@@ -54,27 +54,57 @@
                                     <StackPanel>
                                         <TextBlock Text="{Binding Sender}" FontSize="12" FontWeight="SemiBold" Foreground="#FF1E3A56" />
                                         <TextBlock Margin="0,4,0,0" Text="{Binding Text}" FontSize="14" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
-                                        <Button Margin="0,8,0,0"
-                                                Padding="10,4"
-                                                HorizontalAlignment="Left"
-                                                Content="{x:Static constants:AppConstants.ViewFeedbackButtonText}"
-                                                Command="{Binding DataContext.ViewFeedbackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}"
-                                                Background="White"
-                                                Foreground="#FF1E3A56"
-                                                BorderBrush="#FFCAD8E6"
-                                                Cursor="Hand">
-                                            <Button.Style>
-                                                <Style TargetType="Button">
+
+                                        <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                                            <Button Padding="8,2"
+                                                    HorizontalAlignment="Left"
+                                                    Content="{Binding TranslateButtonText}"
+                                                    Command="{Binding ToggleTranslationCommand}"
+                                                    Background="White"
+                                                    Foreground="#FF506172"
+                                                    FontSize="11"
+                                                    BorderBrush="#FFD4DEE8"
+                                                    Cursor="Hand" />
+
+                                            <Button Margin="8,0,0,0"
+                                                    Padding="10,4"
+                                                    HorizontalAlignment="Left"
+                                                    Content="{x:Static constants:AppConstants.ViewFeedbackButtonText}"
+                                                    Command="{Binding DataContext.ViewFeedbackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="White"
+                                                    Foreground="#FF1E3A56"
+                                                    BorderBrush="#FFCAD8E6"
+                                                    Cursor="Hand">
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsFromBot}" Value="False">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </StackPanel>
+
+                                        <Border Margin="0,8,0,0" Padding="0,6,0,0" BorderBrush="#33A0AFBF" BorderThickness="0,1,0,0">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsFromBot}" Value="False">
+                                                        <DataTrigger Binding="{Binding IsTranslationVisible}" Value="True">
                                                             <Setter Property="Visibility" Value="Visible" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </Button.Style>
-                                        </Button>
+                                            </Border.Style>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding TranslationHeader}" FontSize="11" Foreground="#FF6D7C8B" FontWeight="SemiBold" />
+                                                <TextBlock Margin="0,2,0,0" Text="{Binding TranslationText}" FontSize="12" Foreground="#FF637381" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Border>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
