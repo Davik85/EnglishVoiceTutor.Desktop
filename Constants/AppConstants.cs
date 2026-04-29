@@ -22,10 +22,17 @@ public static class AppConstants
     public const string StartLessonPlaceholderMessage = "Lesson chat will be added in the next step.";
 
     public const string LessonChatTitle = "Lesson chat";
+    public const string LessonSummaryTitle = "Lesson summary";
     public const string BotSenderName = "Bot";
     public const string UserSenderName = "You";
     public const string EmptyMessageWarning = "Please type your answer before sending.";
     public const string MockHintText = "Hint: Try answering with a short complete sentence.";
     public const string MockBotFirstMessage = "Hi! Let's practice this situation. Are you ready?";
     public const string MockBotReplyText = "Good! I understood your answer. In the next step, AI will give real corrections.";
+    public const string FinishLessonButtonText = "Finish lesson";
+    public const string MockSummaryGoodText = "You completed a short practice dialogue and answered in English.";
+    public const string MockSummaryImproveText = "Next, we will connect AI feedback to correct grammar, vocabulary, and natural phrasing.";
+    public const string MockUsefulPhrasesTitle = "Useful phrases to remember";
+    public const string ChooseAnotherSituationText = "Choose another situation";
+    public const string BackToTopicsText = "Back to topics";
 }

@@ -38,6 +38,11 @@ public partial class MainViewModel : ViewModelBase
         CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
     }
 
+    public void NavigateToLessonSummary(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic)
+    {
+        CurrentViewModel = CreateLessonSummaryViewModel(selectedLevel, selectedTopic, selectedSubtopic);
+    }
+
     private WelcomeViewModel CreateWelcomeViewModel()
     {
         return new WelcomeViewModel(NavigateToLevelSelection);
@@ -71,6 +76,17 @@ public partial class MainViewModel : ViewModelBase
             selectedLevel,
             selectedTopic,
             selectedSubtopic,
-            () => NavigateToSubtopics(selectedLevel, selectedTopic));
+            () => NavigateToSubtopics(selectedLevel, selectedTopic),
+            () => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic));
+    }
+
+    private LessonSummaryViewModel CreateLessonSummaryViewModel(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic)
+    {
+        return new LessonSummaryViewModel(
+            selectedLevel,
+            selectedTopic,
+            selectedSubtopic,
+            () => NavigateToSubtopics(selectedLevel, selectedTopic),
+            () => NavigateToHome(selectedLevel));
     }
 }
