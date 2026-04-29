@@ -29,6 +29,13 @@ public static class AppConstants
     public const string MockHintText = "Hint: Try answering with a short complete sentence.";
     public const string MockBotFirstMessage = "Hi! Let's practice this situation. Are you ready?";
     public const string MockBotReplyText = "Good! I understood your answer. In the next step, AI will give real corrections.";
+    public const string TranslateButtonText = "Translate";
+    public const string HideTranslationButtonText = "Hide translation";
+    public const string TranslationLabel = "Translation";
+    public const string DefaultNativeLanguageName = "Russian";
+    public const string MockBotFirstMessageTranslation = "Привет! Давайте потренируем эту ситуацию. Вы готовы?";
+    public const string MockBotReplyTextTranslation = "Хорошо! Я понял ваш ответ. На следующем шаге ИИ будет давать настоящие исправления.";
+    public const string MockUserMessageTranslationText = "Mock translation to the user's native language will be connected later.";
     public const string FinishLessonButtonText = "Finish lesson";
     public const string ViewFeedbackButtonText = "View feedback";
     public const string FeedbackPanelTitle = "Feedback";

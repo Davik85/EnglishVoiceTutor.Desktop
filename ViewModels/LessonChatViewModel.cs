@@ -22,7 +22,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     public string ContextText => $"Topic: {SelectedTopic.Title} • Situation: {SelectedSubtopic.Title} • Level: {SelectedLevel}";
 
-    public ObservableCollection<ChatMessage> Messages { get; } = [];
+    public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
 
     [ObservableProperty]
     private string userInput = string.Empty;
@@ -69,7 +69,7 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void ViewFeedback(ChatMessage? message)
+    private void ViewFeedback(ChatMessageViewModel? message)
     {
         if (message is null || message.IsFromBot || message.Feedback is null)
         {
@@ -108,7 +108,28 @@ public partial class LessonChatViewModel : ViewModelBase
     private void AddMessage(string sender, string text, bool isFromBot)
     {
         messageCounter++;
-        Messages.Add(new ChatMessage(messageCounter, sender, text, isFromBot, isFromBot ? null : CreateMockFeedback()));
+        Messages.Add(new ChatMessageViewModel(
+            messageCounter,
+            sender,
+            text,
+            isFromBot,
+            isFromBot ? null : CreateMockFeedback(),
+            GetMockTranslation(sender, text, isFromBot)));
+    }
+
+    private static string GetMockTranslation(string sender, string text, bool isFromBot)
+    {
+        if (!isFromBot)
+        {
+            return AppConstants.MockUserMessageTranslationText;
+        }
+
+        if (sender == AppConstants.BotSenderName && text == AppConstants.MockBotFirstMessage)
+        {
+            return AppConstants.MockBotFirstMessageTranslation;
+        }
+
+        return AppConstants.MockBotReplyTextTranslation;
     }
 
     private static Feedback CreateMockFeedback()
