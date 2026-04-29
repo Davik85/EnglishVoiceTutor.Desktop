@@ -26,6 +26,9 @@
         <DataTemplate DataType="{x:Type viewModels:SubtopicsViewModel}">
             <views:SubtopicsView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:LessonChatViewModel}">
+            <views:LessonChatView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
