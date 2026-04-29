@@ -20,4 +20,12 @@ public static class AppConstants
     public const string SubtopicsTitlePrefix = "Choose a situation for";
     public const string SubtopicsSubtitle = "Pick a realistic scenario for your short speaking lesson.";
     public const string StartLessonPlaceholderMessage = "Lesson chat will be added in the next step.";
+
+    public const string LessonChatTitle = "Lesson chat";
+    public const string BotSenderName = "Bot";
+    public const string UserSenderName = "You";
+    public const string EmptyMessageWarning = "Please type your answer before sending.";
+    public const string MockHintText = "Hint: Try answering with a short complete sentence.";
+    public const string MockBotFirstMessage = "Hi! Let's practice this situation. Are you ready?";
+    public const string MockBotReplyText = "Good! I understood your answer. In the next step, AI will give real corrections.";
 }

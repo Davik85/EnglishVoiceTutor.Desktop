@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
@@ -8,6 +7,7 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 public partial class SubtopicsViewModel : ViewModelBase
 {
     private readonly Action navigateBack;
+    private readonly Action<Subtopic> navigateToLessonChat;
     private const string NoSubtopicSelectedMessage = "Please choose a situation before starting the lesson.";
     private const string SelectedSituationPrefix = "Selected situation:";
 
@@ -15,9 +15,9 @@ public partial class SubtopicsViewModel : ViewModelBase
 
     public Topic SelectedTopic { get; }
 
-    public string Title => $"{AppConstants.SubtopicsTitlePrefix} {SelectedTopic.Title}";
+    public string Title => $"{Constants.AppConstants.SubtopicsTitlePrefix} {SelectedTopic.Title}";
 
-    public string Subtitle => AppConstants.SubtopicsSubtitle;
+    public string Subtitle => Constants.AppConstants.SubtopicsSubtitle;
 
     public IReadOnlyList<Subtopic> Subtopics { get; }
 
@@ -27,11 +27,16 @@ public partial class SubtopicsViewModel : ViewModelBase
     [ObservableProperty]
     private string statusMessage = string.Empty;
 
-    public SubtopicsViewModel(string selectedLevel, Topic selectedTopic, Action navigateBack)
+    public SubtopicsViewModel(
+        string selectedLevel,
+        Topic selectedTopic,
+        Action navigateBack,
+        Action<Subtopic> navigateToLessonChat)
     {
         SelectedLevel = selectedLevel;
         SelectedTopic = selectedTopic;
         this.navigateBack = navigateBack;
+        this.navigateToLessonChat = navigateToLessonChat;
         Subtopics = CreateSubtopicsForTopic(selectedTopic.Id);
     }
 
@@ -45,9 +50,14 @@ public partial class SubtopicsViewModel : ViewModelBase
     [RelayCommand]
     private void StartLesson()
     {
-        StatusMessage = SelectedSubtopic is null
-            ? NoSubtopicSelectedMessage
-            : AppConstants.StartLessonPlaceholderMessage;
+        if (SelectedSubtopic is null)
+        {
+            StatusMessage = NoSubtopicSelectedMessage;
+            return;
+        }
+
+        StatusMessage = string.Empty;
+        navigateToLessonChat(SelectedSubtopic);
     }
 
     [RelayCommand]
