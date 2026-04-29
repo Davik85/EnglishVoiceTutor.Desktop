@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:constants="clr-namespace:EnglishVoiceTutor.Desktop.Constants"
+             xmlns:behaviors="clr-namespace:EnglishVoiceTutor.Desktop.Behaviors"
              mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="900">
@@ -41,7 +42,8 @@
                                   Margin="0,16,0,12"
                                   MaxHeight="300"
                                   VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled">
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  behaviors:ScrollViewerMouseWheelBehavior.BubbleMouseWheelWhenAtEdge="True">
                         <ItemsControl ItemsSource="{Binding Messages}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
