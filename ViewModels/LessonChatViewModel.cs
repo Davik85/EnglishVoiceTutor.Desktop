@@ -30,6 +30,12 @@ public partial class LessonChatViewModel : ViewModelBase
     [ObservableProperty]
     private string statusMessage = string.Empty;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedFeedback))]
+    private Feedback? selectedFeedback;
+
+    public bool HasSelectedFeedback => SelectedFeedback is not null;
+
     public LessonChatViewModel(
         string selectedLevel,
         Topic selectedTopic,
@@ -63,6 +69,18 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void ViewFeedback(ChatMessage? message)
+    {
+        if (message is null || message.IsFromBot || message.Feedback is null)
+        {
+            return;
+        }
+
+        SelectedFeedback = message.Feedback;
+        StatusMessage = message.Feedback.ShortText;
+    }
+
+    [RelayCommand]
     private void Hint()
     {
         StatusMessage = AppConstants.MockHintText;
@@ -83,6 +101,18 @@ public partial class LessonChatViewModel : ViewModelBase
     private void AddMessage(string sender, string text, bool isFromBot)
     {
         messageCounter++;
-        Messages.Add(new ChatMessage(messageCounter, sender, text, isFromBot));
+        Messages.Add(new ChatMessage(messageCounter, sender, text, isFromBot, isFromBot ? null : CreateMockFeedback()));
+    }
+
+    private static Feedback CreateMockFeedback()
+    {
+        return new Feedback(
+            AppConstants.MockFeedbackType,
+            AppConstants.MockFeedbackShortText,
+            AppConstants.MockCorrectedVersion,
+            AppConstants.MockGrammarTip,
+            AppConstants.MockVocabularyTip,
+            AppConstants.MockCultureTip,
+            AppConstants.MockNaturalVersion);
     }
 }
