@@ -44,6 +44,9 @@ public static class AppConstants
     public const string FeedbackVocabularyTipTitle = "Vocabulary tip";
     public const string FeedbackCultureTipTitle = "Culture tip";
     public const string FeedbackNaturalVersionTitle = "More natural version";
+    public const string FeedbackTranslateButtonText = "Translate feedback";
+    public const string FeedbackHideTranslationButtonText = "Hide feedback translation";
+    public const string FeedbackTranslationLabel = "Feedback translation";
     public const string MockFeedbackType = "correction";
     public const string MockFeedbackShortText = "Good start. Here is a more natural version.";
     public const string MockCorrectedVersion = "Yes, I am ready.";
@@ -51,6 +54,12 @@ public static class AppConstants
     public const string MockVocabularyTip = "Short answers are understandable, but complete phrases sound more natural in practice.";
     public const string MockCultureTip = "In many everyday conversations, a friendly full answer helps keep the dialogue going.";
     public const string MockNaturalVersion = "Yes, I am ready. Let's start.";
+    public const string MockFeedbackShortTextTranslation = "Хорошее начало. Вот более естественный вариант.";
+    public const string MockCorrectedVersionTranslation = "Да, я готов.";
+    public const string MockGrammarTipTranslation = "Используйте полное предложение, если хотите звучать понятнее и увереннее.";
+    public const string MockVocabularyTipTranslation = "Короткие ответы понятны, но полные фразы звучат естественнее во время практики.";
+    public const string MockCultureTipTranslation = "Во многих повседневных разговорах дружелюбный полный ответ помогает поддержать диалог.";
+    public const string MockNaturalVersionTranslation = "Да, я готов. Давайте начнём.";
     public const string MockSummaryGoodText = "You completed a short practice dialogue and answered in English.";
     public const string MockSummaryImproveText = "Next, we will connect AI feedback to correct grammar, vocabulary, and natural phrasing.";
     public const string MockUsefulPhrasesTitle = "Useful phrases to remember";
