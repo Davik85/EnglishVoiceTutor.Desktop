@@ -82,15 +82,17 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <Border Grid.Row="3"
+                <Button Grid.Row="3"
                         Margin="0,0,0,12"
                         Padding="12"
-                        Background="#FFF7FAFD"
-                        BorderBrush="#FFDDE8F3"
-                        BorderThickness="1"
-                        CornerRadius="10">
-                    <Border.Style>
-                        <Style TargetType="Border">
+                        Command="{Binding CloseFeedbackCommand}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Cursor="Hand">
+                    <Button.Style>
+                        <Style TargetType="Button">
                             <Setter Property="Visibility" Value="Collapsed" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding HasSelectedFeedback}" Value="True">
@@ -98,27 +100,34 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </Border.Style>
-                    <StackPanel>
-                        <TextBlock Text="{x:Static constants:AppConstants.FeedbackPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#FF1C2B3A" />
-                        <TextBlock Margin="0,4,0,8" Text="{Binding SelectedFeedback.ShortText}" FontSize="13" Foreground="#FF3A4A5B" TextWrapping="Wrap" />
+                    </Button.Style>
+                    <Border Padding="12"
+                            Background="#FFF7FAFD"
+                            BorderBrush="#FFDDE8F3"
+                            BorderThickness="1"
+                            CornerRadius="10">
+                        <StackPanel>
+                            <TextBlock Text="{x:Static constants:AppConstants.FeedbackPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#FF1C2B3A" />
+                            <TextBlock Margin="0,2,0,8" Text="Click this feedback card to close." FontSize="11" Foreground="#FF7A8A9A" />
+                            <TextBlock Margin="0,4,0,8" Text="{Binding SelectedFeedback.ShortText}" FontSize="13" Foreground="#FF3A4A5B" TextWrapping="Wrap" />
 
-                        <TextBlock Text="{x:Static constants:AppConstants.FeedbackCorrectedVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
-                        <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CorrectedVersion}" FontSize="13" TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Static constants:AppConstants.FeedbackCorrectedVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                            <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CorrectedVersion}" FontSize="13" TextWrapping="Wrap" />
 
-                        <TextBlock Text="{x:Static constants:AppConstants.FeedbackGrammarTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
-                        <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.GrammarTip}" FontSize="13" TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Static constants:AppConstants.FeedbackGrammarTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                            <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.GrammarTip}" FontSize="13" TextWrapping="Wrap" />
 
-                        <TextBlock Text="{x:Static constants:AppConstants.FeedbackVocabularyTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
-                        <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.VocabularyTip}" FontSize="13" TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Static constants:AppConstants.FeedbackVocabularyTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                            <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.VocabularyTip}" FontSize="13" TextWrapping="Wrap" />
 
-                        <TextBlock Text="{x:Static constants:AppConstants.FeedbackCultureTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
-                        <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CultureTip}" FontSize="13" TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Static constants:AppConstants.FeedbackCultureTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                            <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CultureTip}" FontSize="13" TextWrapping="Wrap" />
 
-                        <TextBlock Text="{x:Static constants:AppConstants.FeedbackNaturalVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
-                        <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.NaturalVersion}" FontSize="13" TextWrapping="Wrap" />
-                    </StackPanel>
-                </Border>
+                            <TextBlock Text="{x:Static constants:AppConstants.FeedbackNaturalVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                            <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.NaturalVersion}" FontSize="13" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </Button>
 
                 <StackPanel Grid.Row="4">
                     <TextBox Height="42"

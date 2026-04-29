@@ -81,6 +81,12 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void CloseFeedback()
+    {
+        SelectedFeedback = null;
+    }
+
+    [RelayCommand]
     private void Hint()
     {
         StatusMessage = AppConstants.MockHintText;
