@@ -34,7 +34,15 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(HasSelectedFeedback))]
     private Feedback? selectedFeedback;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FeedbackTranslateButtonText))]
+    private bool isFeedbackTranslationVisible;
+
     public bool HasSelectedFeedback => SelectedFeedback is not null;
+
+    public string FeedbackTranslateButtonText => IsFeedbackTranslationVisible
+        ? AppConstants.FeedbackHideTranslationButtonText
+        : AppConstants.FeedbackTranslateButtonText;
 
     public LessonChatViewModel(
         string selectedLevel,
@@ -77,7 +85,19 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         SelectedFeedback = message.Feedback;
+        IsFeedbackTranslationVisible = false;
         StatusMessage = message.Feedback.ShortText;
+    }
+
+    [RelayCommand]
+    private void ToggleFeedbackTranslation()
+    {
+        if (SelectedFeedback is null)
+        {
+            return;
+        }
+
+        IsFeedbackTranslationVisible = !IsFeedbackTranslationVisible;
     }
 
     [RelayCommand]
@@ -85,6 +105,7 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         SelectedFeedback = null;
         StatusMessage = string.Empty;
+        IsFeedbackTranslationVisible = false;
     }
 
     [RelayCommand]
@@ -141,6 +162,12 @@ public partial class LessonChatViewModel : ViewModelBase
             AppConstants.MockGrammarTip,
             AppConstants.MockVocabularyTip,
             AppConstants.MockCultureTip,
-            AppConstants.MockNaturalVersion);
+            AppConstants.MockNaturalVersion,
+            AppConstants.MockFeedbackShortTextTranslation,
+            AppConstants.MockCorrectedVersionTranslation,
+            AppConstants.MockGrammarTipTranslation,
+            AppConstants.MockVocabularyTipTranslation,
+            AppConstants.MockCultureTipTranslation,
+            AppConstants.MockNaturalVersionTranslation);
     }
 }

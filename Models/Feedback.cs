@@ -7,4 +7,10 @@ public sealed record Feedback(
     string GrammarTip,
     string VocabularyTip,
     string CultureTip,
-    string NaturalVersion);
+    string NaturalVersion,
+    string ShortTextTranslation,
+    string CorrectedVersionTranslation,
+    string GrammarTipTranslation,
+    string VocabularyTipTranslation,
+    string CultureTipTranslation,
+    string NaturalVersionTranslation);
