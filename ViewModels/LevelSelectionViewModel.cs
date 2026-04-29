@@ -7,6 +7,7 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 public partial class LevelSelectionViewModel : ViewModelBase
 {
     private readonly Action navigateBack;
+    private readonly Action<string> navigateToHome;
 
     public string Title => AppConstants.LevelSelectionTitle;
 
@@ -21,14 +22,16 @@ public partial class LevelSelectionViewModel : ViewModelBase
     ];
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ContinueCommand))]
     private string? selectedLevel;
 
     [ObservableProperty]
     private string statusMessage = string.Empty;
 
-    public LevelSelectionViewModel(Action navigateBack)
+    public LevelSelectionViewModel(Action navigateBack, Action<string> navigateToHome)
     {
         this.navigateBack = navigateBack;
+        this.navigateToHome = navigateToHome;
     }
 
     [RelayCommand]
@@ -36,6 +39,23 @@ public partial class LevelSelectionViewModel : ViewModelBase
     {
         SelectedLevel = level;
         StatusMessage = $"{AppConstants.SelectedLevelPrefix} {level}";
+    }
+
+    [RelayCommand(CanExecute = nameof(CanContinue))]
+    private void Continue()
+    {
+        if (!CanContinue())
+        {
+            StatusMessage = "Please select a level before continuing.";
+            return;
+        }
+
+        navigateToHome(SelectedLevel!);
+    }
+
+    private bool CanContinue()
+    {
+        return !string.IsNullOrWhiteSpace(SelectedLevel);
     }
 
     [RelayCommand]

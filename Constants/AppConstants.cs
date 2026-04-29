@@ -10,5 +10,10 @@ public static class AppConstants
     public const string LevelSelectionTitle = "Choose your English level";
     public const string LevelSelectionSubtitle = "We will use this level later to adapt lessons and corrections.";
     public const string SelectedLevelPrefix = "Selected level:";
+
+    public const string HomeTitle = "Choose a conversation topic";
+    public const string HomeSubtitle = "Start with a practical situation and practice step by step.";
+    public const string DailyLimitText = "Free MVP limit: 3 lessons today";
+    public const string HistoryPlaceholderMessage = "Lesson history will be added in a future step.";
     public const string SettingsPlaceholderMessage = "Settings screen will be added in a future step.";
 }
