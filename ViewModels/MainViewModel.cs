@@ -1,15 +1,19 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
+    private readonly UserSettings userSettings = new();
+
     [ObservableProperty]
     private ViewModelBase currentViewModel;
 
     public MainViewModel()
     {
+        userSettings.NativeLanguageName = AppConstants.NativeLanguageRussian;
         currentViewModel = CreateWelcomeViewModel();
     }
 
@@ -43,9 +47,17 @@ public partial class MainViewModel : ViewModelBase
         CurrentViewModel = CreateLessonSummaryViewModel(selectedLevel, selectedTopic, selectedSubtopic);
     }
 
+    private void NavigateToSettings(Action navigateBack)
+    {
+        CurrentViewModel = new SettingsViewModel(
+            userSettings.NativeLanguageName,
+            nativeLanguage => userSettings.NativeLanguageName = nativeLanguage,
+            navigateBack);
+    }
+
     private WelcomeViewModel CreateWelcomeViewModel()
     {
-        return new WelcomeViewModel(NavigateToLevelSelection);
+        return new WelcomeViewModel(NavigateToLevelSelection, () => NavigateToSettings(NavigateToWelcome));
     }
 
     private LevelSelectionViewModel CreateLevelSelectionViewModel()
@@ -58,7 +70,8 @@ public partial class MainViewModel : ViewModelBase
         return new HomeViewModel(
             selectedLevel,
             NavigateToLevelSelection,
-            topic => NavigateToSubtopics(selectedLevel, topic));
+            topic => NavigateToSubtopics(selectedLevel, topic),
+            () => NavigateToSettings(() => NavigateToHome(selectedLevel)));
     }
 
     private SubtopicsViewModel CreateSubtopicsViewModel(string selectedLevel, Topic selectedTopic)
@@ -76,6 +89,7 @@ public partial class MainViewModel : ViewModelBase
             selectedLevel,
             selectedTopic,
             selectedSubtopic,
+            userSettings.NativeLanguageName,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
             () => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic));
     }

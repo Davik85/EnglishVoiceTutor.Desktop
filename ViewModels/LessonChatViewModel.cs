@@ -10,6 +10,7 @@ public partial class LessonChatViewModel : ViewModelBase
 {
     private readonly Action navigateBack;
     private readonly Action finishLesson;
+    private readonly string nativeLanguageName;
     private int messageCounter;
 
     public string SelectedLevel { get; }
@@ -21,6 +22,8 @@ public partial class LessonChatViewModel : ViewModelBase
     public string Title => AppConstants.LessonChatTitle;
 
     public string ContextText => $"Topic: {SelectedTopic.Title} • Situation: {SelectedSubtopic.Title} • Level: {SelectedLevel}";
+
+    public string FeedbackTranslationHeader => $"{AppConstants.FeedbackTranslationLabel} ({nativeLanguageName})";
 
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
 
@@ -48,12 +51,14 @@ public partial class LessonChatViewModel : ViewModelBase
         string selectedLevel,
         Topic selectedTopic,
         Subtopic selectedSubtopic,
+        string nativeLanguageName,
         Action navigateBack,
         Action finishLesson)
     {
         SelectedLevel = selectedLevel;
         SelectedTopic = selectedTopic;
         SelectedSubtopic = selectedSubtopic;
+        this.nativeLanguageName = nativeLanguageName;
         this.navigateBack = navigateBack;
         this.finishLesson = finishLesson;
 
@@ -135,7 +140,8 @@ public partial class LessonChatViewModel : ViewModelBase
             text,
             isFromBot,
             isFromBot ? null : CreateMockFeedback(),
-            GetMockTranslation(sender, text, isFromBot)));
+            GetMockTranslation(sender, text, isFromBot),
+            nativeLanguageName));
     }
 
     private static string GetMockTranslation(string sender, string text, bool isFromBot)

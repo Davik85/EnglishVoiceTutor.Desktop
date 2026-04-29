@@ -7,6 +7,7 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 public partial class WelcomeViewModel : ViewModelBase
 {
     private readonly Action navigateToLevelSelection;
+    private readonly Action navigateToSettings;
 
     public string AppTitle => AppConstants.ShortAppName;
 
@@ -17,9 +18,10 @@ public partial class WelcomeViewModel : ViewModelBase
     [ObservableProperty]
     private string statusMessage = string.Empty;
 
-    public WelcomeViewModel(Action navigateToLevelSelection)
+    public WelcomeViewModel(Action navigateToLevelSelection, Action navigateToSettings)
     {
         this.navigateToLevelSelection = navigateToLevelSelection;
+        this.navigateToSettings = navigateToSettings;
     }
 
     [RelayCommand]
@@ -31,6 +33,6 @@ public partial class WelcomeViewModel : ViewModelBase
     [RelayCommand]
     private void OpenSettings()
     {
-        StatusMessage = AppConstants.SettingsPlaceholderMessage;
+        navigateToSettings();
     }
 }
