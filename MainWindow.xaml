@@ -20,6 +20,9 @@
         <DataTemplate DataType="{x:Type viewModels:LevelSelectionViewModel}">
             <views:LevelSelectionView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:HomeViewModel}">
+            <views:HomeView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

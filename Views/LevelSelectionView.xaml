@@ -47,6 +47,19 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
+                <Button Content="Continue"
+                        Command="{Binding ContinueCommand}"
+                        Margin="0,12,0,0"
+                        Width="140"
+                        Height="42"
+                        HorizontalAlignment="Center"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Background="#FF1E3A56"
+                        Foreground="White"
+                        BorderBrush="#FF1E3A56"
+                        Cursor="Hand" />
+
                 <Button Content="Back"
                         Command="{Binding BackCommand}"
                         Margin="0,10,0,0"

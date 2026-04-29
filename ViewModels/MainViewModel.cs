@@ -22,6 +22,11 @@ public partial class MainViewModel : ViewModelBase
         CurrentViewModel = CreateLevelSelectionViewModel();
     }
 
+    public void NavigateToHome(string selectedLevel)
+    {
+        CurrentViewModel = CreateHomeViewModel(selectedLevel);
+    }
+
     private WelcomeViewModel CreateWelcomeViewModel()
     {
         return new WelcomeViewModel(NavigateToLevelSelection);
@@ -29,6 +34,11 @@ public partial class MainViewModel : ViewModelBase
 
     private LevelSelectionViewModel CreateLevelSelectionViewModel()
     {
-        return new LevelSelectionViewModel(NavigateToWelcome);
+        return new LevelSelectionViewModel(NavigateToWelcome, NavigateToHome);
+    }
+
+    private HomeViewModel CreateHomeViewModel(string selectedLevel)
+    {
+        return new HomeViewModel(selectedLevel, NavigateToLevelSelection);
     }
 }
