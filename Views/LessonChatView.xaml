@@ -205,7 +205,7 @@
                                     </TextBlock>
 
                                     <TextBlock Margin="0,8,0,0" FontSize="11" Foreground="#FF7A8A9A" TextWrapping="Wrap">
-                                        <Run Text="{Binding FeedbackTranslationHeader}" />
+                                        <Run Text="{Binding FeedbackTranslationHeader, Mode=OneWay}" />
                                         <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                     </TextBlock>
                                 </StackPanel>
