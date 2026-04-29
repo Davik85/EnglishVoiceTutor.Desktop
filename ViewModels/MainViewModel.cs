@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using EnglishVoiceTutor.Desktop.Models;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
@@ -27,6 +28,11 @@ public partial class MainViewModel : ViewModelBase
         CurrentViewModel = CreateHomeViewModel(selectedLevel);
     }
 
+    public void NavigateToSubtopics(string selectedLevel, Topic selectedTopic)
+    {
+        CurrentViewModel = CreateSubtopicsViewModel(selectedLevel, selectedTopic);
+    }
+
     private WelcomeViewModel CreateWelcomeViewModel()
     {
         return new WelcomeViewModel(NavigateToLevelSelection);
@@ -39,6 +45,17 @@ public partial class MainViewModel : ViewModelBase
 
     private HomeViewModel CreateHomeViewModel(string selectedLevel)
     {
-        return new HomeViewModel(selectedLevel, NavigateToLevelSelection);
+        return new HomeViewModel(
+            selectedLevel,
+            NavigateToLevelSelection,
+            topic => NavigateToSubtopics(selectedLevel, topic));
+    }
+
+    private SubtopicsViewModel CreateSubtopicsViewModel(string selectedLevel, Topic selectedTopic)
+    {
+        return new SubtopicsViewModel(
+            selectedLevel,
+            selectedTopic,
+            () => NavigateToHome(selectedLevel));
     }
 }

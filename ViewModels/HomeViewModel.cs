@@ -8,6 +8,7 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 public partial class HomeViewModel : ViewModelBase
 {
     private readonly Action navigateBack;
+    private readonly Action<Topic> navigateToSubtopics;
 
     public string SelectedLevel { get; }
 
@@ -32,17 +33,18 @@ public partial class HomeViewModel : ViewModelBase
     [ObservableProperty]
     private string statusMessage = string.Empty;
 
-    public HomeViewModel(string selectedLevel, Action navigateBack)
+    public HomeViewModel(string selectedLevel, Action navigateBack, Action<Topic> navigateToSubtopics)
     {
         SelectedLevel = selectedLevel;
         this.navigateBack = navigateBack;
+        this.navigateToSubtopics = navigateToSubtopics;
     }
 
     [RelayCommand]
     private void SelectTopic(Topic topic)
     {
         SelectedTopic = topic;
-        StatusMessage = $"Selected topic: {topic.Title}";
+        navigateToSubtopics(topic);
     }
 
     [RelayCommand]
