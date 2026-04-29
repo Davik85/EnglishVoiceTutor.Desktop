@@ -16,4 +16,8 @@ public static class AppConstants
     public const string DailyLimitText = "Free MVP limit: 3 lessons today";
     public const string HistoryPlaceholderMessage = "Lesson history will be added in a future step.";
     public const string SettingsPlaceholderMessage = "Settings screen will be added in a future step.";
+
+    public const string SubtopicsTitlePrefix = "Choose a situation for";
+    public const string SubtopicsSubtitle = "Pick a realistic scenario for your short speaking lesson.";
+    public const string StartLessonPlaceholderMessage = "Lesson chat will be added in the next step.";
 }
