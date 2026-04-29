@@ -84,6 +84,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private void CloseFeedback()
     {
         SelectedFeedback = null;
+        StatusMessage = string.Empty;
     }
 
     [RelayCommand]
