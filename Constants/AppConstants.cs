@@ -17,6 +17,29 @@ public static class AppConstants
     public const string HistoryPlaceholderMessage = "Lesson history will be added in a future step.";
     public const string SettingsPlaceholderMessage = "Settings screen will be added in a future step.";
 
+    public const string SettingsTitle = "Settings";
+    public const string SettingsSubtitle = "Configure your learning preferences.";
+    public const string NativeLanguageTitle = "Native language";
+    public const string NativeLanguageSubtitle = "Translations will use this language later.";
+    public const string SettingsSavedMessage = "Settings saved for this session.";
+    public const string BackButtonText = "Back";
+
+    public const string NativeLanguageRussian = "Russian";
+    public const string NativeLanguageSpanish = "Spanish";
+    public const string NativeLanguageGerman = "German";
+    public const string NativeLanguageFrench = "French";
+    public const string NativeLanguageItalian = "Italian";
+    public const string NativeLanguagePortuguese = "Portuguese";
+    public static readonly IReadOnlyList<string> SupportedNativeLanguages =
+    [
+        NativeLanguageRussian,
+        NativeLanguageSpanish,
+        NativeLanguageGerman,
+        NativeLanguageFrench,
+        NativeLanguageItalian,
+        NativeLanguagePortuguese
+    ];
+
     public const string SubtopicsTitlePrefix = "Choose a situation for";
     public const string SubtopicsSubtitle = "Pick a realistic scenario for your short speaking lesson.";
     public const string StartLessonPlaceholderMessage = "Lesson chat will be added in the next step.";

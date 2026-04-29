@@ -7,6 +7,8 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 
 public partial class ChatMessageViewModel : ViewModelBase
 {
+    private readonly string nativeLanguageName;
+
     public int Id { get; }
 
     public string Sender { get; }
@@ -19,7 +21,7 @@ public partial class ChatMessageViewModel : ViewModelBase
 
     public string TranslationText { get; }
 
-    public string TranslationHeader => $"{AppConstants.TranslationLabel} ({AppConstants.DefaultNativeLanguageName})";
+    public string TranslationHeader => $"{AppConstants.TranslationLabel} ({nativeLanguageName})";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TranslateButtonText))]
@@ -29,7 +31,7 @@ public partial class ChatMessageViewModel : ViewModelBase
         ? AppConstants.HideTranslationButtonText
         : AppConstants.TranslateButtonText;
 
-    public ChatMessageViewModel(int id, string sender, string text, bool isFromBot, Feedback? feedback, string translationText)
+    public ChatMessageViewModel(int id, string sender, string text, bool isFromBot, Feedback? feedback, string translationText, string nativeLanguageName)
     {
         Id = id;
         Sender = sender;
@@ -37,6 +39,7 @@ public partial class ChatMessageViewModel : ViewModelBase
         IsFromBot = isFromBot;
         Feedback = feedback;
         TranslationText = translationText;
+        this.nativeLanguageName = nativeLanguageName;
     }
 
     [RelayCommand]

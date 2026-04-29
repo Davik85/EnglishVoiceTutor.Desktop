@@ -9,6 +9,7 @@ public partial class HomeViewModel : ViewModelBase
 {
     private readonly Action navigateBack;
     private readonly Action<Topic> navigateToSubtopics;
+    private readonly Action navigateToSettings;
 
     public string SelectedLevel { get; }
 
@@ -33,11 +34,12 @@ public partial class HomeViewModel : ViewModelBase
     [ObservableProperty]
     private string statusMessage = string.Empty;
 
-    public HomeViewModel(string selectedLevel, Action navigateBack, Action<Topic> navigateToSubtopics)
+    public HomeViewModel(string selectedLevel, Action navigateBack, Action<Topic> navigateToSubtopics, Action navigateToSettings)
     {
         SelectedLevel = selectedLevel;
         this.navigateBack = navigateBack;
         this.navigateToSubtopics = navigateToSubtopics;
+        this.navigateToSettings = navigateToSettings;
     }
 
     [RelayCommand]
@@ -62,6 +64,6 @@ public partial class HomeViewModel : ViewModelBase
     [RelayCommand]
     private void Settings()
     {
-        StatusMessage = AppConstants.SettingsPlaceholderMessage;
+        navigateToSettings();
     }
 }
