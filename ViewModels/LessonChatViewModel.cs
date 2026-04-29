@@ -9,6 +9,7 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 public partial class LessonChatViewModel : ViewModelBase
 {
     private readonly Action navigateBack;
+    private readonly Action finishLesson;
     private int messageCounter;
 
     public string SelectedLevel { get; }
@@ -33,12 +34,14 @@ public partial class LessonChatViewModel : ViewModelBase
         string selectedLevel,
         Topic selectedTopic,
         Subtopic selectedSubtopic,
-        Action navigateBack)
+        Action navigateBack,
+        Action finishLesson)
     {
         SelectedLevel = selectedLevel;
         SelectedTopic = selectedTopic;
         SelectedSubtopic = selectedSubtopic;
         this.navigateBack = navigateBack;
+        this.finishLesson = finishLesson;
 
         AddMessage(AppConstants.BotSenderName, AppConstants.MockBotFirstMessage, true);
     }
@@ -63,6 +66,12 @@ public partial class LessonChatViewModel : ViewModelBase
     private void Hint()
     {
         StatusMessage = AppConstants.MockHintText;
+    }
+
+    [RelayCommand]
+    private void FinishLesson()
+    {
+        finishLesson();
     }
 
     [RelayCommand]
