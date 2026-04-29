@@ -60,23 +60,19 @@
                 </ScrollViewer>
 
                 <StackPanel Grid.Row="3">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                    <TextBox Height="42"
+                             Margin="0,0,0,12"
+                             VerticalContentAlignment="Center"
+                             Text="{Binding UserInput, UpdateSourceTrigger=PropertyChanged}" />
 
-                        <TextBox Grid.Column="0" Margin="0,0,10,0" Height="38" VerticalContentAlignment="Center" Text="{Binding UserInput, UpdateSourceTrigger=PropertyChanged}" />
-                        <Button Grid.Column="1" Content="Send" Command="{Binding SendMessageCommand}" Margin="0,0,8,0" Width="90" Height="38" Background="#FF1E3A56" Foreground="White" BorderBrush="#FF1E3A56" Cursor="Hand" />
-                        <Button Grid.Column="2" Content="Hint" Command="{Binding HintCommand}" Margin="0,0,8,0" Width="90" Height="38" Background="White" Foreground="#FF1E3A56" BorderBrush="#FFCAD8E6" Cursor="Hand" />
-                        <Button Grid.Column="3" Content="Voice later" IsEnabled="False" Margin="0,0,8,0" Width="110" Height="38" Background="#FFF3F3F3" Foreground="#FF7A7A7A" BorderBrush="#FFD8D8D8" />
-                        <Button Grid.Column="4" Content="Back" Command="{Binding BackCommand}" Width="90" Height="38" Background="White" Foreground="#FF1E3A56" BorderBrush="#FFCAD8E6" Cursor="Hand" />
-                    </Grid>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Content="Send" Command="{Binding SendMessageCommand}" Margin="0,0,8,0" Width="90" Height="38" Background="#FF1E3A56" Foreground="White" BorderBrush="#FF1E3A56" Cursor="Hand" />
+                        <Button Content="Hint" Command="{Binding HintCommand}" Margin="0,0,8,0" Width="90" Height="38" Background="White" Foreground="#FF1E3A56" BorderBrush="#FFCAD8E6" Cursor="Hand" />
+                        <Button Content="Voice later" IsEnabled="False" Margin="0,0,8,0" Width="110" Height="38" Background="#FFF3F3F3" Foreground="#FF7A7A7A" BorderBrush="#FFD8D8D8" />
+                        <Button Content="Back" Command="{Binding BackCommand}" Width="90" Height="38" Background="White" Foreground="#FF1E3A56" BorderBrush="#FFCAD8E6" Cursor="Hand" />
+                    </StackPanel>
 
-                    <TextBlock Margin="0,10,0,0" Text="{Binding StatusMessage}" FontSize="13" Foreground="#FF3A4A5B" TextWrapping="Wrap" />
+                    <TextBlock Margin="0,10,0,0" Text="{Binding StatusMessage}" FontSize="13" Foreground="#FF3A4A5B" TextWrapping="Wrap" TextAlignment="Center" />
                 </StackPanel>
             </Grid>
         </Border>
