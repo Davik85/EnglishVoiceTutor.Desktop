@@ -7,6 +7,7 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
     private readonly UserSettingsService userSettingsService = new();
+    private readonly LessonChatBackendService lessonChatBackendService = new();
     private readonly UserSettings userSettings;
 
     [ObservableProperty]
@@ -97,6 +98,7 @@ public partial class MainViewModel : ViewModelBase
             selectedTopic,
             selectedSubtopic,
             userSettings.NativeLanguageName,
+            lessonChatBackendService,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
             () => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic));
     }

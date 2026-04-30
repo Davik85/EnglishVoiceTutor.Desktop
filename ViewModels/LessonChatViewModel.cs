@@ -3,14 +3,18 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Services;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
 public partial class LessonChatViewModel : ViewModelBase
 {
+    private const string BotStatusPrefix = "Bot status:";
+
     private readonly Action navigateBack;
     private readonly Action finishLesson;
     private readonly string nativeLanguageName;
+    private readonly LessonChatBackendService lessonChatBackendService;
     private int messageCounter;
 
     public string SelectedLevel { get; }
@@ -41,17 +45,28 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(FeedbackTranslateButtonText))]
     private bool isFeedbackTranslationVisible;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(BotStatusText))]
+    private string botStatus = BackendConstants.BotStatusReady;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
+    private bool isSending;
+
     public bool HasSelectedFeedback => SelectedFeedback is not null;
 
     public string FeedbackTranslateButtonText => IsFeedbackTranslationVisible
         ? AppConstants.FeedbackHideTranslationButtonText
         : AppConstants.FeedbackTranslateButtonText;
 
+    public string BotStatusText => $"{BotStatusPrefix} {BotStatus}";
+
     public LessonChatViewModel(
         string selectedLevel,
         Topic selectedTopic,
         Subtopic selectedSubtopic,
         string nativeLanguageName,
+        LessonChatBackendService lessonChatBackendService,
         Action navigateBack,
         Action finishLesson)
     {
@@ -59,14 +74,20 @@ public partial class LessonChatViewModel : ViewModelBase
         SelectedTopic = selectedTopic;
         SelectedSubtopic = selectedSubtopic;
         this.nativeLanguageName = nativeLanguageName;
+        this.lessonChatBackendService = lessonChatBackendService;
         this.navigateBack = navigateBack;
         this.finishLesson = finishLesson;
 
         AddMessage(AppConstants.BotSenderName, AppConstants.MockBotFirstMessage, true);
     }
 
-    [RelayCommand]
-    private void SendMessage()
+    private bool CanSendMessage()
+    {
+        return !IsSending;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSendMessage))]
+    private async Task SendMessageAsync()
     {
         if (string.IsNullOrWhiteSpace(UserInput))
         {
@@ -74,11 +95,36 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        AddMessage(AppConstants.UserSenderName, UserInput.Trim(), false);
-        UserInput = string.Empty;
+        var trimmedUserInput = UserInput.Trim();
+        BotStatus = BackendConstants.BotStatusThinking;
+        IsSending = true;
 
-        AddMessage(AppConstants.BotSenderName, AppConstants.MockBotReplyText, true);
-        StatusMessage = string.Empty;
+        try
+        {
+            var response = await lessonChatBackendService.SendMockLessonMessageAsync(new LessonChatBackendRequest
+            {
+                SelectedLevel = SelectedLevel,
+                TopicTitle = SelectedTopic.Title,
+                SubtopicTitle = SelectedSubtopic.Title,
+                UserMessage = trimmedUserInput,
+                NativeLanguageName = nativeLanguageName
+            });
+
+            AddMessage(AppConstants.UserSenderName, trimmedUserInput, false, MapFeedback(response.Feedback));
+            AddMessage(AppConstants.BotSenderName, response.BotReply, true);
+
+            UserInput = string.Empty;
+            StatusMessage = string.Empty;
+        }
+        catch
+        {
+            StatusMessage = BackendConstants.BackendUnavailableMessage;
+        }
+        finally
+        {
+            BotStatus = BackendConstants.BotStatusReady;
+            IsSending = false;
+        }
     }
 
     [RelayCommand]
@@ -131,7 +177,7 @@ public partial class LessonChatViewModel : ViewModelBase
         navigateBack();
     }
 
-    private void AddMessage(string sender, string text, bool isFromBot)
+    private void AddMessage(string sender, string text, bool isFromBot, Feedback? feedback = null)
     {
         messageCounter++;
         Messages.Add(new ChatMessageViewModel(
@@ -139,7 +185,7 @@ public partial class LessonChatViewModel : ViewModelBase
             sender,
             text,
             isFromBot,
-            isFromBot ? null : CreateMockFeedback(),
+            isFromBot ? null : feedback,
             GetMockTranslation(sender, text, isFromBot),
             nativeLanguageName));
     }
@@ -159,16 +205,16 @@ public partial class LessonChatViewModel : ViewModelBase
         return AppConstants.MockBotReplyTextTranslation;
     }
 
-    private static Feedback CreateMockFeedback()
+    private static Feedback MapFeedback(BackendFeedbackDto backendFeedback)
     {
         return new Feedback(
             AppConstants.MockFeedbackType,
-            AppConstants.MockFeedbackShortText,
-            AppConstants.MockCorrectedVersion,
-            AppConstants.MockGrammarTip,
-            AppConstants.MockVocabularyTip,
-            AppConstants.MockCultureTip,
-            AppConstants.MockNaturalVersion,
+            backendFeedback.ShortText,
+            backendFeedback.CorrectedVersion,
+            backendFeedback.GrammarTip,
+            backendFeedback.VocabularyTip,
+            backendFeedback.CultureTip,
+            backendFeedback.NaturalVersion,
             AppConstants.MockFeedbackShortTextTranslation,
             AppConstants.MockCorrectedVersionTranslation,
             AppConstants.MockGrammarTipTranslation,
