@@ -1,7 +1,11 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
+using EnglishVoiceTutor.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddScoped<ILessonChatService, MockLessonChatService>();
+
 var app = builder.Build();
 
 app.MapGet("/health", () =>
@@ -13,7 +17,7 @@ app.MapGet("/health", () =>
     });
 });
 
-app.MapPost("/api/lesson-chat/mock-reply", (LessonChatRequest request) =>
+app.MapPost("/api/lesson-chat/mock-reply", async (LessonChatRequest request, ILessonChatService lessonChatService, CancellationToken cancellationToken) =>
 {
     if (string.IsNullOrWhiteSpace(request.UserMessage))
     {
@@ -23,19 +27,7 @@ app.MapPost("/api/lesson-chat/mock-reply", (LessonChatRequest request) =>
         });
     }
 
-    var response = new LessonChatResponse
-    {
-        BotReply = ApiConstants.MockBotReplyText,
-        Feedback = new FeedbackDto
-        {
-            ShortText = "Good start. Here is a more natural version.",
-            CorrectedVersion = "Yes, I am ready.",
-            GrammarTip = "Use a full sentence when you want to sound clearer and more confident.",
-            VocabularyTip = "Short answers are understandable, but complete phrases sound more natural in practice.",
-            CultureTip = "In everyday conversation, a friendly full answer helps keep the dialogue going.",
-            NaturalVersion = "Yes, I am ready. Let's start."
-        }
-    };
+    var response = await lessonChatService.CreateReplyAsync(request, cancellationToken);
 
     return Results.Ok(response);
 });
