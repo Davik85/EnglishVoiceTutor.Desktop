@@ -1,19 +1,20 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Services;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
-    private readonly UserSettings userSettings = new();
+    private readonly UserSettingsService userSettingsService = new();
+    private readonly UserSettings userSettings;
 
     [ObservableProperty]
     private ViewModelBase currentViewModel;
 
     public MainViewModel()
     {
-        userSettings.NativeLanguageName = AppConstants.NativeLanguageRussian;
+        userSettings = userSettingsService.Load();
         currentViewModel = CreateWelcomeViewModel();
     }
 
@@ -51,8 +52,14 @@ public partial class MainViewModel : ViewModelBase
     {
         CurrentViewModel = new SettingsViewModel(
             userSettings.NativeLanguageName,
-            nativeLanguage => userSettings.NativeLanguageName = nativeLanguage,
+            SaveNativeLanguage,
             navigateBack);
+    }
+
+    private void SaveNativeLanguage(string nativeLanguage)
+    {
+        userSettings.NativeLanguageName = nativeLanguage;
+        userSettingsService.Save(userSettings);
     }
 
     private WelcomeViewModel CreateWelcomeViewModel()
