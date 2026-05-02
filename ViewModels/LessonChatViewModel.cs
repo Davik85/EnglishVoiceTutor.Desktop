@@ -101,7 +101,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
         try
         {
-            var response = await lessonChatBackendService.SendMockLessonMessageAsync(new LessonChatBackendRequest
+            var response = await lessonChatBackendService.SendLessonMessageAsync(new LessonChatBackendRequest
             {
                 SelectedLevel = SelectedLevel,
                 TopicTitle = SelectedTopic.Title,

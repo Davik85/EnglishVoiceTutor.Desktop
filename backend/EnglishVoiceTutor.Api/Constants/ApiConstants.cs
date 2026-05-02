@@ -6,4 +6,8 @@ public static class ApiConstants
     public const string HealthOkStatus = "ok";
     public const string MockBotReplyText = "Good! I understood your answer. In the next step, AI will give real corrections from the backend.";
     public const string EmptyUserMessageError = "User message is required.";
+
+    public const string HealthRoute = "/health";
+    public const string LessonChatReplyRoute = "/api/lesson-chat/reply";
+    public const string LessonChatMockReplyRoute = "/api/lesson-chat/mock-reply";
 }

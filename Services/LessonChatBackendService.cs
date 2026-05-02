@@ -10,7 +10,7 @@ public sealed class LessonChatBackendService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public async Task<LessonChatBackendResponse> SendMockLessonMessageAsync(
+    public async Task<LessonChatBackendResponse> SendLessonMessageAsync(
         LessonChatBackendRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -21,7 +21,7 @@ public sealed class LessonChatBackendService
         };
 
         using var response = await httpClient.PostAsJsonAsync(
-            BackendConstants.MockLessonChatEndpoint,
+            BackendConstants.LessonChatReplyEndpoint,
             request,
             JsonOptions,
             cancellationToken);
