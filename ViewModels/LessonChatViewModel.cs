@@ -50,6 +50,9 @@ public partial class LessonChatViewModel : ViewModelBase
     private string botStatus = BackendConstants.BotStatusReady;
 
     [ObservableProperty]
+    private string backendStatusText = BackendConstants.BackendStatusChecking;
+
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     private bool isSending;
 
@@ -79,6 +82,7 @@ public partial class LessonChatViewModel : ViewModelBase
         this.finishLesson = finishLesson;
 
         AddMessage(AppConstants.BotSenderName, AppConstants.MockBotFirstMessage, true);
+        _ = CheckBackendHealthAsync();
     }
 
     private bool CanSendMessage()
@@ -113,11 +117,13 @@ public partial class LessonChatViewModel : ViewModelBase
             AddMessage(AppConstants.UserSenderName, trimmedUserInput, false, MapFeedback(response.Feedback));
             AddMessage(AppConstants.BotSenderName, response.BotReply, true);
 
+            BackendStatusText = BackendConstants.BackendStatusConnected;
             UserInput = string.Empty;
             StatusMessage = string.Empty;
         }
         catch
         {
+            BackendStatusText = BackendConstants.BackendStatusUnavailable;
             StatusMessage = BackendConstants.BackendUnavailableMessage;
         }
         finally
@@ -125,6 +131,20 @@ public partial class LessonChatViewModel : ViewModelBase
             BotStatus = BackendConstants.BotStatusReady;
             IsSending = false;
         }
+    }
+
+    public async Task CheckBackendHealthAsync()
+    {
+        var isBackendHealthy = await lessonChatBackendService.CheckHealthAsync();
+
+        if (isBackendHealthy)
+        {
+            BackendStatusText = BackendConstants.BackendStatusConnected;
+            return;
+        }
+
+        BackendStatusText = BackendConstants.BackendStatusUnavailable;
+        StatusMessage = BackendConstants.BackendHealthCheckFailedMessage;
     }
 
     [RelayCommand]
