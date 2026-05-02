@@ -10,4 +10,5 @@ public static class ApiConstants
     public const string HealthRoute = "/health";
     public const string LessonChatReplyRoute = "/api/lesson-chat/reply";
     public const string LessonChatMockReplyRoute = "/api/lesson-chat/mock-reply";
+    public const string BackendConfigStatusRoute = "/api/backend/config-status";
 }
