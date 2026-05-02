@@ -4,8 +4,11 @@ using EnglishVoiceTutor.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddScoped<ILessonChatService, MockLessonChatService>();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<MockLessonChatService>();
 builder.Services.AddScoped<OpenAiOptionsProvider>();
+builder.Services.AddScoped<LessonPromptBuilder>();
+builder.Services.AddScoped<ILessonChatService, OpenAiLessonChatService>();
 
 var app = builder.Build();
 
@@ -34,7 +37,7 @@ app.MapGet(ApiConstants.BackendConfigStatusRoute, (OpenAiOptionsProvider options
 });
 
 app.MapPost(ApiConstants.LessonChatReplyRoute, HandleLessonChatReplyAsync);
-app.MapPost(ApiConstants.LessonChatMockReplyRoute, HandleLessonChatReplyAsync);
+app.MapPost(ApiConstants.LessonChatMockReplyRoute, HandleMockLessonChatReplyAsync);
 
 app.Run();
 
@@ -52,6 +55,24 @@ static async Task<IResult> HandleLessonChatReplyAsync(
     }
 
     var response = await lessonChatService.CreateReplyAsync(request, cancellationToken);
+
+    return Results.Ok(response);
+}
+
+static async Task<IResult> HandleMockLessonChatReplyAsync(
+    LessonChatRequest request,
+    MockLessonChatService mockLessonChatService,
+    CancellationToken cancellationToken)
+{
+    if (string.IsNullOrWhiteSpace(request.UserMessage))
+    {
+        return Results.BadRequest(new
+        {
+            error = ApiConstants.EmptyUserMessageError
+        });
+    }
+
+    var response = await mockLessonChatService.CreateReplyAsync(request, cancellationToken);
 
     return Results.Ok(response);
 }
