@@ -8,7 +8,7 @@ builder.Services.AddScoped<ILessonChatService, MockLessonChatService>();
 
 var app = builder.Build();
 
-app.MapGet("/health", () =>
+app.MapGet(ApiConstants.HealthRoute, () =>
 {
     return Results.Ok(new
     {
@@ -17,7 +17,15 @@ app.MapGet("/health", () =>
     });
 });
 
-app.MapPost("/api/lesson-chat/mock-reply", async (LessonChatRequest request, ILessonChatService lessonChatService, CancellationToken cancellationToken) =>
+app.MapPost(ApiConstants.LessonChatReplyRoute, HandleLessonChatReplyAsync);
+app.MapPost(ApiConstants.LessonChatMockReplyRoute, HandleLessonChatReplyAsync);
+
+app.Run();
+
+static async Task<IResult> HandleLessonChatReplyAsync(
+    LessonChatRequest request,
+    ILessonChatService lessonChatService,
+    CancellationToken cancellationToken)
 {
     if (string.IsNullOrWhiteSpace(request.UserMessage))
     {
@@ -30,6 +38,4 @@ app.MapPost("/api/lesson-chat/mock-reply", async (LessonChatRequest request, ILe
     var response = await lessonChatService.CreateReplyAsync(request, cancellationToken);
 
     return Results.Ok(response);
-});
-
-app.Run();
+}

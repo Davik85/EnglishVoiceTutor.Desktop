@@ -17,5 +17,9 @@
 4. Start the API:
    `dotnet run`
 
+## Lesson chat endpoints
+- The desktop app now uses `POST /api/lesson-chat/reply`.
+- `POST /api/lesson-chat/mock-reply` is kept temporarily for local compatibility and testing.
+
 ## Security rule
 OpenAI API keys must never be stored in the desktop app. The desktop app should call only the backend proxy for future AI features.
