@@ -34,6 +34,7 @@
                         <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" Foreground="#FF1C2B3A" TextAlignment="Center" />
                         <TextBlock Margin="0,10,0,0" Text="{Binding ContextText}" FontSize="14" Foreground="#FF3A4A5B" TextAlignment="Center" TextWrapping="Wrap" />
                         <TextBlock Margin="0,10,0,0" Text="{Binding BotStatusText}" FontSize="13" Foreground="#FF1E3A56" TextAlignment="Center" />
+                        <TextBlock Margin="0,4,0,0" Text="{Binding BackendStatusText}" FontSize="12" Foreground="#FF6D7C8B" TextAlignment="Center" />
                     </StackPanel>
 
                     <Border Grid.Row="1" Margin="0,16,0,0" Height="1" Background="#FFE1E8F0" />
