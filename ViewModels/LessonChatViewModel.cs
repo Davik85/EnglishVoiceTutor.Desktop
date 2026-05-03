@@ -53,6 +53,9 @@ public partial class LessonChatViewModel : ViewModelBase
     private string backendStatusText = BackendConstants.BackendStatusChecking;
 
     [ObservableProperty]
+    private string aiStatusText = BackendConstants.AiStatusChecking;
+
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     private bool isSending;
 
@@ -83,6 +86,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
         AddMessage(AppConstants.BotSenderName, AppConstants.MockBotFirstMessage, true);
         _ = CheckBackendHealthAsync();
+        _ = CheckBackendConfigStatusAsync();
     }
 
     private bool CanSendMessage()
@@ -145,6 +149,29 @@ public partial class LessonChatViewModel : ViewModelBase
 
         BackendStatusText = BackendConstants.BackendStatusUnavailable;
         StatusMessage = BackendConstants.BackendHealthCheckFailedMessage;
+    }
+
+
+    private async Task CheckBackendConfigStatusAsync()
+    {
+        var configStatus = await lessonChatBackendService.GetBackendConfigStatusAsync();
+
+        if (configStatus is null)
+        {
+            AiStatusText = BackendConstants.AiStatusUnavailable;
+            return;
+        }
+
+        if (string.Equals(configStatus.OpenAiStatus, BackendConstants.OpenAiConfiguredStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            var modelName = configStatus.OpenAiModel?.Trim();
+            AiStatusText = string.IsNullOrWhiteSpace(modelName)
+                ? BackendConstants.AiStatusConfiguredPrefix
+                : $"{BackendConstants.AiStatusConfiguredPrefix} ({modelName})";
+            return;
+        }
+
+        AiStatusText = BackendConstants.AiStatusNotConfigured;
     }
 
     [RelayCommand]
