@@ -39,6 +39,31 @@ public sealed class LessonChatBackendService
         }
     }
 
+    public async Task<BackendConfigStatusResponse?> GetBackendConfigStatusAsync(CancellationToken cancellationToken = default)
+    {
+        using var httpClient = new HttpClient
+        {
+            BaseAddress = new Uri(BackendConstants.DefaultBackendBaseUrl),
+            Timeout = TimeSpan.FromSeconds(BackendConstants.BackendRequestTimeoutSeconds)
+        };
+
+        try
+        {
+            using var response = await httpClient.GetAsync(BackendConstants.BackendConfigStatusEndpoint, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            return await response.Content.ReadFromJsonAsync<BackendConfigStatusResponse>(JsonOptions, cancellationToken);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public async Task<LessonChatBackendResponse> SendLessonMessageAsync(
         LessonChatBackendRequest request,
         CancellationToken cancellationToken = default)
