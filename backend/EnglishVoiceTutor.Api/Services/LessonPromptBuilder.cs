@@ -8,6 +8,7 @@ public sealed class LessonPromptBuilder
     private const string LessonContextHeader = "Lesson context (already selected by learner):";
     private const string UserMessageHeader = "Learner latest message:";
     private const string CurrentTurnTaskHeader = "Current turn task:";
+    private const string HintTaskHeader = "Hint task:";
 
     public string BuildInput(LessonChatRequest request)
     {
@@ -30,6 +31,26 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("Do not ask the learner to choose a topic.");
         prompt.AppendLine("Do not ask for native language.");
         prompt.AppendLine("Continue the dialogue naturally with one next question in the same scenario.");
+
+        return prompt.ToString();
+    }
+
+    public string BuildHintInput(LessonChatRequest request)
+    {
+        var prompt = new StringBuilder();
+
+        prompt.AppendLine(LessonContextHeader);
+        prompt.AppendLine($"- Level: {request.SelectedLevel}");
+        prompt.AppendLine($"- Topic: {request.TopicTitle}");
+        prompt.AppendLine($"- Situation/Subtopic: {request.SubtopicTitle}");
+        prompt.AppendLine();
+
+        prompt.AppendLine(UserMessageHeader);
+        prompt.AppendLine(request.UserMessage);
+        prompt.AppendLine();
+
+        prompt.AppendLine(HintTaskHeader);
+        prompt.AppendLine("Give one short hint sentence the learner can say next in this exact situation.");
 
         return prompt.ToString();
     }

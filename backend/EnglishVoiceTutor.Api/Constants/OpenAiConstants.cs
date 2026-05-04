@@ -32,7 +32,25 @@ Output rules:
 - Return only JSON that matches the provided schema.
 - Do not return markdown.
 """;
+    public const string LessonHintSystemInstructions = """
+You are an AI English conversation tutor inside an active lesson.
+The learner has already selected the lesson level, topic, and situation.
+
+Rules:
+- Stay inside the selected topic and situation.
+- Give one short hint in English only.
+- The hint must give one example sentence the learner can say next.
+- Keep it short (one sentence).
+- For A1/A2 levels, use simple vocabulary and short sentences.
+- Do not ask the learner to choose a topic.
+- Do not ask for native language.
+- Do not use markdown.
+
+Output rules:
+- Return only JSON that matches the provided schema.
+""";
     public const string LessonReplyFallbackText = "I understood your answer. Let's continue practicing.";
     public const string JsonSchemaFormatType = "json_schema";
     public const string LessonChatResponseSchemaName = "lesson_chat_response";
+    public const string LessonHintResponseSchemaName = "lesson_hint_response";
 }
