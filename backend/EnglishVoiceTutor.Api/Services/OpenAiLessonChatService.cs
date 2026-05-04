@@ -9,9 +9,57 @@ namespace EnglishVoiceTutor.Api.Services;
 public sealed class OpenAiLessonChatService : ILessonChatService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonElement LessonChatResponseSchema = JsonSerializer.Deserialize<JsonElement>(LessonChatResponseSchemaJson);
     private const string OpenAiRequestFailedMessage = "OpenAI request failed.";
     private const string OpenAiResponseMissingMessage = "OpenAI response is empty.";
     private const string OpenAiResponseTextMissingMessage = "OpenAI response does not contain output text.";
+    private const string LessonChatResponseSchemaJson = """
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "botReply": {
+      "type": "string"
+    },
+    "feedback": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shortText": {
+          "type": "string"
+        },
+        "correctedVersion": {
+          "type": "string"
+        },
+        "grammarTip": {
+          "type": "string"
+        },
+        "vocabularyTip": {
+          "type": "string"
+        },
+        "cultureTip": {
+          "type": "string"
+        },
+        "naturalVersion": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "shortText",
+        "correctedVersion",
+        "grammarTip",
+        "vocabularyTip",
+        "cultureTip",
+        "naturalVersion"
+      ]
+    }
+  },
+  "required": [
+    "botReply",
+    "feedback"
+  ]
+}
+""";
 
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly MockLessonChatService _mockLessonChatService;
@@ -74,7 +122,17 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         {
             Model = options.Model,
             Instructions = OpenAiConstants.LessonReplySystemInstructions,
-            Input = _lessonPromptBuilder.BuildInput(request)
+            Input = _lessonPromptBuilder.BuildInput(request),
+            Text = new OpenAiTextOptions
+            {
+                Format = new OpenAiTextFormat
+                {
+                    Type = OpenAiConstants.JsonSchemaFormatType,
+                    Name = OpenAiConstants.LessonChatResponseSchemaName,
+                    Strict = true,
+                    Schema = LessonChatResponseSchema
+                }
+            }
         };
 
         var httpClient = _httpClientFactory.CreateClient();
