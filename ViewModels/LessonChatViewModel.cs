@@ -12,10 +12,11 @@ public partial class LessonChatViewModel : ViewModelBase
     private const string BotStatusPrefix = "Bot status:";
 
     private readonly Action navigateBack;
-    private readonly Action finishLesson;
+    private readonly Action<Feedback?> finishLesson;
     private readonly string nativeLanguageName;
     private readonly LessonChatBackendService lessonChatBackendService;
     private int messageCounter;
+    private Feedback? latestFeedback;
 
     public string SelectedLevel { get; }
 
@@ -74,7 +75,7 @@ public partial class LessonChatViewModel : ViewModelBase
         string nativeLanguageName,
         LessonChatBackendService lessonChatBackendService,
         Action navigateBack,
-        Action finishLesson)
+        Action<Feedback?> finishLesson)
     {
         SelectedLevel = selectedLevel;
         SelectedTopic = selectedTopic;
@@ -118,7 +119,10 @@ public partial class LessonChatViewModel : ViewModelBase
                 NativeLanguageName = nativeLanguageName
             });
 
-            AddMessage(AppConstants.UserSenderName, trimmedUserInput, false, MapFeedback(response.Feedback));
+            var mappedFeedback = MapFeedback(response.Feedback);
+            latestFeedback = mappedFeedback;
+
+            AddMessage(AppConstants.UserSenderName, trimmedUserInput, false, mappedFeedback);
             AddMessage(AppConstants.BotSenderName, response.BotReply, true);
 
             BackendStatusText = BackendConstants.BackendStatusConnected;
@@ -215,7 +219,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [RelayCommand]
     private void FinishLesson()
     {
-        finishLesson();
+        finishLesson(latestFeedback);
     }
 
     [RelayCommand]
