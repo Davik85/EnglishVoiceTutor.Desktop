@@ -211,9 +211,44 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void Hint()
+    private async Task HintAsync()
     {
-        StatusMessage = AppConstants.MockHintText;
+        if (IsSending)
+        {
+            return;
+        }
+
+        IsSending = true;
+        BotStatus = BackendConstants.BotStatusThinking;
+
+        try
+        {
+            var hintUserMessage = string.IsNullOrWhiteSpace(UserInput)
+                ? AppConstants.HintFallbackUserMessage
+                : UserInput.Trim();
+
+            var hintText = await lessonChatBackendService.SendLessonHintRequestAsync(new LessonChatBackendRequest
+            {
+                SelectedLevel = SelectedLevel,
+                TopicTitle = SelectedTopic.Title,
+                SubtopicTitle = SelectedSubtopic.Title,
+                UserMessage = hintUserMessage,
+                NativeLanguageName = nativeLanguageName
+            });
+
+            BackendStatusText = BackendConstants.BackendStatusConnected;
+            StatusMessage = hintText;
+        }
+        catch
+        {
+            BackendStatusText = BackendConstants.BackendStatusUnavailable;
+            StatusMessage = BackendConstants.BackendUnavailableMessage;
+        }
+        finally
+        {
+            BotStatus = BackendConstants.BotStatusReady;
+            IsSending = false;
+        }
     }
 
     [RelayCommand]

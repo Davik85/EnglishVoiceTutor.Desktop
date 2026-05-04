@@ -91,4 +91,32 @@ public sealed class LessonChatBackendService
 
         return backendResponse;
     }
+
+    public async Task<string> SendLessonHintRequestAsync(
+        LessonChatBackendRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        using var httpClient = new HttpClient
+        {
+            BaseAddress = new Uri(BackendConstants.DefaultBackendBaseUrl),
+            Timeout = TimeSpan.FromSeconds(BackendConstants.BackendRequestTimeoutSeconds)
+        };
+
+        using var response = await httpClient.PostAsJsonAsync(
+            BackendConstants.LessonChatHintEndpoint,
+            request,
+            JsonOptions,
+            cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        var backendResponse = await response.Content.ReadFromJsonAsync<LessonHintBackendResponse>(JsonOptions, cancellationToken);
+
+        if (backendResponse is null || string.IsNullOrWhiteSpace(backendResponse.HintText))
+        {
+            throw new InvalidOperationException(BackendConstants.BackendInvalidResponseMessage);
+        }
+
+        return backendResponse.HintText;
+    }
 }
