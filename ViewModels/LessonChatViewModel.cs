@@ -17,6 +17,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly LessonChatBackendService lessonChatBackendService;
     private int messageCounter;
     private Feedback? latestFeedback;
+    private string lastBotMessage = AppConstants.MockBotFirstMessage;
 
     public string SelectedLevel { get; }
 
@@ -86,6 +87,7 @@ public partial class LessonChatViewModel : ViewModelBase
         this.finishLesson = finishLesson;
 
         AddMessage(AppConstants.BotSenderName, AppConstants.MockBotFirstMessage, true);
+        lastBotMessage = AppConstants.MockBotFirstMessage;
         _ = CheckBackendHealthAsync();
         _ = CheckBackendConfigStatusAsync();
     }
@@ -116,6 +118,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 TopicTitle = SelectedTopic.Title,
                 SubtopicTitle = SelectedSubtopic.Title,
                 UserMessage = trimmedUserInput,
+                LastBotMessage = lastBotMessage,
                 NativeLanguageName = nativeLanguageName
             });
 
@@ -124,6 +127,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             AddMessage(AppConstants.UserSenderName, trimmedUserInput, false, mappedFeedback);
             AddMessage(AppConstants.BotSenderName, response.BotReply, true);
+            lastBotMessage = response.BotReply;
 
             BackendStatusText = BackendConstants.BackendStatusConnected;
             UserInput = string.Empty;
@@ -233,6 +237,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 TopicTitle = SelectedTopic.Title,
                 SubtopicTitle = SelectedSubtopic.Title,
                 UserMessage = hintUserMessage,
+                LastBotMessage = lastBotMessage,
                 NativeLanguageName = nativeLanguageName
             });
 

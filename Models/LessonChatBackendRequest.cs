@@ -10,5 +10,7 @@ public sealed class LessonChatBackendRequest
 
     public string UserMessage { get; init; } = string.Empty;
 
+    public string LastBotMessage { get; init; } = string.Empty;
+
     public string NativeLanguageName { get; init; } = string.Empty;
 }
