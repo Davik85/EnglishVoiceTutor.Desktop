@@ -44,9 +44,9 @@ public partial class MainViewModel : ViewModelBase
         CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
     }
 
-    public void NavigateToLessonSummary(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic)
+    public void NavigateToLessonSummary(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, Feedback? latestFeedback)
     {
-        CurrentViewModel = CreateLessonSummaryViewModel(selectedLevel, selectedTopic, selectedSubtopic);
+        CurrentViewModel = CreateLessonSummaryViewModel(selectedLevel, selectedTopic, selectedSubtopic, latestFeedback);
     }
 
     private void NavigateToSettings(Action navigateBack)
@@ -100,15 +100,16 @@ public partial class MainViewModel : ViewModelBase
             userSettings.NativeLanguageName,
             lessonChatBackendService,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
-            () => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic));
+            latestFeedback => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic, latestFeedback));
     }
 
-    private LessonSummaryViewModel CreateLessonSummaryViewModel(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic)
+    private LessonSummaryViewModel CreateLessonSummaryViewModel(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, Feedback? latestFeedback)
     {
         return new LessonSummaryViewModel(
             selectedLevel,
             selectedTopic,
             selectedSubtopic,
+            latestFeedback,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
             () => NavigateToHome(selectedLevel));
     }

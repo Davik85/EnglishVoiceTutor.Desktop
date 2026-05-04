@@ -83,9 +83,16 @@ public static class AppConstants
     public const string MockVocabularyTipTranslation = "Короткие ответы понятны, но полные фразы звучат естественнее во время практики.";
     public const string MockCultureTipTranslation = "Во многих повседневных разговорах дружелюбный полный ответ помогает поддержать диалог.";
     public const string MockNaturalVersionTranslation = "Да, я готов. Давайте начнём.";
-    public const string MockSummaryGoodText = "You completed a short practice dialogue and answered in English.";
-    public const string MockSummaryImproveText = "Next, we will connect AI feedback to correct grammar, vocabulary, and natural phrasing.";
-    public const string MockUsefulPhrasesTitle = "Useful phrases to remember";
+    public const string SummaryFallbackGoodText = "You completed a short practice dialogue and received AI feedback on your response.";
+    public const string SummaryFallbackImproveText = "Keep practicing full sentences and apply the feedback tips to improve grammar and vocabulary.";
+    public const string UsefulPhrasesTitle = "Useful phrases to remember";
+    public static readonly IReadOnlyList<string> SummaryFallbackUsefulPhrases =
+    [
+        "Could you help me, please?",
+        "I would like to...",
+        "Could you repeat that, please?",
+        "That sounds good to me."
+    ];
     public const string ChooseAnotherSituationText = "Choose another situation";
     public const string BackToTopicsText = "Back to topics";
 }
