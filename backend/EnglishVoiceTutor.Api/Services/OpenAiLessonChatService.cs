@@ -47,6 +47,11 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             var outputText = ExtractOutputText(openAiResponse);
             var lessonReply = JsonSerializer.Deserialize<LessonChatResponse>(outputText, JsonOptions);
 
+            if (lessonReply is null)
+            {
+                return await _mockLessonChatService.CreateReplyAsync(request, cancellationToken);
+            }
+
             if (!IsValidLessonReply(lessonReply))
             {
                 return await _mockLessonChatService.CreateReplyAsync(request, cancellationToken);
@@ -114,9 +119,9 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         throw new InvalidOperationException(OpenAiResponseTextMissingMessage);
     }
 
-    private static bool IsValidLessonReply(LessonChatResponse? reply)
+    private static bool IsValidLessonReply(LessonChatResponse reply)
     {
-        if (reply is null || string.IsNullOrWhiteSpace(reply.BotReply) || reply.Feedback is null)
+        if (string.IsNullOrWhiteSpace(reply.BotReply) || reply.Feedback is null)
         {
             return false;
         }
