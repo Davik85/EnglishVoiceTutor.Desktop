@@ -9,6 +9,9 @@ namespace EnglishVoiceTutor.Api.Services;
 public sealed class OpenAiLessonChatService : ILessonChatService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private const string OpenAiRequestFailedMessage = "OpenAI request failed.";
+    private const string OpenAiResponseMissingMessage = "OpenAI response is empty.";
+    private const string OpenAiResponseTextMissingMessage = "OpenAI response does not contain output text.";
 
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly MockLessonChatService _mockLessonChatService;
@@ -41,15 +44,15 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         try
         {
             var openAiResponse = await SendResponsesApiRequestAsync(request, options, cancellationToken);
-
-            var lessonReply = JsonSerializer.Deserialize<LessonChatResponse>(openAiResponse.OutputText, JsonOptions);
+            var outputText = ExtractOutputText(openAiResponse);
+            var lessonReply = JsonSerializer.Deserialize<LessonChatResponse>(outputText, JsonOptions);
 
             if (!IsValidLessonReply(lessonReply))
             {
                 return await _mockLessonChatService.CreateReplyAsync(request, cancellationToken);
             }
 
-            return lessonReply!;
+            return lessonReply;
         }
         catch
         {
@@ -81,37 +84,48 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException("OpenAI request failed.");
+            throw new InvalidOperationException(OpenAiRequestFailedMessage);
         }
 
         var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
         var parsedResponse = JsonSerializer.Deserialize<OpenAiResponsesResponse>(responseJson, JsonOptions);
 
-        if (parsedResponse is null || string.IsNullOrWhiteSpace(parsedResponse.OutputText))
+        if (parsedResponse is null)
         {
-            throw new InvalidOperationException("OpenAI response does not contain output text.");
+            throw new InvalidOperationException(OpenAiResponseMissingMessage);
         }
 
         return parsedResponse;
     }
 
+    private static string ExtractOutputText(OpenAiResponsesResponse response)
+    {
+        foreach (var outputItem in response.Output)
+        {
+            foreach (var contentItem in outputItem.Content)
+            {
+                if (!string.IsNullOrWhiteSpace(contentItem.Text))
+                {
+                    return contentItem.Text.Trim();
+                }
+            }
+        }
+
+        throw new InvalidOperationException(OpenAiResponseTextMissingMessage);
+    }
+
     private static bool IsValidLessonReply(LessonChatResponse? reply)
     {
-        if (reply is null)
+        if (reply is null || string.IsNullOrWhiteSpace(reply.BotReply) || reply.Feedback is null)
         {
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(reply.BotReply))
-        {
-            return false;
-        }
-
-        if (reply.Feedback is null)
-        {
-            return false;
-        }
-
-        return true;
+        return !string.IsNullOrWhiteSpace(reply.Feedback.ShortText)
+            && !string.IsNullOrWhiteSpace(reply.Feedback.CorrectedVersion)
+            && !string.IsNullOrWhiteSpace(reply.Feedback.GrammarTip)
+            && !string.IsNullOrWhiteSpace(reply.Feedback.VocabularyTip)
+            && !string.IsNullOrWhiteSpace(reply.Feedback.CultureTip)
+            && !string.IsNullOrWhiteSpace(reply.Feedback.NaturalVersion);
     }
 }
