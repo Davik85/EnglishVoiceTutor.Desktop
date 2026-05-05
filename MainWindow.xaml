@@ -35,6 +35,9 @@
         <DataTemplate DataType="{x:Type viewModels:LessonSummaryViewModel}">
             <views:LessonSummaryView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:LessonHistoryViewModel}">
+            <views:LessonHistoryView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>

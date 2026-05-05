@@ -14,8 +14,13 @@ public static class AppConstants
     public const string HomeTitle = "Choose a conversation topic";
     public const string HomeSubtitle = "Start with a practical situation and practice step by step.";
     public const string DailyLimitText = "Free MVP limit: 3 lessons today";
-    public const string HistoryPlaceholderMessage = "Lesson history will be added in a future step.";
     public const string SettingsPlaceholderMessage = "Settings screen will be added in a future step.";
+    public const string LessonHistoryTitle = "Lesson history";
+    public const string LessonHistorySubtitle = "Recent completed lessons on this device.";
+    public const string EmptyLessonHistoryText = "No completed lessons yet. Finish a lesson to see it here.";
+    public const string LessonHistoryBackButtonText = "Back to topics";
+    public const string LessonHistoryGoodLabel = "What went well";
+    public const string LessonHistoryImproveLabel = "What to improve";
 
     public const string SettingsTitle = "Settings";
     public const string SettingsSubtitle = "Configure your learning preferences.";
