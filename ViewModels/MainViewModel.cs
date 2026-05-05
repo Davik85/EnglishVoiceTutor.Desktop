@@ -8,6 +8,7 @@ public partial class MainViewModel : ViewModelBase
 {
     private readonly UserSettingsService userSettingsService = new();
     private readonly LessonChatBackendService lessonChatBackendService = new();
+    private readonly LessonHistoryService lessonHistoryService = new();
     private readonly UserSettings userSettings;
 
     [ObservableProperty]
@@ -46,7 +47,13 @@ public partial class MainViewModel : ViewModelBase
 
     public void NavigateToLessonSummary(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, Feedback? latestFeedback)
     {
+        SaveLessonHistory(selectedLevel, selectedTopic, selectedSubtopic, latestFeedback);
         CurrentViewModel = CreateLessonSummaryViewModel(selectedLevel, selectedTopic, selectedSubtopic, latestFeedback);
+    }
+
+    public void NavigateToLessonHistory(string selectedLevel)
+    {
+        CurrentViewModel = CreateLessonHistoryViewModel(selectedLevel);
     }
 
     private void NavigateToSettings(Action navigateBack)
@@ -61,6 +68,23 @@ public partial class MainViewModel : ViewModelBase
     {
         userSettings.NativeLanguageName = nativeLanguage;
         userSettingsService.Save(userSettings);
+    }
+
+    private void SaveLessonHistory(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, Feedback? latestFeedback)
+    {
+        var item = new LessonHistoryItem
+        {
+            Id = Guid.NewGuid(),
+            CompletedAt = DateTime.Now,
+            SelectedLevel = selectedLevel,
+            TopicTitle = selectedTopic.Title,
+            SubtopicTitle = selectedSubtopic.Title,
+            GoodText = LessonSummaryViewModel.BuildGoodText(latestFeedback),
+            ImproveText = LessonSummaryViewModel.BuildImproveText(latestFeedback),
+            UsefulPhrases = LessonSummaryViewModel.BuildUsefulPhrases(latestFeedback)
+        };
+
+        lessonHistoryService.Add(item);
     }
 
     private WelcomeViewModel CreateWelcomeViewModel()
@@ -79,6 +103,7 @@ public partial class MainViewModel : ViewModelBase
             selectedLevel,
             NavigateToLevelSelection,
             topic => NavigateToSubtopics(selectedLevel, topic),
+            () => NavigateToLessonHistory(selectedLevel),
             () => NavigateToSettings(() => NavigateToHome(selectedLevel)));
     }
 
@@ -111,6 +136,13 @@ public partial class MainViewModel : ViewModelBase
             selectedSubtopic,
             latestFeedback,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
+            () => NavigateToHome(selectedLevel));
+    }
+
+    private LessonHistoryViewModel CreateLessonHistoryViewModel(string selectedLevel)
+    {
+        return new LessonHistoryViewModel(
+            lessonHistoryService,
             () => NavigateToHome(selectedLevel));
     }
 }

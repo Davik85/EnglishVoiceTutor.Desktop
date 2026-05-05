@@ -48,7 +48,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
 
         GoodText = BuildGoodText(latestFeedback);
         ImproveText = BuildImproveText(latestFeedback);
-        UsefulPhrases = BuildUsefulPhrases(latestFeedback);
+        UsefulPhrases = new ObservableCollection<string>(BuildUsefulPhrases(latestFeedback));
     }
 
     [RelayCommand]
@@ -63,7 +63,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
         navigateToHome();
     }
 
-    private static string BuildGoodText(Feedback? latestFeedback)
+    public static string BuildGoodText(Feedback? latestFeedback)
     {
         if (!string.IsNullOrWhiteSpace(latestFeedback?.ShortText))
         {
@@ -73,7 +73,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
         return AppConstants.SummaryFallbackGoodText;
     }
 
-    private static string BuildImproveText(Feedback? latestFeedback)
+    public static string BuildImproveText(Feedback? latestFeedback)
     {
         if (latestFeedback is null)
         {
@@ -100,11 +100,11 @@ public partial class LessonSummaryViewModel : ViewModelBase
         return string.Join(" ", tips);
     }
 
-    private static ObservableCollection<string> BuildUsefulPhrases(Feedback? latestFeedback)
+    public static IReadOnlyList<string> BuildUsefulPhrases(Feedback? latestFeedback)
     {
         if (latestFeedback is null)
         {
-            return new ObservableCollection<string>(AppConstants.SummaryFallbackUsefulPhrases);
+            return AppConstants.SummaryFallbackUsefulPhrases;
         }
 
         var phrases = new List<string>();
@@ -114,10 +114,10 @@ public partial class LessonSummaryViewModel : ViewModelBase
 
         if (phrases.Count == 0)
         {
-            return new ObservableCollection<string>(AppConstants.SummaryFallbackUsefulPhrases);
+            return AppConstants.SummaryFallbackUsefulPhrases;
         }
 
-        return new ObservableCollection<string>(phrases);
+        return phrases;
     }
 
     private static void AddPhraseIfValid(ICollection<string> phrases, string phrase)
