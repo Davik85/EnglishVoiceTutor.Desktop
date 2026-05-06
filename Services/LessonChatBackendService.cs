@@ -1,4 +1,6 @@
+using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
@@ -13,11 +15,7 @@ public sealed class LessonChatBackendService
 
     public async Task<bool> CheckHealthAsync(CancellationToken cancellationToken = default)
     {
-        using var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(BackendConstants.DefaultBackendBaseUrl),
-            Timeout = TimeSpan.FromSeconds(BackendConstants.BackendRequestTimeoutSeconds)
-        };
+        using var httpClient = CreateHttpClient();
 
         try
         {
@@ -41,11 +39,7 @@ public sealed class LessonChatBackendService
 
     public async Task<BackendConfigStatusResponse?> GetBackendConfigStatusAsync(CancellationToken cancellationToken = default)
     {
-        using var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(BackendConstants.DefaultBackendBaseUrl),
-            Timeout = TimeSpan.FromSeconds(BackendConstants.BackendRequestTimeoutSeconds)
-        };
+        using var httpClient = CreateHttpClient();
 
         try
         {
@@ -68,11 +62,7 @@ public sealed class LessonChatBackendService
         LessonChatBackendRequest request,
         CancellationToken cancellationToken = default)
     {
-        using var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(BackendConstants.DefaultBackendBaseUrl),
-            Timeout = TimeSpan.FromSeconds(BackendConstants.BackendRequestTimeoutSeconds)
-        };
+        using var httpClient = CreateHttpClient();
 
         using var response = await httpClient.PostAsJsonAsync(
             BackendConstants.LessonChatReplyEndpoint,
@@ -96,11 +86,7 @@ public sealed class LessonChatBackendService
         LessonChatBackendRequest request,
         CancellationToken cancellationToken = default)
     {
-        using var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(BackendConstants.DefaultBackendBaseUrl),
-            Timeout = TimeSpan.FromSeconds(BackendConstants.BackendRequestTimeoutSeconds)
-        };
+        using var httpClient = CreateHttpClient();
 
         using var response = await httpClient.PostAsJsonAsync(
             BackendConstants.LessonChatHintEndpoint,
@@ -118,5 +104,51 @@ public sealed class LessonChatBackendService
         }
 
         return backendResponse.HintText;
+    }
+
+    public async Task<string> SendAudioForTranscriptionAsync(
+        string audioFilePath,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(audioFilePath) || !File.Exists(audioFilePath))
+        {
+            throw new InvalidOperationException(BackendConstants.BackendInvalidTranscriptionResponseMessage);
+        }
+
+        using var httpClient = CreateHttpClient();
+        await using var audioStream = File.OpenRead(audioFilePath);
+        using var formContent = new MultipartFormDataContent();
+        using var audioContent = new StreamContent(audioStream);
+        audioContent.Headers.ContentType = new MediaTypeHeaderValue(BackendConstants.WavContentType);
+
+        formContent.Add(
+            audioContent,
+            BackendConstants.MultipartFileFieldName,
+            Path.GetFileName(audioFilePath));
+
+        using var response = await httpClient.PostAsync(
+            BackendConstants.AudioTranscriptionEndpoint,
+            formContent,
+            cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        var backendResponse = await response.Content.ReadFromJsonAsync<AudioTranscriptionBackendResponse>(JsonOptions, cancellationToken);
+
+        if (backendResponse is null)
+        {
+            throw new InvalidOperationException(BackendConstants.BackendInvalidTranscriptionResponseMessage);
+        }
+
+        return backendResponse.Text.Trim();
+    }
+
+    private static HttpClient CreateHttpClient()
+    {
+        return new HttpClient
+        {
+            BaseAddress = new Uri(BackendConstants.DefaultBackendBaseUrl),
+            Timeout = TimeSpan.FromSeconds(BackendConstants.BackendRequestTimeoutSeconds)
+        };
     }
 }
