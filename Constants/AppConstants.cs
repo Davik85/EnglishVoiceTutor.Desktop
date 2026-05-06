@@ -53,6 +53,12 @@ public static class AppConstants
     public const string LessonSummaryTitle = "Lesson summary";
     public const string BotSenderName = "Bot";
     public const string UserSenderName = "You";
+    public const string StartRecordingButtonText = "Start recording";
+    public const string StopRecordingButtonText = "Stop recording";
+    public const string RecordingStartedMessage = "Recording... Click Stop recording when you finish.";
+    public const string RecordingSavedMessagePrefix = "Voice recording saved locally for testing:";
+    public const string RecordingStartErrorMessage = "Could not start voice recording. Please check your microphone.";
+    public const string RecordingStopErrorMessage = "Could not stop voice recording. Please try again.";
     public const string EmptyMessageWarning = "Please type your answer before sending.";
     public const string MockHintText = "Hint: Try answering with a short complete sentence.";
     public const string HintFallbackUserMessage = "I need a hint for what to say next.";

@@ -15,6 +15,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly Action<Feedback?> finishLesson;
     private readonly string nativeLanguageName;
     private readonly LessonChatBackendService lessonChatBackendService;
+    private readonly AudioRecordingService audioRecordingService;
     private int messageCounter;
     private Feedback? latestFeedback;
     private string lastBotMessage = AppConstants.MockBotFirstMessage;
@@ -59,9 +60,20 @@ public partial class LessonChatViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     private bool isSending;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(VoiceButtonText))]
+    [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
+    private bool isRecording;
+
     public bool HasSelectedFeedback => SelectedFeedback is not null;
+
+    public string VoiceButtonText => IsRecording
+        ? AppConstants.StopRecordingButtonText
+        : AppConstants.StartRecordingButtonText;
 
     public string FeedbackTranslateButtonText => IsFeedbackTranslationVisible
         ? AppConstants.FeedbackHideTranslationButtonText
@@ -75,6 +87,7 @@ public partial class LessonChatViewModel : ViewModelBase
         Subtopic selectedSubtopic,
         string nativeLanguageName,
         LessonChatBackendService lessonChatBackendService,
+        AudioRecordingService audioRecordingService,
         Action navigateBack,
         Action<Feedback?> finishLesson)
     {
@@ -83,6 +96,7 @@ public partial class LessonChatViewModel : ViewModelBase
         SelectedSubtopic = selectedSubtopic;
         this.nativeLanguageName = nativeLanguageName;
         this.lessonChatBackendService = lessonChatBackendService;
+        this.audioRecordingService = audioRecordingService;
         this.navigateBack = navigateBack;
         this.finishLesson = finishLesson;
 
@@ -94,7 +108,59 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanSendMessage()
     {
-        return !IsSending;
+        return !IsSending && !IsRecording;
+    }
+
+    private bool CanToggleVoiceRecording()
+    {
+        return !IsSending || IsRecording;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanToggleVoiceRecording))]
+    private void ToggleVoiceRecording()
+    {
+        if (IsRecording)
+        {
+            StopVoiceRecording();
+            return;
+        }
+
+        StartVoiceRecording();
+    }
+
+    private void StartVoiceRecording()
+    {
+        if (IsSending)
+        {
+            return;
+        }
+
+        try
+        {
+            audioRecordingService.StartRecording();
+            IsRecording = true;
+            StatusMessage = AppConstants.RecordingStartedMessage;
+        }
+        catch
+        {
+            IsRecording = false;
+            StatusMessage = AppConstants.RecordingStartErrorMessage;
+        }
+    }
+
+    private void StopVoiceRecording()
+    {
+        try
+        {
+            var savedFilePath = audioRecordingService.StopRecording();
+            IsRecording = false;
+            StatusMessage = $"{AppConstants.RecordingSavedMessagePrefix} {savedFilePath}";
+        }
+        catch
+        {
+            IsRecording = false;
+            StatusMessage = AppConstants.RecordingStopErrorMessage;
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanSendMessage))]
@@ -217,7 +283,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [RelayCommand]
     private async Task HintAsync()
     {
-        if (IsSending)
+        if (IsSending || IsRecording)
         {
             return;
         }

@@ -8,6 +8,7 @@ public partial class MainViewModel : ViewModelBase
 {
     private readonly UserSettingsService userSettingsService = new();
     private readonly LessonChatBackendService lessonChatBackendService = new();
+    private readonly AudioRecordingService audioRecordingService = new();
     private readonly LessonHistoryService lessonHistoryService = new();
     private readonly UserSettings userSettings;
 
@@ -124,6 +125,7 @@ public partial class MainViewModel : ViewModelBase
             selectedSubtopic,
             userSettings.NativeLanguageName,
             lessonChatBackendService,
+            audioRecordingService,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
             latestFeedback => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic, latestFeedback));
     }
