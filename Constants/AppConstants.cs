@@ -59,6 +59,10 @@ public static class AppConstants
     public const string RecordingSavedMessagePrefix = "Voice recording saved locally for testing:";
     public const string RecordingStartErrorMessage = "Could not start voice recording. Please check your microphone.";
     public const string RecordingStopErrorMessage = "Could not stop voice recording. Please try again.";
+    public const string TranscribingAudioMessage = "Transcribing voice recording...";
+    public const string TranscriptionCompletedMessage = "Voice transcription is ready. Review it and press Send.";
+    public const string TranscriptionFailedMessage = "Could not transcribe the recording. Please try again or type your answer.";
+    public const string EmptyTranscriptionMessage = "No speech was recognized. Please try again.";
     public const string EmptyMessageWarning = "Please type your answer before sending.";
     public const string MockHintText = "Hint: Try answering with a short complete sentence.";
     public const string HintFallbackUserMessage = "I need a hint for what to say next.";

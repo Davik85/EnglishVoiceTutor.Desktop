@@ -74,6 +74,16 @@ public sealed class AudioRecordingService : IDisposable
         return savedFilePath;
     }
 
+    public void SafeDeleteRecording(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return;
+        }
+
+        SafeDeleteFile(filePath);
+    }
+
     public void CleanupOldRecordings()
     {
         var recordingsFolderPath = GetRecordingsFolderPath();

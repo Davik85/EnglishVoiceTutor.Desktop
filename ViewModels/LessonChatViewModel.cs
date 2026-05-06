@@ -117,11 +117,11 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleVoiceRecording))]
-    private void ToggleVoiceRecording()
+    private async Task ToggleVoiceRecordingAsync()
     {
         if (IsRecording)
         {
-            StopVoiceRecording();
+            await StopVoiceRecordingAsync();
             return;
         }
 
@@ -148,18 +148,47 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
-    private void StopVoiceRecording()
+    private async Task StopVoiceRecordingAsync()
     {
+        var savedFilePath = string.Empty;
+
         try
         {
-            var savedFilePath = audioRecordingService.StopRecording();
+            savedFilePath = audioRecordingService.StopRecording();
             IsRecording = false;
             StatusMessage = $"{AppConstants.RecordingSavedMessagePrefix} {savedFilePath}";
+
+            if (string.IsNullOrWhiteSpace(savedFilePath))
+            {
+                StatusMessage = AppConstants.RecordingStopErrorMessage;
+                return;
+            }
+
+            IsSending = true;
+            StatusMessage = AppConstants.TranscribingAudioMessage;
+
+            var transcriptionText = await lessonChatBackendService.SendAudioForTranscriptionAsync(savedFilePath);
+            BackendStatusText = BackendConstants.BackendStatusConnected;
+
+            if (string.IsNullOrWhiteSpace(transcriptionText))
+            {
+                StatusMessage = AppConstants.EmptyTranscriptionMessage;
+                return;
+            }
+
+            UserInput = transcriptionText;
+            StatusMessage = AppConstants.TranscriptionCompletedMessage;
         }
         catch
         {
+            BackendStatusText = BackendConstants.BackendStatusUnavailable;
+            StatusMessage = AppConstants.TranscriptionFailedMessage;
+        }
+        finally
+        {
             IsRecording = false;
-            StatusMessage = AppConstants.RecordingStopErrorMessage;
+            IsSending = false;
+            audioRecordingService.SafeDeleteRecording(savedFilePath);
         }
     }
 

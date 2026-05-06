@@ -7,10 +7,14 @@ public static class ApiConstants
     public const string MockBotReplyText = "Good! I understood your answer. In the next step, AI will give real corrections from the backend.";
     public const string MockHintText = "You can say: Hi, my name is David.";
     public const string EmptyUserMessageError = "User message is required.";
+    public const string EmptyAudioFileError = "Audio file is required.";
+    public const string AudioTranscriptionFallbackText = "";
+    public const string AudioTranscriptionError = "Could not transcribe audio.";
 
     public const string HealthRoute = "/health";
     public const string LessonChatReplyRoute = "/api/lesson-chat/reply";
     public const string LessonChatMockReplyRoute = "/api/lesson-chat/mock-reply";
     public const string LessonChatHintRoute = "/api/lesson-chat/hint";
     public const string BackendConfigStatusRoute = "/api/backend/config-status";
+    public const string AudioTranscriptionRoute = "/api/audio/transcribe";
 }
