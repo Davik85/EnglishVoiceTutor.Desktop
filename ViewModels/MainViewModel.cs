@@ -17,6 +17,7 @@ public partial class MainViewModel : ViewModelBase
 
     public MainViewModel()
     {
+        audioRecordingService.CleanupOldRecordings();
         userSettings = userSettingsService.Load();
         currentViewModel = CreateWelcomeViewModel();
     }

@@ -74,6 +74,34 @@ public sealed class AudioRecordingService : IDisposable
         return savedFilePath;
     }
 
+    public void CleanupOldRecordings()
+    {
+        var recordingsFolderPath = GetRecordingsFolderPath();
+        var oldestAllowedWriteTimeUtc = DateTime.UtcNow.AddHours(-AudioConstants.TemporaryRecordingMaxAgeHours);
+
+        try
+        {
+            if (!Directory.Exists(recordingsFolderPath))
+            {
+                return;
+            }
+
+            foreach (var filePath in Directory.EnumerateFiles(recordingsFolderPath, AudioConstants.WavSearchPattern))
+            {
+                if (IsCurrentRecordingFile(filePath) || !IsRecordingFileOld(filePath, oldestAllowedWriteTimeUtc))
+                {
+                    continue;
+                }
+
+                SafeDeleteFile(filePath);
+            }
+        }
+        catch
+        {
+            // Ignore cleanup errors because temporary recording cleanup must not block app startup.
+        }
+    }
+
     public void Dispose()
     {
         if (disposed)
@@ -88,13 +116,37 @@ public sealed class AudioRecordingService : IDisposable
 
     private static string CreateRecordingFilePath()
     {
-        var recordingDirectory = Path.Combine(Path.GetTempPath(), AudioConstants.AppTempFolderName, AudioConstants.RecordingFolderName);
+        var recordingDirectory = GetRecordingsFolderPath();
         Directory.CreateDirectory(recordingDirectory);
 
         var timestamp = DateTime.Now.ToString(AudioConstants.RecordingTimestampFormat, CultureInfo.InvariantCulture);
         var fileName = $"{AudioConstants.RecordingFilePrefix}{timestamp}{AudioConstants.WavFileExtension}";
 
         return Path.Combine(recordingDirectory, fileName);
+    }
+
+    private static string GetRecordingsFolderPath()
+    {
+        return Path.Combine(Path.GetTempPath(), AudioConstants.AppTempFolderName, AudioConstants.RecordingFolderName);
+    }
+
+    private static bool IsRecordingFileOld(string filePath, DateTime oldestAllowedWriteTimeUtc)
+    {
+        try
+        {
+            return File.GetLastWriteTimeUtc(filePath) < oldestAllowedWriteTimeUtc;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool IsCurrentRecordingFile(string filePath)
+    {
+        return IsRecording
+            && currentFilePath is not null
+            && string.Equals(Path.GetFullPath(filePath), Path.GetFullPath(currentFilePath), StringComparison.OrdinalIgnoreCase);
     }
 
     private void OnDataAvailable(object? sender, WaveInEventArgs args)
@@ -127,7 +179,7 @@ public sealed class AudioRecordingService : IDisposable
         }
         catch
         {
-            // Ignore cleanup errors so the original recording error can be shown.
+            // Ignore cleanup errors so recording and startup flows can continue.
         }
     }
 
