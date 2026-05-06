@@ -156,7 +156,6 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             savedFilePath = audioRecordingService.StopRecording();
             IsRecording = false;
-            StatusMessage = $"{AppConstants.RecordingSavedMessagePrefix} {savedFilePath}";
 
             if (string.IsNullOrWhiteSpace(savedFilePath))
             {
@@ -186,6 +185,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
         finally
         {
+            BotStatus = BackendConstants.BotStatusReady;
             IsRecording = false;
             IsSending = false;
             audioRecordingService.SafeDeleteRecording(savedFilePath);
