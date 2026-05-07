@@ -143,6 +143,41 @@ public sealed class LessonChatBackendService
         return backendResponse.Text.Trim();
     }
 
+
+    public async Task<string> TranslateTextAsync(
+        string text,
+        string targetLanguage,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(targetLanguage))
+        {
+            throw new InvalidOperationException(BackendConstants.BackendInvalidTranslationResponseMessage);
+        }
+
+        using var httpClient = CreateHttpClient();
+
+        using var response = await httpClient.PostAsJsonAsync(
+            BackendConstants.TranslationEndpoint,
+            new TranslationBackendRequest
+            {
+                Text = text,
+                TargetLanguage = targetLanguage
+            },
+            JsonOptions,
+            cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        var backendResponse = await response.Content.ReadFromJsonAsync<TranslationBackendResponse>(JsonOptions, cancellationToken);
+
+        if (backendResponse is null || string.IsNullOrWhiteSpace(backendResponse.TranslatedText))
+        {
+            throw new InvalidOperationException(BackendConstants.BackendInvalidTranslationResponseMessage);
+        }
+
+        return backendResponse.TranslatedText.Trim();
+    }
+
     private static HttpClient CreateHttpClient()
     {
         return new HttpClient

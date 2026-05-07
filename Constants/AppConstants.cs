@@ -70,10 +70,9 @@ public static class AppConstants
     public const string TranslateButtonText = "Translate";
     public const string HideTranslationButtonText = "Hide translation";
     public const string TranslationLabel = "Translation";
+    public const string TranslationLoadingText = "Translating...";
+    public const string TranslationFailedText = "Could not translate this text. Please try again.";
     public const string DefaultNativeLanguageName = "Russian";
-    public const string MockBotFirstMessageTranslation = "Привет! Давайте потренируем эту ситуацию. Вы готовы?";
-    public const string MockBotReplyTextTranslation = "Хорошо! Я понял ваш ответ. На следующем шаге ИИ будет давать настоящие исправления.";
-    public const string MockUserMessageTranslationText = "Mock translation to the user's native language will be connected later.";
     public const string FinishLessonButtonText = "Finish lesson";
     public const string ViewFeedbackButtonText = "View feedback";
     public const string FeedbackPanelTitle = "Feedback";
@@ -92,12 +91,6 @@ public static class AppConstants
     public const string MockVocabularyTip = "Short answers are understandable, but complete phrases sound more natural in practice.";
     public const string MockCultureTip = "In many everyday conversations, a friendly full answer helps keep the dialogue going.";
     public const string MockNaturalVersion = "Yes, I am ready. Let's start.";
-    public const string MockFeedbackShortTextTranslation = "Хорошее начало. Вот более естественный вариант.";
-    public const string MockCorrectedVersionTranslation = "Да, я готов.";
-    public const string MockGrammarTipTranslation = "Используйте полное предложение, если хотите звучать понятнее и увереннее.";
-    public const string MockVocabularyTipTranslation = "Короткие ответы понятны, но полные фразы звучат естественнее во время практики.";
-    public const string MockCultureTipTranslation = "Во многих повседневных разговорах дружелюбный полный ответ помогает поддержать диалог.";
-    public const string MockNaturalVersionTranslation = "Да, я готов. Давайте начнём.";
     public const string SummaryFallbackGoodText = "You completed a short practice dialogue and received AI feedback on your response.";
     public const string SummaryFallbackImproveText = "Keep practicing full sentences and apply the feedback tips to improve grammar and vocabulary.";
     public const string UsefulPhrasesTitle = "Useful phrases to remember";

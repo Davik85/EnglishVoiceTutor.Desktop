@@ -291,14 +291,38 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void ToggleFeedbackTranslation()
+    private async Task ToggleFeedbackTranslationAsync()
     {
         if (SelectedFeedback is null)
         {
             return;
         }
 
-        IsFeedbackTranslationVisible = !IsFeedbackTranslationVisible;
+        if (IsFeedbackTranslationVisible)
+        {
+            IsFeedbackTranslationVisible = false;
+            return;
+        }
+
+        if (SelectedFeedback.HasTranslations)
+        {
+            IsFeedbackTranslationVisible = true;
+            return;
+        }
+
+        StatusMessage = AppConstants.TranslationLoadingText;
+
+        try
+        {
+            await TranslateSelectedFeedbackAsync(SelectedFeedback);
+            IsFeedbackTranslationVisible = true;
+            StatusMessage = SelectedFeedback.ShortText;
+            OnPropertyChanged(nameof(SelectedFeedback));
+        }
+        catch
+        {
+            StatusMessage = AppConstants.TranslationFailedText;
+        }
     }
 
     [RelayCommand]
@@ -372,23 +396,45 @@ public partial class LessonChatViewModel : ViewModelBase
             text,
             isFromBot,
             isFromBot ? null : feedback,
-            GetMockTranslation(sender, text, isFromBot),
-            nativeLanguageName));
+            string.Empty,
+            nativeLanguageName,
+            TranslateMessageAsync));
     }
 
-    private static string GetMockTranslation(string sender, string text, bool isFromBot)
+    private async Task TranslateMessageAsync(ChatMessageViewModel message)
     {
-        if (!isFromBot)
+        try
         {
-            return AppConstants.MockUserMessageTranslationText;
+            var translatedText = await lessonChatBackendService.TranslateTextAsync(message.Text, nativeLanguageName);
+            message.TranslationText = translatedText;
+            message.IsTranslationVisible = true;
+            BackendStatusText = BackendConstants.BackendStatusConnected;
+            StatusMessage = string.Empty;
         }
-
-        if (sender == AppConstants.BotSenderName && text == AppConstants.MockBotFirstMessage)
+        catch
         {
-            return AppConstants.MockBotFirstMessageTranslation;
+            BackendStatusText = BackendConstants.BackendStatusUnavailable;
+            StatusMessage = AppConstants.TranslationFailedText;
         }
+    }
 
-        return AppConstants.MockBotReplyTextTranslation;
+    private async Task TranslateSelectedFeedbackAsync(Feedback feedback)
+    {
+        var translations = await Task.WhenAll(
+            lessonChatBackendService.TranslateTextAsync(feedback.ShortText, nativeLanguageName),
+            lessonChatBackendService.TranslateTextAsync(feedback.CorrectedVersion, nativeLanguageName),
+            lessonChatBackendService.TranslateTextAsync(feedback.GrammarTip, nativeLanguageName),
+            lessonChatBackendService.TranslateTextAsync(feedback.VocabularyTip, nativeLanguageName),
+            lessonChatBackendService.TranslateTextAsync(feedback.CultureTip, nativeLanguageName),
+            lessonChatBackendService.TranslateTextAsync(feedback.NaturalVersion, nativeLanguageName));
+
+        feedback.ShortTextTranslation = translations[0];
+        feedback.CorrectedVersionTranslation = translations[1];
+        feedback.GrammarTipTranslation = translations[2];
+        feedback.VocabularyTipTranslation = translations[3];
+        feedback.CultureTipTranslation = translations[4];
+        feedback.NaturalVersionTranslation = translations[5];
+        BackendStatusText = BackendConstants.BackendStatusConnected;
     }
 
     private static Feedback MapFeedback(BackendFeedbackDto backendFeedback)
@@ -401,11 +447,11 @@ public partial class LessonChatViewModel : ViewModelBase
             backendFeedback.VocabularyTip,
             backendFeedback.CultureTip,
             backendFeedback.NaturalVersion,
-            AppConstants.MockFeedbackShortTextTranslation,
-            AppConstants.MockCorrectedVersionTranslation,
-            AppConstants.MockGrammarTipTranslation,
-            AppConstants.MockVocabularyTipTranslation,
-            AppConstants.MockCultureTipTranslation,
-            AppConstants.MockNaturalVersionTranslation);
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty);
     }
 }

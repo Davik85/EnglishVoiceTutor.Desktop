@@ -8,8 +8,11 @@ public static class ApiConstants
     public const string MockHintText = "You can say: Hi, my name is David.";
     public const string EmptyUserMessageError = "User message is required.";
     public const string EmptyAudioFileError = "Audio file is required.";
+    public const string EmptyTranslationTextError = "Text is required for translation.";
+    public const string EmptyTargetLanguageError = "Target language is required for translation.";
     public const string AudioTranscriptionFallbackText = "";
     public const string AudioTranscriptionError = "Could not transcribe audio.";
+    public const string TranslationError = "Could not translate text.";
 
     public const string HealthRoute = "/health";
     public const string LessonChatReplyRoute = "/api/lesson-chat/reply";
@@ -17,4 +20,5 @@ public static class ApiConstants
     public const string LessonChatHintRoute = "/api/lesson-chat/hint";
     public const string BackendConfigStatusRoute = "/api/backend/config-status";
     public const string AudioTranscriptionRoute = "/api/audio/transcribe";
+    public const string TranslationRoute = "/api/translate";
 }

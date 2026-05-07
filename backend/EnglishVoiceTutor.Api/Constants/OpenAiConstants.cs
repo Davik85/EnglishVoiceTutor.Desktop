@@ -63,4 +63,15 @@ Output rules:
     public const string JsonSchemaFormatType = "json_schema";
     public const string LessonChatResponseSchemaName = "lesson_chat_response";
     public const string LessonHintResponseSchemaName = "lesson_hint_response";
+    public const string TranslationResponseSchemaName = "translation_response";
+    public const string TranslationSystemInstructions = """
+Translate the provided English text into the requested target language.
+
+Rules:
+- Preserve meaning.
+- Keep tone natural and learner-friendly.
+- Do not add explanations.
+- Return only JSON matching the schema.
+- No markdown.
+""";
 }

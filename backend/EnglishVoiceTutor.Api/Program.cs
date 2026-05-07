@@ -12,6 +12,7 @@ builder.Services.AddScoped<LessonPromptBuilder>();
 builder.Services.AddScoped<ILessonChatService, OpenAiLessonChatService>();
 builder.Services.AddScoped<ILessonHintService, OpenAiLessonHintService>();
 builder.Services.AddScoped<AudioTranscriptionService>();
+builder.Services.AddScoped<TranslationService>();
 
 var app = builder.Build();
 
@@ -43,6 +44,7 @@ app.MapPost(ApiConstants.LessonChatReplyRoute, HandleLessonChatReplyAsync);
 app.MapPost(ApiConstants.LessonChatMockReplyRoute, HandleMockLessonChatReplyAsync);
 app.MapPost(ApiConstants.LessonChatHintRoute, HandleLessonChatHintAsync);
 app.MapPost(ApiConstants.AudioTranscriptionRoute, HandleAudioTranscriptionAsync);
+app.MapPost(ApiConstants.TranslationRoute, HandleTranslationAsync);
 
 app.Run();
 
@@ -133,5 +135,39 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
     catch (Exception)
     {
         return Results.Problem(ApiConstants.AudioTranscriptionError);
+    }
+}
+
+
+static async Task<IResult> HandleTranslationAsync(
+    TranslationRequest request,
+    TranslationService translationService,
+    CancellationToken cancellationToken)
+{
+    if (string.IsNullOrWhiteSpace(request.Text))
+    {
+        return Results.BadRequest(new
+        {
+            error = ApiConstants.EmptyTranslationTextError
+        });
+    }
+
+    if (string.IsNullOrWhiteSpace(request.TargetLanguage))
+    {
+        return Results.BadRequest(new
+        {
+            error = ApiConstants.EmptyTargetLanguageError
+        });
+    }
+
+    try
+    {
+        var response = await translationService.TranslateAsync(request, cancellationToken);
+
+        return Results.Ok(response);
+    }
+    catch (Exception)
+    {
+        return Results.Problem(ApiConstants.TranslationError);
     }
 }
