@@ -68,6 +68,9 @@ public static class AppConstants
     public const string MockBotFirstMessage = "Hi! Let's practice this situation. Are you ready?";
     public const string MockBotReplyText = "Good! I understood your answer. In the next step, AI will give real corrections.";
     public const string TranslateButtonText = "Translate";
+    public const string PlayVoiceButtonText = "Play voice";
+    public const string PlayingBotVoiceMessage = "Playing AI-generated bot voice...";
+    public const string BotVoiceFailedMessage = "Could not play bot voice. Please try again.";
     public const string HideTranslationButtonText = "Hide translation";
     public const string TranslationLabel = "Translation";
     public const string TranslationLoadingText = "Translating...";

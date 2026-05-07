@@ -5,8 +5,12 @@ public static class AudioConstants
     public const int TemporaryRecordingMaxAgeHours = 24;
     public const string AppTempFolderName = "EnglishVoiceTutor.Desktop";
     public const string RecordingFolderName = "Recordings";
+    public const string BotVoiceFolderName = "BotVoice";
     public const string RecordingFilePrefix = "voice-recording-";
+    public const string BotVoiceFilePrefix = "bot-voice-";
     public const string WavFileExtension = ".wav";
+    public const string Mp3FileExtension = ".mp3";
     public const string WavSearchPattern = "*.wav";
+    public const string Mp3SearchPattern = "*.mp3";
     public const string RecordingTimestampFormat = "yyyyMMdd-HHmmss-fff";
 }

@@ -9,6 +9,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly UserSettingsService userSettingsService = new();
     private readonly LessonChatBackendService lessonChatBackendService = new();
     private readonly AudioRecordingService audioRecordingService = new();
+    private readonly AudioPlaybackService audioPlaybackService = new();
     private readonly LessonHistoryService lessonHistoryService = new();
     private readonly UserSettings userSettings;
 
@@ -18,6 +19,7 @@ public partial class MainViewModel : ViewModelBase
     public MainViewModel()
     {
         audioRecordingService.CleanupOldRecordings();
+        audioPlaybackService.CleanupOldBotVoiceFiles();
         userSettings = userSettingsService.Load();
         currentViewModel = CreateWelcomeViewModel();
     }
@@ -127,6 +129,7 @@ public partial class MainViewModel : ViewModelBase
             userSettings.NativeLanguageName,
             lessonChatBackendService,
             audioRecordingService,
+            audioPlaybackService,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
             latestFeedback => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic, latestFeedback));
     }

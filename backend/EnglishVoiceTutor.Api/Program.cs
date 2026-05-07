@@ -13,6 +13,7 @@ builder.Services.AddScoped<ILessonChatService, OpenAiLessonChatService>();
 builder.Services.AddScoped<ILessonHintService, OpenAiLessonHintService>();
 builder.Services.AddScoped<AudioTranscriptionService>();
 builder.Services.AddScoped<TranslationService>();
+builder.Services.AddScoped<AudioSpeechService>();
 
 var app = builder.Build();
 
@@ -45,6 +46,7 @@ app.MapPost(ApiConstants.LessonChatMockReplyRoute, HandleMockLessonChatReplyAsyn
 app.MapPost(ApiConstants.LessonChatHintRoute, HandleLessonChatHintAsync);
 app.MapPost(ApiConstants.AudioTranscriptionRoute, HandleAudioTranscriptionAsync);
 app.MapPost(ApiConstants.TranslationRoute, HandleTranslationAsync);
+app.MapPost(ApiConstants.AudioSpeechRoute, HandleAudioSpeechAsync);
 
 app.Run();
 
@@ -169,5 +171,34 @@ static async Task<IResult> HandleTranslationAsync(
     catch (Exception)
     {
         return Results.Problem(ApiConstants.TranslationError);
+    }
+}
+
+static async Task<IResult> HandleAudioSpeechAsync(
+    AudioSpeechRequest request,
+    AudioSpeechService audioSpeechService,
+    CancellationToken cancellationToken)
+{
+    if (string.IsNullOrWhiteSpace(request.Text))
+    {
+        return Results.BadRequest(new
+        {
+            error = ApiConstants.EmptySpeechTextError
+        });
+    }
+
+    try
+    {
+        var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, cancellationToken);
+
+        return Results.File(audioBytes, OpenAiConstants.SpeechResponseContentType);
+    }
+    catch (InvalidOperationException)
+    {
+        return Results.Problem(ApiConstants.AudioSpeechError);
+    }
+    catch (Exception)
+    {
+        return Results.Problem(ApiConstants.AudioSpeechError);
     }
 }

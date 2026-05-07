@@ -80,6 +80,28 @@
                                                 <Button Margin="8,0,0,0"
                                                         Padding="10,4"
                                                         HorizontalAlignment="Left"
+                                                        Content="{x:Static constants:AppConstants.PlayVoiceButtonText}"
+                                                        Command="{Binding DataContext.PlayBotVoiceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="White"
+                                                        Foreground="#FF1E3A56"
+                                                        BorderBrush="#FFCAD8E6"
+                                                        Cursor="Hand">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding ShowPlayVoiceButton}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+
+                                                <Button Margin="8,0,0,0"
+                                                        Padding="10,4"
+                                                        HorizontalAlignment="Left"
                                                         Content="{x:Static constants:AppConstants.ViewFeedbackButtonText}"
                                                         Command="{Binding DataContext.ViewFeedbackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                         CommandParameter="{Binding}"

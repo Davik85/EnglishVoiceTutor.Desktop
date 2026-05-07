@@ -144,6 +144,39 @@ public sealed class LessonChatBackendService
     }
 
 
+    public async Task<byte[]> CreateBotSpeechAsync(
+        string text,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new InvalidOperationException(BackendConstants.BackendInvalidSpeechResponseMessage);
+        }
+
+        using var httpClient = CreateHttpClient();
+
+        using var response = await httpClient.PostAsJsonAsync(
+            BackendConstants.AudioSpeechEndpoint,
+            new AudioSpeechBackendRequest
+            {
+                Text = text
+            },
+            JsonOptions,
+            cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        var audioBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+
+        if (audioBytes.Length == 0)
+        {
+            throw new InvalidOperationException(BackendConstants.BackendInvalidSpeechResponseMessage);
+        }
+
+        return audioBytes;
+    }
+
+
     public async Task<string> TranslateTextAsync(
         string text,
         string targetLanguage,

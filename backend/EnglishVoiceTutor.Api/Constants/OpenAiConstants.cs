@@ -7,10 +7,14 @@ public static class OpenAiConstants
     public const string DefaultModel = "gpt-5.2";
     public const string ResponsesEndpoint = "https://api.openai.com/v1/responses";
     public const string AudioTranscriptionsEndpoint = "https://api.openai.com/v1/audio/transcriptions";
+    public const string AudioSpeechEndpoint = "https://api.openai.com/v1/audio/speech";
     public const string DefaultTranscriptionModel = "gpt-4o-mini-transcribe";
+    public const string DefaultSpeechModel = "gpt-4o-mini-tts";
+    public const string DefaultSpeechVoice = "alloy";
     public const string MultipartFileFieldName = "file";
     public const string MultipartModelFieldName = "model";
     public const string WavContentType = "audio/wav";
+    public const string SpeechResponseContentType = "audio/mpeg";
     public const string NotConfiguredStatus = "not_configured";
     public const string ConfiguredStatus = "configured";
     public const string AuthorizationScheme = "Bearer";
