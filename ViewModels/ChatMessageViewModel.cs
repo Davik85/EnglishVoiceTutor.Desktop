@@ -18,6 +18,8 @@ public partial class ChatMessageViewModel : ViewModelBase
 
     public bool IsFromBot { get; }
 
+    public bool ShowPlayVoiceButton => IsFromBot;
+
     public Feedback? Feedback { get; }
 
     public string TranslationHeader => $"{AppConstants.TranslationLabel} ({nativeLanguageName})";

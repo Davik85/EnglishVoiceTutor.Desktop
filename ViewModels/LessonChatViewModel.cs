@@ -16,6 +16,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly string nativeLanguageName;
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly AudioRecordingService audioRecordingService;
+    private readonly AudioPlaybackService audioPlaybackService;
     private int messageCounter;
     private Feedback? latestFeedback;
     private string lastBotMessage = AppConstants.MockBotFirstMessage;
@@ -69,6 +70,10 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     private bool isRecording;
 
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PlayBotVoiceCommand))]
+    private bool isBotVoicePlaying;
+
     public bool HasSelectedFeedback => SelectedFeedback is not null;
 
     public string VoiceButtonText => IsRecording
@@ -88,6 +93,7 @@ public partial class LessonChatViewModel : ViewModelBase
         string nativeLanguageName,
         LessonChatBackendService lessonChatBackendService,
         AudioRecordingService audioRecordingService,
+        AudioPlaybackService audioPlaybackService,
         Action navigateBack,
         Action<Feedback?> finishLesson)
     {
@@ -97,6 +103,7 @@ public partial class LessonChatViewModel : ViewModelBase
         this.nativeLanguageName = nativeLanguageName;
         this.lessonChatBackendService = lessonChatBackendService;
         this.audioRecordingService = audioRecordingService;
+        this.audioPlaybackService = audioPlaybackService;
         this.navigateBack = navigateBack;
         this.finishLesson = finishLesson;
 
@@ -114,6 +121,14 @@ public partial class LessonChatViewModel : ViewModelBase
     private bool CanToggleVoiceRecording()
     {
         return !IsSending || IsRecording;
+    }
+
+    private bool CanPlayBotVoice(ChatMessageViewModel? message)
+    {
+        return !IsBotVoicePlaying
+            && message is not null
+            && message.ShowPlayVoiceButton
+            && !string.IsNullOrWhiteSpace(message.Text);
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleVoiceRecording))]
@@ -189,6 +204,34 @@ public partial class LessonChatViewModel : ViewModelBase
             IsRecording = false;
             IsSending = false;
             audioRecordingService.SafeDeleteRecording(savedFilePath);
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanPlayBotVoice))]
+    private async Task PlayBotVoiceAsync(ChatMessageViewModel? message)
+    {
+        if (!CanPlayBotVoice(message))
+        {
+            return;
+        }
+
+        IsBotVoicePlaying = true;
+        StatusMessage = AppConstants.PlayingBotVoiceMessage;
+
+        try
+        {
+            var audioBytes = await lessonChatBackendService.CreateBotSpeechAsync(message.Text);
+            await audioPlaybackService.PlayAudioAsync(audioBytes);
+            BackendStatusText = BackendConstants.BackendStatusConnected;
+        }
+        catch
+        {
+            BackendStatusText = BackendConstants.BackendStatusUnavailable;
+            StatusMessage = AppConstants.BotVoiceFailedMessage;
+        }
+        finally
+        {
+            IsBotVoicePlaying = false;
         }
     }
 
