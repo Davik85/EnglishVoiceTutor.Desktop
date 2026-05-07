@@ -7,6 +7,7 @@ public static class BackendConstants
     public const string MockLessonChatEndpoint = "/api/lesson-chat/mock-reply";
     public const string LessonChatHintEndpoint = "/api/lesson-chat/hint";
     public const string AudioTranscriptionEndpoint = "/api/audio/transcribe";
+    public const string TranslationEndpoint = "/api/translate";
     public const string HealthEndpoint = "/health";
     public const string BackendConfigStatusEndpoint = "/api/backend/config-status";
     public const int BackendRequestTimeoutSeconds = 30;
@@ -16,6 +17,7 @@ public static class BackendConstants
     public const string BackendUnavailableMessage = "Backend is unavailable. Please start the local backend and try again.";
     public const string BackendInvalidResponseMessage = "Backend returned an invalid response.";
     public const string BackendInvalidTranscriptionResponseMessage = "Backend returned an invalid transcription response.";
+    public const string BackendInvalidTranslationResponseMessage = "Backend returned an invalid translation response.";
     public const string BackendStatusChecking = "Backend: checking...";
     public const string BackendStatusConnected = "Backend: connected";
     public const string BackendStatusUnavailable = "Backend: unavailable";
