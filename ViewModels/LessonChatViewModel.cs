@@ -210,7 +210,14 @@ public partial class LessonChatViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanPlayBotVoice))]
     private async Task PlayBotVoiceAsync(ChatMessageViewModel? message)
     {
-        if (!CanPlayBotVoice(message))
+        if (message is null || IsBotVoicePlaying || !message.ShowPlayVoiceButton)
+        {
+            return;
+        }
+
+        var messageText = message.Text;
+
+        if (string.IsNullOrWhiteSpace(messageText))
         {
             return;
         }
@@ -220,7 +227,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
         try
         {
-            var audioBytes = await lessonChatBackendService.CreateBotSpeechAsync(message.Text);
+            var audioBytes = await lessonChatBackendService.CreateBotSpeechAsync(messageText);
             await audioPlaybackService.PlayAudioAsync(audioBytes);
             BackendStatusText = BackendConstants.BackendStatusConnected;
         }
