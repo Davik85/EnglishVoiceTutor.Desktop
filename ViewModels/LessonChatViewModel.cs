@@ -10,6 +10,8 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 public partial class LessonChatViewModel : ViewModelBase
 {
     private const string BotStatusPrefix = "Bot status:";
+    private const string ConversationModeEnabledButtonText = "Conversation mode";
+    private const string BackToChatButtonText = "Back to chat";
 
     private readonly Action navigateBack;
     private readonly Action<Feedback?> finishLesson;
@@ -74,6 +76,10 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(PlayBotVoiceCommand))]
     private bool isBotVoicePlaying;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ConversationModeButtonText))]
+    private bool isConversationModeEnabled;
+
     public bool HasSelectedFeedback => SelectedFeedback is not null;
 
     public string VoiceButtonText => IsRecording
@@ -85,6 +91,12 @@ public partial class LessonChatViewModel : ViewModelBase
         : AppConstants.FeedbackTranslateButtonText;
 
     public string BotStatusText => $"{BotStatusPrefix} {BotStatus}";
+
+    public string LatestBotMessageText => lastBotMessage;
+
+    public string ConversationModeButtonText => IsConversationModeEnabled
+        ? BackToChatButtonText
+        : ConversationModeEnabledButtonText;
 
     public LessonChatViewModel(
         string selectedLevel,
@@ -207,6 +219,12 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    private void ToggleConversationMode()
+    {
+        IsConversationModeEnabled = !IsConversationModeEnabled;
+    }
+
     [RelayCommand(CanExecute = nameof(CanPlayBotVoice))]
     private async Task PlayBotVoiceAsync(ChatMessageViewModel? message)
     {
@@ -273,6 +291,7 @@ public partial class LessonChatViewModel : ViewModelBase
             AddMessage(AppConstants.UserSenderName, trimmedUserInput, false, mappedFeedback);
             AddMessage(AppConstants.BotSenderName, response.BotReply, true);
             lastBotMessage = response.BotReply;
+            OnPropertyChanged(nameof(LatestBotMessageText));
 
             BackendStatusText = BackendConstants.BackendStatusConnected;
             UserInput = string.Empty;

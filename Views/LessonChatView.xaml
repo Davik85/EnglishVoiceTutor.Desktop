@@ -9,10 +9,27 @@
              d:DesignHeight="600"
              d:DesignWidth="900">
     <Grid Background="#FFF6F8FB">
+        <Grid.Resources>
+            <Style x:Key="SecondaryLessonButtonStyle" TargetType="Button">
+                <Setter Property="Height" Value="38" />
+                <Setter Property="Background" Value="White" />
+                <Setter Property="Foreground" Value="#FF1E3A56" />
+                <Setter Property="BorderBrush" Value="#FFCAD8E6" />
+                <Setter Property="Cursor" Value="Hand" />
+            </Style>
+            <Style x:Key="PrimaryLessonButtonStyle" TargetType="Button">
+                <Setter Property="Height" Value="38" />
+                <Setter Property="Background" Value="#FF1E3A56" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="BorderBrush" Value="#FF1E3A56" />
+                <Setter Property="Cursor" Value="Hand" />
+            </Style>
+        </Grid.Resources>
+
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="24">
-            <Border MaxWidth="820"
+            <Border MaxWidth="1180"
                     Margin="0,12"
                     Padding="24"
                     HorizontalAlignment="Center"
@@ -23,8 +40,6 @@
                     BorderThickness="1">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -40,219 +55,377 @@
 
                     <Border Grid.Row="1" Margin="0,16,0,0" Height="1" Background="#FFE1E8F0" />
 
-                    <ScrollViewer Grid.Row="2"
-                                  Margin="0,16,0,12"
-                                  MaxHeight="300"
-                                  VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled"
-                                  behaviors:ScrollViewerMouseWheelBehavior.BubbleMouseWheelWhenAtEdge="True">
-                        <ItemsControl ItemsSource="{Binding Messages}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Margin="0,0,0,10" Padding="10" CornerRadius="10" HorizontalAlignment="Left" MaxWidth="620" Background="#FFF2F7FC">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="HorizontalAlignment" Value="Left" />
-                                                <Setter Property="Background" Value="#FFF2F7FC" />
+                    <Grid Grid.Row="2" Margin="0,18,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.9*" MinWidth="280" />
+                            <ColumnDefinition Width="24" />
+                            <ColumnDefinition Width="1.6*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0"
+                                VerticalAlignment="Top"
+                                Background="#FFF8FBFF"
+                                BorderBrush="#FFDCE8F5"
+                                BorderThickness="1"
+                                CornerRadius="18">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Grid.ColumnSpan" Value="1" />
+                                    <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                    <Setter Property="MaxWidth" Value="360" />
+                                    <Setter Property="Padding" Value="22" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
+                                            <Setter Property="Grid.ColumnSpan" Value="3" />
+                                            <Setter Property="MaxWidth" Value="640" />
+                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="34" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <Grid HorizontalAlignment="Center">
+                                    <Grid.Style>
+                                        <Style TargetType="Grid">
+                                            <Setter Property="Width" Value="132" />
+                                            <Setter Property="Height" Value="132" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
+                                                    <Setter Property="Width" Value="188" />
+                                                    <Setter Property="Height" Value="188" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Grid.Style>
+                                    <Ellipse Fill="#FFEAF2FB" Stroke="#FFBFD2E8" StrokeThickness="2" />
+                                    <Border Width="74"
+                                            Height="74"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#FFFFFFFF"
+                                            BorderBrush="#FFD4DEE8"
+                                            BorderThickness="1"
+                                            CornerRadius="24">
+                                        <TextBlock Text="EV"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="26"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#FF1E3A56" />
+                                    </Border>
+                                </Grid>
+
+                                <TextBlock Margin="0,18,0,0"
+                                           Text="Conversation avatar"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FF1C2B3A"
+                                           TextAlignment="Center" />
+                                <TextBlock Margin="0,8,0,0"
+                                           Text="{Binding BotStatusText}"
+                                           FontSize="13"
+                                           Foreground="#FF1E3A56"
+                                           TextAlignment="Center" />
+                                <Border Margin="0,18,0,0"
+                                        Padding="14"
+                                        Background="White"
+                                        BorderBrush="#FFE1E8F0"
+                                        BorderThickness="1"
+                                        CornerRadius="12">
+                                    <StackPanel>
+                                        <TextBlock Text="Latest bot message"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#FF6D7C8B" />
+                                        <TextBlock Margin="0,6,0,0"
+                                                   Text="{Binding LatestBotMessageText}"
+                                                   FontSize="14"
+                                                   Foreground="#FF1C2B3A"
+                                                   TextWrapping="Wrap"
+                                                   TextAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel Margin="0,18,0,0" HorizontalAlignment="Center">
+                                    <Button Width="170"
+                                            Style="{StaticResource PrimaryLessonButtonStyle}"
+                                            Content="{Binding ConversationModeButtonText}"
+                                            Command="{Binding ToggleConversationModeCommand}" />
+
+                                    <Button Width="170"
+                                            Margin="0,10,0,0"
+                                            Content="{Binding VoiceButtonText}"
+                                            Command="{Binding ToggleVoiceRecordingCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource SecondaryLessonButtonStyle}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsFromBot}" Value="False">
-                                                        <Setter Property="HorizontalAlignment" Value="Right" />
-                                                        <Setter Property="Background" Value="#FFEAF6EA" />
+                                                    <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
-                                        </Border.Style>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Sender}" FontSize="12" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                                            <TextBlock Margin="0,4,0,0" Text="{Binding Text}" FontSize="14" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
-
-                                            <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
-                                                <Button Padding="8,2"
-                                                        HorizontalAlignment="Left"
-                                                        Content="{Binding TranslateButtonText}"
-                                                        Command="{Binding ToggleTranslationCommand}"
-                                                        Background="White"
-                                                        Foreground="#FF506172"
-                                                        FontSize="11"
-                                                        BorderBrush="#FFD4DEE8"
-                                                        Cursor="Hand" />
-
-                                                <Button Margin="8,0,0,0"
-                                                        Padding="10,4"
-                                                        HorizontalAlignment="Left"
-                                                        Content="{x:Static constants:AppConstants.PlayVoiceButtonText}"
-                                                        Command="{Binding DataContext.PlayBotVoiceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        Background="White"
-                                                        Foreground="#FF1E3A56"
-                                                        BorderBrush="#FFCAD8E6"
-                                                        Cursor="Hand">
-                                                    <Button.Style>
-                                                        <Style TargetType="Button">
-                                                            <Setter Property="Visibility" Value="Collapsed" />
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding ShowPlayVoiceButton}" Value="True">
-                                                                    <Setter Property="Visibility" Value="Visible" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Button.Style>
-                                                </Button>
-
-                                                <Button Margin="8,0,0,0"
-                                                        Padding="10,4"
-                                                        HorizontalAlignment="Left"
-                                                        Content="{x:Static constants:AppConstants.ViewFeedbackButtonText}"
-                                                        Command="{Binding DataContext.ViewFeedbackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        Background="White"
-                                                        Foreground="#FF1E3A56"
-                                                        BorderBrush="#FFCAD8E6"
-                                                        Cursor="Hand">
-                                                    <Button.Style>
-                                                        <Style TargetType="Button">
-                                                            <Setter Property="Visibility" Value="Collapsed" />
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsFromBot}" Value="False">
-                                                                    <Setter Property="Visibility" Value="Visible" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Button.Style>
-                                                </Button>
-                                            </StackPanel>
-
-                                            <Border Margin="0,8,0,0" Padding="0,6,0,0" BorderBrush="#33A0AFBF" BorderThickness="0,1,0,0">
-                                                <Border.Style>
-                                                    <Style TargetType="Border">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsTranslationVisible}" Value="True">
-                                                                <Setter Property="Visibility" Value="Visible" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Border.Style>
-                                                <StackPanel>
-                                                    <TextBlock Text="{Binding TranslationHeader}" FontSize="11" Foreground="#FF6D7C8B" FontWeight="SemiBold" />
-                                                    <TextBlock Margin="0,2,0,0" Text="{Binding TranslationText}" FontSize="12" Foreground="#FF637381" TextWrapping="Wrap" />
-                                                </StackPanel>
-                                            </Border>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-
-                    <StackPanel Grid.Row="3" Margin="0,0,0,12">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasSelectedFeedback}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-
-                        <Button Padding="10,4"
-                                HorizontalAlignment="Left"
-                                FontSize="11"
-                                Content="{Binding FeedbackTranslateButtonText}"
-                                Command="{Binding ToggleFeedbackTranslationCommand}"
-                                Background="White"
-                                Foreground="#FF506172"
-                                BorderBrush="#FFD4DEE8"
-                                Cursor="Hand" />
-
-                        <Button Margin="0,8,0,0"
-                                Padding="12"
-                                Command="{Binding CloseFeedbackCommand}"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                HorizontalContentAlignment="Stretch"
-                                VerticalContentAlignment="Stretch"
-                                Cursor="Hand">
-                            <Border Padding="12"
-                                    Background="#FFF7FAFD"
-                                    BorderBrush="#FFDDE8F3"
-                                    BorderThickness="1"
-                                    CornerRadius="10">
-                                <StackPanel>
-                                    <TextBlock Text="{x:Static constants:AppConstants.FeedbackPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#FF1C2B3A" />
-                                    <TextBlock Margin="0,2,0,8" Text="Click this feedback card to close." FontSize="11" Foreground="#FF7A8A9A" />
-
-                                    <TextBlock Margin="0,4,0,0" Text="{Binding SelectedFeedback.ShortText}" FontSize="13" Foreground="#FF3A4A5B" TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,2,0,8" Text="{Binding SelectedFeedback.ShortTextTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                        </Button.Style>
+                                    </Button>
+                                    <TextBlock Margin="0,10,0,0"
+                                               Text="Manual recording only. Review transcribed text in chat before sending."
+                                               FontSize="12"
+                                               Foreground="#FF6D7C8B"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               MaxWidth="360">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True">
+                                                    <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
                                                         <Setter Property="Visibility" Value="Visible" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-
-                                    <TextBlock Text="{x:Static constants:AppConstants.FeedbackCorrectedVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
-                                    <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.CorrectedVersion}" FontSize="13" TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CorrectedVersionTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
-                                        <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                                    </TextBlock>
-
-                                    <TextBlock Text="{x:Static constants:AppConstants.FeedbackGrammarTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
-                                    <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.GrammarTip}" FontSize="13" TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.GrammarTipTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
-                                        <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                                    </TextBlock>
-
-                                    <TextBlock Text="{x:Static constants:AppConstants.FeedbackVocabularyTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
-                                    <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.VocabularyTip}" FontSize="13" TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.VocabularyTipTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
-                                        <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                                    </TextBlock>
-
-                                    <TextBlock Text="{x:Static constants:AppConstants.FeedbackCultureTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
-                                    <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.CultureTip}" FontSize="13" TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CultureTipTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
-                                        <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                                    </TextBlock>
-
-                                    <TextBlock Text="{x:Static constants:AppConstants.FeedbackNaturalVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
-                                    <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.NaturalVersion}" FontSize="13" TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.NaturalVersionTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
-                                        <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                                    </TextBlock>
-
-                                    <TextBlock Margin="0,8,0,0" FontSize="11" Foreground="#FF7A8A9A" TextWrapping="Wrap">
-                                        <Run Text="{Binding FeedbackTranslationHeader, Mode=OneWay}" />
-                                        <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                                    </TextBlock>
                                 </StackPanel>
-                            </Border>
-                        </Button>
-                    </StackPanel>
+                            </StackPanel>
+                        </Border>
 
-                    <StackPanel Grid.Row="4">
-                        <TextBox Height="42"
-                                 Margin="0,0,0,12"
-                                 VerticalContentAlignment="Center"
-                                 Text="{Binding UserInput, UpdateSourceTrigger=PropertyChanged}" />
+                        <Border Grid.Column="2"
+                                Padding="24"
+                                Background="White"
+                                CornerRadius="16"
+                                BorderBrush="#FFE1E8F0"
+                                BorderThickness="1">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
 
-                        <WrapPanel HorizontalAlignment="Center" ItemHeight="38">
-                            <Button Content="Send" Command="{Binding SendMessageCommand}" Margin="0,0,8,8" Width="90" Height="38" Background="#FF1E3A56" Foreground="White" BorderBrush="#FF1E3A56" Cursor="Hand" />
-                            <Button Content="Hint" Command="{Binding HintCommand}" Margin="0,0,8,8" Width="90" Height="38" Background="White" Foreground="#FF1E3A56" BorderBrush="#FFCAD8E6" Cursor="Hand" />
-                            <Button Content="{Binding VoiceButtonText}" Command="{Binding ToggleVoiceRecordingCommand}" Margin="0,0,8,8" Width="130" Height="38" Background="White" Foreground="#FF1E3A56" BorderBrush="#FFCAD8E6" Cursor="Hand" />
-                            <Button Content="Finish lesson" Command="{Binding FinishLessonCommand}" Margin="0,0,8,8" Width="110" Height="38" Background="#FF1E3A56" Foreground="White" BorderBrush="#FF1E3A56" Cursor="Hand" />
-                            <Button Content="Back" Command="{Binding BackCommand}" Margin="0,0,0,8" Width="90" Height="38" Background="White" Foreground="#FF1E3A56" BorderBrush="#FFCAD8E6" Cursor="Hand" />
-                        </WrapPanel>
+                                <ScrollViewer Grid.Row="0"
+                                              MaxHeight="300"
+                                              VerticalScrollBarVisibility="Auto"
+                                              HorizontalScrollBarVisibility="Disabled"
+                                              behaviors:ScrollViewerMouseWheelBehavior.BubbleMouseWheelWhenAtEdge="True">
+                                    <ItemsControl ItemsSource="{Binding Messages}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Margin="0,0,0,10" Padding="10" CornerRadius="10" HorizontalAlignment="Left" MaxWidth="620" Background="#FFF2F7FC">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="HorizontalAlignment" Value="Left" />
+                                                            <Setter Property="Background" Value="#FFF2F7FC" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsFromBot}" Value="False">
+                                                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                                                    <Setter Property="Background" Value="#FFEAF6EA" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Sender}" FontSize="12" FontWeight="SemiBold" Foreground="#FF1E3A56" />
+                                                        <TextBlock Margin="0,4,0,0" Text="{Binding Text}" FontSize="14" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
 
-                        <TextBlock Margin="0,10,0,0" Text="{Binding StatusMessage}" FontSize="13" Foreground="#FF3A4A5B" TextWrapping="Wrap" TextAlignment="Center" />
-                    </StackPanel>
+                                                        <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                                                            <Button Padding="8,2"
+                                                                    HorizontalAlignment="Left"
+                                                                    Content="{Binding TranslateButtonText}"
+                                                                    Command="{Binding ToggleTranslationCommand}"
+                                                                    Background="White"
+                                                                    Foreground="#FF506172"
+                                                                    FontSize="11"
+                                                                    BorderBrush="#FFD4DEE8"
+                                                                    Cursor="Hand" />
+
+                                                            <Button Margin="8,0,0,0"
+                                                                    Padding="10,4"
+                                                                    HorizontalAlignment="Left"
+                                                                    Content="{x:Static constants:AppConstants.PlayVoiceButtonText}"
+                                                                    Command="{Binding DataContext.PlayBotVoiceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Background="White"
+                                                                    Foreground="#FF506172"
+                                                                    FontSize="11"
+                                                                    BorderBrush="#FFD4DEE8"
+                                                                    Cursor="Hand">
+                                                                <Button.Style>
+                                                                    <Style TargetType="Button">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding ShowPlayVoiceButton}" Value="True">
+                                                                                <Setter Property="Visibility" Value="Visible" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Button.Style>
+                                                            </Button>
+
+                                                            <Button Margin="8,0,0,0"
+                                                                    Padding="10,4"
+                                                                    HorizontalAlignment="Left"
+                                                                    Content="{x:Static constants:AppConstants.ViewFeedbackButtonText}"
+                                                                    Command="{Binding DataContext.ViewFeedbackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Background="White"
+                                                                    Foreground="#FF506172"
+                                                                    FontSize="11"
+                                                                    BorderBrush="#FFD4DEE8"
+                                                                    Cursor="Hand">
+                                                                <Button.Style>
+                                                                    <Style TargetType="Button">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsFromBot}" Value="False">
+                                                                                <Setter Property="Visibility" Value="Visible" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Button.Style>
+                                                            </Button>
+                                                        </StackPanel>
+
+                                                        <Border Margin="0,8,0,0" Padding="8" Background="White" BorderBrush="#FFE1E8F0" BorderThickness="1" CornerRadius="8">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsTranslationVisible}" Value="True">
+                                                                            <Setter Property="Visibility" Value="Visible" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <StackPanel>
+                                                                <TextBlock Text="{x:Static constants:AppConstants.TranslationLabel}" FontSize="11" FontWeight="SemiBold" Foreground="#FF6D7C8B" />
+                                                                <TextBlock Margin="0,4,0,0" Text="{Binding TranslationText}" FontSize="13" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+
+                                <StackPanel Grid.Row="1" Margin="0,8,0,12">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasSelectedFeedback}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+
+                                    <Button Command="{Binding CloseFeedbackCommand}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Cursor="Hand"
+                                            HorizontalContentAlignment="Stretch">
+                                        <Border Padding="14" Background="#FFFFF9E8" BorderBrush="#FFF0D58A" BorderThickness="1" CornerRadius="12">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{x:Static constants:AppConstants.FeedbackPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#FF1E3A56" />
+                                                    <TextBlock Margin="8,2,0,0" Text="Click to close" FontSize="11" Foreground="#FF7A8A9A" />
+                                                </StackPanel>
+
+                                                <TextBlock Margin="0,8,0,0" Text="{Binding SelectedFeedback.ShortText}" FontSize="13" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
+                                                <TextBlock Margin="0,4,0,0" Text="{Binding SelectedFeedback.ShortTextTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+
+                                                <Button Margin="0,10,0,10"
+                                                        Padding="10,4"
+                                                        HorizontalAlignment="Left"
+                                                        Content="{Binding FeedbackTranslateButtonText}"
+                                                        Command="{Binding ToggleFeedbackTranslationCommand}"
+                                                        Background="White"
+                                                        Foreground="#FF506172"
+                                                        FontSize="11"
+                                                        BorderBrush="#FFD4DEE8"
+                                                        Cursor="Hand" />
+
+                                                <TextBlock Text="{x:Static constants:AppConstants.FeedbackCorrectedVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.CorrectedVersion}" FontSize="13" TextWrapping="Wrap" />
+                                                <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CorrectedVersionTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                                    <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                                                </TextBlock>
+
+                                                <TextBlock Text="{x:Static constants:AppConstants.FeedbackGrammarTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.GrammarTip}" FontSize="13" TextWrapping="Wrap" />
+                                                <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.GrammarTipTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                                    <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                                                </TextBlock>
+
+                                                <TextBlock Text="{x:Static constants:AppConstants.FeedbackVocabularyTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.VocabularyTip}" FontSize="13" TextWrapping="Wrap" />
+                                                <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.VocabularyTipTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                                    <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                                                </TextBlock>
+
+                                                <TextBlock Text="{x:Static constants:AppConstants.FeedbackCultureTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.CultureTip}" FontSize="13" TextWrapping="Wrap" />
+                                                <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CultureTipTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                                    <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                                                </TextBlock>
+
+                                                <TextBlock Text="{x:Static constants:AppConstants.FeedbackNaturalVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.NaturalVersion}" FontSize="13" TextWrapping="Wrap" />
+                                                <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.NaturalVersionTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                                    <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                                                </TextBlock>
+
+                                                <TextBlock Margin="0,8,0,0" FontSize="11" Foreground="#FF7A8A9A" TextWrapping="Wrap">
+                                                    <Run Text="{Binding FeedbackTranslationHeader, Mode=OneWay}" />
+                                                    <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Border>
+                                    </Button>
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="2">
+                                    <TextBox Height="42"
+                                             Margin="0,0,0,12"
+                                             VerticalContentAlignment="Center"
+                                             Text="{Binding UserInput, UpdateSourceTrigger=PropertyChanged}" />
+
+                                    <WrapPanel HorizontalAlignment="Center" ItemHeight="38">
+                                        <Button Content="Send" Command="{Binding SendMessageCommand}" Margin="0,0,8,8" Width="90" Style="{StaticResource PrimaryLessonButtonStyle}" />
+                                        <Button Content="Hint" Command="{Binding HintCommand}" Margin="0,0,8,8" Width="90" Style="{StaticResource SecondaryLessonButtonStyle}" />
+                                        <Button Content="{Binding VoiceButtonText}" Command="{Binding ToggleVoiceRecordingCommand}" Margin="0,0,8,8" Width="130" Style="{StaticResource SecondaryLessonButtonStyle}" />
+                                        <Button Content="Finish lesson" Command="{Binding FinishLessonCommand}" Margin="0,0,8,8" Width="110" Style="{StaticResource PrimaryLessonButtonStyle}" />
+                                        <Button Content="Back" Command="{Binding BackCommand}" Margin="0,0,0,8" Width="90" Style="{StaticResource SecondaryLessonButtonStyle}" />
+                                    </WrapPanel>
+
+                                    <TextBlock Margin="0,10,0,0" Text="{Binding StatusMessage}" FontSize="13" Foreground="#FF3A4A5B" TextWrapping="Wrap" TextAlignment="Center" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
                 </Grid>
             </Border>
         </ScrollViewer>
