@@ -1,14 +1,13 @@
 # Avatar assets
 
-This folder is reserved for the selected lesson avatar assets.
+This folder contains the animated lesson avatar GIF resources used by the Lesson Chat avatar panel.
 
-Expected MVP files to add later:
+Expected MVP files:
 
 - `avatar-idle.gif`
 - `avatar-listening.gif`
 - `avatar-transcribing.gif`
 - `avatar-thinking.gif`
 - `avatar-speaking.gif`
-- `avatar-fallback.png`
 
-The desktop UI currently uses a XAML placeholder so no binary image files need to be committed before the final avatar artwork is ready.
+The desktop project includes `*.gif` files in this folder as WPF `Resource` items so they can be loaded with application pack URIs.

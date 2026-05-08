@@ -15,8 +15,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Assets/Avatars/*.gif" />
+    <Resource Include="Assets/Avatars/*.gif" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="NAudio" Version="2.3.0" />
+    <PackageReference Include="XamlAnimatedGif" Version="2.3.1" />
   </ItemGroup>
 
 </Project>
