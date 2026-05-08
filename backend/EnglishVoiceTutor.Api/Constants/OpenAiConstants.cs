@@ -10,7 +10,7 @@ public static class OpenAiConstants
     public const string AudioSpeechEndpoint = "https://api.openai.com/v1/audio/speech";
     public const string DefaultTranscriptionModel = "gpt-4o-mini-transcribe";
     public const string DefaultSpeechModel = "gpt-4o-mini-tts";
-    public const string DefaultSpeechVoice = "alloy";
+    public const string DefaultSpeechVoice = "nova";
     public const string MultipartFileFieldName = "file";
     public const string MultipartModelFieldName = "model";
     public const string WavContentType = "audio/wav";
