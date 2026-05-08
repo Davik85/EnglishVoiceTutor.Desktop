@@ -22,6 +22,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private int messageCounter;
     private Feedback? latestFeedback;
     private string lastBotMessage = AppConstants.MockBotFirstMessage;
+    private bool isTranscribingAudio;
 
     public string SelectedLevel { get; }
 
@@ -77,6 +78,12 @@ public partial class LessonChatViewModel : ViewModelBase
     private bool isBotVoicePlaying;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AvatarStateDisplayText))]
+    [NotifyPropertyChangedFor(nameof(AvatarAnimationAssetPath))]
+    [NotifyPropertyChangedFor(nameof(AvatarAnimationAssetUri))]
+    private AvatarState currentAvatarState = AvatarState.Idle;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ConversationModeButtonText))]
     private bool isConversationModeEnabled;
 
@@ -97,6 +104,12 @@ public partial class LessonChatViewModel : ViewModelBase
     public string ConversationModeButtonText => IsConversationModeEnabled
         ? BackToChatButtonText
         : ConversationModeEnabledButtonText;
+
+    public string AvatarStateDisplayText => AvatarConstants.GetDisplayText(CurrentAvatarState);
+
+    public string AvatarAnimationAssetPath => AvatarConstants.GetAnimationPath(CurrentAvatarState);
+
+    public string AvatarAnimationAssetUri => AvatarConstants.ToPackUri(AvatarAnimationAssetPath);
 
     public LessonChatViewModel(
         string selectedLevel,
@@ -166,11 +179,13 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             audioRecordingService.StartRecording();
             IsRecording = true;
+            RefreshAvatarState();
             StatusMessage = AppConstants.RecordingStartedMessage;
         }
         catch
         {
             IsRecording = false;
+            RefreshAvatarState();
             StatusMessage = AppConstants.RecordingStartErrorMessage;
         }
     }
@@ -191,6 +206,8 @@ public partial class LessonChatViewModel : ViewModelBase
             }
 
             IsSending = true;
+            isTranscribingAudio = true;
+            RefreshAvatarState();
             StatusMessage = AppConstants.TranscribingAudioMessage;
 
             var transcriptionText = await lessonChatBackendService.SendAudioForTranscriptionAsync(savedFilePath);
@@ -213,8 +230,10 @@ public partial class LessonChatViewModel : ViewModelBase
         finally
         {
             BotStatus = BackendConstants.BotStatusReady;
+            isTranscribingAudio = false;
             IsRecording = false;
             IsSending = false;
+            RefreshAvatarState();
             audioRecordingService.SafeDeleteRecording(savedFilePath);
         }
     }
@@ -241,6 +260,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         IsBotVoicePlaying = true;
+        RefreshAvatarState();
         StatusMessage = AppConstants.PlayingBotVoiceMessage;
 
         try
@@ -257,6 +277,7 @@ public partial class LessonChatViewModel : ViewModelBase
         finally
         {
             IsBotVoicePlaying = false;
+            RefreshAvatarState();
         }
     }
 
@@ -272,6 +293,7 @@ public partial class LessonChatViewModel : ViewModelBase
         var trimmedUserInput = UserInput.Trim();
         BotStatus = BackendConstants.BotStatusThinking;
         IsSending = true;
+        RefreshAvatarState();
 
         try
         {
@@ -306,6 +328,7 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             BotStatus = BackendConstants.BotStatusReady;
             IsSending = false;
+            RefreshAvatarState();
         }
     }
 
@@ -412,6 +435,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
         IsSending = true;
         BotStatus = BackendConstants.BotStatusThinking;
+        RefreshAvatarState();
 
         try
         {
@@ -441,7 +465,38 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             BotStatus = BackendConstants.BotStatusReady;
             IsSending = false;
+            RefreshAvatarState();
         }
+    }
+
+    private void RefreshAvatarState()
+    {
+        CurrentAvatarState = GetActiveAvatarState();
+    }
+
+    private AvatarState GetActiveAvatarState()
+    {
+        if (IsBotVoicePlaying)
+        {
+            return AvatarState.Speaking;
+        }
+
+        if (IsRecording)
+        {
+            return AvatarState.Listening;
+        }
+
+        if (isTranscribingAudio)
+        {
+            return AvatarState.Transcribing;
+        }
+
+        if (IsSending)
+        {
+            return AvatarState.Thinking;
+        }
+
+        return AvatarState.Idle;
     }
 
     [RelayCommand]
