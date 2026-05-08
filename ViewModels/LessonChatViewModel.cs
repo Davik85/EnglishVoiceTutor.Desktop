@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -109,7 +110,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     public string AvatarAnimationAssetPath => AvatarConstants.GetAnimationPath(CurrentAvatarState);
 
-    public string AvatarAnimationAssetUri => AvatarConstants.ToPackUri(AvatarAnimationAssetPath);
+    public Uri AvatarAnimationAssetUri => AvatarConstants.ToPackUri(AvatarAnimationAssetPath);
 
     public LessonChatViewModel(
         string selectedLevel,

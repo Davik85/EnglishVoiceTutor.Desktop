@@ -1,3 +1,4 @@
+using System;
 using EnglishVoiceTutor.Desktop.Models;
 
 namespace EnglishVoiceTutor.Desktop.Constants;
@@ -43,8 +44,8 @@ public static class AvatarConstants
         };
     }
 
-    public static string ToPackUri(string assetPath)
+    public static Uri ToPackUri(string assetPath)
     {
-        return $"{PackUriPrefix}{assetPath}";
+        return new Uri($"{PackUriPrefix}{assetPath}", UriKind.Absolute);
     }
 }

@@ -5,6 +5,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:constants="clr-namespace:EnglishVoiceTutor.Desktop.Constants"
              xmlns:behaviors="clr-namespace:EnglishVoiceTutor.Desktop.Behaviors"
+             xmlns:converters="clr-namespace:EnglishVoiceTutor.Desktop.Converters"
+             xmlns:gif="https://github.com/XamlAnimatedGif/XamlAnimatedGif"
              mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="900">
@@ -17,6 +19,8 @@
                 <Setter Property="BorderBrush" Value="#FFCAD8E6" />
                 <Setter Property="Cursor" Value="Hand" />
             </Style>
+            <converters:AvatarAnimationUriConverter x:Key="AvatarAnimationUriConverter" />
+
             <Style x:Key="PrimaryLessonButtonStyle" TargetType="Button">
                 <Setter Property="Height" Value="38" />
                 <Setter Property="Background" Value="#FF1E3A56" />
@@ -173,24 +177,18 @@
                                                          Fill="#FFF8FBFF"
                                                          Stroke="#FFD4DEE8"
                                                          StrokeThickness="1" />
-                                                <StackPanel HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center">
-                                                    <TextBlock Text="EV"
-                                                               HorizontalAlignment="Center"
-                                                               FontSize="42"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="#FF1E3A56" />
-                                                    <TextBlock Margin="0,8,0,0"
-                                                               Text="Avatar asset slot"
-                                                               HorizontalAlignment="Center"
-                                                               FontSize="12"
-                                                               Foreground="#FF6D7C8B" />
-                                                    <TextBlock Margin="0,4,0,0"
-                                                               Text="Add avatar-fallback.png later"
-                                                               HorizontalAlignment="Center"
-                                                               FontSize="11"
-                                                               Foreground="#FF7A8A9A" />
-                                                </StackPanel>
+                                                <TextBlock Text="EV"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="42"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="#331E3A56" />
+                                                <Image Margin="8"
+                                                       HorizontalAlignment="Stretch"
+                                                       VerticalAlignment="Stretch"
+                                                       Stretch="Uniform"
+                                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                                       gif:AnimationBehavior.SourceUri="{Binding AvatarAnimationAssetUri, Converter={StaticResource AvatarAnimationUriConverter}}" />
                                             </Grid>
                                         </Border>
                                     </Grid>
