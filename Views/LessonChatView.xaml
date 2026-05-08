@@ -68,7 +68,7 @@
 
                         <Border Grid.Column="0"
                                 VerticalAlignment="Stretch"
-                                Background="#FFF8FBFF"
+                                Background="#FF0F1F2E"
                                 BorderBrush="#FFDCE8F5"
                                 BorderThickness="1"
                                 CornerRadius="18"
@@ -89,126 +89,105 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <Grid>
-                                <Border CornerRadius="18">
+                            <Grid ToolTip="{Binding AvatarAnimationAssetPath}">
+                                <Image HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Stretch"
+                                       Stretch="UniformToFill"
+                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                       gif:AnimationBehavior.SourceUri="{Binding AvatarAnimationAssetUri, Converter={StaticResource AvatarAnimationUriConverter}}" />
+
+                                <Border IsHitTestVisible="False">
                                     <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#FFEAF2FB" Offset="0" />
-                                            <GradientStop Color="#FFD7E8FA" Offset="0.55" />
-                                            <GradientStop Color="#FFF7FBFF" Offset="1" />
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#990B1724" Offset="0" />
+                                            <GradientStop Color="#1A0B1724" Offset="0.36" />
+                                            <GradientStop Color="#330B1724" Offset="0.62" />
+                                            <GradientStop Color="#B30B1724" Offset="1" />
                                         </LinearGradientBrush>
                                     </Border.Background>
                                 </Border>
 
-                                <Grid Margin="18">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="*" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-
-                                    <StackPanel Grid.Row="0" HorizontalAlignment="Center">
+                                <StackPanel Margin="18"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Top">
+                                    <Border Padding="14,8"
+                                            HorizontalAlignment="Center"
+                                            Background="#A6FFFFFF"
+                                            BorderBrush="#66FFFFFF"
+                                            BorderThickness="1"
+                                            CornerRadius="16">
                                         <TextBlock Text="Conversation avatar"
                                                    FontSize="18"
                                                    FontWeight="SemiBold"
                                                    Foreground="#FF1C2B3A"
                                                    TextAlignment="Center" />
-                                        <WrapPanel Margin="0,10,0,0" HorizontalAlignment="Center">
-                                            <Border Margin="0,0,8,0"
-                                                    Padding="12,6"
-                                                    HorizontalAlignment="Center"
-                                                    Background="#CCFFFFFF"
-                                                    BorderBrush="#66BFD2E8"
-                                                    BorderThickness="1"
-                                                    CornerRadius="14">
-                                                <TextBlock Text="{Binding AvatarStateDisplayText}"
-                                                           FontSize="13"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="#FF1E3A56"
-                                                           TextAlignment="Center" />
-                                            </Border>
-                                            <Border Padding="12,6"
-                                                    HorizontalAlignment="Center"
-                                                    Background="#99FFFFFF"
-                                                    BorderBrush="#66BFD2E8"
-                                                    BorderThickness="1"
-                                                    CornerRadius="14">
-                                                <TextBlock Text="{Binding BotStatusText}"
-                                                           FontSize="13"
-                                                           Foreground="#FF1E3A56"
-                                                           TextAlignment="Center" />
-                                            </Border>
-                                        </WrapPanel>
-                                    </StackPanel>
-
-                                    <Grid Grid.Row="1" Margin="0,18" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                                        <Ellipse HorizontalAlignment="Stretch"
-                                                 VerticalAlignment="Stretch"
-                                                 Fill="#55FFFFFF"
-                                                 Stroke="#99BFD2E8"
-                                                 StrokeThickness="2" />
-                                        <Ellipse Margin="24"
-                                                 HorizontalAlignment="Stretch"
-                                                 VerticalAlignment="Stretch"
-                                                 Fill="#33FFFFFF"
-                                                 Stroke="#66D4DEE8"
-                                                 StrokeThickness="1" />
-                                        <Border HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Background="#EEFFFFFF"
-                                                BorderBrush="#FFD4DEE8"
-                                                BorderThickness="1"
-                                                CornerRadius="28"
-                                                ClipToBounds="True">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="Width" Value="180" />
-                                                    <Setter Property="Height" Value="180" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
-                                                            <Setter Property="Width" Value="300" />
-                                                            <Setter Property="Height" Value="300" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <Grid ToolTip="{Binding AvatarAnimationAssetPath}">
-                                                <Ellipse Margin="20"
-                                                         Fill="#FFF8FBFF"
-                                                         Stroke="#FFD4DEE8"
-                                                         StrokeThickness="1" />
-                                                <TextBlock Text="EV"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"
-                                                           FontSize="42"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="#331E3A56" />
-                                                <Image Margin="8"
-                                                       HorizontalAlignment="Stretch"
-                                                       VerticalAlignment="Stretch"
-                                                       Stretch="Uniform"
-                                                       RenderOptions.BitmapScalingMode="HighQuality"
-                                                       gif:AnimationBehavior.SourceUri="{Binding AvatarAnimationAssetUri, Converter={StaticResource AvatarAnimationUriConverter}}" />
-                                            </Grid>
-                                        </Border>
-                                    </Grid>
-
-                                    <StackPanel Grid.Row="2" HorizontalAlignment="Stretch">
-                                        <Border Padding="16"
-                                                Background="#DFFFFFFF"
-                                                BorderBrush="#80E1E8F0"
+                                    </Border>
+                                    <WrapPanel Margin="0,10,0,0" HorizontalAlignment="Center">
+                                        <Border Margin="0,0,8,0"
+                                                Padding="12,6"
+                                                HorizontalAlignment="Center"
+                                                Background="#CCFFFFFF"
+                                                BorderBrush="#66FFFFFF"
                                                 BorderThickness="1"
                                                 CornerRadius="14">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
+                                            <TextBlock Text="{Binding AvatarStateDisplayText}"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#FF1E3A56"
+                                                       TextAlignment="Center" />
+                                        </Border>
+                                        <Border Padding="12,6"
+                                                HorizontalAlignment="Center"
+                                                Background="#B3FFFFFF"
+                                                BorderBrush="#66FFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="14">
+                                            <TextBlock Text="{Binding BotStatusText}"
+                                                       FontSize="13"
+                                                       Foreground="#FF1E3A56"
+                                                       TextAlignment="Center" />
+                                        </Border>
+                                    </WrapPanel>
+                                </StackPanel>
+
+                                <Button Width="190"
+                                        Margin="18"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Bottom"
+                                        Content="{Binding ConversationModeButtonText}"
+                                        Command="{Binding ToggleConversationModeCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource PrimaryLessonButtonStyle}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
                                                     <Setter Property="Visibility" Value="Collapsed" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
-                                                            <Setter Property="Visibility" Value="Visible" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <Grid Margin="24"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Bottom">
+                                    <Grid.Style>
+                                        <Style TargetType="Grid">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Grid.Style>
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                                        <Border Padding="16"
+                                                MaxWidth="560"
+                                                Background="#DFFFFFFF"
+                                                BorderBrush="#80FFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="14">
                                             <StackPanel>
                                                 <TextBlock Text="Latest bot message"
                                                            FontSize="12"
@@ -224,89 +203,68 @@
                                             </StackPanel>
                                         </Border>
 
-                                        <Button Width="190"
+                                        <Button Width="78"
+                                                Height="78"
                                                 Margin="0,14,0,0"
-                                                HorizontalAlignment="Center"
-                                                Content="{Binding ConversationModeButtonText}"
-                                                Command="{Binding ToggleConversationModeCommand}">
-                                            <Button.Style>
-                                                <Style TargetType="Button" BasedOn="{StaticResource PrimaryLessonButtonStyle}">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
+                                                Padding="0"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Cursor="Hand"
+                                                Command="{Binding ToggleVoiceRecordingCommand}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                            <Grid Width="78" Height="78">
+                                                <Ellipse Fill="#FFFF3B30"
+                                                         Stroke="#FFE02A20"
+                                                         StrokeThickness="2">
+                                                    <Ellipse.Style>
+                                                        <Style TargetType="Ellipse">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Ellipse.Style>
+                                                </Ellipse>
+                                                <Ellipse Fill="#22FF3B30" />
+                                                <Border Width="32"
+                                                        Height="32"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Background="#FFFF3B30"
+                                                        CornerRadius="4">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
                                                             <Setter Property="Visibility" Value="Collapsed" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                </Border>
+                                            </Grid>
                                         </Button>
 
-                                        <StackPanel Margin="0,14,0,0" HorizontalAlignment="Center">
-                                            <StackPanel.Style>
-                                                <Style TargetType="StackPanel">
-                                                    <Setter Property="Visibility" Value="Collapsed" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
-                                                            <Setter Property="Visibility" Value="Visible" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </StackPanel.Style>
-                                            <Button Width="78"
-                                                    Height="78"
-                                                    Padding="0"
-                                                    Background="Transparent"
-                                                    BorderThickness="0"
-                                                    Cursor="Hand"
-                                                    Command="{Binding ToggleVoiceRecordingCommand}">
-                                                <Button.Template>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                                    </ControlTemplate>
-                                                </Button.Template>
-                                                <Grid Width="78" Height="78">
-                                                    <Ellipse Fill="#FFFF3B30"
-                                                             Stroke="#FFE02A20"
-                                                             StrokeThickness="2">
-                                                        <Ellipse.Style>
-                                                            <Style TargetType="Ellipse">
-                                                                <Setter Property="Visibility" Value="Visible" />
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsRecording}" Value="True">
-                                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Ellipse.Style>
-                                                    </Ellipse>
-                                                    <Ellipse Fill="#22FF3B30" />
-                                                    <Border Width="32"
-                                                            Height="32"
-                                                            HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center"
-                                                            Background="#FFFF3B30"
-                                                            CornerRadius="4">
-                                                        <Border.Style>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsRecording}" Value="True">
-                                                                        <Setter Property="Visibility" Value="Visible" />
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Border.Style>
-                                                    </Border>
-                                                </Grid>
-                                            </Button>
-                                            <TextBlock Margin="0,10,0,0"
-                                                       Text="Manual recording only. Review transcribed text in chat before sending."
+                                        <Border Margin="0,10,0,0"
+                                                Padding="10,6"
+                                                MaxWidth="440"
+                                                Background="#CFFFFFFF"
+                                                BorderBrush="#66FFFFFF"
+                                                BorderThickness="1"
+                                                CornerRadius="12">
+                                            <TextBlock Text="Manual recording only. Review transcribed text in chat before sending."
                                                        FontSize="12"
-                                                       Foreground="#FF6D7C8B"
+                                                       Foreground="#FF3A4A5B"
                                                        TextAlignment="Center"
-                                                       TextWrapping="Wrap"
-                                                       MaxWidth="420" />
-                                        </StackPanel>
+                                                       TextWrapping="Wrap" />
+                                        </Border>
                                     </StackPanel>
                                 </Grid>
 
