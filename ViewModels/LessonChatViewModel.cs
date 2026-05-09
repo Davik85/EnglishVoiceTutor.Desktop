@@ -55,12 +55,15 @@ public partial class LessonChatViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(BotStatusText))]
+    [NotifyPropertyChangedFor(nameof(BotStatusIndicatorBrush))]
     private string botStatus = BackendConstants.BotStatusReady;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(BackendStatusIndicatorBrush))]
     private string backendStatusText = BackendConstants.BackendStatusChecking;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AiStatusIndicatorBrush))]
     private string aiStatusText = BackendConstants.AiStatusChecking;
 
     [ObservableProperty]
@@ -99,6 +102,23 @@ public partial class LessonChatViewModel : ViewModelBase
         : AppConstants.FeedbackTranslateButtonText;
 
     public string BotStatusText => $"{BotStatusPrefix} {BotStatus}";
+
+    public string BotStatusIndicatorBrush => BotStatus == BackendConstants.BotStatusReady
+        ? BackendConstants.StatusIndicatorReadyBrush
+        : BackendConstants.StatusIndicatorCheckingBrush;
+
+    public string BackendStatusIndicatorBrush => BackendStatusText switch
+    {
+        BackendConstants.BackendStatusConnected => BackendConstants.StatusIndicatorReadyBrush,
+        BackendConstants.BackendStatusChecking => BackendConstants.StatusIndicatorCheckingBrush,
+        _ => BackendConstants.StatusIndicatorUnavailableBrush
+    };
+
+    public string AiStatusIndicatorBrush => AiStatusText.StartsWith(BackendConstants.AiStatusConfiguredPrefix, StringComparison.OrdinalIgnoreCase)
+        ? BackendConstants.StatusIndicatorReadyBrush
+        : AiStatusText == BackendConstants.AiStatusChecking
+            ? BackendConstants.StatusIndicatorCheckingBrush
+            : BackendConstants.StatusIndicatorUnavailableBrush;
 
     public string LatestBotMessageText => lastBotMessage;
 

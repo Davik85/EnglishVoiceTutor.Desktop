@@ -50,16 +50,51 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0">
-                        <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" Foreground="#FF1C2B3A" TextAlignment="Center" />
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" Foreground="#FF1C2B3A" TextAlignment="Center" />
+                            <StackPanel Margin="14,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse Width="10" Height="10" Margin="0,0,7,0" Fill="{Binding BotStatusIndicatorBrush}" ToolTip="{Binding BotStatusText}" />
+                                <Ellipse Width="10" Height="10" Margin="0,0,7,0" Fill="{Binding BackendStatusIndicatorBrush}" ToolTip="{Binding BackendStatusText}" />
+                                <Ellipse Width="10" Height="10" Fill="{Binding AiStatusIndicatorBrush}" ToolTip="{Binding AiStatusText}" />
+                            </StackPanel>
+                        </StackPanel>
                         <TextBlock Margin="0,10,0,0" Text="{Binding ContextText}" FontSize="14" Foreground="#FF3A4A5B" TextAlignment="Center" TextWrapping="Wrap" />
-                        <TextBlock Margin="0,10,0,0" Text="{Binding BotStatusText}" FontSize="13" Foreground="#FF1E3A56" TextAlignment="Center" />
-                        <TextBlock Margin="0,4,0,0" Text="{Binding BackendStatusText}" FontSize="12" Foreground="#FF6D7C8B" TextAlignment="Center" />
-                        <TextBlock Margin="0,2,0,0" Text="{Binding AiStatusText}" FontSize="12" Foreground="#FF6D7C8B" TextAlignment="Center" />
                     </StackPanel>
 
-                    <Border Grid.Row="1" Margin="0,16,0,0" Height="1" Background="#FFE1E8F0" />
+                    <Border Grid.Row="1" Margin="0,16,0,0" Height="1" Background="#FFE1E8F0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
 
-                    <Grid Grid.Row="2" Margin="0,18,0,0">
+                    <Grid Grid.Row="2">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Margin" Value="0,18,0,0" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
+                                        <Setter Property="Margin" Value="0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="0.9*" MinWidth="280" />
                             <ColumnDefinition Width="24" />

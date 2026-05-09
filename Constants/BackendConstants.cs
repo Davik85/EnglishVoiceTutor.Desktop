@@ -33,4 +33,8 @@ public static class BackendConstants
 
     public const string BotStatusReady = "Ready";
     public const string BotStatusThinking = "Thinking";
+
+    public const string StatusIndicatorReadyBrush = "#FF34A853";
+    public const string StatusIndicatorUnavailableBrush = "#FFE05252";
+    public const string StatusIndicatorCheckingBrush = "#FF9AA7B5";
 }
