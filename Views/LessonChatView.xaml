@@ -117,10 +117,10 @@
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
                                             <Setter Property="Grid.ColumnSpan" Value="3" />
-                                            <Setter Property="MaxWidth" Value="860" />
-                                            <Setter Property="MinHeight" Value="560" />
-                                            <Setter Property="Height" Value="560" />
-                                            <Setter Property="MaxHeight" Value="560" />
+                                            <Setter Property="MaxWidth" Value="760" />
+                                            <Setter Property="MinHeight" Value="660" />
+                                            <Setter Property="Height" Value="660" />
+                                            <Setter Property="MaxHeight" Value="660" />
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </DataTrigger>
                                     </Style.Triggers>
