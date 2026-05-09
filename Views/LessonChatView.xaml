@@ -117,10 +117,10 @@
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
                                             <Setter Property="Grid.ColumnSpan" Value="3" />
-                                            <Setter Property="MaxWidth" Value="640" />
-                                            <Setter Property="MinHeight" Value="430" />
-                                            <Setter Property="Height" Value="430" />
-                                            <Setter Property="MaxHeight" Value="430" />
+                                            <Setter Property="MaxWidth" Value="860" />
+                                            <Setter Property="MinHeight" Value="560" />
+                                            <Setter Property="Height" Value="560" />
+                                            <Setter Property="MaxHeight" Value="560" />
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </DataTrigger>
                                     </Style.Triggers>
@@ -163,7 +163,7 @@
                                     </Button.Style>
                                 </Button>
 
-                                <Grid Margin="20,0,20,20"
+                                <Grid Margin="32,0,32,28"
                                       HorizontalAlignment="Stretch"
                                       VerticalAlignment="Bottom">
                                     <Grid.Style>
@@ -177,8 +177,8 @@
                                         </Style>
                                     </Grid.Style>
                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom">
-                                        <Border Padding="12"
-                                                MaxWidth="520"
+                                        <Border Padding="14"
+                                                MaxWidth="640"
                                                 Background="#DFFFFFFF"
                                                 BorderBrush="#80FFFFFF"
                                                 BorderThickness="1"
