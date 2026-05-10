@@ -91,6 +91,9 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(ConversationModeButtonText))]
     private bool isConversationModeEnabled;
 
+    [ObservableProperty]
+    private bool isVoiceAutoSendEnabled;
+
     public bool HasSelectedFeedback => SelectedFeedback is not null;
 
     public string VoiceButtonText => IsRecording
@@ -131,6 +134,8 @@ public partial class LessonChatViewModel : ViewModelBase
     public string AvatarAnimationAssetPath => AvatarConstants.GetAnimationPath(CurrentAvatarState);
 
     public Uri AvatarAnimationAssetUri => AvatarConstants.ToPackUri(AvatarAnimationAssetPath);
+
+    private bool ShouldAutoSendTranscribedVoice => IsConversationModeEnabled || IsVoiceAutoSendEnabled;
 
     public LessonChatViewModel(
         string selectedLevel,
@@ -240,8 +245,22 @@ public partial class LessonChatViewModel : ViewModelBase
                 return;
             }
 
-            UserInput = transcriptionText;
-            StatusMessage = AppConstants.TranscriptionCompletedMessage;
+            var trimmedTranscriptionText = transcriptionText.Trim();
+
+            if (!ShouldAutoSendTranscribedVoice)
+            {
+                UserInput = transcriptionText;
+                StatusMessage = AppConstants.TranscriptionCompletedMessage;
+                return;
+            }
+
+            isTranscribingAudio = false;
+            var wasSent = await SendLessonMessageAsync(trimmedTranscriptionText);
+
+            if (wasSent)
+            {
+                UserInput = string.Empty;
+            }
         }
         catch
         {
@@ -312,6 +331,16 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         var trimmedUserInput = UserInput.Trim();
+        var wasSent = await SendLessonMessageAsync(trimmedUserInput);
+
+        if (wasSent)
+        {
+            UserInput = string.Empty;
+        }
+    }
+
+    private async Task<bool> SendLessonMessageAsync(string userMessage)
+    {
         BotStatus = BackendConstants.BotStatusThinking;
         IsSending = true;
         RefreshAvatarState();
@@ -323,7 +352,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 SelectedLevel = SelectedLevel,
                 TopicTitle = SelectedTopic.Title,
                 SubtopicTitle = SelectedSubtopic.Title,
-                UserMessage = trimmedUserInput,
+                UserMessage = userMessage,
                 LastBotMessage = lastBotMessage,
                 NativeLanguageName = nativeLanguageName
             });
@@ -331,19 +360,20 @@ public partial class LessonChatViewModel : ViewModelBase
             var mappedFeedback = MapFeedback(response.Feedback);
             latestFeedback = mappedFeedback;
 
-            AddMessage(AppConstants.UserSenderName, trimmedUserInput, false, mappedFeedback);
+            AddMessage(AppConstants.UserSenderName, userMessage, false, mappedFeedback);
             AddMessage(AppConstants.BotSenderName, response.BotReply, true);
             lastBotMessage = response.BotReply;
             OnPropertyChanged(nameof(LatestBotMessageText));
 
             BackendStatusText = BackendConstants.BackendStatusConnected;
-            UserInput = string.Empty;
             StatusMessage = string.Empty;
+            return true;
         }
         catch
         {
             BackendStatusText = BackendConstants.BackendStatusUnavailable;
             StatusMessage = BackendConstants.BackendUnavailableMessage;
+            return false;
         }
         finally
         {
