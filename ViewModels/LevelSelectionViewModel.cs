@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using EnglishVoiceTutor.Desktop.Constants;
+using EnglishVoiceTutor.Desktop.Localization;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
@@ -8,10 +8,15 @@ public partial class LevelSelectionViewModel : ViewModelBase
 {
     private readonly Action navigateBack;
     private readonly Action<string> navigateToHome;
+    private readonly AppLocalizedText localizedText;
 
-    public string Title => AppConstants.LevelSelectionTitle;
+    public string Title => localizedText.LevelSelectionTitle;
 
-    public string Subtitle => AppConstants.LevelSelectionSubtitle;
+    public string Subtitle => localizedText.LevelSelectionSubtitle;
+
+    public string ContinueButtonText => localizedText.ContinueButtonText;
+
+    public string BackButtonText => localizedText.BackButtonText;
 
     public IReadOnlyList<string> Levels { get; } =
     [
@@ -28,8 +33,9 @@ public partial class LevelSelectionViewModel : ViewModelBase
     [ObservableProperty]
     private string statusMessage = string.Empty;
 
-    public LevelSelectionViewModel(Action navigateBack, Action<string> navigateToHome)
+    public LevelSelectionViewModel(AppLocalizedText localizedText, Action navigateBack, Action<string> navigateToHome)
     {
+        this.localizedText = localizedText;
         this.navigateBack = navigateBack;
         this.navigateToHome = navigateToHome;
     }
@@ -38,7 +44,7 @@ public partial class LevelSelectionViewModel : ViewModelBase
     private void SelectLevel(string level)
     {
         SelectedLevel = level;
-        StatusMessage = $"{AppConstants.SelectedLevelPrefix} {level}";
+        StatusMessage = $"{localizedText.SelectedLevelPrefix} {level}";
     }
 
     [RelayCommand(CanExecute = nameof(CanContinue))]
@@ -46,7 +52,7 @@ public partial class LevelSelectionViewModel : ViewModelBase
     {
         if (!CanContinue())
         {
-            StatusMessage = "Please select a level before continuing.";
+            StatusMessage = localizedText.LevelSelectionRequiredMessage;
             return;
         }
 

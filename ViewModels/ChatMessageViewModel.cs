@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using EnglishVoiceTutor.Desktop.Constants;
+using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
@@ -9,6 +9,7 @@ public partial class ChatMessageViewModel : ViewModelBase
 {
     private readonly string nativeLanguageName;
     private readonly Func<ChatMessageViewModel, Task> translateAsync;
+    private readonly AppLocalizedText localizedText;
 
     public int Id { get; }
 
@@ -22,7 +23,7 @@ public partial class ChatMessageViewModel : ViewModelBase
 
     public Feedback? Feedback { get; }
 
-    public string TranslationHeader => $"{AppConstants.TranslationLabel} ({nativeLanguageName})";
+    public string TranslationHeader => $"{localizedText.TranslationLabel} ({nativeLanguageName})";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasTranslation))]
@@ -42,12 +43,12 @@ public partial class ChatMessageViewModel : ViewModelBase
         {
             if (IsTranslationLoading)
             {
-                return AppConstants.TranslationLoadingText;
+                return localizedText.TranslationLoadingText;
             }
 
             return IsTranslationVisible
-                ? AppConstants.HideTranslationButtonText
-                : AppConstants.TranslateButtonText;
+                ? localizedText.HideTranslationButtonText
+                : localizedText.TranslateButtonText;
         }
     }
 
@@ -61,6 +62,7 @@ public partial class ChatMessageViewModel : ViewModelBase
         Feedback? feedback,
         string translationText,
         string nativeLanguageName,
+        AppLocalizedText localizedText,
         Func<ChatMessageViewModel, Task> translateAsync)
     {
         Id = id;
@@ -70,6 +72,7 @@ public partial class ChatMessageViewModel : ViewModelBase
         Feedback = feedback;
         TranslationText = translationText;
         this.nativeLanguageName = nativeLanguageName;
+        this.localizedText = localizedText;
         this.translateAsync = translateAsync;
     }
 

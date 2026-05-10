@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
+using EnglishVoiceTutor.Desktop.Localization;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
@@ -8,18 +9,32 @@ public partial class WelcomeViewModel : ViewModelBase
 {
     private readonly Action navigateToLevelSelection;
     private readonly Action navigateToSettings;
+    private readonly AppLocalizedText localizedText;
 
     public string AppTitle => AppConstants.ShortAppName;
 
-    public string Subtitle => AppConstants.WelcomeSubtitle;
+    public string Subtitle => localizedText.WelcomeSubtitle;
 
-    public string FooterNote => AppConstants.MvpFooterNote;
+    public string HowItWorksTitle => localizedText.WelcomeMvpHowItWorksTitle;
+
+    public string ChooseTopicStep => localizedText.WelcomeMvpChooseTopicStep;
+
+    public string PracticeStep => localizedText.WelcomeMvpPracticeStep;
+
+    public string CorrectionsStep => localizedText.WelcomeMvpCorrectionsStep;
+
+    public string StartLessonButtonText => localizedText.WelcomeStartLessonButton;
+
+    public string SettingsButtonText => localizedText.WelcomeSettingsButton;
+
+    public string FooterNote => localizedText.WelcomeFooterNote;
 
     [ObservableProperty]
     private string statusMessage = string.Empty;
 
-    public WelcomeViewModel(Action navigateToLevelSelection, Action navigateToSettings)
+    public WelcomeViewModel(AppLocalizedText localizedText, Action navigateToLevelSelection, Action navigateToSettings)
     {
+        this.localizedText = localizedText;
         this.navigateToLevelSelection = navigateToLevelSelection;
         this.navigateToSettings = navigateToSettings;
     }
