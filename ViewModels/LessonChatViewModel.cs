@@ -362,7 +362,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 SubtopicTitle = SelectedSubtopic.Title,
                 UserMessage = userMessage,
                 LastBotMessage = lastBotMessage,
-                NativeLanguageName = nativeLanguageName
+                NativeLanguageName = nativeLanguageName,
+                RecentMessages = GetRecentConversationMessages()
             });
 
             var mappedFeedback = MapFeedback(response.Feedback);
@@ -518,7 +519,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 SubtopicTitle = SelectedSubtopic.Title,
                 UserMessage = hintUserMessage,
                 LastBotMessage = lastBotMessage,
-                NativeLanguageName = nativeLanguageName
+                NativeLanguageName = nativeLanguageName,
+                RecentMessages = GetRecentConversationMessages()
             });
 
             BackendStatusText = BackendConstants.BackendStatusConnected;
@@ -577,6 +579,19 @@ public partial class LessonChatViewModel : ViewModelBase
     private void Back()
     {
         navigateBack();
+    }
+
+    private IReadOnlyList<RecentConversationMessage> GetRecentConversationMessages()
+    {
+        return Messages
+            .TakeLast(AppConstants.RecentConversationMessagesLimit)
+            .Select(message => new RecentConversationMessage
+            {
+                Sender = message.IsFromBot ? AppConstants.BotSenderName : AppConstants.UserSenderName,
+                Text = message.Text
+            })
+            .Where(message => !string.IsNullOrWhiteSpace(message.Text))
+            .ToArray();
     }
 
     private void AddMessage(string sender, string text, bool isFromBot, Feedback? feedback = null)
