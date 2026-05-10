@@ -17,6 +17,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly Action navigateBack;
     private readonly Action<Feedback?> finishLesson;
     private readonly string nativeLanguageName;
+    private readonly string tutorAvatarId;
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly AudioRecordingService audioRecordingService;
     private readonly AudioPlaybackService audioPlaybackService;
@@ -36,6 +37,8 @@ public partial class LessonChatViewModel : ViewModelBase
     public string ContextText => $"Topic: {SelectedTopic.Title} • Situation: {SelectedSubtopic.Title} • Level: {SelectedLevel}";
 
     public string FeedbackTranslationHeader => $"{AppConstants.FeedbackTranslationLabel} ({nativeLanguageName})";
+
+    public string TutorAvatarDisplayName { get; }
 
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
 
@@ -155,6 +158,7 @@ public partial class LessonChatViewModel : ViewModelBase
         Topic selectedTopic,
         Subtopic selectedSubtopic,
         string nativeLanguageName,
+        TutorAvatarOption tutorAvatar,
         LessonChatBackendService lessonChatBackendService,
         AudioRecordingService audioRecordingService,
         AudioPlaybackService audioPlaybackService,
@@ -165,13 +169,15 @@ public partial class LessonChatViewModel : ViewModelBase
         SelectedTopic = selectedTopic;
         SelectedSubtopic = selectedSubtopic;
         this.nativeLanguageName = nativeLanguageName;
+        tutorAvatarId = tutorAvatar.Id;
+        TutorAvatarDisplayName = tutorAvatar.DisplayName;
         this.lessonChatBackendService = lessonChatBackendService;
         this.audioRecordingService = audioRecordingService;
         this.audioPlaybackService = audioPlaybackService;
         this.navigateBack = navigateBack;
         this.finishLesson = finishLesson;
 
-        AddMessage(AppConstants.BotSenderName, AppConstants.MockBotFirstMessage, true);
+        AddMessage(TutorAvatarDisplayName, AppConstants.MockBotFirstMessage, true);
         lastBotMessage = AppConstants.MockBotFirstMessage;
         _ = CheckBackendHealthAsync();
         _ = CheckBackendConfigStatusAsync();
@@ -378,6 +384,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 UserMessage = userMessage,
                 LastBotMessage = lastBotMessage,
                 NativeLanguageName = nativeLanguageName,
+                TutorAvatarId = tutorAvatarId,
                 RecentMessages = GetRecentConversationMessages()
             });
 
@@ -385,7 +392,7 @@ public partial class LessonChatViewModel : ViewModelBase
             latestFeedback = mappedFeedback;
 
             AddMessage(AppConstants.UserSenderName, userMessage, false, mappedFeedback);
-            AddMessage(AppConstants.BotSenderName, response.BotReply, true);
+            AddMessage(TutorAvatarDisplayName, response.BotReply, true);
             lastBotMessage = response.BotReply;
             OnPropertyChanged(nameof(LatestBotMessageText));
 
@@ -541,6 +548,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 UserMessage = hintUserMessage,
                 LastBotMessage = lastBotMessage,
                 NativeLanguageName = nativeLanguageName,
+                TutorAvatarId = tutorAvatarId,
                 RecentMessages = GetRecentConversationMessages()
             });
 
@@ -612,7 +620,7 @@ public partial class LessonChatViewModel : ViewModelBase
             .TakeLast(AppConstants.RecentConversationMessagesLimit)
             .Select(message => new RecentConversationMessage
             {
-                Sender = message.IsFromBot ? AppConstants.BotSenderName : AppConstants.UserSenderName,
+                Sender = message.IsFromBot ? TutorAvatarDisplayName : AppConstants.UserSenderName,
                 Text = message.Text
             })
             .Where(message => !string.IsNullOrWhiteSpace(message.Text))

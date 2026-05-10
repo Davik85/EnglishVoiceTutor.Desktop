@@ -26,7 +26,7 @@ public sealed class LessonPromptBuilder
     public string BuildInput(LessonChatRequest request)
     {
         var prompt = new StringBuilder();
-        var avatarProfile = _avatarProfileProvider.GetDefault();
+        var avatarProfile = _avatarProfileProvider.GetById(request.TutorAvatarId);
 
         AppendLessonContext(prompt, request);
         AppendAvatarProfile(prompt, avatarProfile);
@@ -37,7 +37,7 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine();
 
         prompt.AppendLine(CurrentTurnTaskHeader);
-        prompt.AppendLine("Respond to the learner's latest message as Elena, the selected tutor avatar, as part of the selected situation.");
+        prompt.AppendLine($"Respond to the learner's latest message as {avatarProfile.DisplayName}, the selected tutor avatar, as part of the selected situation.");
         prompt.AppendLine("Use recent context to remember the learner's name, recent facts, and the latest bot question.");
         prompt.AppendLine("Do not restart the lesson.");
         prompt.AppendLine("Do not ask the learner to choose a topic.");
@@ -50,7 +50,7 @@ public sealed class LessonPromptBuilder
     public string BuildHintInput(LessonChatRequest request)
     {
         var prompt = new StringBuilder();
-        var avatarProfile = _avatarProfileProvider.GetDefault();
+        var avatarProfile = _avatarProfileProvider.GetById(request.TutorAvatarId);
 
         AppendLessonContext(prompt, request, includeNativeLanguage: false);
         AppendAvatarProfile(prompt, avatarProfile);
@@ -66,11 +66,11 @@ public sealed class LessonPromptBuilder
 
         prompt.AppendLine(HintTaskHeader);
         prompt.AppendLine("Give one short hint sentence the learner can say next in this exact situation.");
-        prompt.AppendLine("The hint must answer or continue from the learner's point of view, not Elena's point of view.");
+        prompt.AppendLine($"The hint must answer or continue from the learner's point of view, not {avatarProfile.DisplayName}'s point of view.");
         prompt.AppendLine("The hint should help the learner respond to the latest bot message and recent conversation.");
         prompt.AppendLine("If the learner's real name or personal detail is unknown, use placeholders.");
         prompt.AppendLine("Do not invent a learner name.");
-        prompt.AppendLine("Do not use Elena or the tutor avatar name as the learner's name.");
+        prompt.AppendLine($"Do not use {avatarProfile.DisplayName} or the tutor avatar name as the learner's name.");
         prompt.AppendLine("For introductions, prefer examples like: \"My name is [your name].\", \"I'm [your name].\", \"I'm from [your country].\"");
 
         return prompt.ToString();
