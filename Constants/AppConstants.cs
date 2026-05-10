@@ -32,6 +32,13 @@ public static class AppConstants
     public const string UserProfileSubtitle = "This helps your tutor personalize lessons.";
     public const string UserDisplayNameLabel = "Your name";
     public const string LearningGoalLabel = "Learning goal";
+    public const string LearningStatisticsTitle = "Learning statistics";
+    public const string LearningStatisticsSubtitle = "Based on completed lessons on this device.";
+    public const string TotalCompletedLessonsLabel = "Total completed lessons";
+    public const string LessonsTodayLabel = "Lessons completed today";
+    public const string CurrentStreakLabel = "Current streak";
+    public const string LastCompletedLessonLabel = "Last completed lesson";
+    public const string NoCompletedLessonsStatisticsText = "No completed lessons yet.";
     public const string SettingsSavedMessage = "Settings saved for this session.";
     public const string BackButtonText = "Back";
 
