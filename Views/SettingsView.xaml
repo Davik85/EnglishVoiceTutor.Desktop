@@ -113,7 +113,15 @@
                         <StackPanel Grid.Column="0" Margin="0,0,12,0">
                             <Border Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="{Binding NativeLanguageTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                    <TextBlock Text="{Binding InterfaceLanguageTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+
+                                    <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
+                                              ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
+                                              ItemsSource="{Binding AvailableInterfaceLanguages}"
+                                              SelectedItem="{Binding SelectedInterfaceLanguageOption, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMemberPath="DisplayName" />
+
+                                    <TextBlock Text="{Binding NativeLanguageTitle}" Style="{StaticResource SettingsFieldLabelStyle}" />
                                     <TextBlock Text="{Binding NativeLanguageSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
 
                                     <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
@@ -192,7 +200,7 @@
                             <Button Width="100"
                                     Height="38"
                                     Margin="0,0,8,0"
-                                    Content="Save"
+                                    Content="{Binding SaveButtonText}"
                                     Command="{Binding SaveCommand}"
                                     Background="#FF1E3A56"
                                     Foreground="White"
@@ -200,7 +208,7 @@
                                     Cursor="Hand" />
                             <Button Width="100"
                                     Height="38"
-                                    Content="Back"
+                                    Content="{Binding BackButtonText}"
                                     Command="{Binding BackCommand}"
                                     Background="White"
                                     Foreground="#FF1E3A56"

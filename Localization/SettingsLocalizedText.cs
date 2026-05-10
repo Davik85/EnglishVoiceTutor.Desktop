@@ -1,0 +1,24 @@
+namespace EnglishVoiceTutor.Desktop.Localization;
+
+public sealed record SettingsLocalizedText(
+    string Title,
+    string Subtitle,
+    string InterfaceLanguageTitle,
+    string NativeLanguageTitle,
+    string NativeLanguageSubtitle,
+    string UserProfileTitle,
+    string UserProfileSubtitle,
+    string UserDisplayNameLabel,
+    string LearningGoalLabel,
+    string TutorAvatarTitle,
+    string TutorAvatarSubtitle,
+    string LearningStatisticsTitle,
+    string LearningStatisticsSubtitle,
+    string TotalCompletedLessonsLabel,
+    string LessonsTodayLabel,
+    string CurrentStreakLabel,
+    string LastCompletedLessonLabel,
+    string NoCompletedLessonsText,
+    string SaveButtonText,
+    string BackButtonText,
+    string SettingsSavedMessage);

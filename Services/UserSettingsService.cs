@@ -70,6 +70,7 @@ public class UserSettingsService
     {
         return new UserSettings
         {
+            InterfaceLanguageId = InterfaceLanguageOptions.DetectFromCurrentCulture().Id,
             NativeLanguageName = AppConstants.NativeLanguageRussian,
             SelectedTutorAvatarId = TutorAvatarOptions.DefaultAvatarId,
             UserDisplayName = string.Empty,
@@ -79,6 +80,8 @@ public class UserSettingsService
 
     private static void Normalize(UserSettings settings)
     {
+        settings.InterfaceLanguageId = InterfaceLanguageOptions.GetById(settings.InterfaceLanguageId).Id;
+
         if (string.IsNullOrWhiteSpace(settings.NativeLanguageName))
         {
             settings.NativeLanguageName = AppConstants.NativeLanguageRussian;
