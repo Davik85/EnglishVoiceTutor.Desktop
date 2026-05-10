@@ -78,7 +78,7 @@ public partial class SubtopicsViewModel : ViewModelBase
 
     private static IReadOnlyList<Subtopic> CreateSubtopicsForTopic(int topicId, string interfaceLanguageId)
     {
-        var canonicalSubtopics = topicId switch
+        IReadOnlyList<Subtopic> canonicalSubtopics = topicId switch
         {
             1 =>
             [
