@@ -35,6 +35,21 @@
 
                     <Border Margin="0,20,0,0" Height="1" Background="#FFE1E8F0" />
 
+                    <TextBlock Margin="0,20,0,0" Text="{Binding UserProfileTitle}" FontSize="16" FontWeight="SemiBold" Foreground="#FF1E3A56" />
+                    <TextBlock Margin="0,6,0,0" Text="{Binding UserProfileSubtitle}" FontSize="13" Foreground="#FF5B6B7B" TextWrapping="Wrap" />
+
+                    <TextBlock Margin="0,14,0,0" Text="{Binding UserDisplayNameLabel}" FontSize="13" FontWeight="SemiBold" Foreground="#FF1E3A56" />
+                    <TextBox Margin="0,6,0,0"
+                             Height="36"
+                             Text="{Binding UserDisplayName, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Margin="0,14,0,0" Text="{Binding LearningGoalLabel}" FontSize="13" FontWeight="SemiBold" Foreground="#FF1E3A56" />
+                    <TextBox Margin="0,6,0,0"
+                             Height="36"
+                             Text="{Binding LearningGoal, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <Border Margin="0,20,0,0" Height="1" Background="#FFE1E8F0" />
+
                     <TextBlock Margin="0,20,0,0" Text="{Binding TutorAvatarTitle}" FontSize="16" FontWeight="SemiBold" Foreground="#FF1E3A56" />
                     <TextBlock Margin="0,6,0,0" Text="{Binding TutorAvatarSubtitle}" FontSize="13" Foreground="#FF5B6B7B" TextWrapping="Wrap" />
 

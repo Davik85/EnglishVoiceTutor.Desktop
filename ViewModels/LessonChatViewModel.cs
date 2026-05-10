@@ -40,6 +40,10 @@ public partial class LessonChatViewModel : ViewModelBase
 
     public string TutorAvatarDisplayName { get; }
 
+    public string UserDisplayName { get; }
+
+    public string LearningGoal { get; }
+
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
 
     [ObservableProperty]
@@ -158,6 +162,8 @@ public partial class LessonChatViewModel : ViewModelBase
         Topic selectedTopic,
         Subtopic selectedSubtopic,
         string nativeLanguageName,
+        string userDisplayName,
+        string learningGoal,
         TutorAvatarOption tutorAvatar,
         LessonChatBackendService lessonChatBackendService,
         AudioRecordingService audioRecordingService,
@@ -169,6 +175,8 @@ public partial class LessonChatViewModel : ViewModelBase
         SelectedTopic = selectedTopic;
         SelectedSubtopic = selectedSubtopic;
         this.nativeLanguageName = nativeLanguageName;
+        UserDisplayName = NormalizeOptionalText(userDisplayName);
+        LearningGoal = NormalizeOptionalText(learningGoal);
         tutorAvatarId = tutorAvatar.Id;
         TutorAvatarDisplayName = tutorAvatar.DisplayName;
         this.lessonChatBackendService = lessonChatBackendService;
@@ -385,6 +393,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 LastBotMessage = lastBotMessage,
                 NativeLanguageName = nativeLanguageName,
                 TutorAvatarId = tutorAvatarId,
+                UserDisplayName = this.UserDisplayName,
+                LearningGoal = this.LearningGoal,
                 RecentMessages = GetRecentConversationMessages()
             });
 
@@ -549,6 +559,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 LastBotMessage = lastBotMessage,
                 NativeLanguageName = nativeLanguageName,
                 TutorAvatarId = tutorAvatarId,
+                UserDisplayName = this.UserDisplayName,
+                LearningGoal = this.LearningGoal,
                 RecentMessages = GetRecentConversationMessages()
             });
 
@@ -675,6 +687,13 @@ public partial class LessonChatViewModel : ViewModelBase
         feedback.CultureTipTranslation = translations[4];
         feedback.NaturalVersionTranslation = translations[5];
         BackendStatusText = BackendConstants.BackendStatusConnected;
+    }
+
+    private static string NormalizeOptionalText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim();
     }
 
     private static Feedback MapFeedback(BackendFeedbackDto backendFeedback)

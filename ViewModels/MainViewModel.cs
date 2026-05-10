@@ -65,14 +65,18 @@ public partial class MainViewModel : ViewModelBase
         CurrentViewModel = new SettingsViewModel(
             userSettings.NativeLanguageName,
             userSettings.SelectedTutorAvatarId,
+            userSettings.UserDisplayName,
+            userSettings.LearningGoal,
             SaveSettings,
             navigateBack);
     }
 
-    private void SaveSettings(string nativeLanguage, string tutorAvatarId)
+    private void SaveSettings(string nativeLanguage, string tutorAvatarId, string userDisplayName, string learningGoal)
     {
         userSettings.NativeLanguageName = nativeLanguage;
         userSettings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(tutorAvatarId).Id;
+        userSettings.UserDisplayName = userDisplayName;
+        userSettings.LearningGoal = learningGoal;
         userSettingsService.Save(userSettings);
     }
 
@@ -129,6 +133,8 @@ public partial class MainViewModel : ViewModelBase
             selectedTopic,
             selectedSubtopic,
             userSettings.NativeLanguageName,
+            userSettings.UserDisplayName,
+            userSettings.LearningGoal,
             TutorAvatarOptions.GetById(userSettings.SelectedTutorAvatarId),
             lessonChatBackendService,
             audioRecordingService,

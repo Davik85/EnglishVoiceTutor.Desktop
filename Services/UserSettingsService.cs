@@ -71,7 +71,9 @@ public class UserSettingsService
         return new UserSettings
         {
             NativeLanguageName = AppConstants.NativeLanguageRussian,
-            SelectedTutorAvatarId = TutorAvatarOptions.DefaultAvatarId
+            SelectedTutorAvatarId = TutorAvatarOptions.DefaultAvatarId,
+            UserDisplayName = string.Empty,
+            LearningGoal = string.Empty
         };
     }
 
@@ -83,5 +85,14 @@ public class UserSettingsService
         }
 
         settings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(settings.SelectedTutorAvatarId).Id;
+        settings.UserDisplayName = NormalizeOptionalText(settings.UserDisplayName);
+        settings.LearningGoal = NormalizeOptionalText(settings.LearningGoal);
+    }
+
+    private static string NormalizeOptionalText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim();
     }
 }
