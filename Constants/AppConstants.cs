@@ -57,6 +57,8 @@ public static class AppConstants
     public const string StopRecordingButtonText = "Stop recording";
     public const string AutoSendVoiceLabel = "Auto-send voice";
     public const string AutoSendVoiceToolTip = "Send transcribed voice automatically after recording.";
+    public const string AutoPlayBotVoiceLabel = "Auto-play bot voice";
+    public const string AutoPlayBotVoiceToolTip = "Play bot voice automatically after each reply.";
     public const string RecordingStartedMessage = "Recording... Click Stop recording when you finish.";
     public const string RecordingStartErrorMessage = "Could not start voice recording. Please check your microphone.";
     public const string RecordingStopErrorMessage = "Could not stop voice recording. Please try again.";

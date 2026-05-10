@@ -94,6 +94,9 @@ public partial class LessonChatViewModel : ViewModelBase
     [ObservableProperty]
     private bool isVoiceAutoSendEnabled;
 
+    [ObservableProperty]
+    private bool isBotVoiceAutoPlayEnabled;
+
     public bool HasSelectedFeedback => SelectedFeedback is not null;
 
     public string VoiceButtonText => IsRecording
@@ -136,6 +139,8 @@ public partial class LessonChatViewModel : ViewModelBase
     public Uri AvatarAnimationAssetUri => AvatarConstants.ToPackUri(AvatarAnimationAssetPath);
 
     private bool ShouldAutoSendTranscribedVoice => IsConversationModeEnabled || IsVoiceAutoSendEnabled;
+
+    private bool ShouldAutoPlayBotVoice => IsConversationModeEnabled || IsBotVoiceAutoPlayEnabled;
 
     public LessonChatViewModel(
         string selectedLevel,
@@ -287,14 +292,17 @@ public partial class LessonChatViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanPlayBotVoice))]
     private async Task PlayBotVoiceAsync(ChatMessageViewModel? message)
     {
-        if (message is null || IsBotVoicePlaying || !message.ShowPlayVoiceButton)
+        if (message is null || !message.ShowPlayVoiceButton)
         {
             return;
         }
 
-        var messageText = message.Text;
+        await PlayBotVoiceTextAsync(message.Text);
+    }
 
-        if (string.IsNullOrWhiteSpace(messageText))
+    private async Task PlayBotVoiceTextAsync(string messageText)
+    {
+        if (IsBotVoicePlaying || string.IsNullOrWhiteSpace(messageText))
         {
             return;
         }
@@ -367,6 +375,15 @@ public partial class LessonChatViewModel : ViewModelBase
 
             BackendStatusText = BackendConstants.BackendStatusConnected;
             StatusMessage = string.Empty;
+            BotStatus = BackendConstants.BotStatusReady;
+            IsSending = false;
+            RefreshAvatarState();
+
+            if (ShouldAutoPlayBotVoice)
+            {
+                await PlayBotVoiceTextAsync(response.BotReply);
+            }
+
             return true;
         }
         catch
