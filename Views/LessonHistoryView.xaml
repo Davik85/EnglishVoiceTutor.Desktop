@@ -57,11 +57,16 @@
                                         <StackPanel>
                                             <TextBlock Text="{Binding CompletedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" FontSize="12" Foreground="#FF587189" />
                                             <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="14" Foreground="#FF1E3A56">
-                                                <Run Text="Topic: " FontWeight="SemiBold" />
+                                                <Run Text="{Binding DataContext.TopicLabel, RelativeSource={RelativeSource AncestorType=UserControl}}" FontWeight="SemiBold" />
+                                                <Run Text=" " />
                                                 <Run Text="{Binding TopicTitle}" />
-                                                <Run Text=" • Situation: " FontWeight="SemiBold" />
+                                                <Run Text=" • " />
+                                                <Run Text="{Binding DataContext.SituationLabel, RelativeSource={RelativeSource AncestorType=UserControl}}" FontWeight="SemiBold" />
+                                                <Run Text=" " />
                                                 <Run Text="{Binding SubtopicTitle}" />
-                                                <Run Text=" • Level: " FontWeight="SemiBold" />
+                                                <Run Text=" • " />
+                                                <Run Text="{Binding DataContext.LevelLabel, RelativeSource={RelativeSource AncestorType=UserControl}}" FontWeight="SemiBold" />
+                                                <Run Text=" " />
                                                 <Run Text="{Binding SelectedLevel}" />
                                             </TextBlock>
                                             <TextBlock Margin="0,10,0,0" Text="{Binding DataContext.GoodLabel, RelativeSource={RelativeSource AncestorType=UserControl}}" FontSize="14" FontWeight="SemiBold" Foreground="#FF1E3A56" />

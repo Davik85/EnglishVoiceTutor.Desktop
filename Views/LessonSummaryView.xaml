@@ -23,14 +23,14 @@
 
                     <Border Margin="0,20,0,0" Padding="16" Background="#FFF7FBFF" CornerRadius="12" BorderBrush="#FFE1E8F0" BorderThickness="1">
                         <StackPanel>
-                            <TextBlock Text="What went well" FontSize="18" FontWeight="SemiBold" Foreground="#FF1E3A56" />
+                            <TextBlock Text="{Binding GoodTitle}" FontSize="18" FontWeight="SemiBold" Foreground="#FF1E3A56" />
                             <TextBlock Margin="0,8,0,0" Text="{Binding GoodText}" FontSize="14" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
 
                     <Border Margin="0,14,0,0" Padding="16" Background="#FFFFFAF3" CornerRadius="12" BorderBrush="#FFE1E8F0" BorderThickness="1">
                         <StackPanel>
-                            <TextBlock Text="What to improve" FontSize="18" FontWeight="SemiBold" Foreground="#FF1E3A56" />
+                            <TextBlock Text="{Binding ImproveTitle}" FontSize="18" FontWeight="SemiBold" Foreground="#FF1E3A56" />
                             <TextBlock Margin="0,8,0,0" Text="{Binding ImproveText}" FontSize="14" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>

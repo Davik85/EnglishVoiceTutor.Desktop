@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
+using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Services;
 
@@ -10,10 +11,6 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 
 public partial class LessonChatViewModel : ViewModelBase
 {
-    private const string BotStatusPrefix = "Bot status:";
-    private const string ConversationModeEnabledButtonText = "Conversation mode";
-    private const string BackToChatButtonText = "Back to chat";
-
     private readonly Action navigateBack;
     private readonly Action<Feedback?> finishLesson;
     private readonly string nativeLanguageName;
@@ -21,6 +18,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly AudioRecordingService audioRecordingService;
     private readonly AudioPlaybackService audioPlaybackService;
+    private readonly AppLocalizedText localizedText;
     private int messageCounter;
     private Feedback? latestFeedback;
     private string lastBotMessage = AppConstants.MockBotFirstMessage;
@@ -32,11 +30,11 @@ public partial class LessonChatViewModel : ViewModelBase
 
     public Subtopic SelectedSubtopic { get; }
 
-    public string Title => AppConstants.LessonChatTitle;
+    public string Title => localizedText.LessonChatTitle;
 
-    public string ContextText => $"Topic: {SelectedTopic.Title} • Situation: {SelectedSubtopic.Title} • Level: {SelectedLevel}";
+    public string ContextText => $"{localizedText.TopicContextLabel} {SelectedTopic.DisplayTitle} • {localizedText.SituationContextLabel} {SelectedSubtopic.DisplayTitle} • {localizedText.LevelContextLabel} {SelectedLevel}";
 
-    public string FeedbackTranslationHeader => $"{AppConstants.FeedbackTranslationLabel} ({nativeLanguageName})";
+    public string FeedbackTranslationHeader => $"{localizedText.FeedbackTranslationLabel} ({nativeLanguageName})";
 
     public string TutorAvatarDisplayName { get; }
 
@@ -66,6 +64,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(BotStatusText))]
+    [NotifyPropertyChangedFor(nameof(BotStatusDisplayText))]
     [NotifyPropertyChangedFor(nameof(BotStatusIndicatorBrush))]
     private string botStatus = BackendConstants.BotStatusReady;
 
@@ -115,14 +114,18 @@ public partial class LessonChatViewModel : ViewModelBase
     public bool HasCurrentHint => !string.IsNullOrWhiteSpace(CurrentHintText);
 
     public string VoiceButtonText => IsRecording
-        ? AppConstants.StopRecordingButtonText
-        : AppConstants.StartRecordingButtonText;
+        ? localizedText.StopRecordingButtonText
+        : localizedText.StartRecordingButtonText;
 
     public string FeedbackTranslateButtonText => IsFeedbackTranslationVisible
-        ? AppConstants.FeedbackHideTranslationButtonText
-        : AppConstants.FeedbackTranslateButtonText;
+        ? localizedText.FeedbackHideTranslationButtonText
+        : localizedText.FeedbackTranslateButtonText;
 
-    public string BotStatusText => $"{BotStatusPrefix} {BotStatus}";
+    public string BotStatusText => $"{localizedText.BotStatusLabel} {BotStatusDisplayText}";
+
+    public string BotStatusDisplayText => BotStatus == BackendConstants.BotStatusThinking
+        ? localizedText.BotStatusThinking
+        : localizedText.BotStatusReady;
 
     public string BotStatusIndicatorBrush => BotStatus == BackendConstants.BotStatusReady
         ? BackendConstants.StatusIndicatorReadyBrush
@@ -144,8 +147,8 @@ public partial class LessonChatViewModel : ViewModelBase
     public string LatestBotMessageText => lastBotMessage;
 
     public string ConversationModeButtonText => IsConversationModeEnabled
-        ? BackToChatButtonText
-        : ConversationModeEnabledButtonText;
+        ? localizedText.BackToChatButtonText
+        : localizedText.ConversationModeButtonText;
 
     public string AvatarStateDisplayText => AvatarConstants.GetDisplayText(CurrentAvatarState);
 
@@ -153,11 +156,53 @@ public partial class LessonChatViewModel : ViewModelBase
 
     public Uri AvatarAnimationAssetUri => AvatarConstants.ToPackUri(AvatarAnimationAssetPath);
 
+
+    public string SendButtonText => localizedText.SendButtonText;
+
+    public string HintButtonText => localizedText.HintButtonText;
+
+    public string AutoSendVoiceLabel => localizedText.AutoSendVoiceLabel;
+
+    public string AutoSendVoiceToolTip => localizedText.AutoSendVoiceToolTip;
+
+    public string AutoPlayBotVoiceLabel => localizedText.AutoPlayBotVoiceLabel;
+
+    public string AutoPlayBotVoiceToolTip => localizedText.AutoPlayBotVoiceToolTip;
+
+    public string FinishLessonButtonText => localizedText.FinishLessonButtonText;
+
+    public string BackButtonText => localizedText.BackButtonText;
+
+    public string BackToChatToolTip => localizedText.BackToChatToolTip;
+
+    public string PlayVoiceButtonText => localizedText.PlayVoiceButtonText;
+
+    public string ViewFeedbackButtonText => localizedText.ViewFeedbackButtonText;
+
+    public string TranslationLabel => localizedText.TranslationLabel;
+
+    public string HintPanelTitle => localizedText.HintPanelTitle;
+
+    public string ClickToCloseText => localizedText.ClickToCloseText;
+
+    public string FeedbackPanelTitle => localizedText.FeedbackPanelTitle;
+
+    public string FeedbackCorrectedVersionTitle => localizedText.FeedbackCorrectedVersionTitle;
+
+    public string FeedbackGrammarTipTitle => localizedText.FeedbackGrammarTipTitle;
+
+    public string FeedbackVocabularyTipTitle => localizedText.FeedbackVocabularyTipTitle;
+
+    public string FeedbackCultureTipTitle => localizedText.FeedbackCultureTipTitle;
+
+    public string FeedbackNaturalVersionTitle => localizedText.FeedbackNaturalVersionTitle;
+
     private bool ShouldAutoSendTranscribedVoice => IsConversationModeEnabled || IsVoiceAutoSendEnabled;
 
     private bool ShouldAutoPlayBotVoice => IsConversationModeEnabled || IsBotVoiceAutoPlayEnabled;
 
     public LessonChatViewModel(
+        AppLocalizedText localizedText,
         string selectedLevel,
         Topic selectedTopic,
         Subtopic selectedSubtopic,
@@ -171,6 +216,7 @@ public partial class LessonChatViewModel : ViewModelBase
         Action navigateBack,
         Action<Feedback?> finishLesson)
     {
+        this.localizedText = localizedText;
         SelectedLevel = selectedLevel;
         SelectedTopic = selectedTopic;
         SelectedSubtopic = selectedSubtopic;
@@ -239,13 +285,13 @@ public partial class LessonChatViewModel : ViewModelBase
             CurrentHintText = string.Empty;
             IsRecording = true;
             RefreshAvatarState();
-            StatusMessage = AppConstants.RecordingStartedMessage;
+            StatusMessage = localizedText.RecordingStartedMessage;
         }
         catch
         {
             IsRecording = false;
             RefreshAvatarState();
-            StatusMessage = AppConstants.RecordingStartErrorMessage;
+            StatusMessage = localizedText.RecordingStartErrorMessage;
         }
     }
 
@@ -260,21 +306,21 @@ public partial class LessonChatViewModel : ViewModelBase
 
             if (string.IsNullOrWhiteSpace(savedFilePath))
             {
-                StatusMessage = AppConstants.RecordingStopErrorMessage;
+                StatusMessage = localizedText.RecordingStopErrorMessage;
                 return;
             }
 
             IsSending = true;
             isTranscribingAudio = true;
             RefreshAvatarState();
-            StatusMessage = AppConstants.TranscribingAudioMessage;
+            StatusMessage = localizedText.TranscribingAudioMessage;
 
             var transcriptionText = await lessonChatBackendService.SendAudioForTranscriptionAsync(savedFilePath);
             BackendStatusText = BackendConstants.BackendStatusConnected;
 
             if (string.IsNullOrWhiteSpace(transcriptionText))
             {
-                StatusMessage = AppConstants.EmptyTranscriptionMessage;
+                StatusMessage = localizedText.EmptyTranscriptionMessage;
                 return;
             }
 
@@ -283,7 +329,7 @@ public partial class LessonChatViewModel : ViewModelBase
             if (!ShouldAutoSendTranscribedVoice)
             {
                 UserInput = transcriptionText;
-                StatusMessage = AppConstants.TranscriptionCompletedMessage;
+                StatusMessage = localizedText.TranscriptionCompletedMessage;
                 return;
             }
 
@@ -298,7 +344,7 @@ public partial class LessonChatViewModel : ViewModelBase
         catch
         {
             BackendStatusText = BackendConstants.BackendStatusUnavailable;
-            StatusMessage = AppConstants.TranscriptionFailedMessage;
+            StatusMessage = localizedText.TranscriptionFailedMessage;
         }
         finally
         {
@@ -337,7 +383,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
         IsBotVoicePlaying = true;
         RefreshAvatarState();
-        StatusMessage = AppConstants.PlayingBotVoiceMessage;
+        StatusMessage = localizedText.PlayingBotVoiceMessage;
 
         try
         {
@@ -348,7 +394,7 @@ public partial class LessonChatViewModel : ViewModelBase
         catch
         {
             BackendStatusText = BackendConstants.BackendStatusUnavailable;
-            StatusMessage = AppConstants.BotVoiceFailedMessage;
+            StatusMessage = localizedText.BotVoiceFailedMessage;
         }
         finally
         {
@@ -362,7 +408,7 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(UserInput))
         {
-            StatusMessage = AppConstants.EmptyMessageWarning;
+            StatusMessage = localizedText.EmptyMessageWarning;
             return;
         }
 
@@ -422,7 +468,7 @@ public partial class LessonChatViewModel : ViewModelBase
         catch
         {
             BackendStatusText = BackendConstants.BackendStatusUnavailable;
-            StatusMessage = BackendConstants.BackendUnavailableMessage;
+            StatusMessage = localizedText.BackendUnavailableMessage;
             return false;
         }
         finally
@@ -444,7 +490,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         BackendStatusText = BackendConstants.BackendStatusUnavailable;
-        StatusMessage = BackendConstants.BackendHealthCheckFailedMessage;
+        StatusMessage = localizedText.BackendHealthCheckFailedMessage;
     }
 
 
@@ -503,7 +549,7 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        StatusMessage = AppConstants.TranslationLoadingText;
+        StatusMessage = localizedText.TranslationLoadingText;
 
         try
         {
@@ -514,7 +560,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
         catch
         {
-            StatusMessage = AppConstants.TranslationFailedText;
+            StatusMessage = localizedText.TranslationFailedText;
         }
     }
 
@@ -566,15 +612,15 @@ public partial class LessonChatViewModel : ViewModelBase
 
             BackendStatusText = BackendConstants.BackendStatusConnected;
             CurrentHintText = string.IsNullOrWhiteSpace(hintText)
-                ? AppConstants.MockHintText
+                ? localizedText.MockHintText
                 : hintText.Trim();
             StatusMessage = string.Empty;
         }
         catch
         {
             BackendStatusText = BackendConstants.BackendStatusUnavailable;
-            CurrentHintText = AppConstants.MockHintText;
-            StatusMessage = BackendConstants.BackendUnavailableMessage;
+            CurrentHintText = localizedText.MockHintText;
+            StatusMessage = localizedText.BackendUnavailableMessage;
         }
         finally
         {
@@ -650,6 +696,7 @@ public partial class LessonChatViewModel : ViewModelBase
             isFromBot ? null : feedback,
             string.Empty,
             nativeLanguageName,
+            localizedText,
             TranslateMessageAsync));
     }
 
@@ -666,7 +713,7 @@ public partial class LessonChatViewModel : ViewModelBase
         catch
         {
             BackendStatusText = BackendConstants.BackendStatusUnavailable;
-            StatusMessage = AppConstants.TranslationFailedText;
+            StatusMessage = localizedText.TranslationFailedText;
         }
     }
 
