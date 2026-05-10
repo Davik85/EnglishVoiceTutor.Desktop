@@ -28,6 +28,10 @@ public static class AppConstants
     public const string NativeLanguageSubtitle = "Translations will use this language later.";
     public const string TutorAvatarTitle = "Tutor avatar";
     public const string TutorAvatarSubtitle = "Choose who will guide your lesson chat.";
+    public const string UserProfileTitle = "Your profile";
+    public const string UserProfileSubtitle = "This helps your tutor personalize lessons.";
+    public const string UserDisplayNameLabel = "Your name";
+    public const string LearningGoalLabel = "Learning goal";
     public const string SettingsSavedMessage = "Settings saved for this session.";
     public const string BackButtonText = "Back";
 
