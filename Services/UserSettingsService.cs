@@ -35,10 +35,12 @@ public class UserSettingsService
             var json = File.ReadAllText(settingsFilePath);
             var settings = JsonSerializer.Deserialize<UserSettings>(json);
 
-            if (settings is null || string.IsNullOrWhiteSpace(settings.NativeLanguageName))
+            if (settings is null)
             {
                 return CreateDefaultSettings();
             }
+
+            Normalize(settings);
 
             return settings;
         }
@@ -52,10 +54,7 @@ public class UserSettingsService
     {
         ArgumentNullException.ThrowIfNull(settings);
 
-        if (string.IsNullOrWhiteSpace(settings.NativeLanguageName))
-        {
-            settings.NativeLanguageName = AppConstants.NativeLanguageRussian;
-        }
+        Normalize(settings);
 
         var directoryPath = Path.GetDirectoryName(settingsFilePath);
         if (!string.IsNullOrWhiteSpace(directoryPath))
@@ -71,7 +70,18 @@ public class UserSettingsService
     {
         return new UserSettings
         {
-            NativeLanguageName = AppConstants.NativeLanguageRussian
+            NativeLanguageName = AppConstants.NativeLanguageRussian,
+            SelectedTutorAvatarId = TutorAvatarOptions.DefaultAvatarId
         };
+    }
+
+    private static void Normalize(UserSettings settings)
+    {
+        if (string.IsNullOrWhiteSpace(settings.NativeLanguageName))
+        {
+            settings.NativeLanguageName = AppConstants.NativeLanguageRussian;
+        }
+
+        settings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(settings.SelectedTutorAvatarId).Id;
     }
 }

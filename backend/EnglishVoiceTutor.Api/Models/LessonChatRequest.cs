@@ -8,5 +8,6 @@ public sealed class LessonChatRequest
     public string UserMessage { get; init; } = string.Empty;
     public string LastBotMessage { get; init; } = string.Empty;
     public string NativeLanguageName { get; init; } = string.Empty;
+    public string TutorAvatarId { get; init; } = string.Empty;
     public IReadOnlyList<RecentConversationMessage> RecentMessages { get; init; } = [];
 }

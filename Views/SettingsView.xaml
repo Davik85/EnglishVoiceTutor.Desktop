@@ -33,6 +33,23 @@
                               ItemsSource="{Binding SupportedNativeLanguages}"
                               SelectedItem="{Binding SelectedNativeLanguage, UpdateSourceTrigger=PropertyChanged}" />
 
+                    <Border Margin="0,20,0,0" Height="1" Background="#FFE1E8F0" />
+
+                    <TextBlock Margin="0,20,0,0" Text="{Binding TutorAvatarTitle}" FontSize="16" FontWeight="SemiBold" Foreground="#FF1E3A56" />
+                    <TextBlock Margin="0,6,0,0" Text="{Binding TutorAvatarSubtitle}" FontSize="13" Foreground="#FF5B6B7B" TextWrapping="Wrap" />
+
+                    <ComboBox Margin="0,12,0,0"
+                              Height="38"
+                              ItemsSource="{Binding AvailableTutorAvatars}"
+                              SelectedItem="{Binding SelectedTutorAvatarOption, UpdateSourceTrigger=PropertyChanged}"
+                              DisplayMemberPath="DisplayName" />
+
+                    <TextBlock Margin="0,8,0,0"
+                               Text="{Binding SelectedTutorAvatarDescription}"
+                               FontSize="13"
+                               Foreground="#FF5B6B7B"
+                               TextWrapping="Wrap" />
+
                     <WrapPanel Margin="0,20,0,0" HorizontalAlignment="Center" ItemHeight="38">
                         <Button Width="100"
                                 Height="38"

@@ -26,6 +26,8 @@ public static class AppConstants
     public const string SettingsSubtitle = "Configure your learning preferences.";
     public const string NativeLanguageTitle = "Native language";
     public const string NativeLanguageSubtitle = "Translations will use this language later.";
+    public const string TutorAvatarTitle = "Tutor avatar";
+    public const string TutorAvatarSubtitle = "Choose who will guide your lesson chat.";
     public const string SettingsSavedMessage = "Settings saved for this session.";
     public const string BackButtonText = "Back";
 

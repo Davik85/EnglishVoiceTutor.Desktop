@@ -14,5 +14,7 @@ public sealed class LessonChatBackendRequest
 
     public string NativeLanguageName { get; init; } = string.Empty;
 
+    public string TutorAvatarId { get; init; } = string.Empty;
+
     public IReadOnlyList<RecentConversationMessage> RecentMessages { get; init; } = [];
 }
