@@ -294,6 +294,7 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
                                 <ScrollViewer Grid.Row="0"
@@ -408,6 +409,36 @@
                                         <Style TargetType="StackPanel">
                                             <Setter Property="Visibility" Value="Collapsed" />
                                             <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasCurrentHint}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+
+                                    <Button Command="{Binding CloseHintCommand}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Cursor="Hand"
+                                            HorizontalContentAlignment="Stretch">
+                                        <Border Padding="14" Background="#FFEFF7FF" BorderBrush="#FFB9D9F5" BorderThickness="1" CornerRadius="12">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{x:Static constants:AppConstants.HintPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#FF1E3A56" />
+                                                    <TextBlock Margin="8,2,0,0" Text="{x:Static constants:AppConstants.HintPanelCloseText}" FontSize="11" Foreground="#FF6D7C8B" />
+                                                </StackPanel>
+
+                                                <TextBlock Margin="0,8,0,0" Text="{Binding CurrentHintText}" FontSize="13" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Button>
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="2" Margin="0,0,0,12">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
                                                 <DataTrigger Binding="{Binding HasSelectedFeedback}" Value="True">
                                                     <Setter Property="Visibility" Value="Visible" />
                                                 </DataTrigger>
@@ -424,7 +455,7 @@
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Text="{x:Static constants:AppConstants.FeedbackPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                                                    <TextBlock Margin="8,2,0,0" Text="Click to close" FontSize="11" Foreground="#FF7A8A9A" />
+                                                    <TextBlock Margin="8,2,0,0" Text="{x:Static constants:AppConstants.HintPanelCloseText}" FontSize="11" Foreground="#FF7A8A9A" />
                                                 </StackPanel>
 
                                                 <TextBlock Margin="0,8,0,0" Text="{Binding SelectedFeedback.ShortText}" FontSize="13" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
@@ -491,7 +522,7 @@
                                     </Button>
                                 </StackPanel>
 
-                                <StackPanel Grid.Row="2">
+                                <StackPanel Grid.Row="3">
                                     <TextBox Height="42"
                                              Margin="0,0,0,12"
                                              VerticalContentAlignment="Center"
