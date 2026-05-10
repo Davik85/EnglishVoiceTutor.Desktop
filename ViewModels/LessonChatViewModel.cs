@@ -46,6 +46,10 @@ public partial class LessonChatViewModel : ViewModelBase
     private string statusMessage = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCurrentHint))]
+    private string currentHintText = string.Empty;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelectedFeedback))]
     private Feedback? selectedFeedback;
 
@@ -100,6 +104,8 @@ public partial class LessonChatViewModel : ViewModelBase
     private bool isBotVoiceAutoPlayEnabled;
 
     public bool HasSelectedFeedback => SelectedFeedback is not null;
+
+    public bool HasCurrentHint => !string.IsNullOrWhiteSpace(CurrentHintText);
 
     public string VoiceButtonText => IsRecording
         ? AppConstants.StopRecordingButtonText
@@ -216,6 +222,7 @@ public partial class LessonChatViewModel : ViewModelBase
         try
         {
             audioRecordingService.StartRecording();
+            CurrentHintText = string.Empty;
             IsRecording = true;
             RefreshAvatarState();
             StatusMessage = AppConstants.RecordingStartedMessage;
@@ -356,6 +363,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private async Task<bool> SendLessonMessageAsync(string userMessage)
     {
+        CurrentHintText = string.Empty;
         BotStatus = BackendConstants.BotStatusThinking;
         IsSending = true;
         RefreshAvatarState();
@@ -502,6 +510,12 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void CloseHint()
+    {
+        CurrentHintText = string.Empty;
+    }
+
+    [RelayCommand]
     private async Task HintAsync()
     {
         if (IsSending || IsRecording)
@@ -531,11 +545,15 @@ public partial class LessonChatViewModel : ViewModelBase
             });
 
             BackendStatusText = BackendConstants.BackendStatusConnected;
-            StatusMessage = hintText;
+            CurrentHintText = string.IsNullOrWhiteSpace(hintText)
+                ? AppConstants.MockHintText
+                : hintText.Trim();
+            StatusMessage = string.Empty;
         }
         catch
         {
             BackendStatusText = BackendConstants.BackendStatusUnavailable;
+            CurrentHintText = AppConstants.MockHintText;
             StatusMessage = BackendConstants.BackendUnavailableMessage;
         }
         finally

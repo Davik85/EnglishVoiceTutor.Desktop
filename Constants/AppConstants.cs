@@ -83,6 +83,8 @@ public static class AppConstants
     public const string DefaultNativeLanguageName = "Russian";
     public const string FinishLessonButtonText = "Finish lesson";
     public const string ViewFeedbackButtonText = "View feedback";
+    public const string HintPanelTitle = "Hint";
+    public const string HintPanelCloseText = "Click to close";
     public const string FeedbackPanelTitle = "Feedback";
     public const string FeedbackCorrectedVersionTitle = "Corrected version";
     public const string FeedbackGrammarTipTitle = "Grammar tip";
