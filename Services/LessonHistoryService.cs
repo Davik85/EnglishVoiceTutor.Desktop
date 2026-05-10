@@ -56,21 +56,30 @@ public class LessonHistoryService
 
     public void Add(LessonHistoryItem item)
     {
-        var items = Load().ToList();
-        items.Insert(0, item);
-
-        if (items.Count > MaxHistoryItems)
+        try
         {
-            items = items.Take(MaxHistoryItems).ToList();
-        }
+            var items = Load().ToList();
+            items.Insert(0, item);
 
-        var directoryPath = Path.GetDirectoryName(historyFilePath);
-        if (!string.IsNullOrWhiteSpace(directoryPath))
+            if (items.Count > MaxHistoryItems)
+            {
+                items = items.Take(MaxHistoryItems).ToList();
+            }
+
+            var directoryPath = Path.GetDirectoryName(historyFilePath);
+            if (!string.IsNullOrWhiteSpace(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            var json = JsonSerializer.Serialize(items, JsonOptions);
+            File.WriteAllText(historyFilePath, json);
+        }
+        catch (IOException)
         {
-            Directory.CreateDirectory(directoryPath);
         }
-
-        var json = JsonSerializer.Serialize(items, JsonOptions);
-        File.WriteAllText(historyFilePath, json);
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 }
