@@ -8,6 +8,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<MockLessonChatService>();
 builder.Services.AddScoped<MockLessonHintService>();
 builder.Services.AddScoped<OpenAiOptionsProvider>();
+builder.Services.AddScoped<TutorAvatarProfileProvider>();
 builder.Services.AddScoped<LessonPromptBuilder>();
 builder.Services.AddScoped<ILessonChatService, OpenAiLessonChatService>();
 builder.Services.AddScoped<ILessonHintService, OpenAiLessonHintService>();

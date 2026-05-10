@@ -70,6 +70,7 @@ public static class AppConstants
     public const string MockHintText = "Hint: Try answering with a short complete sentence.";
     public const string HintFallbackUserMessage = "I need a hint for what to say next.";
     public const string MockBotFirstMessage = "Hi! Let's practice this situation. Are you ready?";
+    public const int RecentConversationMessagesLimit = 10;
     public const string MockBotReplyText = "Good! I understood your answer. In the next step, AI will give real corrections.";
     public const string TranslateButtonText = "Translate";
     public const string PlayVoiceButtonText = "Play voice";
