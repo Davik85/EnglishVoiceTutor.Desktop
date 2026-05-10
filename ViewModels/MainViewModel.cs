@@ -62,11 +62,14 @@ public partial class MainViewModel : ViewModelBase
 
     private void NavigateToSettings(Action navigateBack)
     {
+        var lessonHistory = lessonHistoryService.Load();
+
         CurrentViewModel = new SettingsViewModel(
             userSettings.NativeLanguageName,
             userSettings.SelectedTutorAvatarId,
             userSettings.UserDisplayName,
             userSettings.LearningGoal,
+            lessonHistory,
             SaveSettings,
             navigateBack);
     }

@@ -5,88 +5,217 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DesignHeight="600"
-             d:DesignWidth="900">
+             d:DesignWidth="1000">
+    <UserControl.Resources>
+        <Style x:Key="SettingsSectionTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#FF1E3A56" />
+        </Style>
+
+        <Style x:Key="SettingsSectionSubtitleStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,6,0,0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#FF5B6B7B" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style x:Key="SettingsFieldLabelStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,14,0,0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#FF1E3A56" />
+        </Style>
+
+        <Style x:Key="SettingsTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="Margin" Value="0,6,0,0" />
+            <Setter Property="Padding" Value="10,0,10,0" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="SettingsComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="Margin" Value="0,12,0,0" />
+            <Setter Property="Padding" Value="10,0,10,0" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="SettingsComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Padding" Value="10,6,10,6" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="SettingsSectionCardStyle" TargetType="Border">
+            <Setter Property="Padding" Value="18" />
+            <Setter Property="Background" Value="#FFFBFCFE" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BorderBrush" Value="#FFE1E8F0" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style x:Key="StatisticsValueStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,4,0,0" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#FF1C2B3A" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </UserControl.Resources>
+
     <Grid Background="#FFF6F8FB">
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="24">
-            <Border MaxWidth="620"
+            <Border MaxWidth="940"
                     Margin="0,20"
-                    Padding="24"
+                    Padding="28"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
                     Background="White"
                     CornerRadius="16"
                     BorderBrush="#FFE1E8F0"
                     BorderThickness="1">
-                <StackPanel>
-                    <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" Foreground="#FF1C2B3A" TextAlignment="Center" />
-                    <TextBlock Margin="0,10,0,0" Text="{Binding Subtitle}" FontSize="14" Foreground="#FF3A4A5B" TextAlignment="Center" TextWrapping="Wrap" />
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                    <Border Margin="0,20,0,0" Height="1" Background="#FFE1E8F0" />
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Text="{Binding Title}"
+                                   FontSize="30"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FF1C2B3A"
+                                   TextAlignment="Center" />
+                        <TextBlock Margin="0,10,0,0"
+                                   Text="{Binding Subtitle}"
+                                   FontSize="14"
+                                   Foreground="#FF3A4A5B"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
 
-                    <TextBlock Margin="0,20,0,0" Text="{Binding NativeLanguageTitle}" FontSize="16" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                    <TextBlock Margin="0,6,0,0" Text="{Binding NativeLanguageSubtitle}" FontSize="13" Foreground="#FF5B6B7B" TextWrapping="Wrap" />
+                    <Border Grid.Row="1" Margin="0,20,0,0" Height="1" Background="#FFE1E8F0" />
 
-                    <ComboBox Margin="0,12,0,0"
-                              Height="38"
-                              ItemsSource="{Binding SupportedNativeLanguages}"
-                              SelectedItem="{Binding SelectedNativeLanguage, UpdateSourceTrigger=PropertyChanged}" />
+                    <Grid Grid.Row="2" Margin="0,20,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                    <Border Margin="0,20,0,0" Height="1" Background="#FFE1E8F0" />
+                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                            <Border Style="{StaticResource SettingsSectionCardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding NativeLanguageTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                    <TextBlock Text="{Binding NativeLanguageSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
 
-                    <TextBlock Margin="0,20,0,0" Text="{Binding UserProfileTitle}" FontSize="16" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                    <TextBlock Margin="0,6,0,0" Text="{Binding UserProfileSubtitle}" FontSize="13" Foreground="#FF5B6B7B" TextWrapping="Wrap" />
+                                    <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
+                                              ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
+                                              ItemsSource="{Binding SupportedNativeLanguages}"
+                                              SelectedItem="{Binding SelectedNativeLanguage, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Border>
 
-                    <TextBlock Margin="0,14,0,0" Text="{Binding UserDisplayNameLabel}" FontSize="13" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                    <TextBox Margin="0,6,0,0"
-                             Height="36"
-                             Text="{Binding UserDisplayName, UpdateSourceTrigger=PropertyChanged}" />
+                            <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding TutorAvatarTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                    <TextBlock Text="{Binding TutorAvatarSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
 
-                    <TextBlock Margin="0,14,0,0" Text="{Binding LearningGoalLabel}" FontSize="13" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                    <TextBox Margin="0,6,0,0"
-                             Height="36"
-                             Text="{Binding LearningGoal, UpdateSourceTrigger=PropertyChanged}" />
+                                    <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
+                                              ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
+                                              ItemsSource="{Binding AvailableTutorAvatars}"
+                                              SelectedItem="{Binding SelectedTutorAvatarOption, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMemberPath="DisplayName" />
 
-                    <Border Margin="0,20,0,0" Height="1" Background="#FFE1E8F0" />
+                                    <TextBlock Margin="0,8,0,0"
+                                               Text="{Binding SelectedTutorAvatarDescription}"
+                                               FontSize="13"
+                                               Foreground="#FF5B6B7B"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
 
-                    <TextBlock Margin="0,20,0,0" Text="{Binding TutorAvatarTitle}" FontSize="16" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                    <TextBlock Margin="0,6,0,0" Text="{Binding TutorAvatarSubtitle}" FontSize="13" Foreground="#FF5B6B7B" TextWrapping="Wrap" />
+                        <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                            <Border Style="{StaticResource SettingsSectionCardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding UserProfileTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                    <TextBlock Text="{Binding UserProfileSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
 
-                    <ComboBox Margin="0,12,0,0"
-                              Height="38"
-                              ItemsSource="{Binding AvailableTutorAvatars}"
-                              SelectedItem="{Binding SelectedTutorAvatarOption, UpdateSourceTrigger=PropertyChanged}"
-                              DisplayMemberPath="DisplayName" />
+                                    <TextBlock Text="{Binding UserDisplayNameLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                    <TextBox Style="{StaticResource SettingsTextBoxStyle}"
+                                             Text="{Binding UserDisplayName, UpdateSourceTrigger=PropertyChanged}" />
 
-                    <TextBlock Margin="0,8,0,0"
-                               Text="{Binding SelectedTutorAvatarDescription}"
-                               FontSize="13"
-                               Foreground="#FF5B6B7B"
-                               TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding LearningGoalLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                    <TextBox Style="{StaticResource SettingsTextBoxStyle}"
+                                             Text="{Binding LearningGoal, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Border>
 
-                    <WrapPanel Margin="0,20,0,0" HorizontalAlignment="Center" ItemHeight="38">
-                        <Button Width="100"
-                                Height="38"
-                                Margin="0,0,8,0"
-                                Content="Save"
-                                Command="{Binding SaveCommand}"
-                                Background="#FF1E3A56"
-                                Foreground="White"
-                                BorderBrush="#FF1E3A56"
-                                Cursor="Hand" />
-                        <Button Width="100"
-                                Height="38"
-                                Content="Back"
-                                Command="{Binding BackCommand}"
-                                Background="White"
-                                Foreground="#FF1E3A56"
-                                BorderBrush="#FFCAD8E6"
-                                Cursor="Hand" />
-                    </WrapPanel>
+                            <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding LearningStatisticsTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                    <TextBlock Text="{Binding LearningStatisticsSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
 
-                    <TextBlock Margin="0,14,0,0" Text="{Binding StatusMessage}" FontSize="13" Foreground="#FF3A4A5B" TextAlignment="Center" TextWrapping="Wrap" />
-                </StackPanel>
+                                    <UniformGrid Margin="0,14,0,0" Columns="2">
+                                        <StackPanel Margin="0,0,12,12">
+                                            <TextBlock Text="{Binding TotalCompletedLessonsLabel}" Style="{StaticResource SettingsFieldLabelStyle}" Margin="0" />
+                                            <TextBlock Text="{Binding TotalCompletedLessonsText}" Style="{StaticResource StatisticsValueStyle}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="0,0,0,12">
+                                            <TextBlock Text="{Binding LessonsTodayLabel}" Style="{StaticResource SettingsFieldLabelStyle}" Margin="0" />
+                                            <TextBlock Text="{Binding LessonsTodayText}" Style="{StaticResource StatisticsValueStyle}" />
+                                        </StackPanel>
+                                        <StackPanel Margin="0,0,12,0">
+                                            <TextBlock Text="{Binding CurrentStreakLabel}" Style="{StaticResource SettingsFieldLabelStyle}" Margin="0" />
+                                            <TextBlock Text="{Binding CurrentStreakText}" Style="{StaticResource StatisticsValueStyle}" />
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding LastCompletedLessonLabel}" Style="{StaticResource SettingsFieldLabelStyle}" Margin="0" />
+                                            <TextBlock Text="{Binding LastCompletedLessonText}" Style="{StaticResource StatisticsValueStyle}" />
+                                        </StackPanel>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Grid.Row="3" Margin="0,22,0,0">
+                        <WrapPanel HorizontalAlignment="Center" ItemHeight="38">
+                            <Button Width="100"
+                                    Height="38"
+                                    Margin="0,0,8,0"
+                                    Content="Save"
+                                    Command="{Binding SaveCommand}"
+                                    Background="#FF1E3A56"
+                                    Foreground="White"
+                                    BorderBrush="#FF1E3A56"
+                                    Cursor="Hand" />
+                            <Button Width="100"
+                                    Height="38"
+                                    Content="Back"
+                                    Command="{Binding BackCommand}"
+                                    Background="White"
+                                    Foreground="#FF1E3A56"
+                                    BorderBrush="#FFCAD8E6"
+                                    Cursor="Hand" />
+                        </WrapPanel>
+
+                        <TextBlock Margin="0,14,0,0"
+                                   Text="{Binding StatusMessage}"
+                                   FontSize="13"
+                                   Foreground="#FF3A4A5B"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
             </Border>
         </ScrollViewer>
     </Grid>
