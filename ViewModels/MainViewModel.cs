@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Services;
 
@@ -94,9 +95,9 @@ public partial class MainViewModel : ViewModelBase
             SelectedLevel = selectedLevel,
             TopicTitle = selectedTopic.Title,
             SubtopicTitle = selectedSubtopic.Title,
-            GoodText = LessonSummaryViewModel.BuildGoodText(latestFeedback),
-            ImproveText = LessonSummaryViewModel.BuildImproveText(latestFeedback),
-            UsefulPhrases = LessonSummaryViewModel.BuildUsefulPhrases(latestFeedback)
+            GoodText = LessonSummaryViewModel.BuildGoodText(latestFeedback, AppLocalization.GetText(userSettings.InterfaceLanguageId)),
+            ImproveText = LessonSummaryViewModel.BuildImproveText(latestFeedback, AppLocalization.GetText(userSettings.InterfaceLanguageId)),
+            UsefulPhrases = LessonSummaryViewModel.BuildUsefulPhrases(latestFeedback, AppLocalization.GetText(userSettings.InterfaceLanguageId))
         };
 
         lessonHistoryService.Add(item);
@@ -104,17 +105,18 @@ public partial class MainViewModel : ViewModelBase
 
     private WelcomeViewModel CreateWelcomeViewModel()
     {
-        return new WelcomeViewModel(NavigateToLevelSelection, () => NavigateToSettings(NavigateToWelcome));
+        return new WelcomeViewModel(AppLocalization.GetText(userSettings.InterfaceLanguageId), NavigateToLevelSelection, () => NavigateToSettings(NavigateToWelcome));
     }
 
     private LevelSelectionViewModel CreateLevelSelectionViewModel()
     {
-        return new LevelSelectionViewModel(NavigateToWelcome, NavigateToHome);
+        return new LevelSelectionViewModel(AppLocalization.GetText(userSettings.InterfaceLanguageId), NavigateToWelcome, NavigateToHome);
     }
 
     private HomeViewModel CreateHomeViewModel(string selectedLevel)
     {
         return new HomeViewModel(
+            AppLocalization.GetText(userSettings.InterfaceLanguageId),
             selectedLevel,
             NavigateToLevelSelection,
             topic => NavigateToSubtopics(selectedLevel, topic),
@@ -125,6 +127,7 @@ public partial class MainViewModel : ViewModelBase
     private SubtopicsViewModel CreateSubtopicsViewModel(string selectedLevel, Topic selectedTopic)
     {
         return new SubtopicsViewModel(
+            AppLocalization.GetText(userSettings.InterfaceLanguageId),
             selectedLevel,
             selectedTopic,
             () => NavigateToHome(selectedLevel),
@@ -134,6 +137,7 @@ public partial class MainViewModel : ViewModelBase
     private LessonChatViewModel CreateLessonChatViewModel(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic)
     {
         return new LessonChatViewModel(
+            AppLocalization.GetText(userSettings.InterfaceLanguageId),
             selectedLevel,
             selectedTopic,
             selectedSubtopic,
@@ -151,6 +155,7 @@ public partial class MainViewModel : ViewModelBase
     private LessonSummaryViewModel CreateLessonSummaryViewModel(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, Feedback? latestFeedback)
     {
         return new LessonSummaryViewModel(
+            AppLocalization.GetText(userSettings.InterfaceLanguageId),
             selectedLevel,
             selectedTopic,
             selectedSubtopic,
@@ -162,6 +167,7 @@ public partial class MainViewModel : ViewModelBase
     private LessonHistoryViewModel CreateLessonHistoryViewModel(string selectedLevel)
     {
         return new LessonHistoryViewModel(
+            AppLocalization.GetText(userSettings.InterfaceLanguageId),
             lessonHistoryService,
             () => NavigateToHome(selectedLevel));
     }

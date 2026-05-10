@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:constants="clr-namespace:EnglishVoiceTutor.Desktop.Constants"
              xmlns:behaviors="clr-namespace:EnglishVoiceTutor.Desktop.Behaviors"
              xmlns:converters="clr-namespace:EnglishVoiceTutor.Desktop.Converters"
              xmlns:gif="https://github.com/XamlAnimatedGif/XamlAnimatedGif"
@@ -256,7 +255,7 @@
                                         FontSize="22"
                                         FontWeight="SemiBold"
                                         Content="↩"
-                                        ToolTip="Back to chat"
+                                        ToolTip="{Binding BackToChatToolTip}"
                                         Cursor="Hand"
                                         Command="{Binding ToggleConversationModeCommand}">
                                     <Button.Style>
@@ -337,7 +336,7 @@
                                                             <Button Margin="8,0,0,0"
                                                                     Padding="10,4"
                                                                     HorizontalAlignment="Left"
-                                                                    Content="{x:Static constants:AppConstants.PlayVoiceButtonText}"
+                                                                    Content="{Binding DataContext.PlayVoiceButtonText, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                     Command="{Binding DataContext.PlayBotVoiceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                     CommandParameter="{Binding}"
                                                                     Background="White"
@@ -360,7 +359,7 @@
                                                             <Button Margin="8,0,0,0"
                                                                     Padding="10,4"
                                                                     HorizontalAlignment="Left"
-                                                                    Content="{x:Static constants:AppConstants.ViewFeedbackButtonText}"
+                                                                    Content="{Binding DataContext.ViewFeedbackButtonText, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                     Command="{Binding DataContext.ViewFeedbackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                     CommandParameter="{Binding}"
                                                                     Background="White"
@@ -393,7 +392,7 @@
                                                                 </Style>
                                                             </Border.Style>
                                                             <StackPanel>
-                                                                <TextBlock Text="{x:Static constants:AppConstants.TranslationLabel}" FontSize="11" FontWeight="SemiBold" Foreground="#FF6D7C8B" />
+                                                                <TextBlock Text="{Binding DataContext.TranslationLabel, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="11" FontWeight="SemiBold" Foreground="#FF6D7C8B" />
                                                                 <TextBlock Margin="0,4,0,0" Text="{Binding TranslationText}" FontSize="13" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
                                                             </StackPanel>
                                                         </Border>
@@ -424,8 +423,8 @@
                                         <Border Padding="14" Background="#FFEFF7FF" BorderBrush="#FFB9D9F5" BorderThickness="1" CornerRadius="12">
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{x:Static constants:AppConstants.HintPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                                                    <TextBlock Margin="8,2,0,0" Text="{x:Static constants:AppConstants.HintPanelCloseText}" FontSize="11" Foreground="#FF6D7C8B" />
+                                                    <TextBlock Text="{Binding HintPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#FF1E3A56" />
+                                                    <TextBlock Margin="8,2,0,0" Text="{Binding ClickToCloseText}" FontSize="11" Foreground="#FF6D7C8B" />
                                                 </StackPanel>
 
                                                 <TextBlock Margin="0,8,0,0" Text="{Binding CurrentHintText}" FontSize="13" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
@@ -454,8 +453,8 @@
                                         <Border Padding="14" Background="#FFFFF9E8" BorderBrush="#FFF0D58A" BorderThickness="1" CornerRadius="12">
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{x:Static constants:AppConstants.FeedbackPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                                                    <TextBlock Margin="8,2,0,0" Text="{x:Static constants:AppConstants.HintPanelCloseText}" FontSize="11" Foreground="#FF7A8A9A" />
+                                                    <TextBlock Text="{Binding FeedbackPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#FF1E3A56" />
+                                                    <TextBlock Margin="8,2,0,0" Text="{Binding ClickToCloseText}" FontSize="11" Foreground="#FF7A8A9A" />
                                                 </StackPanel>
 
                                                 <TextBlock Margin="0,8,0,0" Text="{Binding SelectedFeedback.ShortText}" FontSize="13" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
@@ -483,31 +482,31 @@
                                                         BorderBrush="#FFD4DEE8"
                                                         Cursor="Hand" />
 
-                                                <TextBlock Text="{x:Static constants:AppConstants.FeedbackCorrectedVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Text="{Binding FeedbackCorrectedVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
                                                 <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.CorrectedVersion}" FontSize="13" TextWrapping="Wrap" />
                                                 <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CorrectedVersionTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
                                                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                                 </TextBlock>
 
-                                                <TextBlock Text="{x:Static constants:AppConstants.FeedbackGrammarTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Text="{Binding FeedbackGrammarTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
                                                 <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.GrammarTip}" FontSize="13" TextWrapping="Wrap" />
                                                 <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.GrammarTipTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
                                                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                                 </TextBlock>
 
-                                                <TextBlock Text="{x:Static constants:AppConstants.FeedbackVocabularyTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Text="{Binding FeedbackVocabularyTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
                                                 <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.VocabularyTip}" FontSize="13" TextWrapping="Wrap" />
                                                 <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.VocabularyTipTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
                                                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                                 </TextBlock>
 
-                                                <TextBlock Text="{x:Static constants:AppConstants.FeedbackCultureTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Text="{Binding FeedbackCultureTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
                                                 <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.CultureTip}" FontSize="13" TextWrapping="Wrap" />
                                                 <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CultureTipTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
                                                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                                 </TextBlock>
 
-                                                <TextBlock Text="{x:Static constants:AppConstants.FeedbackNaturalVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Text="{Binding FeedbackNaturalVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
                                                 <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.NaturalVersion}" FontSize="13" TextWrapping="Wrap" />
                                                 <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.NaturalVersionTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
                                                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
@@ -530,28 +529,28 @@
 
                                     <StackPanel HorizontalAlignment="Center">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Button Content="Send" Command="{Binding SendMessageCommand}" Margin="0,0,8,0" Width="90" Style="{StaticResource PrimaryLessonButtonStyle}" />
+                                            <Button Content="{Binding SendButtonText}" Command="{Binding SendMessageCommand}" Margin="0,0,8,0" Width="90" Style="{StaticResource PrimaryLessonButtonStyle}" />
                                             <Button Content="{Binding VoiceButtonText}" Command="{Binding ToggleVoiceRecordingCommand}" Margin="0,0,8,0" Width="150" Style="{StaticResource SecondaryLessonButtonStyle}" />
-                                            <Button Content="Hint" Command="{Binding HintCommand}" Width="90" Style="{StaticResource SecondaryLessonButtonStyle}" />
+                                            <Button Content="{Binding HintButtonText}" Command="{Binding HintCommand}" Width="90" Style="{StaticResource SecondaryLessonButtonStyle}" />
                                         </StackPanel>
 
                                         <StackPanel Margin="0,10,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
                                             <CheckBox Margin="0,0,18,0"
                                                       VerticalAlignment="Center"
                                                       VerticalContentAlignment="Center"
-                                                      Content="{x:Static constants:AppConstants.AutoSendVoiceLabel}"
+                                                      Content="{Binding AutoSendVoiceLabel}"
                                                       IsChecked="{Binding IsVoiceAutoSendEnabled, Mode=TwoWay}"
-                                                      ToolTip="{x:Static constants:AppConstants.AutoSendVoiceToolTip}" />
+                                                      ToolTip="{Binding AutoSendVoiceToolTip}" />
                                             <CheckBox VerticalAlignment="Center"
                                                       VerticalContentAlignment="Center"
-                                                      Content="{x:Static constants:AppConstants.AutoPlayBotVoiceLabel}"
+                                                      Content="{Binding AutoPlayBotVoiceLabel}"
                                                       IsChecked="{Binding IsBotVoiceAutoPlayEnabled, Mode=TwoWay}"
-                                                      ToolTip="{x:Static constants:AppConstants.AutoPlayBotVoiceToolTip}" />
+                                                      ToolTip="{Binding AutoPlayBotVoiceToolTip}" />
                                         </StackPanel>
 
                                         <StackPanel Margin="0,12,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Button Content="Finish lesson" Command="{Binding FinishLessonCommand}" Margin="0,0,8,0" Width="110" Style="{StaticResource PrimaryLessonButtonStyle}" />
-                                            <Button Content="Back" Command="{Binding BackCommand}" Width="90" Style="{StaticResource SecondaryLessonButtonStyle}" />
+                                            <Button Content="{Binding FinishLessonButtonText}" Command="{Binding FinishLessonCommand}" Margin="0,0,8,0" Width="110" Style="{StaticResource PrimaryLessonButtonStyle}" />
+                                            <Button Content="{Binding BackButtonText}" Command="{Binding BackCommand}" Width="90" Style="{StaticResource SecondaryLessonButtonStyle}" />
                                         </StackPanel>
                                     </StackPanel>
 

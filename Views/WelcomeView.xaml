@@ -36,20 +36,20 @@
                         BorderThickness="1"
                         CornerRadius="12">
                     <StackPanel>
-                        <TextBlock Text="How the MVP works"
+                        <TextBlock Text="{Binding HowItWorksTitle}"
                                    FontSize="18"
                                    FontWeight="SemiBold"
                                    Foreground="#FF1C2B3A" />
                         <TextBlock Margin="0,14,0,0"
-                                   Text="• Choose a topic"
+                                   Text="{Binding ChooseTopicStep}"
                                    FontSize="16"
                                    Foreground="#FF2E4053" />
                         <TextBlock Margin="0,8,0,0"
-                                   Text="• Practice by text or voice"
+                                   Text="{Binding PracticeStep}"
                                    FontSize="16"
                                    Foreground="#FF2E4053" />
                         <TextBlock Margin="0,8,0,0"
-                                   Text="• Get soft corrections and hints"
+                                   Text="{Binding CorrectionsStep}"
                                    FontSize="16"
                                    Foreground="#FF2E4053" />
                     </StackPanel>
@@ -58,7 +58,7 @@
                 <StackPanel Margin="0,30,0,0"
                             Orientation="Horizontal"
                             HorizontalAlignment="Center">
-                    <Button Content="Start lesson"
+                    <Button Content="{Binding StartLessonButtonText}"
                             Command="{Binding StartLessonCommand}"
                             Width="170"
                             Height="44"
@@ -69,7 +69,7 @@
                             Foreground="White"
                             BorderBrush="#FF2C7BE5"
                             Cursor="Hand" />
-                    <Button Content="Settings"
+                    <Button Content="{Binding SettingsButtonText}"
                             Command="{Binding OpenSettingsCommand}"
                             Width="140"
                             Height="44"

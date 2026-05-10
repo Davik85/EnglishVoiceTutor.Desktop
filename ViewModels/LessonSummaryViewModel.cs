@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.Input;
-using EnglishVoiceTutor.Desktop.Constants;
+using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
@@ -9,6 +9,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
 {
     private readonly Action navigateToSubtopics;
     private readonly Action navigateToHome;
+    private readonly AppLocalizedText localizedText;
 
     public string SelectedLevel { get; }
 
@@ -16,23 +17,28 @@ public partial class LessonSummaryViewModel : ViewModelBase
 
     public Subtopic SelectedSubtopic { get; }
 
-    public string Title => AppConstants.LessonSummaryTitle;
+    public string Title => localizedText.LessonSummaryTitle;
 
-    public string ContextText => $"Topic: {SelectedTopic.Title} • Situation: {SelectedSubtopic.Title} • Level: {SelectedLevel}";
+    public string ContextText => $"{localizedText.TopicContextLabel} {SelectedTopic.DisplayTitle} • {localizedText.SituationContextLabel} {SelectedSubtopic.DisplayTitle} • {localizedText.LevelContextLabel} {SelectedLevel}";
+
+    public string GoodTitle => localizedText.WhatWentWellTitle;
+
+    public string ImproveTitle => localizedText.WhatToImproveTitle;
 
     public string GoodText { get; }
 
     public string ImproveText { get; }
 
-    public string UsefulPhrasesTitle => AppConstants.UsefulPhrasesTitle;
+    public string UsefulPhrasesTitle => localizedText.UsefulPhrasesTitle;
 
-    public string ChooseAnotherSituationText => AppConstants.ChooseAnotherSituationText;
+    public string ChooseAnotherSituationText => localizedText.ChooseAnotherSituationText;
 
-    public string BackToTopicsText => AppConstants.BackToTopicsText;
+    public string BackToTopicsText => localizedText.BackToTopicsText;
 
     public ObservableCollection<string> UsefulPhrases { get; }
 
     public LessonSummaryViewModel(
+        AppLocalizedText localizedText,
         string selectedLevel,
         Topic selectedTopic,
         Subtopic selectedSubtopic,
@@ -40,15 +46,16 @@ public partial class LessonSummaryViewModel : ViewModelBase
         Action navigateToSubtopics,
         Action navigateToHome)
     {
+        this.localizedText = localizedText;
         SelectedLevel = selectedLevel;
         SelectedTopic = selectedTopic;
         SelectedSubtopic = selectedSubtopic;
         this.navigateToSubtopics = navigateToSubtopics;
         this.navigateToHome = navigateToHome;
 
-        GoodText = BuildGoodText(latestFeedback);
-        ImproveText = BuildImproveText(latestFeedback);
-        UsefulPhrases = new ObservableCollection<string>(BuildUsefulPhrases(latestFeedback));
+        GoodText = BuildGoodText(latestFeedback, localizedText);
+        ImproveText = BuildImproveText(latestFeedback, localizedText);
+        UsefulPhrases = new ObservableCollection<string>(BuildUsefulPhrases(latestFeedback, localizedText));
     }
 
     [RelayCommand]
@@ -63,21 +70,21 @@ public partial class LessonSummaryViewModel : ViewModelBase
         navigateToHome();
     }
 
-    public static string BuildGoodText(Feedback? latestFeedback)
+    public static string BuildGoodText(Feedback? latestFeedback, AppLocalizedText? localizedText = null)
     {
         if (!string.IsNullOrWhiteSpace(latestFeedback?.ShortText))
         {
             return latestFeedback.ShortText;
         }
 
-        return AppConstants.SummaryFallbackGoodText;
+        return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackGoodText;
     }
 
-    public static string BuildImproveText(Feedback? latestFeedback)
+    public static string BuildImproveText(Feedback? latestFeedback, AppLocalizedText? localizedText = null)
     {
         if (latestFeedback is null)
         {
-            return AppConstants.SummaryFallbackImproveText;
+            return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackImproveText;
         }
 
         var tips = new List<string>();
@@ -94,17 +101,17 @@ public partial class LessonSummaryViewModel : ViewModelBase
 
         if (tips.Count == 0)
         {
-            return AppConstants.SummaryFallbackImproveText;
+            return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackImproveText;
         }
 
         return string.Join(" ", tips);
     }
 
-    public static IReadOnlyList<string> BuildUsefulPhrases(Feedback? latestFeedback)
+    public static IReadOnlyList<string> BuildUsefulPhrases(Feedback? latestFeedback, AppLocalizedText? localizedText = null)
     {
         if (latestFeedback is null)
         {
-            return AppConstants.SummaryFallbackUsefulPhrases;
+            return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackUsefulPhrases;
         }
 
         var phrases = new List<string>();
@@ -114,7 +121,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
 
         if (phrases.Count == 0)
         {
-            return AppConstants.SummaryFallbackUsefulPhrases;
+            return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackUsefulPhrases;
         }
 
         return phrases;
