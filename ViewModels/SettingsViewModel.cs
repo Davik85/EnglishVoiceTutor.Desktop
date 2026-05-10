@@ -1,46 +1,55 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
+using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
 public partial class SettingsViewModel : ViewModelBase
 {
-    private readonly Action<string, string, string, string> saveSettings;
+    private readonly Action<string, string, string, string, string> saveSettings;
     private readonly Action navigateBack;
+    private readonly LessonHistoryItem? latestLesson;
+    private SettingsLocalizedText localizedText;
 
-    public string Title => AppConstants.SettingsTitle;
+    public string Title => localizedText.Title;
 
-    public string Subtitle => AppConstants.SettingsSubtitle;
+    public string Subtitle => localizedText.Subtitle;
 
-    public string NativeLanguageTitle => AppConstants.NativeLanguageTitle;
+    public string InterfaceLanguageTitle => localizedText.InterfaceLanguageTitle;
 
-    public string NativeLanguageSubtitle => AppConstants.NativeLanguageSubtitle;
+    public string NativeLanguageTitle => localizedText.NativeLanguageTitle;
 
-    public string TutorAvatarTitle => AppConstants.TutorAvatarTitle;
+    public string NativeLanguageSubtitle => localizedText.NativeLanguageSubtitle;
 
-    public string TutorAvatarSubtitle => AppConstants.TutorAvatarSubtitle;
+    public string TutorAvatarTitle => localizedText.TutorAvatarTitle;
 
-    public string UserProfileTitle => AppConstants.UserProfileTitle;
+    public string TutorAvatarSubtitle => localizedText.TutorAvatarSubtitle;
 
-    public string UserProfileSubtitle => AppConstants.UserProfileSubtitle;
+    public string UserProfileTitle => localizedText.UserProfileTitle;
 
-    public string UserDisplayNameLabel => AppConstants.UserDisplayNameLabel;
+    public string UserProfileSubtitle => localizedText.UserProfileSubtitle;
 
-    public string LearningGoalLabel => AppConstants.LearningGoalLabel;
+    public string UserDisplayNameLabel => localizedText.UserDisplayNameLabel;
 
-    public string LearningStatisticsTitle => AppConstants.LearningStatisticsTitle;
+    public string LearningGoalLabel => localizedText.LearningGoalLabel;
 
-    public string LearningStatisticsSubtitle => AppConstants.LearningStatisticsSubtitle;
+    public string LearningStatisticsTitle => localizedText.LearningStatisticsTitle;
 
-    public string TotalCompletedLessonsLabel => AppConstants.TotalCompletedLessonsLabel;
+    public string LearningStatisticsSubtitle => localizedText.LearningStatisticsSubtitle;
 
-    public string LessonsTodayLabel => AppConstants.LessonsTodayLabel;
+    public string TotalCompletedLessonsLabel => localizedText.TotalCompletedLessonsLabel;
 
-    public string CurrentStreakLabel => AppConstants.CurrentStreakLabel;
+    public string LessonsTodayLabel => localizedText.LessonsTodayLabel;
 
-    public string LastCompletedLessonLabel => AppConstants.LastCompletedLessonLabel;
+    public string CurrentStreakLabel => localizedText.CurrentStreakLabel;
+
+    public string LastCompletedLessonLabel => localizedText.LastCompletedLessonLabel;
+
+    public string SaveButtonText => localizedText.SaveButtonText;
+
+    public string BackButtonText => localizedText.BackButtonText;
 
     public string TotalCompletedLessonsText { get; }
 
@@ -48,7 +57,9 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string CurrentStreakText { get; }
 
-    public string LastCompletedLessonText { get; }
+    public string LastCompletedLessonText => BuildLastCompletedLessonText(latestLesson, localizedText.NoCompletedLessonsText);
+
+    public IReadOnlyList<InterfaceLanguageOption> AvailableInterfaceLanguages { get; } = InterfaceLanguageOptions.All;
 
     public IReadOnlyList<string> SupportedNativeLanguages { get; } = AppConstants.SupportedNativeLanguages;
 
@@ -58,6 +69,12 @@ public partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     private string selectedNativeLanguage;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedInterfaceLanguageId))]
+    private InterfaceLanguageOption selectedInterfaceLanguageOption;
+
+    public string SelectedInterfaceLanguageId => SelectedInterfaceLanguageOption.Id;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarDescription))]
@@ -73,14 +90,17 @@ public partial class SettingsViewModel : ViewModelBase
     private string statusMessage = string.Empty;
 
     public SettingsViewModel(
+        string currentInterfaceLanguageId,
         string currentNativeLanguage,
         string currentTutorAvatarId,
         string currentUserDisplayName,
         string currentLearningGoal,
         IReadOnlyList<LessonHistoryItem> lessonHistory,
-        Action<string, string, string, string> saveSettings,
+        Action<string, string, string, string, string> saveSettings,
         Action navigateBack)
     {
+        selectedInterfaceLanguageOption = InterfaceLanguageOptions.GetById(currentInterfaceLanguageId);
+        localizedText = SettingsLocalization.GetSettingsText(selectedInterfaceLanguageOption.Id);
         selectedNativeLanguage = currentNativeLanguage;
         selectedTutorAvatarOption = TutorAvatarOptions.GetById(currentTutorAvatarId);
         userDisplayName = currentUserDisplayName;
@@ -88,24 +108,61 @@ public partial class SettingsViewModel : ViewModelBase
         this.saveSettings = saveSettings;
         this.navigateBack = navigateBack;
 
+        latestLesson = lessonHistory
+            .OrderByDescending(item => item.CompletedAt)
+            .FirstOrDefault();
         TotalCompletedLessonsText = lessonHistory.Count.ToString();
         LessonsTodayText = CountLessonsToday(lessonHistory).ToString();
         CurrentStreakText = CalculateCurrentStreak(lessonHistory).ToString();
-        LastCompletedLessonText = BuildLastCompletedLessonText(lessonHistory);
     }
 
     [RelayCommand]
     private void Save()
     {
         var selectedAvatar = SelectedTutorAvatarOption ?? TutorAvatarOptions.Elena;
-        saveSettings(SelectedNativeLanguage, selectedAvatar.Id, UserDisplayName, LearningGoal);
-        StatusMessage = AppConstants.SettingsSavedMessage;
+        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguage, selectedAvatar.Id, UserDisplayName, LearningGoal);
+        StatusMessage = localizedText.SettingsSavedMessage;
     }
 
     [RelayCommand]
     private void Back()
     {
         navigateBack();
+    }
+
+    partial void OnSelectedInterfaceLanguageOptionChanged(InterfaceLanguageOption value)
+    {
+        localizedText = SettingsLocalization.GetSettingsText(value.Id);
+        RefreshLocalizedText();
+
+        if (!string.IsNullOrWhiteSpace(StatusMessage))
+        {
+            StatusMessage = localizedText.SettingsSavedMessage;
+        }
+    }
+
+    private void RefreshLocalizedText()
+    {
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(Subtitle));
+        OnPropertyChanged(nameof(InterfaceLanguageTitle));
+        OnPropertyChanged(nameof(NativeLanguageTitle));
+        OnPropertyChanged(nameof(NativeLanguageSubtitle));
+        OnPropertyChanged(nameof(TutorAvatarTitle));
+        OnPropertyChanged(nameof(TutorAvatarSubtitle));
+        OnPropertyChanged(nameof(UserProfileTitle));
+        OnPropertyChanged(nameof(UserProfileSubtitle));
+        OnPropertyChanged(nameof(UserDisplayNameLabel));
+        OnPropertyChanged(nameof(LearningGoalLabel));
+        OnPropertyChanged(nameof(LearningStatisticsTitle));
+        OnPropertyChanged(nameof(LearningStatisticsSubtitle));
+        OnPropertyChanged(nameof(TotalCompletedLessonsLabel));
+        OnPropertyChanged(nameof(LessonsTodayLabel));
+        OnPropertyChanged(nameof(CurrentStreakLabel));
+        OnPropertyChanged(nameof(LastCompletedLessonLabel));
+        OnPropertyChanged(nameof(LastCompletedLessonText));
+        OnPropertyChanged(nameof(SaveButtonText));
+        OnPropertyChanged(nameof(BackButtonText));
     }
 
     private static int CountLessonsToday(IReadOnlyList<LessonHistoryItem> lessonHistory)
@@ -136,15 +193,11 @@ public partial class SettingsViewModel : ViewModelBase
         return streak;
     }
 
-    private static string BuildLastCompletedLessonText(IReadOnlyList<LessonHistoryItem> lessonHistory)
+    private static string BuildLastCompletedLessonText(LessonHistoryItem? latestLesson, string noCompletedLessonsText)
     {
-        var latestLesson = lessonHistory
-            .OrderByDescending(item => item.CompletedAt)
-            .FirstOrDefault();
-
         if (latestLesson is null)
         {
-            return AppConstants.NoCompletedLessonsStatisticsText;
+            return noCompletedLessonsText;
         }
 
         var lessonTitle = string.Join(" — ", new[] { latestLesson.TopicTitle, latestLesson.SubtopicTitle }

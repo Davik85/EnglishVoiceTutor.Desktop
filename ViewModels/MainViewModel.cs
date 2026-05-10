@@ -65,6 +65,7 @@ public partial class MainViewModel : ViewModelBase
         var lessonHistory = lessonHistoryService.Load();
 
         CurrentViewModel = new SettingsViewModel(
+            userSettings.InterfaceLanguageId,
             userSettings.NativeLanguageName,
             userSettings.SelectedTutorAvatarId,
             userSettings.UserDisplayName,
@@ -74,8 +75,9 @@ public partial class MainViewModel : ViewModelBase
             navigateBack);
     }
 
-    private void SaveSettings(string nativeLanguage, string tutorAvatarId, string userDisplayName, string learningGoal)
+    private void SaveSettings(string interfaceLanguageId, string nativeLanguage, string tutorAvatarId, string userDisplayName, string learningGoal)
     {
+        userSettings.InterfaceLanguageId = InterfaceLanguageOptions.GetById(interfaceLanguageId).Id;
         userSettings.NativeLanguageName = nativeLanguage;
         userSettings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(tutorAvatarId).Id;
         userSettings.UserDisplayName = userDisplayName;
