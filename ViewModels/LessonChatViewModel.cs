@@ -69,12 +69,14 @@ public partial class LessonChatViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
+    [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
     private bool isSending;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(VoiceButtonText))]
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
+    [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
     private bool isRecording;
 
     [ObservableProperty]
@@ -185,6 +187,11 @@ public partial class LessonChatViewModel : ViewModelBase
             && message is not null
             && message.ShowPlayVoiceButton
             && !string.IsNullOrWhiteSpace(message.Text);
+    }
+
+    private bool CanFinishLesson()
+    {
+        return !IsRecording && !IsSending;
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleVoiceRecording))]
@@ -569,7 +576,7 @@ public partial class LessonChatViewModel : ViewModelBase
         return AvatarState.Idle;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanFinishLesson))]
     private void FinishLesson()
     {
         finishLesson(latestFeedback);
