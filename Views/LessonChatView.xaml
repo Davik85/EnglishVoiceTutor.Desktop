@@ -506,6 +506,12 @@
                                                   Content="{x:Static constants:AppConstants.AutoSendVoiceLabel}"
                                                   IsChecked="{Binding IsVoiceAutoSendEnabled, Mode=TwoWay}"
                                                   ToolTip="{x:Static constants:AppConstants.AutoSendVoiceToolTip}" />
+                                        <CheckBox Margin="0,0,8,8"
+                                                  VerticalAlignment="Center"
+                                                  VerticalContentAlignment="Center"
+                                                  Content="{x:Static constants:AppConstants.AutoPlayBotVoiceLabel}"
+                                                  IsChecked="{Binding IsBotVoiceAutoPlayEnabled, Mode=TwoWay}"
+                                                  ToolTip="{x:Static constants:AppConstants.AutoPlayBotVoiceToolTip}" />
                                         <Button Content="Finish lesson" Command="{Binding FinishLessonCommand}" Margin="0,0,8,8" Width="110" Style="{StaticResource PrimaryLessonButtonStyle}" />
                                         <Button Content="Back" Command="{Binding BackCommand}" Margin="0,0,0,8" Width="90" Style="{StaticResource SecondaryLessonButtonStyle}" />
                                     </WrapPanel>
