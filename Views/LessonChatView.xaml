@@ -300,7 +300,8 @@
                                               MaxHeight="300"
                                               VerticalScrollBarVisibility="Auto"
                                               HorizontalScrollBarVisibility="Disabled"
-                                              behaviors:ScrollViewerMouseWheelBehavior.BubbleMouseWheelWhenAtEdge="True">
+                                              behaviors:ScrollViewerMouseWheelBehavior.BubbleMouseWheelWhenAtEdge="True"
+                                              behaviors:ScrollViewerAutoScrollBehavior.AutoScrollToBottom="True">
                                     <ItemsControl ItemsSource="{Binding Messages}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
