@@ -27,6 +27,20 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string TutorAvatarSubtitle => localizedText.TutorAvatarSubtitle;
 
+    public string AvatarProfileTitle => localizedText.AvatarProfileTitle;
+
+    public string AvatarAgeLabel => localizedText.AvatarAgeLabel;
+
+    public string AvatarLocationLabel => localizedText.AvatarLocationLabel;
+
+    public string AvatarRoleLabel => localizedText.AvatarRoleLabel;
+
+    public string AvatarInterestsLabel => localizedText.AvatarInterestsLabel;
+
+    public string AvatarPersonalityLabel => localizedText.AvatarPersonalityLabel;
+
+    public string AvatarSpeakingStyleLabel => localizedText.AvatarSpeakingStyleLabel;
+
     public string UserProfileTitle => localizedText.UserProfileTitle;
 
     public string UserProfileSubtitle => localizedText.UserProfileSubtitle;
@@ -67,6 +81,20 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string SelectedTutorAvatarDescription => SelectedTutorAvatarOption?.ShortDescription ?? string.Empty;
 
+    public string SelectedTutorAvatarDisplayName => SelectedTutorAvatarOption?.DisplayName ?? string.Empty;
+
+    public string SelectedTutorAvatarAgeText => SelectedTutorAvatarOption?.AgeText ?? string.Empty;
+
+    public string SelectedTutorAvatarLocation => SelectedTutorAvatarOption?.Location ?? string.Empty;
+
+    public string SelectedTutorAvatarRole => SelectedTutorAvatarOption?.Role ?? string.Empty;
+
+    public string SelectedTutorAvatarInterestsText => SelectedTutorAvatarOption?.InterestsText ?? string.Empty;
+
+    public string SelectedTutorAvatarPersonalityText => SelectedTutorAvatarOption?.PersonalityText ?? string.Empty;
+
+    public string SelectedTutorAvatarSpeakingStyleText => SelectedTutorAvatarOption?.SpeakingStyleText ?? string.Empty;
+
     [ObservableProperty]
     private string selectedNativeLanguage;
 
@@ -78,6 +106,13 @@ public partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarDescription))]
+    [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarDisplayName))]
+    [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarAgeText))]
+    [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarLocation))]
+    [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarRole))]
+    [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarInterestsText))]
+    [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarPersonalityText))]
+    [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarSpeakingStyleText))]
     private TutorAvatarOption? selectedTutorAvatarOption;
 
     [ObservableProperty]
@@ -150,6 +185,13 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(NativeLanguageSubtitle));
         OnPropertyChanged(nameof(TutorAvatarTitle));
         OnPropertyChanged(nameof(TutorAvatarSubtitle));
+        OnPropertyChanged(nameof(AvatarProfileTitle));
+        OnPropertyChanged(nameof(AvatarAgeLabel));
+        OnPropertyChanged(nameof(AvatarLocationLabel));
+        OnPropertyChanged(nameof(AvatarRoleLabel));
+        OnPropertyChanged(nameof(AvatarInterestsLabel));
+        OnPropertyChanged(nameof(AvatarPersonalityLabel));
+        OnPropertyChanged(nameof(AvatarSpeakingStyleLabel));
         OnPropertyChanged(nameof(UserProfileTitle));
         OnPropertyChanged(nameof(UserProfileSubtitle));
         OnPropertyChanged(nameof(UserDisplayNameLabel));
