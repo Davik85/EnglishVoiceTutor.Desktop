@@ -7,21 +7,31 @@ namespace EnglishVoiceTutor.Desktop.Services;
 
 public sealed class AudioRecordingService : IDisposable
 {
+    private readonly object writerLock = new();
     private WaveInEvent? waveIn;
     private WaveFileWriter? writer;
     private string? currentFilePath;
+    private DateTimeOffset? recordingStartedAt;
     private bool disposed;
 
     public bool IsRecording { get; private set; }
+
+    public TimeSpan LastRecordingDuration { get; private set; }
+
+    public TimeSpan CurrentRecordingDuration => recordingStartedAt is null
+        ? TimeSpan.Zero
+        : DateTimeOffset.UtcNow - recordingStartedAt.Value;
 
     public string StartRecording()
     {
         ThrowIfDisposed();
 
-        if (IsRecording && currentFilePath is not null)
+        if (IsRecording)
         {
-            return currentFilePath;
+            throw new InvalidOperationException(AudioConstants.RecordingAlreadyInProgressMessage);
         }
+
+        CleanupRecordingResources();
 
         var filePath = CreateRecordingFilePath();
         var recorder = new WaveInEvent();
@@ -45,6 +55,8 @@ public sealed class AudioRecordingService : IDisposable
         waveIn = recorder;
         writer = fileWriter;
         currentFilePath = filePath;
+        recordingStartedAt = DateTimeOffset.UtcNow;
+        LastRecordingDuration = TimeSpan.Zero;
         IsRecording = true;
 
         return filePath;
@@ -56,10 +68,11 @@ public sealed class AudioRecordingService : IDisposable
 
         if (!IsRecording)
         {
-            return currentFilePath ?? string.Empty;
+            return string.Empty;
         }
 
         var savedFilePath = currentFilePath ?? string.Empty;
+        LastRecordingDuration = CurrentRecordingDuration;
 
         try
         {
@@ -68,6 +81,8 @@ public sealed class AudioRecordingService : IDisposable
         finally
         {
             CleanupRecordingResources();
+            recordingStartedAt = null;
+            currentFilePath = null;
             IsRecording = false;
         }
 
@@ -120,6 +135,8 @@ public sealed class AudioRecordingService : IDisposable
         }
 
         CleanupRecordingResources();
+        recordingStartedAt = null;
+        currentFilePath = null;
         IsRecording = false;
         disposed = true;
     }
@@ -161,8 +178,11 @@ public sealed class AudioRecordingService : IDisposable
 
     private void OnDataAvailable(object? sender, WaveInEventArgs args)
     {
-        writer?.Write(args.Buffer, 0, args.BytesRecorded);
-        writer?.Flush();
+        lock (writerLock)
+        {
+            writer?.Write(args.Buffer, 0, args.BytesRecorded);
+            writer?.Flush();
+        }
     }
 
     private void CleanupRecordingResources()
@@ -174,8 +194,11 @@ public sealed class AudioRecordingService : IDisposable
             waveIn = null;
         }
 
-        writer?.Dispose();
-        writer = null;
+        lock (writerLock)
+        {
+            writer?.Dispose();
+            writer = null;
+        }
     }
 
     private static void SafeDeleteFile(string filePath)
