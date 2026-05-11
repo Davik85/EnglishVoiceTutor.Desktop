@@ -2,6 +2,8 @@
 
 This document describes the first simple local release workflow for `EnglishVoiceTutor.Desktop` without Visual Studio. It publishes the WPF desktop app to a local folder, runs it as a normal `.exe`, and verifies that the app, backend connection, local persistence, and avatar GIF resources work.
 
+For a shareable tester zip package, see [`docs/TESTER_RELEASE.md`](TESTER_RELEASE.md).
+
 ## Scope
 
 This workflow is for a local MVP desktop release check:
