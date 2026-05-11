@@ -73,7 +73,10 @@ public partial class MainViewModel : ViewModelBase
             userSettings.UserDisplayName,
             userSettings.LearningGoal,
             userSettings.BackendBaseUrl,
+            userSettingsService.SettingsFilePath,
+            lessonHistoryService.LessonHistoryFilePath,
             lessonHistory,
+            lessonChatBackendService,
             SaveSettings,
             navigateBack);
     }

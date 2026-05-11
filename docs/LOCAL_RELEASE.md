@@ -155,6 +155,13 @@ Run the published app:
 
 This mode creates a larger output folder because it includes the runtime. Keep this as a folder-based publish. Do not enable single-file publish yet unless WPF behavior and avatar GIF resources are verified separately.
 
+
+## Settings diagnostics
+
+Use Settings -> Diagnostics during local release checks to inspect the current Backend URL, backend status, AI status, settings file path, lesson history file path, interface language, native language, tutor avatar, and app version. Click **Refresh diagnostics** to re-check `/health` and `/api/backend/config-status` for the configured backend.
+
+Diagnostics must never display an OpenAI API key; the desktop app should only show whether AI is configured, not the secret value.
+
 ## Verify local settings and history persistence
 
 The desktop app stores user settings here:

@@ -80,6 +80,21 @@
             <Setter Property="Foreground" Value="#FF1C2B3A" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
+
+        <Style x:Key="DiagnosticsLabelStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,12,8" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#FF5B6B7B" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style x:Key="DiagnosticsValueStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#FF1C2B3A" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
     </UserControl.Resources>
 
     <Grid Background="#FFF6F8FB">
@@ -237,6 +252,69 @@
                                     <TextBlock Text="{Binding BackendUrlLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
                                     <TextBox Style="{StaticResource SettingsTextBoxStyle}"
                                              Text="{Binding BackendBaseUrl, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding DiagnosticsTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                    <TextBlock Text="{Binding DiagnosticsSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+
+                                    <Grid Margin="0,14,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="150" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding DiagnosticsAppVersionLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AppVersionText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding DiagnosticsBackendUrlLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DiagnosticsBackendUrlText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding DiagnosticsBackendStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DiagnosticsBackendStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding DiagnosticsAiStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DiagnosticsAiStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding DiagnosticsSettingsFileLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SettingsFilePathText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding DiagnosticsLessonHistoryFileLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LessonHistoryFilePathText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{Binding DiagnosticsInterfaceLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding DiagnosticsInterfaceLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                        <TextBlock Grid.Row="7" Grid.Column="0" Text="{Binding DiagnosticsNativeLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding DiagnosticsNativeLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{Binding DiagnosticsTutorAvatarLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding DiagnosticsTutorAvatarText}" Style="{StaticResource DiagnosticsValueStyle}" />
+                                    </Grid>
+
+                                    <Button MinWidth="150"
+                                            Height="34"
+                                            HorizontalAlignment="Left"
+                                            Margin="0,4,0,0"
+                                            Content="{Binding RefreshDiagnosticsButtonText}"
+                                            Command="{Binding RefreshDiagnosticsCommand}"
+                                            Background="#FF1E3A56"
+                                            Foreground="White"
+                                            BorderBrush="#FF1E3A56"
+                                            Cursor="Hand" />
                                 </StackPanel>
                             </Border>
 

@@ -22,6 +22,8 @@ public class LessonHistoryService
         historyFilePath = Path.Combine(appDataPath, StorageConstants.AppDataFolderName, StorageConstants.LessonHistoryFileName);
     }
 
+    public string LessonHistoryFilePath => historyFilePath;
+
     public IReadOnlyList<LessonHistoryItem> Load()
     {
         if (!File.Exists(historyFilePath))

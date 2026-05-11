@@ -1,17 +1,29 @@
+using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Services;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
 public partial class SettingsViewModel : ViewModelBase
 {
+    private const string AppVersionFallbackText = "local build";
+    private const string OpenAiNotConfiguredStatus = "not_configured";
+
     private readonly Action<string, string, string, string, string, string> saveSettings;
     private readonly Action navigateBack;
+    private readonly LessonChatBackendService lessonChatBackendService;
     private readonly LessonHistoryItem? latestLesson;
+    private readonly string appVersionText;
+    private readonly string settingsFilePathText;
+    private readonly string lessonHistoryFilePathText;
     private SettingsLocalizedText localizedText;
+    private DiagnosticsLocalizedText diagnosticsLocalizedText;
+    private DiagnosticBackendStatus backendStatus = DiagnosticBackendStatus.Unknown;
+    private DiagnosticAiStatus aiStatus = DiagnosticAiStatus.Unknown;
 
     public string Title => localizedText.Title;
 
@@ -67,6 +79,48 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string LastCompletedLessonLabel => localizedText.LastCompletedLessonLabel;
 
+    public string DiagnosticsTitle => diagnosticsLocalizedText.Title;
+
+    public string DiagnosticsSubtitle => diagnosticsLocalizedText.Subtitle;
+
+    public string DiagnosticsAppVersionLabel => diagnosticsLocalizedText.AppVersionLabel;
+
+    public string DiagnosticsBackendUrlLabel => diagnosticsLocalizedText.BackendUrlLabel;
+
+    public string DiagnosticsBackendStatusLabel => diagnosticsLocalizedText.BackendStatusLabel;
+
+    public string DiagnosticsAiStatusLabel => diagnosticsLocalizedText.AiStatusLabel;
+
+    public string DiagnosticsSettingsFileLabel => diagnosticsLocalizedText.SettingsFileLabel;
+
+    public string DiagnosticsLessonHistoryFileLabel => diagnosticsLocalizedText.LessonHistoryFileLabel;
+
+    public string DiagnosticsInterfaceLanguageLabel => diagnosticsLocalizedText.InterfaceLanguageLabel;
+
+    public string DiagnosticsNativeLanguageLabel => diagnosticsLocalizedText.NativeLanguageLabel;
+
+    public string DiagnosticsTutorAvatarLabel => diagnosticsLocalizedText.TutorAvatarLabel;
+
+    public string RefreshDiagnosticsButtonText => diagnosticsLocalizedText.RefreshButtonText;
+
+    public string AppVersionText => appVersionText;
+
+    public string DiagnosticsBackendUrlText => BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl);
+
+    public string DiagnosticsBackendStatusText => LocalizeBackendStatus(backendStatus);
+
+    public string DiagnosticsAiStatusText => LocalizeAiStatus(aiStatus);
+
+    public string SettingsFilePathText => settingsFilePathText;
+
+    public string LessonHistoryFilePathText => lessonHistoryFilePathText;
+
+    public string DiagnosticsInterfaceLanguageText => SelectedInterfaceLanguageOption.DisplayName;
+
+    public string DiagnosticsNativeLanguageText => SelectedNativeLanguage;
+
+    public string DiagnosticsTutorAvatarText => SelectedTutorAvatarDisplayName;
+
     public string SaveButtonText => localizedText.SaveButtonText;
 
     public string BackButtonText => localizedText.BackButtonText;
@@ -105,10 +159,12 @@ public partial class SettingsViewModel : ViewModelBase
     public string SelectedTutorAvatarSpeakingStyleText => SelectedTutorAvatarProfileText.SpeakingStyleText;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DiagnosticsNativeLanguageText))]
     private string selectedNativeLanguage;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SelectedInterfaceLanguageId))]
+    [NotifyPropertyChangedFor(nameof(DiagnosticsInterfaceLanguageText))]
     private InterfaceLanguageOption selectedInterfaceLanguageOption;
 
     public string SelectedInterfaceLanguageId => SelectedInterfaceLanguageOption.Id;
@@ -122,6 +178,7 @@ public partial class SettingsViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarInterestsText))]
     [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarPersonalityText))]
     [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarSpeakingStyleText))]
+    [NotifyPropertyChangedFor(nameof(DiagnosticsTutorAvatarText))]
     private TutorAvatarOption? selectedTutorAvatarOption;
 
     [ObservableProperty]
@@ -131,6 +188,7 @@ public partial class SettingsViewModel : ViewModelBase
     private string learningGoal = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DiagnosticsBackendUrlText))]
     private string backendBaseUrl = BackendConstants.DefaultBackendBaseUrl;
 
     [ObservableProperty]
@@ -143,17 +201,25 @@ public partial class SettingsViewModel : ViewModelBase
         string currentUserDisplayName,
         string currentLearningGoal,
         string currentBackendBaseUrl,
+        string settingsFilePath,
+        string lessonHistoryFilePath,
         IReadOnlyList<LessonHistoryItem> lessonHistory,
+        LessonChatBackendService lessonChatBackendService,
         Action<string, string, string, string, string, string> saveSettings,
         Action navigateBack)
     {
         selectedInterfaceLanguageOption = InterfaceLanguageOptions.GetById(currentInterfaceLanguageId);
         localizedText = SettingsLocalization.GetSettingsText(selectedInterfaceLanguageOption.Id);
+        diagnosticsLocalizedText = DiagnosticsLocalization.GetText(selectedInterfaceLanguageOption.Id);
         selectedNativeLanguage = currentNativeLanguage;
         selectedTutorAvatarOption = TutorAvatarOptions.GetById(currentTutorAvatarId);
         userDisplayName = currentUserDisplayName;
         learningGoal = currentLearningGoal;
         backendBaseUrl = currentBackendBaseUrl;
+        settingsFilePathText = settingsFilePath;
+        lessonHistoryFilePathText = lessonHistoryFilePath;
+        appVersionText = BuildAppVersionText();
+        this.lessonChatBackendService = lessonChatBackendService;
         this.saveSettings = saveSettings;
         this.navigateBack = navigateBack;
 
@@ -170,6 +236,7 @@ public partial class SettingsViewModel : ViewModelBase
     {
         var selectedAvatar = SelectedTutorAvatarOption ?? TutorAvatarOptions.Elena;
         saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguage, selectedAvatar.Id, UserDisplayName, LearningGoal, BackendBaseUrl);
+        BackendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl);
         StatusMessage = localizedText.SettingsSavedMessage;
     }
 
@@ -179,15 +246,69 @@ public partial class SettingsViewModel : ViewModelBase
         navigateBack();
     }
 
+    [RelayCommand]
+    private async Task RefreshDiagnosticsAsync()
+    {
+        SetDiagnosticStatuses(DiagnosticBackendStatus.Checking, DiagnosticAiStatus.Checking);
+
+        var isBackendHealthy = await lessonChatBackendService.CheckHealthAsync(BackendBaseUrl);
+        if (!isBackendHealthy)
+        {
+            SetDiagnosticStatuses(DiagnosticBackendStatus.Unavailable, DiagnosticAiStatus.Unavailable);
+            return;
+        }
+
+        BackendStatus = DiagnosticBackendStatus.Connected;
+        var configStatus = await lessonChatBackendService.GetBackendConfigStatusAsync(BackendBaseUrl);
+        AiStatus = MapAiStatus(configStatus);
+    }
+
     partial void OnSelectedInterfaceLanguageOptionChanged(InterfaceLanguageOption value)
     {
         localizedText = SettingsLocalization.GetSettingsText(value.Id);
+        diagnosticsLocalizedText = DiagnosticsLocalization.GetText(value.Id);
         RefreshLocalizedText();
 
         if (!string.IsNullOrWhiteSpace(StatusMessage))
         {
             StatusMessage = localizedText.SettingsSavedMessage;
         }
+    }
+
+    private DiagnosticBackendStatus BackendStatus
+    {
+        get => backendStatus;
+        set
+        {
+            if (backendStatus == value)
+            {
+                return;
+            }
+
+            backendStatus = value;
+            OnPropertyChanged(nameof(DiagnosticsBackendStatusText));
+        }
+    }
+
+    private DiagnosticAiStatus AiStatus
+    {
+        get => aiStatus;
+        set
+        {
+            if (aiStatus == value)
+            {
+                return;
+            }
+
+            aiStatus = value;
+            OnPropertyChanged(nameof(DiagnosticsAiStatusText));
+        }
+    }
+
+    private void SetDiagnosticStatuses(DiagnosticBackendStatus nextBackendStatus, DiagnosticAiStatus nextAiStatus)
+    {
+        BackendStatus = nextBackendStatus;
+        AiStatus = nextAiStatus;
     }
 
     private void RefreshLocalizedText()
@@ -221,6 +342,20 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(CurrentStreakLabel));
         OnPropertyChanged(nameof(LastCompletedLessonLabel));
         OnPropertyChanged(nameof(LastCompletedLessonText));
+        OnPropertyChanged(nameof(DiagnosticsTitle));
+        OnPropertyChanged(nameof(DiagnosticsSubtitle));
+        OnPropertyChanged(nameof(DiagnosticsAppVersionLabel));
+        OnPropertyChanged(nameof(DiagnosticsBackendUrlLabel));
+        OnPropertyChanged(nameof(DiagnosticsBackendStatusLabel));
+        OnPropertyChanged(nameof(DiagnosticsAiStatusLabel));
+        OnPropertyChanged(nameof(DiagnosticsSettingsFileLabel));
+        OnPropertyChanged(nameof(DiagnosticsLessonHistoryFileLabel));
+        OnPropertyChanged(nameof(DiagnosticsInterfaceLanguageLabel));
+        OnPropertyChanged(nameof(DiagnosticsNativeLanguageLabel));
+        OnPropertyChanged(nameof(DiagnosticsTutorAvatarLabel));
+        OnPropertyChanged(nameof(RefreshDiagnosticsButtonText));
+        OnPropertyChanged(nameof(DiagnosticsBackendStatusText));
+        OnPropertyChanged(nameof(DiagnosticsAiStatusText));
         OnPropertyChanged(nameof(SaveButtonText));
         OnPropertyChanged(nameof(BackButtonText));
     }
@@ -234,6 +369,63 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(SelectedTutorAvatarInterestsText));
         OnPropertyChanged(nameof(SelectedTutorAvatarPersonalityText));
         OnPropertyChanged(nameof(SelectedTutorAvatarSpeakingStyleText));
+    }
+
+    private string LocalizeBackendStatus(DiagnosticBackendStatus status)
+    {
+        return status switch
+        {
+            DiagnosticBackendStatus.Connected => diagnosticsLocalizedText.ConnectedStatus,
+            DiagnosticBackendStatus.Unavailable => diagnosticsLocalizedText.UnavailableStatus,
+            DiagnosticBackendStatus.Checking => diagnosticsLocalizedText.CheckingStatus,
+            _ => diagnosticsLocalizedText.UnknownStatus
+        };
+    }
+
+    private string LocalizeAiStatus(DiagnosticAiStatus status)
+    {
+        return status switch
+        {
+            DiagnosticAiStatus.Configured => diagnosticsLocalizedText.ConfiguredStatus,
+            DiagnosticAiStatus.NotConfigured => diagnosticsLocalizedText.NotConfiguredStatus,
+            DiagnosticAiStatus.Unavailable => diagnosticsLocalizedText.UnavailableStatus,
+            DiagnosticAiStatus.Checking => diagnosticsLocalizedText.CheckingStatus,
+            _ => diagnosticsLocalizedText.UnknownStatus
+        };
+    }
+
+    private static DiagnosticAiStatus MapAiStatus(BackendConfigStatusResponse? configStatus)
+    {
+        if (configStatus is null)
+        {
+            return DiagnosticAiStatus.Unavailable;
+        }
+
+        if (string.Equals(configStatus.OpenAiStatus, BackendConstants.OpenAiConfiguredStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            return DiagnosticAiStatus.Configured;
+        }
+
+        if (string.Equals(configStatus.OpenAiStatus, OpenAiNotConfiguredStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            return DiagnosticAiStatus.NotConfigured;
+        }
+
+        return string.IsNullOrWhiteSpace(configStatus.OpenAiStatus)
+            ? DiagnosticAiStatus.Unknown
+            : DiagnosticAiStatus.NotConfigured;
+    }
+
+    private static string BuildAppVersionText()
+    {
+        var version = Assembly.GetExecutingAssembly().GetName().Version;
+        if (version is null)
+        {
+            return AppVersionFallbackText;
+        }
+
+        var versionText = version.ToString(fieldCount: 3);
+        return string.IsNullOrWhiteSpace(versionText) ? AppVersionFallbackText : versionText;
     }
 
     private static int CountLessonsToday(IReadOnlyList<LessonHistoryItem> lessonHistory)
@@ -278,5 +470,22 @@ public partial class SettingsViewModel : ViewModelBase
         return string.IsNullOrWhiteSpace(lessonTitle)
             ? completedAtText
             : $"{completedAtText} · {lessonTitle}";
+    }
+
+    private enum DiagnosticBackendStatus
+    {
+        Unknown,
+        Checking,
+        Connected,
+        Unavailable
+    }
+
+    private enum DiagnosticAiStatus
+    {
+        Unknown,
+        Checking,
+        Configured,
+        NotConfigured,
+        Unavailable
     }
 }

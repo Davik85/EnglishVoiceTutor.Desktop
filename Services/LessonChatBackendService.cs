@@ -19,13 +19,18 @@ public sealed class LessonChatBackendService
         backendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(value);
     }
 
-    public async Task<bool> CheckHealthAsync(CancellationToken cancellationToken = default)
+    public Task<bool> CheckHealthAsync(CancellationToken cancellationToken = default)
+    {
+        return CheckHealthAsync(backendBaseUrl, cancellationToken);
+    }
+
+    public async Task<bool> CheckHealthAsync(string? backendBaseUrlOverride, CancellationToken cancellationToken = default)
     {
         using var httpClient = CreateHttpClient();
 
         try
         {
-            using var response = await httpClient.GetAsync(CreateEndpointUri(BackendConstants.HealthEndpoint), cancellationToken);
+            using var response = await httpClient.GetAsync(CreateEndpointUri(backendBaseUrlOverride, BackendConstants.HealthEndpoint), cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -43,13 +48,18 @@ public sealed class LessonChatBackendService
         }
     }
 
-    public async Task<BackendConfigStatusResponse?> GetBackendConfigStatusAsync(CancellationToken cancellationToken = default)
+    public Task<BackendConfigStatusResponse?> GetBackendConfigStatusAsync(CancellationToken cancellationToken = default)
+    {
+        return GetBackendConfigStatusAsync(backendBaseUrl, cancellationToken);
+    }
+
+    public async Task<BackendConfigStatusResponse?> GetBackendConfigStatusAsync(string? backendBaseUrlOverride, CancellationToken cancellationToken = default)
     {
         using var httpClient = CreateHttpClient();
 
         try
         {
-            using var response = await httpClient.GetAsync(CreateEndpointUri(BackendConstants.BackendConfigStatusEndpoint), cancellationToken);
+            using var response = await httpClient.GetAsync(CreateEndpointUri(backendBaseUrlOverride, BackendConstants.BackendConfigStatusEndpoint), cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -226,6 +236,11 @@ public sealed class LessonChatBackendService
     }
 
     private Uri CreateEndpointUri(string endpointPath)
+    {
+        return CreateEndpointUri(backendBaseUrl, endpointPath);
+    }
+
+    private static Uri CreateEndpointUri(string? backendBaseUrl, string endpointPath)
     {
         return BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath);
     }
