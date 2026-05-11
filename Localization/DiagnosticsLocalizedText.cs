@@ -1,0 +1,21 @@
+namespace EnglishVoiceTutor.Desktop.Localization;
+
+public sealed record DiagnosticsLocalizedText(
+    string Title,
+    string Subtitle,
+    string AppVersionLabel,
+    string BackendUrlLabel,
+    string BackendStatusLabel,
+    string AiStatusLabel,
+    string SettingsFileLabel,
+    string LessonHistoryFileLabel,
+    string InterfaceLanguageLabel,
+    string NativeLanguageLabel,
+    string TutorAvatarLabel,
+    string RefreshButtonText,
+    string ConnectedStatus,
+    string UnavailableStatus,
+    string CheckingStatus,
+    string ConfiguredStatus,
+    string NotConfiguredStatus,
+    string UnknownStatus);
