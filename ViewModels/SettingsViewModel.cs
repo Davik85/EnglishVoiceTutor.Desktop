@@ -79,21 +79,24 @@ public partial class SettingsViewModel : ViewModelBase
 
     public IReadOnlyList<TutorAvatarOption> AvailableTutorAvatars { get; } = TutorAvatarOptions.All;
 
-    public string SelectedTutorAvatarDescription => SelectedTutorAvatarOption?.ShortDescription ?? string.Empty;
+    private TutorAvatarLocalizedProfileText SelectedTutorAvatarProfileText =>
+        TutorAvatarProfileLocalization.GetProfileText(SelectedTutorAvatarOption?.Id, SelectedInterfaceLanguageId);
+
+    public string SelectedTutorAvatarDescription => SelectedTutorAvatarProfileText.ShortDescription;
 
     public string SelectedTutorAvatarDisplayName => SelectedTutorAvatarOption?.DisplayName ?? string.Empty;
 
-    public string SelectedTutorAvatarAgeText => SelectedTutorAvatarOption?.AgeText ?? string.Empty;
+    public string SelectedTutorAvatarAgeText => SelectedTutorAvatarProfileText.AgeText;
 
-    public string SelectedTutorAvatarLocation => SelectedTutorAvatarOption?.Location ?? string.Empty;
+    public string SelectedTutorAvatarLocation => SelectedTutorAvatarProfileText.Location;
 
-    public string SelectedTutorAvatarRole => SelectedTutorAvatarOption?.Role ?? string.Empty;
+    public string SelectedTutorAvatarRole => SelectedTutorAvatarProfileText.Role;
 
-    public string SelectedTutorAvatarInterestsText => SelectedTutorAvatarOption?.InterestsText ?? string.Empty;
+    public string SelectedTutorAvatarInterestsText => SelectedTutorAvatarProfileText.InterestsText;
 
-    public string SelectedTutorAvatarPersonalityText => SelectedTutorAvatarOption?.PersonalityText ?? string.Empty;
+    public string SelectedTutorAvatarPersonalityText => SelectedTutorAvatarProfileText.PersonalityText;
 
-    public string SelectedTutorAvatarSpeakingStyleText => SelectedTutorAvatarOption?.SpeakingStyleText ?? string.Empty;
+    public string SelectedTutorAvatarSpeakingStyleText => SelectedTutorAvatarProfileText.SpeakingStyleText;
 
     [ObservableProperty]
     private string selectedNativeLanguage;
@@ -178,6 +181,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     private void RefreshLocalizedText()
     {
+        RefreshSelectedTutorAvatarProfileText();
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(Subtitle));
         OnPropertyChanged(nameof(InterfaceLanguageTitle));
@@ -205,6 +209,17 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(LastCompletedLessonText));
         OnPropertyChanged(nameof(SaveButtonText));
         OnPropertyChanged(nameof(BackButtonText));
+    }
+
+    private void RefreshSelectedTutorAvatarProfileText()
+    {
+        OnPropertyChanged(nameof(SelectedTutorAvatarDescription));
+        OnPropertyChanged(nameof(SelectedTutorAvatarAgeText));
+        OnPropertyChanged(nameof(SelectedTutorAvatarLocation));
+        OnPropertyChanged(nameof(SelectedTutorAvatarRole));
+        OnPropertyChanged(nameof(SelectedTutorAvatarInterestsText));
+        OnPropertyChanged(nameof(SelectedTutorAvatarPersonalityText));
+        OnPropertyChanged(nameof(SelectedTutorAvatarSpeakingStyleText));
     }
 
     private static int CountLessonsToday(IReadOnlyList<LessonHistoryItem> lessonHistory)
