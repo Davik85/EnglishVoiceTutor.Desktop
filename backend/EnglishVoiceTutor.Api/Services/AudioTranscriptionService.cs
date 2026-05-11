@@ -64,6 +64,12 @@ public sealed class AudioTranscriptionService
         formContent.Add(
             new StringContent(OpenAiConstants.DefaultTranscriptionModel),
             OpenAiConstants.MultipartModelFieldName);
+        formContent.Add(
+            new StringContent(OpenAiConstants.TranscriptionLanguage),
+            OpenAiConstants.MultipartLanguageFieldName);
+        formContent.Add(
+            new StringContent(OpenAiConstants.TranscriptionPrompt),
+            OpenAiConstants.MultipartPromptFieldName);
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, OpenAiConstants.AudioTranscriptionsEndpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue(OpenAiConstants.AuthorizationScheme, apiKey);

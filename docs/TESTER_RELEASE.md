@@ -186,6 +186,9 @@ During the tester run, verify:
 - Hint works;
 - Translate works;
 - Start/Stop recording works;
+- for voice testing, say 10 short English phrases in a row and report after which voice message recognition quality degrades;
+- use headphones if possible so the microphone does not capture bot voice;
+- send a screenshot of the chat if transcription switches language;
 - Play voice works;
 - Conversation Mode works;
 - Finish lesson opens Summary;
@@ -220,6 +223,14 @@ Do not ask testers to send API keys. If you need settings or history files for d
   yes / no
 - Voice recording worked:
   yes / no
+- Voice stress test completed with 10 short English phrases in a row:
+  yes / no
+- Recognition quality degraded after voice message number:
+- Used headphones during voice testing:
+  yes / no
+- Transcription switched language:
+  yes / no
+- Screenshot of chat if transcription switched language:
 - Bot voice worked:
   yes / no
 - Conversation Mode worked:

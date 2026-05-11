@@ -91,6 +91,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(PlayBotVoiceCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     private bool isBotVoicePlaying;
 
     [ObservableProperty]
@@ -244,7 +245,12 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanToggleVoiceRecording()
     {
-        return !IsSending || IsRecording;
+        if (IsRecording)
+        {
+            return true;
+        }
+
+        return !IsSending && !IsBotVoicePlaying && !isTranscribingAudio;
     }
 
     private bool CanPlayBotVoice(ChatMessageViewModel? message)
@@ -274,7 +280,19 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private void StartVoiceRecording()
     {
-        if (IsSending)
+        if (IsRecording || audioRecordingService.IsRecording)
+        {
+            StatusMessage = AudioConstants.RecordingAlreadyInProgressMessage;
+            return;
+        }
+
+        if (IsBotVoicePlaying)
+        {
+            StatusMessage = AudioConstants.BotVoicePlayingRecordingBlockedMessage;
+            return;
+        }
+
+        if (IsSending || isTranscribingAudio)
         {
             return;
         }
@@ -297,16 +315,34 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private async Task StopVoiceRecordingAsync()
     {
+        if (isTranscribingAudio)
+        {
+            return;
+        }
+
         var savedFilePath = string.Empty;
 
         try
         {
             savedFilePath = audioRecordingService.StopRecording();
+            var recordingDuration = audioRecordingService.LastRecordingDuration;
             IsRecording = false;
 
             if (string.IsNullOrWhiteSpace(savedFilePath))
             {
                 StatusMessage = localizedText.RecordingStopErrorMessage;
+                return;
+            }
+
+            if (recordingDuration.TotalMilliseconds < AudioConstants.MinimumRecordingDurationMilliseconds)
+            {
+                StatusMessage = AudioConstants.RecordingTooShortMessage;
+                return;
+            }
+
+            if (recordingDuration.TotalSeconds > AudioConstants.MaximumRecordingDurationSeconds)
+            {
+                StatusMessage = AudioConstants.RecordingTooLongMessage;
                 return;
             }
 
@@ -317,18 +353,23 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var transcriptionText = await lessonChatBackendService.SendAudioForTranscriptionAsync(savedFilePath);
             BackendStatusText = BackendConstants.BackendStatusConnected;
+            var trimmedTranscriptionText = transcriptionText.Trim();
 
-            if (string.IsNullOrWhiteSpace(transcriptionText))
+            if (string.IsNullOrWhiteSpace(trimmedTranscriptionText))
             {
                 StatusMessage = localizedText.EmptyTranscriptionMessage;
                 return;
             }
 
-            var trimmedTranscriptionText = transcriptionText.Trim();
+            if (!IsUsableEnglishPracticeTranscription(trimmedTranscriptionText))
+            {
+                StatusMessage = AudioConstants.UnclearEnglishTranscriptionMessage;
+                return;
+            }
 
             if (!ShouldAutoSendTranscribedVoice)
             {
-                UserInput = transcriptionText;
+                UserInput = trimmedTranscriptionText;
                 StatusMessage = localizedText.TranscriptionCompletedMessage;
                 return;
             }
@@ -355,6 +396,45 @@ public partial class LessonChatViewModel : ViewModelBase
             RefreshAvatarState();
             audioRecordingService.SafeDeleteRecording(savedFilePath);
         }
+    }
+
+
+    private static bool IsUsableEnglishPracticeTranscription(string transcriptionText)
+    {
+        if (string.IsNullOrWhiteSpace(transcriptionText))
+        {
+            return false;
+        }
+
+        if (transcriptionText.Length == 1 && char.IsPunctuation(transcriptionText[0]))
+        {
+            return false;
+        }
+
+        return !ContainsMostlyCyrillicLetters(transcriptionText);
+    }
+
+    private static bool ContainsMostlyCyrillicLetters(string text)
+    {
+        var letterCount = 0;
+        var cyrillicLetterCount = 0;
+
+        foreach (var character in text)
+        {
+            if (!char.IsLetter(character))
+            {
+                continue;
+            }
+
+            letterCount++;
+
+            if (character is >= '\u0400' and <= '\u04FF')
+            {
+                cyrillicLetterCount++;
+            }
+        }
+
+        return letterCount > 0 && cyrillicLetterCount > letterCount / 2;
     }
 
     [RelayCommand]
