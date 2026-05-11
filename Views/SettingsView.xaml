@@ -65,6 +65,21 @@
             <Setter Property="Foreground" Value="#FF1C2B3A" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
+
+        <Style x:Key="AvatarProfileLabelStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,10,6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#FF5B6B7B" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style x:Key="AvatarProfileValueStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#FF1C2B3A" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
     </UserControl.Resources>
 
     <Grid Background="#FFF6F8FB">
@@ -142,11 +157,58 @@
                                               SelectedItem="{Binding SelectedTutorAvatarOption, UpdateSourceTrigger=PropertyChanged}"
                                               DisplayMemberPath="DisplayName" />
 
-                                    <TextBlock Margin="0,8,0,0"
-                                               Text="{Binding SelectedTutorAvatarDescription}"
-                                               FontSize="13"
-                                               Foreground="#FF5B6B7B"
-                                               TextWrapping="Wrap" />
+                                    <Border Margin="0,12,0,0"
+                                            Padding="12"
+                                            Background="#FFF6F8FB"
+                                            CornerRadius="10"
+                                            BorderBrush="#FFE1E8F0"
+                                            BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding AvatarProfileTitle}"
+                                                       FontSize="14"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#FF1E3A56" />
+                                            <TextBlock Margin="0,2,0,10"
+                                                       Text="{Binding SelectedTutorAvatarDisplayName}"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#FF1C2B3A"
+                                                       TextWrapping="Wrap" />
+
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+
+                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding AvatarAgeLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
+                                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedTutorAvatarAgeText}" Style="{StaticResource AvatarProfileValueStyle}" />
+
+                                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding AvatarLocationLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
+                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedTutorAvatarLocation}" Style="{StaticResource AvatarProfileValueStyle}" />
+
+                                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding AvatarRoleLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
+                                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedTutorAvatarRole}" Style="{StaticResource AvatarProfileValueStyle}" />
+
+                                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding AvatarInterestsLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
+                                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedTutorAvatarInterestsText}" Style="{StaticResource AvatarProfileValueStyle}" />
+
+                                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding AvatarPersonalityLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
+                                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedTutorAvatarPersonalityText}" Style="{StaticResource AvatarProfileValueStyle}" />
+
+                                                <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding AvatarSpeakingStyleLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
+                                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedTutorAvatarSpeakingStyleText}" Style="{StaticResource AvatarProfileValueStyle}" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
