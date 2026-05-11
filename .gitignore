@@ -1,4 +1,4 @@
-﻿.vs/
+.vs/
 [Bb]in/
 [Oo]bj/
 *.user
@@ -6,3 +6,4 @@
 *.suo
 TestResults/
 *.nupkg
+artifacts/
