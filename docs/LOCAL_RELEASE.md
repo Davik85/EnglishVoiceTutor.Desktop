@@ -4,6 +4,14 @@ This document describes the first simple local release workflow for `EnglishVoic
 
 For a shareable tester zip package, see [`docs/TESTER_RELEASE.md`](TESTER_RELEASE.md).
 
+Tester releases should use the self-contained tester zip by default so testers can unzip and run the app without installing the .NET Desktop Runtime:
+
+```text
+artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+```
+
+Use the framework-dependent publish documented below only for developer checks or controlled machines that already have the matching .NET Desktop Runtime installed.
+
 ## Scope
 
 This workflow is for a local MVP desktop release check:
@@ -117,7 +125,7 @@ Expected results:
 
 ## Publish Mode A: framework-dependent folder
 
-Use this mode when the target Windows machine has the required .NET Desktop Runtime installed.
+Use this mode for developer checks or when the target Windows machine has the required .NET Desktop Runtime installed. Do not use this as the default tester package because early testers should not need to install `windowsdesktop-runtime-10` manually.
 
 From the repository root:
 
@@ -141,7 +149,7 @@ Expected result: `True`.
 
 ## Publish Mode B: self-contained folder
 
-Use this mode when the target Windows machine may not have the required .NET runtime installed.
+Use this mode when the target Windows machine may not have the required .NET runtime installed. This is the default mode for tester release zips.
 
 From the repository root:
 
@@ -231,6 +239,24 @@ With the backend running on port `5000`, start ngrok:
 ngrok http 5000
 ```
 
+Before using the URL in the desktop app, test it manually:
+
+```powershell
+curl.exe -H "ngrok-skip-browser-warning: 1" https://YOUR-NGROK-URL/health
+```
+
+Expected health response:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+If this `curl.exe` command fails, the desktop app will not connect either. Confirm the backend is running locally, ngrok is forwarding port `5000`, and the copied URL is the `https` URL from the current ngrok session.
+
+The desktop app sends the `ngrok-skip-browser-warning: 1` header automatically for backend calls, including Diagnostics and Lesson Chat. The same header is safe for local and hosted ASP.NET Core backends because unknown headers are ignored.
+
 Then:
 
 1. Copy the `https` ngrok URL.
@@ -238,9 +264,13 @@ Then:
 3. Go to Settings -> Backend URL.
 4. Paste the ngrok URL.
 5. Save settings.
-6. Open a new lesson.
-7. Verify backend indicators and AI features.
-8. Restart the desktop app and confirm the ngrok Backend URL persisted if you still need it.
+6. Open Diagnostics.
+7. Click Refresh diagnostics.
+8. Confirm Backend status becomes connected.
+9. Confirm AI status becomes configured or not configured.
+10. Open a new lesson.
+11. Verify backend indicators and AI features.
+12. Restart the desktop app and confirm the ngrok Backend URL persisted if you still need it.
 
 ngrok URLs are temporary and meant for testing. A proper domain and deployed backend can be added later.
 
@@ -264,7 +294,7 @@ ngrok URLs are temporary and meant for testing. A proper domain and deployed bac
 - [ ] `curl http://localhost:5000/health` works and returns status `ok`.
 - [ ] `curl http://localhost:5000/api/backend/config-status` works and does not return an API key.
 - [ ] Invalid backend URL does not crash the app.
-- [ ] ngrok URL works if tested.
+- [ ] ngrok URL works if tested with `curl.exe -H "ngrok-skip-browser-warning: 1" https://YOUR-NGROK-URL/health`.
 
 ### Lesson flow
 

@@ -229,10 +229,31 @@ public sealed class LessonChatBackendService
 
     private HttpClient CreateHttpClient()
     {
-        return new HttpClient
+        var httpClient = new HttpClient
         {
             Timeout = TimeSpan.FromSeconds(BackendConstants.BackendRequestTimeoutSeconds)
         };
+
+        if (!httpClient.DefaultRequestHeaders.Contains(BackendConstants.NgrokSkipBrowserWarningHeaderName))
+        {
+            httpClient.DefaultRequestHeaders.TryAddWithoutValidation(
+                BackendConstants.NgrokSkipBrowserWarningHeaderName,
+                BackendConstants.NgrokSkipBrowserWarningHeaderValue);
+        }
+
+        if (!httpClient.DefaultRequestHeaders.UserAgent.Any(
+                productInfo => string.Equals(
+                    productInfo.Product?.Name,
+                    BackendConstants.BackendUserAgentProductName,
+                    StringComparison.OrdinalIgnoreCase)))
+        {
+            httpClient.DefaultRequestHeaders.UserAgent.Add(
+                new ProductInfoHeaderValue(
+                    BackendConstants.BackendUserAgentProductName,
+                    BackendConstants.BackendUserAgentVersion));
+        }
+
+        return httpClient;
     }
 
     private Uri CreateEndpointUri(string endpointPath)
