@@ -231,6 +231,17 @@
 
                             <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
+                                    <TextBlock Text="{Binding ConnectionTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                    <TextBlock Text="{Binding BackendUrlSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+
+                                    <TextBlock Text="{Binding BackendUrlLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                    <TextBox Style="{StaticResource SettingsTextBoxStyle}"
+                                             Text="{Binding BackendBaseUrl, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
+                                <StackPanel>
                                     <TextBlock Text="{Binding LearningStatisticsTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
                                     <TextBlock Text="{Binding LearningStatisticsSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
 
