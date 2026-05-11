@@ -74,7 +74,8 @@ public class UserSettingsService
             NativeLanguageName = AppConstants.NativeLanguageRussian,
             SelectedTutorAvatarId = TutorAvatarOptions.DefaultAvatarId,
             UserDisplayName = string.Empty,
-            LearningGoal = string.Empty
+            LearningGoal = string.Empty,
+            BackendBaseUrl = BackendConstants.DefaultBackendBaseUrl
         };
     }
 
@@ -90,6 +91,7 @@ public class UserSettingsService
         settings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(settings.SelectedTutorAvatarId).Id;
         settings.UserDisplayName = NormalizeOptionalText(settings.UserDisplayName);
         settings.LearningGoal = NormalizeOptionalText(settings.LearningGoal);
+        settings.BackendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(settings.BackendBaseUrl);
     }
 
     private static string NormalizeOptionalText(string? value)

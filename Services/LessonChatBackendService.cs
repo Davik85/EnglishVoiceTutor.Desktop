@@ -12,6 +12,12 @@ public sealed class LessonChatBackendService
 {
     private const string HealthyStatus = "ok";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private string backendBaseUrl = BackendConstants.DefaultBackendBaseUrl;
+
+    public void SetBackendBaseUrl(string? value)
+    {
+        backendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(value);
+    }
 
     public async Task<bool> CheckHealthAsync(CancellationToken cancellationToken = default)
     {
@@ -19,7 +25,7 @@ public sealed class LessonChatBackendService
 
         try
         {
-            using var response = await httpClient.GetAsync(BackendConstants.HealthEndpoint, cancellationToken);
+            using var response = await httpClient.GetAsync(CreateEndpointUri(BackendConstants.HealthEndpoint), cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -43,7 +49,7 @@ public sealed class LessonChatBackendService
 
         try
         {
-            using var response = await httpClient.GetAsync(BackendConstants.BackendConfigStatusEndpoint, cancellationToken);
+            using var response = await httpClient.GetAsync(CreateEndpointUri(BackendConstants.BackendConfigStatusEndpoint), cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -65,7 +71,7 @@ public sealed class LessonChatBackendService
         using var httpClient = CreateHttpClient();
 
         using var response = await httpClient.PostAsJsonAsync(
-            BackendConstants.LessonChatReplyEndpoint,
+            CreateEndpointUri(BackendConstants.LessonChatReplyEndpoint),
             request,
             JsonOptions,
             cancellationToken);
@@ -89,7 +95,7 @@ public sealed class LessonChatBackendService
         using var httpClient = CreateHttpClient();
 
         using var response = await httpClient.PostAsJsonAsync(
-            BackendConstants.LessonChatHintEndpoint,
+            CreateEndpointUri(BackendConstants.LessonChatHintEndpoint),
             request,
             JsonOptions,
             cancellationToken);
@@ -127,7 +133,7 @@ public sealed class LessonChatBackendService
             Path.GetFileName(audioFilePath));
 
         using var response = await httpClient.PostAsync(
-            BackendConstants.AudioTranscriptionEndpoint,
+            CreateEndpointUri(BackendConstants.AudioTranscriptionEndpoint),
             formContent,
             cancellationToken);
 
@@ -156,7 +162,7 @@ public sealed class LessonChatBackendService
         using var httpClient = CreateHttpClient();
 
         using var response = await httpClient.PostAsJsonAsync(
-            BackendConstants.AudioSpeechEndpoint,
+            CreateEndpointUri(BackendConstants.AudioSpeechEndpoint),
             new AudioSpeechBackendRequest
             {
                 Text = text
@@ -190,7 +196,7 @@ public sealed class LessonChatBackendService
         using var httpClient = CreateHttpClient();
 
         using var response = await httpClient.PostAsJsonAsync(
-            BackendConstants.TranslationEndpoint,
+            CreateEndpointUri(BackendConstants.TranslationEndpoint),
             new TranslationBackendRequest
             {
                 Text = text,
@@ -211,12 +217,16 @@ public sealed class LessonChatBackendService
         return backendResponse.TranslatedText.Trim();
     }
 
-    private static HttpClient CreateHttpClient()
+    private HttpClient CreateHttpClient()
     {
         return new HttpClient
         {
-            BaseAddress = new Uri(BackendConstants.DefaultBackendBaseUrl),
             Timeout = TimeSpan.FromSeconds(BackendConstants.BackendRequestTimeoutSeconds)
         };
+    }
+
+    private Uri CreateEndpointUri(string endpointPath)
+    {
+        return BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath);
     }
 }

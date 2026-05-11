@@ -8,7 +8,7 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 
 public partial class SettingsViewModel : ViewModelBase
 {
-    private readonly Action<string, string, string, string, string> saveSettings;
+    private readonly Action<string, string, string, string, string, string> saveSettings;
     private readonly Action navigateBack;
     private readonly LessonHistoryItem? latestLesson;
     private SettingsLocalizedText localizedText;
@@ -40,6 +40,12 @@ public partial class SettingsViewModel : ViewModelBase
     public string AvatarPersonalityLabel => localizedText.AvatarPersonalityLabel;
 
     public string AvatarSpeakingStyleLabel => localizedText.AvatarSpeakingStyleLabel;
+
+    public string ConnectionTitle => localizedText.ConnectionTitle;
+
+    public string BackendUrlLabel => localizedText.BackendUrlLabel;
+
+    public string BackendUrlSubtitle => localizedText.BackendUrlSubtitle;
 
     public string UserProfileTitle => localizedText.UserProfileTitle;
 
@@ -125,6 +131,9 @@ public partial class SettingsViewModel : ViewModelBase
     private string learningGoal = string.Empty;
 
     [ObservableProperty]
+    private string backendBaseUrl = BackendConstants.DefaultBackendBaseUrl;
+
+    [ObservableProperty]
     private string statusMessage = string.Empty;
 
     public SettingsViewModel(
@@ -133,8 +142,9 @@ public partial class SettingsViewModel : ViewModelBase
         string currentTutorAvatarId,
         string currentUserDisplayName,
         string currentLearningGoal,
+        string currentBackendBaseUrl,
         IReadOnlyList<LessonHistoryItem> lessonHistory,
-        Action<string, string, string, string, string> saveSettings,
+        Action<string, string, string, string, string, string> saveSettings,
         Action navigateBack)
     {
         selectedInterfaceLanguageOption = InterfaceLanguageOptions.GetById(currentInterfaceLanguageId);
@@ -143,6 +153,7 @@ public partial class SettingsViewModel : ViewModelBase
         selectedTutorAvatarOption = TutorAvatarOptions.GetById(currentTutorAvatarId);
         userDisplayName = currentUserDisplayName;
         learningGoal = currentLearningGoal;
+        backendBaseUrl = currentBackendBaseUrl;
         this.saveSettings = saveSettings;
         this.navigateBack = navigateBack;
 
@@ -158,7 +169,7 @@ public partial class SettingsViewModel : ViewModelBase
     private void Save()
     {
         var selectedAvatar = SelectedTutorAvatarOption ?? TutorAvatarOptions.Elena;
-        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguage, selectedAvatar.Id, UserDisplayName, LearningGoal);
+        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguage, selectedAvatar.Id, UserDisplayName, LearningGoal, BackendBaseUrl);
         StatusMessage = localizedText.SettingsSavedMessage;
     }
 
@@ -188,6 +199,9 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(NativeLanguageTitle));
         OnPropertyChanged(nameof(NativeLanguageSubtitle));
         OnPropertyChanged(nameof(TutorAvatarTitle));
+        OnPropertyChanged(nameof(ConnectionTitle));
+        OnPropertyChanged(nameof(BackendUrlLabel));
+        OnPropertyChanged(nameof(BackendUrlSubtitle));
         OnPropertyChanged(nameof(TutorAvatarSubtitle));
         OnPropertyChanged(nameof(AvatarProfileTitle));
         OnPropertyChanged(nameof(AvatarAgeLabel));

@@ -13,4 +13,6 @@ public class UserSettings
     public string UserDisplayName { get; set; } = string.Empty;
 
     public string LearningGoal { get; set; } = string.Empty;
+
+    public string BackendBaseUrl { get; set; } = BackendConstants.DefaultBackendBaseUrl;
 }

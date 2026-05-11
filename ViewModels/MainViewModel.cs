@@ -22,6 +22,7 @@ public partial class MainViewModel : ViewModelBase
         audioRecordingService.CleanupOldRecordings();
         audioPlaybackService.CleanupOldBotVoiceFiles();
         userSettings = userSettingsService.Load();
+        lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
         currentViewModel = CreateWelcomeViewModel();
     }
 
@@ -71,19 +72,22 @@ public partial class MainViewModel : ViewModelBase
             userSettings.SelectedTutorAvatarId,
             userSettings.UserDisplayName,
             userSettings.LearningGoal,
+            userSettings.BackendBaseUrl,
             lessonHistory,
             SaveSettings,
             navigateBack);
     }
 
-    private void SaveSettings(string interfaceLanguageId, string nativeLanguage, string tutorAvatarId, string userDisplayName, string learningGoal)
+    private void SaveSettings(string interfaceLanguageId, string nativeLanguage, string tutorAvatarId, string userDisplayName, string learningGoal, string backendBaseUrl)
     {
         userSettings.InterfaceLanguageId = InterfaceLanguageOptions.GetById(interfaceLanguageId).Id;
         userSettings.NativeLanguageName = nativeLanguage;
         userSettings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(tutorAvatarId).Id;
         userSettings.UserDisplayName = userDisplayName;
         userSettings.LearningGoal = learningGoal;
+        userSettings.BackendBaseUrl = backendBaseUrl;
         userSettingsService.Save(userSettings);
+        lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
     }
 
     private void SaveLessonHistory(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, Feedback? latestFeedback)
