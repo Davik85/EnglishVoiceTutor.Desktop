@@ -1,4 +1,5 @@
 param(
+    [switch]$FrameworkDependent,
     [switch]$SelfContained
 )
 
@@ -12,14 +13,18 @@ if (-not (Test-Path $projectPath)) {
     throw "EnglishVoiceTutor.Desktop.csproj was not found. Run this script from the repository checkout or keep it in the scripts folder."
 }
 
+if ($FrameworkDependent -and $SelfContained) {
+    throw "Use either -FrameworkDependent or -SelfContained, not both. Self-contained is the default."
+}
+
 Set-Location $repoRoot
 
-$packageKind = "framework-dependent"
-$selfContainedValue = "false"
+$packageKind = "self-contained"
+$selfContainedValue = "true"
 
-if ($SelfContained) {
-    $packageKind = "self-contained"
-    $selfContainedValue = "true"
+if ($FrameworkDependent) {
+    $packageKind = "framework-dependent"
+    $selfContainedValue = "false"
 }
 
 $publishDirectory = Join-Path $repoRoot ("artifacts\publish\win-x64-{0}" -f $packageKind)

@@ -14,6 +14,10 @@ public static class BackendConstants
     public const int BackendRequestTimeoutSeconds = 30;
     public const string MultipartFileFieldName = "file";
     public const string WavContentType = "audio/wav";
+    public const string NgrokSkipBrowserWarningHeaderName = "ngrok-skip-browser-warning";
+    public const string NgrokSkipBrowserWarningHeaderValue = "1";
+    public const string BackendUserAgentProductName = "EnglishVoiceTutor.Desktop";
+    public const string BackendUserAgentVersion = "1.0";
 
     public const string BackendUnavailableMessage = "Backend is unavailable. Please start the local backend and try again.";
     public const string BackendInvalidResponseMessage = "Backend returned an invalid response.";

@@ -28,18 +28,18 @@ Keep the MVP tester release simple until installer, signing, and hosting require
 
 ## Package types
 
-The default package is framework-dependent because it creates a smaller zip:
-
-```text
-artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-framework-dependent.zip
-```
-
-A framework-dependent package requires the matching .NET Desktop Runtime on the tester machine. If the app does not launch, install the required .NET Desktop Runtime for Windows x64. If runtime installation is inconvenient for testers, use a self-contained package later.
-
-The optional self-contained package is larger because it includes the runtime:
+The default tester package is self-contained so early testers can unzip the package and run the app without manually installing `windowsdesktop-runtime-10` or any other .NET Desktop Runtime:
 
 ```text
 artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+```
+
+The self-contained package is larger because it includes the required runtime components. This is the recommended package for tester releases.
+
+A framework-dependent package is still available as an advanced smaller option for developer checks or controlled machines that already have the matching .NET Desktop Runtime installed:
+
+```text
+artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-framework-dependent.zip
 ```
 
 ## Prepare the app package
@@ -54,31 +54,31 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
 The script publishes the desktop app to:
 
 ```text
-artifacts/publish/win-x64-framework-dependent
+artifacts/publish/win-x64-self-contained
 ```
 
 Then it creates this tester zip:
 
 ```text
-artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-framework-dependent.zip
+artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
 ```
 
-To create the optional self-contained package:
+To create the advanced framework-dependent package instead:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1 -SelfContained
+powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1 -FrameworkDependent
 ```
 
 That command publishes to:
 
 ```text
-artifacts/publish/win-x64-self-contained
+artifacts/publish/win-x64-framework-dependent
 ```
 
 And creates:
 
 ```text
-artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-framework-dependent.zip
 ```
 
 The package script does not require administrator privileges, does not publish or modify the backend, does not create or modify `%APPDATA%` settings, and does not include local lesson history.
@@ -114,9 +114,32 @@ http://localhost:5000
 Use this option when the backend runs on the developer machine and the tester needs temporary remote access.
 
 1. Start the backend locally.
-2. Start ngrok for the backend port.
-3. Send only the `https` ngrok URL to the tester.
-4. Tell the tester to paste that URL into Settings -> Backend URL.
+2. Start ngrok for the backend port:
+
+```powershell
+ngrok http 5000
+```
+
+3. Test the ngrok URL manually before sending it:
+
+```powershell
+curl.exe -H "ngrok-skip-browser-warning: 1" https://YOUR-NGROK-URL/health
+```
+
+Expected health response:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+If this `curl.exe` command fails, the desktop app will not connect either. Confirm the backend is running locally, ngrok is forwarding port `5000`, and the copied URL is the `https` URL from the current ngrok session.
+
+The desktop app sends the `ngrok-skip-browser-warning: 1` header automatically for backend calls, including Diagnostics and Lesson Chat. The same header is safe for local and hosted ASP.NET Core backends because unknown headers are ignored.
+
+4. Send only the `https` ngrok URL to the tester.
+5. Tell the tester to paste that URL into Settings -> Backend URL.
 
 ngrok URLs are temporary. If the ngrok session changes, send the tester the new Backend URL.
 
