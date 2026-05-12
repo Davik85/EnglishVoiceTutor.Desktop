@@ -75,7 +75,8 @@ public class UserSettingsService
             SelectedTutorAvatarId = TutorAvatarOptions.DefaultAvatarId,
             UserDisplayName = string.Empty,
             LearningGoal = string.Empty,
-            BackendBaseUrl = BackendConstants.DefaultBackendBaseUrl
+            BackendBaseUrl = BackendConstants.DefaultBackendBaseUrl,
+            AudioInputDeviceId = AudioConstants.DefaultAudioInputDeviceId
         };
     }
 
@@ -92,6 +93,9 @@ public class UserSettingsService
         settings.UserDisplayName = NormalizeOptionalText(settings.UserDisplayName);
         settings.LearningGoal = NormalizeOptionalText(settings.LearningGoal);
         settings.BackendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(settings.BackendBaseUrl);
+        settings.AudioInputDeviceId = string.IsNullOrWhiteSpace(settings.AudioInputDeviceId)
+            ? AudioConstants.DefaultAudioInputDeviceId
+            : settings.AudioInputDeviceId.Trim();
     }
 
     private static string NormalizeOptionalText(string? value)

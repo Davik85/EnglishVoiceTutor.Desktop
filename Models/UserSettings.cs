@@ -15,4 +15,6 @@ public class UserSettings
     public string LearningGoal { get; set; } = string.Empty;
 
     public string BackendBaseUrl { get; set; } = BackendConstants.DefaultBackendBaseUrl;
+
+    public string AudioInputDeviceId { get; set; } = AudioConstants.DefaultAudioInputDeviceId;
 }
