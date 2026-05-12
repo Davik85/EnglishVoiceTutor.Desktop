@@ -31,4 +31,12 @@ public sealed record SettingsLocalizedText(
     string NoCompletedLessonsText,
     string SaveButtonText,
     string BackButtonText,
-    string SettingsSavedMessage);
+    string SettingsSavedMessage,
+    string AudioInputTitle = "Audio input",
+    string MicrophoneLabel = "Microphone",
+    string SystemDefaultMicrophoneText = "System default",
+    string TestMicrophoneText = "Test microphone",
+    string RefreshMicrophonesText = "Refresh microphones",
+    string MicrophoneTestCompletedMessage = "Microphone test completed.",
+    string NoMicrophoneFoundMessage = "No microphone found.",
+    string SelectedMicrophoneUnavailableMessage = "Selected microphone is unavailable. Using system default.");

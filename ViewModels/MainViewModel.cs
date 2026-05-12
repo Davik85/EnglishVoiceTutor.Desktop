@@ -10,6 +10,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly UserSettingsService userSettingsService = new();
     private readonly LessonChatBackendService lessonChatBackendService = new();
     private readonly AudioRecordingService audioRecordingService = new();
+    private readonly AudioInputDeviceService audioInputDeviceService = new();
     private readonly AudioPlaybackService audioPlaybackService = new();
     private readonly LessonHistoryService lessonHistoryService = new();
     private readonly UserSettings userSettings;
@@ -73,15 +74,18 @@ public partial class MainViewModel : ViewModelBase
             userSettings.UserDisplayName,
             userSettings.LearningGoal,
             userSettings.BackendBaseUrl,
+            userSettings.AudioInputDeviceId,
             userSettingsService.SettingsFilePath,
             lessonHistoryService.LessonHistoryFilePath,
             lessonHistory,
             lessonChatBackendService,
+            audioInputDeviceService,
+            audioRecordingService,
             SaveSettings,
             navigateBack);
     }
 
-    private void SaveSettings(string interfaceLanguageId, string nativeLanguage, string tutorAvatarId, string userDisplayName, string learningGoal, string backendBaseUrl)
+    private void SaveSettings(string interfaceLanguageId, string nativeLanguage, string tutorAvatarId, string userDisplayName, string learningGoal, string backendBaseUrl, string audioInputDeviceId)
     {
         userSettings.InterfaceLanguageId = InterfaceLanguageOptions.GetById(interfaceLanguageId).Id;
         userSettings.NativeLanguageName = nativeLanguage;
@@ -89,6 +93,7 @@ public partial class MainViewModel : ViewModelBase
         userSettings.UserDisplayName = userDisplayName;
         userSettings.LearningGoal = learningGoal;
         userSettings.BackendBaseUrl = backendBaseUrl;
+        userSettings.AudioInputDeviceId = audioInputDeviceId;
         userSettingsService.Save(userSettings);
         lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
     }
@@ -155,6 +160,7 @@ public partial class MainViewModel : ViewModelBase
             lessonChatBackendService,
             audioRecordingService,
             audioPlaybackService,
+            userSettings.AudioInputDeviceId,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
             latestFeedback => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic, latestFeedback));
     }

@@ -155,22 +155,25 @@ Ask the tester to follow these steps:
 2. Run `EnglishVoiceTutor.Desktop.exe`.
 3. Open Settings.
 4. Set Backend URL.
-5. Click Save.
-6. Open Diagnostics.
-7. Click Refresh diagnostics.
-8. Confirm backend is connected.
-9. Confirm AI is configured or not configured.
-10. Start lesson.
-11. Send text answer.
-12. Use Hint.
-13. Use Translate.
-14. Use Start/Stop recording.
-15. Use Play voice.
-16. Use Conversation Mode.
-17. Finish lesson.
-18. Check Summary.
-19. Check History.
-20. Restart app and confirm settings/history remain.
+5. In Audio input, select the microphone to test, or keep System default.
+6. Click Test microphone and confirm the app does not crash.
+7. Click Save.
+8. Restart the app and confirm the selected microphone persists, or safely falls back to System default if unavailable.
+9. Open Diagnostics.
+10. Click Refresh diagnostics.
+11. Confirm backend is connected.
+12. Confirm AI is configured or not configured.
+13. Start lesson.
+14. Send text answer.
+15. Use Hint.
+16. Use Translate.
+17. Use Start/Stop recording.
+18. Use Play voice.
+19. Use Conversation Mode.
+20. Finish lesson.
+21. Check Summary.
+22. Check History.
+23. Restart app and confirm settings/history remain.
 
 ## What to verify
 
@@ -178,6 +181,9 @@ During the tester run, verify:
 
 - the app opens from the unzipped folder;
 - Settings can save the Backend URL;
+- Settings shows Audio input and System default in the microphone list;
+- the selected microphone is reported in feedback;
+- if recognition is poor, selecting a different microphone in Settings improves or changes the result;
 - Diagnostics refresh works;
 - Diagnostics backend status matches the configured Backend URL;
 - Diagnostics AI status is shown as configured or not configured;
@@ -186,6 +192,8 @@ During the tester run, verify:
 - Hint works;
 - Translate works;
 - Start/Stop recording works;
+- for microphone testing, report which microphone was selected and whether recording started;
+- for transcription testing, report whether the transcript matched the spoken phrase;
 - for voice testing, say 10 short English phrases in a row and report after which voice message recognition quality degrades;
 - use headphones if possible so the microphone does not capture bot voice;
 - send a screenshot of the chat if transcription switches language;
@@ -221,7 +229,12 @@ Do not ask testers to send API keys. If you need settings or history files for d
 - Diagnostics AI status:
 - Lesson Chat worked:
   yes / no
+- Selected microphone:
+- Voice recording started:
+  yes / no
 - Voice recording worked:
+  yes / no
+- Transcription matched speech:
   yes / no
 - Voice stress test completed with 10 short English phrases in a row:
   yes / no

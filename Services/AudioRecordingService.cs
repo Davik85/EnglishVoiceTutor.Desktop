@@ -8,6 +8,7 @@ namespace EnglishVoiceTutor.Desktop.Services;
 public sealed class AudioRecordingService : IDisposable
 {
     private readonly object writerLock = new();
+    private readonly AudioInputDeviceService audioInputDeviceService = new();
     private WaveInEvent? waveIn;
     private WaveFileWriter? writer;
     private string? currentFilePath;
@@ -22,7 +23,7 @@ public sealed class AudioRecordingService : IDisposable
         ? TimeSpan.Zero
         : DateTimeOffset.UtcNow - recordingStartedAt.Value;
 
-    public string StartRecording()
+    public string StartRecording(string? audioInputDeviceId = null)
     {
         ThrowIfDisposed();
 
@@ -34,7 +35,7 @@ public sealed class AudioRecordingService : IDisposable
         CleanupRecordingResources();
 
         var filePath = CreateRecordingFilePath();
-        var recorder = new WaveInEvent();
+        var recorder = CreateRecorder(audioInputDeviceId);
         WaveFileWriter? fileWriter = null;
 
         try
@@ -139,6 +140,19 @@ public sealed class AudioRecordingService : IDisposable
         currentFilePath = null;
         IsRecording = false;
         disposed = true;
+    }
+
+    private WaveInEvent CreateRecorder(string? audioInputDeviceId)
+    {
+        var recorder = new WaveInEvent();
+        var deviceNumber = audioInputDeviceService.ResolveDeviceNumber(audioInputDeviceId);
+
+        if (deviceNumber.HasValue)
+        {
+            recorder.DeviceNumber = deviceNumber.Value;
+        }
+
+        return recorder;
     }
 
     private static string CreateRecordingFilePath()

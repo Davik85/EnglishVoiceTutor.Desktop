@@ -18,6 +18,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly AudioRecordingService audioRecordingService;
     private readonly AudioPlaybackService audioPlaybackService;
+    private readonly string audioInputDeviceId;
     private readonly AppLocalizedText localizedText;
     private int messageCounter;
     private Feedback? latestFeedback;
@@ -214,6 +215,7 @@ public partial class LessonChatViewModel : ViewModelBase
         LessonChatBackendService lessonChatBackendService,
         AudioRecordingService audioRecordingService,
         AudioPlaybackService audioPlaybackService,
+        string audioInputDeviceId,
         Action navigateBack,
         Action<Feedback?> finishLesson)
     {
@@ -229,6 +231,9 @@ public partial class LessonChatViewModel : ViewModelBase
         this.lessonChatBackendService = lessonChatBackendService;
         this.audioRecordingService = audioRecordingService;
         this.audioPlaybackService = audioPlaybackService;
+        this.audioInputDeviceId = string.IsNullOrWhiteSpace(audioInputDeviceId)
+            ? AudioConstants.DefaultAudioInputDeviceId
+            : audioInputDeviceId;
         this.navigateBack = navigateBack;
         this.finishLesson = finishLesson;
 
@@ -299,7 +304,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
         try
         {
-            audioRecordingService.StartRecording();
+            audioRecordingService.StartRecording(audioInputDeviceId);
             CurrentHintText = string.Empty;
             IsRecording = true;
             RefreshAvatarState();

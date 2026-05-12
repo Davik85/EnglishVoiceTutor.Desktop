@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -13,9 +14,11 @@ public partial class SettingsViewModel : ViewModelBase
     private const string AppVersionFallbackText = "local build";
     private const string OpenAiNotConfiguredStatus = "not_configured";
 
-    private readonly Action<string, string, string, string, string, string> saveSettings;
+    private readonly Action<string, string, string, string, string, string, string> saveSettings;
     private readonly Action navigateBack;
     private readonly LessonChatBackendService lessonChatBackendService;
+    private readonly AudioInputDeviceService audioInputDeviceService;
+    private readonly AudioRecordingService audioRecordingService;
     private readonly LessonHistoryItem? latestLesson;
     private readonly string appVersionText;
     private readonly string settingsFilePathText;
@@ -54,6 +57,16 @@ public partial class SettingsViewModel : ViewModelBase
     public string AvatarSpeakingStyleLabel => localizedText.AvatarSpeakingStyleLabel;
 
     public string ConnectionTitle => localizedText.ConnectionTitle;
+
+    public string AudioInputTitle => localizedText.AudioInputTitle;
+
+    public string MicrophoneLabel => localizedText.MicrophoneLabel;
+
+    public string SystemDefaultMicrophoneText => localizedText.SystemDefaultMicrophoneText;
+
+    public string RefreshMicrophonesText => localizedText.RefreshMicrophonesText;
+
+    public string TestMicrophoneText => localizedText.TestMicrophoneText;
 
     public string BackendUrlLabel => localizedText.BackendUrlLabel;
 
@@ -121,6 +134,8 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string DiagnosticsTutorAvatarText => SelectedTutorAvatarDisplayName;
 
+    public string MicrophoneStatusText => StatusMessage;
+
     public string SaveButtonText => localizedText.SaveButtonText;
 
     public string BackButtonText => localizedText.BackButtonText;
@@ -138,6 +153,8 @@ public partial class SettingsViewModel : ViewModelBase
     public IReadOnlyList<string> SupportedNativeLanguages { get; } = AppConstants.SupportedNativeLanguages;
 
     public IReadOnlyList<TutorAvatarOption> AvailableTutorAvatars { get; } = TutorAvatarOptions.All;
+
+    public ObservableCollection<AudioInputDeviceOption> AudioInputDevices { get; } = [];
 
     private TutorAvatarLocalizedProfileText SelectedTutorAvatarProfileText =>
         TutorAvatarProfileLocalization.GetProfileText(SelectedTutorAvatarOption?.Id, SelectedInterfaceLanguageId);
@@ -192,7 +209,11 @@ public partial class SettingsViewModel : ViewModelBase
     private string backendBaseUrl = BackendConstants.DefaultBackendBaseUrl;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MicrophoneStatusText))]
     private string statusMessage = string.Empty;
+
+    [ObservableProperty]
+    private AudioInputDeviceOption? selectedAudioInputDeviceOption;
 
     public SettingsViewModel(
         string currentInterfaceLanguageId,
@@ -201,11 +222,14 @@ public partial class SettingsViewModel : ViewModelBase
         string currentUserDisplayName,
         string currentLearningGoal,
         string currentBackendBaseUrl,
+        string currentAudioInputDeviceId,
         string settingsFilePath,
         string lessonHistoryFilePath,
         IReadOnlyList<LessonHistoryItem> lessonHistory,
         LessonChatBackendService lessonChatBackendService,
-        Action<string, string, string, string, string, string> saveSettings,
+        AudioInputDeviceService audioInputDeviceService,
+        AudioRecordingService audioRecordingService,
+        Action<string, string, string, string, string, string, string> saveSettings,
         Action navigateBack)
     {
         selectedInterfaceLanguageOption = InterfaceLanguageOptions.GetById(currentInterfaceLanguageId);
@@ -220,6 +244,8 @@ public partial class SettingsViewModel : ViewModelBase
         lessonHistoryFilePathText = lessonHistoryFilePath;
         appVersionText = BuildAppVersionText();
         this.lessonChatBackendService = lessonChatBackendService;
+        this.audioInputDeviceService = audioInputDeviceService;
+        this.audioRecordingService = audioRecordingService;
         this.saveSettings = saveSettings;
         this.navigateBack = navigateBack;
 
@@ -229,13 +255,15 @@ public partial class SettingsViewModel : ViewModelBase
         TotalCompletedLessonsText = lessonHistory.Count.ToString();
         LessonsTodayText = CountLessonsToday(lessonHistory).ToString();
         CurrentStreakText = CalculateCurrentStreak(lessonHistory).ToString();
+        RefreshAudioInputDevices(currentAudioInputDeviceId, showUnavailableStatus: false);
     }
 
     [RelayCommand]
     private void Save()
     {
         var selectedAvatar = SelectedTutorAvatarOption ?? TutorAvatarOptions.Elena;
-        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguage, selectedAvatar.Id, UserDisplayName, LearningGoal, BackendBaseUrl);
+        var selectedAudioInputDeviceId = SelectedAudioInputDeviceOption?.Id ?? AudioConstants.DefaultAudioInputDeviceId;
+        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguage, selectedAvatar.Id, UserDisplayName, LearningGoal, BackendBaseUrl, selectedAudioInputDeviceId);
         BackendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl);
         StatusMessage = localizedText.SettingsSavedMessage;
     }
@@ -244,6 +272,48 @@ public partial class SettingsViewModel : ViewModelBase
     private void Back()
     {
         navigateBack();
+    }
+
+    [RelayCommand]
+    private async Task TestMicrophoneAsync()
+    {
+        var previousAudioInputDeviceId = SelectedAudioInputDeviceOption?.Id;
+        RefreshAudioInputDevices(previousAudioInputDeviceId, showUnavailableStatus: true);
+
+        if (AudioInputDevices.Count <= 1)
+        {
+            StatusMessage = localizedText.NoMicrophoneFoundMessage;
+            return;
+        }
+
+        if (!audioInputDeviceService.IsSystemDefault(previousAudioInputDeviceId) && SelectedAudioInputDeviceOption?.IsDefault == true)
+        {
+            StatusMessage = localizedText.SelectedMicrophoneUnavailableMessage;
+            return;
+        }
+
+        var testFilePath = string.Empty;
+
+        try
+        {
+            testFilePath = audioRecordingService.StartRecording(SelectedAudioInputDeviceOption?.Id);
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            testFilePath = audioRecordingService.StopRecording();
+            StatusMessage = localizedText.MicrophoneTestCompletedMessage;
+        }
+        catch
+        {
+            StatusMessage = localizedText.NoMicrophoneFoundMessage;
+        }
+        finally
+        {
+            if (audioRecordingService.IsRecording)
+            {
+                testFilePath = audioRecordingService.StopRecording();
+            }
+
+            audioRecordingService.SafeDeleteRecording(testFilePath);
+        }
     }
 
     [RelayCommand]
@@ -268,6 +338,8 @@ public partial class SettingsViewModel : ViewModelBase
         localizedText = SettingsLocalization.GetSettingsText(value.Id);
         diagnosticsLocalizedText = DiagnosticsLocalization.GetText(value.Id);
         RefreshLocalizedText();
+
+        RefreshAudioInputDevices(SelectedAudioInputDeviceOption?.Id, showUnavailableStatus: false);
 
         if (!string.IsNullOrWhiteSpace(StatusMessage))
         {
@@ -321,6 +393,11 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(NativeLanguageSubtitle));
         OnPropertyChanged(nameof(TutorAvatarTitle));
         OnPropertyChanged(nameof(ConnectionTitle));
+        OnPropertyChanged(nameof(AudioInputTitle));
+        OnPropertyChanged(nameof(MicrophoneLabel));
+        OnPropertyChanged(nameof(SystemDefaultMicrophoneText));
+        OnPropertyChanged(nameof(RefreshMicrophonesText));
+        OnPropertyChanged(nameof(TestMicrophoneText));
         OnPropertyChanged(nameof(BackendUrlLabel));
         OnPropertyChanged(nameof(BackendUrlSubtitle));
         OnPropertyChanged(nameof(TutorAvatarSubtitle));
@@ -358,6 +435,26 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(DiagnosticsAiStatusText));
         OnPropertyChanged(nameof(SaveButtonText));
         OnPropertyChanged(nameof(BackButtonText));
+    }
+
+    private void RefreshAudioInputDevices(string? preferredAudioInputDeviceId, bool showUnavailableStatus)
+    {
+        var devices = audioInputDeviceService.GetAudioInputDevices(localizedText.SystemDefaultMicrophoneText);
+        var selectedDevice = devices.FirstOrDefault(device => string.Equals(device.Id, preferredAudioInputDeviceId, StringComparison.OrdinalIgnoreCase))
+            ?? devices.First(device => device.IsDefault);
+
+        AudioInputDevices.Clear();
+        foreach (var device in devices)
+        {
+            AudioInputDevices.Add(device);
+        }
+
+        SelectedAudioInputDeviceOption = selectedDevice;
+
+        if (showUnavailableStatus && !audioInputDeviceService.IsSystemDefault(preferredAudioInputDeviceId) && selectedDevice.IsDefault)
+        {
+            StatusMessage = localizedText.SelectedMicrophoneUnavailableMessage;
+        }
     }
 
     private void RefreshSelectedTutorAvatarProfileText()
