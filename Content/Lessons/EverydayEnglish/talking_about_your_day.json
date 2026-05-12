@@ -117,96 +117,121 @@
   "levelProfiles": {
     "A1 Beginner": {
       "level": "A1 Beginner",
-      "difficultyNotes": "Very simple English for talking about your day. The tutor uses short questions and accepts one-word answers during early turns.",
-      "tutorLanguageStyle": "Use very short, clear sentences. Ask one easy question at a time. Do not add complications.",
-      "expectedUserResponse": "1 short sentence.",
+      "difficultyNotes": "Very simple English for talking about daily routine. Focus on good/busy day and basic actions like wake up, eat, go, and relax.",
+      "tutorLanguageStyle": "Use very short, clear questions: Is your day good? What time do you wake up? What do you do in the evening?",
+      "expectedUserResponse": "One short sentence about the day or one daily action.",
       "minimumUserResponse": "My day is good.",
-      "stretchUserResponse": "My day is good. I study English.",
-      "addedKeyPhrases": [],
+      "stretchUserResponse": "My day is busy. I wake up at seven. I have breakfast. I go to work. I relax in the evening.",
+      "addedKeyPhrases": [
+        "My day is good.",
+        "My day is busy.",
+        "I wake up at...",
+        "I have breakfast.",
+        "I go to work/school.",
+        "I relax in the evening."
+      ],
       "addedUsefulConstructions": [
-        "One short sentence with I am / I have / I need / Let us."
+        "Use My day is good/busy, I wake up at..., I have breakfast, I go to work/school, and I relax in the evening."
       ],
       "addedGrammarFocus": [
-        "be, have, can, simple present in short sentences"
+        "simple present for routine: wake up, have, go, relax",
+        "at + time",
+        "in the evening",
+        "My day is + adjective"
       ],
-      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
-      "hintStrategy": "A fuller sentence starter or full model sentence is okay when the learner is stuck.",
-      "correctionPriority": "Meaning first; only one essential correction at a time.",
-      "conversationDepth": "Stay very shallow: greet, answer, one detail, thank or close.",
-      "exampleGoodAnswer": "My day is good. I study English.",
-      "exampleStretchAnswer": "My day is good. I study English."
+      "feedbackStrictness": "Correct only mistakes that block meaning in routine sentences. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give a full model starter when needed: My day is good. I wake up at seven.",
+      "correctionPriority": "Clear routine verbs, time phrase, and basic day adjective first.",
+      "conversationDepth": "Stay very shallow: day feeling, one morning action, one work/school action, one evening action.",
+      "exampleGoodAnswer": "My day is good. I wake up at seven.",
+      "exampleStretchAnswer": "My day is busy. I wake up at seven, go to work, and relax in the evening."
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple English for talking about your day. The learner should add one detail such as time, place, reason, or preference.",
-      "tutorLanguageStyle": "Use simple English. Ask one simple follow-up question at a time.",
-      "expectedUserResponse": "1-2 short sentences with one extra detail.",
-      "minimumUserResponse": "My day is good. I worked today.",
-      "stretchUserResponse": "My day is good. I worked in the morning and studied English in the evening.",
+      "difficultyNotes": "Simple daily routine with two actions in sequence and basic time expressions.",
+      "tutorLanguageStyle": "Use simple follow-up questions about morning, afternoon, evening, and two daily actions.",
+      "expectedUserResponse": "One or two short sentences with two simple actions and a time expression.",
+      "minimumUserResponse": "In the morning, I have breakfast and go to work.",
+      "stretchUserResponse": "In the morning, I have breakfast and go to work. In the evening, I study English and relax.",
       "addedKeyPhrases": [
         "in the morning",
-        "in the evening"
+        "in the evening",
+        "first",
+        "then",
+        "after work"
       ],
       "addedUsefulConstructions": [
-        "Add one simple detail about time, place, reason, or preference."
+        "Describe a sequence of two simple actions with in the morning/evening, first, then, or after work."
       ],
       "addedGrammarFocus": [
-        "simple past or present where useful, basic word order, prepositions of time/place"
+        "simple present sequence: I have..., I go..., I study...",
+        "time expressions: in the morning, in the evening",
+        "and / then for two actions"
       ],
-      "feedbackStrictness": "Correct basic grammar, word order, and missing small words when useful.",
-      "hintStrategy": "Give a sentence starter first; do not give the full answer immediately.",
-      "correctionPriority": "Basic grammar, word order, and clear everyday phrasing.",
-      "conversationDepth": "Ask for one added detail, then continue inside the same situation.",
-      "exampleGoodAnswer": "My day is good. I worked in the morning and studied English in the evening.",
-      "exampleStretchAnswer": "My day is good. I worked in the morning and studied English in the evening."
+      "feedbackStrictness": "Correct basic word order, time expressions, and simple present routine verbs when useful.",
+      "hintStrategy": "Give a starter with sequence words: In the morning, I... Then I...",
+      "correctionPriority": "Clear sequence, correct time expression, and accurate routine verbs.",
+      "conversationDepth": "Ask for two actions from the day and one simple time detail.",
+      "exampleGoodAnswer": "In the morning, I have breakfast and go to work.",
+      "exampleStretchAnswer": "In the morning, I have breakfast and go to work. In the evening, I study English and relax."
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
-      "difficultyNotes": "Natural but clear English for talking about your day. The learner should connect ideas and ask one follow-up question back.",
-      "tutorLanguageStyle": "Use natural, clear English. Ask for a reason or short explanation when it fits the roleplay.",
-      "expectedUserResponse": "Answer + detail + follow-up question.",
-      "minimumUserResponse": "My day was busy. I worked and studied English.",
-      "stretchUserResponse": "My day was pretty busy. I worked in the morning, had lunch with a colleague, and studied English after dinner.",
+      "difficultyNotes": "Connected description of the day with routine, after that, because, and a short reflection.",
+      "tutorLanguageStyle": "Use natural, clear English. Ask about sequence, reasons, and how the day felt.",
+      "expectedUserResponse": "Two or three connected sentences with sequence, reason, and a short reflection.",
+      "minimumUserResponse": "My day was busy. I worked in the morning, and after that I studied English.",
+      "stretchUserResponse": "My day was pretty busy. I worked in the morning, and after that I studied English because I want to improve. It was tiring, but I feel good about it.",
       "addedKeyPhrases": [
-        "pretty busy",
-        "after dinner"
+        "after that",
+        "because",
+        "It was tiring, but...",
+        "I feel good about it."
       ],
       "addedUsefulConstructions": [
-        "Connect ideas with and, but, because, then; ask one follow-up question."
+        "Connect your routine with after that and because, then add a short reflection about the day."
       ],
       "addedGrammarFocus": [
-        "connected clauses, question forms, reasons with because, natural follow-up questions"
+        "past simple for completed day: worked, studied, was",
+        "after that for sequence",
+        "because for reasons",
+        "but for short reflection and contrast"
       ],
-      "feedbackStrictness": "Correct grammar, word choice, and sentence flow. Suggest one more natural version when useful.",
-      "hintStrategy": "Give a light structure or useful phrase, not a full scripted answer.",
-      "correctionPriority": "Grammar accuracy, word choice, sentence connection, and natural follow-up questions.",
-      "conversationDepth": "Use 2-3 connected sentences and keep the scenario moving with one question back.",
-      "exampleGoodAnswer": "My day was pretty busy. I worked in the morning, had lunch with a colleague, and studied English after dinner.",
-      "exampleStretchAnswer": "My day was pretty busy. I worked in the morning, had lunch with a colleague, and studied English after dinner."
+      "feedbackStrictness": "Correct grammar, word choice, and sentence flow. Suggest a more natural connected version when useful.",
+      "hintStrategy": "Suggest a structure: summary + sequence + reason + reflection.",
+      "correctionPriority": "Connected routine, reason with because, reflection, and appropriate tense choice.",
+      "conversationDepth": "Encourage 2-3 connected sentences about what happened and how the learner felt about it.",
+      "exampleGoodAnswer": "My day was busy. I worked in the morning, and after that I studied English.",
+      "exampleStretchAnswer": "My day was pretty busy. I worked in the morning, and after that I studied English because I want to improve. It was tiring, but I feel good about it."
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
-      "difficultyNotes": "Natural conversational English for talking about your day. The learner should use nuance and keep the dialogue going without leaving the scenario.",
-      "tutorLanguageStyle": "Use natural conversational English with soft phrasing. You may add one small realistic complication, but stay inside the roleplay.",
-      "expectedUserResponse": "Natural answer with detail, nuance, and a question back.",
-      "minimumUserResponse": "It's been a busy day, but I studied English in the evening.",
-      "stretchUserResponse": "It's been a fairly busy day. I had a lot to do at work, but I still managed to study English for a bit in the evening.",
+      "difficultyNotes": "Natural summary of the day with nuance, priorities, managed to, and a realistic overall feeling.",
+      "tutorLanguageStyle": "Use natural conversational English and invite nuance about what went well, what was busy, and what the learner managed to do.",
+      "expectedUserResponse": "A natural summary with nuance, connected details, and a brief reflection.",
+      "minimumUserResponse": "It's been a fairly busy day, but I managed to study English for a bit.",
+      "stretchUserResponse": "It's been a fairly busy day. I had a lot to get through at work, but I still managed to study English for a bit in the evening, which felt like a small win.",
       "addedKeyPhrases": [
-        "fairly busy",
-        "managed to"
+        "It's been a fairly busy day...",
+        "I managed to...",
+        "I had a lot to get through.",
+        "It felt like a small win."
       ],
       "addedUsefulConstructions": [
-        "Use softer openings, natural connectors, and polite conversational phrasing."
+        "Use a natural summary with It's been a fairly busy day, I managed to..., and a nuanced reflection."
       ],
       "addedGrammarFocus": [
-        "softeners, modal phrases, nuance, tone, natural discourse markers"
+        "present perfect for day summary: It's been...",
+        "managed to + verb",
+        "relative comment with which",
+        "nuanced contrast with but / still"
       ],
-      "feedbackStrictness": "Focus on fluency, nuance, tone, and naturalness while still correcting important errors.",
-      "hintStrategy": "Suggest direction, tone, or a useful natural phrase; avoid full sentences unless necessary.",
-      "correctionPriority": "Naturalness, nuance, tone, fluency, and precise wording.",
-      "conversationDepth": "Richer responses are welcome, but every turn must stay within the selected scenario.",
-      "exampleGoodAnswer": "It's been a fairly busy day. I had a lot to do at work, but I still managed to study English for a bit in the evening.",
-      "exampleStretchAnswer": "It's been a fairly busy day. I had a lot to do at work, but I still managed to study English for a bit in the evening."
+      "feedbackStrictness": "Focus on fluency, nuance, tone, and precise wording while correcting important errors.",
+      "hintStrategy": "Suggest a natural phrase or direction, such as It's been a fairly busy day or I managed to...",
+      "correctionPriority": "Natural summary, nuanced reflection, tense choice, and precise daily-life vocabulary.",
+      "conversationDepth": "Allow richer detail and reflection, but keep the conversation about the learner's day and routine.",
+      "exampleGoodAnswer": "It's been a fairly busy day, but I managed to study English for a bit.",
+      "exampleStretchAnswer": "It's been a fairly busy day. I had a lot to get through at work, but I still managed to study English for a bit in the evening, which felt like a small win."
     }
   },
   "conversationFlow": {

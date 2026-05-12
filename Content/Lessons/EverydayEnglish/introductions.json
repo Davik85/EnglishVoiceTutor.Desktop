@@ -32,7 +32,11 @@
         "meeting",
         "introduce",
         "introduction",
-        "first time"
+        "first time",
+        "neighbor",
+        "neighbour",
+        "language school",
+        "hobby club"
       ],
       "offTopicExamples": [
         "football discussion",
@@ -96,96 +100,119 @@
   "levelProfiles": {
     "A1 Beginner": {
       "level": "A1 Beginner",
-      "difficultyNotes": "Very simple English for introductions. The tutor uses short questions and accepts one-word answers during early turns.",
-      "tutorLanguageStyle": "Use very short, clear sentences. Ask one easy question at a time. Do not add complications.",
-      "expectedUserResponse": "1 short sentence.",
-      "minimumUserResponse": "My name is Anna.",
-      "stretchUserResponse": "My name is Anna. I'm from Poland.",
-      "addedKeyPhrases": [],
-      "addedUsefulConstructions": [
-        "One short sentence with I am / I have / I need / Let us."
-      ],
-      "addedGrammarFocus": [
-        "be, have, can, simple present in short sentences"
-      ],
-      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
-      "hintStrategy": "A fuller sentence starter or full model sentence is okay when the learner is stuck.",
-      "correctionPriority": "Meaning first; only one essential correction at a time.",
-      "conversationDepth": "Stay very shallow: greet, answer, one detail, thank or close.",
-      "exampleGoodAnswer": "My name is Anna. I'm from Poland.",
-      "exampleStretchAnswer": "My name is Anna. I'm from Poland."
-    },
-    "A2 Elementary": {
-      "level": "A2 Elementary",
-      "difficultyNotes": "Simple English for introductions. The learner should add one detail such as time, place, reason, or preference.",
-      "tutorLanguageStyle": "Use simple English. Ask one simple follow-up question at a time.",
-      "expectedUserResponse": "1-2 short sentences with one extra detail.",
-      "minimumUserResponse": "My name is Anna. I'm from Poland.",
-      "stretchUserResponse": "My name is Anna. I'm from Poland, but I live in Berlin.",
+      "difficultyNotes": "Very simple English for first introductions. Focus on name, country or city, where the learner lives, and one friendly closing phrase.",
+      "tutorLanguageStyle": "Use very short, clear questions: What is your name? Where are you from? Where do you live? Ask one thing at a time.",
+      "expectedUserResponse": "One short introduction sentence, or two very short sentences.",
+      "minimumUserResponse": "My name is Ana.",
+      "stretchUserResponse": "My name is Ana. I am from Brazil. I live in Madrid. Nice to meet you.",
       "addedKeyPhrases": [
+        "My name is...",
+        "I'm...",
+        "I'm from...",
         "I live in...",
         "Nice to meet you."
       ],
       "addedUsefulConstructions": [
-        "Add one simple detail about time, place, reason, or preference."
+        "Use My name is..., I'm from..., I live in..."
       ],
       "addedGrammarFocus": [
-        "simple past or present where useful, basic word order, prepositions of time/place"
+        "to be: I am / I'm",
+        "simple present: I live",
+        "basic questions: What's your name? Where are you from?"
       ],
-      "feedbackStrictness": "Correct basic grammar, word order, and missing small words when useful.",
-      "hintStrategy": "Give a sentence starter first; do not give the full answer immediately.",
-      "correctionPriority": "Basic grammar, word order, and clear everyday phrasing.",
-      "conversationDepth": "Ask for one added detail, then continue inside the same situation.",
-      "exampleGoodAnswer": "My name is Anna. I'm from Poland, but I live in Berlin.",
-      "exampleStretchAnswer": "My name is Anna. I'm from Poland, but I live in Berlin."
+      "feedbackStrictness": "Correct only meaning-blocking mistakes in name, from, live, and to be forms. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give a full model starter when needed: My name is [your name]. I'm from [place].",
+      "correctionPriority": "Clear name and place sentences first; only one essential correction at a time.",
+      "conversationDepth": "Stay very shallow: name, where from, where live, nice to meet you.",
+      "exampleGoodAnswer": "My name is Ana. I'm from Brazil.",
+      "exampleStretchAnswer": "My name is Ana. I'm from Brazil, and I live in Madrid. Nice to meet you."
     },
-    "B1 Intermediate": {
-      "level": "B1 Intermediate",
-      "difficultyNotes": "Natural but clear English for introductions. The learner should connect ideas and ask one follow-up question back.",
-      "tutorLanguageStyle": "Use natural, clear English. Ask for a reason or short explanation when it fits the roleplay.",
-      "expectedUserResponse": "Answer + detail + follow-up question.",
-      "minimumUserResponse": "My name is Anna. I'm from Poland, and I live in Berlin.",
-      "stretchUserResponse": "My name is Anna. I'm from Poland, and I moved to Berlin last year. What about you?",
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple introductions with one extra personal detail about city, work, study, or a hobby.",
+      "tutorLanguageStyle": "Use simple follow-up questions and invite one extra detail: Do you work or study? What do you like doing?",
+      "expectedUserResponse": "One or two short sentences with name, place, and one extra detail.",
+      "minimumUserResponse": "I'm Ana. I live in Madrid.",
+      "stretchUserResponse": "I'm Ana. I'm from Brazil, but I live in Madrid. I work as a designer, and I like cooking.",
       "addedKeyPhrases": [
-        "I moved to...",
+        "I live in...",
+        "I work as...",
+        "I study...",
+        "I like...",
         "What about you?"
       ],
       "addedUsefulConstructions": [
-        "Connect ideas with and, but, because, then; ask one follow-up question."
+        "Add one extra detail: I live in..., I work as..., I study..., or I like..."
       ],
       "addedGrammarFocus": [
-        "connected clauses, question forms, reasons with because, natural follow-up questions"
+        "simple present for live, work, study, like",
+        "basic contrast with but: I'm from..., but I live in...",
+        "simple follow-up question: What about you?"
       ],
-      "feedbackStrictness": "Correct grammar, word choice, and sentence flow. Suggest one more natural version when useful.",
-      "hintStrategy": "Give a light structure or useful phrase, not a full scripted answer.",
-      "correctionPriority": "Grammar accuracy, word choice, sentence connection, and natural follow-up questions.",
-      "conversationDepth": "Use 2-3 connected sentences and keep the scenario moving with one question back.",
-      "exampleGoodAnswer": "My name is Anna. I'm from Poland, and I moved to Berlin last year. What about you?",
-      "exampleStretchAnswer": "My name is Anna. I'm from Poland, and I moved to Berlin last year. What about you?"
+      "feedbackStrictness": "Correct basic word order, missing articles in jobs, and simple present forms when useful.",
+      "hintStrategy": "Offer a sentence starter with a choice: I work as... / I study... / I like...",
+      "correctionPriority": "Clear personal details, simple present accuracy, and natural introduction order.",
+      "conversationDepth": "Ask for one extra detail and one simple question back while staying in the first-meeting scenario.",
+      "exampleGoodAnswer": "I'm Ana. I'm from Brazil, and I live in Madrid.",
+      "exampleStretchAnswer": "I'm Ana. I'm from Brazil, but I live in Madrid. I work as a designer. What about you?"
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Clear, connected introductions with short background, a reason or detail, and one question back.",
+      "tutorLanguageStyle": "Use natural, clear English and ask follow-ups about background, reason for being there, or shared interests.",
+      "expectedUserResponse": "Two or three connected sentences plus one question back.",
+      "minimumUserResponse": "I'm Ana. I'm from Brazil, and I moved to Madrid for work.",
+      "stretchUserResponse": "Hi, I'm Ana. I'm from Brazil, and I moved to Madrid last year for work. I'm still getting to know the area. How about you?",
+      "addedKeyPhrases": [
+        "I moved here...",
+        "I'm here because...",
+        "I'm still getting to know...",
+        "How about you?"
+      ],
+      "addedUsefulConstructions": [
+        "Give a short background, add a reason or detail, then ask one friendly question back."
+      ],
+      "addedGrammarFocus": [
+        "past simple for background: moved, started",
+        "reason clauses with because / for",
+        "connected sentences with and, but, so",
+        "natural question back in introductions"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, and sentence flow. Suggest one more natural introduction when useful.",
+      "hintStrategy": "Suggest a structure rather than a full script: name + background + reason/detail + question back.",
+      "correctionPriority": "Connected background, clear reason/detail, natural question back, and accurate tense use.",
+      "conversationDepth": "Keep the first conversation moving with short background details and friendly reciprocal questions.",
+      "exampleGoodAnswer": "Hi, I'm Ana. I'm from Brazil, and I moved here for work. How about you?",
+      "exampleStretchAnswer": "Hi, I'm Ana. I'm from Brazil, and I moved to Madrid last year for work, so I'm still getting to know the area. How about you?"
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
-      "difficultyNotes": "Natural conversational English for introductions. The learner should use nuance and keep the dialogue going without leaving the scenario.",
-      "tutorLanguageStyle": "Use natural conversational English with soft phrasing. You may add one small realistic complication, but stay inside the roleplay.",
-      "expectedUserResponse": "Natural answer with detail, nuance, and a question back.",
-      "minimumUserResponse": "Hi, I'm Anna. I'm originally from Poland, but I live in Berlin now.",
-      "stretchUserResponse": "Hi, I'm Anna. I'm originally from Poland, but I've been living in Berlin for a while now. How about you?",
+      "difficultyNotes": "Natural, warm introductions with nuanced background, smoother phrasing, and comfortable question back.",
+      "tutorLanguageStyle": "Use natural conversational English, warmer openings, and realistic follow-ups while staying in a first-meeting situation.",
+      "expectedUserResponse": "A natural introduction with background, nuance, and a friendly question back.",
+      "minimumUserResponse": "Hi, I'm Ana. I'm originally from Brazil, but I've been living in Madrid for a while.",
+      "stretchUserResponse": "Hi, I'm Ana. It's really nice to meet you. I'm originally from Brazil, but I've been living in Madrid for the past year, so I'm still discovering the neighborhood. How about you?",
       "addedKeyPhrases": [
-        "originally from",
-        "for a while now"
+        "I'm originally from...",
+        "I've been living...",
+        "It's really nice to meet you.",
+        "I'm still discovering..."
       ],
       "addedUsefulConstructions": [
-        "Use softer openings, natural connectors, and polite conversational phrasing."
+        "Use warmer openings, originally from..., I've been living..., and a natural question back."
       ],
       "addedGrammarFocus": [
-        "softeners, modal phrases, nuance, tone, natural discourse markers"
+        "present perfect continuous: I've been living...",
+        "natural contrast: originally from..., but...",
+        "warmer conversational openings",
+        "polite reciprocal questions"
       ],
-      "feedbackStrictness": "Focus on fluency, nuance, tone, and naturalness while still correcting important errors.",
-      "hintStrategy": "Suggest direction, tone, or a useful natural phrase; avoid full sentences unless necessary.",
-      "correctionPriority": "Naturalness, nuance, tone, fluency, and precise wording.",
-      "conversationDepth": "Richer responses are welcome, but every turn must stay within the selected scenario.",
-      "exampleGoodAnswer": "Hi, I'm Anna. I'm originally from Poland, but I've been living in Berlin for a while now. How about you?",
-      "exampleStretchAnswer": "Hi, I'm Anna. I'm originally from Poland, but I've been living in Berlin for a while now. How about you?"
+      "feedbackStrictness": "Focus on naturalness, nuance, tone, and precise wording while still correcting important errors.",
+      "hintStrategy": "Suggest tone or a natural phrase such as originally from or I've been living; avoid full scripted answers unless necessary.",
+      "correctionPriority": "Natural phrasing, tense choice, warmer tone, and smooth conversation flow.",
+      "conversationDepth": "Allow richer background and light personal detail, but keep it appropriate for meeting someone for the first time.",
+      "exampleGoodAnswer": "Hi, I'm Ana. I'm originally from Brazil, but I've been living in Madrid for about a year.",
+      "exampleStretchAnswer": "Hi, I'm Ana. It's really nice to meet you. I'm originally from Brazil, but I've been living in Madrid for the past year, so I'm still getting to know the neighborhood. How about you?"
     }
   },
   "conversationFlow": {

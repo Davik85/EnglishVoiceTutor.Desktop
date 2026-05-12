@@ -8,7 +8,6 @@ public static class ContentConstants
     public const string TutorsFolder = "Tutors";
     public const string PromptsFolder = "Prompts";
 
-    public const string A1LevelFolderName = "A1";
     public const string EverydayEnglishFolderName = "EverydayEnglish";
     public const string IntroductionsFileName = "introductions.json";
     public const string SmallTalkWithANeighborFileName = "small_talk_with_a_neighbor.json";
