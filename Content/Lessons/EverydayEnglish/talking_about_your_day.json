@@ -1,0 +1,392 @@
+{
+  "id": "everyday_english_talking_about_your_day",
+  "metadata": {
+    "topic": "Everyday English",
+    "subtopic": "Talking about your day",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice talking about your day.\n\nGoal: you will learn to describe your day with simple sentences and answer basic questions.\n\nChoose a situation:\n1. Talking about your morning\n2. Talking about work or study\n3. Talking about your evening\n\nOr suggest your own simple daily routine situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is about a simple day, daily routine, morning, work, study, evening, or weekend.",
+      "validCustomContextKeywords": [
+        "day",
+        "morning",
+        "afternoon",
+        "evening",
+        "night",
+        "routine",
+        "work",
+        "study",
+        "school",
+        "university",
+        "breakfast",
+        "lunch",
+        "dinner",
+        "home",
+        "relax",
+        "weekend",
+        "busy",
+        "tired",
+        "today"
+      ],
+      "offTopicExamples": [
+        "job interview",
+        "restaurant order",
+        "hotel check-in",
+        "medical emergency",
+        "police report",
+        "business negotiation",
+        "politics"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about talking about your day. Please choose a simple daily routine situation."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can talk about their day using simple English sentences.",
+    "canDoStatements": [
+      "The user can say what they do in the morning.",
+      "The user can say where they go during the day.",
+      "The user can say what they do after work or study.",
+      "The user can describe their day with one simple adjective.",
+      "The user can ask one simple question back."
+    ]
+  },
+  "situation": {
+    "description": "The user talks with a friendly person about their day and daily routine."
+  },
+  "roles": {
+    "userRole": "A person talking about their day in simple English.",
+    "tutorRole": "A friendly person who asks simple questions about the user's day."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "My day is good.",
+      "My day is busy.",
+      "I wake up at...",
+      "I have breakfast.",
+      "I go to work.",
+      "I go to school.",
+      "I study English.",
+      "I go home.",
+      "I relax in the evening.",
+      "What about you?"
+    ],
+    "usefulConstructions": [
+      "I wake up at + time.",
+      "I have + meal.",
+      "I go to + place.",
+      "I study + subject.",
+      "I work in the morning.",
+      "I relax in the evening.",
+      "My day is + adjective."
+    ],
+    "grammarFocus": [
+      "simple present for daily routine",
+      "I + verb for simple actions",
+      "at + time",
+      "in the morning / afternoon / evening",
+      "basic adjectives: good, busy, quiet, long, nice"
+    ],
+    "pronunciationFocus": [
+      "wake up",
+      "breakfast",
+      "I go to work",
+      "in the evening",
+      "My day is busy"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple English for talking about your day. The tutor uses short questions and accepts one-word answers during early turns.",
+      "tutorLanguageStyle": "Use very short, clear sentences. Ask one easy question at a time. Do not add complications.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "My day is good.",
+      "stretchUserResponse": "My day is good. I study English.",
+      "addedKeyPhrases": [],
+      "addedUsefulConstructions": [
+        "One short sentence with I am / I have / I need / Let us."
+      ],
+      "addedGrammarFocus": [
+        "be, have, can, simple present in short sentences"
+      ],
+      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
+      "hintStrategy": "A fuller sentence starter or full model sentence is okay when the learner is stuck.",
+      "correctionPriority": "Meaning first; only one essential correction at a time.",
+      "conversationDepth": "Stay very shallow: greet, answer, one detail, thank or close.",
+      "exampleGoodAnswer": "My day is good. I study English.",
+      "exampleStretchAnswer": "My day is good. I study English."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple English for talking about your day. The learner should add one detail such as time, place, reason, or preference.",
+      "tutorLanguageStyle": "Use simple English. Ask one simple follow-up question at a time.",
+      "expectedUserResponse": "1-2 short sentences with one extra detail.",
+      "minimumUserResponse": "My day is good. I worked today.",
+      "stretchUserResponse": "My day is good. I worked in the morning and studied English in the evening.",
+      "addedKeyPhrases": [
+        "in the morning",
+        "in the evening"
+      ],
+      "addedUsefulConstructions": [
+        "Add one simple detail about time, place, reason, or preference."
+      ],
+      "addedGrammarFocus": [
+        "simple past or present where useful, basic word order, prepositions of time/place"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, and missing small words when useful.",
+      "hintStrategy": "Give a sentence starter first; do not give the full answer immediately.",
+      "correctionPriority": "Basic grammar, word order, and clear everyday phrasing.",
+      "conversationDepth": "Ask for one added detail, then continue inside the same situation.",
+      "exampleGoodAnswer": "My day is good. I worked in the morning and studied English in the evening.",
+      "exampleStretchAnswer": "My day is good. I worked in the morning and studied English in the evening."
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear English for talking about your day. The learner should connect ideas and ask one follow-up question back.",
+      "tutorLanguageStyle": "Use natural, clear English. Ask for a reason or short explanation when it fits the roleplay.",
+      "expectedUserResponse": "Answer + detail + follow-up question.",
+      "minimumUserResponse": "My day was busy. I worked and studied English.",
+      "stretchUserResponse": "My day was pretty busy. I worked in the morning, had lunch with a colleague, and studied English after dinner.",
+      "addedKeyPhrases": [
+        "pretty busy",
+        "after dinner"
+      ],
+      "addedUsefulConstructions": [
+        "Connect ideas with and, but, because, then; ask one follow-up question."
+      ],
+      "addedGrammarFocus": [
+        "connected clauses, question forms, reasons with because, natural follow-up questions"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, and sentence flow. Suggest one more natural version when useful.",
+      "hintStrategy": "Give a light structure or useful phrase, not a full scripted answer.",
+      "correctionPriority": "Grammar accuracy, word choice, sentence connection, and natural follow-up questions.",
+      "conversationDepth": "Use 2-3 connected sentences and keep the scenario moving with one question back.",
+      "exampleGoodAnswer": "My day was pretty busy. I worked in the morning, had lunch with a colleague, and studied English after dinner.",
+      "exampleStretchAnswer": "My day was pretty busy. I worked in the morning, had lunch with a colleague, and studied English after dinner."
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural conversational English for talking about your day. The learner should use nuance and keep the dialogue going without leaving the scenario.",
+      "tutorLanguageStyle": "Use natural conversational English with soft phrasing. You may add one small realistic complication, but stay inside the roleplay.",
+      "expectedUserResponse": "Natural answer with detail, nuance, and a question back.",
+      "minimumUserResponse": "It's been a busy day, but I studied English in the evening.",
+      "stretchUserResponse": "It's been a fairly busy day. I had a lot to do at work, but I still managed to study English for a bit in the evening.",
+      "addedKeyPhrases": [
+        "fairly busy",
+        "managed to"
+      ],
+      "addedUsefulConstructions": [
+        "Use softer openings, natural connectors, and polite conversational phrasing."
+      ],
+      "addedGrammarFocus": [
+        "softeners, modal phrases, nuance, tone, natural discourse markers"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, tone, and naturalness while still correcting important errors.",
+      "hintStrategy": "Suggest direction, tone, or a useful natural phrase; avoid full sentences unless necessary.",
+      "correctionPriority": "Naturalness, nuance, tone, fluency, and precise wording.",
+      "conversationDepth": "Richer responses are welcome, but every turn must stay within the selected scenario.",
+      "exampleGoodAnswer": "It's been a fairly busy day. I had a lot to do at work, but I still managed to study English for a bit in the evening.",
+      "exampleStretchAnswer": "It's been a fairly busy day. I had a lot to do at work, but I still managed to study English for a bit in the evening."
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor starts as a friendly person asking about the user's day.",
+    "defaultOpeningExample": "Hi! How is your day?",
+    "firstUserTask": "The user gives a short answer about their day.",
+    "expectedPattern": "My day is good.",
+    "guidedPracticeFollowUpQuestions": [
+      "What do you do in the morning?",
+      "What time do you wake up?",
+      "Do you work or study today?",
+      "What do you do in the evening?"
+    ],
+    "variationOrComplication": "Tutor asks the user to add one more detail or ask one simple question back.",
+    "exampleTutorLine": "Nice! Now ask me one simple question about my day.",
+    "correctionMoment": "Tutor gives one short correction when useful.",
+    "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You're doing well. Let's do one final answer. Tell me about your morning, your day, and your evening in three short sentences.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced talking about your day, your routine, and simple daily activities. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "partOfDay",
+      "dailyActivity",
+      "time",
+      "place",
+      "dayDescription",
+      "tutorOpeningLine",
+      "followUpQuestionOrder"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries"
+    ],
+    "contextVariants": [
+      {
+        "id": "morning_routine",
+        "title": "Talking about your morning",
+        "setting": "a simple chat about the morning",
+        "reasonForMeeting": "talking about the user's morning routine",
+        "openingLine": "Hi! What do you do in the morning?",
+        "aliases": [
+          "morning",
+          "morning routine",
+          "my morning",
+          "breakfast",
+          "wake up",
+          "start of the day"
+        ]
+      },
+      {
+        "id": "work_or_study_day",
+        "title": "Talking about work or study",
+        "setting": "a simple chat about the day",
+        "reasonForMeeting": "talking about work or study during the day",
+        "openingLine": "Hi! Do you work or study today?",
+        "aliases": [
+          "work",
+          "study",
+          "school",
+          "university",
+          "work day",
+          "study day",
+          "working day"
+        ]
+      },
+      {
+        "id": "evening_routine",
+        "title": "Talking about your evening",
+        "setting": "a simple chat about the evening",
+        "reasonForMeeting": "talking about what the user does in the evening",
+        "openingLine": "Hi! What do you do in the evening?",
+        "aliases": [
+          "evening",
+          "evening routine",
+          "after work",
+          "after study",
+          "relax",
+          "go home",
+          "dinner"
+        ]
+      },
+      {
+        "id": "busy_day",
+        "title": "Talking about a busy day",
+        "setting": "a simple chat about a busy day",
+        "reasonForMeeting": "talking about a busy day with simple details",
+        "openingLine": "Hi! Is your day busy today?",
+        "aliases": [
+          "busy",
+          "busy day",
+          "long day",
+          "tired",
+          "hard day",
+          "many things"
+        ]
+      },
+      {
+        "id": "weekend_day",
+        "title": "Talking about your weekend day",
+        "setting": "a simple chat about the weekend",
+        "reasonForMeeting": "talking about a simple weekend day",
+        "openingLine": "Hi! What do you do on the weekend?",
+        "aliases": [
+          "weekend",
+          "weekend day",
+          "saturday",
+          "sunday",
+          "free day",
+          "day off"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside the selected topic, subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user's custom context.",
+      "Custom context is allowed only if it is about a simple day or daily routine.",
+      "For the MVP, validate custom context with simple deterministic keyword matching, not AI validation.",
+      "Valid custom context keywords include: day, morning, afternoon, evening, routine, work, study, breakfast, lunch, dinner, home, relax, weekend, busy, tired, today.",
+      "Off-topic examples include job interview, restaurant order, hotel check-in, medical emergency, police report, business negotiation, and politics."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about talking about your day. Please choose a simple daily routine situation."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting! For this lesson, let's practice talking about your day.",
+    "secondRedirect": "Let's stay with your daily routine for now. What do you do in the morning?",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on talking about your day. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar and suggest one more natural phrase.",
+      "B1": "Correct grammar, word choice, and sentence flow.",
+      "B2": "Focus on naturalness, nuance, and fluency."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small starter phrase first. Do not give the full answer immediately.",
+    "hintLevels": [
+      "Give one useful word.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can say: \"My day is good. I study English.\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into a new free-form lesson."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this lesson scenario.",
+    "Guide the user through a short realistic daily-routine dialogue.",
+    "Tutor messages must be in English.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Accept short A1 answers if they are understandable.",
+    "Correct only important mistakes.",
+    "Give feedback in 1-3 short sentences.",
+    "If the user goes off-topic, briefly respond and return to talking about the user's day.",
+    "The setup message and the user's context choice do not count as lesson turns.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}

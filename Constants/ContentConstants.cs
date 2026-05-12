@@ -4,6 +4,7 @@ public static class ContentConstants
 {
     public const string ContentRootFolder = "Content";
     public const string LessonsFolder = "Lessons";
+    public const string SharedLessonsFolderName = LessonsFolder;
     public const string TutorsFolder = "Tutors";
     public const string PromptsFolder = "Prompts";
 

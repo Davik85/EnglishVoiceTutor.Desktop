@@ -63,4 +63,28 @@ public sealed class LessonChatBackendRequest
     public string FeedbackRulesSummary { get; init; } = string.Empty;
 
     public string TutorProfileId { get; init; } = string.Empty;
+
+    public string ActiveLevelProfileDifficultyNotes { get; init; } = string.Empty;
+
+    public string ActiveLevelProfileTutorLanguageStyle { get; init; } = string.Empty;
+
+    public string ActiveLevelProfileExpectedUserResponse { get; init; } = string.Empty;
+
+    public string ActiveLevelProfileFeedbackStrictness { get; init; } = string.Empty;
+
+    public string ActiveLevelProfileHintStrategy { get; init; } = string.Empty;
+
+    public string ActiveLevelProfileCorrectionPriority { get; init; } = string.Empty;
+
+    public string ActiveLevelProfileConversationDepth { get; init; } = string.Empty;
+
+    public string ActiveLevelProfileExampleGoodAnswer { get; init; } = string.Empty;
+
+    public string ActiveLevelProfileExampleStretchAnswer { get; init; } = string.Empty;
+
+    public IReadOnlyList<string> ActiveLevelProfileAddedKeyPhrases { get; init; } = [];
+
+    public IReadOnlyList<string> ActiveLevelProfileAddedUsefulConstructions { get; init; } = [];
+
+    public IReadOnlyList<string> ActiveLevelProfileAddedGrammarFocus { get; init; } = [];
 }

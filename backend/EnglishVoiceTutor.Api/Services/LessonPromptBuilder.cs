@@ -10,6 +10,7 @@ public sealed class LessonPromptBuilder
     private const string TutorAvatarProfileHeader = "Tutor avatar profile (stable identity):";
     private const string LearnerProfileHeader = "Learner profile:";
     private const string LessonLengthHeader = "Lesson length metadata:";
+    private const string ActiveLevelProfileHeader = "Active level profile:";
     private const string RecentConversationHeader = "Recent active lesson conversation context (oldest to newest):";
     private const string NoRecentConversationContext = "- No recent conversation messages were provided.";
     private const string UserMessageHeader = "Learner latest message:";
@@ -49,6 +50,11 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("Do not restart the lesson.");
         prompt.AppendLine("Do not ask the learner to choose a topic or context.");
         prompt.AppendLine("Stay inside the selected roleplay context.");
+        prompt.AppendLine("Keep the base scenario goal and topic fixed; do not turn the lesson into unrelated free conversation.");
+        prompt.AppendLine("Adapt difficulty to the selected level and active level profile.");
+        prompt.AppendLine("For A1, keep output very simple and avoid difficult follow-ups.");
+        prompt.AppendLine("For A1/A2, ask only one question at a time.");
+        prompt.AppendLine("For B1/B2, you may use slightly richer natural responses, but every turn must stay inside the selected scenario.");
         prompt.AppendLine("The setup and context choice are already complete and did not count as lesson turns.");
         prompt.AppendLine("Do not ask for native language.");
 
@@ -87,7 +93,8 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine();
 
         prompt.AppendLine(HintTaskHeader);
-        prompt.AppendLine("Give one short hint sentence the learner can say next in this exact situation.");
+        prompt.AppendLine("Give one short hint the learner can use next in this exact situation, following the active level profile hint strategy.");
+        prompt.AppendLine("A1: a fuller sentence starter is okay. A2: use a less complete sentence starter. B1: suggest structure or a useful phrase. B2: suggest natural direction or tone.");
         prompt.AppendLine($"The hint must answer or continue from the learner's point of view, not {avatarProfile.DisplayName}'s point of view.");
         prompt.AppendLine("The hint should help the learner respond to the latest bot message and recent conversation.");
         prompt.AppendLine("If the learner profile includes a display name, hint examples may use that name when appropriate.");
@@ -141,6 +148,8 @@ public sealed class LessonPromptBuilder
             prompt.AppendLine($"- Grammar focus: {string.Join(", ", request.GrammarFocus)}");
         }
 
+        AppendActiveLevelProfile(prompt, request);
+
         if (!string.IsNullOrWhiteSpace(request.FeedbackRulesSummary))
         {
             prompt.AppendLine($"- Feedback rules: {request.FeedbackRulesSummary}");
@@ -149,6 +158,93 @@ public sealed class LessonPromptBuilder
         if (includeNativeLanguage)
         {
             prompt.AppendLine($"- Native language: {request.NativeLanguageName}");
+        }
+
+        prompt.AppendLine();
+    }
+
+
+    private static void AppendActiveLevelProfile(StringBuilder prompt, LessonChatRequest request)
+    {
+        var hasProfile = !string.IsNullOrWhiteSpace(request.ActiveLevelProfileDifficultyNotes)
+            || !string.IsNullOrWhiteSpace(request.ActiveLevelProfileTutorLanguageStyle)
+            || !string.IsNullOrWhiteSpace(request.ActiveLevelProfileExpectedUserResponse)
+            || !string.IsNullOrWhiteSpace(request.ActiveLevelProfileFeedbackStrictness)
+            || !string.IsNullOrWhiteSpace(request.ActiveLevelProfileHintStrategy)
+            || !string.IsNullOrWhiteSpace(request.ActiveLevelProfileCorrectionPriority)
+            || !string.IsNullOrWhiteSpace(request.ActiveLevelProfileConversationDepth)
+            || !string.IsNullOrWhiteSpace(request.ActiveLevelProfileExampleGoodAnswer)
+            || !string.IsNullOrWhiteSpace(request.ActiveLevelProfileExampleStretchAnswer)
+            || request.ActiveLevelProfileAddedKeyPhrases.Count > 0
+            || request.ActiveLevelProfileAddedUsefulConstructions.Count > 0
+            || request.ActiveLevelProfileAddedGrammarFocus.Count > 0;
+
+        if (!hasProfile)
+        {
+            return;
+        }
+
+        prompt.AppendLine(ActiveLevelProfileHeader);
+        prompt.AppendLine($"- Selected level: {ChooseFirstNonEmpty(request.SelectedLevel, request.Level)}");
+
+        if (!string.IsNullOrWhiteSpace(request.ActiveLevelProfileDifficultyNotes))
+        {
+            prompt.AppendLine($"- Difficulty notes: {request.ActiveLevelProfileDifficultyNotes}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ActiveLevelProfileTutorLanguageStyle))
+        {
+            prompt.AppendLine($"- Tutor language style: {request.ActiveLevelProfileTutorLanguageStyle}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ActiveLevelProfileExpectedUserResponse))
+        {
+            prompt.AppendLine($"- Expected user response: {request.ActiveLevelProfileExpectedUserResponse}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ActiveLevelProfileFeedbackStrictness))
+        {
+            prompt.AppendLine($"- Feedback strictness: {request.ActiveLevelProfileFeedbackStrictness}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ActiveLevelProfileHintStrategy))
+        {
+            prompt.AppendLine($"- Hint strategy: {request.ActiveLevelProfileHintStrategy}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ActiveLevelProfileCorrectionPriority))
+        {
+            prompt.AppendLine($"- Correction priority: {request.ActiveLevelProfileCorrectionPriority}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ActiveLevelProfileConversationDepth))
+        {
+            prompt.AppendLine($"- Conversation depth: {request.ActiveLevelProfileConversationDepth}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ActiveLevelProfileExampleGoodAnswer))
+        {
+            prompt.AppendLine($"- Example good answer: {request.ActiveLevelProfileExampleGoodAnswer}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ActiveLevelProfileExampleStretchAnswer))
+        {
+            prompt.AppendLine($"- Example stretch answer: {request.ActiveLevelProfileExampleStretchAnswer}");
+        }
+
+        if (request.ActiveLevelProfileAddedKeyPhrases.Count > 0)
+        {
+            prompt.AppendLine($"- Level-added key phrases: {string.Join(", ", request.ActiveLevelProfileAddedKeyPhrases)}");
+        }
+
+        if (request.ActiveLevelProfileAddedUsefulConstructions.Count > 0)
+        {
+            prompt.AppendLine($"- Level-added useful constructions: {string.Join(", ", request.ActiveLevelProfileAddedUsefulConstructions)}");
+        }
+
+        if (request.ActiveLevelProfileAddedGrammarFocus.Count > 0)
+        {
+            prompt.AppendLine($"- Level-added grammar focus: {string.Join(", ", request.ActiveLevelProfileAddedGrammarFocus)}");
         }
 
         prompt.AppendLine();

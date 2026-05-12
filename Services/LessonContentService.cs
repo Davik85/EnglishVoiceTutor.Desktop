@@ -29,10 +29,24 @@ public sealed class LessonContentService
 
     public LessonScenario LoadIntroductionsLessonScenario()
     {
-        return LoadLessonScenario(
-            ContentConstants.A1LevelFolderName,
+        return LoadSharedLessonScenario(
             ContentConstants.EverydayEnglishFolderName,
             ContentConstants.IntroductionsFileName);
+    }
+
+
+    public LessonScenario LoadSharedLessonScenario(string topicFolderName, string lessonFileName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(topicFolderName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(lessonFileName);
+
+        var lessonPath = Path.Combine(
+            contentRootPath,
+            ContentConstants.SharedLessonsFolderName,
+            topicFolderName,
+            lessonFileName);
+
+        return LoadJsonFile<LessonScenario>(lessonPath, "shared lesson scenario");
     }
 
     public LessonScenario LoadLessonScenario(string levelFolderName, string topicFolderName, string lessonFileName)
