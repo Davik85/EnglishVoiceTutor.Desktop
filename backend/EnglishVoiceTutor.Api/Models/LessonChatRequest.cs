@@ -11,5 +11,11 @@ public sealed class LessonChatRequest
     public string TutorAvatarId { get; init; } = string.Empty;
     public string UserDisplayName { get; init; } = string.Empty;
     public string LearningGoal { get; init; } = string.Empty;
+    public int LearnerTurnCount { get; init; }
+    public int SoftLearnerTurnLimit { get; init; }
+    public int HardLearnerTurnLimit { get; init; }
+    public int RemainingLearnerTurns { get; init; }
+    public bool ShouldStartWrappingUp { get; init; }
+    public bool ShouldEndLessonNow { get; init; }
     public IReadOnlyList<RecentConversationMessage> RecentMessages { get; init; } = [];
 }

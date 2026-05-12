@@ -24,6 +24,8 @@ public partial class LessonChatViewModel : ViewModelBase
     private Feedback? latestFeedback;
     private string lastBotMessage = AppConstants.MockBotFirstMessage;
     private bool isTranscribingAudio;
+    private bool hasFinishedLesson;
+    private bool hasAutoFinishedByLessonLimit;
 
     public string SelectedLevel { get; }
 
@@ -81,6 +83,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
+    [NotifyCanExecuteChangedFor(nameof(HintCommand))]
     private bool isSending;
 
     [ObservableProperty]
@@ -88,12 +91,22 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
+    [NotifyCanExecuteChangedFor(nameof(HintCommand))]
     private bool isRecording;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(PlayBotVoiceCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     private bool isBotVoicePlaying;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsLessonLimitReached))]
+    [NotifyPropertyChangedFor(nameof(IsLessonWrappingUp))]
+    [NotifyPropertyChangedFor(nameof(IsLessonInputEnabled))]
+    [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
+    [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    private int learnerTurnCount;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AvatarStateDisplayText))]
@@ -114,6 +127,12 @@ public partial class LessonChatViewModel : ViewModelBase
     public bool HasSelectedFeedback => SelectedFeedback is not null;
 
     public bool HasCurrentHint => !string.IsNullOrWhiteSpace(CurrentHintText);
+
+    public bool IsLessonLimitReached => LearnerTurnCount >= AppConstants.DefaultLessonHardLearnerTurnLimit;
+
+    public bool IsLessonWrappingUp => LearnerTurnCount >= AppConstants.DefaultLessonSoftLearnerTurnLimit;
+
+    public bool IsLessonInputEnabled => !IsLessonLimitReached && !hasFinishedLesson;
 
     public string VoiceButtonText => IsRecording
         ? localizedText.StopRecordingButtonText
@@ -245,7 +264,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanSendMessage()
     {
-        return !IsSending && !IsRecording;
+        return IsLessonInputEnabled && !IsSending && !IsRecording;
     }
 
     private bool CanToggleVoiceRecording()
@@ -255,7 +274,7 @@ public partial class LessonChatViewModel : ViewModelBase
             return true;
         }
 
-        return !IsSending && !IsBotVoicePlaying && !isTranscribingAudio;
+        return IsLessonInputEnabled && !IsSending && !IsBotVoicePlaying && !isTranscribingAudio;
     }
 
     private bool CanPlayBotVoice(ChatMessageViewModel? message)
@@ -268,7 +287,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanFinishLesson()
     {
-        return !IsRecording && !IsSending;
+        return !IsRecording && !IsSending && !hasFinishedLesson;
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleVoiceRecording))]
@@ -285,6 +304,11 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private void StartVoiceRecording()
     {
+        if (!IsLessonInputEnabled)
+        {
+            return;
+        }
+
         if (IsRecording || audioRecordingService.IsRecording)
         {
             StatusMessage = AudioConstants.RecordingAlreadyInProgressMessage;
@@ -491,6 +515,11 @@ public partial class LessonChatViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanSendMessage))]
     private async Task SendMessageAsync()
     {
+        if (!IsLessonInputEnabled)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(UserInput))
         {
             StatusMessage = localizedText.EmptyMessageWarning;
@@ -508,10 +537,19 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private async Task<bool> SendLessonMessageAsync(string userMessage)
     {
+        if (!IsLessonInputEnabled || string.IsNullOrWhiteSpace(userMessage))
+        {
+            return false;
+        }
+
         CurrentHintText = string.Empty;
         BotStatus = BackendConstants.BotStatusThinking;
         IsSending = true;
         RefreshAvatarState();
+
+        var nextLearnerTurnCount = LearnerTurnCount + 1;
+        var shouldStartWrappingUp = nextLearnerTurnCount >= AppConstants.DefaultLessonSoftLearnerTurnLimit;
+        var shouldEndLessonNow = nextLearnerTurnCount >= AppConstants.DefaultLessonHardLearnerTurnLimit;
 
         try
         {
@@ -526,6 +564,12 @@ public partial class LessonChatViewModel : ViewModelBase
                 TutorAvatarId = tutorAvatarId,
                 UserDisplayName = this.UserDisplayName,
                 LearningGoal = this.LearningGoal,
+                LearnerTurnCount = nextLearnerTurnCount,
+                SoftLearnerTurnLimit = AppConstants.DefaultLessonSoftLearnerTurnLimit,
+                HardLearnerTurnLimit = AppConstants.DefaultLessonHardLearnerTurnLimit,
+                RemainingLearnerTurns = Math.Max(AppConstants.DefaultLessonHardLearnerTurnLimit - nextLearnerTurnCount, 0),
+                ShouldStartWrappingUp = shouldStartWrappingUp,
+                ShouldEndLessonNow = shouldEndLessonNow,
                 RecentMessages = GetRecentConversationMessages()
             });
 
@@ -533,6 +577,7 @@ public partial class LessonChatViewModel : ViewModelBase
             latestFeedback = mappedFeedback;
 
             AddMessage(AppConstants.UserSenderName, userMessage, false, mappedFeedback);
+            LearnerTurnCount = nextLearnerTurnCount;
             AddMessage(TutorAvatarDisplayName, response.BotReply, true);
             lastBotMessage = response.BotReply;
             OnPropertyChanged(nameof(LatestBotMessageText));
@@ -542,6 +587,12 @@ public partial class LessonChatViewModel : ViewModelBase
             BotStatus = BackendConstants.BotStatusReady;
             IsSending = false;
             RefreshAvatarState();
+
+            if (response.IsLessonComplete || shouldEndLessonNow)
+            {
+                CompleteLessonAfterFinalReply();
+                return true;
+            }
 
             if (ShouldAutoPlayBotVoice)
             {
@@ -663,10 +714,10 @@ public partial class LessonChatViewModel : ViewModelBase
         CurrentHintText = string.Empty;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanRequestHint))]
     private async Task HintAsync()
     {
-        if (IsSending || IsRecording)
+        if (!CanRequestHint())
         {
             return;
         }
@@ -715,6 +766,11 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
+    private bool CanRequestHint()
+    {
+        return IsLessonInputEnabled && !IsSending && !IsRecording;
+    }
+
     private void RefreshAvatarState()
     {
         CurrentAvatarState = GetActiveAvatarState();
@@ -748,6 +804,34 @@ public partial class LessonChatViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanFinishLesson))]
     private void FinishLesson()
     {
+        CompleteLesson();
+    }
+
+    private void CompleteLessonAfterFinalReply()
+    {
+        if (hasAutoFinishedByLessonLimit)
+        {
+            return;
+        }
+
+        hasAutoFinishedByLessonLimit = true;
+        StatusMessage = AppConstants.LessonCompleteOpeningSummaryMessage;
+        CompleteLesson();
+    }
+
+    private void CompleteLesson()
+    {
+        if (hasFinishedLesson)
+        {
+            return;
+        }
+
+        hasFinishedLesson = true;
+        OnPropertyChanged(nameof(IsLessonInputEnabled));
+        SendMessageCommand.NotifyCanExecuteChanged();
+        ToggleVoiceRecordingCommand.NotifyCanExecuteChanged();
+        HintCommand.NotifyCanExecuteChanged();
+        FinishLessonCommand.NotifyCanExecuteChanged();
         finishLesson(latestFeedback);
     }
 

@@ -15,6 +15,10 @@ public static class ApiConstants
     public const string AudioTranscriptionError = "Could not transcribe audio.";
     public const string TranslationError = "Could not translate text.";
     public const string AudioSpeechError = "Could not generate speech audio.";
+    public const int DefaultLessonSoftLearnerTurnLimit = 10;
+    public const int DefaultLessonHardLearnerTurnLimit = 15;
+    public const int ExtendedLessonSoftLearnerTurnLimit = 25;
+    public const int ExtendedLessonHardLearnerTurnLimit = 30;
 
     public const string HealthRoute = "/health";
     public const string LessonChatReplyRoute = "/api/lesson-chat/reply";

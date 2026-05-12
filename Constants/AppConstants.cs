@@ -84,6 +84,11 @@ public static class AppConstants
     public const string HintFallbackUserMessage = "I need a hint for what to say next.";
     public const string MockBotFirstMessage = "Hi! Let's practice this situation. Are you ready?";
     public const int RecentConversationMessagesLimit = 10;
+    public const int DefaultLessonSoftLearnerTurnLimit = 10;
+    public const int DefaultLessonHardLearnerTurnLimit = 15;
+    public const int ExtendedLessonSoftLearnerTurnLimit = 25;
+    public const int ExtendedLessonHardLearnerTurnLimit = 30;
+    public const string LessonCompleteOpeningSummaryMessage = "Lesson complete. Opening summary...";
     public const string MockBotReplyText = "Good! I understood your answer. In the next step, AI will give real corrections.";
     public const string TranslateButtonText = "Translate";
     public const string PlayVoiceButtonText = "Play voice";
