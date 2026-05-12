@@ -174,12 +174,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private LessonScenario LoadLessonScenarioForSubtopic(Topic selectedTopic, Subtopic selectedSubtopic)
     {
+        // These content JSON files are currently A1-specific Everyday English scenarios.
+        // A2/B1/B2 should later get their own files or level overrides; do not silently
+        // treat these A1 scenario files as final reusable content for all levels.
         var lessonFileName = selectedSubtopic.Title switch
         {
             "Introductions" => ContentConstants.IntroductionsFileName,
             "Small talk with a neighbor" => ContentConstants.SmallTalkWithANeighborFileName,
             "Asking for help" => ContentConstants.AskingForHelpFileName,
             "Making plans" => ContentConstants.MakingPlansFileName,
+            "Talking about your day" => ContentConstants.TalkingAboutYourDayFileName,
             _ => ContentConstants.IntroductionsFileName
         };
 

@@ -13,6 +13,7 @@ public static class ContentConstants
     public const string SmallTalkWithANeighborFileName = "small_talk_with_a_neighbor.json";
     public const string AskingForHelpFileName = "asking_for_help.json";
     public const string MakingPlansFileName = "making_plans.json";
+    public const string TalkingAboutYourDayFileName = "talking_about_your_day.json";
     public const string ElenaTutorId = "elena";
     public const string ElenaTutorFileName = "elena.json";
 
