@@ -849,7 +849,7 @@ public partial class LessonChatViewModel : ViewModelBase
             var openingLine = string.IsNullOrWhiteSpace(lessonScenario.ConversationFlow.DefaultOpeningExample)
                 ? "Hi! Nice to meet you. What's your name?"
                 : lessonScenario.ConversationFlow.DefaultOpeningExample.Trim();
-            AddRoleplayStartMessage($"Good idea. Let's keep it simple: you meet someone for the first time.\n\n{openingLine}");
+            AddRoleplayStartMessage($"Good idea. Let's keep it simple: {userMessage.Trim()}.\n\n{openingLine}");
             return Task.FromResult(true);
         }
 
@@ -939,13 +939,20 @@ public partial class LessonChatViewModel : ViewModelBase
             .ToArray();
 
         return titles.Length == 0
-            ? "Choose a simple situation about introductions."
+            ? $"Choose a simple situation about {SelectedSubtopic.Title.ToLowerInvariant()}."
             : $"You can choose: {string.Join(", ", titles)}.";
     }
 
     private static string BuildContextConfirmationText(ContextVariant variant)
     {
         const string meetingPrefix = "Meeting ";
+        const string meetingReasonPrefix = "meeting ";
+
+        if (variant.ReasonForMeeting.StartsWith(meetingReasonPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"you meet {variant.ReasonForMeeting[meetingReasonPrefix.Length..].ToLowerInvariant()}";
+        }
+
         if (variant.Title.StartsWith(meetingPrefix, StringComparison.OrdinalIgnoreCase))
         {
             return $"you meet {variant.Title[meetingPrefix.Length..].ToLowerInvariant()}";

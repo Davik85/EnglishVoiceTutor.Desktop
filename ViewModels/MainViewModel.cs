@@ -1,4 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using EnglishVoiceTutor.Desktop.Constants;
+using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Services;
@@ -159,7 +161,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             userSettings.UserDisplayName,
             userSettings.LearningGoal,
             TutorAvatarOptions.GetById(userSettings.SelectedTutorAvatarId),
-            lessonContentService.LoadIntroductionsLessonScenario(),
+            LoadLessonScenarioForSubtopic(selectedTopic, selectedSubtopic),
             lessonChatBackendService,
             audioRecordingService,
             audioPlaybackService,
@@ -167,6 +169,31 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             userSettings.AudioInputDeviceId,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
             latestFeedback => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic, latestFeedback));
+    }
+
+
+    private LessonScenario LoadLessonScenarioForSubtopic(Topic selectedTopic, Subtopic selectedSubtopic)
+    {
+        var lessonFileName = selectedSubtopic.Title switch
+        {
+            "Introductions" => ContentConstants.IntroductionsFileName,
+            "Small talk with a neighbor" => ContentConstants.SmallTalkWithANeighborFileName,
+            _ => ContentConstants.IntroductionsFileName
+        };
+
+        return lessonContentService.LoadLessonScenario(
+            ContentConstants.A1LevelFolderName,
+            GetTopicFolderName(selectedTopic),
+            lessonFileName);
+    }
+
+    private static string GetTopicFolderName(Topic selectedTopic)
+    {
+        return selectedTopic.Title switch
+        {
+            "Everyday English" => ContentConstants.EverydayEnglishFolderName,
+            _ => ContentConstants.EverydayEnglishFolderName
+        };
     }
 
     private LessonSummaryViewModel CreateLessonSummaryViewModel(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, Feedback? latestFeedback)
