@@ -1,0 +1,390 @@
+{
+  "id": "travel_airport_check_in",
+  "metadata": {
+    "topic": "Travel",
+    "subtopic": "Airport check-in",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice airport check-in.\n\nGoal: you will learn to check in for a flight, answer simple questions, and ask basic airport questions.\n\nChoose a situation:\n1. Checking in with a passport\n2. Asking about baggage\n3. Asking about the gate\n\nOr suggest your own simple airport check-in situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple travel situation about airport check-in.",
+      "validCustomContextKeywords": [
+        "airport",
+        "flight",
+        "check in",
+        "passport",
+        "baggage",
+        "luggage",
+        "bag",
+        "suitcase",
+        "gate",
+        "boarding",
+        "seat",
+        "ticket"
+      ],
+      "offTopicExamples": [
+        "job interview",
+        "restaurant order",
+        "work meeting",
+        "politics",
+        "medical appointment"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about airport check-in. Please choose a simple airport check-in situation."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can check in for a flight, answer simple questions, and ask basic airport check-in questions.",
+    "canDoStatements": [
+      "The user can show a passport and give basic flight information.",
+      "The user can answer simple baggage questions.",
+      "The user can ask about the gate, boarding time, or seat."
+    ]
+  },
+  "situation": {
+    "description": "The user is at an airport check-in desk before a flight."
+  },
+  "roles": {
+    "userRole": "A passenger checking in for a flight.",
+    "tutorRole": "An airline check-in agent who helps with documents, baggage, seat, gate, and boarding time."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "I have a flight to...",
+      "Here is my passport.",
+      "I have one bag.",
+      "Is this bag okay?",
+      "Where is the gate?",
+      "What time is boarding?",
+      "Can I have a window seat?",
+      "Thank you."
+    ],
+    "usefulConstructions": [
+      "I have + flight/bag.",
+      "Here is + document.",
+      "Where is + place?",
+      "What time is + event?",
+      "Can I have + seat?"
+    ],
+    "grammarFocus": [
+      "simple present with have",
+      "basic airport questions",
+      "polite requests with can"
+    ],
+    "pronunciationFocus": [
+      "passport",
+      "baggage",
+      "boarding",
+      "gate",
+      "window seat"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple English for airport check-in. Focus only on the most important travel words and one clear action.",
+      "tutorLanguageStyle": "Use short questions and one idea at a time. Accept short answers if the travel meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "Here is my passport. I have one bag.",
+      "stretchUserResponse": "Here is my passport. I have one bag. Where is the gate?",
+      "addedKeyPhrases": [
+        "I have a flight to...",
+        "Here is my passport.",
+        "I have one bag.",
+        "Is this bag okay?"
+      ],
+      "addedUsefulConstructions": [
+        "Use one simple sentence with I need..., I have..., Where is..., or What time is... as appropriate."
+      ],
+      "addedGrammarFocus": [
+        "simple present for travel needs",
+        "basic question forms",
+        "polite please and thank you"
+      ],
+      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
+      "correctionPriority": "Travel meaning first, then one essential grammar or word correction.",
+      "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
+      "exampleGoodAnswer": "Here is my passport. I have one bag.",
+      "exampleStretchAnswer": "Here is my passport. I have one bag. Where is the gate?"
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple English for airport check-in. The learner should add one useful travel detail such as time, place, object, baggage, room, price, or destination.",
+      "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "Here is my passport. I have one bag to check in.",
+      "stretchUserResponse": "Here is my passport. I have one bag to check in. Can I have a window seat, please?",
+      "addedKeyPhrases": [
+        "I have a flight to...",
+        "Here is my passport.",
+        "I have one bag.",
+        "Is this bag okay?",
+        "Where is the gate?"
+      ],
+      "addedUsefulConstructions": [
+        "Add one detail after the main request or answer.",
+        "Use please for requests and thank you to close."
+      ],
+      "addedGrammarFocus": [
+        "basic word order in questions",
+        "there is / is there when useful",
+        "countable travel nouns and simple prepositions"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and important travel vocabulary.",
+      "hintStrategy": "Offer a sentence starter plus one possible detail, not a long script unless needed.",
+      "correctionPriority": "Clear request or answer, one extra detail, polite wording, and basic question order.",
+      "conversationDepth": "Practice the main travel task and one follow-up question inside the same situation.",
+      "exampleGoodAnswer": "Here is my passport. I have one bag to check in.",
+      "exampleStretchAnswer": "Here is my passport. I have one bag to check in. Can I have a window seat, please?"
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear English for airport check-in. The learner should give an answer, add a detail or short reason, and ask a practical follow-up question.",
+      "tutorLanguageStyle": "Use natural clear English. Ask for clarification when details are missing and keep the roleplay realistic.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "Here is my passport. I have one suitcase to check in, and I’d like a window seat if possible.",
+      "stretchUserResponse": "Here is my passport. I have one suitcase to check in. Could you also tell me where the boarding gate is?",
+      "addedKeyPhrases": [
+        "I have a flight to...",
+        "Here is my passport.",
+        "I have one bag.",
+        "Is this bag okay?",
+        "Where is the gate?",
+        "What time is boarding?"
+      ],
+      "addedUsefulConstructions": [
+        "Combine request + detail + reason or follow-up question.",
+        "Use could you / would like for polite travel requests."
+      ],
+      "addedGrammarFocus": [
+        "polite question forms",
+        "connected sentences with and, but, so",
+        "specific travel details and clarification questions"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, sentence flow, and unclear travel details.",
+      "hintStrategy": "Give a structure such as request + detail + follow-up question, with one phrase option.",
+      "correctionPriority": "Natural travel request, complete details, accurate polite question, and smooth sentence flow.",
+      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected scenario.",
+      "exampleGoodAnswer": "Here is my passport. I have one suitcase to check in, and I’d like a window seat if possible.",
+      "exampleStretchAnswer": "Here is my passport. I have one suitcase to check in. Could you also tell me where the boarding gate is?"
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural travel English for airport check-in. The learner should use polite, flexible, specific phrasing with nuance and a useful follow-up or clarification.",
+      "tutorLanguageStyle": "Use realistic travel-service English and add at most one small complication while keeping the selected scenario focused.",
+      "expectedUserResponse": "Natural answer with detail, nuance, and a follow-up question or clarification.",
+      "minimumUserResponse": "Here is my passport. I have one suitcase to check in, and if possible, I’d prefer a window seat.",
+      "stretchUserResponse": "Here is my passport. I have one suitcase to check in. If there’s still availability, I’d prefer a window seat, and could you let me know where the gate is?",
+      "addedKeyPhrases": [
+        "I have a flight to...",
+        "Here is my passport.",
+        "I have one bag.",
+        "Is this bag okay?",
+        "Where is the gate?",
+        "What time is boarding?",
+        "Can I have a window seat?"
+      ],
+      "addedUsefulConstructions": [
+        "Use nuanced polite requests such as could you let me know, would it be possible, or if possible.",
+        "Clarify preferences and constraints naturally."
+      ],
+      "addedGrammarFocus": [
+        "modal verbs for polite requests",
+        "conditional phrasing with if possible / if there is availability",
+        "precise travel vocabulary and tone"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, tone, precise wording, and any important grammar errors.",
+      "hintStrategy": "Suggest more natural phrasing or tone rather than giving a full script immediately.",
+      "correctionPriority": "Polite nuance, specificity, smooth flow, precise travel vocabulary, and appropriate tone.",
+      "conversationDepth": "Allow richer details, a realistic complication, and flexible negotiation, but do not leave the travel scenario.",
+      "exampleGoodAnswer": "Here is my passport. I have one suitcase to check in, and if possible, I’d prefer a window seat.",
+      "exampleStretchAnswer": "Here is my passport. I have one suitcase to check in. If there’s still availability, I’d prefer a window seat, and could you let me know where the gate is?"
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor greets the passenger and starts the selected airport check-in situation.",
+    "defaultOpeningExample": "Good morning. May I see your passport, please?",
+    "firstUserTask": "The user gives the passport or states the flight/check-in need.",
+    "expectedPattern": "Here is my passport. I have one bag.",
+    "guidedPracticeFollowUpQuestions": [
+      "Do you have any bags to check in?",
+      "Would you like a window seat or an aisle seat?",
+      "Do you have any questions about the gate?",
+      "What time would you like to ask about?"
+    ],
+    "variationOrComplication": "Tutor asks about baggage, seat preference, boarding time, or gate.",
+    "exampleTutorLine": "Do you have any bags to check in?",
+    "correctionMoment": "Tutor gives one short correction when useful.",
+    "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let us do one final check-in question. Ask me about your gate or boarding time.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced airport check-in, baggage questions, seat requests, and gate questions. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific setting",
+      "minor travel detail",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic small complication for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected travel scenario"
+    ],
+    "contextVariants": [
+      {
+        "id": "passport_check_in",
+        "title": "Checking in with a passport",
+        "setting": "an airport check-in desk",
+        "reasonForMeeting": "checking in with travel documents",
+        "openingLine": "Good morning. May I see your passport, please?",
+        "aliases": [
+          "passport",
+          "check in",
+          "airport check-in",
+          "flight check-in",
+          "boarding pass"
+        ]
+      },
+      {
+        "id": "baggage_check",
+        "title": "Asking about baggage",
+        "setting": "an airport check-in desk",
+        "reasonForMeeting": "checking bags before a flight",
+        "openingLine": "Hello. Do you have any bags to check in?",
+        "aliases": [
+          "baggage",
+          "luggage",
+          "bag",
+          "suitcase",
+          "checked bag"
+        ]
+      },
+      {
+        "id": "gate_question",
+        "title": "Asking about the gate",
+        "setting": "an airport check-in desk",
+        "reasonForMeeting": "asking where to go after check-in",
+        "openingLine": "Your flight is checked in. Do you have any questions?",
+        "aliases": [
+          "gate",
+          "boarding gate",
+          "where is the gate",
+          "departure gate"
+        ]
+      },
+      {
+        "id": "seat_question",
+        "title": "Asking about the seat",
+        "setting": "an airport check-in desk",
+        "reasonForMeeting": "choosing a seat",
+        "openingLine": "Would you like a window seat or an aisle seat?",
+        "aliases": [
+          "seat",
+          "window seat",
+          "aisle seat",
+          "seat question"
+        ]
+      },
+      {
+        "id": "boarding_pass",
+        "title": "Getting a boarding pass",
+        "setting": "an airport check-in desk",
+        "reasonForMeeting": "receiving travel documents",
+        "openingLine": "Here is your boarding pass. Please check the gate and boarding time.",
+        "aliases": [
+          "boarding pass",
+          "ticket",
+          "boarding time"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Travel, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "For the MVP, validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about airport check-in. Please choose a simple airport check-in situation."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about airport check-in. Let us stay in this travel situation.",
+    "secondRedirect": "Let us stay with airport check-in for now. Please answer as a traveler in this situation.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on airport check-in. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite words.",
+      "B1": "Correct grammar, word choice, and sentence flow.",
+      "B2": "Focus on fluency, nuance, tone, and precise wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small travel phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful word.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"I have a flight to...\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same travel goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into free chat."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Travel lesson scenario.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as job interview; redirect and remain in setup.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}

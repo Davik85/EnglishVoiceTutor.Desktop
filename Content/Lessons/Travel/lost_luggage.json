@@ -1,0 +1,392 @@
+{
+  "id": "travel_lost_luggage",
+  "metadata": {
+    "topic": "Travel",
+    "subtopic": "Lost luggage",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice lost luggage.\n\nGoal: you will learn to report lost luggage, describe your bag, and ask what to do next.\n\nChoose a situation:\n1. Reporting a missing suitcase\n2. Describing your bag\n3. Asking when your luggage will arrive\n\nOr suggest your own simple lost luggage situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple travel situation about lost luggage.",
+      "validCustomContextKeywords": [
+        "lost luggage",
+        "missing luggage",
+        "missing suitcase",
+        "lost suitcase",
+        "suitcase",
+        "bag",
+        "baggage claim",
+        "carousel",
+        "form",
+        "black bag",
+        "delivery time"
+      ],
+      "offTopicExamples": [
+        "job interview",
+        "hotel check-in",
+        "restaurant order",
+        "politics",
+        "directions"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about lost luggage. Please choose a simple lost luggage situation."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can report lost luggage, describe a bag simply, and ask what to do next.",
+    "canDoStatements": [
+      "The user can say a bag is missing.",
+      "The user can describe a suitcase by size, color, or name tag.",
+      "The user can ask what to do next and when it may arrive."
+    ]
+  },
+  "situation": {
+    "description": "The user is at an airport baggage service desk because luggage is missing."
+  },
+  "roles": {
+    "userRole": "A passenger reporting missing luggage.",
+    "tutorRole": "An airport baggage service agent who asks for bag details and explains the next step."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "My bag is missing.",
+      "I cannot find my suitcase.",
+      "It is black.",
+      "It is small/big.",
+      "It has my name on it.",
+      "What should I do?",
+      "When will it arrive?",
+      "Here is my phone number.",
+      "Thank you for your help."
+    ],
+    "usefulConstructions": [
+      "My bag is missing.",
+      "It is + color/size.",
+      "It has + detail.",
+      "What should I do next?",
+      "When will it arrive?"
+    ],
+    "grammarFocus": [
+      "simple present for description",
+      "can/cannot for problems",
+      "questions with what and when",
+      "adjectives before nouns"
+    ],
+    "pronunciationFocus": [
+      "luggage",
+      "suitcase",
+      "missing",
+      "description",
+      "arrival"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple English for lost luggage. Focus only on the most important travel words and one clear action.",
+      "tutorLanguageStyle": "Use short questions and one idea at a time. Accept short answers if the travel meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "My bag is missing. It is black.",
+      "stretchUserResponse": "My bag is missing. It is black. What should I do?",
+      "addedKeyPhrases": [
+        "My bag is missing.",
+        "I cannot find my suitcase.",
+        "It is black.",
+        "It is small/big."
+      ],
+      "addedUsefulConstructions": [
+        "Use one simple sentence with I need..., I have..., Where is..., or What time is... as appropriate."
+      ],
+      "addedGrammarFocus": [
+        "simple present for travel needs",
+        "basic question forms",
+        "polite please and thank you"
+      ],
+      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
+      "correctionPriority": "Travel meaning first, then one essential grammar or word correction.",
+      "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
+      "exampleGoodAnswer": "My bag is missing. It is black.",
+      "exampleStretchAnswer": "My bag is missing. It is black. What should I do?"
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple English for lost luggage. The learner should add one useful travel detail such as time, place, object, baggage, room, price, or destination.",
+      "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "My suitcase is missing. It is black and small. What should I do?",
+      "stretchUserResponse": "My suitcase is missing. It is black and small, and it has my name on it. What should I do?",
+      "addedKeyPhrases": [
+        "My bag is missing.",
+        "I cannot find my suitcase.",
+        "It is black.",
+        "It is small/big.",
+        "It has my name on it."
+      ],
+      "addedUsefulConstructions": [
+        "Add one detail after the main request or answer.",
+        "Use please for requests and thank you to close."
+      ],
+      "addedGrammarFocus": [
+        "basic word order in questions",
+        "there is / is there when useful",
+        "countable travel nouns and simple prepositions"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and important travel vocabulary.",
+      "hintStrategy": "Offer a sentence starter plus one possible detail, not a long script unless needed.",
+      "correctionPriority": "Clear request or answer, one extra detail, polite wording, and basic question order.",
+      "conversationDepth": "Practice the main travel task and one follow-up question inside the same situation.",
+      "exampleGoodAnswer": "My suitcase is missing. It is black and small. What should I do?",
+      "exampleStretchAnswer": "My suitcase is missing. It is black and small, and it has my name on it. What should I do?"
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear English for lost luggage. The learner should give an answer, add a detail or short reason, and ask a practical follow-up question.",
+      "tutorLanguageStyle": "Use natural clear English. Ask for clarification when details are missing and keep the roleplay realistic.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "My suitcase is missing. It is black, medium-sized, and it has my name on it. What should I do next?",
+      "stretchUserResponse": "My suitcase is missing. It is black, medium-sized, and it has my name on it. Could you tell me what I should do next?",
+      "addedKeyPhrases": [
+        "My bag is missing.",
+        "I cannot find my suitcase.",
+        "It is black.",
+        "It is small/big.",
+        "It has my name on it.",
+        "What should I do?"
+      ],
+      "addedUsefulConstructions": [
+        "Combine request + detail + reason or follow-up question.",
+        "Use could you / would like for polite travel requests."
+      ],
+      "addedGrammarFocus": [
+        "polite question forms",
+        "connected sentences with and, but, so",
+        "specific travel details and clarification questions"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, sentence flow, and unclear travel details.",
+      "hintStrategy": "Give a structure such as request + detail + follow-up question, with one phrase option.",
+      "correctionPriority": "Natural travel request, complete details, accurate polite question, and smooth sentence flow.",
+      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected scenario.",
+      "exampleGoodAnswer": "My suitcase is missing. It is black, medium-sized, and it has my name on it. What should I do next?",
+      "exampleStretchAnswer": "My suitcase is missing. It is black, medium-sized, and it has my name on it. Could you tell me what I should do next?"
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural travel English for lost luggage. The learner should use polite, flexible, specific phrasing with nuance and a useful follow-up or clarification.",
+      "tutorLanguageStyle": "Use realistic travel-service English and add at most one small complication while keeping the selected scenario focused.",
+      "expectedUserResponse": "Natural answer with detail, nuance, and a follow-up question or clarification.",
+      "minimumUserResponse": "My suitcase seems to be missing. It’s a medium-sized black suitcase with my name tag on it. Could you tell me what the next step is?",
+      "stretchUserResponse": "My suitcase seems to be missing. It’s a medium-sized black suitcase with my name tag on it. Could you tell me what the next step is and when it might be delivered?",
+      "addedKeyPhrases": [
+        "My bag is missing.",
+        "I cannot find my suitcase.",
+        "It is black.",
+        "It is small/big.",
+        "It has my name on it.",
+        "What should I do?",
+        "When will it arrive?"
+      ],
+      "addedUsefulConstructions": [
+        "Use nuanced polite requests such as could you let me know, would it be possible, or if possible.",
+        "Clarify preferences and constraints naturally."
+      ],
+      "addedGrammarFocus": [
+        "modal verbs for polite requests",
+        "conditional phrasing with if possible / if there is availability",
+        "precise travel vocabulary and tone"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, tone, precise wording, and any important grammar errors.",
+      "hintStrategy": "Suggest more natural phrasing or tone rather than giving a full script immediately.",
+      "correctionPriority": "Polite nuance, specificity, smooth flow, precise travel vocabulary, and appropriate tone.",
+      "conversationDepth": "Allow richer details, a realistic complication, and flexible negotiation, but do not leave the travel scenario.",
+      "exampleGoodAnswer": "My suitcase seems to be missing. It’s a medium-sized black suitcase with my name tag on it. Could you tell me what the next step is?",
+      "exampleStretchAnswer": "My suitcase seems to be missing. It’s a medium-sized black suitcase with my name tag on it. Could you tell me what the next step is and when it might be delivered?"
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor asks how they can help at the baggage service desk.",
+    "defaultOpeningExample": "Hello. How can I help you?",
+    "firstUserTask": "The user reports that a bag or suitcase is missing.",
+    "expectedPattern": "My bag is missing. It is black.",
+    "guidedPracticeFollowUpQuestions": [
+      "Can you describe your bag?",
+      "What color is it?",
+      "Is it small, medium, or big?",
+      "Can I have your phone number?",
+      "Do you want to ask when it will arrive?"
+    ],
+    "variationOrComplication": "Tutor asks for bag description, contact details, baggage claim location, or form details.",
+    "exampleTutorLine": "Can you describe your bag, please?",
+    "correctionMoment": "Tutor gives one short correction when useful.",
+    "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let us do one final lost luggage report. Describe your bag and ask what to do next.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced reporting lost luggage, describing your bag, and asking about next steps. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific setting",
+      "minor travel detail",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic small complication for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected travel scenario"
+    ],
+    "contextVariants": [
+      {
+        "id": "missing_suitcase",
+        "title": "Reporting a missing suitcase",
+        "setting": "an airport baggage service desk",
+        "reasonForMeeting": "reporting missing luggage",
+        "openingLine": "Hello. How can I help you?",
+        "aliases": [
+          "missing suitcase",
+          "lost suitcase",
+          "luggage missing",
+          "lost luggage",
+          "suitcase"
+        ]
+      },
+      {
+        "id": "bag_description",
+        "title": "Describing your bag",
+        "setting": "an airport baggage service desk",
+        "reasonForMeeting": "describing missing luggage",
+        "openingLine": "Can you describe your bag, please?",
+        "aliases": [
+          "describe bag",
+          "bag description",
+          "black bag",
+          "suitcase color"
+        ]
+      },
+      {
+        "id": "luggage_arrival_time",
+        "title": "Asking when your luggage will arrive",
+        "setting": "an airport baggage service desk",
+        "reasonForMeeting": "asking about delivery time",
+        "openingLine": "We will try to find your bag. Do you have any questions?",
+        "aliases": [
+          "when will it arrive",
+          "arrival time",
+          "when luggage arrive",
+          "delivery time"
+        ]
+      },
+      {
+        "id": "baggage_claim",
+        "title": "Asking at baggage claim",
+        "setting": "the baggage claim area",
+        "reasonForMeeting": "checking whether luggage is missing from the carousel",
+        "openingLine": "Is your bag missing from the baggage claim area?",
+        "aliases": [
+          "baggage claim",
+          "claim area",
+          "luggage belt",
+          "carousel"
+        ]
+      },
+      {
+        "id": "luggage_form",
+        "title": "Filling in a luggage form",
+        "setting": "an airport baggage service desk",
+        "reasonForMeeting": "completing a missing luggage report",
+        "openingLine": "Please fill in this form with your contact details.",
+        "aliases": [
+          "form",
+          "luggage form",
+          "report form",
+          "contact details"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Travel, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "For the MVP, validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about lost luggage. Please choose a simple lost luggage situation."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about lost luggage. Let us stay in this travel situation.",
+    "secondRedirect": "Let us stay with lost luggage for now. Please answer as a traveler in this situation.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on lost luggage. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite words.",
+      "B1": "Correct grammar, word choice, and sentence flow.",
+      "B2": "Focus on fluency, nuance, tone, and precise wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small travel phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful word.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"My bag is missing.\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same travel goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into free chat."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Travel lesson scenario.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as job interview; redirect and remain in setup.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}

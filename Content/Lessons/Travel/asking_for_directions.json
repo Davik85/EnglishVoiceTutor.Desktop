@@ -1,0 +1,390 @@
+{
+  "id": "travel_asking_for_directions",
+  "metadata": {
+    "topic": "Travel",
+    "subtopic": "Asking for directions",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice asking for directions.\n\nGoal: you will learn to ask where a place is and understand simple directions.\n\nChoose a situation:\n1. Asking where the station is\n2. Asking how to get to a hotel\n3. Asking for directions to a museum\n\nOr suggest your own simple directions situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple travel situation about asking for directions.",
+      "validCustomContextKeywords": [
+        "directions",
+        "station",
+        "train station",
+        "hotel",
+        "museum",
+        "bus stop",
+        "bus",
+        "city center",
+        "centre",
+        "downtown",
+        "street",
+        "turn left",
+        "turn right"
+      ],
+      "offTopicExamples": [
+        "job interview",
+        "airport check-in",
+        "hotel check-in",
+        "restaurant order",
+        "politics"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about asking for directions. Please choose a simple directions situation."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can ask for simple directions and understand basic direction instructions.",
+    "canDoStatements": [
+      "The user can politely ask where a place is.",
+      "The user can ask how to get to a place.",
+      "The user can understand simple direction words."
+    ]
+  },
+  "situation": {
+    "description": "The user is in a city and asks a local person for directions."
+  },
+  "roles": {
+    "userRole": "A traveler asking for directions in a city.",
+    "tutorRole": "A helpful local person who gives simple directions and checks understanding."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "Excuse me.",
+      "Where is...?",
+      "How do I get to...?",
+      "Is it far?",
+      "Go straight.",
+      "Turn left.",
+      "Turn right.",
+      "It is near...",
+      "Thank you."
+    ],
+    "usefulConstructions": [
+      "Excuse me, where is + place?",
+      "How do I get to + place?",
+      "Go straight and turn + left/right.",
+      "It is near + place."
+    ],
+    "grammarFocus": [
+      "where questions",
+      "how questions",
+      "imperatives for directions",
+      "prepositions of place"
+    ],
+    "pronunciationFocus": [
+      "excuse me",
+      "straight",
+      "left",
+      "right",
+      "station"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple English for asking for directions. Focus only on the most important travel words and one clear action.",
+      "tutorLanguageStyle": "Use short questions and one idea at a time. Accept short answers if the travel meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "Excuse me. Where is the station?",
+      "stretchUserResponse": "Excuse me. Where is the station? Thank you.",
+      "addedKeyPhrases": [
+        "Excuse me.",
+        "Where is...?",
+        "How do I get to...?",
+        "Is it far?"
+      ],
+      "addedUsefulConstructions": [
+        "Use one simple sentence with I need..., I have..., Where is..., or What time is... as appropriate."
+      ],
+      "addedGrammarFocus": [
+        "simple present for travel needs",
+        "basic question forms",
+        "polite please and thank you"
+      ],
+      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
+      "correctionPriority": "Travel meaning first, then one essential grammar or word correction.",
+      "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
+      "exampleGoodAnswer": "Excuse me. Where is the station?",
+      "exampleStretchAnswer": "Excuse me. Where is the station? Thank you."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple English for asking for directions. The learner should add one useful travel detail such as time, place, object, baggage, room, price, or destination.",
+      "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "Excuse me. How do I get to the station? Is it far?",
+      "stretchUserResponse": "Excuse me. How do I get to the station? Is it far from here?",
+      "addedKeyPhrases": [
+        "Excuse me.",
+        "Where is...?",
+        "How do I get to...?",
+        "Is it far?",
+        "Go straight."
+      ],
+      "addedUsefulConstructions": [
+        "Add one detail after the main request or answer.",
+        "Use please for requests and thank you to close."
+      ],
+      "addedGrammarFocus": [
+        "basic word order in questions",
+        "there is / is there when useful",
+        "countable travel nouns and simple prepositions"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and important travel vocabulary.",
+      "hintStrategy": "Offer a sentence starter plus one possible detail, not a long script unless needed.",
+      "correctionPriority": "Clear request or answer, one extra detail, polite wording, and basic question order.",
+      "conversationDepth": "Practice the main travel task and one follow-up question inside the same situation.",
+      "exampleGoodAnswer": "Excuse me. How do I get to the station? Is it far?",
+      "exampleStretchAnswer": "Excuse me. How do I get to the station? Is it far from here?"
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear English for asking for directions. The learner should give an answer, add a detail or short reason, and ask a practical follow-up question.",
+      "tutorLanguageStyle": "Use natural clear English. Ask for clarification when details are missing and keep the roleplay realistic.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "Excuse me, could you tell me how to get to the station? I’m not from here.",
+      "stretchUserResponse": "Excuse me, could you tell me how to get to the station? I’m not from here, and I need the easiest route.",
+      "addedKeyPhrases": [
+        "Excuse me.",
+        "Where is...?",
+        "How do I get to...?",
+        "Is it far?",
+        "Go straight.",
+        "Turn left."
+      ],
+      "addedUsefulConstructions": [
+        "Combine request + detail + reason or follow-up question.",
+        "Use could you / would like for polite travel requests."
+      ],
+      "addedGrammarFocus": [
+        "polite question forms",
+        "connected sentences with and, but, so",
+        "specific travel details and clarification questions"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, sentence flow, and unclear travel details.",
+      "hintStrategy": "Give a structure such as request + detail + follow-up question, with one phrase option.",
+      "correctionPriority": "Natural travel request, complete details, accurate polite question, and smooth sentence flow.",
+      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected scenario.",
+      "exampleGoodAnswer": "Excuse me, could you tell me how to get to the station? I’m not from here.",
+      "exampleStretchAnswer": "Excuse me, could you tell me how to get to the station? I’m not from here, and I need the easiest route."
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural travel English for asking for directions. The learner should use polite, flexible, specific phrasing with nuance and a useful follow-up or clarification.",
+      "tutorLanguageStyle": "Use realistic travel-service English and add at most one small complication while keeping the selected scenario focused.",
+      "expectedUserResponse": "Natural answer with detail, nuance, and a follow-up question or clarification.",
+      "minimumUserResponse": "Excuse me, would you mind telling me the easiest way to get to the station? I’m trying to avoid getting lost.",
+      "stretchUserResponse": "Excuse me, would you mind telling me the easiest way to get to the station? I’m trying to avoid getting lost, so a simple route would be really helpful.",
+      "addedKeyPhrases": [
+        "Excuse me.",
+        "Where is...?",
+        "How do I get to...?",
+        "Is it far?",
+        "Go straight.",
+        "Turn left.",
+        "Turn right."
+      ],
+      "addedUsefulConstructions": [
+        "Use nuanced polite requests such as could you let me know, would it be possible, or if possible.",
+        "Clarify preferences and constraints naturally."
+      ],
+      "addedGrammarFocus": [
+        "modal verbs for polite requests",
+        "conditional phrasing with if possible / if there is availability",
+        "precise travel vocabulary and tone"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, tone, precise wording, and any important grammar errors.",
+      "hintStrategy": "Suggest more natural phrasing or tone rather than giving a full script immediately.",
+      "correctionPriority": "Polite nuance, specificity, smooth flow, precise travel vocabulary, and appropriate tone.",
+      "conversationDepth": "Allow richer details, a realistic complication, and flexible negotiation, but do not leave the travel scenario.",
+      "exampleGoodAnswer": "Excuse me, would you mind telling me the easiest way to get to the station? I’m trying to avoid getting lost.",
+      "exampleStretchAnswer": "Excuse me, would you mind telling me the easiest way to get to the station? I’m trying to avoid getting lost, so a simple route would be really helpful."
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor offers help and starts the selected directions situation.",
+    "defaultOpeningExample": "Hi! Can I help you?",
+    "firstUserTask": "The user asks where a place is or how to get there.",
+    "expectedPattern": "Excuse me. Where is the station?",
+    "guidedPracticeFollowUpQuestions": [
+      "Where do you want to go?",
+      "Do you want the easiest route?",
+      "Is walking okay?",
+      "Can you repeat the first direction?"
+    ],
+    "variationOrComplication": "Tutor gives simple directions and asks if the user understands one step.",
+    "exampleTutorLine": "Go straight, then turn left. Can you repeat that?",
+    "correctionMoment": "Tutor gives one short correction when useful.",
+    "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let us do one final directions question. Ask me how to get to one place.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced asking for directions and understanding simple direction words. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific setting",
+      "minor travel detail",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic small complication for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected travel scenario"
+    ],
+    "contextVariants": [
+      {
+        "id": "station_directions",
+        "title": "Asking where the station is",
+        "setting": "a city street",
+        "reasonForMeeting": "finding the train station",
+        "openingLine": "Hi! Can I help you?",
+        "aliases": [
+          "station",
+          "train station",
+          "where is the station",
+          "railway station"
+        ]
+      },
+      {
+        "id": "hotel_directions",
+        "title": "Asking how to get to a hotel",
+        "setting": "a city street",
+        "reasonForMeeting": "finding a hotel",
+        "openingLine": "Hi! Are you looking for somewhere?",
+        "aliases": [
+          "hotel",
+          "get to hotel",
+          "my hotel",
+          "hotel directions"
+        ]
+      },
+      {
+        "id": "museum_directions",
+        "title": "Asking for directions to a museum",
+        "setting": "a city street",
+        "reasonForMeeting": "finding a museum",
+        "openingLine": "Hello! Do you need directions?",
+        "aliases": [
+          "museum",
+          "directions to museum",
+          "art museum"
+        ]
+      },
+      {
+        "id": "bus_stop_directions",
+        "title": "Asking where the bus stop is",
+        "setting": "a city street",
+        "reasonForMeeting": "finding a bus stop",
+        "openingLine": "Hi! Can I help you find something?",
+        "aliases": [
+          "bus stop",
+          "bus",
+          "stop",
+          "bus station"
+        ]
+      },
+      {
+        "id": "city_center_directions",
+        "title": "Asking how to get to the city center",
+        "setting": "a city street",
+        "reasonForMeeting": "getting to the city center",
+        "openingLine": "Hello! Where do you want to go?",
+        "aliases": [
+          "city center",
+          "centre",
+          "downtown",
+          "town center"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Travel, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "For the MVP, validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about asking for directions. Please choose a simple directions situation."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about asking for directions. Let us stay in this travel situation.",
+    "secondRedirect": "Let us stay with asking for directions for now. Please answer as a traveler in this situation.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on asking for directions. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite words.",
+      "B1": "Correct grammar, word choice, and sentence flow.",
+      "B2": "Focus on fluency, nuance, tone, and precise wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small travel phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful word.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"Excuse me.\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same travel goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into free chat."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Travel lesson scenario.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as job interview; redirect and remain in setup.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}
