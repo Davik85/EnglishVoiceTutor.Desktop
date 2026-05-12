@@ -1,3 +1,4 @@
+using System.Net;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services;
@@ -5,6 +6,10 @@ using EnglishVoiceTutor.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient(OpenAiConstants.AudioSpeechHttpClientName, httpClient =>
+{
+    httpClient.Timeout = Timeout.InfiniteTimeSpan;
+});
 builder.Services.AddScoped<MockLessonChatService>();
 builder.Services.AddScoped<MockLessonHintService>();
 builder.Services.AddScoped<OpenAiOptionsProvider>();
@@ -18,14 +23,8 @@ builder.Services.AddScoped<AudioSpeechService>();
 
 var app = builder.Build();
 
-app.MapGet(ApiConstants.HealthRoute, () =>
-{
-    return Results.Ok(new
-    {
-        status = ApiConstants.HealthOkStatus,
-        service = ApiConstants.ServiceName
-    });
-});
+app.MapGet(ApiConstants.HealthRoute, CreateHealthResponse);
+app.MapGet(ApiConstants.ApiHealthRoute, CreateHealthResponse);
 
 app.MapGet(ApiConstants.BackendConfigStatusRoute, (OpenAiOptionsProvider optionsProvider) =>
 {
@@ -50,6 +49,15 @@ app.MapPost(ApiConstants.TranslationRoute, HandleTranslationAsync);
 app.MapPost(ApiConstants.AudioSpeechRoute, HandleAudioSpeechAsync);
 
 app.Run();
+
+static IResult CreateHealthResponse()
+{
+    return Results.Ok(new
+    {
+        status = ApiConstants.HealthOkStatus,
+        service = ApiConstants.ServiceName
+    });
+}
 
 static async Task<IResult> HandleLessonChatReplyAsync(
     LessonChatRequest request,
@@ -196,6 +204,51 @@ static async Task<IResult> HandleAudioSpeechAsync(
         var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, cancellationToken);
 
         return Results.File(audioBytes, OpenAiConstants.SpeechResponseContentType);
+    }
+    catch (AudioSpeechRequestCanceledException exception) when (exception.InternalTimeoutReached)
+    {
+        logger.LogWarning(
+            exception,
+            "Audio speech request timed out after {TimeoutSeconds} seconds. ClientCancellationRequested={ClientCancellationRequested}.",
+            OpenAiConstants.OpenAiSpeechTimeoutSeconds,
+            exception.ClientCancellationRequested);
+
+        return Results.Problem(
+            title: "Audio speech request timed out.",
+            detail: $"OpenAI speech generation exceeded the {OpenAiConstants.OpenAiSpeechTimeoutSeconds} second timeout.",
+            statusCode: StatusCodes.Status504GatewayTimeout);
+    }
+    catch (AudioSpeechRequestCanceledException exception) when (exception.ClientCancellationRequested || cancellationToken.IsCancellationRequested)
+    {
+        logger.LogInformation(exception, "Audio speech request was canceled because the client aborted the request.");
+        return Results.Problem(
+            title: "Client closed request.",
+            detail: "The client canceled the audio speech request before the backend could finish writing the response.",
+            statusCode: 499);
+    }
+    catch (TaskCanceledException exception) when (cancellationToken.IsCancellationRequested)
+    {
+        logger.LogInformation(exception, "Audio speech request was canceled because the client aborted the request.");
+        return Results.Problem(
+            title: "Client closed request.",
+            detail: "The client canceled the audio speech request before the backend could finish writing the response.",
+            statusCode: 499);
+    }
+    catch (TaskCanceledException exception)
+    {
+        logger.LogWarning(exception, "Audio speech request was canceled before a response was produced.");
+        return Results.Problem(
+            title: "Audio speech request timed out.",
+            detail: ApiConstants.AudioSpeechError,
+            statusCode: StatusCodes.Status504GatewayTimeout);
+    }
+    catch (HttpRequestException exception)
+    {
+        logger.LogWarning(
+            exception,
+            "OpenAI audio speech HTTP request failed. StatusCode={StatusCode}.",
+            exception.StatusCode?.ToString() ?? HttpStatusCode.ServiceUnavailable.ToString());
+        return Results.Problem(ApiConstants.AudioSpeechError);
     }
     catch (InvalidOperationException exception)
     {
