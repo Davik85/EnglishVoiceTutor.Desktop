@@ -100,96 +100,118 @@
   "levelProfiles": {
     "A1 Beginner": {
       "level": "A1 Beginner",
-      "difficultyNotes": "Very simple English for small talk with a neighbor. The tutor uses short questions and accepts one-word answers during early turns.",
-      "tutorLanguageStyle": "Use very short, clear sentences. Ask one easy question at a time. Do not add complications.",
-      "expectedUserResponse": "1 short sentence.",
-      "minimumUserResponse": "I'm good, thanks.",
-      "stretchUserResponse": "I'm good, thanks. Nice weather today.",
-      "addedKeyPhrases": [],
+      "difficultyNotes": "Very simple neighbor small talk. Focus on hello, how are you, a simple answer, weather, and a polite goodbye.",
+      "tutorLanguageStyle": "Use very short friendly lines. Ask one easy question at a time and accept short polite answers.",
+      "expectedUserResponse": "One short friendly sentence or fixed phrase.",
+      "minimumUserResponse": "Hi. I'm good, thanks.",
+      "stretchUserResponse": "Hi. I'm good, thanks. Nice weather today. Have a nice day.",
+      "addedKeyPhrases": [
+        "Hi.",
+        "How are you?",
+        "I'm good, thanks.",
+        "Nice weather today.",
+        "Have a nice day."
+      ],
       "addedUsefulConstructions": [
-        "One short sentence with I am / I have / I need / Let us."
+        "Use Hi, How are you?, I'm good, thanks, Nice weather today, and Have a nice day."
       ],
       "addedGrammarFocus": [
-        "be, have, can, simple present in short sentences"
+        "to be for feelings: I'm good",
+        "it is / it's for weather",
+        "fixed polite phrases for greetings and goodbyes"
       ],
-      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
-      "hintStrategy": "A fuller sentence starter or full model sentence is okay when the learner is stuck.",
-      "correctionPriority": "Meaning first; only one essential correction at a time.",
-      "conversationDepth": "Stay very shallow: greet, answer, one detail, thank or close.",
-      "exampleGoodAnswer": "I'm good, thanks. Nice weather today.",
-      "exampleStretchAnswer": "I'm good, thanks. Nice weather today."
+      "feedbackStrictness": "Correct only mistakes that make the greeting or basic answer unclear. Keep feedback brief and positive.",
+      "hintStrategy": "Give a simple full phrase when needed, such as I'm good, thanks.",
+      "correctionPriority": "Friendly greeting, simple answer, and polite closing first.",
+      "conversationDepth": "Stay very shallow: greet, answer how you are, mention weather, say goodbye.",
+      "exampleGoodAnswer": "Hi. I'm good, thanks.",
+      "exampleStretchAnswer": "Hi. I'm good, thanks. Nice weather today. Have a nice day."
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple English for small talk with a neighbor. The learner should add one detail such as time, place, reason, or preference.",
-      "tutorLanguageStyle": "Use simple English. Ask one simple follow-up question at a time.",
-      "expectedUserResponse": "1-2 short sentences with one extra detail.",
-      "minimumUserResponse": "I'm good, thanks. I'm going out now.",
-      "stretchUserResponse": "I'm good, thanks. I'm going to the shop now.",
+      "difficultyNotes": "Simple neighbor small talk with one everyday activity or destination.",
+      "tutorLanguageStyle": "Use simple friendly follow-ups about the day, the weather, or where the learner is going.",
+      "expectedUserResponse": "One or two short sentences with a greeting and one simple activity.",
+      "minimumUserResponse": "Hi, I'm good, thanks. I'm going to the shop.",
+      "stretchUserResponse": "Hi, I'm good, thanks. I'm just going to the shop. It's nice weather today.",
       "addedKeyPhrases": [
-        "I am going to...",
+        "I'm going to...",
+        "I'm just going to the shop.",
+        "It's nice weather today.",
         "See you later."
       ],
       "addedUsefulConstructions": [
-        "Add one simple detail about time, place, reason, or preference."
+        "Add one simple activity with I'm going to... or I'm just going to the shop."
       ],
       "addedGrammarFocus": [
-        "simple past or present where useful, basic word order, prepositions of time/place"
+        "present continuous for near-future activity: I'm going to...",
+        "it's + adjective for weather",
+        "simple friendly follow-up: How about you?"
       ],
-      "feedbackStrictness": "Correct basic grammar, word order, and missing small words when useful.",
-      "hintStrategy": "Give a sentence starter first; do not give the full answer immediately.",
-      "correctionPriority": "Basic grammar, word order, and clear everyday phrasing.",
-      "conversationDepth": "Ask for one added detail, then continue inside the same situation.",
-      "exampleGoodAnswer": "I'm good, thanks. I'm going to the shop now.",
-      "exampleStretchAnswer": "I'm good, thanks. I'm going to the shop now."
+      "feedbackStrictness": "Correct basic word order, missing to in going to, and simple everyday phrasing when useful.",
+      "hintStrategy": "Give a starter with an activity choice: I'm going to the shop / work / home.",
+      "correctionPriority": "Clear friendly answer, near-future activity, and polite small-talk phrases.",
+      "conversationDepth": "Add one activity or destination, then close politely or ask one simple question back.",
+      "exampleGoodAnswer": "Hi, I'm good, thanks. I'm going to the shop.",
+      "exampleStretchAnswer": "Hi, I'm good, thanks. I'm just going to the shop. Nice weather today, isn't it?"
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
-      "difficultyNotes": "Natural but clear English for small talk with a neighbor. The learner should connect ideas and ask one follow-up question back.",
-      "tutorLanguageStyle": "Use natural, clear English. Ask for a reason or short explanation when it fits the roleplay.",
-      "expectedUserResponse": "Answer + detail + follow-up question.",
-      "minimumUserResponse": "I'm good, thanks. I'm going out for a walk.",
-      "stretchUserResponse": "I'm good, thanks. I'm just going out for a quick walk because the weather is nice.",
+      "difficultyNotes": "Natural neighbor small talk with a short reason, one detail about the day, weather, or building, and one polite question back.",
+      "tutorLanguageStyle": "Use natural but clear small talk. Ask about the day, the building, weather, or weekend plans without getting too personal.",
+      "expectedUserResponse": "Two connected small-talk sentences plus one polite question back.",
+      "minimumUserResponse": "Hi, I'm good, thanks. I'm heading to the shop because I need a few things.",
+      "stretchUserResponse": "Hi, I'm good, thanks. I'm heading to the shop because I need a few things for dinner. The building is quiet today, isn't it?",
       "addedKeyPhrases": [
-        "I am just going out for...",
-        "because the weather is nice"
+        "I'm heading to...",
+        "because I need...",
+        "It's been quiet today.",
+        "How's your day going?"
       ],
       "addedUsefulConstructions": [
-        "Connect ideas with and, but, because, then; ask one follow-up question."
+        "Add a short reason, one detail about the day/weather/building, and one polite question back."
       ],
       "addedGrammarFocus": [
-        "connected clauses, question forms, reasons with because, natural follow-up questions"
+        "because for simple reasons",
+        "tag question: isn't it?",
+        "present continuous for current plans",
+        "polite question back in small talk"
       ],
-      "feedbackStrictness": "Correct grammar, word choice, and sentence flow. Suggest one more natural version when useful.",
-      "hintStrategy": "Give a light structure or useful phrase, not a full scripted answer.",
-      "correctionPriority": "Grammar accuracy, word choice, sentence connection, and natural follow-up questions.",
-      "conversationDepth": "Use 2-3 connected sentences and keep the scenario moving with one question back.",
-      "exampleGoodAnswer": "I'm good, thanks. I'm just going out for a quick walk because the weather is nice.",
-      "exampleStretchAnswer": "I'm good, thanks. I'm just going out for a quick walk because the weather is nice."
+      "feedbackStrictness": "Correct grammar, word choice, and sentence flow. Offer a more natural small-talk version when useful.",
+      "hintStrategy": "Suggest a structure: greeting + activity/reason + day/weather/building detail + question back.",
+      "correctionPriority": "Natural small-talk flow, clear reason, and polite reciprocal question.",
+      "conversationDepth": "Keep it light and neighborly with 2-3 connected sentences; avoid deep personal topics.",
+      "exampleGoodAnswer": "Hi, I'm good, thanks. I'm heading to the shop because I need a few things. How's your day going?",
+      "exampleStretchAnswer": "Hi, I'm good, thanks. I'm heading to the shop because I need a few things for dinner. The building is quiet today, isn't it?"
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
-      "difficultyNotes": "Natural conversational English for small talk with a neighbor. The learner should use nuance and keep the dialogue going without leaving the scenario.",
-      "tutorLanguageStyle": "Use natural conversational English with soft phrasing. You may add one small realistic complication, but stay inside the roleplay.",
-      "expectedUserResponse": "Natural answer with detail, nuance, and a question back.",
-      "minimumUserResponse": "I'm doing well, thanks. I'm getting some fresh air.",
-      "stretchUserResponse": "I'm doing well, thanks. I thought I'd get some fresh air while the weather is still nice.",
+      "difficultyNotes": "Natural, light neighbor small talk with softeners, friendly tone, and casual social phrasing.",
+      "tutorLanguageStyle": "Use relaxed conversational English, polite softeners, and small realistic comments about the building, weather, or day.",
+      "expectedUserResponse": "A natural small-talk response with light detail, soft phrasing, and a question back.",
+      "minimumUserResponse": "Hi, I'm doing well, thanks. I'm just popping out to the shop for a few things.",
+      "stretchUserResponse": "Hi, I'm doing well, thanks. I'm just popping out to the shop for a few things. Lovely weather for once, isn't it? Hope your day's going smoothly.",
       "addedKeyPhrases": [
-        "I thought I would...",
-        "while the weather is still nice"
+        "I'm just popping out to...",
+        "Lovely weather for once.",
+        "Hope your day's going smoothly.",
+        "Good to see you."
       ],
       "addedUsefulConstructions": [
-        "Use softer openings, natural connectors, and polite conversational phrasing."
+        "Use light social phrasing, polite softeners, and natural small-talk comments before a friendly question or closing."
       ],
       "addedGrammarFocus": [
-        "softeners, modal phrases, nuance, tone, natural discourse markers"
+        "softeners: just, for a bit, for a few things",
+        "natural tag questions",
+        "conversational openings and closings",
+        "tone for light neighborly small talk"
       ],
-      "feedbackStrictness": "Focus on fluency, nuance, tone, and naturalness while still correcting important errors.",
-      "hintStrategy": "Suggest direction, tone, or a useful natural phrase; avoid full sentences unless necessary.",
-      "correctionPriority": "Naturalness, nuance, tone, fluency, and precise wording.",
-      "conversationDepth": "Richer responses are welcome, but every turn must stay within the selected scenario.",
-      "exampleGoodAnswer": "I'm doing well, thanks. I thought I'd get some fresh air while the weather is still nice.",
-      "exampleStretchAnswer": "I'm doing well, thanks. I thought I'd get some fresh air while the weather is still nice."
+      "feedbackStrictness": "Focus on fluency, naturalness, tone, and precise phrasing while correcting important errors.",
+      "hintStrategy": "Suggest a natural direction or phrase, such as just popping out or Hope your day's going smoothly.",
+      "correctionPriority": "Natural tone, soft phrasing, light social flow, and polite boundaries.",
+      "conversationDepth": "Allow richer small talk, but keep it brief, friendly, and appropriate for a neighbor encounter.",
+      "exampleGoodAnswer": "Hi, I'm doing well, thanks. I'm just popping out to the shop for a few things.",
+      "exampleStretchAnswer": "Hi, I'm doing well, thanks. I'm just popping out to the shop for a few things. Lovely weather for once, isn't it? Hope your day's going smoothly."
     }
   },
   "conversationFlow": {

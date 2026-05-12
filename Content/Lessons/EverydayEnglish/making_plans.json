@@ -115,96 +115,120 @@
   "levelProfiles": {
     "A1 Beginner": {
       "level": "A1 Beginner",
-      "difficultyNotes": "Very simple English for making plans. The tutor uses short questions and accepts one-word answers during early turns.",
-      "tutorLanguageStyle": "Use very short, clear sentences. Ask one easy question at a time. Do not add complications.",
-      "expectedUserResponse": "1 short sentence.",
-      "minimumUserResponse": "Coffee tomorrow?",
-      "stretchUserResponse": "Let's have coffee tomorrow.",
-      "addedKeyPhrases": [],
+      "difficultyNotes": "Very simple English for making plans. Focus on invitation, free time, time, place, and a short closing.",
+      "tutorLanguageStyle": "Use very short plan-making questions: Are you free? What time? Where? Ask one thing at a time.",
+      "expectedUserResponse": "One short plan-making phrase or sentence.",
+      "minimumUserResponse": "Let's have coffee.",
+      "stretchUserResponse": "Let's have coffee. Are you free? What time? See you then.",
+      "addedKeyPhrases": [
+        "Let's...",
+        "Are you free?",
+        "What time?",
+        "Where?",
+        "See you then."
+      ],
       "addedUsefulConstructions": [
-        "One short sentence with I am / I have / I need / Let us."
+        "Use Let's..., Are you free?, What time?, Where?, and See you then."
       ],
       "addedGrammarFocus": [
-        "be, have, can, simple present in short sentences"
+        "Let's + verb for simple invitations",
+        "Are you free? for availability",
+        "basic Wh-questions: What time? Where?"
       ],
-      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
-      "hintStrategy": "A fuller sentence starter or full model sentence is okay when the learner is stuck.",
-      "correctionPriority": "Meaning first; only one essential correction at a time.",
-      "conversationDepth": "Stay very shallow: greet, answer, one detail, thank or close.",
-      "exampleGoodAnswer": "Let's have coffee tomorrow.",
-      "exampleStretchAnswer": "Let's have coffee tomorrow."
+      "feedbackStrictness": "Correct only mistakes that block the plan. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give a simple full starter when needed: Let's have coffee.",
+      "correctionPriority": "Clear invitation, time, place, and closing first.",
+      "conversationDepth": "Stay very shallow: suggest plan, ask free/time/place, agree, close.",
+      "exampleGoodAnswer": "Let's have coffee.",
+      "exampleStretchAnswer": "Let's have coffee. Are you free at five? See you then."
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple English for making plans. The learner should add one detail such as time, place, reason, or preference.",
-      "tutorLanguageStyle": "Use simple English. Ask one simple follow-up question at a time.",
-      "expectedUserResponse": "1-2 short sentences with one extra detail.",
-      "minimumUserResponse": "Let's have coffee tomorrow.",
-      "stretchUserResponse": "Let's have coffee tomorrow at five.",
+      "difficultyNotes": "Simple plans with one time or place detail and a short suggestion such as tomorrow or at a cafe.",
+      "tutorLanguageStyle": "Use simple follow-up questions about time, place, and day. Keep the plan concrete.",
+      "expectedUserResponse": "One or two short sentences with an invitation plus time or place detail.",
+      "minimumUserResponse": "Let's meet at the cafe.",
+      "stretchUserResponse": "Let's meet at the cafe at six. How about tomorrow?",
       "addedKeyPhrases": [
-        "at five",
-        "tomorrow after work"
+        "Let's meet at...",
+        "How about tomorrow?",
+        "at six",
+        "on Saturday",
+        "Does that work?"
       ],
       "addedUsefulConstructions": [
-        "Add one simple detail about time, place, reason, or preference."
+        "Add time and place details with Let's meet at... and How about tomorrow?"
       ],
       "addedGrammarFocus": [
-        "simple past or present where useful, basic word order, prepositions of time/place"
+        "at + time / at + place",
+        "on + day",
+        "How about + time/day?",
+        "simple future arrangement with let's meet"
       ],
-      "feedbackStrictness": "Correct basic grammar, word order, and missing small words when useful.",
-      "hintStrategy": "Give a sentence starter first; do not give the full answer immediately.",
-      "correctionPriority": "Basic grammar, word order, and clear everyday phrasing.",
-      "conversationDepth": "Ask for one added detail, then continue inside the same situation.",
-      "exampleGoodAnswer": "Let's have coffee tomorrow at five.",
-      "exampleStretchAnswer": "Let's have coffee tomorrow at five."
+      "feedbackStrictness": "Correct basic prepositions for time and place, word order, and clear plan details when useful.",
+      "hintStrategy": "Give a starter with a slot: Let's meet at [place] at [time].",
+      "correctionPriority": "Concrete time, place, and clear invitation phrasing.",
+      "conversationDepth": "Add one time or place detail, confirm the plan, and close politely.",
+      "exampleGoodAnswer": "Let's meet at the cafe at six.",
+      "exampleStretchAnswer": "Let's meet at the cafe at six. How about tomorrow? Does that work?"
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
-      "difficultyNotes": "Natural but clear English for making plans. The learner should connect ideas and ask one follow-up question back.",
-      "tutorLanguageStyle": "Use natural, clear English. Ask for a reason or short explanation when it fits the roleplay.",
-      "expectedUserResponse": "Answer + detail + follow-up question.",
-      "minimumUserResponse": "How about coffee tomorrow after work?",
-      "stretchUserResponse": "How about having coffee tomorrow after work? I'm free around five.",
+      "difficultyNotes": "Connected plan-making with availability, a reason, and one alternative if the first idea does not work.",
+      "tutorLanguageStyle": "Use natural, clear English. Ask about availability, reason for the plan, and alternatives.",
+      "expectedUserResponse": "Two or three connected sentences with availability or reason plus one alternative plan.",
+      "minimumUserResponse": "I'm free around six. Let's meet for coffee.",
+      "stretchUserResponse": "I'm free around six because I finish work at five-thirty. Let's meet for coffee, or we could go tomorrow if today is too busy.",
       "addedKeyPhrases": [
-        "How about + -ing?",
-        "I am free around..."
+        "I'm free around...",
+        "I finish work at...",
+        "or we could...",
+        "if today is too busy"
       ],
       "addedUsefulConstructions": [
-        "Connect ideas with and, but, because, then; ask one follow-up question."
+        "Mention availability or a reason, then offer one alternative plan if needed."
       ],
       "addedGrammarFocus": [
-        "connected clauses, question forms, reasons with because, natural follow-up questions"
+        "around + time for approximate availability",
+        "because for reasons",
+        "or we could for alternatives",
+        "if clauses for scheduling"
       ],
-      "feedbackStrictness": "Correct grammar, word choice, and sentence flow. Suggest one more natural version when useful.",
-      "hintStrategy": "Give a light structure or useful phrase, not a full scripted answer.",
-      "correctionPriority": "Grammar accuracy, word choice, sentence connection, and natural follow-up questions.",
-      "conversationDepth": "Use 2-3 connected sentences and keep the scenario moving with one question back.",
-      "exampleGoodAnswer": "How about having coffee tomorrow after work? I'm free around five.",
-      "exampleStretchAnswer": "How about having coffee tomorrow after work? I'm free around five."
+      "feedbackStrictness": "Correct grammar, word choice, and sentence flow. Suggest a more natural scheduling phrase when useful.",
+      "hintStrategy": "Suggest a structure: availability + suggestion + time/place + alternative.",
+      "correctionPriority": "Availability, reason, alternative plan, and natural scheduling language.",
+      "conversationDepth": "Negotiate the plan in 2-3 connected sentences and keep it practical.",
+      "exampleGoodAnswer": "I'm free around six. Let's meet for coffee at the cafe.",
+      "exampleStretchAnswer": "I'm free around six because I finish work at five-thirty. Let's meet for coffee, or we could go tomorrow if today is too busy."
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
-      "difficultyNotes": "Natural conversational English for making plans. The learner should use nuance and keep the dialogue going without leaving the scenario.",
-      "tutorLanguageStyle": "Use natural conversational English with soft phrasing. You may add one small realistic complication, but stay inside the roleplay.",
-      "expectedUserResponse": "Natural answer with detail, nuance, and a question back.",
-      "minimumUserResponse": "Would you be up for coffee tomorrow after work?",
-      "stretchUserResponse": "Would you be up for grabbing coffee tomorrow after work? I should be free around five if that works for you.",
+      "difficultyNotes": "Natural invitation and scheduling language with soft alternatives and flexible phrasing.",
+      "tutorLanguageStyle": "Use natural conversational English with soft invitations, flexible options, and polite negotiation.",
+      "expectedUserResponse": "A natural invitation with availability, flexibility, and a soft alternative.",
+      "minimumUserResponse": "Would you be up for coffee later? I'm free around six if that works for you.",
+      "stretchUserResponse": "Would you be up for grabbing coffee later? I'm free around six if that works for you, but we could always do tomorrow if today is a bit rushed.",
       "addedKeyPhrases": [
         "Would you be up for...?",
-        "if that works for you"
+        "if that works for you",
+        "we could always...",
+        "if today is a bit rushed"
       ],
       "addedUsefulConstructions": [
-        "Use softer openings, natural connectors, and polite conversational phrasing."
+        "Use Would you be up for..., if that works for you, and soft alternatives such as we could always..."
       ],
       "addedGrammarFocus": [
-        "softeners, modal phrases, nuance, tone, natural discourse markers"
+        "would you be up for + noun/gerund",
+        "soft conditional phrasing",
+        "flexible alternatives with could always",
+        "natural invitation tone"
       ],
-      "feedbackStrictness": "Focus on fluency, nuance, tone, and naturalness while still correcting important errors.",
-      "hintStrategy": "Suggest direction, tone, or a useful natural phrase; avoid full sentences unless necessary.",
-      "correctionPriority": "Naturalness, nuance, tone, fluency, and precise wording.",
-      "conversationDepth": "Richer responses are welcome, but every turn must stay within the selected scenario.",
-      "exampleGoodAnswer": "Would you be up for grabbing coffee tomorrow after work? I should be free around five if that works for you.",
-      "exampleStretchAnswer": "Would you be up for grabbing coffee tomorrow after work? I should be free around five if that works for you."
+      "feedbackStrictness": "Focus on fluency, nuance, tone, and natural invitation phrasing while correcting important errors.",
+      "hintStrategy": "Suggest a natural invitation phrase or tone, such as Would you be up for...? or if that works for you.",
+      "correctionPriority": "Natural invitation tone, flexible scheduling, soft alternatives, and precise wording.",
+      "conversationDepth": "Allow realistic negotiation and alternatives while staying in the making-plans scenario.",
+      "exampleGoodAnswer": "Would you be up for coffee later? I'm free around six if that works for you.",
+      "exampleStretchAnswer": "Would you be up for grabbing coffee later? I'm free around six if that works for you, but we could always do tomorrow if today is a bit rushed."
     }
   },
   "conversationFlow": {

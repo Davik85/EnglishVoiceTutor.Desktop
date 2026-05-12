@@ -102,96 +102,119 @@
   "levelProfiles": {
     "A1 Beginner": {
       "level": "A1 Beginner",
-      "difficultyNotes": "Very simple English for asking for help. The tutor uses short questions and accepts one-word answers during early turns.",
-      "tutorLanguageStyle": "Use very short, clear sentences. Ask one easy question at a time. Do not add complications.",
-      "expectedUserResponse": "1 short sentence.",
-      "minimumUserResponse": "Excuse me. Help, please.",
-      "stretchUserResponse": "Excuse me, can you help me?",
-      "addedKeyPhrases": [],
+      "difficultyNotes": "Very simple English for asking for everyday help. Focus on excuse me, can you help me, where is, repeat please, and thank you.",
+      "tutorLanguageStyle": "Use very short, clear help-situation prompts. Ask one easy question at a time and accept very short requests.",
+      "expectedUserResponse": "One short polite request or fixed phrase.",
+      "minimumUserResponse": "Excuse me. Can you help me?",
+      "stretchUserResponse": "Excuse me, can you help me? Where is the station? Thank you.",
+      "addedKeyPhrases": [
+        "Excuse me.",
+        "Can you help me?",
+        "Where is...?",
+        "Can you repeat, please?",
+        "Thank you."
+      ],
       "addedUsefulConstructions": [
-        "One short sentence with I am / I have / I need / Let us."
+        "Use Excuse me, Can you help me?, Where is...?, Can you repeat, please?, and Thank you."
       ],
       "addedGrammarFocus": [
-        "be, have, can, simple present in short sentences"
+        "can for simple polite requests",
+        "Where is...? for places or things",
+        "please and thank you for politeness"
       ],
-      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
-      "hintStrategy": "A fuller sentence starter or full model sentence is okay when the learner is stuck.",
-      "correctionPriority": "Meaning first; only one essential correction at a time.",
-      "conversationDepth": "Stay very shallow: greet, answer, one detail, thank or close.",
+      "feedbackStrictness": "Correct only mistakes that block the request. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give a full model request when needed: Excuse me, can you help me?",
+      "correctionPriority": "Clear polite request first; only one essential correction at a time.",
+      "conversationDepth": "Stay very shallow: get attention, ask for help, ask where/repeat, say thank you.",
       "exampleGoodAnswer": "Excuse me, can you help me?",
-      "exampleStretchAnswer": "Excuse me, can you help me?"
+      "exampleStretchAnswer": "Excuse me, can you help me? Where is the station? Thank you."
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple English for asking for help. The learner should add one detail such as time, place, reason, or preference.",
-      "tutorLanguageStyle": "Use simple English. Ask one simple follow-up question at a time.",
-      "expectedUserResponse": "1-2 short sentences with one extra detail.",
-      "minimumUserResponse": "Excuse me, can you help me?",
-      "stretchUserResponse": "Excuse me, can you help me? I'm looking for room 12.",
+      "difficultyNotes": "Simple help requests with one reason or detail about what the learner is looking for or needs help with.",
+      "tutorLanguageStyle": "Use simple English and ask for one detail: What are you looking for? What do you need help with?",
+      "expectedUserResponse": "One or two short sentences with a polite request and one simple detail.",
+      "minimumUserResponse": "Excuse me, can you help me? I'm looking for room 12.",
+      "stretchUserResponse": "Excuse me, can you help me? I'm looking for room 12, and I need help with the directions.",
       "addedKeyPhrases": [
-        "I am looking for...",
-        "Can you show me?"
+        "I'm looking for...",
+        "I need help with...",
+        "Can you show me?",
+        "Can you say that again, please?"
       ],
       "addedUsefulConstructions": [
-        "Add one simple detail about time, place, reason, or preference."
+        "Add a simple reason or detail with I'm looking for... or I need help with..."
       ],
       "addedGrammarFocus": [
-        "simple past or present where useful, basic word order, prepositions of time/place"
+        "present continuous: I'm looking for...",
+        "need help with + noun",
+        "can you + verb for polite requests",
+        "prepositions for simple directions"
       ],
-      "feedbackStrictness": "Correct basic grammar, word order, and missing small words when useful.",
-      "hintStrategy": "Give a sentence starter first; do not give the full answer immediately.",
-      "correctionPriority": "Basic grammar, word order, and clear everyday phrasing.",
-      "conversationDepth": "Ask for one added detail, then continue inside the same situation.",
+      "feedbackStrictness": "Correct basic word order, missing prepositions, and polite request forms when useful.",
+      "hintStrategy": "Give a starter first: I'm looking for... / I need help with...",
+      "correctionPriority": "Polite request, clear object of help, and simple direction words.",
+      "conversationDepth": "Ask for one extra detail and confirm the help request inside the everyday situation.",
       "exampleGoodAnswer": "Excuse me, can you help me? I'm looking for room 12.",
-      "exampleStretchAnswer": "Excuse me, can you help me? I'm looking for room 12."
+      "exampleStretchAnswer": "Excuse me, can you help me? I'm looking for room 12, and I need help with the directions."
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
-      "difficultyNotes": "Natural but clear English for asking for help. The learner should connect ideas and ask one follow-up question back.",
-      "tutorLanguageStyle": "Use natural, clear English. Ask for a reason or short explanation when it fits the roleplay.",
-      "expectedUserResponse": "Answer + detail + follow-up question.",
-      "minimumUserResponse": "Excuse me, could you help me? I'm looking for room 12.",
-      "stretchUserResponse": "Excuse me, could you help me? I'm trying to find room 12, but I'm not sure where it is.",
+      "difficultyNotes": "Clear, polite help requests with could, a short explanation of the problem, and a check that the learner understood.",
+      "tutorLanguageStyle": "Use natural, clear English. Ask for the problem, offer a brief answer, and prompt the learner to check understanding.",
+      "expectedUserResponse": "Two connected sentences: polite request + problem explanation + understanding check if needed.",
+      "minimumUserResponse": "Excuse me, could you help me? I'm trying to find room 12.",
+      "stretchUserResponse": "Excuse me, could you help me? I'm trying to find room 12, but I'm not sure which corridor to take. Did I understand correctly?",
       "addedKeyPhrases": [
         "Could you help me?",
-        "I am not sure where it is."
+        "I'm trying to find...",
+        "I'm not sure which...",
+        "Did I understand correctly?"
       ],
       "addedUsefulConstructions": [
-        "Connect ideas with and, but, because, then; ask one follow-up question."
+        "Use Could you help me?, explain the problem briefly, and check understanding before moving on."
       ],
       "addedGrammarFocus": [
-        "connected clauses, question forms, reasons with because, natural follow-up questions"
+        "could for polite requests",
+        "embedded questions: which corridor to take / where it is",
+        "but for explaining the problem",
+        "understanding checks"
       ],
-      "feedbackStrictness": "Correct grammar, word choice, and sentence flow. Suggest one more natural version when useful.",
-      "hintStrategy": "Give a light structure or useful phrase, not a full scripted answer.",
-      "correctionPriority": "Grammar accuracy, word choice, sentence connection, and natural follow-up questions.",
-      "conversationDepth": "Use 2-3 connected sentences and keep the scenario moving with one question back.",
+      "feedbackStrictness": "Correct grammar, word choice, and sentence flow. Suggest a more natural polite request when useful.",
+      "hintStrategy": "Suggest a structure: polite request + what you need + problem + understanding check.",
+      "correctionPriority": "Polite modal use, clear problem explanation, and checking understanding.",
+      "conversationDepth": "Use 2-3 connected sentences and keep the help exchange moving logically.",
       "exampleGoodAnswer": "Excuse me, could you help me? I'm trying to find room 12, but I'm not sure where it is.",
-      "exampleStretchAnswer": "Excuse me, could you help me? I'm trying to find room 12, but I'm not sure where it is."
+      "exampleStretchAnswer": "Excuse me, could you help me? I'm trying to find room 12, but I'm not sure which corridor to take. Did I understand correctly?"
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
-      "difficultyNotes": "Natural conversational English for asking for help. The learner should use nuance and keep the dialogue going without leaving the scenario.",
-      "tutorLanguageStyle": "Use natural conversational English with soft phrasing. You may add one small realistic complication, but stay inside the roleplay.",
-      "expectedUserResponse": "Natural answer with detail, nuance, and a question back.",
-      "minimumUserResponse": "Excuse me, would you mind helping me? I'm trying to find room 12.",
-      "stretchUserResponse": "Excuse me, would you mind helping me for a moment? I'm trying to find room 12, but I think I may be in the wrong part of the building.",
+      "difficultyNotes": "Natural, polite help requests with brief context, softer phrasing, and appropriate nuance.",
+      "tutorLanguageStyle": "Use natural conversational English with polite softeners. You may add one small realistic detail, but stay inside the help situation.",
+      "expectedUserResponse": "A natural request that gives brief context before asking for help and checks or clarifies politely.",
+      "minimumUserResponse": "Excuse me, would you mind helping me for a moment? I'm trying to find room 12.",
+      "stretchUserResponse": "Excuse me, would you mind helping me for a moment? I'm trying to find room 12, but I think I may be in the wrong part of the building. Could you point me in the right direction?",
       "addedKeyPhrases": [
         "Would you mind helping me?",
-        "I may be in the wrong part of..."
+        "I think I may be...",
+        "Could you point me in the right direction?",
+        "Sorry to bother you."
       ],
       "addedUsefulConstructions": [
-        "Use softer openings, natural connectors, and polite conversational phrasing."
+        "Give brief context before the request, then use Would you mind helping me? or Could you point me in the right direction?"
       ],
       "addedGrammarFocus": [
-        "softeners, modal phrases, nuance, tone, natural discourse markers"
+        "would you mind + gerund",
+        "softeners: for a moment, may, possibly",
+        "brief context before a request",
+        "polite clarification questions"
       ],
-      "feedbackStrictness": "Focus on fluency, nuance, tone, and naturalness while still correcting important errors.",
-      "hintStrategy": "Suggest direction, tone, or a useful natural phrase; avoid full sentences unless necessary.",
-      "correctionPriority": "Naturalness, nuance, tone, fluency, and precise wording.",
-      "conversationDepth": "Richer responses are welcome, but every turn must stay within the selected scenario.",
-      "exampleGoodAnswer": "Excuse me, would you mind helping me for a moment? I'm trying to find room 12, but I think I may be in the wrong part of the building.",
-      "exampleStretchAnswer": "Excuse me, would you mind helping me for a moment? I'm trying to find room 12, but I think I may be in the wrong part of the building."
+      "feedbackStrictness": "Focus on fluency, nuance, politeness, and naturalness while still correcting important errors.",
+      "hintStrategy": "Suggest tone or a natural phrase, such as Would you mind helping me for a moment? Avoid full scripted answers unless necessary.",
+      "correctionPriority": "Politeness level, natural request structure, brief context, and precise wording.",
+      "conversationDepth": "Allow fuller context and clarification, but keep the exchange efficient and everyday.",
+      "exampleGoodAnswer": "Excuse me, would you mind helping me for a moment? I'm trying to find room 12.",
+      "exampleStretchAnswer": "Excuse me, would you mind helping me for a moment? I think I may be in the wrong part of the building. Could you point me in the right direction?"
     }
   },
   "conversationFlow": {
