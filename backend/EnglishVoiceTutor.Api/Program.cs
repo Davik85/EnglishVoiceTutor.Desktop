@@ -178,6 +178,7 @@ static async Task<IResult> HandleTranslationAsync(
 static async Task<IResult> HandleAudioSpeechAsync(
     AudioSpeechRequest request,
     AudioSpeechService audioSpeechService,
+    ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
     if (string.IsNullOrWhiteSpace(request.Text))
@@ -188,18 +189,22 @@ static async Task<IResult> HandleAudioSpeechAsync(
         });
     }
 
+    var logger = loggerFactory.CreateLogger("AudioSpeechEndpoint");
+
     try
     {
         var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, cancellationToken);
 
         return Results.File(audioBytes, OpenAiConstants.SpeechResponseContentType);
     }
-    catch (InvalidOperationException)
+    catch (InvalidOperationException exception)
     {
+        logger.LogWarning(exception, "Audio speech request failed during validation or OpenAI processing.");
         return Results.Problem(ApiConstants.AudioSpeechError);
     }
-    catch (Exception)
+    catch (Exception exception)
     {
+        logger.LogError(exception, "Unexpected audio speech request failure.");
         return Results.Problem(ApiConstants.AudioSpeechError);
     }
 }

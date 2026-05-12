@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -7,6 +8,8 @@ using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
 
 namespace EnglishVoiceTutor.Desktop.Services;
+
+public sealed record BotSpeechBackendResponse(byte[] AudioBytes, string ContentType, string FileExtension);
 
 public sealed class LessonChatBackendService
 {
@@ -26,7 +29,7 @@ public sealed class LessonChatBackendService
 
     public async Task<bool> CheckHealthAsync(string? backendBaseUrlOverride, CancellationToken cancellationToken = default)
     {
-        using var httpClient = CreateHttpClient();
+        using var httpClient = CreateHttpClient(BackendConstants.BackendHealthTimeoutSeconds);
 
         try
         {
@@ -160,7 +163,7 @@ public sealed class LessonChatBackendService
     }
 
 
-    public async Task<byte[]> CreateBotSpeechAsync(
+    public async Task<BotSpeechBackendResponse> CreateBotSpeechAsync(
         string text,
         CancellationToken cancellationToken = default)
     {
@@ -169,27 +172,36 @@ public sealed class LessonChatBackendService
             throw new InvalidOperationException(BackendConstants.BackendInvalidSpeechResponseMessage);
         }
 
-        using var httpClient = CreateHttpClient();
+        using var httpClient = CreateHttpClient(BackendConstants.BotVoiceRequestTimeoutSeconds);
 
-        using var response = await httpClient.PostAsJsonAsync(
-            CreateEndpointUri(BackendConstants.AudioSpeechEndpoint),
-            new AudioSpeechBackendRequest
-            {
-                Text = text
-            },
-            JsonOptions,
-            cancellationToken);
-
-        response.EnsureSuccessStatusCode();
-
-        var audioBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-
-        if (audioBytes.Length == 0)
+        try
         {
-            throw new InvalidOperationException(BackendConstants.BackendInvalidSpeechResponseMessage);
-        }
+            using var response = await httpClient.PostAsJsonAsync(
+                CreateEndpointUri(BackendConstants.AudioSpeechEndpoint),
+                new AudioSpeechBackendRequest
+                {
+                    Text = text
+                },
+                JsonOptions,
+                cancellationToken);
 
-        return audioBytes;
+            response.EnsureSuccessStatusCode();
+
+            var audioBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+
+            if (audioBytes.Length == 0)
+            {
+                throw new InvalidOperationException(BackendConstants.BackendInvalidSpeechResponseMessage);
+            }
+
+            var contentType = response.Content.Headers.ContentType?.MediaType ?? BackendConstants.SpeechResponseContentType;
+            return new BotSpeechBackendResponse(audioBytes, contentType, GetAudioFileExtension(contentType));
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Bot voice backend TTS request failed: {exception}");
+            throw;
+        }
     }
 
 
@@ -227,11 +239,11 @@ public sealed class LessonChatBackendService
         return backendResponse.TranslatedText.Trim();
     }
 
-    private HttpClient CreateHttpClient()
+    private HttpClient CreateHttpClient(int timeoutSeconds = BackendConstants.BackendRequestTimeoutSeconds)
     {
         var httpClient = new HttpClient
         {
-            Timeout = TimeSpan.FromSeconds(BackendConstants.BackendRequestTimeoutSeconds)
+            Timeout = TimeSpan.FromSeconds(timeoutSeconds)
         };
 
         if (!httpClient.DefaultRequestHeaders.Contains(BackendConstants.NgrokSkipBrowserWarningHeaderName))
@@ -254,6 +266,19 @@ public sealed class LessonChatBackendService
         }
 
         return httpClient;
+    }
+
+
+    private static string GetAudioFileExtension(string contentType)
+    {
+        if (contentType.Equals(BackendConstants.WavContentType, StringComparison.OrdinalIgnoreCase)
+            || contentType.Equals("audio/wave", StringComparison.OrdinalIgnoreCase)
+            || contentType.Equals("audio/x-wav", StringComparison.OrdinalIgnoreCase))
+        {
+            return AudioConstants.WavFileExtension;
+        }
+
+        return AudioConstants.Mp3FileExtension;
     }
 
     private Uri CreateEndpointUri(string endpointPath)

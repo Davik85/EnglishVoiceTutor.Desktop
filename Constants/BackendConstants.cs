@@ -12,8 +12,11 @@ public static class BackendConstants
     public const string HealthEndpoint = "/health";
     public const string BackendConfigStatusEndpoint = "/api/backend/config-status";
     public const int BackendRequestTimeoutSeconds = 30;
+    public const int BackendHealthTimeoutSeconds = 5;
+    public const int BotVoiceRequestTimeoutSeconds = 60;
     public const string MultipartFileFieldName = "file";
     public const string WavContentType = "audio/wav";
+    public const string SpeechResponseContentType = "audio/mpeg";
     public const string NgrokSkipBrowserWarningHeaderName = "ngrok-skip-browser-warning";
     public const string NgrokSkipBrowserWarningHeaderValue = "1";
     public const string BackendUserAgentProductName = "EnglishVoiceTutor.Desktop";

@@ -15,11 +15,16 @@ public sealed class AudioSpeechService
 
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<AudioSpeechService> _logger;
 
-    public AudioSpeechService(OpenAiOptionsProvider optionsProvider, IHttpClientFactory httpClientFactory)
+    public AudioSpeechService(
+        OpenAiOptionsProvider optionsProvider,
+        IHttpClientFactory httpClientFactory,
+        ILogger<AudioSpeechService> logger)
     {
         _optionsProvider = optionsProvider;
         _httpClientFactory = httpClientFactory;
+        _logger = logger;
     }
 
     public async Task<byte[]> CreateSpeechAsync(string text, CancellationToken cancellationToken = default)
@@ -40,7 +45,8 @@ public sealed class AudioSpeechService
         {
             Model = OpenAiConstants.DefaultSpeechModel,
             Input = text.Trim(),
-            Voice = OpenAiConstants.DefaultSpeechVoice
+            Voice = OpenAiConstants.DefaultSpeechVoice,
+            ResponseFormat = OpenAiConstants.DefaultSpeechResponseFormat
         };
 
         return await SendAudioSpeechRequestAsync(request, options.ApiKey, cancellationToken);
@@ -63,6 +69,7 @@ public sealed class AudioSpeechService
 
         if (!response.IsSuccessStatusCode)
         {
+            _logger.LogWarning("OpenAI speech generation failed with status {StatusCode}.", response.StatusCode);
             throw new InvalidOperationException(OpenAiRequestFailedMessage);
         }
 
@@ -70,6 +77,7 @@ public sealed class AudioSpeechService
 
         if (audioBytes.Length == 0)
         {
+            _logger.LogWarning("OpenAI speech generation returned an empty audio response.");
             throw new InvalidOperationException(OpenAiResponseMissingMessage);
         }
 
