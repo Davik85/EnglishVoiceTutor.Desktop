@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using EnglishVoiceTutor.Desktop.Constants;
@@ -7,18 +8,52 @@ namespace EnglishVoiceTutor.Desktop.Services;
 
 public sealed class AudioPlaybackService
 {
-    public async Task PlayAudioAsync(byte[] audioBytes, CancellationToken cancellationToken = default)
+    public async Task<string> SaveBotVoiceAudioAsync(
+        byte[] audioBytes,
+        string fileExtension = AudioConstants.DefaultBotVoiceFileExtension,
+        CancellationToken cancellationToken = default)
     {
         if (audioBytes.Length == 0)
         {
             throw new InvalidOperationException(BackendConstants.BackendInvalidSpeechResponseMessage);
         }
 
-        var filePath = await SaveTemporaryAudioFileAsync(audioBytes, cancellationToken);
+        try
+        {
+            return await SaveTemporaryAudioFileAsync(audioBytes, NormalizeAudioFileExtension(fileExtension), cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Bot voice audio file save failed: {exception}");
+            throw;
+        }
+    }
+
+    public async Task PlayAudioFileAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+        {
+            throw new FileNotFoundException("Bot voice audio file was not found.", filePath);
+        }
 
         try
         {
             await PlayTemporaryAudioFileAsync(filePath, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Bot voice audio playback failed: {exception}");
+            throw;
+        }
+    }
+
+    public async Task PlayAudioAsync(byte[] audioBytes, CancellationToken cancellationToken = default)
+    {
+        var filePath = await SaveBotVoiceAudioAsync(audioBytes, AudioConstants.DefaultBotVoiceFileExtension, cancellationToken);
+
+        try
+        {
+            await PlayAudioFileAsync(filePath, cancellationToken);
         }
         finally
         {
@@ -45,6 +80,14 @@ public sealed class AudioPlaybackService
                     SafeDeleteFile(filePath);
                 }
             }
+
+            foreach (var filePath in Directory.EnumerateFiles(botVoiceFolderPath, AudioConstants.WavSearchPattern))
+            {
+                if (IsTemporaryAudioFileOld(filePath, oldestAllowedWriteTimeUtc))
+                {
+                    SafeDeleteFile(filePath);
+                }
+            }
         }
         catch
         {
@@ -52,13 +95,16 @@ public sealed class AudioPlaybackService
         }
     }
 
-    private static async Task<string> SaveTemporaryAudioFileAsync(byte[] audioBytes, CancellationToken cancellationToken)
+    private static async Task<string> SaveTemporaryAudioFileAsync(
+        byte[] audioBytes,
+        string fileExtension,
+        CancellationToken cancellationToken)
     {
         var botVoiceFolderPath = GetBotVoiceFolderPath();
         Directory.CreateDirectory(botVoiceFolderPath);
 
         var timestamp = DateTime.Now.ToString(AudioConstants.RecordingTimestampFormat, CultureInfo.InvariantCulture);
-        var fileName = $"{AudioConstants.BotVoiceFilePrefix}{timestamp}-{Guid.NewGuid():N}{AudioConstants.Mp3FileExtension}";
+        var fileName = $"{AudioConstants.BotVoiceFilePrefix}{timestamp}-{Guid.NewGuid():N}{fileExtension}";
         var filePath = Path.Combine(botVoiceFolderPath, fileName);
 
         await File.WriteAllBytesAsync(filePath, audioBytes, cancellationToken);
@@ -102,6 +148,19 @@ public sealed class AudioPlaybackService
     private static string GetBotVoiceFolderPath()
     {
         return Path.Combine(Path.GetTempPath(), AudioConstants.AppTempFolderName, AudioConstants.BotVoiceFolderName);
+    }
+
+    private static string NormalizeAudioFileExtension(string fileExtension)
+    {
+        if (string.IsNullOrWhiteSpace(fileExtension))
+        {
+            return AudioConstants.DefaultBotVoiceFileExtension;
+        }
+
+        var trimmedExtension = fileExtension.Trim();
+        return trimmedExtension.StartsWith('.')
+            ? trimmedExtension
+            : $".{trimmedExtension}";
     }
 
     private static bool IsTemporaryAudioFileOld(string filePath, DateTime oldestAllowedWriteTimeUtc)

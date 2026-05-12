@@ -1,5 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
@@ -29,6 +31,8 @@ public partial class LessonChatViewModel : ViewModelBase
     private string selectedCustomContextTitle = string.Empty;
     private bool isTranscribingAudio;
     private bool hasFinishedLesson;
+    private readonly SemaphoreSlim botVoiceSemaphore = new(1, 1);
+    private readonly Dictionary<int, string> botVoiceAudioFilePaths = [];
 
     public string SelectedLevel { get; }
 
@@ -527,36 +531,117 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        await PlayBotVoiceTextAsync(message.Text);
+        await PlayBotVoiceForMessageAsync(message, isAutoPlay: false);
     }
 
-    private async Task PlayBotVoiceTextAsync(string messageText)
+    private Task TryAutoPlayNewestBotVoiceAsync(ChatMessageViewModel message)
     {
-        if (IsBotVoicePlaying || string.IsNullOrWhiteSpace(messageText))
+        if (!ShouldAutoPlayBotVoice || !message.IsFromBot || string.IsNullOrWhiteSpace(message.Text))
+        {
+            return Task.CompletedTask;
+        }
+
+        if (message.Text.Length > AudioConstants.AutoPlayMaxCharacters)
+        {
+            Debug.WriteLine($"Skipping bot voice auto-play for message {message.Id}: text length exceeds {AudioConstants.AutoPlayMaxCharacters} characters.");
+            return Task.CompletedTask;
+        }
+
+        // MVP behavior: auto-play never queues. If another bot voice is already loading or playing, skip this one
+        // and leave manual Play voice available so the lesson stays responsive.
+        if (IsBotVoicePlaying)
+        {
+            Debug.WriteLine($"Skipping bot voice auto-play for message {message.Id}: another bot voice is busy.");
+            return Task.CompletedTask;
+        }
+
+        _ = PlayBotVoiceForMessageAsync(message, isAutoPlay: true);
+        return Task.CompletedTask;
+    }
+
+    private async Task PlayBotVoiceForMessageAsync(
+        ChatMessageViewModel message,
+        bool isAutoPlay,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(message.Text))
         {
             return;
         }
 
-        IsBotVoicePlaying = true;
-        RefreshAvatarState();
-        StatusMessage = localizedText.PlayingBotVoiceMessage;
+        if (isAutoPlay && !IsNewestBotMessage(message))
+        {
+            Debug.WriteLine($"Skipping bot voice auto-play for message {message.Id}: it is no longer the newest bot message.");
+            return;
+        }
+
+        if (!await botVoiceSemaphore.WaitAsync(0, cancellationToken))
+        {
+            Debug.WriteLine($"Skipping bot voice {(isAutoPlay ? "auto-play" : "manual play")} for message {message.Id}: another voice request is busy.");
+            return;
+        }
 
         try
         {
-            var audioBytes = await lessonChatBackendService.CreateBotSpeechAsync(messageText);
-            await audioPlaybackService.PlayAudioAsync(audioBytes);
+            IsBotVoicePlaying = true;
+            RefreshAvatarState();
+            StatusMessage = localizedText.PlayingBotVoiceMessage;
+
+            var audioFilePath = await GetOrCreateBotVoiceAudioFileAsync(message, cancellationToken);
+
+            if (isAutoPlay && !IsNewestBotMessage(message))
+            {
+                Debug.WriteLine($"Skipping bot voice auto-play for message {message.Id}: a newer bot message arrived before playback.");
+                return;
+            }
+
+            await audioPlaybackService.PlayAudioFileAsync(audioFilePath, cancellationToken);
             BackendStatusText = BackendConstants.BackendStatusConnected;
         }
-        catch
+        catch (OperationCanceledException exception)
         {
-            BackendStatusText = BackendConstants.BackendStatusUnavailable;
+            Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} canceled for message {message.Id}: {exception}");
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} failed for message {message.Id}: {exception}");
             StatusMessage = localizedText.BotVoiceFailedMessage;
         }
         finally
         {
             IsBotVoicePlaying = false;
             RefreshAvatarState();
+            botVoiceSemaphore.Release();
         }
+    }
+
+    private async Task<string> GetOrCreateBotVoiceAudioFileAsync(ChatMessageViewModel message, CancellationToken cancellationToken)
+    {
+        if (botVoiceAudioFilePaths.TryGetValue(message.Id, out var cachedFilePath) && File.Exists(cachedFilePath))
+        {
+            return cachedFilePath;
+        }
+
+        try
+        {
+            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(message.Text, cancellationToken);
+            var audioFilePath = await audioPlaybackService.SaveBotVoiceAudioAsync(
+                speechResponse.AudioBytes,
+                speechResponse.FileExtension,
+                cancellationToken);
+            botVoiceAudioFilePaths[message.Id] = audioFilePath;
+            return audioFilePath;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            Debug.WriteLine($"Bot voice generation or save failed for message {message.Id}: {exception}");
+            throw;
+        }
+    }
+
+    private bool IsNewestBotMessage(ChatMessageViewModel message)
+    {
+        return Messages.LastOrDefault(candidate => candidate.IsFromBot)?.Id == message.Id;
     }
 
     [RelayCommand(CanExecute = nameof(CanSendMessage))]
@@ -656,7 +741,7 @@ public partial class LessonChatViewModel : ViewModelBase
             var botReply = shouldEndLessonNow && !string.IsNullOrWhiteSpace(lessonScenario.ConversationFlow.FinalMessage)
                 ? lessonScenario.ConversationFlow.FinalMessage
                 : response.BotReply;
-            AddMessage(TutorAvatarDisplayName, botReply, true);
+            var botMessage = AddMessage(TutorAvatarDisplayName, botReply, true);
             lastBotMessage = botReply;
             OnPropertyChanged(nameof(LatestBotMessageText));
 
@@ -673,10 +758,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 return true;
             }
 
-            if (ShouldAutoPlayBotVoice)
-            {
-                await PlayBotVoiceTextAsync(response.BotReply);
-            }
+            await TryAutoPlayNewestBotVoiceAsync(botMessage);
 
             return true;
         }
@@ -733,10 +815,11 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private void AddRoleplayStartMessage(string message)
     {
-        AddMessage(TutorAvatarDisplayName, message, true);
+        var botMessage = AddMessage(TutorAvatarDisplayName, message, true);
         lastBotMessage = message;
         OnPropertyChanged(nameof(LatestBotMessageText));
         StatusMessage = string.Empty;
+        _ = TryAutoPlayNewestBotVoiceAsync(botMessage);
     }
 
     private ContextVariant? FindMatchingContextVariant(string userMessage)
@@ -1166,10 +1249,10 @@ public partial class LessonChatViewModel : ViewModelBase
             .ToArray();
     }
 
-    private void AddMessage(string sender, string text, bool isFromBot, Feedback? feedback = null)
+    private ChatMessageViewModel AddMessage(string sender, string text, bool isFromBot, Feedback? feedback = null)
     {
         messageCounter++;
-        Messages.Add(new ChatMessageViewModel(
+        var message = new ChatMessageViewModel(
             messageCounter,
             sender,
             text,
@@ -1178,7 +1261,9 @@ public partial class LessonChatViewModel : ViewModelBase
             string.Empty,
             nativeLanguageName,
             localizedText,
-            TranslateMessageAsync));
+            TranslateMessageAsync);
+        Messages.Add(message);
+        return message;
     }
 
     private async Task TranslateMessageAsync(ChatMessageViewModel message)

@@ -13,6 +13,7 @@ public static class OpenAiConstants
     public const string TranscriptionPrompt = "This is a short spoken answer from an English learner practicing a lesson dialogue. Transcribe the learner's English words clearly. Do not translate.";
     public const string DefaultSpeechModel = "gpt-4o-mini-tts";
     public const string DefaultSpeechVoice = "coral";
+    public const string DefaultSpeechResponseFormat = "mp3";
     public const string MultipartFileFieldName = "file";
     public const string MultipartModelFieldName = "model";
     public const string MultipartLanguageFieldName = "language";
