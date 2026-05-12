@@ -25,7 +25,6 @@ public partial class LessonChatViewModel : ViewModelBase
     private string lastBotMessage = AppConstants.MockBotFirstMessage;
     private bool isTranscribingAudio;
     private bool hasFinishedLesson;
-    private bool hasAutoFinishedByLessonLimit;
 
     public string SelectedLevel { get; }
 
@@ -84,6 +83,8 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
     [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BackCommand))]
     private bool isSending;
 
     [ObservableProperty]
@@ -92,6 +93,8 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
     [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BackCommand))]
     private bool isRecording;
 
     [ObservableProperty]
@@ -107,6 +110,18 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(HintCommand))]
     private int learnerTurnCount;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsLessonInputEnabled))]
+    [NotifyPropertyChangedFor(nameof(IsLessonOptionsEnabled))]
+    [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
+    [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BackCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PlayBotVoiceCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ViewFeedbackCommand))]
+    private bool isLessonCompleteAwaitingFinish;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AvatarStateDisplayText))]
@@ -132,7 +147,9 @@ public partial class LessonChatViewModel : ViewModelBase
 
     public bool IsLessonWrappingUp => LearnerTurnCount >= AppConstants.DefaultLessonSoftLearnerTurnLimit;
 
-    public bool IsLessonInputEnabled => !IsLessonLimitReached && !hasFinishedLesson;
+    public bool IsLessonInputEnabled => !IsLessonCompleteAwaitingFinish && !IsLessonLimitReached && !hasFinishedLesson;
+
+    public bool IsLessonOptionsEnabled => !IsLessonCompleteAwaitingFinish && !hasFinishedLesson;
 
     public string VoiceButtonText => IsRecording
         ? localizedText.StopRecordingButtonText
@@ -218,9 +235,9 @@ public partial class LessonChatViewModel : ViewModelBase
 
     public string FeedbackNaturalVersionTitle => localizedText.FeedbackNaturalVersionTitle;
 
-    private bool ShouldAutoSendTranscribedVoice => IsConversationModeEnabled || IsVoiceAutoSendEnabled;
+    private bool ShouldAutoSendTranscribedVoice => IsLessonInputEnabled && (IsConversationModeEnabled || IsVoiceAutoSendEnabled);
 
-    private bool ShouldAutoPlayBotVoice => IsConversationModeEnabled || IsBotVoiceAutoPlayEnabled;
+    private bool ShouldAutoPlayBotVoice => !IsLessonCompleteAwaitingFinish && (IsConversationModeEnabled || IsBotVoiceAutoPlayEnabled);
 
     public LessonChatViewModel(
         AppLocalizedText localizedText,
@@ -279,7 +296,8 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanPlayBotVoice(ChatMessageViewModel? message)
     {
-        return !IsBotVoicePlaying
+        return IsLessonOptionsEnabled
+            && !IsBotVoicePlaying
             && message is not null
             && message.ShowPlayVoiceButton
             && !string.IsNullOrWhiteSpace(message.Text);
@@ -396,6 +414,12 @@ public partial class LessonChatViewModel : ViewModelBase
                 return;
             }
 
+            if (!IsLessonInputEnabled)
+            {
+                StatusMessage = AppConstants.LessonCompleteAwaitingFinishMessage;
+                return;
+            }
+
             if (!ShouldAutoSendTranscribedVoice)
             {
                 UserInput = trimmedTranscriptionText;
@@ -466,10 +490,15 @@ public partial class LessonChatViewModel : ViewModelBase
         return letterCount > 0 && cyrillicLetterCount > letterCount / 2;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanToggleConversationMode))]
     private void ToggleConversationMode()
     {
         IsConversationModeEnabled = !IsConversationModeEnabled;
+    }
+
+    private bool CanToggleConversationMode()
+    {
+        return IsLessonOptionsEnabled && !IsSending && !IsRecording;
     }
 
     [RelayCommand(CanExecute = nameof(CanPlayBotVoice))]
@@ -590,7 +619,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             if (response.IsLessonComplete || shouldEndLessonNow)
             {
-                CompleteLessonAfterFinalReply();
+                MarkLessonCompleteAwaitingFinish();
                 return true;
             }
 
@@ -652,17 +681,25 @@ public partial class LessonChatViewModel : ViewModelBase
         AiStatusText = BackendConstants.AiStatusNotConfigured;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanViewFeedback))]
     private void ViewFeedback(ChatMessageViewModel? message)
     {
-        if (message is null || message.IsFromBot || message.Feedback is null)
+        if (!CanViewFeedback(message))
         {
             return;
         }
 
         SelectedFeedback = message.Feedback;
         IsFeedbackTranslationVisible = false;
-        StatusMessage = message.Feedback.ShortText;
+        StatusMessage = message.Feedback!.ShortText;
+    }
+
+    private bool CanViewFeedback(ChatMessageViewModel? message)
+    {
+        return IsLessonOptionsEnabled
+            && message is not null
+            && !message.IsFromBot
+            && message.Feedback is not null;
     }
 
     [RelayCommand]
@@ -807,16 +844,17 @@ public partial class LessonChatViewModel : ViewModelBase
         CompleteLesson();
     }
 
-    private void CompleteLessonAfterFinalReply()
+    private void MarkLessonCompleteAwaitingFinish()
     {
-        if (hasAutoFinishedByLessonLimit)
+        if (IsLessonCompleteAwaitingFinish)
         {
             return;
         }
 
-        hasAutoFinishedByLessonLimit = true;
-        StatusMessage = AppConstants.LessonCompleteOpeningSummaryMessage;
-        CompleteLesson();
+        IsLessonCompleteAwaitingFinish = true;
+        IsConversationModeEnabled = false;
+        UserInput = string.Empty;
+        StatusMessage = AppConstants.LessonCompleteAwaitingFinishMessage;
     }
 
     private void CompleteLesson()
@@ -828,17 +866,27 @@ public partial class LessonChatViewModel : ViewModelBase
 
         hasFinishedLesson = true;
         OnPropertyChanged(nameof(IsLessonInputEnabled));
+        OnPropertyChanged(nameof(IsLessonOptionsEnabled));
         SendMessageCommand.NotifyCanExecuteChanged();
         ToggleVoiceRecordingCommand.NotifyCanExecuteChanged();
         HintCommand.NotifyCanExecuteChanged();
+        ToggleConversationModeCommand.NotifyCanExecuteChanged();
+        BackCommand.NotifyCanExecuteChanged();
+        PlayBotVoiceCommand.NotifyCanExecuteChanged();
+        ViewFeedbackCommand.NotifyCanExecuteChanged();
         FinishLessonCommand.NotifyCanExecuteChanged();
         finishLesson(latestFeedback);
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanGoBack))]
     private void Back()
     {
         navigateBack();
+    }
+
+    private bool CanGoBack()
+    {
+        return !IsLessonCompleteAwaitingFinish && !hasFinishedLesson && !IsSending && !IsRecording;
     }
 
     private IReadOnlyList<RecentConversationMessage> GetRecentConversationMessages()

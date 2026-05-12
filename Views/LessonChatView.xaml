@@ -149,6 +149,7 @@
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Bottom"
                                         Content="{Binding ConversationModeButtonText}"
+                                        IsEnabled="{Binding IsLessonOptionsEnabled}"
                                         Command="{Binding ToggleConversationModeCommand}">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource PrimaryLessonButtonStyle}">
@@ -198,6 +199,7 @@
                                                 Background="Transparent"
                                                 BorderThickness="0"
                                                 Cursor="Hand"
+                                                IsEnabled="{Binding IsLessonInputEnabled}"
                                                 Command="{Binding ToggleVoiceRecordingCommand}">
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
@@ -257,6 +259,7 @@
                                         Content="↩"
                                         ToolTip="{Binding BackToChatToolTip}"
                                         Cursor="Hand"
+                                        IsEnabled="{Binding IsLessonOptionsEnabled}"
                                         Command="{Binding ToggleConversationModeCommand}">
                                     <Button.Style>
                                         <Style TargetType="Button">
@@ -541,11 +544,13 @@
                                                       VerticalContentAlignment="Center"
                                                       Content="{Binding AutoSendVoiceLabel}"
                                                       IsChecked="{Binding IsVoiceAutoSendEnabled, Mode=TwoWay}"
+                                                      IsEnabled="{Binding IsLessonOptionsEnabled}"
                                                       ToolTip="{Binding AutoSendVoiceToolTip}" />
                                             <CheckBox VerticalAlignment="Center"
                                                       VerticalContentAlignment="Center"
                                                       Content="{Binding AutoPlayBotVoiceLabel}"
                                                       IsChecked="{Binding IsBotVoiceAutoPlayEnabled, Mode=TwoWay}"
+                                                      IsEnabled="{Binding IsLessonOptionsEnabled}"
                                                       ToolTip="{Binding AutoPlayBotVoiceToolTip}" />
                                         </StackPanel>
 
