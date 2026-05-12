@@ -7,4 +7,6 @@ public sealed class LessonSetup
     public string SetupMessage { get; set; } = string.Empty;
 
     public bool SetupAndContextChoiceCountAsLessonTurns { get; set; }
+
+    public LessonContextSelection ContextSelection { get; set; } = new();
 }

@@ -18,4 +18,34 @@ public sealed class LessonChatRequest
     public bool ShouldStartWrappingUp { get; init; }
     public bool ShouldEndLessonNow { get; init; }
     public IReadOnlyList<RecentConversationMessage> RecentMessages { get; init; } = [];
+
+    public string LessonScenarioId { get; init; } = string.Empty;
+
+    public string Level { get; init; } = string.Empty;
+
+    public string Topic { get; init; } = string.Empty;
+
+    public string Subtopic { get; init; } = string.Empty;
+
+    public string LessonGoal { get; init; } = string.Empty;
+
+    public string SelectedContextVariantId { get; init; } = string.Empty;
+
+    public string SelectedContextTitle { get; init; } = string.Empty;
+
+    public string SelectedContextOpeningLine { get; init; } = string.Empty;
+
+    public int UserTurnNumber { get; init; }
+
+    public int SoftWrapUpAfterUserTurn { get; init; }
+
+    public int FinalMessageAtUserTurn { get; init; }
+
+    public IReadOnlyList<string> TargetLanguageKeyPhrases { get; init; } = [];
+
+    public IReadOnlyList<string> GrammarFocus { get; init; } = [];
+
+    public string FeedbackRulesSummary { get; init; } = string.Empty;
+
+    public string TutorProfileId { get; init; } = string.Empty;
 }

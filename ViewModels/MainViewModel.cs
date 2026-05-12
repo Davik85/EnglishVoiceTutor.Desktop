@@ -13,6 +13,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly AudioInputDeviceService audioInputDeviceService = new();
     private readonly AudioPlaybackService audioPlaybackService = new();
     private readonly LessonHistoryService lessonHistoryService = new();
+    private readonly LessonContentService lessonContentService = new();
     private readonly UserSettings userSettings;
 
     [ObservableProperty]
@@ -157,6 +158,7 @@ public partial class MainViewModel : ViewModelBase
             userSettings.UserDisplayName,
             userSettings.LearningGoal,
             TutorAvatarOptions.GetById(userSettings.SelectedTutorAvatarId),
+            lessonContentService.LoadIntroductionsLessonScenario(),
             lessonChatBackendService,
             audioRecordingService,
             audioPlaybackService,
