@@ -21,6 +21,7 @@ public static class ApiConstants
     public const int ExtendedLessonHardLearnerTurnLimit = 30;
 
     public const string HealthRoute = "/health";
+    public const string ApiHealthRoute = "/api/health";
     public const string LessonChatReplyRoute = "/api/lesson-chat/reply";
     public const string LessonChatMockReplyRoute = "/api/lesson-chat/mock-reply";
     public const string LessonChatHintRoute = "/api/lesson-chat/hint";

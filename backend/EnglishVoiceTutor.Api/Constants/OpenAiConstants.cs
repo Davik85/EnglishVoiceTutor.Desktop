@@ -13,13 +13,15 @@ public static class OpenAiConstants
     public const string TranscriptionPrompt = "This is a short spoken answer from an English learner practicing a lesson dialogue. Transcribe the learner's English words clearly. Do not translate.";
     public const string DefaultSpeechModel = "gpt-4o-mini-tts";
     public const string DefaultSpeechVoice = "coral";
-    public const string DefaultSpeechResponseFormat = "mp3";
+    public const string DefaultSpeechResponseFormat = "wav";
+    public const int OpenAiSpeechTimeoutSeconds = 120;
+    public const string AudioSpeechHttpClientName = "OpenAiAudioSpeech";
     public const string MultipartFileFieldName = "file";
     public const string MultipartModelFieldName = "model";
     public const string MultipartLanguageFieldName = "language";
     public const string MultipartPromptFieldName = "prompt";
     public const string WavContentType = "audio/wav";
-    public const string SpeechResponseContentType = "audio/mpeg";
+    public const string SpeechResponseContentType = WavContentType;
     public const string NotConfiguredStatus = "not_configured";
     public const string ConfiguredStatus = "configured";
     public const string AuthorizationScheme = "Bearer";

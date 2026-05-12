@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -12,6 +13,7 @@ public sealed class AudioSpeechService
     private const string MissingApiKeyMessage = "OpenAI speech generation is not configured.";
     private const string OpenAiRequestFailedMessage = "OpenAI speech generation request failed.";
     private const string OpenAiResponseMissingMessage = "OpenAI speech generation response is empty.";
+    private const string OpenAiRequestCanceledMessage = "OpenAI speech generation request was canceled.";
 
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -27,7 +29,7 @@ public sealed class AudioSpeechService
         _logger = logger;
     }
 
-    public async Task<byte[]> CreateSpeechAsync(string text, CancellationToken cancellationToken = default)
+    public async Task<byte[]> CreateSpeechAsync(string text, CancellationToken clientCancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -49,38 +51,128 @@ public sealed class AudioSpeechService
             ResponseFormat = OpenAiConstants.DefaultSpeechResponseFormat
         };
 
-        return await SendAudioSpeechRequestAsync(request, options.ApiKey, cancellationToken);
+        return await SendAudioSpeechRequestAsync(request, options.ApiKey, clientCancellationToken);
     }
 
     private async Task<byte[]> SendAudioSpeechRequestAsync(
         OpenAiAudioSpeechRequest request,
         string apiKey,
-        CancellationToken cancellationToken)
+        CancellationToken clientCancellationToken)
     {
-        var httpClient = _httpClientFactory.CreateClient();
+        var timeout = TimeSpan.FromSeconds(OpenAiConstants.OpenAiSpeechTimeoutSeconds);
+        using var timeoutCancellationTokenSource = new CancellationTokenSource(timeout);
+        var stopwatch = Stopwatch.StartNew();
+        int? statusCode = null;
 
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, OpenAiConstants.AudioSpeechEndpoint);
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue(OpenAiConstants.AuthorizationScheme, apiKey);
+        _logger.LogInformation(
+            "Starting OpenAI speech request. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ClientCancellationRequested={ClientCancellationRequested}.",
+            request.Model,
+            request.Voice,
+            request.ResponseFormat,
+            request.Input.Length,
+            OpenAiConstants.OpenAiSpeechTimeoutSeconds,
+            clientCancellationToken.IsCancellationRequested);
 
-        var requestJson = JsonSerializer.Serialize(request, JsonOptions);
-        httpRequest.Content = new StringContent(requestJson, Encoding.UTF8, OpenAiConstants.ContentTypeJson);
-
-        using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            _logger.LogWarning("OpenAI speech generation failed with status {StatusCode}.", response.StatusCode);
-            throw new InvalidOperationException(OpenAiRequestFailedMessage);
+            var httpClient = _httpClientFactory.CreateClient(OpenAiConstants.AudioSpeechHttpClientName);
+
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, OpenAiConstants.AudioSpeechEndpoint);
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue(OpenAiConstants.AuthorizationScheme, apiKey);
+
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions);
+            httpRequest.Content = new StringContent(requestJson, Encoding.UTF8, OpenAiConstants.ContentTypeJson);
+
+            using var response = await httpClient.SendAsync(
+                httpRequest,
+                HttpCompletionOption.ResponseHeadersRead,
+                timeoutCancellationTokenSource.Token);
+
+            statusCode = (int)response.StatusCode;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync(timeoutCancellationTokenSource.Token);
+                _logger.LogWarning(
+                    "OpenAI speech generation failed. StatusCode={StatusCode}; ElapsedMilliseconds={ElapsedMilliseconds}; ResponseBodyLength={ResponseBodyLength}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}.",
+                    response.StatusCode,
+                    stopwatch.ElapsedMilliseconds,
+                    errorBody.Length,
+                    clientCancellationToken.IsCancellationRequested,
+                    timeoutCancellationTokenSource.IsCancellationRequested);
+                throw new HttpRequestException(OpenAiRequestFailedMessage, null, response.StatusCode);
+            }
+
+            var audioBytes = await response.Content.ReadAsByteArrayAsync(timeoutCancellationTokenSource.Token);
+
+            if (audioBytes.Length == 0)
+            {
+                _logger.LogWarning(
+                    "OpenAI speech generation returned an empty audio response. StatusCode={StatusCode}; ElapsedMilliseconds={ElapsedMilliseconds}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}.",
+                    response.StatusCode,
+                    stopwatch.ElapsedMilliseconds,
+                    clientCancellationToken.IsCancellationRequested,
+                    timeoutCancellationTokenSource.IsCancellationRequested);
+                throw new InvalidOperationException(OpenAiResponseMissingMessage);
+            }
+
+            _logger.LogInformation(
+                "Completed OpenAI speech request. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ElapsedMilliseconds={ElapsedMilliseconds}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; AudioBytes={AudioBytes}.",
+                request.Model,
+                request.Voice,
+                request.ResponseFormat,
+                request.Input.Length,
+                OpenAiConstants.OpenAiSpeechTimeoutSeconds,
+                stopwatch.ElapsedMilliseconds,
+                response.StatusCode,
+                false,
+                clientCancellationToken.IsCancellationRequested,
+                timeoutCancellationTokenSource.IsCancellationRequested,
+                audioBytes.Length);
+
+            return audioBytes;
         }
-
-        var audioBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-
-        if (audioBytes.Length == 0)
+        catch (TaskCanceledException exception)
         {
-            _logger.LogWarning("OpenAI speech generation returned an empty audio response.");
-            throw new InvalidOperationException(OpenAiResponseMissingMessage);
-        }
+            var internalTimeoutReached = timeoutCancellationTokenSource.IsCancellationRequested;
+            var clientCancellationRequested = clientCancellationToken.IsCancellationRequested;
 
-        return audioBytes;
+            _logger.LogWarning(
+                exception,
+                "OpenAI speech request canceled. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ElapsedMilliseconds={ElapsedMilliseconds}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}.",
+                request.Model,
+                request.Voice,
+                request.ResponseFormat,
+                request.Input.Length,
+                OpenAiConstants.OpenAiSpeechTimeoutSeconds,
+                stopwatch.ElapsedMilliseconds,
+                statusCode,
+                true,
+                clientCancellationRequested,
+                internalTimeoutReached);
+
+            throw new AudioSpeechRequestCanceledException(
+                OpenAiRequestCanceledMessage,
+                exception,
+                internalTimeoutReached,
+                clientCancellationRequested);
+        }
+        catch (Exception exception) when (exception is not InvalidOperationException and not HttpRequestException)
+        {
+            _logger.LogError(
+                exception,
+                "OpenAI speech request failed unexpectedly. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ElapsedMilliseconds={ElapsedMilliseconds}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}.",
+                request.Model,
+                request.Voice,
+                request.ResponseFormat,
+                request.Input.Length,
+                OpenAiConstants.OpenAiSpeechTimeoutSeconds,
+                stopwatch.ElapsedMilliseconds,
+                statusCode,
+                false,
+                clientCancellationToken.IsCancellationRequested,
+                timeoutCancellationTokenSource.IsCancellationRequested);
+            throw;
+        }
     }
 }

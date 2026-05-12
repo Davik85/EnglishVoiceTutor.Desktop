@@ -13,7 +13,7 @@ public static class AudioConstants
     public const string BotVoiceFilePrefix = "bot-voice-";
     public const string WavFileExtension = ".wav";
     public const string Mp3FileExtension = ".mp3";
-    public const string DefaultBotVoiceFileExtension = Mp3FileExtension;
+    public const string DefaultBotVoiceFileExtension = WavFileExtension;
     public const string WavSearchPattern = "*.wav";
     public const string Mp3SearchPattern = "*.mp3";
     public const string RecordingTimestampFormat = "yyyyMMdd-HHmmss-fff";
