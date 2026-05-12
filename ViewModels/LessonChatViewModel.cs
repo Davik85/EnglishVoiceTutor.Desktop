@@ -25,6 +25,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly string audioInputDeviceId;
     private readonly AppLocalizedText localizedText;
     private readonly LessonScenario lessonScenario;
+    private readonly LevelProfile activeLevelProfile;
     private int messageCounter;
     private Feedback? latestFeedback;
     private string lastBotMessage = AppConstants.MockBotFirstMessage;
@@ -285,6 +286,7 @@ public partial class LessonChatViewModel : ViewModelBase
         tutorAvatarId = tutorAvatar.Id;
         TutorAvatarDisplayName = tutorAvatar.DisplayName;
         this.lessonScenario = lessonScenario ?? new LessonScenario();
+        activeLevelProfile = ResolveActiveLevelProfile(this.lessonScenario, selectedLevel);
         this.lessonChatBackendService = lessonChatBackendService;
         this.audioRecordingService = audioRecordingService;
         this.audioPlaybackService = audioPlaybackService;
@@ -303,6 +305,21 @@ public partial class LessonChatViewModel : ViewModelBase
         lastBotMessage = setupMessage;
         _ = CheckBackendHealthAsync();
         _ = CheckBackendConfigStatusAsync();
+    }
+
+
+    private static LevelProfile ResolveActiveLevelProfile(LessonScenario lessonScenario, string selectedLevel)
+    {
+        if (!string.IsNullOrWhiteSpace(selectedLevel)
+            && lessonScenario.LevelProfiles.TryGetValue(selectedLevel, out var exactProfile))
+        {
+            return exactProfile;
+        }
+
+        var matchingProfile = lessonScenario.LevelProfiles.Values.FirstOrDefault(profile =>
+            string.Equals(profile.Level, selectedLevel, StringComparison.OrdinalIgnoreCase));
+
+        return matchingProfile ?? new LevelProfile { Level = selectedLevel };
     }
 
     private bool CanSendMessage()
@@ -781,7 +798,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 ShouldEndLessonNow = shouldEndLessonNow,
                 RecentMessages = GetRecentConversationMessages(),
                 LessonScenarioId = lessonScenario.Id,
-                Level = lessonScenario.Metadata.Level,
+                Level = SelectedLevel,
                 Topic = lessonScenario.Metadata.Topic,
                 Subtopic = lessonScenario.Metadata.Subtopic,
                 LessonGoal = lessonScenario.LearningGoal.Goal,
@@ -794,7 +811,19 @@ public partial class LessonChatViewModel : ViewModelBase
                 TargetLanguageKeyPhrases = lessonScenario.TargetLanguage.KeyPhrases,
                 GrammarFocus = lessonScenario.TargetLanguage.GrammarFocus,
                 FeedbackRulesSummary = BuildFeedbackRulesSummary(),
-                TutorProfileId = tutorAvatarId
+                TutorProfileId = tutorAvatarId,
+                ActiveLevelProfileDifficultyNotes = activeLevelProfile.DifficultyNotes,
+                ActiveLevelProfileTutorLanguageStyle = activeLevelProfile.TutorLanguageStyle,
+                ActiveLevelProfileExpectedUserResponse = activeLevelProfile.ExpectedUserResponse,
+                ActiveLevelProfileFeedbackStrictness = activeLevelProfile.FeedbackStrictness,
+                ActiveLevelProfileHintStrategy = activeLevelProfile.HintStrategy,
+                ActiveLevelProfileCorrectionPriority = activeLevelProfile.CorrectionPriority,
+                ActiveLevelProfileConversationDepth = activeLevelProfile.ConversationDepth,
+                ActiveLevelProfileExampleGoodAnswer = activeLevelProfile.ExampleGoodAnswer,
+                ActiveLevelProfileExampleStretchAnswer = activeLevelProfile.ExampleStretchAnswer,
+                ActiveLevelProfileAddedKeyPhrases = activeLevelProfile.AddedKeyPhrases,
+                ActiveLevelProfileAddedUsefulConstructions = activeLevelProfile.AddedUsefulConstructions,
+                ActiveLevelProfileAddedGrammarFocus = activeLevelProfile.AddedGrammarFocus
             });
 
             var mappedFeedback = MapFeedback(response.Feedback);
@@ -1183,7 +1212,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 LearningGoal = this.LearningGoal,
                 RecentMessages = GetRecentConversationMessages(),
                 LessonScenarioId = lessonScenario.Id,
-                Level = lessonScenario.Metadata.Level,
+                Level = SelectedLevel,
                 Topic = lessonScenario.Metadata.Topic,
                 Subtopic = lessonScenario.Metadata.Subtopic,
                 LessonGoal = lessonScenario.LearningGoal.Goal,
@@ -1196,7 +1225,19 @@ public partial class LessonChatViewModel : ViewModelBase
                 TargetLanguageKeyPhrases = lessonScenario.TargetLanguage.KeyPhrases,
                 GrammarFocus = lessonScenario.TargetLanguage.GrammarFocus,
                 FeedbackRulesSummary = BuildFeedbackRulesSummary(),
-                TutorProfileId = tutorAvatarId
+                TutorProfileId = tutorAvatarId,
+                ActiveLevelProfileDifficultyNotes = activeLevelProfile.DifficultyNotes,
+                ActiveLevelProfileTutorLanguageStyle = activeLevelProfile.TutorLanguageStyle,
+                ActiveLevelProfileExpectedUserResponse = activeLevelProfile.ExpectedUserResponse,
+                ActiveLevelProfileFeedbackStrictness = activeLevelProfile.FeedbackStrictness,
+                ActiveLevelProfileHintStrategy = activeLevelProfile.HintStrategy,
+                ActiveLevelProfileCorrectionPriority = activeLevelProfile.CorrectionPriority,
+                ActiveLevelProfileConversationDepth = activeLevelProfile.ConversationDepth,
+                ActiveLevelProfileExampleGoodAnswer = activeLevelProfile.ExampleGoodAnswer,
+                ActiveLevelProfileExampleStretchAnswer = activeLevelProfile.ExampleStretchAnswer,
+                ActiveLevelProfileAddedKeyPhrases = activeLevelProfile.AddedKeyPhrases,
+                ActiveLevelProfileAddedUsefulConstructions = activeLevelProfile.AddedUsefulConstructions,
+                ActiveLevelProfileAddedGrammarFocus = activeLevelProfile.AddedGrammarFocus
             });
 
             BackendStatusText = BackendConstants.BackendStatusConnected;

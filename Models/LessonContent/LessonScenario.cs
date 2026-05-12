@@ -16,6 +16,8 @@ public sealed class LessonScenario
 
     public TargetLanguage TargetLanguage { get; set; } = new();
 
+    public Dictionary<string, LevelProfile> LevelProfiles { get; set; } = new();
+
     public ConversationFlow ConversationFlow { get; set; } = new();
 
     public ControlledVariation ControlledVariation { get; set; } = new();

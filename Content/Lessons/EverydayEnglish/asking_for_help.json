@@ -1,0 +1,368 @@
+{
+  "id": "everyday_english_asking_for_help",
+  "metadata": {
+    "topic": "Everyday English",
+    "subtopic": "Asking for help",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice asking for help.\n\nGoal: you will learn to ask for simple help politely and understand a short answer.\n\nChoose a situation:\n1. Asking where something is\n2. Asking someone to repeat\n3. Asking for help with a small problem\n\nOr suggest your own simple help situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is about asking for simple everyday help.",
+      "validCustomContextKeywords": [
+        "help",
+        "can you help",
+        "where",
+        "repeat",
+        "say again",
+        "problem",
+        "lost",
+        "need help"
+      ],
+      "offTopicExamples": [
+        "job interview",
+        "restaurant order",
+        "hotel check-in",
+        "medical emergency",
+        "police report",
+        "business negotiation",
+        "politics"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about asking for simple everyday help. Please choose a simple help situation."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can ask for simple everyday help politely and respond to a short answer.",
+    "canDoStatements": [
+      "The user can say \"Excuse me\" before asking for help.",
+      "The user can ask \"Can you help me?\"",
+      "The user can ask where something is.",
+      "The user can ask someone to repeat.",
+      "The user can thank the person politely."
+    ]
+  },
+  "situation": {
+    "description": "The user needs simple help in an everyday situation."
+  },
+  "roles": {
+    "userRole": "A person who needs simple everyday help.",
+    "tutorRole": "A friendly person who can help with a small everyday problem."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "Excuse me.",
+      "Can you help me?",
+      "I need help.",
+      "Where is...?",
+      "Can you repeat, please?",
+      "Can you say that again, please?",
+      "I don't understand.",
+      "Thank you.",
+      "Thanks a lot."
+    ],
+    "usefulConstructions": [
+      "Excuse me, can you help me?",
+      "Where is + place/object?",
+      "I need help with + noun.",
+      "Can you + verb, please?",
+      "Thank you for your help."
+    ],
+    "grammarFocus": [
+      "can for polite requests",
+      "Where is...? for simple location questions",
+      "please and thank you for politeness",
+      "I need help with..."
+    ],
+    "pronunciationFocus": [
+      "Excuse me",
+      "Can you help me?",
+      "Where is...?",
+      "Can you repeat, please?",
+      "Thank you"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple English for asking for help. The tutor uses short questions and accepts one-word answers during early turns.",
+      "tutorLanguageStyle": "Use very short, clear sentences. Ask one easy question at a time. Do not add complications.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "Excuse me. Help, please.",
+      "stretchUserResponse": "Excuse me, can you help me?",
+      "addedKeyPhrases": [],
+      "addedUsefulConstructions": [
+        "One short sentence with I am / I have / I need / Let us."
+      ],
+      "addedGrammarFocus": [
+        "be, have, can, simple present in short sentences"
+      ],
+      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
+      "hintStrategy": "A fuller sentence starter or full model sentence is okay when the learner is stuck.",
+      "correctionPriority": "Meaning first; only one essential correction at a time.",
+      "conversationDepth": "Stay very shallow: greet, answer, one detail, thank or close.",
+      "exampleGoodAnswer": "Excuse me, can you help me?",
+      "exampleStretchAnswer": "Excuse me, can you help me?"
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple English for asking for help. The learner should add one detail such as time, place, reason, or preference.",
+      "tutorLanguageStyle": "Use simple English. Ask one simple follow-up question at a time.",
+      "expectedUserResponse": "1-2 short sentences with one extra detail.",
+      "minimumUserResponse": "Excuse me, can you help me?",
+      "stretchUserResponse": "Excuse me, can you help me? I'm looking for room 12.",
+      "addedKeyPhrases": [
+        "I am looking for...",
+        "Can you show me?"
+      ],
+      "addedUsefulConstructions": [
+        "Add one simple detail about time, place, reason, or preference."
+      ],
+      "addedGrammarFocus": [
+        "simple past or present where useful, basic word order, prepositions of time/place"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, and missing small words when useful.",
+      "hintStrategy": "Give a sentence starter first; do not give the full answer immediately.",
+      "correctionPriority": "Basic grammar, word order, and clear everyday phrasing.",
+      "conversationDepth": "Ask for one added detail, then continue inside the same situation.",
+      "exampleGoodAnswer": "Excuse me, can you help me? I'm looking for room 12.",
+      "exampleStretchAnswer": "Excuse me, can you help me? I'm looking for room 12."
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear English for asking for help. The learner should connect ideas and ask one follow-up question back.",
+      "tutorLanguageStyle": "Use natural, clear English. Ask for a reason or short explanation when it fits the roleplay.",
+      "expectedUserResponse": "Answer + detail + follow-up question.",
+      "minimumUserResponse": "Excuse me, could you help me? I'm looking for room 12.",
+      "stretchUserResponse": "Excuse me, could you help me? I'm trying to find room 12, but I'm not sure where it is.",
+      "addedKeyPhrases": [
+        "Could you help me?",
+        "I am not sure where it is."
+      ],
+      "addedUsefulConstructions": [
+        "Connect ideas with and, but, because, then; ask one follow-up question."
+      ],
+      "addedGrammarFocus": [
+        "connected clauses, question forms, reasons with because, natural follow-up questions"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, and sentence flow. Suggest one more natural version when useful.",
+      "hintStrategy": "Give a light structure or useful phrase, not a full scripted answer.",
+      "correctionPriority": "Grammar accuracy, word choice, sentence connection, and natural follow-up questions.",
+      "conversationDepth": "Use 2-3 connected sentences and keep the scenario moving with one question back.",
+      "exampleGoodAnswer": "Excuse me, could you help me? I'm trying to find room 12, but I'm not sure where it is.",
+      "exampleStretchAnswer": "Excuse me, could you help me? I'm trying to find room 12, but I'm not sure where it is."
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural conversational English for asking for help. The learner should use nuance and keep the dialogue going without leaving the scenario.",
+      "tutorLanguageStyle": "Use natural conversational English with soft phrasing. You may add one small realistic complication, but stay inside the roleplay.",
+      "expectedUserResponse": "Natural answer with detail, nuance, and a question back.",
+      "minimumUserResponse": "Excuse me, would you mind helping me? I'm trying to find room 12.",
+      "stretchUserResponse": "Excuse me, would you mind helping me for a moment? I'm trying to find room 12, but I think I may be in the wrong part of the building.",
+      "addedKeyPhrases": [
+        "Would you mind helping me?",
+        "I may be in the wrong part of..."
+      ],
+      "addedUsefulConstructions": [
+        "Use softer openings, natural connectors, and polite conversational phrasing."
+      ],
+      "addedGrammarFocus": [
+        "softeners, modal phrases, nuance, tone, natural discourse markers"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, tone, and naturalness while still correcting important errors.",
+      "hintStrategy": "Suggest direction, tone, or a useful natural phrase; avoid full sentences unless necessary.",
+      "correctionPriority": "Naturalness, nuance, tone, fluency, and precise wording.",
+      "conversationDepth": "Richer responses are welcome, but every turn must stay within the selected scenario.",
+      "exampleGoodAnswer": "Excuse me, would you mind helping me for a moment? I'm trying to find room 12, but I think I may be in the wrong part of the building.",
+      "exampleStretchAnswer": "Excuse me, would you mind helping me for a moment? I'm trying to find room 12, but I think I may be in the wrong part of the building."
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor starts as a friendly person who notices the user may need help.",
+    "defaultOpeningExample": "Hi! Do you need help?",
+    "firstUserTask": "The user asks for simple help politely.",
+    "expectedPattern": "Excuse me, can you help me?",
+    "guidedPracticeFollowUpQuestions": [
+      "What do you need?",
+      "What are you looking for?",
+      "Can you say that again, please?",
+      "Do you understand?"
+    ],
+    "variationOrComplication": "Tutor gives a short answer and asks the user to respond or thank them.",
+    "exampleTutorLine": "Sure. It's over there, near the door.",
+    "correctionMoment": "Tutor gives one short correction when useful.",
+    "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You're doing well. Let's do one final help request. Ask politely, explain the problem, and say thank you.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced asking for help politely, asking someone to repeat, and saying thank you. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "setting",
+      "reasonForAskingHelp",
+      "objectOrPlace",
+      "tutorOpeningLine",
+      "followUpQuestionOrder",
+      "one small everyday problem"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries"
+    ],
+    "contextVariants": [
+      {
+        "id": "where_is_classroom",
+        "title": "Asking where something is",
+        "setting": "a language school or public building",
+        "reasonForMeeting": "asking where a room or place is",
+        "openingLine": "Hi! Do you need help?",
+        "aliases": [
+          "where",
+          "where is",
+          "classroom",
+          "room",
+          "place",
+          "asking where something is"
+        ]
+      },
+      {
+        "id": "repeat_please",
+        "title": "Asking someone to repeat",
+        "setting": "a simple conversation",
+        "reasonForMeeting": "asking someone to repeat because the user did not understand",
+        "openingLine": "Sure. What did you not understand?",
+        "aliases": [
+          "repeat",
+          "repeat please",
+          "say again",
+          "say that again",
+          "i don't understand",
+          "asking to repeat"
+        ]
+      },
+      {
+        "id": "small_problem",
+        "title": "Asking for help with a small problem",
+        "setting": "an everyday place",
+        "reasonForMeeting": "asking for help with a small simple problem",
+        "openingLine": "Hi! What is the problem?",
+        "aliases": [
+          "problem",
+          "small problem",
+          "help with a problem",
+          "need help",
+          "can you help"
+        ]
+      },
+      {
+        "id": "help_with_door",
+        "title": "Asking for help with a door",
+        "setting": "near a door in a building",
+        "reasonForMeeting": "asking someone to help with a door",
+        "openingLine": "Hi! Do you need help with the door?",
+        "aliases": [
+          "door",
+          "open the door",
+          "help with the door"
+        ]
+      },
+      {
+        "id": "help_with_bag",
+        "title": "Asking for help with a bag",
+        "setting": "near stairs or an entrance",
+        "reasonForMeeting": "asking someone to help with a bag",
+        "openingLine": "Hi! Do you need help with your bag?",
+        "aliases": [
+          "bag",
+          "heavy bag",
+          "help with my bag",
+          "stairs"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside the selected topic, subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user's custom context.",
+      "Custom context is allowed only if it is about asking for simple everyday help.",
+      "For the MVP, validate custom context with simple deterministic keyword matching, not AI validation.",
+      "Valid custom context keywords include: help, where, repeat, problem, need help.",
+      "Off-topic examples include job interview, restaurant order, hotel check-in, medical emergency, police report, business negotiation, and politics."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about asking for simple everyday help. Please choose a simple help situation."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting! For this lesson, let's practice asking for help.",
+    "secondRedirect": "Let's stay with a simple help situation for now. How would you ask for help politely?",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on asking for help. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar and suggest one more natural phrase.",
+      "B1": "Correct grammar, word choice, and sentence flow.",
+      "B2": "Focus on naturalness, nuance, and fluency."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small starter phrase first. Do not give the full answer immediately.",
+    "hintLevels": [
+      "Give one useful word.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can say: \"Excuse me, can you help me?\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into a new free-form lesson."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this lesson scenario.",
+    "Guide the user through a short realistic help-request dialogue.",
+    "Tutor messages must be in English.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Accept short A1 answers if they are understandable.",
+    "Correct only important mistakes.",
+    "Give feedback in 1-3 short sentences.",
+    "If the user goes off-topic, briefly respond and return to asking for help.",
+    "The setup message and the user's context choice do not count as lesson turns.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}
