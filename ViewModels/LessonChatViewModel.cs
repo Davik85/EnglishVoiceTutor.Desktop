@@ -629,11 +629,20 @@ public partial class LessonChatViewModel : ViewModelBase
 
         try
         {
+            var totalStopwatch = Stopwatch.StartNew();
+            var backendStopwatch = Stopwatch.StartNew();
+            var inputLength = message.Text.Trim().Length;
+
+            Debug.WriteLine($"Bot voice generation starting for message {message.Id}: InputLength={inputLength}.");
             var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(message.Text, cancellationToken);
+            Debug.WriteLine($"Bot voice backend response received for message {message.Id}: InputLength={inputLength}; ElapsedMilliseconds={backendStopwatch.ElapsedMilliseconds}; AudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
+
+            var saveStopwatch = Stopwatch.StartNew();
             var audioFilePath = await audioPlaybackService.SaveBotVoiceAudioAsync(
                 speechResponse.AudioBytes,
                 speechResponse.FileExtension,
                 cancellationToken);
+            Debug.WriteLine($"Bot voice file ready for message {message.Id}: SaveElapsedMilliseconds={saveStopwatch.ElapsedMilliseconds}; TotalElapsedMilliseconds={totalStopwatch.ElapsedMilliseconds}; FileExtension={Path.GetExtension(audioFilePath)}.");
             botVoiceAudioFilePaths[message.Id] = audioFilePath;
             TrackCurrentSessionBotVoiceFile(audioFilePath);
             return audioFilePath;
