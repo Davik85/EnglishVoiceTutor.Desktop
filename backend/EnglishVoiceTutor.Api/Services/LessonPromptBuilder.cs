@@ -47,7 +47,9 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("Do not ask for the learner's name if the learner profile already includes a display name.");
         prompt.AppendLine("If the learner profile includes a learning goal, use it as gentle context without overriding the selected topic or situation.");
         prompt.AppendLine("Do not restart the lesson.");
-        prompt.AppendLine("Do not ask the learner to choose a topic.");
+        prompt.AppendLine("Do not ask the learner to choose a topic or context.");
+        prompt.AppendLine("Stay inside the selected roleplay context.");
+        prompt.AppendLine("The setup and context choice are already complete and did not count as lesson turns.");
         prompt.AppendLine("Do not ask for native language.");
 
         if (LessonLimitHelper.ShouldEndLessonNow(request))
@@ -100,9 +102,49 @@ public sealed class LessonPromptBuilder
     private static void AppendLessonContext(StringBuilder prompt, LessonChatRequest request, bool includeNativeLanguage = true)
     {
         prompt.AppendLine(LessonContextHeader);
-        prompt.AppendLine($"- Level: {request.SelectedLevel}");
-        prompt.AppendLine($"- Topic: {request.TopicTitle}");
-        prompt.AppendLine($"- Situation/Subtopic: {request.SubtopicTitle}");
+        prompt.AppendLine($"- Level: {ChooseFirstNonEmpty(request.Level, request.SelectedLevel)}");
+        prompt.AppendLine($"- Topic: {ChooseFirstNonEmpty(request.Topic, request.TopicTitle)}");
+        prompt.AppendLine($"- Situation/Subtopic: {ChooseFirstNonEmpty(request.Subtopic, request.SubtopicTitle)}");
+
+        if (!string.IsNullOrWhiteSpace(request.LessonScenarioId))
+        {
+            prompt.AppendLine($"- Lesson scenario id: {request.LessonScenarioId}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.LessonGoal))
+        {
+            prompt.AppendLine($"- Lesson goal: {request.LessonGoal}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SelectedContextTitle))
+        {
+            prompt.AppendLine($"- Selected roleplay context: {request.SelectedContextTitle}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SelectedContextVariantId))
+        {
+            prompt.AppendLine($"- Selected context variant id: {request.SelectedContextVariantId}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SelectedContextOpeningLine))
+        {
+            prompt.AppendLine($"- Context opening line already shown by tutor: {request.SelectedContextOpeningLine}");
+        }
+
+        if (request.TargetLanguageKeyPhrases.Count > 0)
+        {
+            prompt.AppendLine($"- Target key phrases: {string.Join(", ", request.TargetLanguageKeyPhrases)}");
+        }
+
+        if (request.GrammarFocus.Count > 0)
+        {
+            prompt.AppendLine($"- Grammar focus: {string.Join(", ", request.GrammarFocus)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.FeedbackRulesSummary))
+        {
+            prompt.AppendLine($"- Feedback rules: {request.FeedbackRulesSummary}");
+        }
 
         if (includeNativeLanguage)
         {
@@ -115,9 +157,10 @@ public sealed class LessonPromptBuilder
     private static void AppendLessonLength(StringBuilder prompt, LessonChatRequest request)
     {
         prompt.AppendLine(LessonLengthHeader);
-        prompt.AppendLine($"- Learner turn count including latest message: {request.LearnerTurnCount}");
+        prompt.AppendLine($"- Learner turn count including latest message: {Math.Max(request.UserTurnNumber, request.LearnerTurnCount)}");
         prompt.AppendLine($"- Soft learner turn limit: {LessonLimitHelper.GetSoftLearnerTurnLimit(request)}");
         prompt.AppendLine($"- Hard learner turn limit: {LessonLimitHelper.GetHardLearnerTurnLimit(request)}");
+        prompt.AppendLine("- Setup/context selection is already complete and did not count as a lesson turn.");
         prompt.AppendLine($"- Remaining learner turns after latest message: {LessonLimitHelper.GetRemainingLearnerTurns(request)}");
         prompt.AppendLine($"- shouldStartWrappingUp: {LessonLimitHelper.ShouldStartWrappingUp(request)}");
         prompt.AppendLine($"- shouldEndLessonNow: {LessonLimitHelper.ShouldEndLessonNow(request)}");
@@ -186,6 +229,13 @@ public sealed class LessonPromptBuilder
         }
 
         prompt.AppendLine();
+    }
+
+    private static string ChooseFirstNonEmpty(string? primary, string fallback)
+    {
+        return string.IsNullOrWhiteSpace(primary)
+            ? NormalizeOptionalText(fallback)
+            : primary.Trim();
     }
 
     private static string NormalizeOptionalText(string? value)

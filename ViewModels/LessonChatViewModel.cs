@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Desktop.Services;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
@@ -20,9 +21,12 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly AudioPlaybackService audioPlaybackService;
     private readonly string audioInputDeviceId;
     private readonly AppLocalizedText localizedText;
+    private readonly LessonScenario lessonScenario;
     private int messageCounter;
     private Feedback? latestFeedback;
     private string lastBotMessage = AppConstants.MockBotFirstMessage;
+    private ContextVariant? selectedContextVariant;
+    private string selectedCustomContextTitle = string.Empty;
     private bool isTranscribingAudio;
     private bool hasFinishedLesson;
 
@@ -139,17 +143,25 @@ public partial class LessonChatViewModel : ViewModelBase
     [ObservableProperty]
     private bool isBotVoiceAutoPlayEnabled;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsLessonInputEnabled))]
+    [NotifyPropertyChangedFor(nameof(IsLessonOptionsEnabled))]
+    [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
+    [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    private LessonPhase currentLessonPhase = LessonPhase.SetupContextSelection;
+
     public bool HasSelectedFeedback => SelectedFeedback is not null;
 
     public bool HasCurrentHint => !string.IsNullOrWhiteSpace(CurrentHintText);
 
-    public bool IsLessonLimitReached => LearnerTurnCount >= AppConstants.DefaultLessonHardLearnerTurnLimit;
+    public bool IsLessonLimitReached => LearnerTurnCount >= GetFinalTurn();
 
-    public bool IsLessonWrappingUp => LearnerTurnCount >= AppConstants.DefaultLessonSoftLearnerTurnLimit;
+    public bool IsLessonWrappingUp => LearnerTurnCount >= GetSoftWrapUpTurn();
 
-    public bool IsLessonInputEnabled => !IsLessonCompleteAwaitingFinish && !IsLessonLimitReached && !hasFinishedLesson;
+    public bool IsLessonInputEnabled => CurrentLessonPhase != LessonPhase.Completed && !IsLessonCompleteAwaitingFinish && !IsLessonLimitReached && !hasFinishedLesson;
 
-    public bool IsLessonOptionsEnabled => !IsLessonCompleteAwaitingFinish && !hasFinishedLesson;
+    public bool IsLessonOptionsEnabled => CurrentLessonPhase != LessonPhase.Completed && !IsLessonCompleteAwaitingFinish && !hasFinishedLesson;
 
     public string VoiceButtonText => IsRecording
         ? localizedText.StopRecordingButtonText
@@ -248,6 +260,7 @@ public partial class LessonChatViewModel : ViewModelBase
         string userDisplayName,
         string learningGoal,
         TutorAvatarOption tutorAvatar,
+        LessonScenario? lessonScenario,
         LessonChatBackendService lessonChatBackendService,
         AudioRecordingService audioRecordingService,
         AudioPlaybackService audioPlaybackService,
@@ -264,6 +277,7 @@ public partial class LessonChatViewModel : ViewModelBase
         LearningGoal = NormalizeOptionalText(learningGoal);
         tutorAvatarId = tutorAvatar.Id;
         TutorAvatarDisplayName = tutorAvatar.DisplayName;
+        this.lessonScenario = lessonScenario ?? new LessonScenario();
         this.lessonChatBackendService = lessonChatBackendService;
         this.audioRecordingService = audioRecordingService;
         this.audioPlaybackService = audioPlaybackService;
@@ -273,8 +287,12 @@ public partial class LessonChatViewModel : ViewModelBase
         this.navigateBack = navigateBack;
         this.finishLesson = finishLesson;
 
-        AddMessage(TutorAvatarDisplayName, AppConstants.MockBotFirstMessage, true);
-        lastBotMessage = AppConstants.MockBotFirstMessage;
+        CurrentLessonPhase = LessonPhase.SetupContextSelection;
+        var setupMessage = string.IsNullOrWhiteSpace(this.lessonScenario.LessonSetup.SetupMessage)
+            ? AppConstants.MockBotFirstMessage
+            : this.lessonScenario.LessonSetup.SetupMessage.Trim();
+        AddMessage(TutorAvatarDisplayName, setupMessage, true);
+        lastBotMessage = setupMessage;
         _ = CheckBackendHealthAsync();
         _ = CheckBackendConfigStatusAsync();
     }
@@ -572,13 +590,26 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         CurrentHintText = string.Empty;
+
+        if (CurrentLessonPhase == LessonPhase.SetupContextSelection)
+        {
+            return await HandleContextSelectionMessageAsync(userMessage);
+        }
+
+        if (CurrentLessonPhase == LessonPhase.Completed)
+        {
+            return false;
+        }
+
         BotStatus = BackendConstants.BotStatusThinking;
         IsSending = true;
         RefreshAvatarState();
 
         var nextLearnerTurnCount = LearnerTurnCount + 1;
-        var shouldStartWrappingUp = nextLearnerTurnCount >= AppConstants.DefaultLessonSoftLearnerTurnLimit;
-        var shouldEndLessonNow = nextLearnerTurnCount >= AppConstants.DefaultLessonHardLearnerTurnLimit;
+        var softWrapUpTurn = GetSoftWrapUpTurn();
+        var finalTurn = GetFinalTurn();
+        var shouldStartWrappingUp = nextLearnerTurnCount >= softWrapUpTurn;
+        var shouldEndLessonNow = nextLearnerTurnCount >= finalTurn;
 
         try
         {
@@ -594,12 +625,27 @@ public partial class LessonChatViewModel : ViewModelBase
                 UserDisplayName = this.UserDisplayName,
                 LearningGoal = this.LearningGoal,
                 LearnerTurnCount = nextLearnerTurnCount,
-                SoftLearnerTurnLimit = AppConstants.DefaultLessonSoftLearnerTurnLimit,
-                HardLearnerTurnLimit = AppConstants.DefaultLessonHardLearnerTurnLimit,
-                RemainingLearnerTurns = Math.Max(AppConstants.DefaultLessonHardLearnerTurnLimit - nextLearnerTurnCount, 0),
+                SoftLearnerTurnLimit = softWrapUpTurn,
+                HardLearnerTurnLimit = finalTurn,
+                RemainingLearnerTurns = Math.Max(finalTurn - nextLearnerTurnCount, 0),
                 ShouldStartWrappingUp = shouldStartWrappingUp,
                 ShouldEndLessonNow = shouldEndLessonNow,
-                RecentMessages = GetRecentConversationMessages()
+                RecentMessages = GetRecentConversationMessages(),
+                LessonScenarioId = lessonScenario.Id,
+                Level = lessonScenario.Metadata.Level,
+                Topic = lessonScenario.Metadata.Topic,
+                Subtopic = lessonScenario.Metadata.Subtopic,
+                LessonGoal = lessonScenario.LearningGoal.Goal,
+                SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
+                SelectedContextTitle = GetSelectedContextTitle(),
+                SelectedContextOpeningLine = selectedContextVariant?.OpeningLine ?? lessonScenario.ConversationFlow.DefaultOpeningExample,
+                UserTurnNumber = nextLearnerTurnCount,
+                SoftWrapUpAfterUserTurn = softWrapUpTurn,
+                FinalMessageAtUserTurn = finalTurn,
+                TargetLanguageKeyPhrases = lessonScenario.TargetLanguage.KeyPhrases,
+                GrammarFocus = lessonScenario.TargetLanguage.GrammarFocus,
+                FeedbackRulesSummary = BuildFeedbackRulesSummary(),
+                TutorProfileId = tutorAvatarId
             });
 
             var mappedFeedback = MapFeedback(response.Feedback);
@@ -607,8 +653,11 @@ public partial class LessonChatViewModel : ViewModelBase
 
             AddMessage(AppConstants.UserSenderName, userMessage, false, mappedFeedback);
             LearnerTurnCount = nextLearnerTurnCount;
-            AddMessage(TutorAvatarDisplayName, response.BotReply, true);
-            lastBotMessage = response.BotReply;
+            var botReply = shouldEndLessonNow && !string.IsNullOrWhiteSpace(lessonScenario.ConversationFlow.FinalMessage)
+                ? lessonScenario.ConversationFlow.FinalMessage
+                : response.BotReply;
+            AddMessage(TutorAvatarDisplayName, botReply, true);
+            lastBotMessage = botReply;
             OnPropertyChanged(nameof(LatestBotMessageText));
 
             BackendStatusText = BackendConstants.BackendStatusConnected;
@@ -619,6 +668,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             if (response.IsLessonComplete || shouldEndLessonNow)
             {
+                CurrentLessonPhase = LessonPhase.Completed;
                 MarkLessonCompleteAwaitingFinish();
                 return true;
             }
@@ -642,6 +692,181 @@ public partial class LessonChatViewModel : ViewModelBase
             IsSending = false;
             RefreshAvatarState();
         }
+    }
+
+
+    private Task<bool> HandleContextSelectionMessageAsync(string userMessage)
+    {
+        AddMessage(AppConstants.UserSenderName, userMessage, false);
+
+        var matchedVariant = FindMatchingContextVariant(userMessage);
+        if (matchedVariant is not null)
+        {
+            selectedContextVariant = matchedVariant;
+            selectedCustomContextTitle = string.Empty;
+            CurrentLessonPhase = LessonPhase.ActiveRoleplay;
+
+            var startMessage = $"Great! Let's imagine {BuildContextConfirmationText(matchedVariant)}.\n\n{matchedVariant.OpeningLine}";
+            AddRoleplayStartMessage(startMessage);
+            return Task.FromResult(true);
+        }
+
+        if (IsValidCustomContext(userMessage))
+        {
+            selectedContextVariant = null;
+            selectedCustomContextTitle = userMessage.Trim();
+            CurrentLessonPhase = LessonPhase.ActiveRoleplay;
+
+            var openingLine = string.IsNullOrWhiteSpace(lessonScenario.ConversationFlow.DefaultOpeningExample)
+                ? "Hi! Nice to meet you. What's your name?"
+                : lessonScenario.ConversationFlow.DefaultOpeningExample.Trim();
+            AddRoleplayStartMessage($"Good idea. Let's keep it simple: you meet someone for the first time.\n\n{openingLine}");
+            return Task.FromResult(true);
+        }
+
+        AddMessage(TutorAvatarDisplayName, GetInvalidContextRedirect(), true);
+        lastBotMessage = GetInvalidContextRedirect();
+        OnPropertyChanged(nameof(LatestBotMessageText));
+        StatusMessage = string.Empty;
+        return Task.FromResult(true);
+    }
+
+    private void AddRoleplayStartMessage(string message)
+    {
+        AddMessage(TutorAvatarDisplayName, message, true);
+        lastBotMessage = message;
+        OnPropertyChanged(nameof(LatestBotMessageText));
+        StatusMessage = string.Empty;
+    }
+
+    private ContextVariant? FindMatchingContextVariant(string userMessage)
+    {
+        var normalizedInput = NormalizeForContextMatching(userMessage);
+        if (string.IsNullOrWhiteSpace(normalizedInput))
+        {
+            return null;
+        }
+
+        foreach (var variant in lessonScenario.ControlledVariation.ContextVariants)
+        {
+            var candidates = new[] { variant.Id, variant.Title }
+                .Concat(variant.Aliases)
+                .Where(candidate => !string.IsNullOrWhiteSpace(candidate));
+
+            foreach (var candidate in candidates)
+            {
+                var normalizedCandidate = NormalizeForContextMatching(candidate);
+                if (normalizedInput.Equals(normalizedCandidate, StringComparison.OrdinalIgnoreCase)
+                    || normalizedInput.Contains(normalizedCandidate, StringComparison.OrdinalIgnoreCase)
+                    || normalizedCandidate.Contains(normalizedInput, StringComparison.OrdinalIgnoreCase))
+                {
+                    return variant;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private bool IsValidCustomContext(string userMessage)
+    {
+        if (!lessonScenario.LessonSetup.ContextSelection.CustomContextAllowed)
+        {
+            return false;
+        }
+
+        var normalizedInput = NormalizeForContextMatching(userMessage);
+        var keywords = lessonScenario.LessonSetup.ContextSelection.ValidCustomContextKeywords.Count > 0
+            ? lessonScenario.LessonSetup.ContextSelection.ValidCustomContextKeywords
+            : ["meet", "meeting", "introduce", "introduction", "first time", "знаком", "познаком", "встреч", "представ"];
+
+        return keywords
+            .Select(NormalizeForContextMatching)
+            .Where(keyword => !string.IsNullOrWhiteSpace(keyword))
+            .Any(keyword => normalizedInput.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string GetInvalidContextRedirect()
+    {
+        if (!string.IsNullOrWhiteSpace(lessonScenario.LessonSetup.ContextSelection.InvalidContextRedirect))
+        {
+            return lessonScenario.LessonSetup.ContextSelection.InvalidContextRedirect.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(lessonScenario.ControlledVariation.InvalidContextRedirect))
+        {
+            return lessonScenario.ControlledVariation.InvalidContextRedirect.Trim();
+        }
+
+        return "That sounds interesting, but this lesson is about introductions. Please choose a situation about meeting someone for the first time.";
+    }
+
+    private string BuildSetupContextHint()
+    {
+        var titles = lessonScenario.ControlledVariation.ContextVariants
+            .Take(3)
+            .Select(variant => $"\"{variant.Title}\"")
+            .ToArray();
+
+        return titles.Length == 0
+            ? "Choose a simple situation about introductions."
+            : $"You can choose: {string.Join(", ", titles)}.";
+    }
+
+    private static string BuildContextConfirmationText(ContextVariant variant)
+    {
+        const string meetingPrefix = "Meeting ";
+        if (variant.Title.StartsWith(meetingPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"you meet {variant.Title[meetingPrefix.Length..].ToLowerInvariant()}";
+        }
+
+        return $"this situation: {variant.Title}";
+    }
+
+    private static string NormalizeForContextMatching(string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim().Replace('_', ' ').ToLowerInvariant();
+    }
+
+    private string GetSelectedContextTitle()
+    {
+        if (selectedContextVariant is not null)
+        {
+            return selectedContextVariant.Title;
+        }
+
+        return selectedCustomContextTitle;
+    }
+
+    private int GetSoftWrapUpTurn()
+    {
+        return lessonScenario.Metadata.SoftWrapUpAfterUserTurn > 0
+            ? lessonScenario.Metadata.SoftWrapUpAfterUserTurn
+            : AppConstants.DefaultLessonSoftLearnerTurnLimit;
+    }
+
+    private int GetFinalTurn()
+    {
+        return lessonScenario.Metadata.FinalMessageAtUserTurn > 0
+            ? lessonScenario.Metadata.FinalMessageAtUserTurn
+            : AppConstants.DefaultLessonHardLearnerTurnLimit;
+    }
+
+    private string BuildFeedbackRulesSummary()
+    {
+        var levelRules = lessonScenario.FeedbackRules.LevelRules.Count == 0
+            ? string.Empty
+            : string.Join(" ", lessonScenario.FeedbackRules.LevelRules.Select(rule => $"{rule.Key}: {rule.Value}"));
+
+        return string.Join(" ", new[]
+        {
+            levelRules,
+            lessonScenario.FeedbackRules.FeedbackLength,
+            lessonScenario.FeedbackRules.FeedbackStyle
+        }.Where(part => !string.IsNullOrWhiteSpace(part)));
     }
 
     public async Task CheckBackendHealthAsync()
@@ -765,6 +990,20 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
+        if (CurrentLessonPhase == LessonPhase.SetupContextSelection)
+        {
+            CurrentHintText = BuildSetupContextHint();
+            StatusMessage = string.Empty;
+            return;
+        }
+
+        if (CurrentLessonPhase == LessonPhase.ActiveRoleplay && LearnerTurnCount == 0 && !string.IsNullOrWhiteSpace(lessonScenario.HintRules.ExampleHint))
+        {
+            CurrentHintText = lessonScenario.HintRules.ExampleHint.Trim();
+            StatusMessage = string.Empty;
+            return;
+        }
+
         IsSending = true;
         BotStatus = BackendConstants.BotStatusThinking;
         RefreshAvatarState();
@@ -774,6 +1013,8 @@ public partial class LessonChatViewModel : ViewModelBase
             var hintUserMessage = string.IsNullOrWhiteSpace(UserInput)
                 ? AppConstants.HintFallbackUserMessage
                 : UserInput.Trim();
+            var softWrapUpTurn = GetSoftWrapUpTurn();
+            var finalTurn = GetFinalTurn();
 
             var hintText = await lessonChatBackendService.SendLessonHintRequestAsync(new LessonChatBackendRequest
             {
@@ -786,7 +1027,22 @@ public partial class LessonChatViewModel : ViewModelBase
                 TutorAvatarId = tutorAvatarId,
                 UserDisplayName = this.UserDisplayName,
                 LearningGoal = this.LearningGoal,
-                RecentMessages = GetRecentConversationMessages()
+                RecentMessages = GetRecentConversationMessages(),
+                LessonScenarioId = lessonScenario.Id,
+                Level = lessonScenario.Metadata.Level,
+                Topic = lessonScenario.Metadata.Topic,
+                Subtopic = lessonScenario.Metadata.Subtopic,
+                LessonGoal = lessonScenario.LearningGoal.Goal,
+                SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
+                SelectedContextTitle = GetSelectedContextTitle(),
+                SelectedContextOpeningLine = selectedContextVariant?.OpeningLine ?? lessonScenario.ConversationFlow.DefaultOpeningExample,
+                UserTurnNumber = LearnerTurnCount,
+                SoftWrapUpAfterUserTurn = softWrapUpTurn,
+                FinalMessageAtUserTurn = finalTurn,
+                TargetLanguageKeyPhrases = lessonScenario.TargetLanguage.KeyPhrases,
+                GrammarFocus = lessonScenario.TargetLanguage.GrammarFocus,
+                FeedbackRulesSummary = BuildFeedbackRulesSummary(),
+                TutorProfileId = tutorAvatarId
             });
 
             BackendStatusText = BackendConstants.BackendStatusConnected;
@@ -857,6 +1113,7 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
+        CurrentLessonPhase = LessonPhase.Completed;
         IsLessonCompleteAwaitingFinish = true;
         IsConversationModeEnabled = false;
         UserInput = string.Empty;
@@ -870,6 +1127,7 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
+        CurrentLessonPhase = LessonPhase.Completed;
         hasFinishedLesson = true;
         OnPropertyChanged(nameof(IsLessonInputEnabled));
         OnPropertyChanged(nameof(IsLessonOptionsEnabled));

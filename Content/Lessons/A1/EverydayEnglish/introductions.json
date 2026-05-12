@@ -17,7 +17,31 @@
       "That the user may suggest their own context if it fits the topic."
     ],
     "setupMessage": "Today we'll practice introductions.\n\nGoal: you will learn to say your name, where you are from, and ask simple questions.\n\nChoose a situation:\n1. Meeting a new neighbor\n2. First day at a language school\n3. Meeting someone at a hobby club\n\nOr suggest your own situation about introductions.",
-    "setupAndContextChoiceCountAsLessonTurns": false
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is about meeting someone, introductions, first conversation, or getting acquainted.",
+      "validCustomContextKeywords": [
+        "meet",
+        "meeting",
+        "introduce",
+        "introduction",
+        "first time",
+        "знаком",
+        "познаком",
+        "встреч",
+        "представ"
+      ],
+      "offTopicExamples": [
+        "football discussion",
+        "politics",
+        "job interview",
+        "restaurant order",
+        "hotel check-in"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about introductions. Please choose a situation about meeting someone for the first time."
+    }
   },
   "learningGoal": {
     "goal": "The user can introduce themselves and ask simple personal questions.",
@@ -110,35 +134,89 @@
         "title": "Meeting a new neighbor",
         "setting": "an apartment building",
         "reasonForMeeting": "meeting a new neighbor",
-        "openingLine": "Hi! I think you are new here. What's your name?"
+        "openingLine": "Hi! I think you are new here. What's your name?",
+        "aliases": [
+          "neighbor",
+          "neighbour",
+          "new neighbor",
+          "meeting a neighbor",
+          "сосед",
+          "соседи",
+          "соседями",
+          "знакомство с соседями",
+          "новый сосед"
+        ]
       },
       {
         "id": "language_school_first_day",
         "title": "First day at a language school",
         "setting": "a language school",
         "reasonForMeeting": "first day of class",
-        "openingLine": "Hi! Nice to meet you. What's your name?"
+        "openingLine": "Hi! Nice to meet you. What's your name?",
+        "aliases": [
+          "language school",
+          "school",
+          "first day",
+          "class",
+          "english class",
+          "языковая школа",
+          "языковой школе",
+          "школа",
+          "урок",
+          "первый день",
+          "занятие"
+        ]
       },
       {
         "id": "hobby_club",
         "title": "Meeting someone at a hobby club",
         "setting": "a hobby club",
         "reasonForMeeting": "joining a new group",
-        "openingLine": "Hi! Welcome to the club. What's your name?"
+        "openingLine": "Hi! Welcome to the club. What's your name?",
+        "aliases": [
+          "hobby club",
+          "club",
+          "hobby",
+          "group",
+          "клуб",
+          "хобби",
+          "клуб по интересам",
+          "кружок",
+          "группа"
+        ]
       },
       {
         "id": "work_break_room",
         "title": "Meeting a colleague",
         "setting": "a workplace break room",
         "reasonForMeeting": "meeting a colleague",
-        "openingLine": "Hi! I don't think we've met. What's your name?"
+        "openingLine": "Hi! I don't think we've met. What's your name?",
+        "aliases": [
+          "work",
+          "colleague",
+          "coworker",
+          "office",
+          "работа",
+          "коллега",
+          "коллегами",
+          "офис"
+        ]
       },
       {
         "id": "online_meeting",
         "title": "Joining an online English meeting",
         "setting": "an online English meeting",
         "reasonForMeeting": "joining a video call",
-        "openingLine": "Hi! Welcome. Can you introduce yourself?"
+        "openingLine": "Hi! Welcome. Can you introduce yourself?",
+        "aliases": [
+          "online",
+          "video call",
+          "online meeting",
+          "zoom",
+          "онлайн",
+          "видеозвонок",
+          "онлайн встреча"
+        ]
       }
     ],
     "customContextRules": [
@@ -146,7 +224,11 @@
       "The custom context must stay inside the selected topic, subtopic, lesson goal, and level.",
       "If the custom context is valid but too difficult for A1, simplify it.",
       "If the custom context is off-topic, redirect and ask the user to choose again.",
-      "Do not change the lesson topic or lesson goal based on the user's custom context."
+      "Do not change the lesson topic or lesson goal based on the user's custom context.",
+      "Custom context is allowed only if it is about meeting someone, introductions, first conversation, or getting acquainted.",
+      "For the MVP, validate custom context with simple deterministic keyword matching, not AI validation.",
+      "Valid custom context keywords include: meet, meeting, introduce, introduction, first time, знаком, познаком, встреч, представ.",
+      "Off-topic examples include football discussion, politics, job interview, restaurant order, and hotel check-in."
     ],
     "invalidContextRedirect": "That sounds interesting, but this lesson is about introductions. Please choose a situation about meeting someone for the first time."
   },
