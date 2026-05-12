@@ -11,6 +11,7 @@ public static class ContentConstants
     public const string EverydayEnglishFolderName = "EverydayEnglish";
     public const string IntroductionsFileName = "introductions.json";
     public const string SmallTalkWithANeighborFileName = "small_talk_with_a_neighbor.json";
+    public const string AskingForHelpFileName = "asking_for_help.json";
     public const string ElenaTutorId = "elena";
     public const string ElenaTutorFileName = "elena.json";
 
