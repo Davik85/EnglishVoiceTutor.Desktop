@@ -17,6 +17,8 @@ public static class OpenAiConstants
     public const string HighQualitySpeechModel = "gpt-4o-mini-tts";
     public const string DefaultSpeechModel = LowLatencySpeechModel;
     public const string DefaultSpeechVoice = "coral";
+    // 1.0 is the default OpenAI speech speed. 0.9 is used for the MVP because learners need slightly slower speech.
+    public const double DefaultSpeechSpeed = 0.9;
     public const string DefaultSpeechResponseFormat = "wav";
     public const int OpenAiSpeechTimeoutSeconds = 120;
     public const string AudioSpeechHttpClientName = "OpenAiAudioSpeech";
