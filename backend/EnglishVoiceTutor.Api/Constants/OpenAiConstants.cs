@@ -11,14 +11,14 @@ public static class OpenAiConstants
     public const string DefaultTranscriptionModel = "gpt-4o-mini-transcribe";
     public const string TranscriptionLanguage = "en";
     public const string TranscriptionPrompt = "This is a short spoken answer from an English learner practicing a lesson dialogue. Transcribe the learner's English words clearly. Do not translate.";
-    // tts-1 is used by default for MVP latency.
+    // tts-1 is available for a future low-latency mode.
     public const string LowLatencySpeechModel = "tts-1";
-    // gpt-4o-mini-tts can be used later for a high-quality voice mode.
+    // gpt-4o-mini-tts is used by default for fuller voice quality.
     public const string HighQualitySpeechModel = "gpt-4o-mini-tts";
-    public const string DefaultSpeechModel = LowLatencySpeechModel;
+    public const string DefaultSpeechModel = HighQualitySpeechModel;
     public const string DefaultSpeechVoice = "coral";
-    // 1.0 is the default OpenAI speech speed. 0.9 is used for the MVP because learners need slightly slower speech.
-    public const double DefaultSpeechSpeed = 0.9;
+    // 1.0 is the default OpenAI speech speed. Keep it as the MVP default for natural full-speed speech.
+    public const double DefaultSpeechSpeed = 1.0;
     public const string DefaultSpeechResponseFormat = "wav";
     public const int OpenAiSpeechTimeoutSeconds = 120;
     public const string AudioSpeechHttpClientName = "OpenAiAudioSpeech";
