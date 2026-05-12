@@ -173,11 +173,16 @@ public sealed class LessonChatBackendService
         }
 
         using var httpClient = CreateHttpClient(BackendConstants.BotVoiceRequestTimeoutSeconds);
+        var stopwatch = Stopwatch.StartNew();
+        var endpointUri = CreateEndpointUri(BackendConstants.AudioSpeechEndpoint);
+        var inputLength = text.Trim().Length;
+
+        Debug.WriteLine($"Bot voice backend TTS request starting: Endpoint={BackendConstants.AudioSpeechEndpoint}; InputLength={inputLength}.");
 
         try
         {
             using var response = await httpClient.PostAsJsonAsync(
-                CreateEndpointUri(BackendConstants.AudioSpeechEndpoint),
+                endpointUri,
                 new AudioSpeechBackendRequest
                 {
                     Text = text
@@ -195,6 +200,7 @@ public sealed class LessonChatBackendService
             }
 
             var contentType = response.Content.Headers.ContentType?.MediaType ?? BackendConstants.SpeechResponseContentType;
+            Debug.WriteLine($"Bot voice backend TTS request completed: Endpoint={BackendConstants.AudioSpeechEndpoint}; InputLength={inputLength}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}; ContentType={contentType}; AudioBytes={audioBytes.Length}.");
             return new BotSpeechBackendResponse(audioBytes, contentType, GetAudioFileExtension(contentType));
         }
         catch (Exception exception)

@@ -22,9 +22,14 @@ public sealed class AudioPlaybackService
             throw new InvalidOperationException(BackendConstants.BackendInvalidSpeechResponseMessage);
         }
 
+        var normalizedExtension = NormalizeAudioFileExtension(fileExtension);
+        var stopwatch = Stopwatch.StartNew();
+
         try
         {
-            return await SaveTemporaryAudioFileAsync(audioBytes, NormalizeAudioFileExtension(fileExtension), cancellationToken);
+            var filePath = await SaveTemporaryAudioFileAsync(audioBytes, normalizedExtension, cancellationToken);
+            Debug.WriteLine($"Bot voice audio file save completed: AudioBytes={audioBytes.Length}; FileExtension={normalizedExtension}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}.");
+            return filePath;
         }
         catch (Exception exception)
         {
@@ -40,9 +45,13 @@ public sealed class AudioPlaybackService
             throw new FileNotFoundException("Bot voice audio file was not found.", filePath);
         }
 
+        var stopwatch = Stopwatch.StartNew();
+
         try
         {
+            Debug.WriteLine($"Bot voice audio playback starting: FileExtension={Path.GetExtension(filePath)}.");
             await PlayTemporaryAudioFileAsync(filePath, cancellationToken);
+            Debug.WriteLine($"Bot voice audio playback completed: FileExtension={Path.GetExtension(filePath)}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}.");
         }
         catch (Exception exception)
         {
@@ -115,8 +124,11 @@ public sealed class AudioPlaybackService
 
         try
         {
+            var initializationStopwatch = Stopwatch.StartNew();
             outputDevice.Init(audioReader);
+            Debug.WriteLine($"Bot voice audio playback initialized: ElapsedMilliseconds={initializationStopwatch.ElapsedMilliseconds}.");
             outputDevice.Play();
+            Debug.WriteLine("Bot voice audio playback started.");
             using var cancellationRegistration = linkedCancellationTokenSource.Token.Register(() =>
             {
                 try
