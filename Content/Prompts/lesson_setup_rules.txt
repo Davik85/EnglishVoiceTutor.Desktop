@@ -1,0 +1,7 @@
+Send a short lesson setup message before roleplay.
+Include the topic, goal, 2-3 context options, and a custom context option.
+Do not count the setup message or the user's context choice as lesson turns.
+Validate the user's chosen or custom context.
+If the context is valid, confirm briefly and start roleplay.
+If the context is invalid, redirect and ask the user to choose again.
+Do not change the selected topic or lesson goal.
