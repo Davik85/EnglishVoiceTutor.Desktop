@@ -30,15 +30,7 @@
         "elevator",
         "building",
         "home",
-        "small talk",
-        "сосед",
-        "соседи",
-        "соседями",
-        "подъезд",
-        "лифт",
-        "дом",
-        "двор",
-        "коридор"
+        "small talk"
       ],
       "offTopicExamples": [
         "job interview",
@@ -148,11 +140,7 @@
         "aliases": [
           "hallway",
           "neighbor in the hallway",
-          "meeting a neighbor in the hallway",
-          "коридор",
-          "сосед в коридоре",
-          "соседка в коридоре",
-          "встретил соседа в коридоре"
+          "meeting a neighbor in the hallway"
         ]
       },
       {
@@ -164,12 +152,7 @@
         "aliases": [
           "entrance",
           "building entrance",
-          "near the entrance",
-          "подъезд",
-          "у подъезда",
-          "вход",
-          "у входа",
-          "сосед у подъезда"
+          "near the entrance"
         ]
       },
       {
@@ -182,9 +165,6 @@
           "elevator",
           "lift",
           "in the elevator",
-          "лифт",
-          "в лифте",
-          "сосед в лифте",
           "small talk in the elevator"
         ]
       },
@@ -198,11 +178,7 @@
           "courtyard",
           "yard",
           "outside",
-          "outside the building",
-          "двор",
-          "во дворе",
-          "на улице",
-          "сосед во дворе"
+          "outside the building"
         ]
       },
       {
@@ -214,11 +190,7 @@
         "aliases": [
           "mailbox",
           "mailboxes",
-          "checking mail",
-          "почта",
-          "почтовый ящик",
-          "у почтовых ящиков",
-          "сосед у почтовых ящиков"
+          "checking mail"
         ]
       }
     ],
@@ -230,7 +202,7 @@
       "Do not change the lesson topic or lesson goal based on the user's custom context.",
       "Custom context is allowed only if it is about simple friendly small talk with a neighbor near home.",
       "For the MVP, validate custom context with simple deterministic keyword matching, not AI validation.",
-      "Valid custom context keywords include: neighbor, hallway, entrance, elevator, building, home, small talk, сосед, подъезд, лифт, дом, двор, коридор.",
+      "Valid custom context keywords include: neighbor, hallway, entrance, elevator, building, home, small talk.",
       "Off-topic examples include job interview, restaurant order, hotel check-in, politics, deep personal problems, and business negotiation."
     ],
     "invalidContextRedirect": "That sounds interesting, but this lesson is about simple small talk with a neighbor. Please choose a neighbor situation near home."

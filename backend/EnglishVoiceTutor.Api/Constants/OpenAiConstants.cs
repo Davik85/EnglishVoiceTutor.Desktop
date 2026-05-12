@@ -10,7 +10,7 @@ public static class OpenAiConstants
     public const string AudioSpeechEndpoint = "https://api.openai.com/v1/audio/speech";
     public const string DefaultTranscriptionModel = "gpt-4o-mini-transcribe";
     public const string TranscriptionLanguage = "en";
-    public const string TranscriptionPrompt = "This is a short spoken answer from an English learner practicing a lesson dialogue. Transcribe the learner's English words clearly. Do not translate.";
+    public const string TranscriptionPrompt = "The learner is practicing English in a lesson dialogue. Transcribe English speech only. Do not translate non-English speech into English. If the audio is not clear English, return an empty transcription.";
     // tts-1 is available for a future low-latency mode.
     public const string LowLatencySpeechModel = "tts-1";
     // gpt-4o-mini-tts is used by default for fuller voice quality.
