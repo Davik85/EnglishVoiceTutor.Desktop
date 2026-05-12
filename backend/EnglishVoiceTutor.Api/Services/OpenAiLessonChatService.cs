@@ -52,11 +52,15 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         "cultureTip",
         "naturalVersion"
       ]
+    },
+    "isLessonComplete": {
+      "type": "boolean"
     }
   },
   "required": [
     "botReply",
-    "feedback"
+    "feedback",
+    "isLessonComplete"
   ]
 }
 """;
@@ -103,6 +107,16 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             if (!IsValidLessonReply(lessonReply))
             {
                 return await _mockLessonChatService.CreateReplyAsync(request, cancellationToken);
+            }
+
+            if (LessonLimitHelper.ShouldEndLessonNow(request) && !lessonReply.IsLessonComplete)
+            {
+                return new LessonChatResponse
+                {
+                    BotReply = lessonReply.BotReply,
+                    Feedback = lessonReply.Feedback,
+                    IsLessonComplete = true
+                };
             }
 
             return lessonReply;

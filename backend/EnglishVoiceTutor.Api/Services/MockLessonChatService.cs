@@ -10,9 +10,16 @@ public sealed class MockLessonChatService : ILessonChatService
         LessonChatRequest request,
         CancellationToken cancellationToken = default)
     {
+        var shouldEndLessonNow = LessonLimitHelper.ShouldEndLessonNow(request);
+        var shouldStartWrappingUp = LessonLimitHelper.ShouldStartWrappingUp(request);
         var response = new LessonChatResponse
         {
-            BotReply = ApiConstants.MockBotReplyText,
+            BotReply = shouldEndLessonNow
+                ? $"Great work today. We'll stop this lesson here. You practiced {request.SubtopicTitle}. You can come back later to repeat it or choose another topic."
+                : shouldStartWrappingUp
+                    ? $"Great. We have only a few turns left in this lesson, so let's practice one more useful phrase about {request.SubtopicTitle}."
+                    : ApiConstants.MockBotReplyText,
+            IsLessonComplete = shouldEndLessonNow,
             Feedback = new FeedbackDto
             {
                 ShortText = "Good start. Here is a more natural version.",

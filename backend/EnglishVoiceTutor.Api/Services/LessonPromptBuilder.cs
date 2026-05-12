@@ -9,6 +9,7 @@ public sealed class LessonPromptBuilder
     private const string LessonContextHeader = "Lesson context (already selected by learner):";
     private const string TutorAvatarProfileHeader = "Tutor avatar profile (stable identity):";
     private const string LearnerProfileHeader = "Learner profile:";
+    private const string LessonLengthHeader = "Lesson length metadata:";
     private const string RecentConversationHeader = "Recent active lesson conversation context (oldest to newest):";
     private const string NoRecentConversationContext = "- No recent conversation messages were provided.";
     private const string UserMessageHeader = "Learner latest message:";
@@ -32,6 +33,7 @@ public sealed class LessonPromptBuilder
         AppendLessonContext(prompt, request);
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, request);
+        AppendLessonLength(prompt, request);
         AppendRecentConversation(prompt, request.RecentMessages);
 
         prompt.AppendLine(UserMessageHeader);
@@ -47,7 +49,19 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("Do not restart the lesson.");
         prompt.AppendLine("Do not ask the learner to choose a topic.");
         prompt.AppendLine("Do not ask for native language.");
-        prompt.AppendLine("Continue the dialogue naturally with one next question in the same scenario.");
+
+        if (LessonLimitHelper.ShouldEndLessonNow(request))
+        {
+            prompt.AppendLine("This is the hard-limit final turn. Give a short friendly closing message and do not ask a new question.");
+        }
+        else if (LessonLimitHelper.ShouldStartWrappingUp(request))
+        {
+            prompt.AppendLine("The lesson is in wrap-up. Continue the selected scenario, but gently guide the learner toward finishing within the remaining turns.");
+        }
+        else
+        {
+            prompt.AppendLine("Continue the dialogue naturally with one next question in the same scenario.");
+        }
 
         return prompt.ToString();
     }
@@ -95,6 +109,18 @@ public sealed class LessonPromptBuilder
             prompt.AppendLine($"- Native language: {request.NativeLanguageName}");
         }
 
+        prompt.AppendLine();
+    }
+
+    private static void AppendLessonLength(StringBuilder prompt, LessonChatRequest request)
+    {
+        prompt.AppendLine(LessonLengthHeader);
+        prompt.AppendLine($"- Learner turn count including latest message: {request.LearnerTurnCount}");
+        prompt.AppendLine($"- Soft learner turn limit: {LessonLimitHelper.GetSoftLearnerTurnLimit(request)}");
+        prompt.AppendLine($"- Hard learner turn limit: {LessonLimitHelper.GetHardLearnerTurnLimit(request)}");
+        prompt.AppendLine($"- Remaining learner turns after latest message: {LessonLimitHelper.GetRemainingLearnerTurns(request)}");
+        prompt.AppendLine($"- shouldStartWrappingUp: {LessonLimitHelper.ShouldStartWrappingUp(request)}");
+        prompt.AppendLine($"- shouldEndLessonNow: {LessonLimitHelper.ShouldEndLessonNow(request)}");
         prompt.AppendLine();
     }
 
