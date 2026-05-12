@@ -9,11 +9,17 @@ public static class ContentConstants
     public const string PromptsFolder = "Prompts";
 
     public const string EverydayEnglishFolderName = "EverydayEnglish";
+    public const string TravelFolderName = "Travel";
     public const string IntroductionsFileName = "introductions.json";
     public const string SmallTalkWithANeighborFileName = "small_talk_with_a_neighbor.json";
     public const string AskingForHelpFileName = "asking_for_help.json";
     public const string MakingPlansFileName = "making_plans.json";
     public const string TalkingAboutYourDayFileName = "talking_about_your_day.json";
+    public const string AirportCheckInFileName = "airport_check_in.json";
+    public const string HotelCheckInFileName = "hotel_check_in.json";
+    public const string AskingForDirectionsFileName = "asking_for_directions.json";
+    public const string OrderingTransportFileName = "ordering_transport.json";
+    public const string LostLuggageFileName = "lost_luggage.json";
     public const string ElenaTutorId = "elena";
     public const string ElenaTutorFileName = "elena.json";
 

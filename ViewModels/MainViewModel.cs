@@ -176,19 +176,27 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         // These JSON files are shared scenario templates with levelProfiles.
         // The selected level chooses the active level profile during lesson chat.
-        var lessonFileName = selectedSubtopic.Title switch
-        {
-            "Introductions" => ContentConstants.IntroductionsFileName,
-            "Small talk with a neighbor" => ContentConstants.SmallTalkWithANeighborFileName,
-            "Asking for help" => ContentConstants.AskingForHelpFileName,
-            "Making plans" => ContentConstants.MakingPlansFileName,
-            "Talking about your day" => ContentConstants.TalkingAboutYourDayFileName,
-            _ => ContentConstants.IntroductionsFileName
-        };
-
         return lessonContentService.LoadSharedLessonScenario(
             GetTopicFolderName(selectedTopic),
-            lessonFileName);
+            GetLessonFileName(selectedTopic, selectedSubtopic));
+    }
+
+    private static string GetLessonFileName(Topic selectedTopic, Subtopic selectedSubtopic)
+    {
+        return (selectedTopic.Title, selectedSubtopic.Title) switch
+        {
+            ("Everyday English", "Introductions") => ContentConstants.IntroductionsFileName,
+            ("Everyday English", "Small talk with a neighbor") => ContentConstants.SmallTalkWithANeighborFileName,
+            ("Everyday English", "Asking for help") => ContentConstants.AskingForHelpFileName,
+            ("Everyday English", "Making plans") => ContentConstants.MakingPlansFileName,
+            ("Everyday English", "Talking about your day") => ContentConstants.TalkingAboutYourDayFileName,
+            ("Travel", "Airport check-in") => ContentConstants.AirportCheckInFileName,
+            ("Travel", "Hotel check-in") => ContentConstants.HotelCheckInFileName,
+            ("Travel", "Asking for directions") => ContentConstants.AskingForDirectionsFileName,
+            ("Travel", "Ordering transport") => ContentConstants.OrderingTransportFileName,
+            ("Travel", "Lost luggage") => ContentConstants.LostLuggageFileName,
+            _ => ContentConstants.IntroductionsFileName
+        };
     }
 
     private static string GetTopicFolderName(Topic selectedTopic)
@@ -196,6 +204,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         return selectedTopic.Title switch
         {
             "Everyday English" => ContentConstants.EverydayEnglishFolderName,
+            "Travel" => ContentConstants.TravelFolderName,
             _ => ContentConstants.EverydayEnglishFolderName
         };
     }

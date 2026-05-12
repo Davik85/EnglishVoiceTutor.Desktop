@@ -1,0 +1,387 @@
+{
+  "id": "travel_hotel_check_in",
+  "metadata": {
+    "topic": "Travel",
+    "subtopic": "Hotel check-in",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice hotel check-in.\n\nGoal: you will learn to check in at a hotel, give your reservation details, and ask simple questions.\n\nChoose a situation:\n1. Checking in with a reservation\n2. Asking about breakfast\n3. Asking about check-out time\n\nOr suggest your own simple hotel check-in situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple travel situation about hotel check-in.",
+      "validCustomContextKeywords": [
+        "hotel",
+        "reservation",
+        "booking",
+        "room",
+        "breakfast",
+        "checkout",
+        "check out",
+        "wifi",
+        "wi-fi",
+        "key",
+        "passport"
+      ],
+      "offTopicExamples": [
+        "job interview",
+        "airport check-in",
+        "restaurant order",
+        "politics",
+        "sports"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about hotel check-in. Please choose a simple hotel check-in situation."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can check in at a hotel, give reservation details, ask basic questions, and respond politely.",
+    "canDoStatements": [
+      "The user can say they have a reservation.",
+      "The user can give a name and document.",
+      "The user can ask about breakfast, Wi-Fi, room, or check-out time."
+    ]
+  },
+  "situation": {
+    "description": "The user is at a hotel reception desk checking in for a stay."
+  },
+  "roles": {
+    "userRole": "A hotel guest checking in.",
+    "tutorRole": "A hotel receptionist who confirms the booking and answers simple stay questions."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "I have a reservation.",
+      "My name is...",
+      "Here is my passport.",
+      "What time is breakfast?",
+      "What time is check-out?",
+      "Is Wi-Fi included?",
+      "Where is my room?",
+      "Thank you."
+    ],
+    "usefulConstructions": [
+      "I have a reservation under the name + name.",
+      "What time is + hotel service?",
+      "Is + service included?",
+      "Where is + room/place?"
+    ],
+    "grammarFocus": [
+      "simple present with have",
+      "questions with what time and where",
+      "polite hotel requests"
+    ],
+    "pronunciationFocus": [
+      "reservation",
+      "breakfast",
+      "check-out",
+      "Wi-Fi",
+      "included"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple English for hotel check-in. Focus only on the most important travel words and one clear action.",
+      "tutorLanguageStyle": "Use short questions and one idea at a time. Accept short answers if the travel meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "I have a reservation. My name is David.",
+      "stretchUserResponse": "I have a reservation. My name is David. What time is breakfast?",
+      "addedKeyPhrases": [
+        "I have a reservation.",
+        "My name is...",
+        "Here is my passport.",
+        "What time is breakfast?"
+      ],
+      "addedUsefulConstructions": [
+        "Use one simple sentence with I need..., I have..., Where is..., or What time is... as appropriate."
+      ],
+      "addedGrammarFocus": [
+        "simple present for travel needs",
+        "basic question forms",
+        "polite please and thank you"
+      ],
+      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
+      "correctionPriority": "Travel meaning first, then one essential grammar or word correction.",
+      "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
+      "exampleGoodAnswer": "I have a reservation. My name is David.",
+      "exampleStretchAnswer": "I have a reservation. My name is David. What time is breakfast?"
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple English for hotel check-in. The learner should add one useful travel detail such as time, place, object, baggage, room, price, or destination.",
+      "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "I have a reservation under the name David. What time is breakfast?",
+      "stretchUserResponse": "I have a reservation under the name David. What time is breakfast, and is Wi-Fi included?",
+      "addedKeyPhrases": [
+        "I have a reservation.",
+        "My name is...",
+        "Here is my passport.",
+        "What time is breakfast?",
+        "What time is check-out?"
+      ],
+      "addedUsefulConstructions": [
+        "Add one detail after the main request or answer.",
+        "Use please for requests and thank you to close."
+      ],
+      "addedGrammarFocus": [
+        "basic word order in questions",
+        "there is / is there when useful",
+        "countable travel nouns and simple prepositions"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and important travel vocabulary.",
+      "hintStrategy": "Offer a sentence starter plus one possible detail, not a long script unless needed.",
+      "correctionPriority": "Clear request or answer, one extra detail, polite wording, and basic question order.",
+      "conversationDepth": "Practice the main travel task and one follow-up question inside the same situation.",
+      "exampleGoodAnswer": "I have a reservation under the name David. What time is breakfast?",
+      "exampleStretchAnswer": "I have a reservation under the name David. What time is breakfast, and is Wi-Fi included?"
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear English for hotel check-in. The learner should give an answer, add a detail or short reason, and ask a practical follow-up question.",
+      "tutorLanguageStyle": "Use natural clear English. Ask for clarification when details are missing and keep the roleplay realistic.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "I have a reservation under the name David. Could you tell me what time breakfast starts?",
+      "stretchUserResponse": "I have a reservation under the name David. Could you tell me what time breakfast starts and when I need to check out?",
+      "addedKeyPhrases": [
+        "I have a reservation.",
+        "My name is...",
+        "Here is my passport.",
+        "What time is breakfast?",
+        "What time is check-out?",
+        "Is Wi-Fi included?"
+      ],
+      "addedUsefulConstructions": [
+        "Combine request + detail + reason or follow-up question.",
+        "Use could you / would like for polite travel requests."
+      ],
+      "addedGrammarFocus": [
+        "polite question forms",
+        "connected sentences with and, but, so",
+        "specific travel details and clarification questions"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, sentence flow, and unclear travel details.",
+      "hintStrategy": "Give a structure such as request + detail + follow-up question, with one phrase option.",
+      "correctionPriority": "Natural travel request, complete details, accurate polite question, and smooth sentence flow.",
+      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected scenario.",
+      "exampleGoodAnswer": "I have a reservation under the name David. Could you tell me what time breakfast starts?",
+      "exampleStretchAnswer": "I have a reservation under the name David. Could you tell me what time breakfast starts and when I need to check out?"
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural travel English for hotel check-in. The learner should use polite, flexible, specific phrasing with nuance and a useful follow-up or clarification.",
+      "tutorLanguageStyle": "Use realistic travel-service English and add at most one small complication while keeping the selected scenario focused.",
+      "expectedUserResponse": "Natural answer with detail, nuance, and a follow-up question or clarification.",
+      "minimumUserResponse": "I have a reservation under the name David. Could you also let me know what time breakfast is served and when check-out is?",
+      "stretchUserResponse": "I have a reservation under the name David. Could you also let me know what time breakfast is served, whether Wi-Fi is included, and when check-out is?",
+      "addedKeyPhrases": [
+        "I have a reservation.",
+        "My name is...",
+        "Here is my passport.",
+        "What time is breakfast?",
+        "What time is check-out?",
+        "Is Wi-Fi included?",
+        "Where is my room?"
+      ],
+      "addedUsefulConstructions": [
+        "Use nuanced polite requests such as could you let me know, would it be possible, or if possible.",
+        "Clarify preferences and constraints naturally."
+      ],
+      "addedGrammarFocus": [
+        "modal verbs for polite requests",
+        "conditional phrasing with if possible / if there is availability",
+        "precise travel vocabulary and tone"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, tone, precise wording, and any important grammar errors.",
+      "hintStrategy": "Suggest more natural phrasing or tone rather than giving a full script immediately.",
+      "correctionPriority": "Polite nuance, specificity, smooth flow, precise travel vocabulary, and appropriate tone.",
+      "conversationDepth": "Allow richer details, a realistic complication, and flexible negotiation, but do not leave the travel scenario.",
+      "exampleGoodAnswer": "I have a reservation under the name David. Could you also let me know what time breakfast is served and when check-out is?",
+      "exampleStretchAnswer": "I have a reservation under the name David. Could you also let me know what time breakfast is served, whether Wi-Fi is included, and when check-out is?"
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor welcomes the guest and starts the selected hotel check-in situation.",
+    "defaultOpeningExample": "Good evening. Welcome to the hotel. Do you have a reservation?",
+    "firstUserTask": "The user says they have a reservation and gives their name.",
+    "expectedPattern": "I have a reservation. My name is...",
+    "guidedPracticeFollowUpQuestions": [
+      "Can I see your passport, please?",
+      "What time would you like breakfast information?",
+      "Do you need the Wi-Fi password?",
+      "Do you have any questions about check-out?"
+    ],
+    "variationOrComplication": "Tutor asks for reservation name, passport, breakfast, Wi-Fi, room floor, or check-out question.",
+    "exampleTutorLine": "Do you have a reservation?",
+    "correctionMoment": "Tutor gives one short correction when useful.",
+    "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let us do one final hotel question. Ask me about breakfast, Wi-Fi, or check-out.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced hotel check-in, reservation details, and polite hotel questions. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific setting",
+      "minor travel detail",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic small complication for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected travel scenario"
+    ],
+    "contextVariants": [
+      {
+        "id": "reservation_check_in",
+        "title": "Checking in with a reservation",
+        "setting": "a hotel reception desk",
+        "reasonForMeeting": "confirming a room booking",
+        "openingLine": "Good evening. Welcome to the hotel. Do you have a reservation?",
+        "aliases": [
+          "reservation",
+          "check in",
+          "hotel check-in",
+          "booking",
+          "room booking"
+        ]
+      },
+      {
+        "id": "breakfast_question",
+        "title": "Asking about breakfast",
+        "setting": "a hotel reception desk",
+        "reasonForMeeting": "asking about breakfast details",
+        "openingLine": "Your room is ready. Do you have any questions about your stay?",
+        "aliases": [
+          "breakfast",
+          "breakfast time",
+          "morning meal"
+        ]
+      },
+      {
+        "id": "checkout_time",
+        "title": "Asking about check-out time",
+        "setting": "a hotel reception desk",
+        "reasonForMeeting": "asking when to leave the room",
+        "openingLine": "Here is your room key. Do you have any questions?",
+        "aliases": [
+          "check out",
+          "checkout",
+          "checkout time",
+          "leaving time"
+        ]
+      },
+      {
+        "id": "room_key",
+        "title": "Getting the room key",
+        "setting": "a hotel reception desk",
+        "reasonForMeeting": "receiving the room key",
+        "openingLine": "Here is your room key. Your room is on the third floor.",
+        "aliases": [
+          "room key",
+          "key",
+          "room",
+          "floor"
+        ]
+      },
+      {
+        "id": "wifi_question",
+        "title": "Asking about Wi-Fi",
+        "setting": "a hotel reception desk",
+        "reasonForMeeting": "asking about internet access",
+        "openingLine": "Your room is ready. Would you like the Wi-Fi password?",
+        "aliases": [
+          "wifi",
+          "wi-fi",
+          "internet",
+          "password"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Travel, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "For the MVP, validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about hotel check-in. Please choose a simple hotel check-in situation."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about hotel check-in. Let us stay in this travel situation.",
+    "secondRedirect": "Let us stay with hotel check-in for now. Please answer as a traveler in this situation.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on hotel check-in. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite words.",
+      "B1": "Correct grammar, word choice, and sentence flow.",
+      "B2": "Focus on fluency, nuance, tone, and precise wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small travel phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful word.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"I have a reservation.\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same travel goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into free chat."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Travel lesson scenario.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as job interview; redirect and remain in setup.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}
