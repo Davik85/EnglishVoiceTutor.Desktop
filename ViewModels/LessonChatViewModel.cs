@@ -684,14 +684,20 @@ public partial class LessonChatViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanViewFeedback))]
     private void ViewFeedback(ChatMessageViewModel? message)
     {
-        if (!CanViewFeedback(message))
+        if (message is null || !CanViewFeedback(message))
         {
             return;
         }
 
-        SelectedFeedback = message.Feedback;
+        var feedback = message.Feedback;
+        if (feedback is null)
+        {
+            return;
+        }
+
+        SelectedFeedback = feedback;
         IsFeedbackTranslationVisible = false;
-        StatusMessage = message.Feedback!.ShortText;
+        StatusMessage = feedback.ShortText;
     }
 
     private bool CanViewFeedback(ChatMessageViewModel? message)
