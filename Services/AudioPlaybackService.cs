@@ -8,6 +8,10 @@ namespace EnglishVoiceTutor.Desktop.Services;
 
 public sealed class AudioPlaybackService
 {
+    private readonly object playbackLock = new();
+    private WaveOutEvent? currentOutputDevice;
+    private CancellationTokenSource? currentPlaybackCancellationTokenSource;
+
     public async Task<string> SaveBotVoiceAudioAsync(
         byte[] audioBytes,
         string fileExtension = AudioConstants.DefaultBotVoiceFileExtension,
@@ -61,37 +65,19 @@ public sealed class AudioPlaybackService
         }
     }
 
-    public void CleanupOldBotVoiceFiles()
+    public void StopPlayback()
     {
-        var botVoiceFolderPath = GetBotVoiceFolderPath();
-        var oldestAllowedWriteTimeUtc = DateTime.UtcNow.AddHours(-AudioConstants.TemporaryRecordingMaxAgeHours);
-
-        try
+        lock (playbackLock)
         {
-            if (!Directory.Exists(botVoiceFolderPath))
+            try
             {
-                return;
+                currentPlaybackCancellationTokenSource?.Cancel();
+                currentOutputDevice?.Stop();
             }
-
-            foreach (var filePath in Directory.EnumerateFiles(botVoiceFolderPath, AudioConstants.Mp3SearchPattern))
+            catch (Exception exception)
             {
-                if (IsTemporaryAudioFileOld(filePath, oldestAllowedWriteTimeUtc))
-                {
-                    SafeDeleteFile(filePath);
-                }
+                Debug.WriteLine($"Bot voice audio playback stop failed: {exception}");
             }
-
-            foreach (var filePath in Directory.EnumerateFiles(botVoiceFolderPath, AudioConstants.WavSearchPattern))
-            {
-                if (IsTemporaryAudioFileOld(filePath, oldestAllowedWriteTimeUtc))
-                {
-                    SafeDeleteFile(filePath);
-                }
-            }
-        }
-        catch
-        {
-            // Ignore cleanup errors because temporary voice cleanup must not block app startup.
         }
     }
 
@@ -104,7 +90,7 @@ public sealed class AudioPlaybackService
         Directory.CreateDirectory(botVoiceFolderPath);
 
         var timestamp = DateTime.Now.ToString(AudioConstants.RecordingTimestampFormat, CultureInfo.InvariantCulture);
-        var fileName = $"{AudioConstants.BotVoiceFilePrefix}{timestamp}-{Guid.NewGuid():N}{fileExtension}";
+        var fileName = $"{AudioConstants.BotVoiceTempFilePrefix}{timestamp}-{Guid.NewGuid():N}{fileExtension}";
         var filePath = Path.Combine(botVoiceFolderPath, fileName);
 
         await File.WriteAllBytesAsync(filePath, audioBytes, cancellationToken);
@@ -112,25 +98,51 @@ public sealed class AudioPlaybackService
         return filePath;
     }
 
-    private static async Task PlayTemporaryAudioFileAsync(string filePath, CancellationToken cancellationToken)
+    private async Task PlayTemporaryAudioFileAsync(string filePath, CancellationToken cancellationToken)
     {
         var playbackCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         using var audioReader = new AudioFileReader(filePath);
         using var outputDevice = new WaveOutEvent();
 
         outputDevice.PlaybackStopped += OnPlaybackStopped;
 
+        lock (playbackLock)
+        {
+            currentOutputDevice = outputDevice;
+            currentPlaybackCancellationTokenSource = linkedCancellationTokenSource;
+        }
+
         try
         {
             outputDevice.Init(audioReader);
             outputDevice.Play();
-            using var cancellationRegistration = cancellationToken.Register(() => playbackCompletion.TrySetCanceled(cancellationToken));
+            using var cancellationRegistration = linkedCancellationTokenSource.Token.Register(() =>
+            {
+                try
+                {
+                    outputDevice.Stop();
+                }
+                finally
+                {
+                    playbackCompletion.TrySetCanceled(linkedCancellationTokenSource.Token);
+                }
+            });
             await playbackCompletion.Task;
         }
         finally
         {
             outputDevice.PlaybackStopped -= OnPlaybackStopped;
             outputDevice.Stop();
+
+            lock (playbackLock)
+            {
+                if (ReferenceEquals(currentOutputDevice, outputDevice))
+                {
+                    currentOutputDevice = null;
+                    currentPlaybackCancellationTokenSource = null;
+                }
+            }
         }
 
         void OnPlaybackStopped(object? sender, StoppedEventArgs args)
@@ -147,7 +159,7 @@ public sealed class AudioPlaybackService
 
     private static string GetBotVoiceFolderPath()
     {
-        return Path.Combine(Path.GetTempPath(), AudioConstants.AppTempFolderName, AudioConstants.BotVoiceFolderName);
+        return Path.Combine(Path.GetTempPath(), AudioConstants.AppTempFolderName, AudioConstants.BotVoiceTempFolderName);
     }
 
     private static string NormalizeAudioFileExtension(string fileExtension)
@@ -163,18 +175,6 @@ public sealed class AudioPlaybackService
             : $".{trimmedExtension}";
     }
 
-    private static bool IsTemporaryAudioFileOld(string filePath, DateTime oldestAllowedWriteTimeUtc)
-    {
-        try
-        {
-            return File.GetLastWriteTimeUtc(filePath) < oldestAllowedWriteTimeUtc;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     private static void SafeDeleteFile(string filePath)
     {
         try
@@ -186,7 +186,7 @@ public sealed class AudioPlaybackService
         }
         catch
         {
-            // Ignore cleanup errors because generated speech files are temporary.
+            // Ignore cleanup errors so playback can continue.
         }
     }
 }
