@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Reflection;
+using System.Text;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
@@ -13,6 +15,9 @@ public partial class SettingsViewModel : ViewModelBase
 {
     private const string AppVersionFallbackText = "local build";
     private const string OpenAiNotConfiguredStatus = "not_configured";
+    private const string DiagnosticsReportTitle = "English Voice Tutor Desktop diagnostics";
+    private const string DiagnosticsCurrentDateTimeLabel = "Current date/time";
+    private const string UnavailableAudioInputDeviceId = "unavailable_audio_input_device";
 
     private readonly Action<string, string, string, string, string, string, string> saveSettings;
     private readonly Action navigateBack;
@@ -27,6 +32,8 @@ public partial class SettingsViewModel : ViewModelBase
     private DiagnosticsLocalizedText diagnosticsLocalizedText;
     private DiagnosticBackendStatus backendStatus = DiagnosticBackendStatus.Unknown;
     private DiagnosticAiStatus aiStatus = DiagnosticAiStatus.Unknown;
+    private bool isRefreshingAudioInputDevices;
+    private bool isSelectedAudioInputDeviceUnavailable;
 
     public string Title => localizedText.Title;
 
@@ -114,7 +121,11 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string DiagnosticsTutorAvatarLabel => diagnosticsLocalizedText.TutorAvatarLabel;
 
+    public string DiagnosticsMicrophoneLabel => localizedText.MicrophoneLabel;
+
     public string RefreshDiagnosticsButtonText => diagnosticsLocalizedText.RefreshButtonText;
+
+    public string CopyDiagnosticsText => diagnosticsLocalizedText.CopyButtonText;
 
     public string AppVersionText => appVersionText;
 
@@ -133,6 +144,8 @@ public partial class SettingsViewModel : ViewModelBase
     public string DiagnosticsNativeLanguageText => SelectedNativeLanguage;
 
     public string DiagnosticsTutorAvatarText => SelectedTutorAvatarDisplayName;
+
+    public string DiagnosticsMicrophoneText => BuildDiagnosticsMicrophoneText();
 
     public string MicrophoneStatusText => StatusMessage;
 
@@ -213,6 +226,10 @@ public partial class SettingsViewModel : ViewModelBase
     private string statusMessage = string.Empty;
 
     [ObservableProperty]
+    private string diagnosticsCopyStatusText = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DiagnosticsMicrophoneText))]
     private AudioInputDeviceOption? selectedAudioInputDeviceOption;
 
     public SettingsViewModel(
@@ -317,8 +334,23 @@ public partial class SettingsViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void CopyDiagnostics()
+    {
+        try
+        {
+            Clipboard.SetText(BuildDiagnosticsReport());
+            DiagnosticsCopyStatusText = diagnosticsLocalizedText.CopySuccessMessage;
+        }
+        catch
+        {
+            DiagnosticsCopyStatusText = diagnosticsLocalizedText.CopyFailureMessage;
+        }
+    }
+
+    [RelayCommand]
     private async Task RefreshDiagnosticsAsync()
     {
+        DiagnosticsCopyStatusText = string.Empty;
         SetDiagnosticStatuses(DiagnosticBackendStatus.Checking, DiagnosticAiStatus.Checking);
 
         var isBackendHealthy = await lessonChatBackendService.CheckHealthAsync(BackendBaseUrl);
@@ -339,11 +371,25 @@ public partial class SettingsViewModel : ViewModelBase
         diagnosticsLocalizedText = DiagnosticsLocalization.GetText(value.Id);
         RefreshLocalizedText();
 
-        RefreshAudioInputDevices(SelectedAudioInputDeviceOption?.Id, showUnavailableStatus: false);
+        var preferredAudioInputDeviceId = isSelectedAudioInputDeviceUnavailable
+            ? UnavailableAudioInputDeviceId
+            : SelectedAudioInputDeviceOption?.Id;
+        RefreshAudioInputDevices(preferredAudioInputDeviceId, showUnavailableStatus: false);
 
         if (!string.IsNullOrWhiteSpace(StatusMessage))
         {
             StatusMessage = localizedText.SettingsSavedMessage;
+        }
+
+        DiagnosticsCopyStatusText = string.Empty;
+    }
+
+    partial void OnSelectedAudioInputDeviceOptionChanged(AudioInputDeviceOption? value)
+    {
+        if (!isRefreshingAudioInputDevices)
+        {
+            isSelectedAudioInputDeviceUnavailable = false;
+            OnPropertyChanged(nameof(DiagnosticsMicrophoneText));
         }
     }
 
@@ -430,7 +476,11 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(DiagnosticsInterfaceLanguageLabel));
         OnPropertyChanged(nameof(DiagnosticsNativeLanguageLabel));
         OnPropertyChanged(nameof(DiagnosticsTutorAvatarLabel));
+        OnPropertyChanged(nameof(DiagnosticsMicrophoneLabel));
+        OnPropertyChanged(nameof(DiagnosticsMicrophoneText));
         OnPropertyChanged(nameof(RefreshDiagnosticsButtonText));
+        OnPropertyChanged(nameof(CopyDiagnosticsText));
+        OnPropertyChanged(nameof(DiagnosticsCopyStatusText));
         OnPropertyChanged(nameof(DiagnosticsBackendStatusText));
         OnPropertyChanged(nameof(DiagnosticsAiStatusText));
         OnPropertyChanged(nameof(SaveButtonText));
@@ -442,6 +492,7 @@ public partial class SettingsViewModel : ViewModelBase
         var devices = audioInputDeviceService.GetAudioInputDevices(localizedText.SystemDefaultMicrophoneText);
         var selectedDevice = devices.FirstOrDefault(device => string.Equals(device.Id, preferredAudioInputDeviceId, StringComparison.OrdinalIgnoreCase))
             ?? devices.First(device => device.IsDefault);
+        var isUnavailable = !audioInputDeviceService.IsSystemDefault(preferredAudioInputDeviceId) && selectedDevice.IsDefault;
 
         AudioInputDevices.Clear();
         foreach (var device in devices)
@@ -449,9 +500,20 @@ public partial class SettingsViewModel : ViewModelBase
             AudioInputDevices.Add(device);
         }
 
-        SelectedAudioInputDeviceOption = selectedDevice;
+        isRefreshingAudioInputDevices = true;
+        try
+        {
+            isSelectedAudioInputDeviceUnavailable = isUnavailable;
+            SelectedAudioInputDeviceOption = selectedDevice;
+        }
+        finally
+        {
+            isRefreshingAudioInputDevices = false;
+        }
 
-        if (showUnavailableStatus && !audioInputDeviceService.IsSystemDefault(preferredAudioInputDeviceId) && selectedDevice.IsDefault)
+        OnPropertyChanged(nameof(DiagnosticsMicrophoneText));
+
+        if (showUnavailableStatus && isUnavailable)
         {
             StatusMessage = localizedText.SelectedMicrophoneUnavailableMessage;
         }
@@ -466,6 +528,49 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(SelectedTutorAvatarInterestsText));
         OnPropertyChanged(nameof(SelectedTutorAvatarPersonalityText));
         OnPropertyChanged(nameof(SelectedTutorAvatarSpeakingStyleText));
+    }
+
+    private string BuildDiagnosticsMicrophoneText()
+    {
+        if (isSelectedAudioInputDeviceUnavailable)
+        {
+            return localizedText.SelectedMicrophoneUnavailableMessage;
+        }
+
+        if (SelectedAudioInputDeviceOption?.IsDefault != false)
+        {
+            return localizedText.SystemDefaultMicrophoneText;
+        }
+
+        return string.IsNullOrWhiteSpace(SelectedAudioInputDeviceOption.DisplayName)
+            ? localizedText.SelectedMicrophoneUnavailableMessage
+            : SelectedAudioInputDeviceOption.DisplayName;
+    }
+
+    private string BuildDiagnosticsReport()
+    {
+        var report = new StringBuilder();
+        report.AppendLine(DiagnosticsReportTitle);
+        AppendDiagnosticsLine(report, DiagnosticsAppVersionLabel, AppVersionText);
+        AppendDiagnosticsLine(report, DiagnosticsBackendUrlLabel, DiagnosticsBackendUrlText);
+        AppendDiagnosticsLine(report, DiagnosticsBackendStatusLabel, DiagnosticsBackendStatusText);
+        AppendDiagnosticsLine(report, DiagnosticsAiStatusLabel, DiagnosticsAiStatusText);
+        AppendDiagnosticsLine(report, DiagnosticsSettingsFileLabel, SettingsFilePathText);
+        AppendDiagnosticsLine(report, DiagnosticsLessonHistoryFileLabel, LessonHistoryFilePathText);
+        AppendDiagnosticsLine(report, DiagnosticsInterfaceLanguageLabel, DiagnosticsInterfaceLanguageText);
+        AppendDiagnosticsLine(report, DiagnosticsNativeLanguageLabel, DiagnosticsNativeLanguageText);
+        AppendDiagnosticsLine(report, DiagnosticsTutorAvatarLabel, DiagnosticsTutorAvatarText);
+        AppendDiagnosticsLine(report, DiagnosticsMicrophoneLabel, DiagnosticsMicrophoneText);
+        AppendDiagnosticsLine(report, DiagnosticsCurrentDateTimeLabel, DateTimeOffset.Now.ToString("u"));
+
+        return report.ToString().TrimEnd();
+    }
+
+    private static void AppendDiagnosticsLine(StringBuilder report, string label, string value)
+    {
+        report.Append(label);
+        report.Append(": ");
+        report.AppendLine(value);
     }
 
     private string LocalizeBackendStatus(DiagnosticBackendStatus status)

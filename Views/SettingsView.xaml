@@ -307,6 +307,7 @@
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
 
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding DiagnosticsAppVersionLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
@@ -335,18 +336,36 @@
 
                                         <TextBlock Grid.Row="8" Grid.Column="0" Text="{Binding DiagnosticsTutorAvatarLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
                                         <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding DiagnosticsTutorAvatarText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{Binding DiagnosticsMicrophoneLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding DiagnosticsMicrophoneText}" Style="{StaticResource DiagnosticsValueStyle}" />
                                     </Grid>
 
-                                    <Button MinWidth="150"
-                                            Height="34"
-                                            HorizontalAlignment="Left"
-                                            Margin="0,4,0,0"
-                                            Content="{Binding RefreshDiagnosticsButtonText}"
-                                            Command="{Binding RefreshDiagnosticsCommand}"
-                                            Background="#FF1E3A56"
-                                            Foreground="White"
-                                            BorderBrush="#FF1E3A56"
-                                            Cursor="Hand" />
+                                    <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                                        <Button MinWidth="150"
+                                                Height="34"
+                                                Content="{Binding RefreshDiagnosticsButtonText}"
+                                                Command="{Binding RefreshDiagnosticsCommand}"
+                                                Background="#FF1E3A56"
+                                                Foreground="White"
+                                                BorderBrush="#FF1E3A56"
+                                                Cursor="Hand" />
+                                        <Button MinWidth="150"
+                                                Height="34"
+                                                Margin="10,0,0,0"
+                                                Content="{Binding CopyDiagnosticsText}"
+                                                Command="{Binding CopyDiagnosticsCommand}"
+                                                Background="#FF1E3A56"
+                                                Foreground="White"
+                                                BorderBrush="#FF1E3A56"
+                                                Cursor="Hand" />
+                                    </StackPanel>
+
+                                    <TextBlock Margin="0,8,0,0"
+                                               Text="{Binding DiagnosticsCopyStatusText}"
+                                               FontSize="12"
+                                               Foreground="#FF3A4A5B"
+                                               TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
 

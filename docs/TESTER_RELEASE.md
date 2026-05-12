@@ -163,17 +163,18 @@ Ask the tester to follow these steps:
 10. Click Refresh diagnostics.
 11. Confirm backend is connected.
 12. Confirm AI is configured or not configured.
-13. Start lesson.
-14. Send text answer.
-15. Use Hint.
-16. Use Translate.
-17. Use Start/Stop recording.
-18. Use Play voice.
-19. Use Conversation Mode.
-20. Finish lesson.
-21. Check Summary.
-22. Check History.
-23. Restart app and confirm settings/history remain.
+13. Click Copy diagnostics and paste the copied report into feedback. A Diagnostics screenshot is optional if the copied report is included.
+14. Start lesson.
+15. Send text answer.
+16. Use Hint.
+17. Use Translate.
+18. Use Start/Stop recording.
+19. Use Play voice.
+20. Use Conversation Mode.
+21. Finish lesson.
+22. Check Summary.
+23. Check History.
+24. Restart app and confirm settings/history remain.
 
 ## What to verify
 
@@ -182,7 +183,8 @@ During the tester run, verify:
 - the app opens from the unzipped folder;
 - Settings can save the Backend URL;
 - Settings shows Audio input and System default in the microphone list;
-- the selected microphone is reported in feedback;
+- the selected microphone is shown in Diagnostics and included in the copied diagnostic report;
+- the copied diagnostic report does not contain API keys, environment variables, lesson messages, raw audio file paths, or lesson history content;
 - if recognition is poor, selecting a different microphone in Settings improves or changes the result;
 - Diagnostics refresh works;
 - Diagnostics backend status matches the configured Backend URL;
@@ -208,7 +210,8 @@ During the tester run, verify:
 Ask the tester to send back:
 
 - the completed feedback template below;
-- a screenshot of Diagnostics;
+- the copied Diagnostics report pasted into the feedback template;
+- a screenshot of Diagnostics, if the copied report is unavailable or a screenshot would help explain the issue;
 - screenshots or exact text for any error messages;
 - what they clicked immediately before a crash or failure;
 - whether the Backend URL was local, ngrok, or hosted;
@@ -253,7 +256,8 @@ Do not ask testers to send API keys. If you need settings or history files for d
 - History worked:
   yes / no
 - Any crashes/errors:
-- Screenshot of Diagnostics:
+- Copied Diagnostics report:
+- Screenshot of Diagnostics (optional):
 - Notes:
 ```
 
@@ -263,7 +267,7 @@ Do not ask testers to send API keys. If you need settings or history files for d
 - Do not paste `OPENAI_API_KEY` into the desktop app.
 - The desktop app only needs Backend URL.
 - OpenAI key stays only on the backend environment variable.
-- Diagnostics must not show the key.
+- Diagnostics must not show or copy the key.
 - `settings.json` must not contain the key.
 - The tester package must not include `%APPDATA%\EnglishVoiceTutor.Desktop\settings.json`.
 - The tester package must not include `%APPDATA%\EnglishVoiceTutor.Desktop\lesson-history.json`.
