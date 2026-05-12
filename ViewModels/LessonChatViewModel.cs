@@ -490,30 +490,38 @@ public partial class LessonChatViewModel : ViewModelBase
             return false;
         }
 
-        return !ContainsMostlyCyrillicLetters(transcriptionText);
+        if (ContainsCyrillicLetter(transcriptionText))
+        {
+            return false;
+        }
+
+        return ContainsLatinLetter(transcriptionText);
     }
 
-    private static bool ContainsMostlyCyrillicLetters(string text)
+    private static bool ContainsCyrillicLetter(string text)
     {
-        var letterCount = 0;
-        var cyrillicLetterCount = 0;
-
         foreach (var character in text)
         {
-            if (!char.IsLetter(character))
-            {
-                continue;
-            }
-
-            letterCount++;
-
             if (character is >= '\u0400' and <= '\u04FF')
             {
-                cyrillicLetterCount++;
+                return true;
             }
         }
 
-        return letterCount > 0 && cyrillicLetterCount > letterCount / 2;
+        return false;
+    }
+
+    private static bool ContainsLatinLetter(string text)
+    {
+        foreach (var character in text)
+        {
+            if (character is >= 'A' and <= 'Z' or >= 'a' and <= 'z')
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleConversationMode))]
@@ -917,7 +925,7 @@ public partial class LessonChatViewModel : ViewModelBase
         var normalizedInput = NormalizeForContextMatching(userMessage);
         var keywords = lessonScenario.LessonSetup.ContextSelection.ValidCustomContextKeywords.Count > 0
             ? lessonScenario.LessonSetup.ContextSelection.ValidCustomContextKeywords
-            : ["meet", "meeting", "introduce", "introduction", "first time", "знаком", "познаком", "встреч", "представ"];
+            : ["meet", "meeting", "introduce", "introduction", "first time"];
 
         return keywords
             .Select(NormalizeForContextMatching)

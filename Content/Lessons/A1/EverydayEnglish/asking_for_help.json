@@ -30,15 +30,7 @@
         "say again",
         "problem",
         "lost",
-        "need help",
-        "помощь",
-        "помоги",
-        "помогите",
-        "подскажите",
-        "где",
-        "повторите",
-        "не понял",
-        "проблема"
+        "need help"
       ],
       "offTopicExamples": [
         "job interview",
@@ -152,14 +144,7 @@
           "classroom",
           "room",
           "place",
-          "asking where something is",
-          "где",
-          "где находится",
-          "аудитория",
-          "кабинет",
-          "комната",
-          "найти комнату",
-          "найти кабинет"
+          "asking where something is"
         ]
       },
       {
@@ -174,13 +159,7 @@
           "say again",
           "say that again",
           "i don't understand",
-          "asking to repeat",
-          "повторите",
-          "повтори",
-          "скажите еще раз",
-          "не понял",
-          "не поняла",
-          "не понимаю"
+          "asking to repeat"
         ]
       },
       {
@@ -194,12 +173,7 @@
           "small problem",
           "help with a problem",
           "need help",
-          "can you help",
-          "проблема",
-          "маленькая проблема",
-          "нужна помощь",
-          "помогите",
-          "можете помочь"
+          "can you help"
         ]
       },
       {
@@ -211,11 +185,7 @@
         "aliases": [
           "door",
           "open the door",
-          "help with the door",
-          "дверь",
-          "открыть дверь",
-          "помочь с дверью",
-          "не открывается дверь"
+          "help with the door"
         ]
       },
       {
@@ -228,12 +198,7 @@
           "bag",
           "heavy bag",
           "help with my bag",
-          "stairs",
-          "сумка",
-          "тяжелая сумка",
-          "помочь с сумкой",
-          "лестница",
-          "поднять сумку"
+          "stairs"
         ]
       }
     ],
@@ -245,7 +210,7 @@
       "Do not change the lesson topic or lesson goal based on the user's custom context.",
       "Custom context is allowed only if it is about asking for simple everyday help.",
       "For the MVP, validate custom context with simple deterministic keyword matching, not AI validation.",
-      "Valid custom context keywords include: help, where, repeat, problem, need help, помощь, помогите, подскажите, где, повторите, проблема.",
+      "Valid custom context keywords include: help, where, repeat, problem, need help.",
       "Off-topic examples include job interview, restaurant order, hotel check-in, medical emergency, police report, business negotiation, and politics."
     ],
     "invalidContextRedirect": "That sounds interesting, but this lesson is about asking for simple everyday help. Please choose a simple help situation."

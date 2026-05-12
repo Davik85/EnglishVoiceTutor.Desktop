@@ -27,11 +27,7 @@
         "meeting",
         "introduce",
         "introduction",
-        "first time",
-        "знаком",
-        "познаком",
-        "встреч",
-        "представ"
+        "first time"
       ],
       "offTopicExamples": [
         "football discussion",
@@ -139,12 +135,7 @@
           "neighbor",
           "neighbour",
           "new neighbor",
-          "meeting a neighbor",
-          "сосед",
-          "соседи",
-          "соседями",
-          "знакомство с соседями",
-          "новый сосед"
+          "meeting a neighbor"
         ]
       },
       {
@@ -158,13 +149,7 @@
           "school",
           "first day",
           "class",
-          "english class",
-          "языковая школа",
-          "языковой школе",
-          "школа",
-          "урок",
-          "первый день",
-          "занятие"
+          "english class"
         ]
       },
       {
@@ -177,12 +162,7 @@
           "hobby club",
           "club",
           "hobby",
-          "group",
-          "клуб",
-          "хобби",
-          "клуб по интересам",
-          "кружок",
-          "группа"
+          "group"
         ]
       },
       {
@@ -195,11 +175,7 @@
           "work",
           "colleague",
           "coworker",
-          "office",
-          "работа",
-          "коллега",
-          "коллегами",
-          "офис"
+          "office"
         ]
       },
       {
@@ -212,10 +188,7 @@
           "online",
           "video call",
           "online meeting",
-          "zoom",
-          "онлайн",
-          "видеозвонок",
-          "онлайн встреча"
+          "zoom"
         ]
       }
     ],
@@ -227,7 +200,7 @@
       "Do not change the lesson topic or lesson goal based on the user's custom context.",
       "Custom context is allowed only if it is about meeting someone, introductions, first conversation, or getting acquainted.",
       "For the MVP, validate custom context with simple deterministic keyword matching, not AI validation.",
-      "Valid custom context keywords include: meet, meeting, introduce, introduction, first time, знаком, познаком, встреч, представ.",
+      "Valid custom context keywords include: meet, meeting, introduce, introduction, first time.",
       "Off-topic examples include football discussion, politics, job interview, restaurant order, and hotel check-in."
     ],
     "invalidContextRedirect": "That sounds interesting, but this lesson is about introductions. Please choose a situation about meeting someone for the first time."

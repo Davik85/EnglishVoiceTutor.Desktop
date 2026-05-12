@@ -179,6 +179,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             "Introductions" => ContentConstants.IntroductionsFileName,
             "Small talk with a neighbor" => ContentConstants.SmallTalkWithANeighborFileName,
             "Asking for help" => ContentConstants.AskingForHelpFileName,
+            "Making plans" => ContentConstants.MakingPlansFileName,
             _ => ContentConstants.IntroductionsFileName
         };
 
