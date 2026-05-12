@@ -48,6 +48,7 @@ public sealed class AudioSpeechService
             Model = OpenAiConstants.DefaultSpeechModel,
             Input = text.Trim(),
             Voice = OpenAiConstants.DefaultSpeechVoice,
+            Speed = OpenAiConstants.DefaultSpeechSpeed,
             ResponseFormat = OpenAiConstants.DefaultSpeechResponseFormat
         };
 
@@ -65,10 +66,11 @@ public sealed class AudioSpeechService
         int? statusCode = null;
 
         _logger.LogInformation(
-            "Starting OpenAI speech request. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ClientCancellationRequested={ClientCancellationRequested}.",
+            "Starting OpenAI speech request. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ClientCancellationRequested={ClientCancellationRequested}.",
             request.Model,
             request.Voice,
             request.ResponseFormat,
+            request.Speed,
             request.Input.Length,
             OpenAiConstants.OpenAiSpeechTimeoutSeconds,
             clientCancellationToken.IsCancellationRequested);
@@ -117,10 +119,11 @@ public sealed class AudioSpeechService
             }
 
             _logger.LogInformation(
-                "Completed OpenAI speech request. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ElapsedMilliseconds={ElapsedMilliseconds}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; AudioBytes={AudioBytes}.",
+                "Completed OpenAI speech request. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ElapsedMilliseconds={ElapsedMilliseconds}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; AudioBytes={AudioBytes}.",
                 request.Model,
                 request.Voice,
                 request.ResponseFormat,
+                request.Speed,
                 request.Input.Length,
                 OpenAiConstants.OpenAiSpeechTimeoutSeconds,
                 stopwatch.ElapsedMilliseconds,
@@ -139,10 +142,11 @@ public sealed class AudioSpeechService
 
             _logger.LogWarning(
                 exception,
-                "OpenAI speech request canceled. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ElapsedMilliseconds={ElapsedMilliseconds}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}.",
+                "OpenAI speech request canceled. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ElapsedMilliseconds={ElapsedMilliseconds}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}.",
                 request.Model,
                 request.Voice,
                 request.ResponseFormat,
+                request.Speed,
                 request.Input.Length,
                 OpenAiConstants.OpenAiSpeechTimeoutSeconds,
                 stopwatch.ElapsedMilliseconds,
@@ -161,10 +165,11 @@ public sealed class AudioSpeechService
         {
             _logger.LogError(
                 exception,
-                "OpenAI speech request failed unexpectedly. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ElapsedMilliseconds={ElapsedMilliseconds}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}.",
+                "OpenAI speech request failed unexpectedly. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ElapsedMilliseconds={ElapsedMilliseconds}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}.",
                 request.Model,
                 request.Voice,
                 request.ResponseFormat,
+                request.Speed,
                 request.Input.Length,
                 OpenAiConstants.OpenAiSpeechTimeoutSeconds,
                 stopwatch.ElapsedMilliseconds,
