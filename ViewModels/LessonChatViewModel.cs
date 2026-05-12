@@ -21,6 +21,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly AudioRecordingService audioRecordingService;
     private readonly AudioPlaybackService audioPlaybackService;
+    private readonly BotVoiceTempFileCleanupService botVoiceTempFileCleanupService;
     private readonly string audioInputDeviceId;
     private readonly AppLocalizedText localizedText;
     private readonly LessonScenario lessonScenario;
@@ -33,6 +34,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private bool hasFinishedLesson;
     private readonly SemaphoreSlim botVoiceSemaphore = new(1, 1);
     private readonly Dictionary<int, string> botVoiceAudioFilePaths = [];
+    private readonly HashSet<string> currentSessionBotVoiceFilePaths = new(StringComparer.OrdinalIgnoreCase);
 
     public string SelectedLevel { get; }
 
@@ -268,6 +270,7 @@ public partial class LessonChatViewModel : ViewModelBase
         LessonChatBackendService lessonChatBackendService,
         AudioRecordingService audioRecordingService,
         AudioPlaybackService audioPlaybackService,
+        BotVoiceTempFileCleanupService botVoiceTempFileCleanupService,
         string audioInputDeviceId,
         Action navigateBack,
         Action<Feedback?> finishLesson)
@@ -285,6 +288,7 @@ public partial class LessonChatViewModel : ViewModelBase
         this.lessonChatBackendService = lessonChatBackendService;
         this.audioRecordingService = audioRecordingService;
         this.audioPlaybackService = audioPlaybackService;
+        this.botVoiceTempFileCleanupService = botVoiceTempFileCleanupService;
         this.audioInputDeviceId = string.IsNullOrWhiteSpace(audioInputDeviceId)
             ? AudioConstants.DefaultAudioInputDeviceId
             : audioInputDeviceId;
@@ -619,6 +623,7 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         if (botVoiceAudioFilePaths.TryGetValue(message.Id, out var cachedFilePath) && File.Exists(cachedFilePath))
         {
+            TrackCurrentSessionBotVoiceFile(cachedFilePath);
             return cachedFilePath;
         }
 
@@ -630,6 +635,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 speechResponse.FileExtension,
                 cancellationToken);
             botVoiceAudioFilePaths[message.Id] = audioFilePath;
+            TrackCurrentSessionBotVoiceFile(audioFilePath);
             return audioFilePath;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
@@ -642,6 +648,47 @@ public partial class LessonChatViewModel : ViewModelBase
     private bool IsNewestBotMessage(ChatMessageViewModel message)
     {
         return Messages.LastOrDefault(candidate => candidate.IsFromBot)?.Id == message.Id;
+    }
+
+    public void CleanupCurrentSessionBotVoiceFiles()
+    {
+        audioPlaybackService.StopPlayback();
+        CleanupTrackedBotVoiceFiles();
+    }
+
+    private async Task CleanupCurrentSessionBotVoiceFilesAsync()
+    {
+        audioPlaybackService.StopPlayback();
+
+        if (await botVoiceSemaphore.WaitAsync(TimeSpan.FromSeconds(2)))
+        {
+            try
+            {
+                CleanupTrackedBotVoiceFiles();
+            }
+            finally
+            {
+                botVoiceSemaphore.Release();
+            }
+
+            return;
+        }
+
+        CleanupTrackedBotVoiceFiles();
+    }
+
+    private void TrackCurrentSessionBotVoiceFile(string filePath)
+    {
+        if (!string.IsNullOrWhiteSpace(filePath))
+        {
+            currentSessionBotVoiceFilePaths.Add(filePath);
+        }
+    }
+
+    private void CleanupTrackedBotVoiceFiles()
+    {
+        botVoiceTempFileCleanupService.CleanupFiles(currentSessionBotVoiceFilePaths);
+        currentSessionBotVoiceFilePaths.RemoveWhere(filePath => !File.Exists(filePath));
     }
 
     [RelayCommand(CanExecute = nameof(CanSendMessage))]
@@ -1184,8 +1231,9 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
     [RelayCommand(CanExecute = nameof(CanFinishLesson))]
-    private void FinishLesson()
+    private async Task FinishLesson()
     {
+        await CleanupCurrentSessionBotVoiceFilesAsync();
         CompleteLesson();
     }
 
@@ -1226,8 +1274,9 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
     [RelayCommand(CanExecute = nameof(CanGoBack))]
-    private void Back()
+    private async Task Back()
     {
+        await CleanupCurrentSessionBotVoiceFilesAsync();
         navigateBack();
     }
 

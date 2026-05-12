@@ -5,13 +5,14 @@ using EnglishVoiceTutor.Desktop.Services;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
-public partial class MainViewModel : ViewModelBase
+public partial class MainViewModel : ViewModelBase, IDisposable
 {
     private readonly UserSettingsService userSettingsService = new();
     private readonly LessonChatBackendService lessonChatBackendService = new();
     private readonly AudioRecordingService audioRecordingService = new();
     private readonly AudioInputDeviceService audioInputDeviceService = new();
     private readonly AudioPlaybackService audioPlaybackService = new();
+    private readonly BotVoiceTempFileCleanupService botVoiceTempFileCleanupService = new();
     private readonly LessonHistoryService lessonHistoryService = new();
     private readonly LessonContentService lessonContentService = new();
     private readonly UserSettings userSettings;
@@ -22,7 +23,7 @@ public partial class MainViewModel : ViewModelBase
     public MainViewModel()
     {
         audioRecordingService.CleanupOldRecordings();
-        audioPlaybackService.CleanupOldBotVoiceFiles();
+        botVoiceTempFileCleanupService.CleanupOldBotVoiceFiles();
         userSettings = userSettingsService.Load();
         lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
         currentViewModel = CreateWelcomeViewModel();
@@ -162,6 +163,7 @@ public partial class MainViewModel : ViewModelBase
             lessonChatBackendService,
             audioRecordingService,
             audioPlaybackService,
+            botVoiceTempFileCleanupService,
             userSettings.AudioInputDeviceId,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
             latestFeedback => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic, latestFeedback));
@@ -185,5 +187,19 @@ public partial class MainViewModel : ViewModelBase
             AppLocalization.GetText(userSettings.InterfaceLanguageId),
             lessonHistoryService,
             () => NavigateToHome(selectedLevel));
+    }
+
+    public void CleanupOnShutdown()
+    {
+        if (CurrentViewModel is LessonChatViewModel lessonChatViewModel)
+        {
+            lessonChatViewModel.CleanupCurrentSessionBotVoiceFiles();
+        }
+    }
+
+    public void Dispose()
+    {
+        CleanupOnShutdown();
+        audioRecordingService.Dispose();
     }
 }
