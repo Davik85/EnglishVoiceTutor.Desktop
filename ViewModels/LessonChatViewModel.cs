@@ -621,6 +621,7 @@ public partial class LessonChatViewModel : ViewModelBase
         playbackCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(BackendConstants.BotVoiceFirstAudioTimeoutSeconds));
         var playbackStarted = false;
         var totalStopwatch = Stopwatch.StartNew();
+        var selectedBotVoicePath = AudioConstants.UsePcmStreamingBotVoice ? "pcm-stream" : "wav-buffer";
 
         try
         {
@@ -629,51 +630,43 @@ public partial class LessonChatViewModel : ViewModelBase
             StatusMessage = localizedText.PlayingBotVoiceMessage;
 
             var inputLength = message.Text.Trim().Length;
-            Debug.WriteLine($"Bot voice request start message id {message.Id}: InputLength={inputLength}; AutoPlay={isAutoPlay}.");
+            Debug.WriteLine($"Bot voice request start message id {message.Id}: InputLength={inputLength}; AutoPlay={isAutoPlay}; SelectedPath={selectedBotVoicePath}.");
 
-            await lessonChatBackendService.StreamBotSpeechAsync(
-                message.Text,
-                async (audioStream, contentType, streamCancellationToken) =>
-                {
-                    if (!string.Equals(contentType, BackendConstants.PcmContentType, StringComparison.OrdinalIgnoreCase))
-                    {
-                        throw new InvalidOperationException($"Unsupported streaming bot voice content type: {contentType}");
-                    }
+            if (AudioConstants.UsePcmStreamingBotVoice)
+            {
+                await PlayPcmStreamingBotVoiceAsync(
+                    message,
+                    playbackCancellationTokenSource,
+                    playbackStartedMs => playbackStarted = true,
+                    cancellationToken);
+            }
+            else
+            {
+                await PlayWavBufferBotVoiceAsync(
+                    message,
+                    playbackCancellationTokenSource,
+                    playbackStartedMs => playbackStarted = true,
+                    cancellationToken);
+            }
 
-                    await audioPlaybackService.PlayPcmStreamAsync(
-                        audioStream,
-                        message.Id,
-                        firstChunkMs => Debug.WriteLine($"Bot voice first audio chunk received ms for message {message.Id}: {firstChunkMs}."),
-                        playbackStartedMs =>
-                        {
-                            playbackStarted = true;
-                            playbackCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(BackendConstants.BotVoiceStreamOverallTimeoutSeconds));
-                            Debug.WriteLine($"Bot voice playback started ms for message {message.Id}: {playbackStartedMs}.");
-                        },
-                        streamCancellationToken);
-                },
-                playbackCancellationTokenSource.Token);
-
-            Debug.WriteLine($"Bot voice playback completed ms for message {message.Id}: {totalStopwatch.ElapsedMilliseconds}.");
+            Debug.WriteLine($"Bot voice playback completed ms for message {message.Id}: SelectedPath={selectedBotVoicePath}; TotalElapsedMilliseconds={totalStopwatch.ElapsedMilliseconds}.");
             BackendStatusText = BackendConstants.BackendStatusConnected;
         }
         catch (OperationCanceledException exception)
         {
             if (!playbackStarted && playbackCancellationTokenSource.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
             {
-                Debug.WriteLine($"Bot voice canceled because first audio exceeded {BackendConstants.BotVoiceFirstAudioTimeoutSeconds} seconds for message {message.Id}: {exception}");
-                StatusMessage = isAutoPlay
-                    ? "Voice took too long. Continuing without audio."
-                    : "Voice took too long. Please try again.";
+                Debug.WriteLine($"Bot voice canceled because first audio exceeded {BackendConstants.BotVoiceFirstAudioTimeoutSeconds} seconds for message {message.Id}: SelectedPath={selectedBotVoicePath}; {exception}");
+                StatusMessage = "Voice took too long. Continuing without audio.";
             }
             else
             {
-                Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} canceled for message {message.Id}: {exception}");
+                Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} canceled for message {message.Id}: SelectedPath={selectedBotVoicePath}; {exception}");
             }
         }
         catch (Exception exception)
         {
-            Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} failed for message {message.Id}: {exception}");
+            Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} failed for message {message.Id}: SelectedPath={selectedBotVoicePath}; {exception}");
             StatusMessage = localizedText.BotVoiceFailedMessage;
         }
         finally
@@ -682,6 +675,60 @@ public partial class LessonChatViewModel : ViewModelBase
             RefreshAvatarState();
             botVoiceSemaphore.Release();
         }
+    }
+
+    private async Task PlayPcmStreamingBotVoiceAsync(
+        ChatMessageViewModel message,
+        CancellationTokenSource playbackCancellationTokenSource,
+        Action<long> onPlaybackStarted,
+        CancellationToken cancellationToken)
+    {
+        await lessonChatBackendService.StreamBotSpeechAsync(
+            message.Text,
+            async (audioStream, contentType, streamCancellationToken) =>
+            {
+                if (!string.Equals(contentType, BackendConstants.PcmContentType, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException($"Unsupported streaming bot voice content type: {contentType}");
+                }
+
+                await audioPlaybackService.PlayPcmStreamAsync(
+                    audioStream,
+                    message.Id,
+                    firstChunkMs => Debug.WriteLine($"Bot voice first audio chunk received ms for message {message.Id}: Path=pcm-stream; FirstChunkMs={firstChunkMs}."),
+                    playbackStartedMs =>
+                    {
+                        playbackCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(BackendConstants.BotVoiceStreamOverallTimeoutSeconds));
+                        Debug.WriteLine($"Bot voice playback started ms for message {message.Id}: Path=pcm-stream; PlaybackStartedMs={playbackStartedMs}; PrebufferMilliseconds={AudioConstants.BotVoiceInitialPrebufferMilliseconds}.");
+                        onPlaybackStarted(playbackStartedMs);
+                    },
+                    streamCancellationToken);
+            },
+            playbackCancellationTokenSource.Token);
+    }
+
+    private async Task PlayWavBufferBotVoiceAsync(
+        ChatMessageViewModel message,
+        CancellationTokenSource playbackCancellationTokenSource,
+        Action<long> onPlaybackStarted,
+        CancellationToken cancellationToken)
+    {
+        using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+            playbackCancellationTokenSource.Token,
+            cancellationToken);
+        var stopwatch = Stopwatch.StartNew();
+        var audioFilePath = await GetOrCreateBotVoiceAudioFileAsync(message, linkedCancellationTokenSource.Token);
+        var playbackStartedMs = stopwatch.ElapsedMilliseconds;
+
+        if (playbackStartedMs > TimeSpan.FromSeconds(BackendConstants.BotVoiceFirstAudioTimeoutSeconds).TotalMilliseconds)
+        {
+            throw new OperationCanceledException(linkedCancellationTokenSource.Token);
+        }
+
+        onPlaybackStarted(playbackStartedMs);
+        playbackCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(BackendConstants.BotVoiceStreamOverallTimeoutSeconds));
+        Debug.WriteLine($"Bot voice playback started ms for message {message.Id}: Path=wav-buffer; PlaybackStartedMs={playbackStartedMs}; AudioFile={Path.GetFileName(audioFilePath)}.");
+        await audioPlaybackService.PlayAudioFileAsync(audioFilePath, linkedCancellationTokenSource.Token);
     }
 
     private async Task<string> GetOrCreateBotVoiceAudioFileAsync(ChatMessageViewModel message, CancellationToken cancellationToken)
