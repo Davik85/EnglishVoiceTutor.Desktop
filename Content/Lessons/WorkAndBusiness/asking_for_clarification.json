@@ -1,0 +1,391 @@
+{
+  "id": "work_business_asking_for_clarification",
+  "metadata": {
+    "topic": "Work & Business",
+    "subtopic": "Asking for clarification",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice asking for clarification at work.\n\nGoal: you will learn to ask someone to repeat, explain, or clarify something politely.\n\nChoose a situation:\n1. Asking someone to repeat\n2. Asking what a task means\n3. Clarifying a deadline\n\nOr suggest your own simple clarification situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple work or business situation about asking for clarification.",
+      "validCustomContextKeywords": [
+        "repeat",
+        "clarify",
+        "explain",
+        "task",
+        "unclear",
+        "deadline",
+        "due date",
+        "meeting",
+        "agenda",
+        "word",
+        "term",
+        "understand",
+        "say again"
+      ],
+      "offTopicExamples": [
+        "hotel check-in",
+        "airport passport",
+        "restaurant order",
+        "movie recommendation",
+        "weather"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about asking for clarification at work. Please choose a simple clarification situation."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can ask someone to repeat, explain, or clarify something at work.",
+    "canDoStatements": [
+      "The user can ask someone to repeat information.",
+      "The user can ask what a task means.",
+      "The user can clarify a deadline or meeting point."
+    ]
+  },
+  "situation": {
+    "description": "The user is in a workplace conversation and needs clarification before continuing."
+  },
+  "roles": {
+    "userRole": "A worker who needs clarification about a task, meeting, word, or deadline.",
+    "tutorRole": "A colleague or manager who explains information when asked politely."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "Sorry, could you repeat that?",
+      "Could you explain that, please?",
+      "What does this mean?",
+      "Do you mean...?",
+      "Is the deadline Friday?",
+      "Could you say that another way?",
+      "I want to make sure I understand.",
+      "Thank you, that's clear now."
+    ],
+    "usefulConstructions": [
+      "Sorry, could you + verb?",
+      "What does + word/task + mean?",
+      "Do you mean + idea?",
+      "I want to make sure + sentence."
+    ],
+    "grammarFocus": [
+      "polite requests with could",
+      "question forms with what and do you mean",
+      "reported understanding with I want to make sure"
+    ],
+    "pronunciationFocus": [
+      "clarify",
+      "repeat",
+      "deadline",
+      "understand",
+      "explain"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple English for asking for clarification. Focus on one clear workplace idea and the most useful words.",
+      "tutorLanguageStyle": "Use short questions and one idea at a time. Accept short answers if the workplace meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "Sorry, can you repeat that?",
+      "stretchUserResponse": "Sorry, can you repeat that, please? I don't understand.",
+      "addedKeyPhrases": [
+        "Sorry, could you repeat that?",
+        "Could you explain that, please?",
+        "What does this mean?",
+        "Do you mean...?"
+      ],
+      "addedUsefulConstructions": [
+        "Use one short asking for clarification sentence with a clear subject and verb.",
+        "Use please or thank you when it fits the workplace situation."
+      ],
+      "addedGrammarFocus": [
+        "simple present for work facts",
+        "basic workplace question forms",
+        "polite words in short sentences"
+      ],
+      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
+      "correctionPriority": "Workplace meaning first, then one essential grammar or word correction.",
+      "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
+      "exampleGoodAnswer": "Sorry, can you repeat that?",
+      "exampleStretchAnswer": "Sorry, can you repeat that, please? I don't understand."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple English for asking for clarification. The learner should add one useful detail such as role, time, task, meeting, problem, or deadline.",
+      "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "Sorry, can you repeat that, please? I don't understand.",
+      "stretchUserResponse": "Sorry, could you repeat that, please? I want to make sure I understand the task.",
+      "addedKeyPhrases": [
+        "Sorry, could you repeat that?",
+        "Could you explain that, please?",
+        "What does this mean?",
+        "Do you mean...?",
+        "Is the deadline Friday?"
+      ],
+      "addedUsefulConstructions": [
+        "Add one detail after the main answer or request.",
+        "Use polite workplace phrases such as could you, please, or thank you."
+      ],
+      "addedGrammarFocus": [
+        "basic word order in workplace statements",
+        "simple present and present continuous for work",
+        "polite workplace requests"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, and missing polite words.",
+      "hintStrategy": "Give a sentence starter and one optional detail to add.",
+      "correctionPriority": "Clear workplace message, basic grammar, and polite tone.",
+      "conversationDepth": "Use simple follow-up questions while staying in the selected workplace scenario.",
+      "exampleGoodAnswer": "Sorry, can you repeat that, please? I don't understand.",
+      "exampleStretchAnswer": "Sorry, could you repeat that, please? I want to make sure I understand the task."
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear English for asking for clarification. The learner should give an answer, add a detail, and include a short reason or follow-up question.",
+      "tutorLanguageStyle": "Use natural clear English. Ask for clarification when details are missing and keep the roleplay realistic.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "Sorry, could you repeat that, please? I want to make sure I understand the task.",
+      "stretchUserResponse": "Sorry, could you repeat that, please? I want to make sure I understand the task before I start.",
+      "addedKeyPhrases": [
+        "Sorry, could you repeat that?",
+        "Could you explain that, please?",
+        "What does this mean?",
+        "Do you mean...?",
+        "Is the deadline Friday?",
+        "Could you say that another way?"
+      ],
+      "addedUsefulConstructions": [
+        "Combine answer + detail + short reason or follow-up question.",
+        "Use could you, would you, or I just want to check for polite workplace clarity."
+      ],
+      "addedGrammarFocus": [
+        "connected sentences with and, but, because, or so",
+        "polite question forms",
+        "specific workplace details and clarification questions"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, sentence flow, and unclear workplace details.",
+      "hintStrategy": "Give a structure such as answer + detail + follow-up question, with one phrase option.",
+      "correctionPriority": "Natural workplace meaning, complete details, polite question form, and smooth sentence flow.",
+      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected scenario.",
+      "exampleGoodAnswer": "Sorry, could you repeat that, please? I want to make sure I understand the task.",
+      "exampleStretchAnswer": "Sorry, could you repeat that, please? I want to make sure I understand the task before I start."
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural workplace English for asking for clarification. The learner should use polite, flexible, specific phrasing with nuance and a useful follow-up or clarification.",
+      "tutorLanguageStyle": "Use realistic workplace English and add at most one small complication while keeping the selected scenario focused.",
+      "expectedUserResponse": "Natural answer with detail, nuance, and a follow-up question or clarification.",
+      "minimumUserResponse": "Sorry, could you repeat that, please? I want to make sure I understand the task before I start.",
+      "stretchUserResponse": "Sorry, could you clarify that for me? I just want to make sure I understand the task correctly before I move forward.",
+      "addedKeyPhrases": [
+        "Sorry, could you repeat that?",
+        "Could you explain that, please?",
+        "What does this mean?",
+        "Do you mean...?",
+        "Is the deadline Friday?",
+        "Could you say that another way?",
+        "I want to make sure I understand.",
+        "Thank you, that's clear now."
+      ],
+      "addedUsefulConstructions": [
+        "Use nuanced polite phrasing such as would it be possible, just to confirm, or could you clarify.",
+        "Clarify constraints, preferences, or next steps naturally."
+      ],
+      "addedGrammarFocus": [
+        "modal verbs for polite professional requests",
+        "conditional phrasing with if possible or if that works for you",
+        "precise workplace vocabulary and tone"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, tone, precise wording, and any important grammar errors.",
+      "hintStrategy": "Suggest more natural phrasing or tone rather than giving a full script immediately.",
+      "correctionPriority": "Polite nuance, specificity, smooth flow, precise workplace vocabulary, and appropriate tone.",
+      "conversationDepth": "Allow richer details, a realistic complication, and flexible negotiation, but do not leave the work/business scenario.",
+      "exampleGoodAnswer": "Sorry, could you repeat that, please? I want to make sure I understand the task before I start.",
+      "exampleStretchAnswer": "Sorry, could you clarify that for me? I just want to make sure I understand the task correctly before I move forward."
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor starts the selected clarification situation and asks what needs to be repeated or explained.",
+    "defaultOpeningExample": "Sure. Which part should I repeat?",
+    "firstUserTask": "The user asks politely for repetition, explanation, or deadline clarification.",
+    "expectedPattern": "Sorry, could you repeat or explain that, please?",
+    "guidedPracticeFollowUpQuestions": [
+      "Which part is unclear?",
+      "Do you want me to explain the task?",
+      "Are you checking the deadline?",
+      "Can you tell me what you understood so far?"
+    ],
+    "variationOrComplication": "Tutor asks what is unclear, gives a short explanation, or checks that the user understood.",
+    "exampleTutorLine": "Which part should I repeat?",
+    "correctionMoment": "Tutor gives one short correction when useful.",
+    "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let's do one final clarification request. Ask me to explain one work detail politely.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced polite clarification, repetition requests, and checking understanding. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific workplace setting",
+      "minor work detail",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic small complication for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected work/business scenario"
+    ],
+    "contextVariants": [
+      {
+        "id": "repeat_instruction",
+        "title": "Asking someone to repeat",
+        "setting": "a workplace conversation",
+        "reasonForMeeting": "asking for repeated information",
+        "openingLine": "Sure. Which part should I repeat?",
+        "aliases": [
+          "repeat",
+          "say again",
+          "repeat instruction",
+          "missed that"
+        ]
+      },
+      {
+        "id": "task_meaning",
+        "title": "Asking what a task means",
+        "setting": "a work task discussion",
+        "reasonForMeeting": "understanding a task",
+        "openingLine": "What part of the task is unclear?",
+        "aliases": [
+          "task",
+          "task meaning",
+          "explain task",
+          "unclear task"
+        ]
+      },
+      {
+        "id": "deadline_clarification",
+        "title": "Clarifying a deadline",
+        "setting": "a deadline discussion",
+        "reasonForMeeting": "checking when work is due",
+        "openingLine": "Sure. Do you want to check the deadline?",
+        "aliases": [
+          "deadline",
+          "due date",
+          "when is it due",
+          "clarify deadline"
+        ]
+      },
+      {
+        "id": "meeting_point",
+        "title": "Clarifying a meeting point",
+        "setting": "a meeting discussion",
+        "reasonForMeeting": "checking meeting details",
+        "openingLine": "Sure. What do you want to clarify about the meeting?",
+        "aliases": [
+          "meeting",
+          "meeting point",
+          "clarify meeting",
+          "agenda"
+        ]
+      },
+      {
+        "id": "technical_word",
+        "title": "Asking about a technical word",
+        "setting": "a workplace explanation",
+        "reasonForMeeting": "understanding a work term",
+        "openingLine": "Which word would you like me to explain?",
+        "aliases": [
+          "word",
+          "technical word",
+          "term",
+          "explain word"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Work & Business, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "For the MVP, validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about asking for clarification at work. Please choose a simple clarification situation."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about asking for clarification. Let's stay in this work situation.",
+    "secondRedirect": "Let's stay with asking for clarification for now. Please answer as a person at work in this situation.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on asking for clarification. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block workplace meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite words.",
+      "B1": "Correct grammar, word choice, and sentence flow.",
+      "B2": "Focus on fluency, nuance, tone, and precise workplace wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small workplace phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful word.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"Sorry, could you repeat that?\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same work/business goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into free chat."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Work & Business lesson scenario.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as hotel check-in or airport passport; redirect and remain in setup.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}
