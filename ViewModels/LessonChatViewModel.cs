@@ -49,6 +49,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private CancellationTokenSource? currentBotVoiceCancellationTokenSource;
     private string currentBotVoiceCancellationReason = BotVoiceCancellationReasons.AppDisposalCancel;
     private bool isRealtimeSessionStarted;
+    private bool isStartingRealtimeSession;
     private ChatMessageViewModel? realtimeAssistantMessage;
     private string realtimeSessionId = Guid.NewGuid().ToString("N");
 
@@ -126,6 +127,11 @@ public partial class LessonChatViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(PlayBotVoiceCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
+    [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BackCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
     private bool isBotVoicePlaying;
 
     [ObservableProperty]
@@ -135,6 +141,10 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BackCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PlayBotVoiceCommand))]
     private int learnerTurnCount;
 
     [ObservableProperty]
@@ -147,6 +157,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(BackCommand))]
     [NotifyCanExecuteChangedFor(nameof(PlayBotVoiceCommand))]
     [NotifyCanExecuteChangedFor(nameof(ViewFeedbackCommand))]
+    [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
     private bool isLessonCompleteAwaitingFinish;
 
     [ObservableProperty]
@@ -158,6 +169,12 @@ public partial class LessonChatViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ConversationModeButtonText))]
     [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
+    [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BackCommand))]
+    [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PlayBotVoiceCommand))]
     private bool isConversationModeEnabled;
 
     [ObservableProperty]
@@ -173,6 +190,9 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(HintCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BackCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PlayBotVoiceCommand))]
     private LessonPhase currentLessonPhase = LessonPhase.SetupContextSelection;
 
     public bool HasSelectedFeedback => SelectedFeedback is not null;
@@ -378,7 +398,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanFinishLesson()
     {
-        return IsLessonCompleteAwaitingFinish && !IsRecording && !IsSending && !hasFinishedLesson;
+        return !hasFinishedLesson && !IsSending && !IsRecording;
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleVoiceRecording))]
@@ -655,16 +675,18 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             IsConversationModeEnabled = false;
             await StopRealtimeConversationAsync("conversation_mode_off");
+            RefreshAllCommandStates();
             return;
         }
 
-        if (IsGuidedRoleplayLesson() && CurrentLessonPhase != LessonPhase.ActiveRoleplay)
+        if (IsGuidedRoleplayLesson() && CurrentLessonPhase == LessonPhase.SetupContextSelection)
         {
-            Debug.WriteLine($"Conversation mode blocked: Reason=setup-context-not-selected; LessonType={lessonScenario.Metadata.LessonType}; CurrentLessonPhase={CurrentLessonPhase}; IsFreeConversation={IsFreeConversationLesson()}; SelectedTopic={SelectedTopic.Title}; SelectedSubtopic={SelectedSubtopic.Title}; UseRealtimeConversationMode={BackendConstants.UseRealtimeConversationMode}; BackendEndpoint={lessonChatBackendService.CreateRealtimeVoiceWebSocketUri()}.");
-            StatusMessage = "Choose a situation before starting Conversation Mode.";
+            IsConversationModeEnabled = true;
+            StatusMessage = "Choose a situation to start the conversation.";
+            Debug.WriteLine($"Conversation mode enabled before guided context selection: LessonType={lessonScenario.Metadata.LessonType}; CurrentLessonPhase={CurrentLessonPhase}; SelectedTopic={SelectedTopic.Title}; SelectedSubtopic={SelectedSubtopic.Title}; UseRealtimeConversationMode={BackendConstants.UseRealtimeConversationMode}; BackendEndpoint={lessonChatBackendService.CreateRealtimeVoiceWebSocketUri()}.");
+            RefreshAllCommandStates();
             return;
         }
-
 
         var startStopwatch = Stopwatch.StartNew();
         Debug.WriteLine($"Conversation mode start requested: LessonType={lessonScenario.Metadata.LessonType}; CurrentLessonPhase={CurrentLessonPhase}; IsFreeConversation={IsFreeConversationLesson()}; SelectedTopic={SelectedTopic.Title}; SelectedSubtopic={SelectedSubtopic.Title}; UseRealtimeConversationMode={BackendConstants.UseRealtimeConversationMode}; BackendEndpoint={lessonChatBackendService.CreateRealtimeVoiceWebSocketUri()}.");
@@ -684,21 +706,34 @@ public partial class LessonChatViewModel : ViewModelBase
             StatusMessage = BackendConstants.RealtimeUnavailableMessage;
             Debug.WriteLine($"Conversation mode start failed: RealtimeSessionId={realtimeSessionId}; ExceptionType={exception.GetType().FullName}; Message={exception.Message}; {exception}");
         }
+        finally
+        {
+            RefreshAllCommandStates();
+        }
     }
 
     private bool CanToggleConversationMode()
     {
-        if (IsConversationModeEnabled)
-        {
-            return !IsSending && !IsRecording;
-        }
-
-        if (!IsLessonOptionsEnabled || IsLessonCompleteAwaitingFinish || IsLessonLimitReached || hasFinishedLesson || IsSending || IsRecording)
+        if (isStartingRealtimeSession)
         {
             return false;
         }
 
-        return IsFreeConversationLesson() || (IsGuidedRoleplayLesson() && CurrentLessonPhase == LessonPhase.ActiveRoleplay);
+        if (IsConversationModeEnabled)
+        {
+            return !IsLessonCompleteAwaitingFinish
+                && !IsLessonLimitReached
+                && !hasFinishedLesson
+                && !IsSending
+                && !IsRecording;
+        }
+
+        return IsLessonOptionsEnabled
+            && !IsLessonCompleteAwaitingFinish
+            && !IsLessonLimitReached
+            && !hasFinishedLesson
+            && !IsSending
+            && !IsRecording;
     }
 
     [RelayCommand(CanExecute = nameof(CanPlayBotVoice))]
@@ -773,11 +808,13 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var rawBotVoiceText = message.Text.Trim();
             var isSetupVoiceMessage = IsSetupVoiceMessage(message);
-            var exactBotVoiceText = GetExactBotVoiceText(message.Text);
-            var allSegments = SplitExactBotVoiceTextIntoSegments(exactBotVoiceText);
+            var exactBotVoiceText = GetExactBotVoiceText(message);
+            IReadOnlyList<string> allSegments = isAutoPlay
+                ? SplitExactBotVoiceTextIntoSegments(exactBotVoiceText)
+                : [exactBotVoiceText];
             var segmentsToSpeak = SelectBotVoiceSegments(allSegments, isAutoPlay);
 
-            Debug.WriteLine($"Exact bot voice text: RawLength={rawBotVoiceText.Length}; VoiceTextLength={exactBotVoiceText.Length}; MessagePhase={(isSetupVoiceMessage ? "setup" : "active")}; AutoPlay={isAutoPlay}; SegmentCount={segmentsToSpeak.Count}; SegmentLengths={string.Join(",", segmentsToSpeak.Select(segment => segment.Length))}.");
+            Debug.WriteLine($"Bot voice exact text: MessageId={message.Id}; RawTextLength={rawBotVoiceText.Length}; VoiceTextLength={exactBotVoiceText.Length}; IsExactText={rawBotVoiceText == exactBotVoiceText}; AutoPlay={isAutoPlay}; IsSetupMessage={isSetupVoiceMessage}; SegmentCount={segmentsToSpeak.Count}; SegmentLengths={string.Join(",", segmentsToSpeak.Select(segment => segment.Length))}.");
 
             if (segmentsToSpeak.Count == 0)
             {
@@ -793,7 +830,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 segmentsToSpeak,
                 playbackCancellationTokenSource.Token,
                 playbackStartedMs => playbackStarted = true,
-                totalStopwatch);
+                totalStopwatch,
+                isAutoPlay);
 
             Debug.WriteLine($"Bot voice playback completed ms for message {message.Id}: Path={selectedBotVoicePath}; TotalElapsedMilliseconds={totalStopwatch.ElapsedMilliseconds}; SegmentCount={segmentsToSpeak.Count}.");
             BackendStatusText = BackendConstants.BackendStatusConnected;
@@ -829,7 +867,8 @@ public partial class LessonChatViewModel : ViewModelBase
         IReadOnlyList<string> segments,
         CancellationToken cancellationToken,
         Action<long> onFirstPlaybackStarted,
-        Stopwatch totalStopwatch)
+        Stopwatch totalStopwatch,
+        bool isAutoPlay)
     {
         var firstSegmentTask = GetOrCreateBotVoiceSegmentAudioFileAsync(
             message,
@@ -837,7 +876,8 @@ public partial class LessonChatViewModel : ViewModelBase
             segmentIndex: 0,
             timeout: TimeSpan.FromSeconds(AudioConstants.BotVoiceFirstSegmentHardTimeoutSeconds),
             totalStopwatch,
-            cancellationToken);
+            cancellationToken,
+            isAutoPlay);
 
         var softTargetTask = Task.Delay(AudioConstants.BotVoiceFirstSegmentSoftTargetMilliseconds, cancellationToken);
         if (await Task.WhenAny(firstSegmentTask, softTargetTask) == softTargetTask && softTargetTask.IsCompletedSuccessfully)
@@ -858,7 +898,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         Task<string>? nextSegmentTask = segments.Count > 1
-            ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[1], 1, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken)
+            ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[1], 1, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken, isAutoPlay)
             : null;
         var currentFilePath = firstSegmentFilePath;
 
@@ -906,7 +946,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var nextIndex = segmentIndex + 2;
             nextSegmentTask = nextIndex < segments.Count
-                ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[nextIndex], nextIndex, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken)
+                ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[nextIndex], nextIndex, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken, isAutoPlay)
                 : null;
         }
     }
@@ -917,7 +957,8 @@ public partial class LessonChatViewModel : ViewModelBase
         int segmentIndex,
         TimeSpan timeout,
         Stopwatch totalStopwatch,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool isAutoPlay = false)
     {
         var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex, segmentText);
         lock (botVoiceSegmentCacheLock)
@@ -941,7 +982,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 segmentIndex,
                 timeout,
                 totalStopwatch,
-                cancellationToken);
+                cancellationToken,
+                isAutoPlay);
             inFlightBotVoiceSegmentTasks[cacheKey] = createdTask;
             return createdTask;
         }
@@ -953,7 +995,8 @@ public partial class LessonChatViewModel : ViewModelBase
         int segmentIndex,
         TimeSpan timeout,
         Stopwatch totalStopwatch,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool isAutoPlay)
     {
         var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex, segmentText);
         using var segmentTimeoutCancellationTokenSource = new CancellationTokenSource(timeout);
@@ -961,7 +1004,7 @@ public partial class LessonChatViewModel : ViewModelBase
             cancellationToken,
             segmentTimeoutCancellationTokenSource.Token);
         var backendStopwatch = Stopwatch.StartNew();
-        var normalizedSegmentText = NormalizeBotVoiceSegmentText(segmentText);
+        var normalizedSegmentText = NormalizeVoiceWhitespace(segmentText);
         var inputLength = normalizedSegmentText.Length;
 
         try
@@ -971,6 +1014,9 @@ public partial class LessonChatViewModel : ViewModelBase
                 throw new InvalidOperationException("Bot voice segment was rejected before backend request because it is not speakable.");
             }
 
+            var rawTextLength = message.Text.Trim().Length;
+            var isExactText = string.Equals(normalizedSegmentText, GetExactBotVoiceText(message), StringComparison.Ordinal);
+            Debug.WriteLine($"Bot voice exact text: MessageId={message.Id}; RawTextLength={rawTextLength}; VoiceTextLength={inputLength}; IsExactText={isExactText}; AutoPlay={isAutoPlay}; IsSetupMessage={IsSetupVoiceMessage(message)}; SegmentIndex={segmentIndex};");
             Debug.WriteLine($"Bot voice segment request: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SegmentLength={inputLength}; SegmentTextPreview={CreateBotVoiceSegmentPreview(normalizedSegmentText)};");
             Debug.WriteLine($"Bot voice segment request starting: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; RequestStartedMs={totalStopwatch.ElapsedMilliseconds}; TimeoutMs={timeout.TotalMilliseconds}; HardTimeoutSeconds={timeout.TotalSeconds}.");
             var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(normalizedSegmentText, linkedCancellationTokenSource.Token);
@@ -1024,38 +1070,29 @@ public partial class LessonChatViewModel : ViewModelBase
         return [];
     }
 
-    private static string GetExactBotVoiceText(string rawText)
+    private static string GetExactBotVoiceText(ChatMessageViewModel message)
+    {
+        return NormalizeVoiceWhitespace(message.Text);
+    }
+
+    private static string NormalizeVoiceWhitespace(string rawText)
     {
         return string.IsNullOrWhiteSpace(rawText)
             ? string.Empty
-            : NormalizeBotVoiceSegmentText(rawText.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n'));
+            : rawText.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Trim();
     }
 
     private static IReadOnlyList<string> SplitExactBotVoiceTextIntoSegments(string exactText)
     {
-        var normalizedText = GetExactBotVoiceText(exactText);
+        var normalizedText = NormalizeVoiceWhitespace(exactText);
         if (string.IsNullOrWhiteSpace(normalizedText))
         {
             return [];
         }
 
-        if (normalizedText.Length <= AudioConstants.BotVoiceAbsoluteMaxSegmentCharacters)
-        {
-            return IsSpeakableSegment(normalizedText, allowMeaningfulShortWholeReply: true)
-                ? [normalizedText]
-                : [];
-        }
-
-        var sentenceSegments = SplitExactTextIntoSentenceSegments(normalizedText);
-        var mediumSegments = MergeBotVoiceSegments(sentenceSegments);
-        var finalSegments = new List<string>();
-
-        foreach (var segment in mediumSegments)
-        {
-            SplitLongBotVoiceSegment(segment, finalSegments);
-        }
-
-        return ValidateAndMergeBotVoiceSegments(finalSegments);
+        return IsSpeakableSegment(normalizedText, allowMeaningfulShortWholeReply: true)
+            ? [normalizedText]
+            : [];
     }
 
     private static IReadOnlyList<string> SplitExactTextIntoSentenceSegments(string text)
@@ -1606,12 +1643,23 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        realtimeSessionId = Guid.NewGuid().ToString("N");
-        var stopwatch = Stopwatch.StartNew();
-        await realtimeVoiceEngine.StartSessionAsync(BuildVoiceSessionStartRequest(), cancellationToken);
-        isRealtimeSessionStarted = true;
-        BackendStatusText = BackendConstants.BackendStatusConnected;
-        Debug.WriteLine($"Desktop realtime session start ms: SessionId={realtimeSessionId}; RealtimeSessionStartMs={stopwatch.ElapsedMilliseconds}; LessonType={lessonScenario.Metadata.LessonType}; Topic={lessonScenario.Metadata.Topic}; Subtopic={lessonScenario.Metadata.Subtopic}; Level={SelectedLevel}.");
+        isStartingRealtimeSession = true;
+        RefreshAllCommandStates();
+
+        try
+        {
+            realtimeSessionId = Guid.NewGuid().ToString("N");
+            var stopwatch = Stopwatch.StartNew();
+            await realtimeVoiceEngine.StartSessionAsync(BuildVoiceSessionStartRequest(), cancellationToken);
+            isRealtimeSessionStarted = true;
+            BackendStatusText = BackendConstants.BackendStatusConnected;
+            Debug.WriteLine($"Desktop realtime session start ms: SessionId={realtimeSessionId}; RealtimeSessionStartMs={stopwatch.ElapsedMilliseconds}; LessonType={lessonScenario.Metadata.LessonType}; Topic={lessonScenario.Metadata.Topic}; Subtopic={lessonScenario.Metadata.Subtopic}; Level={SelectedLevel}.");
+        }
+        finally
+        {
+            isStartingRealtimeSession = false;
+            RefreshAllCommandStates();
+        }
     }
 
     private VoiceSessionStartRequest BuildVoiceSessionStartRequest()
@@ -1663,6 +1711,7 @@ public partial class LessonChatViewModel : ViewModelBase
         realtimeMicrophoneCaptureService.Stop();
         await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None);
         isRealtimeSessionStarted = false;
+        RefreshAllCommandStates();
     }
 
     private void OnRealtimeMicrophoneAudioChunkCaptured(object? sender, RealtimeMicrophoneAudioChunkEventArgs args)
@@ -1736,7 +1785,7 @@ public partial class LessonChatViewModel : ViewModelBase
         Debug.WriteLine($"Desktop realtime playback started ms: SessionId={args.SessionId}; ResponseId={args.ResponseId}; PlaybackStartedMs={args.ElapsedMilliseconds}; BufferUnderrunCount={realtimeAudioPlaybackService.UnderrunCount}.");
     }
 
-    private Task<bool> HandleContextSelectionMessageAsync(string userMessage)
+    private async Task<bool> HandleContextSelectionMessageAsync(string userMessage)
     {
         AddMessage(AppConstants.UserSenderName, userMessage, false);
 
@@ -1749,7 +1798,8 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var startMessage = $"Great! Let's imagine {BuildContextConfirmationText(matchedVariant)}.\n\n{matchedVariant.OpeningLine}";
             AddRoleplayStartMessage(startMessage);
-            return Task.FromResult(true);
+            await TryStartRealtimeAfterGuidedContextSelectionAsync();
+            return true;
         }
 
         if (IsValidCustomContext(userMessage))
@@ -1762,14 +1812,42 @@ public partial class LessonChatViewModel : ViewModelBase
                 ? "Hi! Nice to meet you. What's your name?"
                 : lessonScenario.ConversationFlow.DefaultOpeningExample.Trim();
             AddRoleplayStartMessage($"Good idea. Let's keep it simple: {userMessage.Trim()}.\n\n{openingLine}");
-            return Task.FromResult(true);
+            await TryStartRealtimeAfterGuidedContextSelectionAsync();
+            return true;
         }
 
         AddMessage(TutorAvatarDisplayName, GetInvalidContextRedirect(), true);
         lastBotMessage = GetInvalidContextRedirect();
         OnPropertyChanged(nameof(LatestBotMessageText));
         StatusMessage = string.Empty;
-        return Task.FromResult(true);
+        return true;
+    }
+
+    private async Task TryStartRealtimeAfterGuidedContextSelectionAsync()
+    {
+        if (!IsConversationModeEnabled || !BackendConstants.UseRealtimeConversationMode)
+        {
+            return;
+        }
+
+        try
+        {
+            Debug.WriteLine($"Starting realtime after guided context selection: LessonType={lessonScenario.Metadata.LessonType}; CurrentLessonPhase={CurrentLessonPhase}; SelectedContextTitle={GetSelectedContextTitle()}; BackendEndpoint={lessonChatBackendService.CreateRealtimeVoiceWebSocketUri()}.");
+            await EnsureRealtimeSessionStartedAsync(CancellationToken.None);
+            StatusMessage = string.Empty;
+        }
+        catch (Exception exception)
+        {
+            IsConversationModeEnabled = false;
+            isRealtimeSessionStarted = false;
+            BackendStatusText = BackendConstants.BackendStatusUnavailable;
+            StatusMessage = BackendConstants.RealtimeUnavailableMessage;
+            Debug.WriteLine($"Realtime start after guided context selection failed: RealtimeSessionId={realtimeSessionId}; ExceptionType={exception.GetType().FullName}; Message={exception.Message}; {exception}");
+        }
+        finally
+        {
+            RefreshAllCommandStates();
+        }
     }
 
     private void AddRoleplayStartMessage(string message)
@@ -2243,6 +2321,11 @@ public partial class LessonChatViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsLessonOptionsEnabled));
         OnPropertyChanged(nameof(IsLessonLimitReached));
         OnPropertyChanged(nameof(IsLessonWrappingUp));
+        RefreshAllCommandStates();
+    }
+
+    private void RefreshAllCommandStates()
+    {
         SendMessageCommand.NotifyCanExecuteChanged();
         ToggleVoiceRecordingCommand.NotifyCanExecuteChanged();
         HintCommand.NotifyCanExecuteChanged();
@@ -2261,16 +2344,8 @@ public partial class LessonChatViewModel : ViewModelBase
 
         CurrentLessonPhase = LessonPhase.Completed;
         hasFinishedLesson = true;
-        OnPropertyChanged(nameof(IsLessonInputEnabled));
-        OnPropertyChanged(nameof(IsLessonOptionsEnabled));
-        SendMessageCommand.NotifyCanExecuteChanged();
-        ToggleVoiceRecordingCommand.NotifyCanExecuteChanged();
-        HintCommand.NotifyCanExecuteChanged();
-        ToggleConversationModeCommand.NotifyCanExecuteChanged();
-        BackCommand.NotifyCanExecuteChanged();
-        PlayBotVoiceCommand.NotifyCanExecuteChanged();
+        RefreshAllCommandStates();
         ViewFeedbackCommand.NotifyCanExecuteChanged();
-        FinishLessonCommand.NotifyCanExecuteChanged();
         finishLesson(latestFeedback);
     }
 
@@ -2344,7 +2419,7 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         var rawBotVoiceText = message.Text.Trim();
         var isSetupVoiceMessage = IsSetupVoiceMessage(message);
-        var exactBotVoiceText = GetExactBotVoiceText(message.Text);
+        var exactBotVoiceText = GetExactBotVoiceText(message);
         var allSegments = SplitExactBotVoiceTextIntoSegments(exactBotVoiceText);
         Debug.WriteLine($"Exact bot voice text: RawLength={rawBotVoiceText.Length}; VoiceTextLength={exactBotVoiceText.Length}; MessagePhase={(isSetupVoiceMessage ? "setup" : "active")}; SegmentCount={allSegments.Count}; SegmentLengths={string.Join(",", allSegments.Select(segment => segment.Length))}; Prefetch=True.");
         if (allSegments.Count == 0)
