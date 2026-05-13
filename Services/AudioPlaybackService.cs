@@ -85,22 +85,34 @@ public sealed class AudioPlaybackService
         var stopwatch = Stopwatch.StartNew();
         var playbackCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        linkedCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(BackendConstants.BotVoiceFirstAudioTimeoutSeconds));
+
         var waveFormat = new WaveFormat(
             AudioConstants.BotVoicePcmSampleRate,
             AudioConstants.BotVoicePcmBitsPerSample,
             AudioConstants.BotVoicePcmChannels);
         var bufferedWaveProvider = new BufferedWaveProvider(waveFormat)
         {
-            BufferDuration = TimeSpan.FromSeconds(BackendConstants.BotVoiceStreamOverallTimeoutSeconds),
-            DiscardOnBufferOverflow = true
+            BufferDuration = TimeSpan.FromSeconds(AudioConstants.BotVoiceStreamBufferDurationSeconds),
+            DiscardOnBufferOverflow = false
         };
         using var outputDevice = new WaveOutEvent();
         var buffer = new byte[AudioConstants.BotVoiceStreamReadBufferBytes];
-        var totalBytes = 0L;
+        var leftoverBytes = Array.Empty<byte>();
+        var requiredPrebufferBytes = CalculatePcmByteCount(waveFormat, AudioConstants.BotVoiceInitialPrebufferMilliseconds);
+        var maximumPrebufferBytes = CalculatePcmByteCount(waveFormat, AudioConstants.BotVoiceMaximumPrebufferMilliseconds);
+        var totalRawBytes = 0L;
+        var totalAlignedBytes = 0L;
         var playbackStarted = false;
         var streamCompleted = false;
+        var firstRawChunkLogged = false;
+        var firstAlignedChunkLogged = false;
+        var underrunCount = 0;
+        var lastUnderrunLogged = false;
 
         outputDevice.PlaybackStopped += OnPlaybackStopped;
+
+        Debug.WriteLine($"Bot voice stream setup for message {messageId}: WaveFormat={waveFormat.SampleRate}Hz/{waveFormat.BitsPerSample}bit/{waveFormat.Channels}ch; BlockAlign={waveFormat.BlockAlign}; RequiredPrebufferBytes={requiredPrebufferBytes}; MaximumPrebufferBytes={maximumPrebufferBytes}; BufferDurationSeconds={AudioConstants.BotVoiceStreamBufferDurationSeconds}; DiscardOnBufferOverflow={bufferedWaveProvider.DiscardOnBufferOverflow}.");
 
         lock (playbackLock)
         {
@@ -123,6 +135,8 @@ public sealed class AudioPlaybackService
                 }
             });
 
+            var underrunMonitorTask = MonitorUnderrunsAsync(linkedCancellationTokenSource.Token);
+
             while (true)
             {
                 var bytesRead = await pcmStream.ReadAsync(buffer, linkedCancellationTokenSource.Token);
@@ -130,33 +144,100 @@ public sealed class AudioPlaybackService
                 if (bytesRead == 0)
                 {
                     streamCompleted = true;
+                    Debug.WriteLine($"Bot voice stream input completed before playback drain for message {messageId}: TotalRawBytes={totalRawBytes}; TotalAlignedBytes={totalAlignedBytes}; LeftoverBytes={leftoverBytes.Length}.");
                     break;
                 }
 
-                totalBytes += bytesRead;
+                totalRawBytes += bytesRead;
 
-                if (totalBytes == bytesRead)
+                if (!firstRawChunkLogged)
                 {
+                    firstRawChunkLogged = true;
                     var firstChunkMs = stopwatch.ElapsedMilliseconds;
-                    Debug.WriteLine($"Bot voice stream first audio chunk received for message {messageId}: ElapsedMilliseconds={firstChunkMs}; ChunkBytes={bytesRead}.");
+                    Debug.WriteLine($"Bot voice stream first raw chunk received for message {messageId}: ElapsedMilliseconds={firstChunkMs}; FirstRawChunkBytes={bytesRead}; BlockAlign={waveFormat.BlockAlign}.");
                     onFirstAudioChunkReceived?.Invoke(firstChunkMs);
                 }
 
-                bufferedWaveProvider.AddSamples(buffer, 0, bytesRead);
+                var combinedByteCount = leftoverBytes.Length + bytesRead;
+                var alignedByteCount = combinedByteCount - combinedByteCount % waveFormat.BlockAlign;
+                var nextLeftoverByteCount = combinedByteCount - alignedByteCount;
+                var combinedBuffer = new byte[combinedByteCount];
 
-                if (!playbackStarted)
+                if (leftoverBytes.Length > 0)
                 {
-                    outputDevice.Play();
-                    playbackStarted = true;
-                    var playbackStartedMs = stopwatch.ElapsedMilliseconds;
-                    Debug.WriteLine($"Bot voice stream playback started for message {messageId}: ElapsedMilliseconds={playbackStartedMs}; BufferedBytes={bufferedWaveProvider.BufferedBytes}.");
-                    onPlaybackStarted?.Invoke(playbackStartedMs);
+                    Buffer.BlockCopy(leftoverBytes, 0, combinedBuffer, 0, leftoverBytes.Length);
                 }
+
+                Buffer.BlockCopy(buffer, 0, combinedBuffer, leftoverBytes.Length, bytesRead);
+
+                if (alignedByteCount > 0)
+                {
+                    if (alignedByteCount % waveFormat.BlockAlign != 0)
+                    {
+                        throw new InvalidOperationException($"PCM alignment failed: aligned byte count {alignedByteCount} is not divisible by block align {waveFormat.BlockAlign}.");
+                    }
+
+                    bufferedWaveProvider.AddSamples(combinedBuffer, 0, alignedByteCount);
+                    totalAlignedBytes += alignedByteCount;
+
+                    if (!firstAlignedChunkLogged)
+                    {
+                        firstAlignedChunkLogged = true;
+                        Debug.WriteLine($"Bot voice stream first aligned chunk buffered for message {messageId}: FirstAlignedChunkBytes={alignedByteCount}; LeftoverBytes={nextLeftoverByteCount}; BufferedBytes={bufferedWaveProvider.BufferedBytes}.");
+                    }
+                }
+
+                leftoverBytes = nextLeftoverByteCount > 0
+                    ? combinedBuffer[alignedByteCount..combinedByteCount]
+                    : Array.Empty<byte>();
+
+                Debug.WriteLine($"Bot voice stream chunk buffered for message {messageId}: RawChunkBytes={bytesRead}; AlignedChunkBytes={alignedByteCount}; LeftoverBytes={leftoverBytes.Length}; TotalRawBytes={totalRawBytes}; TotalAlignedBytes={totalAlignedBytes}; BufferedBytes={bufferedWaveProvider.BufferedBytes}.");
+
+                if (!playbackStarted && bufferedWaveProvider.BufferedBytes >= requiredPrebufferBytes)
+                {
+                    StartPlayback("prebuffer reached");
+                }
+
+                if (!playbackStarted && bufferedWaveProvider.BufferedBytes >= maximumPrebufferBytes)
+                {
+                    StartPlayback("maximum prebuffer reached");
+                }
+            }
+
+            if (leftoverBytes.Length > 0)
+            {
+                Debug.WriteLine($"Bot voice stream discarded incomplete PCM leftover bytes at end for message {messageId}: DiscardedLeftoverBytes={leftoverBytes.Length}; BlockAlign={waveFormat.BlockAlign}.");
+                leftoverBytes = Array.Empty<byte>();
+            }
+
+            if (!playbackStarted && bufferedWaveProvider.BufferedBytes > 0)
+            {
+                StartPlayback("stream completed");
+            }
+
+            if (!playbackStarted)
+            {
+                throw new InvalidOperationException(BackendConstants.BackendInvalidSpeechResponseMessage);
             }
 
             while (bufferedWaveProvider.BufferedBytes > 0 && !linkedCancellationTokenSource.Token.IsCancellationRequested)
             {
+                if (!streamCompleted && bufferedWaveProvider.BufferedBytes == 0)
+                {
+                    LogUnderrun();
+                }
+
+                if (bufferedWaveProvider.BufferedBytes > 0)
+                {
+                    lastUnderrunLogged = false;
+                }
+
                 await Task.Delay(50, linkedCancellationTokenSource.Token);
+            }
+
+            if (!streamCompleted && bufferedWaveProvider.BufferedBytes == 0)
+            {
+                LogUnderrun();
             }
 
             if (streamCompleted)
@@ -166,7 +247,18 @@ public sealed class AudioPlaybackService
             }
 
             await playbackCompletion.Task;
-            Debug.WriteLine($"Bot voice stream playback completed for message {messageId}: ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}; AudioBytes={totalBytes}.");
+            linkedCancellationTokenSource.CancelAfter(Timeout.InfiniteTimeSpan);
+
+            try
+            {
+                await underrunMonitorTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Playback shutdown can cancel the underrun monitor after audio has drained.
+            }
+
+            Debug.WriteLine($"Bot voice stream playback completed for message {messageId}: ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}; TotalRawBytes={totalRawBytes}; TotalAlignedBytes={totalAlignedBytes}; DiscardedLeftoverBytes={leftoverBytes.Length}; UnderrunCount={underrunCount}.");
         }
         finally
         {
@@ -183,6 +275,50 @@ public sealed class AudioPlaybackService
             }
         }
 
+        void StartPlayback(string reason)
+        {
+            if (playbackStarted)
+            {
+                return;
+            }
+
+            outputDevice.Play();
+            playbackStarted = true;
+            linkedCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(BackendConstants.BotVoiceStreamOverallTimeoutSeconds));
+            var playbackStartedMs = stopwatch.ElapsedMilliseconds;
+            Debug.WriteLine($"Bot voice stream playback started for message {messageId}: PlaybackStartedMs={playbackStartedMs}; BufferedBytes={bufferedWaveProvider.BufferedBytes}; RequiredPrebufferBytes={requiredPrebufferBytes}; Reason={reason}; TotalRawBytes={totalRawBytes}; TotalAlignedBytes={totalAlignedBytes}.");
+            onPlaybackStarted?.Invoke(playbackStartedMs);
+        }
+
+        async Task MonitorUnderrunsAsync(CancellationToken monitorCancellationToken)
+        {
+            while (!monitorCancellationToken.IsCancellationRequested && !streamCompleted)
+            {
+                if (playbackStarted && bufferedWaveProvider.BufferedBytes == 0)
+                {
+                    LogUnderrun();
+                }
+                else if (bufferedWaveProvider.BufferedBytes > 0)
+                {
+                    lastUnderrunLogged = false;
+                }
+
+                await Task.Delay(50, monitorCancellationToken);
+            }
+        }
+
+        void LogUnderrun()
+        {
+            if (lastUnderrunLogged)
+            {
+                return;
+            }
+
+            underrunCount++;
+            lastUnderrunLogged = true;
+            Debug.WriteLine($"Bot voice stream buffer underrun for message {messageId}: BufferedBytes={bufferedWaveProvider.BufferedBytes}; StreamCompleted={streamCompleted}; TotalRawBytes={totalRawBytes}; TotalAlignedBytes={totalAlignedBytes}; UnderrunCount={underrunCount}.");
+        }
+
         void OnPlaybackStopped(object? sender, StoppedEventArgs args)
         {
             if (args.Exception is not null)
@@ -196,6 +332,16 @@ public sealed class AudioPlaybackService
                 playbackCompletion.TrySetResult();
             }
         }
+    }
+
+    private static int CalculatePcmByteCount(WaveFormat waveFormat, int durationMilliseconds)
+    {
+        return waveFormat.SampleRate
+            * waveFormat.Channels
+            * waveFormat.BitsPerSample
+            / 8
+            * durationMilliseconds
+            / 1000;
     }
 
     public void StopPlayback()
