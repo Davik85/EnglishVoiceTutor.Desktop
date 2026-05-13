@@ -1,0 +1,393 @@
+{
+  "id": "restaurant_and_cafe_asking_about_ingredients",
+  "metadata": {
+    "topic": "Restaurant & Cafe",
+    "subtopic": "Asking about ingredients",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice asking about ingredients.\n\nGoal: you will learn to ask about ingredients, allergies, and dish details politely.\n\nChoose a situation:\n1. Asking about allergies\n2. Asking if a dish is vegetarian\n3. Asking what is in a dish\n\nOr suggest your own simple ingredients question situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple restaurant or cafe situation about ingredients, allergies, or dietary needs.",
+      "validCustomContextKeywords": [
+        "ingredient",
+        "ingredients",
+        "allergy",
+        "allergies",
+        "allergic",
+        "nuts",
+        "nut",
+        "vegetarian",
+        "vegan",
+        "meat free",
+        "no meat",
+        "dish",
+        "spicy",
+        "mild",
+        "gluten free",
+        "gluten-free",
+        "no gluten",
+        "wheat",
+        "contains",
+        "contain"
+      ],
+      "offTopicExamples": [
+        "job interview",
+        "airport passport",
+        "airport check-in",
+        "hotel check-in",
+        "politics",
+        "sports"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about asking about ingredients. Please choose a simple restaurant or cafe situation for this lesson."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can ask about ingredients, allergies, dietary needs, and dish details clearly and politely.",
+    "canDoStatements": [
+      "The user can ask what is in a dish.",
+      "The user can explain a food allergy or dietary need.",
+      "The user can ask staff to check an ingredient politely."
+    ]
+  },
+  "situation": {
+    "description": "The user asks restaurant or cafe staff about ingredients before ordering or eating."
+  },
+  "roles": {
+    "userRole": "A restaurant or cafe customer.",
+    "tutorRole": "A careful waiter or cafe staff member who answers ingredient questions and checks allergy or dietary information when needed."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "Does this contain...?",
+      "I’m allergic to...",
+      "Is this vegetarian?",
+      "Is this vegan?",
+      "Does it have nuts?",
+      "Is it spicy?",
+      "What is in this dish?",
+      "Do you have gluten-free options?",
+      "Thank you for checking."
+    ],
+    "usefulConstructions": [
+      "Does this contain + ingredient?",
+      "I’m allergic to + food.",
+      "Is this + vegetarian/vegan/gluten-free?",
+      "Could you check whether + dish + contains + ingredient?"
+    ],
+    "grammarFocus": [
+      "questions with does this contain and does it have",
+      "adjectives for dietary needs",
+      "polite checking requests with could you"
+    ],
+    "pronunciationFocus": [
+      "allergy",
+      "allergic",
+      "vegetarian",
+      "ingredients",
+      "gluten-free"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple restaurant/cafe English for asking about ingredients. Focus on one clear customer request and the most important service words.",
+      "tutorLanguageStyle": "Use short service questions, one idea at a time, and friendly waiter or cafe staff language. Accept short polite answers if the meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "Does this have nuts?",
+      "stretchUserResponse": "Is this spicy? Does it have nuts?",
+      "addedKeyPhrases": [
+        "Does this have nuts?",
+        "Is it spicy?",
+        "Thank you."
+      ],
+      "addedUsefulConstructions": [
+        "Use one short polite customer sentence with please.",
+        "Answer the staff question directly before adding anything extra."
+      ],
+      "addedGrammarFocus": [
+        "basic polite requests with please",
+        "simple word order for customer requests",
+        "short answers with I’d like or Can I have"
+      ],
+      "feedbackStrictness": "Correct only mistakes that block restaurant/cafe meaning. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give a full sentence starter or a complete simple model if the learner is stuck.",
+      "correctionPriority": "Service meaning first, then one essential restaurant/cafe word or polite phrase.",
+      "conversationDepth": "Keep the roleplay shallow and practical with one short staff question at a time.",
+      "exampleGoodAnswer": "Does this have nuts?",
+      "exampleStretchAnswer": "Is this spicy? Does it have nuts?"
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple restaurant/cafe English for asking about ingredients. The learner should make a polite request and add one useful detail.",
+      "tutorLanguageStyle": "Use simple service follow-up questions. Ask for one detail such as time, number of people, dish, drink, allergy, problem, or payment method.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "I’m allergic to nuts. Does this dish have nuts?",
+      "stretchUserResponse": "I’m allergic to nuts. Could you check this dish, please?",
+      "addedKeyPhrases": [
+        "I’m allergic to...",
+        "Does this dish have...?",
+        "Could you check, please?"
+      ],
+      "addedUsefulConstructions": [
+        "Make the request, then add one specific detail.",
+        "Use Could I, Can I, I’d like, or I ordered for polite restaurant/cafe communication."
+      ],
+      "addedGrammarFocus": [
+        "basic question forms",
+        "word order in polite requests",
+        "please and thank you in service situations"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and unclear restaurant/cafe vocabulary.",
+      "hintStrategy": "Give a sentence frame with one blank for the learner’s detail.",
+      "correctionPriority": "Clear request, correct detail, and polite wording.",
+      "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on the selected restaurant/cafe task.",
+      "exampleGoodAnswer": "I’m allergic to nuts. Does this dish have nuts?",
+      "exampleStretchAnswer": "I’m allergic to nuts. Could you check this dish, please?"
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear restaurant/cafe English for asking about ingredients. The learner should give request plus detail plus a polite follow-up or clarification.",
+      "tutorLanguageStyle": "Use natural service language and ask one realistic follow-up. Encourage clear, polite, connected customer answers.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "I’m allergic to nuts. Could you check whether this dish contains any nuts or nut oil?",
+      "stretchUserResponse": "I’m allergic to nuts, so could you check whether this dish contains nuts or nut oil before I order it?",
+      "addedKeyPhrases": [
+        "Could you check whether...?",
+        "Does this contain any...?",
+        "Thank you for checking."
+      ],
+      "addedUsefulConstructions": [
+        "Use a polite opening, a clear request or explanation, and a follow-up question.",
+        "Connect details with and, but, because, or also when useful."
+      ],
+      "addedGrammarFocus": [
+        "polite modal questions",
+        "connected sentences for requests and clarifications",
+        "accurate restaurant/cafe vocabulary"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, politeness, and sentence flow when they affect natural service communication.",
+      "hintStrategy": "Give a short model with request + detail + polite follow-up, then ask the learner to adapt it.",
+      "correctionPriority": "Polite tone, clear details, natural phrasing, and smooth sentence connection.",
+      "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one detail.",
+      "exampleGoodAnswer": "I’m allergic to nuts. Could you check whether this dish contains any nuts or nut oil?",
+      "exampleStretchAnswer": "I’m allergic to nuts, so could you check whether this dish contains nuts or nut oil before I order it?"
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural, polite, flexible restaurant/cafe English for asking about ingredients. The learner should use softeners, precise requests, appropriate tone, and a polite follow-up or clarification.",
+      "tutorLanguageStyle": "Use professional service language and may add one realistic complication. Keep the scenario focused and expect nuanced customer responses.",
+      "expectedUserResponse": "A natural answer with detail, nuance, and a polite follow-up or clarification.",
+      "minimumUserResponse": "I have a nut allergy, so could you please check whether this dish contains nuts, nut oil, or any traces of nuts?",
+      "stretchUserResponse": "I have a serious nut allergy, so would you mind checking whether this dish contains nuts, nut oil, or any possible traces before I order?",
+      "addedKeyPhrases": [
+        "I have a nut allergy",
+        "would you mind checking",
+        "any traces of nuts"
+      ],
+      "addedUsefulConstructions": [
+        "Use softeners such as when you have a moment, if possible, could you please, or would you mind checking.",
+        "State the request or issue precisely, then confirm the next step politely."
+      ],
+      "addedGrammarFocus": [
+        "softened modal requests",
+        "precise noun phrases for restaurant/cafe details",
+        "tone and nuance in service interactions"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, politeness, tone, precise wording, and natural service-register phrasing.",
+      "hintStrategy": "Offer a polished natural model and ask the learner to personalize the detail or soften the tone.",
+      "correctionPriority": "Nuanced politeness, precise wording, natural rhythm, and appropriate customer tone.",
+      "conversationDepth": "Add one realistic complication when useful while keeping the learner inside the selected restaurant/cafe scenario.",
+      "exampleGoodAnswer": "I have a nut allergy, so could you please check whether this dish contains nuts, nut oil, or any traces of nuts?",
+      "exampleStretchAnswer": "I have a serious nut allergy, so would you mind checking whether this dish contains nuts, nut oil, or any possible traces before I order?"
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor responds as restaurant or cafe staff and helps the customer check ingredients safely.",
+    "defaultOpeningExample": "Of course. Do you have any allergies we should know about?",
+    "firstUserTask": "The user asks about an ingredient, allergy, or dietary need clearly.",
+    "expectedPattern": "I’m allergic to nuts. Does this dish have nuts?",
+    "guidedPracticeFollowUpQuestions": [
+      "Which dish would you like to ask about?",
+      "Do you have any allergies we should know about?",
+      "Would you like me to check with the kitchen?",
+      "Are you looking for vegetarian or gluten-free options?"
+    ],
+    "variationOrComplication": "Tutor may ask which dish, whether it is an allergy or preference, or offer to check with the kitchen.",
+    "exampleTutorLine": "Do you have any allergies we should know about?",
+    "correctionMoment": "Tutor gives one short correction when useful and keeps the customer roleplay moving.",
+    "correctionStyle": "soft, short, encouraging, and appropriate for the selected level.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let's do one final ingredients question. Ask me to check an ingredient or dietary option.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced asking about ingredients, allergies, and dish details politely. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific restaurant or cafe setting",
+      "minor menu or reservation detail",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic small complication for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected restaurant/cafe scenario"
+    ],
+    "contextVariants": [
+      {
+        "id": "allergy_question",
+        "title": "Asking about allergies",
+        "setting": "a restaurant table",
+        "reasonForMeeting": "checking allergy safety before ordering",
+        "openingLine": "Of course. Do you have any allergies we should know about?",
+        "aliases": [
+          "allergy",
+          "allergies",
+          "allergic",
+          "food allergy"
+        ]
+      },
+      {
+        "id": "vegetarian_question",
+        "title": "Asking if a dish is vegetarian",
+        "setting": "a restaurant or cafe",
+        "reasonForMeeting": "checking vegetarian options",
+        "openingLine": "Are you looking for vegetarian options?",
+        "aliases": [
+          "vegetarian",
+          "vegan",
+          "meat free",
+          "no meat"
+        ]
+      },
+      {
+        "id": "dish_ingredients",
+        "title": "Asking what is in a dish",
+        "setting": "a restaurant table",
+        "reasonForMeeting": "asking about dish details",
+        "openingLine": "Sure. Which dish would you like to ask about?",
+        "aliases": [
+          "ingredients",
+          "what is in this",
+          "what is in the dish",
+          "dish details"
+        ]
+      },
+      {
+        "id": "spicy_food",
+        "title": "Asking if food is spicy",
+        "setting": "a restaurant table",
+        "reasonForMeeting": "checking spice level",
+        "openingLine": "Would you like to know how spicy the dish is?",
+        "aliases": [
+          "spicy",
+          "not spicy",
+          "mild",
+          "hot food"
+        ]
+      },
+      {
+        "id": "gluten_free",
+        "title": "Asking for gluten-free options",
+        "setting": "a restaurant or cafe",
+        "reasonForMeeting": "checking gluten-free options",
+        "openingLine": "Are you looking for gluten-free options?",
+        "aliases": [
+          "gluten free",
+          "gluten-free",
+          "no gluten",
+          "wheat"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Restaurant & Cafe, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "Validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about asking about ingredients. Please choose a simple restaurant or cafe situation for this lesson."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about asking about ingredients. Let's stay in this restaurant or cafe situation.",
+    "secondRedirect": "Let's stay with asking about ingredients for now. Please answer as a customer in this situation.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on asking about ingredients. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite words.",
+      "B1": "Correct grammar, word choice, politeness, and sentence flow.",
+      "B2": "Focus on fluency, nuance, tone, and precise wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful, and focused on restaurant/cafe communication."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small ingredient-checking phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful word or phrase.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"Does this have nuts?\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same restaurant/cafe goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into free chat."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Restaurant & Cafe lesson scenario.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as job interview or airport passport; redirect and remain in setup.",
+    "The tutor plays restaurant or cafe staff: a waiter, host, cashier, barista, or other staff member depending on the selected scenario.",
+    "The user plays a customer.",
+    "Use polite service language and keep the lesson focused on the selected restaurant/cafe task.",
+    "Do not turn the lesson into a general food discussion or free chat.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}

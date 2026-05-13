@@ -1,0 +1,393 @@
+{
+  "id": "restaurant_and_cafe_booking_a_table",
+  "metadata": {
+    "topic": "Restaurant & Cafe",
+    "subtopic": "Booking a table",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice booking a table.\n\nGoal: you will learn to reserve a table, say the number of people, choose a time, and confirm your booking.\n\nChoose a situation:\n1. Booking a table by phone\n2. Booking a table at the restaurant\n3. Changing a reservation time\n\nOr suggest your own simple table booking situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple restaurant or cafe situation about booking, changing, or confirming a table.",
+      "validCustomContextKeywords": [
+        "reservation",
+        "reserve",
+        "booking",
+        "book",
+        "table",
+        "phone",
+        "call",
+        "restaurant",
+        "walk in",
+        "walk-in",
+        "tonight",
+        "time",
+        "seven",
+        "two people",
+        "two guests",
+        "outside",
+        "outdoor",
+        "terrace",
+        "patio",
+        "change time",
+        "change reservation"
+      ],
+      "offTopicExamples": [
+        "job interview",
+        "airport passport",
+        "airport check-in",
+        "hotel check-in",
+        "politics",
+        "sports"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about booking a table. Please choose a simple restaurant or cafe situation for this lesson."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can book a table, give the number of people, choose a time, and confirm basic reservation details.",
+    "canDoStatements": [
+      "The user can ask to book a table politely.",
+      "The user can say the number of people and the time.",
+      "The user can confirm the booking name and simple seating preference."
+    ]
+  },
+  "situation": {
+    "description": "The user contacts or visits a restaurant to reserve, confirm, or change a table booking."
+  },
+  "roles": {
+    "userRole": "A restaurant or cafe customer.",
+    "tutorRole": "A polite restaurant host who manages reservations, asks for the number of guests, time, name, and seating preference."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "I’d like to book a table.",
+      "A table for two, please.",
+      "Do you have a table at seven?",
+      "Can I book a table for tonight?",
+      "Under the name...",
+      "Could we sit outside?",
+      "Can I change the time?",
+      "Thank you. See you then."
+    ],
+    "usefulConstructions": [
+      "I’d like to book a table for + number + at + time.",
+      "Do you have a table at + time?",
+      "The reservation is under the name + name.",
+      "Could we sit + inside/outside?"
+    ],
+    "grammarFocus": [
+      "polite requests with I’d like and Could we",
+      "questions with Do you have and Can I",
+      "time expressions for reservations"
+    ],
+    "pronunciationFocus": [
+      "reservation",
+      "table",
+      "tonight",
+      "outside",
+      "under the name"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple restaurant/cafe English for booking a table. Focus on one clear customer request and the most important service words.",
+      "tutorLanguageStyle": "Use short service questions, one idea at a time, and friendly waiter or cafe staff language. Accept short polite answers if the meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "I’d like a table for two, please.",
+      "stretchUserResponse": "A table for two at seven, please.",
+      "addedKeyPhrases": [
+        "A table for two, please.",
+        "At seven, please.",
+        "Thank you."
+      ],
+      "addedUsefulConstructions": [
+        "Use one short polite customer sentence with please.",
+        "Answer the staff question directly before adding anything extra."
+      ],
+      "addedGrammarFocus": [
+        "basic polite requests with please",
+        "simple word order for customer requests",
+        "short answers with I’d like or Can I have"
+      ],
+      "feedbackStrictness": "Correct only mistakes that block restaurant/cafe meaning. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give a full sentence starter or a complete simple model if the learner is stuck.",
+      "correctionPriority": "Service meaning first, then one essential restaurant/cafe word or polite phrase.",
+      "conversationDepth": "Keep the roleplay shallow and practical with one short staff question at a time.",
+      "exampleGoodAnswer": "I’d like a table for two, please.",
+      "exampleStretchAnswer": "A table for two at seven, please."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple restaurant/cafe English for booking a table. The learner should make a polite request and add one useful detail.",
+      "tutorLanguageStyle": "Use simple service follow-up questions. Ask for one detail such as time, number of people, dish, drink, allergy, problem, or payment method.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "I’d like to book a table for two at seven.",
+      "stretchUserResponse": "I’d like to book a table for two tonight at seven, please.",
+      "addedKeyPhrases": [
+        "I’d like to book a table.",
+        "For two at seven.",
+        "Under the name..."
+      ],
+      "addedUsefulConstructions": [
+        "Make the request, then add one specific detail.",
+        "Use Could I, Can I, I’d like, or I ordered for polite restaurant/cafe communication."
+      ],
+      "addedGrammarFocus": [
+        "basic question forms",
+        "word order in polite requests",
+        "please and thank you in service situations"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and unclear restaurant/cafe vocabulary.",
+      "hintStrategy": "Give a sentence frame with one blank for the learner’s detail.",
+      "correctionPriority": "Clear request, correct detail, and polite wording.",
+      "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on the selected restaurant/cafe task.",
+      "exampleGoodAnswer": "I’d like to book a table for two at seven.",
+      "exampleStretchAnswer": "I’d like to book a table for two tonight at seven, please."
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear restaurant/cafe English for booking a table. The learner should give request plus detail plus a polite follow-up or clarification.",
+      "tutorLanguageStyle": "Use natural service language and ask one realistic follow-up. Encourage clear, polite, connected customer answers.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "I’d like to book a table for two tonight at seven, under the name David.",
+      "stretchUserResponse": "I’d like to book a table for two tonight at seven. Could we sit outside if possible?",
+      "addedKeyPhrases": [
+        "I’d like to book a table for two.",
+        "Could we sit outside?",
+        "Can I change the time?"
+      ],
+      "addedUsefulConstructions": [
+        "Use a polite opening, a clear request or explanation, and a follow-up question.",
+        "Connect details with and, but, because, or also when useful."
+      ],
+      "addedGrammarFocus": [
+        "polite modal questions",
+        "connected sentences for requests and clarifications",
+        "accurate restaurant/cafe vocabulary"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, politeness, and sentence flow when they affect natural service communication.",
+      "hintStrategy": "Give a short model with request + detail + polite follow-up, then ask the learner to adapt it.",
+      "correctionPriority": "Polite tone, clear details, natural phrasing, and smooth sentence connection.",
+      "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one detail.",
+      "exampleGoodAnswer": "I’d like to book a table for two tonight at seven, under the name David.",
+      "exampleStretchAnswer": "I’d like to book a table for two tonight at seven. Could we sit outside if possible?"
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural, polite, flexible restaurant/cafe English for booking a table. The learner should use softeners, precise requests, appropriate tone, and a polite follow-up or clarification.",
+      "tutorLanguageStyle": "Use professional service language and may add one realistic complication. Keep the scenario focused and expect nuanced customer responses.",
+      "expectedUserResponse": "A natural answer with detail, nuance, and a polite follow-up or clarification.",
+      "minimumUserResponse": "I’d like to make a reservation for two this evening at seven, if you have availability. Could we sit outside if possible?",
+      "stretchUserResponse": "I’d like to make a reservation for two this evening at seven, under the name David. If the terrace is available, we’d prefer to sit outside.",
+      "addedKeyPhrases": [
+        "if you have availability",
+        "if possible",
+        "under the name..."
+      ],
+      "addedUsefulConstructions": [
+        "Use softeners such as when you have a moment, if possible, could you please, or would you mind checking.",
+        "State the request or issue precisely, then confirm the next step politely."
+      ],
+      "addedGrammarFocus": [
+        "softened modal requests",
+        "precise noun phrases for restaurant/cafe details",
+        "tone and nuance in service interactions"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, politeness, tone, precise wording, and natural service-register phrasing.",
+      "hintStrategy": "Offer a polished natural model and ask the learner to personalize the detail or soften the tone.",
+      "correctionPriority": "Nuanced politeness, precise wording, natural rhythm, and appropriate customer tone.",
+      "conversationDepth": "Add one realistic complication when useful while keeping the learner inside the selected restaurant/cafe scenario.",
+      "exampleGoodAnswer": "I’d like to make a reservation for two this evening at seven, if you have availability. Could we sit outside if possible?",
+      "exampleStretchAnswer": "I’d like to make a reservation for two this evening at seven, under the name David. If the terrace is available, we’d prefer to sit outside."
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor welcomes the customer as a host and starts the selected table booking situation.",
+    "defaultOpeningExample": "Good evening. Thank you for calling. How can I help you?",
+    "firstUserTask": "The user asks to book a table and gives the number of people or time.",
+    "expectedPattern": "I’d like to book a table for two at seven.",
+    "guidedPracticeFollowUpQuestions": [
+      "How many people is the table for?",
+      "What time would you like?",
+      "Could I have your name, please?",
+      "Would you prefer inside or outside?"
+    ],
+    "variationOrComplication": "Tutor may ask for time, guest number, name, seating preference, or offer a nearby time if the requested time is unavailable.",
+    "exampleTutorLine": "How many people is the table for?",
+    "correctionMoment": "Tutor gives one short correction when useful and keeps the customer roleplay moving.",
+    "correctionStyle": "soft, short, encouraging, and appropriate for the selected level.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let's do one final reservation question. Confirm the time, name, or seating preference.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced booking a table, giving details, and confirming a reservation. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific restaurant or cafe setting",
+      "minor menu or reservation detail",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic small complication for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected restaurant/cafe scenario"
+    ],
+    "contextVariants": [
+      {
+        "id": "phone_reservation",
+        "title": "Booking a table by phone",
+        "setting": "a restaurant phone call",
+        "reasonForMeeting": "making a reservation by phone",
+        "openingLine": "Good evening. Thank you for calling. How can I help you?",
+        "aliases": [
+          "phone reservation",
+          "call restaurant",
+          "book by phone",
+          "reservation by phone"
+        ]
+      },
+      {
+        "id": "walk_in_booking",
+        "title": "Booking a table at the restaurant",
+        "setting": "a restaurant entrance",
+        "reasonForMeeting": "asking for a table without a reservation",
+        "openingLine": "Hello. Welcome. Do you have a reservation?",
+        "aliases": [
+          "at the restaurant",
+          "walk in",
+          "table now",
+          "no reservation"
+        ]
+      },
+      {
+        "id": "change_time",
+        "title": "Changing a reservation time",
+        "setting": "a restaurant reservation desk",
+        "reasonForMeeting": "changing an existing reservation time",
+        "openingLine": "Hello. Would you like to change your reservation?",
+        "aliases": [
+          "change time",
+          "change reservation",
+          "later time",
+          "earlier time"
+        ]
+      },
+      {
+        "id": "table_for_two",
+        "title": "Booking a table for two",
+        "setting": "a restaurant reservation desk",
+        "reasonForMeeting": "booking a table for two guests",
+        "openingLine": "Good evening. How many people is the table for?",
+        "aliases": [
+          "table for two",
+          "two people",
+          "dinner for two",
+          "two guests"
+        ]
+      },
+      {
+        "id": "outdoor_table",
+        "title": "Asking for an outdoor table",
+        "setting": "a restaurant with outdoor seating",
+        "reasonForMeeting": "requesting a table outside",
+        "openingLine": "Hello. Would you like a table inside or outside?",
+        "aliases": [
+          "outside table",
+          "outdoor table",
+          "terrace",
+          "patio"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Restaurant & Cafe, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "Validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about booking a table. Please choose a simple restaurant or cafe situation for this lesson."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about booking a table. Let's stay in this restaurant or cafe situation.",
+    "secondRedirect": "Let's stay with booking a table for now. Please answer as a customer in this situation.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on booking a table. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite words.",
+      "B1": "Correct grammar, word choice, politeness, and sentence flow.",
+      "B2": "Focus on fluency, nuance, tone, and precise wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful, and focused on restaurant/cafe communication."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small reservation phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful word or phrase.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"I’d like to book a table.\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same restaurant/cafe goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into free chat."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Restaurant & Cafe lesson scenario.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as job interview or airport passport; redirect and remain in setup.",
+    "The tutor plays restaurant or cafe staff: a waiter, host, cashier, barista, or other staff member depending on the selected scenario.",
+    "The user plays a customer.",
+    "Use polite service language and keep the lesson focused on the selected restaurant/cafe task.",
+    "Do not turn the lesson into a general food discussion or free chat.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}
