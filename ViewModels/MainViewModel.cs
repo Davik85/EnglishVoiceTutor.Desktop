@@ -200,6 +200,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ("Work & Business", "Phone call with a client") => ContentConstants.PhoneCallWithAClientFileName,
             ("Work & Business", "Asking for clarification") => ContentConstants.WorkAskingForClarificationFileName,
             ("Work & Business", "Discussing deadlines") => ContentConstants.DiscussingDeadlinesFileName,
+            ("Job Interview", "Tell me about yourself") => ContentConstants.TellMeAboutYourselfFileName,
+            ("Job Interview", "Work experience") => ContentConstants.WorkExperienceFileName,
+            ("Job Interview", "Strengths and weaknesses") => ContentConstants.StrengthsAndWeaknessesFileName,
+            ("Job Interview", "Why do you want this job?") => ContentConstants.WhyDoYouWantThisJobFileName,
+            ("Job Interview", "Asking questions at the end") => ContentConstants.AskingQuestionsAtTheEndFileName,
             _ => throw new InvalidOperationException(
                 $"No lesson scenario file is mapped for topic '{selectedTopic.Title}' and subtopic '{selectedSubtopic.Title}'.")
         };
@@ -212,6 +217,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             "Everyday English" => ContentConstants.EverydayEnglishFolderName,
             "Travel" => ContentConstants.TravelFolderName,
             "Work & Business" => ContentConstants.WorkAndBusinessFolderName,
+            "Job Interview" => ContentConstants.JobInterviewFolderName,
             _ => throw new InvalidOperationException($"No lesson content folder is mapped for topic '{selectedTopic.Title}'.")
         };
     }

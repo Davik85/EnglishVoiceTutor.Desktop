@@ -11,6 +11,7 @@ public static class ContentConstants
     public const string EverydayEnglishFolderName = "EverydayEnglish";
     public const string TravelFolderName = "Travel";
     public const string WorkAndBusinessFolderName = "WorkAndBusiness";
+    public const string JobInterviewFolderName = "JobInterview";
     public const string IntroductionsFileName = "introductions.json";
     public const string SmallTalkWithANeighborFileName = "small_talk_with_a_neighbor.json";
     public const string AskingForHelpFileName = "asking_for_help.json";
@@ -26,6 +27,11 @@ public static class ContentConstants
     public const string PhoneCallWithAClientFileName = "phone_call_with_a_client.json";
     public const string WorkAskingForClarificationFileName = "asking_for_clarification.json";
     public const string DiscussingDeadlinesFileName = "discussing_deadlines.json";
+    public const string TellMeAboutYourselfFileName = "tell_me_about_yourself.json";
+    public const string WorkExperienceFileName = "work_experience.json";
+    public const string StrengthsAndWeaknessesFileName = "strengths_and_weaknesses.json";
+    public const string WhyDoYouWantThisJobFileName = "why_do_you_want_this_job.json";
+    public const string AskingQuestionsAtTheEndFileName = "asking_questions_at_the_end.json";
     public const string ElenaTutorId = "elena";
     public const string ElenaTutorFileName = "elena.json";
 

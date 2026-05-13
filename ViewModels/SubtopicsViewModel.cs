@@ -106,11 +106,11 @@ public partial class SubtopicsViewModel : ViewModelBase
             ],
             4 =>
             [
-                new Subtopic(401, 4, "Tell me about yourself", "Give a short and clear self-introduction."),
-                new Subtopic(402, 4, "Your strengths", "Describe your strongest skills with examples."),
-                new Subtopic(403, 4, "Your weaknesses", "Explain a weakness and how you improve it."),
-                new Subtopic(404, 4, "Previous experience", "Summarize your past roles and achievements."),
-                new Subtopic(405, 4, "Salary expectations", "Discuss salary politely and professionally.")
+                new Subtopic(401, 4, "Tell me about yourself", "Give a short, relevant interview-style self-introduction."),
+                new Subtopic(402, 4, "Work experience", "Describe previous work, responsibilities, and one result."),
+                new Subtopic(403, 4, "Strengths and weaknesses", "Talk about one strength and one improvement area professionally."),
+                new Subtopic(404, 4, "Why do you want this job?", "Explain your motivation and connect the role to your skills."),
+                new Subtopic(405, 4, "Asking questions at the end", "Ask polite, useful questions before the interview finishes.")
             ],
             5 =>
             [
