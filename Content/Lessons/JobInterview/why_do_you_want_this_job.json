@@ -26,7 +26,7 @@
     "contextSelection": {
       "customContextAllowed": true,
       "customContextValidationMode": "deterministic_keyword_matching",
-      "validCustomContextDescription": "Custom context is allowed only if it is a simple job interview situation about why do you want this job?.",
+      "validCustomContextDescription": "Custom context is allowed only if it is about explaining motivation, role fit, company interest, contribution, or career growth in a job interview.",
       "validCustomContextKeywords": [
         "why this job",
         "role",
@@ -43,7 +43,11 @@
         "learn",
         "learning",
         "opportunity",
-        "develop"
+        "develop",
+        "role fit",
+        "company interest",
+        "contribution",
+        "career growth"
       ],
       "offTopicExamples": [
         "hotel check-in",
@@ -52,7 +56,7 @@
         "travel directions",
         "casual friend chat"
       ],
-      "invalidContextRedirect": "That sounds interesting, but this lesson is about why do you want this job? in a job interview. Please choose a simple interview situation for this lesson."
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about explaining why you want the job. Please choose a motivation-related interview situation."
     }
   },
   "learningGoal": {
@@ -68,11 +72,11 @@
   },
   "roles": {
     "userRole": "A job candidate in an interview.",
-    "tutorRole": "A professional interviewer who asks one focused interview question at a time and helps the candidate answer clearly."
+    "tutorRole": "A professional interviewer who asks focused interview questions, expects relevant candidate answers, and gives concise feedback on clarity, structure, and professional tone. The interviewer is formal but supportive, asks one question at a time, and may ask for a specific example or clarification."
   },
   "targetLanguage": {
     "keyPhrases": [
-      "I want this job because...",
+      "I’m interested in this job because...",
       "I am interested in this role because...",
       "I like this company because...",
       "This role is a good fit because...",
@@ -82,7 +86,7 @@
       "I think I can contribute by..."
     ],
     "usefulConstructions": [
-      "I want this job because + reason.",
+      "I’m interested in this job because + reason.",
       "This role is a good fit because + skill/reason.",
       "I can use my skills in + area.",
       "I think I can contribute by + verb-ing."
@@ -103,130 +107,133 @@
   "levelProfiles": {
     "A1 Beginner": {
       "level": "A1 Beginner",
-      "difficultyNotes": "Very simple interview English for why do you want this job?. Focus on one clear idea and core job-interview words.",
-      "tutorLanguageStyle": "Use short interview questions. Ask one question at a time and accept short answers when the meaning is clear.",
-      "expectedUserResponse": "1 short sentence.",
-      "minimumUserResponse": "I want this job because I like design.",
-      "stretchUserResponse": "I want this job because I like this work.",
+      "difficultyNotes": "Very simple professional English for explaining one job-related reason.",
+      "tutorLanguageStyle": "Use short formal interviewer questions and guide the candidate away from only salary or I need work.",
+      "expectedUserResponse": "1-2 short sentences with interest and one simple reason.",
+      "minimumUserResponse": "I’m interested in this job because I like design.",
+      "stretchUserResponse": "I’m interested in this job because I like design and want to learn.",
       "addedKeyPhrases": [
-        "I want this job because...",
-        "I like...",
-        "I can..."
+        "I’m interested in this job because...",
+        "I like this work.",
+        "I want to learn in this role.",
+        "I can help..."
       ],
       "addedUsefulConstructions": [
-        "Use I want this job because...",
-        "Use one short sentence with a clear interview meaning."
+        "Use I’m interested in this job because...",
+        "Use I like... and I want to learn..."
       ],
       "addedGrammarFocus": [
-        "simple present for interview answers",
-        "basic word order in short answers",
-        "clear subject + verb sentences"
+        "because for one simple reason",
+        "want to + verb",
+        "interested in + noun"
       ],
-      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
-      "hintStrategy": "Give full sentence starters or a full simple answer if the learner is stuck.",
-      "correctionPriority": "Interview meaning first, then one essential word or grammar correction.",
-      "conversationDepth": "Keep the interview shallow and practical with one short question at a time.",
-      "exampleGoodAnswer": "I want this job because I like design.",
-      "exampleStretchAnswer": "I want this job because I like this work."
+      "feedbackStrictness": "Correct only meaning-blocking mistakes and help make the reason professional.",
+      "hintStrategy": "Give a simple professional sentence with interest and one reason.",
+      "correctionPriority": "Professional motivation, simple because sentence, and clear role-related vocabulary.",
+      "conversationDepth": "Keep the answer short and job-related: interest, one reason, and optional learning.",
+      "exampleGoodAnswer": "I’m interested in this job because I like design.",
+      "exampleStretchAnswer": "I’m interested in this job because I like design and want to learn."
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple interview English for why do you want this job?. The learner should answer with one main idea and one useful detail.",
-      "tutorLanguageStyle": "Use simple interview questions. Ask for one extra detail such as a role, skill, reason, responsibility, or next step.",
-      "expectedUserResponse": "1-2 short sentences.",
-      "minimumUserResponse": "I want this job because I like design and I want to learn more.",
-      "stretchUserResponse": "I want this job because I like design and can use my skills.",
+      "difficultyNotes": "Simple motivation answer with interest, fit, and one learning or skill detail.",
+      "tutorLanguageStyle": "Ask for one specific detail about the role, company, skill, or learning opportunity.",
+      "expectedUserResponse": "2 short sentences connecting interest and one skill or growth reason.",
+      "minimumUserResponse": "I’m interested in this job because I like design. I want to learn in this role.",
+      "stretchUserResponse": "I’m interested in this job because I like design and can use my skills. I also want to learn from the team.",
       "addedKeyPhrases": [
-        "I want this job because...",
-        "I want to learn more.",
-        "I can use my skills."
+        "I’m interested in this role because...",
+        "It is a good fit because...",
+        "I can use my skills in...",
+        "I want to learn from..."
       ],
       "addedUsefulConstructions": [
-        "Give one reason and one learning or skill detail.",
-        "Add one detail after the main answer."
+        "Give interest + fit or learning detail.",
+        "Avoid only salary or I need work as the main reason."
       ],
       "addedGrammarFocus": [
-        "simple past or present as needed for interview answers",
-        "basic connectors with and or because",
-        "polite complete sentences"
+        "because for motivation",
+        "can + verb for skill fit",
+        "want to + verb for growth"
       ],
-      "feedbackStrictness": "Correct basic grammar, word order, and missing polite or professional words.",
-      "hintStrategy": "Give a sentence starter and one optional detail to add.",
-      "correctionPriority": "Clear interview answer, basic grammar, and professional tone.",
-      "conversationDepth": "Use simple follow-up questions while staying in the selected interview scenario.",
-      "exampleGoodAnswer": "I want this job because I like design and I want to learn more.",
-      "exampleStretchAnswer": "I want this job because I like design and can use my skills."
+      "feedbackStrictness": "Correct generic motivation, unclear role fit, and important grammar errors.",
+      "hintStrategy": "Offer a frame: I’m interested in this role because... I can... I want to...",
+      "correctionPriority": "Specific motivation, role fit, simple grammar, and professional tone.",
+      "conversationDepth": "Ask one follow-up about what specifically interests the candidate about the role or company.",
+      "exampleGoodAnswer": "I’m interested in this job because I like design. I want to learn in this role.",
+      "exampleStretchAnswer": "I’m interested in this job because I like design and can use my skills. I also want to learn from the team."
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
-      "difficultyNotes": "Natural but clear interview English for why do you want this job?. The learner should give an answer, a detail, and a reason or example.",
-      "tutorLanguageStyle": "Use natural clear interview English. Ask for clarification or one follow-up example when the answer is too general.",
-      "expectedUserResponse": "2-3 connected sentences.",
-      "minimumUserResponse": "I want this job because I’m interested in design and I want to develop my skills in a professional team.",
-      "stretchUserResponse": "I’m interested in this role because it matches my design skills and gives me a chance to learn from a professional team.",
+      "difficultyNotes": "Structured motivation answer using point + detail + reason/example with role fit and contribution.",
+      "tutorLanguageStyle": "Use natural interviewer questions and ask what specifically interests the candidate when the answer is generic.",
+      "expectedUserResponse": "2-3 connected sentences about interest, fit, and contribution or growth.",
+      "minimumUserResponse": "I’m interested in this role because it matches my design skills. For example, I enjoy creating clear visual content, and I think I could contribute to the team while developing professionally.",
+      "stretchUserResponse": "I’m interested in this role because it matches my design background and gives me a chance to grow in a professional team. For example, I enjoy creating clear visual content, and I believe I could contribute useful ideas to your projects.",
       "addedKeyPhrases": [
         "I’m interested in this role because...",
-        "I want to develop my skills...",
-        "This role is a good fit because..."
+        "For example...",
+        "This helped me...",
+        "I could contribute by..."
       ],
       "addedUsefulConstructions": [
-        "Connect interest, skills, and professional growth.",
-        "Use answer + detail + reason or example."
+        "Use point + role-fit detail + contribution or growth reason.",
+        "Connect your motivation to the role, company, skills, or career growth."
       ],
       "addedGrammarFocus": [
-        "connected sentences with because, so, and while",
-        "accurate tense choice for experience or goals",
-        "specific interview vocabulary and examples"
+        "because and while for motivation and contribution",
+        "could for professional contribution",
+        "specific verbs for skills and growth"
       ],
-      "feedbackStrictness": "Correct grammar, word choice, answer structure, and unclear interview details.",
-      "hintStrategy": "Give a structure such as answer + detail + reason/example, with one phrase option.",
-      "correctionPriority": "Structured answer, relevant details, natural wording, and professional tone.",
-      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected interview scenario.",
-      "exampleGoodAnswer": "I want this job because I’m interested in design and I want to develop my skills in a professional team.",
-      "exampleStretchAnswer": "I’m interested in this role because it matches my design skills and gives me a chance to learn from a professional team."
+      "feedbackStrictness": "Correct generic answers, missing role fit, weak contribution, unclear structure, and important grammar errors.",
+      "hintStrategy": "Suggest a structure: interest + skill/fit detail + contribution or growth.",
+      "correctionPriority": "Specific motivation, role fit, contribution, clear structure, and professional tone.",
+      "conversationDepth": "Ask one realistic follow-up about role interest, company interest, skill fit, or contribution.",
+      "exampleGoodAnswer": "I’m interested in this role because it matches my design skills. For example, I enjoy creating clear visual content, and I think I could contribute to the team while developing professionally.",
+      "exampleStretchAnswer": "I’m interested in this role because it matches my design background and gives me a chance to grow in a professional team. For example, I enjoy creating clear visual content, and I believe I could contribute useful ideas to your projects."
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
-      "difficultyNotes": "Natural professional interview English for why do you want this job?. The learner should use structured, specific, nuanced phrasing.",
-      "tutorLanguageStyle": "Use realistic interviewer language. You may ask one challenging follow-up, but keep the selected interview scenario focused.",
-      "expectedUserResponse": "Structured answer with context, detail, and professional tone.",
-      "minimumUserResponse": "I’m interested in this role because it matches my design background and gives me a chance to grow professionally while contributing to a creative team.",
-      "stretchUserResponse": "This role appeals to me because it connects directly with my design background, offers room for professional growth, and would allow me to contribute to a creative team.",
+      "difficultyNotes": "Polished motivation answer with concise opening, evidence, role fit, contribution, and growth.",
+      "tutorLanguageStyle": "Use formal interviewer language and controlled challenges about specificity, relevance, contribution, or concision.",
+      "expectedUserResponse": "Professional answer connecting motivation, evidence, fit, contribution, and career growth.",
+      "minimumUserResponse": "This role appeals to me because it connects directly with my design background and the kind of work I want to develop further. My experience creating digital content has strengthened my attention to audience needs, and I believe I could contribute clear, user-focused ideas to the team.",
+      "stretchUserResponse": "This role appeals to me because it combines creative design work with a structured team environment. My previous digital content experience strengthened my ability to communicate visually, and I would be motivated by the chance to contribute user-focused ideas while continuing to grow professionally.",
       "addedKeyPhrases": [
-        "it matches my background",
-        "grow professionally",
-        "contributing to a team",
-        "This role appeals to me because..."
+        "This role appeals to me because...",
+        "That experience strengthened...",
+        "I could contribute...",
+        "What success would look like..."
       ],
       "addedUsefulConstructions": [
-        "Connect motivation, fit, contribution, and growth with specific wording.",
-        "Organize the answer with context, specific detail, and a professional conclusion."
+        "Use concise opening + evidence + role fit + contribution or growth.",
+        "Be ready to explain how your motivation is relevant to this specific role."
       ],
       "addedGrammarFocus": [
-        "precise professional vocabulary",
-        "complex but clear sentence structure",
-        "nuanced tone and relevance in interview answers"
+        "precise motivation vocabulary",
+        "balanced contribution and growth clauses",
+        "clear relevance links with because, while, and by"
       ],
-      "feedbackStrictness": "Focus on clarity, relevance, nuance, tone, precise wording, and any important grammar errors.",
-      "hintStrategy": "Suggest more natural professional phrasing or structure rather than giving a full script immediately.",
-      "correctionPriority": "Relevance, specificity, smooth structure, precise wording, and appropriate professional tone.",
-      "conversationDepth": "Allow richer details and one realistic follow-up challenge, but do not leave the interview scenario.",
-      "exampleGoodAnswer": "I’m interested in this role because it matches my design background and gives me a chance to grow professionally while contributing to a creative team.",
-      "exampleStretchAnswer": "This role appeals to me because it connects directly with my design background, offers room for professional growth, and would allow me to contribute to a creative team."
+      "feedbackStrictness": "Evaluate specificity, relevance, contribution, credibility, concision, and professional tone.",
+      "hintStrategy": "Suggest a more specific role or company link, clearer contribution, or tighter wording.",
+      "correctionPriority": "Specific motivation, role fit, contribution, evidence, concise structure, and polished wording.",
+      "conversationDepth": "Allow one realistic interviewer challenge such as Could you give me a specific example?, How is that relevant to this role?, or Could you make that answer more concise?",
+      "exampleGoodAnswer": "This role appeals to me because it connects directly with my design background and the kind of work I want to develop further. My experience creating digital content has strengthened my attention to audience needs, and I believe I could contribute clear, user-focused ideas to the team.",
+      "exampleStretchAnswer": "This role appeals to me because it combines creative design work with a structured team environment. My previous digital content experience strengthened my ability to communicate visually, and I would be motivated by the chance to contribute user-focused ideas while continuing to grow professionally."
     }
   },
   "conversationFlow": {
     "opening": "Tutor asks the selected motivation interview question.",
     "defaultOpeningExample": "Why do you want this job?",
     "firstUserTask": "The user explains motivation and connects it to the role, company, skills, or growth.",
-    "expectedPattern": "I want this job because... This role is a good fit because... I can contribute by...",
+    "expectedPattern": "I’m interested in this role because... This role is a good fit because... I could contribute by...",
     "guidedPracticeFollowUpQuestions": [
       "What interests you most about this role?",
       "Which skill would you use in this job?",
       "How would this role help you grow?",
       "What could you contribute to the team?"
     ],
-    "variationOrComplication": "Tutor asks for more specific motivation, company interest, skill fit, or career growth.",
+    "variationOrComplication": "Tutor asks for more specific role interest, company interest, skill fit, contribution, or career growth if the motivation is generic.",
     "exampleTutorLine": "Why do you think this role is a good fit for you?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging, and professional.",
@@ -329,12 +336,12 @@
       "Validate custom context with simple deterministic English keyword matching, not AI validation.",
       "Do not use non-English aliases or Cyrillic keywords."
     ],
-    "invalidContextRedirect": "That sounds interesting, but this lesson is about why do you want this job? in a job interview. Please choose a simple interview situation for this lesson."
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about explaining why you want the job. Please choose a motivation-related interview situation."
   },
   "offTopicHandling": {
-    "firstRedirect": "That sounds interesting, but this lesson is about why do you want this job? in a job interview. Let's stay with the interview question.",
-    "secondRedirect": "Let's stay with this job interview scenario for now. Please answer as a candidate practicing why do you want this job?.",
-    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on why do you want this job? in a job interview. You can finish this lesson and use Free Conversation Mode later."
+    "firstRedirect": "That sounds interesting, but this lesson is about explaining why you want the job. Please focus on motivation, role fit, contribution, or growth.",
+    "secondRedirect": "Let’s stay with the motivation question. Please explain why this role is a good fit from the candidate’s point of view.",
+    "freeConversationSuggestion": "This lesson is focused on explaining motivation, role fit, contribution, and growth in a job interview. You can finish this lesson and use Free Conversation Mode later."
   },
   "feedbackRules": {
     "levelRules": {
@@ -353,7 +360,7 @@
       "Give a sentence starter.",
       "Give a full example only if the user is stuck."
     ],
-    "exampleHint": "You can start with: \"I want this job because...\""
+    "exampleHint": "You can start with: \"I’m interested in this job because...\""
   },
   "repetitionLogic": {
     "rules": [
@@ -367,21 +374,28 @@
   },
   "aiTutorPromptInstructions": [
     "Stay inside this Job Interview lesson scenario.",
-    "The tutor plays an interviewer and the user plays a job candidate.",
+    "The tutor is a professional interviewer and the user is a job candidate.",
+    "Maintain a professional interview tone: formal, supportive, evaluative, and not casual.",
     "Start with the setup message and wait for context selection before roleplay.",
     "Tutor messages must be in English.",
     "Use English-only context matching.",
     "Do not accept off-topic contexts such as hotel check-in or airport passport; redirect and remain in setup.",
     "Keep setup and context choice outside the lesson turn count.",
     "Start counting user turns only after active roleplay starts.",
-    "Use very simple interview English for A1.",
+    "Use very simple but professional interview English for A1.",
     "Keep tutor messages short and suitable for voice output.",
-    "Ask one interview question at a time.",
-    "Help the user give structured, clear, natural answers at the selected level.",
+    "Ask one focused interview question at a time; do not ask multiple questions at once.",
+    "Expect relevant candidate answers and do not drift into casual conversation or general business practice.",
+    "Do not overpraise weak, vague, or off-topic answers.",
+    "If the answer is too vague for the selected level, ask for one specific detail or example.",
+    "Keep feedback concise and interview-focused, with attention to clarity, structure, and professional tone.",
+    "If the answer is only about salary, needing work, or a generic reason, ask what specifically interests the user about the role or company.",
+    "For B1 and B2, guide the candidate toward role fit, contribution, and professional growth.",
+    "For B1 and B2, encourage structured answers with point + evidence/example + relevance to the role.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
     "After user turn 10, start wrapping up.",
     "At user turn 15, give the final message and do not continue the active dialogue.",
-    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal or interviewer role."
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal, interviewer role, candidate role, or selected interview scenario."
   ]
 }

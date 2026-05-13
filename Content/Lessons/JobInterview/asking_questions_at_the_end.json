@@ -26,7 +26,7 @@
     "contextSelection": {
       "customContextAllowed": true,
       "customContextValidationMode": "deterministic_keyword_matching",
-      "validCustomContextDescription": "Custom context is allowed only if it is a simple job interview situation about asking questions at the end.",
+      "validCustomContextDescription": "Custom context is allowed only if it is about asking useful candidate questions at the end of a job interview, such as role, team, success, onboarding, process, or next steps.",
       "validCustomContextKeywords": [
         "role",
         "job role",
@@ -43,7 +43,11 @@
         "support",
         "culture",
         "company culture",
-        "values"
+        "values",
+        "success",
+        "expectations",
+        "next step",
+        "hiring process"
       ],
       "offTopicExamples": [
         "hotel check-in",
@@ -52,7 +56,7 @@
         "travel directions",
         "casual friend chat"
       ],
-      "invalidContextRedirect": "That sounds interesting, but this lesson is about asking questions at the end in a job interview. Please choose a simple interview situation for this lesson."
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about asking useful questions at the end of a job interview. Please choose an end-of-interview question situation."
     }
   },
   "learningGoal": {
@@ -68,7 +72,7 @@
   },
   "roles": {
     "userRole": "A job candidate in an interview.",
-    "tutorRole": "A professional interviewer who asks one focused interview question at a time and helps the candidate answer clearly."
+    "tutorRole": "A professional interviewer who asks focused interview questions, expects relevant candidate answers, and gives concise feedback on clarity, structure, and professional tone. The interviewer is formal but supportive, asks one question at a time, and may ask for a specific example or clarification."
   },
   "targetLanguage": {
     "keyPhrases": [
@@ -104,116 +108,119 @@
   "levelProfiles": {
     "A1 Beginner": {
       "level": "A1 Beginner",
-      "difficultyNotes": "Very simple interview English for asking questions at the end. Focus on one clear idea and core job-interview words.",
-      "tutorLanguageStyle": "Use short interview questions. Ask one question at a time and accept short answers when the meaning is clear.",
-      "expectedUserResponse": "1 short sentence.",
+      "difficultyNotes": "Very simple professional English for asking one useful question at the end of an interview.",
+      "tutorLanguageStyle": "Use short formal interviewer language and invite one polite candidate question.",
+      "expectedUserResponse": "1 short polite question or closing sentence.",
       "minimumUserResponse": "What are the next steps?",
-      "stretchUserResponse": "Thank you. What are the next steps?",
+      "stretchUserResponse": "Thank you for your time. What are the next steps?",
       "addedKeyPhrases": [
         "What are the next steps?",
-        "Thank you.",
-        "What is the team like?"
+        "Thank you for your time.",
+        "Could you tell me about the team?",
+        "What is the role like?"
       ],
       "addedUsefulConstructions": [
-        "Use one short question such as What are the next steps?",
-        "Use one short sentence with a clear interview meaning."
+        "Use What are the next steps?",
+        "Use Could you tell me about the team?"
       ],
       "addedGrammarFocus": [
-        "simple present for interview answers",
-        "basic word order in short answers",
-        "clear subject + verb sentences"
+        "basic question word order",
+        "polite question forms with could",
+        "thank you + for + noun"
       ],
-      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
-      "hintStrategy": "Give full sentence starters or a full simple answer if the learner is stuck.",
-      "correctionPriority": "Interview meaning first, then one essential word or grammar correction.",
-      "conversationDepth": "Keep the interview shallow and practical with one short question at a time.",
+      "feedbackStrictness": "Correct only meaning-blocking mistakes and help make the question polite.",
+      "hintStrategy": "Give one full professional question the candidate can ask.",
+      "correctionPriority": "Politeness, clear question word order, and appropriate interview topic.",
+      "conversationDepth": "Keep the ending practical: one useful question and one polite closing phrase.",
       "exampleGoodAnswer": "What are the next steps?",
-      "exampleStretchAnswer": "Thank you. What are the next steps?"
+      "exampleStretchAnswer": "Thank you for your time. What are the next steps?"
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple interview English for asking questions at the end. The learner should answer with one main idea and one useful detail.",
-      "tutorLanguageStyle": "Use simple interview questions. Ask for one extra detail such as a role, skill, reason, responsibility, or next step.",
-      "expectedUserResponse": "1-2 short sentences.",
+      "difficultyNotes": "Simple end-of-interview questions about role, team, onboarding, training, or next steps.",
+      "tutorLanguageStyle": "Invite one professional question and redirect inappropriate first questions to a better option.",
+      "expectedUserResponse": "1-2 polite questions or a question plus closing phrase.",
       "minimumUserResponse": "Could you tell me about the team?",
-      "stretchUserResponse": "Could you tell me about the team and the next steps?",
+      "stretchUserResponse": "Thank you for your time. Could you tell me about the team and the next steps?",
       "addedKeyPhrases": [
-        "Could you tell me about the team?",
-        "What are the main responsibilities?",
-        "Is there training?"
+        "Could you tell me about...?",
+        "What are the next steps?",
+        "Is there training for this role?",
+        "Thank you for your time."
       ],
       "addedUsefulConstructions": [
-        "Use Could you tell me about... and add one topic.",
-        "Add one detail after the main answer."
+        "Ask about role, team, training, onboarding, process, or next steps.",
+        "Avoid salary or vacation as the first question."
       ],
       "addedGrammarFocus": [
-        "simple past or present as needed for interview answers",
-        "basic connectors with and or because",
-        "polite complete sentences"
+        "could for polite questions",
+        "question word order with what and how",
+        "about + noun phrase"
       ],
-      "feedbackStrictness": "Correct basic grammar, word order, and missing polite or professional words.",
-      "hintStrategy": "Give a sentence starter and one optional detail to add.",
-      "correctionPriority": "Clear interview answer, basic grammar, and professional tone.",
-      "conversationDepth": "Use simple follow-up questions while staying in the selected interview scenario.",
+      "feedbackStrictness": "Correct impolite wording, inappropriate first-question topics, and important question-order errors.",
+      "hintStrategy": "Offer a professional question starter: Could you tell me about...? or What are the next steps?",
+      "correctionPriority": "Professional topic choice, politeness, and clear question structure.",
+      "conversationDepth": "Ask for one useful end-of-interview question and a polite close.",
       "exampleGoodAnswer": "Could you tell me about the team?",
-      "exampleStretchAnswer": "Could you tell me about the team and the next steps?"
+      "exampleStretchAnswer": "Thank you for your time. Could you tell me about the team and the next steps?"
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
-      "difficultyNotes": "Natural but clear interview English for asking questions at the end. The learner should give an answer, a detail, and a reason or example.",
-      "tutorLanguageStyle": "Use natural clear interview English. Ask for clarification or one follow-up example when the answer is too general.",
-      "expectedUserResponse": "2-3 connected sentences.",
-      "minimumUserResponse": "Could you tell me more about the main responsibilities for this role?",
-      "stretchUserResponse": "Could you tell me more about the main responsibilities for this role and the next steps in the process?",
+      "difficultyNotes": "Professional end-of-interview questions using point + detail + reason for role, team, process, or success.",
+      "tutorLanguageStyle": "Use natural interviewer language and ask the candidate to make vague or inappropriate questions more professional.",
+      "expectedUserResponse": "1-2 polite, useful questions with professional framing or a brief reason.",
+      "minimumUserResponse": "Could you tell me more about the main responsibilities for this role? I’d also like to know what the next steps are.",
+      "stretchUserResponse": "Could you tell me more about the main responsibilities for this role? I’d be interested to know how the team supports someone during the first few months.",
       "addedKeyPhrases": [
-        "Could you tell me more about...",
+        "Could you tell me more about...?",
+        "I’d be interested to know...",
         "What are the next steps in the process?",
-        "I appreciate the opportunity."
+        "What would success look like?"
       ],
       "addedUsefulConstructions": [
-        "Ask a polite question about role, team, or process and close professionally.",
-        "Use answer + detail + reason or example."
+        "Ask a question about role, team, process, onboarding, or success, then close politely.",
+        "Use a brief reason if it helps the question sound thoughtful and relevant."
       ],
       "addedGrammarFocus": [
-        "connected sentences with because, so, and while",
-        "accurate tense choice for experience or goals",
-        "specific interview vocabulary and examples"
+        "embedded questions with I’d like to know",
+        "conditional would for polite professional questions",
+        "clear question order after could"
       ],
-      "feedbackStrictness": "Correct grammar, word choice, answer structure, and unclear interview details.",
-      "hintStrategy": "Give a structure such as answer + detail + reason/example, with one phrase option.",
-      "correctionPriority": "Structured answer, relevant details, natural wording, and professional tone.",
-      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected interview scenario.",
-      "exampleGoodAnswer": "Could you tell me more about the main responsibilities for this role?",
-      "exampleStretchAnswer": "Could you tell me more about the main responsibilities for this role and the next steps in the process?"
+      "feedbackStrictness": "Correct vague, casual, or inappropriate questions, unclear question order, and weak professional tone.",
+      "hintStrategy": "Suggest a structure: polite opener + useful topic + optional brief reason.",
+      "correctionPriority": "Usefulness of the question, professional tone, politeness, and grammatical question structure.",
+      "conversationDepth": "Use realistic end-of-interview turns and ask for one more specific or professional version when needed.",
+      "exampleGoodAnswer": "Could you tell me more about the main responsibilities for this role? I’d also like to know what the next steps are.",
+      "exampleStretchAnswer": "Could you tell me more about the main responsibilities for this role? I’d be interested to know how the team supports someone during the first few months."
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
-      "difficultyNotes": "Natural professional interview English for asking questions at the end. The learner should use structured, specific, nuanced phrasing.",
-      "tutorLanguageStyle": "Use realistic interviewer language. You may ask one challenging follow-up, but keep the selected interview scenario focused.",
-      "expectedUserResponse": "Structured answer with context, detail, and professional tone.",
-      "minimumUserResponse": "Could you tell me what success would look like in this role during the first few months?",
-      "stretchUserResponse": "Before we finish, could you tell me what success would look like in this role during the first few months and what the next steps are?",
+      "difficultyNotes": "Polished candidate questions that show judgment, role interest, and professional priorities without becoming a negotiation.",
+      "tutorLanguageStyle": "Use formal interviewer language and controlled challenges about professionalism, specificity, or relevance.",
+      "expectedUserResponse": "One thoughtful professional question or two concise questions about role expectations, success, team, onboarding, or next steps.",
+      "minimumUserResponse": "I’d be interested to know what success would look like in this role during the first few months. Could you also tell me what the next steps in the process are?",
+      "stretchUserResponse": "Before we finish, I’d be interested to know what success would look like in this role during the first few months and how the team typically supports a new hire. Thank you for your time; could you also confirm the next steps in the process?",
       "addedKeyPhrases": [
-        "What does success look like in this role?",
-        "during the first few months",
-        "Could you tell me what...",
-        "I appreciate the opportunity to speak with you."
+        "I’d be interested to know...",
+        "What success would look like...",
+        "Could you tell me how the team...?",
+        "Thank you for your time."
       ],
       "addedUsefulConstructions": [
-        "Ask a precise, useful question with professional framing and a polite closing.",
-        "Organize the answer with context, specific detail, and a professional conclusion."
+        "Ask one thoughtful question about success in the role or team expectations.",
+        "Use concise professional framing before asking about process or next steps."
       ],
       "addedGrammarFocus": [
-        "precise professional vocabulary",
-        "complex but clear sentence structure",
-        "nuanced tone and relevance in interview answers"
+        "embedded questions for polished candidate questions",
+        "modal would for professional curiosity",
+        "concise multi-part question control"
       ],
-      "feedbackStrictness": "Focus on clarity, relevance, nuance, tone, precise wording, and any important grammar errors.",
-      "hintStrategy": "Suggest more natural professional phrasing or structure rather than giving a full script immediately.",
-      "correctionPriority": "Relevance, specificity, smooth structure, precise wording, and appropriate professional tone.",
-      "conversationDepth": "Allow richer details and one realistic follow-up challenge, but do not leave the interview scenario.",
-      "exampleGoodAnswer": "Could you tell me what success would look like in this role during the first few months?",
-      "exampleStretchAnswer": "Before we finish, could you tell me what success would look like in this role during the first few months and what the next steps are?"
+      "feedbackStrictness": "Evaluate professionalism, specificity, timing, concision, politeness, and whether the question strengthens the candidate impression.",
+      "hintStrategy": "Suggest a more strategic question about success, expectations, team support, onboarding, or next steps.",
+      "correctionPriority": "Professional judgment, relevance, concise wording, question control, and polished tone.",
+      "conversationDepth": "Allow one realistic interviewer challenge such as asking the candidate to avoid salary or vacation as the first question, make it more concise, or ask a more thoughtful question about success in the role.",
+      "exampleGoodAnswer": "I’d be interested to know what success would look like in this role during the first few months. Could you also tell me what the next steps in the process are?",
+      "exampleStretchAnswer": "Before we finish, I’d be interested to know what success would look like in this role during the first few months and how the team typically supports a new hire. Thank you for your time; could you also confirm the next steps in the process?"
     }
   },
   "conversationFlow": {
@@ -227,7 +234,7 @@
       "Could you ask that in a more professional way?",
       "Do you have one final question before we finish?"
     ],
-    "variationOrComplication": "Tutor invites questions about role, team, training, company culture, next steps, or success in the role.",
+    "variationOrComplication": "Tutor invites questions about role, team, training, onboarding, company culture, next steps, expectations, or success in the role, and redirects inappropriate first questions to more professional alternatives.",
     "exampleTutorLine": "Do you have any questions about the role?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging, and professional.",
@@ -330,12 +337,12 @@
       "Validate custom context with simple deterministic English keyword matching, not AI validation.",
       "Do not use non-English aliases or Cyrillic keywords."
     ],
-    "invalidContextRedirect": "That sounds interesting, but this lesson is about asking questions at the end in a job interview. Please choose a simple interview situation for this lesson."
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about asking useful questions at the end of a job interview. Please choose an end-of-interview question situation."
   },
   "offTopicHandling": {
-    "firstRedirect": "That sounds interesting, but this lesson is about asking questions at the end in a job interview. Let's stay with the interview question.",
-    "secondRedirect": "Let's stay with this job interview scenario for now. Please answer as a candidate practicing asking questions at the end.",
-    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on asking questions at the end in a job interview. You can finish this lesson and use Free Conversation Mode later."
+    "firstRedirect": "That sounds interesting, but this lesson is about asking useful questions at the end of a job interview. Please focus on the role, team, success, process, onboarding, or next steps.",
+    "secondRedirect": "Let’s stay with end-of-interview candidate questions. Please ask a professional question as the job candidate.",
+    "freeConversationSuggestion": "This lesson is focused on useful candidate questions at the end of a job interview. You can finish this lesson and use Free Conversation Mode later."
   },
   "feedbackRules": {
     "levelRules": {
@@ -368,21 +375,29 @@
   },
   "aiTutorPromptInstructions": [
     "Stay inside this Job Interview lesson scenario.",
-    "The tutor plays an interviewer and the user plays a job candidate.",
+    "The tutor is a professional interviewer and the user is a job candidate.",
+    "Maintain a professional interview tone: formal, supportive, evaluative, and not casual.",
     "Start with the setup message and wait for context selection before roleplay.",
     "Tutor messages must be in English.",
     "Use English-only context matching.",
     "Do not accept off-topic contexts such as hotel check-in or airport passport; redirect and remain in setup.",
     "Keep setup and context choice outside the lesson turn count.",
     "Start counting user turns only after active roleplay starts.",
-    "Use very simple interview English for A1.",
+    "Use very simple but professional interview English for A1.",
     "Keep tutor messages short and suitable for voice output.",
-    "Ask one interview question at a time.",
-    "Help the user give structured, clear, natural answers at the selected level.",
+    "Ask one focused interview question at a time; do not ask multiple questions at once.",
+    "Expect relevant candidate answers and do not drift into casual conversation or general business practice.",
+    "Do not overpraise weak, vague, or off-topic answers.",
+    "If the answer is too vague for the selected level, ask for one specific detail or example.",
+    "Keep feedback concise and interview-focused, with attention to clarity, structure, and professional tone.",
+    "If the user asks an inappropriate first question, such as salary or vacation, suggest a more professional alternative before continuing.",
+    "Guide the candidate toward questions about role, team, success, process, onboarding, or next steps.",
+    "For B2, encourage one thoughtful question about success in the role or team expectations.",
+    "For B1 and B2, encourage structured answers with point + evidence/example + relevance to the role.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
     "After user turn 10, start wrapping up.",
     "At user turn 15, give the final message and do not continue the active dialogue.",
-    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal or interviewer role."
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal, interviewer role, candidate role, or selected interview scenario."
   ]
 }
