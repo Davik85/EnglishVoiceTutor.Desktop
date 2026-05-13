@@ -10,6 +10,7 @@ public static class BackendConstants
     public const string TranslationEndpoint = "/api/translate";
     public const string AudioSpeechEndpoint = "/api/audio/speech";
     public const string AudioSpeechStreamEndpoint = "/api/audio/speech-stream";
+    public const string RealtimeVoiceEndpoint = "/api/realtime-voice";
     public const string HealthEndpoint = "/api/health";
     public const string BackendConfigStatusEndpoint = "/api/backend/config-status";
     public const int BackendRequestTimeoutSeconds = 30;
@@ -18,6 +19,7 @@ public static class BackendConstants
     public const int BotVoiceFirstAudioTimeoutSeconds = 5;
     public const int BotVoiceSegmentTimeoutSeconds = 15;
     public const int BotVoiceStreamOverallTimeoutSeconds = 20;
+    public const bool UseRealtimeConversationMode = true;
     public const string MultipartFileFieldName = "file";
     public const string WavContentType = "audio/wav";
     public const string PcmContentType = "audio/pcm";
@@ -32,6 +34,7 @@ public static class BackendConstants
     public const string BackendInvalidTranscriptionResponseMessage = "Backend returned an invalid transcription response.";
     public const string BackendInvalidTranslationResponseMessage = "Backend returned an invalid translation response.";
     public const string BackendInvalidSpeechResponseMessage = "Backend returned an invalid speech response.";
+    public const string RealtimeUnavailableMessage = "Realtime voice mode is unavailable. Please try text mode.";
     public const string BackendStatusChecking = "Backend: checking...";
     public const string BackendStatusConnected = "Backend: connected";
     public const string BackendStatusUnavailable = "Backend: unavailable";

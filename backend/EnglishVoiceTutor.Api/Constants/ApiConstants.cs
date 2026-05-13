@@ -36,4 +36,5 @@ public static class ApiConstants
     public const string TranslationRoute = "/api/translate";
     public const string AudioSpeechRoute = "/api/audio/speech";
     public const string AudioSpeechStreamRoute = "/api/audio/speech-stream";
+    public const string RealtimeVoiceRoute = "/api/realtime-voice";
 }
