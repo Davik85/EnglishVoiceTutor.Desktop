@@ -12,6 +12,7 @@ public static class ContentConstants
     public const string TravelFolderName = "Travel";
     public const string WorkAndBusinessFolderName = "WorkAndBusiness";
     public const string JobInterviewFolderName = "JobInterview";
+    public const string RestaurantAndCafeFolderName = "RestaurantAndCafe";
     public const string IntroductionsFileName = "introductions.json";
     public const string SmallTalkWithANeighborFileName = "small_talk_with_a_neighbor.json";
     public const string AskingForHelpFileName = "asking_for_help.json";
@@ -32,6 +33,11 @@ public static class ContentConstants
     public const string StrengthsAndWeaknessesFileName = "strengths_and_weaknesses.json";
     public const string WhyDoYouWantThisJobFileName = "why_do_you_want_this_job.json";
     public const string AskingQuestionsAtTheEndFileName = "asking_questions_at_the_end.json";
+    public const string BookingATableFileName = "booking_a_table.json";
+    public const string OrderingFoodFileName = "ordering_food.json";
+    public const string AskingAboutIngredientsFileName = "asking_about_ingredients.json";
+    public const string HandlingAWrongOrderFileName = "handling_a_wrong_order.json";
+    public const string PayingTheBillFileName = "paying_the_bill.json";
     public const string ElenaTutorId = "elena";
     public const string ElenaTutorFileName = "elena.json";
 

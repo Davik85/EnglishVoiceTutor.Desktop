@@ -1,0 +1,395 @@
+{
+  "id": "restaurant_and_cafe_ordering_food",
+  "metadata": {
+    "topic": "Restaurant & Cafe",
+    "subtopic": "Ordering food",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice ordering food.\n\nGoal: you will learn to order food and drinks politely and ask simple menu questions.\n\nChoose a situation:\n1. Ordering at a cafe\n2. Ordering dinner at a restaurant\n3. Asking for a recommendation\n\nOr suggest your own simple food ordering situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple restaurant or cafe situation about ordering food or drinks.",
+      "validCustomContextKeywords": [
+        "order",
+        "ordering",
+        "food",
+        "drink",
+        "menu",
+        "cafe",
+        "coffee",
+        "tea",
+        "water",
+        "pasta",
+        "dish",
+        "dinner",
+        "restaurant",
+        "recommend",
+        "recommendation",
+        "starter",
+        "spicy",
+        "takeaway",
+        "takeout",
+        "to go",
+        "for here"
+      ],
+      "offTopicExamples": [
+        "job interview",
+        "airport passport",
+        "airport check-in",
+        "hotel check-in",
+        "politics",
+        "sports"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about ordering food. Please choose a simple restaurant or cafe situation for this lesson."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can order food and drinks politely, ask simple menu questions, and respond to waiter follow-up questions.",
+    "canDoStatements": [
+      "The user can order a dish or drink politely.",
+      "The user can ask a simple menu question.",
+      "The user can respond to service follow-up questions such as for here or takeaway."
+    ]
+  },
+  "situation": {
+    "description": "The user is ordering food or drinks from restaurant or cafe staff."
+  },
+  "roles": {
+    "userRole": "A restaurant or cafe customer.",
+    "tutorRole": "A polite waiter, cashier, or barista who takes the customer’s order and asks simple service follow-up questions."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "I’d like...",
+      "Can I have...?",
+      "I’ll have...",
+      "What do you recommend?",
+      "Is this dish spicy?",
+      "Can I have water, please?",
+      "For here, please.",
+      "To go, please.",
+      "That’s all, thank you."
+    ],
+    "usefulConstructions": [
+      "I’d like + food/drink, please.",
+      "Can I have + item, please?",
+      "Is this dish + adjective?",
+      "What do you recommend?"
+    ],
+    "grammarFocus": [
+      "polite requests with I’d like and Can I have",
+      "questions with is this and what do you",
+      "countable and uncountable food/drink nouns"
+    ],
+    "pronunciationFocus": [
+      "recommend",
+      "spicy",
+      "takeaway",
+      "water",
+      "pasta"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple restaurant/cafe English for ordering food. Focus on one clear customer request and the most important service words.",
+      "tutorLanguageStyle": "Use short service questions, one idea at a time, and friendly waiter or cafe staff language. Accept short polite answers if the meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "I’d like pasta, please.",
+      "stretchUserResponse": "I’d like pasta and water, please.",
+      "addedKeyPhrases": [
+        "I’d like pasta, please.",
+        "Water, please.",
+        "That’s all."
+      ],
+      "addedUsefulConstructions": [
+        "Use one short polite customer sentence with please.",
+        "Answer the staff question directly before adding anything extra."
+      ],
+      "addedGrammarFocus": [
+        "basic polite requests with please",
+        "simple word order for customer requests",
+        "short answers with I’d like or Can I have"
+      ],
+      "feedbackStrictness": "Correct only mistakes that block restaurant/cafe meaning. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give a full sentence starter or a complete simple model if the learner is stuck.",
+      "correctionPriority": "Service meaning first, then one essential restaurant/cafe word or polite phrase.",
+      "conversationDepth": "Keep the roleplay shallow and practical with one short staff question at a time.",
+      "exampleGoodAnswer": "I’d like pasta, please.",
+      "exampleStretchAnswer": "I’d like pasta and water, please."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple restaurant/cafe English for ordering food. The learner should make a polite request and add one useful detail.",
+      "tutorLanguageStyle": "Use simple service follow-up questions. Ask for one detail such as time, number of people, dish, drink, allergy, problem, or payment method.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "I’d like pasta and water, please.",
+      "stretchUserResponse": "I’d like pasta and water, please. That’s all, thank you.",
+      "addedKeyPhrases": [
+        "Can I have...?",
+        "For here, please.",
+        "To go, please."
+      ],
+      "addedUsefulConstructions": [
+        "Make the request, then add one specific detail.",
+        "Use Could I, Can I, I’d like, or I ordered for polite restaurant/cafe communication."
+      ],
+      "addedGrammarFocus": [
+        "basic question forms",
+        "word order in polite requests",
+        "please and thank you in service situations"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and unclear restaurant/cafe vocabulary.",
+      "hintStrategy": "Give a sentence frame with one blank for the learner’s detail.",
+      "correctionPriority": "Clear request, correct detail, and polite wording.",
+      "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on the selected restaurant/cafe task.",
+      "exampleGoodAnswer": "I’d like pasta and water, please.",
+      "exampleStretchAnswer": "I’d like pasta and water, please. That’s all, thank you."
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear restaurant/cafe English for ordering food. The learner should give request plus detail plus a polite follow-up or clarification.",
+      "tutorLanguageStyle": "Use natural service language and ask one realistic follow-up. Encourage clear, polite, connected customer answers.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "I’d like the pasta, please. Is it spicy, and could I have some water as well?",
+      "stretchUserResponse": "I’d like the pasta, please. Is it spicy? Also, could I have water and a small salad?",
+      "addedKeyPhrases": [
+        "What do you recommend?",
+        "Could I have some water as well?",
+        "Is it spicy?"
+      ],
+      "addedUsefulConstructions": [
+        "Use a polite opening, a clear request or explanation, and a follow-up question.",
+        "Connect details with and, but, because, or also when useful."
+      ],
+      "addedGrammarFocus": [
+        "polite modal questions",
+        "connected sentences for requests and clarifications",
+        "accurate restaurant/cafe vocabulary"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, politeness, and sentence flow when they affect natural service communication.",
+      "hintStrategy": "Give a short model with request + detail + polite follow-up, then ask the learner to adapt it.",
+      "correctionPriority": "Polite tone, clear details, natural phrasing, and smooth sentence connection.",
+      "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one detail.",
+      "exampleGoodAnswer": "I’d like the pasta, please. Is it spicy, and could I have some water as well?",
+      "exampleStretchAnswer": "I’d like the pasta, please. Is it spicy? Also, could I have water and a small salad?"
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural, polite, flexible restaurant/cafe English for ordering food. The learner should use softeners, precise requests, appropriate tone, and a polite follow-up or clarification.",
+      "tutorLanguageStyle": "Use professional service language and may add one realistic complication. Keep the scenario focused and expect nuanced customer responses.",
+      "expectedUserResponse": "A natural answer with detail, nuance, and a polite follow-up or clarification.",
+      "minimumUserResponse": "I think I’ll have the pasta, please. Could you let me know if it’s spicy, and would you recommend any starter with it?",
+      "stretchUserResponse": "I think I’ll have the pasta, please. If it is quite spicy, could you recommend a milder option or a starter that goes well with it?",
+      "addedKeyPhrases": [
+        "I think I’ll have...",
+        "Could you let me know...?",
+        "Would you recommend...?"
+      ],
+      "addedUsefulConstructions": [
+        "Use softeners such as when you have a moment, if possible, could you please, or would you mind checking.",
+        "State the request or issue precisely, then confirm the next step politely."
+      ],
+      "addedGrammarFocus": [
+        "softened modal requests",
+        "precise noun phrases for restaurant/cafe details",
+        "tone and nuance in service interactions"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, politeness, tone, precise wording, and natural service-register phrasing.",
+      "hintStrategy": "Offer a polished natural model and ask the learner to personalize the detail or soften the tone.",
+      "correctionPriority": "Nuanced politeness, precise wording, natural rhythm, and appropriate customer tone.",
+      "conversationDepth": "Add one realistic complication when useful while keeping the learner inside the selected restaurant/cafe scenario.",
+      "exampleGoodAnswer": "I think I’ll have the pasta, please. Could you let me know if it’s spicy, and would you recommend any starter with it?",
+      "exampleStretchAnswer": "I think I’ll have the pasta, please. If it is quite spicy, could you recommend a milder option or a starter that goes well with it?"
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor greets the customer as cafe or restaurant staff and starts taking the selected order.",
+    "defaultOpeningExample": "Hi! What can I get for you today?",
+    "firstUserTask": "The user orders one food or drink item politely.",
+    "expectedPattern": "I’d like pasta and water, please.",
+    "guidedPracticeFollowUpQuestions": [
+      "Would you like anything to drink?",
+      "Is that for here or takeaway?",
+      "Would you like a starter or dessert?",
+      "Would you like still or sparkling water?"
+    ],
+    "variationOrComplication": "Tutor may ask for drink choice, for here or takeaway, menu preference, spice preference, or a simple recommendation request.",
+    "exampleTutorLine": "What can I get for you today?",
+    "correctionMoment": "Tutor gives one short correction when useful and keeps the customer roleplay moving.",
+    "correctionStyle": "soft, short, encouraging, and appropriate for the selected level.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let's do one final ordering question. Add a drink, ask about the dish, or say that is all.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced ordering food and drinks politely. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific restaurant or cafe setting",
+      "minor menu or reservation detail",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic small complication for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected restaurant/cafe scenario"
+    ],
+    "contextVariants": [
+      {
+        "id": "cafe_order",
+        "title": "Ordering at a cafe",
+        "setting": "a cafe counter",
+        "reasonForMeeting": "ordering coffee or a light snack",
+        "openingLine": "Hi! What can I get for you today?",
+        "aliases": [
+          "cafe",
+          "coffee shop",
+          "order coffee",
+          "cafe order"
+        ]
+      },
+      {
+        "id": "restaurant_dinner",
+        "title": "Ordering dinner at a restaurant",
+        "setting": "a restaurant table",
+        "reasonForMeeting": "ordering dinner from a waiter",
+        "openingLine": "Good evening. Are you ready to order?",
+        "aliases": [
+          "dinner",
+          "restaurant",
+          "restaurant order",
+          "order dinner"
+        ]
+      },
+      {
+        "id": "recommendation",
+        "title": "Asking for a recommendation",
+        "setting": "a restaurant table",
+        "reasonForMeeting": "asking staff to recommend a dish",
+        "openingLine": "Are you ready to order, or would you like a recommendation?",
+        "aliases": [
+          "recommendation",
+          "recommend",
+          "what do you recommend",
+          "best dish"
+        ]
+      },
+      {
+        "id": "drink_order",
+        "title": "Ordering a drink",
+        "setting": "a restaurant or cafe",
+        "reasonForMeeting": "ordering a drink",
+        "openingLine": "What would you like to drink?",
+        "aliases": [
+          "drink",
+          "drinks",
+          "water",
+          "coffee",
+          "tea"
+        ]
+      },
+      {
+        "id": "takeaway_order",
+        "title": "Ordering takeaway",
+        "setting": "a cafe or takeaway counter",
+        "reasonForMeeting": "ordering food to go",
+        "openingLine": "Hi! Is this for here or takeaway?",
+        "aliases": [
+          "takeaway",
+          "takeout",
+          "to go",
+          "for here"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Restaurant & Cafe, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "Validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about ordering food. Please choose a simple restaurant or cafe situation for this lesson."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about ordering food. Let's stay in this restaurant or cafe situation.",
+    "secondRedirect": "Let's stay with ordering food for now. Please answer as a customer in this situation.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on ordering food. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite words.",
+      "B1": "Correct grammar, word choice, politeness, and sentence flow.",
+      "B2": "Focus on fluency, nuance, tone, and precise wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful, and focused on restaurant/cafe communication."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small ordering phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful word or phrase.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"I’d like pasta, please.\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same restaurant/cafe goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into free chat."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Restaurant & Cafe lesson scenario.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as job interview or airport passport; redirect and remain in setup.",
+    "The tutor plays restaurant or cafe staff: a waiter, host, cashier, barista, or other staff member depending on the selected scenario.",
+    "The user plays a customer.",
+    "Use polite service language and keep the lesson focused on the selected restaurant/cafe task.",
+    "Do not turn the lesson into a general food discussion or free chat.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}
