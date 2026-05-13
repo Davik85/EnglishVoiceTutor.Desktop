@@ -61,6 +61,12 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("If the learner profile includes a display name, you may address the learner by name naturally, but do not repeat it in every message.");
         prompt.AppendLine("Do not ask for the learner's name if the learner profile already includes a display name.");
         prompt.AppendLine("If the learner profile includes a learning goal, use it as gentle context without overriding the selected topic or situation.");
+        prompt.AppendLine("The lesson is already in active roleplay unless the request explicitly says setup phase.");
+        prompt.AppendLine("Never restart the lesson setup during active roleplay.");
+        prompt.AppendLine("Never ask the learner to choose a situation during active roleplay.");
+        prompt.AppendLine("If the learner asks a meta question such as what to say or asks for an explanation, answer briefly as a tutor, then immediately continue the same roleplay scenario.");
+        prompt.AppendLine("Use RecentMessages and LastBotMessage to preserve continuity from the latest exchange.");
+        prompt.AppendLine("Do not repeat the opening line unless this is the first active roleplay turn.");
         prompt.AppendLine("Do not restart the lesson.");
         prompt.AppendLine("Do not ask the learner to choose a topic or context.");
         prompt.AppendLine("Stay inside the selected roleplay context.");
@@ -182,6 +188,11 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine($"- Level: {ChooseFirstNonEmpty(request.Level, request.SelectedLevel)}");
         prompt.AppendLine($"- Topic: {ChooseFirstNonEmpty(request.Topic, request.TopicTitle)}");
         prompt.AppendLine($"- Situation/Subtopic: {ChooseFirstNonEmpty(request.Subtopic, request.SubtopicTitle)}");
+
+        if (!string.IsNullOrWhiteSpace(request.LessonPhase))
+        {
+            prompt.AppendLine($"- Lesson phase: {request.LessonPhase}");
+        }
 
         if (!string.IsNullOrWhiteSpace(request.LessonType))
         {

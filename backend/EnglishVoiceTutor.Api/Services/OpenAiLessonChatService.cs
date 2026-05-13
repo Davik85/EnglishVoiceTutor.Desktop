@@ -13,6 +13,8 @@ public sealed class OpenAiLessonChatService : ILessonChatService
     private const string OpenAiRequestFailedMessage = "OpenAI request failed.";
     private const string OpenAiResponseMissingMessage = "OpenAI response is empty.";
     private const string OpenAiResponseTextMissingMessage = "OpenAI response does not contain output text.";
+    private const string OpenAiApiKeyMissingMessage = "OpenAI API key is not configured.";
+    private const string OpenAiResponseInvalidMessage = "OpenAI lesson chat response is invalid.";
     private const string LessonChatResponseSchemaJson = """
 {
   "type": "object",
@@ -66,18 +68,15 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 """;
 
     private readonly OpenAiOptionsProvider _optionsProvider;
-    private readonly MockLessonChatService _mockLessonChatService;
     private readonly LessonPromptBuilder _lessonPromptBuilder;
     private readonly IHttpClientFactory _httpClientFactory;
 
     public OpenAiLessonChatService(
         OpenAiOptionsProvider optionsProvider,
-        MockLessonChatService mockLessonChatService,
         LessonPromptBuilder lessonPromptBuilder,
         IHttpClientFactory httpClientFactory)
     {
         _optionsProvider = optionsProvider;
-        _mockLessonChatService = mockLessonChatService;
         _lessonPromptBuilder = lessonPromptBuilder;
         _httpClientFactory = httpClientFactory;
     }
@@ -90,41 +89,29 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
         if (string.IsNullOrWhiteSpace(options.ApiKey))
         {
-            return await _mockLessonChatService.CreateReplyAsync(request, cancellationToken);
+            throw new InvalidOperationException(OpenAiApiKeyMissingMessage);
         }
 
-        try
+        var openAiResponse = await SendResponsesApiRequestAsync(request, options, cancellationToken);
+        var outputText = ExtractOutputText(openAiResponse);
+        var lessonReply = JsonSerializer.Deserialize<LessonChatResponse>(outputText, JsonOptions);
+
+        if (lessonReply is null || !IsValidLessonReply(lessonReply))
         {
-            var openAiResponse = await SendResponsesApiRequestAsync(request, options, cancellationToken);
-            var outputText = ExtractOutputText(openAiResponse);
-            var lessonReply = JsonSerializer.Deserialize<LessonChatResponse>(outputText, JsonOptions);
-
-            if (lessonReply is null)
-            {
-                return await _mockLessonChatService.CreateReplyAsync(request, cancellationToken);
-            }
-
-            if (!IsValidLessonReply(lessonReply))
-            {
-                return await _mockLessonChatService.CreateReplyAsync(request, cancellationToken);
-            }
-
-            if (LessonLimitHelper.ShouldEndLessonNow(request) && !lessonReply.IsLessonComplete)
-            {
-                return new LessonChatResponse
-                {
-                    BotReply = lessonReply.BotReply,
-                    Feedback = lessonReply.Feedback,
-                    IsLessonComplete = true
-                };
-            }
-
-            return lessonReply;
+            throw new InvalidOperationException(OpenAiResponseInvalidMessage);
         }
-        catch
+
+        if (LessonLimitHelper.ShouldEndLessonNow(request) && !lessonReply.IsLessonComplete)
         {
-            return await _mockLessonChatService.CreateReplyAsync(request, cancellationToken);
+            return new LessonChatResponse
+            {
+                BotReply = lessonReply.BotReply,
+                Feedback = lessonReply.Feedback,
+                IsLessonComplete = true
+            };
         }
+
+        return lessonReply;
     }
 
     private async Task<OpenAiResponsesResponse> SendResponsesApiRequestAsync(

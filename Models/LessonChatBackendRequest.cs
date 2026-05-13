@@ -34,6 +34,8 @@ public sealed class LessonChatBackendRequest
 
     public IReadOnlyList<RecentConversationMessage> RecentMessages { get; init; } = [];
 
+    public string LessonPhase { get; init; } = string.Empty;
+
     public string LessonScenarioId { get; init; } = string.Empty;
 
     public string Level { get; init; } = string.Empty;
