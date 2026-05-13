@@ -112,12 +112,12 @@
         "Is this bag okay?"
       ],
       "addedUsefulConstructions": [
-        "Use one simple sentence with I need..., I have..., Where is..., or What time is... as appropriate."
+        "Use short airport check-in sentences with Here is my passport, I have one bag, Where is the gate?, or What time is boarding?"
       ],
       "addedGrammarFocus": [
-        "simple present for travel needs",
-        "basic question forms",
-        "polite please and thank you"
+        "simple present with have for passport and baggage answers",
+        "basic airport question forms",
+        "polite please and thank you at the check-in desk"
       ],
       "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
       "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
@@ -128,7 +128,7 @@
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple English for airport check-in. The learner should add one useful travel detail such as time, place, object, baggage, room, price, or destination.",
+      "difficultyNotes": "Simple English for airport check-in. The learner should add one useful airport detail such as destination, baggage, seat preference, gate, or boarding time.",
       "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
       "expectedUserResponse": "1-2 short sentences.",
       "minimumUserResponse": "Here is my passport. I have one bag to check in.",
@@ -236,7 +236,7 @@
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
     "wrapUpAfterUserTurn": 10,
-    "wrapUpMessage": "You are doing well. Let us do one final check-in question. Ask me about your gate or boarding time.",
+    "wrapUpMessage": "You are doing well. Let's do one final check-in question. Ask me about your gate or boarding time.",
     "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced airport check-in, baggage questions, seat requests, and gate questions. Please click Finish lesson to see your summary."
   },
@@ -337,8 +337,8 @@
     "invalidContextRedirect": "That sounds interesting, but this lesson is about airport check-in. Please choose a simple airport check-in situation."
   },
   "offTopicHandling": {
-    "firstRedirect": "That sounds interesting, but this lesson is about airport check-in. Let us stay in this travel situation.",
-    "secondRedirect": "Let us stay with airport check-in for now. Please answer as a traveler in this situation.",
+    "firstRedirect": "That sounds interesting, but this lesson is about airport check-in. Let's stay in this travel situation.",
+    "secondRedirect": "Let's stay with airport check-in for now. Please answer as a traveler in this situation.",
     "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on airport check-in. You can finish this lesson and use Free Conversation Mode later."
   },
   "feedbackRules": {

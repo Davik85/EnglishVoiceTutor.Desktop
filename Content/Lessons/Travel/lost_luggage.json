@@ -113,12 +113,12 @@
         "It is small/big."
       ],
       "addedUsefulConstructions": [
-        "Use one simple sentence with I need..., I have..., Where is..., or What time is... as appropriate."
+        "Use short lost luggage sentences with My bag is missing, It is black, It is small, or What should I do?"
       ],
       "addedGrammarFocus": [
-        "simple present for travel needs",
-        "basic question forms",
-        "polite please and thank you"
+        "simple present with is for bag descriptions",
+        "basic what questions for next steps",
+        "polite please and thank you at the baggage desk"
       ],
       "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
       "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
@@ -129,7 +129,7 @@
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple English for lost luggage. The learner should add one useful travel detail such as time, place, object, baggage, room, price, or destination.",
+      "difficultyNotes": "Simple English for lost luggage. The learner should add one useful baggage detail such as color, size, tag number, flight number, or contact information.",
       "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
       "expectedUserResponse": "1-2 short sentences.",
       "minimumUserResponse": "My suitcase is missing. It is black and small. What should I do?",
@@ -238,7 +238,7 @@
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
     "wrapUpAfterUserTurn": 10,
-    "wrapUpMessage": "You are doing well. Let us do one final lost luggage report. Describe your bag and ask what to do next.",
+    "wrapUpMessage": "You are doing well. Let's do one final lost luggage report. Describe your bag and ask what to do next.",
     "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced reporting lost luggage, describing your bag, and asking about next steps. Please click Finish lesson to see your summary."
   },
@@ -339,8 +339,8 @@
     "invalidContextRedirect": "That sounds interesting, but this lesson is about lost luggage. Please choose a simple lost luggage situation."
   },
   "offTopicHandling": {
-    "firstRedirect": "That sounds interesting, but this lesson is about lost luggage. Let us stay in this travel situation.",
-    "secondRedirect": "Let us stay with lost luggage for now. Please answer as a traveler in this situation.",
+    "firstRedirect": "That sounds interesting, but this lesson is about lost luggage. Let's stay in this travel situation.",
+    "secondRedirect": "Let's stay with lost luggage for now. Please answer as a traveler in this situation.",
     "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on lost luggage. You can finish this lesson and use Free Conversation Mode later."
   },
   "feedbackRules": {
