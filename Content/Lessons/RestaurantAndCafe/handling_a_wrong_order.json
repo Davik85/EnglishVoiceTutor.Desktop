@@ -1,0 +1,390 @@
+{
+  "id": "restaurant_and_cafe_handling_a_wrong_order",
+  "metadata": {
+    "topic": "Restaurant & Cafe",
+    "subtopic": "Handling a wrong order",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice handling a wrong order.\n\nGoal: you will learn to explain a problem with your order politely and ask for it to be corrected.\n\nChoose a situation:\n1. You received the wrong dish\n2. Something is missing from your order\n3. Your food is cold\n\nOr suggest your own simple wrong order situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple restaurant or cafe situation about a wrong, missing, cold, or incorrect order.",
+      "validCustomContextKeywords": [
+        "wrong order",
+        "wrong dish",
+        "not my order",
+        "different dish",
+        "missing",
+        "missing item",
+        "forgot item",
+        "no drink",
+        "cold food",
+        "food is cold",
+        "not hot",
+        "wrong drink",
+        "incorrect drink",
+        "overcooked",
+        "burnt",
+        "dry food",
+        "replace",
+        "check"
+      ],
+      "offTopicExamples": [
+        "job interview",
+        "airport passport",
+        "airport check-in",
+        "hotel check-in",
+        "politics",
+        "sports"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about handling a wrong order. Please choose a simple restaurant or cafe situation for this lesson."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can politely explain that an order is wrong, describe the issue, and ask for a correction.",
+    "canDoStatements": [
+      "The user can get staff attention politely.",
+      "The user can explain what is wrong with the order.",
+      "The user can ask staff to check, replace, or correct the order."
+    ]
+  },
+  "situation": {
+    "description": "The user speaks to restaurant or cafe staff because something is wrong with the order."
+  },
+  "roles": {
+    "userRole": "A restaurant or cafe customer.",
+    "tutorRole": "A polite waiter or cafe staff member who listens to the customer’s order problem and helps correct it."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "Excuse me.",
+      "I’m sorry, but this is not what I ordered.",
+      "I ordered...",
+      "This dish is cold.",
+      "Something is missing.",
+      "Could you check, please?",
+      "Could you replace it, please?",
+      "Thank you for your help."
+    ],
+    "usefulConstructions": [
+      "Excuse me. I ordered + item, but this is + item/problem.",
+      "This dish is + problem.",
+      "Something is missing from my order.",
+      "Could you check or replace it, please?"
+    ],
+    "grammarFocus": [
+      "past simple with ordered",
+      "but to contrast order and problem",
+      "polite correction requests with could you"
+    ],
+    "pronunciationFocus": [
+      "excuse me",
+      "ordered",
+      "missing",
+      "replace",
+      "overcooked"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple restaurant/cafe English for handling a wrong order. Focus on one clear customer request and the most important service words.",
+      "tutorLanguageStyle": "Use short service questions, one idea at a time, and friendly waiter or cafe staff language. Accept short polite answers if the meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "Excuse me. This is not my order.",
+      "stretchUserResponse": "Excuse me. This is not my order, please.",
+      "addedKeyPhrases": [
+        "Excuse me.",
+        "This is not my order.",
+        "Thank you."
+      ],
+      "addedUsefulConstructions": [
+        "Use one short polite customer sentence with please.",
+        "Answer the staff question directly before adding anything extra."
+      ],
+      "addedGrammarFocus": [
+        "basic polite requests with please",
+        "simple word order for customer requests",
+        "short answers with I’d like or Can I have"
+      ],
+      "feedbackStrictness": "Correct only mistakes that block restaurant/cafe meaning. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give a full sentence starter or a complete simple model if the learner is stuck.",
+      "correctionPriority": "Service meaning first, then one essential restaurant/cafe word or polite phrase.",
+      "conversationDepth": "Keep the roleplay shallow and practical with one short staff question at a time.",
+      "exampleGoodAnswer": "Excuse me. This is not my order.",
+      "exampleStretchAnswer": "Excuse me. This is not my order, please."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple restaurant/cafe English for handling a wrong order. The learner should make a polite request and add one useful detail.",
+      "tutorLanguageStyle": "Use simple service follow-up questions. Ask for one detail such as time, number of people, dish, drink, allergy, problem, or payment method.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "Excuse me. I ordered pasta, but this is soup.",
+      "stretchUserResponse": "Excuse me. I ordered pasta, but this is soup. Could you check, please?",
+      "addedKeyPhrases": [
+        "I ordered...",
+        "but this is...",
+        "Could you check, please?"
+      ],
+      "addedUsefulConstructions": [
+        "Make the request, then add one specific detail.",
+        "Use Could I, Can I, I’d like, or I ordered for polite restaurant/cafe communication."
+      ],
+      "addedGrammarFocus": [
+        "basic question forms",
+        "word order in polite requests",
+        "please and thank you in service situations"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and unclear restaurant/cafe vocabulary.",
+      "hintStrategy": "Give a sentence frame with one blank for the learner’s detail.",
+      "correctionPriority": "Clear request, correct detail, and polite wording.",
+      "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on the selected restaurant/cafe task.",
+      "exampleGoodAnswer": "Excuse me. I ordered pasta, but this is soup.",
+      "exampleStretchAnswer": "Excuse me. I ordered pasta, but this is soup. Could you check, please?"
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear restaurant/cafe English for handling a wrong order. The learner should give request plus detail plus a polite follow-up or clarification.",
+      "tutorLanguageStyle": "Use natural service language and ask one realistic follow-up. Encourage clear, polite, connected customer answers.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "Excuse me, I’m sorry, but I ordered pasta and this seems to be soup. Could you check it, please?",
+      "stretchUserResponse": "Excuse me, I’m sorry, but I ordered pasta and this seems to be a different dish. Could you replace it, please?",
+      "addedKeyPhrases": [
+        "I’m sorry, but...",
+        "this seems to be...",
+        "Could you replace it, please?"
+      ],
+      "addedUsefulConstructions": [
+        "Use a polite opening, a clear request or explanation, and a follow-up question.",
+        "Connect details with and, but, because, or also when useful."
+      ],
+      "addedGrammarFocus": [
+        "polite modal questions",
+        "connected sentences for requests and clarifications",
+        "accurate restaurant/cafe vocabulary"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, politeness, and sentence flow when they affect natural service communication.",
+      "hintStrategy": "Give a short model with request + detail + polite follow-up, then ask the learner to adapt it.",
+      "correctionPriority": "Polite tone, clear details, natural phrasing, and smooth sentence connection.",
+      "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one detail.",
+      "exampleGoodAnswer": "Excuse me, I’m sorry, but I ordered pasta and this seems to be soup. Could you check it, please?",
+      "exampleStretchAnswer": "Excuse me, I’m sorry, but I ordered pasta and this seems to be a different dish. Could you replace it, please?"
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural, polite, flexible restaurant/cafe English for handling a wrong order. The learner should use softeners, precise requests, appropriate tone, and a polite follow-up or clarification.",
+      "tutorLanguageStyle": "Use professional service language and may add one realistic complication. Keep the scenario focused and expect nuanced customer responses.",
+      "expectedUserResponse": "A natural answer with detail, nuance, and a polite follow-up or clarification.",
+      "minimumUserResponse": "Excuse me, I’m sorry to bother you, but I ordered the pasta and this appears to be a different dish. Could you please check the order for me?",
+      "stretchUserResponse": "Excuse me, I’m sorry to bother you, but I ordered the pasta and this appears to be a different dish. Would you mind checking the order and replacing it when you have a moment?",
+      "addedKeyPhrases": [
+        "I’m sorry to bother you",
+        "this appears to be",
+        "Would you mind checking...?"
+      ],
+      "addedUsefulConstructions": [
+        "Use softeners such as when you have a moment, if possible, could you please, or would you mind checking.",
+        "State the request or issue precisely, then confirm the next step politely."
+      ],
+      "addedGrammarFocus": [
+        "softened modal requests",
+        "precise noun phrases for restaurant/cafe details",
+        "tone and nuance in service interactions"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, politeness, tone, precise wording, and natural service-register phrasing.",
+      "hintStrategy": "Offer a polished natural model and ask the learner to personalize the detail or soften the tone.",
+      "correctionPriority": "Nuanced politeness, precise wording, natural rhythm, and appropriate customer tone.",
+      "conversationDepth": "Add one realistic complication when useful while keeping the learner inside the selected restaurant/cafe scenario.",
+      "exampleGoodAnswer": "Excuse me, I’m sorry to bother you, but I ordered the pasta and this appears to be a different dish. Could you please check the order for me?",
+      "exampleStretchAnswer": "Excuse me, I’m sorry to bother you, but I ordered the pasta and this appears to be a different dish. Would you mind checking the order and replacing it when you have a moment?"
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor checks on the customer as waiter or cafe staff and responds to the selected order problem.",
+    "defaultOpeningExample": "Is everything okay with your order?",
+    "firstUserTask": "The user politely explains the order problem.",
+    "expectedPattern": "Excuse me. I ordered pasta, but this is soup.",
+    "guidedPracticeFollowUpQuestions": [
+      "What did you order?",
+      "Could I see your receipt or order number?",
+      "Would you like me to replace it?",
+      "Was anything else missing?"
+    ],
+    "variationOrComplication": "Tutor may ask what the customer ordered, what is missing, whether they want a replacement, or may apologize and offer to fix it.",
+    "exampleTutorLine": "Is everything okay with your order?",
+    "correctionMoment": "Tutor gives one short correction when useful and keeps the customer roleplay moving.",
+    "correctionStyle": "soft, short, encouraging, and appropriate for the selected level.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let's do one final wrong-order question. Explain the problem and ask me to check or replace it.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced explaining an order problem politely and asking for a correction. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific restaurant or cafe setting",
+      "minor menu or reservation detail",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic small complication for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected restaurant/cafe scenario"
+    ],
+    "contextVariants": [
+      {
+        "id": "wrong_dish",
+        "title": "You received the wrong dish",
+        "setting": "a restaurant table",
+        "reasonForMeeting": "explaining that the dish is wrong",
+        "openingLine": "Is everything okay with your order?",
+        "aliases": [
+          "wrong dish",
+          "wrong order",
+          "not my order",
+          "different dish"
+        ]
+      },
+      {
+        "id": "missing_item",
+        "title": "Something is missing from your order",
+        "setting": "a cafe counter or restaurant table",
+        "reasonForMeeting": "explaining that an item is missing",
+        "openingLine": "Is there a problem with the order?",
+        "aliases": [
+          "missing item",
+          "missing",
+          "forgot item",
+          "no drink"
+        ]
+      },
+      {
+        "id": "cold_food",
+        "title": "Your food is cold",
+        "setting": "a restaurant table",
+        "reasonForMeeting": "explaining that the food is cold",
+        "openingLine": "Is everything all right with the food?",
+        "aliases": [
+          "cold food",
+          "food is cold",
+          "not hot",
+          "cold meal"
+        ]
+      },
+      {
+        "id": "incorrect_drink",
+        "title": "You received the wrong drink",
+        "setting": "a cafe or restaurant",
+        "reasonForMeeting": "explaining that the drink is incorrect",
+        "openingLine": "Is there an issue with your drink?",
+        "aliases": [
+          "wrong drink",
+          "incorrect drink",
+          "not my drink",
+          "different drink"
+        ]
+      },
+      {
+        "id": "overcooked_food",
+        "title": "Your food is overcooked",
+        "setting": "a restaurant table",
+        "reasonForMeeting": "explaining that the food is overcooked",
+        "openingLine": "Is there something wrong with the dish?",
+        "aliases": [
+          "overcooked",
+          "burnt",
+          "too cooked",
+          "dry food"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Restaurant & Cafe, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "Validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about handling a wrong order. Please choose a simple restaurant or cafe situation for this lesson."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about handling a wrong order. Let's stay in this restaurant or cafe situation.",
+    "secondRedirect": "Let's stay with handling a wrong order for now. Please answer as a customer in this situation.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on handling a wrong order. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite words.",
+      "B1": "Correct grammar, word choice, politeness, and sentence flow.",
+      "B2": "Focus on fluency, nuance, tone, and precise wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful, and focused on restaurant/cafe communication."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small problem-explaining phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful word or phrase.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"Excuse me. This is not my order.\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same restaurant/cafe goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into free chat."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Restaurant & Cafe lesson scenario.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as job interview or airport passport; redirect and remain in setup.",
+    "The tutor plays restaurant or cafe staff: a waiter, host, cashier, barista, or other staff member depending on the selected scenario.",
+    "The user plays a customer.",
+    "Use polite service language and keep the lesson focused on the selected restaurant/cafe task.",
+    "Do not turn the lesson into a general food discussion or free chat.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}
