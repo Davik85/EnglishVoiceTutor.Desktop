@@ -14,7 +14,11 @@ public static class AudioConstants
     public const int BotVoiceInitialPrebufferMilliseconds = 350;
     public const int BotVoiceMaximumPrebufferMilliseconds = 900;
     public const int BotVoiceStreamBufferDurationSeconds = 10;
+<<<<<<< codex/fix-bot-voice-quality-after-pcm-change-agut3x
     public static readonly bool UsePcmStreamingBotVoice = false;
+=======
+    public const bool UsePcmStreamingBotVoice = false;
+>>>>>>> main
     public const string AppTempFolderName = "EnglishVoiceTutor.Desktop";
     public const string RecordingFolderName = "Recordings";
     public const string BotVoiceTempFolderName = "BotVoice";
