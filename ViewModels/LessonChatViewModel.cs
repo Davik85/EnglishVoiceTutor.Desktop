@@ -37,9 +37,12 @@ public partial class LessonChatViewModel : ViewModelBase
     private bool hasFinishedLesson;
     private readonly SemaphoreSlim botVoiceSemaphore = new(1, 1);
     private readonly Dictionary<string, string> botVoiceSegmentAudioFilePaths = [];
+    private readonly Dictionary<string, Task<string>> inFlightBotVoiceSegmentTasks = [];
+    private readonly object botVoiceSegmentCacheLock = new();
     private readonly HashSet<string> currentSessionBotVoiceFilePaths = new(StringComparer.OrdinalIgnoreCase);
     private readonly object botVoiceCancellationLock = new();
     private CancellationTokenSource? currentBotVoiceCancellationTokenSource;
+    private string currentBotVoiceCancellationReason = BotVoiceCancellationReasons.AppDisposalCancel;
 
     public string SelectedLevel { get; }
 
@@ -587,6 +590,12 @@ public partial class LessonChatViewModel : ViewModelBase
             return Task.CompletedTask;
         }
 
+        if (IsSetupBotMessage(message) && message.Text.Trim().Length > AudioConstants.BotVoiceSetupAutoPlayMaxCharacters)
+        {
+            Debug.WriteLine($"Skipping bot voice auto-play for setup message {message.Id}: TextLength={message.Text.Trim().Length}; MaxCharacters={AudioConstants.BotVoiceSetupAutoPlayMaxCharacters}.");
+            return Task.CompletedTask;
+        }
+
         _ = PlayBotVoiceForMessageAsync(message, isAutoPlay: true);
         return Task.CompletedTask;
     }
@@ -607,7 +616,7 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        CancelCurrentBotVoice($"new {(isAutoPlay ? "auto-play" : "manual play")} request for message {message.Id}");
+        CancelCurrentBotVoice(isAutoPlay ? BotVoiceCancellationReasons.NewerMessageCancel : BotVoiceCancellationReasons.ManualReplayCancel);
 
         if (!await botVoiceSemaphore.WaitAsync(TimeSpan.FromSeconds(2), cancellationToken))
         {
@@ -652,14 +661,14 @@ public partial class LessonChatViewModel : ViewModelBase
         }
         catch (OperationCanceledException exception)
         {
-            if (!playbackStarted && !cancellationToken.IsCancellationRequested)
+            var cancellationReason = GetCurrentBotVoiceCancellationReason();
+            Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} canceled for message {message.Id}: Path={selectedBotVoicePath}; CancellationReason={cancellationReason}; PlaybackStarted={playbackStarted}; TotalMs={totalStopwatch.ElapsedMilliseconds}; {exception}");
+
+            if (string.Equals(cancellationReason, BotVoiceCancellationReasons.HardTimeoutCancel, StringComparison.Ordinal))
             {
-                Debug.WriteLine($"Bot voice canceled before first playback for message {message.Id}: Path={selectedBotVoicePath}; CancellationReason=first-segment-timeout-or-newer-message; TotalMs={totalStopwatch.ElapsedMilliseconds}; {exception}");
-                StatusMessage = "Voice took too long. Continuing without audio.";
-            }
-            else
-            {
-                Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} canceled for message {message.Id}: Path={selectedBotVoicePath}; CancellationReason=request-canceled; TotalMs={totalStopwatch.ElapsedMilliseconds}; {exception}");
+                StatusMessage = isAutoPlay
+                    ? "Voice is taking too long. Please continue without audio."
+                    : "Voice is taking too long. Please try again.";
             }
         }
         catch (Exception exception)
@@ -683,18 +692,34 @@ public partial class LessonChatViewModel : ViewModelBase
         Action<long> onFirstPlaybackStarted,
         Stopwatch totalStopwatch)
     {
-        var firstSegmentFilePath = await GetOrCreateBotVoiceSegmentAudioFileAsync(
+        var firstSegmentTask = GetOrCreateBotVoiceSegmentAudioFileAsync(
             message,
             segments[0],
             segmentIndex: 0,
-            timeout: TimeSpan.FromSeconds(AudioConstants.BotVoiceFirstSegmentTimeoutSeconds),
+            timeout: TimeSpan.FromSeconds(AudioConstants.BotVoiceFirstSegmentHardTimeoutSeconds),
             totalStopwatch,
             cancellationToken);
+
+        var softTargetTask = Task.Delay(AudioConstants.BotVoiceFirstSegmentSoftTargetMilliseconds, cancellationToken);
+        if (await Task.WhenAny(firstSegmentTask, softTargetTask) == softTargetTask && softTargetTask.IsCompletedSuccessfully)
+        {
+            Debug.WriteLine($"Bot voice first segment soft target reached: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; CancellationReason={BotVoiceCancellationReasons.SoftTargetReachedNoCancel}; SoftTargetMs={AudioConstants.BotVoiceFirstSegmentSoftTargetMilliseconds}; ElapsedMs={totalStopwatch.ElapsedMilliseconds}; RequestContinuedAfterSoftTarget=True.");
+            StatusMessage = "Preparing voice...";
+        }
+
+        var firstSegmentFilePath = await firstSegmentTask;
         var firstSegmentReadyMs = totalStopwatch.ElapsedMilliseconds;
-        Debug.WriteLine($"Bot voice first segment ready: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; FirstSegmentLength={segments[0].Length}; FirstSegmentReadyMs={firstSegmentReadyMs}; AudioFile={Path.GetFileName(firstSegmentFilePath)}.");
+        Debug.WriteLine($"Bot voice first segment ready: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; FirstSegmentLength={segments[0].Length}; FirstSegmentReadyMs={firstSegmentReadyMs}; SoftTargetReached={firstSegmentReadyMs >= AudioConstants.BotVoiceFirstSegmentSoftTargetMilliseconds}; RequestContinuedAfterSoftTarget={firstSegmentReadyMs >= AudioConstants.BotVoiceFirstSegmentSoftTargetMilliseconds}; AudioFile={Path.GetFileName(firstSegmentFilePath)}.");
+        StatusMessage = string.Empty;
+
+        if (!IsNewestBotMessage(message))
+        {
+            Debug.WriteLine($"Discarding bot voice first segment for message {message.Id}: CancellationReason={BotVoiceCancellationReasons.NewerMessageCancel}; it is no longer the newest bot message.");
+            return;
+        }
 
         Task<string>? nextSegmentTask = segments.Count > 1
-            ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[1], 1, TimeSpan.FromSeconds(AudioConstants.BotVoiceSegmentTimeoutSeconds), totalStopwatch, cancellationToken)
+            ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[1], 1, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken)
             : null;
         var currentFilePath = firstSegmentFilePath;
 
@@ -712,7 +737,7 @@ public partial class LessonChatViewModel : ViewModelBase
                     if (playbackSegmentIndex == 0)
                     {
                         onFirstPlaybackStarted(playbackStartedMs);
-                        Debug.WriteLine($"Bot voice first playback started: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; FirstSegmentReadyMs={firstSegmentReadyMs}; FirstPlaybackStartedMs={playbackStartedMs}; AcceptanceUnder5000={playbackStartedMs <= 5000}.");
+                        Debug.WriteLine($"Bot voice first playback started: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; FirstSegmentReadyMs={firstSegmentReadyMs}; FirstPlaybackStartedMs={playbackStartedMs}; SoftTargetMet={playbackStartedMs <= AudioConstants.BotVoiceFirstSegmentSoftTargetMilliseconds}.");
                     }
 
                     Debug.WriteLine($"Bot voice segment playback started: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={playbackSegmentIndex}; SegmentLength={segments[playbackSegmentIndex].Length}; PlaybackStartedMs={playbackStartedMs}; AudioFile={Path.GetFileName(currentFilePath)}.");
@@ -731,7 +756,7 @@ public partial class LessonChatViewModel : ViewModelBase
             }
             catch (OperationCanceledException)
             {
-                Debug.WriteLine($"Bot voice later segment canceled: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex + 1}; CancellationReason=later-segment-timeout-or-newer-message; TotalMs={totalStopwatch.ElapsedMilliseconds}.");
+                Debug.WriteLine($"Bot voice later segment canceled: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex + 1}; CancellationReason=later-segment-hard-timeout-or-newer-message; TotalMs={totalStopwatch.ElapsedMilliseconds}.");
                 break;
             }
             catch (Exception exception)
@@ -742,12 +767,12 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var nextIndex = segmentIndex + 2;
             nextSegmentTask = nextIndex < segments.Count
-                ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[nextIndex], nextIndex, TimeSpan.FromSeconds(AudioConstants.BotVoiceSegmentTimeoutSeconds), totalStopwatch, cancellationToken)
+                ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[nextIndex], nextIndex, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken)
                 : null;
         }
     }
 
-    private async Task<string> GetOrCreateBotVoiceSegmentAudioFileAsync(
+    private Task<string> GetOrCreateBotVoiceSegmentAudioFileAsync(
         ChatMessageViewModel message,
         string segmentText,
         int segmentIndex,
@@ -756,13 +781,42 @@ public partial class LessonChatViewModel : ViewModelBase
         CancellationToken cancellationToken)
     {
         var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex);
-        if (botVoiceSegmentAudioFilePaths.TryGetValue(cacheKey, out var cachedFilePath) && File.Exists(cachedFilePath))
+        lock (botVoiceSegmentCacheLock)
         {
-            TrackCurrentSessionBotVoiceFile(cachedFilePath);
-            Debug.WriteLine($"Bot voice segment cache hit: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; ReadyMs={totalStopwatch.ElapsedMilliseconds}; AudioFile={Path.GetFileName(cachedFilePath)}.");
-            return cachedFilePath;
-        }
+            if (botVoiceSegmentAudioFilePaths.TryGetValue(cacheKey, out var cachedFilePath) && File.Exists(cachedFilePath))
+            {
+                TrackCurrentSessionBotVoiceFile(cachedFilePath);
+                Debug.WriteLine($"Bot voice segment cache hit: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; ReadyMs={totalStopwatch.ElapsedMilliseconds}; AudioFile={Path.GetFileName(cachedFilePath)}.");
+                return Task.FromResult(cachedFilePath);
+            }
 
+            if (inFlightBotVoiceSegmentTasks.TryGetValue(cacheKey, out var inFlightTask))
+            {
+                Debug.WriteLine($"Bot voice segment in-flight reuse: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; ReadyMs={totalStopwatch.ElapsedMilliseconds}.");
+                return inFlightTask.WaitAsync(cancellationToken);
+            }
+
+            var createdTask = CreateBotVoiceSegmentAudioFileCoreAsync(
+                message,
+                segmentText,
+                segmentIndex,
+                timeout,
+                totalStopwatch,
+                cancellationToken);
+            inFlightBotVoiceSegmentTasks[cacheKey] = createdTask;
+            return createdTask;
+        }
+    }
+
+    private async Task<string> CreateBotVoiceSegmentAudioFileCoreAsync(
+        ChatMessageViewModel message,
+        string segmentText,
+        int segmentIndex,
+        TimeSpan timeout,
+        Stopwatch totalStopwatch,
+        CancellationToken cancellationToken)
+    {
+        var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex);
         using var segmentTimeoutCancellationTokenSource = new CancellationTokenSource(timeout);
         using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken,
@@ -770,20 +824,41 @@ public partial class LessonChatViewModel : ViewModelBase
         var backendStopwatch = Stopwatch.StartNew();
         var inputLength = segmentText.Trim().Length;
 
-        Debug.WriteLine($"Bot voice segment prepared: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SegmentLength={inputLength}; SegmentTextPreview={CreateBotVoiceSegmentPreview(segmentText)};");
-        Debug.WriteLine($"Bot voice segment request starting: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; RequestStartedMs={totalStopwatch.ElapsedMilliseconds}; TimeoutMs={timeout.TotalMilliseconds}.");
-        var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(segmentText, linkedCancellationTokenSource.Token);
-        Debug.WriteLine($"Bot voice segment backend response received: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; SegmentReadyMs={totalStopwatch.ElapsedMilliseconds}; BackendElapsedMs={backendStopwatch.ElapsedMilliseconds}; AudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
+        try
+        {
+            Debug.WriteLine($"Bot voice segment prepared: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SegmentLength={inputLength}; SegmentTextPreview={CreateBotVoiceSegmentPreview(segmentText)};");
+            Debug.WriteLine($"Bot voice segment request starting: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; RequestStartedMs={totalStopwatch.ElapsedMilliseconds}; TimeoutMs={timeout.TotalMilliseconds}; HardTimeoutSeconds={timeout.TotalSeconds}.");
+            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(segmentText, linkedCancellationTokenSource.Token);
+            Debug.WriteLine($"Bot voice segment backend response received: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; SegmentReadyMs={totalStopwatch.ElapsedMilliseconds}; BackendElapsedMs={backendStopwatch.ElapsedMilliseconds}; AudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
 
-        var saveStopwatch = Stopwatch.StartNew();
-        var audioFilePath = await audioPlaybackService.SaveBotVoiceAudioAsync(
-            speechResponse.AudioBytes,
-            speechResponse.FileExtension,
-            linkedCancellationTokenSource.Token);
-        Debug.WriteLine($"Bot voice segment file ready: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SaveElapsedMs={saveStopwatch.ElapsedMilliseconds}; ReadyMs={totalStopwatch.ElapsedMilliseconds}; FileExtension={Path.GetExtension(audioFilePath)}.");
-        botVoiceSegmentAudioFilePaths[cacheKey] = audioFilePath;
-        TrackCurrentSessionBotVoiceFile(audioFilePath);
-        return audioFilePath;
+            var saveStopwatch = Stopwatch.StartNew();
+            var audioFilePath = await audioPlaybackService.SaveBotVoiceAudioAsync(
+                speechResponse.AudioBytes,
+                speechResponse.FileExtension,
+                linkedCancellationTokenSource.Token);
+            Debug.WriteLine($"Bot voice segment file ready: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SaveElapsedMs={saveStopwatch.ElapsedMilliseconds}; ReadyMs={totalStopwatch.ElapsedMilliseconds}; FileExtension={Path.GetExtension(audioFilePath)}.");
+
+            lock (botVoiceSegmentCacheLock)
+            {
+                botVoiceSegmentAudioFilePaths[cacheKey] = audioFilePath;
+            }
+
+            TrackCurrentSessionBotVoiceFile(audioFilePath);
+            return audioFilePath;
+        }
+        catch (OperationCanceledException) when (segmentTimeoutCancellationTokenSource.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            SetCurrentBotVoiceCancellationReason(BotVoiceCancellationReasons.HardTimeoutCancel);
+            Debug.WriteLine($"Bot voice segment hard timeout: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; CancellationReason={BotVoiceCancellationReasons.HardTimeoutCancel}; InputLength={inputLength}; TotalMs={totalStopwatch.ElapsedMilliseconds}; BackendElapsedMs={backendStopwatch.ElapsedMilliseconds}; HardTimeoutSeconds={timeout.TotalSeconds}.");
+            throw;
+        }
+        finally
+        {
+            lock (botVoiceSegmentCacheLock)
+            {
+                inFlightBotVoiceSegmentTasks.Remove(cacheKey);
+            }
+        }
     }
 
     private static IReadOnlyList<string> SelectBotVoiceSegments(IReadOnlyList<string> segments, bool isAutoPlay)
@@ -1095,6 +1170,23 @@ public partial class LessonChatViewModel : ViewModelBase
         lock (botVoiceCancellationLock)
         {
             currentBotVoiceCancellationTokenSource = cancellationTokenSource;
+            currentBotVoiceCancellationReason = BotVoiceCancellationReasons.AppDisposalCancel;
+        }
+    }
+
+    private void SetCurrentBotVoiceCancellationReason(string cancellationReason)
+    {
+        lock (botVoiceCancellationLock)
+        {
+            currentBotVoiceCancellationReason = cancellationReason;
+        }
+    }
+
+    private string GetCurrentBotVoiceCancellationReason()
+    {
+        lock (botVoiceCancellationLock)
+        {
+            return currentBotVoiceCancellationReason;
         }
     }
 
@@ -1105,6 +1197,7 @@ public partial class LessonChatViewModel : ViewModelBase
             if (ReferenceEquals(currentBotVoiceCancellationTokenSource, cancellationTokenSource))
             {
                 currentBotVoiceCancellationTokenSource = null;
+                currentBotVoiceCancellationReason = BotVoiceCancellationReasons.AppDisposalCancel;
             }
         }
     }
@@ -1115,11 +1208,12 @@ public partial class LessonChatViewModel : ViewModelBase
         lock (botVoiceCancellationLock)
         {
             cancellationTokenSource = currentBotVoiceCancellationTokenSource;
-        }
+            if (cancellationTokenSource is null || cancellationTokenSource.IsCancellationRequested)
+            {
+                return;
+            }
 
-        if (cancellationTokenSource is null || cancellationTokenSource.IsCancellationRequested)
-        {
-            return;
+            currentBotVoiceCancellationReason = reason;
         }
 
         Debug.WriteLine($"Canceling bot voice: Path={AudioConstants.BotVoiceDefaultPathName}; CancellationReason={reason}.");
@@ -1132,16 +1226,21 @@ public partial class LessonChatViewModel : ViewModelBase
         return Messages.LastOrDefault(candidate => candidate.IsFromBot)?.Id == message.Id;
     }
 
+    private bool IsSetupBotMessage(ChatMessageViewModel message)
+    {
+        return message.IsFromBot && CurrentLessonPhase == LessonPhase.SetupContextSelection;
+    }
+
     public void CleanupCurrentSessionBotVoiceFiles()
     {
-        CancelCurrentBotVoice("lesson cleanup");
+        CancelCurrentBotVoice(BotVoiceCancellationReasons.AppDisposalCancel);
         audioPlaybackService.StopPlayback();
         CleanupTrackedBotVoiceFiles();
     }
 
     private async Task CleanupCurrentSessionBotVoiceFilesAsync()
     {
-        CancelCurrentBotVoice("lesson cleanup");
+        CancelCurrentBotVoice(BotVoiceCancellationReasons.AppDisposalCancel);
         audioPlaybackService.StopPlayback();
 
         if (await botVoiceSemaphore.WaitAsync(TimeSpan.FromSeconds(2)))
@@ -1190,7 +1289,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         var trimmedUserInput = UserInput.Trim();
-        CancelCurrentBotVoice("learner sent a new message");
+        CancelCurrentBotVoice(BotVoiceCancellationReasons.NewerMessageCancel);
         var wasSent = await SendLessonMessageAsync(trimmedUserInput);
 
         if (wasSent)
@@ -1831,6 +1930,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanFinishLesson))]
     private async Task FinishLesson()
     {
+        CancelCurrentBotVoice(BotVoiceCancellationReasons.BackOrFinishCancel);
         await CleanupCurrentSessionBotVoiceFilesAsync();
         CompleteLesson();
     }
@@ -1886,6 +1986,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanGoBack))]
     private async Task Back()
     {
+        CancelCurrentBotVoice(BotVoiceCancellationReasons.BackOrFinishCancel);
         await CleanupCurrentSessionBotVoiceFilesAsync();
         navigateBack();
     }
@@ -1922,7 +2023,63 @@ public partial class LessonChatViewModel : ViewModelBase
             localizedText,
             TranslateMessageAsync);
         Messages.Add(message);
+
+        if (ShouldPrefetchBotVoice(message))
+        {
+            QueueBotVoiceFirstSegmentPrefetch(message);
+        }
+
         return message;
+    }
+
+    private bool ShouldPrefetchBotVoice(ChatMessageViewModel message)
+    {
+        if (!message.IsFromBot || string.IsNullOrWhiteSpace(message.Text))
+        {
+            return false;
+        }
+
+        if (CurrentLessonPhase == LessonPhase.SetupContextSelection
+            && message.Text.Trim().Length > AudioConstants.BotVoiceSetupAutoPlayMaxCharacters)
+        {
+            return false;
+        }
+
+        return ShouldAutoPlayBotVoice || IsConversationModeEnabled || message.ShowPlayVoiceButton;
+    }
+
+    private void QueueBotVoiceFirstSegmentPrefetch(ChatMessageViewModel message)
+    {
+        var allSegments = SplitBotVoiceTextIntoSegments(message.Text, isAutoPlay: false);
+        if (allSegments.Count == 0)
+        {
+            return;
+        }
+
+        var totalStopwatch = Stopwatch.StartNew();
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                Debug.WriteLine($"Bot voice first segment prefetch starting: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; InputLength={allSegments[0].Length}.");
+                await GetOrCreateBotVoiceSegmentAudioFileAsync(
+                    message,
+                    allSegments[0],
+                    segmentIndex: 0,
+                    timeout: TimeSpan.FromSeconds(AudioConstants.BotVoiceFirstSegmentHardTimeoutSeconds),
+                    totalStopwatch,
+                    CancellationToken.None);
+                Debug.WriteLine($"Bot voice first segment prefetch completed: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; ReadyMs={totalStopwatch.ElapsedMilliseconds}.");
+            }
+            catch (OperationCanceledException exception)
+            {
+                Debug.WriteLine($"Bot voice first segment prefetch canceled: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; CancellationReason={BotVoiceCancellationReasons.HardTimeoutCancel}; TotalMs={totalStopwatch.ElapsedMilliseconds}; {exception}");
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine($"Bot voice first segment prefetch failed: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; TotalMs={totalStopwatch.ElapsedMilliseconds}; {exception}");
+            }
+        });
     }
 
     private async Task TranslateMessageAsync(ChatMessageViewModel message)
@@ -1984,5 +2141,15 @@ public partial class LessonChatViewModel : ViewModelBase
             string.Empty,
             string.Empty,
             string.Empty);
+    }
+
+    private static class BotVoiceCancellationReasons
+    {
+        public const string SoftTargetReachedNoCancel = "SoftTargetReachedNoCancel";
+        public const string HardTimeoutCancel = "HardTimeoutCancel";
+        public const string NewerMessageCancel = "NewerMessageCancel";
+        public const string BackOrFinishCancel = "BackOrFinishCancel";
+        public const string ManualReplayCancel = "ManualReplayCancel";
+        public const string AppDisposalCancel = "AppDisposalCancel";
     }
 }

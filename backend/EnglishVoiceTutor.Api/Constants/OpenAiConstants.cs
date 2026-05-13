@@ -22,7 +22,7 @@ public static class OpenAiConstants
     public const string WavSpeechResponseFormat = "wav";
     public const string DefaultSpeechResponseFormat = WavSpeechResponseFormat;
     public const string DefaultBotVoiceStreamResponseFormat = PcmSpeechResponseFormat;
-    public const int OpenAiSpeechTimeoutSeconds = 10;
+    public const int OpenAiSpeechTimeoutSeconds = 20;
     public const int BotVoiceFirstAudioTimeoutSeconds = 5;
     public const int BotVoiceStreamOverallTimeoutSeconds = 20;
     public const string AudioSpeechHttpClientName = "OpenAiAudioSpeech";
