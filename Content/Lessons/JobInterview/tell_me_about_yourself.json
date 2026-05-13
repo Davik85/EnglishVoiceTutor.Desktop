@@ -26,7 +26,7 @@
     "contextSelection": {
       "customContextAllowed": true,
       "customContextValidationMode": "deterministic_keyword_matching",
-      "validCustomContextDescription": "Custom context is allowed only if it is a simple job interview situation about tell me about yourself.",
+      "validCustomContextDescription": "Custom context is allowed only if it is about answering the opening self-introduction question in a job interview.",
       "validCustomContextKeywords": [
         "interview",
         "office job",
@@ -39,7 +39,11 @@
         "student",
         "introduce",
         "introduction",
-        "tell me about yourself"
+        "tell me about yourself",
+        "self introduction",
+        "background",
+        "role fit",
+        "opening question"
       ],
       "offTopicExamples": [
         "hotel check-in",
@@ -48,7 +52,7 @@
         "travel directions",
         "casual friend chat"
       ],
-      "invalidContextRedirect": "That sounds interesting, but this lesson is about tell me about yourself in a job interview. Please choose a simple interview situation for this lesson."
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about answering “Tell me about yourself” in a job interview. Please choose an interview introduction situation."
     }
   },
   "learningGoal": {
@@ -64,7 +68,7 @@
   },
   "roles": {
     "userRole": "A job candidate in an interview.",
-    "tutorRole": "A professional interviewer who asks one focused interview question at a time and helps the candidate answer clearly."
+    "tutorRole": "A professional interviewer who asks focused interview questions, expects relevant candidate answers, and gives concise feedback on clarity, structure, and professional tone. The interviewer is formal but supportive, asks one question at a time, and may ask for a specific example or clarification."
   },
   "targetLanguage": {
     "keyPhrases": [
@@ -100,132 +104,133 @@
   "levelProfiles": {
     "A1 Beginner": {
       "level": "A1 Beginner",
-      "difficultyNotes": "Very simple interview English for tell me about yourself. Focus on one clear idea and core job-interview words.",
-      "tutorLanguageStyle": "Use short interview questions. Ask one question at a time and accept short answers when the meaning is clear.",
-      "expectedUserResponse": "1 short sentence.",
-      "minimumUserResponse": "My name is David. I am a designer. I want this job.",
-      "stretchUserResponse": "My name is David. I studied design.",
+      "difficultyNotes": "Very simple professional English for answering the opening self-introduction question. Focus on name, current role or study, and interest in the job.",
+      "tutorLanguageStyle": "Use short formal interviewer language. Ask for name, role or study, and one job-related interest.",
+      "expectedUserResponse": "2-3 short sentences about professional background and job interest.",
+      "minimumUserResponse": "My name is David. I’m a designer. I’m interested in this job.",
+      "stretchUserResponse": "My name is David. I studied design, and I’m interested in this job.",
       "addedKeyPhrases": [
         "My name is...",
         "I am...",
-        "I want this job."
+        "I studied...",
+        "I’m interested in this job."
       ],
       "addedUsefulConstructions": [
-        "Use My name is... + I am... + I want this job.",
-        "Use one short sentence with a clear interview meaning."
+        "Use My name is..., I am..., I studied..., I’m interested in this job.",
+        "Keep the answer about your role, study, or job interest, not your full life story."
       ],
       "addedGrammarFocus": [
-        "simple present for interview answers",
-        "basic word order in short answers",
-        "clear subject + verb sentences"
+        "to be for name and role",
+        "simple present for current interest",
+        "short sentence order: I am + role"
       ],
-      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
-      "hintStrategy": "Give full sentence starters or a full simple answer if the learner is stuck.",
-      "correctionPriority": "Interview meaning first, then one essential word or grammar correction.",
-      "conversationDepth": "Keep the interview shallow and practical with one short question at a time.",
-      "exampleGoodAnswer": "My name is David. I am a designer. I want this job.",
-      "exampleStretchAnswer": "My name is David. I studied design."
+      "feedbackStrictness": "Correct only meaning-blocking mistakes and one key interview word. Keep feedback short but professional.",
+      "hintStrategy": "Give a complete simple interview answer starter with name, role or study, and interest in the job.",
+      "correctionPriority": "Professional relevance first, then basic word order and one essential grammar correction.",
+      "conversationDepth": "Keep the interview introduction short and focused on professional background and role interest.",
+      "exampleGoodAnswer": "My name is David. I’m a designer. I’m interested in this job.",
+      "exampleStretchAnswer": "My name is David. I studied design, and I’m interested in this job."
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple interview English for tell me about yourself. The learner should answer with one main idea and one useful detail.",
-      "tutorLanguageStyle": "Use simple interview questions. Ask for one extra detail such as a role, skill, reason, responsibility, or next step.",
-      "expectedUserResponse": "1-2 short sentences.",
-      "minimumUserResponse": "My name is David. I studied design, and I want to work in this role.",
-      "stretchUserResponse": "My name is David. I studied design, and I am interested in this junior role.",
+      "difficultyNotes": "Simple professional self-introduction with background, one relevant detail, and interest in the role.",
+      "tutorLanguageStyle": "Use clear interviewer questions and ask for one relevant professional detail if the answer is too general.",
+      "expectedUserResponse": "2-3 short connected sentences.",
+      "minimumUserResponse": "I’m a designer. I studied design, and I’m interested in this role.",
+      "stretchUserResponse": "I’m a junior designer. I studied design, and I’m interested in this role because I like creative work.",
       "addedKeyPhrases": [
-        "My name is...",
         "I studied...",
-        "I want to work in this role.",
-        "I am interested in..."
+        "I have experience in...",
+        "I’m interested in this role because...",
+        "I enjoy..."
       ],
       "addedUsefulConstructions": [
-        "Use I studied... and I want to work in this role.",
-        "Add one detail after the main answer."
+        "Introduce role or study, then add one relevant interest.",
+        "Use because to connect your interest to the job."
       ],
       "addedGrammarFocus": [
-        "simple past or present as needed for interview answers",
-        "basic connectors with and or because",
-        "polite complete sentences"
+        "simple past for studied or worked",
+        "because for one job-related reason",
+        "present simple for current interests"
       ],
-      "feedbackStrictness": "Correct basic grammar, word order, and missing polite or professional words.",
-      "hintStrategy": "Give a sentence starter and one optional detail to add.",
-      "correctionPriority": "Clear interview answer, basic grammar, and professional tone.",
-      "conversationDepth": "Use simple follow-up questions while staying in the selected interview scenario.",
-      "exampleGoodAnswer": "My name is David. I studied design, and I want to work in this role.",
-      "exampleStretchAnswer": "My name is David. I studied design, and I am interested in this junior role."
+      "feedbackStrictness": "Correct unclear wording, missing professional focus, and one important grammar issue.",
+      "hintStrategy": "Give a sentence frame: role or study + one detail + interest in this role.",
+      "correctionPriority": "Relevance to the role, clear sentence order, and natural interview phrasing.",
+      "conversationDepth": "Ask one follow-up about background, study, or job interest while keeping the answer concise.",
+      "exampleGoodAnswer": "I’m a designer. I studied design, and I’m interested in this role.",
+      "exampleStretchAnswer": "I’m a junior designer. I studied design, and I’m interested in this role because I like creative work."
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
-      "difficultyNotes": "Natural but clear interview English for tell me about yourself. The learner should give an answer, a detail, and a reason or example.",
-      "tutorLanguageStyle": "Use natural clear interview English. Ask for clarification or one follow-up example when the answer is too general.",
-      "expectedUserResponse": "2-3 connected sentences.",
-      "minimumUserResponse": "My name is David. I studied design and worked on several small projects. I’m interested in this role because I want to grow as a designer.",
-      "stretchUserResponse": "My name is David. I studied design, worked on small projects, and I’m interested in this role because I want to grow in a creative team.",
+      "difficultyNotes": "Concise interview self-introduction using point + detail + reason for role fit.",
+      "tutorLanguageStyle": "Use natural interviewer language. If the answer sounds like a personal life story, redirect to professional background and role fit.",
+      "expectedUserResponse": "3 connected sentences with professional background, evidence or detail, and relevance to the role.",
+      "minimumUserResponse": "I’m a junior designer with experience in social media graphics. For example, I created posts for a small project. I’m interested in this role because I want to grow in a professional team.",
+      "stretchUserResponse": "I’m a junior designer with experience creating social media graphics for small projects. This helped me build practical design skills, and I’m interested in this role because it matches my background and career goals.",
       "addedKeyPhrases": [
-        "I studied...",
-        "I worked on...",
-        "I’m interested in this role because...",
-        "I want to grow as..."
+        "For example...",
+        "My background is in...",
+        "This helped me...",
+        "I’m interested in this role because..."
       ],
       "addedUsefulConstructions": [
-        "Connect background, small experience, and reason for interest.",
-        "Use answer + detail + reason or example."
+        "Use point + professional detail + relevance to the role.",
+        "Keep the opening answer concise and avoid personal life story details."
       ],
       "addedGrammarFocus": [
-        "connected sentences with because, so, and while",
-        "accurate tense choice for experience or goals",
-        "specific interview vocabulary and examples"
+        "present perfect or simple past for experience",
+        "because for role fit",
+        "clear linking with and, because, so"
       ],
-      "feedbackStrictness": "Correct grammar, word choice, answer structure, and unclear interview details.",
-      "hintStrategy": "Give a structure such as answer + detail + reason/example, with one phrase option.",
-      "correctionPriority": "Structured answer, relevant details, natural wording, and professional tone.",
-      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected interview scenario.",
-      "exampleGoodAnswer": "My name is David. I studied design and worked on several small projects. I’m interested in this role because I want to grow as a designer.",
-      "exampleStretchAnswer": "My name is David. I studied design, worked on small projects, and I’m interested in this role because I want to grow in a creative team."
+      "feedbackStrictness": "Correct structure, vague details, role relevance, professional tone, and important grammar errors.",
+      "hintStrategy": "Suggest a three-part structure: current role/background + example/detail + relevance to the role.",
+      "correctionPriority": "Concise structure, role relevance, specific evidence, and natural interview language.",
+      "conversationDepth": "Use realistic follow-ups about background or role fit; ask for one concrete detail when needed.",
+      "exampleGoodAnswer": "I’m a junior designer with experience in social media graphics. For example, I created posts for a small project. I’m interested in this role because I want to grow in a professional team.",
+      "exampleStretchAnswer": "I’m a junior designer with experience creating social media graphics for small projects. This helped me build practical design skills, and I’m interested in this role because it matches my background and career goals."
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
-      "difficultyNotes": "Natural professional interview English for tell me about yourself. The learner should use structured, specific, nuanced phrasing.",
-      "tutorLanguageStyle": "Use realistic interviewer language. You may ask one challenging follow-up, but keep the selected interview scenario focused.",
-      "expectedUserResponse": "Structured answer with context, detail, and professional tone.",
-      "minimumUserResponse": "My name is David. I have a background in design and have worked on several small projects. I’m now looking for an opportunity where I can develop professionally and contribute to a creative team.",
-      "stretchUserResponse": "My name is David. I have a design background with several small project experiences, and I’m looking for a role where I can keep developing while contributing to a creative team.",
+      "difficultyNotes": "Polished interview self-introduction with concise opening, evidence, and clear relevance to the role.",
+      "tutorLanguageStyle": "Use formal interviewer language and ask controlled follow-ups about specificity, relevance, or concision.",
+      "expectedUserResponse": "A concise professional answer with background, evidence, motivation, and role fit.",
+      "minimumUserResponse": "I’m a junior designer with a background in digital content and experience creating social media visuals. That experience strengthened my attention to detail and helped me understand user-focused design. This role appeals to me because it would let me apply those skills in a more structured team environment.",
+      "stretchUserResponse": "I’d describe myself as a junior designer with a digital content background and practical experience creating social media visuals. What I learned from that was how to balance creativity with clear communication, and this role appeals to me because it connects directly with the kind of design work I want to develop further.",
       "addedKeyPhrases": [
-        "I have a background in...",
-        "I’m now looking for an opportunity to...",
-        "contribute to a team",
-        "develop professionally"
+        "What I learned from that was...",
+        "That experience strengthened...",
+        "This role appeals to me because...",
+        "relevant to this role"
       ],
       "addedUsefulConstructions": [
-        "Present background, relevant evidence, motivation, and contribution professionally.",
-        "Organize the answer with context, specific detail, and a professional conclusion."
+        "Use concise opening + evidence + relevance to the role.",
+        "Prepare to make the answer more concise if the interviewer asks."
       ],
       "addedGrammarFocus": [
+        "concise relative clauses for background",
         "precise professional vocabulary",
-        "complex but clear sentence structure",
-        "nuanced tone and relevance in interview answers"
+        "clear links between evidence and role fit"
       ],
-      "feedbackStrictness": "Focus on clarity, relevance, nuance, tone, precise wording, and any important grammar errors.",
-      "hintStrategy": "Suggest more natural professional phrasing or structure rather than giving a full script immediately.",
-      "correctionPriority": "Relevance, specificity, smooth structure, precise wording, and appropriate professional tone.",
-      "conversationDepth": "Allow richer details and one realistic follow-up challenge, but do not leave the interview scenario.",
-      "exampleGoodAnswer": "My name is David. I have a background in design and have worked on several small projects. I’m now looking for an opportunity where I can develop professionally and contribute to a creative team.",
-      "exampleStretchAnswer": "My name is David. I have a design background with several small project experiences, and I’m looking for a role where I can keep developing while contributing to a creative team."
+      "feedbackStrictness": "Evaluate clarity, specificity, concision, professional tone, and relevance to the role.",
+      "hintStrategy": "Suggest a polished direction or sharper wording instead of a full script unless the learner is stuck.",
+      "correctionPriority": "Concision, role relevance, evidence quality, and precise professional phrasing.",
+      "conversationDepth": "Allow one realistic interviewer challenge such as asking for a specific example, role relevance, lesson learned, or a more concise version.",
+      "exampleGoodAnswer": "I’m a junior designer with a background in digital content and experience creating social media visuals. That experience strengthened my attention to detail and helped me understand user-focused design. This role appeals to me because it would let me apply those skills in a more structured team environment.",
+      "exampleStretchAnswer": "I’d describe myself as a junior designer with a digital content background and practical experience creating social media visuals. What I learned from that was how to balance creativity with clear communication, and this role appeals to me because it connects directly with the kind of design work I want to develop further."
     }
   },
   "conversationFlow": {
     "opening": "Tutor welcomes the candidate and starts the selected self-introduction interview situation.",
     "defaultOpeningExample": "Thanks for coming today. Could you tell me a little about yourself?",
-    "firstUserTask": "The user gives a short, relevant interview-style self-introduction.",
-    "expectedPattern": "My name is... I studied/worked... I am interested in this role because...",
+    "firstUserTask": "The user gives a concise professional self-introduction with role or study, relevant background, and interest in the role.",
+    "expectedPattern": "My name is... I am/studied/worked... I’m interested in this role because...",
     "guidedPracticeFollowUpQuestions": [
       "What did you study?",
       "What kind of role are you looking for?",
       "Why are you interested in this role?",
       "Could you add one relevant skill?"
     ],
-    "variationOrComplication": "Tutor asks about study, background, interest in the role, or one relevant skill.",
+    "variationOrComplication": "Tutor asks for a shorter, more relevant, or more role-focused introduction if the answer becomes a personal life story.",
     "exampleTutorLine": "Could you tell me a little about yourself?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging, and professional.",
@@ -328,12 +333,12 @@
       "Validate custom context with simple deterministic English keyword matching, not AI validation.",
       "Do not use non-English aliases or Cyrillic keywords."
     ],
-    "invalidContextRedirect": "That sounds interesting, but this lesson is about tell me about yourself in a job interview. Please choose a simple interview situation for this lesson."
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about answering “Tell me about yourself” in a job interview. Please choose an interview introduction situation."
   },
   "offTopicHandling": {
-    "firstRedirect": "That sounds interesting, but this lesson is about tell me about yourself in a job interview. Let's stay with the interview question.",
-    "secondRedirect": "Let's stay with this job interview scenario for now. Please answer as a candidate practicing tell me about yourself.",
-    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on tell me about yourself in a job interview. You can finish this lesson and use Free Conversation Mode later."
+    "firstRedirect": "That sounds interesting, but this lesson is about answering “Tell me about yourself” in a job interview. Please keep your answer focused on professional background and role fit.",
+    "secondRedirect": "Let’s stay with the interview introduction. Please answer as a job candidate giving a concise professional self-introduction.",
+    "freeConversationSuggestion": "This lesson is focused on the opening self-introduction question in a job interview. You can finish this lesson and use Free Conversation Mode later."
   },
   "feedbackRules": {
     "levelRules": {
@@ -366,21 +371,28 @@
   },
   "aiTutorPromptInstructions": [
     "Stay inside this Job Interview lesson scenario.",
-    "The tutor plays an interviewer and the user plays a job candidate.",
+    "The tutor is a professional interviewer and the user is a job candidate.",
+    "Maintain a professional interview tone: formal, supportive, evaluative, and not casual.",
     "Start with the setup message and wait for context selection before roleplay.",
     "Tutor messages must be in English.",
     "Use English-only context matching.",
     "Do not accept off-topic contexts such as hotel check-in or airport passport; redirect and remain in setup.",
     "Keep setup and context choice outside the lesson turn count.",
     "Start counting user turns only after active roleplay starts.",
-    "Use very simple interview English for A1.",
+    "Use very simple but professional interview English for A1.",
     "Keep tutor messages short and suitable for voice output.",
-    "Ask one interview question at a time.",
-    "Help the user give structured, clear, natural answers at the selected level.",
+    "Ask one focused interview question at a time; do not ask multiple questions at once.",
+    "Expect relevant candidate answers and do not drift into casual conversation or general business practice.",
+    "Do not overpraise weak, vague, or off-topic answers.",
+    "If the answer is too vague for the selected level, ask for one specific detail or example.",
+    "Keep feedback concise and interview-focused, with attention to clarity, structure, and professional tone.",
+    "If the candidate gives a personal life story, redirect to professional background and role fit.",
+    "For B1 and B2, ask the user to keep the answer concise and relevant to the role.",
+    "For B1 and B2, encourage structured answers with point + evidence/example + relevance to the role.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
     "After user turn 10, start wrapping up.",
     "At user turn 15, give the final message and do not continue the active dialogue.",
-    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal or interviewer role."
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal, interviewer role, candidate role, or selected interview scenario."
   ]
 }
