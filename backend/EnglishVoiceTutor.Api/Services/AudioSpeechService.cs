@@ -45,7 +45,7 @@ public sealed class AudioSpeechService
 
         var request = new OpenAiAudioSpeechRequest
         {
-            Model = OpenAiConstants.DefaultSpeechModel,
+            Model = OpenAiConstants.DefaultBotVoiceSpeechModel,
             Input = text.Trim(),
             Voice = OpenAiConstants.DefaultSpeechVoice,
             Speed = OpenAiConstants.DefaultSpeechSpeed,
@@ -53,6 +53,36 @@ public sealed class AudioSpeechService
         };
 
         return await SendAudioSpeechRequestAsync(request, options.ApiKey, clientCancellationToken);
+    }
+
+
+    public async Task<BotVoiceStreamMetrics> StreamSpeechAsync(
+        string text,
+        Stream outputStream,
+        CancellationToken clientCancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new InvalidOperationException(ApiConstants.EmptySpeechTextError);
+        }
+
+        var options = _optionsProvider.GetOptions();
+
+        if (string.IsNullOrWhiteSpace(options.ApiKey))
+        {
+            throw new InvalidOperationException(MissingApiKeyMessage);
+        }
+
+        var request = new OpenAiAudioSpeechRequest
+        {
+            Model = OpenAiConstants.DefaultBotVoiceSpeechModel,
+            Input = text.Trim(),
+            Voice = OpenAiConstants.DefaultSpeechVoice,
+            Speed = OpenAiConstants.DefaultSpeechSpeed,
+            ResponseFormat = OpenAiConstants.DefaultBotVoiceStreamResponseFormat
+        };
+
+        return await StreamAudioSpeechRequestAsync(request, options.ApiKey, outputStream, clientCancellationToken);
     }
 
     private async Task<byte[]> SendAudioSpeechRequestAsync(
@@ -180,4 +210,207 @@ public sealed class AudioSpeechService
             throw;
         }
     }
+
+    private async Task<BotVoiceStreamMetrics> StreamAudioSpeechRequestAsync(
+        OpenAiAudioSpeechRequest request,
+        string apiKey,
+        Stream outputStream,
+        CancellationToken clientCancellationToken)
+    {
+        using var overallCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(OpenAiConstants.BotVoiceStreamOverallTimeoutSeconds));
+        using var firstAudioCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(OpenAiConstants.BotVoiceFirstAudioTimeoutSeconds));
+        using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+            clientCancellationToken,
+            overallCancellationTokenSource.Token,
+            firstAudioCancellationTokenSource.Token);
+
+        var stopwatch = Stopwatch.StartNew();
+        var httpClient = _httpClientFactory.CreateClient(OpenAiConstants.AudioSpeechHttpClientName);
+        var totalBytes = 0L;
+        long? firstHeaderMs = null;
+        long? firstChunkMs = null;
+        long? firstChunkWrittenMs = null;
+        int? statusCode = null;
+
+        _logger.LogInformation(
+            "TTS stream request started. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; InputLength={InputLength}; FirstAudioTimeoutSeconds={FirstAudioTimeoutSeconds}; OverallTimeoutSeconds={OverallTimeoutSeconds}.",
+            "audio/speech-stream",
+            request.Model,
+            request.Voice,
+            request.ResponseFormat,
+            request.Input.Length,
+            OpenAiConstants.BotVoiceFirstAudioTimeoutSeconds,
+            OpenAiConstants.BotVoiceStreamOverallTimeoutSeconds);
+
+        try
+        {
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, OpenAiConstants.AudioSpeechEndpoint);
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue(OpenAiConstants.AuthorizationScheme, apiKey);
+
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions);
+            httpRequest.Content = new StringContent(requestJson, Encoding.UTF8, OpenAiConstants.ContentTypeJson);
+
+            using var response = await httpClient.SendAsync(
+                httpRequest,
+                HttpCompletionOption.ResponseHeadersRead,
+                linkedCancellationTokenSource.Token);
+
+            statusCode = (int)response.StatusCode;
+            firstHeaderMs = stopwatch.ElapsedMilliseconds;
+
+            _logger.LogInformation(
+                "OpenAI TTS stream response headers received. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; InputLength={InputLength}; StatusCode={StatusCode}; FirstHeaderMs={FirstHeaderMs}.",
+                "audio/speech-stream",
+                request.Model,
+                request.Voice,
+                request.ResponseFormat,
+                request.Input.Length,
+                response.StatusCode,
+                firstHeaderMs);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync(linkedCancellationTokenSource.Token);
+                _logger.LogWarning(
+                    "OpenAI TTS stream failed before audio. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; InputLength={InputLength}; StatusCode={StatusCode}; FirstHeaderMs={FirstHeaderMs}; ResponseBodyLength={ResponseBodyLength}.",
+                    "audio/speech-stream",
+                    request.Model,
+                    request.Voice,
+                    request.ResponseFormat,
+                    request.Input.Length,
+                    response.StatusCode,
+                    firstHeaderMs,
+                    errorBody.Length);
+                throw new HttpRequestException(OpenAiRequestFailedMessage, null, response.StatusCode);
+            }
+
+            await using var responseStream = await response.Content.ReadAsStreamAsync(linkedCancellationTokenSource.Token);
+            var buffer = new byte[16 * 1024];
+
+            while (true)
+            {
+                var bytesRead = await responseStream.ReadAsync(buffer, linkedCancellationTokenSource.Token);
+
+                if (bytesRead == 0)
+                {
+                    break;
+                }
+
+                if (firstChunkMs is null)
+                {
+                    firstChunkMs = stopwatch.ElapsedMilliseconds;
+                    firstAudioCancellationTokenSource.CancelAfter(Timeout.InfiniteTimeSpan);
+                    _logger.LogInformation(
+                        "First OpenAI TTS audio chunk received. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; InputLength={InputLength}; FirstHeaderMs={FirstHeaderMs}; FirstChunkMs={FirstChunkMs}; ChunkBytes={ChunkBytes}.",
+                        "audio/speech-stream",
+                        request.Model,
+                        request.Voice,
+                        request.ResponseFormat,
+                        request.Input.Length,
+                        firstHeaderMs,
+                        firstChunkMs,
+                        bytesRead);
+                }
+
+                await outputStream.WriteAsync(buffer.AsMemory(0, bytesRead), linkedCancellationTokenSource.Token);
+                await outputStream.FlushAsync(linkedCancellationTokenSource.Token);
+                totalBytes += bytesRead;
+
+                if (firstChunkWrittenMs is null)
+                {
+                    firstChunkWrittenMs = stopwatch.ElapsedMilliseconds;
+                    _logger.LogInformation(
+                        "First OpenAI TTS audio chunk written to client. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; InputLength={InputLength}; FirstHeaderMs={FirstHeaderMs}; FirstChunkMs={FirstChunkMs}; FirstChunkWrittenMs={FirstChunkWrittenMs}; TotalBytes={TotalBytes}.",
+                        "audio/speech-stream",
+                        request.Model,
+                        request.Voice,
+                        request.ResponseFormat,
+                        request.Input.Length,
+                        firstHeaderMs,
+                        firstChunkMs,
+                        firstChunkWrittenMs,
+                        totalBytes);
+                }
+            }
+
+            if (totalBytes == 0)
+            {
+                throw new InvalidOperationException(OpenAiResponseMissingMessage);
+            }
+
+            _logger.LogInformation(
+                "TTS stream completed. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; InputLength={InputLength}; FirstHeaderMs={FirstHeaderMs}; FirstChunkMs={FirstChunkMs}; FirstChunkWrittenMs={FirstChunkWrittenMs}; TotalMs={TotalMs}; TotalBytes={TotalBytes}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; FirstAudioTimeoutReached={FirstAudioTimeoutReached}; OverallTimeoutReached={OverallTimeoutReached}.",
+                "audio/speech-stream",
+                request.Model,
+                request.Voice,
+                request.ResponseFormat,
+                request.Input.Length,
+                firstHeaderMs,
+                firstChunkMs,
+                firstChunkWrittenMs,
+                stopwatch.ElapsedMilliseconds,
+                totalBytes,
+                false,
+                clientCancellationToken.IsCancellationRequested,
+                false,
+                false);
+
+            return new BotVoiceStreamMetrics(firstHeaderMs, firstChunkMs, firstChunkWrittenMs, stopwatch.ElapsedMilliseconds, totalBytes);
+        }
+        catch (OperationCanceledException exception)
+        {
+            var firstAudioTimeoutReached = firstAudioCancellationTokenSource.IsCancellationRequested && firstChunkMs is null;
+            var overallTimeoutReached = overallCancellationTokenSource.IsCancellationRequested;
+
+            _logger.LogWarning(
+                exception,
+                "TTS stream canceled/timeout. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; InputLength={InputLength}; StatusCode={StatusCode}; FirstHeaderMs={FirstHeaderMs}; FirstChunkMs={FirstChunkMs}; FirstChunkWrittenMs={FirstChunkWrittenMs}; TotalMs={TotalMs}; TotalBytes={TotalBytes}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; FirstAudioTimeoutReached={FirstAudioTimeoutReached}; OverallTimeoutReached={OverallTimeoutReached}.",
+                "audio/speech-stream",
+                request.Model,
+                request.Voice,
+                request.ResponseFormat,
+                request.Input.Length,
+                statusCode,
+                firstHeaderMs,
+                firstChunkMs,
+                firstChunkWrittenMs,
+                stopwatch.ElapsedMilliseconds,
+                totalBytes,
+                true,
+                clientCancellationToken.IsCancellationRequested,
+                firstAudioTimeoutReached,
+                overallTimeoutReached);
+
+            throw new AudioSpeechRequestCanceledException(
+                OpenAiRequestCanceledMessage,
+                exception,
+                firstAudioTimeoutReached || overallTimeoutReached,
+                clientCancellationToken.IsCancellationRequested);
+        }
+        catch (Exception exception) when (exception is not AudioSpeechRequestCanceledException)
+        {
+            _logger.LogWarning(
+                exception,
+                "TTS stream failed. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; InputLength={InputLength}; StatusCode={StatusCode}; FirstHeaderMs={FirstHeaderMs}; FirstChunkMs={FirstChunkMs}; FirstChunkWrittenMs={FirstChunkWrittenMs}; TotalMs={TotalMs}; TotalBytes={TotalBytes}.",
+                "audio/speech-stream",
+                request.Model,
+                request.Voice,
+                request.ResponseFormat,
+                request.Input.Length,
+                statusCode,
+                firstHeaderMs,
+                firstChunkMs,
+                firstChunkWrittenMs,
+                stopwatch.ElapsedMilliseconds,
+                totalBytes);
+            throw;
+        }
+    }
 }
+
+public sealed record BotVoiceStreamMetrics(
+    long? FirstHeaderMs,
+    long? FirstChunkMs,
+    long? FirstChunkWrittenMs,
+    long TotalMs,
+    long TotalBytes);

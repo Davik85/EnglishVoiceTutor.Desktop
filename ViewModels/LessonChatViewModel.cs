@@ -613,9 +613,14 @@ public partial class LessonChatViewModel : ViewModelBase
 
         if (!await botVoiceSemaphore.WaitAsync(0, cancellationToken))
         {
-            Debug.WriteLine($"Skipping bot voice {(isAutoPlay ? "auto-play" : "manual play")} for message {message.Id}: another voice request is busy.");
+            Debug.WriteLine($"Skipped bot voice {(isAutoPlay ? "auto-play" : "manual play")} for message {message.Id}: another voice is already playing.");
             return;
         }
+
+        using var playbackCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        playbackCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(BackendConstants.BotVoiceFirstAudioTimeoutSeconds));
+        var playbackStarted = false;
+        var totalStopwatch = Stopwatch.StartNew();
 
         try
         {
@@ -623,20 +628,48 @@ public partial class LessonChatViewModel : ViewModelBase
             RefreshAvatarState();
             StatusMessage = localizedText.PlayingBotVoiceMessage;
 
-            var audioFilePath = await GetOrCreateBotVoiceAudioFileAsync(message, cancellationToken);
+            var inputLength = message.Text.Trim().Length;
+            Debug.WriteLine($"Bot voice request start message id {message.Id}: InputLength={inputLength}; AutoPlay={isAutoPlay}.");
 
-            if (isAutoPlay && !IsNewestBotMessage(message))
-            {
-                Debug.WriteLine($"Skipping bot voice auto-play for message {message.Id}: a newer bot message arrived before playback.");
-                return;
-            }
+            await lessonChatBackendService.StreamBotSpeechAsync(
+                message.Text,
+                async (audioStream, contentType, streamCancellationToken) =>
+                {
+                    if (!string.Equals(contentType, BackendConstants.PcmContentType, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException($"Unsupported streaming bot voice content type: {contentType}");
+                    }
 
-            await audioPlaybackService.PlayAudioFileAsync(audioFilePath, cancellationToken);
+                    await audioPlaybackService.PlayPcmStreamAsync(
+                        audioStream,
+                        message.Id,
+                        firstChunkMs => Debug.WriteLine($"Bot voice first audio chunk received ms for message {message.Id}: {firstChunkMs}."),
+                        playbackStartedMs =>
+                        {
+                            playbackStarted = true;
+                            playbackCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(BackendConstants.BotVoiceStreamOverallTimeoutSeconds));
+                            Debug.WriteLine($"Bot voice playback started ms for message {message.Id}: {playbackStartedMs}.");
+                        },
+                        streamCancellationToken);
+                },
+                playbackCancellationTokenSource.Token);
+
+            Debug.WriteLine($"Bot voice playback completed ms for message {message.Id}: {totalStopwatch.ElapsedMilliseconds}.");
             BackendStatusText = BackendConstants.BackendStatusConnected;
         }
         catch (OperationCanceledException exception)
         {
-            Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} canceled for message {message.Id}: {exception}");
+            if (!playbackStarted && playbackCancellationTokenSource.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+            {
+                Debug.WriteLine($"Bot voice canceled because first audio exceeded {BackendConstants.BotVoiceFirstAudioTimeoutSeconds} seconds for message {message.Id}: {exception}");
+                StatusMessage = isAutoPlay
+                    ? "Voice took too long. Continuing without audio."
+                    : "Voice took too long. Please try again.";
+            }
+            else
+            {
+                Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} canceled for message {message.Id}: {exception}");
+            }
         }
         catch (Exception exception)
         {

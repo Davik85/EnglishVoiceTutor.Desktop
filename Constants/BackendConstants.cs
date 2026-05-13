@@ -9,13 +9,17 @@ public static class BackendConstants
     public const string AudioTranscriptionEndpoint = "/api/audio/transcribe";
     public const string TranslationEndpoint = "/api/translate";
     public const string AudioSpeechEndpoint = "/api/audio/speech";
+    public const string AudioSpeechStreamEndpoint = "/api/audio/speech-stream";
     public const string HealthEndpoint = "/api/health";
     public const string BackendConfigStatusEndpoint = "/api/backend/config-status";
     public const int BackendRequestTimeoutSeconds = 30;
     public const int BackendHealthTimeoutSeconds = 5;
     public const int BotVoiceRequestTimeoutSeconds = 120;
+    public const int BotVoiceFirstAudioTimeoutSeconds = 5;
+    public const int BotVoiceStreamOverallTimeoutSeconds = 20;
     public const string MultipartFileFieldName = "file";
     public const string WavContentType = "audio/wav";
+    public const string PcmContentType = "audio/pcm";
     public const string SpeechResponseContentType = WavContentType;
     public const string NgrokSkipBrowserWarningHeaderName = "ngrok-skip-browser-warning";
     public const string NgrokSkipBrowserWarningHeaderValue = "1";
