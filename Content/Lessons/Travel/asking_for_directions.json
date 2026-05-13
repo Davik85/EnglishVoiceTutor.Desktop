@@ -114,12 +114,12 @@
         "Is it far?"
       ],
       "addedUsefulConstructions": [
-        "Use one simple sentence with I need..., I have..., Where is..., or What time is... as appropriate."
+        "Use short directions phrases with Excuse me, Where is...?, How do I get to...?, Go straight, Turn left, or Turn right."
       ],
       "addedGrammarFocus": [
-        "simple present for travel needs",
-        "basic question forms",
-        "polite please and thank you"
+        "basic where and how direction questions",
+        "imperatives for simple directions",
+        "polite Excuse me and thank you"
       ],
       "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
       "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
@@ -130,7 +130,7 @@
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple English for asking for directions. The learner should add one useful travel detail such as time, place, object, baggage, room, price, or destination.",
+      "difficultyNotes": "Simple English for asking for directions. The learner should add one useful direction detail such as destination, nearby landmark, street, distance, or station entrance.",
       "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
       "expectedUserResponse": "1-2 short sentences.",
       "minimumUserResponse": "Excuse me. How do I get to the station? Is it far?",
@@ -238,7 +238,7 @@
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
     "wrapUpAfterUserTurn": 10,
-    "wrapUpMessage": "You are doing well. Let us do one final directions question. Ask me how to get to one place.",
+    "wrapUpMessage": "You are doing well. Let's do one final directions question. Ask me how to get to one place.",
     "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced asking for directions and understanding simple direction words. Please click Finish lesson to see your summary."
   },
@@ -337,8 +337,8 @@
     "invalidContextRedirect": "That sounds interesting, but this lesson is about asking for directions. Please choose a simple directions situation."
   },
   "offTopicHandling": {
-    "firstRedirect": "That sounds interesting, but this lesson is about asking for directions. Let us stay in this travel situation.",
-    "secondRedirect": "Let us stay with asking for directions for now. Please answer as a traveler in this situation.",
+    "firstRedirect": "That sounds interesting, but this lesson is about asking for directions. Let's stay in this travel situation.",
+    "secondRedirect": "Let's stay with asking for directions for now. Please answer as a traveler in this situation.",
     "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on asking for directions. You can finish this lesson and use Free Conversation Mode later."
   },
   "feedbackRules": {

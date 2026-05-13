@@ -110,12 +110,12 @@
         "What time is breakfast?"
       ],
       "addedUsefulConstructions": [
-        "Use one simple sentence with I need..., I have..., Where is..., or What time is... as appropriate."
+        "Use short hotel check-in sentences with I have a reservation, My name is..., What time is breakfast?, or What time is check-out?"
       ],
       "addedGrammarFocus": [
-        "simple present for travel needs",
-        "basic question forms",
-        "polite please and thank you"
+        "simple present with have for reservations",
+        "basic hotel question forms",
+        "polite please and thank you at reception"
       ],
       "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
       "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
@@ -126,7 +126,7 @@
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple English for hotel check-in. The learner should add one useful travel detail such as time, place, object, baggage, room, price, or destination.",
+      "difficultyNotes": "Simple English for hotel check-in. The learner should add one useful hotel detail such as reservation name, room, breakfast, Wi-Fi, or check-out time.",
       "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
       "expectedUserResponse": "1-2 short sentences.",
       "minimumUserResponse": "I have a reservation under the name David. What time is breakfast?",
@@ -234,7 +234,7 @@
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
     "wrapUpAfterUserTurn": 10,
-    "wrapUpMessage": "You are doing well. Let us do one final hotel question. Ask me about breakfast, Wi-Fi, or check-out.",
+    "wrapUpMessage": "You are doing well. Let's do one final hotel question. Ask me about breakfast, Wi-Fi, or check-out.",
     "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced hotel check-in, reservation details, and polite hotel questions. Please click Finish lesson to see your summary."
   },
@@ -334,8 +334,8 @@
     "invalidContextRedirect": "That sounds interesting, but this lesson is about hotel check-in. Please choose a simple hotel check-in situation."
   },
   "offTopicHandling": {
-    "firstRedirect": "That sounds interesting, but this lesson is about hotel check-in. Let us stay in this travel situation.",
-    "secondRedirect": "Let us stay with hotel check-in for now. Please answer as a traveler in this situation.",
+    "firstRedirect": "That sounds interesting, but this lesson is about hotel check-in. Let's stay in this travel situation.",
+    "secondRedirect": "Let's stay with hotel check-in for now. Please answer as a traveler in this situation.",
     "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on hotel check-in. You can finish this lesson and use Free Conversation Mode later."
   },
   "feedbackRules": {

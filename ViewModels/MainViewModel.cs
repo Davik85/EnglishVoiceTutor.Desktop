@@ -195,7 +195,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ("Travel", "Asking for directions") => ContentConstants.AskingForDirectionsFileName,
             ("Travel", "Ordering transport") => ContentConstants.OrderingTransportFileName,
             ("Travel", "Lost luggage") => ContentConstants.LostLuggageFileName,
-            _ => ContentConstants.IntroductionsFileName
+            _ => throw new InvalidOperationException(
+                $"No lesson scenario file is mapped for topic '{selectedTopic.Title}' and subtopic '{selectedSubtopic.Title}'.")
         };
     }
 
@@ -205,7 +206,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             "Everyday English" => ContentConstants.EverydayEnglishFolderName,
             "Travel" => ContentConstants.TravelFolderName,
-            _ => ContentConstants.EverydayEnglishFolderName
+            _ => throw new InvalidOperationException($"No lesson content folder is mapped for topic '{selectedTopic.Title}'.")
         };
     }
 

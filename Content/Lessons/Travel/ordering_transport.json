@@ -112,12 +112,12 @@
         "How much is it?"
       ],
       "addedUsefulConstructions": [
-        "Use one simple sentence with I need..., I have..., Where is..., or What time is... as appropriate."
+        "Use short transport sentences with I need a taxi, I want to go to..., How much is it?, or Please pick me up at..."
       ],
       "addedGrammarFocus": [
-        "simple present for travel needs",
-        "basic question forms",
-        "polite please and thank you"
+        "simple present with need and want for transport requests",
+        "basic price and destination questions",
+        "polite please and thank you with a driver or dispatcher"
       ],
       "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
       "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
@@ -128,7 +128,7 @@
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple English for ordering transport. The learner should add one useful travel detail such as time, place, object, baggage, room, price, or destination.",
+      "difficultyNotes": "Simple English for ordering transport. The learner should add one useful transport detail such as destination, pick-up place, time, number of passengers, or price.",
       "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
       "expectedUserResponse": "1-2 short sentences.",
       "minimumUserResponse": "I need a taxi to my hotel. How much is it?",
@@ -236,7 +236,7 @@
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
     "wrapUpAfterUserTurn": 10,
-    "wrapUpMessage": "You are doing well. Let us do one final transport request. Ask for a ride and confirm the price or pick-up place.",
+    "wrapUpMessage": "You are doing well. Let's do one final transport request. Ask for a ride and confirm the price or pick-up place.",
     "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced ordering transport, giving a destination, and confirming price or pick-up details. Please click Finish lesson to see your summary."
   },
@@ -334,8 +334,8 @@
     "invalidContextRedirect": "That sounds interesting, but this lesson is about ordering transport. Please choose a simple taxi or ride situation."
   },
   "offTopicHandling": {
-    "firstRedirect": "That sounds interesting, but this lesson is about ordering transport. Let us stay in this travel situation.",
-    "secondRedirect": "Let us stay with ordering transport for now. Please answer as a traveler in this situation.",
+    "firstRedirect": "That sounds interesting, but this lesson is about ordering transport. Let's stay in this travel situation.",
+    "secondRedirect": "Let's stay with ordering transport for now. Please answer as a traveler in this situation.",
     "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on ordering transport. You can finish this lesson and use Free Conversation Mode later."
   },
   "feedbackRules": {
