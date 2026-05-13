@@ -134,6 +134,7 @@ $GenericPhrases = @(
 )
 $FailGenericPhrases = @('Let us')
 $ObsoleteLevelFolders = @('A1', 'A2', 'B1', 'B2')
+$CyrillicRegexPattern = '[\u0400-\u04FF]'
 
 function Get-RelativePath {
     param([Parameter(Mandatory = $true)][string]$Path)
@@ -333,7 +334,7 @@ function Test-TextContent {
     $files = Get-ChildItem -LiteralPath $Script:LessonsRoot -Recurse -File -Filter '*.json' | Sort-Object FullName
     foreach ($file in $files) {
         $text = [System.IO.File]::ReadAllText($file.FullName, [System.Text.Encoding]::UTF8)
-        $matches = [regex]::Matches($text, '[А-Яа-яЁё]')
+        $matches = [regex]::Matches($text, $CyrillicRegexPattern)
         foreach ($match in $matches) {
             $line = 1 + [regex]::Matches($text.Substring(0, $match.Index), "`n").Count
             Add-AuditError "Cyrillic content found in $(Get-RelativePath $file.FullName):$line: '$($match.Value)'"
