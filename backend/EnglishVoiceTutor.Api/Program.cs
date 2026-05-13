@@ -76,7 +76,7 @@ static async Task HandleRealtimeVoiceAsync(
     }
 
     using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-    logger.LogInformation("Realtime voice desktop WebSocket accepted.");
+    logger.LogInformation("Realtime voice desktop WebSocket accepted. Route={Route}; Path={Path}.", ApiConstants.RealtimeVoiceRoute, context.Request.Path);
     await realtimeVoiceSessionService.RunGatewayAsync(webSocket, context.RequestAborted);
 }
 
