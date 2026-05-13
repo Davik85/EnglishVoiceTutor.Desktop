@@ -134,6 +134,20 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine();
 
         prompt.AppendLine(HintTaskHeader);
+        if (IsFreeConversation(request))
+        {
+            AppendFreeConversationHintTask(prompt, request, avatarProfile);
+        }
+        else
+        {
+            AppendGuidedRoleplayHintTask(prompt, request, avatarProfile);
+        }
+
+        return prompt.ToString();
+    }
+
+    private static void AppendGuidedRoleplayHintTask(StringBuilder prompt, LessonChatRequest request, TutorAvatarProfile avatarProfile)
+    {
         prompt.AppendLine("Give one short hint the learner can use next in this exact situation, following the active level profile hint strategy.");
         prompt.AppendLine("A1: a fuller sentence starter is okay. A2: use a less complete sentence starter. B1: suggest structure or a useful phrase. B2: suggest natural direction or tone.");
         prompt.AppendLine($"The hint must answer or continue from the learner's point of view, not {avatarProfile.DisplayName}'s point of view.");
@@ -142,9 +156,24 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("If the learner's real name or personal detail is unknown, use placeholders such as [your name].");
         prompt.AppendLine("Do not invent a learner name.");
         prompt.AppendLine($"Do not use {avatarProfile.DisplayName} or the tutor avatar name as the learner's name.");
-        prompt.AppendLine("For introductions, prefer examples like: \"My name is [your name].\", \"I'm [your name].\", \"I'm from [your country].\"");
 
-        return prompt.ToString();
+        if (IsIntroductionsSubtopic(request))
+        {
+            prompt.AppendLine("For introductions, prefer examples like: \"My name is [your name].\", \"I'm [your name].\", \"I'm from [your country].\"");
+        }
+    }
+
+    private static void AppendFreeConversationHintTask(StringBuilder prompt, LessonChatRequest request, TutorAvatarProfile avatarProfile)
+    {
+        prompt.AppendLine("Give one short hint that helps the learner continue open English conversation safely, following the active level profile hint strategy.");
+        prompt.AppendLine("A1: a fuller sentence starter is okay. A2: use a less complete sentence starter. B1: suggest structure or a useful phrase. B2: suggest natural direction or tone.");
+        prompt.AppendLine($"The hint must answer or continue from the learner's point of view, not {avatarProfile.DisplayName}'s point of view.");
+        prompt.AppendLine("The hint should help the learner respond to the latest bot message or continue the recent conversation in English.");
+        prompt.AppendLine("If the learner's topic is unsafe, harmful, illegal, hateful, sexually explicit, or asks for professional medical/legal/financial advice, redirect to a safe everyday topic for English practice.");
+        prompt.AppendLine("Do not include roleplay-only instructions or introductions-specific examples.");
+        prompt.AppendLine("If the learner profile includes a display name, hint examples may use that name when appropriate.");
+        prompt.AppendLine("Do not invent a learner name.");
+        prompt.AppendLine($"Do not use {avatarProfile.DisplayName} or the tutor avatar name as the learner's name.");
     }
 
     private static void AppendLessonContext(StringBuilder prompt, LessonChatRequest request, bool includeNativeLanguage = true)
@@ -385,6 +414,11 @@ public sealed class LessonPromptBuilder
     private static bool IsFreeConversation(LessonChatRequest request)
     {
         return string.Equals(request.LessonType, "free_conversation", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsIntroductionsSubtopic(LessonChatRequest request)
+    {
+        return string.Equals(ChooseFirstNonEmpty(request.Subtopic, request.SubtopicTitle), "Introductions", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ChooseFirstNonEmpty(string? primary, string fallback)

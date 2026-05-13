@@ -15,9 +15,13 @@ public partial class SubtopicsViewModel : ViewModelBase
 
     public Topic SelectedTopic { get; }
 
-    public string Title => string.Format(localizedText.SubtopicsTitleTemplate, SelectedTopic.DisplayTitle);
+    public string Title => IsFreeConversationTopic()
+        ? "Start Free Conversation"
+        : string.Format(localizedText.SubtopicsTitleTemplate, SelectedTopic.DisplayTitle);
 
-    public string Subtitle => localizedText.SubtopicsSubtitle;
+    public string Subtitle => IsFreeConversationTopic()
+        ? "Talk freely in English within safe and respectful boundaries."
+        : localizedText.SubtopicsSubtitle;
 
     public string CurrentLevelText => $"{localizedText.CurrentLevelLabel} {SelectedLevel}";
 
@@ -74,6 +78,11 @@ public partial class SubtopicsViewModel : ViewModelBase
     private void Back()
     {
         navigateBack();
+    }
+
+    private bool IsFreeConversationTopic()
+    {
+        return SelectedTopic.Id == 6;
     }
 
     private static IReadOnlyList<Subtopic> CreateSubtopicsForTopic(int topicId, string interfaceLanguageId)
