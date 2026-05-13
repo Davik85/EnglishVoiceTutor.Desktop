@@ -7,9 +7,10 @@ public static class AudioConstants
     public const int TemporaryRecordingMaxAgeHours = 24;
     public const int BotVoiceCleanupRetentionHours = 24;
     public const int AutoPlayMaxCharacters = 300;
-    public const int BotVoiceMaxSegmentCharacters = 120;
-    public const int BotVoiceMinimumSegmentCharacters = 4;
-    public const int BotVoiceShortSegmentMergeThreshold = 12;
+    public const int BotVoiceIdealSegmentMinCharacters = 60;
+    public const int BotVoiceIdealSegmentMaxCharacters = 160;
+    public const int BotVoiceAbsoluteMaxSegmentCharacters = 220;
+    public const int BotVoiceMinimumStandaloneSegmentCharacters = 40;
     public const int BotVoiceAutoPlayMaxSegments = 2;
     public const int BotVoiceFirstSegmentSoftTargetMilliseconds = 5000;
     public const int BotVoiceFirstSegmentHardTimeoutSeconds = 12;
