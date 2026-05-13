@@ -11,22 +11,29 @@ public static class OpenAiConstants
     public const string DefaultTranscriptionModel = "gpt-4o-mini-transcribe";
     public const string TranscriptionLanguage = "en";
     public const string TranscriptionPrompt = "The learner is practicing English in a lesson dialogue. Transcribe English speech only. Do not translate non-English speech into English. If the audio is not clear English, return an empty transcription.";
-    // tts-1 is available for a future low-latency mode.
-    public const string LowLatencySpeechModel = "tts-1";
-    // gpt-4o-mini-tts is used by default for fuller voice quality.
-    public const string HighQualitySpeechModel = "gpt-4o-mini-tts";
-    public const string DefaultSpeechModel = HighQualitySpeechModel;
-    public const string DefaultSpeechVoice = "coral";
+    public const string FastSpeechModel = "tts-1";
+    public const string QualitySpeechModel = "gpt-4o-mini-tts";
+    public const string LowLatencySpeechModel = FastSpeechModel;
+    public const string HighQualitySpeechModel = QualitySpeechModel;
+    public const string DefaultBotVoiceSpeechModel = FastSpeechModel;
+    public const string DefaultSpeechModel = DefaultBotVoiceSpeechModel;
+    public const string DefaultSpeechVoice = "nova";
     // 1.0 is the default OpenAI speech speed. Keep it as the MVP default for natural full-speed speech.
     public const double DefaultSpeechSpeed = 1.0;
-    public const string DefaultSpeechResponseFormat = "wav";
+    public const string PcmSpeechResponseFormat = "pcm";
+    public const string WavSpeechResponseFormat = "wav";
+    public const string DefaultSpeechResponseFormat = WavSpeechResponseFormat;
+    public const string DefaultBotVoiceStreamResponseFormat = PcmSpeechResponseFormat;
     public const int OpenAiSpeechTimeoutSeconds = 120;
+    public const int BotVoiceFirstAudioTimeoutSeconds = 5;
+    public const int BotVoiceStreamOverallTimeoutSeconds = 20;
     public const string AudioSpeechHttpClientName = "OpenAiAudioSpeech";
     public const string MultipartFileFieldName = "file";
     public const string MultipartModelFieldName = "model";
     public const string MultipartLanguageFieldName = "language";
     public const string MultipartPromptFieldName = "prompt";
     public const string WavContentType = "audio/wav";
+    public const string PcmContentType = "audio/pcm";
     public const string SpeechResponseContentType = WavContentType;
     public const string NotConfiguredStatus = "not_configured";
     public const string ConfiguredStatus = "configured";
@@ -57,7 +64,11 @@ Lesson rules:
 - Do not ask for the learner's native language.
 - Continue the current dialogue. Do not restart onboarding.
 - botReply must be in English only.
-- Keep botReply short: 1-3 simple sentences.
+- For voice-friendly practice, keep botReply short enough to speak naturally.
+- Prefer 1-2 short sentences for A1/A2.
+- Prefer 1-3 short sentences for B1/B2.
+- Avoid long explanations in botReply.
+- Put detailed correction only in feedback, not in botReply.
 - For A1/A2 levels, use simple vocabulary and short sentences.
 - For B1/B2 levels, sound natural but still learner-friendly.
 - Give feedback in simple English.

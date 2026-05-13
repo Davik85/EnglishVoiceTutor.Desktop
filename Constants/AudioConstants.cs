@@ -7,6 +7,10 @@ public static class AudioConstants
     public const int TemporaryRecordingMaxAgeHours = 24;
     public const int BotVoiceCleanupRetentionHours = 24;
     public const int AutoPlayMaxCharacters = 300;
+    public const int BotVoicePcmSampleRate = 24000;
+    public const int BotVoicePcmBitsPerSample = 16;
+    public const int BotVoicePcmChannels = 1;
+    public const int BotVoiceStreamReadBufferBytes = 16384;
     public const string AppTempFolderName = "EnglishVoiceTutor.Desktop";
     public const string RecordingFolderName = "Recordings";
     public const string BotVoiceTempFolderName = "BotVoice";

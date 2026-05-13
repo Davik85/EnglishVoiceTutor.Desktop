@@ -74,6 +74,130 @@ public sealed class AudioPlaybackService
         }
     }
 
+
+    public async Task PlayPcmStreamAsync(
+        Stream pcmStream,
+        int messageId,
+        Action<long>? onFirstAudioChunkReceived = null,
+        Action<long>? onPlaybackStarted = null,
+        CancellationToken cancellationToken = default)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var playbackCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var waveFormat = new WaveFormat(
+            AudioConstants.BotVoicePcmSampleRate,
+            AudioConstants.BotVoicePcmBitsPerSample,
+            AudioConstants.BotVoicePcmChannels);
+        var bufferedWaveProvider = new BufferedWaveProvider(waveFormat)
+        {
+            BufferDuration = TimeSpan.FromSeconds(BackendConstants.BotVoiceStreamOverallTimeoutSeconds),
+            DiscardOnBufferOverflow = true
+        };
+        using var outputDevice = new WaveOutEvent();
+        var buffer = new byte[AudioConstants.BotVoiceStreamReadBufferBytes];
+        var totalBytes = 0L;
+        var playbackStarted = false;
+        var streamCompleted = false;
+
+        outputDevice.PlaybackStopped += OnPlaybackStopped;
+
+        lock (playbackLock)
+        {
+            currentOutputDevice = outputDevice;
+            currentPlaybackCancellationTokenSource = linkedCancellationTokenSource;
+        }
+
+        try
+        {
+            outputDevice.Init(bufferedWaveProvider);
+            using var cancellationRegistration = linkedCancellationTokenSource.Token.Register(() =>
+            {
+                try
+                {
+                    outputDevice.Stop();
+                }
+                finally
+                {
+                    playbackCompletion.TrySetCanceled(linkedCancellationTokenSource.Token);
+                }
+            });
+
+            while (true)
+            {
+                var bytesRead = await pcmStream.ReadAsync(buffer, linkedCancellationTokenSource.Token);
+
+                if (bytesRead == 0)
+                {
+                    streamCompleted = true;
+                    break;
+                }
+
+                totalBytes += bytesRead;
+
+                if (totalBytes == bytesRead)
+                {
+                    var firstChunkMs = stopwatch.ElapsedMilliseconds;
+                    Debug.WriteLine($"Bot voice stream first audio chunk received for message {messageId}: ElapsedMilliseconds={firstChunkMs}; ChunkBytes={bytesRead}.");
+                    onFirstAudioChunkReceived?.Invoke(firstChunkMs);
+                }
+
+                bufferedWaveProvider.AddSamples(buffer, 0, bytesRead);
+
+                if (!playbackStarted)
+                {
+                    outputDevice.Play();
+                    playbackStarted = true;
+                    var playbackStartedMs = stopwatch.ElapsedMilliseconds;
+                    Debug.WriteLine($"Bot voice stream playback started for message {messageId}: ElapsedMilliseconds={playbackStartedMs}; BufferedBytes={bufferedWaveProvider.BufferedBytes}.");
+                    onPlaybackStarted?.Invoke(playbackStartedMs);
+                }
+            }
+
+            while (bufferedWaveProvider.BufferedBytes > 0 && !linkedCancellationTokenSource.Token.IsCancellationRequested)
+            {
+                await Task.Delay(50, linkedCancellationTokenSource.Token);
+            }
+
+            if (streamCompleted)
+            {
+                outputDevice.Stop();
+                playbackCompletion.TrySetResult();
+            }
+
+            await playbackCompletion.Task;
+            Debug.WriteLine($"Bot voice stream playback completed for message {messageId}: ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}; AudioBytes={totalBytes}.");
+        }
+        finally
+        {
+            outputDevice.PlaybackStopped -= OnPlaybackStopped;
+            outputDevice.Stop();
+
+            lock (playbackLock)
+            {
+                if (ReferenceEquals(currentOutputDevice, outputDevice))
+                {
+                    currentOutputDevice = null;
+                    currentPlaybackCancellationTokenSource = null;
+                }
+            }
+        }
+
+        void OnPlaybackStopped(object? sender, StoppedEventArgs args)
+        {
+            if (args.Exception is not null)
+            {
+                playbackCompletion.TrySetException(args.Exception);
+                return;
+            }
+
+            if (streamCompleted)
+            {
+                playbackCompletion.TrySetResult();
+            }
+        }
+    }
+
     public void StopPlayback()
     {
         lock (playbackLock)

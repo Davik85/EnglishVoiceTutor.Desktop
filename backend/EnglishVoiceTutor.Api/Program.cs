@@ -48,6 +48,7 @@ app.MapPost(ApiConstants.LessonChatHintRoute, HandleLessonChatHintAsync);
 app.MapPost(ApiConstants.AudioTranscriptionRoute, HandleAudioTranscriptionAsync);
 app.MapPost(ApiConstants.TranslationRoute, HandleTranslationAsync);
 app.MapPost(ApiConstants.AudioSpeechRoute, HandleAudioSpeechAsync);
+app.MapPost(ApiConstants.AudioSpeechStreamRoute, HandleAudioSpeechStreamAsync);
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
     ApiConstants.ServiceName,
@@ -276,6 +277,93 @@ static async Task<IResult> HandleTranslationAsync(
     catch (Exception)
     {
         return Results.Problem(ApiConstants.TranslationError);
+    }
+}
+
+
+static async Task<IResult> HandleAudioSpeechStreamAsync(
+    AudioSpeechRequest request,
+    AudioSpeechService audioSpeechService,
+    HttpContext httpContext,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    if (string.IsNullOrWhiteSpace(request.Text))
+    {
+        return Results.BadRequest(new
+        {
+            error = ApiConstants.EmptySpeechTextError
+        });
+    }
+
+    var logger = loggerFactory.CreateLogger("AudioSpeechStreamEndpoint");
+    var response = httpContext.Response;
+    response.ContentType = OpenAiConstants.DefaultBotVoiceStreamResponseFormat == OpenAiConstants.PcmSpeechResponseFormat
+        ? OpenAiConstants.PcmContentType
+        : OpenAiConstants.WavContentType;
+
+    try
+    {
+        var metrics = await audioSpeechService.StreamSpeechAsync(request.Text, response.Body, cancellationToken);
+        logger.LogInformation(
+            "Audio speech stream endpoint completed. Endpoint={Endpoint}; FirstHeaderMs={FirstHeaderMs}; FirstChunkMs={FirstChunkMs}; FirstChunkWrittenMs={FirstChunkWrittenMs}; TotalMs={TotalMs}; TotalBytes={TotalBytes}.",
+            "audio/speech-stream",
+            metrics.FirstHeaderMs,
+            metrics.FirstChunkMs,
+            metrics.FirstChunkWrittenMs,
+            metrics.TotalMs,
+            metrics.TotalBytes);
+        return Results.Empty;
+    }
+    catch (AudioSpeechRequestCanceledException exception) when (exception.InternalTimeoutReached && !response.HasStarted)
+    {
+        logger.LogWarning(
+            exception,
+            "Audio speech stream timed out before any audio was written. TimeoutSeconds={TimeoutSeconds}; ClientCancellationRequested={ClientCancellationRequested}.",
+            OpenAiConstants.BotVoiceFirstAudioTimeoutSeconds,
+            exception.ClientCancellationRequested);
+        return Results.Problem(
+            title: "Audio speech stream timed out.",
+            detail: $"OpenAI speech streaming did not produce audio within {OpenAiConstants.BotVoiceFirstAudioTimeoutSeconds} seconds.",
+            statusCode: StatusCodes.Status504GatewayTimeout);
+    }
+    catch (AudioSpeechRequestCanceledException exception) when (exception.InternalTimeoutReached)
+    {
+        logger.LogWarning(exception, "Audio speech stream timed out after streaming started; closing response gracefully.");
+        return Results.Empty;
+    }
+    catch (AudioSpeechRequestCanceledException exception) when (exception.ClientCancellationRequested || cancellationToken.IsCancellationRequested)
+    {
+        logger.LogInformation(exception, "Audio speech stream was canceled because the client aborted the request.");
+        return response.HasStarted
+            ? Results.Empty
+            : Results.Problem(
+                title: "Client closed request.",
+                detail: "The client canceled the audio speech stream before the backend could finish writing the response.",
+                statusCode: 499);
+    }
+    catch (HttpRequestException exception) when (!response.HasStarted)
+    {
+        logger.LogWarning(
+            exception,
+            "OpenAI audio speech stream HTTP request failed. StatusCode={StatusCode}.",
+            exception.StatusCode?.ToString() ?? HttpStatusCode.ServiceUnavailable.ToString());
+        return Results.Problem(ApiConstants.AudioSpeechError);
+    }
+    catch (InvalidOperationException exception) when (!response.HasStarted)
+    {
+        logger.LogWarning(exception, "Audio speech stream failed during validation or OpenAI processing.");
+        return Results.Problem(ApiConstants.AudioSpeechError);
+    }
+    catch (Exception exception) when (!response.HasStarted)
+    {
+        logger.LogError(exception, "Unexpected audio speech stream failure before response started.");
+        return Results.Problem(ApiConstants.AudioSpeechError);
+    }
+    catch (Exception exception)
+    {
+        logger.LogWarning(exception, "Audio speech stream failed after streaming started; closing response gracefully.");
+        return Results.Empty;
     }
 }
 

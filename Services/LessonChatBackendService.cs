@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
@@ -11,6 +12,8 @@ using EnglishVoiceTutor.Desktop.Models;
 namespace EnglishVoiceTutor.Desktop.Services;
 
 public sealed record BotSpeechBackendResponse(byte[] AudioBytes, string ContentType, string FileExtension);
+
+public sealed record BotSpeechStreamMetrics(long BackendHeaderMs, long FirstAudioChunkMs, long TotalStreamMs);
 
 public sealed class AudioTranscriptionBackendException : Exception
 {
@@ -226,6 +229,54 @@ public sealed class LessonChatBackendService
         }
     }
 
+
+
+    public async Task<BotSpeechStreamMetrics> StreamBotSpeechAsync(
+        string text,
+        Func<Stream, string, CancellationToken, Task> consumeStreamAsync,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new InvalidOperationException(BackendConstants.BackendInvalidSpeechResponseMessage);
+        }
+
+        using var httpClient = CreateHttpClient(BackendConstants.BotVoiceStreamOverallTimeoutSeconds);
+        var stopwatch = Stopwatch.StartNew();
+        var endpointUri = CreateEndpointUri(BackendConstants.AudioSpeechStreamEndpoint);
+        var inputLength = text.Trim().Length;
+
+        Debug.WriteLine($"Bot voice stream request starting: Endpoint={BackendConstants.AudioSpeechStreamEndpoint}; InputLength={inputLength}.");
+
+        var requestJson = JsonSerializer.Serialize(
+            new AudioSpeechBackendRequest
+            {
+                Text = text
+            },
+            JsonOptions);
+        using var request = new HttpRequestMessage(HttpMethod.Post, endpointUri)
+        {
+            Content = new StringContent(requestJson, Encoding.UTF8, "application/json")
+        };
+
+        using var response = await httpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+
+        var backendHeaderMs = stopwatch.ElapsedMilliseconds;
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? BackendConstants.PcmContentType;
+        Debug.WriteLine($"Bot voice stream backend response headers received: Endpoint={BackendConstants.AudioSpeechStreamEndpoint}; InputLength={inputLength}; ElapsedMilliseconds={backendHeaderMs}; StatusCode={response.StatusCode}; ContentType={contentType}.");
+
+        response.EnsureSuccessStatusCode();
+
+        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await consumeStreamAsync(responseStream, contentType, cancellationToken);
+
+        var totalMs = stopwatch.ElapsedMilliseconds;
+        Debug.WriteLine($"Bot voice stream completed: Endpoint={BackendConstants.AudioSpeechStreamEndpoint}; InputLength={inputLength}; BackendHeaderMs={backendHeaderMs}; TotalStreamMs={totalMs}; ContentType={contentType}.");
+        return new BotSpeechStreamMetrics(backendHeaderMs, 0, totalMs);
+    }
 
     public async Task<string> TranslateTextAsync(
         string text,
