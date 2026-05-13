@@ -107,36 +107,36 @@
   "levelProfiles": {
     "A1 Beginner": {
       "level": "A1 Beginner",
-      "difficultyNotes": "Very simple restaurant/cafe English for paying the bill. Focus on one clear customer request and the most important service words.",
-      "tutorLanguageStyle": "Use short service questions, one idea at a time, and friendly waiter or cafe staff language. Accept short polite answers if the meaning is clear.",
-      "expectedUserResponse": "1 short sentence.",
+      "difficultyNotes": "Very simple restaurant/cafe English for asking for the bill, paying by card or cash, and asking for a receipt.",
+      "tutorLanguageStyle": "Use short payment questions, one idea at a time, and friendly waiter or cafe staff language.",
+      "expectedUserResponse": "1 short phrase or sentence.",
       "minimumUserResponse": "The bill, please.",
-      "stretchUserResponse": "The bill, please. Thank you.",
+      "stretchUserResponse": "The bill, please. Card, please.",
       "addedKeyPhrases": [
         "The bill, please.",
         "Card, please.",
-        "Thank you."
+        "Receipt, please."
       ],
       "addedUsefulConstructions": [
-        "Use one short polite customer sentence with please.",
-        "Answer the staff question directly before adding anything extra."
+        "Use a short bill, card, or receipt phrase with please.",
+        "Answer payment questions with Card or Cash plus please."
       ],
       "addedGrammarFocus": [
-        "basic polite requests with please",
-        "simple word order for customer requests",
-        "short answers with I’d like or Can I have"
+        "The bill, please.",
+        "Card/Cash, please.",
+        "Receipt, please."
       ],
-      "feedbackStrictness": "Correct only mistakes that block restaurant/cafe meaning. Keep feedback very short and encouraging.",
-      "hintStrategy": "Give a full sentence starter or a complete simple model if the learner is stuck.",
-      "correctionPriority": "Service meaning first, then one essential restaurant/cafe word or polite phrase.",
-      "conversationDepth": "Keep the roleplay shallow and practical with one short staff question at a time.",
+      "feedbackStrictness": "Correct only mistakes that block payment meaning. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give a complete payment phrase if the learner is stuck.",
+      "correctionPriority": "Bill request first, payment method second, receipt request third.",
+      "conversationDepth": "Keep the roleplay shallow and practical with one short payment question at a time.",
       "exampleGoodAnswer": "The bill, please.",
-      "exampleStretchAnswer": "The bill, please. Thank you."
+      "exampleStretchAnswer": "The bill, please. Card, please."
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple restaurant/cafe English for paying the bill. The learner should make a polite request and add one useful detail.",
-      "tutorLanguageStyle": "Use simple service follow-up questions. Ask for one detail such as time, number of people, dish, drink, allergy, problem, or payment method.",
+      "difficultyNotes": "Simple restaurant/cafe English for asking for the bill, paying by card, and requesting a receipt.",
+      "tutorLanguageStyle": "Use simple service follow-up questions about bill/check, card or cash, receipt, and paying together or separately.",
       "expectedUserResponse": "1-2 short sentences.",
       "minimumUserResponse": "Could I have the bill, please? Can I pay by card?",
       "stretchUserResponse": "Could I have the bill, please? Can I pay by card, and could I have a receipt?",
@@ -146,76 +146,76 @@
         "Could I have a receipt?"
       ],
       "addedUsefulConstructions": [
-        "Make the request, then add one specific detail.",
-        "Use Could I, Can I, I’d like, or I ordered for polite restaurant/cafe communication."
+        "Ask for the bill first, then say how you want to pay.",
+        "Add a receipt request after the payment method when needed."
       ],
       "addedGrammarFocus": [
-        "basic question forms",
-        "word order in polite requests",
-        "please and thank you in service situations"
+        "Could I have + bill/receipt?",
+        "Can I pay by + card/cash?",
+        "and to connect bill, payment, and receipt requests"
       ],
-      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and unclear restaurant/cafe vocabulary.",
-      "hintStrategy": "Give a sentence frame with one blank for the learner’s detail.",
-      "correctionPriority": "Clear request, correct detail, and polite wording.",
-      "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on the selected restaurant/cafe task.",
+      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and unclear payment vocabulary.",
+      "hintStrategy": "Give a sentence frame with one blank for bill/check, payment method, or receipt.",
+      "correctionPriority": "Clear bill request, payment method, receipt request, and polite wording.",
+      "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on paying the bill.",
       "exampleGoodAnswer": "Could I have the bill, please? Can I pay by card?",
       "exampleStretchAnswer": "Could I have the bill, please? Can I pay by card, and could I have a receipt?"
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
-      "difficultyNotes": "Natural but clear restaurant/cafe English for paying the bill. The learner should give request plus detail plus a polite follow-up or clarification.",
-      "tutorLanguageStyle": "Use natural service language and ask one realistic follow-up. Encourage clear, polite, connected customer answers.",
+      "difficultyNotes": "Natural but clear restaurant/cafe English for asking for the bill, checking service charge, splitting the bill, and paying separately.",
+      "tutorLanguageStyle": "Use natural service language and ask one realistic follow-up about service included, card payment, splitting, separate payments, or receipt.",
       "expectedUserResponse": "2-3 connected sentences.",
       "minimumUserResponse": "Could we have the bill, please? Also, is service included?",
-      "stretchUserResponse": "Could we have the bill, please? Also, can we split it and pay by card?",
+      "stretchUserResponse": "Could we have the bill, please? Also, is service included, and can we split it and pay separately by card?",
       "addedKeyPhrases": [
         "Could we have the bill, please?",
-        "Can we split the bill?",
-        "Is service included?"
+        "Is service included?",
+        "Can we pay separately?"
       ],
       "addedUsefulConstructions": [
-        "Use a polite opening, a clear request or explanation, and a follow-up question.",
-        "Connect details with and, but, because, or also when useful."
+        "Ask for the bill, then check service charge or tip information.",
+        "Use split the bill or pay separately to explain how the group wants to pay."
       ],
       "addedGrammarFocus": [
-        "polite modal questions",
-        "connected sentences for requests and clarifications",
-        "accurate restaurant/cafe vocabulary"
+        "polite modal questions for bill and receipt requests",
+        "passive question Is service included?",
+        "separate vs split for group payments"
       ],
-      "feedbackStrictness": "Correct grammar, word choice, politeness, and sentence flow when they affect natural service communication.",
-      "hintStrategy": "Give a short model with request + detail + polite follow-up, then ask the learner to adapt it.",
-      "correctionPriority": "Polite tone, clear details, natural phrasing, and smooth sentence connection.",
-      "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one detail.",
+      "feedbackStrictness": "Correct grammar, word choice, politeness, and sentence flow when they affect natural payment communication.",
+      "hintStrategy": "Give a model with bill request + service-charge question + split/separate payment detail.",
+      "correctionPriority": "Polite tone, clear payment details, natural phrasing, and smooth sentence connection.",
+      "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one payment detail.",
       "exampleGoodAnswer": "Could we have the bill, please? Also, is service included?",
-      "exampleStretchAnswer": "Could we have the bill, please? Also, can we split it and pay by card?"
+      "exampleStretchAnswer": "Could we have the bill, please? Also, is service included, and can we split it and pay separately by card?"
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
-      "difficultyNotes": "Natural, polite, flexible restaurant/cafe English for paying the bill. The learner should use softeners, precise requests, appropriate tone, and a polite follow-up or clarification.",
-      "tutorLanguageStyle": "Use professional service language and may add one realistic complication. Keep the scenario focused and expect nuanced customer responses.",
+      "difficultyNotes": "Natural, polite, flexible restaurant/cafe English for bills, checks, service charge, tips, receipts, split bills, and separate payments.",
+      "tutorLanguageStyle": "Use professional service language and may add one realistic complication such as a service charge question, split payment request, or receipt issue.",
       "expectedUserResponse": "A natural answer with detail, nuance, and a polite follow-up or clarification.",
       "minimumUserResponse": "Could we have the bill when you have a moment, please? And could you let us know whether service is already included?",
-      "stretchUserResponse": "Could we have the bill when you have a moment, please? We’d like to split it if possible, and could you let us know whether service is already included?",
+      "stretchUserResponse": "Could we have the bill when you have a moment, please? We’d like to split it if possible, pay separately by card, and check whether service is already included.",
       "addedKeyPhrases": [
         "when you have a moment",
-        "could you let us know",
-        "if possible"
+        "could you let us know whether...",
+        "pay separately by card"
       ],
       "addedUsefulConstructions": [
-        "Use softeners such as when you have a moment, if possible, could you please, or would you mind checking.",
-        "State the request or issue precisely, then confirm the next step politely."
+        "Use softeners when asking for the bill, splitting payment, or checking service charge.",
+        "State the payment arrangement precisely, then confirm receipt, service charge, or tip details politely."
       ],
       "addedGrammarFocus": [
-        "softened modal requests",
-        "precise noun phrases for restaurant/cafe details",
-        "tone and nuance in service interactions"
+        "softened modal requests for bill and payment arrangements",
+        "whether clauses for service-charge and tip questions",
+        "precise payment phrases such as split the bill, pay separately, service included, and itemized receipt"
       ],
-      "feedbackStrictness": "Focus on fluency, nuance, politeness, tone, precise wording, and natural service-register phrasing.",
-      "hintStrategy": "Offer a polished natural model and ask the learner to personalize the detail or soften the tone.",
-      "correctionPriority": "Nuanced politeness, precise wording, natural rhythm, and appropriate customer tone.",
-      "conversationDepth": "Add one realistic complication when useful while keeping the learner inside the selected restaurant/cafe scenario.",
+      "feedbackStrictness": "Focus on fluency, nuance, politeness, tone, precise wording, and natural payment-register phrasing.",
+      "hintStrategy": "Offer a polished payment model and ask the learner to personalize the split, card/cash, receipt, or service-charge detail.",
+      "correctionPriority": "Nuanced politeness, precise payment wording, natural rhythm, and appropriate customer tone.",
+      "conversationDepth": "Add one realistic payment complication when useful while keeping the learner inside the bill-payment scenario.",
       "exampleGoodAnswer": "Could we have the bill when you have a moment, please? And could you let us know whether service is already included?",
-      "exampleStretchAnswer": "Could we have the bill when you have a moment, please? We’d like to split it if possible, and could you let us know whether service is already included?"
+      "exampleStretchAnswer": "Could we have the bill when you have a moment, please? We’d like to split it if possible, pay separately by card, and check whether service is already included."
     }
   },
   "conversationFlow": {

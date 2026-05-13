@@ -106,115 +106,115 @@
   "levelProfiles": {
     "A1 Beginner": {
       "level": "A1 Beginner",
-      "difficultyNotes": "Very simple restaurant/cafe English for handling a wrong order. Focus on one clear customer request and the most important service words.",
-      "tutorLanguageStyle": "Use short service questions, one idea at a time, and friendly waiter or cafe staff language. Accept short polite answers if the meaning is clear.",
+      "difficultyNotes": "Very simple restaurant/cafe English for getting staff attention and saying what is wrong with an order.",
+      "tutorLanguageStyle": "Use short service questions, one idea at a time, and friendly waiter or cafe staff language.",
       "expectedUserResponse": "1 short sentence.",
       "minimumUserResponse": "Excuse me. This is not my order.",
-      "stretchUserResponse": "Excuse me. This is not my order, please.",
+      "stretchUserResponse": "Excuse me. I ordered soup. This is cold.",
       "addedKeyPhrases": [
-        "Excuse me.",
         "This is not my order.",
-        "Thank you."
+        "I ordered...",
+        "Something is missing."
       ],
       "addedUsefulConstructions": [
-        "Use one short polite customer sentence with please.",
-        "Answer the staff question directly before adding anything extra."
+        "Start with Excuse me, then say the order problem in one clear sentence.",
+        "Use I ordered plus the item to explain what you expected."
       ],
       "addedGrammarFocus": [
-        "basic polite requests with please",
-        "simple word order for customer requests",
-        "short answers with I’d like or Can I have"
+        "This is not my order.",
+        "I ordered + food or drink",
+        "This is cold / Something is missing"
       ],
-      "feedbackStrictness": "Correct only mistakes that block restaurant/cafe meaning. Keep feedback very short and encouraging.",
-      "hintStrategy": "Give a full sentence starter or a complete simple model if the learner is stuck.",
-      "correctionPriority": "Service meaning first, then one essential restaurant/cafe word or polite phrase.",
+      "feedbackStrictness": "Correct only mistakes that block the order problem. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give a complete wrong-order sentence if the learner is stuck.",
+      "correctionPriority": "Problem meaning first, ordered item second, then polite wording.",
       "conversationDepth": "Keep the roleplay shallow and practical with one short staff question at a time.",
       "exampleGoodAnswer": "Excuse me. This is not my order.",
-      "exampleStretchAnswer": "Excuse me. This is not my order, please."
+      "exampleStretchAnswer": "Excuse me. I ordered soup. This is cold."
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
-      "difficultyNotes": "Simple restaurant/cafe English for handling a wrong order. The learner should make a polite request and add one useful detail.",
-      "tutorLanguageStyle": "Use simple service follow-up questions. Ask for one detail such as time, number of people, dish, drink, allergy, problem, or payment method.",
+      "difficultyNotes": "Simple restaurant/cafe English for explaining the ordered item, the problem, and a polite request to check or correct it.",
+      "tutorLanguageStyle": "Use simple service follow-up questions about what the learner ordered, what is wrong, and whether they want it checked or replaced.",
       "expectedUserResponse": "1-2 short sentences.",
-      "minimumUserResponse": "Excuse me. I ordered pasta, but this is soup.",
-      "stretchUserResponse": "Excuse me. I ordered pasta, but this is soup. Could you check, please?",
+      "minimumUserResponse": "Excuse me. I ordered the chicken salad, but this is the tuna salad.",
+      "stretchUserResponse": "Excuse me. I ordered the chicken salad, but this is the tuna salad. Could you check it, please?",
       "addedKeyPhrases": [
         "I ordered...",
-        "but this is...",
-        "Could you check, please?"
+        "This is not what I ordered.",
+        "Could you check it, please?"
       ],
       "addedUsefulConstructions": [
-        "Make the request, then add one specific detail.",
-        "Use Could I, Can I, I’d like, or I ordered for polite restaurant/cafe communication."
+        "Explain what you ordered, then say what is wrong with the order.",
+        "Ask staff to check or replace the item politely."
       ],
       "addedGrammarFocus": [
-        "basic question forms",
-        "word order in polite requests",
-        "please and thank you in service situations"
+        "past simple I ordered + item",
+        "but to contrast ordered item and wrong item",
+        "Could you check/replace it, please?"
       ],
-      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and unclear restaurant/cafe vocabulary.",
-      "hintStrategy": "Give a sentence frame with one blank for the learner’s detail.",
-      "correctionPriority": "Clear request, correct detail, and polite wording.",
-      "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on the selected restaurant/cafe task.",
-      "exampleGoodAnswer": "Excuse me. I ordered pasta, but this is soup.",
-      "exampleStretchAnswer": "Excuse me. I ordered pasta, but this is soup. Could you check, please?"
+      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and unclear order-problem vocabulary.",
+      "hintStrategy": "Give a sentence frame with blanks for ordered item, wrong item, or missing item.",
+      "correctionPriority": "Clear ordered item, clear problem, and polite request.",
+      "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on fixing the wrong order.",
+      "exampleGoodAnswer": "Excuse me. I ordered the chicken salad, but this is the tuna salad.",
+      "exampleStretchAnswer": "Excuse me. I ordered the chicken salad, but this is the tuna salad. Could you check it, please?"
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
-      "difficultyNotes": "Natural but clear restaurant/cafe English for handling a wrong order. The learner should give request plus detail plus a polite follow-up or clarification.",
-      "tutorLanguageStyle": "Use natural service language and ask one realistic follow-up. Encourage clear, polite, connected customer answers.",
+      "difficultyNotes": "Natural but clear restaurant/cafe English for politely explaining a wrong, cold, or incomplete order and asking staff to correct it.",
+      "tutorLanguageStyle": "Use natural service language and ask one realistic follow-up about the original order, the problem, or the preferred correction.",
       "expectedUserResponse": "2-3 connected sentences.",
-      "minimumUserResponse": "Excuse me, I’m sorry, but I ordered pasta and this seems to be soup. Could you check it, please?",
-      "stretchUserResponse": "Excuse me, I’m sorry, but I ordered pasta and this seems to be a different dish. Could you replace it, please?",
+      "minimumUserResponse": "I’m sorry, but this seems to be the wrong order. I ordered the vegetarian pasta, not the chicken pasta.",
+      "stretchUserResponse": "I’m sorry, but this seems to be the wrong order. I ordered the vegetarian pasta, not the chicken pasta. Could you check it, please?",
       "addedKeyPhrases": [
         "I’m sorry, but...",
-        "this seems to be...",
-        "Could you replace it, please?"
+        "This seems to be...",
+        "Could you check it, please?"
       ],
       "addedUsefulConstructions": [
-        "Use a polite opening, a clear request or explanation, and a follow-up question.",
-        "Connect details with and, but, because, or also when useful."
+        "Use a polite opener, explain what you ordered, then describe what is wrong.",
+        "Use not or but to contrast the expected item with the item received."
       ],
       "addedGrammarFocus": [
-        "polite modal questions",
-        "connected sentences for requests and clarifications",
-        "accurate restaurant/cafe vocabulary"
+        "softened complaints with I’m sorry, but",
+        "seems to be for polite problem descriptions",
+        "contrast structures with not and but"
       ],
       "feedbackStrictness": "Correct grammar, word choice, politeness, and sentence flow when they affect natural service communication.",
-      "hintStrategy": "Give a short model with request + detail + polite follow-up, then ask the learner to adapt it.",
-      "correctionPriority": "Polite tone, clear details, natural phrasing, and smooth sentence connection.",
-      "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one detail.",
-      "exampleGoodAnswer": "Excuse me, I’m sorry, but I ordered pasta and this seems to be soup. Could you check it, please?",
-      "exampleStretchAnswer": "Excuse me, I’m sorry, but I ordered pasta and this seems to be a different dish. Could you replace it, please?"
+      "hintStrategy": "Give a model with polite opener + ordered item + problem + check request, then ask the learner to adapt it.",
+      "correctionPriority": "Polite tone, clear order details, natural phrasing, and smooth sentence connection.",
+      "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one correction detail.",
+      "exampleGoodAnswer": "I’m sorry, but this seems to be the wrong order. I ordered the vegetarian pasta, not the chicken pasta.",
+      "exampleStretchAnswer": "I’m sorry, but this seems to be the wrong order. I ordered the vegetarian pasta, not the chicken pasta. Could you check it, please?"
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
-      "difficultyNotes": "Natural, polite, flexible restaurant/cafe English for handling a wrong order. The learner should use softeners, precise requests, appropriate tone, and a polite follow-up or clarification.",
-      "tutorLanguageStyle": "Use professional service language and may add one realistic complication. Keep the scenario focused and expect nuanced customer responses.",
+      "difficultyNotes": "Natural, polite, flexible restaurant/cafe English for resolving an incorrect, cold, delayed, or incomplete order without sounding rude.",
+      "tutorLanguageStyle": "Use professional service language and may add one realistic complication such as a missing side, cold dish, or uncertainty about the ticket.",
       "expectedUserResponse": "A natural answer with detail, nuance, and a polite follow-up or clarification.",
-      "minimumUserResponse": "Excuse me, I’m sorry to bother you, but I ordered the pasta and this appears to be a different dish. Could you please check the order for me?",
-      "stretchUserResponse": "Excuse me, I’m sorry to bother you, but I ordered the pasta and this appears to be a different dish. Would you mind checking the order and replacing it when you have a moment?",
+      "minimumUserResponse": "I’m sorry, but this doesn’t seem to be what I ordered. Would you mind checking the order?",
+      "stretchUserResponse": "I’m sorry, but this doesn’t seem to be what I ordered. I asked for the salmon without onions, and this has onions on it. Would you mind checking the order?",
       "addedKeyPhrases": [
-        "I’m sorry to bother you",
-        "this appears to be",
-        "Would you mind checking...?"
+        "Would you mind checking the order?",
+        "This doesn’t seem to be what I ordered.",
+        "I asked for... without..."
       ],
       "addedUsefulConstructions": [
-        "Use softeners such as when you have a moment, if possible, could you please, or would you mind checking.",
-        "State the request or issue precisely, then confirm the next step politely."
+        "Use softeners to get staff attention and avoid sounding accusatory.",
+        "State the original order and the specific problem before asking for the next step."
       ],
       "addedGrammarFocus": [
-        "softened modal requests",
-        "precise noun phrases for restaurant/cafe details",
-        "tone and nuance in service interactions"
+        "softened complaint forms with doesn’t seem to be",
+        "specific correction details with without, missing, cold, or instead of",
+        "would you mind + -ing for polite requests"
       ],
       "feedbackStrictness": "Focus on fluency, nuance, politeness, tone, precise wording, and natural service-register phrasing.",
-      "hintStrategy": "Offer a polished natural model and ask the learner to personalize the detail or soften the tone.",
-      "correctionPriority": "Nuanced politeness, precise wording, natural rhythm, and appropriate customer tone.",
-      "conversationDepth": "Add one realistic complication when useful while keeping the learner inside the selected restaurant/cafe scenario.",
-      "exampleGoodAnswer": "Excuse me, I’m sorry to bother you, but I ordered the pasta and this appears to be a different dish. Could you please check the order for me?",
-      "exampleStretchAnswer": "Excuse me, I’m sorry to bother you, but I ordered the pasta and this appears to be a different dish. Would you mind checking the order and replacing it when you have a moment?"
+      "hintStrategy": "Offer a polished correction-request model and ask the learner to personalize the item or problem.",
+      "correctionPriority": "Nuanced politeness, precise problem description, natural rhythm, and appropriate customer tone.",
+      "conversationDepth": "Add one realistic correction complication when useful while keeping the learner inside the wrong-order scenario.",
+      "exampleGoodAnswer": "I’m sorry, but this doesn’t seem to be what I ordered. Would you mind checking the order?",
+      "exampleStretchAnswer": "I’m sorry, but this doesn’t seem to be what I ordered. I asked for the salmon without onions, and this has onions on it. Would you mind checking the order?"
     }
   },
   "conversationFlow": {
