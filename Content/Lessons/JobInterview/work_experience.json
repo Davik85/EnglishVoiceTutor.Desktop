@@ -1,0 +1,388 @@
+{
+  "id": "job_interview_work_experience",
+  "metadata": {
+    "topic": "Job Interview",
+    "subtopic": "Work experience",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice talking about your work experience.\n\nGoal: you will learn to describe your previous experience, responsibilities, and one result.\n\nChoose a situation:\n1. Describing a previous job\n2. Talking about responsibilities\n3. Talking about a project or achievement\n\nOr suggest your own simple work experience interview situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple job interview situation about work experience.",
+      "validCustomContextKeywords": [
+        "experience",
+        "previous job",
+        "last job",
+        "responsibilities",
+        "tasks",
+        "duties",
+        "project",
+        "achievement",
+        "internship",
+        "intern",
+        "trainee",
+        "no experience",
+        "student experience",
+        "worked"
+      ],
+      "offTopicExamples": [
+        "hotel check-in",
+        "airport passport",
+        "restaurant order",
+        "travel directions",
+        "casual friend chat"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about work experience in a job interview. Please choose a simple interview situation for this lesson."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can describe previous work experience, responsibilities, and one result or achievement.",
+    "canDoStatements": [
+      "The user can describe a previous role.",
+      "The user can explain responsibilities.",
+      "The user can mention one result, achievement, or lesson learned."
+    ]
+  },
+  "situation": {
+    "description": "The user is in a job interview and needs to describe previous work or relevant experience."
+  },
+  "roles": {
+    "userRole": "A job candidate in an interview.",
+    "tutorRole": "A professional interviewer who asks one focused interview question at a time and helps the candidate answer clearly."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "I worked as...",
+      "I was responsible for...",
+      "My main tasks were...",
+      "I worked on...",
+      "I helped with...",
+      "I learned how to...",
+      "One result was...",
+      "This experience helped me..."
+    ],
+    "usefulConstructions": [
+      "I worked as + role.",
+      "I was responsible for + noun/verb-ing.",
+      "My main tasks were + tasks.",
+      "One result was + result.",
+      "This experience helped me + verb."
+    ],
+    "grammarFocus": [
+      "simple past for previous jobs",
+      "was/were responsible for",
+      "past results and achievements"
+    ],
+    "pronunciationFocus": [
+      "responsible",
+      "experience",
+      "achievement",
+      "customer",
+      "project"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple interview English for work experience. Focus on one clear idea and core job-interview words.",
+      "tutorLanguageStyle": "Use short interview questions. Ask one question at a time and accept short answers when the meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "I worked as an assistant. I helped customers.",
+      "stretchUserResponse": "I helped customers in a shop.",
+      "addedKeyPhrases": [
+        "I worked as...",
+        "I helped...",
+        "My job was..."
+      ],
+      "addedUsefulConstructions": [
+        "Use I worked as... + I helped...",
+        "Use one short sentence with a clear interview meaning."
+      ],
+      "addedGrammarFocus": [
+        "simple present for interview answers",
+        "basic word order in short answers",
+        "clear subject + verb sentences"
+      ],
+      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give full sentence starters or a full simple answer if the learner is stuck.",
+      "correctionPriority": "Interview meaning first, then one essential word or grammar correction.",
+      "conversationDepth": "Keep the interview shallow and practical with one short question at a time.",
+      "exampleGoodAnswer": "I worked as an assistant. I helped customers.",
+      "exampleStretchAnswer": "I helped customers in a shop."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple interview English for work experience. The learner should answer with one main idea and one useful detail.",
+      "tutorLanguageStyle": "Use simple interview questions. Ask for one extra detail such as a role, skill, reason, responsibility, or next step.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "I worked as an assistant. I helped customers and prepared documents.",
+      "stretchUserResponse": "I worked as an assistant and helped customers every day.",
+      "addedKeyPhrases": [
+        "I worked as...",
+        "I helped customers.",
+        "I prepared documents.",
+        "My main tasks were..."
+      ],
+      "addedUsefulConstructions": [
+        "Use I worked as... and add one task.",
+        "Add one detail after the main answer."
+      ],
+      "addedGrammarFocus": [
+        "simple past or present as needed for interview answers",
+        "basic connectors with and or because",
+        "polite complete sentences"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, and missing polite or professional words.",
+      "hintStrategy": "Give a sentence starter and one optional detail to add.",
+      "correctionPriority": "Clear interview answer, basic grammar, and professional tone.",
+      "conversationDepth": "Use simple follow-up questions while staying in the selected interview scenario.",
+      "exampleGoodAnswer": "I worked as an assistant. I helped customers and prepared documents.",
+      "exampleStretchAnswer": "I worked as an assistant and helped customers every day."
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear interview English for work experience. The learner should give an answer, a detail, and a reason or example.",
+      "tutorLanguageStyle": "Use natural clear interview English. Ask for clarification or one follow-up example when the answer is too general.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "I worked as an assistant for one year. I helped customers, prepared documents, and learned how to work with a team.",
+      "stretchUserResponse": "I worked as an assistant for one year, helped customers, prepared documents, and learned to organize my tasks better.",
+      "addedKeyPhrases": [
+        "I was responsible for...",
+        "I worked on...",
+        "I learned how to...",
+        "One result was..."
+      ],
+      "addedUsefulConstructions": [
+        "Describe role, responsibilities, and one thing learned or achieved.",
+        "Use answer + detail + reason or example."
+      ],
+      "addedGrammarFocus": [
+        "connected sentences with because, so, and while",
+        "accurate tense choice for experience or goals",
+        "specific interview vocabulary and examples"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, answer structure, and unclear interview details.",
+      "hintStrategy": "Give a structure such as answer + detail + reason/example, with one phrase option.",
+      "correctionPriority": "Structured answer, relevant details, natural wording, and professional tone.",
+      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected interview scenario.",
+      "exampleGoodAnswer": "I worked as an assistant for one year. I helped customers, prepared documents, and learned how to work with a team.",
+      "exampleStretchAnswer": "I worked as an assistant for one year, helped customers, prepared documents, and learned to organize my tasks better."
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural professional interview English for work experience. The learner should use structured, specific, nuanced phrasing.",
+      "tutorLanguageStyle": "Use realistic interviewer language. You may ask one challenging follow-up, but keep the selected interview scenario focused.",
+      "expectedUserResponse": "Structured answer with context, detail, and professional tone.",
+      "minimumUserResponse": "I worked as an assistant for one year, where I supported customers, prepared documents, and improved my ability to work under pressure in a team environment.",
+      "stretchUserResponse": "In my previous assistant role, I supported customers, handled documents, and became more confident working under pressure with a busy team.",
+      "addedKeyPhrases": [
+        "In my previous role...",
+        "where I supported...",
+        "This experience strengthened...",
+        "under pressure in a team environment"
+      ],
+      "addedUsefulConstructions": [
+        "Summarize role, responsibilities, impact, and professional growth.",
+        "Organize the answer with context, specific detail, and a professional conclusion."
+      ],
+      "addedGrammarFocus": [
+        "precise professional vocabulary",
+        "complex but clear sentence structure",
+        "nuanced tone and relevance in interview answers"
+      ],
+      "feedbackStrictness": "Focus on clarity, relevance, nuance, tone, precise wording, and any important grammar errors.",
+      "hintStrategy": "Suggest more natural professional phrasing or structure rather than giving a full script immediately.",
+      "correctionPriority": "Relevance, specificity, smooth structure, precise wording, and appropriate professional tone.",
+      "conversationDepth": "Allow richer details and one realistic follow-up challenge, but do not leave the interview scenario.",
+      "exampleGoodAnswer": "I worked as an assistant for one year, where I supported customers, prepared documents, and improved my ability to work under pressure in a team environment.",
+      "exampleStretchAnswer": "In my previous assistant role, I supported customers, handled documents, and became more confident working under pressure with a busy team."
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor asks about the candidate's selected work experience situation.",
+    "defaultOpeningExample": "Could you tell me about your previous job?",
+    "firstUserTask": "The user describes a role, responsibility, and one result or skill learned.",
+    "expectedPattern": "I worked as... I was responsible for... One result was...",
+    "guidedPracticeFollowUpQuestions": [
+      "What were your main tasks?",
+      "Can you give one example?",
+      "What did you learn from that experience?",
+      "What was one result of your work?"
+    ],
+    "variationOrComplication": "Tutor asks about responsibilities, a project, a result, or relevant skills when experience is limited.",
+    "exampleTutorLine": "What were your main responsibilities?",
+    "correctionMoment": "Tutor gives one short correction when useful.",
+    "correctionStyle": "soft, short, encouraging, and professional.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let's do one final answer about your experience and one result.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced describing work experience, responsibilities, and results. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific interview setting",
+      "job title or industry",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic follow-up challenge for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected job interview scenario",
+      "interviewer and candidate roles"
+    ],
+    "contextVariants": [
+      {
+        "id": "previous_job",
+        "title": "Describing a previous job",
+        "setting": "an interview about past work",
+        "reasonForMeeting": "explaining a previous role",
+        "openingLine": "Could you tell me about your previous job?",
+        "aliases": [
+          "previous job",
+          "last job",
+          "past job",
+          "old job"
+        ]
+      },
+      {
+        "id": "responsibilities",
+        "title": "Talking about responsibilities",
+        "setting": "an interview about daily tasks",
+        "reasonForMeeting": "describing responsibilities",
+        "openingLine": "What were your main responsibilities?",
+        "aliases": [
+          "responsibilities",
+          "tasks",
+          "duties",
+          "what did you do"
+        ]
+      },
+      {
+        "id": "project_achievement",
+        "title": "Talking about a project or achievement",
+        "setting": "an interview about a specific project",
+        "reasonForMeeting": "describing a project result",
+        "openingLine": "Could you tell me about a project you worked on?",
+        "aliases": [
+          "project",
+          "achievement",
+          "result",
+          "success"
+        ]
+      },
+      {
+        "id": "internship_experience",
+        "title": "Talking about internship experience",
+        "setting": "an interview about internship experience",
+        "reasonForMeeting": "connecting internship work to the role",
+        "openingLine": "Could you tell me about your internship experience?",
+        "aliases": [
+          "internship",
+          "intern",
+          "trainee",
+          "practice"
+        ]
+      },
+      {
+        "id": "no_formal_experience",
+        "title": "Answering with little work experience",
+        "setting": "an interview for an early-career candidate",
+        "reasonForMeeting": "showing relevant skills without formal experience",
+        "openingLine": "I see you do not have much formal experience yet. Could you tell me what relevant skills you have?",
+        "aliases": [
+          "no experience",
+          "little experience",
+          "first job",
+          "student experience"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Job Interview, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "Validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about work experience in a job interview. Please choose a simple interview situation for this lesson."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about work experience in a job interview. Let's stay with the interview question.",
+    "secondRedirect": "Let's stay with this job interview scenario for now. Please answer as a candidate practicing work experience.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on work experience in a job interview. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite or professional words.",
+      "B1": "Correct grammar, word choice, answer structure, and sentence flow.",
+      "B2": "Focus on clarity, relevance, nuance, tone, and precise wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful, and interview-focused."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small interview phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful interview word.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"I worked as... I was responsible for...\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same job interview goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into casual chat or general business conversation."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Job Interview lesson scenario.",
+    "The tutor plays an interviewer and the user plays a job candidate.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as hotel check-in or airport passport; redirect and remain in setup.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple interview English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one interview question at a time.",
+    "Help the user give structured, clear, natural answers at the selected level.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal or interviewer role."
+  ]
+}

@@ -1,0 +1,386 @@
+{
+  "id": "job_interview_strengths_and_weaknesses",
+  "metadata": {
+    "topic": "Job Interview",
+    "subtopic": "Strengths and weaknesses",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice talking about strengths and weaknesses.\n\nGoal: you will learn to describe one strength, explain one weakness, and sound honest but professional.\n\nChoose a situation:\n1. Talking about your main strength\n2. Talking about a weakness\n3. Balancing strength and weakness in one answer\n\nOr suggest your own simple strengths and weaknesses interview situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple job interview situation about strengths and weaknesses.",
+      "validCustomContextKeywords": [
+        "strength",
+        "weakness",
+        "strong point",
+        "weak point",
+        "improve",
+        "area to improve",
+        "teamwork",
+        "team",
+        "communication",
+        "time management",
+        "deadlines",
+        "planning",
+        "organization"
+      ],
+      "offTopicExamples": [
+        "hotel check-in",
+        "airport passport",
+        "restaurant order",
+        "travel directions",
+        "casual friend chat"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about strengths and weaknesses in a job interview. Please choose a simple interview situation for this lesson."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can talk about one strength and one weakness in a balanced, professional way.",
+    "canDoStatements": [
+      "The user can describe one professional strength.",
+      "The user can explain one area for improvement.",
+      "The user can show they are working on the weakness."
+    ]
+  },
+  "situation": {
+    "description": "The user is in a job interview and needs to discuss strengths and weaknesses honestly and professionally."
+  },
+  "roles": {
+    "userRole": "A job candidate in an interview.",
+    "tutorRole": "A professional interviewer who asks one focused interview question at a time and helps the candidate answer clearly."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "One of my strengths is...",
+      "I am good at...",
+      "I work well with...",
+      "I am trying to improve...",
+      "One area I am working on is...",
+      "I used to find it difficult to...",
+      "Now I try to...",
+      "I am learning to..."
+    ],
+    "usefulConstructions": [
+      "One of my strengths is + noun/verb-ing.",
+      "I am good at + noun/verb-ing.",
+      "One area I am working on is + noun/verb-ing.",
+      "I used to find it difficult to + verb.",
+      "Now I try to + verb."
+    ],
+    "grammarFocus": [
+      "gerunds after good at",
+      "used to for past difficulty",
+      "present continuous for improvement"
+    ],
+    "pronunciationFocus": [
+      "strength",
+      "weakness",
+      "improve",
+      "teamwork",
+      "management"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple interview English for strengths and weaknesses. Focus on one clear idea and core job-interview words.",
+      "tutorLanguageStyle": "Use short interview questions. Ask one question at a time and accept short answers when the meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "My strength is teamwork. I want to improve my English.",
+      "stretchUserResponse": "I am good at teamwork. I am learning English.",
+      "addedKeyPhrases": [
+        "My strength is...",
+        "I am good at...",
+        "I want to improve..."
+      ],
+      "addedUsefulConstructions": [
+        "Use My strength is... + I want to improve...",
+        "Use one short sentence with a clear interview meaning."
+      ],
+      "addedGrammarFocus": [
+        "simple present for interview answers",
+        "basic word order in short answers",
+        "clear subject + verb sentences"
+      ],
+      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give full sentence starters or a full simple answer if the learner is stuck.",
+      "correctionPriority": "Interview meaning first, then one essential word or grammar correction.",
+      "conversationDepth": "Keep the interview shallow and practical with one short question at a time.",
+      "exampleGoodAnswer": "My strength is teamwork. I want to improve my English.",
+      "exampleStretchAnswer": "I am good at teamwork. I am learning English."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple interview English for strengths and weaknesses. The learner should answer with one main idea and one useful detail.",
+      "tutorLanguageStyle": "Use simple interview questions. Ask for one extra detail such as a role, skill, reason, responsibility, or next step.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "One of my strengths is teamwork. I am trying to improve my time management.",
+      "stretchUserResponse": "I am good at teamwork, and I am trying to improve my planning.",
+      "addedKeyPhrases": [
+        "One of my strengths is...",
+        "I am trying to improve...",
+        "I work well with..."
+      ],
+      "addedUsefulConstructions": [
+        "Use One of my strengths is... and add one improvement area.",
+        "Add one detail after the main answer."
+      ],
+      "addedGrammarFocus": [
+        "simple past or present as needed for interview answers",
+        "basic connectors with and or because",
+        "polite complete sentences"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, and missing polite or professional words.",
+      "hintStrategy": "Give a sentence starter and one optional detail to add.",
+      "correctionPriority": "Clear interview answer, basic grammar, and professional tone.",
+      "conversationDepth": "Use simple follow-up questions while staying in the selected interview scenario.",
+      "exampleGoodAnswer": "One of my strengths is teamwork. I am trying to improve my time management.",
+      "exampleStretchAnswer": "I am good at teamwork, and I am trying to improve my planning."
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear interview English for strengths and weaknesses. The learner should give an answer, a detail, and a reason or example.",
+      "tutorLanguageStyle": "Use natural clear interview English. Ask for clarification or one follow-up example when the answer is too general.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "One of my strengths is teamwork because I communicate well with people. One area I’m improving is time management, so I use a daily plan.",
+      "stretchUserResponse": "One strength is teamwork because I listen and communicate clearly. I’m improving time management by using a daily plan.",
+      "addedKeyPhrases": [
+        "because I communicate well",
+        "One area I’m improving is...",
+        "so I use...",
+        "I am learning to..."
+      ],
+      "addedUsefulConstructions": [
+        "Explain strength with a reason and weakness with an action.",
+        "Use answer + detail + reason or example."
+      ],
+      "addedGrammarFocus": [
+        "connected sentences with because, so, and while",
+        "accurate tense choice for experience or goals",
+        "specific interview vocabulary and examples"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, answer structure, and unclear interview details.",
+      "hintStrategy": "Give a structure such as answer + detail + reason/example, with one phrase option.",
+      "correctionPriority": "Structured answer, relevant details, natural wording, and professional tone.",
+      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected interview scenario.",
+      "exampleGoodAnswer": "One of my strengths is teamwork because I communicate well with people. One area I’m improving is time management, so I use a daily plan.",
+      "exampleStretchAnswer": "One strength is teamwork because I listen and communicate clearly. I’m improving time management by using a daily plan."
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural professional interview English for strengths and weaknesses. The learner should use structured, specific, nuanced phrasing.",
+      "tutorLanguageStyle": "Use realistic interviewer language. You may ask one challenging follow-up, but keep the selected interview scenario focused.",
+      "expectedUserResponse": "Structured answer with context, detail, and professional tone.",
+      "minimumUserResponse": "One of my strengths is teamwork, especially communicating clearly with different people. One area I’m actively improving is time management, so I’ve started planning my week more carefully and prioritizing tasks.",
+      "stretchUserResponse": "I would say teamwork is one of my strengths because I communicate clearly across different personalities, and I’m actively improving my time management by planning priorities earlier in the week.",
+      "addedKeyPhrases": [
+        "especially communicating clearly",
+        "one area I’m actively improving",
+        "prioritizing tasks",
+        "I’ve started..."
+      ],
+      "addedUsefulConstructions": [
+        "Balance self-awareness, specific evidence, and improvement action.",
+        "Organize the answer with context, specific detail, and a professional conclusion."
+      ],
+      "addedGrammarFocus": [
+        "precise professional vocabulary",
+        "complex but clear sentence structure",
+        "nuanced tone and relevance in interview answers"
+      ],
+      "feedbackStrictness": "Focus on clarity, relevance, nuance, tone, precise wording, and any important grammar errors.",
+      "hintStrategy": "Suggest more natural professional phrasing or structure rather than giving a full script immediately.",
+      "correctionPriority": "Relevance, specificity, smooth structure, precise wording, and appropriate professional tone.",
+      "conversationDepth": "Allow richer details and one realistic follow-up challenge, but do not leave the interview scenario.",
+      "exampleGoodAnswer": "One of my strengths is teamwork, especially communicating clearly with different people. One area I’m actively improving is time management, so I’ve started planning my week more carefully and prioritizing tasks.",
+      "exampleStretchAnswer": "I would say teamwork is one of my strengths because I communicate clearly across different personalities, and I’m actively improving my time management by planning priorities earlier in the week."
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor asks about the selected strength or weakness interview situation.",
+    "defaultOpeningExample": "What is your main strength?",
+    "firstUserTask": "The user describes one strength and/or one area for improvement professionally.",
+    "expectedPattern": "One of my strengths is... One area I am working on is... Now I try to...",
+    "guidedPracticeFollowUpQuestions": [
+      "Can you give a short example?",
+      "How are you improving that area?",
+      "Why is that strength useful for this role?",
+      "What do you do when you have a deadline?"
+    ],
+    "variationOrComplication": "Tutor asks for a specific example, an improvement action, or how the strength helps in the role.",
+    "exampleTutorLine": "What is one area you would like to improve?",
+    "correctionMoment": "Tutor gives one short correction when useful.",
+    "correctionStyle": "soft, short, encouraging, and professional.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let's do one final balanced answer about a strength and an improvement area.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced strengths, weaknesses, and professional self-awareness. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific interview setting",
+      "job title or industry",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic follow-up challenge for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected job interview scenario",
+      "interviewer and candidate roles"
+    ],
+    "contextVariants": [
+      {
+        "id": "main_strength",
+        "title": "Talking about your main strength",
+        "setting": "an interview question about strengths",
+        "reasonForMeeting": "explaining a professional strength",
+        "openingLine": "What is your main strength?",
+        "aliases": [
+          "strength",
+          "strong point",
+          "main strength",
+          "good at"
+        ]
+      },
+      {
+        "id": "weakness_answer",
+        "title": "Talking about a weakness",
+        "setting": "an interview question about improvement",
+        "reasonForMeeting": "explaining a weakness professionally",
+        "openingLine": "What is one area you would like to improve?",
+        "aliases": [
+          "weakness",
+          "improve",
+          "area to improve",
+          "weak point"
+        ]
+      },
+      {
+        "id": "balanced_answer",
+        "title": "Balancing strength and weakness in one answer",
+        "setting": "an interview question about self-awareness",
+        "reasonForMeeting": "balancing strength and improvement",
+        "openingLine": "Could you tell me about one strength and one area for improvement?",
+        "aliases": [
+          "strength and weakness",
+          "both",
+          "balanced answer",
+          "improvement"
+        ]
+      },
+      {
+        "id": "teamwork_strength",
+        "title": "Strength in teamwork",
+        "setting": "an interview question about teamwork",
+        "reasonForMeeting": "describing teamwork as a strength",
+        "openingLine": "Would you say teamwork is one of your strengths?",
+        "aliases": [
+          "teamwork",
+          "team",
+          "communication",
+          "working with people"
+        ]
+      },
+      {
+        "id": "time_management_weakness",
+        "title": "Improving time management",
+        "setting": "an interview question about time management",
+        "reasonForMeeting": "explaining improvement with deadlines",
+        "openingLine": "Is time management something you are working on?",
+        "aliases": [
+          "time management",
+          "deadlines",
+          "planning",
+          "organization"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Job Interview, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "Validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about strengths and weaknesses in a job interview. Please choose a simple interview situation for this lesson."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about strengths and weaknesses in a job interview. Let's stay with the interview question.",
+    "secondRedirect": "Let's stay with this job interview scenario for now. Please answer as a candidate practicing strengths and weaknesses.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on strengths and weaknesses in a job interview. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite or professional words.",
+      "B1": "Correct grammar, word choice, answer structure, and sentence flow.",
+      "B2": "Focus on clarity, relevance, nuance, tone, and precise wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful, and interview-focused."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small interview phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful interview word.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"One of my strengths is...\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same job interview goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into casual chat or general business conversation."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Job Interview lesson scenario.",
+    "The tutor plays an interviewer and the user plays a job candidate.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as hotel check-in or airport passport; redirect and remain in setup.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple interview English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one interview question at a time.",
+    "Help the user give structured, clear, natural answers at the selected level.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal or interviewer role."
+  ]
+}
