@@ -110,115 +110,116 @@
   "levelProfiles": {
     "A1 Beginner": {
       "level": "A1 Beginner",
-      "difficultyNotes": "Very simple restaurant/cafe English for ordering food. Focus on one clear customer request and the most important service words.",
-      "tutorLanguageStyle": "Use short service questions, one idea at a time, and friendly waiter or cafe staff language. Accept short polite answers if the meaning is clear.",
+      "difficultyNotes": "Very simple restaurant/cafe English for ordering food or a drink. Focus on one item and for here or to go.",
+      "tutorLanguageStyle": "Use short ordering questions, one idea at a time, and friendly waiter or cafe staff language.",
       "expectedUserResponse": "1 short sentence.",
-      "minimumUserResponse": "I’d like pasta, please.",
-      "stretchUserResponse": "I’d like pasta and water, please.",
+      "minimumUserResponse": "I’d like a coffee, please.",
+      "stretchUserResponse": "Can I have a sandwich and water? For here, please.",
       "addedKeyPhrases": [
-        "I’d like pasta, please.",
-        "Water, please.",
-        "That’s all."
-      ],
-      "addedUsefulConstructions": [
-        "Use one short polite customer sentence with please.",
-        "Answer the staff question directly before adding anything extra."
-      ],
-      "addedGrammarFocus": [
-        "basic polite requests with please",
-        "simple word order for customer requests",
-        "short answers with I’d like or Can I have"
-      ],
-      "feedbackStrictness": "Correct only mistakes that block restaurant/cafe meaning. Keep feedback very short and encouraging.",
-      "hintStrategy": "Give a full sentence starter or a complete simple model if the learner is stuck.",
-      "correctionPriority": "Service meaning first, then one essential restaurant/cafe word or polite phrase.",
-      "conversationDepth": "Keep the roleplay shallow and practical with one short staff question at a time.",
-      "exampleGoodAnswer": "I’d like pasta, please.",
-      "exampleStretchAnswer": "I’d like pasta and water, please."
-    },
-    "A2 Elementary": {
-      "level": "A2 Elementary",
-      "difficultyNotes": "Simple restaurant/cafe English for ordering food. The learner should make a polite request and add one useful detail.",
-      "tutorLanguageStyle": "Use simple service follow-up questions. Ask for one detail such as time, number of people, dish, drink, allergy, problem, or payment method.",
-      "expectedUserResponse": "1-2 short sentences.",
-      "minimumUserResponse": "I’d like pasta and water, please.",
-      "stretchUserResponse": "I’d like pasta and water, please. That’s all, thank you.",
-      "addedKeyPhrases": [
+        "I’d like...",
         "Can I have...?",
         "For here, please.",
         "To go, please."
       ],
       "addedUsefulConstructions": [
-        "Make the request, then add one specific detail.",
-        "Use Could I, Can I, I’d like, or I ordered for polite restaurant/cafe communication."
+        "Use I’d like plus the item, or ask Can I have plus the food or drink item.",
+        "Add For here or To go after the order when the staff asks."
       ],
       "addedGrammarFocus": [
-        "basic question forms",
-        "word order in polite requests",
-        "please and thank you in service situations"
+        "I’d like + food or drink",
+        "Can I have + item?",
+        "for here / to go placement after an order"
       ],
-      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and unclear restaurant/cafe vocabulary.",
-      "hintStrategy": "Give a sentence frame with one blank for the learner’s detail.",
-      "correctionPriority": "Clear request, correct detail, and polite wording.",
-      "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on the selected restaurant/cafe task.",
-      "exampleGoodAnswer": "I’d like pasta and water, please.",
-      "exampleStretchAnswer": "I’d like pasta and water, please. That’s all, thank you."
+      "feedbackStrictness": "Correct only mistakes that block the order. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give a full ordering sentence or a complete simple model if the learner is stuck.",
+      "correctionPriority": "Food or drink item first, then for here/to go, then polite wording.",
+      "conversationDepth": "Keep the roleplay shallow and practical with one short staff question at a time.",
+      "exampleGoodAnswer": "I’d like a coffee, please.",
+      "exampleStretchAnswer": "Can I have a sandwich and water? For here, please."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple restaurant/cafe English for ordering a meal, choosing a drink, and asking a basic dish question.",
+      "tutorLanguageStyle": "Use simple service follow-up questions about food choice, drink choice, for here or takeaway, and basic recommendations.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "Could I have the chicken pasta and a lemonade, please?",
+      "stretchUserResponse": "Could I have the chicken pasta and a lemonade, please? Is it spicy?",
+      "addedKeyPhrases": [
+        "What do you recommend?",
+        "Is it spicy?",
+        "Could I have that to go?"
+      ],
+      "addedUsefulConstructions": [
+        "Order the main item first, then add a drink or for here/to go detail.",
+        "Ask one simple question about the dish before confirming the order."
+      ],
+      "addedGrammarFocus": [
+        "Could I have + dish/drink",
+        "Is it + adjective? for dish questions",
+        "and to connect food and drink choices"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and unclear menu vocabulary.",
+      "hintStrategy": "Give an ordering frame with blanks for dish, drink, and for here/to go detail.",
+      "correctionPriority": "Clear order, dish question, drink choice, and polite wording.",
+      "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on ordering food or drinks.",
+      "exampleGoodAnswer": "Could I have the chicken pasta and a lemonade, please?",
+      "exampleStretchAnswer": "Could I have the chicken pasta and a lemonade, please? Is it spicy?"
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
-      "difficultyNotes": "Natural but clear restaurant/cafe English for ordering food. The learner should give request plus detail plus a polite follow-up or clarification.",
-      "tutorLanguageStyle": "Use natural service language and ask one realistic follow-up. Encourage clear, polite, connected customer answers.",
+      "difficultyNotes": "Natural but clear restaurant/cafe English for ordering, asking for a recommendation, checking a dish, and adding a drink or starter.",
+      "tutorLanguageStyle": "Use natural service language and ask one realistic follow-up about recommendations, spice level, drinks, starters, or takeaway.",
       "expectedUserResponse": "2-3 connected sentences.",
-      "minimumUserResponse": "I’d like the pasta, please. Is it spicy, and could I have some water as well?",
-      "stretchUserResponse": "I’d like the pasta, please. Is it spicy? Also, could I have water and a small salad?",
+      "minimumUserResponse": "What do you recommend? I’d like something not too spicy, and I’ll have a still water as well.",
+      "stretchUserResponse": "What do you recommend for a light lunch? If the curry is not too spicy, I’ll have that with a still water.",
       "addedKeyPhrases": [
         "What do you recommend?",
-        "Could I have some water as well?",
-        "Is it spicy?"
+        "Is the curry very spicy?",
+        "I’ll have a starter as well."
       ],
       "addedUsefulConstructions": [
-        "Use a polite opening, a clear request or explanation, and a follow-up question.",
-        "Connect details with and, but, because, or also when useful."
+        "Ask for a recommendation, then explain a preference such as not too spicy.",
+        "Confirm the dish and add a drink or starter in the same turn."
       ],
       "addedGrammarFocus": [
-        "polite modal questions",
-        "connected sentences for requests and clarifications",
-        "accurate restaurant/cafe vocabulary"
+        "recommendation questions with what do you recommend",
+        "degree phrases such as not too spicy and a little spicy",
+        "I’ll have / I’d like for confirming orders"
       ],
       "feedbackStrictness": "Correct grammar, word choice, politeness, and sentence flow when they affect natural service communication.",
-      "hintStrategy": "Give a short model with request + detail + polite follow-up, then ask the learner to adapt it.",
-      "correctionPriority": "Polite tone, clear details, natural phrasing, and smooth sentence connection.",
-      "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one detail.",
-      "exampleGoodAnswer": "I’d like the pasta, please. Is it spicy, and could I have some water as well?",
-      "exampleStretchAnswer": "I’d like the pasta, please. Is it spicy? Also, could I have water and a small salad?"
+      "hintStrategy": "Give a model with recommendation question + food preference + drink choice, then ask the learner to adapt it.",
+      "correctionPriority": "Polite tone, clear menu preferences, natural phrasing, and smooth sentence connection.",
+      "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one order detail.",
+      "exampleGoodAnswer": "What do you recommend? I’d like something not too spicy, and I’ll have a still water as well.",
+      "exampleStretchAnswer": "What do you recommend for a light lunch? If the curry is not too spicy, I’ll have that with a still water."
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
-      "difficultyNotes": "Natural, polite, flexible restaurant/cafe English for ordering food. The learner should use softeners, precise requests, appropriate tone, and a polite follow-up or clarification.",
-      "tutorLanguageStyle": "Use professional service language and may add one realistic complication. Keep the scenario focused and expect nuanced customer responses.",
+      "difficultyNotes": "Natural, polite, flexible restaurant/cafe English for nuanced ordering, recommendations, spice-level checks, and additions to the order.",
+      "tutorLanguageStyle": "Use professional service language and may add one realistic complication such as an unavailable dish or a recommendation choice.",
       "expectedUserResponse": "A natural answer with detail, nuance, and a polite follow-up or clarification.",
-      "minimumUserResponse": "I think I’ll have the pasta, please. Could you let me know if it’s spicy, and would you recommend any starter with it?",
-      "stretchUserResponse": "I think I’ll have the pasta, please. If it is quite spicy, could you recommend a milder option or a starter that goes well with it?",
+      "minimumUserResponse": "Could you recommend something light that isn’t too spicy? I’m thinking of adding a starter and a sparkling water as well.",
+      "stretchUserResponse": "Could you recommend something light that isn’t too spicy? If the sea bass is available, I’d like that with a small salad to start and a sparkling water, please.",
       "addedKeyPhrases": [
-        "I think I’ll have...",
-        "Could you let me know...?",
-        "Would you recommend...?"
+        "Could you recommend something...?",
+        "I’m thinking of adding...",
+        "If the ... is available..."
       ],
       "addedUsefulConstructions": [
-        "Use softeners such as when you have a moment, if possible, could you please, or would you mind checking.",
-        "State the request or issue precisely, then confirm the next step politely."
+        "Use softeners when asking for recommendations or checking whether a dish is spicy.",
+        "State preferences precisely, then confirm the dish, starter, drink, and for here/takeaway detail."
       ],
       "addedGrammarFocus": [
-        "softened modal requests",
-        "precise noun phrases for restaurant/cafe details",
-        "tone and nuance in service interactions"
+        "softened recommendation requests",
+        "relative clauses and conditionals for menu preferences",
+        "precise ordering sequences with main, starter, drink, and takeaway details"
       ],
       "feedbackStrictness": "Focus on fluency, nuance, politeness, tone, precise wording, and natural service-register phrasing.",
-      "hintStrategy": "Offer a polished natural model and ask the learner to personalize the detail or soften the tone.",
-      "correctionPriority": "Nuanced politeness, precise wording, natural rhythm, and appropriate customer tone.",
-      "conversationDepth": "Add one realistic complication when useful while keeping the learner inside the selected restaurant/cafe scenario.",
-      "exampleGoodAnswer": "I think I’ll have the pasta, please. Could you let me know if it’s spicy, and would you recommend any starter with it?",
-      "exampleStretchAnswer": "I think I’ll have the pasta, please. If it is quite spicy, could you recommend a milder option or a starter that goes well with it?"
+      "hintStrategy": "Offer a polished ordering model and ask the learner to personalize the dish, spice preference, or drink detail.",
+      "correctionPriority": "Nuanced politeness, precise menu wording, natural rhythm, and appropriate customer tone.",
+      "conversationDepth": "Add one realistic menu complication when useful while keeping the learner inside the ordering scenario.",
+      "exampleGoodAnswer": "Could you recommend something light that isn’t too spicy? I’m thinking of adding a starter and a sparkling water as well.",
+      "exampleStretchAnswer": "Could you recommend something light that isn’t too spicy? If the sea bass is available, I’d like that with a small salad to start and a sparkling water, please."
     }
   },
   "conversationFlow": {

@@ -109,115 +109,115 @@
   "levelProfiles": {
     "A1 Beginner": {
       "level": "A1 Beginner",
-      "difficultyNotes": "Very simple restaurant/cafe English for booking a table. Focus on one clear customer request and the most important service words.",
-      "tutorLanguageStyle": "Use short service questions, one idea at a time, and friendly waiter or cafe staff language. Accept short polite answers if the meaning is clear.",
-      "expectedUserResponse": "1 short sentence.",
-      "minimumUserResponse": "I’d like a table for two, please.",
-      "stretchUserResponse": "A table for two at seven, please.",
+      "difficultyNotes": "Very simple restaurant/cafe English for booking a table. Focus on guests, time, name, and one seating word if needed.",
+      "tutorLanguageStyle": "Use short reservation questions, one detail at a time: number of guests, time, name, and inside or outside.",
+      "expectedUserResponse": "1 short phrase or sentence.",
+      "minimumUserResponse": "A table for two, please.",
+      "stretchUserResponse": "A table for two at seven, under the name Anna.",
       "addedKeyPhrases": [
-        "A table for two, please.",
-        "At seven, please.",
-        "Thank you."
-      ],
-      "addedUsefulConstructions": [
-        "Use one short polite customer sentence with please.",
-        "Answer the staff question directly before adding anything extra."
-      ],
-      "addedGrammarFocus": [
-        "basic polite requests with please",
-        "simple word order for customer requests",
-        "short answers with I’d like or Can I have"
-      ],
-      "feedbackStrictness": "Correct only mistakes that block restaurant/cafe meaning. Keep feedback very short and encouraging.",
-      "hintStrategy": "Give a full sentence starter or a complete simple model if the learner is stuck.",
-      "correctionPriority": "Service meaning first, then one essential restaurant/cafe word or polite phrase.",
-      "conversationDepth": "Keep the roleplay shallow and practical with one short staff question at a time.",
-      "exampleGoodAnswer": "I’d like a table for two, please.",
-      "exampleStretchAnswer": "A table for two at seven, please."
-    },
-    "A2 Elementary": {
-      "level": "A2 Elementary",
-      "difficultyNotes": "Simple restaurant/cafe English for booking a table. The learner should make a polite request and add one useful detail.",
-      "tutorLanguageStyle": "Use simple service follow-up questions. Ask for one detail such as time, number of people, dish, drink, allergy, problem, or payment method.",
-      "expectedUserResponse": "1-2 short sentences.",
-      "minimumUserResponse": "I’d like to book a table for two at seven.",
-      "stretchUserResponse": "I’d like to book a table for two tonight at seven, please.",
-      "addedKeyPhrases": [
-        "I’d like to book a table.",
-        "For two at seven.",
+        "A table for...",
+        "At seven.",
         "Under the name..."
       ],
       "addedUsefulConstructions": [
-        "Make the request, then add one specific detail.",
-        "Use Could I, Can I, I’d like, or I ordered for polite restaurant/cafe communication."
+        "Give the reservation detail in a short phrase: for two, at seven, under the name Lee.",
+        "Use please after the table request when it sounds natural."
       ],
       "addedGrammarFocus": [
-        "basic question forms",
-        "word order in polite requests",
-        "please and thank you in service situations"
+        "A table for + number of guests",
+        "at + time for reservation time",
+        "under the name + name"
       ],
-      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and unclear restaurant/cafe vocabulary.",
-      "hintStrategy": "Give a sentence frame with one blank for the learner’s detail.",
-      "correctionPriority": "Clear request, correct detail, and polite wording.",
-      "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on the selected restaurant/cafe task.",
-      "exampleGoodAnswer": "I’d like to book a table for two at seven.",
-      "exampleStretchAnswer": "I’d like to book a table for two tonight at seven, please."
+      "feedbackStrictness": "Correct only mistakes that block the booking details. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give a complete reservation phrase with one detail to change, such as A table for two, please.",
+      "correctionPriority": "Guest count, time, name, then polite wording.",
+      "conversationDepth": "Keep the roleplay shallow and practical with one short booking question at a time.",
+      "exampleGoodAnswer": "A table for two, please.",
+      "exampleStretchAnswer": "A table for two at seven, under the name Anna."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple restaurant/cafe English for making or changing a reservation. The learner should give the guest count, time, name, and seating preference when asked.",
+      "tutorLanguageStyle": "Use simple booking follow-up questions about availability, reservation time, number of people, name, and inside or outside seating.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "Could I book a table for two at seven, please?",
+      "stretchUserResponse": "Could I book a table for two at seven, please? Outside if possible, under the name Anna.",
+      "addedKeyPhrases": [
+        "Could I book a table for...?",
+        "Do you have a table at...?",
+        "Inside or outside is fine."
+      ],
+      "addedUsefulConstructions": [
+        "Ask for availability, then give the number of guests and reservation time.",
+        "Add the booking name and seating preference when the staff asks."
+      ],
+      "addedGrammarFocus": [
+        "Could I book + noun phrase",
+        "for + number of people and at + time",
+        "inside/outside preference with if possible"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, missing polite words, and unclear reservation details.",
+      "hintStrategy": "Give a booking frame with blanks for guests, time, name, or seating: Could I book a table for ___ at ___?",
+      "correctionPriority": "Clear booking request, correct guest count, time, name, and polite wording.",
+      "conversationDepth": "Ask one realistic reservation follow-up and keep the exchange focused on booking the table.",
+      "exampleGoodAnswer": "Could I book a table for two at seven, please?",
+      "exampleStretchAnswer": "Could I book a table for two at seven, please? Outside if possible, under the name Anna."
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
-      "difficultyNotes": "Natural but clear restaurant/cafe English for booking a table. The learner should give request plus detail plus a polite follow-up or clarification.",
-      "tutorLanguageStyle": "Use natural service language and ask one realistic follow-up. Encourage clear, polite, connected customer answers.",
+      "difficultyNotes": "Natural but clear restaurant/cafe English for booking a table, checking availability, and adjusting reservation details.",
+      "tutorLanguageStyle": "Use natural reservation language and ask one realistic follow-up about time, guest count, name, seating, or availability.",
       "expectedUserResponse": "2-3 connected sentences.",
-      "minimumUserResponse": "I’d like to book a table for two tonight at seven, under the name David.",
-      "stretchUserResponse": "I’d like to book a table for two tonight at seven. Could we sit outside if possible?",
+      "minimumUserResponse": "I’d like to book a table for four at 7:30 under the name Chen. Do you have anything available outside?",
+      "stretchUserResponse": "I’d like to book a table for four at 7:30 under the name Chen. If outside seating isn’t available, inside is fine.",
       "addedKeyPhrases": [
-        "I’d like to book a table for two.",
-        "Could we sit outside?",
-        "Can I change the time?"
+        "Do you have anything available at...?",
+        "under the name...",
+        "If outside seating isn’t available..."
       ],
       "addedUsefulConstructions": [
-        "Use a polite opening, a clear request or explanation, and a follow-up question.",
-        "Connect details with and, but, because, or also when useful."
+        "State the booking request, then add guest count, time, name, and seating preference.",
+        "Use if to offer an alternative when the preferred time or seating is not available."
       ],
       "addedGrammarFocus": [
-        "polite modal questions",
-        "connected sentences for requests and clarifications",
-        "accurate restaurant/cafe vocabulary"
+        "polite modal and I’d like to book forms",
+        "connected reservation details using for, at, and under",
+        "if-clauses for availability and alternatives"
       ],
-      "feedbackStrictness": "Correct grammar, word choice, politeness, and sentence flow when they affect natural service communication.",
-      "hintStrategy": "Give a short model with request + detail + polite follow-up, then ask the learner to adapt it.",
-      "correctionPriority": "Polite tone, clear details, natural phrasing, and smooth sentence connection.",
-      "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one detail.",
-      "exampleGoodAnswer": "I’d like to book a table for two tonight at seven, under the name David.",
-      "exampleStretchAnswer": "I’d like to book a table for two tonight at seven. Could we sit outside if possible?"
+      "feedbackStrictness": "Correct grammar, word choice, politeness, and sentence flow when they affect the reservation.",
+      "hintStrategy": "Give a model with booking request + details + availability question, then ask the learner to adapt it.",
+      "correctionPriority": "Polite tone, accurate reservation details, natural phrasing, and clear alternatives.",
+      "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one booking detail.",
+      "exampleGoodAnswer": "I’d like to book a table for four at 7:30 under the name Chen. Do you have anything available outside?",
+      "exampleStretchAnswer": "I’d like to book a table for four at 7:30 under the name Chen. If outside seating isn’t available, inside is fine."
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
-      "difficultyNotes": "Natural, polite, flexible restaurant/cafe English for booking a table. The learner should use softeners, precise requests, appropriate tone, and a polite follow-up or clarification.",
-      "tutorLanguageStyle": "Use professional service language and may add one realistic complication. Keep the scenario focused and expect nuanced customer responses.",
+      "difficultyNotes": "Natural, polite, flexible restaurant/cafe English for reservations, availability, seating preferences, and changing a booking time.",
+      "tutorLanguageStyle": "Use professional reservation language and may add one realistic complication such as limited availability or a requested time change.",
       "expectedUserResponse": "A natural answer with detail, nuance, and a polite follow-up or clarification.",
-      "minimumUserResponse": "I’d like to make a reservation for two this evening at seven, if you have availability. Could we sit outside if possible?",
-      "stretchUserResponse": "I’d like to make a reservation for two this evening at seven, under the name David. If the terrace is available, we’d prefer to sit outside.",
+      "minimumUserResponse": "I have a reservation for four under the name Chen at 7:30. Would it be possible to move it to 8:00?",
+      "stretchUserResponse": "I have a reservation for four under the name Chen at 7:30. Would it be possible to move it to 8:00, preferably outside if you still have availability?",
       "addedKeyPhrases": [
-        "if you have availability",
-        "if possible",
-        "under the name..."
+        "Would it be possible to move it to...?",
+        "preferably outside",
+        "if you still have availability"
       ],
       "addedUsefulConstructions": [
-        "Use softeners such as when you have a moment, if possible, could you please, or would you mind checking.",
-        "State the request or issue precisely, then confirm the next step politely."
+        "Use a softener before changing the reservation time or seating preference.",
+        "State the existing reservation details precisely before requesting a change."
       ],
       "addedGrammarFocus": [
-        "softened modal requests",
-        "precise noun phrases for restaurant/cafe details",
-        "tone and nuance in service interactions"
+        "softened modal requests for reservation changes",
+        "precise noun phrases for guest count, name, time, and seating",
+        "conditional phrasing for availability and preferences"
       ],
-      "feedbackStrictness": "Focus on fluency, nuance, politeness, tone, precise wording, and natural service-register phrasing.",
-      "hintStrategy": "Offer a polished natural model and ask the learner to personalize the detail or soften the tone.",
-      "correctionPriority": "Nuanced politeness, precise wording, natural rhythm, and appropriate customer tone.",
-      "conversationDepth": "Add one realistic complication when useful while keeping the learner inside the selected restaurant/cafe scenario.",
-      "exampleGoodAnswer": "I’d like to make a reservation for two this evening at seven, if you have availability. Could we sit outside if possible?",
-      "exampleStretchAnswer": "I’d like to make a reservation for two this evening at seven, under the name David. If the terrace is available, we’d prefer to sit outside."
+      "feedbackStrictness": "Focus on fluency, nuance, politeness, tone, precise wording, and natural reservation-register phrasing.",
+      "hintStrategy": "Offer a polished reservation-change model and ask the learner to personalize the time, name, or seating detail.",
+      "correctionPriority": "Nuanced politeness, precise booking details, natural rhythm, and appropriate customer tone.",
+      "conversationDepth": "Add one realistic availability complication when useful while keeping the learner inside the booking scenario.",
+      "exampleGoodAnswer": "I have a reservation for four under the name Chen at 7:30. Would it be possible to move it to 8:00?",
+      "exampleStretchAnswer": "I have a reservation for four under the name Chen at 7:30. Would it be possible to move it to 8:00, preferably outside if you still have availability?"
     }
   },
   "conversationFlow": {
