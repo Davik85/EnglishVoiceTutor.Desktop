@@ -337,14 +337,14 @@ function Test-TextContent {
         $matches = [regex]::Matches($text, $CyrillicRegexPattern)
         foreach ($match in $matches) {
             $line = 1 + [regex]::Matches($text.Substring(0, $match.Index), "`n").Count
-            Add-AuditError "Cyrillic content found in $(Get-RelativePath $file.FullName):$line: '$($match.Value)'"
+            Add-AuditError ("Cyrillic content found in {0}:{1}: '{2}'" -f (Get-RelativePath $file.FullName), $line, $match.Value)
         }
 
         $relativePath = Get-RelativePath $file.FullName
         $isFreeConversation = $relativePath.StartsWith('Content/Lessons/FreeConversation/', [System.StringComparison]::OrdinalIgnoreCase)
         foreach ($phrase in $GenericPhrases) {
             if ($text.Contains($phrase)) {
-                $message = "Generic/copied phrase found in $relativePath: '$phrase'"
+                $message = "Generic/copied phrase found in {0}: '{1}'" -f $relativePath, $phrase
                 if ($FailGenericPhrases -contains $phrase -or $isFreeConversation) {
                     Add-AuditError $message
                 }
