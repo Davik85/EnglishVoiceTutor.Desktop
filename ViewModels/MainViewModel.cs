@@ -183,33 +183,34 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private static string GetLessonFileName(Topic selectedTopic, Subtopic selectedSubtopic)
     {
-        return (selectedTopic.Title, selectedSubtopic.Title) switch
+        // Route by stable canonical IDs so localized display titles cannot break content loading.
+        return (selectedTopic.Id, selectedSubtopic.Id) switch
         {
-            ("Everyday English", "Introductions") => ContentConstants.IntroductionsFileName,
-            ("Everyday English", "Small talk with a neighbor") => ContentConstants.SmallTalkWithANeighborFileName,
-            ("Everyday English", "Asking for help") => ContentConstants.AskingForHelpFileName,
-            ("Everyday English", "Making plans") => ContentConstants.MakingPlansFileName,
-            ("Everyday English", "Talking about your day") => ContentConstants.TalkingAboutYourDayFileName,
-            ("Travel", "Airport check-in") => ContentConstants.AirportCheckInFileName,
-            ("Travel", "Hotel check-in") => ContentConstants.HotelCheckInFileName,
-            ("Travel", "Asking for directions") => ContentConstants.AskingForDirectionsFileName,
-            ("Travel", "Ordering transport") => ContentConstants.OrderingTransportFileName,
-            ("Travel", "Lost luggage") => ContentConstants.LostLuggageFileName,
-            ("Work & Business", "First meeting") => ContentConstants.FirstMeetingFileName,
-            ("Work & Business", "Daily standup") => ContentConstants.DailyStandupFileName,
-            ("Work & Business", "Phone call with a client") => ContentConstants.PhoneCallWithAClientFileName,
-            ("Work & Business", "Asking for clarification") => ContentConstants.WorkAskingForClarificationFileName,
-            ("Work & Business", "Discussing deadlines") => ContentConstants.DiscussingDeadlinesFileName,
-            ("Job Interview", "Tell me about yourself") => ContentConstants.TellMeAboutYourselfFileName,
-            ("Job Interview", "Work experience") => ContentConstants.WorkExperienceFileName,
-            ("Job Interview", "Strengths and weaknesses") => ContentConstants.StrengthsAndWeaknessesFileName,
-            ("Job Interview", "Why do you want this job?") => ContentConstants.WhyDoYouWantThisJobFileName,
-            ("Job Interview", "Asking questions at the end") => ContentConstants.AskingQuestionsAtTheEndFileName,
-            ("Restaurant & Cafe", "Booking a table") => ContentConstants.BookingATableFileName,
-            ("Restaurant & Cafe", "Ordering food") => ContentConstants.OrderingFoodFileName,
-            ("Restaurant & Cafe", "Asking about ingredients") => ContentConstants.AskingAboutIngredientsFileName,
-            ("Restaurant & Cafe", "Handling a wrong order") => ContentConstants.HandlingAWrongOrderFileName,
-            ("Restaurant & Cafe", "Paying the bill") => ContentConstants.PayingTheBillFileName,
+            (1, 101) => ContentConstants.IntroductionsFileName,
+            (1, 102) => ContentConstants.SmallTalkWithANeighborFileName,
+            (1, 103) => ContentConstants.AskingForHelpFileName,
+            (1, 104) => ContentConstants.MakingPlansFileName,
+            (1, 105) => ContentConstants.TalkingAboutYourDayFileName,
+            (2, 201) => ContentConstants.AirportCheckInFileName,
+            (2, 202) => ContentConstants.HotelCheckInFileName,
+            (2, 203) => ContentConstants.AskingForDirectionsFileName,
+            (2, 204) => ContentConstants.OrderingTransportFileName,
+            (2, 205) => ContentConstants.LostLuggageFileName,
+            (3, 301) => ContentConstants.FirstMeetingFileName,
+            (3, 302) => ContentConstants.DailyStandupFileName,
+            (3, 303) => ContentConstants.PhoneCallWithAClientFileName,
+            (3, 304) => ContentConstants.WorkAskingForClarificationFileName,
+            (3, 305) => ContentConstants.DiscussingDeadlinesFileName,
+            (4, 401) => ContentConstants.TellMeAboutYourselfFileName,
+            (4, 402) => ContentConstants.WorkExperienceFileName,
+            (4, 403) => ContentConstants.StrengthsAndWeaknessesFileName,
+            (4, 404) => ContentConstants.WhyDoYouWantThisJobFileName,
+            (4, 405) => ContentConstants.AskingQuestionsAtTheEndFileName,
+            (5, 501) => ContentConstants.BookingATableFileName,
+            (5, 502) => ContentConstants.OrderingFoodFileName,
+            (5, 503) => ContentConstants.AskingAboutIngredientsFileName,
+            (5, 504) => ContentConstants.HandlingAWrongOrderFileName,
+            (5, 505) => ContentConstants.PayingTheBillFileName,
             _ => throw new InvalidOperationException(
                 $"No lesson scenario file is mapped for topic '{selectedTopic.Title}' and subtopic '{selectedSubtopic.Title}'.")
         };
@@ -217,13 +218,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private static string GetTopicFolderName(Topic selectedTopic)
     {
-        return selectedTopic.Title switch
+        // Route by stable canonical IDs so localized display titles cannot break content loading.
+        return selectedTopic.Id switch
         {
-            "Everyday English" => ContentConstants.EverydayEnglishFolderName,
-            "Travel" => ContentConstants.TravelFolderName,
-            "Work & Business" => ContentConstants.WorkAndBusinessFolderName,
-            "Job Interview" => ContentConstants.JobInterviewFolderName,
-            "Restaurant & Cafe" => ContentConstants.RestaurantAndCafeFolderName,
+            1 => ContentConstants.EverydayEnglishFolderName,
+            2 => ContentConstants.TravelFolderName,
+            3 => ContentConstants.WorkAndBusinessFolderName,
+            4 => ContentConstants.JobInterviewFolderName,
+            5 => ContentConstants.RestaurantAndCafeFolderName,
             _ => throw new InvalidOperationException($"No lesson content folder is mapped for topic '{selectedTopic.Title}'.")
         };
     }
