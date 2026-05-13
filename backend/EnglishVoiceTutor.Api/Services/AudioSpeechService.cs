@@ -100,7 +100,8 @@ public sealed class AudioSpeechService
         long? firstHeaderMs = null;
 
         _logger.LogInformation(
-            "Starting OpenAI speech request. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ClientCancellationRequested={ClientCancellationRequested}.",
+            "Starting OpenAI speech request. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ClientCancellationRequested={ClientCancellationRequested}.",
+            "audio/speech",
             request.Model,
             request.Voice,
             request.ResponseFormat,
@@ -128,7 +129,8 @@ public sealed class AudioSpeechService
             statusCode = (int)response.StatusCode;
 
             _logger.LogInformation(
-                "OpenAI speech response headers received. Model={Model}; Voice={Voice}; Format={Format}; InputLength={InputLength}; StatusCode={StatusCode}; FirstHeaderMs={FirstHeaderMs}.",
+                "OpenAI speech response headers received. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; InputLength={InputLength}; StatusCode={StatusCode}; FirstHeaderMs={FirstHeaderMs}.",
+                "audio/speech",
                 request.Model,
                 request.Voice,
                 request.ResponseFormat,
@@ -163,7 +165,8 @@ public sealed class AudioSpeechService
             }
 
             _logger.LogInformation(
-                "Completed OpenAI speech request. Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; FirstHeaderMs={FirstHeaderMs}; TotalMs={TotalMs}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; TotalBytes={TotalBytes}.",
+                "Completed OpenAI speech request. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; FirstHeaderMs={FirstHeaderMs}; TotalMs={TotalMs}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; TotalBytes={TotalBytes}.",
+                "audio/speech",
                 request.Model,
                 request.Voice,
                 request.ResponseFormat,

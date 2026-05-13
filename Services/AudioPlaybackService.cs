@@ -38,7 +38,7 @@ public sealed class AudioPlaybackService
         }
     }
 
-    public async Task PlayAudioFileAsync(string filePath, CancellationToken cancellationToken = default)
+    public async Task PlayAudioFileAsync(string filePath, CancellationToken cancellationToken = default, Action<long>? onPlaybackStarted = null)
     {
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {
@@ -50,7 +50,7 @@ public sealed class AudioPlaybackService
         try
         {
             Debug.WriteLine($"Bot voice audio playback starting: FileExtension={Path.GetExtension(filePath)}.");
-            await PlayTemporaryAudioFileAsync(filePath, cancellationToken);
+            await PlayTemporaryAudioFileAsync(filePath, cancellationToken, onPlaybackStarted);
             Debug.WriteLine($"Bot voice audio playback completed: FileExtension={Path.GetExtension(filePath)}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}.");
         }
         catch (Exception exception)
@@ -377,7 +377,7 @@ public sealed class AudioPlaybackService
         return filePath;
     }
 
-    private async Task PlayTemporaryAudioFileAsync(string filePath, CancellationToken cancellationToken)
+    private async Task PlayTemporaryAudioFileAsync(string filePath, CancellationToken cancellationToken, Action<long>? onPlaybackStarted = null)
     {
         var playbackCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -398,7 +398,9 @@ public sealed class AudioPlaybackService
             outputDevice.Init(audioReader);
             Debug.WriteLine($"Bot voice audio playback initialized: ElapsedMilliseconds={initializationStopwatch.ElapsedMilliseconds}.");
             outputDevice.Play();
-            Debug.WriteLine("Bot voice audio playback started.");
+            var playbackStartedMs = initializationStopwatch.ElapsedMilliseconds;
+            Debug.WriteLine($"Bot voice audio playback started: PlaybackStartInitializationMilliseconds={playbackStartedMs}.");
+            onPlaybackStarted?.Invoke(playbackStartedMs);
             using var cancellationRegistration = linkedCancellationTokenSource.Token.Register(() =>
             {
                 try

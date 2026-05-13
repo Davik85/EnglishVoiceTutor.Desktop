@@ -1,7 +1,9 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
@@ -34,8 +36,10 @@ public partial class LessonChatViewModel : ViewModelBase
     private bool isTranscribingAudio;
     private bool hasFinishedLesson;
     private readonly SemaphoreSlim botVoiceSemaphore = new(1, 1);
-    private readonly Dictionary<int, string> botVoiceAudioFilePaths = [];
+    private readonly Dictionary<string, string> botVoiceSegmentAudioFilePaths = [];
     private readonly HashSet<string> currentSessionBotVoiceFilePaths = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object botVoiceCancellationLock = new();
+    private CancellationTokenSource? currentBotVoiceCancellationTokenSource;
 
     public string SelectedLevel { get; }
 
@@ -577,17 +581,9 @@ public partial class LessonChatViewModel : ViewModelBase
             return Task.CompletedTask;
         }
 
-        if (message.Text.Length > AudioConstants.AutoPlayMaxCharacters)
+        if (!IsNewestBotMessage(message))
         {
-            Debug.WriteLine($"Skipping bot voice auto-play for message {message.Id}: text length exceeds {AudioConstants.AutoPlayMaxCharacters} characters.");
-            return Task.CompletedTask;
-        }
-
-        // MVP behavior: auto-play never queues. If another bot voice is already loading or playing, skip this one
-        // and leave manual Play voice available so the lesson stays responsive.
-        if (IsBotVoicePlaying)
-        {
-            Debug.WriteLine($"Skipping bot voice auto-play for message {message.Id}: another bot voice is busy.");
+            Debug.WriteLine($"Skipping bot voice auto-play for message {message.Id}: it is no longer the newest bot message.");
             return Task.CompletedTask;
         }
 
@@ -611,17 +607,19 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        if (!await botVoiceSemaphore.WaitAsync(0, cancellationToken))
+        CancelCurrentBotVoice($"new {(isAutoPlay ? "auto-play" : "manual play")} request for message {message.Id}");
+
+        if (!await botVoiceSemaphore.WaitAsync(TimeSpan.FromSeconds(2), cancellationToken))
         {
-            Debug.WriteLine($"Skipped bot voice {(isAutoPlay ? "auto-play" : "manual play")} for message {message.Id}: another voice is already playing.");
+            Debug.WriteLine($"Skipped bot voice {(isAutoPlay ? "auto-play" : "manual play")} for message {message.Id}: previous voice did not stop in time.");
             return;
         }
 
         using var playbackCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        playbackCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(BackendConstants.BotVoiceFirstAudioTimeoutSeconds));
+        SetCurrentBotVoiceCancellationTokenSource(playbackCancellationTokenSource);
         var playbackStarted = false;
         var totalStopwatch = Stopwatch.StartNew();
-        var selectedBotVoicePath = AudioConstants.UsePcmStreamingBotVoice ? "pcm-stream" : "wav-buffer";
+        var selectedBotVoicePath = AudioConstants.BotVoiceDefaultPathName;
 
         try
         {
@@ -629,141 +627,301 @@ public partial class LessonChatViewModel : ViewModelBase
             RefreshAvatarState();
             StatusMessage = localizedText.PlayingBotVoiceMessage;
 
+            var allSegments = SplitBotVoiceSegments(message.Text);
+            var segmentsToSpeak = SelectBotVoiceSegments(allSegments, isAutoPlay);
+
+            if (segmentsToSpeak.Count == 0)
+            {
+                return;
+            }
+
             var inputLength = message.Text.Trim().Length;
-            Debug.WriteLine($"Bot voice request start message id {message.Id}: InputLength={inputLength}; AutoPlay={isAutoPlay}; SelectedPath={selectedBotVoicePath}.");
+            Debug.WriteLine($"Bot voice request start message id {message.Id}: Path={selectedBotVoicePath}; MessageId={message.Id}; InputLength={inputLength}; AutoPlay={isAutoPlay}; SegmentCount={segmentsToSpeak.Count}; TotalSegmentCount={allSegments.Count}; FirstSegmentLength={segmentsToSpeak[0].Length}; FirstSegmentRequestStartedMs={totalStopwatch.ElapsedMilliseconds}.");
 
-            if (AudioConstants.UsePcmStreamingBotVoice)
-            {
-                await PlayPcmStreamingBotVoiceAsync(
-                    message,
-                    playbackCancellationTokenSource,
-                    playbackStartedMs => playbackStarted = true,
-                    cancellationToken);
-            }
-            else
-            {
-                await PlayWavBufferBotVoiceAsync(
-                    message,
-                    playbackCancellationTokenSource,
-                    playbackStartedMs => playbackStarted = true,
-                    cancellationToken);
-            }
+            await PlaySegmentedHighQualityBotVoiceAsync(
+                message,
+                segmentsToSpeak,
+                playbackCancellationTokenSource.Token,
+                playbackStartedMs => playbackStarted = true,
+                totalStopwatch);
 
-            Debug.WriteLine($"Bot voice playback completed ms for message {message.Id}: SelectedPath={selectedBotVoicePath}; TotalElapsedMilliseconds={totalStopwatch.ElapsedMilliseconds}.");
+            Debug.WriteLine($"Bot voice playback completed ms for message {message.Id}: Path={selectedBotVoicePath}; TotalElapsedMilliseconds={totalStopwatch.ElapsedMilliseconds}; SegmentCount={segmentsToSpeak.Count}.");
             BackendStatusText = BackendConstants.BackendStatusConnected;
         }
         catch (OperationCanceledException exception)
         {
-            if (!playbackStarted && playbackCancellationTokenSource.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+            if (!playbackStarted && !cancellationToken.IsCancellationRequested)
             {
-                Debug.WriteLine($"Bot voice canceled because first audio exceeded {BackendConstants.BotVoiceFirstAudioTimeoutSeconds} seconds for message {message.Id}: SelectedPath={selectedBotVoicePath}; {exception}");
+                Debug.WriteLine($"Bot voice canceled before first playback for message {message.Id}: Path={selectedBotVoicePath}; CancellationReason=first-segment-timeout-or-newer-message; TotalMs={totalStopwatch.ElapsedMilliseconds}; {exception}");
                 StatusMessage = "Voice took too long. Continuing without audio.";
             }
             else
             {
-                Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} canceled for message {message.Id}: SelectedPath={selectedBotVoicePath}; {exception}");
+                Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} canceled for message {message.Id}: Path={selectedBotVoicePath}; CancellationReason=request-canceled; TotalMs={totalStopwatch.ElapsedMilliseconds}; {exception}");
             }
         }
         catch (Exception exception)
         {
-            Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} failed for message {message.Id}: SelectedPath={selectedBotVoicePath}; {exception}");
+            Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} failed for message {message.Id}: Path={selectedBotVoicePath}; TotalMs={totalStopwatch.ElapsedMilliseconds}; {exception}");
             StatusMessage = localizedText.BotVoiceFailedMessage;
         }
         finally
         {
+            ClearCurrentBotVoiceCancellationTokenSource(playbackCancellationTokenSource);
             IsBotVoicePlaying = false;
             RefreshAvatarState();
             botVoiceSemaphore.Release();
         }
     }
 
-    private async Task PlayPcmStreamingBotVoiceAsync(
+    private async Task PlaySegmentedHighQualityBotVoiceAsync(
         ChatMessageViewModel message,
-        CancellationTokenSource playbackCancellationTokenSource,
-        Action<long> onPlaybackStarted,
-        CancellationToken cancellationToken)
+        IReadOnlyList<string> segments,
+        CancellationToken cancellationToken,
+        Action<long> onFirstPlaybackStarted,
+        Stopwatch totalStopwatch)
     {
-        await lessonChatBackendService.StreamBotSpeechAsync(
-            message.Text,
-            async (audioStream, contentType, streamCancellationToken) =>
-            {
-                if (!string.Equals(contentType, BackendConstants.PcmContentType, StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new InvalidOperationException($"Unsupported streaming bot voice content type: {contentType}");
-                }
-
-                await audioPlaybackService.PlayPcmStreamAsync(
-                    audioStream,
-                    message.Id,
-                    firstChunkMs => Debug.WriteLine($"Bot voice first audio chunk received ms for message {message.Id}: Path=pcm-stream; FirstChunkMs={firstChunkMs}."),
-                    playbackStartedMs =>
-                    {
-                        playbackCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(BackendConstants.BotVoiceStreamOverallTimeoutSeconds));
-                        Debug.WriteLine($"Bot voice playback started ms for message {message.Id}: Path=pcm-stream; PlaybackStartedMs={playbackStartedMs}; PrebufferMilliseconds={AudioConstants.BotVoiceInitialPrebufferMilliseconds}.");
-                        onPlaybackStarted(playbackStartedMs);
-                    },
-                    streamCancellationToken);
-            },
-            playbackCancellationTokenSource.Token);
-    }
-
-    private async Task PlayWavBufferBotVoiceAsync(
-        ChatMessageViewModel message,
-        CancellationTokenSource playbackCancellationTokenSource,
-        Action<long> onPlaybackStarted,
-        CancellationToken cancellationToken)
-    {
-        using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
-            playbackCancellationTokenSource.Token,
+        var firstSegmentFilePath = await GetOrCreateBotVoiceSegmentAudioFileAsync(
+            message,
+            segments[0],
+            segmentIndex: 0,
+            timeout: TimeSpan.FromSeconds(AudioConstants.BotVoiceFirstSegmentTimeoutSeconds),
+            totalStopwatch,
             cancellationToken);
-        var stopwatch = Stopwatch.StartNew();
-        var audioFilePath = await GetOrCreateBotVoiceAudioFileAsync(message, linkedCancellationTokenSource.Token);
-        var playbackStartedMs = stopwatch.ElapsedMilliseconds;
+        var firstSegmentReadyMs = totalStopwatch.ElapsedMilliseconds;
+        Debug.WriteLine($"Bot voice first segment ready: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; FirstSegmentLength={segments[0].Length}; FirstSegmentReadyMs={firstSegmentReadyMs}; AudioFile={Path.GetFileName(firstSegmentFilePath)}.");
 
-        if (playbackStartedMs > TimeSpan.FromSeconds(BackendConstants.BotVoiceFirstAudioTimeoutSeconds).TotalMilliseconds)
+        Task<string>? nextSegmentTask = segments.Count > 1
+            ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[1], 1, TimeSpan.FromSeconds(AudioConstants.BotVoiceSegmentTimeoutSeconds), totalStopwatch, cancellationToken)
+            : null;
+        var currentFilePath = firstSegmentFilePath;
+
+        for (var segmentIndex = 0; segmentIndex < segments.Count; segmentIndex++)
         {
-            throw new OperationCanceledException(linkedCancellationTokenSource.Token);
-        }
+            var playbackSegmentIndex = segmentIndex;
+            var playbackStartedForSegment = false;
+            await audioPlaybackService.PlayAudioFileAsync(
+                currentFilePath,
+                cancellationToken,
+                _ =>
+                {
+                    playbackStartedForSegment = true;
+                    var playbackStartedMs = totalStopwatch.ElapsedMilliseconds;
+                    if (playbackSegmentIndex == 0)
+                    {
+                        onFirstPlaybackStarted(playbackStartedMs);
+                        Debug.WriteLine($"Bot voice first playback started: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; FirstSegmentReadyMs={firstSegmentReadyMs}; FirstPlaybackStartedMs={playbackStartedMs}; AcceptanceUnder5000={playbackStartedMs <= 5000}.");
+                    }
 
-        onPlaybackStarted(playbackStartedMs);
-        playbackCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(BackendConstants.BotVoiceStreamOverallTimeoutSeconds));
-        Debug.WriteLine($"Bot voice playback started ms for message {message.Id}: Path=wav-buffer; PlaybackStartedMs={playbackStartedMs}; AudioFile={Path.GetFileName(audioFilePath)}.");
-        await audioPlaybackService.PlayAudioFileAsync(audioFilePath, linkedCancellationTokenSource.Token);
+                    Debug.WriteLine($"Bot voice segment playback started: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={playbackSegmentIndex}; SegmentLength={segments[playbackSegmentIndex].Length}; PlaybackStartedMs={playbackStartedMs}; AudioFile={Path.GetFileName(currentFilePath)}.");
+                });
+
+            Debug.WriteLine($"Bot voice segment playback ended: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; PlaybackEndMs={totalStopwatch.ElapsedMilliseconds}; PlaybackStarted={playbackStartedForSegment}.");
+
+            if (segmentIndex + 1 >= segments.Count)
+            {
+                continue;
+            }
+
+            try
+            {
+                currentFilePath = await nextSegmentTask!;
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine($"Bot voice later segment canceled: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex + 1}; CancellationReason=later-segment-timeout-or-newer-message; TotalMs={totalStopwatch.ElapsedMilliseconds}.");
+                break;
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine($"Bot voice later segment failed: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex + 1}; TotalMs={totalStopwatch.ElapsedMilliseconds}; {exception}");
+                break;
+            }
+
+            var nextIndex = segmentIndex + 2;
+            nextSegmentTask = nextIndex < segments.Count
+                ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[nextIndex], nextIndex, TimeSpan.FromSeconds(AudioConstants.BotVoiceSegmentTimeoutSeconds), totalStopwatch, cancellationToken)
+                : null;
+        }
     }
 
-    private async Task<string> GetOrCreateBotVoiceAudioFileAsync(ChatMessageViewModel message, CancellationToken cancellationToken)
+    private async Task<string> GetOrCreateBotVoiceSegmentAudioFileAsync(
+        ChatMessageViewModel message,
+        string segmentText,
+        int segmentIndex,
+        TimeSpan timeout,
+        Stopwatch totalStopwatch,
+        CancellationToken cancellationToken)
     {
-        if (botVoiceAudioFilePaths.TryGetValue(message.Id, out var cachedFilePath) && File.Exists(cachedFilePath))
+        var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex);
+        if (botVoiceSegmentAudioFilePaths.TryGetValue(cacheKey, out var cachedFilePath) && File.Exists(cachedFilePath))
         {
             TrackCurrentSessionBotVoiceFile(cachedFilePath);
+            Debug.WriteLine($"Bot voice segment cache hit: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; ReadyMs={totalStopwatch.ElapsedMilliseconds}; AudioFile={Path.GetFileName(cachedFilePath)}.");
             return cachedFilePath;
         }
 
-        try
-        {
-            var totalStopwatch = Stopwatch.StartNew();
-            var backendStopwatch = Stopwatch.StartNew();
-            var inputLength = message.Text.Trim().Length;
+        using var segmentTimeoutCancellationTokenSource = new CancellationTokenSource(timeout);
+        using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            segmentTimeoutCancellationTokenSource.Token);
+        var backendStopwatch = Stopwatch.StartNew();
+        var inputLength = segmentText.Trim().Length;
 
-            Debug.WriteLine($"Bot voice generation starting for message {message.Id}: InputLength={inputLength}.");
-            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(message.Text, cancellationToken);
-            Debug.WriteLine($"Bot voice backend response received for message {message.Id}: InputLength={inputLength}; ElapsedMilliseconds={backendStopwatch.ElapsedMilliseconds}; AudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
+        Debug.WriteLine($"Bot voice segment request starting: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; RequestStartedMs={totalStopwatch.ElapsedMilliseconds}; TimeoutMs={timeout.TotalMilliseconds}.");
+        var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(segmentText, linkedCancellationTokenSource.Token);
+        Debug.WriteLine($"Bot voice segment backend response received: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; SegmentReadyMs={totalStopwatch.ElapsedMilliseconds}; BackendElapsedMs={backendStopwatch.ElapsedMilliseconds}; AudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
 
-            var saveStopwatch = Stopwatch.StartNew();
-            var audioFilePath = await audioPlaybackService.SaveBotVoiceAudioAsync(
-                speechResponse.AudioBytes,
-                speechResponse.FileExtension,
-                cancellationToken);
-            Debug.WriteLine($"Bot voice file ready for message {message.Id}: SaveElapsedMilliseconds={saveStopwatch.ElapsedMilliseconds}; TotalElapsedMilliseconds={totalStopwatch.ElapsedMilliseconds}; FileExtension={Path.GetExtension(audioFilePath)}.");
-            botVoiceAudioFilePaths[message.Id] = audioFilePath;
-            TrackCurrentSessionBotVoiceFile(audioFilePath);
-            return audioFilePath;
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        var saveStopwatch = Stopwatch.StartNew();
+        var audioFilePath = await audioPlaybackService.SaveBotVoiceAudioAsync(
+            speechResponse.AudioBytes,
+            speechResponse.FileExtension,
+            linkedCancellationTokenSource.Token);
+        Debug.WriteLine($"Bot voice segment file ready: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SaveElapsedMs={saveStopwatch.ElapsedMilliseconds}; ReadyMs={totalStopwatch.ElapsedMilliseconds}; FileExtension={Path.GetExtension(audioFilePath)}.");
+        botVoiceSegmentAudioFilePaths[cacheKey] = audioFilePath;
+        TrackCurrentSessionBotVoiceFile(audioFilePath);
+        return audioFilePath;
+    }
+
+    private static IReadOnlyList<string> SelectBotVoiceSegments(IReadOnlyList<string> segments, bool isAutoPlay)
+    {
+        if (!isAutoPlay || segments.Count == 0)
         {
-            Debug.WriteLine($"Bot voice generation or save failed for message {message.Id}: {exception}");
-            throw;
+            return segments;
         }
+
+        var totalCharacters = segments.Sum(segment => segment.Length);
+        if (segments.Count <= AudioConstants.BotVoiceAutoPlayMaxSegments
+            && totalCharacters <= AudioConstants.BotVoiceMaxSpokenCharactersAutoPlay)
+        {
+            return segments;
+        }
+
+        var selectedSegments = new List<string>();
+        var selectedCharacters = 0;
+
+        foreach (var segment in segments)
+        {
+            if (selectedSegments.Count >= AudioConstants.BotVoiceAutoPlayMaxSegments)
+            {
+                break;
+            }
+
+            if (selectedSegments.Count > 0
+                && selectedCharacters + segment.Length > AudioConstants.BotVoiceMaxSpokenCharactersAutoPlay)
+            {
+                break;
+            }
+
+            selectedSegments.Add(segment);
+            selectedCharacters += segment.Length;
+        }
+
+        return selectedSegments.Count > 0 ? selectedSegments : segments.Take(1).ToList();
+    }
+
+    private static IReadOnlyList<string> SplitBotVoiceSegments(string text)
+    {
+        var normalizedText = text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        var sentenceSegments = new List<string>();
+        var current = new StringBuilder();
+
+        foreach (var character in normalizedText)
+        {
+            current.Append(character);
+
+            if (character is '.' or '?' or '!' or ';' or '\n')
+            {
+                AddTrimmedSegment(sentenceSegments, current.ToString());
+                current.Clear();
+            }
+        }
+
+        AddTrimmedSegment(sentenceSegments, current.ToString());
+
+        var finalSegments = new List<string>();
+        foreach (var segment in sentenceSegments)
+        {
+            SplitLongBotVoiceSegment(segment, finalSegments);
+        }
+
+        return finalSegments;
+    }
+
+    private static void SplitLongBotVoiceSegment(string segment, List<string> output)
+    {
+        var remaining = segment.Trim();
+
+        while (remaining.Length > AudioConstants.BotVoiceMaxSegmentCharacters)
+        {
+            var splitIndex = remaining.LastIndexOf(',', AudioConstants.BotVoiceMaxSegmentCharacters - 1, AudioConstants.BotVoiceMaxSegmentCharacters);
+            if (splitIndex < AudioConstants.BotVoiceMaxSegmentCharacters / 2)
+            {
+                splitIndex = remaining.LastIndexOf(' ', AudioConstants.BotVoiceMaxSegmentCharacters - 1, AudioConstants.BotVoiceMaxSegmentCharacters);
+            }
+
+            if (splitIndex < AudioConstants.BotVoiceMaxSegmentCharacters / 2)
+            {
+                splitIndex = AudioConstants.BotVoiceMaxSegmentCharacters;
+            }
+
+            var nextSegment = remaining[..(splitIndex + 1)].Trim();
+            AddTrimmedSegment(output, nextSegment);
+            remaining = remaining[(splitIndex + 1)..].Trim();
+        }
+
+        AddTrimmedSegment(output, remaining);
+    }
+
+    private static void AddTrimmedSegment(List<string> segments, string segment)
+    {
+        var trimmedSegment = segment.Trim();
+        if (!string.IsNullOrWhiteSpace(trimmedSegment))
+        {
+            segments.Add(trimmedSegment);
+        }
+    }
+
+    private static string CreateBotVoiceSegmentCacheKey(int messageId, int segmentIndex)
+    {
+        return string.Format(CultureInfo.InvariantCulture, "{0}:{1}", messageId, segmentIndex);
+    }
+
+    private void SetCurrentBotVoiceCancellationTokenSource(CancellationTokenSource cancellationTokenSource)
+    {
+        lock (botVoiceCancellationLock)
+        {
+            currentBotVoiceCancellationTokenSource = cancellationTokenSource;
+        }
+    }
+
+    private void ClearCurrentBotVoiceCancellationTokenSource(CancellationTokenSource cancellationTokenSource)
+    {
+        lock (botVoiceCancellationLock)
+        {
+            if (ReferenceEquals(currentBotVoiceCancellationTokenSource, cancellationTokenSource))
+            {
+                currentBotVoiceCancellationTokenSource = null;
+            }
+        }
+    }
+
+    private void CancelCurrentBotVoice(string reason)
+    {
+        CancellationTokenSource? cancellationTokenSource;
+        lock (botVoiceCancellationLock)
+        {
+            cancellationTokenSource = currentBotVoiceCancellationTokenSource;
+        }
+
+        if (cancellationTokenSource is null || cancellationTokenSource.IsCancellationRequested)
+        {
+            return;
+        }
+
+        Debug.WriteLine($"Canceling bot voice: Path={AudioConstants.BotVoiceDefaultPathName}; CancellationReason={reason}.");
+        cancellationTokenSource.Cancel();
+        audioPlaybackService.StopPlayback();
     }
 
     private bool IsNewestBotMessage(ChatMessageViewModel message)
@@ -773,12 +931,14 @@ public partial class LessonChatViewModel : ViewModelBase
 
     public void CleanupCurrentSessionBotVoiceFiles()
     {
+        CancelCurrentBotVoice("lesson cleanup");
         audioPlaybackService.StopPlayback();
         CleanupTrackedBotVoiceFiles();
     }
 
     private async Task CleanupCurrentSessionBotVoiceFilesAsync()
     {
+        CancelCurrentBotVoice("lesson cleanup");
         audioPlaybackService.StopPlayback();
 
         if (await botVoiceSemaphore.WaitAsync(TimeSpan.FromSeconds(2)))
@@ -827,6 +987,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         var trimmedUserInput = UserInput.Trim();
+        CancelCurrentBotVoice("learner sent a new message");
         var wasSent = await SendLessonMessageAsync(trimmedUserInput);
 
         if (wasSent)

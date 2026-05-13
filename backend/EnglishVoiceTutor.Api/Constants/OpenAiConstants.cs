@@ -11,20 +11,18 @@ public static class OpenAiConstants
     public const string DefaultTranscriptionModel = "gpt-4o-mini-transcribe";
     public const string TranscriptionLanguage = "en";
     public const string TranscriptionPrompt = "The learner is practicing English in a lesson dialogue. Transcribe English speech only. Do not translate non-English speech into English. If the audio is not clear English, return an empty transcription.";
-    public const string FastSpeechModel = "tts-1";
-    public const string QualitySpeechModel = "gpt-4o-mini-tts";
-    public const string LowLatencySpeechModel = FastSpeechModel;
-    public const string HighQualitySpeechModel = QualitySpeechModel;
-    public const string DefaultBotVoiceSpeechModel = FastSpeechModel;
+    public const string LowLatencySpeechModel = "tts-1";
+    public const string HighQualitySpeechModel = "gpt-4o-mini-tts";
+    public const string DefaultBotVoiceSpeechModel = HighQualitySpeechModel;
     public const string DefaultSpeechModel = DefaultBotVoiceSpeechModel;
-    public const string DefaultSpeechVoice = "nova";
+    public const string DefaultSpeechVoice = "coral";
     // 1.0 is the default OpenAI speech speed. Keep it as the MVP default for natural full-speed speech.
     public const double DefaultSpeechSpeed = 1.0;
     public const string PcmSpeechResponseFormat = "pcm";
     public const string WavSpeechResponseFormat = "wav";
     public const string DefaultSpeechResponseFormat = WavSpeechResponseFormat;
     public const string DefaultBotVoiceStreamResponseFormat = PcmSpeechResponseFormat;
-    public const int OpenAiSpeechTimeoutSeconds = 5;
+    public const int OpenAiSpeechTimeoutSeconds = 10;
     public const int BotVoiceFirstAudioTimeoutSeconds = 5;
     public const int BotVoiceStreamOverallTimeoutSeconds = 20;
     public const string AudioSpeechHttpClientName = "OpenAiAudioSpeech";
