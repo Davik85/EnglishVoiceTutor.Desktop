@@ -1,0 +1,390 @@
+{
+  "id": "work_business_first_meeting",
+  "metadata": {
+    "topic": "Work & Business",
+    "subtopic": "First meeting",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice a first meeting at work.\n\nGoal: you will learn to introduce yourself, say your role, and ask a simple professional question.\n\nChoose a situation:\n1. First day at a new job\n2. Meeting a new colleague\n3. Joining a team call\n\nOr suggest your own simple work introduction situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple work or business situation about first meeting.",
+      "validCustomContextKeywords": [
+        "first day",
+        "new job",
+        "role",
+        "colleague",
+        "coworker",
+        "team call",
+        "manager",
+        "boss",
+        "client",
+        "customer",
+        "team",
+        "work"
+      ],
+      "offTopicExamples": [
+        "hotel check-in",
+        "airport passport",
+        "restaurant order",
+        "vacation plans",
+        "sports"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about a first meeting at work. Please choose a simple work introduction situation."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can introduce themselves in a work setting, say their role, and ask a simple professional question.",
+    "canDoStatements": [
+      "The user can say their name and role.",
+      "The user can say they are new or explain their responsibility.",
+      "The user can ask a simple question about another person's role."
+    ]
+  },
+  "situation": {
+    "description": "The user is meeting someone at work for the first time."
+  },
+  "roles": {
+    "userRole": "A worker introducing themselves in a new professional situation.",
+    "tutorRole": "A friendly colleague, manager, or client who welcomes the user and asks simple work questions."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "Hi, I'm...",
+      "I work as...",
+      "I'm responsible for...",
+      "I'm new here.",
+      "Nice to meet you.",
+      "What do you do?",
+      "Could you tell me about your role?",
+      "I'm happy to join the team."
+    ],
+    "usefulConstructions": [
+      "Hi, I'm + name.",
+      "I work as + job.",
+      "I'm responsible for + task.",
+      "Could you tell me about + work topic?"
+    ],
+    "grammarFocus": [
+      "simple present for jobs and responsibilities",
+      "be + adjective for introductions",
+      "polite questions with could"
+    ],
+    "pronunciationFocus": [
+      "responsible",
+      "colleague",
+      "manager",
+      "role",
+      "team"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple English for first meeting. Focus on one clear workplace idea and the most useful words.",
+      "tutorLanguageStyle": "Use short questions and one idea at a time. Accept short answers if the workplace meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "Hi, I'm David. I work as a designer.",
+      "stretchUserResponse": "Hi, I'm David. I work as a designer, and I'm new here.",
+      "addedKeyPhrases": [
+        "Hi, I'm...",
+        "I work as...",
+        "I'm responsible for...",
+        "I'm new here."
+      ],
+      "addedUsefulConstructions": [
+        "Use one short first meeting sentence with a clear subject and verb.",
+        "Use please or thank you when it fits the workplace situation."
+      ],
+      "addedGrammarFocus": [
+        "simple present for work facts",
+        "basic workplace question forms",
+        "polite words in short sentences"
+      ],
+      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
+      "correctionPriority": "Workplace meaning first, then one essential grammar or word correction.",
+      "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
+      "exampleGoodAnswer": "Hi, I'm David. I work as a designer.",
+      "exampleStretchAnswer": "Hi, I'm David. I work as a designer, and I'm new here."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple English for first meeting. The learner should add one useful detail such as role, time, task, meeting, problem, or deadline.",
+      "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "Hi, I'm David. I work as a designer, and I'm new here.",
+      "stretchUserResponse": "Hi, I'm David. I work as a designer, and I'm responsible for visual materials.",
+      "addedKeyPhrases": [
+        "Hi, I'm...",
+        "I work as...",
+        "I'm responsible for...",
+        "I'm new here.",
+        "Nice to meet you."
+      ],
+      "addedUsefulConstructions": [
+        "Add one detail after the main answer or request.",
+        "Use polite workplace phrases such as could you, please, or thank you."
+      ],
+      "addedGrammarFocus": [
+        "basic word order in workplace statements",
+        "simple present and present continuous for work",
+        "polite workplace requests"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, and missing polite words.",
+      "hintStrategy": "Give a sentence starter and one optional detail to add.",
+      "correctionPriority": "Clear workplace message, basic grammar, and polite tone.",
+      "conversationDepth": "Use simple follow-up questions while staying in the selected workplace scenario.",
+      "exampleGoodAnswer": "Hi, I'm David. I work as a designer, and I'm new here.",
+      "exampleStretchAnswer": "Hi, I'm David. I work as a designer, and I'm responsible for visual materials."
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear English for first meeting. The learner should give an answer, add a detail, and include a short reason or follow-up question.",
+      "tutorLanguageStyle": "Use natural clear English. Ask for clarification when details are missing and keep the roleplay realistic.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "Hi, I'm David. I work as a designer, and I'm responsible for visual materials.",
+      "stretchUserResponse": "Hi, I'm David. I work as a designer, and I'm responsible for visual materials. What do you do on the team?",
+      "addedKeyPhrases": [
+        "Hi, I'm...",
+        "I work as...",
+        "I'm responsible for...",
+        "I'm new here.",
+        "Nice to meet you.",
+        "What do you do?"
+      ],
+      "addedUsefulConstructions": [
+        "Combine answer + detail + short reason or follow-up question.",
+        "Use could you, would you, or I just want to check for polite workplace clarity."
+      ],
+      "addedGrammarFocus": [
+        "connected sentences with and, but, because, or so",
+        "polite question forms",
+        "specific workplace details and clarification questions"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, sentence flow, and unclear workplace details.",
+      "hintStrategy": "Give a structure such as answer + detail + follow-up question, with one phrase option.",
+      "correctionPriority": "Natural workplace meaning, complete details, polite question form, and smooth sentence flow.",
+      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected scenario.",
+      "exampleGoodAnswer": "Hi, I'm David. I work as a designer, and I'm responsible for visual materials.",
+      "exampleStretchAnswer": "Hi, I'm David. I work as a designer, and I'm responsible for visual materials. What do you do on the team?"
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural workplace English for first meeting. The learner should use polite, flexible, specific phrasing with nuance and a useful follow-up or clarification.",
+      "tutorLanguageStyle": "Use realistic workplace English and add at most one small complication while keeping the selected scenario focused.",
+      "expectedUserResponse": "Natural answer with detail, nuance, and a follow-up question or clarification.",
+      "minimumUserResponse": "Hi, I'm David. I work as a designer, and I'm responsible for visual materials. What do you do on the team?",
+      "stretchUserResponse": "Hi, I'm David. I've just joined the team as a designer, and I'll mainly be responsible for visual materials. Could you tell me a bit about your role?",
+      "addedKeyPhrases": [
+        "Hi, I'm...",
+        "I work as...",
+        "I'm responsible for...",
+        "I'm new here.",
+        "Nice to meet you.",
+        "What do you do?",
+        "Could you tell me about your role?",
+        "I'm happy to join the team."
+      ],
+      "addedUsefulConstructions": [
+        "Use nuanced polite phrasing such as would it be possible, just to confirm, or could you clarify.",
+        "Clarify constraints, preferences, or next steps naturally."
+      ],
+      "addedGrammarFocus": [
+        "modal verbs for polite professional requests",
+        "conditional phrasing with if possible or if that works for you",
+        "precise workplace vocabulary and tone"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, tone, precise wording, and any important grammar errors.",
+      "hintStrategy": "Suggest more natural phrasing or tone rather than giving a full script immediately.",
+      "correctionPriority": "Polite nuance, specificity, smooth flow, precise workplace vocabulary, and appropriate tone.",
+      "conversationDepth": "Allow richer details, a realistic complication, and flexible negotiation, but do not leave the work/business scenario.",
+      "exampleGoodAnswer": "Hi, I'm David. I work as a designer, and I'm responsible for visual materials. What do you do on the team?",
+      "exampleStretchAnswer": "Hi, I'm David. I've just joined the team as a designer, and I'll mainly be responsible for visual materials. Could you tell me a bit about your role?"
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor welcomes the user and starts the selected first-meeting situation.",
+    "defaultOpeningExample": "Hi! Welcome to the team. Could you introduce yourself?",
+    "firstUserTask": "The user introduces themselves and says their role.",
+    "expectedPattern": "Hi, I'm... I work as...",
+    "guidedPracticeFollowUpQuestions": [
+      "What is your role?",
+      "What are you responsible for?",
+      "Are you new to the team?",
+      "Do you have a question for me?"
+    ],
+    "variationOrComplication": "Tutor asks about role, team, responsibility, or one simple professional question.",
+    "exampleTutorLine": "Could you introduce yourself?",
+    "correctionMoment": "Tutor gives one short correction when useful.",
+    "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let's do one final first-meeting question. Please introduce yourself and ask me about my role.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced introducing yourself, saying your role, and asking a professional question. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific workplace setting",
+      "minor work detail",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic small complication for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected work/business scenario"
+    ],
+    "contextVariants": [
+      {
+        "id": "first_day_new_job",
+        "title": "First day at a new job",
+        "setting": "a new workplace",
+        "reasonForMeeting": "joining a new team",
+        "openingLine": "Hi! Welcome to the team. Could you introduce yourself?",
+        "aliases": [
+          "first day",
+          "new job",
+          "new role",
+          "new employee"
+        ]
+      },
+      {
+        "id": "meeting_new_colleague",
+        "title": "Meeting a new colleague",
+        "setting": "an office or online workspace",
+        "reasonForMeeting": "meeting a coworker for the first time",
+        "openingLine": "Hi, I don't think we've met. What's your name?",
+        "aliases": [
+          "colleague",
+          "coworker",
+          "new colleague",
+          "meet colleague"
+        ]
+      },
+      {
+        "id": "joining_team_call",
+        "title": "Joining a team call",
+        "setting": "an online team call",
+        "reasonForMeeting": "joining a meeting with teammates",
+        "openingLine": "Hi! Welcome to the call. Could you introduce yourself briefly?",
+        "aliases": [
+          "team call",
+          "call",
+          "online meeting",
+          "video call"
+        ]
+      },
+      {
+        "id": "meeting_manager",
+        "title": "Meeting a manager",
+        "setting": "a manager's office or video call",
+        "reasonForMeeting": "meeting a manager for the first time",
+        "openingLine": "Hi, welcome. Tell me a little about yourself and your role.",
+        "aliases": [
+          "manager",
+          "boss",
+          "team lead",
+          "supervisor"
+        ]
+      },
+      {
+        "id": "meeting_client",
+        "title": "Meeting a client",
+        "setting": "a client meeting",
+        "reasonForMeeting": "introducing yourself to a business contact",
+        "openingLine": "Hello, nice to meet you. Could you briefly introduce yourself?",
+        "aliases": [
+          "client",
+          "customer",
+          "meet client",
+          "business contact"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Work & Business, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "For the MVP, validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about a first meeting at work. Please choose a simple work introduction situation."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about first meeting. Let's stay in this work situation.",
+    "secondRedirect": "Let's stay with first meeting for now. Please answer as a person at work in this situation.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on first meeting. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block workplace meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite words.",
+      "B1": "Correct grammar, word choice, and sentence flow.",
+      "B2": "Focus on fluency, nuance, tone, and precise workplace wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small workplace phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful word.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"Hi, I'm David. I work as a designer.\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same work/business goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into free chat."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Work & Business lesson scenario.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as hotel check-in or airport passport; redirect and remain in setup.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}

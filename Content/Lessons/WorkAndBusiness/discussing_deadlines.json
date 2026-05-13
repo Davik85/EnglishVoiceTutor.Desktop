@@ -1,0 +1,392 @@
+{
+  "id": "work_business_discussing_deadlines",
+  "metadata": {
+    "topic": "Work & Business",
+    "subtopic": "Discussing deadlines",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice discussing deadlines at work.\n\nGoal: you will learn to ask about a deadline, explain timing, and agree on next steps.\n\nChoose a situation:\n1. Confirming a deadline\n2. Asking for more time\n3. Agreeing on next steps\n\nOr suggest your own simple deadline discussion situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple work or business situation about discussing deadlines.",
+      "validCustomContextKeywords": [
+        "deadline",
+        "due date",
+        "friday",
+        "monday",
+        "tomorrow",
+        "time",
+        "more time",
+        "extension",
+        "next step",
+        "update",
+        "manager",
+        "client",
+        "delivery",
+        "timeline"
+      ],
+      "offTopicExamples": [
+        "hotel check-in",
+        "airport passport",
+        "restaurant order",
+        "flight gate",
+        "cooking"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about discussing deadlines at work. Please choose a simple deadline discussion situation."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can discuss timelines and delivery expectations politely and clearly.",
+    "canDoStatements": [
+      "The user can ask when something is due.",
+      "The user can say whether a deadline works.",
+      "The user can ask for more time or agree on a next step."
+    ]
+  },
+  "situation": {
+    "description": "The user is discussing a work deadline with a colleague, manager, or client."
+  },
+  "roles": {
+    "userRole": "A worker discussing a task deadline or delivery date.",
+    "tutorRole": "A colleague, manager, or client who asks about timing and next steps."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "When is the deadline?",
+      "The deadline is...",
+      "Can we move the deadline?",
+      "I need more time.",
+      "Does Friday work for you?",
+      "I can finish it by...",
+      "That works for me.",
+      "I'll send an update tomorrow."
+    ],
+    "usefulConstructions": [
+      "Can we finish it by + day/time?",
+      "I need + amount of time.",
+      "Does + day/time + work for you?",
+      "I'll + action + by + deadline."
+    ],
+    "grammarFocus": [
+      "future with will and can",
+      "time expressions for deadlines",
+      "polite requests with can and could"
+    ],
+    "pronunciationFocus": [
+      "deadline",
+      "timeline",
+      "Friday",
+      "tomorrow",
+      "update"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple English for discussing deadlines. Focus on one clear workplace idea and the most useful words.",
+      "tutorLanguageStyle": "Use short questions and one idea at a time. Accept short answers if the workplace meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "The deadline is Friday.",
+      "stretchUserResponse": "The deadline is Friday. I need more time.",
+      "addedKeyPhrases": [
+        "When is the deadline?",
+        "The deadline is...",
+        "Can we move the deadline?",
+        "I need more time."
+      ],
+      "addedUsefulConstructions": [
+        "Use one short discussing deadlines sentence with a clear subject and verb.",
+        "Use please or thank you when it fits the workplace situation."
+      ],
+      "addedGrammarFocus": [
+        "simple present for work facts",
+        "basic workplace question forms",
+        "polite words in short sentences"
+      ],
+      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
+      "correctionPriority": "Workplace meaning first, then one essential grammar or word correction.",
+      "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
+      "exampleGoodAnswer": "The deadline is Friday.",
+      "exampleStretchAnswer": "The deadline is Friday. I need more time."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple English for discussing deadlines. The learner should add one useful detail such as role, time, task, meeting, problem, or deadline.",
+      "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "The deadline is Friday. I need more time.",
+      "stretchUserResponse": "The deadline is Friday, but I need one more day.",
+      "addedKeyPhrases": [
+        "When is the deadline?",
+        "The deadline is...",
+        "Can we move the deadline?",
+        "I need more time.",
+        "Does Friday work for you?"
+      ],
+      "addedUsefulConstructions": [
+        "Add one detail after the main answer or request.",
+        "Use polite workplace phrases such as could you, please, or thank you."
+      ],
+      "addedGrammarFocus": [
+        "basic word order in workplace statements",
+        "simple present and present continuous for work",
+        "polite workplace requests"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, and missing polite words.",
+      "hintStrategy": "Give a sentence starter and one optional detail to add.",
+      "correctionPriority": "Clear workplace message, basic grammar, and polite tone.",
+      "conversationDepth": "Use simple follow-up questions while staying in the selected workplace scenario.",
+      "exampleGoodAnswer": "The deadline is Friday. I need more time.",
+      "exampleStretchAnswer": "The deadline is Friday, but I need one more day."
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear English for discussing deadlines. The learner should give an answer, add a detail, and include a short reason or follow-up question.",
+      "tutorLanguageStyle": "Use natural clear English. Ask for clarification when details are missing and keep the roleplay realistic.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "The deadline is Friday, but I need one more day.",
+      "stretchUserResponse": "The deadline is Friday, but I need one more day to finish it well. Does Monday morning work for you?",
+      "addedKeyPhrases": [
+        "When is the deadline?",
+        "The deadline is...",
+        "Can we move the deadline?",
+        "I need more time.",
+        "Does Friday work for you?",
+        "I can finish it by..."
+      ],
+      "addedUsefulConstructions": [
+        "Combine answer + detail + short reason or follow-up question.",
+        "Use could you, would you, or I just want to check for polite workplace clarity."
+      ],
+      "addedGrammarFocus": [
+        "connected sentences with and, but, because, or so",
+        "polite question forms",
+        "specific workplace details and clarification questions"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, sentence flow, and unclear workplace details.",
+      "hintStrategy": "Give a structure such as answer + detail + follow-up question, with one phrase option.",
+      "correctionPriority": "Natural workplace meaning, complete details, polite question form, and smooth sentence flow.",
+      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected scenario.",
+      "exampleGoodAnswer": "The deadline is Friday, but I need one more day.",
+      "exampleStretchAnswer": "The deadline is Friday, but I need one more day to finish it well. Does Monday morning work for you?"
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural workplace English for discussing deadlines. The learner should use polite, flexible, specific phrasing with nuance and a useful follow-up or clarification.",
+      "tutorLanguageStyle": "Use realistic workplace English and add at most one small complication while keeping the selected scenario focused.",
+      "expectedUserResponse": "Natural answer with detail, nuance, and a follow-up question or clarification.",
+      "minimumUserResponse": "The deadline is Friday, but I need one more day to finish it well. Does Monday morning work for you?",
+      "stretchUserResponse": "The current deadline is Friday, but I may need one extra day to finish it properly. Would Monday morning still work for you, and should I send a short update tomorrow?",
+      "addedKeyPhrases": [
+        "When is the deadline?",
+        "The deadline is...",
+        "Can we move the deadline?",
+        "I need more time.",
+        "Does Friday work for you?",
+        "I can finish it by...",
+        "That works for me.",
+        "I'll send an update tomorrow."
+      ],
+      "addedUsefulConstructions": [
+        "Use nuanced polite phrasing such as would it be possible, just to confirm, or could you clarify.",
+        "Clarify constraints, preferences, or next steps naturally."
+      ],
+      "addedGrammarFocus": [
+        "modal verbs for polite professional requests",
+        "conditional phrasing with if possible or if that works for you",
+        "precise workplace vocabulary and tone"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, tone, precise wording, and any important grammar errors.",
+      "hintStrategy": "Suggest more natural phrasing or tone rather than giving a full script immediately.",
+      "correctionPriority": "Polite nuance, specificity, smooth flow, precise workplace vocabulary, and appropriate tone.",
+      "conversationDepth": "Allow richer details, a realistic complication, and flexible negotiation, but do not leave the work/business scenario.",
+      "exampleGoodAnswer": "The deadline is Friday, but I need one more day to finish it well. Does Monday morning work for you?",
+      "exampleStretchAnswer": "The current deadline is Friday, but I may need one extra day to finish it properly. Would Monday morning still work for you, and should I send a short update tomorrow?"
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor starts the selected deadline discussion and asks about timing.",
+    "defaultOpeningExample": "Hi! Can we talk about the deadline for this task?",
+    "firstUserTask": "The user confirms the deadline or asks about timing.",
+    "expectedPattern": "The deadline is... / Does ... work for you?",
+    "guidedPracticeFollowUpQuestions": [
+      "When can you finish it?",
+      "Do you need more time?",
+      "Does Friday work for you?",
+      "What update can you send tomorrow?"
+    ],
+    "variationOrComplication": "Tutor asks about a due date, a delay, extra time, or a next update.",
+    "exampleTutorLine": "Can we talk about the deadline for this task?",
+    "correctionMoment": "Tutor gives one short correction when useful.",
+    "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let's do one final deadline task. Confirm the deadline and agree on a next step.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced deadline questions, timing, and polite next-step language. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific workplace setting",
+      "minor work detail",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic small complication for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected work/business scenario"
+    ],
+    "contextVariants": [
+      {
+        "id": "confirm_deadline",
+        "title": "Confirming a deadline",
+        "setting": "a work deadline discussion",
+        "reasonForMeeting": "checking the due date",
+        "openingLine": "Hi! Can you confirm the deadline for this task?",
+        "aliases": [
+          "confirm deadline",
+          "deadline",
+          "due date",
+          "when is it due"
+        ]
+      },
+      {
+        "id": "ask_more_time",
+        "title": "Asking for more time",
+        "setting": "a manager or client check-in",
+        "reasonForMeeting": "requesting a deadline extension",
+        "openingLine": "Hi. Do you need more time for this task?",
+        "aliases": [
+          "more time",
+          "extension",
+          "move deadline",
+          "need more time"
+        ]
+      },
+      {
+        "id": "agree_next_steps",
+        "title": "Agreeing on next steps",
+        "setting": "a timeline discussion",
+        "reasonForMeeting": "deciding what happens next",
+        "openingLine": "What should be the next step before the deadline?",
+        "aliases": [
+          "next steps",
+          "next step",
+          "plan",
+          "update tomorrow"
+        ]
+      },
+      {
+        "id": "deadline_with_manager",
+        "title": "Discussing a deadline with a manager",
+        "setting": "a manager check-in",
+        "reasonForMeeting": "reviewing delivery expectations",
+        "openingLine": "Hi! How is the timing for this task?",
+        "aliases": [
+          "manager",
+          "boss",
+          "timing",
+          "delivery"
+        ]
+      },
+      {
+        "id": "client_deadline",
+        "title": "Discussing a client deadline",
+        "setting": "a client conversation",
+        "reasonForMeeting": "confirming client delivery timing",
+        "openingLine": "Hi, can we confirm when you need this delivered?",
+        "aliases": [
+          "client",
+          "customer",
+          "delivery",
+          "timeline"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Work & Business, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "For the MVP, validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about discussing deadlines at work. Please choose a simple deadline discussion situation."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about discussing deadlines. Let's stay in this work situation.",
+    "secondRedirect": "Let's stay with discussing deadlines for now. Please answer as a person at work in this situation.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on discussing deadlines. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block workplace meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite words.",
+      "B1": "Correct grammar, word choice, and sentence flow.",
+      "B2": "Focus on fluency, nuance, tone, and precise workplace wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small workplace phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful word.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"When is the deadline?\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same work/business goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into free chat."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Work & Business lesson scenario.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as hotel check-in or airport passport; redirect and remain in setup.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}

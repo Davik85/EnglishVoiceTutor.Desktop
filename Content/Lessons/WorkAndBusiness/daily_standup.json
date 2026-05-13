@@ -1,0 +1,393 @@
+{
+  "id": "work_business_daily_standup",
+  "metadata": {
+    "topic": "Work & Business",
+    "subtopic": "Daily standup",
+    "lessonType": "guided_roleplay",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "The topic.",
+      "The goal.",
+      "2-3 context options.",
+      "That the user may suggest their own context if it fits the topic."
+    ],
+    "setupMessage": "Today we'll practice a daily standup at work.\n\nGoal: you will learn to give a short update about what is done, what is next, and one simple problem.\n\nChoose a situation:\n1. Short update in a team meeting\n2. Update about a small problem\n3. Talking about next steps\n\nOr suggest your own simple daily standup situation.",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": true,
+      "customContextValidationMode": "deterministic_keyword_matching",
+      "validCustomContextDescription": "Custom context is allowed only if it is a simple work or business situation about daily standup.",
+      "validCustomContextKeywords": [
+        "standup",
+        "daily",
+        "update",
+        "task",
+        "finished",
+        "done",
+        "next",
+        "plan",
+        "problem",
+        "issue",
+        "blocker",
+        "deadline",
+        "manager",
+        "project"
+      ],
+      "offTopicExamples": [
+        "hotel check-in",
+        "airport passport",
+        "restaurant order",
+        "weekend trip",
+        "music"
+      ],
+      "invalidContextRedirect": "That sounds interesting, but this lesson is about a daily standup at work. Please choose a simple standup or work update situation."
+    }
+  },
+  "learningGoal": {
+    "goal": "The user can give a simple standup update, say what is done, what is next, and mention a problem.",
+    "canDoStatements": [
+      "The user can say what they finished.",
+      "The user can say what they are working on next.",
+      "The user can mention a simple issue or deadline."
+    ]
+  },
+  "situation": {
+    "description": "The user is in a short daily team meeting giving a work update."
+  },
+  "roles": {
+    "userRole": "A team member giving a daily standup update.",
+    "tutorRole": "A teammate or team lead who asks short update questions."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "The project is going well.",
+      "I finished...",
+      "I am working on...",
+      "Next, I will...",
+      "We have a small problem.",
+      "I need more time.",
+      "The deadline is...",
+      "I will update you tomorrow."
+    ],
+    "usefulConstructions": [
+      "Yesterday, I finished + task.",
+      "Today, I am working on + task.",
+      "The only problem is + issue.",
+      "Next, I will + action."
+    ],
+    "grammarFocus": [
+      "past simple for finished tasks",
+      "present continuous for current work",
+      "future with will for next steps"
+    ],
+    "pronunciationFocus": [
+      "finished",
+      "working",
+      "deadline",
+      "update",
+      "problem"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Very simple English for daily standup. Focus on one clear workplace idea and the most useful words.",
+      "tutorLanguageStyle": "Use short questions and one idea at a time. Accept short answers if the workplace meaning is clear.",
+      "expectedUserResponse": "1 short sentence.",
+      "minimumUserResponse": "The project is good. I finished the first task.",
+      "stretchUserResponse": "The project is going well. I finished the first task, and now I am working on the design.",
+      "addedKeyPhrases": [
+        "The project is going well.",
+        "I finished...",
+        "I am working on...",
+        "Next, I will..."
+      ],
+      "addedUsefulConstructions": [
+        "Use one short daily standup sentence with a clear subject and verb.",
+        "Use please or thank you when it fits the workplace situation."
+      ],
+      "addedGrammarFocus": [
+        "simple present for work facts",
+        "basic workplace question forms",
+        "polite words in short sentences"
+      ],
+      "feedbackStrictness": "Correct only meaning-blocking mistakes. Keep feedback very short and encouraging.",
+      "hintStrategy": "Give full sentence starters or a full simple model if the learner is stuck.",
+      "correctionPriority": "Workplace meaning first, then one essential grammar or word correction.",
+      "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
+      "exampleGoodAnswer": "The project is good. I finished the first task.",
+      "exampleStretchAnswer": "The project is going well. I finished the first task, and now I am working on the design."
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Simple English for daily standup. The learner should add one useful detail such as role, time, task, meeting, problem, or deadline.",
+      "tutorLanguageStyle": "Use simple follow-up questions. Ask for one extra detail and model polite phrasing when needed.",
+      "expectedUserResponse": "1-2 short sentences.",
+      "minimumUserResponse": "The project is going well. I finished the first task, and now I am working on the design.",
+      "stretchUserResponse": "The project is going well. I finished the first task, and now I'm working on the design.",
+      "addedKeyPhrases": [
+        "The project is going well.",
+        "I finished...",
+        "I am working on...",
+        "Next, I will...",
+        "We have a small problem."
+      ],
+      "addedUsefulConstructions": [
+        "Add one detail after the main answer or request.",
+        "Use polite workplace phrases such as could you, please, or thank you."
+      ],
+      "addedGrammarFocus": [
+        "basic word order in workplace statements",
+        "simple present and present continuous for work",
+        "polite workplace requests"
+      ],
+      "feedbackStrictness": "Correct basic grammar, word order, and missing polite words.",
+      "hintStrategy": "Give a sentence starter and one optional detail to add.",
+      "correctionPriority": "Clear workplace message, basic grammar, and polite tone.",
+      "conversationDepth": "Use simple follow-up questions while staying in the selected workplace scenario.",
+      "exampleGoodAnswer": "The project is going well. I finished the first task, and now I am working on the design.",
+      "exampleStretchAnswer": "The project is going well. I finished the first task, and now I'm working on the design."
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Natural but clear English for daily standup. The learner should give an answer, add a detail, and include a short reason or follow-up question.",
+      "tutorLanguageStyle": "Use natural clear English. Ask for clarification when details are missing and keep the roleplay realistic.",
+      "expectedUserResponse": "2-3 connected sentences.",
+      "minimumUserResponse": "The project is going well. I finished the first task, and now I'm working on the design.",
+      "stretchUserResponse": "The project is going well. I finished the first task, and now I'm working on the design. The only problem is that I need one more day.",
+      "addedKeyPhrases": [
+        "The project is going well.",
+        "I finished...",
+        "I am working on...",
+        "Next, I will...",
+        "We have a small problem.",
+        "I need more time."
+      ],
+      "addedUsefulConstructions": [
+        "Combine answer + detail + short reason or follow-up question.",
+        "Use could you, would you, or I just want to check for polite workplace clarity."
+      ],
+      "addedGrammarFocus": [
+        "connected sentences with and, but, because, or so",
+        "polite question forms",
+        "specific workplace details and clarification questions"
+      ],
+      "feedbackStrictness": "Correct grammar, word choice, sentence flow, and unclear workplace details.",
+      "hintStrategy": "Give a structure such as answer + detail + follow-up question, with one phrase option.",
+      "correctionPriority": "Natural workplace meaning, complete details, polite question form, and smooth sentence flow.",
+      "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected scenario.",
+      "exampleGoodAnswer": "The project is going well. I finished the first task, and now I'm working on the design.",
+      "exampleStretchAnswer": "The project is going well. I finished the first task, and now I'm working on the design. The only problem is that I need one more day."
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Natural workplace English for daily standup. The learner should use polite, flexible, specific phrasing with nuance and a useful follow-up or clarification.",
+      "tutorLanguageStyle": "Use realistic workplace English and add at most one small complication while keeping the selected scenario focused.",
+      "expectedUserResponse": "Natural answer with detail, nuance, and a follow-up question or clarification.",
+      "minimumUserResponse": "The project is going well. I finished the first task, and now I'm working on the design. The only problem is that I need one more day.",
+      "stretchUserResponse": "The project is moving forward well. I've finished the first task and started working on the design. The only issue is that I may need one extra day to finish it properly.",
+      "addedKeyPhrases": [
+        "The project is going well.",
+        "I finished...",
+        "I am working on...",
+        "Next, I will...",
+        "We have a small problem.",
+        "I need more time.",
+        "The deadline is...",
+        "I will update you tomorrow."
+      ],
+      "addedUsefulConstructions": [
+        "Use nuanced polite phrasing such as would it be possible, just to confirm, or could you clarify.",
+        "Clarify constraints, preferences, or next steps naturally."
+      ],
+      "addedGrammarFocus": [
+        "modal verbs for polite professional requests",
+        "conditional phrasing with if possible or if that works for you",
+        "precise workplace vocabulary and tone"
+      ],
+      "feedbackStrictness": "Focus on fluency, nuance, tone, precise wording, and any important grammar errors.",
+      "hintStrategy": "Suggest more natural phrasing or tone rather than giving a full script immediately.",
+      "correctionPriority": "Polite nuance, specificity, smooth flow, precise workplace vocabulary, and appropriate tone.",
+      "conversationDepth": "Allow richer details, a realistic complication, and flexible negotiation, but do not leave the work/business scenario.",
+      "exampleGoodAnswer": "The project is going well. I finished the first task, and now I'm working on the design. The only problem is that I need one more day.",
+      "exampleStretchAnswer": "The project is moving forward well. I've finished the first task and started working on the design. The only issue is that I may need one extra day to finish it properly."
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor starts the selected daily standup situation and asks for a short update.",
+    "defaultOpeningExample": "Hi! Could you give us a quick update?",
+    "firstUserTask": "The user says what they finished and what they are working on now.",
+    "expectedPattern": "I finished... Now I am working on...",
+    "guidedPracticeFollowUpQuestions": [
+      "What did you finish yesterday?",
+      "What are you working on today?",
+      "Do you have any blockers?",
+      "When can you update us again?"
+    ],
+    "variationOrComplication": "Tutor asks about tasks, next steps, a blocker, or a small deadline risk.",
+    "exampleTutorLine": "Could you give us a quick update?",
+    "correctionMoment": "Tutor gives one short correction when useful.",
+    "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
+    "wrapUpMessage": "You are doing well. Let's do one final standup update. Say what is done, what is next, and one issue if needed.",
+    "finalMessageAtUserTurn": 15,
+    "finalMessage": "Great work today! You practiced daily standup updates, next steps, and simple problem language. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "specific workplace setting",
+      "minor work detail",
+      "tutor opening line",
+      "follow-up question order",
+      "one realistic small complication for B2"
+    ],
+    "cannotChange": [
+      "lesson goal",
+      "target phrases",
+      "grammar focus",
+      "level difficulty",
+      "turn limit logic",
+      "topic boundaries",
+      "selected work/business scenario"
+    ],
+    "contextVariants": [
+      {
+        "id": "team_meeting_update",
+        "title": "Short update in a team meeting",
+        "setting": "a team standup meeting",
+        "reasonForMeeting": "sharing work progress",
+        "openingLine": "Hi! Could you give us a quick update?",
+        "aliases": [
+          "team meeting",
+          "standup",
+          "update",
+          "quick update",
+          "status"
+        ]
+      },
+      {
+        "id": "small_problem_update",
+        "title": "Update about a small problem",
+        "setting": "a standup meeting",
+        "reasonForMeeting": "explaining a small blocker",
+        "openingLine": "Hi! Is everything going well with your tasks?",
+        "aliases": [
+          "problem",
+          "issue",
+          "blocker",
+          "delay"
+        ]
+      },
+      {
+        "id": "next_steps",
+        "title": "Talking about next steps",
+        "setting": "a team check-in",
+        "reasonForMeeting": "planning the next action",
+        "openingLine": "Hi! What are your next steps today?",
+        "aliases": [
+          "next steps",
+          "next",
+          "plan",
+          "today"
+        ]
+      },
+      {
+        "id": "completed_task",
+        "title": "Talking about a completed task",
+        "setting": "a daily standup",
+        "reasonForMeeting": "reporting completed work",
+        "openingLine": "Hi! What have you finished so far?",
+        "aliases": [
+          "done",
+          "finished",
+          "completed",
+          "task"
+        ]
+      },
+      {
+        "id": "manager_update",
+        "title": "Update to a manager",
+        "setting": "a short manager check-in",
+        "reasonForMeeting": "giving a progress update",
+        "openingLine": "Hi! How is the project going?",
+        "aliases": [
+          "manager",
+          "project manager",
+          "boss",
+          "manager update"
+        ]
+      }
+    ],
+    "customContextRules": [
+      "The user may suggest a custom context.",
+      "The custom context must stay inside Work & Business, the selected subtopic, lesson goal, and level.",
+      "If the custom context is valid but too difficult for A1, simplify it.",
+      "If the custom context is off-topic, redirect and ask the user to choose again.",
+      "Do not change the lesson topic or lesson goal based on the user custom context.",
+      "For the MVP, validate custom context with simple deterministic English keyword matching, not AI validation.",
+      "Do not use non-English aliases or Cyrillic keywords."
+    ],
+    "invalidContextRedirect": "That sounds interesting, but this lesson is about a daily standup at work. Please choose a simple standup or work update situation."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "That sounds interesting, but this lesson is about daily standup. Let's stay in this work situation.",
+    "secondRedirect": "Let's stay with daily standup for now. Please answer as a person at work in this situation.",
+    "freeConversationSuggestion": "I like chatting with you, but this lesson is focused on daily standup. You can finish this lesson and use Free Conversation Mode later."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1": "Correct only important mistakes that block workplace meaning. Keep feedback very short.",
+      "A2": "Correct basic grammar, word order, and missing polite words.",
+      "B1": "Correct grammar, word choice, and sentence flow.",
+      "B2": "Focus on fluency, nuance, tone, and precise workplace wording."
+    },
+    "feedbackLength": "1-3 short sentences.",
+    "feedbackStyle": "warm, specific, useful."
+  },
+  "hintRules": {
+    "hintStyle": "Give a small workplace phrase or sentence starter first. Give a full example only if the user is stuck.",
+    "hintLevels": [
+      "Give one useful word.",
+      "Give a sentence starter.",
+      "Give a full example only if the user is stuck."
+    ],
+    "exampleHint": "You can start with: \"I finished the first task. Now I am working on the design.\""
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Keep the same work/business goal.",
+      "Keep the same target language.",
+      "Keep the same grammar focus.",
+      "Choose a different context variant if possible.",
+      "Avoid repeating the same opening line when possible.",
+      "Do not turn the repeated lesson into free chat."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "Stay inside this Work & Business lesson scenario.",
+    "Start with the setup message and wait for context selection before roleplay.",
+    "Tutor messages must be in English.",
+    "Use English-only context matching.",
+    "Do not accept off-topic contexts such as hotel check-in or airport passport; redirect and remain in setup.",
+    "Keep setup and context choice outside the lesson turn count.",
+    "Start counting user turns only after active roleplay starts.",
+    "Use very simple English for A1.",
+    "Keep tutor messages short and suitable for voice output.",
+    "Ask one question at a time.",
+    "Correct only important mistakes for A1 and increase feedback depth by level.",
+    "Give feedback in 1-3 short sentences.",
+    "After user turn 10, start wrapping up.",
+    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ]
+}
