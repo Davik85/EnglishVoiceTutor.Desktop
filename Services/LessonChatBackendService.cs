@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -10,6 +11,17 @@ using EnglishVoiceTutor.Desktop.Models;
 namespace EnglishVoiceTutor.Desktop.Services;
 
 public sealed record BotSpeechBackendResponse(byte[] AudioBytes, string ContentType, string FileExtension);
+
+public sealed class AudioTranscriptionBackendException : Exception
+{
+    public AudioTranscriptionBackendException(HttpStatusCode statusCode)
+        : base(BackendConstants.BackendInvalidTranscriptionResponseMessage)
+    {
+        StatusCode = statusCode;
+    }
+
+    public HttpStatusCode StatusCode { get; }
+}
 
 public sealed class LessonChatBackendService
 {
@@ -150,13 +162,16 @@ public sealed class LessonChatBackendService
             formContent,
             cancellationToken);
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new AudioTranscriptionBackendException(response.StatusCode);
+        }
 
         var backendResponse = await response.Content.ReadFromJsonAsync<AudioTranscriptionBackendResponse>(JsonOptions, cancellationToken);
 
         if (backendResponse is null)
         {
-            throw new InvalidOperationException(BackendConstants.BackendInvalidTranscriptionResponseMessage);
+            throw new AudioTranscriptionBackendException(response.StatusCode);
         }
 
         return backendResponse.Text.Trim();

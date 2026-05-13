@@ -2,6 +2,7 @@ using System.Net;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -116,6 +117,7 @@ static async Task<IResult> HandleLessonChatHintAsync(
 static async Task<IResult> HandleAudioTranscriptionAsync(
     HttpRequest request,
     AudioTranscriptionService audioTranscriptionService,
+    ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
     if (!request.HasFormContentType)
@@ -126,29 +128,93 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
         });
     }
 
-    var form = await request.ReadFormAsync(cancellationToken);
-    var audioFile = form.Files.GetFile(OpenAiConstants.MultipartFileFieldName);
-
-    if (audioFile is null || audioFile.Length <= 0)
-    {
-        return Results.BadRequest(new
-        {
-            error = ApiConstants.EmptyAudioFileError
-        });
-    }
+    var logger = loggerFactory.CreateLogger("AudioTranscriptionEndpoint");
 
     try
     {
+        logger.LogInformation("Starting audio transcription form read.");
+
+        var form = await request.ReadFormAsync(cancellationToken);
+        var audioFile = form.Files.GetFile(OpenAiConstants.MultipartFileFieldName);
+
+        logger.LogInformation(
+            "Audio transcription form read completed. FileName={FileName}; FileLength={FileLength}.",
+            audioFile?.FileName ?? "<missing>",
+            audioFile?.Length ?? 0);
+
+        if (audioFile is null || audioFile.Length <= 0)
+        {
+            return Results.BadRequest(new
+            {
+                error = ApiConstants.EmptyAudioFileError
+            });
+        }
+
         var response = await audioTranscriptionService.TranscribeAsync(audioFile, cancellationToken);
+        var transcriptionLength = response.Text?.Length ?? 0;
+
+        logger.LogInformation("Audio transcription completed successfully. TranscriptionLength={TranscriptionLength}.", transcriptionLength);
 
         return Results.Ok(response);
     }
-    catch (Exception)
+    catch (BadHttpRequestException exception)
     {
+        var isBodyReadTimeout = IsRequestBodyReadTimeout(exception);
+        var statusCode = isBodyReadTimeout
+            ? StatusCodes.Status408RequestTimeout
+            : StatusCodes.Status400BadRequest;
+
+        logger.LogWarning(
+            exception,
+            "Audio transcription upload failed while reading the request body. StatusCode={StatusCode}; IsBodyReadTimeout={IsBodyReadTimeout}.",
+            statusCode,
+            isBodyReadTimeout);
+
+        return Results.Problem(
+            title: isBodyReadTimeout ? ApiConstants.AudioUploadTimedOutTitle : ApiConstants.AudioUploadFailedTitle,
+            detail: isBodyReadTimeout ? ApiConstants.AudioUploadTimedOutDetail : ApiConstants.AudioUploadFailedDetail,
+            statusCode: statusCode);
+    }
+    catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
+    {
+        logger.LogInformation(exception, "Audio transcription upload was canceled by the client while reading or processing audio.");
+
+        return Results.Problem(
+            title: ApiConstants.AudioUploadCanceledTitle,
+            detail: ApiConstants.AudioUploadCanceledDetail,
+            statusCode: 499);
+    }
+    catch (IOException exception)
+    {
+        logger.LogWarning(exception, "Audio transcription upload failed because the request body could not be read.");
+
+        return Results.Problem(
+            title: ApiConstants.AudioUploadFailedTitle,
+            detail: ApiConstants.AudioUploadFailedDetail,
+            statusCode: StatusCodes.Status400BadRequest);
+    }
+    catch (InvalidOperationException exception)
+    {
+        logger.LogWarning(exception, "Audio transcription request failed during form validation or transcription processing.");
+
+        return Results.Problem(
+            title: ApiConstants.AudioUploadFailedTitle,
+            detail: ApiConstants.AudioTranscriptionError,
+            statusCode: StatusCodes.Status400BadRequest);
+    }
+    catch (Exception exception)
+    {
+        logger.LogError(exception, "Unexpected audio transcription request failure.");
         return Results.Problem(ApiConstants.AudioTranscriptionError);
     }
 }
 
+static bool IsRequestBodyReadTimeout(BadHttpRequestException exception)
+{
+    return exception.Message.Contains("MinRequestBodyDataRate", StringComparison.OrdinalIgnoreCase)
+        || (exception.Message.Contains("request body", StringComparison.OrdinalIgnoreCase)
+            && exception.Message.Contains("timed out", StringComparison.OrdinalIgnoreCase));
+}
 
 static async Task<IResult> HandleTranslationAsync(
     TranslationRequest request,
