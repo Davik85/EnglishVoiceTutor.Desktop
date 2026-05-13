@@ -144,7 +144,9 @@
       "correctionPriority": "Clear routine verbs, time phrase, and basic day adjective first.",
       "conversationDepth": "Stay very shallow: day feeling, one morning action, one work/school action, one evening action.",
       "exampleGoodAnswer": "My day is good. I wake up at seven.",
-      "exampleStretchAnswer": "My day is busy. I wake up at seven, go to work, and relax in the evening."
+      "exampleStretchAnswer": "My day is busy. I wake up at seven, go to work, and relax in the evening.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -173,7 +175,9 @@
       "correctionPriority": "Clear sequence, correct time expression, and accurate routine verbs.",
       "conversationDepth": "Ask for two actions from the day and one simple time detail.",
       "exampleGoodAnswer": "In the morning, I have breakfast and go to work.",
-      "exampleStretchAnswer": "In the morning, I have breakfast and go to work. In the evening, I study English and relax."
+      "exampleStretchAnswer": "In the morning, I have breakfast and go to work. In the evening, I study English and relax.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -202,7 +206,9 @@
       "correctionPriority": "Connected routine, reason with because, reflection, and appropriate tense choice.",
       "conversationDepth": "Encourage 2-3 connected sentences about what happened and how the learner felt about it.",
       "exampleGoodAnswer": "My day was busy. I worked in the morning, and after that I studied English.",
-      "exampleStretchAnswer": "My day was pretty busy. I worked in the morning, and after that I studied English because I want to improve. It was tiring, but I feel good about it."
+      "exampleStretchAnswer": "My day was pretty busy. I worked in the morning, and after that I studied English because I want to improve. It was tiring, but I feel good about it.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -231,7 +237,9 @@
       "correctionPriority": "Natural summary, nuanced reflection, tense choice, and precise daily-life vocabulary.",
       "conversationDepth": "Allow richer detail and reflection, but keep the conversation about the learner's day and routine.",
       "exampleGoodAnswer": "It's been a fairly busy day, but I managed to study English for a bit.",
-      "exampleStretchAnswer": "It's been a fairly busy day. I had a lot to get through at work, but I still managed to study English for a bit in the evening, which felt like a small win."
+      "exampleStretchAnswer": "It's been a fairly busy day. I had a lot to get through at work, but I still managed to study English for a bit in the evening, which felt like a small win.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -410,8 +418,8 @@
     "Give feedback in 1-3 short sentences.",
     "If the user goes off-topic, briefly respond and return to talking about the user's day.",
     "The setup message and the user's context choice do not count as lesson turns.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
   ]
 }

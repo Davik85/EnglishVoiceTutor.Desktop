@@ -132,7 +132,9 @@
       "correctionPriority": "Professional motivation, simple because sentence, and clear role-related vocabulary.",
       "conversationDepth": "Keep the answer short and job-related: interest, one reason, and optional learning.",
       "exampleGoodAnswer": "I’m interested in this job because I like design.",
-      "exampleStretchAnswer": "I’m interested in this job because I like design and want to learn."
+      "exampleStretchAnswer": "I’m interested in this job because I like design and want to learn.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -161,7 +163,9 @@
       "correctionPriority": "Specific motivation, role fit, simple grammar, and professional tone.",
       "conversationDepth": "Ask one follow-up about what specifically interests the candidate about the role or company.",
       "exampleGoodAnswer": "I’m interested in this job because I like design. I want to learn in this role.",
-      "exampleStretchAnswer": "I’m interested in this job because I like design and can use my skills. I also want to learn from the team."
+      "exampleStretchAnswer": "I’m interested in this job because I like design and can use my skills. I also want to learn from the team.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -190,7 +194,9 @@
       "correctionPriority": "Specific motivation, role fit, contribution, clear structure, and professional tone.",
       "conversationDepth": "Ask one realistic follow-up about role interest, company interest, skill fit, or contribution.",
       "exampleGoodAnswer": "I’m interested in this role because it matches my design skills. For example, I enjoy creating clear visual content, and I think I could contribute to the team while developing professionally.",
-      "exampleStretchAnswer": "I’m interested in this role because it matches my design background and gives me a chance to grow in a professional team. For example, I enjoy creating clear visual content, and I believe I could contribute useful ideas to your projects."
+      "exampleStretchAnswer": "I’m interested in this role because it matches my design background and gives me a chance to grow in a professional team. For example, I enjoy creating clear visual content, and I believe I could contribute useful ideas to your projects.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -219,7 +225,9 @@
       "correctionPriority": "Specific motivation, role fit, contribution, evidence, concise structure, and polished wording.",
       "conversationDepth": "Allow one realistic interviewer challenge such as Could you give me a specific example?, How is that relevant to this role?, or Could you make that answer more concise?",
       "exampleGoodAnswer": "This role appeals to me because it connects directly with my design background and the kind of work I want to develop further. My experience creating digital content has strengthened my attention to audience needs, and I believe I could contribute clear, user-focused ideas to the team.",
-      "exampleStretchAnswer": "This role appeals to me because it combines creative design work with a structured team environment. My previous digital content experience strengthened my ability to communicate visually, and I would be motivated by the chance to contribute user-focused ideas while continuing to grow professionally."
+      "exampleStretchAnswer": "This role appeals to me because it combines creative design work with a structured team environment. My previous digital content experience strengthened my ability to communicate visually, and I would be motivated by the chance to contribute user-focused ideas while continuing to grow professionally.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -394,8 +402,8 @@
     "For B1 and B2, encourage structured answers with point + evidence/example + relevance to the role.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal, interviewer role, candidate role, or selected interview scenario."
   ]
 }

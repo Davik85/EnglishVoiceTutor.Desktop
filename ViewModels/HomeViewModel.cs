@@ -87,7 +87,8 @@ public partial class HomeViewModel : ViewModelBase
             new Topic(2, "Travel", "Airports, hotels, directions, and transport."),
             new Topic(3, "Work & Business", "Meetings, emails, calls, and workplace conversations."),
             new Topic(4, "Job Interview", "Practice common interview questions and answers."),
-            new Topic(5, "Restaurant & Cafe", "Ordering food, booking tables, and polite requests.")
+            new Topic(5, "Restaurant & Cafe", "Ordering food, booking tables, and polite requests."),
+            new Topic(6, "Free Conversation", "Open English conversation with safe, respectful boundaries.")
         };
 
         return canonicalTopics

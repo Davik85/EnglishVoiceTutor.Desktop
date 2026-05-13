@@ -1,0 +1,304 @@
+{
+  "id": "free_conversation_open_conversation",
+  "metadata": {
+    "topic": "Free Conversation",
+    "subtopic": "Open conversation",
+    "lessonType": "free_conversation",
+    "supportedLevels": [
+      "A1 Beginner",
+      "A2 Elementary",
+      "B1 Intermediate",
+      "B2 Upper-Intermediate"
+    ],
+    "softWrapUpAfterUserTurn": 25,
+    "finalMessageAtUserTurn": 30,
+    "setupAndContextChoiceCountAsLessonTurns": false
+  },
+  "lessonSetup": {
+    "firstBotMessageShouldExplain": [
+      "This is open English conversation practice.",
+      "The learner may choose any safe topic.",
+      "The conversation stays safe, respectful, age-appropriate, and in English."
+    ],
+    "setupMessage": "Hi, {{userDisplayName}}! Want to just chat without a lesson? I’d be happy to. What would you like to talk about?",
+    "setupAndContextChoiceCountAsLessonTurns": false,
+    "contextSelection": {
+      "customContextAllowed": false,
+      "customContextValidationMode": "not_required_for_free_conversation",
+      "validCustomContextDescription": "No setup context selection is required. The first user answer is the first active conversation turn.",
+      "validCustomContextKeywords": [],
+      "offTopicExamples": [],
+      "invalidContextRedirect": "Let’s keep this safe and respectful. We can talk about travel, hobbies, work, movies, technology, food, or daily life."
+    }
+  },
+  "learningGoal": {
+    "goal": "Practice open English conversation within safe and respectful boundaries.",
+    "canDoStatements": [
+      "Choose a safe topic for conversation.",
+      "Share opinions, reasons, and examples at the selected level.",
+      "Ask and answer natural follow-up questions.",
+      "Practice polite agreement, disagreement, and clarification."
+    ]
+  },
+  "situation": {
+    "description": "The learner has an open English conversation with the tutor. This is not a guided roleplay and has no required scenario selection."
+  },
+  "roles": {
+    "userRole": "English learner choosing a safe conversation topic.",
+    "tutorRole": "Friendly English conversation tutor who adapts to the learner level and keeps clear safety boundaries."
+  },
+  "targetLanguage": {
+    "keyPhrases": [
+      "I’d like to talk about...",
+      "In my opinion...",
+      "I think...",
+      "For example...",
+      "That’s interesting because...",
+      "Could you explain that?",
+      "What do you think?",
+      "I’m not sure, but..."
+    ],
+    "usefulConstructions": [
+      "I’d like to talk about [topic] because [reason].",
+      "In my opinion, [idea].",
+      "For example, [example].",
+      "I agree because [reason].",
+      "I see your point, but [different idea]."
+    ],
+    "grammarFocus": [
+      "asking follow-up questions",
+      "giving opinions",
+      "giving reasons",
+      "giving examples",
+      "agreeing and disagreeing politely"
+    ],
+    "pronunciationFocus": [
+      "clear stress in opinion phrases",
+      "natural intonation in follow-up questions"
+    ]
+  },
+  "levelProfiles": {
+    "A1 Beginner": {
+      "level": "A1 Beginner",
+      "difficultyNotes": "Tutor uses very simple English and supports basic words.",
+      "tutorLanguageStyle": "Very simple, friendly English with short questions.",
+      "expectedUserResponse": "One short sentence from the user is enough.",
+      "minimumUserResponse": "A word or short phrase about a safe topic is acceptable.",
+      "stretchUserResponse": "One sentence with a simple reason.",
+      "addedKeyPhrases": [
+        "I want to talk about...",
+        "I like...",
+        "I think..."
+      ],
+      "addedUsefulConstructions": [
+        "I want to talk about music.",
+        "I like it because..."
+      ],
+      "addedGrammarFocus": [
+        "simple present",
+        "basic because clauses",
+        "simple follow-up questions"
+      ],
+      "feedbackStrictness": "Very light corrections; prioritize confidence and meaning.",
+      "hintStrategy": "Offer a short sentence starter or one basic word when needed.",
+      "correctionPriority": "Correct only errors that block meaning or the target phrase.",
+      "conversationDepth": "Simple personal preferences and daily-life topics.",
+      "exampleGoodAnswer": "I want to talk about music.",
+      "exampleStretchAnswer": "I want to talk about music because I like pop songs.",
+      "softWrapUpAfterUserTurn": 25,
+      "finalMessageAtUserTurn": 30
+    },
+    "A2 Elementary": {
+      "level": "A2 Elementary",
+      "difficultyNotes": "Tutor uses simple conversational English and asks simple follow-up questions.",
+      "tutorLanguageStyle": "Simple, natural, supportive, with one clear question at a time.",
+      "expectedUserResponse": "User should answer with 1-2 short sentences.",
+      "minimumUserResponse": "One clear sentence about the chosen safe topic.",
+      "stretchUserResponse": "Two short sentences with a reason or future plan.",
+      "addedKeyPhrases": [
+        "I want to talk about...",
+        "I like visiting...",
+        "What do you think?"
+      ],
+      "addedUsefulConstructions": [
+        "I want to talk about travel.",
+        "I like visiting new cities because..."
+      ],
+      "addedGrammarFocus": [
+        "present simple",
+        "past simple basics",
+        "because clauses",
+        "follow-up questions"
+      ],
+      "feedbackStrictness": "Light corrections with simple improved examples.",
+      "hintStrategy": "Suggest a phrase, simple structure, or short answer model.",
+      "correctionPriority": "Focus on common grammar, word choice, and clear meaning.",
+      "conversationDepth": "Personal experiences, preferences, and simple reasons.",
+      "exampleGoodAnswer": "I want to talk about travel. I like visiting new cities.",
+      "exampleStretchAnswer": "I want to talk about travel because I want to visit Italy next year.",
+      "softWrapUpAfterUserTurn": 25,
+      "finalMessageAtUserTurn": 30
+    },
+    "B1 Intermediate": {
+      "level": "B1 Intermediate",
+      "difficultyNotes": "Tutor uses natural but clear English and helps improve fluency.",
+      "tutorLanguageStyle": "Natural, clear, encouraging, with practical follow-up questions.",
+      "expectedUserResponse": "User should give opinions, reasons, and examples.",
+      "minimumUserResponse": "Two connected sentences with a reason or example.",
+      "stretchUserResponse": "A short explanation with opinion, reason, and detail.",
+      "addedKeyPhrases": [
+        "I’d like to talk about...",
+        "In my opinion...",
+        "For example..."
+      ],
+      "addedUsefulConstructions": [
+        "I watched a film recently, and...",
+        "It made me think about..."
+      ],
+      "addedGrammarFocus": [
+        "giving opinions",
+        "giving reasons",
+        "giving examples",
+        "asking follow-up questions"
+      ],
+      "feedbackStrictness": "Moderate but friendly; improve fluency without interrupting flow.",
+      "hintStrategy": "Suggest structure, linking phrases, or a more natural expression.",
+      "correctionPriority": "Prioritize clarity, tense control, connectors, and natural phrasing.",
+      "conversationDepth": "Opinions, experiences, reasons, examples, and simple comparisons.",
+      "exampleGoodAnswer": "I’d like to talk about movies. I watched a good film recently, and I want to describe it.",
+      "exampleStretchAnswer": "I’d like to talk about movies because I watched a film recently that made me think about friendship and choices.",
+      "softWrapUpAfterUserTurn": 25,
+      "finalMessageAtUserTurn": 30
+    },
+    "B2 Upper-Intermediate": {
+      "level": "B2 Upper-Intermediate",
+      "difficultyNotes": "Tutor uses natural conversational English and may gently challenge ideas.",
+      "tutorLanguageStyle": "Natural, concise, thoughtful, and respectful.",
+      "expectedUserResponse": "User should discuss ideas, opinions, nuance, and examples.",
+      "minimumUserResponse": "A clear opinion with at least one supporting detail.",
+      "stretchUserResponse": "A nuanced answer with contrast, example, or clarification.",
+      "addedKeyPhrases": [
+        "I’d like to talk about...",
+        "That’s interesting because...",
+        "I’m not sure, but..."
+      ],
+      "addedUsefulConstructions": [
+        "especially whether...",
+        "on the other hand...",
+        "it depends on..."
+      ],
+      "addedGrammarFocus": [
+        "nuanced opinions",
+        "agreeing and disagreeing politely",
+        "clarifying ideas",
+        "supporting examples"
+      ],
+      "feedbackStrictness": "Balanced corrections for precision, naturalness, and tone.",
+      "hintStrategy": "Suggest natural direction, nuance, or a more precise phrase.",
+      "correctionPriority": "Prioritize natural phrasing, precision, register, and discourse flow.",
+      "conversationDepth": "Ideas, tradeoffs, opinions, clarification, and supported examples.",
+      "exampleGoodAnswer": "I’d like to talk about how technology affects daily life.",
+      "exampleStretchAnswer": "I’d like to talk about how technology affects daily life, especially whether it makes us more productive or just more distracted.",
+      "softWrapUpAfterUserTurn": 25,
+      "finalMessageAtUserTurn": 30
+    }
+  },
+  "conversationFlow": {
+    "opening": "Tutor greets the user with the setup message and asks what they want to talk about.",
+    "defaultOpeningExample": "Hi! Want to just chat without a lesson? I’d be happy to. What would you like to talk about?",
+    "firstUserTask": "The user chooses any safe topic or starts with a safe idea in English.",
+    "expectedPattern": "I’d like to talk about...",
+    "guidedPracticeFollowUpQuestions": [
+      "What made you interested in that?",
+      "Can you give me an example?",
+      "What do you think about it?",
+      "How does that connect to your daily life?"
+    ],
+    "variationOrComplication": "Tutor may gently ask for a reason, example, clarification, or polite opinion depending on level.",
+    "exampleTutorLine": "That sounds interesting. What do you like most about it?",
+    "correctionMoment": "Tutor gives brief natural corrections when useful and keeps the conversation moving.",
+    "correctionStyle": "light, friendly, concise, and level-aware.",
+    "wrapUpAfterUserTurn": 25,
+    "wrapUpMessage": "We’re near the end, so let’s finish with one final thought. What is one useful phrase from our conversation that you want to remember?",
+    "finalMessageAtUserTurn": 30,
+    "finalMessage": "Great work today! You practiced open English conversation while keeping it safe and respectful. Please click Finish lesson to see your summary."
+  },
+  "controlledVariation": {
+    "canChange": [
+      "safe conversation topic",
+      "follow-up question order",
+      "examples",
+      "correction focus",
+      "conversation depth by level"
+    ],
+    "cannotChange": [
+      "English-only practice",
+      "safety boundaries",
+      "selected level difficulty",
+      "turn limit logic",
+      "respectful tutor behavior"
+    ],
+    "contextVariants": [],
+    "customContextRules": [
+      "No setup context selection is required.",
+      "The learner may choose any safe topic after the greeting.",
+      "If a topic is unsafe, refuse briefly and redirect to safe English conversation.",
+      "For controversial topics, stay neutral, respectful, and focused on language practice."
+    ],
+    "invalidContextRedirect": "Let’s keep this safe and respectful. We can talk about travel, hobbies, work, movies, technology, food, or daily life."
+  },
+  "offTopicHandling": {
+    "firstRedirect": "I can’t help with that. But we can talk about it in a safe, general way, or choose another topic. What would you like to practice in English?",
+    "secondRedirect": "Let’s keep this safe and respectful. We can talk about travel, hobbies, work, movies, technology, food, or daily life.",
+    "freeConversationSuggestion": "This lesson is already Free Conversation, so redirect unsafe or inappropriate requests to safe English conversation practice."
+  },
+  "feedbackRules": {
+    "levelRules": {
+      "A1 Beginner": "Use very light corrections and one simple improved example.",
+      "A2 Elementary": "Correct basic grammar or word choice briefly and kindly.",
+      "B1 Intermediate": "Give concise corrections that improve fluency, clarity, and natural phrasing.",
+      "B2 Upper-Intermediate": "Give precise but brief feedback on nuance, register, and natural expression."
+    },
+    "feedbackLength": "Keep feedback short and useful for speaking practice.",
+    "feedbackStyle": "Friendly, encouraging, and focused on practical English improvement."
+  },
+  "hintRules": {
+    "hintStyle": "Offer one short phrase, question, or structure the learner can use next.",
+    "hintLevels": [
+      "A1: a simple sentence starter.",
+      "A2: a short phrase plus one detail.",
+      "B1: a useful structure for an opinion, reason, or example.",
+      "B2: a natural phrase for nuance, clarification, or polite disagreement."
+    ],
+    "exampleHint": "Try: I’d like to talk about movies because I watched something interesting recently."
+  },
+  "repetitionLogic": {
+    "rules": [
+      "Do not repeat the same follow-up question if the learner already answered it.",
+      "If the learner struggles, simplify the next question.",
+      "If the learner is fluent, ask for a reason, example, or clarification.",
+      "When the active soft wrap-up limit is reached, start wrapping up.",
+      "When the active final turn limit is reached, give the final message and do not continue the active dialogue."
+    ]
+  },
+  "aiTutorPromptInstructions": [
+    "This is Free Conversation English practice, not a guided roleplay.",
+    "The learner may choose any safe topic after the greeting.",
+    "Do not require scenario or context selection.",
+    "The first user answer after the greeting is the first active conversation turn.",
+    "Keep the conversation safe, respectful, and age-appropriate.",
+    "Do not help with harmful, illegal, abusive, hateful, or sexually explicit content.",
+    "Do not provide instructions for violence, self-harm, weapons, evading law enforcement, cyber abuse, fraud, or dangerous activities.",
+    "Do not engage in hate speech or harassment.",
+    "Do not roleplay sexual content.",
+    "Do not provide professional medical, legal, financial, or mental health diagnosis or advice.",
+    "If the user seems distressed or mentions self-harm, respond supportively, encourage contacting trusted people or emergency services, and gently move away from dangerous details.",
+    "For provocative requests, refuse briefly and redirect to safe English conversation.",
+    "For controversial topics, stay neutral, respectful, and focused on language practice.",
+    "Do not lecture. Keep responses short, friendly, and useful for English speaking practice.",
+    "Example safe refusal: I can’t help with that. But we can talk about it in a safe, general way, or choose another topic. What would you like to practice in English?",
+    "Example redirection: Let’s keep this safe and respectful. We can talk about travel, hobbies, work, movies, technology, food, or daily life.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue."
+  ]
+}

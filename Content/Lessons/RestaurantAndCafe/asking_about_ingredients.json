@@ -133,7 +133,9 @@
       "correctionPriority": "Safety meaning first, then ingredient word, then polite wording.",
       "conversationDepth": "Keep the roleplay shallow and practical with one short ingredient question at a time.",
       "exampleGoodAnswer": "Does this have nuts?",
-      "exampleStretchAnswer": "I’m allergic to nuts. Does this have nuts?"
+      "exampleStretchAnswer": "I’m allergic to nuts. Does this have nuts?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -161,7 +163,9 @@
       "correctionPriority": "Clear safety need, correct ingredient detail, and polite wording.",
       "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on ingredients and safe menu choices.",
       "exampleGoodAnswer": "I’m allergic to nuts. Does this dish contain nuts?",
-      "exampleStretchAnswer": "I’m allergic to nuts. Could you check whether this dish contains nuts?"
+      "exampleStretchAnswer": "I’m allergic to nuts. Could you check whether this dish contains nuts?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -189,7 +193,9 @@
       "correctionPriority": "Safety meaning, precise ingredient vocabulary, polite tone, and clear follow-up.",
       "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one ingredient or dietary detail.",
       "exampleGoodAnswer": "I’m allergic to nuts. Could you check whether this dish contains any nuts or nut oil?",
-      "exampleStretchAnswer": "I’m allergic to nuts, so could you check whether this dish contains nuts or nut oil before I order it? I’d prefer something mild if possible."
+      "exampleStretchAnswer": "I’m allergic to nuts, so could you check whether this dish contains nuts or nut oil before I order it? I’d prefer something mild if possible.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -217,7 +223,9 @@
       "correctionPriority": "Safety precision, nuanced politeness, natural rhythm, and appropriate customer tone.",
       "conversationDepth": "Add one realistic ingredient or cross-contact complication when useful while keeping the learner inside the ingredient-check scenario.",
       "exampleGoodAnswer": "I have a serious nut allergy, so would you mind checking whether this dish contains nuts, nut oil, or any possible traces?",
-      "exampleStretchAnswer": "I have a serious nut allergy, so would you mind checking whether this dish contains nuts, nut oil, or any possible traces? If there’s any risk of cross-contact, could you recommend a safer option?"
+      "exampleStretchAnswer": "I have a serious nut allergy, so would you mind checking whether this dish contains nuts, nut oil, or any possible traces? If there’s any risk of cross-contact, could you recommend a safer option?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -386,8 +394,8 @@
     "Ask one question at a time.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
   ]
 }

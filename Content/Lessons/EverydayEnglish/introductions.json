@@ -125,7 +125,9 @@
       "correctionPriority": "Clear name and place sentences first; only one essential correction at a time.",
       "conversationDepth": "Stay very shallow: name, where from, where live, nice to meet you.",
       "exampleGoodAnswer": "My name is Ana. I'm from Brazil.",
-      "exampleStretchAnswer": "My name is Ana. I'm from Brazil, and I live in Madrid. Nice to meet you."
+      "exampleStretchAnswer": "My name is Ana. I'm from Brazil, and I live in Madrid. Nice to meet you.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -154,7 +156,9 @@
       "correctionPriority": "Clear personal details, simple present accuracy, and natural introduction order.",
       "conversationDepth": "Ask for one extra detail and one simple question back while staying in the first-meeting scenario.",
       "exampleGoodAnswer": "I'm Ana. I'm from Brazil, and I live in Madrid.",
-      "exampleStretchAnswer": "I'm Ana. I'm from Brazil, but I live in Madrid. I work as a designer. What about you?"
+      "exampleStretchAnswer": "I'm Ana. I'm from Brazil, but I live in Madrid. I work as a designer. What about you?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -183,7 +187,9 @@
       "correctionPriority": "Connected background, clear reason/detail, natural question back, and accurate tense use.",
       "conversationDepth": "Keep the first conversation moving with short background details and friendly reciprocal questions.",
       "exampleGoodAnswer": "Hi, I'm Ana. I'm from Brazil, and I moved here for work. How about you?",
-      "exampleStretchAnswer": "Hi, I'm Ana. I'm from Brazil, and I moved to Madrid last year for work, so I'm still getting to know the area. How about you?"
+      "exampleStretchAnswer": "Hi, I'm Ana. I'm from Brazil, and I moved to Madrid last year for work, so I'm still getting to know the area. How about you?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -212,7 +218,9 @@
       "correctionPriority": "Natural phrasing, tense choice, warmer tone, and smooth conversation flow.",
       "conversationDepth": "Allow richer background and light personal detail, but keep it appropriate for meeting someone for the first time.",
       "exampleGoodAnswer": "Hi, I'm Ana. I'm originally from Brazil, but I've been living in Madrid for about a year.",
-      "exampleStretchAnswer": "Hi, I'm Ana. It's really nice to meet you. I'm originally from Brazil, but I've been living in Madrid for the past year, so I'm still getting to know the neighborhood. How about you?"
+      "exampleStretchAnswer": "Hi, I'm Ana. It's really nice to meet you. I'm originally from Brazil, but I've been living in Madrid for the past year, so I'm still getting to know the neighborhood. How about you?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -378,8 +386,8 @@
     "Give feedback in 1-3 short sentences.",
     "If the user goes off-topic, briefly respond and return to introductions.",
     "The setup message and the user's context choice do not count as lesson turns.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
   ]
 }

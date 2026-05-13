@@ -211,6 +211,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             (5, 503) => ContentConstants.AskingAboutIngredientsFileName,
             (5, 504) => ContentConstants.HandlingAWrongOrderFileName,
             (5, 505) => ContentConstants.PayingTheBillFileName,
+            (6, 601) => ContentConstants.OpenConversationFileName,
             _ => throw new InvalidOperationException(
                 $"No lesson scenario file is mapped for topic '{selectedTopic.Title}' and subtopic '{selectedSubtopic.Title}'.")
         };
@@ -226,6 +227,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             3 => ContentConstants.WorkAndBusinessFolderName,
             4 => ContentConstants.JobInterviewFolderName,
             5 => ContentConstants.RestaurantAndCafeFolderName,
+            6 => ContentConstants.FreeConversationFolderName,
             _ => throw new InvalidOperationException($"No lesson content folder is mapped for topic '{selectedTopic.Title}'.")
         };
     }

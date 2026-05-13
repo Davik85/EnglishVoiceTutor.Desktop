@@ -42,6 +42,20 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine();
 
         prompt.AppendLine(CurrentTurnTaskHeader);
+        if (IsFreeConversation(request))
+        {
+            AppendFreeConversationTask(prompt, request, avatarProfile);
+        }
+        else
+        {
+            AppendGuidedRoleplayTask(prompt, request, avatarProfile);
+        }
+
+        return prompt.ToString();
+    }
+
+    private static void AppendGuidedRoleplayTask(StringBuilder prompt, LessonChatRequest request, TutorAvatarProfile avatarProfile)
+    {
         prompt.AppendLine($"Respond to the learner's latest message as {avatarProfile.DisplayName}, the selected tutor avatar, as part of the selected situation.");
         prompt.AppendLine("Use learner profile as stable context and recent conversation as active lesson context.");
         prompt.AppendLine("If the learner profile includes a display name, you may address the learner by name naturally, but do not repeat it in every message.");
@@ -70,8 +84,35 @@ public sealed class LessonPromptBuilder
         {
             prompt.AppendLine("Continue the dialogue naturally with one next question in the same scenario.");
         }
+    }
 
-        return prompt.ToString();
+    private static void AppendFreeConversationTask(StringBuilder prompt, LessonChatRequest request, TutorAvatarProfile avatarProfile)
+    {
+        prompt.AppendLine($"Respond to the learner's latest message as {avatarProfile.DisplayName}, the selected tutor avatar.");
+        prompt.AppendLine("This is Free Conversation English practice, not a guided roleplay.");
+        prompt.AppendLine("The learner may choose any safe topic.");
+        prompt.AppendLine("Follow the safety boundaries from lesson instructions.");
+        prompt.AppendLine("Keep the conversation in English.");
+        prompt.AppendLine("Adapt difficulty to the selected level and active level profile.");
+        prompt.AppendLine("Keep responses concise and suitable for voice.");
+        prompt.AppendLine("Correct lightly and naturally; do not overcorrect.");
+        prompt.AppendLine("If unsafe or provocative content appears, refuse briefly and redirect to a safe topic for English practice.");
+        prompt.AppendLine("Use learner profile as stable context and recent conversation as active conversation context.");
+        prompt.AppendLine("Do not ask for native language.");
+
+        if (LessonLimitHelper.ShouldEndLessonNow(request))
+        {
+            prompt.AppendLine("This is the hard-limit final turn. Give a short friendly closing message and do not ask a new question.");
+        }
+        else if (LessonLimitHelper.ShouldStartWrappingUp(request))
+        {
+            prompt.AppendLine("The conversation is in wrap-up. Gently guide the learner toward finishing within the remaining turns.");
+            prompt.AppendLine("Ask at most one natural follow-up question if it helps the wrap-up.");
+        }
+        else
+        {
+            prompt.AppendLine("Ask one natural follow-up question unless the learner needs a brief correction or safe redirection first.");
+        }
     }
 
     public string BuildHintInput(LessonChatRequest request)
@@ -113,6 +154,11 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine($"- Topic: {ChooseFirstNonEmpty(request.Topic, request.TopicTitle)}");
         prompt.AppendLine($"- Situation/Subtopic: {ChooseFirstNonEmpty(request.Subtopic, request.SubtopicTitle)}");
 
+        if (!string.IsNullOrWhiteSpace(request.LessonType))
+        {
+            prompt.AppendLine($"- Lesson type: {request.LessonType}");
+        }
+
         if (!string.IsNullOrWhiteSpace(request.LessonScenarioId))
         {
             prompt.AppendLine($"- Lesson scenario id: {request.LessonScenarioId}");
@@ -153,6 +199,15 @@ public sealed class LessonPromptBuilder
         if (!string.IsNullOrWhiteSpace(request.FeedbackRulesSummary))
         {
             prompt.AppendLine($"- Feedback rules: {request.FeedbackRulesSummary}");
+        }
+
+        if (request.AiTutorPromptInstructions.Count > 0)
+        {
+            prompt.AppendLine("- Lesson-specific tutor instructions:");
+            foreach (var instruction in request.AiTutorPromptInstructions.Where(instruction => !string.IsNullOrWhiteSpace(instruction)))
+            {
+                prompt.AppendLine($"  - {instruction.Trim()}");
+            }
         }
 
         if (includeNativeLanguage)
@@ -325,6 +380,11 @@ public sealed class LessonPromptBuilder
         }
 
         prompt.AppendLine();
+    }
+
+    private static bool IsFreeConversation(LessonChatRequest request)
+    {
+        return string.Equals(request.LessonType, "free_conversation", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ChooseFirstNonEmpty(string? primary, string fallback)

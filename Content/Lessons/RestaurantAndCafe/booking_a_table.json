@@ -133,7 +133,9 @@
       "correctionPriority": "Guest count, time, name, then polite wording.",
       "conversationDepth": "Keep the roleplay shallow and practical with one short booking question at a time.",
       "exampleGoodAnswer": "A table for two, please.",
-      "exampleStretchAnswer": "A table for two at seven, under the name Anna."
+      "exampleStretchAnswer": "A table for two at seven, under the name Anna.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -161,7 +163,9 @@
       "correctionPriority": "Clear booking request, correct guest count, time, name, and polite wording.",
       "conversationDepth": "Ask one realistic reservation follow-up and keep the exchange focused on booking the table.",
       "exampleGoodAnswer": "Could I book a table for two at seven, please?",
-      "exampleStretchAnswer": "Could I book a table for two at seven, please? Outside if possible, under the name Anna."
+      "exampleStretchAnswer": "Could I book a table for two at seven, please? Outside if possible, under the name Anna.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -189,7 +193,9 @@
       "correctionPriority": "Polite tone, accurate reservation details, natural phrasing, and clear alternatives.",
       "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one booking detail.",
       "exampleGoodAnswer": "I’d like to book a table for four at 7:30 under the name Chen. Do you have anything available outside?",
-      "exampleStretchAnswer": "I’d like to book a table for four at 7:30 under the name Chen. If outside seating isn’t available, inside is fine."
+      "exampleStretchAnswer": "I’d like to book a table for four at 7:30 under the name Chen. If outside seating isn’t available, inside is fine.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -217,7 +223,9 @@
       "correctionPriority": "Nuanced politeness, precise booking details, natural rhythm, and appropriate customer tone.",
       "conversationDepth": "Add one realistic availability complication when useful while keeping the learner inside the booking scenario.",
       "exampleGoodAnswer": "I have a reservation for four under the name Chen at 7:30. Would it be possible to move it to 8:00?",
-      "exampleStretchAnswer": "I have a reservation for four under the name Chen at 7:30. Would it be possible to move it to 8:00, preferably outside if you still have availability?"
+      "exampleStretchAnswer": "I have a reservation for four under the name Chen at 7:30. Would it be possible to move it to 8:00, preferably outside if you still have availability?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -386,8 +394,8 @@
     "Ask one question at a time.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
   ]
 }

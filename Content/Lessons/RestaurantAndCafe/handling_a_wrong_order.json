@@ -130,7 +130,9 @@
       "correctionPriority": "Problem meaning first, ordered item second, then polite wording.",
       "conversationDepth": "Keep the roleplay shallow and practical with one short staff question at a time.",
       "exampleGoodAnswer": "Excuse me. This is not my order.",
-      "exampleStretchAnswer": "Excuse me. I ordered soup. This is cold."
+      "exampleStretchAnswer": "Excuse me. I ordered soup. This is cold.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -158,7 +160,9 @@
       "correctionPriority": "Clear ordered item, clear problem, and polite request.",
       "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on fixing the wrong order.",
       "exampleGoodAnswer": "Excuse me. I ordered the chicken salad, but this is the tuna salad.",
-      "exampleStretchAnswer": "Excuse me. I ordered the chicken salad, but this is the tuna salad. Could you check it, please?"
+      "exampleStretchAnswer": "Excuse me. I ordered the chicken salad, but this is the tuna salad. Could you check it, please?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -186,7 +190,9 @@
       "correctionPriority": "Polite tone, clear order details, natural phrasing, and smooth sentence connection.",
       "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one correction detail.",
       "exampleGoodAnswer": "I’m sorry, but this seems to be the wrong order. I ordered the vegetarian pasta, not the chicken pasta.",
-      "exampleStretchAnswer": "I’m sorry, but this seems to be the wrong order. I ordered the vegetarian pasta, not the chicken pasta. Could you check it, please?"
+      "exampleStretchAnswer": "I’m sorry, but this seems to be the wrong order. I ordered the vegetarian pasta, not the chicken pasta. Could you check it, please?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -214,7 +220,9 @@
       "correctionPriority": "Nuanced politeness, precise problem description, natural rhythm, and appropriate customer tone.",
       "conversationDepth": "Add one realistic correction complication when useful while keeping the learner inside the wrong-order scenario.",
       "exampleGoodAnswer": "I’m sorry, but this doesn’t seem to be what I ordered. Would you mind checking the order?",
-      "exampleStretchAnswer": "I’m sorry, but this doesn’t seem to be what I ordered. I asked for the salmon without onions, and this has onions on it. Would you mind checking the order?"
+      "exampleStretchAnswer": "I’m sorry, but this doesn’t seem to be what I ordered. I asked for the salmon without onions, and this has onions on it. Would you mind checking the order?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -383,8 +391,8 @@
     "Ask one question at a time.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
   ]
 }

@@ -131,7 +131,9 @@
       "correctionPriority": "Bill request first, payment method second, receipt request third.",
       "conversationDepth": "Keep the roleplay shallow and practical with one short payment question at a time.",
       "exampleGoodAnswer": "The bill, please.",
-      "exampleStretchAnswer": "The bill, please. Card, please."
+      "exampleStretchAnswer": "The bill, please. Card, please.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -159,7 +161,9 @@
       "correctionPriority": "Clear bill request, payment method, receipt request, and polite wording.",
       "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on paying the bill.",
       "exampleGoodAnswer": "Could I have the bill, please? Can I pay by card?",
-      "exampleStretchAnswer": "Could I have the bill, please? Can I pay by card, and could I have a receipt?"
+      "exampleStretchAnswer": "Could I have the bill, please? Can I pay by card, and could I have a receipt?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -187,7 +191,9 @@
       "correctionPriority": "Polite tone, clear payment details, natural phrasing, and smooth sentence connection.",
       "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one payment detail.",
       "exampleGoodAnswer": "Could we have the bill, please? Also, is service included?",
-      "exampleStretchAnswer": "Could we have the bill, please? Also, is service included, and can we split it and pay separately by card?"
+      "exampleStretchAnswer": "Could we have the bill, please? Also, is service included, and can we split it and pay separately by card?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -215,7 +221,9 @@
       "correctionPriority": "Nuanced politeness, precise payment wording, natural rhythm, and appropriate customer tone.",
       "conversationDepth": "Add one realistic payment complication when useful while keeping the learner inside the bill-payment scenario.",
       "exampleGoodAnswer": "Could we have the bill when you have a moment, please? And could you let us know whether service is already included?",
-      "exampleStretchAnswer": "Could we have the bill when you have a moment, please? We’d like to split it if possible, pay separately by card, and check whether service is already included."
+      "exampleStretchAnswer": "Could we have the bill when you have a moment, please? We’d like to split it if possible, pay separately by card, and check whether service is already included.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -384,8 +392,8 @@
     "Ask one question at a time.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
   ]
 }

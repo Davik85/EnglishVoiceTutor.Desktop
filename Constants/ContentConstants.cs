@@ -13,6 +13,7 @@ public static class ContentConstants
     public const string WorkAndBusinessFolderName = "WorkAndBusiness";
     public const string JobInterviewFolderName = "JobInterview";
     public const string RestaurantAndCafeFolderName = "RestaurantAndCafe";
+    public const string FreeConversationFolderName = "FreeConversation";
     public const string IntroductionsFileName = "introductions.json";
     public const string SmallTalkWithANeighborFileName = "small_talk_with_a_neighbor.json";
     public const string AskingForHelpFileName = "asking_for_help.json";
@@ -38,6 +39,7 @@ public static class ContentConstants
     public const string AskingAboutIngredientsFileName = "asking_about_ingredients.json";
     public const string HandlingAWrongOrderFileName = "handling_a_wrong_order.json";
     public const string PayingTheBillFileName = "paying_the_bill.json";
+    public const string OpenConversationFileName = "open_conversation.json";
     public const string ElenaTutorId = "elena";
     public const string ElenaTutorFileName = "elena.json";
 

@@ -135,7 +135,9 @@
       "correctionPriority": "Food or drink item first, then for here/to go, then polite wording.",
       "conversationDepth": "Keep the roleplay shallow and practical with one short staff question at a time.",
       "exampleGoodAnswer": "I’d like a coffee, please.",
-      "exampleStretchAnswer": "Can I have a sandwich and water? For here, please."
+      "exampleStretchAnswer": "Can I have a sandwich and water? For here, please.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -163,7 +165,9 @@
       "correctionPriority": "Clear order, dish question, drink choice, and polite wording.",
       "conversationDepth": "Ask one realistic follow-up and keep the exchange focused on ordering food or drinks.",
       "exampleGoodAnswer": "Could I have the chicken pasta and a lemonade, please?",
-      "exampleStretchAnswer": "Could I have the chicken pasta and a lemonade, please? Is it spicy?"
+      "exampleStretchAnswer": "Could I have the chicken pasta and a lemonade, please? Is it spicy?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -191,7 +195,9 @@
       "correctionPriority": "Polite tone, clear menu preferences, natural phrasing, and smooth sentence connection.",
       "conversationDepth": "Use a realistic staff follow-up and ask the learner to clarify or confirm one order detail.",
       "exampleGoodAnswer": "What do you recommend? I’d like something not too spicy, and I’ll have a still water as well.",
-      "exampleStretchAnswer": "What do you recommend for a light lunch? If the curry is not too spicy, I’ll have that with a still water."
+      "exampleStretchAnswer": "What do you recommend for a light lunch? If the curry is not too spicy, I’ll have that with a still water.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -219,7 +225,9 @@
       "correctionPriority": "Nuanced politeness, precise menu wording, natural rhythm, and appropriate customer tone.",
       "conversationDepth": "Add one realistic menu complication when useful while keeping the learner inside the ordering scenario.",
       "exampleGoodAnswer": "Could you recommend something light that isn’t too spicy? I’m thinking of adding a starter and a sparkling water as well.",
-      "exampleStretchAnswer": "Could you recommend something light that isn’t too spicy? If the sea bass is available, I’d like that with a small salad to start and a sparkling water, please."
+      "exampleStretchAnswer": "Could you recommend something light that isn’t too spicy? If the sea bass is available, I’d like that with a small salad to start and a sparkling water, please.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -389,8 +397,8 @@
     "Ask one question at a time.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
   ]
 }

@@ -31,4 +31,8 @@ public sealed class LevelProfile
     public string ExampleGoodAnswer { get; set; } = string.Empty;
 
     public string ExampleStretchAnswer { get; set; } = string.Empty;
+
+    public int SoftWrapUpAfterUserTurn { get; set; }
+
+    public int FinalMessageAtUserTurn { get; set; }
 }

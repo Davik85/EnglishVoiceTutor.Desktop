@@ -29,6 +29,10 @@ public sealed class LessonChatRequest
 
     public string LessonGoal { get; init; } = string.Empty;
 
+    public string LessonType { get; init; } = string.Empty;
+
+    public IReadOnlyList<string> AiTutorPromptInstructions { get; init; } = [];
+
     public string SelectedContextVariantId { get; init; } = string.Empty;
 
     public string SelectedContextTitle { get; init; } = string.Empty;

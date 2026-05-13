@@ -140,7 +140,9 @@
       "correctionPriority": "Clear invitation, time, place, and closing first.",
       "conversationDepth": "Stay very shallow: suggest plan, ask free/time/place, agree, close.",
       "exampleGoodAnswer": "Let's have coffee.",
-      "exampleStretchAnswer": "Let's have coffee. Are you free at five? See you then."
+      "exampleStretchAnswer": "Let's have coffee. Are you free at five? See you then.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -170,7 +172,9 @@
       "correctionPriority": "Concrete time, place, and clear invitation phrasing.",
       "conversationDepth": "Add one time or place detail, confirm the plan, and close politely.",
       "exampleGoodAnswer": "Let's meet at the cafe at six.",
-      "exampleStretchAnswer": "Let's meet at the cafe at six. How about tomorrow? Does that work?"
+      "exampleStretchAnswer": "Let's meet at the cafe at six. How about tomorrow? Does that work?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -199,7 +203,9 @@
       "correctionPriority": "Availability, reason, alternative plan, and natural scheduling language.",
       "conversationDepth": "Negotiate the plan in 2-3 connected sentences and keep it practical.",
       "exampleGoodAnswer": "I'm free around six. Let's meet for coffee at the cafe.",
-      "exampleStretchAnswer": "I'm free around six because I finish work at five-thirty. Let's meet for coffee, or we could go tomorrow if today is too busy."
+      "exampleStretchAnswer": "I'm free around six because I finish work at five-thirty. Let's meet for coffee, or we could go tomorrow if today is too busy.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -228,7 +234,9 @@
       "correctionPriority": "Natural invitation tone, flexible scheduling, soft alternatives, and precise wording.",
       "conversationDepth": "Allow realistic negotiation and alternatives while staying in the making-plans scenario.",
       "exampleGoodAnswer": "Would you be up for coffee later? I'm free around six if that works for you.",
-      "exampleStretchAnswer": "Would you be up for grabbing coffee later? I'm free around six if that works for you, but we could always do tomorrow if today is a bit rushed."
+      "exampleStretchAnswer": "Would you be up for grabbing coffee later? I'm free around six if that works for you, but we could always do tomorrow if today is a bit rushed.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -402,8 +410,8 @@
     "Give feedback in 1-3 short sentences.",
     "If the user goes off-topic, briefly respond and return to making plans.",
     "The setup message and the user's context choice do not count as lesson turns.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
   ]
 }

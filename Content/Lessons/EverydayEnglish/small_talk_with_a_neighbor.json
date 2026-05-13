@@ -125,7 +125,9 @@
       "correctionPriority": "Friendly greeting, simple answer, and polite closing first.",
       "conversationDepth": "Stay very shallow: greet, answer how you are, mention weather, say goodbye.",
       "exampleGoodAnswer": "Hi. I'm good, thanks.",
-      "exampleStretchAnswer": "Hi. I'm good, thanks. Nice weather today. Have a nice day."
+      "exampleStretchAnswer": "Hi. I'm good, thanks. Nice weather today. Have a nice day.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -153,7 +155,9 @@
       "correctionPriority": "Clear friendly answer, near-future activity, and polite small-talk phrases.",
       "conversationDepth": "Add one activity or destination, then close politely or ask one simple question back.",
       "exampleGoodAnswer": "Hi, I'm good, thanks. I'm going to the shop.",
-      "exampleStretchAnswer": "Hi, I'm good, thanks. I'm just going to the shop. Nice weather today, isn't it?"
+      "exampleStretchAnswer": "Hi, I'm good, thanks. I'm just going to the shop. Nice weather today, isn't it?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -182,7 +186,9 @@
       "correctionPriority": "Natural small-talk flow, clear reason, and polite reciprocal question.",
       "conversationDepth": "Keep it light and neighborly with 2-3 connected sentences; avoid deep personal topics.",
       "exampleGoodAnswer": "Hi, I'm good, thanks. I'm heading to the shop because I need a few things. How's your day going?",
-      "exampleStretchAnswer": "Hi, I'm good, thanks. I'm heading to the shop because I need a few things for dinner. The building is quiet today, isn't it?"
+      "exampleStretchAnswer": "Hi, I'm good, thanks. I'm heading to the shop because I need a few things for dinner. The building is quiet today, isn't it?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -211,7 +217,9 @@
       "correctionPriority": "Natural tone, soft phrasing, light social flow, and polite boundaries.",
       "conversationDepth": "Allow richer small talk, but keep it brief, friendly, and appropriate for a neighbor encounter.",
       "exampleGoodAnswer": "Hi, I'm doing well, thanks. I'm just popping out to the shop for a few things.",
-      "exampleStretchAnswer": "Hi, I'm doing well, thanks. I'm just popping out to the shop for a few things. Lovely weather for once, isn't it? Hope your day's going smoothly."
+      "exampleStretchAnswer": "Hi, I'm doing well, thanks. I'm just popping out to the shop for a few things. Lovely weather for once, isn't it? Hope your day's going smoothly.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -375,8 +383,8 @@
     "Give feedback in 1-3 short sentences.",
     "If the user goes off-topic, briefly respond and return to small talk with a neighbor.",
     "The setup message and the user's context choice do not count as lesson turns.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
   ]
 }
