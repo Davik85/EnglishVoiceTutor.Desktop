@@ -168,7 +168,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     public bool IsLessonInputEnabled => CurrentLessonPhase != LessonPhase.Completed && !IsLessonCompleteAwaitingFinish && !IsLessonLimitReached && !hasFinishedLesson;
 
-    public bool IsLessonOptionsEnabled => CurrentLessonPhase != LessonPhase.Completed && !IsLessonCompleteAwaitingFinish && !hasFinishedLesson;
+    public bool IsLessonOptionsEnabled => CurrentLessonPhase != LessonPhase.Completed && !IsLessonCompleteAwaitingFinish && !IsLessonLimitReached && !hasFinishedLesson;
 
     public string VoiceButtonText => IsRecording
         ? localizedText.StopRecordingButtonText
@@ -350,7 +350,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanFinishLesson()
     {
-        return !IsRecording && !IsSending && !hasFinishedLesson;
+        return IsLessonCompleteAwaitingFinish && !IsRecording && !IsSending && !hasFinishedLesson;
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleVoiceRecording))]
@@ -757,8 +757,18 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private async Task<bool> SendLessonMessageAsync(string userMessage)
     {
-        if (!IsLessonInputEnabled || string.IsNullOrWhiteSpace(userMessage))
+        if (string.IsNullOrWhiteSpace(userMessage))
         {
+            return false;
+        }
+
+        if (!IsLessonInputEnabled)
+        {
+            if (CurrentLessonPhase == LessonPhase.Completed || IsLessonLimitReached)
+            {
+                MarkLessonCompleteAwaitingFinish();
+            }
+
             return false;
         }
 
@@ -771,16 +781,37 @@ public partial class LessonChatViewModel : ViewModelBase
 
         if (CurrentLessonPhase == LessonPhase.Completed)
         {
+            MarkLessonCompleteAwaitingFinish();
             return false;
+        }
+
+        var nextLearnerTurnCount = LearnerTurnCount + 1;
+        var softWrapUpTurn = GetSoftWrapUpTurn();
+        var finalTurn = GetFinalTurn();
+
+        if (LearnerTurnCount >= finalTurn)
+        {
+            MarkLessonCompleteAwaitingFinish();
+            return false;
+        }
+
+        if (nextLearnerTurnCount >= finalTurn)
+        {
+            AddMessage(AppConstants.UserSenderName, userMessage, false);
+            LearnerTurnCount = nextLearnerTurnCount;
+            var finalMessage = GetFinalLessonMessage();
+            AddMessage(TutorAvatarDisplayName, finalMessage, true);
+            lastBotMessage = finalMessage;
+            OnPropertyChanged(nameof(LatestBotMessageText));
+            CurrentLessonPhase = LessonPhase.Completed;
+            MarkLessonCompleteAwaitingFinish();
+            return true;
         }
 
         BotStatus = BackendConstants.BotStatusThinking;
         IsSending = true;
         RefreshAvatarState();
 
-        var nextLearnerTurnCount = LearnerTurnCount + 1;
-        var softWrapUpTurn = GetSoftWrapUpTurn();
-        var finalTurn = GetFinalTurn();
         var shouldStartWrappingUp = nextLearnerTurnCount >= softWrapUpTurn;
         var shouldEndLessonNow = nextLearnerTurnCount >= finalTurn;
 
@@ -804,6 +835,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 ShouldStartWrappingUp = shouldStartWrappingUp,
                 ShouldEndLessonNow = shouldEndLessonNow,
                 RecentMessages = GetRecentConversationMessages(),
+                LessonPhase = CurrentLessonPhase.ToString(),
                 LessonScenarioId = lessonScenario.Id,
                 Level = SelectedLevel,
                 Topic = lessonScenario.Metadata.Topic,
@@ -840,9 +872,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             AddMessage(AppConstants.UserSenderName, userMessage, false, mappedFeedback);
             LearnerTurnCount = nextLearnerTurnCount;
-            var botReply = shouldEndLessonNow && !string.IsNullOrWhiteSpace(lessonScenario.ConversationFlow.FinalMessage)
-                ? lessonScenario.ConversationFlow.FinalMessage
-                : response.BotReply;
+            var botReply = response.BotReply;
             var botMessage = AddMessage(TutorAvatarDisplayName, botReply, true);
             lastBotMessage = botReply;
             OnPropertyChanged(nameof(LatestBotMessageText));
@@ -1260,6 +1290,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 ShouldStartWrappingUp = LearnerTurnCount >= softWrapUpTurn,
                 ShouldEndLessonNow = LearnerTurnCount >= finalTurn,
                 RecentMessages = GetRecentConversationMessages(),
+                LessonPhase = CurrentLessonPhase.ToString(),
                 LessonScenarioId = lessonScenario.Id,
                 Level = SelectedLevel,
                 Topic = lessonScenario.Metadata.Topic,
@@ -1316,6 +1347,13 @@ public partial class LessonChatViewModel : ViewModelBase
         return IsLessonInputEnabled && !IsSending && !IsRecording;
     }
 
+    private string GetFinalLessonMessage()
+    {
+        return string.IsNullOrWhiteSpace(lessonScenario.ConversationFlow.FinalMessage)
+            ? AppConstants.LessonCompleteAwaitingFinishMessage
+            : lessonScenario.ConversationFlow.FinalMessage.Trim();
+    }
+
     private void RefreshAvatarState()
     {
         CurrentAvatarState = GetActiveAvatarState();
@@ -1355,16 +1393,28 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private void MarkLessonCompleteAwaitingFinish()
     {
-        if (IsLessonCompleteAwaitingFinish)
-        {
-            return;
-        }
-
         CurrentLessonPhase = LessonPhase.Completed;
         IsLessonCompleteAwaitingFinish = true;
         IsConversationModeEnabled = false;
         UserInput = string.Empty;
+        BotStatus = BackendConstants.BotStatusReady;
         StatusMessage = AppConstants.LessonCompleteAwaitingFinishMessage;
+        RefreshLessonCompletionState();
+    }
+
+    private void RefreshLessonCompletionState()
+    {
+        OnPropertyChanged(nameof(IsLessonInputEnabled));
+        OnPropertyChanged(nameof(IsLessonOptionsEnabled));
+        OnPropertyChanged(nameof(IsLessonLimitReached));
+        OnPropertyChanged(nameof(IsLessonWrappingUp));
+        SendMessageCommand.NotifyCanExecuteChanged();
+        ToggleVoiceRecordingCommand.NotifyCanExecuteChanged();
+        HintCommand.NotifyCanExecuteChanged();
+        ToggleConversationModeCommand.NotifyCanExecuteChanged();
+        BackCommand.NotifyCanExecuteChanged();
+        FinishLessonCommand.NotifyCanExecuteChanged();
+        PlayBotVoiceCommand.NotifyCanExecuteChanged();
     }
 
     private void CompleteLesson()
@@ -1398,7 +1448,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanGoBack()
     {
-        return !IsLessonCompleteAwaitingFinish && !hasFinishedLesson && !IsSending && !IsRecording;
+        return IsLessonOptionsEnabled && !IsLessonCompleteAwaitingFinish && !hasFinishedLesson && !IsSending && !IsRecording;
     }
 
     private IReadOnlyList<RecentConversationMessage> GetRecentConversationMessages()
