@@ -92,8 +92,12 @@ public sealed class AudioSpeechService
     {
         var timeout = TimeSpan.FromSeconds(OpenAiConstants.OpenAiSpeechTimeoutSeconds);
         using var timeoutCancellationTokenSource = new CancellationTokenSource(timeout);
+        using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+            timeoutCancellationTokenSource.Token,
+            clientCancellationToken);
         var stopwatch = Stopwatch.StartNew();
         int? statusCode = null;
+        long? firstHeaderMs = null;
 
         _logger.LogInformation(
             "Starting OpenAI speech request. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ClientCancellationRequested={ClientCancellationRequested}.",
@@ -118,13 +122,23 @@ public sealed class AudioSpeechService
             using var response = await httpClient.SendAsync(
                 httpRequest,
                 HttpCompletionOption.ResponseHeadersRead,
-                timeoutCancellationTokenSource.Token);
+                linkedCancellationTokenSource.Token);
 
+            firstHeaderMs = stopwatch.ElapsedMilliseconds;
             statusCode = (int)response.StatusCode;
+
+            _logger.LogInformation(
+                "OpenAI speech response headers received. Model={Model}; Voice={Voice}; Format={Format}; InputLength={InputLength}; StatusCode={StatusCode}; FirstHeaderMs={FirstHeaderMs}.",
+                request.Model,
+                request.Voice,
+                request.ResponseFormat,
+                request.Input.Length,
+                response.StatusCode,
+                firstHeaderMs);
 
             if (!response.IsSuccessStatusCode)
             {
-                var errorBody = await response.Content.ReadAsStringAsync(timeoutCancellationTokenSource.Token);
+                var errorBody = await response.Content.ReadAsStringAsync(linkedCancellationTokenSource.Token);
                 _logger.LogWarning(
                     "OpenAI speech generation failed. StatusCode={StatusCode}; ElapsedMilliseconds={ElapsedMilliseconds}; ResponseBodyLength={ResponseBodyLength}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}.",
                     response.StatusCode,
@@ -135,7 +149,7 @@ public sealed class AudioSpeechService
                 throw new HttpRequestException(OpenAiRequestFailedMessage, null, response.StatusCode);
             }
 
-            var audioBytes = await response.Content.ReadAsByteArrayAsync(timeoutCancellationTokenSource.Token);
+            var audioBytes = await response.Content.ReadAsByteArrayAsync(linkedCancellationTokenSource.Token);
 
             if (audioBytes.Length == 0)
             {
@@ -149,13 +163,14 @@ public sealed class AudioSpeechService
             }
 
             _logger.LogInformation(
-                "Completed OpenAI speech request. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ElapsedMilliseconds={ElapsedMilliseconds}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; AudioBytes={AudioBytes}.",
+                "Completed OpenAI speech request. Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; FirstHeaderMs={FirstHeaderMs}; TotalMs={TotalMs}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; TotalBytes={TotalBytes}.",
                 request.Model,
                 request.Voice,
                 request.ResponseFormat,
                 request.Speed,
                 request.Input.Length,
                 OpenAiConstants.OpenAiSpeechTimeoutSeconds,
+                firstHeaderMs,
                 stopwatch.ElapsedMilliseconds,
                 response.StatusCode,
                 false,
@@ -172,13 +187,14 @@ public sealed class AudioSpeechService
 
             _logger.LogWarning(
                 exception,
-                "OpenAI speech request canceled. Model={Model}; Voice={Voice}; ResponseFormat={ResponseFormat}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ElapsedMilliseconds={ElapsedMilliseconds}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}.",
+                "OpenAI speech request canceled. Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; FirstHeaderMs={FirstHeaderMs}; TotalMs={TotalMs}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}.",
                 request.Model,
                 request.Voice,
                 request.ResponseFormat,
                 request.Speed,
                 request.Input.Length,
                 OpenAiConstants.OpenAiSpeechTimeoutSeconds,
+                firstHeaderMs,
                 stopwatch.ElapsedMilliseconds,
                 statusCode,
                 true,
