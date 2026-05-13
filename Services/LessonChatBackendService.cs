@@ -141,6 +141,7 @@ public sealed class LessonChatBackendService
         return backendResponse.HintText;
     }
 
+    // ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
     public async Task<string> SendAudioForTranscriptionAsync(
         string audioFilePath,
         CancellationToken cancellationToken = default)
@@ -182,6 +183,7 @@ public sealed class LessonChatBackendService
     }
 
 
+    // ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
     public async Task<BotSpeechBackendResponse> CreateBotSpeechAsync(
         string text,
         CancellationToken cancellationToken = default)
@@ -231,6 +233,7 @@ public sealed class LessonChatBackendService
 
 
 
+    // ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
     public async Task<BotSpeechStreamMetrics> StreamBotSpeechAsync(
         string text,
         Func<Stream, string, CancellationToken, Task> consumeStreamAsync,
@@ -352,6 +355,17 @@ public sealed class LessonChatBackendService
         }
 
         return AudioConstants.Mp3FileExtension;
+    }
+
+    public Uri CreateRealtimeVoiceWebSocketUri()
+    {
+        var endpoint = CreateEndpointUri(BackendConstants.RealtimeVoiceEndpoint);
+        var builder = new UriBuilder(endpoint)
+        {
+            Scheme = endpoint.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase) ? "wss" : "ws"
+        };
+
+        return builder.Uri;
     }
 
     private Uri CreateEndpointUri(string endpointPath)

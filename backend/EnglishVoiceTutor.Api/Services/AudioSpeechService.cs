@@ -7,6 +7,7 @@ using EnglishVoiceTutor.Api.Models;
 
 namespace EnglishVoiceTutor.Api.Services;
 
+// ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
 public sealed class AudioSpeechService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
