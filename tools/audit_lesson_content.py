@@ -330,16 +330,50 @@ def check_lesson_type_specific_content(path: Path, data: dict[str, Any], lesson_
 
 
 def check_routing_sources(report: AuditReport) -> None:
+    topic_folder_constants = [
+        "ContentConstants.EverydayEnglishFolderName",
+        "ContentConstants.TravelFolderName",
+        "ContentConstants.WorkAndBusinessFolderName",
+        "ContentConstants.JobInterviewFolderName",
+        "ContentConstants.RestaurantAndCafeFolderName",
+        "ContentConstants.FreeConversationFolderName",
+    ]
+    lesson_file_constants = [
+        "ContentConstants.IntroductionsFileName",
+        "ContentConstants.SmallTalkWithANeighborFileName",
+        "ContentConstants.AskingForHelpFileName",
+        "ContentConstants.MakingPlansFileName",
+        "ContentConstants.TalkingAboutYourDayFileName",
+        "ContentConstants.AirportCheckInFileName",
+        "ContentConstants.HotelCheckInFileName",
+        "ContentConstants.AskingForDirectionsFileName",
+        "ContentConstants.OrderingTransportFileName",
+        "ContentConstants.LostLuggageFileName",
+        "ContentConstants.FirstMeetingFileName",
+        "ContentConstants.DailyStandupFileName",
+        "ContentConstants.PhoneCallWithAClientFileName",
+        "ContentConstants.WorkAskingForClarificationFileName",
+        "ContentConstants.DiscussingDeadlinesFileName",
+        "ContentConstants.TellMeAboutYourselfFileName",
+        "ContentConstants.WorkExperienceFileName",
+        "ContentConstants.StrengthsAndWeaknessesFileName",
+        "ContentConstants.WhyDoYouWantThisJobFileName",
+        "ContentConstants.AskingQuestionsAtTheEndFileName",
+        "ContentConstants.BookingATableFileName",
+        "ContentConstants.OrderingFoodFileName",
+        "ContentConstants.AskingAboutIngredientsFileName",
+        "ContentConstants.HandlingAWrongOrderFileName",
+        "ContentConstants.PayingTheBillFileName",
+        "ContentConstants.OpenConversationFileName",
+    ]
     checks = {
         REPO_ROOT / "ViewModels" / "HomeViewModel.cs": [registry["topic"] for registry in EXPECTED_REGISTRY.values()],
         REPO_ROOT / "ViewModels" / "SubtopicsViewModel.cs": [
             subtopic for registry in EXPECTED_REGISTRY.values() for subtopic in registry["files"].values()
         ],
-        REPO_ROOT / "ViewModels" / "MainViewModel.cs": [
-            "OpenConversationFileName",
-            "FreeConversationFolderName",
-            "ContentConstants.IntroductionsFileName",
-            "ContentConstants.PayingTheBillFileName",
+        REPO_ROOT / "ViewModels" / "MainViewModel.cs": topic_folder_constants + lesson_file_constants,
+        REPO_ROOT / "Constants" / "ContentConstants.cs": list(EXPECTED_REGISTRY.keys()) + [
+            file_name for registry in EXPECTED_REGISTRY.values() for file_name in registry["files"].keys()
         ],
     }
 
