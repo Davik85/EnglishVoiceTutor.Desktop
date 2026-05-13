@@ -25,6 +25,15 @@ public static class AudioConstants
     public const int BotVoiceInitialPrebufferMilliseconds = 350;
     public const int BotVoiceMaximumPrebufferMilliseconds = 900;
     public const int BotVoiceStreamBufferDurationSeconds = 10;
+    public const int RealtimeInputPcmSampleRate = 24000;
+    public const int RealtimeInputPcmBitsPerSample = 16;
+    public const int RealtimeInputPcmChannels = 1;
+    public const int RealtimeOutputPcmSampleRate = 24000;
+    public const int RealtimeOutputPcmBitsPerSample = 16;
+    public const int RealtimeOutputPcmChannels = 1;
+    public const int RealtimeMicrophoneBufferMilliseconds = 50;
+    public const int RealtimePlaybackInitialPrebufferBytes = 4800;
+    public const int RealtimePlaybackBufferDurationSeconds = 10;
     // Keep this runtime-evaluated so the disabled PCM branch still compiles without unreachable-code warnings.
     public static readonly bool UsePcmStreamingBotVoice = false;
     public const string AppTempFolderName = "EnglishVoiceTutor.Desktop";

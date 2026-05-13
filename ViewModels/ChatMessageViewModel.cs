@@ -15,7 +15,8 @@ public partial class ChatMessageViewModel : ViewModelBase
 
     public string Sender { get; }
 
-    public string Text { get; }
+    [ObservableProperty]
+    private string text = string.Empty;
 
     public bool IsFromBot { get; }
 

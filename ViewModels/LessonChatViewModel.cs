@@ -11,6 +11,8 @@ using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Desktop.Services;
+using EnglishVoiceTutor.Desktop.Services.Voice;
+using System.Windows;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
@@ -24,6 +26,9 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly AudioRecordingService audioRecordingService;
     private readonly AudioPlaybackService audioPlaybackService;
     private readonly BotVoiceTempFileCleanupService botVoiceTempFileCleanupService;
+    private readonly IVoiceConversationEngine realtimeVoiceEngine;
+    private readonly RealtimeAudioPlaybackService realtimeAudioPlaybackService;
+    private readonly RealtimeMicrophoneCaptureService realtimeMicrophoneCaptureService;
     private readonly string audioInputDeviceId;
     private readonly AppLocalizedText localizedText;
     private readonly LessonScenario lessonScenario;
@@ -43,6 +48,9 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly object botVoiceCancellationLock = new();
     private CancellationTokenSource? currentBotVoiceCancellationTokenSource;
     private string currentBotVoiceCancellationReason = BotVoiceCancellationReasons.AppDisposalCancel;
+    private bool isRealtimeSessionStarted;
+    private ChatMessageViewModel? realtimeAssistantMessage;
+    private string realtimeSessionId = Guid.NewGuid().ToString("N");
 
     public string SelectedLevel { get; }
 
@@ -263,7 +271,9 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool ShouldAutoSendTranscribedVoice => IsLessonInputEnabled && (IsConversationModeEnabled || IsVoiceAutoSendEnabled);
 
-    private bool ShouldAutoPlayBotVoice => !IsLessonCompleteAwaitingFinish && (IsConversationModeEnabled || IsBotVoiceAutoPlayEnabled);
+    private bool IsRealtimeConversationActive => BackendConstants.UseRealtimeConversationMode && IsConversationModeEnabled && CurrentLessonPhase == LessonPhase.ActiveRoleplay;
+
+    private bool ShouldAutoPlayBotVoice => !IsRealtimeConversationActive && !IsLessonCompleteAwaitingFinish && (IsConversationModeEnabled || IsBotVoiceAutoPlayEnabled);
 
     public LessonChatViewModel(
         AppLocalizedText localizedText,
@@ -298,6 +308,15 @@ public partial class LessonChatViewModel : ViewModelBase
         this.audioRecordingService = audioRecordingService;
         this.audioPlaybackService = audioPlaybackService;
         this.botVoiceTempFileCleanupService = botVoiceTempFileCleanupService;
+        realtimeVoiceEngine = new RealtimeVoiceConversationEngine(lessonChatBackendService);
+        realtimeAudioPlaybackService = new RealtimeAudioPlaybackService();
+        realtimeMicrophoneCaptureService = new RealtimeMicrophoneCaptureService();
+        realtimeVoiceEngine.AssistantAudioChunkReceived += OnRealtimeAssistantAudioChunkReceived;
+        realtimeVoiceEngine.AssistantTranscriptDeltaReceived += OnRealtimeAssistantTranscriptDeltaReceived;
+        realtimeVoiceEngine.AssistantTurnCompleted += OnRealtimeAssistantTurnCompleted;
+        realtimeVoiceEngine.ErrorReceived += OnRealtimeErrorReceived;
+        realtimeAudioPlaybackService.PlaybackStarted += OnRealtimePlaybackStarted;
+        realtimeMicrophoneCaptureService.AudioChunkCaptured += OnRealtimeMicrophoneAudioChunkCaptured;
         this.audioInputDeviceId = string.IsNullOrWhiteSpace(audioInputDeviceId)
             ? AudioConstants.DefaultAudioInputDeviceId
             : audioInputDeviceId;
@@ -398,6 +417,12 @@ public partial class LessonChatViewModel : ViewModelBase
 
         try
         {
+            if (IsRealtimeConversationActive)
+            {
+                _ = StartRealtimeVoiceRecordingAsync();
+                return;
+            }
+
             audioRecordingService.StartRecording(audioInputDeviceId);
             CurrentHintText = string.Empty;
             IsRecording = true;
@@ -412,10 +437,37 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
+    private async Task StartRealtimeVoiceRecordingAsync()
+    {
+        try
+        {
+            await EnsureRealtimeSessionStartedAsync(CancellationToken.None);
+            await realtimeVoiceEngine.StartUserAudioAsync(CancellationToken.None);
+            realtimeMicrophoneCaptureService.Start(audioInputDeviceId);
+            CurrentHintText = string.Empty;
+            IsRecording = true;
+            RefreshAvatarState();
+            StatusMessage = localizedText.RecordingStartedMessage;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Realtime microphone start failed: SessionId={realtimeSessionId}; {exception}");
+            IsRecording = false;
+            RefreshAvatarState();
+            StatusMessage = BackendConstants.RealtimeUnavailableMessage;
+        }
+    }
+
     private async Task StopVoiceRecordingAsync()
     {
         if (isTranscribingAudio)
         {
+            return;
+        }
+
+        if (IsRealtimeConversationActive)
+        {
+            await StopRealtimeVoiceRecordingAsync();
             return;
         }
 
@@ -509,6 +561,45 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
 
+    private async Task StopRealtimeVoiceRecordingAsync()
+    {
+        try
+        {
+            var duration = realtimeMicrophoneCaptureService.Stop();
+            IsRecording = false;
+
+            if (duration.TotalMilliseconds < AudioConstants.MinimumRecordingDurationMilliseconds)
+            {
+                StatusMessage = AudioConstants.RecordingTooShortMessage;
+                return;
+            }
+
+            if (!IsLessonInputEnabled)
+            {
+                StatusMessage = AppConstants.LessonCompleteAwaitingFinishMessage;
+                return;
+            }
+
+            var nextLearnerTurnCount = LearnerTurnCount + 1;
+            var finalTurn = GetFinalTurn();
+            AddMessage(AppConstants.UserSenderName, "[Voice message]", false);
+            LearnerTurnCount = nextLearnerTurnCount;
+            PrepareRealtimeAssistantPlaceholder();
+            await realtimeVoiceEngine.CommitUserAudioAsync(CancellationToken.None);
+            StatusMessage = string.Empty;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Realtime voice recording stop failed: SessionId={realtimeSessionId}; {exception}");
+            StatusMessage = BackendConstants.RealtimeUnavailableMessage;
+        }
+        finally
+        {
+            IsRecording = false;
+            RefreshAvatarState();
+        }
+    }
+
     private static bool IsUsableEnglishPracticeTranscription(string transcriptionText)
     {
         if (string.IsNullOrWhiteSpace(transcriptionText))
@@ -556,9 +647,26 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleConversationMode))]
-    private void ToggleConversationMode()
+    private async Task ToggleConversationModeAsync()
     {
-        IsConversationModeEnabled = !IsConversationModeEnabled;
+        if (IsConversationModeEnabled)
+        {
+            IsConversationModeEnabled = false;
+            await StopRealtimeConversationAsync("conversation_mode_off");
+            return;
+        }
+
+        if (BackendConstants.UseRealtimeConversationMode && CurrentLessonPhase != LessonPhase.ActiveRoleplay)
+        {
+            StatusMessage = "Choose a situation before starting Conversation Mode.";
+            return;
+        }
+
+        IsConversationModeEnabled = true;
+        if (BackendConstants.UseRealtimeConversationMode)
+        {
+            await EnsureRealtimeSessionStartedAsync(CancellationToken.None);
+        }
     }
 
     private bool CanToggleConversationMode()
@@ -1585,6 +1693,11 @@ public partial class LessonChatViewModel : ViewModelBase
             return false;
         }
 
+        if (IsRealtimeConversationActive)
+        {
+            return await SendRealtimeLessonMessageAsync(userMessage);
+        }
+
         if (nextLearnerTurnCount >= finalTurn)
         {
             AddMessage(AppConstants.UserSenderName, userMessage, false);
@@ -1698,6 +1811,171 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
+
+    private async Task<bool> SendRealtimeLessonMessageAsync(string userMessage)
+    {
+        var nextLearnerTurnCount = LearnerTurnCount + 1;
+        var finalTurn = GetFinalTurn();
+        if (LearnerTurnCount >= finalTurn)
+        {
+            MarkLessonCompleteAwaitingFinish();
+            return false;
+        }
+
+        try
+        {
+            await EnsureRealtimeSessionStartedAsync(CancellationToken.None);
+            AddMessage(AppConstants.UserSenderName, userMessage, false);
+            LearnerTurnCount = nextLearnerTurnCount;
+            PrepareRealtimeAssistantPlaceholder();
+            await realtimeVoiceEngine.SendUserTextAsync(userMessage, CancellationToken.None);
+            StatusMessage = string.Empty;
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Realtime text turn failed: SessionId={realtimeSessionId}; {exception}");
+            StatusMessage = BackendConstants.RealtimeUnavailableMessage;
+            return false;
+        }
+    }
+
+    private async Task EnsureRealtimeSessionStartedAsync(CancellationToken cancellationToken)
+    {
+        if (isRealtimeSessionStarted)
+        {
+            return;
+        }
+
+        realtimeSessionId = Guid.NewGuid().ToString("N");
+        var stopwatch = Stopwatch.StartNew();
+        await realtimeVoiceEngine.StartSessionAsync(BuildVoiceSessionStartRequest(), cancellationToken);
+        isRealtimeSessionStarted = true;
+        BackendStatusText = BackendConstants.BackendStatusConnected;
+        Debug.WriteLine($"Desktop realtime session start ms: SessionId={realtimeSessionId}; RealtimeSessionStartMs={stopwatch.ElapsedMilliseconds}; LessonType={lessonScenario.Metadata.LessonType}; Topic={lessonScenario.Metadata.Topic}; Subtopic={lessonScenario.Metadata.Subtopic}; Level={SelectedLevel}.");
+    }
+
+    private VoiceSessionStartRequest BuildVoiceSessionStartRequest()
+    {
+        return new VoiceSessionStartRequest
+        {
+            SessionId = realtimeSessionId,
+            TutorProfileId = tutorAvatarId,
+            TutorDisplayName = TutorAvatarDisplayName,
+            SelectedLevel = SelectedLevel,
+            Topic = lessonScenario.Metadata.Topic,
+            TopicTitle = SelectedTopic.Title,
+            Subtopic = lessonScenario.Metadata.Subtopic,
+            SubtopicTitle = SelectedSubtopic.Title,
+            LessonScenarioId = lessonScenario.Id,
+            LessonType = lessonScenario.Metadata.LessonType,
+            LessonGoal = lessonScenario.LearningGoal.Goal,
+            LessonPhase = CurrentLessonPhase.ToString(),
+            NativeLanguageName = nativeLanguageName,
+            UserDisplayName = UserDisplayName,
+            LearningGoal = LearningGoal,
+            SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
+            SelectedContextTitle = GetSelectedContextTitle(),
+            SelectedContextOpeningLine = selectedContextVariant?.OpeningLine ?? lessonScenario.ConversationFlow.DefaultOpeningExample,
+            LearnerTurnCount = LearnerTurnCount,
+            SoftLearnerTurnLimit = GetSoftWrapUpTurn(),
+            HardLearnerTurnLimit = GetFinalTurn(),
+            TargetLanguageKeyPhrases = lessonScenario.TargetLanguage.KeyPhrases,
+            GrammarFocus = lessonScenario.TargetLanguage.GrammarFocus,
+            FeedbackRulesSummary = BuildFeedbackRulesSummary(),
+            AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
+            ActiveLevelProfile = activeLevelProfile,
+            RecentMessages = GetRecentConversationMessages()
+        };
+    }
+
+    private void PrepareRealtimeAssistantPlaceholder()
+    {
+        BotStatus = BackendConstants.BotStatusThinking;
+        IsSending = true;
+        RefreshAvatarState();
+        realtimeAssistantMessage = AddMessage(TutorAvatarDisplayName, "Elena is speaking...", true);
+        realtimeAudioPlaybackService.StartSession(realtimeSessionId, string.Empty);
+    }
+
+    private async Task StopRealtimeConversationAsync(string reason)
+    {
+        realtimeAudioPlaybackService.Stop(reason);
+        realtimeMicrophoneCaptureService.Stop();
+        await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None);
+        isRealtimeSessionStarted = false;
+    }
+
+    private void OnRealtimeMicrophoneAudioChunkCaptured(object? sender, RealtimeMicrophoneAudioChunkEventArgs args)
+    {
+        _ = realtimeVoiceEngine.AppendUserAudioAsync(args.AudioChunk, CancellationToken.None);
+    }
+
+    private void OnRealtimeAssistantAudioChunkReceived(object? sender, AssistantAudioChunkReceivedEventArgs args)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            realtimeAudioPlaybackService.AddAudioChunk(args.SessionId, args.ResponseId, args.AudioChunk);
+            IsBotVoicePlaying = true;
+            RefreshAvatarState();
+        });
+    }
+
+    private void OnRealtimeAssistantTranscriptDeltaReceived(object? sender, AssistantTranscriptDeltaEventArgs args)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            if (realtimeAssistantMessage is null)
+            {
+                realtimeAssistantMessage = AddMessage(TutorAvatarDisplayName, string.Empty, true);
+            }
+
+            realtimeAssistantMessage.Text = args.TranscriptSoFar;
+            lastBotMessage = args.TranscriptSoFar;
+            OnPropertyChanged(nameof(LatestBotMessageText));
+        });
+    }
+
+    private void OnRealtimeAssistantTurnCompleted(object? sender, AssistantTurnCompletedEventArgs args)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            var finalTranscript = string.IsNullOrWhiteSpace(args.Transcript) ? lastBotMessage : args.Transcript.Trim();
+            if (realtimeAssistantMessage is not null)
+            {
+                realtimeAssistantMessage.Text = finalTranscript;
+            }
+            lastBotMessage = finalTranscript;
+            OnPropertyChanged(nameof(LatestBotMessageText));
+            realtimeAudioPlaybackService.CompleteResponse(args.SessionId, args.ResponseId);
+            IsBotVoicePlaying = false;
+            IsSending = false;
+            BotStatus = BackendConstants.BotStatusReady;
+            if (LearnerTurnCount >= GetFinalTurn())
+            {
+                MarkLessonCompleteAwaitingFinish();
+            }
+            RefreshAvatarState();
+        });
+    }
+
+    private void OnRealtimeErrorReceived(object? sender, VoiceSessionErrorEventArgs args)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            Debug.WriteLine($"Realtime session error: SessionId={args.SessionId}; ResponseId={args.ResponseId}; Message={args.Message}; Exception={args.Exception}");
+            StatusMessage = BackendConstants.RealtimeUnavailableMessage;
+            IsSending = false;
+            IsBotVoicePlaying = false;
+            isRealtimeSessionStarted = false;
+            RefreshAvatarState();
+        });
+    }
+
+    private void OnRealtimePlaybackStarted(object? sender, RealtimePlaybackStartedEventArgs args)
+    {
+        Debug.WriteLine($"Desktop realtime playback started ms: SessionId={args.SessionId}; ResponseId={args.ResponseId}; PlaybackStartedMs={args.ElapsedMilliseconds}; BufferUnderrunCount={realtimeAudioPlaybackService.UnderrunCount}.");
+    }
 
     private Task<bool> HandleContextSelectionMessageAsync(string userMessage)
     {
@@ -2179,6 +2457,7 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         CancelCurrentBotVoice(BotVoiceCancellationReasons.BackOrFinishCancel);
         await CleanupCurrentSessionBotVoiceFilesAsync();
+        await StopRealtimeConversationAsync("finish_lesson");
         CompleteLesson();
     }
 
@@ -2190,6 +2469,7 @@ public partial class LessonChatViewModel : ViewModelBase
         UserInput = string.Empty;
         BotStatus = BackendConstants.BotStatusReady;
         StatusMessage = AppConstants.LessonCompleteAwaitingFinishMessage;
+        _ = StopRealtimeConversationAsync("lesson_complete");
         RefreshLessonCompletionState();
     }
 
@@ -2235,6 +2515,7 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         CancelCurrentBotVoice(BotVoiceCancellationReasons.BackOrFinishCancel);
         await CleanupCurrentSessionBotVoiceFilesAsync();
+        await StopRealtimeConversationAsync("back");
         navigateBack();
     }
 
@@ -2292,7 +2573,7 @@ public partial class LessonChatViewModel : ViewModelBase
             return false;
         }
 
-        return ShouldAutoPlayBotVoice || IsConversationModeEnabled || message.ShowPlayVoiceButton;
+        return !IsRealtimeConversationActive && (ShouldAutoPlayBotVoice || IsConversationModeEnabled || message.ShowPlayVoiceButton);
     }
 
     private void QueueBotVoiceFirstSegmentPrefetch(ChatMessageViewModel message)

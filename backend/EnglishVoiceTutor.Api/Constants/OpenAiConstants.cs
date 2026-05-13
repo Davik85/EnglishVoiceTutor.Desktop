@@ -11,11 +11,12 @@ public static class OpenAiConstants
     public const string DefaultTranscriptionModel = "gpt-4o-mini-transcribe";
     public const string TranscriptionLanguage = "en";
     public const string TranscriptionPrompt = "The learner is practicing English in a lesson dialogue. Transcribe English speech only. Do not translate non-English speech into English. If the audio is not clear English, return an empty transcription.";
-    public const string LowLatencySpeechModel = "tts-1";
     public const string HighQualitySpeechModel = "gpt-4o-mini-tts";
     public const string DefaultBotVoiceSpeechModel = HighQualitySpeechModel;
     public const string DefaultSpeechModel = DefaultBotVoiceSpeechModel;
     public const string DefaultSpeechVoice = "coral";
+    public const string DefaultRealtimeVoiceModel = "gpt-realtime";
+    public const string DefaultRealtimeVoice = "coral";
     // 1.0 is the default OpenAI speech speed. Keep it as the MVP default for natural full-speed speech.
     public const double DefaultSpeechSpeed = 1.0;
     public const string PcmSpeechResponseFormat = "pcm";

@@ -21,8 +21,11 @@ builder.Services.AddScoped<ILessonHintService, OpenAiLessonHintService>();
 builder.Services.AddScoped<AudioTranscriptionService>();
 builder.Services.AddScoped<TranslationService>();
 builder.Services.AddScoped<AudioSpeechService>();
+builder.Services.AddScoped<RealtimeVoiceSessionService>();
 
 var app = builder.Build();
+
+app.UseWebSockets();
 
 app.MapGet(ApiConstants.HealthRoute, CreateHealthResponse);
 app.MapGet(ApiConstants.ApiHealthRoute, CreateHealthResponse);
@@ -49,6 +52,7 @@ app.MapPost(ApiConstants.AudioTranscriptionRoute, HandleAudioTranscriptionAsync)
 app.MapPost(ApiConstants.TranslationRoute, HandleTranslationAsync);
 app.MapPost(ApiConstants.AudioSpeechRoute, HandleAudioSpeechAsync);
 app.MapPost(ApiConstants.AudioSpeechStreamRoute, HandleAudioSpeechStreamAsync);
+app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
     ApiConstants.ServiceName,
@@ -57,6 +61,24 @@ app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName};
     ApiConstants.LessonChatReplyRoute);
 
 app.Run();
+
+static async Task HandleRealtimeVoiceAsync(
+    HttpContext context,
+    RealtimeVoiceSessionService realtimeVoiceSessionService,
+    ILoggerFactory loggerFactory)
+{
+    var logger = loggerFactory.CreateLogger("RealtimeVoiceEndpoint");
+    if (!context.WebSockets.IsWebSocketRequest)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await context.Response.WriteAsync("Realtime voice endpoint requires a WebSocket request.");
+        return;
+    }
+
+    using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+    logger.LogInformation("Realtime voice desktop WebSocket accepted.");
+    await realtimeVoiceSessionService.RunGatewayAsync(webSocket, context.RequestAborted);
+}
 
 static IResult CreateHealthResponse()
 {
@@ -145,6 +167,7 @@ static async Task<IResult> HandleLessonChatHintAsync(
     return Results.Ok(response);
 }
 
+// ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
 static async Task<IResult> HandleAudioTranscriptionAsync(
     HttpRequest request,
     AudioTranscriptionService audioTranscriptionService,
@@ -281,6 +304,7 @@ static async Task<IResult> HandleTranslationAsync(
 }
 
 
+// ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
 static async Task<IResult> HandleAudioSpeechStreamAsync(
     AudioSpeechRequest request,
     AudioSpeechService audioSpeechService,
@@ -367,6 +391,7 @@ static async Task<IResult> HandleAudioSpeechStreamAsync(
     }
 }
 
+// ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
 static async Task<IResult> HandleAudioSpeechAsync(
     AudioSpeechRequest request,
     AudioSpeechService audioSpeechService,
