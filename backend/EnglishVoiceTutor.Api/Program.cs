@@ -389,6 +389,18 @@ static async Task<IResult> HandleAudioSpeechAsync(
 
         return Results.File(audioBytes, OpenAiConstants.SpeechResponseContentType);
     }
+    catch (AudioSpeechRequestCanceledException exception) when (exception.ClientCancellationRequested || cancellationToken.IsCancellationRequested)
+    {
+        logger.LogInformation(
+            "Audio speech request was canceled because the client aborted the request. Endpoint={Endpoint}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}.",
+            "audio/speech",
+            exception.ClientCancellationRequested,
+            exception.InternalTimeoutReached);
+        return Results.Problem(
+            title: "Client closed request.",
+            detail: "The client canceled the audio speech request before the backend could finish writing the response.",
+            statusCode: 499);
+    }
     catch (AudioSpeechRequestCanceledException exception) when (exception.InternalTimeoutReached)
     {
         logger.LogWarning(
@@ -402,17 +414,9 @@ static async Task<IResult> HandleAudioSpeechAsync(
             detail: $"OpenAI speech generation exceeded the {OpenAiConstants.OpenAiSpeechTimeoutSeconds} second timeout.",
             statusCode: StatusCodes.Status504GatewayTimeout);
     }
-    catch (AudioSpeechRequestCanceledException exception) when (exception.ClientCancellationRequested || cancellationToken.IsCancellationRequested)
+    catch (TaskCanceledException) when (cancellationToken.IsCancellationRequested)
     {
-        logger.LogInformation(exception, "Audio speech request was canceled because the client aborted the request.");
-        return Results.Problem(
-            title: "Client closed request.",
-            detail: "The client canceled the audio speech request before the backend could finish writing the response.",
-            statusCode: 499);
-    }
-    catch (TaskCanceledException exception) when (cancellationToken.IsCancellationRequested)
-    {
-        logger.LogInformation(exception, "Audio speech request was canceled because the client aborted the request.");
+        logger.LogInformation("Audio speech request was canceled because the client aborted the request. Endpoint={Endpoint}; ClientCancellationRequested={ClientCancellationRequested}.", "audio/speech", true);
         return Results.Problem(
             title: "Client closed request.",
             detail: "The client canceled the audio speech request before the backend could finish writing the response.",

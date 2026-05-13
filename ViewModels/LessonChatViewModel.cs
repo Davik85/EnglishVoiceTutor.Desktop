@@ -627,11 +627,13 @@ public partial class LessonChatViewModel : ViewModelBase
             RefreshAvatarState();
             StatusMessage = localizedText.PlayingBotVoiceMessage;
 
-            var allSegments = SplitBotVoiceSegments(message.Text);
+            var allSegments = SplitBotVoiceTextIntoSegments(message.Text, isAutoPlay);
             var segmentsToSpeak = SelectBotVoiceSegments(allSegments, isAutoPlay);
 
             if (segmentsToSpeak.Count == 0)
             {
+                Debug.WriteLine("Bot voice skipped because no speakable segments were found.");
+                StatusMessage = string.Empty;
                 return;
             }
 
@@ -768,6 +770,7 @@ public partial class LessonChatViewModel : ViewModelBase
         var backendStopwatch = Stopwatch.StartNew();
         var inputLength = segmentText.Trim().Length;
 
+        Debug.WriteLine($"Bot voice segment prepared: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SegmentLength={inputLength}; SegmentTextPreview={CreateBotVoiceSegmentPreview(segmentText)};");
         Debug.WriteLine($"Bot voice segment request starting: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; RequestStartedMs={totalStopwatch.ElapsedMilliseconds}; TimeoutMs={timeout.TotalMilliseconds}.");
         var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(segmentText, linkedCancellationTokenSource.Token);
         Debug.WriteLine($"Bot voice segment backend response received: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; SegmentReadyMs={totalStopwatch.ElapsedMilliseconds}; BackendElapsedMs={backendStopwatch.ElapsedMilliseconds}; AudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
@@ -820,7 +823,15 @@ public partial class LessonChatViewModel : ViewModelBase
         return selectedSegments.Count > 0 ? selectedSegments : segments.Take(1).ToList();
     }
 
-    private static IReadOnlyList<string> SplitBotVoiceSegments(string text)
+    private static IReadOnlyList<string> SplitBotVoiceTextIntoSegments(string text, bool isAutoPlay)
+    {
+        _ = isAutoPlay;
+
+        var rawSegments = SplitRawBotVoiceSegments(text);
+        return NormalizeBotVoiceSegments(rawSegments);
+    }
+
+    private static IReadOnlyList<string> SplitRawBotVoiceSegments(string text)
     {
         var normalizedText = text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
         var sentenceSegments = new List<string>();
@@ -830,7 +841,7 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             current.Append(character);
 
-            if (character is '.' or '?' or '!' or ';' or '\n')
+            if (character is '.' or '?' or '!' or ';' or ':' or '\n')
             {
                 AddTrimmedSegment(sentenceSegments, current.ToString());
                 current.Clear();
@@ -839,18 +850,210 @@ public partial class LessonChatViewModel : ViewModelBase
 
         AddTrimmedSegment(sentenceSegments, current.ToString());
 
-        var finalSegments = new List<string>();
+        var splitSegments = new List<string>();
         foreach (var segment in sentenceSegments)
         {
-            SplitLongBotVoiceSegment(segment, finalSegments);
+            SplitLongBotVoiceSegment(segment, splitSegments);
+        }
+
+        return splitSegments;
+    }
+
+    private static IReadOnlyList<string> NormalizeBotVoiceSegments(IEnumerable<string> rawSegments)
+    {
+        var speakableSegments = new List<string>();
+
+        foreach (var rawSegment in rawSegments)
+        {
+            var normalizedSegment = NormalizeBotVoiceSegmentText(rawSegment);
+            if (string.IsNullOrWhiteSpace(normalizedSegment))
+            {
+                LogSkippedBotVoiceSegment("empty-after-normalization", rawSegment);
+                continue;
+            }
+
+            if (!ContainsLetterOrDigit(normalizedSegment))
+            {
+                LogSkippedBotVoiceSegment("punctuation-only", rawSegment);
+                continue;
+            }
+
+            speakableSegments.Add(normalizedSegment);
+        }
+
+        if (speakableSegments.Count == 0)
+        {
+            return [];
+        }
+
+        var mergedSegments = MergeShortBotVoiceSegments(speakableSegments);
+        var finalSegments = new List<string>();
+        var allowMeaningfulShortWholeReply = mergedSegments.Count == 1;
+
+        foreach (var segment in mergedSegments)
+        {
+            if (IsSpeakableSegment(segment, allowMeaningfulShortWholeReply))
+            {
+                SplitLongBotVoiceSegment(segment, finalSegments);
+            }
+            else
+            {
+                LogSkippedBotVoiceSegment("too-short", segment);
+            }
         }
 
         return finalSegments;
     }
 
+    private static List<string> MergeShortBotVoiceSegments(IReadOnlyList<string> segments)
+    {
+        var mergedSegments = new List<string>();
+
+        for (var index = 0; index < segments.Count; index++)
+        {
+            var segment = segments[index];
+            if (!ShouldMergeShortSegment(segment))
+            {
+                mergedSegments.Add(segment);
+                continue;
+            }
+
+            if (index + 1 < segments.Count)
+            {
+                var mergedWithNext = JoinBotVoiceSegments(segment, segments[index + 1]);
+                if (mergedWithNext.Length <= AudioConstants.BotVoiceMaxSegmentCharacters)
+                {
+                    mergedSegments.Add(mergedWithNext);
+                    index++;
+                    continue;
+                }
+            }
+
+            if (mergedSegments.Count > 0)
+            {
+                var previousIndex = mergedSegments.Count - 1;
+                var mergedWithPrevious = JoinBotVoiceSegments(mergedSegments[previousIndex], segment);
+                if (mergedWithPrevious.Length <= AudioConstants.BotVoiceMaxSegmentCharacters)
+                {
+                    mergedSegments[previousIndex] = mergedWithPrevious;
+                    continue;
+                }
+            }
+
+            mergedSegments.Add(segment);
+        }
+
+        return mergedSegments;
+    }
+
+    private static bool IsSpeakableSegment(string segment)
+    {
+        return IsSpeakableSegment(segment, allowMeaningfulShortWholeReply: false);
+    }
+
+    private static bool IsSpeakableSegment(string segment, bool allowMeaningfulShortWholeReply)
+    {
+        var normalizedSegment = NormalizeBotVoiceSegmentText(segment);
+        if (string.IsNullOrWhiteSpace(normalizedSegment) || !ContainsLetterOrDigit(normalizedSegment))
+        {
+            return false;
+        }
+
+        if (normalizedSegment.Length >= AudioConstants.BotVoiceMinimumSegmentCharacters)
+        {
+            return true;
+        }
+
+        return allowMeaningfulShortWholeReply && IsMeaningfulShortWholeReply(normalizedSegment);
+    }
+
+    private static bool ShouldMergeShortSegment(string segment)
+    {
+        return NormalizeBotVoiceSegmentText(segment).Length < AudioConstants.BotVoiceShortSegmentMergeThreshold;
+    }
+
+    private static bool IsMeaningfulShortWholeReply(string segment)
+    {
+        var normalizedSegment = NormalizeBotVoiceSegmentText(segment);
+        var lowerSegment = normalizedSegment.TrimEnd('.', '?', '!', ',').ToLowerInvariant();
+        return lowerSegment is "no" or "yes" or "hi";
+    }
+
+    private static bool ContainsLetterOrDigit(string text)
+    {
+        foreach (var character in text)
+        {
+            if (char.IsLetterOrDigit(character))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string NormalizeBotVoiceSegmentText(string segment)
+    {
+        if (string.IsNullOrWhiteSpace(segment))
+        {
+            return string.Empty;
+        }
+
+        var builder = new StringBuilder();
+        var previousWasWhitespace = false;
+
+        foreach (var character in segment.Trim())
+        {
+            if (char.IsWhiteSpace(character))
+            {
+                if (!previousWasWhitespace)
+                {
+                    builder.Append(' ');
+                    previousWasWhitespace = true;
+                }
+
+                continue;
+            }
+
+            builder.Append(character);
+            previousWasWhitespace = false;
+        }
+
+        return builder.ToString().Trim();
+    }
+
+    private static string JoinBotVoiceSegments(string firstSegment, string secondSegment)
+    {
+        var first = NormalizeBotVoiceSegmentText(firstSegment);
+        var second = NormalizeBotVoiceSegmentText(secondSegment);
+
+        if (string.IsNullOrWhiteSpace(first))
+        {
+            return second;
+        }
+
+        if (string.IsNullOrWhiteSpace(second))
+        {
+            return first;
+        }
+
+        return $"{first} {second}";
+    }
+
+    private static string CreateBotVoiceSegmentPreview(string segment)
+    {
+        var preview = NormalizeBotVoiceSegmentText(segment);
+        return preview.Length <= 40 ? preview : $"{preview[..40]}…";
+    }
+
+    private static void LogSkippedBotVoiceSegment(string reason, string segment)
+    {
+        Debug.WriteLine($"Bot voice segment skipped: Reason={reason}; SegmentTextPreview={CreateBotVoiceSegmentPreview(segment)};");
+    }
+
     private static void SplitLongBotVoiceSegment(string segment, List<string> output)
     {
-        var remaining = segment.Trim();
+        var remaining = NormalizeBotVoiceSegmentText(segment);
 
         while (remaining.Length > AudioConstants.BotVoiceMaxSegmentCharacters)
         {
@@ -862,7 +1065,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             if (splitIndex < AudioConstants.BotVoiceMaxSegmentCharacters / 2)
             {
-                splitIndex = AudioConstants.BotVoiceMaxSegmentCharacters;
+                splitIndex = AudioConstants.BotVoiceMaxSegmentCharacters - 1;
             }
 
             var nextSegment = remaining[..(splitIndex + 1)].Trim();
@@ -875,7 +1078,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private static void AddTrimmedSegment(List<string> segments, string segment)
     {
-        var trimmedSegment = segment.Trim();
+        var trimmedSegment = NormalizeBotVoiceSegmentText(segment);
         if (!string.IsNullOrWhiteSpace(trimmedSegment))
         {
             segments.Add(trimmedSegment);
