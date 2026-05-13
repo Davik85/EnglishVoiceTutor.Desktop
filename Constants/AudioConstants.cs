@@ -11,8 +11,10 @@ public static class AudioConstants
     public const int BotVoiceMinimumSegmentCharacters = 4;
     public const int BotVoiceShortSegmentMergeThreshold = 12;
     public const int BotVoiceAutoPlayMaxSegments = 2;
-    public const int BotVoiceFirstSegmentTimeoutSeconds = 5;
-    public const int BotVoiceSegmentTimeoutSeconds = 10;
+    public const int BotVoiceFirstSegmentSoftTargetMilliseconds = 5000;
+    public const int BotVoiceFirstSegmentHardTimeoutSeconds = 12;
+    public const int BotVoiceLaterSegmentHardTimeoutSeconds = 15;
+    public const int BotVoiceSetupAutoPlayMaxCharacters = 120;
     public const int BotVoiceMaxSpokenCharactersAutoPlay = 220;
     public const string BotVoiceDefaultPathName = "high-quality-segmented-wav";
     public const int BotVoicePcmSampleRate = 24000;
