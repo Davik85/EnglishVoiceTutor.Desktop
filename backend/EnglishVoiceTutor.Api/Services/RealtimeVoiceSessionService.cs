@@ -37,6 +37,21 @@ public sealed class RealtimeVoiceSessionService
         {
             await ReceiveDesktopEventsAsync(cancellationToken);
         }
+        catch (WebSocketException exception) when (IsExpectedDesktopDisconnect(exception, cancellationToken))
+        {
+            logger.LogInformation("Realtime desktop socket disconnected without a full close handshake. SessionId={SessionId}; ResponseId={ResponseId}; SocketState={SocketState}; Message={Message}.",
+                sessionId,
+                activeResponseId,
+                desktopSocket?.State,
+                exception.Message);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            logger.LogInformation("Realtime desktop socket receive loop canceled. SessionId={SessionId}; ResponseId={ResponseId}; SocketState={SocketState}.",
+                sessionId,
+                activeResponseId,
+                desktopSocket?.State);
+        }
         finally
         {
             await DisconnectAsync("desktop_disconnected", CancellationToken.None);
@@ -50,7 +65,21 @@ public sealed class RealtimeVoiceSessionService
 
         while (!cancellationToken.IsCancellationRequested && desktopSocket?.State == WebSocketState.Open)
         {
-            var result = await desktopSocket.ReceiveAsync(buffer, cancellationToken);
+            WebSocketReceiveResult result;
+            try
+            {
+                result = await desktopSocket.ReceiveAsync(buffer, cancellationToken);
+            }
+            catch (WebSocketException exception) when (IsExpectedDesktopDisconnect(exception, cancellationToken))
+            {
+                logger.LogInformation("Realtime desktop receive ended because the client disconnected. SessionId={SessionId}; ResponseId={ResponseId}; SocketState={SocketState}; Message={Message}.",
+                    sessionId,
+                    activeResponseId,
+                    desktopSocket?.State,
+                    exception.Message);
+                return;
+            }
+
             if (result.MessageType == WebSocketMessageType.Close)
             {
                 return;
@@ -299,6 +328,12 @@ public sealed class RealtimeVoiceSessionService
         var json = JsonSerializer.Serialize(value, JsonOptions);
         var bytes = Encoding.UTF8.GetBytes(json);
         await socket.SendAsync(bytes, WebSocketMessageType.Text, WebSocketMessageFlags.EndOfMessage, cancellationToken);
+    }
+
+    private static bool IsExpectedDesktopDisconnect(WebSocketException exception, CancellationToken cancellationToken)
+    {
+        return cancellationToken.IsCancellationRequested
+            || exception.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely;
     }
 
     private async Task DisconnectAsync(string reason, CancellationToken cancellationToken)

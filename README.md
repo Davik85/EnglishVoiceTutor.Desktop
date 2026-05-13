@@ -36,3 +36,27 @@ dotnet run
 
 ## Security rule
 OpenAI API keys must never be stored in the desktop app and must never be committed to source control.
+
+## Current stabilization status
+
+Feature development is paused while Lesson Chat, bot voice playback, and Realtime Conversation Mode are stabilized. Detailed review docs live in `docs/`:
+
+- `docs/CURRENT_STATE.md`
+- `docs/ARCHITECTURE_REVIEW.md`
+- `docs/VOICE_AND_REALTIME_REVIEW.md`
+- `docs/LESSON_FLOW_REVIEW.md`
+- `docs/KNOWN_ISSUES.md`
+- `docs/STABILIZATION_PLAN.md`
+- `docs/MANUAL_TEST_CHECKLIST.md`
+
+Common validation commands from the repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\audit_lesson_content.ps1
+dotnet restore
+dotnet build
+dotnet build -c Release
+cd backend\EnglishVoiceTutor.Api
+dotnet restore
+dotnet build
+```
