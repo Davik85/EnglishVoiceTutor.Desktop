@@ -49,7 +49,6 @@ public partial class LessonChatViewModel : ViewModelBase
     private CancellationTokenSource? currentBotVoiceCancellationTokenSource;
     private string currentBotVoiceCancellationReason = BotVoiceCancellationReasons.AppDisposalCancel;
     private bool isRealtimeSessionStarted;
-    private bool isRealtimeTurnInProgress;
     private ChatMessageViewModel? realtimeAssistantMessage;
     private string realtimeSessionId = Guid.NewGuid().ToString("N");
 
@@ -1892,7 +1891,6 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private void PrepareRealtimeAssistantPlaceholder()
     {
-        isRealtimeTurnInProgress = true;
         BotStatus = BackendConstants.BotStatusThinking;
         IsSending = true;
         RefreshAvatarState();
@@ -1906,7 +1904,6 @@ public partial class LessonChatViewModel : ViewModelBase
         realtimeMicrophoneCaptureService.Stop();
         await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None);
         isRealtimeSessionStarted = false;
-        isRealtimeTurnInProgress = false;
     }
 
     private void OnRealtimeMicrophoneAudioChunkCaptured(object? sender, RealtimeMicrophoneAudioChunkEventArgs args)
@@ -1953,7 +1950,6 @@ public partial class LessonChatViewModel : ViewModelBase
             realtimeAudioPlaybackService.CompleteResponse(args.SessionId, args.ResponseId);
             IsBotVoicePlaying = false;
             IsSending = false;
-            isRealtimeTurnInProgress = false;
             BotStatus = BackendConstants.BotStatusReady;
             if (LearnerTurnCount >= GetFinalTurn())
             {
@@ -1972,7 +1968,6 @@ public partial class LessonChatViewModel : ViewModelBase
             IsSending = false;
             IsBotVoicePlaying = false;
             isRealtimeSessionStarted = false;
-            isRealtimeTurnInProgress = false;
             RefreshAvatarState();
         });
     }
