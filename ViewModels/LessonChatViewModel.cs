@@ -157,6 +157,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ConversationModeButtonText))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
     private bool isConversationModeEnabled;
 
     [ObservableProperty]
@@ -171,6 +172,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
     private LessonPhase currentLessonPhase = LessonPhase.SetupContextSelection;
 
     public bool HasSelectedFeedback => SelectedFeedback is not null;
@@ -273,7 +275,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool IsRealtimeConversationActive => BackendConstants.UseRealtimeConversationMode && IsConversationModeEnabled && CurrentLessonPhase == LessonPhase.ActiveRoleplay;
 
-    private bool ShouldAutoPlayBotVoice => !IsRealtimeConversationActive && !IsLessonCompleteAwaitingFinish && (IsConversationModeEnabled || IsBotVoiceAutoPlayEnabled);
+    private bool ShouldAutoPlayBotVoice => !IsRealtimeConversationActive && !IsLessonCompleteAwaitingFinish && IsBotVoiceAutoPlayEnabled;
 
     public LessonChatViewModel(
         AppLocalizedText localizedText,
@@ -656,22 +658,47 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        if (BackendConstants.UseRealtimeConversationMode && CurrentLessonPhase != LessonPhase.ActiveRoleplay)
+        if (IsGuidedRoleplayLesson() && CurrentLessonPhase != LessonPhase.ActiveRoleplay)
         {
+            Debug.WriteLine($"Conversation mode blocked: Reason=setup-context-not-selected; LessonType={lessonScenario.Metadata.LessonType}; CurrentLessonPhase={CurrentLessonPhase}; IsFreeConversation={IsFreeConversationLesson()}; SelectedTopic={SelectedTopic.Title}; SelectedSubtopic={SelectedSubtopic.Title}; UseRealtimeConversationMode={BackendConstants.UseRealtimeConversationMode}; BackendEndpoint={lessonChatBackendService.CreateRealtimeVoiceWebSocketUri()}.");
             StatusMessage = "Choose a situation before starting Conversation Mode.";
             return;
         }
 
-        IsConversationModeEnabled = true;
-        if (BackendConstants.UseRealtimeConversationMode)
+
+        var startStopwatch = Stopwatch.StartNew();
+        Debug.WriteLine($"Conversation mode start requested: LessonType={lessonScenario.Metadata.LessonType}; CurrentLessonPhase={CurrentLessonPhase}; IsFreeConversation={IsFreeConversationLesson()}; SelectedTopic={SelectedTopic.Title}; SelectedSubtopic={SelectedSubtopic.Title}; UseRealtimeConversationMode={BackendConstants.UseRealtimeConversationMode}; BackendEndpoint={lessonChatBackendService.CreateRealtimeVoiceWebSocketUri()}.");
+
+        try
         {
             await EnsureRealtimeSessionStartedAsync(CancellationToken.None);
+            IsConversationModeEnabled = true;
+            StatusMessage = string.Empty;
+            Debug.WriteLine($"Conversation mode started: RealtimeSessionId={realtimeSessionId}; ElapsedMs={startStopwatch.ElapsedMilliseconds}.");
+        }
+        catch (Exception exception)
+        {
+            IsConversationModeEnabled = false;
+            isRealtimeSessionStarted = false;
+            BackendStatusText = BackendConstants.BackendStatusUnavailable;
+            StatusMessage = BackendConstants.RealtimeUnavailableMessage;
+            Debug.WriteLine($"Conversation mode start failed: RealtimeSessionId={realtimeSessionId}; ExceptionType={exception.GetType().FullName}; Message={exception.Message}; {exception}");
         }
     }
 
     private bool CanToggleConversationMode()
     {
-        return IsLessonOptionsEnabled && !IsSending && !IsRecording;
+        if (IsConversationModeEnabled)
+        {
+            return !IsSending && !IsRecording;
+        }
+
+        if (!IsLessonOptionsEnabled || IsLessonCompleteAwaitingFinish || IsLessonLimitReached || hasFinishedLesson || IsSending || IsRecording)
+        {
+            return false;
+        }
+
+        return IsFreeConversationLesson() || (IsGuidedRoleplayLesson() && CurrentLessonPhase == LessonPhase.ActiveRoleplay);
     }
 
     [RelayCommand(CanExecute = nameof(CanPlayBotVoice))]
@@ -698,9 +725,9 @@ public partial class LessonChatViewModel : ViewModelBase
             return Task.CompletedTask;
         }
 
-        if (IsSetupBotMessage(message) && message.Text.Trim().Length > AudioConstants.BotVoiceSetupAutoPlayMaxCharacters)
+        if (IsSetupBotMessage(message))
         {
-            Debug.WriteLine($"Skipping bot voice auto-play for setup message {message.Id}: TextLength={message.Text.Trim().Length}; MaxCharacters={AudioConstants.BotVoiceSetupAutoPlayMaxCharacters}.");
+            Debug.WriteLine($"Skipping bot voice auto-play for setup message {message.Id}: setup auto-play is disabled; TextLength={message.Text.Trim().Length}.");
             return Task.CompletedTask;
         }
 
@@ -746,11 +773,11 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var rawBotVoiceText = message.Text.Trim();
             var isSetupVoiceMessage = IsSetupVoiceMessage(message);
-            var preparedBotVoiceText = PrepareBotVoiceText(rawBotVoiceText, isSetupVoiceMessage);
-            var allSegments = SplitBotVoiceTextIntoSpeakableSegments(preparedBotVoiceText);
+            var exactBotVoiceText = GetExactBotVoiceText(message.Text);
+            var allSegments = SplitExactBotVoiceTextIntoSegments(exactBotVoiceText);
             var segmentsToSpeak = SelectBotVoiceSegments(allSegments, isAutoPlay);
 
-            Debug.WriteLine($"Prepared bot voice text: RawLength={rawBotVoiceText.Length}; PreparedLength={preparedBotVoiceText.Length}; MessagePhase={(isSetupVoiceMessage ? "setup" : "active")}; SegmentCount={segmentsToSpeak.Count}; SegmentLengths={string.Join(",", segmentsToSpeak.Select(segment => segment.Length))}.");
+            Debug.WriteLine($"Exact bot voice text: RawLength={rawBotVoiceText.Length}; VoiceTextLength={exactBotVoiceText.Length}; MessagePhase={(isSetupVoiceMessage ? "setup" : "active")}; AutoPlay={isAutoPlay}; SegmentCount={segmentsToSpeak.Count}; SegmentLengths={string.Join(",", segmentsToSpeak.Select(segment => segment.Length))}.");
 
             if (segmentsToSpeak.Count == 0)
             {
@@ -759,7 +786,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 return;
             }
 
-            Debug.WriteLine($"Bot voice request start message id {message.Id}: Path={selectedBotVoicePath}; MessageId={message.Id}; RawInputLength={rawBotVoiceText.Length}; PreparedInputLength={preparedBotVoiceText.Length}; AutoPlay={isAutoPlay}; SegmentCount={segmentsToSpeak.Count}; TotalSegmentCount={allSegments.Count}; FirstSegmentLength={segmentsToSpeak[0].Length}; FirstSegmentRequestStartedMs={totalStopwatch.ElapsedMilliseconds}.");
+            Debug.WriteLine($"Bot voice request start message id {message.Id}: Path={selectedBotVoicePath}; MessageId={message.Id}; RawInputLength={rawBotVoiceText.Length}; VoiceTextLength={exactBotVoiceText.Length}; AutoPlay={isAutoPlay}; SegmentCount={segmentsToSpeak.Count}; TotalSegmentCount={allSegments.Count}; FirstSegmentLength={segmentsToSpeak[0].Length}; FirstSegmentRequestStartedMs={totalStopwatch.ElapsedMilliseconds}.");
 
             await PlaySegmentedHighQualityBotVoiceAsync(
                 message,
@@ -993,119 +1020,20 @@ public partial class LessonChatViewModel : ViewModelBase
             return segments;
         }
 
-        var selectedSegments = new List<string>();
-        var selectedCharacters = 0;
-
-        foreach (var segment in segments)
-        {
-            if (selectedSegments.Count >= AudioConstants.BotVoiceAutoPlayMaxSegments)
-            {
-                break;
-            }
-
-            if (selectedSegments.Count > 0
-                && selectedCharacters + segment.Length > AudioConstants.BotVoiceMaxSpokenCharactersAutoPlay)
-            {
-                break;
-            }
-
-            selectedSegments.Add(segment);
-            selectedCharacters += segment.Length;
-        }
-
-        return selectedSegments.Count > 0 ? selectedSegments : segments.Take(1).ToList();
+        Debug.WriteLine($"Skipping bot voice auto-play because exact visible text is too long for auto-play: SegmentCount={segments.Count}; VoiceTextLength={totalCharacters}; MaxSegments={AudioConstants.BotVoiceAutoPlayMaxSegments}; MaxCharacters={AudioConstants.BotVoiceMaxSpokenCharactersAutoPlay}.");
+        return [];
     }
 
-    private static string PrepareBotVoiceText(string rawText, bool isSetupMessage)
+    private static string GetExactBotVoiceText(string rawText)
     {
-        return isSetupMessage
-            ? PrepareSetupBotVoiceText(rawText)
-            : PrepareNormalBotVoiceText(rawText);
+        return string.IsNullOrWhiteSpace(rawText)
+            ? string.Empty
+            : NormalizeBotVoiceSegmentText(rawText.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n'));
     }
 
-    private static string PrepareSetupBotVoiceText(string rawText)
+    private static IReadOnlyList<string> SplitExactBotVoiceTextIntoSegments(string exactText)
     {
-        if (string.IsNullOrWhiteSpace(rawText))
-        {
-            return string.Empty;
-        }
-
-        var lines = rawText.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n')
-            .Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        var introSentence = string.Empty;
-        var goalSentence = string.Empty;
-
-        foreach (var line in lines)
-        {
-            var normalizedLine = NormalizeBotVoiceSegmentText(line);
-            if (string.IsNullOrWhiteSpace(normalizedLine)
-                || IsSetupMenuHeading(normalizedLine)
-                || IsNumberedOptionLine(normalizedLine))
-            {
-                continue;
-            }
-
-            if (StartsWithGoalLabel(normalizedLine))
-            {
-                goalSentence = RemoveLeadingGoalLabel(normalizedLine);
-                continue;
-            }
-
-            if (IsSuggestionLine(normalizedLine))
-            {
-                continue;
-            }
-
-            if (string.IsNullOrWhiteSpace(introSentence))
-            {
-                introSentence = normalizedLine;
-            }
-        }
-
-        var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(introSentence))
-        {
-            parts.Add(EnsureTerminalPunctuation(introSentence));
-        }
-
-        if (!string.IsNullOrWhiteSpace(goalSentence))
-        {
-            parts.Add(EnsureTerminalPunctuation(CapitalizeFirstLetter(goalSentence)));
-        }
-
-        parts.Add("Please choose a situation, or suggest your own.");
-        return PrepareNormalBotVoiceText(string.Join(' ', parts));
-    }
-
-    private static string PrepareNormalBotVoiceText(string rawText)
-    {
-        if (string.IsNullOrWhiteSpace(rawText))
-        {
-            return string.Empty;
-        }
-
-        var lines = rawText.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n')
-            .Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        var speakableLines = new List<string>();
-
-        foreach (var line in lines)
-        {
-            var normalizedLine = NormalizeBotVoiceSegmentText(line);
-            if (string.IsNullOrWhiteSpace(normalizedLine)
-                || IsObviousUiOnlyArtifact(normalizedLine))
-            {
-                continue;
-            }
-
-            speakableLines.Add(normalizedLine);
-        }
-
-        return NormalizeBotVoiceSegmentText(string.Join(' ', speakableLines));
-    }
-
-    private static IReadOnlyList<string> SplitBotVoiceTextIntoSpeakableSegments(string preparedText)
-    {
-        var normalizedText = PrepareNormalBotVoiceText(preparedText);
+        var normalizedText = GetExactBotVoiceText(exactText);
         if (string.IsNullOrWhiteSpace(normalizedText))
         {
             return [];
@@ -1118,7 +1046,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 : [];
         }
 
-        var sentenceSegments = SplitPreparedTextIntoSentenceSegments(normalizedText);
+        var sentenceSegments = SplitExactTextIntoSentenceSegments(normalizedText);
         var mediumSegments = MergeBotVoiceSegments(sentenceSegments);
         var finalSegments = new List<string>();
 
@@ -1130,7 +1058,7 @@ public partial class LessonChatViewModel : ViewModelBase
         return ValidateAndMergeBotVoiceSegments(finalSegments);
     }
 
-    private static IReadOnlyList<string> SplitPreparedTextIntoSentenceSegments(string text)
+    private static IReadOnlyList<string> SplitExactTextIntoSentenceSegments(string text)
     {
         var segments = new List<string>();
         var current = new StringBuilder();
@@ -1157,9 +1085,8 @@ public partial class LessonChatViewModel : ViewModelBase
         foreach (var rawSegment in segments)
         {
             var segment = NormalizeBotVoiceSegmentText(rawSegment);
-            if (string.IsNullOrWhiteSpace(segment) || !ContainsLetterOrDigit(segment))
+            if (string.IsNullOrWhiteSpace(segment))
             {
-                LogSkippedBotVoiceSegment("empty-or-punctuation", rawSegment);
                 continue;
             }
 
@@ -1171,15 +1098,10 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var previousIndex = mergedSegments.Count - 1;
             var mergedWithPrevious = JoinBotVoiceSegments(mergedSegments[previousIndex], segment);
-            if (mergedSegments[previousIndex].Length < AudioConstants.BotVoiceIdealSegmentMinCharacters
-                || segment.Length < AudioConstants.BotVoiceMinimumStandaloneSegmentCharacters
-                || mergedWithPrevious.Length <= AudioConstants.BotVoiceIdealSegmentMaxCharacters)
+            if (mergedWithPrevious.Length <= AudioConstants.BotVoiceIdealSegmentMaxCharacters)
             {
-                if (mergedWithPrevious.Length <= AudioConstants.BotVoiceAbsoluteMaxSegmentCharacters)
-                {
-                    mergedSegments[previousIndex] = mergedWithPrevious;
-                    continue;
-                }
+                mergedSegments[previousIndex] = mergedWithPrevious;
+                continue;
             }
 
             mergedSegments.Add(segment);
@@ -1190,80 +1112,10 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private static IReadOnlyList<string> ValidateAndMergeBotVoiceSegments(IReadOnlyList<string> segments)
     {
-        var validSegments = segments
+        return segments
             .Select(NormalizeBotVoiceSegmentText)
-            .Where(HasBasicSpeakableContent)
+            .Where(segment => ValidateBotVoiceSegmentForRequest(segment, allowShortMeaningfulOnlySegment: true))
             .ToList();
-
-        if (validSegments.Count <= 1)
-        {
-            return validSegments
-                .Where(segment => ValidateBotVoiceSegmentForRequest(segment, allowShortMeaningfulOnlySegment: true))
-                .ToList();
-        }
-
-        for (var index = 0; index < validSegments.Count; index++)
-        {
-            if (validSegments[index].Length >= AudioConstants.BotVoiceMinimumStandaloneSegmentCharacters)
-            {
-                continue;
-            }
-
-            if (index > 0)
-            {
-                var mergedWithPrevious = JoinBotVoiceSegments(validSegments[index - 1], validSegments[index]);
-                if (mergedWithPrevious.Length <= AudioConstants.BotVoiceAbsoluteMaxSegmentCharacters)
-                {
-                    validSegments[index - 1] = mergedWithPrevious;
-                    validSegments.RemoveAt(index);
-                    index--;
-                    continue;
-                }
-            }
-
-            if (index + 1 < validSegments.Count)
-            {
-                var mergedWithNext = JoinBotVoiceSegments(validSegments[index], validSegments[index + 1]);
-                if (mergedWithNext.Length <= AudioConstants.BotVoiceAbsoluteMaxSegmentCharacters)
-                {
-                    validSegments[index] = mergedWithNext;
-                    validSegments.RemoveAt(index + 1);
-                    continue;
-                }
-            }
-
-            LogSkippedBotVoiceSegment("too-short-standalone-after-merge", validSegments[index]);
-            validSegments.RemoveAt(index);
-            index--;
-        }
-
-        return validSegments
-            .Where(segment => ValidateBotVoiceSegmentForRequest(segment, allowShortMeaningfulOnlySegment: validSegments.Count == 1))
-            .ToList();
-    }
-
-    private static bool HasBasicSpeakableContent(string segment)
-    {
-        var normalizedSegment = NormalizeBotVoiceSegmentText(segment);
-        if (string.IsNullOrWhiteSpace(normalizedSegment))
-        {
-            LogSkippedBotVoiceSegment("empty", segment);
-            return false;
-        }
-
-        if (!ContainsLetterOrDigit(normalizedSegment))
-        {
-            LogSkippedBotVoiceSegment("no-letters-or-digits", segment);
-            return false;
-        }
-
-        if (IsHeadingOnlyFragment(normalizedSegment))
-        {
-            LogSkippedBotVoiceSegment("heading-only", segment);
-            return false;
-        }
-
-        return true;
     }
 
     private static bool ValidateBotVoiceSegmentForRequest(string segment, bool allowShortMeaningfulOnlySegment)
@@ -1281,33 +1133,12 @@ public partial class LessonChatViewModel : ViewModelBase
             return false;
         }
 
-        if (IsHeadingOnlyFragment(normalizedSegment))
-        {
-            LogSkippedBotVoiceSegment("heading-only", segment);
-            return false;
-        }
-
-        if (normalizedSegment.Length < AudioConstants.BotVoiceMinimumStandaloneSegmentCharacters
-            && !(allowShortMeaningfulOnlySegment && IsMeaningfulShortWholeReply(normalizedSegment)))
-        {
-            LogSkippedBotVoiceSegment("too-short-standalone", segment);
-            return false;
-        }
-
         return true;
     }
 
     private static bool IsSpeakableSegment(string segment, bool allowMeaningfulShortWholeReply)
     {
         return ValidateBotVoiceSegmentForRequest(segment, allowMeaningfulShortWholeReply);
-    }
-
-    private static bool IsMeaningfulShortWholeReply(string segment)
-    {
-        var normalizedSegment = NormalizeBotVoiceSegmentText(segment);
-        return ContainsLetterOrDigit(normalizedSegment)
-            && !IsHeadingOnlyFragment(normalizedSegment)
-            && normalizedSegment.Length > 1;
     }
 
     private static bool ContainsLetterOrDigit(string text)
@@ -1419,78 +1250,6 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             segments.Add(trimmedSegment);
         }
-    }
-
-    private static bool IsObviousUiOnlyArtifact(string line)
-    {
-        return IsNumberedOptionLine(line) || IsSetupMenuHeading(line);
-    }
-
-    private static bool IsNumberedOptionLine(string line)
-    {
-        var trimmedLine = line.TrimStart();
-        var digitCount = 0;
-        while (digitCount < trimmedLine.Length && char.IsDigit(trimmedLine[digitCount]))
-        {
-            digitCount++;
-        }
-
-        return digitCount > 0
-            && digitCount + 1 < trimmedLine.Length
-            && (trimmedLine[digitCount] == '.' || trimmedLine[digitCount] == ')' || trimmedLine[digitCount] == '-')
-            && char.IsWhiteSpace(trimmedLine[digitCount + 1]);
-    }
-
-    private static bool IsSetupMenuHeading(string line)
-    {
-        var normalizedLine = NormalizeBotVoiceSegmentText(line).TrimEnd(':').Trim();
-        return string.Equals(normalizedLine, "Choose a situation", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalizedLine, "Choose a context", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalizedLine, "Choose an option", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsHeadingOnlyFragment(string line)
-    {
-        var normalizedLine = NormalizeBotVoiceSegmentText(line);
-        return IsSetupMenuHeading(normalizedLine)
-            || (normalizedLine.EndsWith(":", StringComparison.Ordinal)
-                && normalizedLine.Length < AudioConstants.BotVoiceMinimumStandaloneSegmentCharacters);
-    }
-
-    private static bool StartsWithGoalLabel(string line)
-    {
-        return line.StartsWith("Goal:", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string RemoveLeadingGoalLabel(string line)
-    {
-        return StartsWithGoalLabel(line) ? line["Goal:".Length..].Trim() : line;
-    }
-
-    private static bool IsSuggestionLine(string line)
-    {
-        return line.StartsWith("Or suggest", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string EnsureTerminalPunctuation(string text)
-    {
-        var normalizedText = NormalizeBotVoiceSegmentText(text);
-        return normalizedText.EndsWith(".", StringComparison.Ordinal)
-            || normalizedText.EndsWith("?", StringComparison.Ordinal)
-            || normalizedText.EndsWith("!", StringComparison.Ordinal)
-            ? normalizedText
-            : $"{normalizedText}.";
-    }
-
-    private static string CapitalizeFirstLetter(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return string.Empty;
-        }
-
-        var normalizedText = NormalizeBotVoiceSegmentText(text);
-        return char.ToUpperInvariant(normalizedText[0]) + normalizedText[1..];
     }
 
     private static string CreateBotVoiceSegmentCacheKey(int messageId, int segmentIndex, string segmentText)
@@ -2160,6 +1919,11 @@ public partial class LessonChatViewModel : ViewModelBase
         return string.Equals(lessonScenario.Metadata.LessonType, "free_conversation", StringComparison.OrdinalIgnoreCase);
     }
 
+    private bool IsGuidedRoleplayLesson()
+    {
+        return string.Equals(lessonScenario.Metadata.LessonType, "guided_roleplay", StringComparison.OrdinalIgnoreCase);
+    }
+
     private string RenderLessonTemplate(string template)
     {
         if (string.IsNullOrWhiteSpace(template))
@@ -2573,16 +2337,16 @@ public partial class LessonChatViewModel : ViewModelBase
             return false;
         }
 
-        return !IsRealtimeConversationActive && (ShouldAutoPlayBotVoice || IsConversationModeEnabled || message.ShowPlayVoiceButton);
+        return !IsRealtimeConversationActive && message.ShowPlayVoiceButton && CurrentLessonPhase != LessonPhase.SetupContextSelection;
     }
 
     private void QueueBotVoiceFirstSegmentPrefetch(ChatMessageViewModel message)
     {
         var rawBotVoiceText = message.Text.Trim();
         var isSetupVoiceMessage = IsSetupVoiceMessage(message);
-        var preparedBotVoiceText = PrepareBotVoiceText(rawBotVoiceText, isSetupVoiceMessage);
-        var allSegments = SplitBotVoiceTextIntoSpeakableSegments(preparedBotVoiceText);
-        Debug.WriteLine($"Prepared bot voice text: RawLength={rawBotVoiceText.Length}; PreparedLength={preparedBotVoiceText.Length}; MessagePhase={(isSetupVoiceMessage ? "setup" : "active")}; SegmentCount={allSegments.Count}; SegmentLengths={string.Join(",", allSegments.Select(segment => segment.Length))}; Prefetch=True.");
+        var exactBotVoiceText = GetExactBotVoiceText(message.Text);
+        var allSegments = SplitExactBotVoiceTextIntoSegments(exactBotVoiceText);
+        Debug.WriteLine($"Exact bot voice text: RawLength={rawBotVoiceText.Length}; VoiceTextLength={exactBotVoiceText.Length}; MessagePhase={(isSetupVoiceMessage ? "setup" : "active")}; SegmentCount={allSegments.Count}; SegmentLengths={string.Join(",", allSegments.Select(segment => segment.Length))}; Prefetch=True.");
         if (allSegments.Count == 0)
         {
             return;

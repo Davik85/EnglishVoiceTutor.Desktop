@@ -80,6 +80,12 @@ public sealed class RealtimeVoiceSessionService
         {
             case "session.start":
                 var request = payload.Deserialize<RealtimeVoiceSessionStartRequest>(JsonOptions) ?? new RealtimeVoiceSessionStartRequest();
+                logger.LogInformation("Realtime session start endpoint call received. SessionId={SessionId}; LessonType={LessonType}; Topic={Topic}; Subtopic={Subtopic}; Level={Level}.",
+                    request.SessionId,
+                    request.LessonType,
+                    string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
+                    string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
+                    request.SelectedLevel);
                 await StartOpenAiSessionAsync(request, cancellationToken);
                 break;
             case "user.text":
@@ -132,36 +138,46 @@ public sealed class RealtimeVoiceSessionService
         firstAudioLogged = false;
         stopwatch.Restart();
 
-        openAiSocket = new ClientWebSocket();
-        openAiSocket.Options.SetRequestHeader("Authorization", $"Bearer {options.ApiKey}");
-        openAiSocket.Options.SetRequestHeader("OpenAI-Beta", "realtime=v1");
-        await openAiSocket.ConnectAsync(new Uri(RealtimeWebSocketEndpoint), cancellationToken);
-        _ = Task.Run(() => ReceiveOpenAiEventsAsync(openAiSocket, cancellationToken), CancellationToken.None);
-
-        var instructions = BuildInstructions(request);
-        await SendOpenAiEventAsync(new
+        try
         {
-            type = "session.update",
-            session = new
-            {
-                modalities = new[] { "text", "audio" },
-                instructions,
-                voice = OpenAiConstants.DefaultRealtimeVoice,
-                input_audio_format = "pcm16",
-                output_audio_format = "pcm16",
-                turn_detection = (object?)null,
-                input_audio_transcription = new { model = OpenAiConstants.DefaultTranscriptionModel, language = OpenAiConstants.TranscriptionLanguage }
-            }
-        }, cancellationToken);
+            openAiSocket = new ClientWebSocket();
+            openAiSocket.Options.SetRequestHeader("Authorization", $"Bearer {options.ApiKey}");
+            openAiSocket.Options.SetRequestHeader("OpenAI-Beta", "realtime=v1");
+            await openAiSocket.ConnectAsync(new Uri(RealtimeWebSocketEndpoint), cancellationToken);
+            _ = Task.Run(() => ReceiveOpenAiEventsAsync(openAiSocket, cancellationToken), CancellationToken.None);
 
-        logger.LogInformation("Realtime session created. SessionId={SessionId}; Model={Model}; Voice={Voice}; LessonType={LessonType}; Topic={Topic}; Subtopic={Subtopic}; Level={Level}.",
-            sessionId,
-            OpenAiConstants.DefaultRealtimeVoiceModel,
-            OpenAiConstants.DefaultRealtimeVoice,
-            request.LessonType,
-            string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
-            string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
-            request.SelectedLevel);
+            var instructions = BuildInstructions(request);
+            await SendOpenAiEventAsync(new
+            {
+                type = "session.update",
+                session = new
+                {
+                    modalities = new[] { "text", "audio" },
+                    instructions,
+                    voice = OpenAiConstants.DefaultRealtimeVoice,
+                    input_audio_format = "pcm16",
+                    output_audio_format = "pcm16",
+                    turn_detection = (object?)null,
+                    input_audio_transcription = new { model = OpenAiConstants.DefaultTranscriptionModel, language = OpenAiConstants.TranscriptionLanguage }
+                }
+            }, cancellationToken);
+
+            logger.LogInformation("Realtime session created. SessionId={SessionId}; Model={Model}; Voice={Voice}; LessonType={LessonType}; Topic={Topic}; Subtopic={Subtopic}; Level={Level}.",
+                sessionId,
+                OpenAiConstants.DefaultRealtimeVoiceModel,
+                OpenAiConstants.DefaultRealtimeVoice,
+                request.LessonType,
+                string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
+                string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
+                request.SelectedLevel);
+
+            await SendDesktopEventAsync(new { type = "session.started", sessionId, model = OpenAiConstants.DefaultRealtimeVoiceModel, voice = OpenAiConstants.DefaultRealtimeVoice }, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(exception, "Realtime session start failed. SessionId={SessionId}; Endpoint={Endpoint}.", request.SessionId, RealtimeWebSocketEndpoint);
+            await SendDesktopEventAsync(new { type = "session.error", sessionId = request.SessionId, message = "Realtime voice mode is unavailable. Please try text mode." }, CancellationToken.None);
+        }
     }
 
     private async Task ReceiveOpenAiEventsAsync(ClientWebSocket socket, CancellationToken cancellationToken)

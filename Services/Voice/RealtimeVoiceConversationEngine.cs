@@ -19,6 +19,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
     private string sessionId = string.Empty;
     private string activeResponseId = string.Empty;
     private readonly StringBuilder activeTranscript = new();
+    private TaskCompletionSource<bool>? sessionStartCompletionSource;
     private bool disposed;
 
     public RealtimeVoiceConversationEngine(LessonChatBackendService backendService)
@@ -44,12 +45,20 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         socket.Options.SetRequestHeader(BackendConstants.NgrokSkipBrowserWarningHeaderName, BackendConstants.NgrokSkipBrowserWarningHeaderValue);
         webSocket = socket;
         receiveCancellationTokenSource = new CancellationTokenSource();
+        sessionStartCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var endpoint = backendService.CreateRealtimeVoiceWebSocketUri();
         Debug.WriteLine($"Realtime voice session connecting: SessionId={sessionId}; Endpoint={endpoint}; LessonType={request.LessonType}; Topic={request.Topic}; Subtopic={request.Subtopic}; Level={request.SelectedLevel}.");
         await socket.ConnectAsync(endpoint, cancellationToken);
         receiveTask = ReceiveLoopAsync(socket, receiveCancellationTokenSource.Token);
         await SendBackendEventAsync("session.start", request, cancellationToken);
+
+        var startCompletion = sessionStartCompletionSource;
+        if (startCompletion is not null)
+        {
+            await startCompletion.Task.WaitAsync(TimeSpan.FromSeconds(BackendConstants.BackendRequestTimeoutSeconds), cancellationToken);
+        }
+
         Debug.WriteLine($"Realtime voice session start ms: SessionId={sessionId}; StartMs={sessionStopwatch.ElapsedMilliseconds}.");
     }
 
@@ -98,6 +107,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         webSocket = null;
         receiveCancellationTokenSource?.Dispose();
         receiveCancellationTokenSource = null;
+        sessionStartCompletionSource = null;
         Debug.WriteLine($"Realtime voice session stopped: SessionId={sessionId}; CancellationReason=client_stop; ElapsedMs={sessionStopwatch.ElapsedMilliseconds}.");
     }
 
@@ -167,6 +177,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         catch (Exception exception)
         {
             Debug.WriteLine($"Realtime voice receive loop failed: SessionId={sessionId}; {exception}");
+            sessionStartCompletionSource?.TrySetException(exception);
             ErrorReceived?.Invoke(this, new VoiceSessionErrorEventArgs(sessionId, "Realtime voice mode is unavailable. Please try text mode.", activeResponseId, exception));
         }
     }
@@ -187,6 +198,10 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
 
         switch (type)
         {
+            case "session.started":
+                sessionStartCompletionSource?.TrySetResult(true);
+                Debug.WriteLine($"Realtime voice session started acknowledgement received: SessionId={eventSessionId}; StartMs={sessionStopwatch.ElapsedMilliseconds}.");
+                break;
             case "assistant.audio.delta":
                 var audioBase64 = root.GetProperty("audio").GetString() ?? string.Empty;
                 var audioBytes = Convert.FromBase64String(audioBase64);
@@ -205,6 +220,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
                 break;
             case "session.error":
                 var message = root.TryGetProperty("message", out var messageProperty) ? messageProperty.GetString() ?? "Realtime voice mode is unavailable. Please try text mode." : "Realtime voice mode is unavailable. Please try text mode.";
+                sessionStartCompletionSource?.TrySetException(new InvalidOperationException(message));
                 ErrorReceived?.Invoke(this, new VoiceSessionErrorEventArgs(eventSessionId, message, responseId));
                 break;
         }
