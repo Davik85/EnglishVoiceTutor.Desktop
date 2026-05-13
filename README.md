@@ -8,13 +8,14 @@
 3. Run from your IDE or use your preferred `dotnet` run/publish workflow.
 
 ## Run the local backend proxy
-1. Go to the backend project folder:
+1. Stop any old backend `dotnet` process or close old backend terminal windows before starting a fresh backend.
+2. Go to the backend project folder:
    `cd backend/EnglishVoiceTutor.Api`
-2. Restore dependencies:
+3. Restore dependencies:
    `dotnet restore`
-3. Build the backend:
+4. Build the backend:
    `dotnet build`
-4. Start the API:
+5. Start the API:
    `dotnet run`
 
 ## Lesson chat endpoints
@@ -29,9 +30,9 @@ $env:OPENAI_API_KEY="your_api_key_here"
 dotnet run
 ```
 
-- If `OPENAI_API_KEY` is missing, backend returns mock replies.
-- If OpenAI call fails or returns invalid output, backend safely falls back to mock replies.
-- Desktop app still calls only the backend.
+- If `OPENAI_API_KEY` is missing, the real lesson chat endpoint returns an error instead of mock lesson text.
+- If an OpenAI call fails or returns invalid output, the real lesson chat endpoint returns an error instead of mock lesson text.
+- Desktop app still calls only the real backend lesson chat endpoint during normal lesson flow.
 
 ## Security rule
 OpenAI API keys must never be stored in the desktop app and must never be committed to source control.

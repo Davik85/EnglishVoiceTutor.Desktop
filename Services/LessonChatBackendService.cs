@@ -94,6 +94,7 @@ public sealed class LessonChatBackendService
         CancellationToken cancellationToken = default)
     {
         using var httpClient = CreateHttpClient();
+        Debug.WriteLine($"Sending lesson chat request to {BackendConstants.LessonChatReplyEndpoint}");
 
         using var response = await httpClient.PostAsJsonAsync(
             CreateEndpointUri(BackendConstants.LessonChatReplyEndpoint),

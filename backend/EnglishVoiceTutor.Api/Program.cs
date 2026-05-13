@@ -2,7 +2,7 @@ using System.Net;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
+using HttpBadHttpRequestException = Microsoft.AspNetCore.Http.BadHttpRequestException;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,6 +49,12 @@ app.MapPost(ApiConstants.AudioTranscriptionRoute, HandleAudioTranscriptionAsync)
 app.MapPost(ApiConstants.TranslationRoute, HandleTranslationAsync);
 app.MapPost(ApiConstants.AudioSpeechRoute, HandleAudioSpeechAsync);
 
+app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
+    ApiConstants.ServiceName,
+    app.Environment.EnvironmentName,
+    DateTimeOffset.UtcNow,
+    ApiConstants.LessonChatReplyRoute);
+
 app.Run();
 
 static IResult CreateHealthResponse()
@@ -63,8 +69,16 @@ static IResult CreateHealthResponse()
 static async Task<IResult> HandleLessonChatReplyAsync(
     LessonChatRequest request,
     ILessonChatService lessonChatService,
+    ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
+    var logger = loggerFactory.CreateLogger("LessonChatReplyEndpoint");
+    logger.LogInformation("LessonChatReplyEndpoint lessonType={LessonType}; topic={Topic}; subtopic={Subtopic}; userTurnNumber={UserTurnNumber}.",
+        request.LessonType,
+        string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
+        string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
+        request.UserTurnNumber);
+
     if (string.IsNullOrWhiteSpace(request.UserMessage))
     {
         return Results.BadRequest(new
@@ -73,16 +87,32 @@ static async Task<IResult> HandleLessonChatReplyAsync(
         });
     }
 
-    var response = await lessonChatService.CreateReplyAsync(request, cancellationToken);
+    try
+    {
+        var response = await lessonChatService.CreateReplyAsync(request, cancellationToken);
 
-    return Results.Ok(response);
+        return Results.Ok(response);
+    }
+    catch (Exception exception)
+    {
+        logger.LogError(exception, "LessonChatReplyEndpoint failed to create a real lesson chat reply.");
+
+        return Results.Problem(
+            title: "Lesson chat reply failed.",
+            detail: "The real lesson chat service could not create a reply. Please check backend AI configuration and try again.",
+            statusCode: StatusCodes.Status502BadGateway);
+    }
 }
 
 static async Task<IResult> HandleMockLessonChatReplyAsync(
     LessonChatRequest request,
     MockLessonChatService mockLessonChatService,
+    ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
+    var logger = loggerFactory.CreateLogger("MockLessonChatEndpoint");
+    logger.LogWarning("Mock lesson chat endpoint was called.");
+
     if (string.IsNullOrWhiteSpace(request.UserMessage))
     {
         return Results.BadRequest(new
@@ -157,7 +187,7 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
 
         return Results.Ok(response);
     }
-    catch (BadHttpRequestException exception)
+    catch (HttpBadHttpRequestException exception)
     {
         var isBodyReadTimeout = IsRequestBodyReadTimeout(exception);
         var statusCode = isBodyReadTimeout
@@ -209,7 +239,7 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
     }
 }
 
-static bool IsRequestBodyReadTimeout(BadHttpRequestException exception)
+static bool IsRequestBodyReadTimeout(HttpBadHttpRequestException exception)
 {
     return exception.Message.Contains("MinRequestBodyDataRate", StringComparison.OrdinalIgnoreCase)
         || (exception.Message.Contains("request body", StringComparison.OrdinalIgnoreCase)
