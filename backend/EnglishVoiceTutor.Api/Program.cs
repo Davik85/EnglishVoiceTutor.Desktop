@@ -2,8 +2,7 @@ using System.Net;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using KestrelBadHttpRequestException = Microsoft.AspNetCore.Server.Kestrel.Core.BadHttpRequestException;
+using HttpBadHttpRequestException = Microsoft.AspNetCore.Http.BadHttpRequestException;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -188,7 +187,7 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
 
         return Results.Ok(response);
     }
-    catch (KestrelBadHttpRequestException exception)
+    catch (HttpBadHttpRequestException exception)
     {
         var isBodyReadTimeout = IsRequestBodyReadTimeout(exception);
         var statusCode = isBodyReadTimeout
@@ -240,7 +239,7 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
     }
 }
 
-static bool IsRequestBodyReadTimeout(KestrelBadHttpRequestException exception)
+static bool IsRequestBodyReadTimeout(HttpBadHttpRequestException exception)
 {
     return exception.Message.Contains("MinRequestBodyDataRate", StringComparison.OrdinalIgnoreCase)
         || (exception.Message.Contains("request body", StringComparison.OrdinalIgnoreCase)
