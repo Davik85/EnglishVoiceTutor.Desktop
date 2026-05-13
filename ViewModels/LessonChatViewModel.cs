@@ -1345,7 +1345,7 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         var normalizedLine = NormalizeBotVoiceSegmentText(line);
         return IsSetupMenuHeading(normalizedLine)
-            || (normalizedLine.EndsWith(':', StringComparison.Ordinal)
+            || (normalizedLine.EndsWith(":", StringComparison.Ordinal)
                 && normalizedLine.Length < AudioConstants.BotVoiceMinimumStandaloneSegmentCharacters);
     }
 
@@ -1367,9 +1367,9 @@ public partial class LessonChatViewModel : ViewModelBase
     private static string EnsureTerminalPunctuation(string text)
     {
         var normalizedText = NormalizeBotVoiceSegmentText(text);
-        return normalizedText.EndsWith('.', StringComparison.Ordinal)
-            || normalizedText.EndsWith('?', StringComparison.Ordinal)
-            || normalizedText.EndsWith('!', StringComparison.Ordinal)
+        return normalizedText.EndsWith(".", StringComparison.Ordinal)
+            || normalizedText.EndsWith("?", StringComparison.Ordinal)
+            || normalizedText.EndsWith("!", StringComparison.Ordinal)
             ? normalizedText
             : $"{normalizedText}.";
     }
