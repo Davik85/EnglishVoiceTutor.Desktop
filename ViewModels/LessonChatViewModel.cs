@@ -480,6 +480,11 @@ public partial class LessonChatViewModel : ViewModelBase
                 UserInput = string.Empty;
             }
         }
+        catch (AudioTranscriptionBackendException)
+        {
+            BackendStatusText = BackendConstants.BackendStatusConnected;
+            StatusMessage = localizedText.TranscriptionFailedMessage;
+        }
         catch
         {
             BackendStatusText = BackendConstants.BackendStatusUnavailable;

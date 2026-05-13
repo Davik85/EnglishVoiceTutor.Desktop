@@ -13,6 +13,12 @@ public static class ApiConstants
     public const string EmptySpeechTextError = "Text is required for speech generation.";
     public const string AudioTranscriptionFallbackText = "";
     public const string AudioTranscriptionError = "Could not transcribe audio.";
+    public const string AudioUploadTimedOutTitle = "Audio upload timed out.";
+    public const string AudioUploadTimedOutDetail = "Audio upload timed out. Please try recording again.";
+    public const string AudioUploadCanceledTitle = "Audio upload canceled.";
+    public const string AudioUploadCanceledDetail = "Audio upload was canceled. Please try recording again.";
+    public const string AudioUploadFailedTitle = "Audio upload failed.";
+    public const string AudioUploadFailedDetail = "I couldn't process that recording. Please try again.";
     public const string TranslationError = "Could not translate text.";
     public const string AudioSpeechError = "Could not generate speech audio.";
     public const int DefaultLessonSoftLearnerTurnLimit = 10;
