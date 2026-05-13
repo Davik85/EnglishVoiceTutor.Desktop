@@ -126,7 +126,9 @@
       "correctionPriority": "Workplace meaning first, then one essential grammar or word correction.",
       "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
       "exampleGoodAnswer": "The deadline is Friday.",
-      "exampleStretchAnswer": "The deadline is Friday. I need more time."
+      "exampleStretchAnswer": "The deadline is Friday. I need more time.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -156,7 +158,9 @@
       "correctionPriority": "Clear workplace message, basic grammar, and polite tone.",
       "conversationDepth": "Use simple follow-up questions while staying in the selected workplace scenario.",
       "exampleGoodAnswer": "The deadline is Friday. I need more time.",
-      "exampleStretchAnswer": "The deadline is Friday, but I need one more day."
+      "exampleStretchAnswer": "The deadline is Friday, but I need one more day.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -187,7 +191,9 @@
       "correctionPriority": "Natural workplace meaning, complete details, polite question form, and smooth sentence flow.",
       "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected scenario.",
       "exampleGoodAnswer": "The deadline is Friday, but I need one more day.",
-      "exampleStretchAnswer": "The deadline is Friday, but I need one more day to finish it well. Does Monday morning work for you?"
+      "exampleStretchAnswer": "The deadline is Friday, but I need one more day to finish it well. Does Monday morning work for you?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -220,7 +226,9 @@
       "correctionPriority": "Polite nuance, specificity, smooth flow, precise workplace vocabulary, and appropriate tone.",
       "conversationDepth": "Allow richer details, a realistic complication, and flexible negotiation, but do not leave the work/business scenario.",
       "exampleGoodAnswer": "The deadline is Friday, but I need one more day to finish it well. Does Monday morning work for you?",
-      "exampleStretchAnswer": "The current deadline is Friday, but I may need one extra day to finish it properly. Would Monday morning still work for you, and should I send a short update tomorrow?"
+      "exampleStretchAnswer": "The current deadline is Friday, but I may need one extra day to finish it properly. Would Monday morning still work for you, and should I send a short update tomorrow?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -385,8 +393,8 @@
     "Ask one question at a time.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
   ]
 }

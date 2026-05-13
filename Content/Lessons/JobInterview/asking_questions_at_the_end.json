@@ -133,7 +133,9 @@
       "correctionPriority": "Politeness, clear question word order, and appropriate interview topic.",
       "conversationDepth": "Keep the ending practical: one useful question and one polite closing phrase.",
       "exampleGoodAnswer": "What are the next steps?",
-      "exampleStretchAnswer": "Thank you for your time. What are the next steps?"
+      "exampleStretchAnswer": "Thank you for your time. What are the next steps?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -162,7 +164,9 @@
       "correctionPriority": "Professional topic choice, politeness, and clear question structure.",
       "conversationDepth": "Ask for one useful end-of-interview question and a polite close.",
       "exampleGoodAnswer": "Could you tell me about the team?",
-      "exampleStretchAnswer": "Thank you for your time. Could you tell me about the team and the next steps?"
+      "exampleStretchAnswer": "Thank you for your time. Could you tell me about the team and the next steps?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -191,7 +195,9 @@
       "correctionPriority": "Usefulness of the question, professional tone, politeness, and grammatical question structure.",
       "conversationDepth": "Use realistic end-of-interview turns and ask for one more specific or professional version when needed.",
       "exampleGoodAnswer": "Could you tell me more about the main responsibilities for this role? I’d also like to know what the next steps are.",
-      "exampleStretchAnswer": "Could you tell me more about the main responsibilities for this role? I’d be interested to know how the team supports someone during the first few months."
+      "exampleStretchAnswer": "Could you tell me more about the main responsibilities for this role? I’d be interested to know how the team supports someone during the first few months.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -220,7 +226,9 @@
       "correctionPriority": "Professional judgment, relevance, concise wording, question control, and polished tone.",
       "conversationDepth": "Allow one realistic interviewer challenge such as asking the candidate to avoid salary or vacation as the first question, make it more concise, or ask a more thoughtful question about success in the role.",
       "exampleGoodAnswer": "I’d be interested to know what success would look like in this role during the first few months. Could you also tell me what the next steps in the process are?",
-      "exampleStretchAnswer": "Before we finish, I’d be interested to know what success would look like in this role during the first few months and how the team typically supports a new hire. Thank you for your time; could you also confirm the next steps in the process?"
+      "exampleStretchAnswer": "Before we finish, I’d be interested to know what success would look like in this role during the first few months and how the team typically supports a new hire. Thank you for your time; could you also confirm the next steps in the process?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -396,8 +404,8 @@
     "For B1 and B2, encourage structured answers with point + evidence/example + relevance to the role.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal, interviewer role, candidate role, or selected interview scenario."
   ]
 }

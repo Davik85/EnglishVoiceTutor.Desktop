@@ -126,7 +126,9 @@
       "correctionPriority": "Travel meaning first, then one essential grammar or word correction.",
       "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
       "exampleGoodAnswer": "Excuse me. Where is the station?",
-      "exampleStretchAnswer": "Excuse me. Where is the station? Thank you."
+      "exampleStretchAnswer": "Excuse me. Where is the station? Thank you.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -156,7 +158,9 @@
       "correctionPriority": "Clear request or answer, one extra detail, polite wording, and basic question order.",
       "conversationDepth": "Practice the main travel task and one follow-up question inside the same situation.",
       "exampleGoodAnswer": "Excuse me. How do I get to the station? Is it far?",
-      "exampleStretchAnswer": "Excuse me. How do I get to the station? Is it far from here?"
+      "exampleStretchAnswer": "Excuse me. How do I get to the station? Is it far from here?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -187,7 +191,9 @@
       "correctionPriority": "Natural travel request, complete details, accurate polite question, and smooth sentence flow.",
       "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected scenario.",
       "exampleGoodAnswer": "Excuse me, could you tell me how to get to the station? I’m not from here.",
-      "exampleStretchAnswer": "Excuse me, could you tell me how to get to the station? I’m not from here, and I need the easiest route."
+      "exampleStretchAnswer": "Excuse me, could you tell me how to get to the station? I’m not from here, and I need the easiest route.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -219,7 +225,9 @@
       "correctionPriority": "Polite nuance, specificity, smooth flow, precise travel vocabulary, and appropriate tone.",
       "conversationDepth": "Allow richer details, a realistic complication, and flexible negotiation, but do not leave the travel scenario.",
       "exampleGoodAnswer": "Excuse me, would you mind telling me the easiest way to get to the station? I’m trying to avoid getting lost.",
-      "exampleStretchAnswer": "Excuse me, would you mind telling me the easiest way to get to the station? I’m trying to avoid getting lost, so a simple route would be really helpful."
+      "exampleStretchAnswer": "Excuse me, would you mind telling me the easiest way to get to the station? I’m trying to avoid getting lost, so a simple route would be really helpful.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -383,8 +391,8 @@
     "Ask one question at a time.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
   ]
 }

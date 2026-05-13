@@ -297,10 +297,12 @@ public partial class LessonChatViewModel : ViewModelBase
         this.navigateBack = navigateBack;
         this.finishLesson = finishLesson;
 
-        CurrentLessonPhase = LessonPhase.SetupContextSelection;
+        CurrentLessonPhase = IsFreeConversationLesson()
+            ? LessonPhase.ActiveRoleplay
+            : LessonPhase.SetupContextSelection;
         var setupMessage = string.IsNullOrWhiteSpace(this.lessonScenario.LessonSetup.SetupMessage)
             ? AppConstants.MockBotFirstMessage
-            : this.lessonScenario.LessonSetup.SetupMessage.Trim();
+            : RenderLessonTemplate(this.lessonScenario.LessonSetup.SetupMessage.Trim());
         AddMessage(TutorAvatarDisplayName, setupMessage, true);
         lastBotMessage = setupMessage;
         _ = CheckBackendHealthAsync();
@@ -757,7 +759,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
         CurrentHintText = string.Empty;
 
-        if (CurrentLessonPhase == LessonPhase.SetupContextSelection)
+        if (CurrentLessonPhase == LessonPhase.SetupContextSelection && !IsFreeConversationLesson())
         {
             return await HandleContextSelectionMessageAsync(userMessage);
         }
@@ -802,6 +804,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 Topic = lessonScenario.Metadata.Topic,
                 Subtopic = lessonScenario.Metadata.Subtopic,
                 LessonGoal = lessonScenario.LearningGoal.Goal,
+                LessonType = lessonScenario.Metadata.LessonType,
+                AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
                 SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
                 SelectedContextTitle = GetSelectedContextTitle(),
                 SelectedContextOpeningLine = selectedContextVariant?.OpeningLine ?? lessonScenario.ConversationFlow.DefaultOpeningExample,
@@ -974,7 +978,7 @@ public partial class LessonChatViewModel : ViewModelBase
             return lessonScenario.ControlledVariation.InvalidContextRedirect.Trim();
         }
 
-        return "That sounds interesting, but this lesson is about introductions. Please choose a situation about meeting someone for the first time.";
+        return $"That sounds interesting, but this lesson is about {SelectedSubtopic.Title.ToLowerInvariant()}. Please choose a situation that matches this lesson.";
     }
 
     private string BuildSetupContextHint()
@@ -1026,6 +1030,11 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private int GetSoftWrapUpTurn()
     {
+        if (activeLevelProfile.SoftWrapUpAfterUserTurn > 0)
+        {
+            return activeLevelProfile.SoftWrapUpAfterUserTurn;
+        }
+
         return lessonScenario.Metadata.SoftWrapUpAfterUserTurn > 0
             ? lessonScenario.Metadata.SoftWrapUpAfterUserTurn
             : AppConstants.DefaultLessonSoftLearnerTurnLimit;
@@ -1033,9 +1042,38 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private int GetFinalTurn()
     {
+        if (activeLevelProfile.FinalMessageAtUserTurn > 0)
+        {
+            return activeLevelProfile.FinalMessageAtUserTurn;
+        }
+
         return lessonScenario.Metadata.FinalMessageAtUserTurn > 0
             ? lessonScenario.Metadata.FinalMessageAtUserTurn
             : AppConstants.DefaultLessonHardLearnerTurnLimit;
+    }
+
+    private bool IsFreeConversationLesson()
+    {
+        return string.Equals(lessonScenario.Metadata.LessonType, "free_conversation", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private string RenderLessonTemplate(string template)
+    {
+        if (string.IsNullOrWhiteSpace(template))
+        {
+            return string.Empty;
+        }
+
+        var rendered = template.Trim();
+
+        if (rendered.Contains("{{userDisplayName}}", StringComparison.Ordinal))
+        {
+            rendered = string.IsNullOrWhiteSpace(UserDisplayName)
+                ? rendered.Replace("Hi, {{userDisplayName}}!", "Hi!", StringComparison.Ordinal)
+                : rendered.Replace("{{userDisplayName}}", UserDisplayName, StringComparison.Ordinal);
+        }
+
+        return rendered.Replace("Hi, !", "Hi!", StringComparison.Ordinal).Trim();
     }
 
     private string BuildFeedbackRulesSummary()
@@ -1210,12 +1248,20 @@ public partial class LessonChatViewModel : ViewModelBase
                 TutorAvatarId = tutorAvatarId,
                 UserDisplayName = this.UserDisplayName,
                 LearningGoal = this.LearningGoal,
+                LearnerTurnCount = LearnerTurnCount,
+                SoftLearnerTurnLimit = softWrapUpTurn,
+                HardLearnerTurnLimit = finalTurn,
+                RemainingLearnerTurns = Math.Max(finalTurn - LearnerTurnCount, 0),
+                ShouldStartWrappingUp = LearnerTurnCount >= softWrapUpTurn,
+                ShouldEndLessonNow = LearnerTurnCount >= finalTurn,
                 RecentMessages = GetRecentConversationMessages(),
                 LessonScenarioId = lessonScenario.Id,
                 Level = SelectedLevel,
                 Topic = lessonScenario.Metadata.Topic,
                 Subtopic = lessonScenario.Metadata.Subtopic,
                 LessonGoal = lessonScenario.LearningGoal.Goal,
+                LessonType = lessonScenario.Metadata.LessonType,
+                AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
                 SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
                 SelectedContextTitle = GetSelectedContextTitle(),
                 SelectedContextOpeningLine = selectedContextVariant?.OpeningLine ?? lessonScenario.ConversationFlow.DefaultOpeningExample,

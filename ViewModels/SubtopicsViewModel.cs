@@ -120,6 +120,10 @@ public partial class SubtopicsViewModel : ViewModelBase
                 new Subtopic(504, 5, "Handling a wrong order", "Politely explain an issue with your order."),
                 new Subtopic(505, 5, "Paying the bill", "Ask for the check and complete payment.")
             ],
+            6 =>
+            [
+                new Subtopic(601, 6, "Open conversation", "Talk freely in English within safe and respectful boundaries.")
+            ],
             _ => []
         };
 

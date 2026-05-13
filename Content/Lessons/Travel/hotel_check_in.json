@@ -122,7 +122,9 @@
       "correctionPriority": "Travel meaning first, then one essential grammar or word correction.",
       "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
       "exampleGoodAnswer": "I have a reservation. My name is David.",
-      "exampleStretchAnswer": "I have a reservation. My name is David. What time is breakfast?"
+      "exampleStretchAnswer": "I have a reservation. My name is David. What time is breakfast?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -152,7 +154,9 @@
       "correctionPriority": "Clear request or answer, one extra detail, polite wording, and basic question order.",
       "conversationDepth": "Practice the main travel task and one follow-up question inside the same situation.",
       "exampleGoodAnswer": "I have a reservation under the name David. What time is breakfast?",
-      "exampleStretchAnswer": "I have a reservation under the name David. What time is breakfast, and is Wi-Fi included?"
+      "exampleStretchAnswer": "I have a reservation under the name David. What time is breakfast, and is Wi-Fi included?",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -183,7 +187,9 @@
       "correctionPriority": "Natural travel request, complete details, accurate polite question, and smooth sentence flow.",
       "conversationDepth": "Use several realistic turns and ask one clarification question while staying in the selected scenario.",
       "exampleGoodAnswer": "I have a reservation under the name David. Could you tell me what time breakfast starts?",
-      "exampleStretchAnswer": "I have a reservation under the name David. Could you tell me what time breakfast starts and when I need to check out?"
+      "exampleStretchAnswer": "I have a reservation under the name David. Could you tell me what time breakfast starts and when I need to check out?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -215,7 +221,9 @@
       "correctionPriority": "Polite nuance, specificity, smooth flow, precise travel vocabulary, and appropriate tone.",
       "conversationDepth": "Allow richer details, a realistic complication, and flexible negotiation, but do not leave the travel scenario.",
       "exampleGoodAnswer": "I have a reservation under the name David. Could you also let me know what time breakfast is served and when check-out is?",
-      "exampleStretchAnswer": "I have a reservation under the name David. Could you also let me know what time breakfast is served, whether Wi-Fi is included, and when check-out is?"
+      "exampleStretchAnswer": "I have a reservation under the name David. Could you also let me know what time breakfast is served, whether Wi-Fi is included, and when check-out is?",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -380,8 +388,8 @@
     "Ask one question at a time.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
   ]
 }

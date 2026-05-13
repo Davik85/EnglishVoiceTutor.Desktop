@@ -133,7 +133,9 @@
       "correctionPriority": "Clear role, clear task, and basic simple past verbs.",
       "conversationDepth": "Keep the interview practical: one role, one task, and optionally one learning.",
       "exampleGoodAnswer": "I worked as an assistant. I helped customers.",
-      "exampleStretchAnswer": "I worked as an assistant and helped customers every day."
+      "exampleStretchAnswer": "I worked as an assistant and helped customers every day.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -162,7 +164,9 @@
       "correctionPriority": "Specific responsibility, correct past-tense verbs, and professional vocabulary.",
       "conversationDepth": "Ask one follow-up about a concrete task, project, or result.",
       "exampleGoodAnswer": "I worked as an assistant. I helped customers and prepared documents.",
-      "exampleStretchAnswer": "I worked as an assistant for one year. I helped customers every day and learned to organize my tasks."
+      "exampleStretchAnswer": "I worked as an assistant for one year. I helped customers every day and learned to organize my tasks.",
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "B1 Intermediate": {
       "level": "B1 Intermediate",
@@ -191,7 +195,9 @@
       "correctionPriority": "Clear role, specific task, concrete result or learning, and professional tone.",
       "conversationDepth": "Ask one realistic follow-up about a concrete task, result, or what the candidate learned.",
       "exampleGoodAnswer": "I worked as an assistant for one year. In my previous role, I helped customers, prepared documents, and learned how to organize my work. This helped me communicate better with a team.",
-      "exampleStretchAnswer": "In my previous role as an assistant, I helped customers, prepared documents, and handled daily requests. For example, I organized client files more clearly, and this helped the team find information faster."
+      "exampleStretchAnswer": "In my previous role as an assistant, I helped customers, prepared documents, and handled daily requests. For example, I organized client files more clearly, and this helped the team find information faster.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     },
     "B2 Upper-Intermediate": {
       "level": "B2 Upper-Intermediate",
@@ -220,7 +226,9 @@
       "correctionPriority": "Concrete evidence, role relevance, concise structure, precise vocabulary, and professional tone.",
       "conversationDepth": "Allow one realistic interviewer challenge such as Could you give me a specific example?, What did you learn?, How is that relevant to this role?, or Could you make that answer more concise?",
       "exampleGoodAnswer": "In my previous assistant role, I supported customers, prepared documents, and helped improve how information was organized. What I learned from that was the importance of clear communication under pressure. That experience strengthened skills I would use in this role, especially organization and customer focus.",
-      "exampleStretchAnswer": "In my previous assistant role, I supported customers, handled documentation, and improved the way client files were organized. That experience strengthened my ability to prioritize under pressure, and it is relevant to this role because it required accuracy, communication, and consistent follow-through."
+      "exampleStretchAnswer": "In my previous assistant role, I supported customers, handled documentation, and improved the way client files were organized. That experience strengthened my ability to prioritize under pressure, and it is relevant to this role because it required accuracy, communication, and consistent follow-through.",
+      "softWrapUpAfterUserTurn": 20,
+      "finalMessageAtUserTurn": 25
     }
   },
   "conversationFlow": {
@@ -395,8 +403,8 @@
     "For B1 and B2, encourage structured answers with point + evidence/example + relevance to the role.",
     "Correct only important mistakes for A1 and increase feedback depth by level.",
     "Give feedback in 1-3 short sentences.",
-    "After user turn 10, start wrapping up.",
-    "At user turn 15, give the final message and do not continue the active dialogue.",
+    "When the active soft wrap-up limit is reached, start wrapping up.",
+    "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal, interviewer role, candidate role, or selected interview scenario."
   ]
 }
