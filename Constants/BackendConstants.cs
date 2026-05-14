@@ -6,6 +6,7 @@ public static class BackendConstants
     public const string LessonChatReplyEndpoint = "/api/lesson-chat/reply";
     public const string MockLessonChatEndpoint = "/api/lesson-chat/mock-reply";
     public const string LessonChatHintEndpoint = "/api/lesson-chat/hint";
+    public const string LessonChatFeedbackEndpoint = "/api/lesson-chat/feedback";
     public const string AudioTranscriptionEndpoint = "/api/audio/transcribe";
     public const string TranslationEndpoint = "/api/translate";
     public const string AudioSpeechEndpoint = "/api/audio/speech";

@@ -49,6 +49,7 @@ app.MapGet(ApiConstants.BackendConfigStatusRoute, (OpenAiOptionsProvider options
 app.MapPost(ApiConstants.LessonChatReplyRoute, HandleLessonChatReplyAsync);
 app.MapPost(ApiConstants.LessonChatMockReplyRoute, HandleMockLessonChatReplyAsync);
 app.MapPost(ApiConstants.LessonChatHintRoute, HandleLessonChatHintAsync);
+app.MapPost(ApiConstants.LessonChatFeedbackRoute, HandleLessonChatFeedbackAsync);
 app.MapPost(ApiConstants.AudioTranscriptionRoute, HandleAudioTranscriptionAsync);
 app.MapPost(ApiConstants.TranslationRoute, HandleTranslationAsync);
 app.MapPost(ApiConstants.AudioSpeechRoute, HandleAudioSpeechAsync);
@@ -166,6 +167,43 @@ static async Task<IResult> HandleLessonChatHintAsync(
     var response = await lessonHintService.CreateHintAsync(request, cancellationToken);
 
     return Results.Ok(response);
+}
+
+static async Task<IResult> HandleLessonChatFeedbackAsync(
+    LessonChatRequest request,
+    ILessonChatService lessonChatService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("LessonChatFeedbackEndpoint");
+    logger.LogInformation("LessonChatFeedbackEndpoint sourceMessageLength={UserMessageLength}; lessonType={LessonType}; topic={Topic}; subtopic={Subtopic}; userTurnNumber={UserTurnNumber}.",
+        request.UserMessage?.Trim().Length ?? 0,
+        request.LessonType,
+        string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
+        string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
+        request.UserTurnNumber);
+
+    if (string.IsNullOrWhiteSpace(request.UserMessage))
+    {
+        return Results.BadRequest(new
+        {
+            error = ApiConstants.EmptyUserMessageError
+        });
+    }
+
+    try
+    {
+        var feedback = await lessonChatService.CreateFeedbackAsync(request, cancellationToken);
+        return Results.Ok(feedback);
+    }
+    catch (Exception exception)
+    {
+        logger.LogError(exception, "LessonChatFeedbackEndpoint failed to create feedback for the selected message.");
+        return Results.Problem(
+            title: "Lesson feedback failed.",
+            detail: "The real lesson chat service could not create feedback. Please check backend AI configuration and try again.",
+            statusCode: StatusCodes.Status502BadGateway);
+    }
 }
 
 // ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
@@ -303,8 +341,6 @@ static async Task<IResult> HandleTranslationAsync(
         return Results.Problem(ApiConstants.TranslationError);
     }
 }
-
-
 // ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
 static async Task<IResult> HandleAudioSpeechStreamAsync(
     AudioSpeechRequest request,

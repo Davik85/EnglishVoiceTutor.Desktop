@@ -374,7 +374,7 @@
                                                                     <Style TargetType="Button">
                                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                                         <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding IsFromBot}" Value="False">
+                                                                            <DataTrigger Binding="{Binding IsFeedbackEligible}" Value="True">
                                                                                 <Setter Property="Visibility" Value="Visible" />
                                                                             </DataTrigger>
                                                                         </Style.Triggers>
