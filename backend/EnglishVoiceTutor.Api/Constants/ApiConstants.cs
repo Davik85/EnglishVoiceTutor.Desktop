@@ -31,6 +31,7 @@ public static class ApiConstants
     public const string LessonChatReplyRoute = "/api/lesson-chat/reply";
     public const string LessonChatMockReplyRoute = "/api/lesson-chat/mock-reply";
     public const string LessonChatHintRoute = "/api/lesson-chat/hint";
+    public const string LessonChatFeedbackRoute = "/api/lesson-chat/feedback";
     public const string BackendConfigStatusRoute = "/api/backend/config-status";
     public const string AudioTranscriptionRoute = "/api/audio/transcribe";
     public const string TranslationRoute = "/api/translate";

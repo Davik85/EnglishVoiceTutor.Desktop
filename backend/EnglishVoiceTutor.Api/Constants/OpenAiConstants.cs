@@ -12,7 +12,8 @@ public static class OpenAiConstants
     public const string TranscriptionLanguage = "en";
     public const string TranscriptionPrompt = "The learner is practicing English in a lesson dialogue. Transcribe English speech only. Do not translate non-English speech into English. If the audio is not clear English, return an empty transcription.";
     public const string HighQualitySpeechModel = "gpt-4o-mini-tts";
-    public const string DefaultBotVoiceSpeechModel = HighQualitySpeechModel;
+    public const string NormalChatTtsModel = "tts-1";
+    public const string DefaultBotVoiceSpeechModel = NormalChatTtsModel;
     public const string DefaultSpeechModel = DefaultBotVoiceSpeechModel;
     public const string DefaultSpeechVoice = "coral";
     public const string DefaultRealtimeVoiceModel = "gpt-realtime";

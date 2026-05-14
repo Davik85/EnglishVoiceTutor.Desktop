@@ -20,9 +20,39 @@ public partial class ChatMessageViewModel : ViewModelBase
 
     public bool IsFromBot { get; }
 
+    public string Role => IsFromBot ? "assistant" : "user";
+
+    public string Source { get; }
+
+    public int LessonTurnNumber { get; private set; }
+
+    public string LessonPhase { get; }
+
+    public string Topic { get; }
+
+    public string Subtopic { get; }
+
+    public string Level { get; }
+
+    public string SelectedContextTitle { get; }
+
+    public string SelectedContextVariantId { get; }
+
+    public DateTimeOffset Timestamp { get; }
+
+    public bool CountsAsValidLessonTurn { get; private set; }
+
+    public bool IsTechnicalMessage { get; private set; }
+
+    public bool IsFeedbackEligible { get; private set; }
+
     public bool ShowPlayVoiceButton => IsFromBot;
 
-    public Feedback? Feedback { get; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasFeedback))]
+    private Feedback? feedback;
+
+    public bool HasFeedback => Feedback is not null;
 
     public string TranslationHeader => $"{localizedText.TranslationLabel} ({nativeLanguageName})";
 
@@ -64,17 +94,68 @@ public partial class ChatMessageViewModel : ViewModelBase
         string translationText,
         string nativeLanguageName,
         AppLocalizedText localizedText,
-        Func<ChatMessageViewModel, Task> translateAsync)
+        Func<ChatMessageViewModel, Task> translateAsync,
+        string source = ChatMessageSource.Technical,
+        int lessonTurnNumber = 0,
+        string lessonPhase = "",
+        string topic = "",
+        string subtopic = "",
+        string level = "",
+        string selectedContextTitle = "",
+        string selectedContextVariantId = "",
+        DateTimeOffset? timestamp = null,
+        bool countsAsValidLessonTurn = false,
+        bool isTechnicalMessage = false,
+        bool isFeedbackEligible = false)
     {
         Id = id;
         Sender = sender;
         Text = text;
         IsFromBot = isFromBot;
         Feedback = feedback;
+        Source = string.IsNullOrWhiteSpace(source) ? ChatMessageSource.Technical : source;
+        LessonTurnNumber = lessonTurnNumber;
+        LessonPhase = lessonPhase;
+        Topic = topic;
+        Subtopic = subtopic;
+        Level = level;
+        SelectedContextTitle = selectedContextTitle;
+        SelectedContextVariantId = selectedContextVariantId;
+        Timestamp = timestamp ?? DateTimeOffset.Now;
+        CountsAsValidLessonTurn = countsAsValidLessonTurn;
+        IsTechnicalMessage = isTechnicalMessage;
+        IsFeedbackEligible = isFeedbackEligible;
         TranslationText = translationText;
         this.nativeLanguageName = nativeLanguageName;
         this.localizedText = localizedText;
         this.translateAsync = translateAsync;
+    }
+
+    public void MarkAsValidLearnerTurn(string normalizedText, int lessonTurnNumber)
+    {
+        Text = normalizedText;
+        LessonTurnNumber = lessonTurnNumber;
+        CountsAsValidLessonTurn = true;
+        IsTechnicalMessage = false;
+        IsFeedbackEligible = !IsFromBot && !string.IsNullOrWhiteSpace(normalizedText);
+        OnPropertyChanged(nameof(LessonTurnNumber));
+        OnPropertyChanged(nameof(CountsAsValidLessonTurn));
+        OnPropertyChanged(nameof(IsTechnicalMessage));
+        OnPropertyChanged(nameof(IsFeedbackEligible));
+    }
+
+    public void MarkAsInvalidLearnerTranscript(string retryText)
+    {
+        Text = retryText;
+        CountsAsValidLessonTurn = false;
+        IsFeedbackEligible = false;
+        OnPropertyChanged(nameof(CountsAsValidLessonTurn));
+        OnPropertyChanged(nameof(IsFeedbackEligible));
+    }
+
+    public void SetFeedback(Feedback value)
+    {
+        Feedback = value;
     }
 
     [RelayCommand]

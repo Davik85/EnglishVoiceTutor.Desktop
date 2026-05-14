@@ -56,10 +56,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
     }
 
-    public void NavigateToLessonSummary(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, Feedback? latestFeedback)
+    public void NavigateToLessonSummary(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput)
     {
-        SaveLessonHistory(selectedLevel, selectedTopic, selectedSubtopic, latestFeedback);
-        CurrentViewModel = CreateLessonSummaryViewModel(selectedLevel, selectedTopic, selectedSubtopic, latestFeedback);
+        SaveLessonHistory(selectedLevel, selectedTopic, selectedSubtopic, summaryInput);
+        CurrentViewModel = CreateLessonSummaryViewModel(selectedLevel, selectedTopic, selectedSubtopic, summaryInput);
     }
 
     public void NavigateToLessonHistory(string selectedLevel)
@@ -102,7 +102,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
     }
 
-    private void SaveLessonHistory(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, Feedback? latestFeedback)
+    private void SaveLessonHistory(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput)
     {
         var item = new LessonHistoryItem
         {
@@ -111,9 +111,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             SelectedLevel = selectedLevel,
             TopicTitle = selectedTopic.Title,
             SubtopicTitle = selectedSubtopic.Title,
-            GoodText = LessonSummaryViewModel.BuildGoodText(latestFeedback, AppLocalization.GetText(userSettings.InterfaceLanguageId)),
-            ImproveText = LessonSummaryViewModel.BuildImproveText(latestFeedback, AppLocalization.GetText(userSettings.InterfaceLanguageId)),
-            UsefulPhrases = LessonSummaryViewModel.BuildUsefulPhrases(latestFeedback, AppLocalization.GetText(userSettings.InterfaceLanguageId))
+            GoodText = LessonSummaryViewModel.BuildGoodText(summaryInput, AppLocalization.GetText(userSettings.InterfaceLanguageId)),
+            ImproveText = LessonSummaryViewModel.BuildImproveText(summaryInput, AppLocalization.GetText(userSettings.InterfaceLanguageId)),
+            UsefulPhrases = LessonSummaryViewModel.BuildUsefulPhrases(summaryInput, AppLocalization.GetText(userSettings.InterfaceLanguageId))
         };
 
         lessonHistoryService.Add(item);
@@ -168,7 +168,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             botVoiceTempFileCleanupService,
             userSettings.AudioInputDeviceId,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
-            latestFeedback => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic, latestFeedback));
+            summaryInput => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic, summaryInput));
     }
 
 
@@ -232,14 +232,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         };
     }
 
-    private LessonSummaryViewModel CreateLessonSummaryViewModel(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, Feedback? latestFeedback)
+    private LessonSummaryViewModel CreateLessonSummaryViewModel(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput)
     {
         return new LessonSummaryViewModel(
             AppLocalization.GetText(userSettings.InterfaceLanguageId),
             selectedLevel,
             selectedTopic,
             selectedSubtopic,
-            latestFeedback,
+            summaryInput,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
             () => NavigateToHome(selectedLevel));
     }

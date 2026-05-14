@@ -116,6 +116,29 @@ public sealed class LessonChatBackendService
 
         return backendResponse;
     }
+    public async Task<BackendFeedbackDto> SendLessonFeedbackRequestAsync(
+        LessonChatBackendRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        using var httpClient = CreateHttpClient();
+
+        using var response = await httpClient.PostAsJsonAsync(
+            CreateEndpointUri(BackendConstants.LessonChatFeedbackEndpoint),
+            request,
+            JsonOptions,
+            cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        var backendResponse = await response.Content.ReadFromJsonAsync<BackendFeedbackDto>(JsonOptions, cancellationToken);
+
+        if (backendResponse is null || string.IsNullOrWhiteSpace(backendResponse.ShortText))
+        {
+            throw new InvalidOperationException(BackendConstants.BackendInvalidResponseMessage);
+        }
+
+        return backendResponse;
+    }
 
     public async Task<string> SendLessonHintRequestAsync(
         LessonChatBackendRequest request,

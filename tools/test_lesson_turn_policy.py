@@ -137,7 +137,7 @@ def main() -> int:
     assert_contains(validator, "InvalidTranscriptUserMessage", "shared retry text")
     assert_contains(turn_policy, "LessonTurnPolicy", "shared turn policy")
     assert_contains(vm, "LessonTranscriptValidator.Validate(transcriptionText)", "Lesson Chat voice validation")
-    assert_contains(vm, "SendLessonMessageAsync(trimmedTranscriptionText)", "valid voice auto-send path")
+    assert_contains(vm, "SendLessonMessageAsync(trimmedTranscriptionText, ChatMessageSource.LessonChatVoice)", "valid voice auto-send path")
     assert_contains(vm, "return false;\n        }\n\n        userMessage = activeTurnTranscriptValidation.NormalizedTranscript", "Lesson Chat invalid transcript short-circuit")
     assert_contains(realtime, "waiting for transcript before response.create", "Realtime transcript-gated commit")
     assert_contains(realtime, "HandleUserTranscriptCompletedAsync", "Realtime transcript completion handler")

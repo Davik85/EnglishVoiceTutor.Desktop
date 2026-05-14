@@ -42,7 +42,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
         string selectedLevel,
         Topic selectedTopic,
         Subtopic selectedSubtopic,
-        Feedback? latestFeedback,
+        LessonSummaryInput summaryInput,
         Action navigateToSubtopics,
         Action navigateToHome)
     {
@@ -53,9 +53,9 @@ public partial class LessonSummaryViewModel : ViewModelBase
         this.navigateToSubtopics = navigateToSubtopics;
         this.navigateToHome = navigateToHome;
 
-        GoodText = BuildGoodText(latestFeedback, localizedText);
-        ImproveText = BuildImproveText(latestFeedback, localizedText);
-        UsefulPhrases = new ObservableCollection<string>(BuildUsefulPhrases(latestFeedback, localizedText));
+        GoodText = BuildGoodText(summaryInput, localizedText);
+        ImproveText = BuildImproveText(summaryInput, localizedText);
+        UsefulPhrases = new ObservableCollection<string>(BuildUsefulPhrases(summaryInput, localizedText));
     }
 
     [RelayCommand]
@@ -70,61 +70,66 @@ public partial class LessonSummaryViewModel : ViewModelBase
         navigateToHome();
     }
 
-    public static string BuildGoodText(Feedback? latestFeedback, AppLocalizedText? localizedText = null)
+    public static string BuildGoodText(LessonSummaryInput summaryInput, AppLocalizedText? localizedText = null)
     {
-        if (!string.IsNullOrWhiteSpace(latestFeedback?.ShortText))
+        var userTurns = GetValidUserTurns(summaryInput).ToArray();
+        if (userTurns.Length > 0)
         {
-            return latestFeedback.ShortText;
+            var examples = string.Join("; ", userTurns.Take(4).Select(message => $"\"{message.Text}\""));
+            return $"You practiced {summaryInput.SubtopicTitle} across {userTurns.Length} learner turn(s). Useful learner phrases included: {examples}.";
         }
 
         return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackGoodText;
     }
 
-    public static string BuildImproveText(Feedback? latestFeedback, AppLocalizedText? localizedText = null)
+    public static string BuildImproveText(LessonSummaryInput summaryInput, AppLocalizedText? localizedText = null)
     {
-        if (latestFeedback is null)
+        var tips = GetValidUserTurns(summaryInput)
+            .SelectMany(message => new[] { message.Feedback?.GrammarTip, message.Feedback?.VocabularyTip })
+            .Where(tip => !string.IsNullOrWhiteSpace(tip))
+            .Select(tip => tip!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(4)
+            .ToArray();
+
+        if (tips.Length > 0)
         {
-            return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackImproveText;
+            return string.Join(" ", tips);
         }
 
-        var tips = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(latestFeedback.GrammarTip))
+        var userTurns = GetValidUserTurns(summaryInput).Select(message => message.Text).Take(3).ToArray();
+        if (userTurns.Length > 0)
         {
-            tips.Add(latestFeedback.GrammarTip.Trim());
+            return $"Next focus: keep using complete English sentences in the same situation. Review: {string.Join("; ", userTurns)}.";
         }
 
-        if (!string.IsNullOrWhiteSpace(latestFeedback.VocabularyTip))
-        {
-            tips.Add(latestFeedback.VocabularyTip.Trim());
-        }
-
-        if (tips.Count == 0)
-        {
-            return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackImproveText;
-        }
-
-        return string.Join(" ", tips);
+        return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackImproveText;
     }
 
-    public static IReadOnlyList<string> BuildUsefulPhrases(Feedback? latestFeedback, AppLocalizedText? localizedText = null)
+    public static IReadOnlyList<string> BuildUsefulPhrases(LessonSummaryInput summaryInput, AppLocalizedText? localizedText = null)
     {
-        if (latestFeedback is null)
-        {
-            return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackUsefulPhrases;
-        }
-
         var phrases = new List<string>();
 
-        AddPhraseIfValid(phrases, latestFeedback.NaturalVersion);
-        AddPhraseIfValid(phrases, latestFeedback.CorrectedVersion);
+        foreach (var message in GetValidUserTurns(summaryInput))
+        {
+            AddPhraseIfValid(phrases, message.Feedback?.NaturalVersion ?? string.Empty);
+            AddPhraseIfValid(phrases, message.Feedback?.CorrectedVersion ?? string.Empty);
+            AddPhraseIfValid(phrases, message.Text);
+        }
 
         if (phrases.Count == 0)
         {
             return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackUsefulPhrases;
         }
 
-        return phrases;
+        return phrases.Take(6).ToArray();
+    }
+
+    private static IEnumerable<LessonSummaryMessage> GetValidUserTurns(LessonSummaryInput summaryInput)
+    {
+        return summaryInput.Messages
+            .Where(message => string.Equals(message.Role, "user", StringComparison.OrdinalIgnoreCase))
+            .Where(message => !string.IsNullOrWhiteSpace(message.Text));
     }
 
     private static void AddPhraseIfValid(ICollection<string> phrases, string phrase)
