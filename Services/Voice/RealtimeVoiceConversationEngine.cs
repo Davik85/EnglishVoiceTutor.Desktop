@@ -33,6 +33,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
     public event EventHandler<UserAudioCommittedEventArgs>? UserAudioCommitted;
     public event EventHandler<UserTranscriptDeltaEventArgs>? UserTranscriptDeltaReceived;
     public event EventHandler<UserTranscriptCompletedEventArgs>? UserTranscriptCompleted;
+    public event EventHandler<UserTranscriptFailedEventArgs>? UserTranscriptFailed;
     public event EventHandler<VoiceSessionErrorEventArgs>? ErrorReceived;
 
     public async Task StartSessionAsync(VoiceSessionStartRequest request, CancellationToken cancellationToken)
@@ -239,6 +240,16 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
                 var userTranscriptItemId = root.TryGetProperty("itemId", out var userTranscriptItemProperty) ? userTranscriptItemProperty.GetString() ?? string.Empty : string.Empty;
                 Debug.WriteLine($"Realtime user transcript complete received: SessionId={eventSessionId}; ItemId={userTranscriptItemId}; TranscriptLength={userTranscript.Trim().Length}; UserTranscriptCompletedMs={sessionStopwatch.ElapsedMilliseconds}.");
                 UserTranscriptCompleted?.Invoke(this, new UserTranscriptCompletedEventArgs(eventSessionId, userTranscriptItemId, userTranscript, sessionStopwatch.ElapsedMilliseconds));
+                break;
+            case "user.audio.ignored":
+                Debug.WriteLine($"Realtime user audio ignored: SessionId={eventSessionId}; Reason=too_short; ElapsedMs={sessionStopwatch.ElapsedMilliseconds}.");
+                UserTranscriptFailed?.Invoke(this, new UserTranscriptFailedEventArgs(eventSessionId, string.Empty, "Audio too short.", sessionStopwatch.ElapsedMilliseconds));
+                break;
+            case "user.transcript.failed":
+                var failedItemId = root.TryGetProperty("itemId", out var failedItemProperty) ? failedItemProperty.GetString() ?? string.Empty : string.Empty;
+                var failureMessage = root.TryGetProperty("message", out var failureMessageProperty) ? failureMessageProperty.GetString() ?? "Transcription unavailable." : "Transcription unavailable.";
+                Debug.WriteLine($"Realtime user transcript failed received: SessionId={eventSessionId}; ItemId={failedItemId}; UserTranscriptFailedMs={sessionStopwatch.ElapsedMilliseconds}.");
+                UserTranscriptFailed?.Invoke(this, new UserTranscriptFailedEventArgs(eventSessionId, failedItemId, failureMessage, sessionStopwatch.ElapsedMilliseconds));
                 break;
             case "session.error":
                 var message = root.TryGetProperty("message", out var messageProperty) ? messageProperty.GetString() ?? "Realtime voice mode is unavailable. Please try text mode." : "Realtime voice mode is unavailable. Please try text mode.";

@@ -50,10 +50,15 @@ public partial class LessonChatViewModel : ViewModelBase
     private string currentBotVoiceCancellationReason = BotVoiceCancellationReasons.AppDisposalCancel;
     private bool isRealtimeSessionStarted;
     private bool isStartingRealtimeSession;
+    private const string RealtimeVoicePendingText = "[Voice message]";
+    private const string RealtimeVoiceTranscriptionUnavailableText = "[Voice message: transcription unavailable]";
     private ChatMessageViewModel? realtimeAssistantMessage;
     private ChatMessageViewModel? realtimeUserPlaceholderMessage;
     private string realtimeUserPlaceholderItemId = string.Empty;
     private readonly StringBuilder realtimeUserTranscriptBuffer = new();
+    private readonly Dictionary<string, int> realtimeItemIdToChatMessageId = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> pendingTranscriptByItemId = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> pendingTranscriptFailureByItemId = new(StringComparer.Ordinal);
     private string realtimeSessionId = Guid.NewGuid().ToString("N");
 
     public string SelectedLevel { get; }
@@ -388,6 +393,7 @@ public partial class LessonChatViewModel : ViewModelBase
         realtimeVoiceEngine.UserAudioCommitted += OnRealtimeUserAudioCommitted;
         realtimeVoiceEngine.UserTranscriptDeltaReceived += OnRealtimeUserTranscriptDeltaReceived;
         realtimeVoiceEngine.UserTranscriptCompleted += OnRealtimeUserTranscriptCompleted;
+        realtimeVoiceEngine.UserTranscriptFailed += OnRealtimeUserTranscriptFailed;
         realtimeVoiceEngine.ErrorReceived += OnRealtimeErrorReceived;
         realtimeAudioPlaybackService.PlaybackStarted += OnRealtimePlaybackStarted;
         realtimeMicrophoneCaptureService.AudioChunkCaptured += OnRealtimeMicrophoneAudioChunkCaptured;
@@ -712,8 +718,8 @@ public partial class LessonChatViewModel : ViewModelBase
             var finalTurn = GetFinalTurn();
             realtimeUserTranscriptBuffer.Clear();
             realtimeUserPlaceholderItemId = string.Empty;
-            realtimeUserPlaceholderMessage = AddMessage(AppConstants.UserSenderName, "[Voice message]", false);
-            Debug.WriteLine($"Realtime user placeholder message added: SessionId={realtimeSessionId}; UserPlaceholderMessageId={realtimeUserPlaceholderMessage.Id}; Text=[Voice message].");
+            realtimeUserPlaceholderMessage = AddMessage(AppConstants.UserSenderName, RealtimeVoicePendingText, false);
+            Debug.WriteLine($"Realtime user placeholder message added: SessionId={realtimeSessionId}; UserPlaceholderMessageId={realtimeUserPlaceholderMessage.Id}; Text={RealtimeVoicePendingText}.");
             LearnerTurnCount = nextLearnerTurnCount;
             if (LearnerTurnCount >= finalTurn)
             {
@@ -1901,6 +1907,19 @@ public partial class LessonChatViewModel : ViewModelBase
         Application.Current.Dispatcher.Invoke(() =>
         {
             realtimeUserPlaceholderItemId = args.ItemId;
+            if (realtimeUserPlaceholderMessage is not null && !string.IsNullOrWhiteSpace(args.ItemId))
+            {
+                realtimeItemIdToChatMessageId[args.ItemId] = realtimeUserPlaceholderMessage.Id;
+                if (pendingTranscriptByItemId.Remove(args.ItemId, out var bufferedTranscript))
+                {
+                    ApplyRealtimeUserTranscript(args.ItemId, bufferedTranscript, args.SessionId);
+                }
+                else if (pendingTranscriptFailureByItemId.Remove(args.ItemId, out _))
+                {
+                    ApplyRealtimeUserTranscriptFailure(args.ItemId, args.SessionId);
+                }
+            }
+
             Debug.WriteLine($"Realtime user audio committed in UI: SessionId={args.SessionId}; ItemId={args.ItemId}; UserPlaceholderMessageId={realtimeUserPlaceholderMessage?.Id}; UserAudioCommittedMs={args.ElapsedMilliseconds}.");
         });
     }
@@ -1912,9 +1931,13 @@ public partial class LessonChatViewModel : ViewModelBase
             realtimeUserTranscriptBuffer.Append(args.Delta);
             var transcriptSoFar = realtimeUserTranscriptBuffer.ToString().Trim();
             Debug.WriteLine($"Realtime user transcript delta in UI: SessionId={args.SessionId}; ItemId={args.ItemId}; UserPlaceholderMessageId={realtimeUserPlaceholderMessage?.Id}; TranscriptLength={transcriptSoFar.Length}.");
-            if (!string.IsNullOrWhiteSpace(transcriptSoFar) && realtimeUserPlaceholderMessage is not null)
+            if (!string.IsNullOrWhiteSpace(transcriptSoFar))
             {
-                realtimeUserPlaceholderMessage.Text = transcriptSoFar;
+                var target = FindRealtimeUserMessage(args.ItemId);
+                if (target is not null)
+                {
+                    target.Text = transcriptSoFar;
+                }
             }
         });
     }
@@ -1929,15 +1952,82 @@ public partial class LessonChatViewModel : ViewModelBase
                 return;
             }
 
-            realtimeUserPlaceholderItemId = string.IsNullOrWhiteSpace(args.ItemId) ? realtimeUserPlaceholderItemId : args.ItemId;
-            realtimeUserTranscriptBuffer.Clear();
-            realtimeUserTranscriptBuffer.Append(transcript);
-            if (realtimeUserPlaceholderMessage is not null)
+            var itemId = string.IsNullOrWhiteSpace(args.ItemId) ? realtimeUserPlaceholderItemId : args.ItemId;
+            if (string.IsNullOrWhiteSpace(itemId))
             {
-                realtimeUserPlaceholderMessage.Text = transcript;
-                Debug.WriteLine($"Realtime placeholder replaced with transcript: SessionId={args.SessionId}; ItemId={realtimeUserPlaceholderItemId}; UserPlaceholderMessageId={realtimeUserPlaceholderMessage.Id}; TranscriptLength={transcript.Length}.");
+                ApplyRealtimeUserTranscript(itemId, transcript, args.SessionId);
+                return;
             }
+
+            if (FindRealtimeUserMessage(itemId) is null)
+            {
+                pendingTranscriptByItemId[itemId] = transcript;
+                return;
+            }
+
+            ApplyRealtimeUserTranscript(itemId, transcript, args.SessionId);
         });
+    }
+
+
+    private void OnRealtimeUserTranscriptFailed(object? sender, UserTranscriptFailedEventArgs args)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            var itemId = string.IsNullOrWhiteSpace(args.ItemId) ? realtimeUserPlaceholderItemId : args.ItemId;
+            if (string.IsNullOrWhiteSpace(itemId))
+            {
+                ApplyRealtimeUserTranscriptFailure(itemId, args.SessionId);
+                return;
+            }
+
+            if (FindRealtimeUserMessage(itemId) is null)
+            {
+                pendingTranscriptFailureByItemId[itemId] = args.Message;
+                return;
+            }
+
+            ApplyRealtimeUserTranscriptFailure(itemId, args.SessionId);
+        });
+    }
+
+    private ChatMessageViewModel? FindRealtimeUserMessage(string itemId)
+    {
+        if (!string.IsNullOrWhiteSpace(itemId)
+            && realtimeItemIdToChatMessageId.TryGetValue(itemId, out var messageId))
+        {
+            return Messages.FirstOrDefault(message => message.Id == messageId);
+        }
+
+        return realtimeUserPlaceholderMessage;
+    }
+
+    private void ApplyRealtimeUserTranscript(string itemId, string transcript, string sessionId)
+    {
+        var target = FindRealtimeUserMessage(itemId);
+        if (target is null || string.IsNullOrWhiteSpace(transcript))
+        {
+            return;
+        }
+
+        realtimeUserPlaceholderItemId = itemId;
+        realtimeUserTranscriptBuffer.Clear();
+        realtimeUserTranscriptBuffer.Append(transcript);
+        target.Text = transcript.Trim();
+        Debug.WriteLine($"Realtime placeholder replaced with transcript: SessionId={sessionId}; ItemId={itemId}; UserPlaceholderMessageId={target.Id}; TranscriptLength={target.Text.Length}.");
+    }
+
+    private void ApplyRealtimeUserTranscriptFailure(string itemId, string sessionId)
+    {
+        var target = FindRealtimeUserMessage(itemId);
+        if (target is null)
+        {
+            return;
+        }
+
+        realtimeUserPlaceholderItemId = itemId;
+        target.Text = RealtimeVoiceTranscriptionUnavailableText;
+        Debug.WriteLine($"Realtime placeholder marked transcription unavailable: SessionId={sessionId}; ItemId={itemId}; UserPlaceholderMessageId={target.Id}.");
     }
 
     private void OnRealtimeErrorReceived(object? sender, VoiceSessionErrorEventArgs args)
