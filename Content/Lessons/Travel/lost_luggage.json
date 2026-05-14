@@ -231,7 +231,7 @@
   },
   "conversationFlow": {
     "opening": "Tutor asks how they can help at the baggage service desk.",
-    "defaultOpeningExample": "Hello. How can I help you?",
+    "defaultOpeningExample": "Hello. What do you need?",
     "firstUserTask": "The user reports that a bag or suitcase is missing.",
     "expectedPattern": "My bag is missing. It is black.",
     "guidedPracticeFollowUpQuestions": [
@@ -273,7 +273,7 @@
         "title": "Reporting a missing suitcase",
         "setting": "an airport baggage service desk",
         "reasonForMeeting": "reporting missing luggage",
-        "openingLine": "Hello. How can I help you?",
+        "openingLine": "Hello. What do you need?",
         "aliases": [
           "missing suitcase",
           "lost suitcase",

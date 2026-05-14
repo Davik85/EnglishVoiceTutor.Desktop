@@ -69,15 +69,21 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly LessonPromptBuilder _lessonPromptBuilder;
+    private readonly TutorAvatarProfileProvider _avatarProfileProvider;
+    private readonly TutorIdentityGuard _tutorIdentityGuard;
     private readonly IHttpClientFactory _httpClientFactory;
 
     public OpenAiLessonChatService(
         OpenAiOptionsProvider optionsProvider,
         LessonPromptBuilder lessonPromptBuilder,
+        TutorAvatarProfileProvider avatarProfileProvider,
+        TutorIdentityGuard tutorIdentityGuard,
         IHttpClientFactory httpClientFactory)
     {
         _optionsProvider = optionsProvider;
         _lessonPromptBuilder = lessonPromptBuilder;
+        _avatarProfileProvider = avatarProfileProvider;
+        _tutorIdentityGuard = tutorIdentityGuard;
         _httpClientFactory = httpClientFactory;
     }
 
@@ -101,17 +107,19 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             throw new InvalidOperationException(OpenAiResponseInvalidMessage);
         }
 
-        if (LessonLimitHelper.ShouldEndLessonNow(request) && !lessonReply.IsLessonComplete)
+        var guardedReply = _tutorIdentityGuard.PreventWrongTutorSelfIntroduction(lessonReply, _avatarProfileProvider.GetById(request.TutorAvatarId));
+
+        if (LessonLimitHelper.ShouldEndLessonNow(request) && !guardedReply.IsLessonComplete)
         {
             return new LessonChatResponse
             {
-                BotReply = lessonReply.BotReply,
-                Feedback = lessonReply.Feedback,
+                BotReply = guardedReply.BotReply,
+                Feedback = guardedReply.Feedback,
                 IsLessonComplete = true
             };
         }
 
-        return lessonReply;
+        return guardedReply;
     }
 
     private async Task<OpenAiResponsesResponse> SendResponsesApiRequestAsync(

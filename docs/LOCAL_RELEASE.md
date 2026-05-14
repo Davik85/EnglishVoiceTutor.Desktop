@@ -95,7 +95,7 @@ Open a PowerShell window for the backend:
 
 ```powershell
 cd C:\dev\EnglishVoiceTutor.Desktop\backend\EnglishVoiceTutor.Api
-$env:OPENAI_API_KEY = "YOUR_KEY_HERE"
+Set-Item -Path Env:OPENAI_API_KEY -Value (Read-Host "Enter your local OpenAI API key")
 dotnet run
 ```
 

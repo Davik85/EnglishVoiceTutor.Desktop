@@ -56,7 +56,7 @@ public static class AudioConstants
     public const string RecordingAlreadyInProgressMessage = "Recording is already in progress.";
     public const string RecordingTooShortMessage = "Recording too short. Please try again.";
     public const string RecordingTooLongMessage = "Recording is too long. Please keep voice answers under 30 seconds.";
-    public const string BotVoicePlayingRecordingBlockedMessage = "Please wait until Elena finishes speaking.";
+    public const string BotVoicePlayingRecordingBlockedMessage = "Please wait until your tutor finishes speaking.";
     public const string BotVoiceCleanupErrorMessage = "Bot voice temporary file cleanup failed.";
     public const string UnclearEnglishTranscriptionMessage = "I could not clearly recognize English. Please try recording again.";
 }

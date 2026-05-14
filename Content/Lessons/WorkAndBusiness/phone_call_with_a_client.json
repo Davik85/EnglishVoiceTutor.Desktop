@@ -231,7 +231,7 @@
   },
   "conversationFlow": {
     "opening": "Tutor answers the phone and starts the selected client-call situation.",
-    "defaultOpeningExample": "Hello, this is Maria speaking. How can I help you?",
+    "defaultOpeningExample": "Hello, this is Maria speaking. What do you need?",
     "firstUserTask": "The user greets the client, gives their name, and says the reason for the call.",
     "expectedPattern": "Hello, this is... I'm calling about...",
     "guidedPracticeFollowUpQuestions": [
@@ -241,7 +241,7 @@
       "What is the next step after this call?"
     ],
     "variationOrComplication": "Tutor asks for the caller's name, meeting details, missing information, or one follow-up action.",
-    "exampleTutorLine": "Hello, this is Maria speaking. How can I help you?",
+    "exampleTutorLine": "Hello, this is Maria speaking. What do you need?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
     "wrapUpAfterUserTurn": 10,
@@ -272,7 +272,7 @@
         "title": "Introducing yourself on a client call",
         "setting": "a business phone call",
         "reasonForMeeting": "starting a call with a client",
-        "openingLine": "Hello, this is Maria speaking. How can I help you?",
+        "openingLine": "Hello, this is Maria speaking. What do you need?",
         "aliases": [
           "introduce",
           "client call",

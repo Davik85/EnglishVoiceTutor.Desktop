@@ -230,7 +230,7 @@
   },
   "conversationFlow": {
     "opening": "Tutor welcomes the customer as a host and starts the selected table booking situation.",
-    "defaultOpeningExample": "Good evening. Thank you for calling. How can I help you?",
+    "defaultOpeningExample": "Good evening. Thank you for calling. What do you need?",
     "firstUserTask": "The user asks to book a table and gives the number of people or time.",
     "expectedPattern": "I’d like to book a table for two at seven.",
     "guidedPracticeFollowUpQuestions": [
@@ -271,7 +271,7 @@
         "title": "Booking a table by phone",
         "setting": "a restaurant phone call",
         "reasonForMeeting": "making a reservation by phone",
-        "openingLine": "Good evening. Thank you for calling. How can I help you?",
+        "openingLine": "Good evening. Thank you for calling. What do you need?",
         "aliases": [
           "phone reservation",
           "call restaurant",
