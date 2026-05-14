@@ -292,7 +292,10 @@ public partial class LessonChatViewModel : ViewModelBase
 
     public string FeedbackNaturalVersionTitle => localizedText.FeedbackNaturalVersionTitle;
 
-    private bool ShouldAutoSendTranscribedVoice => IsLessonInputEnabled && (IsConversationModeEnabled || IsVoiceAutoSendEnabled);
+    private bool ShouldAutoSendTranscribedVoiceResult()
+    {
+        return CanAcceptTranscriptionResult && (IsConversationModeEnabled || IsVoiceAutoSendEnabled);
+    }
 
     // Lesson chat deterministic state table (Stage 1 stabilization):
     //
@@ -329,6 +332,12 @@ public partial class LessonChatViewModel : ViewModelBase
     private bool IsRealtimeSessionStarting => isStartingRealtimeSession;
 
     private bool CanAcceptLessonInput => !hasFinishedLesson && !IsCompletedAwaitingFinish && !IsLessonLimitReached && !IsLessonBusyForInput;
+
+    private bool CanAcceptTranscriptionResult =>
+        !hasFinishedLesson
+        && !IsCompletedAwaitingFinish
+        && !IsLessonLimitReached
+        && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay);
 
     private bool IsRealtimeConversationActive => BackendConstants.UseRealtimeConversationMode && IsConversationModeEnabled && CurrentLessonPhase == LessonPhase.ActiveRoleplay;
 
@@ -563,41 +572,64 @@ public partial class LessonChatViewModel : ViewModelBase
                 return;
             }
 
-            IsSending = true;
-            isTranscribingAudio = true;
-            RefreshAvatarState();
+            SetIsTranscribingAudio(true);
+            Debug.WriteLine(
+                $"Voice transcription started: CurrentLessonPhase={CurrentLessonPhase}; " +
+                $"IsConversationModeEnabled={IsConversationModeEnabled}; " +
+                $"IsVoiceAutoSendEnabled={IsVoiceAutoSendEnabled}; " +
+                $"IsSending={IsSending}; " +
+                $"IsRecording={IsRecording}; " +
+                $"isTranscribingAudio={isTranscribingAudio}.");
             StatusMessage = localizedText.TranscribingAudioMessage;
 
             var transcriptionText = await lessonChatBackendService.SendAudioForTranscriptionAsync(savedFilePath);
             BackendStatusText = BackendConstants.BackendStatusConnected;
             var trimmedTranscriptionText = transcriptionText.Trim();
+            var isUsableEnglishPracticeTranscription = IsUsableEnglishPracticeTranscription(trimmedTranscriptionText);
+            var shouldAutoSend = ShouldAutoSendTranscribedVoiceResult();
+            Debug.WriteLine(
+                $"Voice transcription received: TranscriptLength={trimmedTranscriptionText.Length}; " +
+                $"IsUsableEnglishPracticeTranscription={isUsableEnglishPracticeTranscription}; " +
+                $"CanAcceptTranscriptionResult={CanAcceptTranscriptionResult}; " +
+                $"ShouldAutoSend={shouldAutoSend}; " +
+                $"CurrentLessonPhase={CurrentLessonPhase}; " +
+                $"IsConversationModeEnabled={IsConversationModeEnabled}; " +
+                $"IsVoiceAutoSendEnabled={IsVoiceAutoSendEnabled}; " +
+                $"IsSending={IsSending}; " +
+                $"isTranscribingAudio={isTranscribingAudio}; " +
+                $"Preview={GetLimitedTranscriptPreview(trimmedTranscriptionText)}.");
 
             if (string.IsNullOrWhiteSpace(trimmedTranscriptionText))
             {
+                Debug.WriteLine("Voice transcription rejected: Reason=empty.");
                 StatusMessage = localizedText.EmptyTranscriptionMessage;
                 return;
             }
 
-            if (!IsUsableEnglishPracticeTranscription(trimmedTranscriptionText))
+            if (!isUsableEnglishPracticeTranscription)
             {
+                Debug.WriteLine("Voice transcription rejected: Reason=not-english.");
                 StatusMessage = AudioConstants.UnclearEnglishTranscriptionMessage;
                 return;
             }
 
-            if (!IsLessonInputEnabled)
+            if (!CanAcceptTranscriptionResult)
             {
+                Debug.WriteLine("Voice transcription rejected: Reason=lesson-not-accepting-input.");
                 StatusMessage = AppConstants.LessonCompleteAwaitingFinishMessage;
                 return;
             }
 
-            if (!ShouldAutoSendTranscribedVoice)
+            if (!shouldAutoSend)
             {
                 UserInput = trimmedTranscriptionText;
+                Debug.WriteLine("Voice transcription placed into UserInput.");
                 StatusMessage = localizedText.TranscriptionCompletedMessage;
                 return;
             }
 
-            isTranscribingAudio = false;
+            Debug.WriteLine("Voice transcription auto-send started.");
+            SetIsTranscribingAudio(false);
             var wasSent = await SendLessonMessageAsync(trimmedTranscriptionText);
 
             if (wasSent)
@@ -618,14 +650,38 @@ public partial class LessonChatViewModel : ViewModelBase
         finally
         {
             BotStatus = BackendConstants.BotStatusReady;
-            isTranscribingAudio = false;
+            SetIsTranscribingAudio(false);
             IsRecording = false;
-            IsSending = false;
             RefreshAvatarState();
             audioRecordingService.SafeDeleteRecording(savedFilePath);
         }
     }
 
+
+    private void SetIsTranscribingAudio(bool value)
+    {
+        if (isTranscribingAudio == value)
+        {
+            return;
+        }
+
+        isTranscribingAudio = value;
+        RefreshAvatarState();
+        RefreshAllCommandStates();
+    }
+
+    private static string GetLimitedTranscriptPreview(string transcriptionText)
+    {
+        if (string.IsNullOrWhiteSpace(transcriptionText))
+        {
+            return string.Empty;
+        }
+
+        var normalizedText = transcriptionText.Replace("\r\n", " ", StringComparison.Ordinal).Replace('\r', ' ').Replace('\n', ' ');
+        return normalizedText.Length <= 40
+            ? normalizedText
+            : normalizedText[..40];
+    }
 
     private async Task StopRealtimeVoiceRecordingAsync()
     {
