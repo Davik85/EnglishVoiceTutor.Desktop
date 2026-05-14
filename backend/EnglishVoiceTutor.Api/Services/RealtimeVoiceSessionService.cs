@@ -370,6 +370,12 @@ public sealed class RealtimeVoiceSessionService
         builder.AppendLine($"Lesson type: {request.LessonType}.");
         builder.AppendLine($"Lesson scenario id: {request.LessonScenarioId}.");
         builder.AppendLine($"Lesson goal: {request.LessonGoal}.");
+        builder.AppendLine($"Lesson phase: {Choose(request.CurrentPhase, request.LessonPhase)}.");
+        if (!string.IsNullOrWhiteSpace(request.TutorRole)) builder.AppendLine($"Tutor role: {request.TutorRole}.");
+        if (!string.IsNullOrWhiteSpace(request.UserRole)) builder.AppendLine($"Learner role: {request.UserRole}.");
+        if (!string.IsNullOrWhiteSpace(request.Situation)) builder.AppendLine($"Situation: {request.Situation}.");
+        if (!string.IsNullOrWhiteSpace(request.LearningGoal)) builder.AppendLine($"Learner personal goal: {request.LearningGoal}.");
+        builder.AppendLine($"Target language: {request.TargetLanguageName}.");
         builder.AppendLine($"Turn limits: soft wrap-up after learner turn {request.SoftLearnerTurnLimit}; final learner turn {request.HardLearnerTurnLimit}. Current learner turn count is {request.LearnerTurnCount}. The server also enforces these limits.");
         builder.AppendLine($"Feedback rules: {request.FeedbackRulesSummary}.");
         builder.AppendLine($"Level profile: {request.ActiveLevelProfile.DifficultyNotes} {request.ActiveLevelProfile.TutorLanguageStyle} Expected learner response: {request.ActiveLevelProfile.ExpectedUserResponse} Conversation depth: {request.ActiveLevelProfile.ConversationDepth}.");
@@ -377,9 +383,13 @@ public sealed class RealtimeVoiceSessionService
         if (request.GrammarFocus.Count > 0) builder.AppendLine($"Grammar focus: {string.Join(", ", request.GrammarFocus)}.");
         if (request.AiTutorPromptInstructions.Count > 0) builder.AppendLine($"Lesson-specific instructions: {string.Join(" ", request.AiTutorPromptInstructions)}");
         if (!string.IsNullOrWhiteSpace(request.SelectedContextTitle)) builder.AppendLine($"Selected guided roleplay context: {request.SelectedContextTitle}. Variant id: {request.SelectedContextVariantId}. Opening line already shown: {request.SelectedContextOpeningLine}.");
+        if (!string.IsNullOrWhiteSpace(request.LastBotMessage)) builder.AppendLine($"Last visible tutor message to continue from: {request.LastBotMessage}.");
         if (request.LessonType.Equals("guided_roleplay", StringComparison.OrdinalIgnoreCase))
         {
-            builder.AppendLine("Guided roleplay: keep the learner inside the selected situation. Do not restart setup. Never ask the learner to choose a situation again during the active roleplay. If the learner asks a meta question like 'What should I say?', answer briefly with a useful phrase and return to the current scenario.");
+            builder.AppendLine("This is an active guided roleplay, not free conversation. Stay inside the selected scenario and continue naturally from the selected context and last visible tutor message.");
+            builder.AppendLine("Do not ask 'What would you like to discuss?' or any similar open topic-selection question unless lesson type is free_conversation.");
+            builder.AppendLine("Do not ask the learner to choose a situation during ActiveRoleplay. The situation is already selected.");
+            builder.AppendLine("If the learner asks a meta question, answer briefly with a useful phrase and return to the current scenario.");
         }
         else if (request.LessonType.Equals("free_conversation", StringComparison.OrdinalIgnoreCase))
         {

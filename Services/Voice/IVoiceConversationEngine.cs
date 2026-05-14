@@ -31,6 +31,10 @@ public sealed record VoiceSessionStartRequest
     public string LessonType { get; init; } = string.Empty;
     public string LessonGoal { get; init; } = string.Empty;
     public string LessonPhase { get; init; } = string.Empty;
+    public string CurrentPhase { get; init; } = string.Empty;
+    public string TutorRole { get; init; } = string.Empty;
+    public string UserRole { get; init; } = string.Empty;
+    public string Situation { get; init; } = string.Empty;
     public string TargetLanguageName { get; init; } = "English";
     public string NativeLanguageName { get; init; } = string.Empty;
     public string UserDisplayName { get; init; } = string.Empty;
@@ -38,6 +42,7 @@ public sealed record VoiceSessionStartRequest
     public string SelectedContextVariantId { get; init; } = string.Empty;
     public string SelectedContextTitle { get; init; } = string.Empty;
     public string SelectedContextOpeningLine { get; init; } = string.Empty;
+    public string LastBotMessage { get; init; } = string.Empty;
     public int LearnerTurnCount { get; init; }
     public int SoftLearnerTurnLimit { get; init; }
     public int HardLearnerTurnLimit { get; init; }
