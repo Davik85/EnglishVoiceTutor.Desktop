@@ -161,6 +161,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             userSettings.UserDisplayName,
             userSettings.LearningGoal,
             TutorAvatarOptions.GetById(userSettings.SelectedTutorAvatarId),
+            LoadTutorProfile(userSettings.SelectedTutorAvatarId),
             LoadLessonScenarioForSubtopic(selectedTopic, selectedSubtopic),
             lessonChatBackendService,
             audioRecordingService,
@@ -171,6 +172,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             summaryInput => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic, summaryInput));
     }
 
+    private TutorProfile LoadTutorProfile(string tutorAvatarId)
+    {
+        try
+        {
+            return lessonContentService.LoadTutorProfile(TutorAvatarOptions.GetById(tutorAvatarId).Id);
+        }
+        catch (Exception exception)
+        {
+            System.Diagnostics.Debug.WriteLine($"Tutor profile load failed. TutorProfileId={tutorAvatarId}; {exception.Message}");
+            return new TutorProfile
+            {
+                Id = TutorAvatarOptions.DefaultAvatarId,
+                DisplayName = TutorAvatarOptions.Elena.DisplayName
+            };
+        }
+    }
 
     private LessonScenario LoadLessonScenarioForSubtopic(Topic selectedTopic, Subtopic selectedSubtopic)
     {
@@ -240,6 +257,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             selectedTopic,
             selectedSubtopic,
             summaryInput,
+            lessonChatBackendService,
+            userSettings.NativeLanguageName,
+            userSettings.InterfaceLanguageId,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
             () => NavigateToHome(selectedLevel));
     }

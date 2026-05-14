@@ -8,4 +8,8 @@
     <Compile Include="../../Shared/LessonPolicies/**/*.cs" Link="Shared/LessonPolicies/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="../../Content/Tutors/**/*.json" Link="Content/Tutors/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

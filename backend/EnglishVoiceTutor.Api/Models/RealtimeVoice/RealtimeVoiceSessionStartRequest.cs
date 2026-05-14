@@ -5,6 +5,14 @@ public sealed record RealtimeVoiceSessionStartRequest
     public string SessionId { get; init; } = string.Empty;
     public string TutorProfileId { get; init; } = string.Empty;
     public string TutorDisplayName { get; init; } = string.Empty;
+    public int TutorProfileAge { get; init; }
+    public string TutorProfileHomeCity { get; init; } = string.Empty;
+    public string TutorProfileCountryOrRegion { get; init; } = string.Empty;
+    public string TutorProfileStudies { get; init; } = string.Empty;
+    public IReadOnlyList<string> TutorProfileHobbies { get; init; } = [];
+    public IReadOnlyList<string> TutorProfileCommunicationStyle { get; init; } = [];
+    public Dictionary<string, string> TutorProfileSpeakingRules { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+    public IReadOnlyList<string> TutorProfileIdentityRules { get; init; } = [];
     public string SelectedLevel { get; init; } = string.Empty;
     public string Topic { get; init; } = string.Empty;
     public string TopicTitle { get; init; } = string.Empty;

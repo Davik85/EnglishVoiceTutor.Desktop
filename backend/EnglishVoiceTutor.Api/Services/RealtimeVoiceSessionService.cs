@@ -234,10 +234,15 @@ public sealed class RealtimeVoiceSessionService
         transcriptionTimeoutCancellationTokenSource?.Dispose();
         transcriptionTimeoutCancellationTokenSource = null;
         stopwatch.Restart();
-        logger.LogInformation("Realtime session start time. SessionId={SessionId}; StartedAtUtc={StartedAtUtc:o}; LessonType={LessonType}; CurrentPhase={CurrentPhase}; SelectedContextTitle={SelectedContextTitle}; RecentMessages={RecentMessageCount}; LastBotMessageLength={LastBotMessageLength}; LearnerTurnCount={LearnerTurnCount}.",
+        logger.LogInformation("Realtime session start time. SessionId={SessionId}; StartedAtUtc={StartedAtUtc:o}; TutorProfileId={TutorProfileId}; TutorDisplayName={TutorDisplayName}; Level={Level}; LessonType={LessonType}; Topic={Topic}; Subtopic={Subtopic}; CurrentPhase={CurrentPhase}; SelectedContextTitle={SelectedContextTitle}; RecentMessages={RecentMessageCount}; LastBotMessageLength={LastBotMessageLength}; LearnerTurnCount={LearnerTurnCount}.",
             sessionId,
             DateTimeOffset.UtcNow,
+            request.TutorProfileId,
+            request.TutorDisplayName,
+            request.SelectedLevel,
             request.LessonType,
+            string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
+            string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
             request.CurrentPhase,
             request.SelectedContextTitle,
             request.RecentMessages.Count,

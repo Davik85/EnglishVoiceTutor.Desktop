@@ -34,6 +34,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly AppLocalizedText localizedText;
     private readonly LessonScenario lessonScenario;
     private readonly LevelProfile activeLevelProfile;
+    private readonly TutorProfile tutorProfile;
     private int messageCounter;
     private string lastBotMessage = AppConstants.MockBotFirstMessage;
     private ContextVariant? selectedContextVariant;
@@ -360,6 +361,7 @@ public partial class LessonChatViewModel : ViewModelBase
         string userDisplayName,
         string learningGoal,
         TutorAvatarOption tutorAvatar,
+        TutorProfile? tutorProfile,
         LessonScenario? lessonScenario,
         LessonChatBackendService lessonChatBackendService,
         AudioRecordingService audioRecordingService,
@@ -378,6 +380,7 @@ public partial class LessonChatViewModel : ViewModelBase
         LearningGoal = NormalizeOptionalText(learningGoal);
         tutorAvatarId = tutorAvatar.Id;
         TutorAvatarDisplayName = tutorAvatar.DisplayName;
+        this.tutorProfile = tutorProfile ?? new TutorProfile { Id = tutorAvatar.Id, DisplayName = tutorAvatar.DisplayName };
         this.lessonScenario = lessonScenario ?? new LessonScenario();
         activeLevelProfile = ResolveActiveLevelProfile(this.lessonScenario, selectedLevel);
         this.lessonChatBackendService = lessonChatBackendService;
@@ -1749,7 +1752,7 @@ public partial class LessonChatViewModel : ViewModelBase
             await realtimeVoiceEngine.StartSessionAsync(BuildVoiceSessionStartRequest(), cancellationToken);
             isRealtimeSessionStarted = true;
             BackendStatusText = BackendConstants.BackendStatusConnected;
-            Debug.WriteLine($"Desktop realtime session start ms: SessionId={realtimeSessionId}; RealtimeSessionStartMs={stopwatch.ElapsedMilliseconds}; LessonType={lessonScenario.Metadata.LessonType}; Topic={lessonScenario.Metadata.Topic}; Subtopic={lessonScenario.Metadata.Subtopic}; Level={SelectedLevel}.");
+            Debug.WriteLine($"Desktop realtime session start ms: SessionId={realtimeSessionId}; RealtimeSessionStartMs={stopwatch.ElapsedMilliseconds}; TutorProfileId={tutorProfile.Id}; TutorDisplayName={tutorProfile.DisplayName}; LessonType={lessonScenario.Metadata.LessonType}; Topic={lessonScenario.Metadata.Topic}; Subtopic={lessonScenario.Metadata.Subtopic}; Level={SelectedLevel}; SelectedContextTitle={GetSelectedContextTitle()}.");
         }
         finally
         {
@@ -1763,8 +1766,16 @@ public partial class LessonChatViewModel : ViewModelBase
         return new VoiceSessionStartRequest
         {
             SessionId = realtimeSessionId,
-            TutorProfileId = tutorAvatarId,
-            TutorDisplayName = TutorAvatarDisplayName,
+            TutorProfileId = string.IsNullOrWhiteSpace(tutorProfile.Id) ? tutorAvatarId : tutorProfile.Id,
+            TutorDisplayName = string.IsNullOrWhiteSpace(tutorProfile.DisplayName) ? TutorAvatarDisplayName : tutorProfile.DisplayName,
+            TutorProfileAge = tutorProfile.Age,
+            TutorProfileHomeCity = tutorProfile.HomeCity,
+            TutorProfileCountryOrRegion = tutorProfile.CountryOrRegion,
+            TutorProfileStudies = tutorProfile.Studies,
+            TutorProfileHobbies = tutorProfile.Hobbies,
+            TutorProfileCommunicationStyle = tutorProfile.CommunicationStyle,
+            TutorProfileSpeakingRules = tutorProfile.SpeakingRules,
+            TutorProfileIdentityRules = tutorProfile.IdentityRules,
             SelectedLevel = SelectedLevel,
             Topic = lessonScenario.Metadata.Topic,
             TopicTitle = SelectedTopic.Title,

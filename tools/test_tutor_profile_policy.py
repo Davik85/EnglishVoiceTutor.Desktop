@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""Deterministic checks for realtime tutor profile identity and guided roleplay policy."""
+from __future__ import annotations
+
+import json
+import pathlib
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+PROMPT_BUILDER = ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "LessonPromptBuilder.cs"
+REALTIME_SERVICE = ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "RealtimeVoiceSessionService.cs"
+DESKTOP_VM = ROOT / "ViewModels" / "LessonChatViewModel.cs"
+ELENA_PROFILE = ROOT / "Content" / "Tutors" / "elena.json"
+
+
+def read(path: pathlib.Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def assert_contains(text: str, needle: str, label: str) -> None:
+    if needle not in text:
+        raise AssertionError(f"Missing {label}: {needle}")
+
+
+def main() -> int:
+    prompt_builder = read(PROMPT_BUILDER)
+    realtime_service = read(REALTIME_SERVICE)
+    desktop_vm = read(DESKTOP_VM)
+    elena = json.loads(read(ELENA_PROFILE))
+
+    assert elena["displayName"] == "Elena"
+    assert elena["homeCity"] == "London"
+    assert elena["studies"] == "fashion design"
+    assert "padel" in elena["hobbies"]
+    assert "art" in elena["hobbies"]
+
+    for needle in [
+        "You are {avatarProfile.DisplayName}",
+        "Lives in {avatarProfile.HomeCity}",
+        "Studies {avatarProfile.Studies}",
+        "FormatNaturalList(avatarProfile.Hobbies)",
+    ]:
+        assert_contains(prompt_builder, needle, "realtime Elena identity prompt construction")
+
+    for needle in [
+        "Use 1-2 short sentences",
+        "Use simple words",
+        "Ask one simple question",
+        "Avoid long explanations unless the learner asks",
+    ]:
+        assert_contains(prompt_builder, needle, "A1 realtime simplicity rule")
+
+    for needle in [
+        "This is active guided roleplay, not free conversation",
+        "selected roleplay context",
+        "Do not ask the learner to choose a new topic",
+        "What would you like to " + '" + "discuss',
+        "How can I " + '" + "assist',
+    ]:
+        assert_contains(prompt_builder, needle, "guided roleplay retention rule")
+
+    for needle in [
+        "TutorProfileId={TutorProfileId}",
+        "TutorDisplayName={TutorDisplayName}",
+        "SelectedContextTitle={SelectedContextTitle}",
+    ]:
+        assert_contains(realtime_service, needle, "backend realtime diagnostic")
+
+    for needle in [
+        "TutorProfileAge = tutorProfile.Age",
+        "TutorProfileSpeakingRules = tutorProfile.SpeakingRules",
+        "SelectedContextTitle={GetSelectedContextTitle()}",
+    ]:
+        assert_contains(desktop_vm, needle, "desktop realtime tutor profile request")
+
+    print("Tutor profile realtime policy checks passed.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

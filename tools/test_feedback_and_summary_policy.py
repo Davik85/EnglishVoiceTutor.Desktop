@@ -50,6 +50,11 @@ def main() -> int:
     assert_contains(vm, "LessonTranscriptValidator.VoiceMessagePlaceholder", "summary excludes voice placeholder")
     assert_contains(vm, "LessonTranscriptValidator.InvalidTranscriptUserMessage", "summary excludes invalid retry text")
     assert_contains(summary, "GetValidUserTurns(summaryInput)", "summary view consumes full summary input")
+    assert_contains(summary, "ToggleSummaryTranslationAsync", "summary translation toggle")
+    assert_contains(summary, "TranslatedSummaryText", "summary translated text state")
+    assert_contains(summary, "BuildVisibleSummaryText", "summary structured visible translation source")
+    assert_contains(summary, "Could not translate summary. Please try again.", "summary translation failure message")
+    assert_contains(read("Views/LessonSummaryView.xaml"), "ToggleSummaryTranslationCommand", "summary translate button binding")
 
     assert_contains(backend_constants, 'NormalChatTtsModel = "tts-1"', "normal chat TTS model")
     assert_contains(backend_constants, "DefaultBotVoiceSpeechModel = NormalChatTtsModel", "audio/speech uses normal chat model constant")
