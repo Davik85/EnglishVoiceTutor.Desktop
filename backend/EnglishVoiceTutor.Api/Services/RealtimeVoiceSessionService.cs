@@ -24,6 +24,12 @@ public sealed class RealtimeVoiceSessionService
     private bool firstAudioLogged;
     private bool firstTranscriptLogged;
     private long lastUserAudioCommitMs;
+    private int inputAudioBytesBuffered;
+    private bool isResponseInProgress;
+    private const int InputAudioSampleRate = 24000;
+    private const int InputAudioBytesPerSample = 2;
+    private const int MinimumInputAudioDurationMs = 500;
+    private const int MinimumInputAudioBytes = InputAudioSampleRate * InputAudioBytesPerSample * MinimumInputAudioDurationMs / 1000;
 
     public RealtimeVoiceSessionService(OpenAiOptionsProvider optionsProvider, ILogger<RealtimeVoiceSessionService> logger)
     {
@@ -136,16 +142,29 @@ public sealed class RealtimeVoiceSessionService
                 break;
             case "user.audio.start":
                 EnforceTurnLimit();
+                inputAudioBytesBuffered = 0;
                 await SendOpenAiEventAsync(new { type = "input_audio_buffer.clear" }, cancellationToken);
                 break;
             case "user.audio.append":
-                await SendOpenAiEventAsync(new { type = "input_audio_buffer.append", audio = payload.GetProperty("audio").GetString() ?? string.Empty }, cancellationToken);
+                var audioBase64 = payload.GetProperty("audio").GetString() ?? string.Empty;
+                inputAudioBytesBuffered += GetBase64DecodedByteCount(audioBase64);
+                await SendOpenAiEventAsync(new { type = "input_audio_buffer.append", audio = audioBase64 }, cancellationToken);
                 break;
             case "user.audio.commit":
                 EnforceTurnLimit();
+                if (inputAudioBytesBuffered < MinimumInputAudioBytes)
+                {
+                    logger.LogInformation("Realtime user audio commit ignored because the buffered audio is too short. SessionId={SessionId}; BufferedBytes={BufferedBytes}; MinimumBytes={MinimumBytes}; MinimumDurationMs={MinimumDurationMs}.", sessionId, inputAudioBytesBuffered, MinimumInputAudioBytes, MinimumInputAudioDurationMs);
+                    inputAudioBytesBuffered = 0;
+                    await SendOpenAiEventAsync(new { type = "input_audio_buffer.clear" }, cancellationToken);
+                    await SendDesktopEventAsync(new { type = "user.audio.ignored", sessionId, reason = "too_short", minimumDurationMs = MinimumInputAudioDurationMs }, cancellationToken);
+                    break;
+                }
+
                 learnerTurnCount++;
                 lastUserAudioCommitMs = stopwatch.ElapsedMilliseconds;
-                logger.LogInformation("Realtime user audio commit sent. SessionId={SessionId}; LearnerTurnCount={LearnerTurnCount}; UserAudioCommitMs={ElapsedMs}.", sessionId, learnerTurnCount, lastUserAudioCommitMs);
+                logger.LogInformation("Realtime user audio commit sent. SessionId={SessionId}; LearnerTurnCount={LearnerTurnCount}; BufferedBytes={BufferedBytes}; UserAudioCommitMs={ElapsedMs}.", sessionId, learnerTurnCount, inputAudioBytesBuffered, lastUserAudioCommitMs);
+                inputAudioBytesBuffered = 0;
                 await SendOpenAiEventAsync(new { type = "input_audio_buffer.commit" }, cancellationToken);
                 await CreateResponseAsync(cancellationToken);
                 break;
@@ -179,6 +198,10 @@ public sealed class RealtimeVoiceSessionService
         firstAudioLogged = false;
         firstTranscriptLogged = false;
         lastUserAudioCommitMs = 0;
+        inputAudioBytesBuffered = 0;
+        activeResponseId = string.Empty;
+        activeTranscript.Clear();
+        isResponseInProgress = false;
         stopwatch.Restart();
         logger.LogInformation("Realtime session start time. SessionId={SessionId}; StartedAtUtc={StartedAtUtc:o}; LessonType={LessonType}; CurrentPhase={CurrentPhase}; SelectedContextTitle={SelectedContextTitle}; RecentMessages={RecentMessageCount}; LastBotMessageLength={LastBotMessageLength}; LearnerTurnCount={LearnerTurnCount}.",
             sessionId,
@@ -210,21 +233,7 @@ public sealed class RealtimeVoiceSessionService
                     input_audio_format = "pcm16",
                     output_audio_format = "pcm16",
                     turn_detection = (object?)null,
-                    input_audio_transcription = new { model = OpenAiConstants.DefaultTranscriptionModel, language = OpenAiConstants.TranscriptionLanguage },
-                    audio = new
-                    {
-                        input = new
-                        {
-                            format = new { type = "audio/pcm", rate = 24000 },
-                            transcription = new { model = OpenAiConstants.DefaultTranscriptionModel, language = OpenAiConstants.TranscriptionLanguage },
-                            turn_detection = (object?)null
-                        },
-                        output = new
-                        {
-                            format = new { type = "audio/pcm", rate = 24000 },
-                            voice = OpenAiConstants.DefaultRealtimeVoice
-                        }
-                    }
+                    input_audio_transcription = new { model = OpenAiConstants.DefaultTranscriptionModel, language = OpenAiConstants.TranscriptionLanguage }
                 }
             }, cancellationToken);
 
@@ -288,6 +297,7 @@ public sealed class RealtimeVoiceSessionService
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
         var type = root.GetProperty("type").GetString() ?? string.Empty;
+        logger.LogDebug("Realtime OpenAI event received. SessionId={SessionId}; EventType={EventType}; ResponseId={ResponseId}; IsResponseInProgress={IsResponseInProgress}.", sessionId, type, activeResponseId, isResponseInProgress);
         var responseId = root.TryGetProperty("response_id", out var responseProperty) ? responseProperty.GetString() ?? activeResponseId : activeResponseId;
         if (!string.IsNullOrWhiteSpace(responseId) && !string.Equals(activeResponseId, responseId, StringComparison.Ordinal))
         {
@@ -299,6 +309,10 @@ public sealed class RealtimeVoiceSessionService
 
         switch (type)
         {
+            case "response.created":
+                isResponseInProgress = true;
+                logger.LogInformation("Realtime assistant response created. SessionId={SessionId}; ResponseId={ResponseId}; ResponseCreatedMs={ElapsedMs}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds);
+                break;
             case "response.audio.delta":
             case "response.output_audio.delta":
                 var audio = root.GetProperty("delta").GetString() ?? string.Empty;
@@ -320,7 +334,16 @@ public sealed class RealtimeVoiceSessionService
                 }
                 await SendDesktopEventAsync(new { type = "assistant.transcript.delta", sessionId, responseId = activeResponseId, delta }, cancellationToken);
                 break;
+            case "response.failed":
+                isResponseInProgress = false;
+                logger.LogWarning("Realtime assistant response failed. SessionId={SessionId}; ResponseId={ResponseId}; ResponseFailedMs={ElapsedMs}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds);
+                break;
+            case "response.cancelled":
+                isResponseInProgress = false;
+                logger.LogInformation("Realtime assistant response cancelled. SessionId={SessionId}; ResponseId={ResponseId}; ResponseCancelledMs={ElapsedMs}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds);
+                break;
             case "response.done":
+                isResponseInProgress = false;
                 logger.LogInformation("Realtime assistant response completed ms. SessionId={SessionId}; ResponseId={ResponseId}; AssistantResponseCompletedMs={ElapsedMs}; SinceUserAudioCommitMs={SinceUserAudioCommitMs}; TranscriptLength={TranscriptLength}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds, lastUserAudioCommitMs > 0 ? stopwatch.ElapsedMilliseconds - lastUserAudioCommitMs : 0, activeTranscript.Length);
                 await SendDesktopEventAsync(new { type = "assistant.turn.completed", sessionId, responseId = activeResponseId, transcript = activeTranscript.ToString() }, cancellationToken);
                 break;
@@ -335,13 +358,24 @@ public sealed class RealtimeVoiceSessionService
                 logger.LogInformation("Realtime user transcript delta received. SessionId={SessionId}; ItemId={ItemId}; TranscriptLength={TranscriptLength}; EventMs={ElapsedMs}.", sessionId, deltaItemId, transcriptDelta.Length, stopwatch.ElapsedMilliseconds);
                 await SendDesktopEventAsync(new { type = "user.transcript.delta", sessionId, itemId = deltaItemId, delta = transcriptDelta }, cancellationToken);
                 break;
+            case "conversation.item.created":
+                var createdItemId = root.TryGetProperty("item", out var createdItem) && createdItem.TryGetProperty("id", out var createdItemIdProperty) ? createdItemIdProperty.GetString() ?? string.Empty : string.Empty;
+                logger.LogDebug("Realtime conversation item created. SessionId={SessionId}; ItemId={ItemId}; EventMs={ElapsedMs}.", sessionId, createdItemId, stopwatch.ElapsedMilliseconds);
+                break;
             case "conversation.item.input_audio_transcription.completed":
                 var userTranscript = root.TryGetProperty("transcript", out var userTranscriptProperty) ? userTranscriptProperty.GetString() ?? string.Empty : string.Empty;
                 var transcriptItemId = root.TryGetProperty("item_id", out var transcriptItemIdProperty) ? transcriptItemIdProperty.GetString() ?? string.Empty : string.Empty;
                 logger.LogInformation("Realtime user transcript completed received. SessionId={SessionId}; ItemId={ItemId}; TranscriptLength={TranscriptLength}; EventMs={ElapsedMs}.", sessionId, transcriptItemId, userTranscript.Trim().Length, stopwatch.ElapsedMilliseconds);
                 await SendDesktopEventAsync(new { type = "user.transcript.completed", sessionId, itemId = transcriptItemId, transcript = userTranscript }, cancellationToken);
                 break;
+            case "conversation.item.input_audio_transcription.failed":
+                var failedItemId = root.TryGetProperty("item_id", out var failedItemIdProperty) ? failedItemIdProperty.GetString() ?? string.Empty : string.Empty;
+                var failureMessage = root.TryGetProperty("error", out var transcriptionError) && transcriptionError.TryGetProperty("message", out var transcriptionErrorMessage) ? transcriptionErrorMessage.GetString() ?? "Transcription unavailable." : "Transcription unavailable.";
+                logger.LogWarning("Realtime user transcript failed. SessionId={SessionId}; ItemId={ItemId}; Error={Error}; EventMs={ElapsedMs}.", sessionId, failedItemId, failureMessage, stopwatch.ElapsedMilliseconds);
+                await SendDesktopEventAsync(new { type = "user.transcript.failed", sessionId, itemId = failedItemId, message = failureMessage }, cancellationToken);
+                break;
             case "error":
+                isResponseInProgress = false;
                 var message = root.TryGetProperty("error", out var error) && error.TryGetProperty("message", out var errorMessage) ? errorMessage.GetString() : "Realtime voice mode is unavailable. Please try text mode.";
                 logger.LogWarning("Realtime error event. SessionId={SessionId}; ResponseId={ResponseId}; Error={Error}.", sessionId, activeResponseId, message);
                 await SendDesktopEventAsync(new { type = "session.error", sessionId, responseId = activeResponseId, message }, cancellationToken);
@@ -367,7 +401,7 @@ public sealed class RealtimeVoiceSessionService
                 {
                     type = "message",
                     role,
-                    content = new[] { new { type = role == "assistant" ? "output_text" : "input_text", text } }
+                    content = new[] { new { type = role == "assistant" ? "text" : "input_text", text } }
                 }
             }, cancellationToken);
         }
@@ -387,6 +421,13 @@ public sealed class RealtimeVoiceSessionService
 
     private async Task CreateResponseAsync(CancellationToken cancellationToken)
     {
+        if (isResponseInProgress)
+        {
+            logger.LogInformation("Realtime response.create skipped because a response is already active. SessionId={SessionId}; ActiveResponseId={ResponseId}; LearnerTurnCount={LearnerTurnCount}.", sessionId, activeResponseId, learnerTurnCount);
+            return;
+        }
+
+        isResponseInProgress = true;
         logger.LogInformation("Realtime response.create sent. SessionId={SessionId}; LearnerTurnCount={LearnerTurnCount}; ResponseCreateSentMs={ElapsedMs}; SinceUserAudioCommitMs={SinceUserAudioCommitMs}.", sessionId, learnerTurnCount, stopwatch.ElapsedMilliseconds, lastUserAudioCommitMs > 0 ? stopwatch.ElapsedMilliseconds - lastUserAudioCommitMs : 0);
         await SendOpenAiEventAsync(new
         {
@@ -429,6 +470,23 @@ public sealed class RealtimeVoiceSessionService
         var json = JsonSerializer.Serialize(value, JsonOptions);
         var bytes = Encoding.UTF8.GetBytes(json);
         await socket.SendAsync(bytes, WebSocketMessageType.Text, WebSocketMessageFlags.EndOfMessage, cancellationToken);
+    }
+
+    private static int GetBase64DecodedByteCount(string base64)
+    {
+        if (string.IsNullOrWhiteSpace(base64))
+        {
+            return 0;
+        }
+
+        try
+        {
+            return Convert.FromBase64String(base64).Length;
+        }
+        catch (FormatException)
+        {
+            return 0;
+        }
     }
 
     private static bool IsExpectedDesktopDisconnect(WebSocketException exception, CancellationToken cancellationToken)
@@ -512,7 +570,8 @@ public sealed class RealtimeVoiceSessionService
         if (!string.IsNullOrWhiteSpace(request.Situation)) builder.AppendLine($"Situation: {request.Situation}.");
         if (!string.IsNullOrWhiteSpace(request.LearningGoal)) builder.AppendLine($"Learner personal goal: {request.LearningGoal}.");
         builder.AppendLine($"Target language: {request.TargetLanguageName}.");
-        builder.AppendLine($"Turn limits: soft wrap-up after learner turn {request.SoftLearnerTurnLimit}; final learner turn {request.HardLearnerTurnLimit}. Current learner turn count is {request.LearnerTurnCount}. The server also enforces these limits.");
+        var maxUserTurns = GetRealtimeMaxUserTurns(request);
+        builder.AppendLine($"Turn limits: soft wrap-up after learner turn {request.SoftLearnerTurnLimit}; final learner turn {request.HardLearnerTurnLimit}; realtime max user turns {maxUserTurns}. Current active-roleplay user turn number is {request.LearnerTurnCount}. Setup and context-selection turns do not count.");
         builder.AppendLine($"Feedback rules: {request.FeedbackRulesSummary}.");
         builder.AppendLine($"Level profile: {request.ActiveLevelProfile.DifficultyNotes} {request.ActiveLevelProfile.TutorLanguageStyle} Expected learner response: {request.ActiveLevelProfile.ExpectedUserResponse} Conversation depth: {request.ActiveLevelProfile.ConversationDepth}.");
         if (request.TargetLanguageKeyPhrases.Count > 0) builder.AppendLine($"Target key phrases: {string.Join(", ", request.TargetLanguageKeyPhrases)}.");
@@ -520,6 +579,7 @@ public sealed class RealtimeVoiceSessionService
         if (request.AiTutorPromptInstructions.Count > 0) builder.AppendLine($"Lesson-specific instructions: {string.Join(" ", request.AiTutorPromptInstructions)}");
         if (!string.IsNullOrWhiteSpace(request.SelectedContextTitle)) builder.AppendLine($"Selected guided roleplay context: {request.SelectedContextTitle}. Variant id: {request.SelectedContextVariantId}. Opening line already shown: {request.SelectedContextOpeningLine}.");
         if (!string.IsNullOrWhiteSpace(request.LastBotMessage)) builder.AppendLine($"Last visible tutor message to continue from: {request.LastBotMessage}.");
+        AppendLevelRules(builder, request.SelectedLevel);
         if (request.LessonType.Equals("guided_roleplay", StringComparison.OrdinalIgnoreCase))
         {
             builder.AppendLine("You are in an active guided roleplay, not free conversation.");
@@ -528,9 +588,10 @@ public sealed class RealtimeVoiceSessionService
             builder.AppendLine("Continue naturally from that message. Stay inside the selected scenario and role.");
             builder.AppendLine("Ask one simple on-scenario question at a time.");
             builder.AppendLine("Never ask the learner what topic they want to discuss.");
-            builder.AppendLine("Never say 'How can I assist you today?' or similar generic assistant offers.");
+            builder.AppendLine("Never use generic assistant-offer or open-topic prompts in guided roleplay. Do not ask what topic the learner wants, what they want to discuss, or whether they want unrelated tips/help.");
             builder.AppendLine("Do not ask the learner to choose a situation during ActiveRoleplay. The situation is already selected.");
-            builder.AppendLine("If the learner asks a meta question, answer briefly and return to the selected scenario.");
+            builder.AppendLine("If the learner goes off-topic, briefly acknowledge and redirect back to the lesson goal and selected scenario. If this repeats, suggest finishing this lesson and using Free Conversation later.");
+            builder.AppendLine("Do not change the topic, subtopic, lesson goal, or selected scenario based on an off-topic learner request.");
         }
         else if (request.LessonType.Equals("free_conversation", StringComparison.OrdinalIgnoreCase))
         {
@@ -545,6 +606,43 @@ public sealed class RealtimeVoiceSessionService
             }
         }
         return builder.ToString();
+    }
+
+    private static int GetRealtimeMaxUserTurns(RealtimeVoiceSessionStartRequest request)
+    {
+        if (request.LessonType.Equals("free_conversation", StringComparison.OrdinalIgnoreCase))
+        {
+            return 30;
+        }
+
+        return request.SelectedLevel.StartsWith("B", StringComparison.OrdinalIgnoreCase) ? 25 : 15;
+    }
+
+    private static void AppendLevelRules(StringBuilder builder, string selectedLevel)
+    {
+        var level = string.IsNullOrWhiteSpace(selectedLevel) ? string.Empty : selectedLevel.Trim().ToUpperInvariant();
+        if (level.StartsWith("A1", StringComparison.Ordinal))
+        {
+            builder.AppendLine("A1 realtime output rules: use very simple English; usually one short sentence plus one question; one question at a time; simple words; no long advice; no lectures; no generic assistant phrases; accept short understandable answers; correct only meaning-blocking mistakes. Good continuation after 'My name is David.': 'Nice to meet you, David. Where are you from?'");
+            return;
+        }
+
+        if (level.StartsWith("A2", StringComparison.Ordinal))
+        {
+            builder.AppendLine("A2 realtime output rules: use short phrases, one clear follow-up question, a little more detail than A1, and soft correction only when useful.");
+            return;
+        }
+
+        if (level.StartsWith("B1", StringComparison.Ordinal))
+        {
+            builder.AppendLine("B1 realtime output rules: use 1 to 3 short spoken-friendly sentences, maintain a natural dialogue, and ask relevant follow-up questions inside the scenario.");
+            return;
+        }
+
+        if (level.StartsWith("B2", StringComparison.Ordinal))
+        {
+            builder.AppendLine("B2 realtime output rules: be natural and fluent but voice-friendly; avoid long lectures unless the learner explicitly asks in Free Conversation.");
+        }
     }
 
     private static string Choose(string first, string second)
