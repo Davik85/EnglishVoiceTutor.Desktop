@@ -13,6 +13,7 @@ public sealed class RealtimeVoiceSessionService
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly OpenAiOptionsProvider optionsProvider;
     private readonly ILogger<RealtimeVoiceSessionService> logger;
+    private readonly LessonPromptBuilder lessonPromptBuilder;
     private ClientWebSocket? openAiSocket;
     private WebSocket? desktopSocket;
     private RealtimeVoiceSessionStartRequest? startRequest;
@@ -31,9 +32,13 @@ public sealed class RealtimeVoiceSessionService
     private const int MinimumInputAudioDurationMs = 500;
     private const int MinimumInputAudioBytes = InputAudioSampleRate * InputAudioBytesPerSample * MinimumInputAudioDurationMs / 1000;
 
-    public RealtimeVoiceSessionService(OpenAiOptionsProvider optionsProvider, ILogger<RealtimeVoiceSessionService> logger)
+    public RealtimeVoiceSessionService(
+        OpenAiOptionsProvider optionsProvider,
+        LessonPromptBuilder lessonPromptBuilder,
+        ILogger<RealtimeVoiceSessionService> logger)
     {
         this.optionsProvider = optionsProvider;
+        this.lessonPromptBuilder = lessonPromptBuilder;
         this.logger = logger;
     }
 
@@ -221,7 +226,7 @@ public sealed class RealtimeVoiceSessionService
             await openAiSocket.ConnectAsync(new Uri(RealtimeWebSocketEndpoint), cancellationToken);
             _ = Task.Run(() => ReceiveOpenAiEventsAsync(openAiSocket, cancellationToken), CancellationToken.None);
 
-            var instructions = BuildInstructions(request);
+            var instructions = lessonPromptBuilder.BuildRealtimeInstructions(request);
             await SendOpenAiEventAsync(new
             {
                 type = "session.update",
@@ -411,12 +416,9 @@ public sealed class RealtimeVoiceSessionService
 
     private string BuildResponseInstructions()
     {
-        if (startRequest is not null && startRequest.LessonType.Equals("guided_roleplay", StringComparison.OrdinalIgnoreCase))
-        {
-            return $"Respond now in English as the tutor role inside the active guided roleplay scenario '{startRequest.SelectedContextTitle}'. Continue naturally from the last tutor message: '{startRequest.LastBotMessage}'. Produce audio and matching audio transcript from this same response. Ask one simple on-scenario question at a time. Do not ask what topic the learner wants to discuss and do not ask the learner to choose a situation.";
-        }
-
-        return "Respond now in English. Produce audio and matching audio transcript from this same response. Ask one question at a time.";
+        return startRequest is null
+            ? "Respond now in English. Produce audio and matching audio transcript from this same response. Ask one question at a time."
+            : lessonPromptBuilder.BuildRealtimeResponseInstructions(startRequest);
     }
 
     private async Task CreateResponseAsync(CancellationToken cancellationToken)
@@ -547,102 +549,7 @@ public sealed class RealtimeVoiceSessionService
     private static bool IsTutorSender(RealtimeRecentConversationMessage message, RealtimeVoiceSessionStartRequest request)
     {
         return message.Sender.Equals(request.TutorDisplayName, StringComparison.OrdinalIgnoreCase)
-            || message.Sender.Contains("tutor", StringComparison.OrdinalIgnoreCase)
-            || message.Sender.Contains("Elena", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string BuildInstructions(RealtimeVoiceSessionStartRequest request)
-    {
-        var builder = new StringBuilder();
-        builder.AppendLine("You are the realtime voice engine for English Voice Tutor Desktop.");
-        builder.AppendLine("Voice-first rule: every assistant response must produce audio and a matching transcript from the same response id and same turn. Do not rely on separate TTS or separate text generation.");
-        builder.AppendLine("Speak only English. Keep responses appropriate to the selected learner level. Ask one question at a time.");
-        builder.AppendLine($"Tutor profile: {request.TutorDisplayName} ({request.TutorProfileId}).");
-        builder.AppendLine($"Level: {request.SelectedLevel}.");
-        builder.AppendLine($"Topic: {Choose(request.Topic, request.TopicTitle)}.");
-        builder.AppendLine($"Subtopic/situation: {Choose(request.Subtopic, request.SubtopicTitle)}.");
-        builder.AppendLine($"Lesson type: {request.LessonType}.");
-        builder.AppendLine($"Lesson scenario id: {request.LessonScenarioId}.");
-        builder.AppendLine($"Lesson goal: {request.LessonGoal}.");
-        builder.AppendLine($"Lesson phase: {Choose(request.CurrentPhase, request.LessonPhase)}.");
-        if (!string.IsNullOrWhiteSpace(request.TutorRole)) builder.AppendLine($"Tutor role: {request.TutorRole}.");
-        if (!string.IsNullOrWhiteSpace(request.UserRole)) builder.AppendLine($"Learner role: {request.UserRole}.");
-        if (!string.IsNullOrWhiteSpace(request.Situation)) builder.AppendLine($"Situation: {request.Situation}.");
-        if (!string.IsNullOrWhiteSpace(request.LearningGoal)) builder.AppendLine($"Learner personal goal: {request.LearningGoal}.");
-        builder.AppendLine($"Target language: {request.TargetLanguageName}.");
-        var maxUserTurns = GetRealtimeMaxUserTurns(request);
-        builder.AppendLine($"Turn limits: soft wrap-up after learner turn {request.SoftLearnerTurnLimit}; final learner turn {request.HardLearnerTurnLimit}; realtime max user turns {maxUserTurns}. Current active-roleplay user turn number is {request.LearnerTurnCount}. Setup and context-selection turns do not count.");
-        builder.AppendLine($"Feedback rules: {request.FeedbackRulesSummary}.");
-        builder.AppendLine($"Level profile: {request.ActiveLevelProfile.DifficultyNotes} {request.ActiveLevelProfile.TutorLanguageStyle} Expected learner response: {request.ActiveLevelProfile.ExpectedUserResponse} Conversation depth: {request.ActiveLevelProfile.ConversationDepth}.");
-        if (request.TargetLanguageKeyPhrases.Count > 0) builder.AppendLine($"Target key phrases: {string.Join(", ", request.TargetLanguageKeyPhrases)}.");
-        if (request.GrammarFocus.Count > 0) builder.AppendLine($"Grammar focus: {string.Join(", ", request.GrammarFocus)}.");
-        if (request.AiTutorPromptInstructions.Count > 0) builder.AppendLine($"Lesson-specific instructions: {string.Join(" ", request.AiTutorPromptInstructions)}");
-        if (!string.IsNullOrWhiteSpace(request.SelectedContextTitle)) builder.AppendLine($"Selected guided roleplay context: {request.SelectedContextTitle}. Variant id: {request.SelectedContextVariantId}. Opening line already shown: {request.SelectedContextOpeningLine}.");
-        if (!string.IsNullOrWhiteSpace(request.LastBotMessage)) builder.AppendLine($"Last visible tutor message to continue from: {request.LastBotMessage}.");
-        AppendLevelRules(builder, request.SelectedLevel);
-        if (request.LessonType.Equals("guided_roleplay", StringComparison.OrdinalIgnoreCase))
-        {
-            builder.AppendLine("You are in an active guided roleplay, not free conversation.");
-            builder.AppendLine($"The selected scenario is: {request.SelectedContextTitle}.");
-            builder.AppendLine($"The last tutor message already said: {request.LastBotMessage}.");
-            builder.AppendLine("Continue naturally from that message. Stay inside the selected scenario and role.");
-            builder.AppendLine("Ask one simple on-scenario question at a time.");
-            builder.AppendLine("Never ask the learner what topic they want to discuss.");
-            builder.AppendLine("Never use generic assistant-offer or open-topic prompts in guided roleplay. Do not ask what topic the learner wants, what they want to discuss, or whether they want unrelated tips/help.");
-            builder.AppendLine("Do not ask the learner to choose a situation during ActiveRoleplay. The situation is already selected.");
-            builder.AppendLine("If the learner goes off-topic, briefly acknowledge and redirect back to the lesson goal and selected scenario. If this repeats, suggest finishing this lesson and using Free Conversation later.");
-            builder.AppendLine("Do not change the topic, subtopic, lesson goal, or selected scenario based on an off-topic learner request.");
-        }
-        else if (request.LessonType.Equals("free_conversation", StringComparison.OrdinalIgnoreCase))
-        {
-            builder.AppendLine("Free Conversation: allow safe open topics, keep conversation in English, refuse unsafe content briefly, and redirect to safe everyday English practice.");
-        }
-        if (request.RecentMessages.Count > 0)
-        {
-            builder.AppendLine("Recent conversation context:");
-            foreach (var message in request.RecentMessages)
-            {
-                builder.AppendLine($"- {message.Sender}: {message.Text}");
-            }
-        }
-        return builder.ToString();
-    }
-
-    private static int GetRealtimeMaxUserTurns(RealtimeVoiceSessionStartRequest request)
-    {
-        if (request.LessonType.Equals("free_conversation", StringComparison.OrdinalIgnoreCase))
-        {
-            return 30;
-        }
-
-        return request.SelectedLevel.StartsWith("B", StringComparison.OrdinalIgnoreCase) ? 25 : 15;
-    }
-
-    private static void AppendLevelRules(StringBuilder builder, string selectedLevel)
-    {
-        var level = string.IsNullOrWhiteSpace(selectedLevel) ? string.Empty : selectedLevel.Trim().ToUpperInvariant();
-        if (level.StartsWith("A1", StringComparison.Ordinal))
-        {
-            builder.AppendLine("A1 realtime output rules: use very simple English; usually one short sentence plus one question; one question at a time; simple words; no long advice; no lectures; no generic assistant phrases; accept short understandable answers; correct only meaning-blocking mistakes. Good continuation after 'My name is David.': 'Nice to meet you, David. Where are you from?'");
-            return;
-        }
-
-        if (level.StartsWith("A2", StringComparison.Ordinal))
-        {
-            builder.AppendLine("A2 realtime output rules: use short phrases, one clear follow-up question, a little more detail than A1, and soft correction only when useful.");
-            return;
-        }
-
-        if (level.StartsWith("B1", StringComparison.Ordinal))
-        {
-            builder.AppendLine("B1 realtime output rules: use 1 to 3 short spoken-friendly sentences, maintain a natural dialogue, and ask relevant follow-up questions inside the scenario.");
-            return;
-        }
-
-        if (level.StartsWith("B2", StringComparison.Ordinal))
-        {
-            builder.AppendLine("B2 realtime output rules: be natural and fluent but voice-friendly; avoid long lectures unless the learner explicitly asks in Free Conversation.");
-        }
+            || message.Sender.Contains("tutor", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string Choose(string first, string second)

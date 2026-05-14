@@ -26,7 +26,7 @@
 Run backend with OpenAI enabled (PowerShell):
 
 ```powershell
-$env:OPENAI_API_KEY="your_api_key_here"
+Set-Item -Path Env:OPENAI_API_KEY -Value (Read-Host "Enter your local OpenAI API key")
 dotnet run
 ```
 

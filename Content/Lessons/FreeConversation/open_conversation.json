@@ -20,7 +20,7 @@
       "The learner may choose any safe topic.",
       "The conversation stays safe, respectful, age-appropriate, and in English."
     ],
-    "setupMessage": "Hi, {{userDisplayName}}! Want to just chat without a lesson? I’d be happy to. What would you like to talk about?",
+    "setupMessage": "Hi, {{userDisplayName}}! Want to just chat without a lesson? I’d be happy to. Which topic would you like to practice?",
     "setupAndContextChoiceCountAsLessonTurns": false,
     "contextSelection": {
       "customContextAllowed": false,
@@ -205,7 +205,7 @@
   },
   "conversationFlow": {
     "opening": "Tutor greets the user with the setup message and asks what they want to talk about.",
-    "defaultOpeningExample": "Hi! Want to just chat without a lesson? I’d be happy to. What would you like to talk about?",
+    "defaultOpeningExample": "Hi! Want to just chat without a lesson? I’d be happy to. Which topic would you like to practice?",
     "firstUserTask": "The user chooses any safe topic or starts with a safe idea in English.",
     "expectedPattern": "I’d like to talk about...",
     "guidedPracticeFollowUpQuestions": [

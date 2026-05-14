@@ -4,7 +4,7 @@ public static class ApiConstants
 {
     public const string ServiceName = "EnglishVoiceTutor.Api";
     public const string HealthOkStatus = "ok";
-    public const string MockBotReplyText = "Good! I understood your answer. In the next step, AI will give real corrections from the backend.";
+    public const string MockBotReplyText = "Thanks. I received your answer, and the tutor reply will appear here when AI chat is enabled.";
     public const string MockHintText = "You can say: Hi, my name is David.";
     public const string EmptyUserMessageError = "User message is required.";
     public const string EmptyAudioFileError = "Audio file is required.";

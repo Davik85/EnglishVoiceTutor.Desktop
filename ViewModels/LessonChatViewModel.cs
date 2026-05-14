@@ -1835,7 +1835,7 @@ public partial class LessonChatViewModel : ViewModelBase
         BotStatus = BackendConstants.BotStatusThinking;
         IsSending = true;
         RefreshAvatarState();
-        realtimeAssistantMessage = AddMessage(TutorAvatarDisplayName, "Elena is speaking...", true);
+        realtimeAssistantMessage = AddMessage(TutorAvatarDisplayName, $"{TutorAvatarDisplayName} is speaking...", true);
         realtimeAudioPlaybackService.StartSession(realtimeSessionId, string.Empty);
     }
 

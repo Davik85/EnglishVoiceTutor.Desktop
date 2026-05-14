@@ -16,6 +16,7 @@ builder.Services.AddScoped<MockLessonHintService>();
 builder.Services.AddScoped<OpenAiOptionsProvider>();
 builder.Services.AddScoped<TutorAvatarProfileProvider>();
 builder.Services.AddScoped<LessonPromptBuilder>();
+builder.Services.AddScoped<TutorIdentityGuard>();
 builder.Services.AddScoped<ILessonChatService, OpenAiLessonChatService>();
 builder.Services.AddScoped<ILessonHintService, OpenAiLessonHintService>();
 builder.Services.AddScoped<AudioTranscriptionService>();

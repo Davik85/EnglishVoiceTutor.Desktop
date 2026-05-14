@@ -1,6 +1,7 @@
 using System.Text;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
+using EnglishVoiceTutor.Api.Models.RealtimeVoice;
 
 namespace EnglishVoiceTutor.Api.Services;
 
@@ -18,6 +19,8 @@ public sealed class LessonPromptBuilder
     private const string LastBotMessageHeader = "Latest bot message:";
     private const string CurrentTurnTaskHeader = "Current turn task:";
     private const string HintTaskHeader = "Hint task:";
+    private const string NormalChatMode = "normal lesson chat";
+    private const string RealtimeVoiceMode = "realtime voice conversation";
 
     private readonly TutorAvatarProfileProvider _avatarProfileProvider;
 
@@ -32,6 +35,7 @@ public sealed class LessonPromptBuilder
         var avatarProfile = _avatarProfileProvider.GetById(request.TutorAvatarId);
 
         AppendLessonContext(prompt, request);
+        AppendCanonicalTeachingPolicy(prompt, request, avatarProfile, NormalChatMode);
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, request);
         AppendLessonLength(prompt, request);
@@ -49,6 +53,65 @@ public sealed class LessonPromptBuilder
         else
         {
             AppendGuidedRoleplayTask(prompt, request, avatarProfile);
+        }
+
+        return prompt.ToString();
+    }
+
+
+    public string BuildRealtimeInstructions(RealtimeVoiceSessionStartRequest request)
+    {
+        var prompt = new StringBuilder();
+        var chatRequest = CreateLessonChatRequest(request);
+        var avatarProfile = _avatarProfileProvider.GetById(chatRequest.TutorAvatarId);
+
+        prompt.AppendLine("You are the realtime voice engine for English Voice Tutor Desktop.");
+        prompt.AppendLine("Voice-first rule: every assistant response must produce audio and a matching transcript from the same Realtime response id and same turn. Do not rely on separate TTS or separate text generation.");
+        prompt.AppendLine("Use the canonical lesson teaching policy below. Realtime changes only audio transport and spoken-friendly formatting; it must not change teaching behavior.");
+        prompt.AppendLine();
+
+        AppendLessonContext(prompt, chatRequest);
+        AppendCanonicalTeachingPolicy(prompt, chatRequest, avatarProfile, RealtimeVoiceMode);
+        AppendAvatarProfile(prompt, avatarProfile);
+        AppendLearnerProfile(prompt, chatRequest);
+        AppendLessonLength(prompt, chatRequest);
+        AppendRecentConversation(prompt, chatRequest.RecentMessages);
+
+        prompt.AppendLine("Realtime output format:");
+        prompt.AppendLine("- Speak naturally for voice, but follow the same lesson rules as normal Lesson Chat.");
+        prompt.AppendLine("- Do not output JSON for realtime turns.");
+        prompt.AppendLine("- Assistant audio and assistant transcript must come from this same realtime response.");
+        prompt.AppendLine("- Ask at most one question in a turn.");
+        prompt.AppendLine();
+
+        return prompt.ToString();
+    }
+
+    public string BuildRealtimeResponseInstructions(RealtimeVoiceSessionStartRequest request)
+    {
+        var chatRequest = CreateLessonChatRequest(request);
+        var avatarProfile = _avatarProfileProvider.GetById(chatRequest.TutorAvatarId);
+        var prompt = new StringBuilder();
+
+        prompt.AppendLine($"Respond now as {avatarProfile.DisplayName}, the selected tutor profile.");
+        prompt.AppendLine("Follow the canonical lesson teaching policy from the session instructions.");
+        prompt.AppendLine("Produce assistant audio and a matching assistant transcript from this same Realtime response.");
+
+        if (IsFreeConversation(chatRequest))
+        {
+            prompt.AppendLine("This is Free Conversation: safe open topic selection is allowed.");
+        }
+        else
+        {
+            prompt.AppendLine($"This is guided roleplay. Continue the selected scenario: {chatRequest.SelectedContextTitle}.");
+            prompt.AppendLine($"Continue from the last visible tutor message: {chatRequest.LastBotMessage}.");
+            prompt.AppendLine("Do not ask the learner to choose a topic, choose a situation, or request unrelated help/tips.");
+            prompt.AppendLine("If the learner goes off-topic, briefly acknowledge and redirect back to the selected lesson goal and context.");
+        }
+
+        if (IsA1(chatRequest))
+        {
+            AppendA1StrictRules(prompt, chatRequest);
         }
 
         return prompt.ToString();
@@ -72,11 +135,16 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("Stay inside the selected roleplay context.");
         prompt.AppendLine("Keep the base scenario goal and topic fixed; do not turn the lesson into unrelated free conversation.");
         prompt.AppendLine("Adapt difficulty to the selected level and active level profile.");
-        prompt.AppendLine("For A1, keep output very simple and avoid difficult follow-ups.");
+        if (IsA1(request))
+        {
+            AppendA1StrictRules(prompt, request);
+        }
         prompt.AppendLine("For A1/A2, ask only one question at a time.");
         prompt.AppendLine("For B1/B2, you may use slightly richer natural responses, but every turn must stay inside the selected scenario.");
         prompt.AppendLine("The setup and context choice are already complete and did not count as lesson turns.");
         prompt.AppendLine("Do not ask for native language.");
+        AppendTutorIdentityRules(prompt, avatarProfile);
+        AppendGuidedRoleplayRetentionRules(prompt);
 
         if (LessonLimitHelper.ShouldEndLessonNow(request))
         {
@@ -105,6 +173,7 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("If unsafe or provocative content appears, refuse briefly and redirect to a safe topic for English practice.");
         prompt.AppendLine("Use learner profile as stable context and recent conversation as active conversation context.");
         prompt.AppendLine("Do not ask for native language.");
+        AppendTutorIdentityRules(prompt, avatarProfile);
 
         if (LessonLimitHelper.ShouldEndLessonNow(request))
         {
@@ -127,6 +196,7 @@ public sealed class LessonPromptBuilder
         var avatarProfile = _avatarProfileProvider.GetById(request.TutorAvatarId);
 
         AppendLessonContext(prompt, request, includeNativeLanguage: false);
+        AppendCanonicalTeachingPolicy(prompt, request, avatarProfile, NormalChatMode);
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, request);
         AppendRecentConversation(prompt, request.RecentMessages);
@@ -180,6 +250,77 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("If the learner profile includes a display name, hint examples may use that name when appropriate.");
         prompt.AppendLine("Do not invent a learner name.");
         prompt.AppendLine($"Do not use {avatarProfile.DisplayName} or the tutor avatar name as the learner's name.");
+    }
+
+
+    private static void AppendCanonicalTeachingPolicy(StringBuilder prompt, LessonChatRequest request, TutorAvatarProfile avatarProfile, string mode)
+    {
+        prompt.AppendLine("Canonical tutor teaching policy shared by normal Lesson Chat and Realtime Conversation Mode:");
+        prompt.AppendLine($"- Current mode: {mode}.");
+        prompt.AppendLine($"- Tutor identity comes only from the selected TutorProfile: {avatarProfile.DisplayName} ({avatarProfile.Id}).");
+        prompt.AppendLine("- Lesson content describes roles and scenarios; it must not override the tutor profile identity.");
+        prompt.AppendLine("- UI label, avatar name, prompt identity, and any tutor self-reference must stay aligned with the selected TutorProfile.");
+        prompt.AppendLine("- The tutor may react warmly to jokes, compliments, and small talk, then return to the lesson goal.");
+        prompt.AppendLine("- Target language, level profile, feedback rules, hint rules, off-topic rules, turn limits, and guided scenario retention all apply in this mode.");
+
+        if (IsFreeConversation(request))
+        {
+            prompt.AppendLine("- Free Conversation allows safe open topic selection and natural open-topic questions.");
+        }
+        else
+        {
+            prompt.AppendLine("- Guided roleplay must continue the selected context, selected context variant id, role, situation, and learning goal.");
+            prompt.AppendLine("- Guided roleplay must not become generic AI chat or free conversation.");
+            prompt.AppendLine("- Guided roleplay must not ask broad assistant-offer questions or open-topic selection questions.");
+            prompt.AppendLine("- If the learner goes off-topic: briefly acknowledge, redirect to the selected lesson goal, and do not switch topic.");
+        }
+
+        AppendTutorIdentityRules(prompt, avatarProfile);
+
+        if (IsA1(request))
+        {
+            AppendA1StrictRules(prompt, request);
+        }
+
+        prompt.AppendLine();
+    }
+
+    private static void AppendTutorIdentityRules(StringBuilder prompt, TutorAvatarProfile avatarProfile)
+    {
+        prompt.AppendLine($"- If you introduce yourself by name, use only this exact tutor name: {avatarProfile.DisplayName}.");
+        prompt.AppendLine("- Do not invent or use any other tutor name.");
+        prompt.AppendLine("- Prefer no tutor self-naming in A1 unless the selected scenario explicitly needs it.");
+    }
+
+    private static void AppendGuidedRoleplayRetentionRules(StringBuilder prompt)
+    {
+        prompt.AppendLine("Guided roleplay retention rules:");
+        prompt.AppendLine("- Stay inside the selected roleplay context and continue from the last visible tutor message.");
+        prompt.AppendLine("- Do not ask the learner to choose a new topic, context, or situation during active roleplay.");
+        prompt.AppendLine("- Do not offer unrelated help or tips.");
+        prompt.AppendLine("- Keep the selected lesson goal, target language, and grammar focus fixed.");
+    }
+
+    private static void AppendA1StrictRules(StringBuilder prompt, LessonChatRequest request)
+    {
+        prompt.AppendLine("A1 strict output rules:");
+        prompt.AppendLine("- Use very simple English.");
+        prompt.AppendLine("- Use short sentences.");
+        prompt.AppendLine("- Ask one question at a time.");
+        prompt.AppendLine("- Avoid phrasal verbs when a simpler verb exists.");
+        prompt.AppendLine("- Avoid complex tenses unless they are the lesson target.");
+        prompt.AppendLine("- No long advice and no explanations inside roleplay unless correcting one important mistake.");
+        prompt.AppendLine("- No generic assistant phrases.");
+        prompt.AppendLine("- One short response plus one question is usually enough.");
+
+        if (IsIntroductionsSubtopic(request))
+        {
+            prompt.AppendLine("A1 introductions/new-neighbor rules:");
+            prompt.AppendLine("- After 'My name is David.', a good reply is: 'Nice to meet you, David. Where are you from?'");
+            prompt.AppendLine("- After 'I am from Russia.', a good reply is: 'Nice. Do you live here now?' or 'Good. Where do you live?'");
+            prompt.AppendLine("- Do not ask: 'Where did you move from?'");
+            prompt.AppendLine("- Do not ask: 'How long have you been living here?'");
+        }
     }
 
     private static void AppendLessonContext(StringBuilder prompt, LessonChatRequest request, bool includeNativeLanguage = true)
@@ -420,6 +561,63 @@ public sealed class LessonPromptBuilder
         }
 
         prompt.AppendLine();
+    }
+
+
+    private static LessonChatRequest CreateLessonChatRequest(RealtimeVoiceSessionStartRequest request)
+    {
+        return new LessonChatRequest
+        {
+            SelectedLevel = request.SelectedLevel,
+            TopicTitle = request.TopicTitle,
+            SubtopicTitle = request.SubtopicTitle,
+            UserMessage = string.Empty,
+            LastBotMessage = request.LastBotMessage,
+            NativeLanguageName = request.NativeLanguageName,
+            TutorAvatarId = request.TutorProfileId,
+            UserDisplayName = request.UserDisplayName,
+            LearningGoal = request.LearningGoal,
+            LearnerTurnCount = request.LearnerTurnCount,
+            SoftLearnerTurnLimit = request.SoftLearnerTurnLimit,
+            HardLearnerTurnLimit = request.HardLearnerTurnLimit,
+            RecentMessages = request.RecentMessages.Select(message => new RecentConversationMessage { Sender = message.Sender, Text = message.Text }).ToArray(),
+            LessonPhase = ChooseFirstNonEmpty(request.CurrentPhase, request.LessonPhase),
+            LessonScenarioId = request.LessonScenarioId,
+            Level = request.SelectedLevel,
+            Topic = request.Topic,
+            Subtopic = request.Subtopic,
+            LessonGoal = request.LessonGoal,
+            LessonType = request.LessonType,
+            AiTutorPromptInstructions = request.AiTutorPromptInstructions,
+            SelectedContextVariantId = request.SelectedContextVariantId,
+            SelectedContextTitle = request.SelectedContextTitle,
+            SelectedContextOpeningLine = request.SelectedContextOpeningLine,
+            UserTurnNumber = request.LearnerTurnCount,
+            SoftWrapUpAfterUserTurn = request.SoftLearnerTurnLimit,
+            FinalMessageAtUserTurn = request.HardLearnerTurnLimit,
+            TargetLanguageKeyPhrases = request.TargetLanguageKeyPhrases,
+            GrammarFocus = request.GrammarFocus,
+            FeedbackRulesSummary = request.FeedbackRulesSummary,
+            TutorProfileId = request.TutorProfileId,
+            ActiveLevelProfileDifficultyNotes = request.ActiveLevelProfile.DifficultyNotes,
+            ActiveLevelProfileTutorLanguageStyle = request.ActiveLevelProfile.TutorLanguageStyle,
+            ActiveLevelProfileExpectedUserResponse = request.ActiveLevelProfile.ExpectedUserResponse,
+            ActiveLevelProfileFeedbackStrictness = request.ActiveLevelProfile.FeedbackStrictness,
+            ActiveLevelProfileHintStrategy = request.ActiveLevelProfile.HintStrategy,
+            ActiveLevelProfileCorrectionPriority = request.ActiveLevelProfile.CorrectionPriority,
+            ActiveLevelProfileConversationDepth = request.ActiveLevelProfile.ConversationDepth,
+            ActiveLevelProfileExampleGoodAnswer = request.ActiveLevelProfile.ExampleGoodAnswer,
+            ActiveLevelProfileExampleStretchAnswer = request.ActiveLevelProfile.ExampleStretchAnswer,
+            ActiveLevelProfileAddedKeyPhrases = request.ActiveLevelProfile.AddedKeyPhrases,
+            ActiveLevelProfileAddedUsefulConstructions = request.ActiveLevelProfile.AddedUsefulConstructions,
+            ActiveLevelProfileAddedGrammarFocus = request.ActiveLevelProfile.AddedGrammarFocus
+        };
+    }
+
+    private static bool IsA1(LessonChatRequest request)
+    {
+        var level = ChooseFirstNonEmpty(request.SelectedLevel, request.Level);
+        return level.StartsWith("A1", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsFreeConversation(LessonChatRequest request)
