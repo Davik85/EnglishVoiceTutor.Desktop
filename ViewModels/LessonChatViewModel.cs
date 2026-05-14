@@ -74,6 +74,7 @@ public partial class LessonChatViewModel : ViewModelBase
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     private string userInput = string.Empty;
 
     [ObservableProperty]
@@ -203,9 +204,9 @@ public partial class LessonChatViewModel : ViewModelBase
 
     public bool IsLessonWrappingUp => LearnerTurnCount >= GetSoftWrapUpTurn();
 
-    public bool IsLessonInputEnabled => CurrentLessonPhase != LessonPhase.Completed && !IsLessonCompleteAwaitingFinish && !IsLessonLimitReached && !hasFinishedLesson;
+    public bool IsLessonInputEnabled => CanAcceptLessonInput;
 
-    public bool IsLessonOptionsEnabled => CurrentLessonPhase != LessonPhase.Completed && !IsLessonCompleteAwaitingFinish && !IsLessonLimitReached && !hasFinishedLesson;
+    public bool IsLessonOptionsEnabled => !hasFinishedLesson && !IsCompletedAwaitingFinish && !IsLessonLimitReached;
 
     public string VoiceButtonText => IsRecording
         ? localizedText.StopRecordingButtonText
@@ -293,6 +294,42 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool ShouldAutoSendTranscribedVoice => IsLessonInputEnabled && (IsConversationModeEnabled || IsVoiceAutoSendEnabled);
 
+    // Lesson chat deterministic state table (Stage 1 stabilization):
+    //
+    // SetupContextSelection
+    // - Guided lessons only. Scenario/context has not been selected yet.
+    // - User messages are context selection messages, not lesson turns; LearnerTurnCount must not increment here.
+    // - Send enabled when text is present and not busy. Start recording enabled unless busy.
+    // - Hint enabled in setup to show context-selection guidance when not busy.
+    // - Back enabled when not busy. Finish lesson enabled when not sending/recording.
+    // - Conversation Mode enabled as UI/layout mode, but Realtime must not start until ActiveRoleplay.
+    //
+    // ActiveRoleplay
+    // - Guided scenario selected OR Free Conversation started. User messages count as lesson turns.
+    // - Send enabled unless busy/final and text is present. Start recording enabled unless busy/final.
+    // - Hint enabled unless busy/final. Back enabled unless final/awaiting-finish.
+    // - Finish lesson enabled. Conversation Mode can start Realtime.
+    //
+    // CompletedAwaitingFinish
+    // - Final message has been shown. Lesson no longer accepts input. Only Finish lesson enabled.
+    // - Send, recording, hint, and back disabled. Conversation Mode disabled/stopped.
+    //
+    // Finished
+    // - Summary navigation has happened or lesson is closed. All lesson commands disabled except navigation controlled outside this VM.
+    //
+    // Transient busy flags used by command state:
+    // - IsSending: backend/realtime assistant turn in progress.
+    // - IsRecording: local or realtime microphone capture in progress.
+    // - IsRealtimeSessionStarting: realtime WebSocket/session startup in progress.
+    // - IsBotVoicePlaying: bot voice playback in progress; blocks local recording but not text input.
+    private bool IsLessonBusyForInput => IsSending || IsRecording || IsRealtimeSessionStarting;
+
+    private bool IsCompletedAwaitingFinish => IsLessonCompleteAwaitingFinish || CurrentLessonPhase == LessonPhase.Completed;
+
+    private bool IsRealtimeSessionStarting => isStartingRealtimeSession;
+
+    private bool CanAcceptLessonInput => !hasFinishedLesson && !IsCompletedAwaitingFinish && !IsLessonLimitReached && !IsLessonBusyForInput;
+
     private bool IsRealtimeConversationActive => BackendConstants.UseRealtimeConversationMode && IsConversationModeEnabled && CurrentLessonPhase == LessonPhase.ActiveRoleplay;
 
     private bool ShouldAutoPlayBotVoice => !IsRealtimeConversationActive && !IsLessonCompleteAwaitingFinish && IsBotVoiceAutoPlayEnabled;
@@ -355,6 +392,7 @@ public partial class LessonChatViewModel : ViewModelBase
         lastBotMessage = setupMessage;
         _ = CheckBackendHealthAsync();
         _ = CheckBackendConfigStatusAsync();
+        LogLessonStateSnapshot("lesson initialization");
     }
 
 
@@ -374,17 +412,23 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanSendMessage()
     {
-        return IsLessonInputEnabled && !IsSending && !IsRecording;
+        return CanAcceptLessonInput && !string.IsNullOrWhiteSpace(UserInput);
     }
 
     private bool CanToggleVoiceRecording()
     {
         if (IsRecording)
         {
-            return true;
+            return !hasFinishedLesson;
         }
 
-        return IsLessonInputEnabled && !IsSending && !IsBotVoicePlaying && !isTranscribingAudio;
+        return !hasFinishedLesson
+            && !IsCompletedAwaitingFinish
+            && !IsLessonLimitReached
+            && !IsSending
+            && !IsRealtimeSessionStarting
+            && !IsBotVoicePlaying
+            && !isTranscribingAudio;
     }
 
     private bool CanPlayBotVoice(ChatMessageViewModel? message)
@@ -606,6 +650,11 @@ public partial class LessonChatViewModel : ViewModelBase
             var finalTurn = GetFinalTurn();
             AddMessage(AppConstants.UserSenderName, "[Voice message]", false);
             LearnerTurnCount = nextLearnerTurnCount;
+            if (LearnerTurnCount >= finalTurn)
+            {
+                LogFinalLimitReached(finalTurn);
+            }
+
             PrepareRealtimeAssistantPlaceholder();
             await realtimeVoiceEngine.CommitUserAudioAsync(CancellationToken.None);
             StatusMessage = string.Empty;
@@ -671,11 +720,14 @@ public partial class LessonChatViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanToggleConversationMode))]
     private async Task ToggleConversationModeAsync()
     {
+        LogLessonStateSnapshot("Conversation Mode toggle requested");
+
         if (IsConversationModeEnabled)
         {
-            IsConversationModeEnabled = false;
             await StopRealtimeConversationAsync("conversation_mode_off");
+            IsConversationModeEnabled = false;
             RefreshAllCommandStates();
+            LogLessonStateSnapshot("Conversation Mode toggle off");
             return;
         }
 
@@ -685,6 +737,7 @@ public partial class LessonChatViewModel : ViewModelBase
             StatusMessage = "Choose a situation to start the conversation.";
             Debug.WriteLine($"Conversation mode enabled before guided context selection: LessonType={lessonScenario.Metadata.LessonType}; CurrentLessonPhase={CurrentLessonPhase}; SelectedTopic={SelectedTopic.Title}; SelectedSubtopic={SelectedSubtopic.Title}; UseRealtimeConversationMode={BackendConstants.UseRealtimeConversationMode}; BackendEndpoint={lessonChatBackendService.CreateRealtimeVoiceWebSocketUri()}.");
             RefreshAllCommandStates();
+            LogLessonStateSnapshot("Conversation Mode enabled in setup; realtime deferred");
             return;
         }
 
@@ -697,6 +750,7 @@ public partial class LessonChatViewModel : ViewModelBase
             IsConversationModeEnabled = true;
             StatusMessage = string.Empty;
             Debug.WriteLine($"Conversation mode started: RealtimeSessionId={realtimeSessionId}; ElapsedMs={startStopwatch.ElapsedMilliseconds}.");
+            LogLessonStateSnapshot("Realtime start success");
         }
         catch (Exception exception)
         {
@@ -705,6 +759,7 @@ public partial class LessonChatViewModel : ViewModelBase
             BackendStatusText = BackendConstants.BackendStatusUnavailable;
             StatusMessage = BackendConstants.RealtimeUnavailableMessage;
             Debug.WriteLine($"Conversation mode start failed: RealtimeSessionId={realtimeSessionId}; ExceptionType={exception.GetType().FullName}; Message={exception.Message}; {exception}");
+            LogLessonStateSnapshot("Realtime start failure");
         }
         finally
         {
@@ -714,26 +769,13 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanToggleConversationMode()
     {
-        if (isStartingRealtimeSession)
-        {
-            return false;
-        }
-
-        if (IsConversationModeEnabled)
-        {
-            return !IsLessonCompleteAwaitingFinish
-                && !IsLessonLimitReached
-                && !hasFinishedLesson
-                && !IsSending
-                && !IsRecording;
-        }
-
-        return IsLessonOptionsEnabled
-            && !IsLessonCompleteAwaitingFinish
+        return !hasFinishedLesson
+            && !IsCompletedAwaitingFinish
             && !IsLessonLimitReached
-            && !hasFinishedLesson
             && !IsSending
-            && !IsRecording;
+            && !IsRecording
+            && !IsRealtimeSessionStarting
+            && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay);
     }
 
     [RelayCommand(CanExecute = nameof(CanPlayBotVoice))]
@@ -1485,6 +1527,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
         if (LearnerTurnCount >= finalTurn)
         {
+            LogFinalLimitReached(finalTurn);
             MarkLessonCompleteAwaitingFinish();
             return false;
         }
@@ -1498,6 +1541,7 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             AddMessage(AppConstants.UserSenderName, userMessage, false);
             LearnerTurnCount = nextLearnerTurnCount;
+            LogFinalLimitReached(finalTurn);
             var finalMessage = GetFinalLessonMessage();
             AddMessage(TutorAvatarDisplayName, finalMessage, true);
             lastBotMessage = finalMessage;
@@ -1614,6 +1658,7 @@ public partial class LessonChatViewModel : ViewModelBase
         var finalTurn = GetFinalTurn();
         if (LearnerTurnCount >= finalTurn)
         {
+            LogFinalLimitReached(finalTurn);
             MarkLessonCompleteAwaitingFinish();
             return false;
         }
@@ -1623,6 +1668,11 @@ public partial class LessonChatViewModel : ViewModelBase
             await EnsureRealtimeSessionStartedAsync(CancellationToken.None);
             AddMessage(AppConstants.UserSenderName, userMessage, false);
             LearnerTurnCount = nextLearnerTurnCount;
+            if (LearnerTurnCount >= finalTurn)
+            {
+                LogFinalLimitReached(finalTurn);
+            }
+
             PrepareRealtimeAssistantPlaceholder();
             await realtimeVoiceEngine.SendUserTextAsync(userMessage, CancellationToken.None);
             StatusMessage = string.Empty;
@@ -1678,12 +1728,17 @@ public partial class LessonChatViewModel : ViewModelBase
             LessonType = lessonScenario.Metadata.LessonType,
             LessonGoal = lessonScenario.LearningGoal.Goal,
             LessonPhase = CurrentLessonPhase.ToString(),
+            CurrentPhase = CurrentLessonPhase.ToString(),
+            TutorRole = lessonScenario.Roles.TutorRole,
+            UserRole = lessonScenario.Roles.UserRole,
+            Situation = lessonScenario.Situation.Description,
             NativeLanguageName = nativeLanguageName,
             UserDisplayName = UserDisplayName,
             LearningGoal = LearningGoal,
             SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
             SelectedContextTitle = GetSelectedContextTitle(),
             SelectedContextOpeningLine = selectedContextVariant?.OpeningLine ?? lessonScenario.ConversationFlow.DefaultOpeningExample,
+            LastBotMessage = lastBotMessage,
             LearnerTurnCount = LearnerTurnCount,
             SoftLearnerTurnLimit = GetSoftWrapUpTurn(),
             HardLearnerTurnLimit = GetFinalTurn(),
@@ -1761,6 +1816,7 @@ public partial class LessonChatViewModel : ViewModelBase
             BotStatus = BackendConstants.BotStatusReady;
             if (LearnerTurnCount >= GetFinalTurn())
             {
+                LogFinalLimitReached(GetFinalTurn());
                 MarkLessonCompleteAwaitingFinish();
             }
             RefreshAvatarState();
@@ -1777,6 +1833,8 @@ public partial class LessonChatViewModel : ViewModelBase
             IsBotVoicePlaying = false;
             isRealtimeSessionStarted = false;
             RefreshAvatarState();
+            RefreshAllCommandStates();
+            LogLessonStateSnapshot("Realtime start failure");
         });
     }
 
@@ -1787,6 +1845,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private async Task<bool> HandleContextSelectionMessageAsync(string userMessage)
     {
+        var learnerTurnCountBefore = LearnerTurnCount;
         AddMessage(AppConstants.UserSenderName, userMessage, false);
 
         var matchedVariant = FindMatchingContextVariant(userMessage);
@@ -1794,11 +1853,9 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             selectedContextVariant = matchedVariant;
             selectedCustomContextTitle = string.Empty;
-            CurrentLessonPhase = LessonPhase.ActiveRoleplay;
 
             var startMessage = $"Great! Let's imagine {BuildContextConfirmationText(matchedVariant)}.\n\n{matchedVariant.OpeningLine}";
-            AddRoleplayStartMessage(startMessage);
-            await TryStartRealtimeAfterGuidedContextSelectionAsync();
+            await StartActiveRoleplayAfterContextSelectionAsync(startMessage, learnerTurnCountBefore);
             return true;
         }
 
@@ -1806,13 +1863,11 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             selectedContextVariant = null;
             selectedCustomContextTitle = userMessage.Trim();
-            CurrentLessonPhase = LessonPhase.ActiveRoleplay;
 
             var openingLine = string.IsNullOrWhiteSpace(lessonScenario.ConversationFlow.DefaultOpeningExample)
                 ? "Hi! Nice to meet you. What's your name?"
                 : lessonScenario.ConversationFlow.DefaultOpeningExample.Trim();
-            AddRoleplayStartMessage($"Good idea. Let's keep it simple: {userMessage.Trim()}.\n\n{openingLine}");
-            await TryStartRealtimeAfterGuidedContextSelectionAsync();
+            await StartActiveRoleplayAfterContextSelectionAsync($"Good idea. Let's keep it simple: {userMessage.Trim()}.\n\n{openingLine}", learnerTurnCountBefore);
             return true;
         }
 
@@ -1820,7 +1875,19 @@ public partial class LessonChatViewModel : ViewModelBase
         lastBotMessage = GetInvalidContextRedirect();
         OnPropertyChanged(nameof(LatestBotMessageText));
         StatusMessage = string.Empty;
+        LogLessonStateSnapshot("context selection invalid");
         return true;
+    }
+
+    private async Task StartActiveRoleplayAfterContextSelectionAsync(string startMessage, int learnerTurnCountBefore)
+    {
+        CurrentLessonPhase = LessonPhase.ActiveRoleplay;
+        AddRoleplayStartMessage(startMessage);
+        RefreshAllCommandStates();
+        Debug.WriteLine($"PhaseTransition SetupContextSelection -> ActiveRoleplay; SelectedContextVariantId={selectedContextVariant?.Id ?? string.Empty}; SelectedContextTitle={GetSelectedContextTitle()}; LearnerTurnCountBefore={learnerTurnCountBefore}; LearnerTurnCountAfter={LearnerTurnCount}; ConversationModeEnabled={IsConversationModeEnabled}; RealtimeStartDeferred={IsConversationModeEnabled && BackendConstants.UseRealtimeConversationMode}.");
+        LogLessonStateSnapshot("context selected");
+        LogLessonStateSnapshot("ActiveRoleplay start");
+        await TryStartRealtimeAfterGuidedContextSelectionAsync();
     }
 
     private async Task TryStartRealtimeAfterGuidedContextSelectionAsync()
@@ -1835,6 +1902,7 @@ public partial class LessonChatViewModel : ViewModelBase
             Debug.WriteLine($"Starting realtime after guided context selection: LessonType={lessonScenario.Metadata.LessonType}; CurrentLessonPhase={CurrentLessonPhase}; SelectedContextTitle={GetSelectedContextTitle()}; BackendEndpoint={lessonChatBackendService.CreateRealtimeVoiceWebSocketUri()}.");
             await EnsureRealtimeSessionStartedAsync(CancellationToken.None);
             StatusMessage = string.Empty;
+            LogLessonStateSnapshot("Realtime start success");
         }
         catch (Exception exception)
         {
@@ -1843,6 +1911,7 @@ public partial class LessonChatViewModel : ViewModelBase
             BackendStatusText = BackendConstants.BackendStatusUnavailable;
             StatusMessage = BackendConstants.RealtimeUnavailableMessage;
             Debug.WriteLine($"Realtime start after guided context selection failed: RealtimeSessionId={realtimeSessionId}; ExceptionType={exception.GetType().FullName}; Message={exception.Message}; {exception}");
+            LogLessonStateSnapshot("Realtime start failure");
         }
         finally
         {
@@ -2254,7 +2323,8 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanRequestHint()
     {
-        return IsLessonInputEnabled && !IsSending && !IsRecording;
+        // Hints are intentionally allowed during SetupContextSelection so the learner can see valid context choices.
+        return CanAcceptLessonInput;
     }
 
     private string GetFinalLessonMessage()
@@ -2313,6 +2383,7 @@ public partial class LessonChatViewModel : ViewModelBase
         StatusMessage = AppConstants.LessonCompleteAwaitingFinishMessage;
         _ = StopRealtimeConversationAsync("lesson_complete");
         RefreshLessonCompletionState();
+        LogLessonStateSnapshot("final limit reached");
     }
 
     private void RefreshLessonCompletionState()
@@ -2322,6 +2393,37 @@ public partial class LessonChatViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsLessonLimitReached));
         OnPropertyChanged(nameof(IsLessonWrappingUp));
         RefreshAllCommandStates();
+    }
+
+    private void LogFinalLimitReached(int finalTurn)
+    {
+        Debug.WriteLine($"FinalLimitReached; FinalTurn={finalTurn}; LearnerTurnCount={LearnerTurnCount}; CurrentLessonPhase={CurrentLessonPhase}; CommandsInvalidated=True.");
+        LogLessonStateSnapshot("final limit reached");
+    }
+
+    private void LogLessonStateSnapshot(string reason)
+    {
+        Debug.WriteLine(
+            $"LessonStateSnapshot Reason={reason}; " +
+            $"CurrentLessonPhase={CurrentLessonPhase}; " +
+            $"LearnerTurnCount={LearnerTurnCount}; " +
+            $"FinalTurn={GetFinalTurn()}; " +
+            $"IsLessonLimitReached={IsLessonLimitReached}; " +
+            $"IsLessonCompleteAwaitingFinish={IsLessonCompleteAwaitingFinish}; " +
+            $"HasFinishedLesson={hasFinishedLesson}; " +
+            $"IsSending={IsSending}; " +
+            $"IsRecording={IsRecording}; " +
+            $"IsRealtimeSessionStarting={IsRealtimeSessionStarting}; " +
+            $"IsBotVoicePlaying={IsBotVoicePlaying}; " +
+            $"IsConversationModeEnabled={IsConversationModeEnabled}; " +
+            $"IsRealtimeConversationStarted={isRealtimeSessionStarted}; " +
+            $"IsRealtimeConversationActive={IsRealtimeConversationActive}; " +
+            $"CanSend={CanSendMessage()}; " +
+            $"CanRecord={CanToggleVoiceRecording()}; " +
+            $"CanHint={CanRequestHint()}; " +
+            $"CanBack={CanGoBack()}; " +
+            $"CanFinish={CanFinishLesson()}; " +
+            $"CanConversationMode={CanToggleConversationMode()}.");
     }
 
     private void RefreshAllCommandStates()
@@ -2345,6 +2447,7 @@ public partial class LessonChatViewModel : ViewModelBase
         CurrentLessonPhase = LessonPhase.Completed;
         hasFinishedLesson = true;
         RefreshAllCommandStates();
+        LogLessonStateSnapshot("Finish lesson clicked");
         ViewFeedbackCommand.NotifyCanExecuteChanged();
         finishLesson(latestFeedback);
     }
@@ -2360,7 +2463,12 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanGoBack()
     {
-        return IsLessonOptionsEnabled && !IsLessonCompleteAwaitingFinish && !hasFinishedLesson && !IsSending && !IsRecording;
+        return !hasFinishedLesson
+            && !IsCompletedAwaitingFinish
+            && !IsSending
+            && !IsRecording
+            && !IsRealtimeSessionStarting
+            && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay);
     }
 
     private IReadOnlyList<RecentConversationMessage> GetRecentConversationMessages()
