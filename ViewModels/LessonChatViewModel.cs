@@ -51,6 +51,9 @@ public partial class LessonChatViewModel : ViewModelBase
     private bool isRealtimeSessionStarted;
     private bool isStartingRealtimeSession;
     private ChatMessageViewModel? realtimeAssistantMessage;
+    private ChatMessageViewModel? realtimeUserPlaceholderMessage;
+    private string realtimeUserPlaceholderItemId = string.Empty;
+    private readonly StringBuilder realtimeUserTranscriptBuffer = new();
     private string realtimeSessionId = Guid.NewGuid().ToString("N");
 
     public string SelectedLevel { get; }
@@ -382,6 +385,9 @@ public partial class LessonChatViewModel : ViewModelBase
         realtimeVoiceEngine.AssistantAudioChunkReceived += OnRealtimeAssistantAudioChunkReceived;
         realtimeVoiceEngine.AssistantTranscriptDeltaReceived += OnRealtimeAssistantTranscriptDeltaReceived;
         realtimeVoiceEngine.AssistantTurnCompleted += OnRealtimeAssistantTurnCompleted;
+        realtimeVoiceEngine.UserAudioCommitted += OnRealtimeUserAudioCommitted;
+        realtimeVoiceEngine.UserTranscriptDeltaReceived += OnRealtimeUserTranscriptDeltaReceived;
+        realtimeVoiceEngine.UserTranscriptCompleted += OnRealtimeUserTranscriptCompleted;
         realtimeVoiceEngine.ErrorReceived += OnRealtimeErrorReceived;
         realtimeAudioPlaybackService.PlaybackStarted += OnRealtimePlaybackStarted;
         realtimeMicrophoneCaptureService.AudioChunkCaptured += OnRealtimeMicrophoneAudioChunkCaptured;
@@ -704,7 +710,10 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var nextLearnerTurnCount = LearnerTurnCount + 1;
             var finalTurn = GetFinalTurn();
-            AddMessage(AppConstants.UserSenderName, "[Voice message]", false);
+            realtimeUserTranscriptBuffer.Clear();
+            realtimeUserPlaceholderItemId = string.Empty;
+            realtimeUserPlaceholderMessage = AddMessage(AppConstants.UserSenderName, "[Voice message]", false);
+            Debug.WriteLine($"Realtime user placeholder message added: SessionId={realtimeSessionId}; UserPlaceholderMessageId={realtimeUserPlaceholderMessage.Id}; Text=[Voice message].");
             LearnerTurnCount = nextLearnerTurnCount;
             if (LearnerTurnCount >= finalTurn)
             {
@@ -989,7 +998,7 @@ public partial class LessonChatViewModel : ViewModelBase
         Debug.WriteLine($"Bot voice first segment ready: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; FirstSegmentLength={segments[0].Length}; FirstSegmentReadyMs={firstSegmentReadyMs}; SoftTargetReached={firstSegmentReadyMs >= AudioConstants.BotVoiceFirstSegmentSoftTargetMilliseconds}; RequestContinuedAfterSoftTarget={firstSegmentReadyMs >= AudioConstants.BotVoiceFirstSegmentSoftTargetMilliseconds}; AudioFile={Path.GetFileName(firstSegmentFilePath)}.");
         StatusMessage = string.Empty;
 
-        if (!IsNewestBotMessage(message))
+        if (isAutoPlay && !IsNewestBotMessage(message))
         {
             Debug.WriteLine($"Discarding bot voice first segment for message {message.Id}: CancellationReason={BotVoiceCancellationReasons.NewerMessageCancel}; it is no longer the newest bot message.");
             return;
@@ -1004,6 +1013,7 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             var playbackSegmentIndex = segmentIndex;
             var playbackStartedForSegment = false;
+            Debug.WriteLine($"Bot voice PlaybackStartRequested: MessageId={message.Id}; VoiceRequestId={CreateBotVoiceRequestId(message.Id, playbackSegmentIndex, segments[playbackSegmentIndex])}; SavedAudioPath={currentFilePath}; SavedAudioFileExists={File.Exists(currentFilePath)}; SavedAudioFileLength={(File.Exists(currentFilePath) ? new FileInfo(currentFilePath).Length : 0)}.");
             await audioPlaybackService.PlayAudioFileAsync(
                 currentFilePath,
                 cancellationToken,
@@ -1014,13 +1024,13 @@ public partial class LessonChatViewModel : ViewModelBase
                     if (playbackSegmentIndex == 0)
                     {
                         onFirstPlaybackStarted(playbackStartedMs);
-                        Debug.WriteLine($"Bot voice first playback started: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex=0; FirstSegmentReadyMs={firstSegmentReadyMs}; FirstPlaybackStartedMs={playbackStartedMs}; SoftTargetMet={playbackStartedMs <= AudioConstants.BotVoiceFirstSegmentSoftTargetMilliseconds}.");
+                        Debug.WriteLine($"Bot voice PlaybackStarted: MessageId={message.Id}; VoiceRequestId={CreateBotVoiceRequestId(message.Id, playbackSegmentIndex, segments[playbackSegmentIndex])}; FirstSegmentReadyMs={firstSegmentReadyMs}; FirstPlaybackStartedMs={playbackStartedMs}; SoftTargetMet={playbackStartedMs <= AudioConstants.BotVoiceFirstSegmentSoftTargetMilliseconds}.");
                     }
 
                     Debug.WriteLine($"Bot voice segment playback started: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={playbackSegmentIndex}; SegmentLength={segments[playbackSegmentIndex].Length}; PlaybackStartedMs={playbackStartedMs}; AudioFile={Path.GetFileName(currentFilePath)}.");
                 });
 
-            Debug.WriteLine($"Bot voice segment playback ended: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; PlaybackEndMs={totalStopwatch.ElapsedMilliseconds}; PlaybackStarted={playbackStartedForSegment}.");
+            Debug.WriteLine($"Bot voice PlaybackCompleted: MessageId={message.Id}; VoiceRequestId={CreateBotVoiceRequestId(message.Id, segmentIndex, segments[segmentIndex])}; SegmentIndex={segmentIndex}; PlaybackEndMs={totalStopwatch.ElapsedMilliseconds}; PlaybackStarted={playbackStartedForSegment}.");
 
             if (segmentIndex + 1 >= segments.Count)
             {
@@ -1113,19 +1123,21 @@ public partial class LessonChatViewModel : ViewModelBase
             }
 
             var rawTextLength = message.Text.Trim().Length;
+            var voiceRequestId = CreateBotVoiceRequestId(message.Id, segmentIndex, normalizedSegmentText);
             var isExactText = string.Equals(normalizedSegmentText, GetExactBotVoiceText(message), StringComparison.Ordinal);
-            Debug.WriteLine($"Bot voice exact text: MessageId={message.Id}; RawTextLength={rawTextLength}; VoiceTextLength={inputLength}; IsExactText={isExactText}; AutoPlay={isAutoPlay}; IsSetupMessage={IsSetupVoiceMessage(message)}; SegmentIndex={segmentIndex};");
+            Debug.WriteLine($"Bot voice exact text: MessageId={message.Id}; VoiceRequestId={voiceRequestId}; RawTextLength={rawTextLength}; VoiceTextLength={inputLength}; IsExactText={isExactText}; AutoPlay={isAutoPlay}; IsSetupMessage={IsSetupVoiceMessage(message)}; SegmentIndex={segmentIndex};");
             Debug.WriteLine($"Bot voice segment request: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SegmentLength={inputLength}; SegmentTextPreview={CreateBotVoiceSegmentPreview(normalizedSegmentText)};");
             Debug.WriteLine($"Bot voice segment request starting: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; RequestStartedMs={totalStopwatch.ElapsedMilliseconds}; TimeoutMs={timeout.TotalMilliseconds}; HardTimeoutSeconds={timeout.TotalSeconds}.");
             var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(normalizedSegmentText, linkedCancellationTokenSource.Token);
-            Debug.WriteLine($"Bot voice segment backend response received: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; SegmentReadyMs={totalStopwatch.ElapsedMilliseconds}; BackendElapsedMs={backendStopwatch.ElapsedMilliseconds}; AudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
+            Debug.WriteLine($"Bot voice segment backend response received: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; VoiceRequestId={voiceRequestId}; SegmentIndex={segmentIndex}; InputLength={inputLength}; SegmentReadyMs={totalStopwatch.ElapsedMilliseconds}; BackendElapsedMs={backendStopwatch.ElapsedMilliseconds}; BackendAudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
 
             var saveStopwatch = Stopwatch.StartNew();
             var audioFilePath = await audioPlaybackService.SaveBotVoiceAudioAsync(
                 speechResponse.AudioBytes,
                 speechResponse.FileExtension,
                 linkedCancellationTokenSource.Token);
-            Debug.WriteLine($"Bot voice segment file ready: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SaveElapsedMs={saveStopwatch.ElapsedMilliseconds}; ReadyMs={totalStopwatch.ElapsedMilliseconds}; FileExtension={Path.GetExtension(audioFilePath)}.");
+            var savedAudioFileInfo = new FileInfo(audioFilePath);
+            Debug.WriteLine($"Bot voice SavedAudioPath: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; VoiceRequestId={voiceRequestId}; SegmentIndex={segmentIndex}; SaveElapsedMs={saveStopwatch.ElapsedMilliseconds}; ReadyMs={totalStopwatch.ElapsedMilliseconds}; SavedAudioPath={audioFilePath}; SavedAudioFileExists={savedAudioFileInfo.Exists}; SavedAudioFileLength={(savedAudioFileInfo.Exists ? savedAudioFileInfo.Length : 0)}; FileExtension={Path.GetExtension(audioFilePath)}.");
 
             lock (botVoiceSegmentCacheLock)
             {
@@ -1148,6 +1160,11 @@ public partial class LessonChatViewModel : ViewModelBase
                 inFlightBotVoiceSegmentTasks.Remove(cacheKey);
             }
         }
+    }
+
+    private static string CreateBotVoiceRequestId(int messageId, int segmentIndex, string text)
+    {
+        return $"msg-{messageId}-seg-{segmentIndex}-len-{text.Length}";
     }
 
     private static IReadOnlyList<string> SelectBotVoiceSegments(IReadOnlyList<string> segments, bool isAutoPlay)
@@ -1879,6 +1896,50 @@ public partial class LessonChatViewModel : ViewModelBase
         });
     }
 
+    private void OnRealtimeUserAudioCommitted(object? sender, UserAudioCommittedEventArgs args)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            realtimeUserPlaceholderItemId = args.ItemId;
+            Debug.WriteLine($"Realtime user audio committed in UI: SessionId={args.SessionId}; ItemId={args.ItemId}; UserPlaceholderMessageId={realtimeUserPlaceholderMessage?.Id}; UserAudioCommittedMs={args.ElapsedMilliseconds}.");
+        });
+    }
+
+    private void OnRealtimeUserTranscriptDeltaReceived(object? sender, UserTranscriptDeltaEventArgs args)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            realtimeUserTranscriptBuffer.Append(args.Delta);
+            var transcriptSoFar = realtimeUserTranscriptBuffer.ToString().Trim();
+            Debug.WriteLine($"Realtime user transcript delta in UI: SessionId={args.SessionId}; ItemId={args.ItemId}; UserPlaceholderMessageId={realtimeUserPlaceholderMessage?.Id}; TranscriptLength={transcriptSoFar.Length}.");
+            if (!string.IsNullOrWhiteSpace(transcriptSoFar) && realtimeUserPlaceholderMessage is not null)
+            {
+                realtimeUserPlaceholderMessage.Text = transcriptSoFar;
+            }
+        });
+    }
+
+    private void OnRealtimeUserTranscriptCompleted(object? sender, UserTranscriptCompletedEventArgs args)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            var transcript = args.Transcript.Trim();
+            if (string.IsNullOrWhiteSpace(transcript))
+            {
+                return;
+            }
+
+            realtimeUserPlaceholderItemId = string.IsNullOrWhiteSpace(args.ItemId) ? realtimeUserPlaceholderItemId : args.ItemId;
+            realtimeUserTranscriptBuffer.Clear();
+            realtimeUserTranscriptBuffer.Append(transcript);
+            if (realtimeUserPlaceholderMessage is not null)
+            {
+                realtimeUserPlaceholderMessage.Text = transcript;
+                Debug.WriteLine($"Realtime placeholder replaced with transcript: SessionId={args.SessionId}; ItemId={realtimeUserPlaceholderItemId}; UserPlaceholderMessageId={realtimeUserPlaceholderMessage.Id}; TranscriptLength={transcript.Length}.");
+            }
+        });
+    }
+
     private void OnRealtimeErrorReceived(object? sender, VoiceSessionErrorEventArgs args)
     {
         Application.Current.Dispatcher.Invoke(() =>
@@ -1938,12 +1999,20 @@ public partial class LessonChatViewModel : ViewModelBase
     private async Task StartActiveRoleplayAfterContextSelectionAsync(string startMessage, int learnerTurnCountBefore)
     {
         CurrentLessonPhase = LessonPhase.ActiveRoleplay;
-        AddRoleplayStartMessage(startMessage);
+        var roleplayStartMessage = AddRoleplayStartMessage(startMessage);
         RefreshAllCommandStates();
         Debug.WriteLine($"PhaseTransition SetupContextSelection -> ActiveRoleplay; SelectedContextVariantId={selectedContextVariant?.Id ?? string.Empty}; SelectedContextTitle={GetSelectedContextTitle()}; LearnerTurnCountBefore={learnerTurnCountBefore}; LearnerTurnCountAfter={LearnerTurnCount}; ConversationModeEnabled={IsConversationModeEnabled}; RealtimeStartDeferred={IsConversationModeEnabled && BackendConstants.UseRealtimeConversationMode}.");
         LogLessonStateSnapshot("context selected");
         LogLessonStateSnapshot("ActiveRoleplay start");
         await TryStartRealtimeAfterGuidedContextSelectionAsync();
+
+        if (IsConversationModeEnabled && BackendConstants.UseRealtimeConversationMode)
+        {
+            // Scripted lesson opening playback is allowed through exact TTS because the text is fixed and visible.
+            // Realtime generated assistant turns must not use chained TTS; their text/audio come from Realtime events.
+            Debug.WriteLine($"Guided conversation scripted opening playback requested: MessageId={roleplayStartMessage.Id}; VoiceTextLength={roleplayStartMessage.Text.Trim().Length}; RealtimeSessionStarted={isRealtimeSessionStarted}.");
+            await PlayBotVoiceForMessageAsync(roleplayStartMessage, isAutoPlay: false);
+        }
     }
 
     private async Task TryStartRealtimeAfterGuidedContextSelectionAsync()
@@ -1975,13 +2044,14 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
-    private void AddRoleplayStartMessage(string message)
+    private ChatMessageViewModel AddRoleplayStartMessage(string message)
     {
         var botMessage = AddMessage(TutorAvatarDisplayName, message, true);
         lastBotMessage = message;
         OnPropertyChanged(nameof(LatestBotMessageText));
         StatusMessage = string.Empty;
         _ = TryAutoPlayNewestBotVoiceAsync(botMessage);
+        return botMessage;
     }
 
     private ContextVariant? FindMatchingContextVariant(string userMessage)

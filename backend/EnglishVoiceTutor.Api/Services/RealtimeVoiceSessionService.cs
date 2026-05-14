@@ -22,6 +22,8 @@ public sealed class RealtimeVoiceSessionService
     private readonly StringBuilder activeTranscript = new();
     private int learnerTurnCount;
     private bool firstAudioLogged;
+    private bool firstTranscriptLogged;
+    private long lastUserAudioCommitMs;
 
     public RealtimeVoiceSessionService(OpenAiOptionsProvider optionsProvider, ILogger<RealtimeVoiceSessionService> logger)
     {
@@ -142,6 +144,8 @@ public sealed class RealtimeVoiceSessionService
             case "user.audio.commit":
                 EnforceTurnLimit();
                 learnerTurnCount++;
+                lastUserAudioCommitMs = stopwatch.ElapsedMilliseconds;
+                logger.LogInformation("Realtime user audio commit sent. SessionId={SessionId}; LearnerTurnCount={LearnerTurnCount}; UserAudioCommitMs={ElapsedMs}.", sessionId, learnerTurnCount, lastUserAudioCommitMs);
                 await SendOpenAiEventAsync(new { type = "input_audio_buffer.commit" }, cancellationToken);
                 await CreateResponseAsync(cancellationToken);
                 break;
@@ -161,11 +165,30 @@ public sealed class RealtimeVoiceSessionService
             return;
         }
 
+        var validationError = ValidateGuidedRoleplayStartRequest(request);
+        if (!string.IsNullOrWhiteSpace(validationError))
+        {
+            await SendDesktopEventAsync(new { type = "session.error", sessionId = request.SessionId, message = validationError }, cancellationToken);
+            logger.LogWarning("Realtime guided roleplay session rejected. SessionId={SessionId}; ValidationError={ValidationError}; LessonType={LessonType}; CurrentPhase={CurrentPhase}; SelectedContextTitle={SelectedContextTitle}.", request.SessionId, validationError, request.LessonType, request.CurrentPhase, request.SelectedContextTitle);
+            return;
+        }
+
         startRequest = request;
         sessionId = request.SessionId;
         learnerTurnCount = request.LearnerTurnCount;
         firstAudioLogged = false;
+        firstTranscriptLogged = false;
+        lastUserAudioCommitMs = 0;
         stopwatch.Restart();
+        logger.LogInformation("Realtime session start time. SessionId={SessionId}; StartedAtUtc={StartedAtUtc:o}; LessonType={LessonType}; CurrentPhase={CurrentPhase}; SelectedContextTitle={SelectedContextTitle}; RecentMessages={RecentMessageCount}; LastBotMessageLength={LastBotMessageLength}; LearnerTurnCount={LearnerTurnCount}.",
+            sessionId,
+            DateTimeOffset.UtcNow,
+            request.LessonType,
+            request.CurrentPhase,
+            request.SelectedContextTitle,
+            request.RecentMessages.Count,
+            request.LastBotMessage?.Length ?? 0,
+            request.LearnerTurnCount);
 
         try
         {
@@ -187,9 +210,27 @@ public sealed class RealtimeVoiceSessionService
                     input_audio_format = "pcm16",
                     output_audio_format = "pcm16",
                     turn_detection = (object?)null,
-                    input_audio_transcription = new { model = OpenAiConstants.DefaultTranscriptionModel, language = OpenAiConstants.TranscriptionLanguage }
+                    input_audio_transcription = new { model = OpenAiConstants.DefaultTranscriptionModel, language = OpenAiConstants.TranscriptionLanguage },
+                    audio = new
+                    {
+                        input = new
+                        {
+                            format = new { type = "audio/pcm", rate = 24000 },
+                            transcription = new { model = OpenAiConstants.DefaultTranscriptionModel, language = OpenAiConstants.TranscriptionLanguage },
+                            turn_detection = (object?)null
+                        },
+                        output = new
+                        {
+                            format = new { type = "audio/pcm", rate = 24000 },
+                            voice = OpenAiConstants.DefaultRealtimeVoice
+                        }
+                    }
                 }
             }, cancellationToken);
+
+            logger.LogInformation("Realtime session configured. SessionId={SessionId}; SessionConfiguredMs={ElapsedMs}; InputAudioTranscriptionModel={TranscriptionModel}; TranscriptionLanguage={Language}.", sessionId, stopwatch.ElapsedMilliseconds, OpenAiConstants.DefaultTranscriptionModel, OpenAiConstants.TranscriptionLanguage);
+
+            await SeedRecentConversationAsync(request, cancellationToken);
 
             logger.LogInformation("Realtime session created. SessionId={SessionId}; Model={Model}; Voice={Voice}; LessonType={LessonType}; Topic={Topic}; Subtopic={Subtopic}; Level={Level}.",
                 sessionId,
@@ -253,6 +294,7 @@ public sealed class RealtimeVoiceSessionService
             activeResponseId = responseId;
             activeTranscript.Clear();
             firstAudioLogged = false;
+            firstTranscriptLogged = false;
         }
 
         switch (type)
@@ -263,7 +305,7 @@ public sealed class RealtimeVoiceSessionService
                 if (!firstAudioLogged)
                 {
                     firstAudioLogged = true;
-                    logger.LogInformation("Realtime first assistant audio delta ms. SessionId={SessionId}; ResponseId={ResponseId}; FirstAssistantAudioDeltaMs={ElapsedMs}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds);
+                    logger.LogInformation("Realtime first assistant audio delta ms. SessionId={SessionId}; ResponseId={ResponseId}; FirstAssistantAudioDeltaMs={ElapsedMs}; SinceUserAudioCommitMs={SinceUserAudioCommitMs}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds, lastUserAudioCommitMs > 0 ? stopwatch.ElapsedMilliseconds - lastUserAudioCommitMs : 0);
                 }
                 await SendDesktopEventAsync(new { type = "assistant.audio.delta", sessionId, responseId = activeResponseId, audio }, cancellationToken);
                 break;
@@ -271,11 +313,33 @@ public sealed class RealtimeVoiceSessionService
             case "response.output_audio_transcript.delta":
                 var delta = root.GetProperty("delta").GetString() ?? string.Empty;
                 activeTranscript.Append(delta);
+                if (!firstTranscriptLogged)
+                {
+                    firstTranscriptLogged = true;
+                    logger.LogInformation("Realtime first assistant transcript delta ms. SessionId={SessionId}; ResponseId={ResponseId}; FirstAssistantTranscriptDeltaMs={ElapsedMs}; SinceUserAudioCommitMs={SinceUserAudioCommitMs}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds, lastUserAudioCommitMs > 0 ? stopwatch.ElapsedMilliseconds - lastUserAudioCommitMs : 0);
+                }
                 await SendDesktopEventAsync(new { type = "assistant.transcript.delta", sessionId, responseId = activeResponseId, delta }, cancellationToken);
                 break;
             case "response.done":
-                logger.LogInformation("Realtime assistant response completed ms. SessionId={SessionId}; ResponseId={ResponseId}; AssistantResponseCompletedMs={ElapsedMs}; TranscriptLength={TranscriptLength}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds, activeTranscript.Length);
+                logger.LogInformation("Realtime assistant response completed ms. SessionId={SessionId}; ResponseId={ResponseId}; AssistantResponseCompletedMs={ElapsedMs}; SinceUserAudioCommitMs={SinceUserAudioCommitMs}; TranscriptLength={TranscriptLength}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds, lastUserAudioCommitMs > 0 ? stopwatch.ElapsedMilliseconds - lastUserAudioCommitMs : 0, activeTranscript.Length);
                 await SendDesktopEventAsync(new { type = "assistant.turn.completed", sessionId, responseId = activeResponseId, transcript = activeTranscript.ToString() }, cancellationToken);
+                break;
+            case "input_audio_buffer.committed":
+                var itemId = root.TryGetProperty("item_id", out var itemIdProperty) ? itemIdProperty.GetString() ?? string.Empty : string.Empty;
+                logger.LogInformation("Realtime user audio committed event received. SessionId={SessionId}; ItemId={ItemId}; UserAudioCommittedEventMs={ElapsedMs}.", sessionId, itemId, stopwatch.ElapsedMilliseconds);
+                await SendDesktopEventAsync(new { type = "user.audio.committed", sessionId, itemId }, cancellationToken);
+                break;
+            case "conversation.item.input_audio_transcription.delta":
+                var transcriptDelta = root.TryGetProperty("delta", out var transcriptDeltaProperty) ? transcriptDeltaProperty.GetString() ?? string.Empty : string.Empty;
+                var deltaItemId = root.TryGetProperty("item_id", out var deltaItemIdProperty) ? deltaItemIdProperty.GetString() ?? string.Empty : string.Empty;
+                logger.LogInformation("Realtime user transcript delta received. SessionId={SessionId}; ItemId={ItemId}; TranscriptLength={TranscriptLength}; EventMs={ElapsedMs}.", sessionId, deltaItemId, transcriptDelta.Length, stopwatch.ElapsedMilliseconds);
+                await SendDesktopEventAsync(new { type = "user.transcript.delta", sessionId, itemId = deltaItemId, delta = transcriptDelta }, cancellationToken);
+                break;
+            case "conversation.item.input_audio_transcription.completed":
+                var userTranscript = root.TryGetProperty("transcript", out var userTranscriptProperty) ? userTranscriptProperty.GetString() ?? string.Empty : string.Empty;
+                var transcriptItemId = root.TryGetProperty("item_id", out var transcriptItemIdProperty) ? transcriptItemIdProperty.GetString() ?? string.Empty : string.Empty;
+                logger.LogInformation("Realtime user transcript completed received. SessionId={SessionId}; ItemId={ItemId}; TranscriptLength={TranscriptLength}; EventMs={ElapsedMs}.", sessionId, transcriptItemId, userTranscript.Trim().Length, stopwatch.ElapsedMilliseconds);
+                await SendDesktopEventAsync(new { type = "user.transcript.completed", sessionId, itemId = transcriptItemId, transcript = userTranscript }, cancellationToken);
                 break;
             case "error":
                 var message = root.TryGetProperty("error", out var error) && error.TryGetProperty("message", out var errorMessage) ? errorMessage.GetString() : "Realtime voice mode is unavailable. Please try text mode.";
@@ -285,15 +349,52 @@ public sealed class RealtimeVoiceSessionService
         }
     }
 
+    private async Task SeedRecentConversationAsync(RealtimeVoiceSessionStartRequest request, CancellationToken cancellationToken)
+    {
+        foreach (var message in request.RecentMessages.TakeLast(12))
+        {
+            var text = message.Text?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                continue;
+            }
+
+            var role = IsTutorSender(message.Sender, request) ? "assistant" : "user";
+            await SendOpenAiEventAsync(new
+            {
+                type = "conversation.item.create",
+                item = new
+                {
+                    type = "message",
+                    role,
+                    content = new[] { new { type = role == "assistant" ? "output_text" : "input_text", text } }
+                }
+            }, cancellationToken);
+        }
+
+        logger.LogInformation("Realtime recent conversation seeded. SessionId={SessionId}; RecentMessages={RecentMessageCount}; LastBotMessageLength={LastBotMessageLength}.", sessionId, request.RecentMessages.Count, request.LastBotMessage?.Length ?? 0);
+    }
+
+    private string BuildResponseInstructions()
+    {
+        if (startRequest is not null && startRequest.LessonType.Equals("guided_roleplay", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Respond now in English as the tutor role inside the active guided roleplay scenario '{startRequest.SelectedContextTitle}'. Continue naturally from the last tutor message: '{startRequest.LastBotMessage}'. Produce audio and matching audio transcript from this same response. Ask one simple on-scenario question at a time. Do not ask what topic the learner wants to discuss and do not ask the learner to choose a situation.";
+        }
+
+        return "Respond now in English. Produce audio and matching audio transcript from this same response. Ask one question at a time.";
+    }
+
     private async Task CreateResponseAsync(CancellationToken cancellationToken)
     {
+        logger.LogInformation("Realtime response.create sent. SessionId={SessionId}; LearnerTurnCount={LearnerTurnCount}; ResponseCreateSentMs={ElapsedMs}; SinceUserAudioCommitMs={SinceUserAudioCommitMs}.", sessionId, learnerTurnCount, stopwatch.ElapsedMilliseconds, lastUserAudioCommitMs > 0 ? stopwatch.ElapsedMilliseconds - lastUserAudioCommitMs : 0);
         await SendOpenAiEventAsync(new
         {
             type = "response.create",
             response = new
             {
                 modalities = new[] { "text", "audio" },
-                instructions = "Respond now in English. Produce audio and matching audio transcript from this same response. Ask one question at a time."
+                instructions = BuildResponseInstructions()
             }
         }, cancellationToken);
     }
@@ -357,6 +458,41 @@ public sealed class RealtimeVoiceSessionService
         }
     }
 
+    private static string ValidateGuidedRoleplayStartRequest(RealtimeVoiceSessionStartRequest request)
+    {
+        if (!request.LessonType.Equals("guided_roleplay", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Empty;
+        }
+
+        var missing = new List<string>();
+        if (!request.CurrentPhase.Equals("ActiveRoleplay", StringComparison.OrdinalIgnoreCase)) missing.Add(nameof(request.CurrentPhase));
+        if (string.IsNullOrWhiteSpace(request.SelectedLevel)) missing.Add(nameof(request.SelectedLevel));
+        if (string.IsNullOrWhiteSpace(Choose(request.Topic, request.TopicTitle))) missing.Add(nameof(request.Topic));
+        if (string.IsNullOrWhiteSpace(Choose(request.Subtopic, request.SubtopicTitle))) missing.Add(nameof(request.Subtopic));
+        if (string.IsNullOrWhiteSpace(request.SelectedContextTitle)) missing.Add(nameof(request.SelectedContextTitle));
+        if (string.IsNullOrWhiteSpace(request.SelectedContextVariantId)) missing.Add(nameof(request.SelectedContextVariantId));
+        if (string.IsNullOrWhiteSpace(request.TutorRole)) missing.Add(nameof(request.TutorRole));
+        if (string.IsNullOrWhiteSpace(request.UserRole)) missing.Add(nameof(request.UserRole));
+        if (string.IsNullOrWhiteSpace(request.Situation)) missing.Add(nameof(request.Situation));
+        if (string.IsNullOrWhiteSpace(request.LessonGoal) && string.IsNullOrWhiteSpace(request.LearningGoal)) missing.Add("LearningGoal");
+        if (string.IsNullOrWhiteSpace(request.TargetLanguageName)) missing.Add(nameof(request.TargetLanguageName));
+        if (string.IsNullOrWhiteSpace(request.ActiveLevelProfile.DifficultyNotes) && string.IsNullOrWhiteSpace(request.ActiveLevelProfile.TutorLanguageStyle)) missing.Add(nameof(request.ActiveLevelProfile));
+        if (string.IsNullOrWhiteSpace(request.LastBotMessage)) missing.Add(nameof(request.LastBotMessage));
+        if (request.RecentMessages.Count == 0) missing.Add(nameof(request.RecentMessages));
+
+        return missing.Count == 0
+            ? string.Empty
+            : $"Guided roleplay realtime cannot start without selected scenario context: {string.Join(", ", missing)}.";
+    }
+
+    private static bool IsTutorSender(RealtimeRecentConversationMessage message, RealtimeVoiceSessionStartRequest request)
+    {
+        return message.Sender.Equals(request.TutorDisplayName, StringComparison.OrdinalIgnoreCase)
+            || message.Sender.Contains("tutor", StringComparison.OrdinalIgnoreCase)
+            || message.Sender.Contains("Elena", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string BuildInstructions(RealtimeVoiceSessionStartRequest request)
     {
         var builder = new StringBuilder();
@@ -386,10 +522,15 @@ public sealed class RealtimeVoiceSessionService
         if (!string.IsNullOrWhiteSpace(request.LastBotMessage)) builder.AppendLine($"Last visible tutor message to continue from: {request.LastBotMessage}.");
         if (request.LessonType.Equals("guided_roleplay", StringComparison.OrdinalIgnoreCase))
         {
-            builder.AppendLine("This is an active guided roleplay, not free conversation. Stay inside the selected scenario and continue naturally from the selected context and last visible tutor message.");
-            builder.AppendLine("Do not ask 'What would you like to discuss?' or any similar open topic-selection question unless lesson type is free_conversation.");
+            builder.AppendLine("You are in an active guided roleplay, not free conversation.");
+            builder.AppendLine($"The selected scenario is: {request.SelectedContextTitle}.");
+            builder.AppendLine($"The last tutor message already said: {request.LastBotMessage}.");
+            builder.AppendLine("Continue naturally from that message. Stay inside the selected scenario and role.");
+            builder.AppendLine("Ask one simple on-scenario question at a time.");
+            builder.AppendLine("Never ask the learner what topic they want to discuss.");
+            builder.AppendLine("Never say 'How can I assist you today?' or similar generic assistant offers.");
             builder.AppendLine("Do not ask the learner to choose a situation during ActiveRoleplay. The situation is already selected.");
-            builder.AppendLine("If the learner asks a meta question, answer briefly with a useful phrase and return to the current scenario.");
+            builder.AppendLine("If the learner asks a meta question, answer briefly and return to the selected scenario.");
         }
         else if (request.LessonType.Equals("free_conversation", StringComparison.OrdinalIgnoreCase))
         {

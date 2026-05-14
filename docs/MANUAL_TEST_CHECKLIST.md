@@ -117,3 +117,12 @@ Use this on a Windows machine with the desktop app and backend available.
 - [ ] Verify summary screen appears.
 - [ ] Verify lesson history is saved.
 - [ ] Verify navigation back to topics/home works.
+
+## Voice contract regression checks
+
+- [ ] Manual Play setup audible playback: open `A1 -> Everyday English -> Introductions`, click Play on the setup bot message, verify `/api/audio/speech` succeeds, Debug logs include `SavedAudioPath`, `PlaybackStarted`, and `PlaybackCompleted`, and the full visible setup text is heard.
+- [ ] Guided Conversation Mode scripted opening playback: enable Conversation Mode before context selection, choose `Meeting a new neighbor`, verify the scripted tutor opening appears and is spoken with the exact visible text.
+- [ ] Realtime user transcript replaces placeholder: after the scripted opening, say `My name is David`, verify the chat message updates from `[Voice message]` to the transcript and no duplicate user message appears.
+- [ ] Guided Realtime stays in scenario: verify the assistant continues the selected neighbor-introduction roleplay and does not ask generic free-conversation prompts such as `How can I assist you today?` or `What would you like to discuss?`.
+- [ ] Realtime generated assistant text/audio consistency: verify generated assistant audio and visible transcript come from the same Realtime response and no `/api/audio/speech` request is made for generated Realtime turns.
+- [ ] Normal non-Realtime voice transcription still works: with Conversation Mode off and auto-send off, verify a recording fills `UserInput`; with auto-send on, verify the transcript is sent and context selection still works.
