@@ -359,7 +359,7 @@ public sealed class RealtimeVoiceSessionService
                 continue;
             }
 
-            var role = IsTutorSender(message.Sender, request) ? "assistant" : "user";
+            var role = IsTutorSender(message, request) ? "assistant" : "user";
             await SendOpenAiEventAsync(new
             {
                 type = "conversation.item.create",
