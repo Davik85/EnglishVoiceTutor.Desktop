@@ -14,6 +14,9 @@ public interface IVoiceConversationEngine
     event EventHandler<AssistantAudioChunkReceivedEventArgs>? AssistantAudioChunkReceived;
     event EventHandler<AssistantTranscriptDeltaEventArgs>? AssistantTranscriptDeltaReceived;
     event EventHandler<AssistantTurnCompletedEventArgs>? AssistantTurnCompleted;
+    event EventHandler<UserAudioCommittedEventArgs>? UserAudioCommitted;
+    event EventHandler<UserTranscriptDeltaEventArgs>? UserTranscriptDeltaReceived;
+    event EventHandler<UserTranscriptCompletedEventArgs>? UserTranscriptCompleted;
     event EventHandler<VoiceSessionErrorEventArgs>? ErrorReceived;
 }
 
@@ -118,4 +121,50 @@ public sealed class VoiceSessionErrorEventArgs : EventArgs
     public string? ResponseId { get; }
     public string Message { get; }
     public Exception? Exception { get; }
+}
+
+public sealed class UserAudioCommittedEventArgs : EventArgs
+{
+    public UserAudioCommittedEventArgs(string sessionId, string itemId, long elapsedMilliseconds)
+    {
+        SessionId = sessionId;
+        ItemId = itemId;
+        ElapsedMilliseconds = elapsedMilliseconds;
+    }
+
+    public string SessionId { get; }
+    public string ItemId { get; }
+    public long ElapsedMilliseconds { get; }
+}
+
+public sealed class UserTranscriptDeltaEventArgs : EventArgs
+{
+    public UserTranscriptDeltaEventArgs(string sessionId, string itemId, string delta, long elapsedMilliseconds)
+    {
+        SessionId = sessionId;
+        ItemId = itemId;
+        Delta = delta;
+        ElapsedMilliseconds = elapsedMilliseconds;
+    }
+
+    public string SessionId { get; }
+    public string ItemId { get; }
+    public string Delta { get; }
+    public long ElapsedMilliseconds { get; }
+}
+
+public sealed class UserTranscriptCompletedEventArgs : EventArgs
+{
+    public UserTranscriptCompletedEventArgs(string sessionId, string itemId, string transcript, long elapsedMilliseconds)
+    {
+        SessionId = sessionId;
+        ItemId = itemId;
+        Transcript = transcript;
+        ElapsedMilliseconds = elapsedMilliseconds;
+    }
+
+    public string SessionId { get; }
+    public string ItemId { get; }
+    public string Transcript { get; }
+    public long ElapsedMilliseconds { get; }
 }

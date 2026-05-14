@@ -28,7 +28,8 @@ public sealed class AudioPlaybackService
         try
         {
             var filePath = await SaveTemporaryAudioFileAsync(audioBytes, normalizedExtension, cancellationToken);
-            Debug.WriteLine($"Bot voice audio file save completed: AudioBytes={audioBytes.Length}; FileExtension={normalizedExtension}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}.");
+            var fileInfo = new FileInfo(filePath);
+            Debug.WriteLine($"Bot voice audio file save completed: AudioBytes={audioBytes.Length}; SavedAudioPath={filePath}; SavedAudioFileExists={fileInfo.Exists}; SavedAudioFileLength={(fileInfo.Exists ? fileInfo.Length : 0)}; FileExtension={normalizedExtension}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}.");
             return filePath;
         }
         catch (Exception exception)
@@ -40,22 +41,33 @@ public sealed class AudioPlaybackService
 
     public async Task PlayAudioFileAsync(string filePath, CancellationToken cancellationToken = default, Action<long>? onPlaybackStarted = null)
     {
-        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new FileNotFoundException("Bot voice audio file path was empty.", filePath);
+        }
+
+        var fileInfo = new FileInfo(filePath);
+        if (!fileInfo.Exists)
         {
             throw new FileNotFoundException("Bot voice audio file was not found.", filePath);
+        }
+
+        if (fileInfo.Length <= 0)
+        {
+            throw new InvalidOperationException($"Bot voice audio file is empty: {filePath}");
         }
 
         var stopwatch = Stopwatch.StartNew();
 
         try
         {
-            Debug.WriteLine($"Bot voice audio playback starting: FileExtension={Path.GetExtension(filePath)}.");
+            Debug.WriteLine($"Bot voice audio playback starting: SavedAudioPath={filePath}; SavedAudioFileExists={fileInfo.Exists}; SavedAudioFileLength={fileInfo.Length}; FileExtension={Path.GetExtension(filePath)}.");
             await PlayTemporaryAudioFileAsync(filePath, cancellationToken, onPlaybackStarted);
-            Debug.WriteLine($"Bot voice audio playback completed: FileExtension={Path.GetExtension(filePath)}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}.");
+            Debug.WriteLine($"Bot voice audio playback completed: SavedAudioPath={filePath}; SavedAudioFileLength={fileInfo.Length}; FileExtension={Path.GetExtension(filePath)}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}.");
         }
         catch (Exception exception)
         {
-            Debug.WriteLine($"Bot voice audio playback failed: {exception}");
+            Debug.WriteLine($"Bot voice audio playback failed: SavedAudioPath={filePath}; ExceptionType={exception.GetType().FullName}; Message={exception.Message}; {exception}");
             throw;
         }
     }
@@ -243,6 +255,7 @@ public sealed class AudioPlaybackService
             if (streamCompleted)
             {
                 outputDevice.Stop();
+                Debug.WriteLine($"Bot voice stream playback stop event received for message {messageId}: Exception=False.");
                 playbackCompletion.TrySetResult();
             }
 
@@ -263,7 +276,11 @@ public sealed class AudioPlaybackService
         finally
         {
             outputDevice.PlaybackStopped -= OnPlaybackStopped;
-            outputDevice.Stop();
+            if (outputDevice.PlaybackState != PlaybackState.Stopped)
+            {
+                outputDevice.Stop();
+            }
+            Debug.WriteLine($"Bot voice stream playback stopped/disposed for message {messageId}.");
 
             lock (playbackLock)
             {
@@ -323,12 +340,14 @@ public sealed class AudioPlaybackService
         {
             if (args.Exception is not null)
             {
+                Debug.WriteLine($"Bot voice stream playback stop event received for message {messageId}: Exception=True; ExceptionType={args.Exception.GetType().FullName}; Message={args.Exception.Message}.");
                 playbackCompletion.TrySetException(args.Exception);
                 return;
             }
 
             if (streamCompleted)
             {
+                Debug.WriteLine($"Bot voice stream playback stop event received for message {messageId}: Exception=False.");
                 playbackCompletion.TrySetResult();
             }
         }
@@ -396,10 +415,10 @@ public sealed class AudioPlaybackService
         {
             var initializationStopwatch = Stopwatch.StartNew();
             outputDevice.Init(audioReader);
-            Debug.WriteLine($"Bot voice audio playback initialized: ElapsedMilliseconds={initializationStopwatch.ElapsedMilliseconds}.");
+            Debug.WriteLine($"Bot voice audio playback initialized: SavedAudioPath={filePath}; FileSizeBytes={new FileInfo(filePath).Length}; ElapsedMilliseconds={initializationStopwatch.ElapsedMilliseconds}.");
             outputDevice.Play();
             var playbackStartedMs = initializationStopwatch.ElapsedMilliseconds;
-            Debug.WriteLine($"Bot voice audio playback started: PlaybackStartInitializationMilliseconds={playbackStartedMs}.");
+            Debug.WriteLine($"Bot voice audio playback started: SavedAudioPath={filePath}; PlaybackStartInitializationMilliseconds={playbackStartedMs}; PlaybackState={outputDevice.PlaybackState}.");
             onPlaybackStarted?.Invoke(playbackStartedMs);
             using var cancellationRegistration = linkedCancellationTokenSource.Token.Register(() =>
             {
@@ -417,7 +436,11 @@ public sealed class AudioPlaybackService
         finally
         {
             outputDevice.PlaybackStopped -= OnPlaybackStopped;
-            outputDevice.Stop();
+            if (outputDevice.PlaybackState != PlaybackState.Stopped)
+            {
+                outputDevice.Stop();
+            }
+            Debug.WriteLine($"Bot voice audio playback stopped/disposed: SavedAudioPath={filePath}; FileExistsAtDispose={File.Exists(filePath)}.");
 
             lock (playbackLock)
             {
@@ -433,6 +456,7 @@ public sealed class AudioPlaybackService
         {
             if (args.Exception is not null)
             {
+                Debug.WriteLine($"Bot voice audio playback stop event received: SavedAudioPath={filePath}; Exception=True; ExceptionType={args.Exception.GetType().FullName}; Message={args.Exception.Message}.");
                 playbackCompletion.TrySetException(args.Exception);
                 return;
             }
