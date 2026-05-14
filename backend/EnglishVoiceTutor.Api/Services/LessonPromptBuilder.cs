@@ -303,6 +303,7 @@ public sealed class LessonPromptBuilder
             prompt.AppendLine("- Guided roleplay must not become generic AI chat or free conversation.");
             prompt.AppendLine("- Guided roleplay must not ask broad assistant-offer questions or open-topic selection questions.");
             prompt.AppendLine("- If the learner goes off-topic: briefly acknowledge, redirect to the selected lesson goal, and do not switch topic.");
+            AppendGuidedScenarioFlexibilityPolicy(prompt);
         }
 
         AppendTutorIdentityRules(prompt, avatarProfile);
@@ -358,6 +359,18 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine();
     }
 
+    private static void AppendGuidedScenarioFlexibilityPolicy(StringBuilder prompt)
+    {
+        prompt.AppendLine("Guided scenario flexibility:");
+        prompt.AppendLine("- Stay inside the selected guided scenario.");
+        prompt.AppendLine("- Answer natural learner questions that fit the scenario, including normal introduction and small-talk reciprocal questions.");
+        prompt.AppendLine("- Use the active tutor profile for simple personal answers such as name, home city, study/work, hobbies, and how you are.");
+        prompt.AppendLine("- After answering, ask one short scenario-compatible question back.");
+        prompt.AppendLine("- Do not refuse normal introduction/small-talk questions just because the tutor is in a role.");
+        prompt.AppendLine("- Do not say \"No, I'm your neighbor\" when asked whether you study or work.");
+        prompt.AppendLine("- For A1, answer with one short sentence plus one simple question.");
+    }
+
     private static void AppendTutorIdentityRules(StringBuilder prompt, TutorAvatarProfile avatarProfile)
     {
         prompt.AppendLine($"- You are {avatarProfile.DisplayName}.");
@@ -373,7 +386,7 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("Guided roleplay retention rules:");
         prompt.AppendLine("- This is active guided roleplay, not free conversation.");
         prompt.AppendLine("- You are still the selected tutor avatar while playing the role required by the scenario.");
-        prompt.AppendLine("- If the learner asks a personal small-talk question, answer using your tutor profile, then return to the scenario.");
+        prompt.AppendLine("- If the learner asks a personal small-talk question, answer using your tutor profile, then ask one short scenario-compatible question back.");
         prompt.AppendLine("- Stay inside the selected roleplay context and continue from the last visible tutor message.");
         prompt.AppendLine("- Do not ask the learner to choose a new topic, context, or situation during active roleplay.");
         prompt.AppendLine("- Do not offer unrelated help or tips.");
@@ -509,6 +522,8 @@ public sealed class LessonPromptBuilder
             || !string.IsNullOrWhiteSpace(request.ConversationFinalMessageIntent)
             || request.RoleplayBeats.Count > 0
             || !string.IsNullOrWhiteSpace(request.ReciprocalQuestionIfUserAsksTutorName)
+            || !string.IsNullOrWhiteSpace(request.ReciprocalQuestionIfUserAsksSimplePersonalQuestion)
+            || request.ReciprocalQuestionMustNotRefuseScenarioCompatibleQuestions
             || request.ExpectedScenarioProgression.Count > 0;
 
         if (!hasScenarioFlow)
@@ -548,11 +563,16 @@ public sealed class LessonPromptBuilder
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(request.ReciprocalQuestionIfUserAsksTutorName) || request.ReciprocalQuestionMustNotIgnoreUserQuestion)
+        if (!string.IsNullOrWhiteSpace(request.ReciprocalQuestionIfUserAsksTutorName)
+            || !string.IsNullOrWhiteSpace(request.ReciprocalQuestionIfUserAsksSimplePersonalQuestion)
+            || request.ReciprocalQuestionMustNotIgnoreUserQuestion
+            || request.ReciprocalQuestionMustNotRefuseScenarioCompatibleQuestions)
         {
             prompt.AppendLine("- Reciprocal question handling:");
             AppendOptionalLine(prompt, "  - If learner asks tutor name", request.ReciprocalQuestionIfUserAsksTutorName);
+            AppendOptionalLine(prompt, "  - If learner asks a simple personal question", request.ReciprocalQuestionIfUserAsksSimplePersonalQuestion);
             prompt.AppendLine($"  - Must not ignore learner's reciprocal question: {request.ReciprocalQuestionMustNotIgnoreUserQuestion}");
+            prompt.AppendLine($"  - Must not refuse scenario-compatible questions: {request.ReciprocalQuestionMustNotRefuseScenarioCompatibleQuestions}");
         }
     }
 
@@ -820,7 +840,9 @@ public sealed class LessonPromptBuilder
             ConversationFinalMessageIntent = request.ConversationFinalMessageIntent,
             RoleplayBeats = request.RoleplayBeats.Select(beat => new ScenarioRoleplayBeat { Id = beat.Id, Intent = beat.Intent }).ToArray(),
             ReciprocalQuestionIfUserAsksTutorName = request.ReciprocalQuestionIfUserAsksTutorName,
+            ReciprocalQuestionIfUserAsksSimplePersonalQuestion = request.ReciprocalQuestionIfUserAsksSimplePersonalQuestion,
             ReciprocalQuestionMustNotIgnoreUserQuestion = request.ReciprocalQuestionMustNotIgnoreUserQuestion,
+            ReciprocalQuestionMustNotRefuseScenarioCompatibleQuestions = request.ReciprocalQuestionMustNotRefuseScenarioCompatibleQuestions,
             ExpectedScenarioProgression = request.ExpectedScenarioProgression,
             FeedbackRulesSummary = request.FeedbackRulesSummary,
             TutorProfileId = request.TutorProfileId,

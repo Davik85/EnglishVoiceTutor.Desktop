@@ -58,6 +58,14 @@ def main() -> int:
     assert_contains(prompt_builder, "BuildInput", "chat adapter")
     assert_contains(prompt_builder, "Tutor identity comes only from the selected TutorProfile", "tutor profile injection")
     assert_contains(prompt_builder, "Guided roleplay must not become generic AI chat", "guided retention")
+    assert_contains(prompt_builder, "Guided scenario flexibility:", "shared guided scenario flexibility block")
+    assert_contains(prompt_builder, "Answer natural learner questions that fit the scenario", "natural reciprocal questions allowed")
+    assert_contains(prompt_builder, "Use the active tutor profile for simple personal answers", "active tutor profile simple personal answers")
+    assert_contains(prompt_builder, "No, I'm your neighbor", "forbidden neighbor study/work answer")
+    assert_contains(prompt_builder, "For A1, answer with one short sentence plus one simple question.", "A1 reciprocal answer shape")
+    assert_contains(prompt_builder, "AppendGuidedScenarioFlexibilityPolicy(prompt)", "shared flexibility method consumed by canonical policy")
+    assert_contains(prompt_builder, "AppendCanonicalTeachingPolicy(prompt, request, avatarProfile, NormalChatMode)", "normal chat uses canonical policy")
+    assert_contains(prompt_builder, "AppendCanonicalTeachingPolicy(prompt, chatRequest, avatarProfile, RealtimeVoiceMode)", "realtime uses canonical policy")
     assert_contains(prompt_builder, "Free Conversation allows safe open topic selection", "free conversation open topic behavior")
     assert_contains(realtime_service, "lessonPromptBuilder.BuildRealtimeInstructions", "shared realtime session instructions")
     assert_contains(realtime_service, "lessonPromptBuilder.BuildRealtimeResponseInstructions", "shared realtime response instructions")
@@ -87,6 +95,8 @@ def main() -> int:
     assert_contains(new_neighbor["contextConfirmationLine"], "meet a new neighbor", "context confirmation line")
     assert_contains(dumped_introductions, "roleplayBeats", "scenario roleplay beats")
     assert_contains(dumped_introductions, "reciprocalQuestionHandling", "reciprocal question handling")
+    assert_contains(dumped_introductions, "ifUserAsksSimplePersonalQuestion", "simple personal reciprocal question handling")
+    assert_contains(dumped_introductions, "mustNotRefuseScenarioCompatibleQuestions", "scenario-compatible reciprocal question handling")
 
     for needle in [
         "ResolveScenarioPlaceholders(request.SelectedContextOpeningLine, avatarProfile)",
@@ -94,6 +104,8 @@ def main() -> int:
         "Reciprocal question handling:",
         "SelectedContextConfirmationLine = request.SelectedContextConfirmationLine",
         "using the active tutor profile name",
+        "ReciprocalQuestionIfUserAsksSimplePersonalQuestion",
+        "Must not refuse scenario-compatible questions",
     ]:
         assert_contains(prompt_builder, needle, "prompt-builder shared scenario rule consumption")
 

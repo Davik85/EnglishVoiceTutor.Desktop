@@ -434,7 +434,9 @@
   ],
   "reciprocalQuestionHandling": {
     "ifUserAsksTutorName": "Answer with the active tutor profile name, then continue the selected introduction scenario.",
-    "mustNotIgnoreUserQuestion": true
+    "mustNotIgnoreUserQuestion": true,
+    "ifUserAsksSimplePersonalQuestion": "Answer briefly using the active tutor profile when the question fits introductions or small talk, then ask a simple question back.",
+    "mustNotRefuseScenarioCompatibleQuestions": true
   },
   "expectedScenarioProgression": [
     "After context selection, tutor confirms the selected context.",

@@ -323,8 +323,9 @@ public partial class LessonChatViewModel : ViewModelBase
     // - Finish lesson enabled. Conversation Mode can start Realtime.
     //
     // CompletedAwaitingFinish
-    // - Final message has been shown. Lesson no longer accepts input. Only Finish lesson enabled.
+    // - Final message has been shown. Lesson no longer accepts input. Finish lesson remains enabled.
     // - Send, recording, hint, and back disabled. Conversation Mode disabled/stopped.
+    // - Existing message review actions remain enabled when each message is eligible.
     //
     // Finished
     // - Summary navigation has happened or lesson is closed. All lesson commands disabled except navigation controlled outside this VM.
@@ -339,6 +340,8 @@ public partial class LessonChatViewModel : ViewModelBase
     private bool IsCompletedAwaitingFinish => IsLessonCompleteAwaitingFinish || CurrentLessonPhase == LessonPhase.Completed;
 
     private bool IsRealtimeSessionStarting => isStartingRealtimeSession;
+
+    private bool CanReviewExistingMessages => !hasFinishedLesson;
 
     private bool CanAcceptLessonInput => !hasFinishedLesson && !IsCompletedAwaitingFinish && !IsLessonLimitReached && !IsLessonBusyForInput;
 
@@ -457,7 +460,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanPlayBotVoice(ChatMessageViewModel? message)
     {
-        return IsLessonOptionsEnabled
+        return CanReviewExistingMessages
             && !IsBotVoicePlaying
             && message is not null
             && message.ShowPlayVoiceButton
@@ -1650,7 +1653,9 @@ public partial class LessonChatViewModel : ViewModelBase
                 ConversationFinalMessageIntent = lessonScenario.ConversationFlow.FinalMessageIntent,
                 RoleplayBeats = lessonScenario.RoleplayBeats.Select(beat => new ScenarioRoleplayBeat { Id = beat.Id, Intent = beat.Intent }).ToArray(),
                 ReciprocalQuestionIfUserAsksTutorName = lessonScenario.ReciprocalQuestionHandling.IfUserAsksTutorName,
+                ReciprocalQuestionIfUserAsksSimplePersonalQuestion = lessonScenario.ReciprocalQuestionHandling.IfUserAsksSimplePersonalQuestion,
                 ReciprocalQuestionMustNotIgnoreUserQuestion = lessonScenario.ReciprocalQuestionHandling.MustNotIgnoreUserQuestion,
+                ReciprocalQuestionMustNotRefuseScenarioCompatibleQuestions = lessonScenario.ReciprocalQuestionHandling.MustNotRefuseScenarioCompatibleQuestions,
                 ExpectedScenarioProgression = lessonScenario.ExpectedScenarioProgression,
                 FeedbackRulesSummary = BuildFeedbackRulesSummary(),
                 TutorProfileId = tutorAvatarId,
@@ -1822,7 +1827,9 @@ public partial class LessonChatViewModel : ViewModelBase
             ConversationFinalMessageIntent = lessonScenario.ConversationFlow.FinalMessageIntent,
             RoleplayBeats = lessonScenario.RoleplayBeats,
             ReciprocalQuestionIfUserAsksTutorName = lessonScenario.ReciprocalQuestionHandling.IfUserAsksTutorName,
+            ReciprocalQuestionIfUserAsksSimplePersonalQuestion = lessonScenario.ReciprocalQuestionHandling.IfUserAsksSimplePersonalQuestion,
             ReciprocalQuestionMustNotIgnoreUserQuestion = lessonScenario.ReciprocalQuestionHandling.MustNotIgnoreUserQuestion,
+            ReciprocalQuestionMustNotRefuseScenarioCompatibleQuestions = lessonScenario.ReciprocalQuestionHandling.MustNotRefuseScenarioCompatibleQuestions,
             ExpectedScenarioProgression = lessonScenario.ExpectedScenarioProgression,
             FeedbackRulesSummary = BuildFeedbackRulesSummary(),
             AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
@@ -2449,7 +2456,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private bool CanViewFeedback(ChatMessageViewModel? message)
     {
-        return IsLessonOptionsEnabled
+        return CanReviewExistingMessages
             && message is not null
             && !message.IsFromBot
             && message.IsFeedbackEligible
@@ -2587,7 +2594,9 @@ public partial class LessonChatViewModel : ViewModelBase
                 ConversationFinalMessageIntent = lessonScenario.ConversationFlow.FinalMessageIntent,
                 RoleplayBeats = lessonScenario.RoleplayBeats.Select(beat => new ScenarioRoleplayBeat { Id = beat.Id, Intent = beat.Intent }).ToArray(),
                 ReciprocalQuestionIfUserAsksTutorName = lessonScenario.ReciprocalQuestionHandling.IfUserAsksTutorName,
+                ReciprocalQuestionIfUserAsksSimplePersonalQuestion = lessonScenario.ReciprocalQuestionHandling.IfUserAsksSimplePersonalQuestion,
                 ReciprocalQuestionMustNotIgnoreUserQuestion = lessonScenario.ReciprocalQuestionHandling.MustNotIgnoreUserQuestion,
+                ReciprocalQuestionMustNotRefuseScenarioCompatibleQuestions = lessonScenario.ReciprocalQuestionHandling.MustNotRefuseScenarioCompatibleQuestions,
                 ExpectedScenarioProgression = lessonScenario.ExpectedScenarioProgression,
                 FeedbackRulesSummary = BuildFeedbackRulesSummary(),
                 TutorProfileId = tutorAvatarId,
@@ -2739,6 +2748,7 @@ public partial class LessonChatViewModel : ViewModelBase
         BackCommand.NotifyCanExecuteChanged();
         FinishLessonCommand.NotifyCanExecuteChanged();
         PlayBotVoiceCommand.NotifyCanExecuteChanged();
+        ViewFeedbackCommand.NotifyCanExecuteChanged();
     }
 
     private void CompleteLesson()
