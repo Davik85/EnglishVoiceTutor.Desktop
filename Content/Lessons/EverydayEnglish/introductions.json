@@ -224,10 +224,10 @@
     }
   },
   "conversationFlow": {
-    "opening": "Tutor greets the user and starts the selected situation.",
-    "defaultOpeningExample": "Hi! Nice to meet you. What's your name?",
-    "firstUserTask": "The user gives their name.",
-    "expectedPattern": "My name is...",
+    "opening": "Tutor starts the selected first-meeting roleplay by introducing themselves with the active tutor profile name, then asks the learner for their name.",
+    "defaultOpeningExample": "Hi! I'm {tutorName}. Nice to meet you. What's your name?",
+    "firstUserTask": "Learner gives their name, then shares where they are from and where they live when asked.",
+    "expectedPattern": "Tutor self-introduction -> learner name -> origin -> current home or nearby status -> one simple reciprocal learner question -> gentle wrap-up -> final message.",
     "guidedPracticeFollowUpQuestions": [
       "Where are you from?",
       "Where do you live?",
@@ -241,7 +241,9 @@
     "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You're doing well. Let's do one final introduction. Please introduce yourself with your name, city, and one thing you like.",
     "finalMessageAtUserTurn": 15,
-    "finalMessage": "Great work today! You practiced introducing yourself, saying where you are from, and asking simple questions. Please click Finish lesson to see your summary."
+    "finalMessage": "Great work today! You practiced introducing yourself, saying where you are from, and asking simple questions. Please click Finish lesson to see your summary.",
+    "wrapUpIntent": "Tutor starts a gentle wrap-up near the configured soft wrap-up turn while staying in the selected introduction scenario.",
+    "finalMessageIntent": "Tutor ends the active roleplay at the configured final turn and tells the learner to click Finish lesson."
   },
   "controlledVariation": {
     "canChange": [
@@ -265,66 +267,76 @@
         "title": "Meeting a new neighbor",
         "setting": "an apartment building",
         "reasonForMeeting": "meeting a new neighbor",
-        "openingLine": "Hi! I think you are new here. What's your name?",
+        "openingLine": "Hi! I'm {tutorName}. I live next door. What's your name?",
         "aliases": [
           "neighbor",
           "neighbour",
           "new neighbor",
           "meeting a neighbor"
-        ]
+        ],
+        "contextConfirmationLine": "Great! Let's imagine you meet a new neighbor.",
+        "openingIntent": "Tutor plays a friendly next-door neighbor who is meeting the learner for the first time."
       },
       {
         "id": "language_school_first_day",
         "title": "First day at a language school",
         "setting": "a language school",
         "reasonForMeeting": "first day of class",
-        "openingLine": "Hi! Nice to meet you. What's your name?",
+        "openingLine": "Hi! I'm {tutorName}. I'm in this class too. What's your name?",
         "aliases": [
           "language school",
           "school",
           "first day",
           "class",
           "english class"
-        ]
+        ],
+        "contextConfirmationLine": "Great! Let's imagine it is the first day at a language school.",
+        "openingIntent": "Tutor plays a friendly classmate who is meeting the learner on the first day of class."
       },
       {
         "id": "hobby_club",
         "title": "Meeting someone at a hobby club",
         "setting": "a hobby club",
         "reasonForMeeting": "joining a new group",
-        "openingLine": "Hi! Welcome to the club. What's your name?",
+        "openingLine": "Hi! I'm {tutorName}. Welcome to the club. What's your name?",
         "aliases": [
           "hobby club",
           "club",
           "hobby",
           "group"
-        ]
+        ],
+        "contextConfirmationLine": "Great! Let's imagine you meet someone at a hobby club.",
+        "openingIntent": "Tutor plays a friendly club member who welcomes the learner."
       },
       {
         "id": "work_break_room",
         "title": "Meeting a colleague",
         "setting": "a workplace break room",
         "reasonForMeeting": "meeting a colleague",
-        "openingLine": "Hi! I don't think we've met. What's your name?",
+        "openingLine": "Hi! I'm {tutorName}. I work here too. What's your name?",
         "aliases": [
           "work",
           "colleague",
           "coworker",
           "office"
-        ]
+        ],
+        "contextConfirmationLine": "Great! Let's imagine you meet a colleague in the break room.",
+        "openingIntent": "Tutor plays a friendly colleague meeting the learner at work."
       },
       {
         "id": "online_meeting",
         "title": "Joining an online English meeting",
         "setting": "an online English meeting",
         "reasonForMeeting": "joining a video call",
-        "openingLine": "Hi! Welcome. Can you introduce yourself?",
+        "openingLine": "Hi! I'm {tutorName}. Welcome. What's your name?",
         "aliases": [
           "online",
           "video call",
           "online meeting",
           "zoom"
-        ]
+        ],
+        "contextConfirmationLine": "Great! Let's imagine you join an online English meeting.",
+        "openingIntent": "Tutor plays a friendly participant welcoming the learner to an online meeting."
       }
     ],
     "customContextRules": [
@@ -389,5 +401,53 @@
     "When the active soft wrap-up limit is reached, start wrapping up.",
     "When the active final turn limit is reached, give the final message and do not continue the active dialogue.",
     "Tutor personality is provided separately. Adapt tone to the tutor profile, but do not change the lesson goal."
+  ],
+  "roleplayBeats": [
+    {
+      "id": "tutor_self_introduction",
+      "intent": "Tutor introduces themselves using the active tutor profile name and starts the first-meeting roleplay."
+    },
+    {
+      "id": "ask_learner_name",
+      "intent": "Tutor asks for the learner's name."
+    },
+    {
+      "id": "ask_origin",
+      "intent": "After the learner gives their name, tutor asks where the learner is from."
+    },
+    {
+      "id": "ask_current_home",
+      "intent": "After the learner says where they are from, tutor asks where they live or whether they live nearby now."
+    },
+    {
+      "id": "ask_reciprocal_question",
+      "intent": "Tutor asks the learner to ask one simple question back."
+    },
+    {
+      "id": "wrap_up",
+      "intent": "Tutor starts a gentle wrap-up near the configured soft wrap-up turn."
+    },
+    {
+      "id": "final_message",
+      "intent": "Tutor ends the active roleplay and tells the learner to click Finish lesson."
+    }
+  ],
+  "reciprocalQuestionHandling": {
+    "ifUserAsksTutorName": "Answer with the active tutor profile name, then continue the selected introduction scenario.",
+    "mustNotIgnoreUserQuestion": true
+  },
+  "expectedScenarioProgression": [
+    "After context selection, tutor confirms the selected context.",
+    "Active roleplay starts with the selected context opening line.",
+    "Tutor introduces themselves using the active tutor profile name.",
+    "Tutor asks for the learner's name.",
+    "Learner gives their name.",
+    "Tutor uses the learner's name and asks where they are from.",
+    "Learner says where they are from.",
+    "Tutor may ask where they live or whether they live nearby now.",
+    "Tutor eventually asks the learner to ask one simple question back.",
+    "If the learner asks the tutor's name, tutor answers with the active tutor profile name and continues the scenario.",
+    "Wrap-up begins at the configured soft wrap-up point.",
+    "Final message appears at the configured final turn before lesson controls are disabled."
   ]
 }

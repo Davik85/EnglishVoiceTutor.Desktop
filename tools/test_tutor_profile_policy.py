@@ -42,6 +42,8 @@ def main() -> int:
         assert_contains(prompt_builder, needle, "realtime Elena identity prompt construction")
 
     for needle in [
+        "ResolveScenarioPlaceholders",
+        "active tutor profile name",
         "Use 1-2 short sentences",
         "Use simple words",
         "Ask one simple question",
@@ -69,6 +71,8 @@ def main() -> int:
         "TutorProfileAge = tutorProfile.Age",
         "TutorProfileSpeakingRules = tutorProfile.SpeakingRules",
         "SelectedContextTitle={GetSelectedContextTitle()}",
+        "RoleplayBeats = lessonScenario.RoleplayBeats",
+        "GetSelectedContextOpeningLine()",
     ]:
         assert_contains(desktop_vm, needle, "desktop realtime tutor profile request")
 

@@ -329,6 +329,41 @@ def check_lesson_type_specific_content(path: Path, data: dict[str, Any], lesson_
             report.error(f"{rel(path)} free_conversation aiTutorPromptInstructions missing safety terms: {', '.join(missing)}")
 
 
+
+def check_everyday_english_scenario_separation(parsed: dict[Path, Any], report: AuditReport) -> None:
+    introductions_path = LESSONS_ROOT / "EverydayEnglish" / "introductions.json"
+    data = parsed.get(introductions_path)
+    if not isinstance(data, dict):
+        return
+
+    dumped = json.dumps(data)
+    if "Elena" in dumped:
+        report.error(f"{rel(introductions_path)} must not hardcode tutor profile name Elena")
+
+    forbidden_fields = ["levelSpecificTurnPlans", "forbiddenByLevel", "A1-only", "A1 forbidden"]
+    for forbidden in forbidden_fields:
+        if forbidden in dumped:
+            report.error(f"{rel(introductions_path)} contains duplicated level-specific scenario field/text: {forbidden}")
+
+    variants = data.get("controlledVariation", {}).get("contextVariants", [])
+    new_neighbor = next((variant for variant in variants if isinstance(variant, dict) and variant.get("id") == "new_neighbor"), None)
+    if not isinstance(new_neighbor, dict):
+        return
+
+    opening_line = new_neighbor.get("openingLine", "")
+    if "{tutorName}" not in opening_line:
+        report.error(f"{rel(introductions_path)} new_neighbor openingLine must use {{tutorName}} placeholder")
+    if "I live next door" not in opening_line:
+        report.error(f"{rel(introductions_path)} new_neighbor openingLine should self-introduce as the next-door neighbor")
+    if not new_neighbor.get("contextConfirmationLine"):
+        report.error(f"{rel(introductions_path)} new_neighbor must define contextConfirmationLine")
+
+    if not data.get("roleplayBeats"):
+        report.error(f"{rel(introductions_path)} must define level-neutral roleplayBeats")
+    reciprocal = data.get("reciprocalQuestionHandling", {})
+    if not isinstance(reciprocal, dict) or not reciprocal.get("mustNotIgnoreUserQuestion"):
+        report.error(f"{rel(introductions_path)} must define reciprocalQuestionHandling.mustNotIgnoreUserQuestion")
+
 def check_routing_sources(report: AuditReport) -> None:
     topic_folder_constants = [
         "ContentConstants.EverydayEnglishFolderName",
@@ -425,6 +460,7 @@ def main() -> int:
     check_folders_and_registry(parsed, report)
     check_text_content(report)
     check_required_fields(parsed, report)
+    check_everyday_english_scenario_separation(parsed, report)
     check_routing_sources(report)
     print_report(report, len(parsed))
     return 1 if report.errors else 0

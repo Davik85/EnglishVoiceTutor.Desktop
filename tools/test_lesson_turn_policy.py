@@ -144,10 +144,12 @@ def main() -> int:
     assert_contains(realtime, "NormalAssistantResponseCreated=False", "Realtime invalid no-response logging")
     assert_not_contains_between(realtime, 'case "user.audio.commit":', 'case "session.stop":', 'await CreateResponseAsync(cancellationToken);', "Realtime response.create before transcript validation")
 
-    expected_opening = "Hi! I think you are new here. What's your name?"
+    expected_opening = "Hi! I'm {tutorName}. I live next door. What's your name?"
     neighbor = next(variant for variant in introductions["controlledVariation"]["contextVariants"] if variant["id"] == "new_neighbor")
     if neighbor["openingLine"] != expected_opening:
-        raise AssertionError("A1 new-neighbor opening line changed unexpectedly.")
+        raise AssertionError("New-neighbor opening must self-introduce with the tutorName placeholder.")
+    if "Elena" in neighbor["openingLine"]:
+        raise AssertionError("New-neighbor opening must not hardcode the active tutor profile name.")
 
     final_json = introductions["conversationFlow"]["finalMessage"]
     if "Great work today!" not in final_json:
@@ -158,7 +160,8 @@ def main() -> int:
     assert_contains(prompt, "A1 introductions/new-neighbor rules", "A1 introductions flow guard")
     assert_contains(prompt, "Nice to meet you, David. Where are you from?", "A1 first-turn example")
     assert_contains(prompt, "Nice. Do you live here now?", "A1 second-turn example")
-    assert_contains(vm, "BuildContextConfirmationText(matchedVariant)", "selected context variant opening")
+    assert_contains(vm, "GetSelectedContextConfirmationLine(matchedVariant)", "selected context confirmation line")
+    assert_contains(vm, "GetSelectedContextOpeningLine()", "profile-resolved selected context opening")
     assert_contains(vm, "await TryAutoPlayNewestBotVoiceAsync(botMessage);\n            CurrentLessonPhase = LessonPhase.Completed", "final assistant message before completion")
 
     print("Lesson turn policy checks passed.")

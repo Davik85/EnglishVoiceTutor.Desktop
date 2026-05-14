@@ -20,6 +20,12 @@ public sealed class LessonScenario
 
     public ConversationFlow ConversationFlow { get; set; } = new();
 
+    public List<RoleplayBeat> RoleplayBeats { get; set; } = [];
+
+    public ReciprocalQuestionHandling ReciprocalQuestionHandling { get; set; } = new();
+
+    public List<string> ExpectedScenarioProgression { get; set; } = [];
+
     public ControlledVariation ControlledVariation { get; set; } = new();
 
     public OffTopicHandling OffTopicHandling { get; set; } = new();
