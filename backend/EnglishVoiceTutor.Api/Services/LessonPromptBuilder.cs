@@ -34,7 +34,7 @@ public sealed class LessonPromptBuilder
         var prompt = new StringBuilder();
         var avatarProfile = _avatarProfileProvider.GetById(request.TutorAvatarId);
 
-        AppendLessonContext(prompt, request);
+        AppendLessonContext(prompt, request, avatarProfile);
         AppendCanonicalTeachingPolicy(prompt, request, avatarProfile, NormalChatMode);
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, request);
@@ -70,7 +70,7 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("Use the canonical lesson teaching policy below. Realtime changes only audio transport and spoken-friendly formatting; it must not change teaching behavior.");
         prompt.AppendLine();
 
-        AppendLessonContext(prompt, chatRequest);
+        AppendLessonContext(prompt, chatRequest, avatarProfile);
         AppendCanonicalTeachingPolicy(prompt, chatRequest, avatarProfile, RealtimeVoiceMode);
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, chatRequest);
@@ -225,7 +225,7 @@ public sealed class LessonPromptBuilder
         var prompt = new StringBuilder();
         var avatarProfile = _avatarProfileProvider.GetById(request.TutorAvatarId);
 
-        AppendLessonContext(prompt, request, includeNativeLanguage: false);
+        AppendLessonContext(prompt, request, avatarProfile, includeNativeLanguage: false);
         AppendCanonicalTeachingPolicy(prompt, request, avatarProfile, NormalChatMode);
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, request);
@@ -400,14 +400,14 @@ public sealed class LessonPromptBuilder
         {
             prompt.AppendLine("A1 introductions/new-neighbor rules:");
             prompt.AppendLine("- After 'My name is David.', a good reply is: 'Nice to meet you, David. Where are you from?'");
-            prompt.AppendLine("- If the learner asks your name after sharing their country, answer simply: 'I'm Elena. Nice to meet you.' You may add: 'Do you live here now?'");
+            prompt.AppendLine("- If the learner asks your name after sharing their country, answer simply using the active tutor profile name, then continue the introduction scenario.");
             prompt.AppendLine("- After 'I am from Russia.', a good reply is: 'Nice. Do you live here now?' or 'Good. Where do you live?'");
             prompt.AppendLine("- Do not ask: 'Where did you move from?'");
             prompt.AppendLine("- Do not ask: 'How long have you been living here?'");
         }
     }
 
-    private static void AppendLessonContext(StringBuilder prompt, LessonChatRequest request, bool includeNativeLanguage = true)
+    private static void AppendLessonContext(StringBuilder prompt, LessonChatRequest request, TutorAvatarProfile avatarProfile, bool includeNativeLanguage = true)
     {
         prompt.AppendLine(LessonContextHeader);
         prompt.AppendLine($"- Level: {ChooseFirstNonEmpty(request.Level, request.SelectedLevel)}");
@@ -444,9 +444,19 @@ public sealed class LessonPromptBuilder
             prompt.AppendLine($"- Selected context variant id: {request.SelectedContextVariantId}");
         }
 
+        if (!string.IsNullOrWhiteSpace(request.SelectedContextConfirmationLine))
+        {
+            prompt.AppendLine($"- Context confirmation line already shown by tutor: {ResolveScenarioPlaceholders(request.SelectedContextConfirmationLine, avatarProfile)}");
+        }
+
         if (!string.IsNullOrWhiteSpace(request.SelectedContextOpeningLine))
         {
-            prompt.AppendLine($"- Context opening line already shown by tutor: {request.SelectedContextOpeningLine}");
+            prompt.AppendLine($"- Context opening line already shown by tutor: {ResolveScenarioPlaceholders(request.SelectedContextOpeningLine, avatarProfile)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SelectedContextOpeningIntent))
+        {
+            prompt.AppendLine($"- Selected context opening intent: {ResolveScenarioPlaceholders(request.SelectedContextOpeningIntent, avatarProfile)}");
         }
 
         if (request.TargetLanguageKeyPhrases.Count > 0)
@@ -494,7 +504,12 @@ public sealed class LessonPromptBuilder
             || !string.IsNullOrWhiteSpace(request.ConversationVariationOrComplication)
             || !string.IsNullOrWhiteSpace(request.ConversationCorrectionMoment)
             || !string.IsNullOrWhiteSpace(request.ConversationWrapUpMessage)
-            || !string.IsNullOrWhiteSpace(request.ConversationFinalMessage);
+            || !string.IsNullOrWhiteSpace(request.ConversationFinalMessage)
+            || !string.IsNullOrWhiteSpace(request.ConversationWrapUpIntent)
+            || !string.IsNullOrWhiteSpace(request.ConversationFinalMessageIntent)
+            || request.RoleplayBeats.Count > 0
+            || !string.IsNullOrWhiteSpace(request.ReciprocalQuestionIfUserAsksTutorName)
+            || request.ExpectedScenarioProgression.Count > 0;
 
         if (!hasScenarioFlow)
         {
@@ -512,6 +527,33 @@ public sealed class LessonPromptBuilder
         AppendOptionalLine(prompt, "- Correction moment", request.ConversationCorrectionMoment);
         AppendOptionalLine(prompt, "- Wrap-up message from lesson JSON", request.ConversationWrapUpMessage);
         AppendOptionalLine(prompt, "- Final message from lesson JSON", request.ConversationFinalMessage);
+        AppendOptionalLine(prompt, "- Wrap-up intent", request.ConversationWrapUpIntent);
+        AppendOptionalLine(prompt, "- Final message intent", request.ConversationFinalMessageIntent);
+        if (request.ExpectedScenarioProgression.Count > 0)
+        {
+            prompt.AppendLine("- Expected scenario progression:");
+            foreach (var step in request.ExpectedScenarioProgression.Where(step => !string.IsNullOrWhiteSpace(step)))
+            {
+                prompt.AppendLine($"  - {step.Trim()}");
+            }
+        }
+
+        if (request.RoleplayBeats.Count > 0)
+        {
+            prompt.AppendLine("- Roleplay beats:");
+            foreach (var beat in request.RoleplayBeats.Where(beat => !string.IsNullOrWhiteSpace(beat.Intent)))
+            {
+                var beatId = string.IsNullOrWhiteSpace(beat.Id) ? "beat" : beat.Id.Trim();
+                prompt.AppendLine($"  - {beatId}: {beat.Intent.Trim()}");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ReciprocalQuestionIfUserAsksTutorName) || request.ReciprocalQuestionMustNotIgnoreUserQuestion)
+        {
+            prompt.AppendLine("- Reciprocal question handling:");
+            AppendOptionalLine(prompt, "  - If learner asks tutor name", request.ReciprocalQuestionIfUserAsksTutorName);
+            prompt.AppendLine($"  - Must not ignore learner's reciprocal question: {request.ReciprocalQuestionMustNotIgnoreUserQuestion}");
+        }
     }
 
     private static void AppendOptionalLine(StringBuilder prompt, string label, string value)
@@ -760,6 +802,8 @@ public sealed class LessonPromptBuilder
             SelectedContextVariantId = request.SelectedContextVariantId,
             SelectedContextTitle = request.SelectedContextTitle,
             SelectedContextOpeningLine = request.SelectedContextOpeningLine,
+            SelectedContextConfirmationLine = request.SelectedContextConfirmationLine,
+            SelectedContextOpeningIntent = request.SelectedContextOpeningIntent,
             UserTurnNumber = request.LearnerTurnCount,
             SoftWrapUpAfterUserTurn = request.SoftLearnerTurnLimit,
             FinalMessageAtUserTurn = request.HardLearnerTurnLimit,
@@ -772,6 +816,12 @@ public sealed class LessonPromptBuilder
             ConversationCorrectionMoment = request.ConversationCorrectionMoment,
             ConversationWrapUpMessage = request.ConversationWrapUpMessage,
             ConversationFinalMessage = request.ConversationFinalMessage,
+            ConversationWrapUpIntent = request.ConversationWrapUpIntent,
+            ConversationFinalMessageIntent = request.ConversationFinalMessageIntent,
+            RoleplayBeats = request.RoleplayBeats.Select(beat => new ScenarioRoleplayBeat { Id = beat.Id, Intent = beat.Intent }).ToArray(),
+            ReciprocalQuestionIfUserAsksTutorName = request.ReciprocalQuestionIfUserAsksTutorName,
+            ReciprocalQuestionMustNotIgnoreUserQuestion = request.ReciprocalQuestionMustNotIgnoreUserQuestion,
+            ExpectedScenarioProgression = request.ExpectedScenarioProgression,
             FeedbackRulesSummary = request.FeedbackRulesSummary,
             TutorProfileId = request.TutorProfileId,
             ActiveLevelProfileDifficultyNotes = request.ActiveLevelProfile.DifficultyNotes,
@@ -803,6 +853,13 @@ public sealed class LessonPromptBuilder
     private static bool IsIntroductionsSubtopic(LessonChatRequest request)
     {
         return string.Equals(ChooseFirstNonEmpty(request.Subtopic, request.SubtopicTitle), "Introductions", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolveScenarioPlaceholders(string value, TutorAvatarProfile avatarProfile)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Replace("{tutorName}", avatarProfile.DisplayName, StringComparison.OrdinalIgnoreCase).Trim();
     }
 
     private static string ChooseFirstNonEmpty(string? primary, string fallback)

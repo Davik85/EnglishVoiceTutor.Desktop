@@ -10,7 +10,11 @@ public sealed class ContextVariant
 
     public string ReasonForMeeting { get; set; } = string.Empty;
 
+    public string ContextConfirmationLine { get; set; } = string.Empty;
+
     public string OpeningLine { get; set; } = string.Empty;
+
+    public string OpeningIntent { get; set; } = string.Empty;
 
     public List<string> Aliases { get; set; } = [];
 }

@@ -1631,7 +1631,9 @@ public partial class LessonChatViewModel : ViewModelBase
                 AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
                 SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
                 SelectedContextTitle = GetSelectedContextTitle(),
-                SelectedContextOpeningLine = selectedContextVariant?.OpeningLine ?? lessonScenario.ConversationFlow.DefaultOpeningExample,
+                SelectedContextOpeningLine = GetSelectedContextOpeningLine(),
+                SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant),
+                SelectedContextOpeningIntent = selectedContextVariant?.OpeningIntent ?? string.Empty,
                 UserTurnNumber = nextLearnerTurnCount,
                 SoftWrapUpAfterUserTurn = softWrapUpTurn,
                 FinalMessageAtUserTurn = finalTurn,
@@ -1644,6 +1646,12 @@ public partial class LessonChatViewModel : ViewModelBase
                 ConversationCorrectionMoment = lessonScenario.ConversationFlow.CorrectionMoment,
                 ConversationWrapUpMessage = lessonScenario.ConversationFlow.WrapUpMessage,
                 ConversationFinalMessage = GetFinalLessonMessage(),
+                ConversationWrapUpIntent = lessonScenario.ConversationFlow.WrapUpIntent,
+                ConversationFinalMessageIntent = lessonScenario.ConversationFlow.FinalMessageIntent,
+                RoleplayBeats = lessonScenario.RoleplayBeats.Select(beat => new ScenarioRoleplayBeat { Id = beat.Id, Intent = beat.Intent }).ToArray(),
+                ReciprocalQuestionIfUserAsksTutorName = lessonScenario.ReciprocalQuestionHandling.IfUserAsksTutorName,
+                ReciprocalQuestionMustNotIgnoreUserQuestion = lessonScenario.ReciprocalQuestionHandling.MustNotIgnoreUserQuestion,
+                ExpectedScenarioProgression = lessonScenario.ExpectedScenarioProgression,
                 FeedbackRulesSummary = BuildFeedbackRulesSummary(),
                 TutorProfileId = tutorAvatarId,
                 ActiveLevelProfileDifficultyNotes = activeLevelProfile.DifficultyNotes,
@@ -1794,7 +1802,9 @@ public partial class LessonChatViewModel : ViewModelBase
             LearningGoal = LearningGoal,
             SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
             SelectedContextTitle = GetSelectedContextTitle(),
-            SelectedContextOpeningLine = selectedContextVariant?.OpeningLine ?? lessonScenario.ConversationFlow.DefaultOpeningExample,
+            SelectedContextOpeningLine = GetSelectedContextOpeningLine(),
+            SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant),
+            SelectedContextOpeningIntent = selectedContextVariant?.OpeningIntent ?? string.Empty,
             LastBotMessage = lastBotMessage,
             LearnerTurnCount = LearnerTurnCount,
             SoftLearnerTurnLimit = GetSoftWrapUpTurn(),
@@ -1808,6 +1818,12 @@ public partial class LessonChatViewModel : ViewModelBase
             ConversationCorrectionMoment = lessonScenario.ConversationFlow.CorrectionMoment,
             ConversationWrapUpMessage = lessonScenario.ConversationFlow.WrapUpMessage,
             ConversationFinalMessage = GetFinalLessonMessage(),
+            ConversationWrapUpIntent = lessonScenario.ConversationFlow.WrapUpIntent,
+            ConversationFinalMessageIntent = lessonScenario.ConversationFlow.FinalMessageIntent,
+            RoleplayBeats = lessonScenario.RoleplayBeats,
+            ReciprocalQuestionIfUserAsksTutorName = lessonScenario.ReciprocalQuestionHandling.IfUserAsksTutorName,
+            ReciprocalQuestionMustNotIgnoreUserQuestion = lessonScenario.ReciprocalQuestionHandling.MustNotIgnoreUserQuestion,
+            ExpectedScenarioProgression = lessonScenario.ExpectedScenarioProgression,
             FeedbackRulesSummary = BuildFeedbackRulesSummary(),
             AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
             ActiveLevelProfile = activeLevelProfile,
@@ -2085,7 +2101,7 @@ public partial class LessonChatViewModel : ViewModelBase
             selectedContextVariant = matchedVariant;
             selectedCustomContextTitle = string.Empty;
 
-            var startMessage = $"Great! Let's imagine {BuildContextConfirmationText(matchedVariant)}.\n\n{matchedVariant.OpeningLine}";
+            var startMessage = $"{GetSelectedContextConfirmationLine(matchedVariant)}\n\n{GetSelectedContextOpeningLine()}";
             await StartActiveRoleplayAfterContextSelectionAsync(startMessage, learnerTurnCountBefore);
             return true;
         }
@@ -2097,7 +2113,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var openingLine = string.IsNullOrWhiteSpace(lessonScenario.ConversationFlow.DefaultOpeningExample)
                 ? "Hi! Nice to meet you. What's your name?"
-                : lessonScenario.ConversationFlow.DefaultOpeningExample.Trim();
+                : GetSelectedContextOpeningLine();
             await StartActiveRoleplayAfterContextSelectionAsync($"Good idea. Let's keep it simple: {userMessage.Trim()}.\n\n{openingLine}", learnerTurnCountBefore);
             return true;
         }
@@ -2240,6 +2256,28 @@ public partial class LessonChatViewModel : ViewModelBase
         return titles.Length == 0
             ? $"Choose a simple situation about {SelectedSubtopic.Title.ToLowerInvariant()}."
             : $"You can choose: {string.Join(", ", titles)}.";
+    }
+
+    private string ResolveScenarioPlaceholders(string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Replace("{tutorName}", TutorAvatarDisplayName, StringComparison.OrdinalIgnoreCase).Trim();
+    }
+
+    private string GetSelectedContextOpeningLine()
+    {
+        return ResolveScenarioPlaceholders(selectedContextVariant?.OpeningLine ?? lessonScenario.ConversationFlow.DefaultOpeningExample);
+    }
+
+    private string GetSelectedContextConfirmationLine(ContextVariant variant)
+    {
+        if (!string.IsNullOrWhiteSpace(variant.ContextConfirmationLine))
+        {
+            return ResolveScenarioPlaceholders(variant.ContextConfirmationLine);
+        }
+
+        return $"Great! Let's imagine {BuildContextConfirmationText(variant)}.";
     }
 
     private static string BuildContextConfirmationText(ContextVariant variant)
@@ -2530,7 +2568,9 @@ public partial class LessonChatViewModel : ViewModelBase
                 AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
                 SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
                 SelectedContextTitle = GetSelectedContextTitle(),
-                SelectedContextOpeningLine = selectedContextVariant?.OpeningLine ?? lessonScenario.ConversationFlow.DefaultOpeningExample,
+                SelectedContextOpeningLine = GetSelectedContextOpeningLine(),
+                SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant),
+                SelectedContextOpeningIntent = selectedContextVariant?.OpeningIntent ?? string.Empty,
                 UserTurnNumber = LearnerTurnCount,
                 SoftWrapUpAfterUserTurn = softWrapUpTurn,
                 FinalMessageAtUserTurn = finalTurn,
@@ -2543,6 +2583,12 @@ public partial class LessonChatViewModel : ViewModelBase
                 ConversationCorrectionMoment = lessonScenario.ConversationFlow.CorrectionMoment,
                 ConversationWrapUpMessage = lessonScenario.ConversationFlow.WrapUpMessage,
                 ConversationFinalMessage = GetFinalLessonMessage(),
+                ConversationWrapUpIntent = lessonScenario.ConversationFlow.WrapUpIntent,
+                ConversationFinalMessageIntent = lessonScenario.ConversationFlow.FinalMessageIntent,
+                RoleplayBeats = lessonScenario.RoleplayBeats.Select(beat => new ScenarioRoleplayBeat { Id = beat.Id, Intent = beat.Intent }).ToArray(),
+                ReciprocalQuestionIfUserAsksTutorName = lessonScenario.ReciprocalQuestionHandling.IfUserAsksTutorName,
+                ReciprocalQuestionMustNotIgnoreUserQuestion = lessonScenario.ReciprocalQuestionHandling.MustNotIgnoreUserQuestion,
+                ExpectedScenarioProgression = lessonScenario.ExpectedScenarioProgression,
                 FeedbackRulesSummary = BuildFeedbackRulesSummary(),
                 TutorProfileId = tutorAvatarId,
                 ActiveLevelProfileDifficultyNotes = activeLevelProfile.DifficultyNotes,

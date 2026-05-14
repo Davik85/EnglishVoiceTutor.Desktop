@@ -56,6 +56,10 @@ public sealed class LessonChatBackendRequest
 
     public string SelectedContextOpeningLine { get; init; } = string.Empty;
 
+    public string SelectedContextConfirmationLine { get; init; } = string.Empty;
+
+    public string SelectedContextOpeningIntent { get; init; } = string.Empty;
+
     public int UserTurnNumber { get; init; }
 
     public int SoftWrapUpAfterUserTurn { get; init; }
@@ -79,6 +83,18 @@ public sealed class LessonChatBackendRequest
     public string ConversationWrapUpMessage { get; init; } = string.Empty;
 
     public string ConversationFinalMessage { get; init; } = string.Empty;
+
+    public string ConversationWrapUpIntent { get; init; } = string.Empty;
+
+    public string ConversationFinalMessageIntent { get; init; } = string.Empty;
+
+    public IReadOnlyList<ScenarioRoleplayBeat> RoleplayBeats { get; init; } = [];
+
+    public string ReciprocalQuestionIfUserAsksTutorName { get; init; } = string.Empty;
+
+    public bool ReciprocalQuestionMustNotIgnoreUserQuestion { get; init; }
+
+    public IReadOnlyList<string> ExpectedScenarioProgression { get; init; } = [];
 
     public string FeedbackRulesSummary { get; init; } = string.Empty;
 
@@ -107,4 +123,11 @@ public sealed class LessonChatBackendRequest
     public IReadOnlyList<string> ActiveLevelProfileAddedUsefulConstructions { get; init; } = [];
 
     public IReadOnlyList<string> ActiveLevelProfileAddedGrammarFocus { get; init; } = [];
+}
+
+public sealed class ScenarioRoleplayBeat
+{
+    public string Id { get; init; } = string.Empty;
+
+    public string Intent { get; init; } = string.Empty;
 }

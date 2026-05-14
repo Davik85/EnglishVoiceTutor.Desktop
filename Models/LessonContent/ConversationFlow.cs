@@ -27,4 +27,8 @@ public sealed class ConversationFlow
     public int FinalMessageAtUserTurn { get; set; }
 
     public string FinalMessage { get; set; } = string.Empty;
+
+    public string WrapUpIntent { get; set; } = string.Empty;
+
+    public string FinalMessageIntent { get; set; } = string.Empty;
 }

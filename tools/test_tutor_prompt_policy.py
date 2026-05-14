@@ -77,6 +77,25 @@ def main() -> int:
     dumped_introductions = json.dumps(introductions)
     assert_not_contains(dumped_introductions, "Elena", "avatar-specific scenario content")
     assert_not_contains(dumped_introductions, "Alex", "stale scenario tutor name")
+    assert_not_contains(dumped_introductions, "levelSpecificTurnPlans", "new duplicated level-specific turn plan field")
+    assert_not_contains(dumped_introductions, "forbiddenByLevel", "new duplicated level-specific forbidden field")
+    assert_not_contains(dumped_introductions, "A1-only", "A1-only scenario rule")
+
+    new_neighbor = next(variant for variant in introductions["controlledVariation"]["contextVariants"] if variant["id"] == "new_neighbor")
+    assert_contains(new_neighbor["openingLine"], "{tutorName}", "profile-driven tutor name placeholder")
+    assert_contains(new_neighbor["openingLine"], "I live next door", "neighbor self-introduction opening")
+    assert_contains(new_neighbor["contextConfirmationLine"], "meet a new neighbor", "context confirmation line")
+    assert_contains(dumped_introductions, "roleplayBeats", "scenario roleplay beats")
+    assert_contains(dumped_introductions, "reciprocalQuestionHandling", "reciprocal question handling")
+
+    for needle in [
+        "ResolveScenarioPlaceholders(request.SelectedContextOpeningLine, avatarProfile)",
+        "Roleplay beats:",
+        "Reciprocal question handling:",
+        "SelectedContextConfirmationLine = request.SelectedContextConfirmationLine",
+        "using the active tutor profile name",
+    ]:
+        assert_contains(prompt_builder, needle, "prompt-builder shared scenario rule consumption")
 
     assert_contains(free_conversation, "Which topic would you like to practice?", "free conversation open-topic prompt")
 

@@ -33,6 +33,8 @@ public sealed record RealtimeVoiceSessionStartRequest
     public string SelectedContextVariantId { get; init; } = string.Empty;
     public string SelectedContextTitle { get; init; } = string.Empty;
     public string SelectedContextOpeningLine { get; init; } = string.Empty;
+    public string SelectedContextConfirmationLine { get; init; } = string.Empty;
+    public string SelectedContextOpeningIntent { get; init; } = string.Empty;
     public string LastBotMessage { get; init; } = string.Empty;
     public int LearnerTurnCount { get; init; }
     public int SoftLearnerTurnLimit { get; init; }
@@ -53,10 +55,22 @@ public sealed record RealtimeVoiceSessionStartRequest
     public string ConversationWrapUpMessage { get; init; } = string.Empty;
 
     public string ConversationFinalMessage { get; init; } = string.Empty;
+    public string ConversationWrapUpIntent { get; init; } = string.Empty;
+    public string ConversationFinalMessageIntent { get; init; } = string.Empty;
+    public IReadOnlyList<RealtimeRoleplayBeat> RoleplayBeats { get; init; } = [];
+    public string ReciprocalQuestionIfUserAsksTutorName { get; init; } = string.Empty;
+    public bool ReciprocalQuestionMustNotIgnoreUserQuestion { get; init; }
+    public IReadOnlyList<string> ExpectedScenarioProgression { get; init; } = [];
     public string FeedbackRulesSummary { get; init; } = string.Empty;
     public IReadOnlyList<string> AiTutorPromptInstructions { get; init; } = [];
     public RealtimeLevelProfile ActiveLevelProfile { get; init; } = new();
     public IReadOnlyList<RealtimeRecentConversationMessage> RecentMessages { get; init; } = [];
+}
+
+public sealed record RealtimeRoleplayBeat
+{
+    public string Id { get; init; } = string.Empty;
+    public string Intent { get; init; } = string.Empty;
 }
 
 public sealed record RealtimeLevelProfile
