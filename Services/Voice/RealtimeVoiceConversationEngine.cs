@@ -30,6 +30,9 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
     public event EventHandler<AssistantAudioChunkReceivedEventArgs>? AssistantAudioChunkReceived;
     public event EventHandler<AssistantTranscriptDeltaEventArgs>? AssistantTranscriptDeltaReceived;
     public event EventHandler<AssistantTurnCompletedEventArgs>? AssistantTurnCompleted;
+    public event EventHandler<UserAudioCommittedEventArgs>? UserAudioCommitted;
+    public event EventHandler<UserTranscriptDeltaEventArgs>? UserTranscriptDeltaReceived;
+    public event EventHandler<UserTranscriptCompletedEventArgs>? UserTranscriptCompleted;
     public event EventHandler<VoiceSessionErrorEventArgs>? ErrorReceived;
 
     public async Task StartSessionAsync(VoiceSessionStartRequest request, CancellationToken cancellationToken)
@@ -79,6 +82,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
 
     public Task CommitUserAudioAsync(CancellationToken cancellationToken)
     {
+        Debug.WriteLine($"Realtime user audio commit requested: SessionId={sessionId}; UserAudioCommitRequestedMs={sessionStopwatch.ElapsedMilliseconds}.");
         return SendBackendEventAsync("user.audio.commit", new { }, cancellationToken);
     }
 
@@ -200,23 +204,41 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         {
             case "session.started":
                 sessionStartCompletionSource?.TrySetResult(true);
-                Debug.WriteLine($"Realtime voice session started acknowledgement received: SessionId={eventSessionId}; StartMs={sessionStopwatch.ElapsedMilliseconds}.");
+                Debug.WriteLine($"Realtime voice session started acknowledgement received: SessionId={eventSessionId}; SessionConfiguredMs={sessionStopwatch.ElapsedMilliseconds}.");
                 break;
             case "assistant.audio.delta":
                 var audioBase64 = root.GetProperty("audio").GetString() ?? string.Empty;
                 var audioBytes = Convert.FromBase64String(audioBase64);
+                Debug.WriteLine($"Realtime assistant audio delta received: SessionId={eventSessionId}; ResponseId={responseId}; AudioDeltaMs={sessionStopwatch.ElapsedMilliseconds}; Bytes={audioBytes.Length}.");
                 AssistantAudioChunkReceived?.Invoke(this, new AssistantAudioChunkReceivedEventArgs(eventSessionId, responseId, audioBytes, sessionStopwatch.ElapsedMilliseconds));
                 break;
             case "assistant.transcript.delta":
                 var delta = root.GetProperty("delta").GetString() ?? string.Empty;
                 activeTranscript.Append(delta);
-                Debug.WriteLine($"Realtime first transcript delta ms: SessionId={eventSessionId}; ResponseId={responseId}; FirstTranscriptDeltaMs={sessionStopwatch.ElapsedMilliseconds}.");
+                Debug.WriteLine($"Realtime assistant transcript delta received: SessionId={eventSessionId}; ResponseId={responseId}; TranscriptDeltaMs={sessionStopwatch.ElapsedMilliseconds}; DeltaLength={delta.Length}; TranscriptLength={activeTranscript.Length}.");
                 AssistantTranscriptDeltaReceived?.Invoke(this, new AssistantTranscriptDeltaEventArgs(eventSessionId, responseId, delta, activeTranscript.ToString(), sessionStopwatch.ElapsedMilliseconds));
                 break;
             case "assistant.turn.completed":
                 var transcript = root.TryGetProperty("transcript", out var transcriptProperty) ? transcriptProperty.GetString() ?? activeTranscript.ToString() : activeTranscript.ToString();
-                Debug.WriteLine($"Realtime assistant turn completed ms: SessionId={eventSessionId}; ResponseId={responseId}; AssistantTurnCompletedMs={sessionStopwatch.ElapsedMilliseconds}; TranscriptLength={transcript.Length}.");
+                Debug.WriteLine($"Realtime assistant transcript finalized: SessionId={eventSessionId}; ResponseId={responseId}; AssistantTurnCompletedMs={sessionStopwatch.ElapsedMilliseconds}; TranscriptLength={transcript.Length}.");
                 AssistantTurnCompleted?.Invoke(this, new AssistantTurnCompletedEventArgs(eventSessionId, responseId, transcript, sessionStopwatch.ElapsedMilliseconds));
+                break;
+            case "user.audio.committed":
+                var committedItemId = root.TryGetProperty("itemId", out var committedItemProperty) ? committedItemProperty.GetString() ?? string.Empty : string.Empty;
+                Debug.WriteLine($"Realtime user audio committed: SessionId={eventSessionId}; ItemId={committedItemId}; UserAudioCommittedMs={sessionStopwatch.ElapsedMilliseconds}.");
+                UserAudioCommitted?.Invoke(this, new UserAudioCommittedEventArgs(eventSessionId, committedItemId, sessionStopwatch.ElapsedMilliseconds));
+                break;
+            case "user.transcript.delta":
+                var userDelta = root.TryGetProperty("delta", out var userDeltaProperty) ? userDeltaProperty.GetString() ?? string.Empty : string.Empty;
+                var userDeltaItemId = root.TryGetProperty("itemId", out var userDeltaItemProperty) ? userDeltaItemProperty.GetString() ?? string.Empty : string.Empty;
+                Debug.WriteLine($"Realtime user transcript delta received: SessionId={eventSessionId}; ItemId={userDeltaItemId}; TranscriptLength={userDelta.Length}; UserTranscriptDeltaMs={sessionStopwatch.ElapsedMilliseconds}.");
+                UserTranscriptDeltaReceived?.Invoke(this, new UserTranscriptDeltaEventArgs(eventSessionId, userDeltaItemId, userDelta, sessionStopwatch.ElapsedMilliseconds));
+                break;
+            case "user.transcript.completed":
+                var userTranscript = root.TryGetProperty("transcript", out var userTranscriptProperty) ? userTranscriptProperty.GetString() ?? string.Empty : string.Empty;
+                var userTranscriptItemId = root.TryGetProperty("itemId", out var userTranscriptItemProperty) ? userTranscriptItemProperty.GetString() ?? string.Empty : string.Empty;
+                Debug.WriteLine($"Realtime user transcript complete received: SessionId={eventSessionId}; ItemId={userTranscriptItemId}; TranscriptLength={userTranscript.Trim().Length}; UserTranscriptCompletedMs={sessionStopwatch.ElapsedMilliseconds}.");
+                UserTranscriptCompleted?.Invoke(this, new UserTranscriptCompletedEventArgs(eventSessionId, userTranscriptItemId, userTranscript, sessionStopwatch.ElapsedMilliseconds));
                 break;
             case "session.error":
                 var message = root.TryGetProperty("message", out var messageProperty) ? messageProperty.GetString() ?? "Realtime voice mode is unavailable. Please try text mode." : "Realtime voice mode is unavailable. Please try text mode.";
