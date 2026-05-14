@@ -63,7 +63,7 @@ public sealed class LessonPromptBuilder
     {
         var prompt = new StringBuilder();
         var chatRequest = CreateLessonChatRequest(request);
-        var avatarProfile = _avatarProfileProvider.GetById(chatRequest.TutorAvatarId);
+        var avatarProfile = CreateRealtimeTutorProfile(request, _avatarProfileProvider.GetById(chatRequest.TutorAvatarId));
 
         prompt.AppendLine("You are the realtime voice engine for English Voice Tutor Desktop.");
         prompt.AppendLine("Voice-first rule: every assistant response must produce audio and a matching transcript from the same Realtime response id and same turn. Do not rely on separate TTS or separate text generation.");
@@ -90,7 +90,7 @@ public sealed class LessonPromptBuilder
     public string BuildRealtimeResponseInstructions(RealtimeVoiceSessionStartRequest request)
     {
         var chatRequest = CreateLessonChatRequest(request);
-        var avatarProfile = _avatarProfileProvider.GetById(chatRequest.TutorAvatarId);
+        var avatarProfile = CreateRealtimeTutorProfile(request, _avatarProfileProvider.GetById(chatRequest.TutorAvatarId));
         var prompt = new StringBuilder();
 
         prompt.AppendLine($"Respond now as {avatarProfile.DisplayName}, the selected tutor profile.");
@@ -126,10 +126,7 @@ public sealed class LessonPromptBuilder
             prompt.AppendLine("If the learner goes off-topic, briefly acknowledge and redirect back to the selected lesson goal and context.");
         }
 
-        if (IsA1(chatRequest))
-        {
-            AppendA1StrictRules(prompt, chatRequest);
-        }
+        AppendLevelSpecificRealtimeRules(prompt, chatRequest, avatarProfile);
 
         return prompt.ToString();
     }
@@ -310,7 +307,11 @@ public sealed class LessonPromptBuilder
 
         AppendTutorIdentityRules(prompt, avatarProfile);
 
-        if (IsA1(request))
+        if (string.Equals(mode, RealtimeVoiceMode, StringComparison.OrdinalIgnoreCase))
+        {
+            AppendLevelSpecificRealtimeRules(prompt, request, avatarProfile);
+        }
+        else if (IsA1(request))
         {
             AppendA1StrictRules(prompt, request);
         }
@@ -318,19 +319,66 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine();
     }
 
+
+    private static void AppendLevelSpecificRealtimeRules(StringBuilder prompt, LessonChatRequest request, TutorAvatarProfile avatarProfile)
+    {
+        var level = ChooseFirstNonEmpty(request.SelectedLevel, request.Level).ToLowerInvariant();
+        prompt.AppendLine("Level-specific realtime behavior:");
+
+        var speakingRule = avatarProfile.SpeakingRules.FirstOrDefault(rule => level.StartsWith(rule.Key, StringComparison.OrdinalIgnoreCase)).Value;
+        if (!string.IsNullOrWhiteSpace(speakingRule))
+        {
+            prompt.AppendLine($"- Tutor profile speaking rule: {speakingRule.Trim()}");
+        }
+
+        if (level.StartsWith("a1", StringComparison.OrdinalIgnoreCase))
+        {
+            AppendA1StrictRules(prompt, request);
+            prompt.AppendLine("- Use 1-2 short sentences.");
+            prompt.AppendLine("- Use simple words.");
+            prompt.AppendLine("- Ask one simple question.");
+        }
+        else if (level.StartsWith("a2", StringComparison.OrdinalIgnoreCase))
+        {
+            prompt.AppendLine("- Use 1-3 short sentences.");
+            prompt.AppendLine("- Ask one clear follow-up question.");
+            prompt.AppendLine("- Use simple natural English.");
+        }
+        else if (level.StartsWith("b1", StringComparison.OrdinalIgnoreCase))
+        {
+            prompt.AppendLine("- Use natural but concise conversation.");
+            prompt.AppendLine("- You may ask a follow-up and add one detail.");
+        }
+        else if (level.StartsWith("b2", StringComparison.OrdinalIgnoreCase))
+        {
+            prompt.AppendLine("- Use more natural and nuanced conversation.");
+            prompt.AppendLine("- Avoid long monologues.");
+        }
+
+        prompt.AppendLine();
+    }
+
     private static void AppendTutorIdentityRules(StringBuilder prompt, TutorAvatarProfile avatarProfile)
     {
+        prompt.AppendLine($"- You are {avatarProfile.DisplayName}.");
+        prompt.AppendLine($"- If the learner asks your name, answer with \"I'm {avatarProfile.DisplayName}.\"");
         prompt.AppendLine($"- If you introduce yourself by name, use only this exact tutor name: {avatarProfile.DisplayName}.");
-        prompt.AppendLine("- Do not invent or use any other tutor name.");
-        prompt.AppendLine("- Prefer no tutor self-naming in A1 unless the selected scenario explicitly needs it.");
+        prompt.AppendLine($"- Do not say you are from any place except {avatarProfile.HomeCity}, {avatarProfile.CountryOrRegion}.");
+        prompt.AppendLine("- Do not invent or use any other tutor name, city, country, job, study field, age, hobby, or background.");
+        prompt.AppendLine("- Stay consistent with the selected tutor profile.");
     }
 
     private static void AppendGuidedRoleplayRetentionRules(StringBuilder prompt)
     {
         prompt.AppendLine("Guided roleplay retention rules:");
+        prompt.AppendLine("- This is active guided roleplay, not free conversation.");
+        prompt.AppendLine("- You are still the selected tutor avatar while playing the role required by the scenario.");
+        prompt.AppendLine("- If the learner asks a personal small-talk question, answer using your tutor profile, then return to the scenario.");
         prompt.AppendLine("- Stay inside the selected roleplay context and continue from the last visible tutor message.");
         prompt.AppendLine("- Do not ask the learner to choose a new topic, context, or situation during active roleplay.");
         prompt.AppendLine("- Do not offer unrelated help or tips.");
+        prompt.AppendLine("- Do not say: \"How can I " + "assist you today?\"");
+        prompt.AppendLine("- Do not say: \"What would you like to " + "discuss?\"");
         prompt.AppendLine("- Keep the selected lesson goal, target language, and grammar focus fixed.");
     }
 
@@ -342,6 +390,8 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("- Ask one question at a time.");
         prompt.AppendLine("- Avoid phrasal verbs when a simpler verb exists.");
         prompt.AppendLine("- Avoid complex tenses unless they are the lesson target.");
+        prompt.AppendLine("- Avoid long suggestions.");
+        prompt.AppendLine("- Avoid long explanations unless the learner asks.");
         prompt.AppendLine("- No long advice and no explanations inside roleplay unless correcting one important mistake.");
         prompt.AppendLine("- No generic assistant phrases.");
         prompt.AppendLine("- One short response plus one question is usually enough.");
@@ -350,6 +400,7 @@ public sealed class LessonPromptBuilder
         {
             prompt.AppendLine("A1 introductions/new-neighbor rules:");
             prompt.AppendLine("- After 'My name is David.', a good reply is: 'Nice to meet you, David. Where are you from?'");
+            prompt.AppendLine("- If the learner asks your name after sharing their country, answer simply: 'I'm Elena. Nice to meet you.' You may add: 'Do you live here now?'");
             prompt.AppendLine("- After 'I am from Russia.', a good reply is: 'Nice. Do you live here now?' or 'Good. Where do you live?'");
             prompt.AppendLine("- Do not ask: 'Where did you move from?'");
             prompt.AppendLine("- Do not ask: 'How long have you been living here?'");
@@ -573,15 +624,23 @@ public sealed class LessonPromptBuilder
     private static void AppendAvatarProfile(StringBuilder prompt, TutorAvatarProfile avatarProfile)
     {
         prompt.AppendLine(TutorAvatarProfileHeader);
+        prompt.AppendLine($"You are {avatarProfile.DisplayName}.");
+        prompt.AppendLine("Profile:");
         prompt.AppendLine($"- Id: {avatarProfile.Id}");
         prompt.AppendLine($"- Display name: {avatarProfile.DisplayName}");
-        prompt.AppendLine($"- Age: {avatarProfile.Age}");
-        prompt.AppendLine($"- Location: {avatarProfile.Location}");
-        prompt.AppendLine($"- Role: {avatarProfile.Role}");
-        prompt.AppendLine($"- Interests: {string.Join(", ", avatarProfile.Interests)}");
-        prompt.AppendLine($"- Personality: {avatarProfile.PersonalitySummary}");
-        prompt.AppendLine($"- Speaking style: {avatarProfile.SpeakingStyle}");
-        prompt.AppendLine($"- Boundaries and lesson behavior: {avatarProfile.Boundaries}");
+        prompt.AppendLine($"- Age: {avatarProfile.Age}.");
+        prompt.AppendLine($"- Lives in {avatarProfile.HomeCity}, {avatarProfile.CountryOrRegion}.");
+        prompt.AppendLine($"- Studies {avatarProfile.Studies}.");
+        prompt.AppendLine($"- Enjoys {FormatNaturalList(avatarProfile.Hobbies)}.");
+        prompt.AppendLine("Style:");
+        prompt.AppendLine($"- {FormatNaturalList(avatarProfile.CommunicationStyle)}.");
+        prompt.AppendLine("- Speak clearly and briefly.");
+        prompt.AppendLine("Identity rules:");
+        AppendTutorIdentityRules(prompt, avatarProfile);
+        foreach (var rule in avatarProfile.IdentityRules.Where(rule => !string.IsNullOrWhiteSpace(rule)))
+        {
+            prompt.AppendLine($"- {rule.Trim()}");
+        }
         prompt.AppendLine();
     }
 
@@ -634,6 +693,44 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine();
     }
 
+
+
+    private static TutorAvatarProfile CreateRealtimeTutorProfile(RealtimeVoiceSessionStartRequest request, TutorAvatarProfile fallbackProfile)
+    {
+        if (string.IsNullOrWhiteSpace(request.TutorDisplayName)
+            || request.TutorProfileAge <= 0
+            || string.IsNullOrWhiteSpace(request.TutorProfileHomeCity)
+            || string.IsNullOrWhiteSpace(request.TutorProfileStudies))
+        {
+            return fallbackProfile;
+        }
+
+        return new TutorAvatarProfile
+        {
+            Id = string.IsNullOrWhiteSpace(request.TutorProfileId) ? fallbackProfile.Id : request.TutorProfileId.Trim(),
+            DisplayName = request.TutorDisplayName.Trim(),
+            Age = request.TutorProfileAge,
+            HomeCity = request.TutorProfileHomeCity.Trim(),
+            CountryOrRegion = string.IsNullOrWhiteSpace(request.TutorProfileCountryOrRegion) ? fallbackProfile.CountryOrRegion : request.TutorProfileCountryOrRegion.Trim(),
+            Studies = request.TutorProfileStudies.Trim(),
+            Hobbies = request.TutorProfileHobbies.Count > 0 ? request.TutorProfileHobbies.ToList() : fallbackProfile.Hobbies,
+            CommunicationStyle = request.TutorProfileCommunicationStyle.Count > 0 ? request.TutorProfileCommunicationStyle.ToList() : fallbackProfile.CommunicationStyle,
+            SpeakingRules = request.TutorProfileSpeakingRules.Count > 0 ? new Dictionary<string, string>(request.TutorProfileSpeakingRules, StringComparer.OrdinalIgnoreCase) : fallbackProfile.SpeakingRules,
+            IdentityRules = request.TutorProfileIdentityRules.Count > 0 ? request.TutorProfileIdentityRules.ToList() : fallbackProfile.IdentityRules
+        };
+    }
+
+    private static string FormatNaturalList(IEnumerable<string> values)
+    {
+        var items = values.Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value.Trim()).ToArray();
+        return items.Length switch
+        {
+            0 => string.Empty,
+            1 => items[0],
+            2 => $"{items[0]} and {items[1]}",
+            _ => $"{string.Join(", ", items[..^1])}, and {items[^1]}"
+        };
+    }
 
     private static LessonChatRequest CreateLessonChatRequest(RealtimeVoiceSessionStartRequest request)
     {

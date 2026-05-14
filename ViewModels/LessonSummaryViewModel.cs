@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Services;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
@@ -10,6 +11,8 @@ public partial class LessonSummaryViewModel : ViewModelBase
     private readonly Action navigateToSubtopics;
     private readonly Action navigateToHome;
     private readonly AppLocalizedText localizedText;
+    private readonly LessonChatBackendService lessonChatBackendService;
+    private readonly string targetTranslationLanguage;
 
     public string SelectedLevel { get; }
 
@@ -37,16 +40,85 @@ public partial class LessonSummaryViewModel : ViewModelBase
 
     public ObservableCollection<string> UsefulPhrases { get; }
 
+    private string translatedSummaryText = string.Empty;
+
+    public string TranslatedSummaryText
+    {
+        get => translatedSummaryText;
+        private set => SetProperty(ref translatedSummaryText, value);
+    }
+
+    private bool isTranslationVisible;
+
+    public bool IsTranslationVisible
+    {
+        get => isTranslationVisible;
+        private set
+        {
+            if (SetProperty(ref isTranslationVisible, value))
+            {
+                OnPropertyChanged(nameof(TranslationButtonText));
+                OnPropertyChanged(nameof(HasTranslatedSummary));
+            }
+        }
+    }
+
+    private bool isTranslating;
+
+    public bool IsTranslating
+    {
+        get => isTranslating;
+        private set
+        {
+            if (SetProperty(ref isTranslating, value))
+            {
+                OnPropertyChanged(nameof(TranslationStatusText));
+                ToggleSummaryTranslationCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    private string translationErrorText = string.Empty;
+
+    public string TranslationErrorText
+    {
+        get => translationErrorText;
+        private set
+        {
+            if (SetProperty(ref translationErrorText, value))
+            {
+                OnPropertyChanged(nameof(HasTranslationError));
+            }
+        }
+    }
+
+    public bool HasTranslatedSummary => IsTranslationVisible && !string.IsNullOrWhiteSpace(TranslatedSummaryText);
+
+    public bool HasTranslationError => !string.IsNullOrWhiteSpace(TranslationErrorText);
+
+    public string TranslationButtonText => IsTranslationVisible
+        ? localizedText.HideTranslationButtonText
+        : localizedText.TranslateButtonText;
+
+    public string TranslationLabel => localizedText.TranslationLabel;
+
+    public string TranslationStatusText => IsTranslating ? localizedText.TranslationLoadingText : string.Empty;
+
     public LessonSummaryViewModel(
         AppLocalizedText localizedText,
         string selectedLevel,
         Topic selectedTopic,
         Subtopic selectedSubtopic,
         LessonSummaryInput summaryInput,
+        LessonChatBackendService lessonChatBackendService,
+        string nativeLanguageName,
+        string interfaceLanguageId,
         Action navigateToSubtopics,
         Action navigateToHome)
     {
         this.localizedText = localizedText;
+        this.lessonChatBackendService = lessonChatBackendService;
+        targetTranslationLanguage = ResolveTargetTranslationLanguage(nativeLanguageName, interfaceLanguageId);
         SelectedLevel = selectedLevel;
         SelectedTopic = selectedTopic;
         SelectedSubtopic = selectedSubtopic;
@@ -56,6 +128,93 @@ public partial class LessonSummaryViewModel : ViewModelBase
         GoodText = BuildGoodText(summaryInput, localizedText);
         ImproveText = BuildImproveText(summaryInput, localizedText);
         UsefulPhrases = new ObservableCollection<string>(BuildUsefulPhrases(summaryInput, localizedText));
+    }
+
+
+    [RelayCommand(CanExecute = nameof(CanToggleSummaryTranslation))]
+    private async Task ToggleSummaryTranslationAsync()
+    {
+        if (IsTranslationVisible)
+        {
+            IsTranslationVisible = false;
+            TranslationErrorText = string.Empty;
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(TranslatedSummaryText))
+        {
+            IsTranslationVisible = true;
+            TranslationErrorText = string.Empty;
+            return;
+        }
+
+        var sourceText = BuildVisibleSummaryText();
+        if (string.IsNullOrWhiteSpace(sourceText))
+        {
+            TranslatedSummaryText = string.Empty;
+            IsTranslationVisible = false;
+            TranslationErrorText = string.Empty;
+            return;
+        }
+
+        IsTranslating = true;
+        TranslationErrorText = string.Empty;
+
+        try
+        {
+            TranslatedSummaryText = await lessonChatBackendService.TranslateTextAsync(sourceText, targetTranslationLanguage);
+            IsTranslationVisible = true;
+        }
+        catch
+        {
+            TranslationErrorText = "Could not translate summary. Please try again.";
+            IsTranslationVisible = false;
+        }
+        finally
+        {
+            IsTranslating = false;
+        }
+    }
+
+    private bool CanToggleSummaryTranslation()
+    {
+        return !IsTranslating;
+    }
+
+    private string BuildVisibleSummaryText()
+    {
+        var sections = new List<string>();
+
+        AddSection(sections, Title, ContextText);
+        AddSection(sections, GoodTitle, GoodText);
+        AddSection(sections, ImproveTitle, ImproveText);
+
+        var phrases = UsefulPhrases.Where(phrase => !string.IsNullOrWhiteSpace(phrase)).Select(phrase => $"- {phrase.Trim()}").ToArray();
+        if (phrases.Length > 0)
+        {
+            AddSection(sections, UsefulPhrasesTitle, string.Join(Environment.NewLine, phrases));
+        }
+
+        return string.Join(Environment.NewLine + Environment.NewLine, sections);
+    }
+
+    private static void AddSection(ICollection<string> sections, string title, string body)
+    {
+        if (!string.IsNullOrWhiteSpace(body))
+        {
+            sections.Add($"{title.Trim()}:\n{body.Trim()}");
+        }
+    }
+
+    private static string ResolveTargetTranslationLanguage(string nativeLanguageName, string interfaceLanguageId)
+    {
+        if (!string.IsNullOrWhiteSpace(nativeLanguageName))
+        {
+            return nativeLanguageName.Trim();
+        }
+
+        var interfaceLanguage = InterfaceLanguageOptions.GetById(interfaceLanguageId);
+        return string.IsNullOrWhiteSpace(interfaceLanguage.DisplayName) ? InterfaceLanguageOptions.English.DisplayName : interfaceLanguage.DisplayName;
     }
 
     [RelayCommand]
