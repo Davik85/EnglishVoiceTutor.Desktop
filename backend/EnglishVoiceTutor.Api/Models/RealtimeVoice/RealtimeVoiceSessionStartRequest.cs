@@ -59,7 +59,9 @@ public sealed record RealtimeVoiceSessionStartRequest
     public string ConversationFinalMessageIntent { get; init; } = string.Empty;
     public IReadOnlyList<RealtimeRoleplayBeat> RoleplayBeats { get; init; } = [];
     public string ReciprocalQuestionIfUserAsksTutorName { get; init; } = string.Empty;
+    public string ReciprocalQuestionIfUserAsksSimplePersonalQuestion { get; init; } = string.Empty;
     public bool ReciprocalQuestionMustNotIgnoreUserQuestion { get; init; }
+    public bool ReciprocalQuestionMustNotRefuseScenarioCompatibleQuestions { get; init; }
     public IReadOnlyList<string> ExpectedScenarioProgression { get; init; } = [];
     public string FeedbackRulesSummary { get; init; } = string.Empty;
     public IReadOnlyList<string> AiTutorPromptInstructions { get; init; } = [];

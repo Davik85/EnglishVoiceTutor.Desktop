@@ -77,7 +77,11 @@ public sealed class LessonChatRequest
 
     public string ReciprocalQuestionIfUserAsksTutorName { get; init; } = string.Empty;
 
+    public string ReciprocalQuestionIfUserAsksSimplePersonalQuestion { get; init; } = string.Empty;
+
     public bool ReciprocalQuestionMustNotIgnoreUserQuestion { get; init; }
+
+    public bool ReciprocalQuestionMustNotRefuseScenarioCompatibleQuestions { get; init; }
 
     public IReadOnlyList<string> ExpectedScenarioProgression { get; init; } = [];
 
