@@ -12,6 +12,7 @@ using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Desktop.Services;
 using EnglishVoiceTutor.Desktop.Services.Voice;
+using EnglishVoiceTutor.Shared.LessonPolicies;
 using System.Windows;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
@@ -50,8 +51,8 @@ public partial class LessonChatViewModel : ViewModelBase
     private string currentBotVoiceCancellationReason = BotVoiceCancellationReasons.AppDisposalCancel;
     private bool isRealtimeSessionStarted;
     private bool isStartingRealtimeSession;
-    private const string RealtimeVoicePendingText = "[Voice message]";
-    private const string RealtimeVoiceTranscriptionUnavailableText = "[Voice message: transcription unavailable]";
+    private const string RealtimeVoicePendingText = LessonTranscriptValidator.VoiceMessagePlaceholder;
+    private const string RealtimeVoiceTranscriptionUnavailableText = LessonTranscriptValidator.InvalidTranscriptUserMessage;
     private ChatMessageViewModel? realtimeAssistantMessage;
     private ChatMessageViewModel? realtimeUserPlaceholderMessage;
     private string realtimeUserPlaceholderItemId = string.Empty;
@@ -596,32 +597,29 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var transcriptionText = await lessonChatBackendService.SendAudioForTranscriptionAsync(savedFilePath);
             BackendStatusText = BackendConstants.BackendStatusConnected;
-            var trimmedTranscriptionText = transcriptionText.Trim();
-            var isUsableEnglishPracticeTranscription = IsUsableEnglishPracticeTranscription(trimmedTranscriptionText);
+            var transcriptValidation = LessonTranscriptValidator.Validate(transcriptionText);
+            var trimmedTranscriptionText = transcriptValidation.NormalizedTranscript;
             var shouldAutoSend = ShouldAutoSendTranscribedVoiceResult();
             Debug.WriteLine(
-                $"Voice transcription received: TranscriptLength={trimmedTranscriptionText.Length}; " +
-                $"IsUsableEnglishPracticeTranscription={isUsableEnglishPracticeTranscription}; " +
+                $"Voice transcription validation: IsValid={transcriptValidation.IsValid}; " +
+                $"Reason={transcriptValidation.Reason}; " +
+                $"TranscriptLength={trimmedTranscriptionText.Length}; " +
+                $"TurnCounted=False; " +
+                $"LearnerTurnCountBefore={LearnerTurnCount}; " +
                 $"CanAcceptTranscriptionResult={CanAcceptTranscriptionResult}; " +
                 $"ShouldAutoSend={shouldAutoSend}; " +
                 $"CurrentLessonPhase={CurrentLessonPhase}; " +
                 $"IsConversationModeEnabled={IsConversationModeEnabled}; " +
                 $"IsVoiceAutoSendEnabled={IsVoiceAutoSendEnabled}; " +
-                $"IsSending={IsSending}; " +
-                $"isTranscribingAudio={isTranscribingAudio}; " +
+                $"NormalAssistantResponseCreated=False; " +
+                $"RetryPromptShown={!transcriptValidation.IsValid}; " +
                 $"Preview={GetLimitedTranscriptPreview(trimmedTranscriptionText)}.");
 
-            if (string.IsNullOrWhiteSpace(trimmedTranscriptionText))
+            if (!transcriptValidation.IsValid)
             {
-                Debug.WriteLine("Voice transcription rejected: Reason=empty.");
-                StatusMessage = localizedText.EmptyTranscriptionMessage;
-                return;
-            }
-
-            if (!isUsableEnglishPracticeTranscription)
-            {
-                Debug.WriteLine("Voice transcription rejected: Reason=not-english.");
-                StatusMessage = AudioConstants.UnclearEnglishTranscriptionMessage;
+                StatusMessage = LessonTranscriptValidator.GetRetryMessage(SelectedLevel);
+                UserInput = string.Empty;
+                Debug.WriteLine($"Voice transcription rejected: Reason={transcriptValidation.Reason}; LearnerTurnCountBefore={LearnerTurnCount}; LearnerTurnCountAfter={LearnerTurnCount}; RetryPromptShown=True.");
                 return;
             }
 
@@ -714,19 +712,11 @@ public partial class LessonChatViewModel : ViewModelBase
                 return;
             }
 
-            var nextLearnerTurnCount = LearnerTurnCount + 1;
-            var finalTurn = GetFinalTurn();
             realtimeUserTranscriptBuffer.Clear();
             realtimeUserPlaceholderItemId = string.Empty;
             realtimeUserPlaceholderMessage = AddMessage(AppConstants.UserSenderName, RealtimeVoicePendingText, false);
-            Debug.WriteLine($"Realtime user placeholder message added: SessionId={realtimeSessionId}; UserPlaceholderMessageId={realtimeUserPlaceholderMessage.Id}; Text={RealtimeVoicePendingText}.");
-            LearnerTurnCount = nextLearnerTurnCount;
-            if (LearnerTurnCount >= finalTurn)
-            {
-                LogFinalLimitReached(finalTurn);
-            }
+            Debug.WriteLine($"Realtime user placeholder message added: SessionId={realtimeSessionId}; UserPlaceholderMessageId={realtimeUserPlaceholderMessage.Id}; Text={RealtimeVoicePendingText}; LearnerTurnCountBefore={LearnerTurnCount}.");
 
-            PrepareRealtimeAssistantPlaceholder();
             await realtimeVoiceEngine.CommitUserAudioAsync(CancellationToken.None);
             StatusMessage = string.Empty;
         }
@@ -740,52 +730,6 @@ public partial class LessonChatViewModel : ViewModelBase
             IsRecording = false;
             RefreshAvatarState();
         }
-    }
-
-    private static bool IsUsableEnglishPracticeTranscription(string transcriptionText)
-    {
-        if (string.IsNullOrWhiteSpace(transcriptionText))
-        {
-            return false;
-        }
-
-        if (transcriptionText.Length == 1 && char.IsPunctuation(transcriptionText[0]))
-        {
-            return false;
-        }
-
-        if (ContainsCyrillicLetter(transcriptionText))
-        {
-            return false;
-        }
-
-        return ContainsLatinLetter(transcriptionText);
-    }
-
-    private static bool ContainsCyrillicLetter(string text)
-    {
-        foreach (var character in text)
-        {
-            if (character is >= '\u0400' and <= '\u04FF')
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool ContainsLatinLetter(string text)
-    {
-        foreach (var character in text)
-        {
-            if (character is >= 'A' and <= 'Z' or >= 'a' and <= 'z')
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleConversationMode))]
@@ -1600,7 +1544,24 @@ public partial class LessonChatViewModel : ViewModelBase
             return false;
         }
 
-        var nextLearnerTurnCount = LearnerTurnCount + 1;
+        var activeTurnTranscriptValidation = LessonTranscriptValidator.Validate(userMessage);
+        var activeTurnPolicyPreview = LessonTurnPolicy.EvaluateUserInput(BuildTurnPolicyContext(), activeTurnTranscriptValidation.IsValid);
+        Debug.WriteLine(
+            $"Lesson chat transcript validation: IsValid={activeTurnTranscriptValidation.IsValid}; " +
+            $"Reason={activeTurnTranscriptValidation.Reason}; " +
+            $"TurnCounted={activeTurnPolicyPreview.ShouldCountUserTurn}; " +
+            $"LearnerTurnCountBefore={activeTurnPolicyPreview.LearnerTurnCountBefore}; " +
+            $"LearnerTurnCountAfter={activeTurnPolicyPreview.LearnerTurnCountAfter}; " +
+            $"PhaseBefore={activeTurnPolicyPreview.PhaseBefore}; PhaseAfter={activeTurnPolicyPreview.PhaseAfter}; " +
+            $"NormalAssistantResponseCreated={activeTurnTranscriptValidation.IsValid}; RetryPromptShown={!activeTurnTranscriptValidation.IsValid}.");
+        if (!activeTurnTranscriptValidation.IsValid)
+        {
+            StatusMessage = LessonTranscriptValidator.GetRetryMessage(SelectedLevel);
+            return false;
+        }
+
+        userMessage = activeTurnTranscriptValidation.NormalizedTranscript;
+        var nextLearnerTurnCount = activeTurnPolicyPreview.LearnerTurnCountAfter;
         var softWrapUpTurn = GetSoftWrapUpTurn();
         var finalTurn = GetFinalTurn();
 
@@ -1622,9 +1583,10 @@ public partial class LessonChatViewModel : ViewModelBase
             LearnerTurnCount = nextLearnerTurnCount;
             LogFinalLimitReached(finalTurn);
             var finalMessage = GetFinalLessonMessage();
-            AddMessage(TutorAvatarDisplayName, finalMessage, true);
+            var botMessage = AddMessage(TutorAvatarDisplayName, finalMessage, true);
             lastBotMessage = finalMessage;
             OnPropertyChanged(nameof(LatestBotMessageText));
+            await TryAutoPlayNewestBotVoiceAsync(botMessage);
             CurrentLessonPhase = LessonPhase.Completed;
             MarkLessonCompleteAwaitingFinish();
             return true;
@@ -1673,6 +1635,13 @@ public partial class LessonChatViewModel : ViewModelBase
                 FinalMessageAtUserTurn = finalTurn,
                 TargetLanguageKeyPhrases = lessonScenario.TargetLanguage.KeyPhrases,
                 GrammarFocus = lessonScenario.TargetLanguage.GrammarFocus,
+                ConversationOpening = lessonScenario.ConversationFlow.Opening,
+                ConversationFirstUserTask = lessonScenario.ConversationFlow.FirstUserTask,
+                ConversationGuidedPracticeFollowUpQuestions = lessonScenario.ConversationFlow.GuidedPracticeFollowUpQuestions,
+                ConversationVariationOrComplication = lessonScenario.ConversationFlow.VariationOrComplication,
+                ConversationCorrectionMoment = lessonScenario.ConversationFlow.CorrectionMoment,
+                ConversationWrapUpMessage = lessonScenario.ConversationFlow.WrapUpMessage,
+                ConversationFinalMessage = GetFinalLessonMessage(),
                 FeedbackRulesSummary = BuildFeedbackRulesSummary(),
                 TutorProfileId = tutorAvatarId,
                 ActiveLevelProfileDifficultyNotes = activeLevelProfile.DifficultyNotes,
@@ -1707,6 +1676,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             if (response.IsLessonComplete || shouldEndLessonNow)
             {
+                await TryAutoPlayNewestBotVoiceAsync(botMessage);
                 CurrentLessonPhase = LessonPhase.Completed;
                 MarkLessonCompleteAwaitingFinish();
                 return true;
@@ -1823,6 +1793,13 @@ public partial class LessonChatViewModel : ViewModelBase
             HardLearnerTurnLimit = GetFinalTurn(),
             TargetLanguageKeyPhrases = lessonScenario.TargetLanguage.KeyPhrases,
             GrammarFocus = lessonScenario.TargetLanguage.GrammarFocus,
+            ConversationOpening = lessonScenario.ConversationFlow.Opening,
+            ConversationFirstUserTask = lessonScenario.ConversationFlow.FirstUserTask,
+            ConversationGuidedPracticeFollowUpQuestions = lessonScenario.ConversationFlow.GuidedPracticeFollowUpQuestions,
+            ConversationVariationOrComplication = lessonScenario.ConversationFlow.VariationOrComplication,
+            ConversationCorrectionMoment = lessonScenario.ConversationFlow.CorrectionMoment,
+            ConversationWrapUpMessage = lessonScenario.ConversationFlow.WrapUpMessage,
+            ConversationFinalMessage = GetFinalLessonMessage(),
             FeedbackRulesSummary = BuildFeedbackRulesSummary(),
             AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
             ActiveLevelProfile = activeLevelProfile,
@@ -2005,16 +1982,47 @@ public partial class LessonChatViewModel : ViewModelBase
     private void ApplyRealtimeUserTranscript(string itemId, string transcript, string sessionId)
     {
         var target = FindRealtimeUserMessage(itemId);
-        if (target is null || string.IsNullOrWhiteSpace(transcript))
+        if (target is null)
         {
             return;
         }
 
         realtimeUserPlaceholderItemId = itemId;
         realtimeUserTranscriptBuffer.Clear();
-        realtimeUserTranscriptBuffer.Append(transcript);
-        target.Text = transcript.Trim();
-        Debug.WriteLine($"Realtime placeholder replaced with transcript: SessionId={sessionId}; ItemId={itemId}; UserPlaceholderMessageId={target.Id}; TranscriptLength={target.Text.Length}.");
+        var validation = LessonTranscriptValidator.Validate(transcript);
+        var turnResult = LessonTurnPolicy.EvaluateUserInput(BuildTurnPolicyContext(), validation.IsValid);
+        Debug.WriteLine(
+            $"Realtime transcript validation: SessionId={sessionId}; ItemId={itemId}; " +
+            $"IsValid={validation.IsValid}; Reason={validation.Reason}; " +
+            $"TurnCounted={turnResult.ShouldCountUserTurn}; " +
+            $"LearnerTurnCountBefore={turnResult.LearnerTurnCountBefore}; " +
+            $"LearnerTurnCountAfter={turnResult.LearnerTurnCountAfter}; " +
+            $"PhaseBefore={turnResult.PhaseBefore}; PhaseAfter={turnResult.PhaseAfter}; " +
+            $"NormalAssistantResponseCreated={validation.IsValid}; RetryPromptShown={!validation.IsValid}.");
+
+        if (!validation.IsValid)
+        {
+            target.Text = RealtimeVoiceTranscriptionUnavailableText;
+            StatusMessage = LessonTranscriptValidator.GetRetryMessage(SelectedLevel);
+            BotStatus = BackendConstants.BotStatusReady;
+            IsSending = false;
+            RefreshAvatarState();
+            RefreshAllCommandStates();
+            return;
+        }
+
+        realtimeUserTranscriptBuffer.Append(validation.NormalizedTranscript);
+        target.Text = validation.NormalizedTranscript;
+        LearnerTurnCount = turnResult.LearnerTurnCountAfter;
+        Debug.WriteLine($"Realtime placeholder replaced with transcript: SessionId={sessionId}; ItemId={itemId}; UserPlaceholderMessageId={target.Id}; TranscriptLength={target.Text.Length}; LearnerTurnCount={LearnerTurnCount}.");
+
+        if (turnResult.ShouldUseFinalMessage)
+        {
+            LogFinalLimitReached(turnResult.FinalTurn);
+        }
+
+        PrepareRealtimeAssistantPlaceholder();
+        StatusMessage = string.Empty;
     }
 
     private void ApplyRealtimeUserTranscriptFailure(string itemId, string sessionId)
@@ -2027,7 +2035,12 @@ public partial class LessonChatViewModel : ViewModelBase
 
         realtimeUserPlaceholderItemId = itemId;
         target.Text = RealtimeVoiceTranscriptionUnavailableText;
-        Debug.WriteLine($"Realtime placeholder marked transcription unavailable: SessionId={sessionId}; ItemId={itemId}; UserPlaceholderMessageId={target.Id}.");
+        StatusMessage = LessonTranscriptValidator.GetRetryMessage(SelectedLevel);
+        BotStatus = BackendConstants.BotStatusReady;
+        IsSending = false;
+        RefreshAvatarState();
+        RefreshAllCommandStates();
+        Debug.WriteLine($"Realtime placeholder marked transcription unavailable: SessionId={sessionId}; ItemId={itemId}; UserPlaceholderMessageId={target.Id}; LearnerTurnCountBefore={LearnerTurnCount}; LearnerTurnCountAfter={LearnerTurnCount}; RetryPromptShown=True; NormalAssistantResponseCreated=False.");
     }
 
     private void OnRealtimeErrorReceived(object? sender, VoiceSessionErrorEventArgs args)
@@ -2255,26 +2268,29 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private int GetSoftWrapUpTurn()
     {
-        if (activeLevelProfile.SoftWrapUpAfterUserTurn > 0)
-        {
-            return activeLevelProfile.SoftWrapUpAfterUserTurn;
-        }
-
-        return lessonScenario.Metadata.SoftWrapUpAfterUserTurn > 0
-            ? lessonScenario.Metadata.SoftWrapUpAfterUserTurn
-            : AppConstants.DefaultLessonSoftLearnerTurnLimit;
+        return LessonTurnPolicy.ResolveSoftWrapUpTurn(BuildTurnPolicyContext());
     }
 
     private int GetFinalTurn()
     {
-        if (activeLevelProfile.FinalMessageAtUserTurn > 0)
-        {
-            return activeLevelProfile.FinalMessageAtUserTurn;
-        }
+        return LessonTurnPolicy.ResolveFinalTurn(BuildTurnPolicyContext());
+    }
 
-        return lessonScenario.Metadata.FinalMessageAtUserTurn > 0
-            ? lessonScenario.Metadata.FinalMessageAtUserTurn
-            : AppConstants.DefaultLessonHardLearnerTurnLimit;
+    private LessonTurnPolicyContext BuildTurnPolicyContext()
+    {
+        return new LessonTurnPolicyContext(
+            lessonScenario.Metadata.LessonType,
+            SelectedLevel,
+            CurrentLessonPhase switch
+            {
+                LessonPhase.ActiveRoleplay => LessonTurnPhase.ActiveRoleplay,
+                LessonPhase.Completed => LessonTurnPhase.Completed,
+                _ => LessonTurnPhase.SetupContextSelection
+            },
+            LearnerTurnCount,
+            activeLevelProfile.SoftWrapUpAfterUserTurn > 0 ? activeLevelProfile.SoftWrapUpAfterUserTurn : lessonScenario.Metadata.SoftWrapUpAfterUserTurn,
+            activeLevelProfile.FinalMessageAtUserTurn > 0 ? activeLevelProfile.FinalMessageAtUserTurn : lessonScenario.Metadata.FinalMessageAtUserTurn,
+            IsFreeConversationLesson() || selectedContextVariant is not null || !string.IsNullOrWhiteSpace(selectedCustomContextTitle));
     }
 
     private bool IsFreeConversationLesson()
@@ -2501,6 +2517,13 @@ public partial class LessonChatViewModel : ViewModelBase
                 FinalMessageAtUserTurn = finalTurn,
                 TargetLanguageKeyPhrases = lessonScenario.TargetLanguage.KeyPhrases,
                 GrammarFocus = lessonScenario.TargetLanguage.GrammarFocus,
+                ConversationOpening = lessonScenario.ConversationFlow.Opening,
+                ConversationFirstUserTask = lessonScenario.ConversationFlow.FirstUserTask,
+                ConversationGuidedPracticeFollowUpQuestions = lessonScenario.ConversationFlow.GuidedPracticeFollowUpQuestions,
+                ConversationVariationOrComplication = lessonScenario.ConversationFlow.VariationOrComplication,
+                ConversationCorrectionMoment = lessonScenario.ConversationFlow.CorrectionMoment,
+                ConversationWrapUpMessage = lessonScenario.ConversationFlow.WrapUpMessage,
+                ConversationFinalMessage = GetFinalLessonMessage(),
                 FeedbackRulesSummary = BuildFeedbackRulesSummary(),
                 TutorProfileId = tutorAvatarId,
                 ActiveLevelProfileDifficultyNotes = activeLevelProfile.DifficultyNotes,
@@ -2696,7 +2719,9 @@ public partial class LessonChatViewModel : ViewModelBase
                 Sender = message.IsFromBot ? TutorAvatarDisplayName : AppConstants.UserSenderName,
                 Text = message.Text
             })
-            .Where(message => !string.IsNullOrWhiteSpace(message.Text))
+            .Where(message => !string.IsNullOrWhiteSpace(message.Text)
+                && !string.Equals(message.Text.Trim(), LessonTranscriptValidator.VoiceMessagePlaceholder, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(message.Text.Trim(), LessonTranscriptValidator.InvalidTranscriptUserMessage, StringComparison.OrdinalIgnoreCase))
             .ToArray();
     }
 

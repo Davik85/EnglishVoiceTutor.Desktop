@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models.RealtimeVoice;
+using EnglishVoiceTutor.Shared.LessonPolicies;
 
 namespace EnglishVoiceTutor.Api.Services;
 
@@ -27,9 +28,13 @@ public sealed class RealtimeVoiceSessionService
     private long lastUserAudioCommitMs;
     private int inputAudioBytesBuffered;
     private bool isResponseInProgress;
+    private string pendingUserAudioItemId = string.Empty;
+    private bool isAwaitingUserTranscript;
+    private CancellationTokenSource? transcriptionTimeoutCancellationTokenSource;
     private const int InputAudioSampleRate = 24000;
     private const int InputAudioBytesPerSample = 2;
     private const int MinimumInputAudioDurationMs = 500;
+    private const int UserTranscriptTimeoutMilliseconds = 8000;
     private const int MinimumInputAudioBytes = InputAudioSampleRate * InputAudioBytesPerSample * MinimumInputAudioDurationMs / 1000;
 
     public RealtimeVoiceSessionService(
@@ -132,7 +137,22 @@ public sealed class RealtimeVoiceSessionService
                 break;
             case "user.text":
                 EnforceTurnLimit();
+                var userText = payload.GetProperty("text").GetString() ?? string.Empty;
+                var textValidation = LessonTranscriptValidator.Validate(userText);
+                if (!textValidation.IsValid)
+                {
+                    logger.LogInformation("Realtime user text rejected by transcript policy. SessionId={SessionId}; Reason={Reason}; LearnerTurnCountBefore={LearnerTurnCount}; NormalAssistantResponseCreated=False; RetryPromptShown=True.", sessionId, textValidation.Reason, learnerTurnCount);
+                    await SendDesktopEventAsync(new { type = "user.transcript.failed", sessionId, itemId = string.Empty, message = LessonTranscriptValidator.RetryMessage, reason = textValidation.Reason.ToString() }, cancellationToken);
+                    break;
+                }
+
                 learnerTurnCount++;
+                if (startRequest is not null)
+                {
+                    startRequest = startRequest with { LearnerTurnCount = learnerTurnCount };
+                }
+
+                logger.LogInformation("Realtime user text accepted. SessionId={SessionId}; LearnerTurnCountAfter={LearnerTurnCount}; ValidationReason={Reason}.", sessionId, learnerTurnCount, textValidation.Reason);
                 await SendOpenAiEventAsync(new
                 {
                     type = "conversation.item.create",
@@ -140,7 +160,7 @@ public sealed class RealtimeVoiceSessionService
                     {
                         type = "message",
                         role = "user",
-                        content = new[] { new { type = "input_text", text = payload.GetProperty("text").GetString() ?? string.Empty } }
+                        content = new[] { new { type = "input_text", text = textValidation.NormalizedTranscript } }
                     }
                 }, cancellationToken);
                 await CreateResponseAsync(cancellationToken);
@@ -166,12 +186,13 @@ public sealed class RealtimeVoiceSessionService
                     break;
                 }
 
-                learnerTurnCount++;
                 lastUserAudioCommitMs = stopwatch.ElapsedMilliseconds;
-                logger.LogInformation("Realtime user audio commit sent. SessionId={SessionId}; LearnerTurnCount={LearnerTurnCount}; BufferedBytes={BufferedBytes}; UserAudioCommitMs={ElapsedMs}.", sessionId, learnerTurnCount, inputAudioBytesBuffered, lastUserAudioCommitMs);
+                isAwaitingUserTranscript = true;
+                pendingUserAudioItemId = string.Empty;
+                logger.LogInformation("Realtime user audio commit sent; waiting for transcript before response.create. SessionId={SessionId}; LearnerTurnCountBefore={LearnerTurnCount}; BufferedBytes={BufferedBytes}; UserAudioCommitMs={ElapsedMs}; TranscriptionTimeoutMs={TimeoutMs}.", sessionId, learnerTurnCount, inputAudioBytesBuffered, lastUserAudioCommitMs, UserTranscriptTimeoutMilliseconds);
                 inputAudioBytesBuffered = 0;
                 await SendOpenAiEventAsync(new { type = "input_audio_buffer.commit" }, cancellationToken);
-                await CreateResponseAsync(cancellationToken);
+                StartTranscriptionTimeout(cancellationToken);
                 break;
             case "session.stop":
                 await DisconnectAsync("client_stop", cancellationToken);
@@ -207,6 +228,11 @@ public sealed class RealtimeVoiceSessionService
         activeResponseId = string.Empty;
         activeTranscript.Clear();
         isResponseInProgress = false;
+        pendingUserAudioItemId = string.Empty;
+        isAwaitingUserTranscript = false;
+        transcriptionTimeoutCancellationTokenSource?.Cancel();
+        transcriptionTimeoutCancellationTokenSource?.Dispose();
+        transcriptionTimeoutCancellationTokenSource = null;
         stopwatch.Restart();
         logger.LogInformation("Realtime session start time. SessionId={SessionId}; StartedAtUtc={StartedAtUtc:o}; LessonType={LessonType}; CurrentPhase={CurrentPhase}; SelectedContextTitle={SelectedContextTitle}; RecentMessages={RecentMessageCount}; LastBotMessageLength={LastBotMessageLength}; LearnerTurnCount={LearnerTurnCount}.",
             sessionId,
@@ -354,7 +380,8 @@ public sealed class RealtimeVoiceSessionService
                 break;
             case "input_audio_buffer.committed":
                 var itemId = root.TryGetProperty("item_id", out var itemIdProperty) ? itemIdProperty.GetString() ?? string.Empty : string.Empty;
-                logger.LogInformation("Realtime user audio committed event received. SessionId={SessionId}; ItemId={ItemId}; UserAudioCommittedEventMs={ElapsedMs}.", sessionId, itemId, stopwatch.ElapsedMilliseconds);
+                pendingUserAudioItemId = itemId;
+                logger.LogInformation("Realtime user audio committed event received. SessionId={SessionId}; ItemId={ItemId}; UserAudioCommittedEventMs={ElapsedMs}; WaitingForTranscript={WaitingForTranscript}.", sessionId, itemId, stopwatch.ElapsedMilliseconds, isAwaitingUserTranscript);
                 await SendDesktopEventAsync(new { type = "user.audio.committed", sessionId, itemId }, cancellationToken);
                 break;
             case "conversation.item.input_audio_transcription.delta":
@@ -371,13 +398,13 @@ public sealed class RealtimeVoiceSessionService
                 var userTranscript = root.TryGetProperty("transcript", out var userTranscriptProperty) ? userTranscriptProperty.GetString() ?? string.Empty : string.Empty;
                 var transcriptItemId = root.TryGetProperty("item_id", out var transcriptItemIdProperty) ? transcriptItemIdProperty.GetString() ?? string.Empty : string.Empty;
                 logger.LogInformation("Realtime user transcript completed received. SessionId={SessionId}; ItemId={ItemId}; TranscriptLength={TranscriptLength}; EventMs={ElapsedMs}.", sessionId, transcriptItemId, userTranscript.Trim().Length, stopwatch.ElapsedMilliseconds);
-                await SendDesktopEventAsync(new { type = "user.transcript.completed", sessionId, itemId = transcriptItemId, transcript = userTranscript }, cancellationToken);
+                await HandleUserTranscriptCompletedAsync(transcriptItemId, userTranscript, cancellationToken);
                 break;
             case "conversation.item.input_audio_transcription.failed":
                 var failedItemId = root.TryGetProperty("item_id", out var failedItemIdProperty) ? failedItemIdProperty.GetString() ?? string.Empty : string.Empty;
                 var failureMessage = root.TryGetProperty("error", out var transcriptionError) && transcriptionError.TryGetProperty("message", out var transcriptionErrorMessage) ? transcriptionErrorMessage.GetString() ?? "Transcription unavailable." : "Transcription unavailable.";
-                logger.LogWarning("Realtime user transcript failed. SessionId={SessionId}; ItemId={ItemId}; Error={Error}; EventMs={ElapsedMs}.", sessionId, failedItemId, failureMessage, stopwatch.ElapsedMilliseconds);
-                await SendDesktopEventAsync(new { type = "user.transcript.failed", sessionId, itemId = failedItemId, message = failureMessage }, cancellationToken);
+                logger.LogWarning("Realtime user transcript failed. SessionId={SessionId}; ItemId={ItemId}; Error={Error}; EventMs={ElapsedMs}; LearnerTurnCountBefore={LearnerTurnCount}; NormalAssistantResponseCreated=False; RetryPromptShown=True.", sessionId, failedItemId, failureMessage, stopwatch.ElapsedMilliseconds, learnerTurnCount);
+                await HandleUserTranscriptFailedAsync(failedItemId, failureMessage, cancellationToken);
                 break;
             case "error":
                 isResponseInProgress = false;
@@ -386,6 +413,64 @@ public sealed class RealtimeVoiceSessionService
                 await SendDesktopEventAsync(new { type = "session.error", sessionId, responseId = activeResponseId, message }, cancellationToken);
                 break;
         }
+    }
+
+    private async Task HandleUserTranscriptCompletedAsync(string itemId, string transcript, CancellationToken cancellationToken)
+    {
+        transcriptionTimeoutCancellationTokenSource?.Cancel();
+        var validation = LessonTranscriptValidator.Validate(transcript);
+        var resolvedItemId = string.IsNullOrWhiteSpace(itemId) ? pendingUserAudioItemId : itemId;
+        if (!validation.IsValid)
+        {
+            logger.LogInformation("Realtime user transcript rejected. SessionId={SessionId}; ItemId={ItemId}; Reason={Reason}; TranscriptLength={TranscriptLength}; LearnerTurnCountBefore={LearnerTurnCount}; LearnerTurnCountAfter={LearnerTurnCountAfter}; NormalAssistantResponseCreated=False; RetryPromptShown=True.", sessionId, resolvedItemId, validation.Reason, validation.NormalizedTranscript.Length, learnerTurnCount, learnerTurnCount);
+            isAwaitingUserTranscript = false;
+            await SendDesktopEventAsync(new { type = "user.transcript.completed", sessionId, itemId = resolvedItemId, transcript = validation.NormalizedTranscript }, cancellationToken);
+            await SendDesktopEventAsync(new { type = "user.transcript.failed", sessionId, itemId = resolvedItemId, message = LessonTranscriptValidator.RetryMessage, reason = validation.Reason.ToString() }, cancellationToken);
+            return;
+        }
+
+        EnforceTurnLimit();
+        learnerTurnCount++;
+        if (startRequest is not null)
+        {
+            startRequest = startRequest with { LearnerTurnCount = learnerTurnCount };
+        }
+
+        isAwaitingUserTranscript = false;
+        logger.LogInformation("Realtime user transcript accepted. SessionId={SessionId}; ItemId={ItemId}; Reason={Reason}; TranscriptLength={TranscriptLength}; LearnerTurnCountAfter={LearnerTurnCount}; NormalAssistantResponseCreated=True; RetryPromptShown=False.", sessionId, resolvedItemId, validation.Reason, validation.NormalizedTranscript.Length, learnerTurnCount);
+        await SendDesktopEventAsync(new { type = "user.transcript.completed", sessionId, itemId = resolvedItemId, transcript = validation.NormalizedTranscript }, cancellationToken);
+        await CreateResponseAsync(cancellationToken);
+    }
+
+    private async Task HandleUserTranscriptFailedAsync(string itemId, string message, CancellationToken cancellationToken)
+    {
+        transcriptionTimeoutCancellationTokenSource?.Cancel();
+        isAwaitingUserTranscript = false;
+        var resolvedItemId = string.IsNullOrWhiteSpace(itemId) ? pendingUserAudioItemId : itemId;
+        await SendDesktopEventAsync(new { type = "user.transcript.failed", sessionId, itemId = resolvedItemId, message = LessonTranscriptValidator.RetryMessage, reason = message }, cancellationToken);
+    }
+
+    private void StartTranscriptionTimeout(CancellationToken cancellationToken)
+    {
+        transcriptionTimeoutCancellationTokenSource?.Cancel();
+        transcriptionTimeoutCancellationTokenSource?.Dispose();
+        transcriptionTimeoutCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var timeoutToken = transcriptionTimeoutCancellationTokenSource.Token;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(UserTranscriptTimeoutMilliseconds, timeoutToken);
+                if (!timeoutToken.IsCancellationRequested && isAwaitingUserTranscript)
+                {
+                    logger.LogWarning("Realtime user transcript timed out. SessionId={SessionId}; ItemId={ItemId}; TimeoutMs={TimeoutMs}; LearnerTurnCountBefore={LearnerTurnCount}; NormalAssistantResponseCreated=False; RetryPromptShown=True.", sessionId, pendingUserAudioItemId, UserTranscriptTimeoutMilliseconds, learnerTurnCount);
+                    await HandleUserTranscriptFailedAsync(pendingUserAudioItemId, "transcription_timeout", CancellationToken.None);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }, CancellationToken.None);
     }
 
     private async Task SeedRecentConversationAsync(RealtimeVoiceSessionStartRequest request, CancellationToken cancellationToken)
@@ -500,6 +585,10 @@ public sealed class RealtimeVoiceSessionService
     private async Task DisconnectAsync(string reason, CancellationToken cancellationToken)
     {
         logger.LogInformation("Realtime disconnect. SessionId={SessionId}; ResponseId={ResponseId}; DisconnectReason={DisconnectReason}; ElapsedMs={ElapsedMs}.", sessionId, activeResponseId, reason, stopwatch.ElapsedMilliseconds);
+        transcriptionTimeoutCancellationTokenSource?.Cancel();
+        transcriptionTimeoutCancellationTokenSource?.Dispose();
+        transcriptionTimeoutCancellationTokenSource = null;
+        isAwaitingUserTranscript = false;
         if (openAiSocket is not null)
         {
             try
