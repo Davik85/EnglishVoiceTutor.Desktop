@@ -96,6 +96,23 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine($"Respond now as {avatarProfile.DisplayName}, the selected tutor profile.");
         prompt.AppendLine("Follow the canonical lesson teaching policy from the session instructions.");
         prompt.AppendLine("Produce assistant audio and a matching assistant transcript from this same Realtime response.");
+        prompt.AppendLine($"Current counted learner turn: {chatRequest.LearnerTurnCount} of {chatRequest.HardLearnerTurnLimit}.");
+        if (LessonLimitHelper.ShouldEndLessonNow(chatRequest))
+        {
+            prompt.AppendLine("This is the final turn. Say the final lesson message first. Do not ask another question.");
+            if (!string.IsNullOrWhiteSpace(chatRequest.ConversationFinalMessage))
+            {
+                prompt.AppendLine($"Exact final message from lesson JSON: {chatRequest.ConversationFinalMessage.Trim()}");
+            }
+        }
+        else if (LessonLimitHelper.ShouldStartWrappingUp(chatRequest))
+        {
+            prompt.AppendLine("Start or continue a polite wrap-up while staying in scenario.");
+            if (!string.IsNullOrWhiteSpace(chatRequest.ConversationWrapUpMessage))
+            {
+                prompt.AppendLine($"Wrap-up direction from lesson JSON: {chatRequest.ConversationWrapUpMessage.Trim()}");
+            }
+        }
 
         if (IsFreeConversation(chatRequest))
         {
@@ -148,11 +165,19 @@ public sealed class LessonPromptBuilder
 
         if (LessonLimitHelper.ShouldEndLessonNow(request))
         {
-            prompt.AppendLine("This is the hard-limit final turn. Give a short friendly closing message and do not ask a new question.");
+            prompt.AppendLine("This is the hard-limit final turn. Give the lesson final message first and do not ask a new question.");
+            if (!string.IsNullOrWhiteSpace(request.ConversationFinalMessage))
+            {
+                prompt.AppendLine($"Use this final message from lesson JSON: {request.ConversationFinalMessage.Trim()}");
+            }
         }
         else if (LessonLimitHelper.ShouldStartWrappingUp(request))
         {
             prompt.AppendLine("The lesson is in wrap-up. Continue the selected scenario, but gently guide the learner toward finishing within the remaining turns.");
+            if (!string.IsNullOrWhiteSpace(request.ConversationWrapUpMessage))
+            {
+                prompt.AppendLine($"Prefer this wrap-up direction from lesson JSON: {request.ConversationWrapUpMessage.Trim()}");
+            }
         }
         else
         {
@@ -178,11 +203,19 @@ public sealed class LessonPromptBuilder
         if (LessonLimitHelper.ShouldEndLessonNow(request))
         {
             prompt.AppendLine("This is the hard-limit final turn. Give a short friendly closing message and do not ask a new question.");
+            if (!string.IsNullOrWhiteSpace(request.ConversationFinalMessage))
+            {
+                prompt.AppendLine($"Use this final message from lesson JSON: {request.ConversationFinalMessage.Trim()}");
+            }
         }
         else if (LessonLimitHelper.ShouldStartWrappingUp(request))
         {
             prompt.AppendLine("The conversation is in wrap-up. Gently guide the learner toward finishing within the remaining turns.");
             prompt.AppendLine("Ask at most one natural follow-up question if it helps the wrap-up.");
+            if (!string.IsNullOrWhiteSpace(request.ConversationWrapUpMessage))
+            {
+                prompt.AppendLine($"Prefer this wrap-up direction from lesson JSON: {request.ConversationWrapUpMessage.Trim()}");
+            }
         }
         else
         {
@@ -375,6 +408,8 @@ public sealed class LessonPromptBuilder
             prompt.AppendLine($"- Grammar focus: {string.Join(", ", request.GrammarFocus)}");
         }
 
+        AppendScenarioFlow(prompt, request);
+
         AppendActiveLevelProfile(prompt, request);
 
         if (!string.IsNullOrWhiteSpace(request.FeedbackRulesSummary))
@@ -399,6 +434,42 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine();
     }
 
+
+    private static void AppendScenarioFlow(StringBuilder prompt, LessonChatRequest request)
+    {
+        var hasScenarioFlow = !string.IsNullOrWhiteSpace(request.ConversationOpening)
+            || !string.IsNullOrWhiteSpace(request.ConversationFirstUserTask)
+            || request.ConversationGuidedPracticeFollowUpQuestions.Count > 0
+            || !string.IsNullOrWhiteSpace(request.ConversationVariationOrComplication)
+            || !string.IsNullOrWhiteSpace(request.ConversationCorrectionMoment)
+            || !string.IsNullOrWhiteSpace(request.ConversationWrapUpMessage)
+            || !string.IsNullOrWhiteSpace(request.ConversationFinalMessage);
+
+        if (!hasScenarioFlow)
+        {
+            return;
+        }
+
+        prompt.AppendLine("Scenario conversation flow from lesson JSON:");
+        AppendOptionalLine(prompt, "- Opening policy", request.ConversationOpening);
+        AppendOptionalLine(prompt, "- First user task", request.ConversationFirstUserTask);
+        if (request.ConversationGuidedPracticeFollowUpQuestions.Count > 0)
+        {
+            prompt.AppendLine($"- Guided practice follow-up questions: {string.Join(" | ", request.ConversationGuidedPracticeFollowUpQuestions.Where(question => !string.IsNullOrWhiteSpace(question)).Select(question => question.Trim()))}");
+        }
+        AppendOptionalLine(prompt, "- Variation or complication", request.ConversationVariationOrComplication);
+        AppendOptionalLine(prompt, "- Correction moment", request.ConversationCorrectionMoment);
+        AppendOptionalLine(prompt, "- Wrap-up message from lesson JSON", request.ConversationWrapUpMessage);
+        AppendOptionalLine(prompt, "- Final message from lesson JSON", request.ConversationFinalMessage);
+    }
+
+    private static void AppendOptionalLine(StringBuilder prompt, string label, string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            prompt.AppendLine($"{label}: {value.Trim()}");
+        }
+    }
 
     private static void AppendActiveLevelProfile(StringBuilder prompt, LessonChatRequest request)
     {
@@ -597,6 +668,13 @@ public sealed class LessonPromptBuilder
             FinalMessageAtUserTurn = request.HardLearnerTurnLimit,
             TargetLanguageKeyPhrases = request.TargetLanguageKeyPhrases,
             GrammarFocus = request.GrammarFocus,
+            ConversationOpening = request.ConversationOpening,
+            ConversationFirstUserTask = request.ConversationFirstUserTask,
+            ConversationGuidedPracticeFollowUpQuestions = request.ConversationGuidedPracticeFollowUpQuestions,
+            ConversationVariationOrComplication = request.ConversationVariationOrComplication,
+            ConversationCorrectionMoment = request.ConversationCorrectionMoment,
+            ConversationWrapUpMessage = request.ConversationWrapUpMessage,
+            ConversationFinalMessage = request.ConversationFinalMessage,
             FeedbackRulesSummary = request.FeedbackRulesSummary,
             TutorProfileId = request.TutorProfileId,
             ActiveLevelProfileDifficultyNotes = request.ActiveLevelProfile.DifficultyNotes,

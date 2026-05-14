@@ -66,6 +66,20 @@ public sealed class LessonChatBackendRequest
 
     public IReadOnlyList<string> GrammarFocus { get; init; } = [];
 
+    public string ConversationOpening { get; init; } = string.Empty;
+
+    public string ConversationFirstUserTask { get; init; } = string.Empty;
+
+    public IReadOnlyList<string> ConversationGuidedPracticeFollowUpQuestions { get; init; } = [];
+
+    public string ConversationVariationOrComplication { get; init; } = string.Empty;
+
+    public string ConversationCorrectionMoment { get; init; } = string.Empty;
+
+    public string ConversationWrapUpMessage { get; init; } = string.Empty;
+
+    public string ConversationFinalMessage { get; init; } = string.Empty;
+
     public string FeedbackRulesSummary { get; init; } = string.Empty;
 
     public string TutorProfileId { get; init; } = string.Empty;
