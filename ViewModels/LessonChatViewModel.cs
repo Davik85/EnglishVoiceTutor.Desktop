@@ -2030,7 +2030,7 @@ public partial class LessonChatViewModel : ViewModelBase
         realtimeUserPlaceholderItemId = string.Empty;
         pendingTranscriptByItemId.Clear();
         pendingTranscriptFailureByItemId.Clear();
-        SetConversationModeState(IsCompletedAwaitingFinish ? ConversationModeState.CompletedAwaitingFinish : ConversationModeState.Faulted, reason);
+        SetConversationModeState(IsCompletedAwaitingFinish ? ConversationModeState.CompletedAwaitingFinish : ConversationModeState.NotStarted, reason);
         RefreshAvatarState();
     }
 
@@ -2039,10 +2039,26 @@ public partial class LessonChatViewModel : ViewModelBase
         _ = realtimeVoiceEngine.AppendUserAudioAsync(args.AudioChunk, CancellationToken.None);
     }
 
+    private bool IsActiveRealtimeSessionEvent(string eventSessionId, string eventName)
+    {
+        if (string.IsNullOrWhiteSpace(eventSessionId) || string.Equals(eventSessionId, realtimeSessionId, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        Debug.WriteLine($"Ignoring stale realtime UI event: ActiveSessionId={realtimeSessionId}; EventSessionId={eventSessionId}; EventName={eventName}.");
+        return false;
+    }
+
     private void OnRealtimeAssistantAudioChunkReceived(object? sender, AssistantAudioChunkReceivedEventArgs args)
     {
         Application.Current.Dispatcher.Invoke(() =>
         {
+            if (!IsActiveRealtimeSessionEvent(args.SessionId, nameof(OnRealtimeAssistantAudioChunkReceived)))
+            {
+                return;
+            }
+
             realtimeAudioPlaybackService.AddAudioChunk(args.SessionId, args.ResponseId, args.AudioChunk);
             IsBotVoicePlaying = true;
             SetConversationModeState(ConversationModeState.PlayingAssistantAudio, "assistant_audio_delta");
@@ -2054,6 +2070,11 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         Application.Current.Dispatcher.Invoke(() =>
         {
+            if (!IsActiveRealtimeSessionEvent(args.SessionId, nameof(OnRealtimeAssistantTranscriptDeltaReceived)))
+            {
+                return;
+            }
+
             if (realtimeAssistantMessage is null)
             {
                 realtimeAssistantMessage = AddMessage(TutorAvatarDisplayName, string.Empty, true);
@@ -2069,6 +2090,11 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         Application.Current.Dispatcher.Invoke(() =>
         {
+            if (!IsActiveRealtimeSessionEvent(args.SessionId, nameof(OnRealtimeAssistantTurnCompleted)))
+            {
+                return;
+            }
+
             var finalTranscript = string.IsNullOrWhiteSpace(args.Transcript) ? lastBotMessage : args.Transcript.Trim();
             if (realtimeAssistantMessage is not null)
             {
@@ -2094,6 +2120,11 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         Application.Current.Dispatcher.Invoke(() =>
         {
+            if (!IsActiveRealtimeSessionEvent(args.SessionId, nameof(OnRealtimeUserAudioCommitted)))
+            {
+                return;
+            }
+
             realtimeUserPlaceholderItemId = args.ItemId;
             if (realtimeUserPlaceholderMessage is not null && !string.IsNullOrWhiteSpace(args.ItemId))
             {
@@ -2116,6 +2147,11 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         Application.Current.Dispatcher.Invoke(() =>
         {
+            if (!IsActiveRealtimeSessionEvent(args.SessionId, nameof(OnRealtimeUserTranscriptDeltaReceived)))
+            {
+                return;
+            }
+
             realtimeUserTranscriptBuffer.Append(args.Delta);
             var transcriptSoFar = realtimeUserTranscriptBuffer.ToString().Trim();
             Debug.WriteLine($"Realtime user transcript delta in UI: SessionId={args.SessionId}; ItemId={args.ItemId}; UserPlaceholderMessageId={realtimeUserPlaceholderMessage?.Id}; TranscriptLength={transcriptSoFar.Length}.");
@@ -2134,6 +2170,11 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         Application.Current.Dispatcher.Invoke(() =>
         {
+            if (!IsActiveRealtimeSessionEvent(args.SessionId, nameof(OnRealtimeUserTranscriptCompleted)))
+            {
+                return;
+            }
+
             var transcript = args.Transcript.Trim();
             if (string.IsNullOrWhiteSpace(transcript))
             {
@@ -2162,6 +2203,11 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         Application.Current.Dispatcher.Invoke(() =>
         {
+            if (!IsActiveRealtimeSessionEvent(args.SessionId, nameof(OnRealtimeUserTranscriptFailed)))
+            {
+                return;
+            }
+
             var itemId = string.IsNullOrWhiteSpace(args.ItemId) ? realtimeUserPlaceholderItemId : args.ItemId;
             if (string.IsNullOrWhiteSpace(itemId))
             {
@@ -2264,6 +2310,11 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         Application.Current.Dispatcher.Invoke(() =>
         {
+            if (!IsActiveRealtimeSessionEvent(args.SessionId, nameof(OnRealtimeErrorReceived)))
+            {
+                return;
+            }
+
             Debug.WriteLine($"Realtime session error: SessionId={args.SessionId}; ResponseId={args.ResponseId}; Message={args.Message}; Exception={args.Exception}");
             StatusMessage = BackendConstants.RealtimeUnavailableMessage;
             IsSending = false;
@@ -2272,7 +2323,7 @@ public partial class LessonChatViewModel : ViewModelBase
             isRealtimeSessionStarted = false;
             SafeStopRealtimeMicrophone("session_error");
             realtimeAudioPlaybackService.Stop("session_error");
-            SetConversationModeState(ConversationModeState.Faulted, "session_error");
+            SetConversationModeState(ConversationModeState.NotStarted, "session_error_recoverable");
             RefreshAvatarState();
             RefreshAllCommandStates();
             LogLessonStateSnapshot("Realtime session error recovery");
@@ -2289,6 +2340,11 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private async Task RecoverRealtimeDisconnectAsync(VoiceSessionDisconnectedEventArgs args)
     {
+        if (!IsActiveRealtimeSessionEvent(args.SessionId, nameof(OnRealtimeDisconnected)))
+        {
+            return;
+        }
+
         Debug.WriteLine($"Realtime disconnected: SessionId={args.SessionId}; ResponseId={args.ResponseId}; Reason={args.Reason}; Expected={args.IsExpected}; SocketState={args.SocketState}; State={CurrentConversationModeState}.");
         if (!args.IsExpected && IsConversationModeEnabled)
         {
@@ -2379,8 +2435,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
         catch (Exception exception)
         {
-            IsConversationModeEnabled = false;
-            isRealtimeSessionStarted = false;
+            await CleanupRealtimeAfterFaultAsync("guided_context_realtime_start_failed");
             BackendStatusText = BackendConstants.BackendStatusUnavailable;
             StatusMessage = BackendConstants.RealtimeUnavailableMessage;
             Debug.WriteLine($"Realtime start after guided context selection failed: RealtimeSessionId={realtimeSessionId}; ExceptionType={exception.GetType().FullName}; Message={exception.Message}; {exception}");

@@ -82,6 +82,7 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("- Do not output JSON for realtime turns.");
         prompt.AppendLine("- Assistant audio and assistant transcript must come from this same realtime response.");
         prompt.AppendLine("- Ask at most one question in a turn.");
+        prompt.AppendLine("- English-only lesson language applies to every spoken realtime response.");
         prompt.AppendLine();
 
         return prompt.ToString();
@@ -95,6 +96,7 @@ public sealed class LessonPromptBuilder
 
         prompt.AppendLine($"Respond now as {avatarProfile.DisplayName}, the selected tutor profile.");
         prompt.AppendLine("Follow the canonical lesson teaching policy from the session instructions.");
+        prompt.AppendLine("English-only lesson language: speak English only, even if the learner asks for Finnish, Russian, Spanish, or another language.");
         prompt.AppendLine("Produce assistant audio and a matching assistant transcript from this same Realtime response.");
         prompt.AppendLine($"Current counted learner turn: {chatRequest.LearnerTurnCount} of {chatRequest.HardLearnerTurnLimit}.");
         if (LessonLimitHelper.ShouldEndLessonNow(chatRequest))
@@ -283,6 +285,26 @@ public sealed class LessonPromptBuilder
     }
 
 
+
+    private static void AppendEnglishOnlyLanguageLock(StringBuilder prompt, LessonChatRequest request)
+    {
+        prompt.AppendLine("English-only lesson language lock:");
+        prompt.AppendLine("- Always speak English in tutor messages.");
+        prompt.AppendLine("- Do not switch to another language even if the learner asks.");
+        prompt.AppendLine("- If the learner asks to use another language, politely refuse in English and continue the current lesson.");
+        prompt.AppendLine("- Keep the reply level-appropriate.");
+        prompt.AppendLine("- For A1, say: \"Let's practice in English. What is your name?\" or a scenario-compatible equivalent.");
+        prompt.AppendLine("- Translation is handled only by the app's Translate button, not by changing tutor language.");
+        prompt.AppendLine("- Do not produce Finnish, Russian, Spanish, or any non-English tutor output during the lesson.");
+        prompt.AppendLine("- Deterministic language-switch refusal examples:");
+        prompt.AppendLine("  User: \"Speak Finnish.\" Tutor A1: \"Let's practice in English. What's your name?\"");
+        prompt.AppendLine("  User: \"Can you speak Russian?\" Tutor A1: \"Let's use English. Where are you from?\"");
+        prompt.AppendLine("  User: \"Puhu suomea.\" Tutor A1: \"Let's practice in English. Please say it in English.\"");
+        prompt.AppendLine("  User: \"Говори по-русски.\" Tutor A1: \"Let's practice in English. Please say it in English.\"");
+        prompt.AppendLine("  Tutor B1/B2: \"Let's keep this lesson in English. I can help you with this situation in English.\"");
+        prompt.AppendLine();
+    }
+
     private static void AppendCanonicalTeachingPolicy(StringBuilder prompt, LessonChatRequest request, TutorAvatarProfile avatarProfile, string mode)
     {
         prompt.AppendLine("Canonical tutor teaching policy shared by normal Lesson Chat and Realtime Conversation Mode:");
@@ -292,6 +314,7 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("- UI label, avatar name, prompt identity, and any tutor self-reference must stay aligned with the selected TutorProfile.");
         prompt.AppendLine("- The tutor may react warmly to jokes, compliments, and small talk, then return to the lesson goal.");
         prompt.AppendLine("- Target language, level profile, feedback rules, hint rules, off-topic rules, turn limits, and guided scenario retention all apply in this mode.");
+        AppendEnglishOnlyLanguageLock(prompt, request);
 
         if (IsFreeConversation(request))
         {

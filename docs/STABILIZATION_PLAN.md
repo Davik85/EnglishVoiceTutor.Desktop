@@ -77,3 +77,10 @@ This plan reflects the current post-fix stabilization status. It favors document
 ## Current priority: Realtime recovery and usage instrumentation
 
 Conversation Mode now has explicit startup/record recovery work: failed starts, unexpected disconnects, microphone failures, quick toggles, and final lesson state must all reset command state without requiring an app restart. Developer-only usage/cost logs are required before deciding whether normal TTS, chained voice, or Realtime should change pricing or model strategy.
+
+## 2026-05-15 stabilization addendum
+
+- Realtime is migrated to the GA `/v1/realtime` WebSocket interface; beta headers and beta session fields are regression risks and must not return.
+- Conversation Mode startup is recoverable: startup errors produce a user-facing fallback message and reset command state so retry does not require app restart.
+- Duplicate/stale Realtime events are ignored by session id on the desktop.
+- English-only tutor output is a product invariant for normal Lesson Chat and Realtime. Translation remains available only through the app's Translate button.
