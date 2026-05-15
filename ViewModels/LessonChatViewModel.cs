@@ -2694,7 +2694,7 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         realtimeUserTranscriptBuffer.Clear();
         realtimeUserTranscriptBuffer.Append(normalizedTranscript);
-        var turnResult = LessonTurnPolicy.EvaluateUserInput(BuildTurnPolicyContext(), isValidTranscript: true);
+        var turnResult = LessonTurnPolicy.EvaluateUserInput(BuildTurnPolicyContext(), isValidEnglishTranscript: true);
         target.MarkAsValidLearnerTurn(normalizedTranscript, turnResult.LearnerTurnCountAfter);
         ViewFeedbackCommand.NotifyCanExecuteChanged();
         LearnerTurnCount = turnResult.LearnerTurnCountAfter;
