@@ -37,3 +37,7 @@ The current baseline is acceptable for stabilization: Windows audit/build comman
 ## Recommended immediate next task
 
 Run a full manual smoke test across all five MVP topics and record pass/fail in `docs/MANUAL_TEST_CHECKLIST.md`.
+
+## Added stabilization priority
+
+Realtime startup/record state recovery is now a priority before broader feature work. Developer-only usage/cost instrumentation must be inspected from real lessons before pricing or model decisions are made.

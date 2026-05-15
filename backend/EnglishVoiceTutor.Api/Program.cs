@@ -114,6 +114,7 @@ static async Task<IResult> HandleLessonChatReplyAsync(
 
     try
     {
+        request.RequestPurpose = "typed_lesson_chat";
         var response = await lessonChatService.CreateReplyAsync(request, cancellationToken);
 
         return Results.Ok(response);
@@ -193,6 +194,7 @@ static async Task<IResult> HandleLessonChatFeedbackAsync(
 
     try
     {
+        request.RequestPurpose = "feedback";
         var feedback = await lessonChatService.CreateFeedbackAsync(request, cancellationToken);
         return Results.Ok(feedback);
     }
