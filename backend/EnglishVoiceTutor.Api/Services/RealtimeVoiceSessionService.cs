@@ -166,12 +166,12 @@ public sealed class RealtimeVoiceSessionService
                 logger.LogInformation("Realtime user text accepted. SessionId={SessionId}; LearnerTurnCountAfter={LearnerTurnCount}; ValidationReason={Reason}.", sessionId, learnerTurnCount, textValidation.Reason);
                 await SendOpenAiEventAsync(new
                 {
-                    type = "conversation.item.create",
+                    type = OpenAiConstants.RealtimeConversationItemCreateEventType,
                     item = new
                     {
                         type = "message",
                         role = "user",
-                        content = new[] { new { type = "input_text", text = textValidation.NormalizedTranscript } }
+                        content = new[] { new { type = OpenAiConstants.RealtimeInputTextContentType, text = textValidation.NormalizedTranscript } }
                     }
                 }, cancellationToken);
                 await CreateResponseAsync(cancellationToken);
@@ -450,7 +450,8 @@ public sealed class RealtimeVoiceSessionService
                 return;
             }
 
-            await SendDesktopEventAsync(new { type = "session.error", sessionId, responseId = activeResponseId, message = "Realtime voice mode is unavailable. Please try text mode." }, CancellationToken.None);
+            await SendDesktopEventAsync(new { type = "session.runtime_failed", sessionId, responseId = activeResponseId, reason = "ReceiveLoopFailed", message = "Realtime voice mode is unavailable. Please try text mode." }, CancellationToken.None);
+            await DisconnectAsync("runtime_error", CancellationToken.None);
         }
     }
 
@@ -571,7 +572,8 @@ public sealed class RealtimeVoiceSessionService
                     break;
                 }
 
-                await SendDesktopEventAsync(new { type = "session.error", sessionId, responseId = activeResponseId, message }, cancellationToken);
+                await SendDesktopEventAsync(new { type = "session.runtime_failed", sessionId, responseId = activeResponseId, reason = "UpstreamRealtimeError", message }, cancellationToken);
+                await DisconnectAsync("upstream_realtime_error", CancellationToken.None);
                 break;
         }
     }
@@ -648,17 +650,24 @@ public sealed class RealtimeVoiceSessionService
             var role = IsTutorSender(message, request) ? "assistant" : "user";
             await SendOpenAiEventAsync(new
             {
-                type = "conversation.item.create",
+                type = OpenAiConstants.RealtimeConversationItemCreateEventType,
                 item = new
                 {
                     type = "message",
                     role,
-                    content = new[] { new { type = role == "assistant" ? "text" : "input_text", text } }
+                    content = new[] { new { type = GetRealtimeTextContentTypeForRole(role), text } }
                 }
             }, cancellationToken);
         }
 
         logger.LogInformation("Realtime recent conversation seeded. SessionId={SessionId}; RecentMessages={RecentMessageCount}; LastBotMessageLength={LastBotMessageLength}.", sessionId, request.RecentMessages.Count, request.LastBotMessage?.Length ?? 0);
+    }
+
+    private static string GetRealtimeTextContentTypeForRole(string role)
+    {
+        return role.Equals("assistant", StringComparison.OrdinalIgnoreCase)
+            ? OpenAiConstants.RealtimeOutputTextContentType
+            : OpenAiConstants.RealtimeInputTextContentType;
     }
 
     private string BuildResponseInstructions()
@@ -686,7 +695,7 @@ public sealed class RealtimeVoiceSessionService
         logger.LogInformation("Realtime response.create sent. SessionId={SessionId}; LearnerTurnCount={LearnerTurnCount}; ResponseCreateSentMs={ElapsedMs}; SinceUserAudioCommitMs={SinceUserAudioCommitMs}.", sessionId, learnerTurnCount, stopwatch.ElapsedMilliseconds, lastUserAudioCommitMs > 0 ? stopwatch.ElapsedMilliseconds - lastUserAudioCommitMs : 0);
         await SendOpenAiEventAsync(new
         {
-            type = "response.create",
+            type = OpenAiConstants.RealtimeResponseCreateEventType,
             response = new
             {
                 output_modalities = new[] { OpenAiConstants.RealtimeAudioOutputModality },
@@ -735,7 +744,111 @@ public sealed class RealtimeVoiceSessionService
     private Task SendOpenAiEventAsync(object value, CancellationToken cancellationToken)
     {
         var socket = openAiSocket ?? throw new InvalidOperationException("OpenAI realtime session is not started.");
+        LogRealtimeOutboundEventShape(value);
         return SendJsonAsync(socket, value, cancellationToken);
+    }
+
+    private void LogRealtimeOutboundEventShape(object value)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(value, JsonOptions);
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            var eventType = root.TryGetProperty("type", out var typeProperty) ? typeProperty.GetString() ?? string.Empty : string.Empty;
+            var role = string.Empty;
+            var itemKind = string.Empty;
+            var contentPartTypes = Array.Empty<string?>();
+            var outputModalities = Array.Empty<string?>();
+
+            if (eventType.Equals(OpenAiConstants.RealtimeConversationItemCreateEventType, StringComparison.Ordinal)
+                && root.TryGetProperty("item", out var item))
+            {
+                role = item.TryGetProperty("role", out var roleProperty) ? roleProperty.GetString() ?? string.Empty : string.Empty;
+                itemKind = DetermineRealtimeOutboundItemKind(role);
+                if (item.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Array)
+                {
+                    contentPartTypes = content.EnumerateArray()
+                        .Select(part => part.TryGetProperty("type", out var contentTypeProperty) ? contentTypeProperty.GetString() : string.Empty)
+                        .ToArray();
+                }
+            }
+            else if (eventType.Equals(OpenAiConstants.RealtimeResponseCreateEventType, StringComparison.Ordinal)
+                && root.TryGetProperty("response", out var response))
+            {
+                itemKind = "generated_response";
+                if (response.TryGetProperty("output_modalities", out var modalities) && modalities.ValueKind == JsonValueKind.Array)
+                {
+                    outputModalities = modalities.EnumerateArray().Select(modality => modality.GetString()).ToArray();
+                }
+
+                if (response.TryGetProperty("input", out var input))
+                {
+                    contentPartTypes = ExtractRealtimeInputContentTypes(input);
+                }
+            }
+            else if (eventType.Equals("session.update", StringComparison.Ordinal) && root.TryGetProperty("session", out var session))
+            {
+                itemKind = session.TryGetProperty("instructions", out _) && isSessionReady ? "correction" : "session_configuration";
+                if (session.TryGetProperty("output_modalities", out var sessionModalities) && sessionModalities.ValueKind == JsonValueKind.Array)
+                {
+                    outputModalities = sessionModalities.EnumerateArray().Select(modality => modality.GetString()).ToArray();
+                }
+            }
+            else
+            {
+                itemKind = eventType switch
+                {
+                    "input_audio_buffer.append" => "user_audio",
+                    "input_audio_buffer.commit" => "user_audio",
+                    "input_audio_buffer.clear" => "user_audio",
+                    "response.cancel" => "response_control",
+                    _ => "control"
+                };
+            }
+
+            logger.LogInformation("Realtime outbound event shape. SessionId={SessionId}; EventType={EventType}; Role={Role}; ItemKind={ItemKind}; ContentPartTypes={ContentPartTypes}; OutputModalities={OutputModalities}; IsSeed={IsSeed}; IsCorrection={IsCorrection}.",
+                sessionId,
+                eventType,
+                string.IsNullOrWhiteSpace(role) ? "none" : role,
+                itemKind,
+                string.Join(",", contentPartTypes.Where(value => !string.IsNullOrWhiteSpace(value))),
+                string.Join(",", outputModalities.Where(value => !string.IsNullOrWhiteSpace(value))),
+                itemKind.StartsWith("seed_", StringComparison.Ordinal),
+                itemKind.Equals("correction", StringComparison.Ordinal));
+        }
+        catch (Exception exception)
+        {
+            logger.LogDebug(exception, "Realtime outbound event shape logging skipped. SessionId={SessionId}.", sessionId);
+        }
+    }
+
+    private string DetermineRealtimeOutboundItemKind(string role)
+    {
+        if (isSessionReady)
+        {
+            return role.Equals("user", StringComparison.OrdinalIgnoreCase) ? "live_user_text" : "live_conversation_item";
+        }
+
+        return role.Equals("assistant", StringComparison.OrdinalIgnoreCase)
+            ? "seed_assistant"
+            : role.Equals("system", StringComparison.OrdinalIgnoreCase)
+                ? "seed_system"
+                : "seed_user";
+    }
+
+    private static string?[] ExtractRealtimeInputContentTypes(JsonElement input)
+    {
+        if (input.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<string?>();
+        }
+
+        return input.EnumerateArray()
+            .SelectMany(item => item.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Array
+                ? content.EnumerateArray().Select(part => part.TryGetProperty("type", out var contentTypeProperty) ? contentTypeProperty.GetString() : string.Empty)
+                : Enumerable.Empty<string?>())
+            .ToArray();
     }
 
     private Task SendDesktopEventAsync(object value, CancellationToken cancellationToken)

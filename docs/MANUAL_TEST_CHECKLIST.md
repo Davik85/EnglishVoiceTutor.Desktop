@@ -154,3 +154,11 @@ Reach the final tutor message in A1 Introductions or another guided lesson.
 - [ ] Click Translate on an existing message and verify translation works without changing tutor lesson language.
 
 - [ ] Verify a broken Realtime schema is fatal but recoverable: backend sends `session.startup_failed`, desktop returns Conversation Mode to NotStarted/Faulted retry state, the Conversation Mode button is clickable, the Record button remains disabled until a later `session.ready`, and normal text Lesson Chat still works.
+
+## 2026-05-15 Realtime GA content-part regression checks
+
+- [ ] Start Conversation Mode after recent assistant messages exist and verify backend logs show `ContentPartTypes=output_text` for assistant seed items and never `ContentPartTypes=text`.
+- [ ] Verify `response.create` logs `OutputModalities=audio` and does not include any content item with type `text`.
+- [ ] Verify no backend log contains `Invalid value: 'text'. Value must be 'output_text'.`.
+- [ ] Force a post-ready Realtime upstream error and verify desktop receives a recoverable runtime failure, stops microphone/playback, clears busy state, and allows Conversation Mode re-entry without app restart.
+- [ ] Start Conversation Mode while normal bot voice playback or auto-play is pending and verify normal TTS is canceled/suppressed during Realtime startup; manual Play voice still works after leaving Realtime.

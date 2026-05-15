@@ -37,12 +37,17 @@ def main() -> None:
         "IsActiveRealtimeSessionEvent(args.SessionId",
         "Ignoring stale realtime UI event",
         "Conversation Mode toggle ignored because lifecycle operation is active",
+        "PrepareForRealtimeConversationStartup",
+        "RealtimeStartupCancel",
+        "Normal bot voice playback stopped before Conversation Mode startup",
     ]:
         require(vm, needle, "ViewModels/LessonChatViewModel.cs")
     engine = read("Services/Voice/RealtimeVoiceConversationEngine.cs")
     for needle in [
         "Disconnected?.Invoke",
         "session.startup_failed",
+        "session.runtime_failed",
+        "if (!isSessionReady)",
         "sessionStartCompletionSource?.TrySetException",
         "Ignoring stale realtime event",
     ]:
