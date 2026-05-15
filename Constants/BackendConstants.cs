@@ -29,6 +29,12 @@ public static class BackendConstants
     public const string NgrokSkipBrowserWarningHeaderValue = "1";
     public const string BackendUserAgentProductName = "EnglishVoiceTutor.Desktop";
     public const string BackendUserAgentVersion = "1.0";
+    public const string LessonChatModelName = "configured OpenAI Responses model";
+    public const string FeedbackModelName = LessonChatModelName;
+    public const string SummaryModelName = "desktop summary generator";
+    public const string TranscriptionModelName = "gpt-4o-mini-transcribe";
+    public const string TtsModelName = "tts-1";
+    public const string RealtimeModelName = "gpt-realtime";
 
     public const string BackendUnavailableMessage = "Backend is unavailable. Please start the local backend and try again.";
     public const string BackendInvalidResponseMessage = "Backend returned an invalid response.";

@@ -27,6 +27,11 @@ public sealed class RealtimeVoiceSessionService
     private bool firstTranscriptLogged;
     private long lastUserAudioCommitMs;
     private int inputAudioBytesBuffered;
+    private long totalInputAudioBytes;
+    private long totalCommittedAudioBytes;
+    private long totalAssistantAudioBytes;
+    private int audioCommitCount;
+    private int realtimeUserTranscriptCharacters;
     private bool isResponseInProgress;
     private string pendingUserAudioItemId = string.Empty;
     private bool isAwaitingUserTranscript;
@@ -172,7 +177,9 @@ public sealed class RealtimeVoiceSessionService
                 break;
             case "user.audio.append":
                 var audioBase64 = payload.GetProperty("audio").GetString() ?? string.Empty;
-                inputAudioBytesBuffered += GetBase64DecodedByteCount(audioBase64);
+                var appendedBytes = GetBase64DecodedByteCount(audioBase64);
+                inputAudioBytesBuffered += appendedBytes;
+                totalInputAudioBytes += appendedBytes;
                 await SendOpenAiEventAsync(new { type = "input_audio_buffer.append", audio = audioBase64 }, cancellationToken);
                 break;
             case "user.audio.commit":
@@ -187,6 +194,8 @@ public sealed class RealtimeVoiceSessionService
                 }
 
                 lastUserAudioCommitMs = stopwatch.ElapsedMilliseconds;
+                totalCommittedAudioBytes += inputAudioBytesBuffered;
+                audioCommitCount++;
                 isAwaitingUserTranscript = true;
                 pendingUserAudioItemId = string.Empty;
                 logger.LogInformation("Realtime user audio commit sent; waiting for transcript before response.create. SessionId={SessionId}; LearnerTurnCountBefore={LearnerTurnCount}; BufferedBytes={BufferedBytes}; UserAudioCommitMs={ElapsedMs}; TranscriptionTimeoutMs={TimeoutMs}.", sessionId, learnerTurnCount, inputAudioBytesBuffered, lastUserAudioCommitMs, UserTranscriptTimeoutMilliseconds);
@@ -225,6 +234,11 @@ public sealed class RealtimeVoiceSessionService
         firstTranscriptLogged = false;
         lastUserAudioCommitMs = 0;
         inputAudioBytesBuffered = 0;
+        totalInputAudioBytes = 0;
+        totalCommittedAudioBytes = 0;
+        totalAssistantAudioBytes = 0;
+        audioCommitCount = 0;
+        realtimeUserTranscriptCharacters = 0;
         activeResponseId = string.Empty;
         activeTranscript.Clear();
         isResponseInProgress = false;
@@ -352,10 +366,12 @@ public sealed class RealtimeVoiceSessionService
             case "response.audio.delta":
             case "response.output_audio.delta":
                 var audio = root.GetProperty("delta").GetString() ?? string.Empty;
+                var assistantAudioBytes = GetBase64DecodedByteCount(audio);
+                totalAssistantAudioBytes += assistantAudioBytes;
                 if (!firstAudioLogged)
                 {
                     firstAudioLogged = true;
-                    logger.LogInformation("Realtime first assistant audio delta ms. SessionId={SessionId}; ResponseId={ResponseId}; FirstAssistantAudioDeltaMs={ElapsedMs}; SinceUserAudioCommitMs={SinceUserAudioCommitMs}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds, lastUserAudioCommitMs > 0 ? stopwatch.ElapsedMilliseconds - lastUserAudioCommitMs : 0);
+                    logger.LogInformation("Realtime first assistant audio delta ms. SessionId={SessionId}; ResponseId={ResponseId}; FirstAssistantAudioDeltaMs={ElapsedMs}; SinceUserAudioCommitMs={SinceUserAudioCommitMs}; AssistantAudioBytes={AssistantAudioBytes}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds, lastUserAudioCommitMs > 0 ? stopwatch.ElapsedMilliseconds - lastUserAudioCommitMs : 0, assistantAudioBytes);
                 }
                 await SendDesktopEventAsync(new { type = "assistant.audio.delta", sessionId, responseId = activeResponseId, audio }, cancellationToken);
                 break;
@@ -380,7 +396,8 @@ public sealed class RealtimeVoiceSessionService
                 break;
             case "response.done":
                 isResponseInProgress = false;
-                logger.LogInformation("Realtime assistant response completed ms. SessionId={SessionId}; ResponseId={ResponseId}; AssistantResponseCompletedMs={ElapsedMs}; SinceUserAudioCommitMs={SinceUserAudioCommitMs}; TranscriptLength={TranscriptLength}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds, lastUserAudioCommitMs > 0 ? stopwatch.ElapsedMilliseconds - lastUserAudioCommitMs : 0, activeTranscript.Length);
+                LogRealtimeResponseUsage(root);
+                logger.LogInformation("Realtime assistant response completed ms. SessionId={SessionId}; ResponseId={ResponseId}; AssistantResponseCompletedMs={ElapsedMs}; SinceUserAudioCommitMs={SinceUserAudioCommitMs}; TranscriptLength={TranscriptLength}; AssistantAudioBytes={AssistantAudioBytes}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds, lastUserAudioCommitMs > 0 ? stopwatch.ElapsedMilliseconds - lastUserAudioCommitMs : 0, activeTranscript.Length, totalAssistantAudioBytes);
                 await SendDesktopEventAsync(new { type = "assistant.turn.completed", sessionId, responseId = activeResponseId, transcript = activeTranscript.ToString() }, cancellationToken);
                 break;
             case "input_audio_buffer.committed":
@@ -442,6 +459,7 @@ public sealed class RealtimeVoiceSessionService
         }
 
         isAwaitingUserTranscript = false;
+        realtimeUserTranscriptCharacters += validation.NormalizedTranscript.Length;
         logger.LogInformation("Realtime user transcript accepted. SessionId={SessionId}; ItemId={ItemId}; Reason={Reason}; TranscriptLength={TranscriptLength}; LearnerTurnCountAfter={LearnerTurnCount}; NormalAssistantResponseCreated=True; RetryPromptShown=False.", sessionId, resolvedItemId, validation.Reason, validation.NormalizedTranscript.Length, learnerTurnCount);
         await SendDesktopEventAsync(new { type = "user.transcript.completed", sessionId, itemId = resolvedItemId, transcript = validation.NormalizedTranscript }, cancellationToken);
         await CreateResponseAsync(cancellationToken);
@@ -532,6 +550,35 @@ public sealed class RealtimeVoiceSessionService
         }, cancellationToken);
     }
 
+    private void LogRealtimeResponseUsage(JsonElement responseDoneEvent)
+    {
+        if (!responseDoneEvent.TryGetProperty("response", out var response) || !response.TryGetProperty("usage", out var usage))
+        {
+            logger.LogInformation("Developer usage summary: Operation=realtime_response; SessionId={SessionId}; ResponseId={ResponseId}; Model={Model}; HasExactUsage=False; MissingUsageFields=realtime_response_usage.", sessionId, activeResponseId, OpenAiConstants.DefaultRealtimeVoiceModel);
+            return;
+        }
+
+        long? GetLong(string name) => usage.TryGetProperty(name, out var property) && property.TryGetInt64(out var value) ? value : null;
+        long? inputTokens = GetLong("input_tokens");
+        long? outputTokens = GetLong("output_tokens");
+        long? totalTokens = GetLong("total_tokens");
+        long? inputAudioTokens = null;
+        long? outputAudioTokens = null;
+        JsonElement inputDetails;
+        if (usage.TryGetProperty("input_token_details", out inputDetails) || usage.TryGetProperty("input_tokens_details", out inputDetails))
+        {
+            inputAudioTokens = inputDetails.TryGetProperty("audio_tokens", out var value) && value.TryGetInt64(out var parsed) ? parsed : null;
+        }
+
+        JsonElement outputDetails;
+        if (usage.TryGetProperty("output_token_details", out outputDetails) || usage.TryGetProperty("output_tokens_details", out outputDetails))
+        {
+            outputAudioTokens = outputDetails.TryGetProperty("audio_tokens", out var value) && value.TryGetInt64(out var parsed) ? parsed : null;
+        }
+
+        logger.LogInformation("Developer usage summary: Operation=realtime_response; SessionId={SessionId}; ResponseId={ResponseId}; Model={Model}; InputTokens={InputTokens}; OutputTokens={OutputTokens}; TotalTokens={TotalTokens}; AudioInputTokens={AudioInputTokens}; AudioOutputTokens={AudioOutputTokens}; HasExactUsage={HasExactUsage}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", sessionId, activeResponseId, OpenAiConstants.DefaultRealtimeVoiceModel, inputTokens, outputTokens, totalTokens, inputAudioTokens, outputAudioTokens, inputTokens.HasValue || outputTokens.HasValue || totalTokens.HasValue || inputAudioTokens.HasValue || outputAudioTokens.HasValue, PricingConstants.OpenAi.RealtimeTextInputPerMillionTokensUsd == 0m || PricingConstants.OpenAi.RealtimeTextOutputPerMillionTokensUsd == 0m ? "realtime_pricing" : string.Empty);
+    }
+
     private void EnforceTurnLimit()
     {
         if (startRequest is not null && learnerTurnCount >= startRequest.HardLearnerTurnLimit)
@@ -581,6 +628,11 @@ public sealed class RealtimeVoiceSessionService
         }
     }
 
+    private static double EstimateRealtimePcmDurationSeconds(long bytes)
+    {
+        return Math.Max(0, bytes) / (double)(InputAudioSampleRate * InputAudioBytesPerSample);
+    }
+
     private static bool IsExpectedDesktopDisconnect(WebSocketException exception, CancellationToken cancellationToken)
     {
         return cancellationToken.IsCancellationRequested
@@ -590,6 +642,7 @@ public sealed class RealtimeVoiceSessionService
     private async Task DisconnectAsync(string reason, CancellationToken cancellationToken)
     {
         logger.LogInformation("Realtime disconnect. SessionId={SessionId}; ResponseId={ResponseId}; DisconnectReason={DisconnectReason}; ElapsedMs={ElapsedMs}.", sessionId, activeResponseId, reason, stopwatch.ElapsedMilliseconds);
+        logger.LogInformation("Developer usage summary: Operation=realtime_session; SessionId={SessionId}; Model={Model}; Voice={Voice}; InputTranscriptionModel={InputTranscriptionModel}; Language={Language}; TotalInputAudioBytes={TotalInputAudioBytes}; EstimatedInputAudioDurationSeconds={EstimatedInputAudioDurationSeconds}; TotalCommittedAudioBytes={TotalCommittedAudioBytes}; AudioCommits={AudioCommits}; UserTranscriptCharacters={UserTranscriptCharacters}; AssistantTranscriptCharacters={AssistantTranscriptCharacters}; AssistantAudioBytes={AssistantAudioBytes}; EstimatedAssistantAudioDurationSeconds={EstimatedAssistantAudioDurationSeconds}; DisconnectReason={DisconnectReason}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", sessionId, OpenAiConstants.DefaultRealtimeVoiceModel, OpenAiConstants.DefaultRealtimeVoice, OpenAiConstants.DefaultTranscriptionModel, OpenAiConstants.TranscriptionLanguage, totalInputAudioBytes, EstimateRealtimePcmDurationSeconds(totalInputAudioBytes), totalCommittedAudioBytes, audioCommitCount, realtimeUserTranscriptCharacters, activeTranscript.Length, totalAssistantAudioBytes, EstimateRealtimePcmDurationSeconds(totalAssistantAudioBytes), reason, PricingConstants.OpenAi.RealtimeAudioInputPerMillionTokensUsd == 0m || PricingConstants.OpenAi.RealtimeAudioOutputPerMillionTokensUsd == 0m ? "realtime_pricing" : string.Empty);
         transcriptionTimeoutCancellationTokenSource?.Cancel();
         transcriptionTimeoutCancellationTokenSource?.Dispose();
         transcriptionTimeoutCancellationTokenSource = null;

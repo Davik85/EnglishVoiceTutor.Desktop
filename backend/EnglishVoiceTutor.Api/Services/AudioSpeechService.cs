@@ -182,6 +182,8 @@ public sealed class AudioSpeechService
                 timeoutCancellationTokenSource.IsCancellationRequested,
                 audioBytes.Length);
 
+            _logger.LogInformation("Developer usage summary: Operation=tts; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; InputCharacters={InputCharacters}; OutputBytes={OutputBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", request.Model, request.Voice, request.ResponseFormat, "normal_lesson_chat_play_voice", request.Input.Length, audioBytes.Length, EstimateWavDurationSeconds(audioBytes.LongLength), PricingConstants.OpenAi.Tts1PerMillionCharactersUsd == 0m ? "tts_pricing" : string.Empty);
+
             return audioBytes;
         }
         catch (TaskCanceledException exception)
@@ -397,6 +399,8 @@ public sealed class AudioSpeechService
                 false,
                 false);
 
+            _logger.LogInformation("Developer usage summary: Operation=tts_stream; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; InputCharacters={InputCharacters}; OutputBytes={OutputBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", request.Model, request.Voice, request.ResponseFormat, "normal_lesson_chat_play_voice", request.Input.Length, totalBytes, EstimatePcmDurationSeconds(totalBytes), PricingConstants.OpenAi.Tts1PerMillionCharactersUsd == 0m ? "tts_pricing" : string.Empty);
+
             return new BotVoiceStreamMetrics(firstHeaderMs, firstChunkMs, firstChunkWrittenMs, stopwatch.ElapsedMilliseconds, totalBytes);
         }
         catch (OperationCanceledException exception)
@@ -447,6 +451,24 @@ public sealed class AudioSpeechService
                 totalBytes);
             throw;
         }
+    }
+
+    private static double EstimateWavDurationSeconds(long bytes)
+    {
+        const int wavHeaderBytes = 44;
+        const int sampleRate = 24000;
+        const int channels = 1;
+        const int bytesPerSample = 2;
+        var audioBytes = Math.Max(0, bytes - wavHeaderBytes);
+        return audioBytes / (double)(sampleRate * channels * bytesPerSample);
+    }
+
+    private static double EstimatePcmDurationSeconds(long bytes)
+    {
+        const int sampleRate = 24000;
+        const int channels = 1;
+        const int bytesPerSample = 2;
+        return Math.Max(0, bytes) / (double)(sampleRate * channels * bytesPerSample);
     }
 }
 

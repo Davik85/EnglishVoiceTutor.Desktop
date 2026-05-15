@@ -19,6 +19,7 @@ public interface IVoiceConversationEngine
     event EventHandler<UserTranscriptCompletedEventArgs>? UserTranscriptCompleted;
     event EventHandler<UserTranscriptFailedEventArgs>? UserTranscriptFailed;
     event EventHandler<VoiceSessionErrorEventArgs>? ErrorReceived;
+    event EventHandler<VoiceSessionDisconnectedEventArgs>? Disconnected;
 }
 
 public sealed record VoiceSessionStartRequest
@@ -216,4 +217,27 @@ public sealed class UserTranscriptFailedEventArgs : EventArgs
     public string ItemId { get; }
     public string Message { get; }
     public long ElapsedMilliseconds { get; }
+}
+
+
+public sealed class VoiceSessionDisconnectedEventArgs : EventArgs
+{
+    public VoiceSessionDisconnectedEventArgs(string sessionId, string responseId, string reason, bool isExpected, string socketState)
+    {
+        SessionId = sessionId;
+        ResponseId = responseId;
+        Reason = reason;
+        IsExpected = isExpected;
+        SocketState = socketState;
+    }
+
+    public string SessionId { get; }
+
+    public string ResponseId { get; }
+
+    public string Reason { get; }
+
+    public bool IsExpected { get; }
+
+    public string SocketState { get; }
 }

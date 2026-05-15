@@ -72,19 +72,22 @@ public sealed class OpenAiLessonChatService : ILessonChatService
     private readonly TutorAvatarProfileProvider _avatarProfileProvider;
     private readonly TutorIdentityGuard _tutorIdentityGuard;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<OpenAiLessonChatService> _logger;
 
     public OpenAiLessonChatService(
         OpenAiOptionsProvider optionsProvider,
         LessonPromptBuilder lessonPromptBuilder,
         TutorAvatarProfileProvider avatarProfileProvider,
         TutorIdentityGuard tutorIdentityGuard,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        ILogger<OpenAiLessonChatService> logger)
     {
         _optionsProvider = optionsProvider;
         _lessonPromptBuilder = lessonPromptBuilder;
         _avatarProfileProvider = avatarProfileProvider;
         _tutorIdentityGuard = tutorIdentityGuard;
         _httpClientFactory = httpClientFactory;
+        _logger = logger;
     }
 
     public async Task<LessonChatResponse> CreateReplyAsync(
@@ -99,6 +102,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         }
 
         var openAiResponse = await SendResponsesApiRequestAsync(request, options, cancellationToken);
+        LogResponsesUsage(string.IsNullOrWhiteSpace(request.RequestPurpose) ? "lesson_chat_reply" : request.RequestPurpose, request, options.Model, openAiResponse);
         var outputText = ExtractOutputText(openAiResponse);
         var lessonReply = JsonSerializer.Deserialize<LessonChatResponse>(outputText, JsonOptions);
 
@@ -168,6 +172,44 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         }
 
         return parsedResponse;
+    }
+
+    private void LogResponsesUsage(string operation, LessonChatRequest request, string model, OpenAiResponsesResponse response)
+    {
+        var usage = response.Usage;
+        var metrics = new OpenAiCallUsageMetrics
+        {
+            Operation = operation,
+            Model = model,
+            ResponseId = response.Id,
+            InputTokens = usage?.InputTokens,
+            OutputTokens = usage?.OutputTokens,
+            TotalTokens = usage?.TotalTokens,
+            CachedInputTokens = usage?.InputTokensDetails?.CachedTokens,
+            AudioInputTokens = usage?.InputTokensDetails?.AudioTokens,
+            AudioOutputTokens = usage?.OutputTokensDetails?.AudioTokens
+        };
+
+        _logger.LogInformation(
+            "Developer usage summary: Operation={Operation}; Model={Model}; ResponseId={ResponseId}; LessonId={LessonId}; Topic={Topic}; Subtopic={Subtopic}; Level={Level}; LessonType={LessonType}; SelectedContext={SelectedContext}; TutorProfileId={TutorProfileId}; InputTokens={InputTokens}; OutputTokens={OutputTokens}; TotalTokens={TotalTokens}; CachedInputTokens={CachedInputTokens}; AudioInputTokens={AudioInputTokens}; AudioOutputTokens={AudioOutputTokens}; HasExactUsage={HasExactUsage}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.",
+            metrics.Operation,
+            metrics.Model,
+            metrics.ResponseId,
+            request.LessonScenarioId,
+            string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
+            string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
+            string.IsNullOrWhiteSpace(request.Level) ? request.SelectedLevel : request.Level,
+            request.LessonType,
+            request.SelectedContextTitle,
+            request.TutorProfileId,
+            metrics.InputTokens,
+            metrics.OutputTokens,
+            metrics.TotalTokens,
+            metrics.CachedInputTokens,
+            metrics.AudioInputTokens,
+            metrics.AudioOutputTokens,
+            metrics.HasExactUsage,
+            PricingConstants.OpenAi.ChatTextInputPerMillionTokensUsd == 0m || PricingConstants.OpenAi.ChatTextOutputPerMillionTokensUsd == 0m ? "chat_pricing" : string.Empty);
     }
 
     private static string ExtractOutputText(OpenAiResponsesResponse response)

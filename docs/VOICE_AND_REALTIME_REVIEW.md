@@ -82,3 +82,7 @@ After the final tutor message, the lesson enters Awaiting Finish:
 - Transcript/audio mismatch is a high-severity regression: Realtime assistant transcript and audio must always come from the same response.
 - Manual Play exact-visible-text behavior should remain covered by checklist and logs.
 - Chained fallback should remain usable when Realtime is unavailable.
+
+## 2026-05-14 update: recovery and cost instrumentation
+
+Realtime Conversation Mode startup and record-button recovery are treated as stabilization priorities. The desktop state model must allow retry after backend/OpenAI startup failure, unexpected socket disconnect, and microphone start failure. Backend developer logs now collect raw usage data for typed Lesson Chat, chained transcription, `tts-1` speech, and `gpt-realtime` sessions so future cost comparisons use measured usage instead of theory alone.
