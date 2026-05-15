@@ -25,6 +25,7 @@ public sealed class RealtimeMicrophoneCaptureService : IDisposable
             throw new InvalidOperationException(AudioConstants.RecordingAlreadyInProgressMessage);
         }
 
+        Debug.WriteLine($"Realtime microphone capture start requested: RequestedDeviceId={audioInputDeviceId}; AvailableDeviceCount={WaveIn.DeviceCount}.");
         var recorder = new WaveInEvent
         {
             WaveFormat = new WaveFormat(AudioConstants.RealtimeInputPcmSampleRate, AudioConstants.RealtimeInputPcmBitsPerSample, AudioConstants.RealtimeInputPcmChannels),
@@ -36,6 +37,7 @@ public sealed class RealtimeMicrophoneCaptureService : IDisposable
             recorder.DeviceNumber = deviceNumber.Value;
         }
 
+        Debug.WriteLine($"Realtime microphone device selected: RequestedDeviceId={audioInputDeviceId}; DeviceNumber={(deviceNumber.HasValue ? deviceNumber.Value.ToString() : "system_default")}; SampleRate={recorder.WaveFormat.SampleRate}; Bits={recorder.WaveFormat.BitsPerSample}; Channels={recorder.WaveFormat.Channels}.");
         recorder.DataAvailable += OnDataAvailable;
         recorder.StartRecording();
         waveIn = recorder;
@@ -80,6 +82,7 @@ public sealed class RealtimeMicrophoneCaptureService : IDisposable
             return;
         }
 
+        Debug.WriteLine($"Realtime microphone bytes captured: Bytes={args.BytesRecorded}.");
         var chunk = new byte[args.BytesRecorded];
         Buffer.BlockCopy(args.Buffer, 0, chunk, 0, args.BytesRecorded);
         AudioChunkCaptured?.Invoke(this, new RealtimeMicrophoneAudioChunkEventArgs(chunk));

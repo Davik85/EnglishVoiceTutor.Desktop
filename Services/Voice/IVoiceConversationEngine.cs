@@ -18,6 +18,7 @@ public interface IVoiceConversationEngine
     event EventHandler<UserTranscriptDeltaEventArgs>? UserTranscriptDeltaReceived;
     event EventHandler<UserTranscriptCompletedEventArgs>? UserTranscriptCompleted;
     event EventHandler<UserTranscriptFailedEventArgs>? UserTranscriptFailed;
+    event EventHandler<VoiceSessionReadyEventArgs>? SessionReady;
     event EventHandler<VoiceSessionErrorEventArgs>? ErrorReceived;
     event EventHandler<VoiceSessionDisconnectedEventArgs>? Disconnected;
 }
@@ -138,6 +139,25 @@ public sealed class AssistantTurnCompletedEventArgs : EventArgs
     public string SessionId { get; }
     public string ResponseId { get; }
     public string Transcript { get; }
+    public long ElapsedMilliseconds { get; }
+}
+
+public sealed class VoiceSessionReadyEventArgs : EventArgs
+{
+    public VoiceSessionReadyEventArgs(string sessionId, string model, string voice, long elapsedMilliseconds)
+    {
+        SessionId = sessionId;
+        Model = model;
+        Voice = voice;
+        ElapsedMilliseconds = elapsedMilliseconds;
+    }
+
+    public string SessionId { get; }
+
+    public string Model { get; }
+
+    public string Voice { get; }
+
     public long ElapsedMilliseconds { get; }
 }
 

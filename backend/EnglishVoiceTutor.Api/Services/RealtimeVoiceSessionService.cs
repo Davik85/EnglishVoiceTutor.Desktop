@@ -132,7 +132,7 @@ public sealed class RealtimeVoiceSessionService
         var root = document.RootElement;
         var type = root.GetProperty("type").GetString() ?? string.Empty;
         sessionId = root.TryGetProperty("sessionId", out var sessionProperty) ? sessionProperty.GetString() ?? sessionId : sessionId;
-        var payload = root.GetProperty("payload");
+        var payload = root.TryGetProperty("payload", out var payloadProperty) ? payloadProperty : default;
 
         switch (type)
         {
@@ -177,6 +177,7 @@ public sealed class RealtimeVoiceSessionService
                 await CreateResponseAsync(cancellationToken);
                 break;
             case "user.audio.start":
+                logger.LogInformation("Realtime desktop start_recording event received. SessionId={SessionId}; LearnerTurnCount={LearnerTurnCount}; SessionReady={SessionReady}.", sessionId, learnerTurnCount, isSessionReady);
                 EnforceTurnLimit();
                 inputAudioBytesBuffered = 0;
                 await SendOpenAiEventAsync(new { type = "input_audio_buffer.clear" }, cancellationToken);
@@ -186,9 +187,11 @@ public sealed class RealtimeVoiceSessionService
                 var appendedBytes = GetBase64DecodedByteCount(audioBase64);
                 inputAudioBytesBuffered += appendedBytes;
                 totalInputAudioBytes += appendedBytes;
+                logger.LogInformation("Realtime desktop audio append received. SessionId={SessionId}; AppendedBytes={AppendedBytes}; BufferedBytes={BufferedBytes}; TotalInputAudioBytes={TotalInputAudioBytes}; SessionReady={SessionReady}.", sessionId, appendedBytes, inputAudioBytesBuffered, totalInputAudioBytes, isSessionReady);
                 await SendOpenAiEventAsync(new { type = "input_audio_buffer.append", audio = audioBase64 }, cancellationToken);
                 break;
             case "user.audio.commit":
+                logger.LogInformation("Realtime desktop commit received. SessionId={SessionId}; BufferedBytes={BufferedBytes}; TotalInputAudioBytes={TotalInputAudioBytes}; SessionReady={SessionReady}.", sessionId, inputAudioBytesBuffered, totalInputAudioBytes, isSessionReady);
                 EnforceTurnLimit();
                 if (inputAudioBytesBuffered < MinimumInputAudioBytes)
                 {
@@ -210,7 +213,11 @@ public sealed class RealtimeVoiceSessionService
                 StartTranscriptionTimeout(cancellationToken);
                 break;
             case "session.stop":
+                logger.LogInformation("Realtime desktop stop/cancel received. SessionId={SessionId}; ResponseId={ResponseId}; SessionReady={SessionReady}.", sessionId, activeResponseId, isSessionReady);
                 await DisconnectAsync("client_stop", cancellationToken);
+                break;
+            default:
+                logger.LogWarning("Realtime ignored unknown desktop message. SessionId={SessionId}; MessageType={MessageType}; Reason=unknown_desktop_message_type.", sessionId, type);
                 break;
         }
     }
