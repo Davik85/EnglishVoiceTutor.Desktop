@@ -3,6 +3,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
+using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Models.RealtimeVoice;
 using EnglishVoiceTutor.Shared.LessonPolicies;
 
