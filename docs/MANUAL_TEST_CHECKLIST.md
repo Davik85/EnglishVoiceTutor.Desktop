@@ -142,3 +142,13 @@ Reach the final tutor message in A1 Introductions or another guided lesson.
 - [ ] Realtime user audio commit logs indicate waiting for transcript before `response.create`.
 - [ ] Realtime invalid transcript logs indicate no normal assistant response was created.
 - [ ] Manual Play logs indicate exact visible text was used.
+
+## 2026-05-15 Realtime GA recovery and English-only checks
+
+- [ ] Start Conversation Mode and verify backend logs do not contain `Realtime Beta API is no longer supported`.
+- [ ] Verify Realtime connects through GA `/v1/realtime` and sends no `OpenAI-Beta` header.
+- [ ] Force a Realtime startup failure and verify the user sees a clear failure message, Conversation Mode becomes clickable again, Record is not shown as ready, and text Lesson Chat still works.
+- [ ] Start/stop Conversation Mode three times and verify no overlapping sessions or stale events corrupt the active state.
+- [ ] In normal Lesson Chat, send `Speak Finnish.` and verify the tutor answers in English, for example `Let's practice in English. What's your name?`.
+- [ ] In Realtime, say `Speak Finnish.` and verify the tutor replies in English and does not speak Finnish.
+- [ ] Click Translate on an existing message and verify translation works without changing tutor lesson language.

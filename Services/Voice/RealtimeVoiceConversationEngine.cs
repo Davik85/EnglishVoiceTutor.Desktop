@@ -216,6 +216,12 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         var eventSessionId = root.TryGetProperty("sessionId", out var sessionProperty) ? sessionProperty.GetString() ?? sessionId : sessionId;
         var responseId = root.TryGetProperty("responseId", out var responseProperty) ? responseProperty.GetString() ?? activeResponseId : activeResponseId;
 
+        if (!string.IsNullOrWhiteSpace(eventSessionId) && !string.Equals(eventSessionId, sessionId, StringComparison.Ordinal))
+        {
+            Debug.WriteLine($"Ignoring stale realtime event: ActiveSessionId={sessionId}; EventSessionId={eventSessionId}; EventType={type}.");
+            return;
+        }
+
         if (!string.IsNullOrWhiteSpace(responseId) && !string.Equals(activeResponseId, responseId, StringComparison.Ordinal))
         {
             activeResponseId = responseId;
@@ -225,8 +231,9 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         switch (type)
         {
             case "session.started":
+            case "session.ready":
                 sessionStartCompletionSource?.TrySetResult(true);
-                Debug.WriteLine($"Realtime voice session started acknowledgement received: SessionId={eventSessionId}; SessionConfiguredMs={sessionStopwatch.ElapsedMilliseconds}.");
+                Debug.WriteLine($"Realtime voice session ready acknowledgement received: SessionId={eventSessionId}; SessionConfiguredMs={sessionStopwatch.ElapsedMilliseconds}.");
                 break;
             case "assistant.audio.delta":
                 var audioBase64 = root.GetProperty("audio").GetString() ?? string.Empty;
@@ -272,6 +279,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
                 Debug.WriteLine($"Realtime user transcript failed received: SessionId={eventSessionId}; ItemId={failedItemId}; UserTranscriptFailedMs={sessionStopwatch.ElapsedMilliseconds}.");
                 UserTranscriptFailed?.Invoke(this, new UserTranscriptFailedEventArgs(eventSessionId, failedItemId, failureMessage, sessionStopwatch.ElapsedMilliseconds));
                 break;
+            case "session.startup_failed":
             case "session.error":
                 var message = root.TryGetProperty("message", out var messageProperty) ? messageProperty.GetString() ?? "Realtime voice mode is unavailable. Please try text mode." : "Realtime voice mode is unavailable. Please try text mode.";
                 sessionStartCompletionSource?.TrySetException(new InvalidOperationException(message));

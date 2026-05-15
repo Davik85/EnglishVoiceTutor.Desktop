@@ -165,3 +165,9 @@ This review container also ran the repository checks listed in the final task re
 - Scenario methodology and prompts are acceptable for stabilization but still need a quality polish pass.
 - Manual test coverage should be strengthened and recorded after each future behavior change.
 - Do not add subscriptions, avatar expansion, broad UI polish, or all-lesson JSON migration until the smoke checklist is reliable.
+
+## 2026-05-15 Realtime and language-lock update
+
+Realtime Conversation Mode uses the GA OpenAI Realtime WebSocket endpoint `/v1/realtime` with `gpt-realtime` and voice `coral`; it no longer sends the deprecated Realtime beta header. The desktop enters Ready only after the backend confirms upstream configuration with a `session.ready` event. Startup failures are fatal but recoverable: sockets are closed, pending realtime state is cleared, and Conversation Mode can be retried while normal text Lesson Chat remains usable.
+
+All tutor lesson output is English-only. Normal Lesson Chat prompts, Realtime session instructions, and response instructions forbid switching to Finnish, Russian, Spanish, or any other non-English lesson language on user request. The Translate button remains separate and may translate existing messages for review.
