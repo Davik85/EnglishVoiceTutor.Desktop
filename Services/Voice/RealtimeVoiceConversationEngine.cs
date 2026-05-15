@@ -36,6 +36,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
     public event EventHandler<UserTranscriptDeltaEventArgs>? UserTranscriptDeltaReceived;
     public event EventHandler<UserTranscriptCompletedEventArgs>? UserTranscriptCompleted;
     public event EventHandler<UserTranscriptFailedEventArgs>? UserTranscriptFailed;
+    public event EventHandler<VoiceSessionReadyEventArgs>? SessionReady;
     public event EventHandler<VoiceSessionErrorEventArgs>? ErrorReceived;
     public event EventHandler<VoiceSessionDisconnectedEventArgs>? Disconnected;
 
@@ -78,11 +79,13 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
 
     public Task StartUserAudioAsync(CancellationToken cancellationToken)
     {
+        Debug.WriteLine($"Realtime user audio start requested: SessionId={sessionId}; UserAudioStartRequestedMs={sessionStopwatch.ElapsedMilliseconds}.");
         return SendBackendEventAsync("user.audio.start", new { }, cancellationToken);
     }
 
     public Task AppendUserAudioAsync(ReadOnlyMemory<byte> audioChunk, CancellationToken cancellationToken)
     {
+        Debug.WriteLine($"Realtime user audio append requested: SessionId={sessionId}; Bytes={audioChunk.Length}; UserAudioAppendRequestedMs={sessionStopwatch.ElapsedMilliseconds}.");
         return SendBackendEventAsync("user.audio.append", new { audio = Convert.ToBase64String(audioChunk.Span) }, cancellationToken);
     }
 
@@ -237,7 +240,10 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
             case "session.ready":
                 isSessionReady = true;
                 sessionStartCompletionSource?.TrySetResult(true);
-                Debug.WriteLine($"Realtime voice session ready acknowledgement received: SessionId={eventSessionId}; SessionConfiguredMs={sessionStopwatch.ElapsedMilliseconds}.");
+                var readyModel = root.TryGetProperty("model", out var modelProperty) ? modelProperty.GetString() ?? string.Empty : string.Empty;
+                var readyVoice = root.TryGetProperty("voice", out var voiceProperty) ? voiceProperty.GetString() ?? string.Empty : string.Empty;
+                Debug.WriteLine($"Realtime voice session ready acknowledgement received: SessionId={eventSessionId}; Model={readyModel}; Voice={readyVoice}; SessionConfiguredMs={sessionStopwatch.ElapsedMilliseconds}.");
+                SessionReady?.Invoke(this, new VoiceSessionReadyEventArgs(eventSessionId, readyModel, readyVoice, sessionStopwatch.ElapsedMilliseconds));
                 break;
             case "assistant.audio.delta":
                 var audioBase64 = root.GetProperty("audio").GetString() ?? string.Empty;
