@@ -293,15 +293,15 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("- Do not switch to another language even if the learner asks.");
         prompt.AppendLine("- If the learner asks to use another language, politely refuse in English and continue the current lesson.");
         prompt.AppendLine("- Keep the reply level-appropriate.");
-        prompt.AppendLine("- For A1, say: "Let's practice in English. What is your name?" or a scenario-compatible equivalent.");
+        prompt.AppendLine("- For A1, say: \"Let's practice in English. What is your name?\" or a scenario-compatible equivalent.");
         prompt.AppendLine("- Translation is handled only by the app's Translate button, not by changing tutor language.");
         prompt.AppendLine("- Do not produce Finnish, Russian, Spanish, or any non-English tutor output during the lesson.");
         prompt.AppendLine("- Deterministic language-switch refusal examples:");
-        prompt.AppendLine("  User: "Speak Finnish." Tutor A1: "Let's practice in English. What's your name?"");
-        prompt.AppendLine("  User: "Can you speak Russian?" Tutor A1: "Let's use English. Where are you from?"");
-        prompt.AppendLine("  User: "Puhu suomea." Tutor A1: "Let's practice in English. Please say it in English."");
-        prompt.AppendLine("  User: "Говори по-русски." Tutor A1: "Let's practice in English. Please say it in English."");
-        prompt.AppendLine("  Tutor B1/B2: "Let's keep this lesson in English. I can help you with this situation in English."");
+        prompt.AppendLine("  User: \"Speak Finnish.\" Tutor A1: \"Let's practice in English. What's your name?\"");
+        prompt.AppendLine("  User: \"Can you speak Russian?\" Tutor A1: \"Let's use English. Where are you from?\"");
+        prompt.AppendLine("  User: \"Puhu suomea.\" Tutor A1: \"Let's practice in English. Please say it in English.\"");
+        prompt.AppendLine("  User: \"Говори по-русски.\" Tutor A1: \"Let's practice in English. Please say it in English.\"");
+        prompt.AppendLine("  Tutor B1/B2: \"Let's keep this lesson in English. I can help you with this situation in English.\"");
         prompt.AppendLine();
     }
 
