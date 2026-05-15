@@ -174,3 +174,11 @@ Reach the final tutor message in A1 Introductions or another guided lesson.
 - [ ] Record silence/noise and verify `[Voice message]` is replaced with a retry/status message, no feedback button appears, the learner turn count does not increment, and no assistant response is created.
 - [ ] Force a Realtime transcript timeout/failure with committed audio and verify exactly one fallback transcription attempt is logged; a valid fallback transcript is used once with no duplicate user messages or assistant responses.
 - [ ] Leave Conversation Mode and verify normal Lesson Chat recording still uses `/api/audio/transcribe` and normal Play voice still uses `tts-1`.
+
+## 2026-05-15 Avatar tooltip and freeze diagnostics checks
+
+- [ ] Hover over the tutor avatar in Lesson Chat.
+- [ ] Expected: no technical asset path, file path, image file name, or avatar asset metadata is shown.
+- [ ] Expected: the avatar image/animation still renders normally.
+- [ ] If the desktop app freezes or hangs, collect recent frontend Debug logs and backend logs around Conversation Mode enter/exit, `realtime_pre_start_opening` TTS playback, Play voice/auto-play, and normal/Realtime recording start/stop.
+- [ ] Check frontend logs for `UI operation start`, `UI operation end`, and `UI operation warning` entries with operation names and durations.
