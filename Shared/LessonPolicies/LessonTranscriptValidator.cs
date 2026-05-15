@@ -55,7 +55,9 @@ public static class LessonTranscriptValidator
             return LessonTranscriptValidationResult.Invalid(LessonTranscriptValidationReason.Empty);
         }
 
-        if (string.Equals(normalized, VoiceMessagePlaceholder, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(normalized, VoiceMessagePlaceholder, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, InvalidTranscriptUserMessage, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized.Trim('[', ']'), InvalidTranscriptUserMessage.Trim('[', ']'), StringComparison.OrdinalIgnoreCase))
         {
             return LessonTranscriptValidationResult.Invalid(LessonTranscriptValidationReason.Placeholder, normalized);
         }

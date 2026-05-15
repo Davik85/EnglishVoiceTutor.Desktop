@@ -5,6 +5,7 @@ public enum ConversationModeState
     NotStarted,
     Starting,
     Ready,
+    OpeningPlayback,
     Recording,
     WaitingForTranscript,
     WaitingForAssistant,

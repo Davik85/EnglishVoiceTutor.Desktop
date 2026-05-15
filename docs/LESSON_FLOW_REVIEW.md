@@ -103,3 +103,12 @@ This document records the current lesson flow contract for guided roleplay and s
 - Disabling review actions in Awaiting Finish.
 - Letting Realtime continue after the final tutor message.
 - Summarizing only the last exchange instead of the whole valid conversation.
+
+## 2026-05-15 Conversation Mode opening and retry flow
+
+- Entering active Conversation Mode starts Realtime first, then plays the current visible bot prompt as `OpeningPlayback` using normal `tts-1` speech with purpose `realtime_pre_start_opening`.
+- `OpeningPlayback` does not add chat messages and does not call Realtime `response.create`.
+- The record button is enabled only in `Ready`, so it is disabled while the tutor opening is spoken and enabled after playback completes or fails non-blockingly.
+- Realtime user placeholders must resolve to accepted transcript text, `[Voice not recognized. Please try again in English.]`, or a technical retry/status message.
+- Retry/status messages are not valid learner turns, are not feedback-eligible, are excluded from summary input, and do not trigger normal lesson replies.
+- Short A1 answers and proper nouns such as `David`, `Russia`, `Moscow`, `Yes`, and `No` are valid when recognized because the shared transcript validator only rejects empty/noise, placeholders, blocked scripts, mostly non-Latin content, no-English-content, or truly too-short content.

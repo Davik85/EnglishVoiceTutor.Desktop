@@ -10,6 +10,8 @@ namespace EnglishVoiceTutor.Api.Services;
 // ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
 public sealed class AudioSpeechService
 {
+    public const string DefaultPurpose = "lesson_chat_tts";
+    public const string RealtimePreStartOpeningPurpose = "realtime_pre_start_opening";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private const string MissingApiKeyMessage = "OpenAI speech generation is not configured.";
     private const string OpenAiRequestFailedMessage = "OpenAI speech generation request failed.";
@@ -30,7 +32,7 @@ public sealed class AudioSpeechService
         _logger = logger;
     }
 
-    public async Task<byte[]> CreateSpeechAsync(string text, CancellationToken clientCancellationToken = default)
+    public async Task<byte[]> CreateSpeechAsync(string text, string? purpose = null, CancellationToken clientCancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -44,6 +46,8 @@ public sealed class AudioSpeechService
             throw new InvalidOperationException(MissingApiKeyMessage);
         }
 
+        var normalizedPurpose = NormalizePurpose(purpose);
+
         var request = new OpenAiAudioSpeechRequest
         {
             Model = OpenAiConstants.DefaultBotVoiceSpeechModel,
@@ -53,13 +57,14 @@ public sealed class AudioSpeechService
             ResponseFormat = OpenAiConstants.DefaultSpeechResponseFormat
         };
 
-        return await SendAudioSpeechRequestAsync(request, options.ApiKey, clientCancellationToken);
+        return await SendAudioSpeechRequestAsync(request, options.ApiKey, normalizedPurpose, clientCancellationToken);
     }
 
 
     public async Task<BotVoiceStreamMetrics> StreamSpeechAsync(
         string text,
         Stream outputStream,
+        string? purpose = null,
         CancellationToken clientCancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -74,6 +79,8 @@ public sealed class AudioSpeechService
             throw new InvalidOperationException(MissingApiKeyMessage);
         }
 
+        var normalizedPurpose = NormalizePurpose(purpose);
+
         var request = new OpenAiAudioSpeechRequest
         {
             Model = OpenAiConstants.DefaultBotVoiceSpeechModel,
@@ -83,12 +90,23 @@ public sealed class AudioSpeechService
             ResponseFormat = OpenAiConstants.DefaultBotVoiceStreamResponseFormat
         };
 
-        return await StreamAudioSpeechRequestAsync(request, options.ApiKey, outputStream, clientCancellationToken);
+        return await StreamAudioSpeechRequestAsync(request, options.ApiKey, outputStream, normalizedPurpose, clientCancellationToken);
+    }
+
+    private static string NormalizePurpose(string? purpose)
+    {
+        if (string.Equals(purpose, RealtimePreStartOpeningPurpose, StringComparison.OrdinalIgnoreCase))
+        {
+            return RealtimePreStartOpeningPurpose;
+        }
+
+        return DefaultPurpose;
     }
 
     private async Task<byte[]> SendAudioSpeechRequestAsync(
         OpenAiAudioSpeechRequest request,
         string apiKey,
+        string purpose,
         CancellationToken clientCancellationToken)
     {
         var timeout = TimeSpan.FromSeconds(OpenAiConstants.OpenAiSpeechTimeoutSeconds);
@@ -101,12 +119,13 @@ public sealed class AudioSpeechService
         long? firstHeaderMs = null;
 
         _logger.LogInformation(
-            "Starting OpenAI speech request. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ClientCancellationRequested={ClientCancellationRequested}.",
+            "Starting OpenAI speech request. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; Purpose={Purpose}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ClientCancellationRequested={ClientCancellationRequested}.",
             "audio/speech",
             request.Model,
             request.Voice,
             request.ResponseFormat,
             request.Speed,
+            purpose,
             request.Input.Length,
             OpenAiConstants.OpenAiSpeechTimeoutSeconds,
             clientCancellationToken.IsCancellationRequested);
@@ -130,11 +149,12 @@ public sealed class AudioSpeechService
             statusCode = (int)response.StatusCode;
 
             _logger.LogInformation(
-                "OpenAI speech response headers received. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; InputLength={InputLength}; StatusCode={StatusCode}; FirstHeaderMs={FirstHeaderMs}.",
+                "OpenAI speech response headers received. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; InputLength={InputLength}; StatusCode={StatusCode}; FirstHeaderMs={FirstHeaderMs}.",
                 "audio/speech",
                 request.Model,
                 request.Voice,
                 request.ResponseFormat,
+                purpose,
                 request.Input.Length,
                 response.StatusCode,
                 firstHeaderMs);
@@ -166,12 +186,13 @@ public sealed class AudioSpeechService
             }
 
             _logger.LogInformation(
-                "Completed OpenAI speech request. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; FirstHeaderMs={FirstHeaderMs}; TotalMs={TotalMs}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; TotalBytes={TotalBytes}.",
+                "Completed OpenAI speech request. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; Purpose={Purpose}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; FirstHeaderMs={FirstHeaderMs}; TotalMs={TotalMs}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; TotalBytes={TotalBytes}.",
                 "audio/speech",
                 request.Model,
                 request.Voice,
                 request.ResponseFormat,
                 request.Speed,
+                purpose,
                 request.Input.Length,
                 OpenAiConstants.OpenAiSpeechTimeoutSeconds,
                 firstHeaderMs,
@@ -182,7 +203,7 @@ public sealed class AudioSpeechService
                 timeoutCancellationTokenSource.IsCancellationRequested,
                 audioBytes.Length);
 
-            _logger.LogInformation("Developer usage summary: Operation=tts; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; InputCharacters={InputCharacters}; OutputBytes={OutputBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", request.Model, request.Voice, request.ResponseFormat, "normal_lesson_chat_play_voice", request.Input.Length, audioBytes.Length, EstimateWavDurationSeconds(audioBytes.LongLength), PricingConstants.OpenAi.Tts1PerMillionCharactersUsd == 0m ? "tts_pricing" : string.Empty);
+            _logger.LogInformation("Developer usage summary: Operation=tts; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; InputCharacters={InputCharacters}; OutputBytes={OutputBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", request.Model, request.Voice, request.ResponseFormat, purpose, request.Input.Length, audioBytes.Length, EstimateWavDurationSeconds(audioBytes.LongLength), PricingConstants.OpenAi.Tts1PerMillionCharactersUsd == 0m ? "tts_pricing" : string.Empty);
 
             return audioBytes;
         }
@@ -259,6 +280,7 @@ public sealed class AudioSpeechService
         OpenAiAudioSpeechRequest request,
         string apiKey,
         Stream outputStream,
+        string purpose,
         CancellationToken clientCancellationToken)
     {
         using var overallCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(OpenAiConstants.BotVoiceStreamOverallTimeoutSeconds));
@@ -399,7 +421,7 @@ public sealed class AudioSpeechService
                 false,
                 false);
 
-            _logger.LogInformation("Developer usage summary: Operation=tts_stream; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; InputCharacters={InputCharacters}; OutputBytes={OutputBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", request.Model, request.Voice, request.ResponseFormat, "normal_lesson_chat_play_voice", request.Input.Length, totalBytes, EstimatePcmDurationSeconds(totalBytes), PricingConstants.OpenAi.Tts1PerMillionCharactersUsd == 0m ? "tts_pricing" : string.Empty);
+            _logger.LogInformation("Developer usage summary: Operation=tts_stream; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; InputCharacters={InputCharacters}; OutputBytes={OutputBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", request.Model, request.Voice, request.ResponseFormat, purpose, request.Input.Length, totalBytes, EstimatePcmDurationSeconds(totalBytes), PricingConstants.OpenAi.Tts1PerMillionCharactersUsd == 0m ? "tts_pricing" : string.Empty);
 
             return new BotVoiceStreamMetrics(firstHeaderMs, firstChunkMs, firstChunkWrittenMs, stopwatch.ElapsedMilliseconds, totalBytes);
         }

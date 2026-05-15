@@ -35,6 +35,8 @@ public static class BackendConstants
     public const string TranscriptionModelName = "gpt-4o-mini-transcribe";
     public const string TtsModelName = "tts-1";
     public const string RealtimeModelName = "gpt-realtime";
+    public const string LessonChatTtsPurpose = "lesson_chat_tts";
+    public const string RealtimePreStartOpeningSpeechPurpose = "realtime_pre_start_opening";
 
     public const string BackendUnavailableMessage = "Backend is unavailable. Please start the local backend and try again.";
     public const string BackendInvalidResponseMessage = "Backend returned an invalid response.";
