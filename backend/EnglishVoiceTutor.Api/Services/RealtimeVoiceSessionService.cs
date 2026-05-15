@@ -36,6 +36,11 @@ public sealed class RealtimeVoiceSessionService
     private bool isResponseInProgress;
     private string pendingUserAudioItemId = string.Empty;
     private bool isAwaitingUserTranscript;
+    private bool isStartupInProgress;
+    private bool isSessionReady;
+    private bool isDisconnecting;
+    private bool startupFailureNotified;
+    private TaskCompletionSource<bool>? startupCompletionSource;
     private CancellationTokenSource? transcriptionTimeoutCancellationTokenSource;
     private const int InputAudioSampleRate = 24000;
     private const int InputAudioBytesPerSample = 2;
@@ -245,6 +250,8 @@ public sealed class RealtimeVoiceSessionService
         isResponseInProgress = false;
         pendingUserAudioItemId = string.Empty;
         isAwaitingUserTranscript = false;
+        isStartupInProgress = false;
+        isSessionReady = false;
         transcriptionTimeoutCancellationTokenSource?.Cancel();
         transcriptionTimeoutCancellationTokenSource?.Dispose();
         transcriptionTimeoutCancellationTokenSource = null;
@@ -266,9 +273,13 @@ public sealed class RealtimeVoiceSessionService
 
         try
         {
+            isStartupInProgress = true;
+            isSessionReady = false;
+            isDisconnecting = false;
+            startupFailureNotified = false;
+            startupCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             openAiSocket = new ClientWebSocket();
             openAiSocket.Options.SetRequestHeader("Authorization", $"Bearer {options.ApiKey}");
-            openAiSocket.Options.SetRequestHeader("OpenAI-Beta", "realtime=v1");
             await openAiSocket.ConnectAsync(new Uri(RealtimeWebSocketEndpoint), cancellationToken);
             _ = Task.Run(() => ReceiveOpenAiEventsAsync(openAiSocket, cancellationToken), CancellationToken.None);
 
@@ -278,19 +289,33 @@ public sealed class RealtimeVoiceSessionService
                 type = "session.update",
                 session = new
                 {
-                    modalities = new[] { "text", "audio" },
+                    type = "realtime",
+                    model = OpenAiConstants.DefaultRealtimeVoiceModel,
+                    output_modalities = new[] { "audio" },
                     instructions,
-                    voice = OpenAiConstants.DefaultRealtimeVoice,
-                    input_audio_format = "pcm16",
-                    output_audio_format = "pcm16",
-                    turn_detection = (object?)null,
-                    input_audio_transcription = new { model = OpenAiConstants.DefaultTranscriptionModel, language = OpenAiConstants.TranscriptionLanguage }
+                    audio = new
+                    {
+                        input = new
+                        {
+                            format = new { type = "audio/pcm", rate = InputAudioSampleRate },
+                            turn_detection = (object?)null,
+                            transcription = new { model = OpenAiConstants.DefaultTranscriptionModel, language = OpenAiConstants.TranscriptionLanguage }
+                        },
+                        output = new
+                        {
+                            format = new { type = "audio/pcm" },
+                            voice = OpenAiConstants.DefaultRealtimeVoice
+                        }
+                    }
                 }
             }, cancellationToken);
 
+            await startupCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken);
             logger.LogInformation("Realtime session configured. SessionId={SessionId}; SessionConfiguredMs={ElapsedMs}; InputAudioTranscriptionModel={TranscriptionModel}; TranscriptionLanguage={Language}.", sessionId, stopwatch.ElapsedMilliseconds, OpenAiConstants.DefaultTranscriptionModel, OpenAiConstants.TranscriptionLanguage);
 
             await SeedRecentConversationAsync(request, cancellationToken);
+            isStartupInProgress = false;
+            isSessionReady = true;
 
             logger.LogInformation("Realtime session created. SessionId={SessionId}; Model={Model}; Voice={Voice}; LessonType={LessonType}; Topic={Topic}; Subtopic={Subtopic}; Level={Level}.",
                 sessionId,
@@ -301,12 +326,20 @@ public sealed class RealtimeVoiceSessionService
                 string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
                 request.SelectedLevel);
 
-            await SendDesktopEventAsync(new { type = "session.started", sessionId, model = OpenAiConstants.DefaultRealtimeVoiceModel, voice = OpenAiConstants.DefaultRealtimeVoice }, cancellationToken);
+            await SendDesktopEventAsync(new { type = "session.ready", sessionId, model = OpenAiConstants.DefaultRealtimeVoiceModel, voice = OpenAiConstants.DefaultRealtimeVoice }, cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "Realtime session start failed. SessionId={SessionId}; Endpoint={Endpoint}.", request.SessionId, RealtimeWebSocketEndpoint);
-            await SendDesktopEventAsync(new { type = "session.error", sessionId = request.SessionId, message = "Realtime voice mode is unavailable. Please try text mode." }, CancellationToken.None);
+            isStartupInProgress = false;
+            isSessionReady = false;
+            startupCompletionSource?.TrySetException(exception);
+            logger.LogError(exception, "Realtime session start failed. SessionId={SessionId}; Endpoint={Endpoint}; FailureKind=StartupFailed.", request.SessionId, RealtimeWebSocketEndpoint);
+            if (!startupFailureNotified)
+            {
+                startupFailureNotified = true;
+                await SendDesktopEventAsync(new { type = "session.startup_failed", sessionId = request.SessionId, reason = "StartupFailed", message = "Realtime voice mode is unavailable. Please try text mode." }, CancellationToken.None);
+            }
+            await DisconnectAsync("startup_failed", CancellationToken.None);
         }
     }
 
@@ -338,7 +371,18 @@ public sealed class RealtimeVoiceSessionService
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "Realtime OpenAI receive loop failed. SessionId={SessionId}; ResponseId={ResponseId}.", sessionId, activeResponseId);
+            logger.LogError(exception, "Realtime OpenAI receive loop failed. SessionId={SessionId}; ResponseId={ResponseId}; StartupInProgress={StartupInProgress}.", sessionId, activeResponseId, isStartupInProgress);
+            if (isStartupInProgress || !isSessionReady)
+            {
+                startupCompletionSource?.TrySetException(exception);
+                if (!startupFailureNotified)
+                {
+                    startupFailureNotified = true;
+                    await SendDesktopEventAsync(new { type = "session.startup_failed", sessionId, responseId = activeResponseId, reason = "UpstreamRealtimeError", message = "Realtime voice mode is unavailable. Please try text mode." }, CancellationToken.None);
+                }
+                return;
+            }
+
             await SendDesktopEventAsync(new { type = "session.error", sessionId, responseId = activeResponseId, message = "Realtime voice mode is unavailable. Please try text mode." }, CancellationToken.None);
         }
     }
@@ -360,11 +404,17 @@ public sealed class RealtimeVoiceSessionService
 
         switch (type)
         {
+            case "session.created":
+                logger.LogInformation("Realtime upstream session.created received. SessionId={SessionId}; EventMs={ElapsedMs}.", sessionId, stopwatch.ElapsedMilliseconds);
+                break;
+            case "session.updated":
+                logger.LogInformation("Realtime upstream session.updated received. SessionId={SessionId}; StartupInProgress={StartupInProgress}; EventMs={ElapsedMs}.", sessionId, isStartupInProgress, stopwatch.ElapsedMilliseconds);
+                startupCompletionSource?.TrySetResult(true);
+                break;
             case "response.created":
                 isResponseInProgress = true;
                 logger.LogInformation("Realtime assistant response created. SessionId={SessionId}; ResponseId={ResponseId}; ResponseCreatedMs={ElapsedMs}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds);
                 break;
-            case "response.audio.delta":
             case "response.output_audio.delta":
                 var audio = root.GetProperty("delta").GetString() ?? string.Empty;
                 var assistantAudioBytes = GetBase64DecodedByteCount(audio);
@@ -376,7 +426,6 @@ public sealed class RealtimeVoiceSessionService
                 }
                 await SendDesktopEventAsync(new { type = "assistant.audio.delta", sessionId, responseId = activeResponseId, audio }, cancellationToken);
                 break;
-            case "response.audio_transcript.delta":
             case "response.output_audio_transcript.delta":
                 var delta = root.GetProperty("delta").GetString() ?? string.Empty;
                 activeTranscript.Append(delta);
@@ -398,8 +447,15 @@ public sealed class RealtimeVoiceSessionService
             case "response.done":
                 isResponseInProgress = false;
                 LogRealtimeResponseUsage(root);
+                var finalTranscript = activeTranscript.ToString();
+                if (AssistantOutputLanguageGuard.IsClearlyNonEnglishTutorOutput(finalTranscript))
+                {
+                    logger.LogWarning("RealtimeAssistantLanguageViolation SessionId={SessionId}; ResponseId={ResponseId}; Model={Model}; LessonId={LessonId}; Level={Level}; Topic={Topic}; Subtopic={Subtopic}; TranscriptLength={TranscriptLength}.", sessionId, activeResponseId, OpenAiConstants.DefaultRealtimeVoiceModel, startRequest?.LessonScenarioId, startRequest?.SelectedLevel, startRequest?.Topic, startRequest?.Subtopic, finalTranscript.Length);
+                    await SendOpenAiEventAsync(new { type = "session.update", session = new { type = "realtime", instructions = BuildCorrectiveEnglishOnlyInstructions() } }, cancellationToken);
+                }
+
                 logger.LogInformation("Realtime assistant response completed ms. SessionId={SessionId}; ResponseId={ResponseId}; AssistantResponseCompletedMs={ElapsedMs}; SinceUserAudioCommitMs={SinceUserAudioCommitMs}; TranscriptLength={TranscriptLength}; AssistantAudioBytes={AssistantAudioBytes}.", sessionId, activeResponseId, stopwatch.ElapsedMilliseconds, lastUserAudioCommitMs > 0 ? stopwatch.ElapsedMilliseconds - lastUserAudioCommitMs : 0, activeTranscript.Length, totalAssistantAudioBytes);
-                await SendDesktopEventAsync(new { type = "assistant.turn.completed", sessionId, responseId = activeResponseId, transcript = activeTranscript.ToString() }, cancellationToken);
+                await SendDesktopEventAsync(new { type = "assistant.turn.completed", sessionId, responseId = activeResponseId, transcript = finalTranscript }, cancellationToken);
                 break;
             case "input_audio_buffer.committed":
                 var itemId = root.TryGetProperty("item_id", out var itemIdProperty) ? itemIdProperty.GetString() ?? string.Empty : string.Empty;
@@ -432,7 +488,22 @@ public sealed class RealtimeVoiceSessionService
             case "error":
                 isResponseInProgress = false;
                 var message = root.TryGetProperty("error", out var error) && error.TryGetProperty("message", out var errorMessage) ? errorMessage.GetString() : "Realtime voice mode is unavailable. Please try text mode.";
-                logger.LogWarning("Realtime error event. SessionId={SessionId}; ResponseId={ResponseId}; Error={Error}.", sessionId, activeResponseId, message);
+                logger.LogWarning("Realtime error event. SessionId={SessionId}; ResponseId={ResponseId}; Error={Error}; StartupInProgress={StartupInProgress}.", sessionId, activeResponseId, message, isStartupInProgress);
+                if (isStartupInProgress || !isSessionReady)
+                {
+                    var exception = new InvalidOperationException(message);
+                    startupCompletionSource?.TrySetException(exception);
+                    isStartupInProgress = false;
+                    isSessionReady = false;
+                    if (!startupFailureNotified)
+                    {
+                        startupFailureNotified = true;
+                        await SendDesktopEventAsync(new { type = "session.startup_failed", sessionId, responseId = activeResponseId, reason = "UpstreamRealtimeError", message = "Realtime voice mode is unavailable. Please try text mode." }, cancellationToken);
+                    }
+                    await DisconnectAsync("upstream_realtime_error", CancellationToken.None);
+                    break;
+                }
+
                 await SendDesktopEventAsync(new { type = "session.error", sessionId, responseId = activeResponseId, message }, cancellationToken);
                 break;
         }
@@ -530,6 +601,12 @@ public sealed class RealtimeVoiceSessionService
             : lessonPromptBuilder.BuildRealtimeResponseInstructions(startRequest);
     }
 
+    private string BuildCorrectiveEnglishOnlyInstructions()
+    {
+        return (startRequest is null ? BuildResponseInstructions() : lessonPromptBuilder.BuildRealtimeInstructions(startRequest))
+            + "\nEnglish-only correction: continue the lesson in English only. If the learner asks for another language, refuse briefly in English and continue the lesson.";
+    }
+
     private async Task CreateResponseAsync(CancellationToken cancellationToken)
     {
         if (isResponseInProgress)
@@ -545,7 +622,7 @@ public sealed class RealtimeVoiceSessionService
             type = "response.create",
             response = new
             {
-                modalities = new[] { "text", "audio" },
+                output_modalities = new[] { "audio" },
                 instructions = BuildResponseInstructions()
             }
         }, cancellationToken);
@@ -642,12 +719,21 @@ public sealed class RealtimeVoiceSessionService
 
     private async Task DisconnectAsync(string reason, CancellationToken cancellationToken)
     {
+        if (isDisconnecting)
+        {
+            return;
+        }
+
+        isDisconnecting = true;
         logger.LogInformation("Realtime disconnect. SessionId={SessionId}; ResponseId={ResponseId}; DisconnectReason={DisconnectReason}; ElapsedMs={ElapsedMs}.", sessionId, activeResponseId, reason, stopwatch.ElapsedMilliseconds);
         logger.LogInformation("Developer usage summary: Operation=realtime_session; SessionId={SessionId}; Model={Model}; Voice={Voice}; InputTranscriptionModel={InputTranscriptionModel}; Language={Language}; TotalInputAudioBytes={TotalInputAudioBytes}; EstimatedInputAudioDurationSeconds={EstimatedInputAudioDurationSeconds}; TotalCommittedAudioBytes={TotalCommittedAudioBytes}; AudioCommits={AudioCommits}; UserTranscriptCharacters={UserTranscriptCharacters}; AssistantTranscriptCharacters={AssistantTranscriptCharacters}; AssistantAudioBytes={AssistantAudioBytes}; EstimatedAssistantAudioDurationSeconds={EstimatedAssistantAudioDurationSeconds}; DisconnectReason={DisconnectReason}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", sessionId, OpenAiConstants.DefaultRealtimeVoiceModel, OpenAiConstants.DefaultRealtimeVoice, OpenAiConstants.DefaultTranscriptionModel, OpenAiConstants.TranscriptionLanguage, totalInputAudioBytes, EstimateRealtimePcmDurationSeconds(totalInputAudioBytes), totalCommittedAudioBytes, audioCommitCount, realtimeUserTranscriptCharacters, activeTranscript.Length, totalAssistantAudioBytes, EstimateRealtimePcmDurationSeconds(totalAssistantAudioBytes), reason, PricingConstants.OpenAi.RealtimeAudioInputPerMillionTokensUsd == 0m || PricingConstants.OpenAi.RealtimeAudioOutputPerMillionTokensUsd == 0m ? "realtime_pricing" : string.Empty);
         transcriptionTimeoutCancellationTokenSource?.Cancel();
         transcriptionTimeoutCancellationTokenSource?.Dispose();
         transcriptionTimeoutCancellationTokenSource = null;
         isAwaitingUserTranscript = false;
+        isStartupInProgress = false;
+        isSessionReady = false;
+        startupCompletionSource = null;
         if (openAiSocket is not null)
         {
             try

@@ -58,3 +58,7 @@ This stabilization task does not change runtime model choices. Normal Lesson Cha
 ## Developer-only output
 
 Usage summaries are emitted as structured backend logs with `Developer usage summary`. They are not shown to end users and do not contain API keys, authorization headers, raw audio, or full sensitive payloads.
+
+## 2026-05-15 Realtime GA usage note
+
+Realtime usage logging remains attached to `gpt-realtime` responses and sessions after the GA `/v1/realtime` migration. The backend still records session id, model, voice, English transcription model/language, input/output audio byte estimates, transcript characters, disconnect reason, and exact response usage fields when the GA `response.done.response.usage` payload provides them. Normal Lesson Chat TTS remains `tts-1`.
