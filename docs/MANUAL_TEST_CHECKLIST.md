@@ -162,3 +162,15 @@ Reach the final tutor message in A1 Introductions or another guided lesson.
 - [ ] Verify no backend log contains `Invalid value: 'text'. Value must be 'output_text'.`.
 - [ ] Force a post-ready Realtime upstream error and verify desktop receives a recoverable runtime failure, stops microphone/playback, clears busy state, and allows Conversation Mode re-entry without app restart.
 - [ ] Start Conversation Mode while normal bot voice playback or auto-play is pending and verify normal TTS is canceled/suppressed during Realtime startup; manual Play voice still works after leaving Realtime.
+
+## 2026-05-15 Conversation Mode opening playback and fallback checks
+
+- [ ] A1 Beginner → Everyday English → Introductions → Meeting a new neighbor: click Conversation Mode and verify the visible prompt is spoken before recording is enabled.
+- [ ] Verify backend `/api/audio/speech` logs show `Model=tts-1` and `Purpose=realtime_pre_start_opening` for the opening prompt.
+- [ ] Verify the opening prompt is not duplicated in chat and no Realtime `response.create` is sent for that opening.
+- [ ] Verify the record button is disabled during `OpeningPlayback` and enabled after playback completes or after a simulated playback failure.
+- [ ] Record `My name is David.` and verify the placeholder becomes the transcript, feedback is available, and the tutor reply arrives through Realtime audio rather than `/api/audio/speech`.
+- [ ] Record short A1 answers such as `Russia.`, `Moscow.`, `Yes.`, and `No.` and verify recognized transcripts count as valid learner turns.
+- [ ] Record silence/noise and verify `[Voice message]` is replaced with a retry/status message, no feedback button appears, the learner turn count does not increment, and no assistant response is created.
+- [ ] Force a Realtime transcript timeout/failure with committed audio and verify exactly one fallback transcription attempt is logged; a valid fallback transcript is used once with no duplicate user messages or assistant responses.
+- [ ] Leave Conversation Mode and verify normal Lesson Chat recording still uses `/api/audio/transcribe` and normal Play voice still uses `tts-1`.

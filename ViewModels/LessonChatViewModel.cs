@@ -14,6 +14,7 @@ using EnglishVoiceTutor.Desktop.Services;
 using EnglishVoiceTutor.Desktop.Services.Voice;
 using EnglishVoiceTutor.Shared.LessonPolicies;
 using System.Windows;
+using NAudio.Wave;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
@@ -64,6 +65,12 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly Dictionary<string, int> realtimeItemIdToChatMessageId = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> pendingTranscriptByItemId = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> pendingTranscriptFailureByItemId = new(StringComparer.Ordinal);
+    private readonly HashSet<int> spokenRealtimeOpeningMessageIds = [];
+    private readonly List<byte> realtimeCommittedAudioBuffer = [];
+    private int realtimeCommittedAudioChunkCount;
+    private int realtimeCommittedAudioBytes;
+    private bool realtimeFallbackTranscriptionAttempted;
+    private bool realtimeFallbackTranscriptionInProgress;
     private string realtimeSessionId = Guid.NewGuid().ToString("N");
 
     public string SelectedLevel { get; }
@@ -679,6 +686,7 @@ public partial class LessonChatViewModel : ViewModelBase
             }
 
             SetConversationModeState(ConversationModeState.Recording, "record_start_requested");
+            ResetRealtimeCommittedAudioBuffer();
             Debug.WriteLine($"Realtime microphone capture starting: SessionId={realtimeSessionId}; AudioInputDeviceId={audioInputDeviceId}; State={CurrentConversationModeState}.");
             await realtimeVoiceEngine.StartUserAudioAsync(CancellationToken.None);
             realtimeMicrophoneCaptureService.Start(audioInputDeviceId);
@@ -871,6 +879,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             if (duration.TotalMilliseconds < AudioConstants.MinimumRecordingDurationMilliseconds)
             {
+                ResolveRealtimePlaceholderAsStatus(RealtimeVoiceTranscriptionUnavailableText, "record_too_short");
                 StatusMessage = AudioConstants.RecordingTooShortMessage;
                 SetConversationModeState(isRealtimeSessionStarted ? ConversationModeState.Ready : ConversationModeState.NotStarted, "record_too_short");
                 return;
@@ -897,6 +906,7 @@ public partial class LessonChatViewModel : ViewModelBase
         catch (Exception exception)
         {
             Debug.WriteLine($"Realtime voice recording stop failed: SessionId={realtimeSessionId}; State={CurrentConversationModeState}; {exception}");
+            ResolveRealtimePlaceholderAsStatus("[Voice input failed. Please try again.]", "record_stop_failed");
             IsRecording = false;
             SetConversationModeState(isRealtimeSessionStarted ? ConversationModeState.Ready : ConversationModeState.Faulted, "record_stop_failed");
             StatusMessage = BackendConstants.RealtimeUnavailableMessage;
@@ -951,6 +961,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 IsConversationModeEnabled = true;
                 SetConversationModeState(ConversationModeState.Starting, "conversation_mode_start_requested");
                 await EnsureRealtimeSessionStartedAsync(CancellationToken.None);
+                await PlayRealtimePreStartOpeningAsync(CancellationToken.None);
                 SetConversationModeState(ConversationModeState.Ready, "conversation_mode_start_succeeded");
                 StatusMessage = string.Empty;
                 Debug.WriteLine($"Conversation mode started: RealtimeSessionId={realtimeSessionId}; ElapsedMs={startStopwatch.ElapsedMilliseconds}.");
@@ -981,6 +992,84 @@ public partial class LessonChatViewModel : ViewModelBase
             && !IsRecording
             && !IsRealtimeSessionStarting
             && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay);
+    }
+
+    private async Task PlayRealtimePreStartOpeningAsync(CancellationToken cancellationToken)
+    {
+        var openingMessages = SelectRealtimeOpeningMessagesToSpeak();
+        if (openingMessages.Count == 0)
+        {
+            Debug.WriteLine($"Realtime pre-start opening playback skipped: SessionId={realtimeSessionId}; Reason=no_current_unspoken_bot_prompt; LearnerTurnCount={LearnerTurnCount}.");
+            return;
+        }
+
+        SetConversationModeState(ConversationModeState.OpeningPlayback, "realtime_pre_start_opening_playback_start");
+        IsBotVoicePlaying = true;
+        RefreshAvatarState();
+        StatusMessage = $"{TutorAvatarDisplayName} is speaking...";
+        RefreshAllCommandStates();
+
+        try
+        {
+            foreach (var openingMessage in openingMessages)
+            {
+                var exactText = GetExactBotVoiceText(openingMessage);
+                Debug.WriteLine($"Realtime pre-start opening playback request: SessionId={realtimeSessionId}; MessageId={openingMessage.Id}; Purpose={BackendConstants.RealtimePreStartOpeningSpeechPurpose}; Model={BackendConstants.TtsModelName}; TextLength={exactText.Length}; ExactVisibleText=True.");
+                await PlayBotVoiceForMessageCoreAsync(
+                    openingMessage,
+                    isAutoPlay: false,
+                    allowDuringRealtimeOpeningPlayback: true,
+                    speechPurpose: BackendConstants.RealtimePreStartOpeningSpeechPurpose,
+                    cancellationToken: cancellationToken);
+                spokenRealtimeOpeningMessageIds.Add(openingMessage.Id);
+            }
+        }
+        catch (OperationCanceledException exception)
+        {
+            Debug.WriteLine($"Realtime pre-start opening playback canceled: SessionId={realtimeSessionId}; MessageCount={openingMessages.Count}; {exception}");
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Realtime pre-start opening playback failed: SessionId={realtimeSessionId}; MessageCount={openingMessages.Count}; {exception}");
+            StatusMessage = "Conversation Mode ready. Opening voice could not play.";
+        }
+        finally
+        {
+            IsBotVoicePlaying = false;
+            RefreshAvatarState();
+            if (isRealtimeSessionStarted && !IsCompletedAwaitingFinish && IsConversationModeEnabled)
+            {
+                SetConversationModeState(ConversationModeState.Ready, "realtime_pre_start_opening_playback_finished");
+            }
+            RefreshAllCommandStates();
+        }
+    }
+
+    private IReadOnlyList<ChatMessageViewModel> SelectRealtimeOpeningMessagesToSpeak()
+    {
+        var trailingBotMessages = Messages
+            .Reverse()
+            .TakeWhile(message => message.IsFromBot && !message.IsTechnicalMessage && !string.IsNullOrWhiteSpace(message.Text))
+            .Reverse()
+            .Where(message => !spokenRealtimeOpeningMessageIds.Contains(message.Id))
+            .ToList();
+
+        if (trailingBotMessages.Count > 0)
+        {
+            return trailingBotMessages;
+        }
+
+        var latestBotPrompt = Messages.LastOrDefault(message => message.IsFromBot && !message.IsTechnicalMessage && !string.IsNullOrWhiteSpace(message.Text));
+        if (latestBotPrompt is null || spokenRealtimeOpeningMessageIds.Contains(latestBotPrompt.Id))
+        {
+            return [];
+        }
+
+        var latestValidLearnerTurnIndex = Messages
+            .Select((message, index) => new { Message = message, Index = index })
+            .LastOrDefault(item => !item.Message.IsFromBot && item.Message.CountsAsValidLessonTurn)?.Index ?? -1;
+        var latestBotPromptIndex = Messages.IndexOf(latestBotPrompt);
+        return latestBotPromptIndex > latestValidLearnerTurnIndex ? [latestBotPrompt] : [];
     }
 
     [RelayCommand(CanExecute = nameof(CanPlayBotVoice))]
@@ -1017,9 +1106,19 @@ public partial class LessonChatViewModel : ViewModelBase
         return Task.CompletedTask;
     }
 
-    private async Task PlayBotVoiceForMessageAsync(
+    private Task PlayBotVoiceForMessageAsync(
         ChatMessageViewModel message,
         bool isAutoPlay,
+        CancellationToken cancellationToken = default)
+    {
+        return PlayBotVoiceForMessageCoreAsync(message, isAutoPlay, allowDuringRealtimeOpeningPlayback: false, speechPurpose: BackendConstants.LessonChatTtsPurpose, cancellationToken: cancellationToken);
+    }
+
+    private async Task PlayBotVoiceForMessageCoreAsync(
+        ChatMessageViewModel message,
+        bool isAutoPlay,
+        bool allowDuringRealtimeOpeningPlayback,
+        string speechPurpose,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(message.Text))
@@ -1027,7 +1126,7 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        if (IsRealtimeConversationActive)
+        if (IsRealtimeConversationActive && !allowDuringRealtimeOpeningPlayback)
         {
             Debug.WriteLine($"Skipping bot voice {(isAutoPlay ? "auto-play" : "manual play")} during active Conversation Mode: MessageId={message.Id}; SessionId={realtimeSessionId}.");
             StatusMessage = string.Empty;
@@ -1048,7 +1147,7 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        if (IsRealtimeConversationActive)
+        if (IsRealtimeConversationActive && !allowDuringRealtimeOpeningPlayback)
         {
             Debug.WriteLine($"Skipped bot voice {(isAutoPlay ? "auto-play" : "manual play")} after waiting because Conversation Mode became active: MessageId={message.Id}; SessionId={realtimeSessionId}.");
             botVoiceSemaphore.Release();
@@ -1069,12 +1168,12 @@ public partial class LessonChatViewModel : ViewModelBase
             {
                 usedAutoPlayVoice = true;
             }
-            else
+            else if (!allowDuringRealtimeOpeningPlayback)
             {
                 usedManualPlayVoice = true;
             }
             RefreshAvatarState();
-            StatusMessage = localizedText.PlayingBotVoiceMessage;
+            StatusMessage = allowDuringRealtimeOpeningPlayback ? $"{TutorAvatarDisplayName} is speaking..." : localizedText.PlayingBotVoiceMessage;
 
             var rawBotVoiceText = message.Text.Trim();
             var isSetupVoiceMessage = IsSetupVoiceMessage(message);
@@ -1101,7 +1200,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 playbackCancellationTokenSource.Token,
                 playbackStartedMs => playbackStarted = true,
                 totalStopwatch,
-                isAutoPlay);
+                isAutoPlay,
+                speechPurpose);
 
             Debug.WriteLine($"Bot voice playback completed ms for message {message.Id}: Path={selectedBotVoicePath}; TotalElapsedMilliseconds={totalStopwatch.ElapsedMilliseconds}; SegmentCount={segmentsToSpeak.Count}.");
             BackendStatusText = BackendConstants.BackendStatusConnected;
@@ -1138,7 +1238,8 @@ public partial class LessonChatViewModel : ViewModelBase
         CancellationToken cancellationToken,
         Action<long> onFirstPlaybackStarted,
         Stopwatch totalStopwatch,
-        bool isAutoPlay)
+        bool isAutoPlay,
+        string speechPurpose)
     {
         var firstSegmentTask = GetOrCreateBotVoiceSegmentAudioFileAsync(
             message,
@@ -1147,7 +1248,8 @@ public partial class LessonChatViewModel : ViewModelBase
             timeout: TimeSpan.FromSeconds(AudioConstants.BotVoiceFirstSegmentHardTimeoutSeconds),
             totalStopwatch,
             cancellationToken,
-            isAutoPlay);
+            isAutoPlay,
+            speechPurpose);
 
         var softTargetTask = Task.Delay(AudioConstants.BotVoiceFirstSegmentSoftTargetMilliseconds, cancellationToken);
         if (await Task.WhenAny(firstSegmentTask, softTargetTask) == softTargetTask && softTargetTask.IsCompletedSuccessfully)
@@ -1168,7 +1270,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         Task<string>? nextSegmentTask = segments.Count > 1
-            ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[1], 1, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken, isAutoPlay)
+            ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[1], 1, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken, isAutoPlay, speechPurpose)
             : null;
         var currentFilePath = firstSegmentFilePath;
 
@@ -1217,7 +1319,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var nextIndex = segmentIndex + 2;
             nextSegmentTask = nextIndex < segments.Count
-                ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[nextIndex], nextIndex, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken, isAutoPlay)
+                ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[nextIndex], nextIndex, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken, isAutoPlay, speechPurpose)
                 : null;
         }
     }
@@ -1229,9 +1331,10 @@ public partial class LessonChatViewModel : ViewModelBase
         TimeSpan timeout,
         Stopwatch totalStopwatch,
         CancellationToken cancellationToken,
-        bool isAutoPlay = false)
+        bool isAutoPlay = false,
+        string speechPurpose = BackendConstants.LessonChatTtsPurpose)
     {
-        var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex, segmentText);
+        var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex, segmentText, speechPurpose);
         lock (botVoiceSegmentCacheLock)
         {
             if (botVoiceSegmentAudioFilePaths.TryGetValue(cacheKey, out var cachedFilePath) && File.Exists(cachedFilePath))
@@ -1254,7 +1357,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 timeout,
                 totalStopwatch,
                 cancellationToken,
-                isAutoPlay);
+                isAutoPlay,
+                speechPurpose);
             inFlightBotVoiceSegmentTasks[cacheKey] = createdTask;
             return createdTask;
         }
@@ -1267,9 +1371,10 @@ public partial class LessonChatViewModel : ViewModelBase
         TimeSpan timeout,
         Stopwatch totalStopwatch,
         CancellationToken cancellationToken,
-        bool isAutoPlay)
+        bool isAutoPlay,
+        string speechPurpose)
     {
-        var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex, segmentText);
+        var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex, segmentText, speechPurpose);
         using var segmentTimeoutCancellationTokenSource = new CancellationTokenSource(timeout);
         using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken,
@@ -1291,7 +1396,7 @@ public partial class LessonChatViewModel : ViewModelBase
             Debug.WriteLine($"Bot voice exact text: MessageId={message.Id}; VoiceRequestId={voiceRequestId}; RawTextLength={rawTextLength}; VoiceTextLength={inputLength}; IsExactText={isExactText}; AutoPlay={isAutoPlay}; IsSetupMessage={IsSetupVoiceMessage(message)}; SegmentIndex={segmentIndex};");
             Debug.WriteLine($"Bot voice segment request: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SegmentLength={inputLength}; SegmentTextPreview={CreateBotVoiceSegmentPreview(normalizedSegmentText)};");
             Debug.WriteLine($"Bot voice segment request starting: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; RequestStartedMs={totalStopwatch.ElapsedMilliseconds}; TimeoutMs={timeout.TotalMilliseconds}; HardTimeoutSeconds={timeout.TotalSeconds}.");
-            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(normalizedSegmentText, linkedCancellationTokenSource.Token);
+            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(normalizedSegmentText, linkedCancellationTokenSource.Token, speechPurpose);
             Debug.WriteLine($"Bot voice segment backend response received: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; VoiceRequestId={voiceRequestId}; SegmentIndex={segmentIndex}; InputLength={inputLength}; SegmentReadyMs={totalStopwatch.ElapsedMilliseconds}; BackendElapsedMs={backendStopwatch.ElapsedMilliseconds}; BackendAudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
 
             var saveStopwatch = Stopwatch.StartNew();
@@ -1567,14 +1672,15 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
-    private static string CreateBotVoiceSegmentCacheKey(int messageId, int segmentIndex, string segmentText)
+    private static string CreateBotVoiceSegmentCacheKey(int messageId, int segmentIndex, string segmentText, string speechPurpose = BackendConstants.LessonChatTtsPurpose)
     {
         return string.Format(
             CultureInfo.InvariantCulture,
-            "{0}:{1}:{2}",
+            "{0}:{1}:{2}:{3}",
             messageId,
             segmentIndex,
-            NormalizeBotVoiceSegmentText(segmentText));
+            NormalizeBotVoiceSegmentText(segmentText),
+            string.IsNullOrWhiteSpace(speechPurpose) ? BackendConstants.LessonChatTtsPurpose : speechPurpose);
     }
 
     private void SetCurrentBotVoiceCancellationTokenSource(CancellationTokenSource cancellationTokenSource)
@@ -2082,6 +2188,8 @@ public partial class LessonChatViewModel : ViewModelBase
         SetConversationModeState(ConversationModeState.Stopping, reason);
         try
         {
+            CancelCurrentBotVoice(BotVoiceCancellationReasons.RealtimeStartupCancel);
+            audioPlaybackService.StopPlayback();
             realtimeAudioPlaybackService.Stop(reason);
             SafeStopRealtimeMicrophone(reason);
             await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None);
@@ -2141,8 +2249,22 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
+    private void ResolveRealtimePlaceholderAsStatus(string statusText, string reason)
+    {
+        var target = realtimeUserPlaceholderMessage;
+        if (target is null || !string.Equals(target.Text, RealtimeVoicePendingText, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        target.MarkAsInvalidLearnerTranscript(statusText);
+        Debug.WriteLine($"Realtime voice placeholder resolved as status: SessionId={realtimeSessionId}; UserPlaceholderMessageId={target.Id}; Reason={reason}; CountsAsValidLessonTurn={target.CountsAsValidLessonTurn}; FeedbackEligible={target.IsFeedbackEligible}.");
+        ViewFeedbackCommand.NotifyCanExecuteChanged();
+    }
+
     private async Task CleanupRealtimeAfterFaultAsync(string reason)
     {
+        ResolveRealtimePlaceholderAsStatus(RealtimeVoiceTranscriptionUnavailableText, reason);
         realtimeAudioPlaybackService.Stop(reason);
         SafeStopRealtimeMicrophone(reason);
         try
@@ -2170,7 +2292,8 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private void OnRealtimeMicrophoneAudioChunkCaptured(object? sender, RealtimeMicrophoneAudioChunkEventArgs args)
     {
-        Debug.WriteLine($"Realtime microphone audio chunk captured: SessionId={realtimeSessionId}; Bytes={args.AudioChunk.Length}; State={CurrentConversationModeState}.");
+        BufferRealtimeAudioChunkForFallback(args.AudioChunk);
+        Debug.WriteLine($"Realtime microphone audio chunk captured: SessionId={realtimeSessionId}; Bytes={args.AudioChunk.Length}; State={CurrentConversationModeState}; FallbackBufferedBytes={realtimeCommittedAudioBytes}; FallbackAudioChunkCount={realtimeCommittedAudioChunkCount}.");
         _ = SendRealtimeAudioChunkAsync(args.AudioChunk);
     }
 
@@ -2186,6 +2309,147 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             Debug.WriteLine($"Realtime audio append failed: SessionId={realtimeSessionId}; Bytes={audioChunk.Length}; {exception}");
         }
+    }
+
+    private void ResetRealtimeCommittedAudioBuffer()
+    {
+        realtimeCommittedAudioBuffer.Clear();
+        realtimeCommittedAudioChunkCount = 0;
+        realtimeCommittedAudioBytes = 0;
+        realtimeFallbackTranscriptionAttempted = false;
+        realtimeFallbackTranscriptionInProgress = false;
+    }
+
+    private void BufferRealtimeAudioChunkForFallback(byte[] audioChunk)
+    {
+        if (audioChunk.Length == 0)
+        {
+            return;
+        }
+
+        realtimeCommittedAudioBuffer.AddRange(audioChunk);
+        realtimeCommittedAudioChunkCount++;
+        realtimeCommittedAudioBytes += audioChunk.Length;
+    }
+
+    private double EstimateRealtimeBufferedAudioDurationSeconds()
+    {
+        var bytesPerSecond = AudioConstants.RealtimeInputPcmSampleRate
+            * AudioConstants.RealtimeInputPcmChannels
+            * AudioConstants.RealtimeInputPcmBitsPerSample
+            / 8.0;
+        return bytesPerSecond <= 0 ? 0 : realtimeCommittedAudioBytes / bytesPerSecond;
+    }
+
+    private void LogInvalidRealtimeTranscriptDecision(
+        string sessionId,
+        string itemId,
+        LessonTranscriptValidationReason validationReason,
+        int transcriptLength,
+        bool retryPromptShown)
+    {
+        Debug.WriteLine(
+            $"Realtime invalid transcript decision: SessionId={sessionId}; " +
+            $"RealtimeUserTurnId={itemId}; LearnerTurnNumber={LearnerTurnCount + 1}; " +
+            $"AudioChunkCount={realtimeCommittedAudioChunkCount}; BufferedBytes={realtimeCommittedAudioBytes}; " +
+            $"EstimatedBufferedAudioDurationSeconds={EstimateRealtimeBufferedAudioDurationSeconds():F2}; " +
+            $"TranscriptLength={transcriptLength}; ValidationReason={validationReason}; " +
+            $"WasEmpty={validationReason == LessonTranscriptValidationReason.Empty}; " +
+            $"WasNonEnglish={validationReason is LessonTranscriptValidationReason.NonLatinScript or LessonTranscriptValidationReason.MostlyNonLatinScript or LessonTranscriptValidationReason.NoEnglishContent}; " +
+            $"WasTooShort={validationReason == LessonTranscriptValidationReason.TooShort}; " +
+            $"WasPlaceholder={validationReason == LessonTranscriptValidationReason.Placeholder}; " +
+            $"RetryPromptShown={retryPromptShown}.");
+    }
+
+    private void TryStartRealtimeFallbackTranscription(ChatMessageViewModel target, string itemId, string sessionId, string reason)
+    {
+        if (realtimeFallbackTranscriptionAttempted || realtimeFallbackTranscriptionInProgress || realtimeCommittedAudioBytes == 0)
+        {
+            Debug.WriteLine($"Realtime fallback transcription skipped: SessionId={sessionId}; ItemId={itemId}; Reason={reason}; Attempted={realtimeFallbackTranscriptionAttempted}; InProgress={realtimeFallbackTranscriptionInProgress}; BufferedBytes={realtimeCommittedAudioBytes}.");
+            return;
+        }
+
+        realtimeFallbackTranscriptionAttempted = true;
+        realtimeFallbackTranscriptionInProgress = true;
+        var audioBytes = realtimeCommittedAudioBuffer.ToArray();
+        var audioChunkCount = realtimeCommittedAudioChunkCount;
+        var estimatedDurationSeconds = EstimateRealtimeBufferedAudioDurationSeconds();
+        Debug.WriteLine($"Realtime fallback transcription starting: SessionId={sessionId}; ItemId={itemId}; Reason={reason}; AudioChunkCount={audioChunkCount}; BufferedBytes={audioBytes.Length}; EstimatedBufferedAudioDurationSeconds={estimatedDurationSeconds:F2}; Model={BackendConstants.TranscriptionModelName}; Language=en.");
+        _ = RunRealtimeFallbackTranscriptionAsync(target, itemId, sessionId, reason, audioBytes, audioChunkCount, estimatedDurationSeconds);
+    }
+
+    private async Task RunRealtimeFallbackTranscriptionAsync(
+        ChatMessageViewModel target,
+        string itemId,
+        string sessionId,
+        string reason,
+        byte[] audioBytes,
+        int audioChunkCount,
+        double estimatedDurationSeconds)
+    {
+        var fallbackFilePath = string.Empty;
+        try
+        {
+            fallbackFilePath = await SaveRealtimeFallbackAudioFileAsync(audioBytes);
+            var fallbackTranscript = await lessonChatBackendService.SendAudioForTranscriptionAsync(fallbackFilePath, CancellationToken.None);
+            var validation = LessonTranscriptValidator.Validate(fallbackTranscript);
+            Task? applyValidTranscriptTask = null;
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (!ReferenceEquals(target, FindRealtimeUserMessage(itemId)) || target.CountsAsValidLessonTurn)
+                {
+                    Debug.WriteLine($"Realtime fallback transcription ignored stale target: SessionId={sessionId}; ItemId={itemId}; Reason={reason}; TargetMessageId={target.Id}; CountsAsValidLessonTurn={target.CountsAsValidLessonTurn}.");
+                    return;
+                }
+
+                Debug.WriteLine($"Realtime fallback transcription completed: SessionId={sessionId}; ItemId={itemId}; Reason={reason}; AudioChunkCount={audioChunkCount}; BufferedBytes={audioBytes.Length}; EstimatedBufferedAudioDurationSeconds={estimatedDurationSeconds:F2}; TranscriptLength={validation.NormalizedTranscript.Length}; IsValid={validation.IsValid}; ValidationReason={validation.Reason}; UsageMetricsLogged=True.");
+                if (!validation.IsValid)
+                {
+                    LogInvalidRealtimeTranscriptDecision(sessionId, itemId, validation.Reason, validation.NormalizedTranscript.Length, retryPromptShown: true);
+                    target.MarkAsInvalidLearnerTranscript(RealtimeVoiceTranscriptionUnavailableText);
+                    StatusMessage = LessonTranscriptValidator.GetRetryMessage(SelectedLevel);
+                    SetConversationModeState(isRealtimeSessionStarted ? ConversationModeState.Ready : ConversationModeState.NotStarted, "fallback_invalid_user_transcript");
+                    RefreshAllCommandStates();
+                    return;
+                }
+
+                applyValidTranscriptTask = ApplyValidRealtimeTranscriptAsync(target, itemId, sessionId, validation.NormalizedTranscript, "fallback_valid_user_transcript");
+            });
+
+            if (applyValidTranscriptTask is not null)
+            {
+                await applyValidTranscriptTask;
+            }
+        }
+        catch (Exception exception)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                Debug.WriteLine($"Realtime fallback transcription failed: SessionId={sessionId}; ItemId={itemId}; Reason={reason}; AudioChunkCount={audioChunkCount}; BufferedBytes={audioBytes.Length}; EstimatedBufferedAudioDurationSeconds={estimatedDurationSeconds:F2}; {exception}");
+                target.MarkAsInvalidLearnerTranscript(RealtimeVoiceTranscriptionUnavailableText);
+                StatusMessage = LessonTranscriptValidator.GetRetryMessage(SelectedLevel);
+                SetConversationModeState(isRealtimeSessionStarted ? ConversationModeState.Ready : ConversationModeState.NotStarted, "fallback_transcription_failed");
+                RefreshAllCommandStates();
+            });
+        }
+        finally
+        {
+            realtimeFallbackTranscriptionInProgress = false;
+            if (!string.IsNullOrWhiteSpace(fallbackFilePath))
+            {
+                audioRecordingService.SafeDeleteRecording(fallbackFilePath);
+            }
+        }
+    }
+
+    private static Task<string> SaveRealtimeFallbackAudioFileAsync(byte[] pcmAudioBytes)
+    {
+        var recordingDirectory = Path.Combine(Path.GetTempPath(), AudioConstants.AppTempFolderName, AudioConstants.RecordingFolderName);
+        Directory.CreateDirectory(recordingDirectory);
+        var filePath = Path.Combine(recordingDirectory, $"realtime-fallback-{DateTime.Now.ToString(AudioConstants.RecordingTimestampFormat, CultureInfo.InvariantCulture)}{AudioConstants.WavFileExtension}");
+        using var writer = new WaveFileWriter(filePath, new WaveFormat(AudioConstants.RealtimeInputPcmSampleRate, AudioConstants.RealtimeInputPcmBitsPerSample, AudioConstants.RealtimeInputPcmChannels));
+        writer.Write(pcmAudioBytes, 0, pcmAudioBytes.Length);
+        return Task.FromResult(filePath);
     }
 
     private bool IsActiveRealtimeSessionEvent(string eventSessionId, string eventName)
@@ -2325,12 +2589,13 @@ public partial class LessonChatViewModel : ViewModelBase
             }
 
             var transcript = args.Transcript.Trim();
+            var itemId = string.IsNullOrWhiteSpace(args.ItemId) ? realtimeUserPlaceholderItemId : args.ItemId;
             if (string.IsNullOrWhiteSpace(transcript))
             {
+                ApplyRealtimeUserTranscriptFailure(itemId, args.SessionId);
                 return;
             }
 
-            var itemId = string.IsNullOrWhiteSpace(args.ItemId) ? realtimeUserPlaceholderItemId : args.ItemId;
             if (string.IsNullOrWhiteSpace(itemId))
             {
                 ApplyRealtimeUserTranscript(itemId, transcript, args.SessionId);
@@ -2408,6 +2673,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
         if (!validation.IsValid)
         {
+            LogInvalidRealtimeTranscriptDecision(sessionId, itemId, validation.Reason, validation.NormalizedTranscript.Length, retryPromptShown: true);
             target.MarkAsInvalidLearnerTranscript(RealtimeVoiceTranscriptionUnavailableText);
             StatusMessage = LessonTranscriptValidator.GetRetryMessage(SelectedLevel);
             BotStatus = BackendConstants.BotStatusReady;
@@ -2416,14 +2682,23 @@ public partial class LessonChatViewModel : ViewModelBase
             RefreshAvatarState();
             RefreshAllCommandStates();
             ViewFeedbackCommand.NotifyCanExecuteChanged();
+            TryStartRealtimeFallbackTranscription(target, itemId, sessionId, validation.Reason.ToString());
             return;
         }
 
-        realtimeUserTranscriptBuffer.Append(validation.NormalizedTranscript);
-        target.MarkAsValidLearnerTurn(validation.NormalizedTranscript, turnResult.LearnerTurnCountAfter);
+        // Keep valid Realtime transcripts normalized before they become feedback-eligible learner turns: MarkAsValidLearnerTurn(validation.NormalizedTranscript).
+        _ = ApplyValidRealtimeTranscriptAsync(target, itemId, sessionId, validation.NormalizedTranscript, "valid_user_transcript");
+    }
+
+    private async Task ApplyValidRealtimeTranscriptAsync(ChatMessageViewModel target, string itemId, string sessionId, string normalizedTranscript, string stateReason)
+    {
+        realtimeUserTranscriptBuffer.Clear();
+        realtimeUserTranscriptBuffer.Append(normalizedTranscript);
+        var turnResult = LessonTurnPolicy.EvaluateUserInput(BuildTurnPolicyContext(), isValidEnglishTranscript: true);
+        target.MarkAsValidLearnerTurn(normalizedTranscript, turnResult.LearnerTurnCountAfter);
         ViewFeedbackCommand.NotifyCanExecuteChanged();
         LearnerTurnCount = turnResult.LearnerTurnCountAfter;
-        Debug.WriteLine($"Realtime placeholder replaced with transcript: SessionId={sessionId}; ItemId={itemId}; UserPlaceholderMessageId={target.Id}; TranscriptLength={target.Text.Length}; LearnerTurnCount={LearnerTurnCount}.");
+        Debug.WriteLine($"Realtime placeholder replaced with transcript: SessionId={sessionId}; ItemId={itemId}; UserPlaceholderMessageId={target.Id}; TranscriptLength={target.Text.Length}; LearnerTurnCount={LearnerTurnCount}; Source={stateReason}.");
 
         if (turnResult.ShouldUseFinalMessage)
         {
@@ -2431,8 +2706,27 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         PrepareRealtimeAssistantPlaceholder();
-        SetConversationModeState(ConversationModeState.WaitingForAssistant, "valid_user_transcript");
+        SetConversationModeState(ConversationModeState.WaitingForAssistant, stateReason);
         StatusMessage = string.Empty;
+
+        if (string.Equals(stateReason, "fallback_valid_user_transcript", StringComparison.Ordinal))
+        {
+            try
+            {
+                await realtimeVoiceEngine.SendUserTextAsync(normalizedTranscript, CancellationToken.None);
+                Debug.WriteLine($"Realtime fallback transcript sent as realtime text turn: SessionId={sessionId}; ItemId={itemId}; TranscriptLength={normalizedTranscript.Length}; DuplicateLearnerTurnCreated=False; DuplicateAssistantResponseCreated=False.");
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine($"Realtime fallback transcript text send failed: SessionId={sessionId}; ItemId={itemId}; TranscriptLength={normalizedTranscript.Length}; {exception}");
+                StatusMessage = BackendConstants.RealtimeUnavailableMessage;
+                BotStatus = BackendConstants.BotStatusReady;
+                IsSending = false;
+                SetConversationModeState(isRealtimeSessionStarted ? ConversationModeState.Ready : ConversationModeState.Faulted, "fallback_text_send_failed");
+                RefreshAvatarState();
+                RefreshAllCommandStates();
+            }
+        }
     }
 
     private void ApplyRealtimeUserTranscriptFailure(string itemId, string sessionId)
@@ -2444,6 +2738,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         realtimeUserPlaceholderItemId = itemId;
+        LogInvalidRealtimeTranscriptDecision(sessionId, itemId, LessonTranscriptValidationReason.Empty, 0, retryPromptShown: true);
         target.MarkAsInvalidLearnerTranscript(RealtimeVoiceTranscriptionUnavailableText);
         StatusMessage = LessonTranscriptValidator.GetRetryMessage(SelectedLevel);
         BotStatus = BackendConstants.BotStatusReady;
@@ -2453,6 +2748,7 @@ public partial class LessonChatViewModel : ViewModelBase
         RefreshAllCommandStates();
         ViewFeedbackCommand.NotifyCanExecuteChanged();
         Debug.WriteLine($"Realtime placeholder marked transcription unavailable: SessionId={sessionId}; ItemId={itemId}; UserPlaceholderMessageId={target.Id}; LearnerTurnCountBefore={LearnerTurnCount}; LearnerTurnCountAfter={LearnerTurnCount}; RetryPromptShown=True; NormalAssistantResponseCreated=False.");
+        TryStartRealtimeFallbackTranscription(target, itemId, sessionId, "transcript_failure_or_timeout");
     }
 
     private void OnRealtimeSessionReady(object? sender, VoiceSessionReadyEventArgs args)
@@ -2598,6 +2894,7 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             Debug.WriteLine($"Starting realtime after guided context selection: LessonType={lessonScenario.Metadata.LessonType}; CurrentLessonPhase={CurrentLessonPhase}; SelectedContextTitle={GetSelectedContextTitle()}; BackendEndpoint={lessonChatBackendService.CreateRealtimeVoiceWebSocketUri()}.");
             await EnsureRealtimeSessionStartedAsync(CancellationToken.None);
+            await PlayRealtimePreStartOpeningAsync(CancellationToken.None);
             StatusMessage = string.Empty;
             LogLessonStateSnapshot("Realtime start success");
         }
