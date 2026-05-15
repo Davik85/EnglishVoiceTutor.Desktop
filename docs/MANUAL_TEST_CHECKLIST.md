@@ -146,9 +146,11 @@ Reach the final tutor message in A1 Introductions or another guided lesson.
 ## 2026-05-15 Realtime GA recovery and English-only checks
 
 - [ ] Start Conversation Mode and verify backend logs do not contain `Realtime Beta API is no longer supported`.
-- [ ] Verify Realtime connects through GA `/v1/realtime` and sends no `OpenAI-Beta` header.
+- [ ] Verify Realtime connects through GA `/v1/realtime`, sends no `OpenAI-Beta` header, and logs a sanitized `session.update` shape containing `audio.input.format.rate` and `audio.output.format.rate`.
 - [ ] Force a Realtime startup failure and verify the user sees a clear failure message, Conversation Mode becomes clickable again, Record is not shown as ready, and text Lesson Chat still works.
 - [ ] Start/stop Conversation Mode three times and verify no overlapping sessions or stale events corrupt the active state.
 - [ ] In normal Lesson Chat, send `Speak Finnish.` and verify the tutor answers in English, for example `Let's practice in English. What's your name?`.
 - [ ] In Realtime, say `Speak Finnish.` and verify the tutor replies in English and does not speak Finnish.
 - [ ] Click Translate on an existing message and verify translation works without changing tutor lesson language.
+
+- [ ] Verify a broken Realtime schema is fatal but recoverable: backend sends `session.startup_failed`, desktop returns Conversation Mode to NotStarted/Faulted retry state, the Conversation Mode button is clickable, the Record button remains disabled until a later `session.ready`, and normal text Lesson Chat still works.

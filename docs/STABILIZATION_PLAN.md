@@ -80,7 +80,7 @@ Conversation Mode now has explicit startup/record recovery work: failed starts, 
 
 ## 2026-05-15 stabilization addendum
 
-- Realtime is migrated to the GA `/v1/realtime` WebSocket interface; beta headers and beta session fields are regression risks and must not return.
-- Conversation Mode startup is recoverable: startup errors produce a user-facing fallback message and reset command state so retry does not require app restart.
+- Realtime is migrated to the GA `/v1/realtime` WebSocket interface; beta headers and beta session fields are regression risks and must not return. The GA `session.update` audio format must include `audio.input.format.rate` and `audio.output.format.rate` with the centralized 24 kHz PCM constants.
+- Conversation Mode startup is recoverable: startup errors, including missing required Realtime schema parameters, produce a user-facing fallback message, close the stale socket, stop microphone/playback, and reset command state so retry does not require app restart. Startup is ready only after upstream `session.updated` and backend `session.ready`.
 - Duplicate/stale Realtime events are ignored by session id on the desktop.
 - English-only tutor output is a product invariant for normal Lesson Chat and Realtime. Translation remains available only through the app's Translate button.
