@@ -125,7 +125,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <Grid ToolTip="{Binding AvatarAnimationAssetPath}">
+                            <Grid>
                                 <Image HorizontalAlignment="Stretch"
                                        VerticalAlignment="Stretch"
                                        Stretch="UniformToFill"
