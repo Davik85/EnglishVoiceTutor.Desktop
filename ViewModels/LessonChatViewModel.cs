@@ -842,9 +842,10 @@ public partial class LessonChatViewModel : ViewModelBase
 
             try
             {
+                PrepareForRealtimeConversationStartup("conversation_mode_start_requested");
+                IsConversationModeEnabled = true;
                 SetConversationModeState(ConversationModeState.Starting, "conversation_mode_start_requested");
                 await EnsureRealtimeSessionStartedAsync(CancellationToken.None);
-                IsConversationModeEnabled = true;
                 SetConversationModeState(ConversationModeState.Ready, "conversation_mode_start_succeeded");
                 StatusMessage = string.Empty;
                 Debug.WriteLine($"Conversation mode started: RealtimeSessionId={realtimeSessionId}; ElapsedMs={startStopwatch.ElapsedMilliseconds}.");
@@ -1835,6 +1836,16 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
+    private void PrepareForRealtimeConversationStartup(string reason)
+    {
+        CancelCurrentBotVoice(BotVoiceCancellationReasons.RealtimeStartupCancel);
+        audioPlaybackService.StopPlayback();
+        IsBotVoicePlaying = false;
+        StatusMessage = string.Empty;
+        RefreshAvatarState();
+        Debug.WriteLine($"Normal bot voice playback stopped before Conversation Mode startup: Reason={reason}; SessionId={realtimeSessionId}; AutoPlaySuppressed={IsConversationModeEnabled || BackendConstants.UseRealtimeConversationMode}.");
+    }
+
     private async Task EnsureRealtimeSessionStartedAsync(CancellationToken cancellationToken)
     {
         if (isRealtimeSessionStarted)
@@ -1842,6 +1853,7 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
+        PrepareForRealtimeConversationStartup("ensure_realtime_session_starting");
         isStartingRealtimeSession = true;
         SetConversationModeState(ConversationModeState.Starting, "ensure_realtime_session_starting");
 
@@ -3372,6 +3384,7 @@ public partial class LessonChatViewModel : ViewModelBase
         public const string NewerMessageCancel = "NewerMessageCancel";
         public const string BackOrFinishCancel = "BackOrFinishCancel";
         public const string ManualReplayCancel = "ManualReplayCancel";
+        public const string RealtimeStartupCancel = "RealtimeStartupCancel";
         public const string AppDisposalCancel = "AppDisposalCancel";
     }
 }

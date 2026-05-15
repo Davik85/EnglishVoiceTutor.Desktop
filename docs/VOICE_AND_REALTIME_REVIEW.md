@@ -94,3 +94,9 @@ Realtime Conversation Mode now uses the GA Realtime WebSocket path `wss://api.op
 Startup is strict: desktop does not treat Conversation Mode as ready until the backend receives a successful upstream `session.updated` after `session.update`, seeds recent conversation, and sends `session.ready`. Missing required Realtime schema parameters are fatal for that startup attempt, classified as startup failure/upstream realtime error, relayed as `session.startup_failed`, and cleaned up so the Conversation Mode button can be clicked again without restarting the app.
 
 Tutor output language is locked to English in both normal Lesson Chat and Realtime. The tutor must refuse requests such as “Speak Finnish” or “Can you speak Russian?” in English and continue the selected lesson. The Translate button remains a separate review feature and does not permit the tutor to change lesson language.
+
+## 2026-05-15 GA content-part correction
+
+The remaining GA runtime crash `Invalid value: 'text'. Value must be 'output_text'.` was traced to recent conversation seeding for assistant messages. Realtime `conversation.item.create` events no longer use a generic content part type of `text`: user/system-style text is mapped to `input_text`, and assistant seed text is mapped to `output_text`. Realtime `response.create` remains an audio-generation event with `output_modalities: ["audio"]`; it does not create fake text content items and does not route generated Realtime assistant turns through `/api/audio/speech`.
+
+Runtime upstream errors after `session.ready` are recoverable. The backend emits `session.runtime_failed`, logs the shutdown as an upstream/runtime Realtime error, and closes stale upstream state. The desktop cleans microphone, playback, transcript buffers, and active-response flags, returns to a retryable state, and ignores stale events from old session IDs.

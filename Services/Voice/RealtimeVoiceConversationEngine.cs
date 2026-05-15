@@ -20,6 +20,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
     private string activeResponseId = string.Empty;
     private readonly StringBuilder activeTranscript = new();
     private TaskCompletionSource<bool>? sessionStartCompletionSource;
+    private bool isSessionReady;
     private bool disposed;
     private bool stopRequested;
 
@@ -44,6 +45,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         await StopSessionAsync(CancellationToken.None);
         stopRequested = false;
         sessionId = request.SessionId;
+        isSessionReady = false;
         activeTranscript.Clear();
         activeResponseId = string.Empty;
         sessionStopwatch = Stopwatch.StartNew();
@@ -114,6 +116,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         }
 
         webSocket = null;
+        isSessionReady = false;
         receiveCancellationTokenSource?.Dispose();
         receiveCancellationTokenSource = null;
         sessionStartCompletionSource = null;
@@ -232,6 +235,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         {
             case "session.started":
             case "session.ready":
+                isSessionReady = true;
                 sessionStartCompletionSource?.TrySetResult(true);
                 Debug.WriteLine($"Realtime voice session ready acknowledgement received: SessionId={eventSessionId}; SessionConfiguredMs={sessionStopwatch.ElapsedMilliseconds}.");
                 break;
@@ -281,8 +285,14 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
                 break;
             case "session.startup_failed":
             case "session.error":
+            case "session.runtime_failed":
                 var message = root.TryGetProperty("message", out var messageProperty) ? messageProperty.GetString() ?? "Realtime voice mode is unavailable. Please try text mode." : "Realtime voice mode is unavailable. Please try text mode.";
-                sessionStartCompletionSource?.TrySetException(new InvalidOperationException(message));
+                if (!isSessionReady)
+                {
+                    sessionStartCompletionSource?.TrySetException(new InvalidOperationException(message));
+                }
+
+                Debug.WriteLine($"Realtime voice session error event received: SessionId={eventSessionId}; ResponseId={responseId}; EventType={type}; Ready={isSessionReady}; ElapsedMs={sessionStopwatch.ElapsedMilliseconds}.");
                 ErrorReceived?.Invoke(this, new VoiceSessionErrorEventArgs(eventSessionId, message, responseId));
                 break;
         }
