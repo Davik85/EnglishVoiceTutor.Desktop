@@ -2310,24 +2310,23 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         Application.Current.Dispatcher.Invoke(() =>
         {
-            if (!IsActiveRealtimeSessionEvent(args.SessionId, nameof(OnRealtimeErrorReceived)))
-            {
-                return;
-            }
-
-            Debug.WriteLine($"Realtime session error: SessionId={args.SessionId}; ResponseId={args.ResponseId}; Message={args.Message}; Exception={args.Exception}");
-            StatusMessage = BackendConstants.RealtimeUnavailableMessage;
-            IsSending = false;
-            IsRecording = false;
-            IsBotVoicePlaying = false;
-            isRealtimeSessionStarted = false;
-            SafeStopRealtimeMicrophone("session_error");
-            realtimeAudioPlaybackService.Stop("session_error");
-            SetConversationModeState(ConversationModeState.NotStarted, "session_error_recoverable");
-            RefreshAvatarState();
-            RefreshAllCommandStates();
-            LogLessonStateSnapshot("Realtime session error recovery");
+            _ = RecoverRealtimeErrorAsync(args);
         });
+    }
+
+    private async Task RecoverRealtimeErrorAsync(VoiceSessionErrorEventArgs args)
+    {
+        if (!IsActiveRealtimeSessionEvent(args.SessionId, nameof(OnRealtimeErrorReceived)))
+        {
+            return;
+        }
+
+        Debug.WriteLine($"Realtime session error: SessionId={args.SessionId}; ResponseId={args.ResponseId}; Message={args.Message}; Exception={args.Exception}");
+        StatusMessage = BackendConstants.RealtimeUnavailableMessage;
+        isStartingRealtimeSession = false;
+        await CleanupRealtimeAfterFaultAsync("session_error_recoverable");
+        RefreshAllCommandStates();
+        LogLessonStateSnapshot("Realtime session error recovery");
     }
 
     private void OnRealtimeDisconnected(object? sender, VoiceSessionDisconnectedEventArgs args)

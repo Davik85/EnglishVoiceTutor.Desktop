@@ -25,11 +25,28 @@ def main() -> None:
         "Microphone is not available",
         "Conversation Mode could not start. Please try again.",
         "OnRealtimeDisconnected",
+        "RecoverRealtimeErrorAsync",
         "CanStartRealtimeRecording",
+        "CurrentConversationModeState == ConversationModeState.Ready",
+        "isRealtimeSessionStarted",
+        "isStartingRealtimeSession = false;",
+        "SafeStopRealtimeMicrophone(reason)",
+        "realtimeAudioPlaybackService.Stop(reason)",
+        "await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None)",
+        "SetConversationModeState(IsCompletedAwaitingFinish ? ConversationModeState.CompletedAwaitingFinish : ConversationModeState.NotStarted, reason)",
+        "IsActiveRealtimeSessionEvent(args.SessionId",
+        "Ignoring stale realtime UI event",
+        "Conversation Mode toggle ignored because lifecycle operation is active",
     ]:
         require(vm, needle, "ViewModels/LessonChatViewModel.cs")
     engine = read("Services/Voice/RealtimeVoiceConversationEngine.cs")
-    require(engine, "Disconnected?.Invoke", "Services/Voice/RealtimeVoiceConversationEngine.cs")
+    for needle in [
+        "Disconnected?.Invoke",
+        "session.startup_failed",
+        "sessionStartCompletionSource?.TrySetException",
+        "Ignoring stale realtime event",
+    ]:
+        require(engine, needle, "Services/Voice/RealtimeVoiceConversationEngine.cs")
 
 
 if __name__ == "__main__":

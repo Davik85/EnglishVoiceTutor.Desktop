@@ -18,6 +18,10 @@ public static class OpenAiConstants
     public const string DefaultSpeechVoice = "coral";
     public const string DefaultRealtimeVoiceModel = "gpt-realtime";
     public const string DefaultRealtimeVoice = "coral";
+    public const string RealtimeAudioPcmFormatType = "audio/pcm";
+    public const int RealtimeInputAudioSampleRate = 24000;
+    public const int RealtimeOutputAudioSampleRate = 24000;
+    public const string RealtimeAudioOutputModality = "audio";
     // 1.0 is the default OpenAI speech speed. Keep it as the MVP default for natural full-speed speech.
     public const double DefaultSpeechSpeed = 1.0;
     public const string PcmSpeechResponseFormat = "pcm";

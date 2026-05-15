@@ -62,3 +62,8 @@ Usage summaries are emitted as structured backend logs with `Developer usage sum
 ## 2026-05-15 Realtime GA usage note
 
 Realtime usage logging remains attached to `gpt-realtime` responses and sessions after the GA `/v1/realtime` migration. The backend still records session id, model, voice, English transcription model/language, input/output audio byte estimates, transcript characters, disconnect reason, and exact response usage fields when the GA `response.done.response.usage` payload provides them. Normal Lesson Chat TTS remains `tts-1`.
+
+
+## 2026-05-15 Realtime GA schema and recovery note
+
+Realtime usage instrumentation remains unchanged while the GA session schema is corrected. The configured session update must include `audio.input.format: { type: "audio/pcm", rate: 24000 }` and `audio.output.format: { type: "audio/pcm", rate: 24000 }`; `audio.output.format.rate` is required before OpenAI accepts the session. A missing required schema parameter is treated as a failed startup, not a billable successful lesson turn, and cleanup still emits the `Developer usage summary: Operation=realtime_session` line with approximate byte/duration counters and centralized placeholder pricing fields.

@@ -42,7 +42,7 @@ public sealed class RealtimeVoiceSessionService
     private bool startupFailureNotified;
     private TaskCompletionSource<bool>? startupCompletionSource;
     private CancellationTokenSource? transcriptionTimeoutCancellationTokenSource;
-    private const int InputAudioSampleRate = 24000;
+    private const int InputAudioSampleRate = OpenAiConstants.RealtimeInputAudioSampleRate;
     private const int InputAudioBytesPerSample = 2;
     private const int MinimumInputAudioDurationMs = 500;
     private const int UserTranscriptTimeoutMilliseconds = 8000;
@@ -284,31 +284,9 @@ public sealed class RealtimeVoiceSessionService
             _ = Task.Run(() => ReceiveOpenAiEventsAsync(openAiSocket, cancellationToken), CancellationToken.None);
 
             var instructions = lessonPromptBuilder.BuildRealtimeInstructions(request);
-            await SendOpenAiEventAsync(new
-            {
-                type = "session.update",
-                session = new
-                {
-                    type = "realtime",
-                    model = OpenAiConstants.DefaultRealtimeVoiceModel,
-                    output_modalities = new[] { "audio" },
-                    instructions,
-                    audio = new
-                    {
-                        input = new
-                        {
-                            format = new { type = "audio/pcm", rate = InputAudioSampleRate },
-                            turn_detection = (object?)null,
-                            transcription = new { model = OpenAiConstants.DefaultTranscriptionModel, language = OpenAiConstants.TranscriptionLanguage }
-                        },
-                        output = new
-                        {
-                            format = new { type = "audio/pcm" },
-                            voice = OpenAiConstants.DefaultRealtimeVoice
-                        }
-                    }
-                }
-            }, cancellationToken);
+            var sessionUpdateEvent = CreateRealtimeSessionUpdateEvent(instructions);
+            LogRealtimeSessionUpdateShape(sessionUpdateEvent, instructions.Length);
+            await SendOpenAiEventAsync(sessionUpdateEvent, cancellationToken);
 
             await startupCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken);
             logger.LogInformation("Realtime session configured. SessionId={SessionId}; SessionConfiguredMs={ElapsedMs}; InputAudioTranscriptionModel={TranscriptionModel}; TranscriptionLanguage={Language}.", sessionId, stopwatch.ElapsedMilliseconds, OpenAiConstants.DefaultTranscriptionModel, OpenAiConstants.TranscriptionLanguage);
@@ -341,6 +319,95 @@ public sealed class RealtimeVoiceSessionService
             }
             await DisconnectAsync("startup_failed", CancellationToken.None);
         }
+    }
+
+
+    private static object CreateRealtimeSessionUpdateEvent(string instructions)
+    {
+        return new
+        {
+            type = "session.update",
+            session = new
+            {
+                type = "realtime",
+                model = OpenAiConstants.DefaultRealtimeVoiceModel,
+                output_modalities = new[] { OpenAiConstants.RealtimeAudioOutputModality },
+                instructions,
+                audio = new
+                {
+                    input = new
+                    {
+                        format = new
+                        {
+                            type = OpenAiConstants.RealtimeAudioPcmFormatType,
+                            rate = OpenAiConstants.RealtimeInputAudioSampleRate
+                        },
+                        turn_detection = (object?)null,
+                        transcription = new
+                        {
+                            model = OpenAiConstants.DefaultTranscriptionModel,
+                            language = OpenAiConstants.TranscriptionLanguage
+                        }
+                    },
+                    output = new
+                    {
+                        format = new
+                        {
+                            type = OpenAiConstants.RealtimeAudioPcmFormatType,
+                            rate = OpenAiConstants.RealtimeOutputAudioSampleRate
+                        },
+                        voice = OpenAiConstants.DefaultRealtimeVoice
+                    }
+                }
+            }
+        };
+    }
+
+    private void LogRealtimeSessionUpdateShape(object sessionUpdateEvent, int instructionsLength)
+    {
+        var json = JsonSerializer.Serialize(sessionUpdateEvent, JsonOptions);
+        using var document = JsonDocument.Parse(json);
+        var session = document.RootElement.GetProperty("session");
+        var audio = session.GetProperty("audio");
+        var sanitizedShape = new
+        {
+            type = document.RootElement.GetProperty("type").GetString(),
+            session = new
+            {
+                type = session.GetProperty("type").GetString(),
+                model = session.GetProperty("model").GetString(),
+                output_modalities = session.GetProperty("output_modalities").EnumerateArray().Select(value => value.GetString()).ToArray(),
+                voice = audio.GetProperty("output").GetProperty("voice").GetString(),
+                instructionsLength,
+                audio = new
+                {
+                    input = new
+                    {
+                        format = new
+                        {
+                            type = audio.GetProperty("input").GetProperty("format").GetProperty("type").GetString(),
+                            rate = audio.GetProperty("input").GetProperty("format").GetProperty("rate").GetInt32()
+                        },
+                        turn_detection = (string?)null,
+                        transcription = new
+                        {
+                            model = audio.GetProperty("input").GetProperty("transcription").GetProperty("model").GetString(),
+                            language = audio.GetProperty("input").GetProperty("transcription").GetProperty("language").GetString()
+                        }
+                    },
+                    output = new
+                    {
+                        format = new
+                        {
+                            type = audio.GetProperty("output").GetProperty("format").GetProperty("type").GetString(),
+                            rate = audio.GetProperty("output").GetProperty("format").GetProperty("rate").GetInt32()
+                        }
+                    }
+                }
+            }
+        };
+
+        logger.LogInformation("Realtime session.update sanitized shape. SessionId={SessionId}; Shape={SessionUpdateShape}.", sessionId, JsonSerializer.Serialize(sanitizedShape, JsonOptions));
     }
 
     private async Task ReceiveOpenAiEventsAsync(ClientWebSocket socket, CancellationToken cancellationToken)
@@ -622,7 +689,7 @@ public sealed class RealtimeVoiceSessionService
             type = "response.create",
             response = new
             {
-                output_modalities = new[] { "audio" },
+                output_modalities = new[] { OpenAiConstants.RealtimeAudioOutputModality },
                 instructions = BuildResponseInstructions()
             }
         }, cancellationToken);
