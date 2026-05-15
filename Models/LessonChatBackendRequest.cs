@@ -102,6 +102,8 @@ public sealed class LessonChatBackendRequest
 
     public string FeedbackRulesSummary { get; init; } = string.Empty;
 
+    public string RequestPurpose { get; set; } = string.Empty;
+
     public string TutorProfileId { get; init; } = string.Empty;
 
     public string ActiveLevelProfileDifficultyNotes { get; init; } = string.Empty;

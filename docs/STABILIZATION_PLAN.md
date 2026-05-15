@@ -73,3 +73,7 @@ This plan reflects the current post-fix stabilization status. It favors document
 - Priority C — Prompt/methodology polishing for lesson usefulness.
 - Priority D — Small architecture extractions after behavior is pinned.
 - Priority E — UI polish only after lesson behavior is stable.
+
+## Current priority: Realtime recovery and usage instrumentation
+
+Conversation Mode now has explicit startup/record recovery work: failed starts, unexpected disconnects, microphone failures, quick toggles, and final lesson state must all reset command state without requiring an app restart. Developer-only usage/cost logs are required before deciding whether normal TTS, chained voice, or Realtime should change pricing or model strategy.

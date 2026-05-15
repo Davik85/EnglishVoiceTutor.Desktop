@@ -21,6 +21,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
     private readonly StringBuilder activeTranscript = new();
     private TaskCompletionSource<bool>? sessionStartCompletionSource;
     private bool disposed;
+    private bool stopRequested;
 
     public RealtimeVoiceConversationEngine(LessonChatBackendService backendService)
     {
@@ -35,11 +36,13 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
     public event EventHandler<UserTranscriptCompletedEventArgs>? UserTranscriptCompleted;
     public event EventHandler<UserTranscriptFailedEventArgs>? UserTranscriptFailed;
     public event EventHandler<VoiceSessionErrorEventArgs>? ErrorReceived;
+    public event EventHandler<VoiceSessionDisconnectedEventArgs>? Disconnected;
 
     public async Task StartSessionAsync(VoiceSessionStartRequest request, CancellationToken cancellationToken)
     {
         ThrowIfDisposed();
         await StopSessionAsync(CancellationToken.None);
+        stopRequested = false;
         sessionId = request.SessionId;
         activeTranscript.Clear();
         activeResponseId = string.Empty;
@@ -89,6 +92,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
 
     public async Task StopSessionAsync(CancellationToken cancellationToken)
     {
+        stopRequested = true;
         var socket = webSocket;
         receiveCancellationTokenSource?.Cancel();
         if (socket is not null)
@@ -154,6 +158,9 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         var buffer = new byte[64 * 1024];
         var builder = new StringBuilder();
 
+        var disconnectReason = "receive_loop_ended";
+        var expectedDisconnect = false;
+
         try
         {
             while (!cancellationToken.IsCancellationRequested && socket.State == WebSocketState.Open)
@@ -161,6 +168,8 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
                 var result = await socket.ReceiveAsync(buffer, cancellationToken);
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
+                    disconnectReason = "websocket_close_received";
+                    expectedDisconnect = stopRequested;
                     break;
                 }
 
@@ -177,13 +186,25 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         }
         catch (OperationCanceledException)
         {
-            // Normal shutdown.
+            disconnectReason = stopRequested ? "client_stop" : "receive_loop_canceled";
+            expectedDisconnect = stopRequested;
         }
         catch (Exception exception)
         {
+            disconnectReason = "receive_loop_failed";
+            expectedDisconnect = false;
             Debug.WriteLine($"Realtime voice receive loop failed: SessionId={sessionId}; {exception}");
             sessionStartCompletionSource?.TrySetException(exception);
             ErrorReceived?.Invoke(this, new VoiceSessionErrorEventArgs(sessionId, "Realtime voice mode is unavailable. Please try text mode.", activeResponseId, exception));
+        }
+        finally
+        {
+            var socketState = socket.State.ToString();
+            Debug.WriteLine($"Realtime voice receive loop ended: SessionId={sessionId}; Reason={disconnectReason}; Expected={expectedDisconnect}; SocketState={socketState}; ElapsedMs={sessionStopwatch.ElapsedMilliseconds}.");
+            if (!expectedDisconnect)
+            {
+                Disconnected?.Invoke(this, new VoiceSessionDisconnectedEventArgs(sessionId, activeResponseId, disconnectReason, expectedDisconnect, socketState));
+            }
         }
     }
 

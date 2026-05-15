@@ -14,13 +14,16 @@ public sealed class AudioTranscriptionService
 
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<AudioTranscriptionService> _logger;
 
     public AudioTranscriptionService(
         OpenAiOptionsProvider optionsProvider,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        ILogger<AudioTranscriptionService> logger)
     {
         _optionsProvider = optionsProvider;
         _httpClientFactory = httpClientFactory;
+        _logger = logger;
     }
 
     public async Task<AudioTranscriptionResponse> TranscribeAsync(
@@ -38,6 +41,8 @@ public sealed class AudioTranscriptionService
         }
 
         var openAiResponse = await SendAudioTranscriptionRequestAsync(audioFile, options.ApiKey, cancellationToken);
+        var durationSeconds = EstimatePcmWavDurationSeconds(audioFile.Length);
+        _logger.LogInformation("Developer usage summary: Operation=audio_transcription; Model={Model}; Language={Language}; InputAudioBytes={InputAudioBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; TranscriptCharacters={TranscriptCharacters}; Status=success; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", OpenAiConstants.DefaultTranscriptionModel, OpenAiConstants.TranscriptionLanguage, audioFile.Length, durationSeconds, openAiResponse.Text.Trim().Length, PricingConstants.OpenAi.TranscriptionPerMinuteUsd == 0m ? "transcription_pricing" : string.Empty);
 
         return new AudioTranscriptionResponse
         {
@@ -91,5 +96,15 @@ public sealed class AudioTranscriptionService
         }
 
         return parsedResponse;
+    }
+
+    private static double EstimatePcmWavDurationSeconds(long bytes)
+    {
+        const int wavHeaderBytes = 44;
+        const int sampleRate = 16000;
+        const int channels = 1;
+        const int bytesPerSample = 2;
+        var audioBytes = Math.Max(0, bytes - wavHeaderBytes);
+        return audioBytes / (double)(sampleRate * channels * bytesPerSample);
     }
 }
