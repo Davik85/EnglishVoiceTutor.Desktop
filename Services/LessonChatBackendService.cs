@@ -209,7 +209,8 @@ public sealed class LessonChatBackendService
     // ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
     public async Task<BotSpeechBackendResponse> CreateBotSpeechAsync(
         string text,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string purpose = BackendConstants.LessonChatTtsPurpose)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -221,7 +222,7 @@ public sealed class LessonChatBackendService
         var endpointUri = CreateEndpointUri(BackendConstants.AudioSpeechEndpoint);
         var inputLength = text.Trim().Length;
 
-        Debug.WriteLine($"Bot voice backend TTS request starting: Endpoint={BackendConstants.AudioSpeechEndpoint}; InputLength={inputLength}.");
+        Debug.WriteLine($"Bot voice backend TTS request starting: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={BackendConstants.TtsModelName}; InputLength={inputLength}.");
 
         try
         {
@@ -229,7 +230,8 @@ public sealed class LessonChatBackendService
                 endpointUri,
                 new AudioSpeechBackendRequest
                 {
-                    Text = text
+                    Text = text,
+                    Purpose = purpose
                 },
                 JsonOptions,
                 cancellationToken);
@@ -244,7 +246,7 @@ public sealed class LessonChatBackendService
             }
 
             var contentType = response.Content.Headers.ContentType?.MediaType ?? BackendConstants.SpeechResponseContentType;
-            Debug.WriteLine($"Bot voice backend TTS request completed: Endpoint={BackendConstants.AudioSpeechEndpoint}; InputLength={inputLength}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}; ContentType={contentType}; AudioBytes={audioBytes.Length}.");
+            Debug.WriteLine($"Bot voice backend TTS request completed: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={BackendConstants.TtsModelName}; InputLength={inputLength}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}; ContentType={contentType}; AudioBytes={audioBytes.Length}.");
             return new BotSpeechBackendResponse(audioBytes, contentType, GetAudioFileExtension(contentType));
         }
         catch (Exception exception)

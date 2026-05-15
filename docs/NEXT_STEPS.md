@@ -41,3 +41,9 @@ Run a full manual smoke test across all five MVP topics and record pass/fail in 
 ## Added stabilization priority
 
 Realtime startup/record state recovery is now a priority before broader feature work. Developer-only usage/cost instrumentation must be inspected from real lessons before pricing or model decisions are made.
+
+## Follow-up after Conversation Mode opening playback
+
+- Manually capture backend logs proving `Purpose=realtime_pre_start_opening` uses `tts-1` for the pre-start visible prompt and that generated Realtime assistant replies do not call `/api/audio/speech`.
+- Review real fallback transcription logs after several A1 sessions to decide whether the Realtime transcript timeout should be increased beyond the current named timeout constant.
+- Consider a dedicated visual style for retry/status voice messages so they are clearly distinct from learner content while preserving translation behavior for existing messages.

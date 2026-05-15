@@ -34,6 +34,8 @@ public sealed class RealtimeVoiceSessionService
     private bool firstTranscriptLogged;
     private long lastUserAudioCommitMs;
     private int inputAudioBytesBuffered;
+    private int committedAudioBytesAwaitingTranscript;
+    private int committedAudioChunkCountAwaitingTranscript;
     private long totalInputAudioBytes;
     private long totalCommittedAudioBytes;
     private long totalAssistantAudioBytes;
@@ -235,6 +237,8 @@ public sealed class RealtimeVoiceSessionService
                 }
 
                 lastUserAudioCommitMs = stopwatch.ElapsedMilliseconds;
+                committedAudioBytesAwaitingTranscript = inputAudioBytesBuffered;
+                committedAudioChunkCountAwaitingTranscript = currentAudioChunkCount;
                 totalCommittedAudioBytes += inputAudioBytesBuffered;
                 audioCommitCount++;
                 isAwaitingUserTranscript = true;
@@ -639,9 +643,15 @@ public sealed class RealtimeVoiceSessionService
         transcriptionTimeoutCancellationTokenSource?.Cancel();
         var validation = LessonTranscriptValidator.Validate(transcript);
         var resolvedItemId = string.IsNullOrWhiteSpace(itemId) ? pendingUserAudioItemId : itemId;
+        if (!isAwaitingUserTranscript)
+        {
+            logger.LogInformation("Realtime stale user transcript ignored. SessionId={SessionId}; RealtimeUserTurnId={RealtimeUserTurnId}; LearnerTurnNumber={LearnerTurnNumber}; ItemId={ItemId}; TranscriptLength={TranscriptLength}; NormalAssistantResponseCreated=False; RetryPromptShown=False.", sessionId, currentRealtimeUserTurnId, currentRealtimeUserTurnNumber, resolvedItemId, validation.NormalizedTranscript.Length);
+            return;
+        }
+
         if (!validation.IsValid)
         {
-            logger.LogInformation("Realtime user transcript rejected. SessionId={SessionId}; RealtimeUserTurnId={RealtimeUserTurnId}; LearnerTurnNumber={LearnerTurnNumber}; ItemId={ItemId}; Reason={Reason}; TranscriptLength={TranscriptLength}; LearnerTurnCountBefore={LearnerTurnCount}; LearnerTurnCountAfter={LearnerTurnCountAfter}; NormalAssistantResponseCreated=False; RetryPromptShown=True.", sessionId, currentRealtimeUserTurnId, currentRealtimeUserTurnNumber, resolvedItemId, validation.Reason, validation.NormalizedTranscript.Length, learnerTurnCount, learnerTurnCount);
+            LogRealtimeInvalidTranscriptDecision(resolvedItemId, validation.Reason, validation.NormalizedTranscript.Length, retryPromptShown: true);
             isAwaitingUserTranscript = false;
             await SendDesktopEventAsync(new { type = "user.transcript.completed", sessionId, itemId = resolvedItemId, transcript = validation.NormalizedTranscript }, cancellationToken);
             await SendDesktopEventAsync(new { type = "user.transcript.failed", sessionId, itemId = resolvedItemId, message = LessonTranscriptValidator.RetryMessage, reason = validation.Reason.ToString() }, cancellationToken);
@@ -666,9 +676,41 @@ public sealed class RealtimeVoiceSessionService
     private async Task HandleUserTranscriptFailedAsync(string itemId, string message, CancellationToken cancellationToken)
     {
         transcriptionTimeoutCancellationTokenSource?.Cancel();
+        if (!isAwaitingUserTranscript && !string.Equals(message, "transcription_timeout", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         isAwaitingUserTranscript = false;
         var resolvedItemId = string.IsNullOrWhiteSpace(itemId) ? pendingUserAudioItemId : itemId;
+        LogRealtimeInvalidTranscriptDecision(resolvedItemId, LessonTranscriptValidationReason.Empty, 0, retryPromptShown: true, validationReasonText: message);
         await SendDesktopEventAsync(new { type = "user.transcript.failed", sessionId, itemId = resolvedItemId, message = LessonTranscriptValidator.RetryMessage, reason = message }, cancellationToken);
+    }
+
+    private void LogRealtimeInvalidTranscriptDecision(
+        string itemId,
+        LessonTranscriptValidationReason validationReason,
+        int transcriptLength,
+        bool retryPromptShown,
+        string? validationReasonText = null)
+    {
+        var reason = string.IsNullOrWhiteSpace(validationReasonText) ? validationReason.ToString() : validationReasonText;
+        logger.LogInformation(
+            "Realtime invalid transcript decision. SessionId={SessionId}; RealtimeUserTurnId={RealtimeUserTurnId}; LearnerTurnNumber={LearnerTurnNumber}; AudioChunkCount={AudioChunkCount}; BufferedBytes={BufferedBytes}; EstimatedBufferedAudioDurationSeconds={EstimatedBufferedAudioDurationSeconds}; TranscriptLength={TranscriptLength}; ValidationReason={ValidationReason}; WasEmpty={WasEmpty}; WasNonEnglish={WasNonEnglish}; WasTooShort={WasTooShort}; WasPlaceholder={WasPlaceholder}; RetryPromptShown={RetryPromptShown}; ItemId={ItemId}.",
+            sessionId,
+            currentRealtimeUserTurnId,
+            currentRealtimeUserTurnNumber,
+            committedAudioChunkCountAwaitingTranscript,
+            committedAudioBytesAwaitingTranscript,
+            EstimateRealtimePcmDurationSeconds(committedAudioBytesAwaitingTranscript),
+            transcriptLength,
+            reason,
+            validationReason == LessonTranscriptValidationReason.Empty,
+            validationReason is LessonTranscriptValidationReason.NonLatinScript or LessonTranscriptValidationReason.MostlyNonLatinScript or LessonTranscriptValidationReason.NoEnglishContent,
+            validationReason == LessonTranscriptValidationReason.TooShort,
+            validationReason == LessonTranscriptValidationReason.Placeholder,
+            retryPromptShown,
+            itemId);
     }
 
     private void StartTranscriptionTimeout(CancellationToken cancellationToken)

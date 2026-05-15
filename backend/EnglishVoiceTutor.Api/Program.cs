@@ -367,7 +367,7 @@ static async Task<IResult> HandleAudioSpeechStreamAsync(
 
     try
     {
-        var metrics = await audioSpeechService.StreamSpeechAsync(request.Text, response.Body, cancellationToken);
+        var metrics = await audioSpeechService.StreamSpeechAsync(request.Text, response.Body, request.Purpose, cancellationToken);
         logger.LogInformation(
             "Audio speech stream endpoint completed. Endpoint={Endpoint}; FirstHeaderMs={FirstHeaderMs}; FirstChunkMs={FirstChunkMs}; FirstChunkWrittenMs={FirstChunkWrittenMs}; TotalMs={TotalMs}; TotalBytes={TotalBytes}.",
             "audio/speech-stream",
@@ -449,7 +449,7 @@ static async Task<IResult> HandleAudioSpeechAsync(
 
     try
     {
-        var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, cancellationToken);
+        var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, request.Purpose, cancellationToken);
 
         return Results.File(audioBytes, OpenAiConstants.SpeechResponseContentType);
     }
@@ -480,7 +480,7 @@ static async Task<IResult> HandleAudioSpeechAsync(
     }
     catch (TaskCanceledException) when (cancellationToken.IsCancellationRequested)
     {
-        logger.LogInformation("Audio speech request was canceled because the client aborted the request. Endpoint={Endpoint}; ClientCancellationRequested={ClientCancellationRequested}.", "audio/speech", true);
+        logger.LogInformation("Audio speech request was canceled because the client aborted the request. Endpoint={Endpoint}; Purpose={Purpose}; ClientCancellationRequested={ClientCancellationRequested}.", "audio/speech", request.Purpose, true);
         return Results.Problem(
             title: "Client closed request.",
             detail: "The client canceled the audio speech request before the backend could finish writing the response.",

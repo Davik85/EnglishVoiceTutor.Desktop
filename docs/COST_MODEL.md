@@ -67,3 +67,7 @@ Realtime usage logging remains attached to `gpt-realtime` responses and sessions
 ## 2026-05-15 Realtime GA schema and recovery note
 
 Realtime usage instrumentation remains unchanged while the GA session schema is corrected. The configured session update must include `audio.input.format: { type: "audio/pcm", rate: 24000 }` and `audio.output.format: { type: "audio/pcm", rate: 24000 }`; `audio.output.format.rate` is required before OpenAI accepts the session. A missing required schema parameter is treated as a failed startup, not a billable successful lesson turn, and cleanup still emits the `Developer usage summary: Operation=realtime_session` line with approximate byte/duration counters and centralized placeholder pricing fields.
+
+## 2026-05-15 fallback transcription cost note
+
+Realtime transcript recovery can add a one-shot fallback transcription call only after Realtime user transcription fails or times out and buffered committed audio exists. The fallback uses the same normal transcription endpoint/model (`gpt-4o-mini-transcribe`, English) as Lesson Chat voice input. It is not used on successful Realtime transcripts, does not generate assistant speech through `tts-1`, and does not create duplicate learner turns or duplicate Realtime assistant responses. Fallback attempts log usage-oriented metadata (audio chunks, bytes, estimated duration, model, language, and result validity) so extra cost can be measured separately from successful Realtime turns.

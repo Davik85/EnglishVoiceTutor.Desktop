@@ -40,7 +40,7 @@ def py_validate(transcript: str | None, allows_one_letter_answer: bool = False) 
     if transcript is None:
         return False
     normalized = " ".join(transcript.strip().split())
-    if not normalized or normalized.lower() == VOICE_PLACEHOLDER.lower():
+    if not normalized or normalized.lower() in {VOICE_PLACEHOLDER.lower(), RETRY_TEXT.lower()}:
         return False
     if not any(ch.isalnum() for ch in normalized):
         return False
@@ -101,11 +101,11 @@ def main() -> int:
     prompt = read(PROMPT_BUILDER)
     introductions = json.loads(read(INTRODUCTIONS_JSON))
 
-    for sample in ["David.", "My name is David.", "Russia.", "I am from Russia.", "Yes.", "No."]:
+    for sample in ["David.", "My name is David.", "Russia.", "I am from Russia.", "Moscow.", "I live in Moscow.", "Yes.", "No.", "Good.", "I work.", "I study."]:
         if not py_validate(sample):
             raise AssertionError(f"Expected valid transcript: {sample}")
 
-    for sample in ["", " ", VOICE_PLACEHOLDER, "记", "Лонг", "да", "привет"]:
+    for sample in ["", " ", VOICE_PLACEHOLDER, RETRY_TEXT, "记", "Лонг", "да", "привет"]:
         if py_validate(sample):
             raise AssertionError(f"Expected invalid transcript: {sample!r}")
 
