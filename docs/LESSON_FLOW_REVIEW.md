@@ -1,6 +1,6 @@
 # Lesson Flow Review
 
-Review date: 2026-05-14.
+Review date: 2026-05-16.
 
 This document records the current lesson flow contract for guided roleplay and summary behavior.
 
@@ -112,3 +112,13 @@ This document records the current lesson flow contract for guided roleplay and s
 - Realtime user placeholders must resolve to accepted transcript text, `[Voice not recognized. Please try again in English.]`, or a technical retry/status message.
 - Retry/status messages are not valid learner turns, are not feedback-eligible, are excluded from summary input, and do not trigger normal lesson replies.
 - Short A1 answers and proper nouns such as `David`, `Russia`, `Moscow`, `Yes`, and `No` are valid when recognized because the shared transcript validator only rejects empty/noise, placeholders, blocked scripts, mostly non-Latin content, no-English-content, or truly too-short content.
+
+## 2026-05-16 flow baseline confirmation
+
+Current stable flow rules for the next phase:
+
+- Normal typed Lesson Chat and valid normal/Realtime voice transcripts count as learner turns only after transcript and phase policy accept them.
+- Invalid transcript retry/status messages remain visible for user recovery but are not feedback-eligible, do not increment learner-turn counts, and are excluded from summary input.
+- Awaiting Finish is a review state: new lesson input is disabled, but feedback, translation, and Play voice remain available for existing messages.
+- Lesson summaries use the full valid conversation instead of only the final exchange.
+- Tutor output remains English-only; methodology and scenario quality are intentionally left for later iterative polish rather than this stabilization cleanup.

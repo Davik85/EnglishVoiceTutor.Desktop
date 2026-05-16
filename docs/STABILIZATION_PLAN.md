@@ -1,6 +1,6 @@
 # Stabilization Plan
 
-Review date: 2026-05-14.
+Review date: 2026-05-16.
 
 This plan reflects the current post-fix stabilization status. It favors documentation, regression checks, and targeted smoke testing before new feature work.
 
@@ -84,3 +84,15 @@ Conversation Mode now has explicit startup/record recovery work: failed starts, 
 - Conversation Mode startup is recoverable: startup errors, including missing required Realtime schema parameters, produce a user-facing fallback message, close the stale socket, stop microphone/playback, and reset command state so retry does not require app restart. Startup is ready only after upstream `session.updated` and backend `session.ready`.
 - Duplicate/stale Realtime events are ignored by session id on the desktop.
 - English-only tutor output is a product invariant for normal Lesson Chat and Realtime. Translation remains available only through the app's Translate button.
+
+## 2026-05-16 stabilization pass outcome
+
+This pass is a baseline-hardening checkpoint, not a methodology rewrite. The current working assumptions are:
+
+- 26 lesson JSON files pass the lesson content audit.
+- Normal Lesson Chat, normal TTS with `tts-1`, normal voice transcription with `gpt-4o-mini-transcribe`, and Realtime Conversation Mode with `gpt-realtime` remain the intended routes.
+- Realtime stays on the GA `/v1/realtime` schema and keeps pre-start opening playback through `tts-1` with `purpose=realtime_pre_start_opening`.
+- Realtime assistant replies remain on Realtime audio rather than `/api/audio/speech`.
+- Usage/cost instrumentation, transcript validation, English-only output locking, and lightweight hang diagnostics are protected behavior.
+
+Next stabilization work should focus on manual smoke coverage, scenario QA, methodology/prompt polish, feedback/summary quality, and real usage/cost measurements before architecture extraction.

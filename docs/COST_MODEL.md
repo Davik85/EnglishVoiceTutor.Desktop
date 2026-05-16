@@ -1,6 +1,6 @@
 # Cost and Usage Instrumentation Model
 
-Review date: 2026-05-14.
+Review date: 2026-05-16.
 
 This document describes the developer-only instrumentation used to compare normal Lesson Chat, chained voice fallback, normal `tts-1` playback, and Realtime Conversation Mode with `gpt-realtime`.
 
@@ -71,3 +71,7 @@ Realtime usage instrumentation remains unchanged while the GA session schema is 
 ## 2026-05-15 fallback transcription cost note
 
 Realtime transcript recovery can add a one-shot fallback transcription call only after Realtime user transcription fails or times out and buffered committed audio exists. The fallback uses the same normal transcription endpoint/model (`gpt-4o-mini-transcribe`, English) as Lesson Chat voice input. It is not used on successful Realtime transcripts, does not generate assistant speech through `tts-1`, and does not create duplicate learner turns or duplicate Realtime assistant responses. Fallback attempts log usage-oriented metadata (audio chunks, bytes, estimated duration, model, language, and result validity) so extra cost can be measured separately from successful Realtime turns.
+
+## 2026-05-16 baseline note
+
+Usage/cost instrumentation is present but still developer-only and approximate. Pricing constants remain placeholders until they are manually updated from the current OpenAI pricing page and validated against real test-session measurements. The next useful cost task is to collect 10-20 representative lessons that include typed chat, normal voice, manual Play voice, feedback/summary calls, and Realtime sessions, then compare measured usage before changing model choices.

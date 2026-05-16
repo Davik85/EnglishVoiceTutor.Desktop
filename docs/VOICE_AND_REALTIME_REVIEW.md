@@ -1,6 +1,6 @@
 # Voice and Realtime Review
 
-Review date: 2026-05-14.
+Review date: 2026-05-16.
 
 This document records current voice contracts that should be regression-tested before future voice or realtime changes.
 
@@ -110,3 +110,13 @@ During `OpeningPlayback`, the red record button is disabled because recording re
 Realtime voice placeholders now resolve to a final state: accepted transcript text, the retry/status message, or a technical retry status after microphone/network failure. Invalid retry messages remain non-turn technical user messages: they are not feedback-eligible, do not increment learner turns, do not push the conversation forward, and are excluded from summaries.
 
 Realtime transcript failures now log compact diagnostics with session id, realtime user turn id/item id, learner turn number, audio chunk count, buffered bytes, estimated audio duration, transcript length, validation reason, and retry flags. When Realtime transcription fails or times out and buffered PCM audio exists, the desktop makes one fallback `/api/audio/transcribe` attempt using `gpt-4o-mini-transcribe` with English transcription. A valid fallback transcript replaces the placeholder and is sent into Realtime as a text user turn so the assistant response still uses Realtime audio; an invalid fallback keeps the retry message.
+
+## 2026-05-16 voice baseline confirmation
+
+The current voice baseline keeps the three audio paths deliberately separate:
+
+1. Normal Play voice and normal auto-play use `/api/audio/speech` with `tts-1`.
+2. Normal chained voice input uses `/api/audio/transcribe` with `gpt-4o-mini-transcribe`, validates the transcript, and then sends accepted text through normal Lesson Chat.
+3. Realtime Conversation Mode uses `/api/realtime-voice` and OpenAI GA `/v1/realtime` with `gpt-realtime`; generated Realtime assistant replies remain Realtime audio and are not sent to `/api/audio/speech`.
+
+The pre-start Conversation Mode opening prompt is the one intentional bridge: it speaks the already-visible tutor prompt before Realtime recording starts through `/api/audio/speech` with `tts-1` and `purpose=realtime_pre_start_opening`. This behavior is current and must remain protected during later refactors.

@@ -5,7 +5,7 @@ namespace EnglishVoiceTutor.Api.Services;
 
 public sealed class MockLessonChatService : ILessonChatService
 {
-    // TODO: Replace this mock implementation with an OpenAI-backed backend service in a future step.
+    // Local compatibility implementation for the explicit mock endpoint; normal lesson flow uses OpenAiLessonChatService.
     public Task<LessonChatResponse> CreateReplyAsync(
         LessonChatRequest request,
         CancellationToken cancellationToken = default)
