@@ -60,3 +60,17 @@ cd backend\EnglishVoiceTutor.Api
 dotnet restore
 dotnet build
 ```
+
+## 2026-05-16 stabilization baseline
+
+The current stabilization baseline keeps runtime behavior unchanged while documenting the working routes:
+
+- Lesson audit covers 26 JSON lessons.
+- Normal Lesson Chat TTS remains `tts-1` through `/api/audio/speech`.
+- Normal voice transcription remains `gpt-4o-mini-transcribe` through `/api/audio/transcribe`.
+- Realtime Conversation Mode uses `gpt-realtime` on the GA `/v1/realtime` schema.
+- Realtime pre-start opening playback remains enabled through `tts-1` with `purpose=realtime_pre_start_opening`.
+- Realtime-generated assistant replies stay on Realtime audio and are not routed through `/api/audio/speech`.
+- Usage/cost instrumentation, transcript validation, English-only tutor output, lesson content audit, avatar tooltip cleanup, and lightweight hang diagnostics are protected stabilization behavior.
+
+Recommended next work: full MVP smoke-test, all-lesson scenario QA, methodology/prompt polish by level, feedback/summary quality polish, and real usage/cost measurement before architecture extraction.

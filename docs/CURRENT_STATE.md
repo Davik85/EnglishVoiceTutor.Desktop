@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-05-14.
+Review date: 2026-05-16.
 
 This document records the current stabilized baseline after the Realtime Conversation Mode, guided methodology, feedback, summary, TTS, and final-review fixes. It is a current-state note, not a claim that every manual test has permanently passed.
 
@@ -187,3 +187,27 @@ Post-startup upstream Realtime errors are treated as recoverable runtime faults.
 Conversation Mode now speaks the current visible tutor prompt before recording starts. The playback is intentionally classified as Realtime pre-start opening playback, uses normal `/api/audio/speech` with `tts-1` and purpose `realtime_pre_start_opening`, and speaks the exact visible text without duplicating chat bubbles. Realtime-generated assistant turns remain Realtime audio/transcript events and still must not use `/api/audio/speech`.
 
 Realtime speech input recovery is stricter. `[Voice message]` should not remain after transcript success, invalid transcript, timeout, audio-too-short, cancel, microphone failure, or disconnect handling. Invalid retry/status messages do not count as learner turns and do not show feedback. A one-shot fallback transcription path can use the buffered committed PCM audio after Realtime transcript failure/timeout; if fallback is valid it becomes the user message and is sent to Realtime as text, otherwise the retry message remains.
+
+## 2026-05-16 stabilization baseline
+
+The current baseline for the next product-development phase is:
+
+- Desktop app builds on Windows when the documented `.NET` commands are run in a Windows development environment.
+- Backend builds on Windows from `backend/EnglishVoiceTutor.Api`.
+- The lesson content audit covers 26 lesson JSON files and currently passes with 0 errors and 0 warnings.
+- Normal Lesson Chat is the stable default lesson path.
+- Normal Lesson Chat TTS remains `tts-1` through `/api/audio/speech`.
+- Normal voice transcription remains `gpt-4o-mini-transcribe` through `/api/audio/transcribe`.
+- Realtime Conversation Mode uses `gpt-realtime` through the GA `/v1/realtime` WebSocket schema.
+- Realtime pre-start opening playback remains enabled, uses `tts-1`, and is tagged with `purpose=realtime_pre_start_opening`.
+- Realtime-generated assistant replies stay on Realtime audio/transcript events and do not route through `/api/audio/speech`.
+- Valid Realtime user transcripts are normal learner messages for feedback and summary purposes.
+- Invalid, placeholder, empty, or non-English transcripts do not count as learner turns.
+- Lesson summary input uses the full valid lesson conversation, excluding invalid retry/status technical messages.
+- Awaiting Finish disables new learner input while preserving feedback, translation, and Play voice review actions for existing messages.
+- Tutor output remains locked to English-only responses.
+- Usage/cost instrumentation exists for normal chat, feedback, normal transcription, normal TTS, and Realtime, but pricing constants are intentionally approximate placeholders.
+- The avatar panel no longer exposes a technical asset-path tooltip.
+- Lightweight hang diagnostics exist around backend calls, speech playback, recording, Realtime lifecycle, and cleanup paths.
+
+Known limitations remain intentionally out of scope for this cleanup pass: methodology/scenario quality needs iterative polish, all 26 lessons still need scenario QA, Realtime recognition may still need retry/fallback tuning, pricing constants need real values and real-session measurements, `LessonChatViewModel` remains large, UI polish is not complete, and multiple tutor avatars are planned later rather than in this stabilization pass.

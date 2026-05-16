@@ -1,6 +1,6 @@
 # Architecture Review
 
-Review date: 2026-05-14.
+Review date: 2026-05-16.
 
 This review documents current architecture boundaries after the stabilization fixes. It recommends small future extractions only after behavior is pinned by smoke tests; it does not recommend a rewrite.
 
@@ -146,3 +146,19 @@ Extract one boundary at a time after the manual smoke checklist and policy tests
 - Exact spoken text is protected by code/logging, but normalization and segmentation remain in the ViewModel.
 - Realtime expected disconnects are improved, but long-session behavior still needs testing.
 - Mock fallback services are present and useful for degraded operation, but must be clearly distinguished from production OpenAI paths.
+
+## 2026-05-16 codebase inventory
+
+- `Views/`: WPF user controls and light code-behind. Stable, no obvious Realtime/TTS obsolete artifacts found; avatar tooltip cleanup remains in place.
+- `ViewModels/`: screen state and commands. Stable but highest-risk area because `LessonChatViewModel` still owns chat, phase, feedback, translation, normal voice, Realtime, summary, and navigation lifecycle logic. No safe wholesale extraction was made.
+- `Services/`: desktop content, backend, recording, playback, settings, cleanup, and history services. Stable; temporary-file cleanup and TTS playback are current behavior, not obsolete artifacts.
+- `Services/Voice/`: Realtime desktop WebSocket, microphone capture, and PCM playback services. Stable after GA schema work; no beta transport artifact was identified in runtime code.
+- `Shared/LessonPolicies/`: shared turn/transcript validation policy. Stable and protected by policy tests; transcript validation must not be weakened.
+- `Models/`: desktop DTOs, UI state, and lesson content schema models. Stable; no unused request/response model was removed because current compiler coverage is unavailable in this Linux container.
+- `Content/Lessons/`: 26 lesson JSON files. Stable by audit, but scenario QA is still a product/content task.
+- `Content/Tutors/`: tutor profile JSON. Stable; tutor identity remains separate from lesson JSON.
+- `backend/EnglishVoiceTutor.Api/`: minimal API backend, OpenAI services, Realtime gateway, usage/cost models, and endpoint DTOs. Stable; mock endpoint remains intentionally available for compatibility/testing and is separate from normal lesson flow.
+- `tools/`: static policy tests and lesson audit scripts. Stable; tests assert current GA Realtime, routing, language-lock, feedback/summary, usage/cost, avatar, and diagnostics policies.
+- `docs/`: stabilization, architecture, flow, voice, cost, release, and checklist documentation. Refreshed to describe the current working baseline and remaining limitations.
+
+Larger extraction opportunities should remain queued until the full manual smoke-test matrix passes across MVP topics.

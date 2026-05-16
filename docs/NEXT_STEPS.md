@@ -47,3 +47,12 @@ Realtime startup/record state recovery is now a priority before broader feature 
 - Manually capture backend logs proving `Purpose=realtime_pre_start_opening` uses `tts-1` for the pre-start visible prompt and that generated Realtime assistant replies do not call `/api/audio/speech`.
 - Review real fallback transcription logs after several A1 sessions to decide whether the Realtime transcript timeout should be increased beyond the current named timeout constant.
 - Consider a dedicated visual style for retry/status voice messages so they are clearly distinct from learner content while preserving translation behavior for existing messages.
+
+## 2026-05-16 recommended priority order
+
+1. Run a full smoke-test across all MVP topics and record any failures in the manual checklist.
+2. Create a scenario QA report for all 26 lesson JSON files without changing methodology during the report pass.
+3. Polish methodology and prompt behavior by level after smoke coverage is reliable.
+4. Improve feedback and summary quality using real lesson transcripts.
+5. Measure usage/cost across 10-20 representative test lessons before changing model or pricing assumptions.
+6. Start only small architecture extractions after the behavior above is pinned by tests and manual results.

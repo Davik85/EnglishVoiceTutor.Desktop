@@ -1,6 +1,6 @@
 # Manual Test Checklist
 
-Review date: 2026-05-14.
+Review date: 2026-05-16.
 
 Use this checklist on a Windows machine with the desktop app and backend available. Record pass/fail notes when possible. The latest Windows smoke commands were reported passing by the developer, but this checklist should still be rerun before new feature work.
 
@@ -182,3 +182,13 @@ Reach the final tutor message in A1 Introductions or another guided lesson.
 - [ ] Expected: the avatar image/animation still renders normally.
 - [ ] If the desktop app freezes or hangs, collect recent frontend Debug logs and backend logs around Conversation Mode enter/exit, `realtime_pre_start_opening` TTS playback, Play voice/auto-play, and normal/Realtime recording start/stop.
 - [ ] Check frontend logs for `UI operation start`, `UI operation end`, and `UI operation warning` entries with operation names and durations.
+
+## Short post-cleanup smoke checklist
+
+Run this after documentation or low-risk cleanup changes before starting feature work:
+
+1. Normal Lesson Chat: open A1 Introductions, send `My name is David.`, verify the tutor response, click Play voice, and click View feedback.
+2. Normal voice: use Start recording outside Conversation Mode, verify the transcript appears, and verify the lesson response is generated.
+3. Realtime: enter Conversation Mode, verify the opening prompt plays with `purpose=realtime_pre_start_opening`, record one answer, verify the transcript appears, verify Realtime assistant audio plays, then exit and re-enter Conversation Mode.
+4. Finish lesson: click Finish lesson after multiple valid learner turns and verify the summary is based on the lesson conversation.
+5. UI: hover over the avatar and verify no technical asset path appears.
