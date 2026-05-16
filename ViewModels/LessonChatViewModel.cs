@@ -3419,8 +3419,6 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         StatusMessage = localizedText.TranslationLoadingText;
-        isFeedbackTranslationLoading = true;
-
         try
         {
             await TranslateSelectedFeedbackAsync(feedback);
@@ -3455,7 +3453,6 @@ public partial class LessonChatViewModel : ViewModelBase
         }
         finally
         {
-            isFeedbackTranslationLoading = false;
             RefreshAllCommandStates();
         }
     }

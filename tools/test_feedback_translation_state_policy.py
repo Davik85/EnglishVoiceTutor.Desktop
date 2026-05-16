@@ -52,9 +52,9 @@ def main() -> int:
     assert_contains(method, "catch (OperationCanceledException)", "translation cancellation guard")
     assert_contains(method, "catch", "translation failure guard")
     assert_contains(method, "finally", "translation cleanup finally")
-    assert_contains(method, "isFeedbackTranslationLoading = false;", "translation loading reset")
     assert_contains(method, "RefreshAllCommandStates();", "command refresh after translation")
-    assert_contains(vm, "private bool isFeedbackTranslationLoading;", "translation loading field")
+    if "isFeedbackTranslationLoading" in vm:
+        raise AssertionError("Feedback translation loading field must not be left as an unused private field.")
 
     close_method = extract_method(vm, "private void CloseFeedback()")
     assert_contains(close_method, "SelectedFeedback = null;", "feedback close clears selection")
