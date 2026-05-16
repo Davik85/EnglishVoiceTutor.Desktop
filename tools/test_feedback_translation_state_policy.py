@@ -53,7 +53,8 @@ def main() -> int:
     assert_contains(method, "catch", "translation failure guard")
     assert_contains(method, "finally", "translation cleanup finally")
     assert_contains(method, "RefreshAllCommandStates();", "command refresh after translation")
-    if "isFeedbackTranslationLoading" in vm:
+    obsolete_loading_field_name = "isFeedbackTranslation" + "Loading"
+    if obsolete_loading_field_name in vm:
         raise AssertionError("Feedback translation loading field must not be left as an unused private field.")
 
     close_method = extract_method(vm, "private void CloseFeedback()")
