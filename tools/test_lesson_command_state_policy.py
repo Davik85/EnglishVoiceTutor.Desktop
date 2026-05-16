@@ -49,7 +49,7 @@ def main() -> int:
     lesson_view = read(LESSON_VIEW)
 
     assert_contains(lesson_vm, "private bool CanReviewExistingMessages => !hasFinishedLesson;", "review state separation")
-    assert_contains(lesson_vm, "private bool CanAcceptLessonInput => !hasFinishedLesson && !IsCompletedAwaitingFinish && !IsLessonLimitReached && !IsLessonBusyForInput;", "send disabled while awaiting finish")
+    assert_contains(lesson_vm, "private bool CanAcceptLessonInput => !hasFinishedLesson && !IsCompletedAwaitingFinish && !IsLessonLimitReached && !IsLessonBusyForInput && !IsRealtimeConversationActive;", "send disabled while awaiting finish")
 
     for signature, blocked_state in [
         ("private bool CanToggleVoiceRecording()", "!IsCompletedAwaitingFinish"),
