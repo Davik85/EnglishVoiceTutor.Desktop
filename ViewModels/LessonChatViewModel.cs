@@ -41,6 +41,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private ContextVariant? selectedContextVariant;
     private string selectedCustomContextTitle = string.Empty;
     private bool isTranscribingAudio;
+    private bool isFeedbackTranslationLoading;
     private bool hasFinishedLesson;
     private bool usedManualPlayVoice;
     private bool usedAutoPlayVoice;
