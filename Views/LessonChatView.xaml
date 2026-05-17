@@ -513,7 +513,7 @@
                                              IsEnabled="{Binding CanTypeText}"
                                              Text="{Binding UserInput, UpdateSourceTrigger=PropertyChanged}">
                                         <TextBox.InputBindings>
-                                            <KeyBinding Key="Enter"
+                                            <KeyBinding Key="Return"
                                                         Modifiers="None"
                                                         Command="{Binding SendMessageCommand}" />
                                         </TextBox.InputBindings>
