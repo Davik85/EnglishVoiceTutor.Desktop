@@ -46,7 +46,7 @@ public partial class ChatMessageViewModel : ViewModelBase
 
     public bool IsFeedbackEligible { get; private set; }
 
-    public bool CanShowFeedbackAction => !IsFromBot && IsFeedbackEligible && !IsTechnicalMessage && CountsAsValidLessonTurn;
+    public bool CanShowFeedbackAction => !IsFromBot && IsFeedbackEligible && !IsTechnicalMessage;
 
     public bool ShowPlayVoiceButton => IsFromBot;
 

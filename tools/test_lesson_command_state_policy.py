@@ -68,7 +68,8 @@ def main() -> int:
     view_feedback_method = extract_method(lesson_vm, "private bool CanViewFeedback(ChatMessageViewModel? message)")
     assert_contains(view_feedback_method, "CanReviewExistingMessages", "feedback uses review state")
     assert_contains(view_feedback_method, "message.IsFeedbackEligible", "feedback eligibility")
-    assert_contains(view_feedback_method, "message.CountsAsValidLessonTurn", "feedback valid-turn requirement")
+    if "message.CountsAsValidLessonTurn" in view_feedback_method:
+        raise AssertionError("View feedback must not require active turn counting; setup context learner English can be feedback eligible.")
     if "IsLessonOptionsEnabled" in view_feedback_method or "IsCompletedAwaitingFinish" in view_feedback_method:
         raise AssertionError("View feedback must not be disabled merely because the lesson is awaiting Finish lesson.")
 
