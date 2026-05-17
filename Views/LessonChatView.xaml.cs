@@ -127,11 +127,12 @@ public partial class LessonChatView : UserControl
             return true;
         }
 
-        if (originalSource is not DependencyObject dependencyObject)
+        if (originalSource is not DependencyObject sourceDependencyObject)
         {
             return false;
         }
 
+        DependencyObject? dependencyObject = sourceDependencyObject;
         while (dependencyObject is not null)
         {
             if (ReferenceEquals(dependencyObject, LessonInputTextBox))
