@@ -33,7 +33,7 @@ public sealed class AudioSpeechService
         _logger = logger;
     }
 
-    public async Task<byte[]> CreateSpeechAsync(string text, string? purpose = null, double? speechSpeed = null, CancellationToken clientCancellationToken = default)
+    public async Task<byte[]> CreateSpeechAsync(string text, string? purpose = null, double? speechSpeed = null, string? model = null, string? instructions = null, CancellationToken clientCancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -49,12 +49,15 @@ public sealed class AudioSpeechService
 
         var normalizedPurpose = NormalizePurpose(purpose);
         var resolvedSpeechSpeed = ResolveSpeechSpeed(normalizedPurpose, speechSpeed);
+        var resolvedModel = ResolveSpeechModel(normalizedPurpose, model);
+        var resolvedInstructions = ResolveSpeechInstructions(resolvedModel, instructions);
 
         var request = new OpenAiAudioSpeechRequest
         {
-            Model = OpenAiConstants.DefaultBotVoiceSpeechModel,
-            Input = text.Trim(),
+            Model = resolvedModel,
+            Input = text,
             Voice = OpenAiConstants.DefaultSpeechVoice,
+            Instructions = resolvedInstructions,
             Speed = resolvedSpeechSpeed,
             ResponseFormat = OpenAiConstants.DefaultSpeechResponseFormat
         };
@@ -124,6 +127,31 @@ public sealed class AudioSpeechService
             : OpenAiConstants.DefaultSpeechSpeed;
     }
 
+    private static string ResolveSpeechModel(string purpose, string? requestedModel)
+    {
+        if (string.Equals(purpose, ConversationModeTtsPurpose, StringComparison.OrdinalIgnoreCase))
+        {
+            return OpenAiConstants.ConversationModeTtsModel;
+        }
+
+        return OpenAiConstants.NormalChatTtsModel;
+    }
+
+    private static string? ResolveSpeechInstructions(string model, string? instructions)
+    {
+        if (!SpeechModelSupportsInstructions(model) || string.IsNullOrWhiteSpace(instructions))
+        {
+            return null;
+        }
+
+        return instructions;
+    }
+
+    private static bool SpeechModelSupportsInstructions(string model)
+    {
+        return string.Equals(model, OpenAiConstants.ConversationModeTtsModel, StringComparison.Ordinal);
+    }
+
     private async Task<byte[]> SendAudioSpeechRequestAsync(
         OpenAiAudioSpeechRequest request,
         string apiKey,
@@ -140,7 +168,7 @@ public sealed class AudioSpeechService
         long? firstHeaderMs = null;
 
         _logger.LogInformation(
-            "Starting OpenAI speech request. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; Purpose={Purpose}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; ClientCancellationRequested={ClientCancellationRequested}.",
+            "Starting OpenAI speech request. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; Purpose={Purpose}; InputLength={InputLength}; HasInstructions={HasInstructions}; InstructionsLength={InstructionsLength}; TimeoutSeconds={TimeoutSeconds}; ClientCancellationRequested={ClientCancellationRequested}.",
             "audio/speech",
             request.Model,
             request.Voice,
@@ -148,6 +176,8 @@ public sealed class AudioSpeechService
             request.Speed,
             purpose,
             request.Input.Length,
+            !string.IsNullOrWhiteSpace(request.Instructions),
+            request.Instructions?.Length ?? 0,
             OpenAiConstants.OpenAiSpeechTimeoutSeconds,
             clientCancellationToken.IsCancellationRequested);
 
@@ -170,13 +200,15 @@ public sealed class AudioSpeechService
             statusCode = (int)response.StatusCode;
 
             _logger.LogInformation(
-                "OpenAI speech response headers received. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; InputLength={InputLength}; StatusCode={StatusCode}; FirstHeaderMs={FirstHeaderMs}.",
+                "OpenAI speech response headers received. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; InputLength={InputLength}; HasInstructions={HasInstructions}; InstructionsLength={InstructionsLength}; StatusCode={StatusCode}; FirstHeaderMs={FirstHeaderMs}.",
                 "audio/speech",
                 request.Model,
                 request.Voice,
                 request.ResponseFormat,
                 purpose,
                 request.Input.Length,
+                !string.IsNullOrWhiteSpace(request.Instructions),
+                request.Instructions?.Length ?? 0,
                 response.StatusCode,
                 firstHeaderMs);
 
@@ -207,7 +239,7 @@ public sealed class AudioSpeechService
             }
 
             _logger.LogInformation(
-                "Completed OpenAI speech request. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; Purpose={Purpose}; InputLength={InputLength}; TimeoutSeconds={TimeoutSeconds}; FirstHeaderMs={FirstHeaderMs}; TotalMs={TotalMs}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; TotalBytes={TotalBytes}.",
+                "Completed OpenAI speech request. Endpoint={Endpoint}; Model={Model}; Voice={Voice}; Format={Format}; SpeechSpeed={SpeechSpeed}; Purpose={Purpose}; InputLength={InputLength}; HasInstructions={HasInstructions}; InstructionsLength={InstructionsLength}; TimeoutSeconds={TimeoutSeconds}; FirstHeaderMs={FirstHeaderMs}; TotalMs={TotalMs}; StatusCode={StatusCode}; Canceled={Canceled}; ClientCancellationRequested={ClientCancellationRequested}; InternalTimeoutReached={InternalTimeoutReached}; TotalBytes={TotalBytes}.",
                 "audio/speech",
                 request.Model,
                 request.Voice,
@@ -215,6 +247,8 @@ public sealed class AudioSpeechService
                 request.Speed,
                 purpose,
                 request.Input.Length,
+                !string.IsNullOrWhiteSpace(request.Instructions),
+                request.Instructions?.Length ?? 0,
                 OpenAiConstants.OpenAiSpeechTimeoutSeconds,
                 firstHeaderMs,
                 stopwatch.ElapsedMilliseconds,

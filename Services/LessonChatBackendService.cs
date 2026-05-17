@@ -211,7 +211,9 @@ public sealed class LessonChatBackendService
         string text,
         CancellationToken cancellationToken = default,
         string purpose = BackendConstants.LessonChatTtsPurpose,
-        double? speechSpeed = null)
+        double? speechSpeed = null,
+        string? model = null,
+        string? instructions = null)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -221,9 +223,11 @@ public sealed class LessonChatBackendService
         using var httpClient = CreateHttpClient(BackendConstants.BotVoiceRequestTimeoutSeconds);
         var stopwatch = Stopwatch.StartNew();
         var endpointUri = CreateEndpointUri(BackendConstants.AudioSpeechEndpoint);
-        var inputLength = text.Trim().Length;
+        var inputLength = text.Length;
+        var resolvedModel = string.IsNullOrWhiteSpace(model) ? BackendConstants.LessonChatTtsModel : model;
+        var instructionsToSend = BackendConstants.SpeechModelSupportsInstructions(resolvedModel) ? instructions : null;
 
-        Debug.WriteLine($"Bot voice backend TTS request starting: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={BackendConstants.TtsModelName}; SpeechSpeed={speechSpeed?.ToString(CultureInfo.InvariantCulture) ?? "default"}; InputLength={inputLength}.");
+        Debug.WriteLine($"Bot voice backend TTS request starting: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={resolvedModel}; SpeechSpeed={speechSpeed?.ToString(CultureInfo.InvariantCulture) ?? "default"}; HasInstructions={!string.IsNullOrWhiteSpace(instructionsToSend)}; InstructionsLength={instructionsToSend?.Length ?? 0}; InputLength={inputLength}.");
 
         try
         {
@@ -233,6 +237,8 @@ public sealed class LessonChatBackendService
                 {
                     Text = text,
                     Purpose = purpose,
+                    Model = resolvedModel,
+                    Instructions = instructionsToSend,
                     SpeechSpeed = speechSpeed
                 },
                 JsonOptions,
@@ -248,7 +254,7 @@ public sealed class LessonChatBackendService
             }
 
             var contentType = response.Content.Headers.ContentType?.MediaType ?? BackendConstants.SpeechResponseContentType;
-            Debug.WriteLine($"Bot voice backend TTS request completed: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={BackendConstants.TtsModelName}; SpeechSpeed={speechSpeed?.ToString(CultureInfo.InvariantCulture) ?? "default"}; InputLength={inputLength}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}; ContentType={contentType}; AudioBytes={audioBytes.Length}.");
+            Debug.WriteLine($"Bot voice backend TTS request completed: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={resolvedModel}; SpeechSpeed={speechSpeed?.ToString(CultureInfo.InvariantCulture) ?? "default"}; HasInstructions={!string.IsNullOrWhiteSpace(instructionsToSend)}; InstructionsLength={instructionsToSend?.Length ?? 0}; InputLength={inputLength}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}; ContentType={contentType}; AudioBytes={audioBytes.Length}.");
             return new BotSpeechBackendResponse(audioBytes, contentType, GetAudioFileExtension(contentType));
         }
         catch (Exception exception)

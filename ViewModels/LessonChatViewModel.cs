@@ -1254,7 +1254,7 @@ public partial class LessonChatViewModel : ViewModelBase
             ConversationLatestBotText = openingBotMessage.Text;
         }
 
-        Debug.WriteLine($"Conversation mode started with TTS provider: Provider={CurrentConversationModeVoiceProvider}; CurrentLessonPhase={CurrentLessonPhase}; UsesTranscriptionEndpoint=True; UsesLessonChatEndpoint=True; UsesAudioSpeechEndpoint=True; RealtimeWebSocketOpened=False; RealtimeSessionStarted={isRealtimeSessionStarted}; TtsPurpose={BackendConstants.ConversationModeTtsPurpose}; TtsModel={BackendConstants.TtsModelName}; TtsVoice=coral; TtsSpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; OpeningMessageId={openingBotMessage?.Id.ToString(CultureInfo.InvariantCulture) ?? "none"}.");
+        Debug.WriteLine($"Conversation mode started with TTS provider: Provider={CurrentConversationModeVoiceProvider}; CurrentLessonPhase={CurrentLessonPhase}; UsesTranscriptionEndpoint=True; UsesLessonChatEndpoint=True; UsesAudioSpeechEndpoint=True; RealtimeWebSocketOpened=False; RealtimeSessionStarted={isRealtimeSessionStarted}; TtsPurpose={BackendConstants.ConversationModeTtsPurpose}; TtsModel={BackendConstants.ConversationModeTtsModel}; TtsVoice=coral; TtsSpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; OpeningMessageId={openingBotMessage?.Id.ToString(CultureInfo.InvariantCulture) ?? "none"}.");
 
         if (openingBotMessage is null)
         {
@@ -1467,7 +1467,9 @@ public partial class LessonChatViewModel : ViewModelBase
         bool allowDuringRealtimeOpeningPlayback,
         string speechPurpose,
         CancellationToken cancellationToken = default,
-        double? speechSpeed = null)
+        double? speechSpeed = null,
+        string? speechModel = null,
+        string? speechInstructions = null)
     {
         if (string.IsNullOrWhiteSpace(message.Text))
         {
@@ -1532,7 +1534,7 @@ public partial class LessonChatViewModel : ViewModelBase
         var operationStopwatch = StartUiOperationDiagnostics(
             operationName,
             TtsPlaybackPreparationWarningThresholdMilliseconds,
-            $"MessageId={message.Id}; AutoPlay={isAutoPlay}; AllowDuringRealtimeOpeningPlayback={allowDuringRealtimeOpeningPlayback}; Purpose={speechPurpose}; TextLength={message.Text.Trim().Length}");
+            $"MessageId={message.Id}; AutoPlay={isAutoPlay}; AllowDuringRealtimeOpeningPlayback={allowDuringRealtimeOpeningPlayback}; Purpose={speechPurpose}; Model={speechModel ?? BackendConstants.LessonChatTtsModel}; TextLength={message.Text.Length}; HasInstructions={!string.IsNullOrWhiteSpace(speechInstructions)}; InstructionsLength={speechInstructions?.Length ?? 0}");
 
         try
         {
@@ -1548,7 +1550,7 @@ public partial class LessonChatViewModel : ViewModelBase
             RefreshAvatarState();
             StatusMessage = isConversationModeSpeechPurpose || allowDuringRealtimeOpeningPlayback ? $"{TutorAvatarDisplayName} is speaking..." : localizedText.PlayingBotVoiceMessage;
 
-            var rawBotVoiceText = message.Text.Trim();
+            var rawBotVoiceText = message.Text;
             var isSetupVoiceMessage = IsSetupVoiceMessage(message);
             var exactBotVoiceText = GetExactBotVoiceText(message);
             IReadOnlyList<string> allSegments = isAutoPlay
@@ -1575,7 +1577,9 @@ public partial class LessonChatViewModel : ViewModelBase
                 totalStopwatch,
                 isAutoPlay,
                 speechPurpose,
-                speechSpeed);
+                speechSpeed,
+                speechModel,
+                speechInstructions);
 
             Debug.WriteLine($"Bot voice playback completed ms for message {message.Id}: Path={selectedBotVoicePath}; TotalElapsedMilliseconds={totalStopwatch.ElapsedMilliseconds}; SegmentCount={segmentsToSpeak.Count}.");
             BackendStatusText = BackendConstants.BackendStatusConnected;
@@ -1635,14 +1639,25 @@ public partial class LessonChatViewModel : ViewModelBase
             SetConversationModeState(
                 isOpeningPlayback ? ConversationModeState.OpeningPlayback : ConversationModeState.PlayingAssistantAudio,
                 isOpeningPlayback ? "tts_opening_bot_voice_playback_starting" : "tts_bot_voice_playback_starting");
-            Debug.WriteLine($"Conversation Mode TTS playback requested: MessageId={message.Id}; IsOpeningPlayback={isOpeningPlayback}; Purpose={BackendConstants.ConversationModeTtsPurpose}; Model={BackendConstants.TtsModelName}; Voice=coral; SpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; RealtimeWebSocketOpened=False.");
+            var visibleText = ConversationLatestBotText;
+            var ttsInputText = message.Text;
+            var textMatchesVisible = string.Equals(visibleText, ttsInputText, StringComparison.Ordinal);
+            Debug.WriteLine($"Conversation Mode TTS text match check: MessageId={message.Id}; VisibleTextLength={visibleText.Length}; TtsInputLength={ttsInputText.Length}; TextMatchesVisible={textMatchesVisible}.");
+            if (!textMatchesVisible)
+            {
+                Debug.WriteLine($"Warning: Conversation Mode TTS input differs from visible bot text. MessageId={message.Id}; VisibleTextLength={visibleText.Length}; TtsInputLength={ttsInputText.Length}; TextMatchesVisible=False.");
+            }
+
+            Debug.WriteLine($"Conversation Mode TTS playback requested: MessageId={message.Id}; IsOpeningPlayback={isOpeningPlayback}; Purpose={BackendConstants.ConversationModeTtsPurpose}; Model={BackendConstants.ConversationModeTtsModel}; Voice=coral; SpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; HasInstructions=True; InstructionsLength={BackendConstants.ConversationModeTtsInstructions.Length}; RealtimeWebSocketOpened=False.");
             await PlayBotVoiceForMessageCoreAsync(
                 message,
                 isAutoPlay: false,
                 allowDuringRealtimeOpeningPlayback: false,
                 speechPurpose: BackendConstants.ConversationModeTtsPurpose,
                 cancellationToken: CancellationToken.None,
-                speechSpeed: ConversationModeTtsSpeechSpeed);
+                speechSpeed: ConversationModeTtsSpeechSpeed,
+                speechModel: BackendConstants.ConversationModeTtsModel,
+                speechInstructions: BackendConstants.ConversationModeTtsInstructions);
         }
         catch (Exception exception)
         {
@@ -1670,7 +1685,9 @@ public partial class LessonChatViewModel : ViewModelBase
         Stopwatch totalStopwatch,
         bool isAutoPlay,
         string speechPurpose,
-        double? speechSpeed = null)
+        double? speechSpeed = null,
+        string? speechModel = null,
+        string? speechInstructions = null)
     {
         var firstSegmentTask = GetOrCreateBotVoiceSegmentAudioFileAsync(
             message,
@@ -1681,7 +1698,9 @@ public partial class LessonChatViewModel : ViewModelBase
             cancellationToken,
             isAutoPlay,
             speechPurpose,
-            speechSpeed);
+            speechSpeed,
+            speechModel,
+            speechInstructions);
 
         var softTargetTask = Task.Delay(AudioConstants.BotVoiceFirstSegmentSoftTargetMilliseconds, cancellationToken);
         if (await Task.WhenAny(firstSegmentTask, softTargetTask) == softTargetTask && softTargetTask.IsCompletedSuccessfully)
@@ -1702,7 +1721,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         Task<string>? nextSegmentTask = segments.Count > 1
-            ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[1], 1, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken, isAutoPlay, speechPurpose, speechSpeed)
+            ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[1], 1, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken, isAutoPlay, speechPurpose, speechSpeed, speechModel, speechInstructions)
             : null;
         var currentFilePath = firstSegmentFilePath;
 
@@ -1751,7 +1770,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var nextIndex = segmentIndex + 2;
             nextSegmentTask = nextIndex < segments.Count
-                ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[nextIndex], nextIndex, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken, isAutoPlay, speechPurpose, speechSpeed)
+                ? GetOrCreateBotVoiceSegmentAudioFileAsync(message, segments[nextIndex], nextIndex, TimeSpan.FromSeconds(AudioConstants.BotVoiceLaterSegmentHardTimeoutSeconds), totalStopwatch, cancellationToken, isAutoPlay, speechPurpose, speechSpeed, speechModel, speechInstructions)
                 : null;
         }
     }
@@ -1765,9 +1784,11 @@ public partial class LessonChatViewModel : ViewModelBase
         CancellationToken cancellationToken,
         bool isAutoPlay = false,
         string speechPurpose = BackendConstants.LessonChatTtsPurpose,
-        double? speechSpeed = null)
+        double? speechSpeed = null,
+        string? speechModel = null,
+        string? speechInstructions = null)
     {
-        var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex, segmentText, speechPurpose);
+        var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex, segmentText, speechPurpose, speechModel, speechInstructions);
         lock (botVoiceSegmentCacheLock)
         {
             if (botVoiceSegmentAudioFilePaths.TryGetValue(cacheKey, out var cachedFilePath) && File.Exists(cachedFilePath))
@@ -1792,7 +1813,9 @@ public partial class LessonChatViewModel : ViewModelBase
                 cancellationToken,
                 isAutoPlay,
                 speechPurpose,
-                speechSpeed);
+                speechSpeed,
+                speechModel,
+                speechInstructions);
             inFlightBotVoiceSegmentTasks[cacheKey] = createdTask;
             return createdTask;
         }
@@ -1807,31 +1830,33 @@ public partial class LessonChatViewModel : ViewModelBase
         CancellationToken cancellationToken,
         bool isAutoPlay,
         string speechPurpose,
-        double? speechSpeed)
+        double? speechSpeed,
+        string? speechModel,
+        string? speechInstructions)
     {
-        var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex, segmentText, speechPurpose);
+        var cacheKey = CreateBotVoiceSegmentCacheKey(message.Id, segmentIndex, segmentText, speechPurpose, speechModel, speechInstructions);
         using var segmentTimeoutCancellationTokenSource = new CancellationTokenSource(timeout);
         using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken,
             segmentTimeoutCancellationTokenSource.Token);
         var backendStopwatch = Stopwatch.StartNew();
-        var normalizedSegmentText = NormalizeVoiceWhitespace(segmentText);
-        var inputLength = normalizedSegmentText.Length;
+        var ttsInputText = segmentText;
+        var inputLength = ttsInputText.Length;
 
         try
         {
-            if (!ValidateBotVoiceSegmentForRequest(normalizedSegmentText, allowShortMeaningfulOnlySegment: true))
+            if (!ValidateBotVoiceSegmentForRequest(ttsInputText, allowShortMeaningfulOnlySegment: true))
             {
                 throw new InvalidOperationException("Bot voice segment was rejected before backend request because it is not speakable.");
             }
 
             var rawTextLength = message.Text.Trim().Length;
-            var voiceRequestId = CreateBotVoiceRequestId(message.Id, segmentIndex, normalizedSegmentText);
-            var isExactText = string.Equals(normalizedSegmentText, GetExactBotVoiceText(message), StringComparison.Ordinal);
+            var voiceRequestId = CreateBotVoiceRequestId(message.Id, segmentIndex, ttsInputText);
+            var isExactText = string.Equals(ttsInputText, GetExactBotVoiceText(message), StringComparison.Ordinal);
             Debug.WriteLine($"Bot voice exact text: MessageId={message.Id}; VoiceRequestId={voiceRequestId}; RawTextLength={rawTextLength}; VoiceTextLength={inputLength}; IsExactText={isExactText}; AutoPlay={isAutoPlay}; IsSetupMessage={IsSetupVoiceMessage(message)}; SegmentIndex={segmentIndex};");
-            Debug.WriteLine($"Bot voice segment request: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SegmentLength={inputLength}; SegmentTextPreview={CreateBotVoiceSegmentPreview(normalizedSegmentText)};");
+            Debug.WriteLine($"Bot voice segment request: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SegmentLength={inputLength}; SegmentTextPreview={CreateBotVoiceSegmentPreview(ttsInputText)};");
             Debug.WriteLine($"Bot voice segment request starting: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; RequestStartedMs={totalStopwatch.ElapsedMilliseconds}; TimeoutMs={timeout.TotalMilliseconds}; HardTimeoutSeconds={timeout.TotalSeconds}.");
-            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(normalizedSegmentText, linkedCancellationTokenSource.Token, speechPurpose, speechSpeed);
+            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(ttsInputText, linkedCancellationTokenSource.Token, speechPurpose, speechSpeed, speechModel, speechInstructions);
             Debug.WriteLine($"Bot voice segment backend response received: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; VoiceRequestId={voiceRequestId}; SegmentIndex={segmentIndex}; InputLength={inputLength}; SegmentReadyMs={totalStopwatch.ElapsedMilliseconds}; BackendElapsedMs={backendStopwatch.ElapsedMilliseconds}; BackendAudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
 
             var saveStopwatch = Stopwatch.StartNew();
@@ -1890,7 +1915,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private static string GetExactBotVoiceText(ChatMessageViewModel message)
     {
-        return NormalizeVoiceWhitespace(message.Text);
+        return message.Text;
     }
 
     private static string NormalizeVoiceWhitespace(string rawText)
@@ -2107,15 +2132,23 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
-    private static string CreateBotVoiceSegmentCacheKey(int messageId, int segmentIndex, string segmentText, string speechPurpose = BackendConstants.LessonChatTtsPurpose)
+    private static string CreateBotVoiceSegmentCacheKey(
+        int messageId,
+        int segmentIndex,
+        string segmentText,
+        string speechPurpose = BackendConstants.LessonChatTtsPurpose,
+        string? speechModel = null,
+        string? speechInstructions = null)
     {
         return string.Format(
             CultureInfo.InvariantCulture,
-            "{0}:{1}:{2}:{3}",
+            "{0}:{1}:{2}:{3}:{4}:{5}",
             messageId,
             segmentIndex,
-            NormalizeBotVoiceSegmentText(segmentText),
-            string.IsNullOrWhiteSpace(speechPurpose) ? BackendConstants.LessonChatTtsPurpose : speechPurpose);
+            segmentText,
+            string.IsNullOrWhiteSpace(speechPurpose) ? BackendConstants.LessonChatTtsPurpose : speechPurpose,
+            string.IsNullOrWhiteSpace(speechModel) ? BackendConstants.LessonChatTtsModel : speechModel,
+            speechInstructions?.GetHashCode(StringComparison.Ordinal) ?? 0);
     }
 
     private void SetCurrentBotVoiceCancellationTokenSource(CancellationTokenSource cancellationTokenSource)

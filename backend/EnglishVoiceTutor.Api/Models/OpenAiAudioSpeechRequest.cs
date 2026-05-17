@@ -13,6 +13,10 @@ public sealed class OpenAiAudioSpeechRequest
     [JsonPropertyName("voice")]
     public string Voice { get; init; } = string.Empty;
 
+    [JsonPropertyName("instructions")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Instructions { get; init; }
+
     [JsonPropertyName("speed")]
     public double Speed { get; init; } = 1.0;
 

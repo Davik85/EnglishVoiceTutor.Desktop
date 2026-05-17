@@ -451,7 +451,17 @@ static async Task<IResult> HandleAudioSpeechAsync(
 
     try
     {
-        var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, request.Purpose, request.SpeechSpeed, cancellationToken);
+        logger.LogInformation(
+            "Audio speech endpoint request accepted. Endpoint={Endpoint}; Model={Model}; Purpose={Purpose}; SpeechSpeed={SpeechSpeed}; HasInstructions={HasInstructions}; InstructionsLength={InstructionsLength}; InputLength={InputLength}.",
+            "audio/speech",
+            request.Model ?? OpenAiConstants.DefaultBotVoiceSpeechModel,
+            request.Purpose,
+            request.SpeechSpeed,
+            !string.IsNullOrWhiteSpace(request.Instructions),
+            request.Instructions?.Length ?? 0,
+            request.Text.Length);
+
+        var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, request.Purpose, request.SpeechSpeed, request.Model, request.Instructions, cancellationToken);
 
         return Results.File(audioBytes, OpenAiConstants.SpeechResponseContentType);
     }

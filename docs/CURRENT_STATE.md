@@ -95,7 +95,7 @@ Tutor identity comes from `Content/Tutors/*.json` and runtime tutor profile data
 4. Auto-play bot voice: desktop optionally plays newly-created bot messages through `/api/audio/speech`; setup auto-play is intentionally skipped.
 5. Realtime Conversation Mode: desktop opens a WebSocket to `/api/realtime-voice`; backend opens OpenAI Realtime and relays same-response assistant transcript/audio deltas.
 
-Normal Lesson Chat TTS currently uses `tts-1`. Realtime Conversation Mode currently uses `gpt-realtime`.
+Normal Lesson Chat TTS currently uses `tts-1`. Default Conversation Mode uses the TTS-provider flow with `gpt-4o-mini-tts` for calmer speech testing. Realtime Conversation Mode remains implemented with `gpt-realtime` but is not the default.
 
 ## Current normal Lesson Chat path
 
@@ -230,6 +230,6 @@ The desktop UI keeps the Soft Learning Desktop presentation layer: rounded contr
 
 Conversation Mode now has an internal provider switch. The default provider is `Tts1`, so the MVP Conversation Mode path does not open `/api/realtime-voice` and does not create a Realtime session. The Realtime provider remains implemented in the desktop/backend code and can be re-enabled later by changing the provider switch to `Realtime`.
 
-Default MVP Conversation Mode keeps the full-screen avatar overlay, latest learner bubble, latest tutor bubble, bottom-left Hint button, semi-transparent hint overlay, red record button, and bottom-right exit/back button. Its turn flow is the stable chained pipeline: microphone recording, `/api/audio/transcribe`, `/api/lesson-chat/reply`, `/api/audio/speech`, and sequential playback. Conversation Mode TTS uses `tts-1`, voice `coral`, purpose `conversation_mode_tts`, and a conservative speech speed of `0.9` to keep playback calm and even.
+Default MVP Conversation Mode keeps the full-screen avatar overlay, latest learner bubble, latest tutor bubble, bottom-left Hint button, semi-transparent hint overlay, red record button, and bottom-right exit/back button. Its turn flow is the stable chained pipeline: microphone recording, `/api/audio/transcribe`, `/api/lesson-chat/reply`, `/api/audio/speech`, and sequential playback. Conversation Mode TTS uses `gpt-4o-mini-tts`, voice `coral`, purpose `conversation_mode_tts`, speech speed `1.0`, and calm English-tutor voice instructions for speech-quality testing. The exact learner-visible tutor message is sent to TTS; the app does not shorten, summarize, rewrite, or chunk Conversation Mode speech because the learner must hear exactly the text shown on screen.
 
 Realtime documentation and tests remain in place, but Realtime is not the default Conversation Mode engine for the MVP.

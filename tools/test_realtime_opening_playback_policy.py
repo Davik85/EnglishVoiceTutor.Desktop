@@ -56,7 +56,7 @@ def main() -> None:
     for needle in [
         "Purpose { get; init; }",
         "Purpose = purpose",
-        "Purpose={purpose}; Model={BackendConstants.TtsModelName}",
+        "Purpose={purpose}; Model={resolvedModel}",
         "Purpose={Purpose}",
         "tts",
     ]:
