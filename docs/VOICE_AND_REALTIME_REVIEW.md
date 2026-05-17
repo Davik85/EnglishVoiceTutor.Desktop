@@ -12,7 +12,7 @@ This document records current voice contracts that should be regression-tested b
 - `/api/lesson-chat/reply`: normal typed and chained-fallback text reply.
 - `/api/realtime-voice`: Conversation Mode WebSocket only.
 
-Normal Lesson Chat TTS currently uses `tts-1`. Realtime Conversation Mode currently uses `gpt-realtime`.
+Normal Lesson Chat TTS currently uses `tts-1`. Default Conversation Mode uses the TTS-provider flow with `gpt-4o-mini-tts` for calmer speech testing. Realtime Conversation Mode remains implemented with `gpt-realtime` but is not the default.
 
 ## Normal chained voice fallback
 
@@ -123,6 +123,6 @@ The pre-start Conversation Mode opening prompt is the one intentional bridge: it
 
 ## 2026-05-17 MVP provider decision
 
-Conversation Mode is temporarily switched to the stable `Tts1` provider for the MVP. The default Conversation Mode engine now uses the same reliable chained flow as normal voice input: microphone recording, audio transcription, lesson chat reply, TTS-1 speech generation, and playback. The default path uses `/api/audio/transcribe`, `/api/lesson-chat/reply`, and `/api/audio/speech` with `model=tts-1`, `voice=coral`, `purpose=conversation_mode_tts`, and speech speed `0.9`.
+Conversation Mode is temporarily switched to the stable `Tts1` provider for the MVP. The default Conversation Mode engine now uses the same reliable chained flow as normal voice input: microphone recording, audio transcription, lesson chat reply, `gpt-4o-mini-tts` speech generation with instructions, and playback. The default path uses `/api/audio/transcribe`, `/api/lesson-chat/reply`, and `/api/audio/speech` with `model=gpt-4o-mini-tts`, `voice=coral`, `purpose=conversation_mode_tts`, speech speed `1.0`, and calm voice instructions. Normal Lesson Chat can still use `tts-1` without speech instructions. The TTS input remains exactly the visible tutor text; no shortening, summarization, rewriting, or sentence chunking is used for Conversation Mode.
 
 Realtime remains implemented for future use behind the provider switch. The Realtime WebSocket gateway, GA schema, diagnostics, stop-reason logging, fallback transcription recovery, and policy tests remain in the repository. Realtime is not the default MVP Conversation Mode engine and the default Conversation Mode path must not open `/api/realtime-voice` or create a Realtime session.
