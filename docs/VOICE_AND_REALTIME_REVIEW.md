@@ -1,128 +1,96 @@
 # Voice and Realtime Review
 
-Review date: 2026-05-16.
+Review date: 2026-05-17.
 
-This document records current voice contracts that should be regression-tested before future voice or realtime changes.
+This document records the current MVP voice architecture. It intentionally reflects the stable MVP path after recent Conversation Mode stabilization.
 
-## Endpoint ownership by path
+## Current MVP voice decision
 
-- `/api/audio/speech`: normal Lesson Chat manual Play, auto-play bot voice, and chained TTS fallback.
-- `/api/audio/speech-stream`: backend streaming TTS endpoint; currently separate from the main manual Play path.
-- `/api/audio/transcribe`: chained/non-realtime user voice transcription.
-- `/api/lesson-chat/reply`: normal typed and chained-fallback text reply.
-- `/api/realtime-voice`: Conversation Mode WebSocket only.
+Conversation Mode uses the stable TTS provider by default:
 
-Normal Lesson Chat TTS currently uses `tts-1`. Default Conversation Mode uses the TTS-provider flow with `gpt-4o-mini-tts` for calmer speech testing. Realtime Conversation Mode remains implemented with `gpt-realtime` but is not the default.
+`microphone recording -> audio transcription -> lesson chat reply -> gpt-4o-mini-tts playback`
 
-## Normal chained voice fallback
+Realtime remains in the codebase for future testing, but it is not the default MVP path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
 
-```text
-user voice -> AudioRecordingService -> /api/audio/transcribe -> transcript validation -> /api/lesson-chat/reply -> optional /api/audio/speech -> AudioPlaybackService
-```
+## Normal Lesson Chat voice path
 
-This path uses separate STT, text generation, TTS, and playback operations. It remains the fallback/non-realtime voice path and should not be removed while Realtime is still being tested.
+Normal Lesson Chat uses a chained backend path:
 
-Invalid/empty/non-English transcripts show a retry message, do not count as lesson turns, and must stay excluded from feedback and summary.
+1. The learner types or records a message.
+2. Recorded audio is transcribed with `gpt-4o-mini-transcribe`.
+3. Valid learner text is sent to the lesson chat reply endpoint.
+4. Bot text is displayed in chat.
+5. Play voice / normal auto-play uses `/api/audio/speech`.
 
-## Manual Play voice
+Normal Lesson Chat TTS settings:
 
-Manual Play starts from a visible `ChatMessageViewModel.Text` value in `LessonChatViewModel`. Current contract:
+- model: `tts-1`;
+- purpose: `lesson_chat_tts`;
+- voice: backend/default voice configuration;
+- speech instructions: not used for normal `tts-1` Lesson Chat playback.
 
-- Manual Play must speak exactly the visible bot message, except harmless trim/newline normalization.
-- The desktop sends that exact normalized text to `/api/audio/speech`.
-- `/api/audio/speech` uses the normal chat TTS model `tts-1`.
-- Diagnostic logs should show exact-text checks such as `RawTextLength`, `VoiceTextLength`, and `IsExactText`.
+Normal Lesson Chat TTS should continue to speak the visible bot message text.
 
-Manual Play is a review action. Existing bot messages remain playable in Awaiting Finish until Finish lesson is clicked.
+## Conversation Mode voice path
 
-## Auto-play bot voice
+Default MVP Conversation Mode uses the stable TTS provider, not Realtime:
 
-Auto-play also uses visible bot message text and `/api/audio/speech` with `tts-1`, but may skip playback when setup auto-play is disabled, the newest message changed, playback is already busy, or the text exceeds auto-play limits. Setup messages are intentionally skipped for auto-play.
+1. The learner enters Conversation Mode from Lesson Chat.
+2. The overlay shows the full avatar mode with the red record button, exit/back button, latest user phrase bubble, latest bot phrase bubble, and bottom-left Hint button.
+3. The learner records audio.
+4. Audio is transcribed through the normal transcription endpoint.
+5. The transcript is sent through the same lesson chat reply flow as normal Lesson Chat.
+6. The bot reply is displayed in the Conversation Mode bot bubble and persisted into the lesson transcript.
+7. The displayed bot reply is sent to `/api/audio/speech` with Conversation Mode TTS settings.
+8. The returned audio is played back.
+9. Multiple turns repeat the same flow.
 
-Auto-play skipping is separate from the manual Play exact-visible-text requirement.
+Conversation Mode TTS settings:
 
-## Realtime Conversation Mode
+- model: `gpt-4o-mini-tts`;
+- purpose: `conversation_mode_tts`;
+- voice: `coral`;
+- speed: `1.0`;
+- instructions: calm speech instructions for natural, friendly learner-facing delivery.
 
-```text
-LessonChatViewModel -> RealtimeVoiceConversationEngine -> /api/realtime-voice
-/api/realtime-voice -> RealtimeVoiceSessionService -> OpenAI Realtime WebSocket (gpt-realtime)
-OpenAI response audio delta -> backend -> desktop -> RealtimeAudioPlaybackService
-OpenAI response transcript delta -> backend -> desktop -> LessonChatViewModel message text
-RealtimeMicrophoneCaptureService -> RealtimeVoiceConversationEngine -> backend -> OpenAI input_audio_buffer
-```
+The visible text and spoken text must match exactly. Conversation Mode must not use spoken-only shortening, summarization, rewriting, or chunking.
 
-Realtime generated assistant turns must not use `/api/audio/speech`. Assistant transcript and audio must come from the same OpenAI Realtime response.
+## Why the MVP uses the TTS provider
 
-Current Realtime transcript behavior:
+Realtime was too unstable for the MVP lifecycle. The TTS provider path is more stable because it reuses the already-working transcription, lesson chat reply, and speech playback endpoints. Switching Conversation Mode speech to `gpt-4o-mini-tts` also improved speech calmness because the request can include speech instructions.
 
-- Desktop creates a pending user placeholder such as `[Voice message]` when the learner speaks.
-- Backend commits user audio and waits for transcription.
-- `response.create` is gated by a valid transcript.
-- A valid Realtime user transcript replaces the pending placeholder and counts as a learner turn only when active roleplay is underway.
-- Invalid/empty/non-English transcripts mark the placeholder as an invalid retry message, do not count as lesson turns, do not generate a normal assistant response, and remain excluded from feedback and summary.
+This decision prioritizes predictable MVP testing over lower-latency future experiments.
 
-## Shared teaching policy
+## Realtime status
 
-Normal Lesson Chat and Realtime share the canonical tutor teaching policy from `LessonPromptBuilder`. Realtime changes only the transport and voice-first formatting. Tutor identity comes from `TutorProfile`; scenario JSON remains avatar-neutral; level complexity belongs to level rules/policy.
+Realtime is implemented/partially stabilized and remains in the repository for future work. It should be treated as a provider-switch/future option, not the default MVP Conversation Mode provider.
 
-## Awaiting Finish voice behavior
+Realtime assets that remain useful for future testing include:
 
-After the final tutor message, the lesson enters Awaiting Finish:
+- desktop WebSocket client/coordinator code;
+- backend Realtime gateway;
+- GA schema work;
+- logging and stop-reason diagnostics;
+- fallback/recovery policy tests;
+- overlay policy coverage.
 
-- Send, Start recording, Hint, Back, and Conversation Mode are disabled for new lesson input.
-- Finish lesson remains enabled.
-- View feedback remains enabled on valid learner messages.
-- Translate remains enabled on existing messages.
-- Play voice remains enabled on existing bot messages through `/api/audio/speech` until Finish lesson is clicked.
+Default MVP Conversation Mode should not open `/api/realtime-voice` or create an OpenAI Realtime session.
 
-## Known risks and regression checks
+## Feedback, hint, and transcript behavior in voice flows
 
-- Realtime lifecycle is improved, including expected disconnect handling, but still needs long-session testing.
-- Realtime latency has not been optimized; measure first-audio and playback timing before tuning.
-- Transcript/audio mismatch is a high-severity regression: Realtime assistant transcript and audio must always come from the same response.
-- Manual Play exact-visible-text behavior should remain covered by checklist and logs.
-- Chained fallback should remain usable when Realtime is unavailable.
+- Feedback is tied to the clicked message through `sourceMessageId` and `sourceMessageKind`.
+- Context-selection feedback is phrase-level and does not treat the phrase as an active roleplay answer.
+- Conversation Mode transcript messages should be reviewable after returning to Lesson Chat.
+- Hint works in normal Lesson Chat and in the Conversation Mode overlay.
+- Invalid retry/status messages should not count as learner turns and should stay excluded from summary input.
 
-## 2026-05-14 update: recovery and cost instrumentation
+## Cost and logging expectations
 
-Realtime Conversation Mode startup and record-button recovery are treated as stabilization priorities. The desktop state model must allow retry after backend/OpenAI startup failure, unexpected socket disconnect, and microphone start failure. Backend developer logs now collect raw usage data for typed Lesson Chat, chained transcription, `tts-1` speech, and `gpt-realtime` sessions so future cost comparisons use measured usage instead of theory alone.
+Backend logs should make the current voice routing visible:
 
-## 2026-05-15 update: Realtime GA and English-only output
+- normal Lesson Chat speech requests use `Model=tts-1` and `Purpose=lesson_chat_tts`;
+- Conversation Mode speech requests use `Model=gpt-4o-mini-tts` and `Purpose=conversation_mode_tts`;
+- Conversation Mode speech requests include `HasInstructions=True`;
+- no Realtime WebSocket opens by default in the MVP path.
 
-Realtime Conversation Mode now uses the GA Realtime WebSocket path `wss://api.openai.com/v1/realtime?model=gpt-realtime` with only the normal `Authorization: Bearer ...` header. The deprecated `OpenAI-Beta: realtime=v1` header is not used. Session configuration uses GA-shaped `session.update` data: `type: realtime`, `model: gpt-realtime`, `output_modalities: ["audio"]`, nested `audio.input.format` and `audio.output.format` objects, output voice `coral`, and English input transcription. Both audio format objects must include `type: "audio/pcm"` and `rate: 24000`; the explicit `audio.output.format.rate` field fixes the Windows startup blocker `Missing required parameter: 'session.audio.output.format.rate'`.
-
-Startup is strict: desktop does not treat Conversation Mode as ready until the backend receives a successful upstream `session.updated` after `session.update`, seeds recent conversation, and sends `session.ready`. Missing required Realtime schema parameters are fatal for that startup attempt, classified as startup failure/upstream realtime error, relayed as `session.startup_failed`, and cleaned up so the Conversation Mode button can be clicked again without restarting the app.
-
-Tutor output language is locked to English in both normal Lesson Chat and Realtime. The tutor must refuse requests such as “Speak Finnish” or “Can you speak Russian?” in English and continue the selected lesson. The Translate button remains a separate review feature and does not permit the tutor to change lesson language.
-
-## 2026-05-15 GA content-part correction
-
-The remaining GA runtime crash `Invalid value: 'text'. Value must be 'output_text'.` was traced to recent conversation seeding for assistant messages. Realtime `conversation.item.create` events no longer use a generic content part type of `text`: user/system-style text is mapped to `input_text`, and assistant seed text is mapped to `output_text`. Realtime `response.create` remains an audio-generation event with `output_modalities: ["audio"]`; it does not create fake text content items and does not route generated Realtime assistant turns through `/api/audio/speech`.
-
-Runtime upstream errors after `session.ready` are recoverable. The backend emits `session.runtime_failed`, logs the shutdown as an upstream/runtime Realtime error, and closes stale upstream state. The desktop cleans microphone, playback, transcript buffers, and active-response flags, returns to a retryable state, and ignores stale events from old session IDs.
-
-## 2026-05-15 update: Conversation Mode opening playback and transcript recovery
-
-Conversation Mode now has an explicit `OpeningPlayback` startup state. After the Realtime session is configured but before recording is enabled, the desktop selects the current visible bot prompt that is awaiting the learner and plays that exact visible text through the normal `/api/audio/speech` path with `tts-1` and purpose `realtime_pre_start_opening`. This is pre-existing lesson text only; generated Realtime assistant turns still come from Realtime audio events and are not routed through `/api/audio/speech`.
-
-During `OpeningPlayback`, the red record button is disabled because recording remains allowed only in `Ready`. If opening playback fails or is canceled, Conversation Mode transitions to `Ready` so the learner can still record. Spoken opening message ids are remembered by the view model so leaving and re-entering Conversation Mode during the same active lesson does not replay the same prompt automatically.
-
-Realtime voice placeholders now resolve to a final state: accepted transcript text, the retry/status message, or a technical retry status after microphone/network failure. Invalid retry messages remain non-turn technical user messages: they are not feedback-eligible, do not increment learner turns, do not push the conversation forward, and are excluded from summaries.
-
-Realtime transcript failures now log compact diagnostics with session id, realtime user turn id/item id, learner turn number, audio chunk count, buffered bytes, estimated audio duration, transcript length, validation reason, and retry flags. When Realtime transcription fails or times out and buffered PCM audio exists, the desktop makes one fallback `/api/audio/transcribe` attempt using `gpt-4o-mini-transcribe` with English transcription. A valid fallback transcript replaces the placeholder and is sent into Realtime as a text user turn so the assistant response still uses Realtime audio; an invalid fallback keeps the retry message.
-
-## 2026-05-16 voice baseline confirmation
-
-The current voice baseline keeps the three audio paths deliberately separate:
-
-1. Normal Play voice and normal auto-play use `/api/audio/speech` with `tts-1`.
-2. Normal chained voice input uses `/api/audio/transcribe` with `gpt-4o-mini-transcribe`, validates the transcript, and then sends accepted text through normal Lesson Chat.
-3. Realtime Conversation Mode uses `/api/realtime-voice` and OpenAI GA `/v1/realtime` with `gpt-realtime`; generated Realtime assistant replies remain Realtime audio and are not sent to `/api/audio/speech`.
-
-The pre-start Conversation Mode opening prompt is the one intentional bridge: it speaks the already-visible tutor prompt before Realtime recording starts through `/api/audio/speech` with `tts-1` and `purpose=realtime_pre_start_opening`. This behavior is current and must remain protected during later refactors.
-
-## 2026-05-17 MVP provider decision
-
-Conversation Mode is temporarily switched to the stable `Tts1` provider for the MVP. The default Conversation Mode engine now uses the same reliable chained flow as normal voice input: microphone recording, audio transcription, lesson chat reply, `gpt-4o-mini-tts` speech generation with instructions, and playback. The default path uses `/api/audio/transcribe`, `/api/lesson-chat/reply`, and `/api/audio/speech` with `model=gpt-4o-mini-tts`, `voice=coral`, `purpose=conversation_mode_tts`, speech speed `1.0`, and calm voice instructions. Normal Lesson Chat can still use `tts-1` without speech instructions. The TTS input remains exactly the visible tutor text; no shortening, summarization, rewriting, or sentence chunking is used for Conversation Mode.
-
-Realtime remains implemented for future use behind the provider switch. The Realtime WebSocket gateway, GA schema, diagnostics, stop-reason logging, fallback transcription recovery, and policy tests remain in the repository. Realtime is not the default MVP Conversation Mode engine and the default Conversation Mode path must not open `/api/realtime-voice` or create a Realtime session.
+Exact pricing remains approximate until real usage logs are collected and pricing constants are completed.

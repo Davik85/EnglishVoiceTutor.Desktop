@@ -1,6 +1,9 @@
 # EnglishVoiceTutor.Desktop
 
+EnglishVoiceTutor.Desktop is a WPF desktop MVP for guided English speaking practice. The current MVP lesson flow is stabilized for local Windows testing: learners choose a level, topic, subtopic, and scenario, then practice in Lesson Chat by typing or recording speech.
+
 ## Run the desktop app
+
 1. Restore dependencies:
    `dotnet restore`
 2. Build the desktop app:
@@ -8,6 +11,7 @@
 3. Run from your IDE or use your preferred `dotnet` run/publish workflow.
 
 ## Run the local backend proxy
+
 1. Stop any old backend `dotnet` process or close old backend terminal windows before starting a fresh backend.
 2. Go to the backend project folder:
    `cd backend/EnglishVoiceTutor.Api`
@@ -19,10 +23,15 @@
    `dotnet run`
 
 ## Lesson chat endpoints
-- The desktop app uses `POST /api/lesson-chat/reply`.
+
+- The desktop app uses `POST /api/lesson-chat/reply` for normal lesson replies and for the default Conversation Mode reply flow.
 - `POST /api/lesson-chat/mock-reply` stays available for local compatibility and testing.
+- Normal audio transcription uses `POST /api/audio/transcribe`.
+- Speech playback uses `POST /api/audio/speech`.
+- Realtime code remains in the repository for future testing, but it is not the default MVP Conversation Mode path.
 
 ## Backend OpenAI configuration
+
 Run backend with OpenAI enabled (PowerShell):
 
 ```powershell
@@ -35,19 +44,43 @@ dotnet run
 - Desktop app still calls only the real backend lesson chat endpoint during normal lesson flow.
 
 ## Security rule
+
 OpenAI API keys must never be stored in the desktop app and must never be committed to source control.
 
-## Current stabilization status
+## Current MVP voice decision
 
-Feature development is paused while Lesson Chat, bot voice playback, and Realtime Conversation Mode are stabilized. Detailed review docs live in `docs/`:
+Conversation Mode uses the stable TTS provider by default:
+
+`microphone recording -> audio transcription -> lesson chat reply -> gpt-4o-mini-tts playback`
+
+Realtime remains in the codebase for future testing, but it is not the default MVP path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
+
+## Current MVP status
+
+The current MVP baseline is documentation-first and behavior-stable:
+
+- Lesson content audit passes with 26 lesson JSON files.
+- Desktop builds successfully in Debug and Release on Windows.
+- Backend builds successfully on Windows.
+- Normal Lesson Chat works with typed input, Enter-to-send, Send button, normal voice recording, transcription, bot replies, Play voice, Translate, Hint, View feedback, and lesson summary.
+- Feedback uses the global bottom feedback panel and is bound to the clicked message through `sourceMessageId` / `sourceMessageKind`.
+- Context-selection feedback is phrase-level and does not treat the phrase as an active roleplay answer.
+- Hint works in normal Lesson Chat and Conversation Mode, including the semi-transparent Conversation Mode overlay.
+- Conversation Mode works with the TTS provider: full avatar overlay, red record button, exit/back button, latest user and bot phrase bubbles, recording, transcription, bot reply generation, voice playback, and multiple turns.
+- Normal Lesson Chat TTS remains `tts-1` with `purpose=lesson_chat_tts`.
+- Conversation Mode TTS uses `gpt-4o-mini-tts`, voice `coral`, `purpose=conversation_mode_tts`, speed `1.0`, and calm speech instructions.
+- Usage/cost logging exists, but exact pricing fields are still approximate or missing where pricing constants are not configured.
+- UI has the Soft Learning Desktop style: light blue frame, rounded cards/buttons/inputs, level colors, topic colors, and warm hint/feedback cards.
+
+Detailed review docs live in `docs/`:
 
 - `docs/CURRENT_STATE.md`
 - `docs/ARCHITECTURE_REVIEW.md`
 - `docs/VOICE_AND_REALTIME_REVIEW.md`
 - `docs/LESSON_FLOW_REVIEW.md`
-- `docs/KNOWN_ISSUES.md`
-- `docs/STABILIZATION_PLAN.md`
+- `docs/COST_MODEL.md`
 - `docs/MANUAL_TEST_CHECKLIST.md`
+- `docs/NEXT_STEPS.md`
 
 Common validation commands from the repository root:
 
@@ -61,16 +94,4 @@ dotnet restore
 dotnet build
 ```
 
-## 2026-05-16 stabilization baseline
-
-The current stabilization baseline keeps runtime behavior unchanged while documenting the working routes:
-
-- Lesson audit covers 26 JSON lessons.
-- Normal Lesson Chat TTS remains `tts-1` through `/api/audio/speech`.
-- Normal voice transcription remains `gpt-4o-mini-transcribe` through `/api/audio/transcribe`.
-- Realtime Conversation Mode uses `gpt-realtime` on the GA `/v1/realtime` schema.
-- Realtime pre-start opening playback remains enabled through `tts-1` with `purpose=realtime_pre_start_opening`.
-- Realtime-generated assistant replies stay on Realtime audio and are not routed through `/api/audio/speech`.
-- Usage/cost instrumentation, transcript validation, English-only tutor output, lesson content audit, avatar tooltip cleanup, and lightweight hang diagnostics are protected stabilization behavior.
-
-Recommended next work: full MVP smoke-test, all-lesson scenario QA, methodology/prompt polish by level, feedback/summary quality polish, and real usage/cost measurement before architecture extraction.
+Recommended next work: short regression smoke-test, then MVP infrastructure work for local/user data, accounts, usage limits, payment, packaging, release preparation, and support diagnostics.

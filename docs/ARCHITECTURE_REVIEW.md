@@ -121,9 +121,9 @@ Extract one boundary at a time after the manual smoke checklist and policy tests
 
 - `LessonPhaseStateMachine` / `LessonTurnPolicy`: own setup, active roleplay, wrap-up, final, Awaiting Finish transitions and learner turn counting.
 - `LessonCommandStateService`: compute Send, Record, Hint, Back, Finish, Conversation Mode, View Feedback, Translate, and Play Voice enablement from phase and busy flags.
-- `BotVoicePlaybackCoordinator`: own manual Play, auto-play, exact-text validation, segmentation, prefetch, cancellation, and playback logs.
+- `BotVoicePlaybackCoordinator`: own manual Play, auto-play, exact-text validation, prefetch, cancellation, and playback logs.
 - `ChainedVoiceInputCoordinator`: own record/transcribe/validate/auto-send flow.
-- `RealtimeConversationCoordinator`: own Conversation Mode state, deferred guided start, transcript replacement, realtime event handlers, and cleanup.
+- `ConversationModeVoiceCoordinator`: own default TTS-provider Conversation Mode state, transcript handling, exact visible-text playback, and cleanup; keep Realtime-specific coordination separate for future provider-switch work.
 - `LessonBackendRequestFactory`: build chat, hint, feedback, summary/recent-message, and realtime request DTOs from lesson state.
 - `LessonPromptPolicy` / `LevelRulePolicy`: only if the current prompt/level boundaries become hard to maintain in `LessonPromptBuilder`; do not duplicate policy in lesson JSON.
 
@@ -131,8 +131,8 @@ Extract one boundary at a time after the manual smoke checklist and policy tests
 
 - Do not rewrite the whole `LessonChatViewModel`.
 - Do not redesign Realtime transport before long-session and latency measurements.
-- Do not change OpenAI model choices during stabilization.
-- Do not route generated Realtime turns through `/api/audio/speech`.
+- Do not change OpenAI model choices during the documentation update.
+- Do not make Realtime the default MVP Conversation Mode provider.
 - Do not hardcode Elena or any tutor identity in lesson JSON.
 - Do not put A1-only rules directly into each scenario JSON unless documenting current `levelProfiles` behavior.
 - Do not add subscriptions, avatar expansion, broad UI polish, or all-lesson JSON migration until smoke tests are reliable.
@@ -142,9 +142,9 @@ Extract one boundary at a time after the manual smoke checklist and policy tests
 - Single large ViewModel creates high regression risk.
 - Command can-execute attributes and manual `RefreshAllCommandStates()` are easy to miss.
 - Lesson phase and button state are coupled but not fully represented as a formal state machine.
-- Realtime and chained voice share UI flags but use different lifecycles.
-- Exact spoken text is protected by code/logging, but normalization and segmentation remain in the ViewModel.
-- Realtime expected disconnects are improved, but long-session behavior still needs testing.
+- Realtime and default TTS-provider Conversation Mode share some UI flags but use different lifecycles.
+- Exact spoken text is protected by code/logging, but voice playback coordination remains in the ViewModel.
+- Realtime is non-default for MVP and still needs future long-session/provider-switch testing before it can be reconsidered.
 - Mock fallback services are present and useful for degraded operation, but must be clearly distinguished from production OpenAI paths.
 
 ## 2026-05-16 codebase inventory
