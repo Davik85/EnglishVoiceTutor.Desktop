@@ -168,6 +168,10 @@ def main() -> int:
     assert_contains(chat, 'x:Name="FeedbackPanelCard"', "feedback panel exposes a card-level close target")
     assert_contains(chat, 'PreviewMouseLeftButtonUp="FeedbackPanelCard_PreviewMouseLeftButtonUp"', "feedback panel close is not limited to hint text")
     assert_contains(code_behind, "CloseFeedbackCommand.Execute(null)", "feedback card click delegates to close command")
+    feedback_handler = code_behind.split("private void FeedbackPanelCard_PreviewMouseLeftButtonUp", 1)[1].split("private bool IsEventFromFeedbackInteractiveControl", 1)[0]
+    for forbidden in ["ConversationMode", "StopConversation", "BackCommand", "ToggleConversationModeCommand", "StopRealtimeConversationAsync"]:
+        if forbidden in feedback_handler:
+            raise AssertionError(f"FeedbackPanelCard click handler must not reference Realtime stop/back behavior: {forbidden}")
     assert_contains(code_behind, "dependencyObject is Button", "feedback translate button remains interactive under card-wide close")
     assert_contains(chat, 'Style="{StaticResource LessonSupportPanelStyle}"', "hint panel uses shared warm support panel style")
     assert_contains(chat, 'BasedOn="{StaticResource LessonSupportPanelStyle}"', "feedback panel uses shared warm support panel style")

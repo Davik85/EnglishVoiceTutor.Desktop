@@ -61,10 +61,12 @@ def main() -> int:
         raise AssertionError("Opening pre-start playback cleanup must not stop an active Realtime session.")
 
     stop = extract_method(vm, "private async Task StopRealtimeConversationAsync")
-    for reason in ["user_clicked_back", "user_clicked_conversation_mode_exit", "final_cleanup", "runtime_failure"]:
+    for reason in ["user_back", "user_exit_conversation_mode", "lesson_finished", "fatal_realtime_error", "cleanup_finally", "assistant_audio_playback_completed", "opening_playback_completed"]:
         require(vm, reason, f"mapped realtime lifecycle reason {reason}")
     require(stop, "Realtime engine StopSessionAsync requested", "explicit stop logging")
-    require(stop, "await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None)", "explicit stop sends client stop")
+    require(stop, "await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None, mappedReason)", "explicit stop sends reasoned client stop")
+    require(stop, "ShouldBlockRealtimeStop(mappedReason)", "non-explicit stop guard blocks during assistant playback")
+    require(stop, "Realtime stop/cancel blocked during assistant turn", "blocked stop is logged")
 
     require(playback, "event EventHandler<RealtimePlaybackCompletedEventArgs>? PlaybackCompleted", "playback completion event")
     require(playback, "StopConversationModeRequested=False", "playback logs document no conversation stop")
@@ -73,6 +75,7 @@ def main() -> int:
 
     require(engine, "Realtime voice session.stop sending", "engine stop/cancel log")
     require(engine, "Realtime voice CloseAsync requested", "engine close log")
+    require(engine, "new { reason = stopReason }", "desktop stop message includes explicit reason")
 
     print("Realtime audio lifecycle policy checks passed.")
     return 0

@@ -71,6 +71,7 @@ def main() -> None:
         "Realtime desktop audio append received",
         "Realtime desktop commit received",
         "Realtime desktop stop/cancel received",
+        "DesktopStopReason={DesktopStopReason}",
         "Realtime ignored unknown desktop message",
         "input_audio_buffer.append",
         "input_audio_buffer.commit",

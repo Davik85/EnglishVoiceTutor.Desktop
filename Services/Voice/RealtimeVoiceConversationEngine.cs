@@ -43,7 +43,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
     public async Task StartSessionAsync(VoiceSessionStartRequest request, CancellationToken cancellationToken)
     {
         ThrowIfDisposed();
-        await StopSessionAsync(CancellationToken.None);
+        await StopSessionAsync(CancellationToken.None, "cleanup_finally");
         stopRequested = false;
         sessionId = request.SessionId;
         isSessionReady = false;
@@ -95,9 +95,10 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         return SendBackendEventAsync("user.audio.commit", new { }, cancellationToken);
     }
 
-    public async Task StopSessionAsync(CancellationToken cancellationToken)
+    public async Task StopSessionAsync(CancellationToken cancellationToken, string reason = "unknown")
     {
-        Debug.WriteLine($"Realtime voice StopSessionAsync requested: SessionId={sessionId}; Reason=client_stop; SocketState={webSocket?.State.ToString() ?? "null"}.");
+        var stopReason = NormalizeDesktopStopReason(reason);
+        Debug.WriteLine($"Realtime voice StopSessionAsync requested: SessionId={sessionId}; Reason={stopReason}; SocketState={webSocket?.State.ToString() ?? "null"}.");
         stopRequested = true;
         var socket = webSocket;
         receiveCancellationTokenSource?.Cancel();
@@ -107,18 +108,18 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
             {
                 if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
                 {
-                    Debug.WriteLine($"Realtime voice session.stop sending: SessionId={sessionId}; Reason=client_stop; SocketState={socket.State}.");
-                    await SendBackendEventAsync("session.stop", new { reason = "client_stop" }, CancellationToken.None);
-                    Debug.WriteLine($"Realtime voice CloseAsync requested: SessionId={sessionId}; Reason=client_stop; SocketState={socket.State}.");
-                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "client_stop", cancellationToken);
+                    Debug.WriteLine($"Realtime voice session.stop sending: SessionId={sessionId}; Reason={stopReason}; SocketState={socket.State}.");
+                    await SendBackendEventAsync("session.stop", new { reason = stopReason }, CancellationToken.None);
+                    Debug.WriteLine($"Realtime voice CloseAsync requested: SessionId={sessionId}; Reason={stopReason}; SocketState={socket.State}.");
+                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, stopReason, cancellationToken);
                 }
             }
             catch (Exception exception)
             {
-                Debug.WriteLine($"Realtime voice session stop warning: SessionId={sessionId}; CancellationReason=client_stop; {exception}");
+                Debug.WriteLine($"Realtime voice session stop warning: SessionId={sessionId}; CancellationReason={stopReason}; {exception}");
             }
 
-            Debug.WriteLine($"Realtime voice socket dispose requested: SessionId={sessionId}; Reason=client_stop; SocketState={socket.State}.");
+            Debug.WriteLine($"Realtime voice socket dispose requested: SessionId={sessionId}; Reason={stopReason}; SocketState={socket.State}.");
             socket.Dispose();
         }
 
@@ -127,7 +128,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         receiveCancellationTokenSource?.Dispose();
         receiveCancellationTokenSource = null;
         sessionStartCompletionSource = null;
-        Debug.WriteLine($"Realtime voice session stopped: SessionId={sessionId}; CancellationReason=client_stop; ElapsedMs={sessionStopwatch.ElapsedMilliseconds}.");
+        Debug.WriteLine($"Realtime voice session stopped: SessionId={sessionId}; CancellationReason={stopReason}; ElapsedMs={sessionStopwatch.ElapsedMilliseconds}.");
     }
 
     public void Dispose()
@@ -138,9 +139,28 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
         }
 
         Debug.WriteLine($"Realtime voice engine dispose requested: SessionId={sessionId}; Reason=window_closing_or_view_model_dispose.");
-        _ = StopSessionAsync(CancellationToken.None);
+        _ = StopSessionAsync(CancellationToken.None, "window_closing");
         sendLock.Dispose();
         disposed = true;
+    }
+
+    private static string NormalizeDesktopStopReason(string reason)
+    {
+        return reason switch
+        {
+            "user_exit_conversation_mode"
+                or "user_back"
+                or "window_closing"
+                or "lesson_finished"
+                or "fatal_realtime_error"
+                or "microphone_failure"
+                or "assistant_audio_playback_failure"
+                or "assistant_audio_playback_completed"
+                or "opening_playback_completed"
+                or "cleanup_finally" => reason,
+            _ when string.IsNullOrWhiteSpace(reason) => "unknown",
+            _ => reason
+        };
     }
 
     private async Task SendBackendEventAsync(string type, object payload, CancellationToken cancellationToken)

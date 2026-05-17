@@ -32,7 +32,7 @@ def main() -> None:
         "isStartingRealtimeSession = false;",
         "SafeStopRealtimeMicrophone(mappedReason)",
         "realtimeAudioPlaybackService.Stop(mappedReason)",
-        "await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None)",
+        "await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None, mappedReason)",
         "SetConversationModeState(IsCompletedAwaitingFinish ? ConversationModeState.CompletedAwaitingFinish : ConversationModeState.NotStarted, mappedReason)",
         "IsActiveRealtimeSessionEvent(args.SessionId",
         "Ignoring stale realtime UI event",
