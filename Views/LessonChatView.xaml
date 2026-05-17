@@ -511,13 +511,8 @@
                                              VerticalContentAlignment="Center"
                                              AcceptsReturn="False"
                                              IsEnabled="{Binding CanTypeText}"
-                                             Text="{Binding UserInput, UpdateSourceTrigger=PropertyChanged}">
-                                        <TextBox.InputBindings>
-                                            <KeyBinding Key="Return"
-                                                        Modifiers="None"
-                                                        Command="{Binding SendMessageCommand}" />
-                                        </TextBox.InputBindings>
-                                    </TextBox>
+                                             PreviewKeyDown="LessonInputTextBox_PreviewKeyDown"
+                                             Text="{Binding UserInput, UpdateSourceTrigger=PropertyChanged}" />
 
                                     <StackPanel HorizontalAlignment="Center">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
