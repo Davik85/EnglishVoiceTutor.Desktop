@@ -2,6 +2,7 @@ using System.Text;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Models.RealtimeVoice;
+using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Api.Services;
 
@@ -10,6 +11,7 @@ public sealed class LessonPromptBuilder
     private const string LessonContextHeader = "Lesson context (already selected by learner):";
     private const string TutorAvatarProfileHeader = "Tutor avatar profile (stable identity):";
     private const string LearnerProfileHeader = "Learner profile:";
+    private const string TargetStudyLanguageHeader = "TARGET STUDY LANGUAGE:";
     private const string LessonLengthHeader = "Lesson length metadata:";
     private const string ActiveLevelProfileHeader = "Active level profile:";
     private const string RecentConversationHeader = "Recent active lesson conversation context (oldest to newest):";
@@ -36,6 +38,7 @@ public sealed class LessonPromptBuilder
         var avatarProfile = _avatarProfileProvider.GetById(request.TutorAvatarId);
 
         AppendLessonContext(prompt, request, avatarProfile);
+        AppendTargetStudyLanguage(prompt, request);
         AppendCanonicalTeachingPolicy(prompt, request, avatarProfile, NormalChatMode);
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, request);
@@ -80,6 +83,7 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine();
 
         AppendLessonContext(prompt, chatRequest, avatarProfile);
+        AppendTargetStudyLanguage(prompt, chatRequest);
         AppendCanonicalTeachingPolicy(prompt, chatRequest, avatarProfile, RealtimeVoiceMode);
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, chatRequest);
@@ -91,7 +95,7 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("- Do not output JSON for realtime turns.");
         prompt.AppendLine("- Assistant audio and assistant transcript must come from this same realtime response.");
         prompt.AppendLine("- Ask at most one question in a turn.");
-        prompt.AppendLine("- English-only lesson language applies to every spoken realtime response.");
+        prompt.AppendLine($"- Target-language lesson lock applies to every spoken realtime response: use {ResolveTargetLanguage(chatRequest).LanguageLockName}.");
         prompt.AppendLine();
 
         return prompt.ToString();
@@ -105,7 +109,7 @@ public sealed class LessonPromptBuilder
 
         prompt.AppendLine($"Respond now as {avatarProfile.DisplayName}, the selected tutor profile.");
         prompt.AppendLine("Follow the canonical lesson teaching policy from the session instructions.");
-        prompt.AppendLine("English-only lesson language: speak English only, even if the learner asks for Finnish, Russian, Spanish, or another language.");
+        prompt.AppendLine($"Target-language lesson lock: speak {ResolveTargetLanguage(chatRequest).LanguageLockName} only, even if the learner asks for Finnish, Russian, Spanish, English, or another language.");
         prompt.AppendLine("Produce assistant audio and a matching assistant transcript from this same Realtime response.");
         prompt.AppendLine($"Current counted learner turn: {chatRequest.LearnerTurnCount} of {chatRequest.HardLearnerTurnLimit}.");
         if (LessonLimitHelper.ShouldEndLessonNow(chatRequest))
@@ -196,14 +200,14 @@ public sealed class LessonPromptBuilder
     private static void AppendFreeConversationTask(StringBuilder prompt, LessonChatRequest request, TutorAvatarProfile avatarProfile)
     {
         prompt.AppendLine($"Respond to the learner's latest message as {avatarProfile.DisplayName}, the selected tutor avatar.");
-        prompt.AppendLine("This is Free Conversation English practice, not a guided roleplay.");
+        prompt.AppendLine("This is Free Conversation study-language practice, not a guided roleplay.");
         prompt.AppendLine("The learner may choose any safe topic.");
         prompt.AppendLine("Follow the safety boundaries from lesson instructions.");
-        prompt.AppendLine("Keep the conversation in English.");
+        prompt.AppendLine("Keep the conversation in the selected target study language.");
         prompt.AppendLine("Adapt difficulty to the selected level and active level profile.");
         prompt.AppendLine("Keep responses concise and suitable for voice.");
         prompt.AppendLine("Correct lightly and naturally; do not overcorrect.");
-        prompt.AppendLine("If unsafe or provocative content appears, refuse briefly and redirect to a safe topic for English practice.");
+        prompt.AppendLine("If unsafe or provocative content appears, refuse briefly and redirect to a safe topic for practice in the selected target study language.");
         prompt.AppendLine("Use learner profile as stable context and recent conversation as active conversation context.");
         prompt.AppendLine("Do not ask for native language.");
         AppendTutorIdentityRules(prompt, avatarProfile);
@@ -238,8 +242,8 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine($"- SourceMessageKind: {request.SourceMessageKind}");
         prompt.AppendLine("- Return a short placeholder botReply such as: Feedback ready.");
         prompt.AppendLine("- The feedback object is the only content shown in the feedback panel.");
-        prompt.AppendLine("- Keep feedback kind, brief, and level-appropriate.");
-        prompt.AppendLine("- Fill every structured feedback field with learner-friendly text: shortText, correctedVersion, grammarTip, vocabularyTip, cultureTip, naturalVersion.");
+        prompt.AppendLine("- Keep feedback kind, brief, level-appropriate, and in the selected target study language.");
+        prompt.AppendLine("- Fill every structured feedback field with learner-friendly target-language text: shortText, correctedVersion, grammarTip, vocabularyTip, cultureTip, naturalVersion.");
         prompt.AppendLine("- Do not mention JSON field names or technical labels in the feedback text.");
         prompt.AppendLine($"- Do not claim to be anyone except {avatarProfile.DisplayName}, the selected tutor profile.");
 
@@ -300,9 +304,22 @@ public sealed class LessonPromptBuilder
         return prompt.ToString();
     }
 
+    private static void AppendTargetStudyLanguage(StringBuilder prompt, LessonChatRequest request)
+    {
+        var targetLanguage = ResolveTargetLanguage(request);
+        prompt.AppendLine(TargetStudyLanguageHeader);
+        prompt.AppendLine($"The learner is practicing {targetLanguage.TutorInstructionName}.");
+        prompt.AppendLine($"All tutor-facing lesson content must be in {targetLanguage.TutorInstructionName}.");
+        prompt.AppendLine($"Use {targetLanguage.TutorInstructionName} for tutor replies, roleplay, hints, feedback, corrections, examples, and summary.");
+        prompt.AppendLine("Do not switch to another language even if the learner asks.");
+        prompt.AppendLine($"If the learner uses another language, gently answer in {targetLanguage.TutorInstructionName} and guide them back to the lesson.");
+        prompt.AppendLine($"The lesson JSON scenario text is a semantic plan. Adapt it naturally into {targetLanguage.TutorInstructionName}; do not treat English wording in JSON as the output language.");
+        prompt.AppendLine();
+    }
+
     private static void AppendGuidedRoleplayHintTask(StringBuilder prompt, LessonChatRequest request, TutorAvatarProfile avatarProfile)
     {
-        prompt.AppendLine("Give one short hint the learner can use next in this exact situation, following the active level profile hint strategy.");
+        prompt.AppendLine("Give one short target-language hint the learner can use next in this exact situation, following the active level profile hint strategy.");
         prompt.AppendLine("A1: a fuller sentence starter is okay. A2: use a less complete sentence starter. B1: suggest structure or a useful phrase. B2: suggest natural direction or tone.");
         prompt.AppendLine($"The hint must answer or continue from the learner's point of view, not {avatarProfile.DisplayName}'s point of view.");
         prompt.AppendLine("The hint should help the learner respond to the latest bot message and recent conversation.");
@@ -319,11 +336,11 @@ public sealed class LessonPromptBuilder
 
     private static void AppendFreeConversationHintTask(StringBuilder prompt, LessonChatRequest request, TutorAvatarProfile avatarProfile)
     {
-        prompt.AppendLine("Give one short hint that helps the learner continue open English conversation safely, following the active level profile hint strategy.");
+        prompt.AppendLine("Give one short target-language hint that helps the learner continue open target-language conversation safely, following the active level profile hint strategy.");
         prompt.AppendLine("A1: a fuller sentence starter is okay. A2: use a less complete sentence starter. B1: suggest structure or a useful phrase. B2: suggest natural direction or tone.");
         prompt.AppendLine($"The hint must answer or continue from the learner's point of view, not {avatarProfile.DisplayName}'s point of view.");
-        prompt.AppendLine("The hint should help the learner respond to the latest bot message or continue the recent conversation in English.");
-        prompt.AppendLine("If the learner's topic is unsafe, harmful, illegal, hateful, sexually explicit, or asks for professional medical/legal/financial advice, redirect to a safe everyday topic for English practice.");
+        prompt.AppendLine("The hint should help the learner respond to the latest bot message or continue the recent conversation in the selected target study language.");
+        prompt.AppendLine("If the learner's topic is unsafe, harmful, illegal, hateful, sexually explicit, or asks for professional medical/legal/financial advice, redirect to a safe everyday topic for target-language practice.");
         prompt.AppendLine("Do not include roleplay-only instructions or introductions-specific examples.");
         prompt.AppendLine("If the learner profile includes a display name, hint examples may use that name when appropriate.");
         prompt.AppendLine("Do not invent a learner name.");
@@ -332,22 +349,22 @@ public sealed class LessonPromptBuilder
 
 
 
-    private static void AppendEnglishOnlyLanguageLock(StringBuilder prompt, LessonChatRequest request)
+    private static void AppendTargetLanguageLock(StringBuilder prompt, LessonChatRequest request)
     {
-        prompt.AppendLine("English-only lesson language lock:");
-        prompt.AppendLine("- Always speak English in tutor messages.");
+        var targetLanguage = ResolveTargetLanguage(request);
+        prompt.AppendLine("Target-language lesson language lock:");
+        prompt.AppendLine($"- Always speak {targetLanguage.LanguageLockName} in tutor messages.");
         prompt.AppendLine("- Do not switch to another language even if the learner asks.");
-        prompt.AppendLine("- If the learner asks to use another language, politely refuse in English and continue the current lesson.");
+        prompt.AppendLine($"- If the learner asks to use another language, politely refuse in {targetLanguage.LanguageLockName} and continue the current lesson.");
         prompt.AppendLine("- Keep the reply level-appropriate.");
-        prompt.AppendLine("- For A1, say: \"Let's practice in English. What is your name?\" or a scenario-compatible equivalent.");
+        prompt.AppendLine($"- For A1, use a scenario-compatible equivalent of: Let's practice in {targetLanguage.LanguageLockName}.");
         prompt.AppendLine("- Translation is handled only by the app's Translate button, not by changing tutor language.");
-        prompt.AppendLine("- Do not produce Finnish, Russian, Spanish, or any non-English tutor output during the lesson.");
-        prompt.AppendLine("- Deterministic language-switch refusal examples:");
-        prompt.AppendLine("  User: \"Speak Finnish.\" Tutor A1: \"Let's practice in English. What's your name?\"");
-        prompt.AppendLine("  User: \"Can you speak Russian?\" Tutor A1: \"Let's use English. Where are you from?\"");
-        prompt.AppendLine("  User: \"Puhu suomea.\" Tutor A1: \"Let's practice in English. Please say it in English.\"");
-        prompt.AppendLine("  User: \"Говори по-русски.\" Tutor A1: \"Let's practice in English. Please say it in English.\"");
-        prompt.AppendLine("  Tutor B1/B2: \"Let's keep this lesson in English. I can help you with this situation in English.\"");
+        prompt.AppendLine($"- Do not produce Finnish, Russian, English, Spanish, or any other non-target-language tutor output unless {targetLanguage.LanguageLockName} is that language.");
+        prompt.AppendLine("- Deterministic language-switch refusal examples must be adapted into the active target language:");
+        prompt.AppendLine($"  User: \"Speak Finnish.\" Tutor A1: answer in {targetLanguage.LanguageLockName} and return to the lesson.");
+        prompt.AppendLine($"  User: \"Can you speak Russian?\" Tutor A1: answer in {targetLanguage.LanguageLockName} and ask one scenario-compatible question.");
+        prompt.AppendLine($"  User: \"Puhu suomea.\" Tutor A1: answer in {targetLanguage.LanguageLockName} and guide the learner back.");
+        prompt.AppendLine($"  Tutor B1/B2: keep the lesson in {targetLanguage.LanguageLockName} and continue the scenario.");
         prompt.AppendLine();
     }
 
@@ -359,8 +376,8 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("- Lesson content describes roles and scenarios; it must not override the tutor profile identity.");
         prompt.AppendLine("- UI label, avatar name, prompt identity, and any tutor self-reference must stay aligned with the selected TutorProfile.");
         prompt.AppendLine("- The tutor may react warmly to jokes, compliments, and small talk, then return to the lesson goal.");
-        prompt.AppendLine("- Target language, level profile, feedback rules, hint rules, off-topic rules, turn limits, and guided scenario retention all apply in this mode.");
-        AppendEnglishOnlyLanguageLock(prompt, request);
+        prompt.AppendLine("- Target study language, level profile, feedback rules, hint rules, off-topic rules, turn limits, and guided scenario retention all apply in this mode.");
+        AppendTargetLanguageLock(prompt, request);
 
         if (IsFreeConversation(request))
         {
@@ -412,7 +429,7 @@ public sealed class LessonPromptBuilder
         {
             prompt.AppendLine("- Use 1-3 short sentences.");
             prompt.AppendLine("- Ask one clear follow-up question.");
-            prompt.AppendLine("- Use simple natural English.");
+            prompt.AppendLine("- Use simple natural target-language sentences.");
         }
         else if (level.StartsWith("b1", StringComparison.OrdinalIgnoreCase))
         {
@@ -467,7 +484,7 @@ public sealed class LessonPromptBuilder
     private static void AppendA1StrictRules(StringBuilder prompt, LessonChatRequest request)
     {
         prompt.AppendLine("A1 strict output rules:");
-        prompt.AppendLine("- Use very simple English.");
+        prompt.AppendLine("- Use very simple target-language sentences. Use very simple English when English is the target study language.");
         prompt.AppendLine("- Use short sentences.");
         prompt.AppendLine("- Ask one question at a time.");
         prompt.AppendLine("- Avoid phrasal verbs when a simpler verb exists.");
@@ -873,6 +890,10 @@ public sealed class LessonPromptBuilder
             UserMessage = string.Empty,
             LastBotMessage = request.LastBotMessage,
             NativeLanguageName = request.NativeLanguageName,
+            TargetLanguageId = request.TargetLanguageId,
+            TargetLanguageName = request.TargetLanguageName,
+            TargetLanguageNativeName = request.TargetLanguageNativeName,
+            TargetLanguageCode = request.TargetLanguageCode,
             TutorAvatarId = request.TutorProfileId,
             UserDisplayName = request.UserDisplayName,
             LearningGoal = request.LearningGoal,
@@ -951,6 +972,40 @@ public sealed class LessonPromptBuilder
         return string.IsNullOrWhiteSpace(value)
             ? string.Empty
             : value.Replace("{tutorName}", avatarProfile.DisplayName, StringComparison.OrdinalIgnoreCase).Trim();
+    }
+
+    private static StudyLanguageDefinition ResolveTargetLanguage(LessonChatRequest request)
+    {
+        var byId = StudyLanguageCatalog.GetById(request.TargetLanguageId);
+        if (!string.Equals(byId.Id, StudyLanguageCatalog.DefaultStudyLanguageId, StringComparison.OrdinalIgnoreCase)
+            || string.IsNullOrWhiteSpace(request.TargetLanguageId))
+        {
+            return byId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.TargetLanguageCode))
+        {
+            var byCode = StudyLanguageCatalog.All.FirstOrDefault(language =>
+                string.Equals(language.Bcp47Code, request.TargetLanguageCode.Trim(), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(language.TranscriptionLanguageCode, request.TargetLanguageCode.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (byCode is not null)
+            {
+                return byCode;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.TargetLanguageName))
+        {
+            var byName = StudyLanguageCatalog.All.FirstOrDefault(language =>
+                string.Equals(language.EnglishName, request.TargetLanguageName.Trim(), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(language.NativeName, request.TargetLanguageName.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (byName is not null)
+            {
+                return byName;
+            }
+        }
+
+        return StudyLanguageCatalog.English;
     }
 
     private static string ChooseFirstNonEmpty(string? primary, string fallback)

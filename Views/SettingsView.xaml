@@ -151,6 +151,15 @@
                                               ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
                                               ItemsSource="{Binding SupportedNativeLanguages}"
                                               SelectedItem="{Binding SelectedNativeLanguage, UpdateSourceTrigger=PropertyChanged}" />
+
+                                    <TextBlock Text="{Binding StudyLanguageTitle}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                    <TextBlock Text="{Binding StudyLanguageSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+
+                                    <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
+                                              ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
+                                              ItemsSource="{Binding AvailableStudyLanguages}"
+                                              SelectedItem="{Binding SelectedStudyLanguage, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMemberPath="DisplayName" />
                                 </StackPanel>
                             </Border>
 
@@ -298,6 +307,7 @@
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
 
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding DiagnosticsAppVersionLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
@@ -324,11 +334,14 @@
                                         <TextBlock Grid.Row="7" Grid.Column="0" Text="{Binding DiagnosticsNativeLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
                                         <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding DiagnosticsNativeLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
 
-                                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{Binding DiagnosticsTutorAvatarLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding DiagnosticsTutorAvatarText}" Style="{StaticResource DiagnosticsValueStyle}" />
+                                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{Binding DiagnosticsStudyLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding DiagnosticsStudyLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
 
-                                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{Binding DiagnosticsMicrophoneLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding DiagnosticsMicrophoneText}" Style="{StaticResource DiagnosticsValueStyle}" />
+                                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{Binding DiagnosticsTutorAvatarLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding DiagnosticsTutorAvatarText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{Binding DiagnosticsMicrophoneLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding DiagnosticsMicrophoneText}" Style="{StaticResource DiagnosticsValueStyle}" />
                                     </Grid>
 
                                     <StackPanel Margin="0,4,0,0" Orientation="Horizontal">

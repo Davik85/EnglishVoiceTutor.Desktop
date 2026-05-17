@@ -13,6 +13,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
     private readonly AppLocalizedText localizedText;
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly string targetTranslationLanguage;
+    private readonly string summaryInputTargetLanguageId;
 
     public string SelectedLevel { get; }
 
@@ -119,6 +120,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
         this.localizedText = localizedText;
         this.lessonChatBackendService = lessonChatBackendService;
         targetTranslationLanguage = ResolveTargetTranslationLanguage(nativeLanguageName, interfaceLanguageId);
+        summaryInputTargetLanguageId = summaryInput.TargetLanguageId;
         SelectedLevel = selectedLevel;
         SelectedTopic = selectedTopic;
         SelectedSubtopic = selectedSubtopic;
@@ -162,7 +164,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
 
         try
         {
-            TranslatedSummaryText = await lessonChatBackendService.TranslateTextAsync(sourceText, targetTranslationLanguage);
+            TranslatedSummaryText = await lessonChatBackendService.TranslateTextAsync(sourceText, targetTranslationLanguage, EnglishVoiceTutor.Shared.StudyLanguages.StudyLanguageCatalog.GetById(summaryInputTargetLanguageId));
             IsTranslationVisible = true;
         }
         catch
@@ -235,7 +237,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
         if (userTurns.Length > 0)
         {
             var examples = string.Join("; ", userTurns.Take(4).Select(message => $"\"{message.Text}\""));
-            return $"You practiced {summaryInput.SubtopicTitle} across {userTurns.Length} learner turn(s). Useful learner phrases included: {examples}.";
+            return $"You practiced {summaryInput.SubtopicTitle} in {summaryInput.TargetLanguage} across {userTurns.Length} learner turn(s). Useful learner phrases included: {examples}.";
         }
 
         return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackGoodText;
@@ -259,7 +261,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
         var userTurns = GetValidUserTurns(summaryInput).Select(message => message.Text).Take(3).ToArray();
         if (userTurns.Length > 0)
         {
-            return $"Next focus: keep using complete English sentences in the same situation. Review: {string.Join("; ", userTurns)}.";
+            return $"Next focus: keep using complete target-language sentences in the same situation. Review: {string.Join("; ", userTurns)}.";
         }
 
         return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackImproveText;

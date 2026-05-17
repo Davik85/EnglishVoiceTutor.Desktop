@@ -2,6 +2,7 @@ using System.Net;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services;
+using EnglishVoiceTutor.Shared.StudyLanguages;
 using HttpBadHttpRequestException = Microsoft.AspNetCore.Http.BadHttpRequestException;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -233,11 +234,21 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
 
         var form = await request.ReadFormAsync(cancellationToken);
         var audioFile = form.Files.GetFile(OpenAiConstants.MultipartFileFieldName);
+        var targetLanguageId = form["targetLanguageId"].ToString();
+        var targetLanguageCode = form["targetLanguageCode"].ToString();
+        var targetLanguage = StudyLanguageCatalog.GetById(targetLanguageId);
+
+        if (!string.IsNullOrWhiteSpace(targetLanguageCode))
+        {
+            targetLanguage = StudyLanguageCatalog.All.FirstOrDefault(language => string.Equals(language.TranscriptionLanguageCode, targetLanguageCode.Trim(), StringComparison.OrdinalIgnoreCase)) ?? targetLanguage;
+        }
 
         logger.LogInformation(
-            "Audio transcription form read completed. FileName={FileName}; FileLength={FileLength}.",
+            "Audio transcription form read completed. FileName={FileName}; FileLength={FileLength}; TargetLanguageId={TargetLanguageId}; TranscriptionLanguageCode={TranscriptionLanguageCode}.",
             audioFile?.FileName ?? "<missing>",
-            audioFile?.Length ?? 0);
+            audioFile?.Length ?? 0,
+            targetLanguage.Id,
+            targetLanguage.TranscriptionLanguageCode);
 
         if (audioFile is null || audioFile.Length <= 0)
         {
@@ -247,10 +258,10 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
             });
         }
 
-        var response = await audioTranscriptionService.TranscribeAsync(audioFile, cancellationToken);
+        var response = await audioTranscriptionService.TranscribeAsync(audioFile, targetLanguage, cancellationToken);
         var transcriptionLength = response.Text?.Length ?? 0;
 
-        logger.LogInformation("Audio transcription completed successfully. TranscriptionLength={TranscriptionLength}.", transcriptionLength);
+        logger.LogInformation("Audio transcription completed successfully. TranscriptionLength={TranscriptionLength}; TargetLanguageId={TargetLanguageId}; TranscriptionLanguageCode={TranscriptionLanguageCode}.", transcriptionLength, targetLanguage.Id, targetLanguage.TranscriptionLanguageCode);
 
         return Results.Ok(response);
     }
@@ -452,14 +463,16 @@ static async Task<IResult> HandleAudioSpeechAsync(
     try
     {
         logger.LogInformation(
-            "Audio speech endpoint request accepted. Endpoint={Endpoint}; Model={Model}; Purpose={Purpose}; SpeechSpeed={SpeechSpeed}; HasInstructions={HasInstructions}; InstructionsLength={InstructionsLength}; InputLength={InputLength}.",
+            "Audio speech endpoint request accepted. Endpoint={Endpoint}; Model={Model}; Purpose={Purpose}; SpeechSpeed={SpeechSpeed}; HasInstructions={HasInstructions}; InstructionsLength={InstructionsLength}; InputLength={InputLength}; TargetLanguageId={TargetLanguageId}; TargetLanguageCode={TargetLanguageCode}.",
             "audio/speech",
             request.Model ?? OpenAiConstants.DefaultBotVoiceSpeechModel,
             request.Purpose,
             request.SpeechSpeed,
             !string.IsNullOrWhiteSpace(request.Instructions),
             request.Instructions?.Length ?? 0,
-            request.Text.Length);
+            request.Text.Length,
+            string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
+            string.IsNullOrWhiteSpace(request.TargetLanguageCode) ? StudyLanguageCatalog.English.Bcp47Code : request.TargetLanguageCode);
 
         var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, request.Purpose, request.SpeechSpeed, request.Model, request.Instructions, cancellationToken);
 

@@ -8,6 +8,7 @@ using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Services;
+using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
@@ -18,8 +19,11 @@ public partial class SettingsViewModel : ViewModelBase
     private const string DiagnosticsReportTitle = "English Voice Tutor Desktop diagnostics";
     private const string DiagnosticsCurrentDateTimeLabel = "Current date/time";
     private const string UnavailableAudioInputDeviceId = "unavailable_audio_input_device";
+    private const string StudyLanguageTitleText = "Study language";
+    private const string StudyLanguageSubtitleText = "Choose the language you want to practice. This does not change the app UI language.";
+    private const string DiagnosticsStudyLanguageLabelText = "Study language";
 
-    private readonly Action<string, string, string, string, string, string, string> saveSettings;
+    private readonly Action<string, string, string, string, string, string, string, string> saveSettings;
     private readonly Action navigateBack;
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly AudioInputDeviceService audioInputDeviceService;
@@ -44,6 +48,10 @@ public partial class SettingsViewModel : ViewModelBase
     public string NativeLanguageTitle => localizedText.NativeLanguageTitle;
 
     public string NativeLanguageSubtitle => localizedText.NativeLanguageSubtitle;
+
+    public string StudyLanguageTitle => StudyLanguageTitleText;
+
+    public string StudyLanguageSubtitle => StudyLanguageSubtitleText;
 
     public string TutorAvatarTitle => localizedText.TutorAvatarTitle;
 
@@ -119,6 +127,8 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string DiagnosticsNativeLanguageLabel => diagnosticsLocalizedText.NativeLanguageLabel;
 
+    public string DiagnosticsStudyLanguageLabel => DiagnosticsStudyLanguageLabelText;
+
     public string DiagnosticsTutorAvatarLabel => diagnosticsLocalizedText.TutorAvatarLabel;
 
     public string DiagnosticsMicrophoneLabel => localizedText.MicrophoneLabel;
@@ -143,6 +153,8 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string DiagnosticsNativeLanguageText => SelectedNativeLanguage;
 
+    public string DiagnosticsStudyLanguageText => SelectedStudyLanguage.DisplayName;
+
     public string DiagnosticsTutorAvatarText => SelectedTutorAvatarDisplayName;
 
     public string DiagnosticsMicrophoneText => BuildDiagnosticsMicrophoneText();
@@ -164,6 +176,8 @@ public partial class SettingsViewModel : ViewModelBase
     public IReadOnlyList<InterfaceLanguageOption> AvailableInterfaceLanguages { get; } = InterfaceLanguageOptions.All;
 
     public IReadOnlyList<string> SupportedNativeLanguages { get; } = AppConstants.SupportedNativeLanguages;
+
+    public IReadOnlyList<StudyLanguageDefinition> AvailableStudyLanguages { get; } = StudyLanguageCatalog.All;
 
     public IReadOnlyList<TutorAvatarOption> AvailableTutorAvatars { get; } = TutorAvatarOptions.All;
 
@@ -191,6 +205,10 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DiagnosticsNativeLanguageText))]
     private string selectedNativeLanguage;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DiagnosticsStudyLanguageText))]
+    private StudyLanguageDefinition selectedStudyLanguage = StudyLanguageCatalog.English;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SelectedInterfaceLanguageId))]
@@ -235,6 +253,7 @@ public partial class SettingsViewModel : ViewModelBase
     public SettingsViewModel(
         string currentInterfaceLanguageId,
         string currentNativeLanguage,
+        string currentStudyLanguageId,
         string currentTutorAvatarId,
         string currentUserDisplayName,
         string currentLearningGoal,
@@ -246,13 +265,14 @@ public partial class SettingsViewModel : ViewModelBase
         LessonChatBackendService lessonChatBackendService,
         AudioInputDeviceService audioInputDeviceService,
         AudioRecordingService audioRecordingService,
-        Action<string, string, string, string, string, string, string> saveSettings,
+        Action<string, string, string, string, string, string, string, string> saveSettings,
         Action navigateBack)
     {
         selectedInterfaceLanguageOption = InterfaceLanguageOptions.GetById(currentInterfaceLanguageId);
         localizedText = SettingsLocalization.GetSettingsText(selectedInterfaceLanguageOption.Id);
         diagnosticsLocalizedText = DiagnosticsLocalization.GetText(selectedInterfaceLanguageOption.Id);
         selectedNativeLanguage = currentNativeLanguage;
+        selectedStudyLanguage = StudyLanguageCatalog.GetById(currentStudyLanguageId);
         selectedTutorAvatarOption = TutorAvatarOptions.GetById(currentTutorAvatarId);
         userDisplayName = currentUserDisplayName;
         learningGoal = currentLearningGoal;
@@ -280,7 +300,7 @@ public partial class SettingsViewModel : ViewModelBase
     {
         var selectedAvatar = SelectedTutorAvatarOption ?? TutorAvatarOptions.Elena;
         var selectedAudioInputDeviceId = SelectedAudioInputDeviceOption?.Id ?? AudioConstants.DefaultAudioInputDeviceId;
-        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguage, selectedAvatar.Id, UserDisplayName, LearningGoal, BackendBaseUrl, selectedAudioInputDeviceId);
+        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguage, SelectedStudyLanguage.Id, selectedAvatar.Id, UserDisplayName, LearningGoal, BackendBaseUrl, selectedAudioInputDeviceId);
         BackendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl);
         StatusMessage = localizedText.SettingsSavedMessage;
     }
@@ -437,6 +457,8 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(InterfaceLanguageTitle));
         OnPropertyChanged(nameof(NativeLanguageTitle));
         OnPropertyChanged(nameof(NativeLanguageSubtitle));
+        OnPropertyChanged(nameof(StudyLanguageTitle));
+        OnPropertyChanged(nameof(StudyLanguageSubtitle));
         OnPropertyChanged(nameof(TutorAvatarTitle));
         OnPropertyChanged(nameof(ConnectionTitle));
         OnPropertyChanged(nameof(AudioInputTitle));
@@ -475,6 +497,7 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(DiagnosticsLessonHistoryFileLabel));
         OnPropertyChanged(nameof(DiagnosticsInterfaceLanguageLabel));
         OnPropertyChanged(nameof(DiagnosticsNativeLanguageLabel));
+        OnPropertyChanged(nameof(DiagnosticsStudyLanguageLabel));
         OnPropertyChanged(nameof(DiagnosticsTutorAvatarLabel));
         OnPropertyChanged(nameof(DiagnosticsMicrophoneLabel));
         OnPropertyChanged(nameof(DiagnosticsMicrophoneText));
@@ -559,6 +582,7 @@ public partial class SettingsViewModel : ViewModelBase
         AppendDiagnosticsLine(report, DiagnosticsLessonHistoryFileLabel, LessonHistoryFilePathText);
         AppendDiagnosticsLine(report, DiagnosticsInterfaceLanguageLabel, DiagnosticsInterfaceLanguageText);
         AppendDiagnosticsLine(report, DiagnosticsNativeLanguageLabel, DiagnosticsNativeLanguageText);
+        AppendDiagnosticsLine(report, DiagnosticsStudyLanguageLabel, DiagnosticsStudyLanguageText);
         AppendDiagnosticsLine(report, DiagnosticsTutorAvatarLabel, DiagnosticsTutorAvatarText);
         AppendDiagnosticsLine(report, DiagnosticsMicrophoneLabel, DiagnosticsMicrophoneText);
         AppendDiagnosticsLine(report, DiagnosticsCurrentDateTimeLabel, DateTimeOffset.Now.ToString("u"));

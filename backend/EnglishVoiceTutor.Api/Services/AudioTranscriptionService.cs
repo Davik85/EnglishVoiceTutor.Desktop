@@ -3,6 +3,7 @@ using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using Microsoft.AspNetCore.Http;
+using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Api.Services;
 
@@ -28,9 +29,11 @@ public sealed class AudioTranscriptionService
 
     public async Task<AudioTranscriptionResponse> TranscribeAsync(
         IFormFile audioFile,
+        StudyLanguageDefinition? targetLanguage = null,
         CancellationToken cancellationToken = default)
     {
         var options = _optionsProvider.GetOptions();
+        var resolvedTargetLanguage = targetLanguage ?? StudyLanguageCatalog.English;
 
         if (string.IsNullOrWhiteSpace(options.ApiKey))
         {
@@ -40,9 +43,9 @@ public sealed class AudioTranscriptionService
             };
         }
 
-        var openAiResponse = await SendAudioTranscriptionRequestAsync(audioFile, options.ApiKey, cancellationToken);
+        var openAiResponse = await SendAudioTranscriptionRequestAsync(audioFile, options.ApiKey, resolvedTargetLanguage, cancellationToken);
         var durationSeconds = EstimatePcmWavDurationSeconds(audioFile.Length);
-        _logger.LogInformation("Developer usage summary: Operation=audio_transcription; Model={Model}; Language={Language}; InputAudioBytes={InputAudioBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; TranscriptCharacters={TranscriptCharacters}; Status=success; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", OpenAiConstants.DefaultTranscriptionModel, OpenAiConstants.TranscriptionLanguage, audioFile.Length, durationSeconds, openAiResponse.Text.Trim().Length, PricingConstants.OpenAi.TranscriptionPerMinuteUsd == 0m ? "transcription_pricing" : string.Empty);
+        _logger.LogInformation("Developer usage summary: Operation=audio_transcription; Model={Model}; Language={Language}; InputAudioBytes={InputAudioBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; TranscriptCharacters={TranscriptCharacters}; Status=success; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", OpenAiConstants.DefaultTranscriptionModel, resolvedTargetLanguage.TranscriptionLanguageCode, audioFile.Length, durationSeconds, openAiResponse.Text.Trim().Length, PricingConstants.OpenAi.TranscriptionPerMinuteUsd == 0m ? "transcription_pricing" : string.Empty);
 
         return new AudioTranscriptionResponse
         {
@@ -53,6 +56,7 @@ public sealed class AudioTranscriptionService
     private async Task<OpenAiAudioTranscriptionResponse> SendAudioTranscriptionRequestAsync(
         IFormFile audioFile,
         string apiKey,
+        StudyLanguageDefinition targetLanguage,
         CancellationToken cancellationToken)
     {
         var httpClient = _httpClientFactory.CreateClient();
@@ -70,10 +74,10 @@ public sealed class AudioTranscriptionService
             new StringContent(OpenAiConstants.DefaultTranscriptionModel),
             OpenAiConstants.MultipartModelFieldName);
         formContent.Add(
-            new StringContent(OpenAiConstants.TranscriptionLanguage),
+            new StringContent(targetLanguage.TranscriptionLanguageCode),
             OpenAiConstants.MultipartLanguageFieldName);
         formContent.Add(
-            new StringContent(OpenAiConstants.TranscriptionPrompt),
+            new StringContent($"The learner is practicing {targetLanguage.EnglishName}. Transcribe the learner audio in {targetLanguage.EnglishName}."),
             OpenAiConstants.MultipartPromptFieldName);
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, OpenAiConstants.AudioTranscriptionsEndpoint);

@@ -4,6 +4,7 @@ using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Services;
+using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
@@ -74,6 +75,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         CurrentViewModel = new SettingsViewModel(
             userSettings.InterfaceLanguageId,
             userSettings.NativeLanguageName,
+            userSettings.StudyLanguageId,
             userSettings.SelectedTutorAvatarId,
             userSettings.UserDisplayName,
             userSettings.LearningGoal,
@@ -89,10 +91,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             navigateBack);
     }
 
-    private void SaveSettings(string interfaceLanguageId, string nativeLanguage, string tutorAvatarId, string userDisplayName, string learningGoal, string backendBaseUrl, string audioInputDeviceId)
+    private void SaveSettings(string interfaceLanguageId, string nativeLanguage, string studyLanguageId, string tutorAvatarId, string userDisplayName, string learningGoal, string backendBaseUrl, string audioInputDeviceId)
     {
         userSettings.InterfaceLanguageId = InterfaceLanguageOptions.GetById(interfaceLanguageId).Id;
         userSettings.NativeLanguageName = nativeLanguage;
+        userSettings.StudyLanguageId = StudyLanguageCatalog.GetById(studyLanguageId).Id;
         userSettings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(tutorAvatarId).Id;
         userSettings.UserDisplayName = userDisplayName;
         userSettings.LearningGoal = learningGoal;
@@ -158,6 +161,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             selectedTopic,
             selectedSubtopic,
             userSettings.NativeLanguageName,
+            StudyLanguageCatalog.GetById(userSettings.StudyLanguageId),
             userSettings.UserDisplayName,
             userSettings.LearningGoal,
             TutorAvatarOptions.GetById(userSettings.SelectedTutorAvatarId),

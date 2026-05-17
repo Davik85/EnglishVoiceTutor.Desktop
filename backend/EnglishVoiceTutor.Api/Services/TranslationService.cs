@@ -13,7 +13,7 @@ public sealed class TranslationService
     private const string OpenAiRequestFailedMessage = "OpenAI translation request failed.";
     private const string OpenAiResponseMissingMessage = "OpenAI translation response is empty.";
     private const string OpenAiResponseTextMissingMessage = "OpenAI translation response does not contain output text.";
-    private const string TranslationInputTemplate = "Target language: {0}\n\nEnglish text:\n{1}";
+    private const string TranslationInputTemplate = "Source language: {0}\nTarget language: {1}\n\nText to translate:\n{2}";
     private const string TranslationResponseSchemaJson = """
 {
   "type": "object",
@@ -44,6 +44,7 @@ public sealed class TranslationService
     {
         var trimmedText = request.Text.Trim();
         var targetLanguage = request.TargetLanguage.Trim();
+        var sourceLanguage = string.IsNullOrWhiteSpace(request.SourceLanguageName) ? "English" : request.SourceLanguageName.Trim();
         var options = _optionsProvider.GetOptions();
 
         if (string.IsNullOrWhiteSpace(options.ApiKey))
@@ -53,7 +54,7 @@ public sealed class TranslationService
 
         try
         {
-            var openAiResponse = await SendResponsesApiRequestAsync(trimmedText, targetLanguage, options, cancellationToken);
+            var openAiResponse = await SendResponsesApiRequestAsync(trimmedText, sourceLanguage, targetLanguage, options, cancellationToken);
             var outputText = ExtractOutputText(openAiResponse);
             var translation = JsonSerializer.Deserialize<TranslationResponse>(outputText, JsonOptions);
 
@@ -75,6 +76,7 @@ public sealed class TranslationService
 
     private async Task<OpenAiResponsesResponse> SendResponsesApiRequestAsync(
         string text,
+        string sourceLanguage,
         string targetLanguage,
         OpenAiOptions options,
         CancellationToken cancellationToken)
@@ -83,7 +85,7 @@ public sealed class TranslationService
         {
             Model = options.Model,
             Instructions = OpenAiConstants.TranslationSystemInstructions,
-            Input = string.Format(TranslationInputTemplate, targetLanguage, text),
+            Input = string.Format(TranslationInputTemplate, sourceLanguage, targetLanguage, text),
             Text = new OpenAiTextOptions
             {
                 Format = new OpenAiTextFormat

@@ -118,7 +118,7 @@ def main() -> None:
     require_text(vm, "speechPurpose: BackendConstants.ConversationModeTtsPurpose", vm_path)
     require_text(vm, "speechSpeed: ConversationModeTtsSpeechSpeed", vm_path)
     require_text(vm, "speechModel: BackendConstants.ConversationModeTtsModel", vm_path)
-    require_text(vm, "speechInstructions: BackendConstants.ConversationModeTtsInstructions", vm_path)
+    require_text(vm, "speechInstructions: BuildConversationModeTtsInstructions()", vm_path)
     require_text(vm, "allowDuringRealtimeOpeningPlayback: false", vm_path)
     require_text(vm, "tts_context_selected_waiting_for_opening_voice", vm_path)
     require_text(vm, "await PlayConversationModeBotVoiceAsync(roleplayStartMessage)", vm_path)
