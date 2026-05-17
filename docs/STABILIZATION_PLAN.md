@@ -74,9 +74,9 @@ This plan reflects the current post-fix stabilization status. It favors document
 - Priority D — Small architecture extractions after behavior is pinned.
 - Priority E — UI polish only after lesson behavior is stable.
 
-## Current priority: Realtime recovery and usage instrumentation
+## Current priority: regression smoke-test and MVP infrastructure
 
-Conversation Mode now has explicit startup/record recovery work: failed starts, unexpected disconnects, microphone failures, quick toggles, and final lesson state must all reset command state without requiring an app restart. Developer-only usage/cost logs are required before deciding whether normal TTS, chained voice, or Realtime should change pricing or model strategy.
+The immediate next step is a short regression smoke-test after the documentation update. Developer-only usage/cost logs should still be reviewed before pricing or model decisions, but the default MVP Conversation Mode path is now the stable TTS provider rather than Realtime.
 
 ## 2026-05-15 stabilization addendum
 
@@ -90,9 +90,10 @@ Conversation Mode now has explicit startup/record recovery work: failed starts, 
 This pass is a baseline-hardening checkpoint, not a methodology rewrite. The current working assumptions are:
 
 - 26 lesson JSON files pass the lesson content audit.
-- Normal Lesson Chat, normal TTS with `tts-1`, normal voice transcription with `gpt-4o-mini-transcribe`, and Realtime Conversation Mode with `gpt-realtime` remain the intended routes.
-- Realtime stays on the GA `/v1/realtime` schema and keeps pre-start opening playback through `tts-1` with `purpose=realtime_pre_start_opening`.
-- Realtime assistant replies remain on Realtime audio rather than `/api/audio/speech`.
+- Normal Lesson Chat, normal TTS with `tts-1`, and normal voice transcription with `gpt-4o-mini-transcribe` remain intended MVP routes.
+- Conversation Mode uses the stable TTS provider by default: microphone recording -> audio transcription -> lesson chat reply -> `gpt-4o-mini-tts` playback.
+- Conversation Mode TTS uses `voice=coral`, `purpose=conversation_mode_tts`, speed `1.0`, and calm speech instructions.
+- Realtime remains in the repository for future provider-switch testing, but it is not the default MVP Conversation Mode path.
 - Usage/cost instrumentation, transcript validation, English-only output locking, and lightweight hang diagnostics are protected behavior.
 
-Next stabilization work should focus on manual smoke coverage, scenario QA, methodology/prompt polish, feedback/summary quality, and real usage/cost measurements before architecture extraction.
+Next stabilization work should focus on the regression smoke-test, then MVP infrastructure: local/user data, accounts, usage limits, payment/subscription planning, packaging/installer, error reporting/log export, and release preparation. Methodology/prompt, feedback, and summary quality polishing remain ongoing.

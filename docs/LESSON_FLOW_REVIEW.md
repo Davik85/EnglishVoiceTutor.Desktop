@@ -1,22 +1,33 @@
 # Lesson Flow Review
 
-Review date: 2026-05-16.
+Review date: 2026-05-17.
 
-This document records the current lesson flow contract for guided roleplay and summary behavior.
+This document records the current lesson flow contract for guided roleplay, Conversation Mode, feedback, and summary behavior.
+
+## Methodology boundaries
+
+Keep these layers separate:
+
+1. Lesson scenario: topic, subtopic, learning goal, roles, target language, scenario flow, roleplay beats, wrap-up/final behavior.
+2. Context selection: the learner chooses or supplies safe small details for the scenario.
+3. Level rules: A1/A2/B1/B2 complexity, grammar depth, sentence length, conversation depth, and feedback strictness.
+4. Tutor profile: tutor identity, personality, tone, and safe background details.
+
+Active roleplay remains guided by the selected level, topic, subtopic, and scenario.
 
 ## Guided lesson flow
 
 1. Setup/context selection.
-   - Tutor asks the learner to choose one controlled context variant or a safe simple custom context.
-   - This is setup, not roleplay practice.
-   - Setup/context selection does not count as a learner turn.
+   - The learner selects a predefined context or types a safe simple custom context.
+   - This is setup, not active roleplay practice.
+   - Context selection does not count as a learner turn.
 2. Context confirmation.
    - Desktop confirms the chosen context and displays the opening roleplay line.
    - Scenario placeholders such as `{tutorName}` are resolved from the active tutor profile at runtime.
 3. Active roleplay.
    - `CurrentLessonPhase` becomes `ActiveRoleplay`.
    - Valid learner turns count only after active roleplay starts.
-   - Typed messages, valid chained voice transcripts, and valid Realtime transcripts can count.
+   - Typed messages and valid voice transcripts can count.
    - Empty, placeholder, invalid, or non-English transcripts do not count.
 4. Soft wrap-up.
    - When `LearnerTurnCount >= softWrapUpAfterUserTurn`, backend/tutor should start wrapping up naturally while staying in the scenario.
@@ -31,13 +42,36 @@ This document records the current lesson flow contract for guided roleplay and s
    - Finish lesson navigates to the summary/history flow.
    - Summary should use the whole valid lesson conversation and exclude invalid transcript retry/technical messages.
 
+## Context-selection feedback
+
+ContextSelection messages can receive phrase-level feedback. This feedback is tied to the clicked setup/context message through `sourceMessageId` and `sourceMessageKind`.
+
+ContextSelection messages should not be treated as active roleplay answers. They should not increment active-roleplay learner turns and should not be evaluated as if the learner had already entered the roleplay scenario.
+
 ## Free Conversation flow
 
 - No context selection is required.
 - Practice starts as open conversation / active practice.
 - Safety boundaries and gentle redirection still apply.
-- Final turn limit is 30 learner turns.
-- Realtime may start immediately when Conversation Mode is enabled, subject to backend availability.
+- Final turn limit remains higher than guided roleplay.
+
+## Conversation Mode flow
+
+Current MVP voice decision:
+
+Conversation Mode uses the stable TTS provider by default:
+
+`microphone recording -> audio transcription -> lesson chat reply -> gpt-4o-mini-tts playback`
+
+Realtime remains in the codebase for future testing, but it is not the default MVP path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
+
+Conversation Mode uses the same lesson methodology and the same chat reply flow as normal Lesson Chat:
+
+- the same selected level/topic/subtopic/scenario guides the reply;
+- valid transcribed learner speech becomes a learner turn when phase policy allows it;
+- the lesson chat reply endpoint generates the visible bot reply;
+- Conversation Mode TTS speaks that visible bot reply exactly with `gpt-4o-mini-tts`;
+- transcript messages remain available for feedback after returning to Lesson Chat.
 
 ## Button state expectations
 
@@ -47,8 +81,7 @@ This document records the current lesson flow contract for guided roleplay and s
 - Record is allowed only if lesson input is enabled and not busy.
 - Hint can provide setup/context help.
 - Finish lesson should not accidentally create a completed lesson before meaningful practice.
-- Conversation Mode may be enabled before context, but guided realtime should defer actual session start until context selection/opening.
-- Setup bot message should not auto-play.
+- Setup bot message should not auto-play unless explicitly allowed by current behavior.
 
 ### Context confirmation/opening
 
@@ -64,29 +97,17 @@ This document records the current lesson flow contract for guided roleplay and s
 - Invalid/empty/non-English transcripts show a retry path and do not count.
 - Feedback should attach to valid learner messages when available.
 
-### Soft wrap-up
-
-- The tutor should keep the current scenario and naturally move toward closure.
-- The app should not jump to summary until Finish lesson is clicked after completion.
-
-### Final message
+### Final and Awaiting Finish
 
 - Final tutor message is shown once at the final learner turn.
 - New lesson input should stop immediately after the final message.
 - Conversation Mode should stop/disable for the completed lesson.
-
-### Awaiting Finish
-
 - `IsLessonCompleteAwaitingFinish` should be true.
-- Send disabled.
-- Start recording disabled.
-- Hint disabled.
-- Back disabled.
-- Conversation Mode disabled.
-- Finish lesson enabled.
-- View feedback enabled on valid user messages.
-- Translate enabled on existing messages.
-- Play voice enabled on existing bot messages.
+- Send, recording, Hint, Back, and Conversation Mode are disabled.
+- Finish lesson remains enabled.
+- View feedback remains enabled on valid user messages.
+- Translate remains enabled on existing messages.
+- Play voice remains enabled on existing bot messages.
 
 ### Summary/history
 
@@ -97,28 +118,10 @@ This document records the current lesson flow contract for guided roleplay and s
 
 ## Regression risks
 
-- Counting setup text as a learner turn.
+- Counting setup/context-selection text as an active learner turn.
+- Treating phrase-level ContextSelection feedback as active roleplay feedback.
 - Counting invalid transcript retry messages.
-- Generating a Realtime assistant response before a valid transcript.
 - Disabling review actions in Awaiting Finish.
-- Letting Realtime continue after the final tutor message.
+- Letting Conversation Mode continue after the final tutor message.
 - Summarizing only the last exchange instead of the whole valid conversation.
-
-## 2026-05-15 Conversation Mode opening and retry flow
-
-- Entering active Conversation Mode starts Realtime first, then plays the current visible bot prompt as `OpeningPlayback` using normal `tts-1` speech with purpose `realtime_pre_start_opening`.
-- `OpeningPlayback` does not add chat messages and does not call Realtime `response.create`.
-- The record button is enabled only in `Ready`, so it is disabled while the tutor opening is spoken and enabled after playback completes or fails non-blockingly.
-- Realtime user placeholders must resolve to accepted transcript text, `[Voice not recognized. Please try again in English.]`, or a technical retry/status message.
-- Retry/status messages are not valid learner turns, are not feedback-eligible, are excluded from summary input, and do not trigger normal lesson replies.
-- Short A1 answers and proper nouns such as `David`, `Russia`, `Moscow`, `Yes`, and `No` are valid when recognized because the shared transcript validator only rejects empty/noise, placeholders, blocked scripts, mostly non-Latin content, no-English-content, or truly too-short content.
-
-## 2026-05-16 flow baseline confirmation
-
-Current stable flow rules for the next phase:
-
-- Normal typed Lesson Chat and valid normal/Realtime voice transcripts count as learner turns only after transcript and phase policy accept them.
-- Invalid transcript retry/status messages remain visible for user recovery but are not feedback-eligible, do not increment learner-turn counts, and are excluded from summary input.
-- Awaiting Finish is a review state: new lesson input is disabled, but feedback, translation, and Play voice remain available for existing messages.
-- Lesson summaries use the full valid conversation instead of only the final exchange.
-- Tutor output remains English-only; methodology and scenario quality are intentionally left for later iterative polish rather than this stabilization cleanup.
+- Speaking text in Conversation Mode that differs from the visible bot text.

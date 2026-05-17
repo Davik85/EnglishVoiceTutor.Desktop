@@ -1,64 +1,74 @@
 # Next Steps
 
-## Current stable baseline
+Review date: 2026-05-17.
 
-The current baseline is acceptable for stabilization: Windows audit/build commands were reported passing by the developer; normal Lesson Chat uses `tts-1`; Realtime uses `gpt-realtime`; Realtime response creation is transcript-gated; valid Realtime transcripts appear as feedback-eligible learner messages; summaries should use the whole valid lesson conversation; Awaiting Finish disables new lesson input while preserving message review actions.
+This roadmap starts from the current MVP state: lesson content audit passes with 26 lesson JSON files, desktop Debug/Release builds pass on Windows, backend build passes on Windows, normal Lesson Chat works, and Conversation Mode uses the stable TTS provider by default.
 
-## Do not touch yet
+## Immediate next step
 
-- Do not rewrite `LessonChatViewModel`.
-- Do not redesign Realtime.
-- Do not migrate all lesson JSON yet.
-- Do not add payments/subscriptions.
-- Do not add new avatars.
-- Do not start UI polish before lesson behavior is stable.
+Run a short regression smoke-test after this documentation update.
 
-## Recommended next tasks
+Use `docs/MANUAL_TEST_CHECKLIST.md` and confirm at minimum:
 
-1. Full manual smoke test across 5 topics.
-2. Scenario QA pass for all 26 lesson JSON files.
-3. Methodology polish for A1/A2/B1/B2 prompts.
-4. Feedback quality pass.
-5. Summary quality pass.
-6. Realtime latency measurement.
-7. Small architecture extraction only after smoke tests.
+- app start;
+- level, topic, and subtopic selection;
+- normal Lesson Chat typed input;
+- Enter-to-send;
+- normal voice recording and transcription;
+- Hint;
+- feedback on context-selection and active roleplay messages;
+- Translate;
+- Play voice;
+- Conversation Mode entry;
+- Conversation Mode recording, transcription, bot reply, and playback;
+- Conversation Mode Hint overlay;
+- exit/back from Conversation Mode;
+- feedback on Conversation Mode transcript after returning to chat;
+- lesson summary;
+- backend logs show normal Lesson Chat `tts-1`, Conversation Mode `gpt-4o-mini-tts`, `HasInstructions=True`, and no Realtime WebSocket by default.
 
-## Candidate Codex tasks
+## MVP infrastructure roadmap
 
-- Review all lesson scenarios for methodology consistency — check scenario, context variation, level rules, and tutor profile separation across all lesson JSON files.
-- Add regression tests for final-state message review — protect Awaiting Finish review actions from future command-state regressions.
-- Improve lesson summary quality from full conversation — review summary inputs and output expectations without changing runtime behavior first.
-- Measure Realtime latency and produce a tuning report — capture first-audio and playback metrics before optimizing.
-- Extract BotVoicePlaybackCoordinator from LessonChatViewModel — move manual/auto voice playback after exact-text behavior is pinned.
-- Extract RealtimeConversationCoordinator from LessonChatViewModel — move realtime lifecycle and transcript handling after smoke tests pass.
-- Create a scenario QA report for all Content/Lessons JSON files — identify methodology polish needs without mass migration.
-- Add broader prompt policy regression tests — cover reciprocal questions, tutor identity, level complexity, feedback, and final-turn behavior.
+After the smoke-test, continue toward MVP infrastructure:
 
-## Recommended immediate next task
+1. Decide the data storage approach.
+2. Add user profile / local settings persistence needed for MVP.
+3. Add lesson history persistence that survives app restarts and supports user review.
+4. Decide account/auth strategy.
+5. Define and enforce usage limits.
+6. Create payment/subscription plan.
+7. Prepare packaging/installer flow.
+8. Add error reporting / log export for support.
+9. Create the release checklist.
 
-Run a full manual smoke test across all five MVP topics and record pass/fail in `docs/MANUAL_TEST_CHECKLIST.md`.
+## Ongoing methodology polishing
 
-## Added stabilization priority
+Keep methodology and learning-quality improvements ongoing but separate from infrastructure work:
 
-Realtime startup/record state recovery is now a priority before broader feature work. Developer-only usage/cost instrumentation must be inspected from real lessons before pricing or model decisions are made.
+- tutor prompt refinements;
+- level rules polish;
+- lesson scenario improvements;
+- feedback wording improvements;
+- summary quality improvements.
 
-## Follow-up after Conversation Mode opening playback
+## Voice roadmap
 
-- Manually capture backend logs proving `Purpose=realtime_pre_start_opening` uses `tts-1` for the pre-start visible prompt and that generated Realtime assistant replies do not call `/api/audio/speech`.
-- Review real fallback transcription logs after several A1 sessions to decide whether the Realtime transcript timeout should be increased beyond the current named timeout constant.
-- Consider a dedicated visual style for retry/status voice messages so they are clearly distinct from learner content while preserving translation behavior for existing messages.
+Current MVP voice decision:
 
-## 2026-05-16 recommended priority order
+Conversation Mode uses the stable TTS provider by default:
 
-1. Run a full smoke-test across all MVP topics and record any failures in the manual checklist.
-2. Create a scenario QA report for all 26 lesson JSON files without changing methodology during the report pass.
-3. Polish methodology and prompt behavior by level after smoke coverage is reliable.
-4. Improve feedback and summary quality using real lesson transcripts.
-5. Measure usage/cost across 10-20 representative test lessons before changing model or pricing assumptions.
-6. Start only small architecture extractions after the behavior above is pinned by tests and manual results.
+`microphone recording -> audio transcription -> lesson chat reply -> gpt-4o-mini-tts playback`
 
-## MVP Conversation Mode stability follow-up
+Realtime remains in the codebase for future testing, but it is not the default MVP path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
 
-- Keep Conversation Mode on the default `Tts1` provider until manual Windows checks show the MVP path is stable across A1/A2/B1/B2 lessons.
-- Continue to preserve Realtime code, diagnostics, stop-reason logging, and policy tests behind the provider switch for a future post-MVP feature flag.
-- When Realtime is revisited, compare backend logs for `/api/audio/transcribe`, `/api/lesson-chat/reply`, `/api/audio/speech`, and `/api/realtime-voice` before changing the default provider.
+Future voice work should be done only after the MVP smoke-test is stable and should compare real logs for:
+
+- normal Lesson Chat `tts-1` playback;
+- Conversation Mode `gpt-4o-mini-tts` playback;
+- transcription usage;
+- lesson chat reply usage;
+- any future Realtime provider-switch experiment.
+
+## Architecture caution
+
+Do not start large refactors before smoke-test results are recorded. `LessonChatViewModel` remains a future extraction candidate, but the next phase should prioritize MVP infrastructure and release readiness over architecture churn.
