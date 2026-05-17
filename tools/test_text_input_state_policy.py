@@ -56,6 +56,7 @@ def main() -> int:
     prompt_builder = read(PROMPT_BUILDER)
 
     assert_contains(vm, "public bool CanTypeText => CanAcceptLessonInput;", "independent text edit enabled property")
+    assert_contains(xaml, "x:Name=\"LessonInputTextBox\"", "stable lesson input TextBox name")
     assert_contains(xaml, "IsEnabled=\"{Binding CanTypeText}\"", "TextBox enabled binding is edit gate")
     if "IsEnabled=\"{Binding IsLessonInputEnabled}\"\n                                             Text=\"{Binding UserInput" in xaml:
         raise AssertionError("TextBox must not bind directly to the send/input command state alias.")

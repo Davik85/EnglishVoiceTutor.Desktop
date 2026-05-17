@@ -19,6 +19,7 @@ public sealed class LessonPromptBuilder
     private const string LastBotMessageHeader = "Latest bot message:";
     private const string CurrentTurnTaskHeader = "Current turn task:";
     private const string HintTaskHeader = "Hint task:";
+    private const string FeedbackTaskHeader = "Feedback task:";
     private const string NormalChatMode = "normal lesson chat";
     private const string RealtimeVoiceMode = "realtime voice conversation";
 
@@ -45,14 +46,22 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine(request.UserMessage);
         prompt.AppendLine();
 
-        prompt.AppendLine(CurrentTurnTaskHeader);
-        if (IsFreeConversation(request))
+        if (string.Equals(request.RequestPurpose, "feedback", StringComparison.OrdinalIgnoreCase))
         {
-            AppendFreeConversationTask(prompt, request, avatarProfile);
+            prompt.AppendLine(FeedbackTaskHeader);
+            AppendFeedbackOnlyTask(prompt, request, avatarProfile);
         }
         else
         {
-            AppendGuidedRoleplayTask(prompt, request, avatarProfile);
+            prompt.AppendLine(CurrentTurnTaskHeader);
+            if (IsFreeConversation(request))
+            {
+                AppendFreeConversationTask(prompt, request, avatarProfile);
+            }
+            else
+            {
+                AppendGuidedRoleplayTask(prompt, request, avatarProfile);
+            }
         }
 
         return prompt.ToString();
@@ -221,6 +230,38 @@ public sealed class LessonPromptBuilder
             prompt.AppendLine("Ask one natural follow-up question unless the learner needs a brief correction or safe redirection first.");
         }
     }
+
+    private static void AppendFeedbackOnlyTask(StringBuilder prompt, LessonChatRequest request, TutorAvatarProfile avatarProfile)
+    {
+        prompt.AppendLine("Create feedback only for the exact learner source message above. Do not use the latest or any other user message as the feedback source.");
+        prompt.AppendLine($"- SourceMessageId: {request.SourceMessageId}");
+        prompt.AppendLine($"- SourceMessageKind: {request.SourceMessageKind}");
+        prompt.AppendLine("- Return a short placeholder botReply such as: Feedback ready.");
+        prompt.AppendLine("- The feedback object is the only content shown in the feedback panel.");
+        prompt.AppendLine("- Keep feedback kind, brief, and level-appropriate.");
+        prompt.AppendLine("- Fill every structured feedback field with learner-friendly text: shortText, correctedVersion, grammarTip, vocabularyTip, cultureTip, naturalVersion.");
+        prompt.AppendLine("- Do not mention JSON field names or technical labels in the feedback text.");
+        prompt.AppendLine($"- Do not claim to be anyone except {avatarProfile.DisplayName}, the selected tutor profile.");
+
+        if (string.Equals(request.SourceMessageKind, "ContextSelection", StringComparison.OrdinalIgnoreCase))
+        {
+            prompt.AppendLine("Context-selection feedback mode:");
+            prompt.AppendLine("- The learner was choosing or suggesting the scenario/context, not answering the active roleplay yet.");
+            prompt.AppendLine("- Treat the text as a short setup phrase or scenario choice.");
+            prompt.AppendLine("- Do not criticize the learner for not giving a roleplay answer, not giving an update, or not completing the scenario task.");
+            prompt.AppendLine("- Give phrase-level feedback only: clarity, capitalization, punctuation, and a natural way to choose the scenario.");
+            prompt.AppendLine("- Prefer supportive wording like: Clear phrase for choosing a scenario.");
+            prompt.AppendLine("- If useful, suggest a natural option such as: Let's talk about next steps.");
+            prompt.AppendLine("- Mention that this phrase starts the situation and is not the learner's active roleplay answer yet.");
+            return;
+        }
+
+        prompt.AppendLine("Active roleplay feedback mode:");
+        prompt.AppendLine("- Evaluate the exact source message as the learner's active roleplay or voice transcript turn.");
+        prompt.AppendLine("- Give normal roleplay feedback connected to the selected scenario, recent conversation, and level profile.");
+        prompt.AppendLine("- Correct grammar and naturalness without overcorrecting.");
+    }
+
 
     public string BuildHintInput(LessonChatRequest request)
     {

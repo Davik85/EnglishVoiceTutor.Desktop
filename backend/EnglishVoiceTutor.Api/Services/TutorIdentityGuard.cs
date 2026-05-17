@@ -6,8 +6,27 @@ namespace EnglishVoiceTutor.Api.Services;
 public sealed class TutorIdentityGuard
 {
     private static readonly Regex SelfIntroductionRegex = new(
-        @"\b(?:I\s*(?:am|'m)|my\s+name\s+is)\s+(?<name>[A-Z][a-z]+)\b",
-        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+        @"\b(?i:(?:I\s*(?:am|'m)|my\s+name\s+is)\s+)(?<name>[A-Z][a-z]+)\b",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly HashSet<string> CommonWordsThatAreNotTutorNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "able",
+        "about",
+        "available",
+        "clear",
+        "fine",
+        "going",
+        "good",
+        "great",
+        "happy",
+        "here",
+        "learning",
+        "ready",
+        "sorry",
+        "sure",
+        "working"
+    };
 
     private readonly ILogger<TutorIdentityGuard> _logger;
 
@@ -26,7 +45,8 @@ public sealed class TutorIdentityGuard
         }
 
         var generatedName = match.Groups["name"].Value;
-        if (string.Equals(generatedName, activeTutorProfile.DisplayName, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(generatedName, activeTutorProfile.DisplayName, StringComparison.OrdinalIgnoreCase)
+            || CommonWordsThatAreNotTutorNames.Contains(generatedName))
         {
             return response;
         }

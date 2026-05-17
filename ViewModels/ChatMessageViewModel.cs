@@ -13,6 +13,8 @@ public partial class ChatMessageViewModel : ViewModelBase
 
     public int Id { get; }
 
+    public int MessageId => Id;
+
     public string Sender { get; }
 
     [ObservableProperty]
