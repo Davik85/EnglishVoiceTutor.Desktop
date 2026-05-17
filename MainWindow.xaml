@@ -44,8 +44,8 @@
             Background="{StaticResource AppBackgroundBrush}"
             BorderBrush="{StaticResource FrameBorderBrush}"
             BorderThickness="1"
-            CornerRadius="20"
-            Padding="8">
+            CornerRadius="24"
+            Padding="10">
         <ContentControl Content="{Binding CurrentViewModel}" />
     </Border>
 </Window>

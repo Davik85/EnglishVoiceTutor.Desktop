@@ -214,9 +214,10 @@ Known limitations remain intentionally out of scope for this cleanup pass: metho
 
 ## UI styling direction
 
-The desktop app uses a soft, light learning-product style rather than a raw demo look. Shared XAML resources define rounded buttons, text inputs, cards, and the main app frame so new screens should reuse the same visual system instead of duplicating inline values.
+The desktop app uses a focused Soft Learning Desktop style rather than a raw demo look. Shared XAML resources define the light blue `#F5F9FE` base, rounded buttons, text inputs, cards, and the main app frame so new screens should reuse the same visual system instead of duplicating inline values.
 
-- Corners are intentionally rounded: small controls use a medium radius, while cards and main containers use a larger radius.
+- Corners are intentionally rounded across cards, buttons, and inputs; small controls stay compact while cards and main containers use larger radii.
 - The window content sits inside a subtle light-blue frame to keep the app feeling neat and contained.
 - Level choices use a calm progression palette from fresh green (A1) through mint/cyan (A2), warm amber (B1), and soft violet (B2).
 - Topic and situation cards use restrained theme accents: blue for Everyday English, travel green, office blue, professional navy, warm cafe peach, and lavender for Free Conversation.
+- Visual polish must remain presentation-only and must not change lesson behavior, navigation, prompts, lesson JSON, Realtime, normal TTS, backend routing, or lesson state logic.

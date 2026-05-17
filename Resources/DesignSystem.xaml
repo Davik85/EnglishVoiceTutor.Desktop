@@ -1,57 +1,86 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Color x:Key="AppBackgroundColor">#FFF6F8FB</Color>
+    <!-- Soft Learning Desktop palette -->
+    <Color x:Key="AppBackgroundColor">#FFF5F9FE</Color>
     <Color x:Key="SurfaceColor">#FFFFFFFF</Color>
-    <Color x:Key="SurfaceSoftColor">#FFFBFCFE</Color>
-    <Color x:Key="TextPrimaryColor">#FF1C2B3A</Color>
-    <Color x:Key="TextSecondaryColor">#FF3A4A5B</Color>
-    <Color x:Key="AccentColor">#FF1E3A56</Color>
-    <Color x:Key="AccentHoverColor">#FF2B4C70</Color>
-    <Color x:Key="AccentPressedColor">#FF17304D</Color>
-    <Color x:Key="BorderSoftColor">#FFE1E8F0</Color>
-    <Color x:Key="BorderAccentSoftColor">#FFCAD8E6</Color>
-    <Color x:Key="FrameBorderColor">#FFBFDDF4</Color>
+    <Color x:Key="SurfaceSoftColor">#FFF8FBFF</Color>
+    <Color x:Key="TextPrimaryColor">#FF102A43</Color>
+    <Color x:Key="TextSecondaryColor">#FF5B6B7C</Color>
+    <Color x:Key="TextMutedColor">#FF7B8A9A</Color>
+    <Color x:Key="AccentColor">#FF173B57</Color>
+    <Color x:Key="AccentHoverColor">#FF214D70</Color>
+    <Color x:Key="AccentPressedColor">#FF102A43</Color>
+    <Color x:Key="FocusBlueColor">#FF4CA3FF</Color>
+    <Color x:Key="BorderSoftColor">#FFE3EDF7</Color>
+    <Color x:Key="BorderAccentSoftColor">#FFD6E6F5</Color>
+    <Color x:Key="FrameBorderColor">#FFD6E6F5</Color>
 
     <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackgroundColor}" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
     <SolidColorBrush x:Key="SurfaceSoftBrush" Color="{StaticResource SurfaceSoftColor}" />
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
     <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHoverColor}" />
     <SolidColorBrush x:Key="AccentPressedBrush" Color="{StaticResource AccentPressedColor}" />
+    <SolidColorBrush x:Key="FocusBlueBrush" Color="{StaticResource FocusBlueColor}" />
     <SolidColorBrush x:Key="BorderSoftBrush" Color="{StaticResource BorderSoftColor}" />
     <SolidColorBrush x:Key="BorderAccentSoftBrush" Color="{StaticResource BorderAccentSoftColor}" />
     <SolidColorBrush x:Key="FrameBorderBrush" Color="{StaticResource FrameBorderColor}" />
 
     <CornerRadius x:Key="CornerSmall">10</CornerRadius>
-    <CornerRadius x:Key="CornerMedium">13</CornerRadius>
-    <CornerRadius x:Key="CornerLarge">18</CornerRadius>
+    <CornerRadius x:Key="CornerTextInput">12</CornerRadius>
+    <CornerRadius x:Key="CornerButton">14</CornerRadius>
+    <CornerRadius x:Key="CornerTile">16</CornerRadius>
+    <CornerRadius x:Key="CornerPanel">20</CornerRadius>
+    <CornerRadius x:Key="CornerContainer">24</CornerRadius>
     <Thickness x:Key="ButtonPadding">18,8,18,8</Thickness>
 
-    <SolidColorBrush x:Key="LevelA1BackgroundBrush" Color="#FFEAF8EE" />
-    <SolidColorBrush x:Key="LevelA1BorderBrush" Color="#FFBFE8CB" />
-    <SolidColorBrush x:Key="LevelA2BackgroundBrush" Color="#FFE7F8F5" />
-    <SolidColorBrush x:Key="LevelA2BorderBrush" Color="#FFB9E5DE" />
-    <SolidColorBrush x:Key="LevelB1BackgroundBrush" Color="#FFFFF6D8" />
-    <SolidColorBrush x:Key="LevelB1BorderBrush" Color="#FFF0D88A" />
-    <SolidColorBrush x:Key="LevelB2BackgroundBrush" Color="#FFF0EEFF" />
-    <SolidColorBrush x:Key="LevelB2BorderBrush" Color="#FFD2CBFF" />
+    <!-- Level progression colors -->
+    <SolidColorBrush x:Key="LevelA1BackgroundBrush" Color="#FFE4F8EA" />
+    <SolidColorBrush x:Key="LevelA1BorderBrush" Color="#FFA7DDB7" />
+    <SolidColorBrush x:Key="LevelA1AccentBrush" Color="#FF2E7D4F" />
+    <SolidColorBrush x:Key="LevelA1TextBrush" Color="#FF123524" />
+    <SolidColorBrush x:Key="LevelA2BackgroundBrush" Color="#FFE0F7F5" />
+    <SolidColorBrush x:Key="LevelA2BorderBrush" Color="#FF9ADAD5" />
+    <SolidColorBrush x:Key="LevelA2AccentBrush" Color="#FF1E7E8A" />
+    <SolidColorBrush x:Key="LevelA2TextBrush" Color="#FF12393D" />
+    <SolidColorBrush x:Key="LevelB1BackgroundBrush" Color="#FFFFF1CC" />
+    <SolidColorBrush x:Key="LevelB1BorderBrush" Color="#FFE7C66F" />
+    <SolidColorBrush x:Key="LevelB1AccentBrush" Color="#FFA66A00" />
+    <SolidColorBrush x:Key="LevelB1TextBrush" Color="#FF4A3200" />
+    <SolidColorBrush x:Key="LevelB2BackgroundBrush" Color="#FFEDE8FF" />
+    <SolidColorBrush x:Key="LevelB2BorderBrush" Color="#FFC5B8F3" />
+    <SolidColorBrush x:Key="LevelB2AccentBrush" Color="#FF5B4DB7" />
+    <SolidColorBrush x:Key="LevelB2TextBrush" Color="#FF2E2863" />
 
-    <SolidColorBrush x:Key="TopicEverydayBackgroundBrush" Color="#FFF1F7FD" />
-    <SolidColorBrush x:Key="TopicEverydayBorderBrush" Color="#FFBFD9F0" />
-    <SolidColorBrush x:Key="TopicTravelBackgroundBrush" Color="#FFF0F8EF" />
-    <SolidColorBrush x:Key="TopicTravelBorderBrush" Color="#FFC8E4BD" />
-    <SolidColorBrush x:Key="TopicBusinessBackgroundBrush" Color="#FFF3F8FF" />
-    <SolidColorBrush x:Key="TopicBusinessBorderBrush" Color="#FFC5D8F2" />
-    <SolidColorBrush x:Key="TopicInterviewBackgroundBrush" Color="#FFEFF5FB" />
-    <SolidColorBrush x:Key="TopicInterviewBorderBrush" Color="#FFAEC8E6" />
-    <SolidColorBrush x:Key="TopicRestaurantBackgroundBrush" Color="#FFFFF4EA" />
-    <SolidColorBrush x:Key="TopicRestaurantBorderBrush" Color="#FFF0C7A6" />
-    <SolidColorBrush x:Key="TopicFreeConversationBackgroundBrush" Color="#FFF7F1FF" />
-    <SolidColorBrush x:Key="TopicFreeConversationBorderBrush" Color="#FFD9C6F5" />
-    <SolidColorBrush x:Key="SelectedTileBackgroundBrush" Color="#FFE8F2FF" />
-    <SolidColorBrush x:Key="SelectedTileBorderBrush" Color="#FF2C7BE5" />
+    <!-- Topic identity colors -->
+    <SolidColorBrush x:Key="TopicEverydayBackgroundBrush" Color="#FFEAF3FF" />
+    <SolidColorBrush x:Key="TopicEverydayBorderBrush" Color="#FFB9D7F5" />
+    <SolidColorBrush x:Key="TopicEverydayAccentBrush" Color="#FF2F80ED" />
+    <SolidColorBrush x:Key="TopicTravelBackgroundBrush" Color="#FFEEF9F2" />
+    <SolidColorBrush x:Key="TopicTravelBorderBrush" Color="#FFBFE4C8" />
+    <SolidColorBrush x:Key="TopicTravelAccentBrush" Color="#FF2FAE75" />
+    <SolidColorBrush x:Key="TopicTravelSecondaryAccentBrush" Color="#FFF2C94C" />
+    <SolidColorBrush x:Key="TopicBusinessBackgroundBrush" Color="#FFEAF2FF" />
+    <SolidColorBrush x:Key="TopicBusinessBorderBrush" Color="#FFBBD0EA" />
+    <SolidColorBrush x:Key="TopicBusinessAccentBrush" Color="#FF2B5C96" />
+    <SolidColorBrush x:Key="TopicInterviewBackgroundBrush" Color="#FFEEF1F8" />
+    <SolidColorBrush x:Key="TopicInterviewBorderBrush" Color="#FFBFC8DA" />
+    <SolidColorBrush x:Key="TopicInterviewAccentBrush" Color="#FF23395D" />
+    <SolidColorBrush x:Key="TopicRestaurantBackgroundBrush" Color="#FFFFF1E8" />
+    <SolidColorBrush x:Key="TopicRestaurantBorderBrush" Color="#FFF0C8B2" />
+    <SolidColorBrush x:Key="TopicRestaurantAccentBrush" Color="#FFD97745" />
+    <SolidColorBrush x:Key="TopicFreeConversationBackgroundBrush" Color="#FFF1EAFF" />
+    <SolidColorBrush x:Key="TopicFreeConversationBorderBrush" Color="#FFD0BDF4" />
+    <SolidColorBrush x:Key="TopicFreeConversationAccentBrush" Color="#FF7C5CCB" />
+
+    <SolidColorBrush x:Key="BotMessageBrush" Color="#FFEAF3FF" />
+    <SolidColorBrush x:Key="UserMessageBrush" Color="#FFF8FBFF" />
+    <SolidColorBrush x:Key="StatusMessageBrush" Color="#FFFFF1CC" />
+    <SolidColorBrush x:Key="DisabledBackgroundBrush" Color="#FFF1F6FB" />
+    <SolidColorBrush x:Key="DisabledTextBrush" Color="#FF8DA0B2" />
 
     <Style x:Key="SoftButtonBaseStyle" TargetType="Button">
         <Setter Property="MinHeight" Value="38" />
@@ -60,6 +89,7 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -68,16 +98,16 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{StaticResource CornerMedium}">
+                            CornerRadius="{StaticResource CornerButton}">
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           RecognizesAccessKey="True" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ButtonBorder" Property="Background" Value="#FFF1F4F8" />
-                            <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#FFD6DEE8" />
-                            <Setter Property="Foreground" Value="#FF8A98A8" />
+                            <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource DisabledBackgroundBrush}" />
+                            <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{StaticResource BorderSoftBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
                             <Setter Property="Cursor" Value="Arrow" />
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -85,24 +115,6 @@
             </Setter.Value>
         </Setter>
     </Style>
-
-    <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SoftButtonBaseStyle}">
-        <Setter Property="Background" Value="White" />
-        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource BorderAccentSoftBrush}" />
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#FFF3F8FD" />
-                <Setter Property="BorderBrush" Value="#FFB5CDE6" />
-            </Trigger>
-            <Trigger Property="IsPressed" Value="True">
-                <Setter Property="Background" Value="#FFE6F0FA" />
-                <Setter Property="BorderBrush" Value="#FF9CBFDF" />
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-
-    <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}" />
 
     <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SoftButtonBaseStyle}">
         <Setter Property="Background" Value="{StaticResource AccentBrush}" />
@@ -120,128 +132,237 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="LevelOptionButtonStyle" TargetType="Button" BasedOn="{StaticResource SoftButtonBaseStyle}">
-        <Setter Property="Height" Value="46" />
+    <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SoftButtonBaseStyle}">
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderAccentSoftBrush}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource SurfaceSoftBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource FocusBlueBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#FFEAF3FF" />
+                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}" />
+
+
+    <Style x:Key="SoftTileButtonBaseStyle" TargetType="Button" BasedOn="{StaticResource SoftButtonBaseStyle}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="ButtonBorder"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource CornerTile}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          RecognizesAccessKey="True" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource DisabledBackgroundBrush}" />
+                            <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{StaticResource BorderSoftBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="LevelOptionButtonStyle" TargetType="Button" BasedOn="{StaticResource SoftTileButtonBaseStyle}">
+        <Setter Property="Height" Value="50" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
-        <Setter Property="Background" Value="#FFF7FAFD" />
+        <Setter Property="Background" Value="{StaticResource SurfaceSoftBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderAccentSoftBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding}" Value="A1 Beginner">
                 <Setter Property="Background" Value="{StaticResource LevelA1BackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource LevelA1BorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource LevelA1TextBrush}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="A2 Elementary">
                 <Setter Property="Background" Value="{StaticResource LevelA2BackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource LevelA2BorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource LevelA2TextBrush}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="B1 Intermediate">
                 <Setter Property="Background" Value="{StaticResource LevelB1BackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource LevelB1BorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource LevelB1TextBrush}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding}" Value="B2 Upper-Intermediate">
                 <Setter Property="Background" Value="{StaticResource LevelB2BackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource LevelB2BorderBrush}" />
-            </DataTrigger>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="BorderThickness" Value="2" />
-            </Trigger>
-            <Trigger Property="IsKeyboardFocused" Value="True">
-                <Setter Property="BorderThickness" Value="2" />
-                <Setter Property="BorderBrush" Value="{StaticResource SelectedTileBorderBrush}" />
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-
-    <Style x:Key="TopicTileButtonStyle" TargetType="Button" BasedOn="{StaticResource SoftButtonBaseStyle}">
-        <Setter Property="Padding" Value="16" />
-        <Setter Property="HorizontalContentAlignment" Value="Left" />
-        <Setter Property="Background" Value="#FFF7FAFD" />
-        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource BorderAccentSoftBrush}" />
-        <Style.Triggers>
-            <DataTrigger Binding="{Binding ThemeKey}" Value="1">
-                <Setter Property="Background" Value="{StaticResource TopicEverydayBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource TopicEverydayBorderBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding ThemeKey}" Value="2">
-                <Setter Property="Background" Value="{StaticResource TopicTravelBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource TopicTravelBorderBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding ThemeKey}" Value="3">
-                <Setter Property="Background" Value="{StaticResource TopicBusinessBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource TopicBusinessBorderBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding ThemeKey}" Value="4">
-                <Setter Property="Background" Value="{StaticResource TopicInterviewBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource TopicInterviewBorderBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding ThemeKey}" Value="5">
-                <Setter Property="Background" Value="{StaticResource TopicRestaurantBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource TopicRestaurantBorderBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding ThemeKey}" Value="6">
-                <Setter Property="Background" Value="{StaticResource TopicFreeConversationBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource TopicFreeConversationBorderBrush}" />
-            </DataTrigger>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="BorderThickness" Value="2" />
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-
-    <Style x:Key="SubtopicTileButtonStyle" TargetType="Button" BasedOn="{StaticResource SoftButtonBaseStyle}">
-        <Setter Property="Padding" Value="16" />
-        <Setter Property="HorizontalContentAlignment" Value="Left" />
-        <Setter Property="Background" Value="#FFF7FAFD" />
-        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource BorderAccentSoftBrush}" />
-        <Style.Triggers>
-            <DataTrigger Binding="{Binding TopicThemeKey}" Value="1">
-                <Setter Property="Background" Value="{StaticResource TopicEverydayBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource TopicEverydayBorderBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding TopicThemeKey}" Value="2">
-                <Setter Property="Background" Value="{StaticResource TopicTravelBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource TopicTravelBorderBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding TopicThemeKey}" Value="3">
-                <Setter Property="Background" Value="{StaticResource TopicBusinessBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource TopicBusinessBorderBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding TopicThemeKey}" Value="4">
-                <Setter Property="Background" Value="{StaticResource TopicInterviewBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource TopicInterviewBorderBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding TopicThemeKey}" Value="5">
-                <Setter Property="Background" Value="{StaticResource TopicRestaurantBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource TopicRestaurantBorderBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding TopicThemeKey}" Value="6">
-                <Setter Property="Background" Value="{StaticResource TopicFreeConversationBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource TopicFreeConversationBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource LevelB2TextBrush}" />
             </DataTrigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="BorderThickness" Value="2" />
             </Trigger>
             <Trigger Property="Tag" Value="Selected">
-                <Setter Property="Background" Value="{StaticResource SelectedTileBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource SelectedTileBorderBrush}" />
-                <Setter Property="BorderThickness" Value="2" />
+                <Setter Property="BorderBrush" Value="{StaticResource FocusBlueBrush}" />
+                <Setter Property="BorderThickness" Value="3" />
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
-                <Setter Property="Background" Value="{StaticResource SelectedTileBackgroundBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource SelectedTileBorderBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource FocusBlueBrush}" />
+                <Setter Property="BorderThickness" Value="3" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="TopicTileButtonStyle" TargetType="Button" BasedOn="{StaticResource SoftTileButtonBaseStyle}">
+        <Setter Property="Padding" Value="18" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Background" Value="{StaticResource SurfaceSoftBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderAccentSoftBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ThemeKey}" Value="1">
+                <Setter Property="Background" Value="{StaticResource TopicEverydayBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource TopicEverydayBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TopicEverydayAccentBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ThemeKey}" Value="2">
+                <Setter Property="Background" Value="{StaticResource TopicTravelBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource TopicTravelBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TopicTravelAccentBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ThemeKey}" Value="3">
+                <Setter Property="Background" Value="{StaticResource TopicBusinessBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource TopicBusinessBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TopicBusinessAccentBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ThemeKey}" Value="4">
+                <Setter Property="Background" Value="{StaticResource TopicInterviewBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource TopicInterviewBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TopicInterviewAccentBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ThemeKey}" Value="5">
+                <Setter Property="Background" Value="{StaticResource TopicRestaurantBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource TopicRestaurantBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TopicRestaurantAccentBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding ThemeKey}" Value="6">
+                <Setter Property="Background" Value="{StaticResource TopicFreeConversationBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource TopicFreeConversationBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TopicFreeConversationAccentBrush}" />
+            </DataTrigger>
+            <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="BorderThickness" Value="2" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="SubtopicTileButtonStyle" TargetType="Button" BasedOn="{StaticResource TopicTileButtonStyle}">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding TopicThemeKey}" Value="1">
+                <Setter Property="Background" Value="{StaticResource TopicEverydayBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource TopicEverydayBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TopicEverydayAccentBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding TopicThemeKey}" Value="2">
+                <Setter Property="Background" Value="{StaticResource TopicTravelBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource TopicTravelBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TopicTravelAccentBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding TopicThemeKey}" Value="3">
+                <Setter Property="Background" Value="{StaticResource TopicBusinessBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource TopicBusinessBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TopicBusinessAccentBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding TopicThemeKey}" Value="4">
+                <Setter Property="Background" Value="{StaticResource TopicInterviewBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource TopicInterviewBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TopicInterviewAccentBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding TopicThemeKey}" Value="5">
+                <Setter Property="Background" Value="{StaticResource TopicRestaurantBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource TopicRestaurantBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TopicRestaurantAccentBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding TopicThemeKey}" Value="6">
+                <Setter Property="Background" Value="{StaticResource TopicFreeConversationBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource TopicFreeConversationBorderBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TopicFreeConversationAccentBrush}" />
+            </DataTrigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="BorderThickness" Value="2" />
+            </Trigger>
+            <Trigger Property="Tag" Value="Selected1">
+                <Setter Property="BorderBrush" Value="{StaticResource TopicEverydayAccentBrush}" />
+                <Setter Property="BorderThickness" Value="3" />
+            </Trigger>
+            <Trigger Property="Tag" Value="Selected2">
+                <Setter Property="BorderBrush" Value="{StaticResource TopicTravelAccentBrush}" />
+                <Setter Property="BorderThickness" Value="3" />
+            </Trigger>
+            <Trigger Property="Tag" Value="Selected3">
+                <Setter Property="BorderBrush" Value="{StaticResource TopicBusinessAccentBrush}" />
+                <Setter Property="BorderThickness" Value="3" />
+            </Trigger>
+            <Trigger Property="Tag" Value="Selected4">
+                <Setter Property="BorderBrush" Value="{StaticResource TopicInterviewAccentBrush}" />
+                <Setter Property="BorderThickness" Value="3" />
+            </Trigger>
+            <Trigger Property="Tag" Value="Selected5">
+                <Setter Property="BorderBrush" Value="{StaticResource TopicRestaurantAccentBrush}" />
+                <Setter Property="BorderThickness" Value="3" />
+            </Trigger>
+            <Trigger Property="Tag" Value="Selected6">
+                <Setter Property="BorderBrush" Value="{StaticResource TopicFreeConversationAccentBrush}" />
+                <Setter Property="BorderThickness" Value="3" />
+            </Trigger>
+            <Trigger Property="Tag" Value="Selected">
+                <Setter Property="BorderBrush" Value="{StaticResource FocusBlueBrush}" />
+                <Setter Property="BorderThickness" Value="3" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource FocusBlueBrush}" />
+                <Setter Property="BorderThickness" Value="3" />
             </Trigger>
         </Style.Triggers>
     </Style>
 
     <Style x:Key="MainContentCardStyle" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
-        <Setter Property="CornerRadius" Value="{StaticResource CornerLarge}" />
+        <Setter Property="CornerRadius" Value="{StaticResource CornerContainer}" />
+        <Setter Property="BorderBrush" Value="{StaticResource FrameBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style x:Key="SoftPanelStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource SurfaceSoftBrush}" />
+        <Setter Property="CornerRadius" Value="{StaticResource CornerPanel}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderSoftBrush}" />
         <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style x:Key="ChatMessageBubbleStyle" TargetType="Border">
+        <Setter Property="Margin" Value="0,0,0,10" />
+        <Setter Property="Padding" Value="12" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="MaxWidth" Value="620" />
+        <Setter Property="Background" Value="{StaticResource BotMessageBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderSoftBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsFromBot}" Value="False">
+                <Setter Property="HorizontalAlignment" Value="Right" />
+                <Setter Property="Background" Value="{StaticResource UserMessageBrush}" />
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="SoftTextBoxStyle" TargetType="TextBox">
@@ -249,7 +370,7 @@
         <Setter Property="Padding" Value="12,0,12,0" />
         <Setter Property="FontSize" Value="15" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="Background" Value="White" />
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderAccentSoftBrush}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -260,19 +381,19 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{StaticResource CornerMedium}">
+                            CornerRadius="{StaticResource CornerTextInput}">
                         <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="TextBoxBorder" Property="BorderBrush" Value="#FFB5CDE6" />
+                            <Setter TargetName="TextBoxBorder" Property="BorderBrush" Value="{StaticResource FocusBlueBrush}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="TextBoxBorder" Property="BorderBrush" Value="#FF2C7BE5" />
+                            <Setter TargetName="TextBoxBorder" Property="BorderBrush" Value="{StaticResource FocusBlueBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="TextBoxBorder" Property="Background" Value="#FFF1F4F8" />
-                            <Setter Property="Foreground" Value="#FF8A98A8" />
+                            <Setter TargetName="TextBoxBorder" Property="Background" Value="{StaticResource DisabledBackgroundBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

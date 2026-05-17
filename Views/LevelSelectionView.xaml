@@ -3,29 +3,31 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:EnglishVoiceTutor.Desktop.Converters"
              mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="900">
+    <UserControl.Resources>
+        <converters:SelectionEqualsConverter x:Key="SelectionEqualsConverter" />
+    </UserControl.Resources>
+
     <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
         <Border MaxWidth="720"
                 Padding="40"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Background="{StaticResource SurfaceBrush}"
-                CornerRadius="{StaticResource CornerLarge}"
-                BorderBrush="{StaticResource BorderSoftBrush}"
-                BorderThickness="1">
+                Style="{StaticResource MainContentCardStyle}">
             <StackPanel>
                 <TextBlock Text="{Binding Title}"
                            FontSize="34"
                            FontWeight="SemiBold"
-                           Foreground="#FF1C2B3A"
+                           Foreground="{StaticResource TextPrimaryBrush}"
                            TextAlignment="Center" />
 
                 <TextBlock Margin="0,12,0,0"
                            Text="{Binding Subtitle}"
                            FontSize="16"
-                           Foreground="#FF3A4A5B"
+                           Foreground="{StaticResource TextSecondaryBrush}"
                            TextAlignment="Center"
                            TextWrapping="Wrap" />
 
@@ -36,7 +38,14 @@
                                     Command="{Binding DataContext.SelectLevelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     CommandParameter="{Binding}"
                                     Margin="0,0,0,10"
-                                    Style="{StaticResource LevelOptionButtonStyle}" />
+                                    Style="{StaticResource LevelOptionButtonStyle}">
+                                <Button.Tag>
+                                    <MultiBinding Converter="{StaticResource SelectionEqualsConverter}">
+                                        <Binding Path="DataContext.SelectedLevel" RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                        <Binding />
+                                    </MultiBinding>
+                                </Button.Tag>
+                            </Button>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -64,7 +73,7 @@
                 <TextBlock Margin="0,16,0,0"
                            Text="{Binding StatusMessage}"
                            FontSize="13"
-                           Foreground="#FF3A4A5B"
+                           Foreground="{StaticResource TextSecondaryBrush}"
                            TextAlignment="Center"
                            TextWrapping="Wrap" />
             </StackPanel>

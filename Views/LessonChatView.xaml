@@ -13,18 +13,18 @@
         <Grid.Resources>
             <Style x:Key="SecondaryLessonButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
                 <Setter Property="Height" Value="38" />
-                <Setter Property="Background" Value="White" />
-                <Setter Property="Foreground" Value="#FF1E3A56" />
-                <Setter Property="BorderBrush" Value="#FFCAD8E6" />
+                <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource BorderAccentSoftBrush}" />
                 <Setter Property="Cursor" Value="Hand" />
             </Style>
             <converters:AvatarAnimationUriConverter x:Key="AvatarAnimationUriConverter" />
 
             <Style x:Key="PrimaryLessonButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
                 <Setter Property="Height" Value="38" />
-                <Setter Property="Background" Value="#FF1E3A56" />
+                <Setter Property="Background" Value="{StaticResource AccentBrush}" />
                 <Setter Property="Foreground" Value="White" />
-                <Setter Property="BorderBrush" Value="#FF1E3A56" />
+                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
                 <Setter Property="Cursor" Value="Hand" />
             </Style>
         </Grid.Resources>
@@ -37,10 +37,7 @@
                     Padding="24"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
-                    Background="{StaticResource SurfaceBrush}"
-                    CornerRadius="{StaticResource CornerLarge}"
-                    BorderBrush="{StaticResource BorderSoftBrush}"
-                    BorderThickness="1">
+                    Style="{StaticResource MainContentCardStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -60,17 +57,17 @@
                             </Style>
                         </StackPanel.Style>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" Foreground="#FF1C2B3A" TextAlignment="Center" />
+                            <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" TextAlignment="Center" />
                             <StackPanel Margin="14,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Ellipse Width="10" Height="10" Margin="0,0,7,0" Fill="{Binding BotStatusIndicatorBrush}" ToolTip="{Binding BotStatusText}" />
                                 <Ellipse Width="10" Height="10" Margin="0,0,7,0" Fill="{Binding BackendStatusIndicatorBrush}" ToolTip="{Binding BackendStatusText}" />
                                 <Ellipse Width="10" Height="10" Fill="{Binding AiStatusIndicatorBrush}" ToolTip="{Binding AiStatusText}" />
                             </StackPanel>
                         </StackPanel>
-                        <TextBlock Margin="0,10,0,0" Text="{Binding ContextText}" FontSize="14" Foreground="#FF3A4A5B" TextAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock Margin="0,10,0,0" Text="{Binding ContextText}" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" />
                     </StackPanel>
 
-                    <Border Grid.Row="1" Margin="0,16,0,0" Height="1" Background="#FFE1E8F0">
+                    <Border Grid.Row="1" Margin="0,16,0,0" Height="1" Background="{StaticResource BorderSoftBrush}">
                         <Border.Style>
                             <Style TargetType="Border">
                                 <Setter Property="Visibility" Value="Visible" />
@@ -102,10 +99,10 @@
 
                         <Border Grid.Column="0"
                                 VerticalAlignment="Stretch"
-                                Background="#FF0F1F2E"
-                                BorderBrush="#FFDCE8F5"
+                                Background="{StaticResource SurfaceSoftBrush}"
+                                BorderBrush="{StaticResource FrameBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="18"
+                                CornerRadius="{StaticResource CornerPanel}"
                                 ClipToBounds="True">
                             <Border.Style>
                                 <Style TargetType="Border">
@@ -179,14 +176,14 @@
                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom">
                                         <Border Padding="14"
                                                 MaxWidth="640"
-                                                Background="#DFFFFFFF"
-                                                BorderBrush="#80FFFFFF"
+                                                Background="#EEFFFFFF"
+                                                BorderBrush="{StaticResource BorderAccentSoftBrush}"
                                                 BorderThickness="1"
-                                                CornerRadius="14">
+                                                CornerRadius="{StaticResource CornerPanel}">
                                             <StackPanel>
                                                 <TextBlock Text="{Binding LatestBotMessageText}"
                                                            FontSize="15"
-                                                           Foreground="#FF1C2B3A"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
                                                            TextWrapping="Wrap"
                                                            TextAlignment="Center" />
                                             </StackPanel>
@@ -253,7 +250,7 @@
                                         Background="#EFFFFFFF"
                                         BorderBrush="#99CAD8E6"
                                         BorderThickness="1"
-                                        Foreground="#FF1E3A56"
+                                        Foreground="{StaticResource AccentBrush}"
                                         FontSize="22"
                                         FontWeight="SemiBold"
                                         Content="↩"
@@ -276,13 +273,9 @@
                         </Border>
 
                         <Border Grid.Column="2"
-                                Padding="24"
-                                Background="{StaticResource SurfaceBrush}"
-                                CornerRadius="{StaticResource CornerLarge}"
-                                BorderBrush="{StaticResource BorderSoftBrush}"
-                                BorderThickness="1">
+                                Padding="24">
                             <Border.Style>
-                                <Style TargetType="Border">
+                                <Style TargetType="Border" BasedOn="{StaticResource SoftPanelStyle}">
                                     <Setter Property="Visibility" Value="Visible" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
@@ -308,22 +301,10 @@
                                     <ItemsControl ItemsSource="{Binding Messages}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border Margin="0,0,0,10" Padding="10" CornerRadius="10" HorizontalAlignment="Left" MaxWidth="620" Background="#FFF2F7FC">
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="HorizontalAlignment" Value="Left" />
-                                                            <Setter Property="Background" Value="#FFF2F7FC" />
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsFromBot}" Value="False">
-                                                                    <Setter Property="HorizontalAlignment" Value="Right" />
-                                                                    <Setter Property="Background" Value="#FFEAF6EA" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
+                                                <Border Style="{StaticResource ChatMessageBubbleStyle}">
                                                     <StackPanel>
-                                                        <TextBlock Text="{Binding Sender}" FontSize="12" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                                                        <TextBlock Margin="0,4,0,0" Text="{Binding Text}" FontSize="14" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{Binding Sender}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                                                        <TextBlock Margin="0,4,0,0" Text="{Binding Text}" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" TextWrapping="Wrap" />
 
                                                         <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
                                                             <Button Padding="8,2"
@@ -331,9 +312,9 @@
                                                                     Content="{Binding TranslateButtonText}"
                                                                     Command="{Binding ToggleTranslationCommand}"
                                                                     Background="{StaticResource SurfaceBrush}"
-                                                                    Foreground="#FF506172"
+                                                                    Foreground="{StaticResource TextSecondaryBrush}"
                                                                     FontSize="11"
-                                                                    BorderBrush="#FFD4DEE8"
+                                                                    BorderBrush="{StaticResource BorderAccentSoftBrush}"
                                                                     Cursor="Hand" />
 
                                                             <Button Margin="8,0,0,0"
@@ -343,9 +324,9 @@
                                                                     Command="{Binding DataContext.PlayBotVoiceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                     CommandParameter="{Binding}"
                                                                     Background="{StaticResource SurfaceBrush}"
-                                                                    Foreground="#FF506172"
+                                                                    Foreground="{StaticResource TextSecondaryBrush}"
                                                                     FontSize="11"
-                                                                    BorderBrush="#FFD4DEE8"
+                                                                    BorderBrush="{StaticResource BorderAccentSoftBrush}"
                                                                     Cursor="Hand">
                                                                 <Button.Style>
                                                                     <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
@@ -366,9 +347,9 @@
                                                                     Command="{Binding DataContext.ViewFeedbackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                     CommandParameter="{Binding}"
                                                                     Background="{StaticResource SurfaceBrush}"
-                                                                    Foreground="#FF506172"
+                                                                    Foreground="{StaticResource TextSecondaryBrush}"
                                                                     FontSize="11"
-                                                                    BorderBrush="#FFD4DEE8"
+                                                                    BorderBrush="{StaticResource BorderAccentSoftBrush}"
                                                                     Cursor="Hand">
                                                                 <Button.Style>
                                                                     <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
@@ -383,7 +364,7 @@
                                                             </Button>
                                                         </StackPanel>
 
-                                                        <Border Margin="0,8,0,0" Padding="8" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="8">
+                                                        <Border Margin="0,8,0,0" Padding="8" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
                                                             <Border.Style>
                                                                 <Style TargetType="Border">
                                                                     <Setter Property="Visibility" Value="Collapsed" />
@@ -395,8 +376,8 @@
                                                                 </Style>
                                                             </Border.Style>
                                                             <StackPanel>
-                                                                <TextBlock Text="{Binding DataContext.TranslationLabel, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="11" FontWeight="SemiBold" Foreground="#FF6D7C8B" />
-                                                                <TextBlock Margin="0,4,0,0" Text="{Binding TranslationText}" FontSize="13" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
+                                                                <TextBlock Text="{Binding DataContext.TranslationLabel, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}" />
+                                                                <TextBlock Margin="0,4,0,0" Text="{Binding TranslationText}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" TextWrapping="Wrap" />
                                                             </StackPanel>
                                                         </Border>
                                                     </StackPanel>
@@ -423,14 +404,14 @@
                                             BorderThickness="0"
                                             Cursor="Hand"
                                             HorizontalContentAlignment="Stretch">
-                                        <Border Padding="14" Background="#FFEFF7FF" BorderBrush="#FFB9D9F5" BorderThickness="1" CornerRadius="12">
+                                        <Border Padding="14" Background="{StaticResource BotMessageBrush}" BorderBrush="{StaticResource TopicEverydayBorderBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerTextInput}">
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding HintPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                                                    <TextBlock Margin="8,2,0,0" Text="{Binding ClickToCloseText}" FontSize="11" Foreground="#FF6D7C8B" />
+                                                    <TextBlock Text="{Binding HintPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                                                    <TextBlock Margin="8,2,0,0" Text="{Binding ClickToCloseText}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" />
                                                 </StackPanel>
 
-                                                <TextBlock Margin="0,8,0,0" Text="{Binding CurrentHintText}" FontSize="13" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
+                                                <TextBlock Margin="0,8,0,0" Text="{Binding CurrentHintText}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Border>
                                     </Button>
@@ -453,15 +434,15 @@
                                             BorderThickness="0"
                                             Cursor="Hand"
                                             HorizontalContentAlignment="Stretch">
-                                        <Border Padding="14" Background="#FFFFF9E8" BorderBrush="#FFF0D58A" BorderThickness="1" CornerRadius="12">
+                                        <Border Padding="14" Background="{StaticResource StatusMessageBrush}" BorderBrush="{StaticResource LevelB1BorderBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerTextInput}">
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding FeedbackPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                                                    <TextBlock Margin="8,2,0,0" Text="{Binding ClickToCloseText}" FontSize="11" Foreground="#FF7A8A9A" />
+                                                    <TextBlock Text="{Binding FeedbackPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                                                    <TextBlock Margin="8,2,0,0" Text="{Binding ClickToCloseText}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" />
                                                 </StackPanel>
 
-                                                <TextBlock Margin="0,8,0,0" Text="{Binding SelectedFeedback.ShortText}" FontSize="13" Foreground="#FF1C2B3A" TextWrapping="Wrap" />
-                                                <TextBlock Margin="0,4,0,0" Text="{Binding SelectedFeedback.ShortTextTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                                <TextBlock Margin="0,8,0,0" Text="{Binding SelectedFeedback.ShortText}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" TextWrapping="Wrap" />
+                                                <TextBlock Margin="0,4,0,0" Text="{Binding SelectedFeedback.ShortTextTranslation}" FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
                                                     <TextBlock.Style>
                                                         <Style TargetType="TextBlock">
                                                             <Setter Property="Visibility" Value="Collapsed" />
@@ -480,42 +461,42 @@
                                                         Content="{Binding FeedbackTranslateButtonText}"
                                                         Command="{Binding ToggleFeedbackTranslationCommand}"
                                                         Background="{StaticResource SurfaceBrush}"
-                                                        Foreground="#FF506172"
+                                                        Foreground="{StaticResource TextSecondaryBrush}"
                                                         FontSize="11"
-                                                        BorderBrush="#FFD4DEE8"
+                                                        BorderBrush="{StaticResource BorderAccentSoftBrush}"
                                                         Cursor="Hand" />
 
-                                                <TextBlock Text="{Binding FeedbackCorrectedVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Text="{Binding FeedbackCorrectedVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource AccentBrush}" />
                                                 <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.CorrectedVersion}" FontSize="13" TextWrapping="Wrap" />
-                                                <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CorrectedVersionTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                                <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CorrectedVersionTranslation}" FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
                                                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                                 </TextBlock>
 
-                                                <TextBlock Text="{Binding FeedbackGrammarTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Text="{Binding FeedbackGrammarTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource AccentBrush}" />
                                                 <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.GrammarTip}" FontSize="13" TextWrapping="Wrap" />
-                                                <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.GrammarTipTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                                <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.GrammarTipTranslation}" FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
                                                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                                 </TextBlock>
 
-                                                <TextBlock Text="{Binding FeedbackVocabularyTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Text="{Binding FeedbackVocabularyTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource AccentBrush}" />
                                                 <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.VocabularyTip}" FontSize="13" TextWrapping="Wrap" />
-                                                <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.VocabularyTipTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                                <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.VocabularyTipTranslation}" FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
                                                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                                 </TextBlock>
 
-                                                <TextBlock Text="{Binding FeedbackCultureTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Text="{Binding FeedbackCultureTipTitle}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource AccentBrush}" />
                                                 <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.CultureTip}" FontSize="13" TextWrapping="Wrap" />
-                                                <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CultureTipTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                                <TextBlock Margin="0,2,0,6" Text="{Binding SelectedFeedback.CultureTipTranslation}" FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
                                                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                                 </TextBlock>
 
-                                                <TextBlock Text="{Binding FeedbackNaturalVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="#FF1E3A56" />
+                                                <TextBlock Text="{Binding FeedbackNaturalVersionTitle}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource AccentBrush}" />
                                                 <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.NaturalVersion}" FontSize="13" TextWrapping="Wrap" />
-                                                <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.NaturalVersionTranslation}" FontSize="12" Foreground="#FF6D7C8B" TextWrapping="Wrap">
+                                                <TextBlock Margin="0,2,0,0" Text="{Binding SelectedFeedback.NaturalVersionTranslation}" FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
                                                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                                 </TextBlock>
 
-                                                <TextBlock Margin="0,8,0,0" FontSize="11" Foreground="#FF7A8A9A" TextWrapping="Wrap">
+                                                <TextBlock Margin="0,8,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
                                                     <Run Text="{Binding FeedbackTranslationHeader, Mode=OneWay}" />
                                                     <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
                                                 </TextBlock>
@@ -560,7 +541,7 @@
                                         </StackPanel>
                                     </StackPanel>
 
-                                    <TextBlock Margin="0,10,0,0" Text="{Binding StatusMessage}" FontSize="13" Foreground="#FF3A4A5B" TextWrapping="Wrap" TextAlignment="Center" />
+                                    <TextBlock Margin="0,10,0,0" Text="{Binding StatusMessage}" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" TextAlignment="Center" />
                                 </StackPanel>
                             </Grid>
                         </Border>
