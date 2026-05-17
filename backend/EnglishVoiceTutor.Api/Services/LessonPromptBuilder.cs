@@ -248,11 +248,16 @@ public sealed class LessonPromptBuilder
             prompt.AppendLine("Context-selection feedback mode:");
             prompt.AppendLine("- The learner was choosing or suggesting the scenario/context, not answering the active roleplay yet.");
             prompt.AppendLine("- Treat the text as a short setup phrase or scenario choice.");
-            prompt.AppendLine("- Do not criticize the learner for not giving a roleplay answer, not giving an update, or not completing the scenario task.");
-            prompt.AppendLine("- Give phrase-level feedback only: clarity, capitalization, punctuation, and a natural way to choose the scenario.");
-            prompt.AppendLine("- Prefer supportive wording like: Clear phrase for choosing a scenario.");
-            prompt.AppendLine("- If useful, suggest a natural option such as: Let's talk about next steps.");
-            prompt.AppendLine("- Mention that this phrase starts the situation and is not the learner's active roleplay answer yet.");
+            prompt.AppendLine("- Explicitly say this phrase is clear for choosing the situation when it is understandable.");
+            prompt.AppendLine("- If needed, correct only capitalization and punctuation in correctedVersion.");
+            prompt.AppendLine("- Suggest a more natural full sentence in naturalVersion, for example: Let's talk about next steps.");
+            prompt.AppendLine("- Explicitly say this phrase starts the scenario and is not the learner's roleplay answer yet.");
+            prompt.AppendLine("- Good grammarTip pattern: This is a phrase, not a full sentence. That is okay for choosing a situation.");
+            prompt.AppendLine("- Good cultureTip pattern: In the real scenario, after choosing the topic, you would give your update or roleplay answer next.");
+            prompt.AppendLine("- Do not say the learner did not give an update.");
+            prompt.AppendLine("- Do not say this does not fit a daily standup update.");
+            prompt.AppendLine("- Do not say the learner repeated the situation name.");
+            prompt.AppendLine("- Do not treat the context phrase as an active roleplay reply.");
             return;
         }
 
