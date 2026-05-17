@@ -6,14 +6,14 @@
              mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="900">
-    <Grid Margin="24" Background="#FFF6F8FB">
+    <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
         <Border MaxWidth="720"
                 Padding="40"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Background="White"
-                CornerRadius="16"
-                BorderBrush="#FFE1E8F0"
+                Background="{StaticResource SurfaceBrush}"
+                CornerRadius="{StaticResource CornerLarge}"
+                BorderBrush="{StaticResource BorderSoftBrush}"
                 BorderThickness="1">
             <StackPanel>
                 <TextBlock Text="{Binding AppTitle}"
@@ -31,10 +31,10 @@
 
                 <Border Margin="0,28,0,0"
                         Padding="20"
-                        Background="#FFF8FAFD"
-                        BorderBrush="#FFD9E3EE"
+                        Background="{StaticResource SurfaceSoftBrush}"
+                        BorderBrush="{StaticResource BorderAccentSoftBrush}"
                         BorderThickness="1"
-                        CornerRadius="12">
+                        CornerRadius="{StaticResource CornerMedium}">
                     <StackPanel>
                         <TextBlock Text="{Binding HowItWorksTitle}"
                                    FontSize="18"
@@ -65,20 +65,14 @@
                             Margin="0,0,12,0"
                             FontSize="15"
                             FontWeight="SemiBold"
-                            Background="#FF2C7BE5"
-                            Foreground="White"
-                            BorderBrush="#FF2C7BE5"
-                            Cursor="Hand" />
+                            Style="{StaticResource PrimaryButtonStyle}" />
                     <Button Content="{Binding SettingsButtonText}"
                             Command="{Binding OpenSettingsCommand}"
                             Width="140"
                             Height="44"
                             FontSize="15"
                             FontWeight="SemiBold"
-                            Background="#FFEAF0F8"
-                            Foreground="#FF1E3A56"
-                            BorderBrush="#FFCAD8E6"
-                            Cursor="Hand" />
+                            Style="{StaticResource SecondaryButtonStyle}" />
                 </StackPanel>
 
                 <TextBlock Margin="0,16,0,0"

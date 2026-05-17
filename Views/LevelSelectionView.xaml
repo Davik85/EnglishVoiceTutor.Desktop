@@ -6,14 +6,14 @@
              mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="900">
-    <Grid Margin="24" Background="#FFF6F8FB">
+    <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
         <Border MaxWidth="720"
                 Padding="40"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Background="White"
-                CornerRadius="16"
-                BorderBrush="#FFE1E8F0"
+                Background="{StaticResource SurfaceBrush}"
+                CornerRadius="{StaticResource CornerLarge}"
+                BorderBrush="{StaticResource BorderSoftBrush}"
                 BorderThickness="1">
             <StackPanel>
                 <TextBlock Text="{Binding Title}"
@@ -36,13 +36,7 @@
                                     Command="{Binding DataContext.SelectLevelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     CommandParameter="{Binding}"
                                     Margin="0,0,0,10"
-                                    Height="42"
-                                    FontSize="15"
-                                    FontWeight="SemiBold"
-                                    Background="#FFEAF0F8"
-                                    Foreground="#FF1E3A56"
-                                    BorderBrush="#FFCAD8E6"
-                                    Cursor="Hand" />
+                                    Style="{StaticResource LevelOptionButtonStyle}" />
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -55,10 +49,7 @@
                         HorizontalAlignment="Center"
                         FontSize="15"
                         FontWeight="SemiBold"
-                        Background="#FF1E3A56"
-                        Foreground="White"
-                        BorderBrush="#FF1E3A56"
-                        Cursor="Hand" />
+                        Style="{StaticResource PrimaryButtonStyle}" />
 
                 <Button Content="{Binding BackButtonText}"
                         Command="{Binding BackCommand}"
@@ -68,10 +59,7 @@
                         HorizontalAlignment="Center"
                         FontSize="15"
                         FontWeight="SemiBold"
-                        Background="#FFFFFFFF"
-                        Foreground="#FF1E3A56"
-                        BorderBrush="#FFCAD8E6"
-                        Cursor="Hand" />
+                        Style="{StaticResource SecondaryButtonStyle}" />
 
                 <TextBlock Margin="0,16,0,0"
                            Text="{Binding StatusMessage}"
