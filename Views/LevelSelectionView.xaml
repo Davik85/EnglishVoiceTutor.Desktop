@@ -12,71 +12,76 @@
     </UserControl.Resources>
 
     <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
-        <Border MaxWidth="720"
-                Padding="40"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Style="{StaticResource MainContentCardStyle}">
-            <StackPanel>
-                <TextBlock Text="{Binding Title}"
-                           FontSize="34"
-                           FontWeight="SemiBold"
-                           Foreground="{StaticResource TextPrimaryBrush}"
-                           TextAlignment="Center" />
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalAlignment="Stretch">
+            <Border MaxWidth="720"
+                    Margin="0,12"
+                    Padding="32"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Style="{StaticResource MainContentCardStyle}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Title}"
+                               FontSize="34"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               TextAlignment="Center" />
 
-                <TextBlock Margin="0,12,0,0"
-                           Text="{Binding Subtitle}"
-                           FontSize="16"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           TextAlignment="Center"
-                           TextWrapping="Wrap" />
+                    <TextBlock Margin="0,12,0,0"
+                               Text="{Binding Subtitle}"
+                               FontSize="16"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap" />
 
-                <ItemsControl Margin="0,24,0,0" ItemsSource="{Binding Levels}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Content="{Binding}"
-                                    Command="{Binding DataContext.SelectLevelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                    CommandParameter="{Binding}"
-                                    Margin="0,0,0,10"
-                                    Style="{StaticResource LevelOptionButtonStyle}">
-                                <Button.Tag>
-                                    <MultiBinding Converter="{StaticResource SelectionEqualsConverter}">
-                                        <Binding Path="DataContext.SelectedLevel" RelativeSource="{RelativeSource AncestorType=UserControl}" />
-                                        <Binding />
-                                    </MultiBinding>
-                                </Button.Tag>
-                            </Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                    <ItemsControl Margin="0,24,0,0" ItemsSource="{Binding Levels}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Content="{Binding}"
+                                        Command="{Binding DataContext.SelectLevelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Margin="0,0,0,10"
+                                        Style="{StaticResource LevelOptionButtonStyle}">
+                                    <Button.Tag>
+                                        <MultiBinding Converter="{StaticResource SelectionEqualsConverter}">
+                                            <Binding Path="DataContext.SelectedLevel" RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                            <Binding />
+                                        </MultiBinding>
+                                    </Button.Tag>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
-                <Button Content="{Binding ContinueButtonText}"
-                        Command="{Binding ContinueCommand}"
-                        Margin="0,12,0,0"
-                        Width="140"
-                        Height="42"
-                        HorizontalAlignment="Center"
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Style="{StaticResource PrimaryButtonStyle}" />
+                    <Button Content="{Binding ContinueButtonText}"
+                            Command="{Binding ContinueCommand}"
+                            Margin="0,12,0,0"
+                            MinWidth="140"
+                            MinHeight="42"
+                            HorizontalAlignment="Center"
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Style="{StaticResource PrimaryButtonStyle}" />
 
-                <Button Content="{Binding BackButtonText}"
-                        Command="{Binding BackCommand}"
-                        Margin="0,10,0,0"
-                        Width="140"
-                        Height="42"
-                        HorizontalAlignment="Center"
-                        FontSize="15"
-                        FontWeight="SemiBold"
-                        Style="{StaticResource SecondaryButtonStyle}" />
+                    <Button Content="{Binding BackButtonText}"
+                            Command="{Binding BackCommand}"
+                            Margin="0,10,0,0"
+                            MinWidth="140"
+                            MinHeight="42"
+                            HorizontalAlignment="Center"
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Style="{StaticResource SecondaryButtonStyle}" />
 
-                <TextBlock Margin="0,16,0,0"
-                           Text="{Binding StatusMessage}"
-                           FontSize="13"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           TextAlignment="Center"
-                           TextWrapping="Wrap" />
-            </StackPanel>
-        </Border>
+                    <TextBlock Margin="0,16,0,0"
+                               Text="{Binding StatusMessage}"
+                               FontSize="13"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
     </Grid>
 </UserControl>
