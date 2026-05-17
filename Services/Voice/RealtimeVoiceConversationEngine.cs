@@ -97,6 +97,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
 
     public async Task StopSessionAsync(CancellationToken cancellationToken)
     {
+        Debug.WriteLine($"Realtime voice StopSessionAsync requested: SessionId={sessionId}; Reason=client_stop; SocketState={webSocket?.State.ToString() ?? "null"}.");
         stopRequested = true;
         var socket = webSocket;
         receiveCancellationTokenSource?.Cancel();
@@ -106,7 +107,9 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
             {
                 if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
                 {
+                    Debug.WriteLine($"Realtime voice session.stop sending: SessionId={sessionId}; Reason=client_stop; SocketState={socket.State}.");
                     await SendBackendEventAsync("session.stop", new { reason = "client_stop" }, CancellationToken.None);
+                    Debug.WriteLine($"Realtime voice CloseAsync requested: SessionId={sessionId}; Reason=client_stop; SocketState={socket.State}.");
                     await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "client_stop", cancellationToken);
                 }
             }
@@ -115,6 +118,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
                 Debug.WriteLine($"Realtime voice session stop warning: SessionId={sessionId}; CancellationReason=client_stop; {exception}");
             }
 
+            Debug.WriteLine($"Realtime voice socket dispose requested: SessionId={sessionId}; Reason=client_stop; SocketState={socket.State}.");
             socket.Dispose();
         }
 
@@ -133,6 +137,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
             return;
         }
 
+        Debug.WriteLine($"Realtime voice engine dispose requested: SessionId={sessionId}; Reason=window_closing_or_view_model_dispose.");
         _ = StopSessionAsync(CancellationToken.None);
         sendLock.Dispose();
         disposed = true;

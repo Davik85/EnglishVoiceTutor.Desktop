@@ -34,12 +34,22 @@ def main() -> int:
     assert_contains(vm, "MarkAsValidLearnerTurn(validation.NormalizedTranscript", "realtime transcript normalization")
     assert_contains(vm, "MarkAsInvalidLearnerTranscript(RealtimeVoiceTranscriptionUnavailableText)", "invalid realtime transcript exclusion")
     assert_contains(msg, "CanShowFeedbackAction", "feedback action visibility state")
+    assert_contains(msg, "public bool CanShowFeedbackAction => !IsFromBot && IsFeedbackEligible && !IsTechnicalMessage;", "feedback visibility decoupled from turn counting")
+    assert_contains(vm, "private ChatMessageViewModel AddSetupContextLearnerMessage", "setup context feedback metadata helper")
+    assert_contains(vm, "countsAsValidLessonTurn: false", "setup context feedback does not imply turn count")
+    assert_contains(vm, "isFeedbackEligible: feedbackEligible", "setup context feedback eligibility")
     assert_contains(xaml, "{Binding CanShowFeedbackAction}", "View feedback button eligibility binding")
 
     feedback_request = re.search(r"private LessonChatBackendRequest BuildLessonFeedbackRequest[\s\S]+?\n    }", vm)
     if not feedback_request:
         raise AssertionError("Feedback request builder not found.")
     assert_contains(feedback_request.group(0), "UserMessage = message.Text.Trim()", "selected message text in feedback request")
+    can_view = re.search(r"private bool CanViewFeedback[\s\S]+?\n    }", vm)
+    if not can_view:
+        raise AssertionError("CanViewFeedback method not found.")
+    assert_contains(can_view.group(0), "message.IsFeedbackEligible", "feedback command checks eligibility")
+    if "message.CountsAsValidLessonTurn" in can_view.group(0):
+        raise AssertionError("Feedback command must not require active learner turn counting for setup context messages.")
     assert_contains(feedback_request.group(0), "RecentMessages = GetRecentConversationMessages()", "surrounding messages in feedback request")
 
     summary_builder = re.search(r"private LessonSummaryInput BuildLessonSummaryInput[\s\S]+?\n    }", vm)
