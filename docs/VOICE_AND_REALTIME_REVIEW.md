@@ -120,3 +120,9 @@ The current voice baseline keeps the three audio paths deliberately separate:
 3. Realtime Conversation Mode uses `/api/realtime-voice` and OpenAI GA `/v1/realtime` with `gpt-realtime`; generated Realtime assistant replies remain Realtime audio and are not sent to `/api/audio/speech`.
 
 The pre-start Conversation Mode opening prompt is the one intentional bridge: it speaks the already-visible tutor prompt before Realtime recording starts through `/api/audio/speech` with `tts-1` and `purpose=realtime_pre_start_opening`. This behavior is current and must remain protected during later refactors.
+
+## 2026-05-17 MVP provider decision
+
+Conversation Mode is temporarily switched to the stable `Tts1` provider for the MVP. The default Conversation Mode engine now uses the same reliable chained flow as normal voice input: microphone recording, audio transcription, lesson chat reply, TTS-1 speech generation, and playback. The default path uses `/api/audio/transcribe`, `/api/lesson-chat/reply`, and `/api/audio/speech` with `model=tts-1`, `voice=coral`, `purpose=conversation_mode_tts`, and speech speed `0.9`.
+
+Realtime remains implemented for future use behind the provider switch. The Realtime WebSocket gateway, GA schema, diagnostics, stop-reason logging, fallback transcription recovery, and policy tests remain in the repository. Realtime is not the default MVP Conversation Mode engine and the default Conversation Mode path must not open `/api/realtime-voice` or create a Realtime session.

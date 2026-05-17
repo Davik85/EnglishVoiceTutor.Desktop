@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -164,7 +165,7 @@ public sealed class LessonChatBackendService
         return backendResponse.HintText;
     }
 
-    // ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
+    // Stable voice pipeline: used by normal voice input and default TTS Conversation Mode.
     public async Task<string> SendAudioForTranscriptionAsync(
         string audioFilePath,
         CancellationToken cancellationToken = default)
@@ -206,11 +207,11 @@ public sealed class LessonChatBackendService
     }
 
 
-    // ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
     public async Task<BotSpeechBackendResponse> CreateBotSpeechAsync(
         string text,
         CancellationToken cancellationToken = default,
-        string purpose = BackendConstants.LessonChatTtsPurpose)
+        string purpose = BackendConstants.LessonChatTtsPurpose,
+        double? speechSpeed = null)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -222,7 +223,7 @@ public sealed class LessonChatBackendService
         var endpointUri = CreateEndpointUri(BackendConstants.AudioSpeechEndpoint);
         var inputLength = text.Trim().Length;
 
-        Debug.WriteLine($"Bot voice backend TTS request starting: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={BackendConstants.TtsModelName}; InputLength={inputLength}.");
+        Debug.WriteLine($"Bot voice backend TTS request starting: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={BackendConstants.TtsModelName}; SpeechSpeed={speechSpeed?.ToString(CultureInfo.InvariantCulture) ?? "default"}; InputLength={inputLength}.");
 
         try
         {
@@ -231,7 +232,8 @@ public sealed class LessonChatBackendService
                 new AudioSpeechBackendRequest
                 {
                     Text = text,
-                    Purpose = purpose
+                    Purpose = purpose,
+                    SpeechSpeed = speechSpeed
                 },
                 JsonOptions,
                 cancellationToken);
@@ -246,7 +248,7 @@ public sealed class LessonChatBackendService
             }
 
             var contentType = response.Content.Headers.ContentType?.MediaType ?? BackendConstants.SpeechResponseContentType;
-            Debug.WriteLine($"Bot voice backend TTS request completed: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={BackendConstants.TtsModelName}; InputLength={inputLength}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}; ContentType={contentType}; AudioBytes={audioBytes.Length}.");
+            Debug.WriteLine($"Bot voice backend TTS request completed: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={BackendConstants.TtsModelName}; SpeechSpeed={speechSpeed?.ToString(CultureInfo.InvariantCulture) ?? "default"}; InputLength={inputLength}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}; ContentType={contentType}; AudioBytes={audioBytes.Length}.");
             return new BotSpeechBackendResponse(audioBytes, contentType, GetAudioFileExtension(contentType));
         }
         catch (Exception exception)
@@ -258,7 +260,7 @@ public sealed class LessonChatBackendService
 
 
 
-    // ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
+    // Stable TTS pipeline: used by normal Lesson Chat voice playback and default TTS Conversation Mode.
     public async Task<BotSpeechStreamMetrics> StreamBotSpeechAsync(
         string text,
         Func<Stream, string, CancellationToken, Task> consumeStreamAsync,
@@ -279,7 +281,8 @@ public sealed class LessonChatBackendService
         var requestJson = JsonSerializer.Serialize(
             new AudioSpeechBackendRequest
             {
-                Text = text
+                Text = text,
+                Purpose = BackendConstants.LessonChatTtsPurpose
             },
             JsonOptions);
         using var request = new HttpRequestMessage(HttpMethod.Post, endpointUri)

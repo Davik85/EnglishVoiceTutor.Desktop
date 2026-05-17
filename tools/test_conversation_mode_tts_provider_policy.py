@@ -1,0 +1,111 @@
+from pathlib import Path
+import re
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def read(path: str) -> str:
+    return (ROOT / path).read_text(encoding="utf-8")
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise AssertionError(message)
+
+
+def require_text(text: str, needle: str, path: str) -> None:
+    require(needle in text, f"Missing {needle!r} in {path}")
+
+
+def method_body(text: str, method_name: str) -> str:
+    marker = f"{method_name}("
+    start = text.find(marker)
+    require(start >= 0, f"Missing method {method_name}")
+    brace_start = text.find("{", start)
+    depth = 0
+    for index in range(brace_start, len(text)):
+        char = text[index]
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return text[brace_start:index + 1]
+    raise AssertionError(f"Could not parse method {method_name}")
+
+
+def main() -> None:
+    vm_path = "ViewModels/LessonChatViewModel.cs"
+    backend_constants_path = "Constants/BackendConstants.cs"
+    service_path = "Services/LessonChatBackendService.cs"
+    backend_speech_path = "backend/EnglishVoiceTutor.Api/Services/AudioSpeechService.cs"
+    backend_request_path = "backend/EnglishVoiceTutor.Api/Models/AudioSpeechRequest.cs"
+    client_request_path = "Models/AudioSpeechBackendRequest.cs"
+    provider_path = "Models/ConversationModeVoiceProvider.cs"
+
+    vm = read(vm_path)
+    constants = read(backend_constants_path)
+    service = read(service_path)
+    backend_speech = read(backend_speech_path)
+    backend_request = read(backend_request_path)
+    client_request = read(client_request_path)
+    provider = read(provider_path)
+
+    require_text(provider, "enum ConversationModeVoiceProvider", provider_path)
+    require_text(provider, "Tts1", provider_path)
+    require_text(provider, "Realtime", provider_path)
+    require_text(constants, 'DefaultConversationModeVoiceProvider = "Tts1"', backend_constants_path)
+    require_text(vm, "ResolveConversationModeVoiceProvider", vm_path)
+    require_text(vm, "StartConversationModeAsync", vm_path)
+    require_text(vm, "StartTtsConversationModeAsync", vm_path)
+    require_text(vm, "StartRealtimeConversationModeAsync", vm_path)
+
+    start_tts_body = method_body(vm, "StartTtsConversationModeAsync")
+    require("StartRealtimeConversationAsync" not in start_tts_body, "Default TTS start must not call StartRealtimeConversationAsync")
+    require("EnsureRealtimeSessionStartedAsync" not in start_tts_body, "Default TTS start must not create a Realtime session")
+    require("CreateRealtimeVoiceWebSocketUri" not in start_tts_body, "Default TTS start must not build/open /api/realtime-voice WebSocket")
+    require("RealtimeVoiceEndpoint" not in start_tts_body and "/api/realtime-voice" not in start_tts_body, "Default TTS start must not reference /api/realtime-voice")
+    require_text(vm, "StartRealtimeConversationModeAsync", vm_path)
+    require_text(vm, "EnsureRealtimeSessionStartedAsync", vm_path)
+
+    require_text(service, "SendAudioForTranscriptionAsync", service_path)
+    require_text(constants, "AudioTranscriptionEndpoint", backend_constants_path)
+    require_text(service, "SendLessonMessageAsync", service_path)
+    require_text(constants, "LessonChatReplyEndpoint", backend_constants_path)
+    require_text(service, "CreateBotSpeechAsync", service_path)
+    require_text(constants, "AudioSpeechEndpoint", backend_constants_path)
+    require_text(constants, 'TtsModelName = "tts-1"', backend_constants_path)
+    require_text(constants, 'ConversationModeTtsPurpose = "conversation_mode_tts"', backend_constants_path)
+    require_text(vm, "BackendConstants.ConversationModeTtsPurpose", vm_path)
+    require_text(service, "SpeechSpeed = speechSpeed", service_path)
+    require_text(client_request, "SpeechSpeed", client_request_path)
+    require_text(backend_request, "SpeechSpeed", backend_request_path)
+    require_text(backend_speech, "ConversationModeTtsPurpose", backend_speech_path)
+    require_text(backend_speech, "ResolveSpeechSpeed", backend_speech_path)
+
+    speed_match = re.search(r"ConversationModeTtsSpeechSpeed\s*=\s*([0-9.]+)", constants)
+    require(speed_match is not None, "Conversation Mode TTS speed must be a named constant")
+    require(float(speed_match.group(1)) <= 1.0, "Conversation Mode TTS speed must not exceed 1.0")
+    require_text(vm, "ConversationModeTtsSpeechSpeed", vm_path)
+
+    require_text(vm, "CancelCurrentBotVoice(BotVoiceCancellationReasons.NewerMessageCancel)", vm_path)
+    require_text(vm, "botVoiceSemaphore", vm_path)
+    require_text(vm, "IsBotVoicePlaying", vm_path)
+    require_text(vm, "PlayConversationModeBotVoiceAsync", vm_path)
+    require_text(vm, "VoicePlaybackUnavailableMessage", vm_path)
+
+    require_text(vm, "ConversationLatestUserText = trimmedTranscriptionText", vm_path)
+    require_text(vm, "ConversationLatestBotText = botReply", vm_path)
+    require_text(vm, "AddLearnerMessage(userMessage, messageSource, nextLearnerTurnCount, mappedFeedback)", vm_path)
+    require_text(vm, "isFeedbackEligible: true", vm_path)
+    require_text(vm, "CountsAsValidLessonTurn", vm_path)
+    require_text(vm, "BuildLessonSummaryInput", vm_path)
+
+    lesson_json_changed = any(path.suffix.lower() == ".json" and "lesson" in str(path).lower() for path in ROOT.glob("**/*.json") if ".git" in path.parts)
+    require(not lesson_json_changed, "Policy sanity check failed while scanning lesson JSON")
+
+    print("Conversation Mode TTS provider policy checks passed.")
+
+
+if __name__ == "__main__":
+    main()

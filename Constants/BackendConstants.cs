@@ -20,7 +20,8 @@ public static class BackendConstants
     public const int BotVoiceFirstAudioTimeoutSeconds = 5;
     public const int BotVoiceSegmentTimeoutSeconds = 15;
     public const int BotVoiceStreamOverallTimeoutSeconds = 20;
-    public const bool UseRealtimeConversationMode = true;
+    public const string DefaultConversationModeVoiceProvider = "Tts1";
+    public const double ConversationModeTtsSpeechSpeed = 0.9;
     public const string MultipartFileFieldName = "file";
     public const string WavContentType = "audio/wav";
     public const string PcmContentType = "audio/pcm";
@@ -37,6 +38,7 @@ public static class BackendConstants
     public const string RealtimeModelName = "gpt-realtime";
     public const string LessonChatTtsPurpose = "lesson_chat_tts";
     public const string RealtimePreStartOpeningSpeechPurpose = "realtime_pre_start_opening";
+    public const string ConversationModeTtsPurpose = "conversation_mode_tts";
 
     public const string BackendUnavailableMessage = "Backend is unavailable. Please start the local backend and try again.";
     public const string BackendInvalidResponseMessage = "Backend returned an invalid response.";
@@ -44,6 +46,7 @@ public static class BackendConstants
     public const string BackendInvalidTranslationResponseMessage = "Backend returned an invalid translation response.";
     public const string BackendInvalidSpeechResponseMessage = "Backend returned an invalid speech response.";
     public const string RealtimeUnavailableMessage = "Realtime voice mode is unavailable. Please try text mode.";
+    public const string VoicePlaybackUnavailableMessage = "Voice playback is unavailable. You can continue by reading the message.";
     public const string BackendStatusChecking = "Backend: checking...";
     public const string BackendStatusConnected = "Backend: connected";
     public const string BackendStatusUnavailable = "Backend: unavailable";

@@ -56,3 +56,9 @@ Realtime startup/record state recovery is now a priority before broader feature 
 4. Improve feedback and summary quality using real lesson transcripts.
 5. Measure usage/cost across 10-20 representative test lessons before changing model or pricing assumptions.
 6. Start only small architecture extractions after the behavior above is pinned by tests and manual results.
+
+## MVP Conversation Mode stability follow-up
+
+- Keep Conversation Mode on the default `Tts1` provider until manual Windows checks show the MVP path is stable across A1/A2/B1/B2 lessons.
+- Continue to preserve Realtime code, diagnostics, stop-reason logging, and policy tests behind the provider switch for a future post-MVP feature flag.
+- When Realtime is revisited, compare backend logs for `/api/audio/transcribe`, `/api/lesson-chat/reply`, `/api/audio/speech`, and `/api/realtime-voice` before changing the default provider.

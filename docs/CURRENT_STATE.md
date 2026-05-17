@@ -225,3 +225,11 @@ The desktop app uses a focused Soft Learning Desktop style rather than a raw dem
 ## Current desktop presentation polish
 
 The desktop UI keeps the Soft Learning Desktop presentation layer: rounded controls/cards/inputs, soft chat cards, and topic/level identity colors. Recent usability polish is presentation-only and adds Enter-to-send for the Lesson Chat text input plus selectable/copyable chat message text; these UI changes must not alter lesson logic, prompts, TTS routing, Realtime schemas, or lesson JSON.
+
+## 2026-05-17 update: MVP Conversation Mode provider switch
+
+Conversation Mode now has an internal provider switch. The default provider is `Tts1`, so the MVP Conversation Mode path does not open `/api/realtime-voice` and does not create a Realtime session. The Realtime provider remains implemented in the desktop/backend code and can be re-enabled later by changing the provider switch to `Realtime`.
+
+Default MVP Conversation Mode keeps the full-screen avatar overlay, latest learner bubble, latest tutor bubble, bottom-left Hint button, semi-transparent hint overlay, red record button, and bottom-right exit/back button. Its turn flow is the stable chained pipeline: microphone recording, `/api/audio/transcribe`, `/api/lesson-chat/reply`, `/api/audio/speech`, and sequential playback. Conversation Mode TTS uses `tts-1`, voice `coral`, purpose `conversation_mode_tts`, and a conservative speech speed of `0.9` to keep playback calm and even.
+
+Realtime documentation and tests remain in place, but Realtime is not the default Conversation Mode engine for the MVP.
