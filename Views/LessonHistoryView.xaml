@@ -6,15 +6,15 @@
              mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="900">
-    <Grid Margin="24" Background="#FFF6F8FB">
+    <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
         <Border MaxWidth="820"
                 Margin="0,12"
                 Padding="24"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Stretch"
-                Background="White"
-                CornerRadius="16"
-                BorderBrush="#FFE1E8F0"
+                Background="{StaticResource SurfaceBrush}"
+                CornerRadius="{StaticResource CornerLarge}"
+                BorderBrush="{StaticResource BorderSoftBrush}"
                 BorderThickness="1">
             <Grid>
                 <Grid.RowDefinitions>
@@ -53,7 +53,7 @@
                             </ItemsControl.Style>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Margin="0,0,0,12" Padding="16" Background="#FFF7FBFF" CornerRadius="12" BorderBrush="#FFE1E8F0" BorderThickness="1">
+                                    <Border Margin="0,0,0,12" Padding="16" Background="#FFF7FBFF" CornerRadius="{StaticResource CornerMedium}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1">
                                         <StackPanel>
                                             <TextBlock Text="{Binding CompletedAt, Mode=OneWay, StringFormat={}{0:yyyy-MM-dd HH:mm}}" FontSize="12" Foreground="#FF587189" />
                                             <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="14" Foreground="#FF1E3A56">
@@ -98,10 +98,7 @@
                         MinWidth="160"
                         Height="38"
                         Padding="18,0"
-                        Background="White"
-                        Foreground="#FF1E3A56"
-                        BorderBrush="#FFCAD8E6"
-                        Cursor="Hand" />
+                        Style="{StaticResource SecondaryButtonStyle}" />
             </Grid>
         </Border>
     </Grid>

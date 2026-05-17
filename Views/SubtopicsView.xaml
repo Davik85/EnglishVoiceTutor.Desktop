@@ -7,16 +7,16 @@
              mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="900">
-    <Grid Margin="24" Background="#FFF6F8FB">
+    <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <Border MaxWidth="760"
                     Margin="0,12"
                     Padding="32"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
-                    Background="White"
-                    CornerRadius="16"
-                    BorderBrush="#FFE1E8F0"
+                    Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="{StaticResource CornerLarge}"
+                    BorderBrush="{StaticResource BorderSoftBrush}"
                     BorderThickness="1">
                 <StackPanel>
                     <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" Foreground="#FF1C2B3A" TextAlignment="Center" />
@@ -30,11 +30,7 @@
                                 <Button Command="{Binding DataContext.SelectSubtopicCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                         CommandParameter="{Binding}"
                                         Margin="0,0,0,10"
-                                        Padding="14"
-                                        HorizontalContentAlignment="Left"
-                                        Background="#FFF7FAFD"
-                                        BorderBrush="#FFCAD8E6"
-                                        Cursor="Hand">
+                                        Style="{StaticResource SubtopicTileButtonStyle}">
                                     <StackPanel>
                                         <TextBlock Text="{Binding DisplayTitle}" FontSize="16" FontWeight="SemiBold" Foreground="#FF1E3A56" />
                                         <TextBlock Margin="0,4,0,0" Text="{Binding DisplayDescription}" FontSize="13" Foreground="#FF3A4A5B" TextWrapping="Wrap" />
@@ -45,8 +41,8 @@
                     </ItemsControl>
 
                     <StackPanel Margin="0,8,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button Content="{Binding BackButtonText}" Command="{Binding BackCommand}" Margin="6,0" Width="110" Height="40" Background="White" Foreground="#FF1E3A56" BorderBrush="#FFCAD8E6" Cursor="Hand" />
-                        <Button Content="{Binding StartLessonButtonText}" Command="{Binding StartLessonCommand}" Margin="6,0" Width="140" Height="40" Background="#FF1E3A56" Foreground="White" BorderBrush="#FF1E3A56" Cursor="Hand" />
+                        <Button Content="{Binding StartLessonButtonText}" Command="{Binding StartLessonCommand}" Margin="6,0" Width="150" Height="40" Style="{StaticResource PrimaryButtonStyle}" />
+                        <Button Content="{Binding BackButtonText}" Command="{Binding BackCommand}" Margin="6,0" Width="110" Height="40" Style="{StaticResource SecondaryButtonStyle}" />
                     </StackPanel>
 
                     <TextBlock Margin="0,16,0,0" Text="{Binding StatusMessage}" FontSize="13" Foreground="#FF3A4A5B" TextAlignment="Center" TextWrapping="Wrap" />

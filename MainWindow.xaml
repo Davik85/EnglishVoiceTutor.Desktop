@@ -12,7 +12,7 @@
         MinWidth="820"
         MinHeight="560"
         WindowStartupLocation="CenterScreen"
-        Background="#FFF6F8FB">
+        Background="{StaticResource AppBackgroundBrush}">
     <Window.Resources>
         <DataTemplate DataType="{x:Type viewModels:WelcomeViewModel}">
             <views:WelcomeView />
@@ -40,7 +40,12 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Grid>
+    <Border Margin="14"
+            Background="{StaticResource AppBackgroundBrush}"
+            BorderBrush="{StaticResource FrameBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="20"
+            Padding="8">
         <ContentControl Content="{Binding CurrentViewModel}" />
-    </Grid>
+    </Border>
 </Window>
