@@ -45,6 +45,23 @@ def assert_min_width(tag_text: str, label: str, minimum: int) -> None:
         raise AssertionError(f"{label} must have MinWidth >= {minimum}.")
 
 
+def extract_style(text: str, style_key: str) -> str:
+    pattern = rf'<Style[^>]*x:Key="{re.escape(style_key)}"[\s\S]*?</Style>'
+    match = re.search(pattern, text)
+    if not match:
+        raise AssertionError(f"Missing style {style_key}.")
+    return match.group(0)
+
+
+def assert_no_restrictive_height(style_text: str, style_key: str) -> None:
+    fixed_height = re.search(r'Property="Height"\s+Value="(?!Auto")([^"]+)"', style_text)
+    if fixed_height:
+        raise AssertionError(f"{style_key} must not set a fixed Height: {fixed_height.group(1)}.")
+
+    if re.search(r'Property="MaxHeight"', style_text) and "intentionally documented" not in style_text:
+        raise AssertionError(f"{style_key} must not set MaxHeight for normal chat messages unless intentionally documented.")
+
+
 def main() -> int:
     design = read(DESIGN_SYSTEM)
     level = read(LEVEL_VIEW)
@@ -54,13 +71,17 @@ def main() -> int:
     assert_contains(design, "HorizontalContentAlignment", "shared button horizontal content centering")
     assert_contains(design, "VerticalContentAlignment", "shared button vertical content centering")
     assert_contains(design, "SelectableChatTextBoxStyle", "selectable chat text style")
+    selectable_style = extract_style(design, "SelectableChatTextBoxStyle")
     for selectable_property in [
         "IsReadOnly\" Value=\"True",
         "TextWrapping\" Value=\"Wrap",
         "Background\" Value=\"Transparent",
         "BorderThickness\" Value=\"0",
+        "HorizontalScrollBarVisibility\" Value=\"Disabled",
+        "VerticalScrollBarVisibility\" Value=\"Disabled",
     ]:
-        assert_contains(design, selectable_property, f"selectable chat text {selectable_property}")
+        assert_contains(selectable_style, selectable_property, f"selectable chat text {selectable_property}")
+    assert_no_restrictive_height(selectable_style, "SelectableChatTextBoxStyle")
 
     assert_contains(level, "<ScrollViewer", "level selection scroll safety")
     assert_contains(level, "VerticalAlignment=\"Top\"", "level card top alignment inside scroll viewer")
@@ -93,35 +114,35 @@ def main() -> int:
         assert_min_width(tag, f"lesson {binding}", minimum)
 
     assert_contains(chat, "AcceptsReturn=\"False\"", "single-line input documents Shift+Enter no-op behavior")
+    assert_contains(chat, "PreviewKeyDown=\"LessonInputTextBox_PreviewKeyDown\"", "scoped Lesson Chat input PreviewKeyDown handler")
     if "Key=\"Enter\"" in chat:
-        raise AssertionError("LessonChatView.xaml must not use Key=\"Enter\" because WPF XAML parsing requires Key=\"Return\" for the main Enter key.")
+        raise AssertionError("LessonChatView.xaml must not use XAML KeyBinding Key=\"Enter\".")
+    if "Key=\"Return\"" in chat:
+        raise AssertionError("LessonChatView.xaml must not use XAML KeyBinding Key=\"Return\" when PreviewKeyDown is the final implementation.")
 
     code_behind = read(LESSON_CHAT_VIEW_CODE_BEHIND)
-    has_return_key_binding = "<KeyBinding Key=\"Return\"" in chat
-    has_safe_preview_handler = "PreviewKeyDown=\"LessonInputTextBox_PreviewKeyDown\"" in chat
-    if not (has_return_key_binding or has_safe_preview_handler):
-        raise AssertionError("Lesson text input must support Enter-to-send via Key=\"Return\" or a named safe PreviewKeyDown handler.")
+    for handler_requirement in [
+        "LessonInputTextBox_PreviewKeyDown",
+        "Key.Return",
+        "Key.Enter",
+        "e.SystemKey == Key.Return",
+        "e.SystemKey == Key.Enter",
+        "ModifierKeys.Shift",
+        "SendMessageCommand.CanExecute(null)",
+        "SendMessageCommand.Execute(null)",
+        "e.Handled = true",
+    ]:
+        assert_contains(code_behind, handler_requirement, f"safe Enter-to-send handler {handler_requirement}")
 
-    if has_return_key_binding:
-        assert_contains(chat, "<TextBox.InputBindings>", "lesson text input bindings")
-        assert_contains(chat, "Modifiers=\"None\"", "Enter sends only without Shift modifiers")
-        assert_contains(chat, "Command=\"{Binding SendMessageCommand}\"", "Enter invokes existing send command")
-
-    if has_safe_preview_handler:
-        for handler_requirement in [
-            "LessonInputTextBox_PreviewKeyDown",
-            "Key.Return",
-            "ModifierKeys.Shift",
-            "SendMessageCommand.CanExecute(null)",
-            "SendMessageCommand.Execute(null)",
-            "e.Handled = true",
-        ]:
-            assert_contains(code_behind, handler_requirement, f"safe Enter-to-send handler {handler_requirement}")
+    if code_behind.count("SendMessageCommand.Execute(null)") != 1:
+        raise AssertionError("Lesson input PreviewKeyDown handler must execute SendMessageCommand exactly once.")
 
     if chat.count("Style=\"{StaticResource SelectableChatTextBoxStyle}\"") < 2:
         raise AssertionError("Chat body and translation text must use selectable read-only TextBox styling.")
     for command_binding in ["ToggleTranslationCommand", "PlayBotVoiceCommand", "ViewFeedbackCommand"]:
         assert_contains(chat, command_binding, f"chat action remains available: {command_binding}")
+    assert_contains(chat, "CanShowFeedbackAction", "user message template preserves View feedback visibility condition")
+    assert_contains(chat, '<WrapPanel Margin="0,8,0,0" Orientation="Horizontal">', "chat action row wraps instead of clipping feedback action")
 
     for realtime_test in REALTIME_SCHEMA_TESTS:
         assert_contains(read(realtime_test), "realtime", f"existing realtime policy test still present: {realtime_test.name}")

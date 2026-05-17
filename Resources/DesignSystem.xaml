@@ -355,6 +355,7 @@
         <Setter Property="Padding" Value="12" />
         <Setter Property="CornerRadius" Value="14" />
         <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="MinWidth" Value="220" />
         <Setter Property="MaxWidth" Value="620" />
         <Setter Property="Background" Value="{StaticResource BotMessageBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderSoftBrush}" />
@@ -403,17 +404,22 @@
         </Setter>
     </Style>
 
-    <Style x:Key="SelectableChatTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource SoftTextBoxStyle}">
+    <Style x:Key="SelectableChatTextBoxStyle" TargetType="TextBox">
         <Setter Property="IsReadOnly" Value="True" />
         <Setter Property="AcceptsReturn" Value="True" />
         <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="VerticalScrollBarVisibility" Value="Disabled" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="MinHeight" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Top" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
     </Style>
 
     <Style TargetType="TextBox" BasedOn="{StaticResource SoftTextBoxStyle}" />

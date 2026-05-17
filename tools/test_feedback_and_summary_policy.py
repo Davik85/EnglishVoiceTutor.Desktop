@@ -33,7 +33,8 @@ def main() -> int:
     assert_contains(vm, "countsAsValidLessonTurn: true", "valid turns become counted messages")
     assert_contains(vm, "MarkAsValidLearnerTurn(validation.NormalizedTranscript", "realtime transcript normalization")
     assert_contains(vm, "MarkAsInvalidLearnerTranscript(RealtimeVoiceTranscriptionUnavailableText)", "invalid realtime transcript exclusion")
-    assert_contains(xaml, "{Binding IsFeedbackEligible}", "View feedback button eligibility binding")
+    assert_contains(msg, "CanShowFeedbackAction", "feedback action visibility state")
+    assert_contains(xaml, "{Binding CanShowFeedbackAction}", "View feedback button eligibility binding")
 
     feedback_request = re.search(r"private LessonChatBackendRequest BuildLessonFeedbackRequest[\s\S]+?\n    }", vm)
     if not feedback_request:
