@@ -94,3 +94,11 @@ Backend logs should make the current voice routing visible:
 - no Realtime WebSocket opens by default in the MVP path.
 
 Exact pricing remains approximate until real usage logs are collected and pricing constants are completed.
+
+## Study-language voice behavior
+
+Study languages are English, French, German, Portuguese, Spanish, and Italian, with English as the default. Normal voice recording and default TTS Conversation Mode send the selected study-language code to transcription (`en`, `fr`, `de`, `pt`, `es`, or `it`). Backend transcription logs include `TargetLanguageId` and `TranscriptionLanguageCode` and do not log audio content or secrets.
+
+Conversation Mode remains on the stable TTS provider by default. It still uses `gpt-4o-mini-tts`, voice `coral`, speed `1.0`, and visible bot text as the exact TTS input. The only speech-instruction change is that instructions now name the selected study language and require speech only in that language unless quoting the learner. Normal Lesson Chat TTS remains `tts-1` and does not receive speech instructions.
+
+Translate button remains a separate review feature. Study language controls lesson language and transcription; translation target/native-language behavior remains a future refinement.

@@ -171,3 +171,13 @@ The app currently reflects the Soft Learning Desktop style:
    - packaging/installer;
    - release preparation;
    - support diagnostics such as error reporting and log export.
+
+## Study language layer
+
+The MVP now supports a study-language layer for English, French, German, Portuguese, Spanish, and Italian. English remains the default study language.
+
+The same 26 lesson JSON scenarios are reused for every study language. Lesson JSON remains semantic scenario metadata; it is not duplicated or translated per language. The selected study language is passed to lesson chat, hint, feedback, summary input, translation source context, audio transcription, and Conversation Mode speech requests.
+
+Study language is selected in Settings and is separate from UI/interface language. UI localization is not complete for the new study languages. Translation still targets the learner/native language setting and can be refined later as a separate data-storage/product task.
+
+Conversation Mode continues to use the stable TTS provider by default (`gpt-4o-mini-tts`) with target-language speech instructions. Realtime remains present for future experimentation and is not the default MVP path.

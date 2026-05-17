@@ -13,6 +13,7 @@ using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Desktop.Services;
 using EnglishVoiceTutor.Desktop.Services.Voice;
 using EnglishVoiceTutor.Shared.LessonPolicies;
+using EnglishVoiceTutor.Shared.StudyLanguages;
 using System.Windows;
 using NAudio.Wave;
 
@@ -23,6 +24,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly Action navigateBack;
     private readonly Action<LessonSummaryInput> finishLesson;
     private readonly string nativeLanguageName;
+    private readonly StudyLanguageDefinition studyLanguage;
     private readonly string tutorAvatarId;
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly AudioRecordingService audioRecordingService;
@@ -571,6 +573,7 @@ public partial class LessonChatViewModel : ViewModelBase
         Topic selectedTopic,
         Subtopic selectedSubtopic,
         string nativeLanguageName,
+        StudyLanguageDefinition? studyLanguage,
         string userDisplayName,
         string learningGoal,
         TutorAvatarOption tutorAvatar,
@@ -589,6 +592,7 @@ public partial class LessonChatViewModel : ViewModelBase
         SelectedTopic = selectedTopic;
         SelectedSubtopic = selectedSubtopic;
         this.nativeLanguageName = nativeLanguageName;
+        this.studyLanguage = studyLanguage ?? StudyLanguageCatalog.English;
         UserDisplayName = NormalizeOptionalText(userDisplayName);
         LearningGoal = NormalizeOptionalText(learningGoal);
         tutorAvatarId = tutorAvatar.Id;
@@ -959,7 +963,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 $"isTranscribingAudio={isTranscribingAudio}.");
             StatusMessage = localizedText.TranscribingAudioMessage;
 
-            var transcriptionText = await lessonChatBackendService.SendAudioForTranscriptionAsync(savedFilePath);
+            var transcriptionText = await lessonChatBackendService.SendAudioForTranscriptionAsync(savedFilePath, studyLanguage);
             BackendStatusText = BackendConstants.BackendStatusConnected;
             var transcriptValidation = LessonTranscriptValidator.Validate(transcriptionText);
             var trimmedTranscriptionText = transcriptValidation.NormalizedTranscript;
@@ -1619,6 +1623,15 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
 
+    private string BuildConversationModeTtsInstructions()
+    {
+        var targetLanguageName = string.IsNullOrWhiteSpace(studyLanguage.EnglishName)
+            ? StudyLanguageCatalog.English.EnglishName
+            : studyLanguage.EnglishName;
+
+        return $"Speak in a calm, friendly {targetLanguageName} tutor voice. Use an even pace and steady volume. Do not shout. Do not rush near the end of sentences. Keep the tone warm, patient, and encouraging. Use natural pauses between sentences. Pronounce clearly for a {targetLanguageName} learner. Speak only in {targetLanguageName} unless quoting the learner.";
+    }
+
     private Task PlayConversationModeBotVoiceAsync(ChatMessageViewModel message)
     {
         return PlayConversationModeBotVoiceAsync(message, isOpeningPlayback: false);
@@ -1648,7 +1661,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 Debug.WriteLine($"Warning: Conversation Mode TTS input differs from visible bot text. MessageId={message.Id}; VisibleTextLength={visibleText.Length}; TtsInputLength={ttsInputText.Length}; TextMatchesVisible=False.");
             }
 
-            Debug.WriteLine($"Conversation Mode TTS playback requested: MessageId={message.Id}; IsOpeningPlayback={isOpeningPlayback}; Purpose={BackendConstants.ConversationModeTtsPurpose}; Model={BackendConstants.ConversationModeTtsModel}; Voice=coral; SpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; HasInstructions=True; InstructionsLength={BackendConstants.ConversationModeTtsInstructions.Length}; RealtimeWebSocketOpened=False.");
+            Debug.WriteLine($"Conversation Mode TTS playback requested: MessageId={message.Id}; IsOpeningPlayback={isOpeningPlayback}; Purpose={BackendConstants.ConversationModeTtsPurpose}; Model={BackendConstants.ConversationModeTtsModel}; Voice=coral; SpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; HasInstructions=True; InstructionsLength={BuildConversationModeTtsInstructions().Length}; RealtimeWebSocketOpened=False.");
             await PlayBotVoiceForMessageCoreAsync(
                 message,
                 isAutoPlay: false,
@@ -1657,7 +1670,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 cancellationToken: CancellationToken.None,
                 speechSpeed: ConversationModeTtsSpeechSpeed,
                 speechModel: BackendConstants.ConversationModeTtsModel,
-                speechInstructions: BackendConstants.ConversationModeTtsInstructions);
+                speechInstructions: BuildConversationModeTtsInstructions());
         }
         catch (Exception exception)
         {
@@ -1856,7 +1869,7 @@ public partial class LessonChatViewModel : ViewModelBase
             Debug.WriteLine($"Bot voice exact text: MessageId={message.Id}; VoiceRequestId={voiceRequestId}; RawTextLength={rawTextLength}; VoiceTextLength={inputLength}; IsExactText={isExactText}; AutoPlay={isAutoPlay}; IsSetupMessage={IsSetupVoiceMessage(message)}; SegmentIndex={segmentIndex};");
             Debug.WriteLine($"Bot voice segment request: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SegmentLength={inputLength}; SegmentTextPreview={CreateBotVoiceSegmentPreview(ttsInputText)};");
             Debug.WriteLine($"Bot voice segment request starting: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; RequestStartedMs={totalStopwatch.ElapsedMilliseconds}; TimeoutMs={timeout.TotalMilliseconds}; HardTimeoutSeconds={timeout.TotalSeconds}.");
-            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(ttsInputText, linkedCancellationTokenSource.Token, speechPurpose, speechSpeed, speechModel, speechInstructions);
+            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(ttsInputText, linkedCancellationTokenSource.Token, speechPurpose, speechSpeed, speechModel, speechInstructions, studyLanguage);
             Debug.WriteLine($"Bot voice segment backend response received: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; VoiceRequestId={voiceRequestId}; SegmentIndex={segmentIndex}; InputLength={inputLength}; SegmentReadyMs={totalStopwatch.ElapsedMilliseconds}; BackendElapsedMs={backendStopwatch.ElapsedMilliseconds}; BackendAudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
 
             var saveStopwatch = Stopwatch.StartNew();
@@ -2416,6 +2429,10 @@ public partial class LessonChatViewModel : ViewModelBase
                 UserMessage = userMessage,
                 LastBotMessage = lastBotMessage,
                 NativeLanguageName = nativeLanguageName,
+                TargetLanguageId = studyLanguage.Id,
+                TargetLanguageName = studyLanguage.EnglishName,
+                TargetLanguageNativeName = studyLanguage.NativeName,
+                TargetLanguageCode = studyLanguage.Bcp47Code,
                 TutorAvatarId = tutorAvatarId,
                 UserDisplayName = this.UserDisplayName,
                 LearningGoal = this.LearningGoal,
@@ -2659,6 +2676,10 @@ public partial class LessonChatViewModel : ViewModelBase
             UserRole = lessonScenario.Roles.UserRole,
             Situation = lessonScenario.Situation.Description,
             NativeLanguageName = nativeLanguageName,
+            TargetLanguageId = studyLanguage.Id,
+            TargetLanguageName = studyLanguage.EnglishName,
+            TargetLanguageNativeName = studyLanguage.NativeName,
+            TargetLanguageCode = studyLanguage.Bcp47Code,
             UserDisplayName = UserDisplayName,
             LearningGoal = LearningGoal,
             SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
@@ -2979,7 +3000,7 @@ public partial class LessonChatViewModel : ViewModelBase
         var audioBytes = realtimeCommittedAudioBuffer.ToArray();
         var audioChunkCount = realtimeCommittedAudioChunkCount;
         var estimatedDurationSeconds = EstimateRealtimeBufferedAudioDurationSeconds();
-        Debug.WriteLine($"Realtime fallback transcription starting: SessionId={sessionId}; ItemId={itemId}; Reason={reason}; AudioChunkCount={audioChunkCount}; BufferedBytes={audioBytes.Length}; EstimatedBufferedAudioDurationSeconds={estimatedDurationSeconds:F2}; Model={BackendConstants.TranscriptionModelName}; Language=en.");
+        Debug.WriteLine($"Realtime fallback transcription starting: SessionId={sessionId}; ItemId={itemId}; Reason={reason}; AudioChunkCount={audioChunkCount}; BufferedBytes={audioBytes.Length}; EstimatedBufferedAudioDurationSeconds={estimatedDurationSeconds:F2}; Model={BackendConstants.TranscriptionModelName}; Language={studyLanguage.TranscriptionLanguageCode}.");
         _ = RunRealtimeFallbackTranscriptionAsync(target, itemId, sessionId, reason, audioBytes, audioChunkCount, estimatedDurationSeconds);
     }
 
@@ -2996,7 +3017,7 @@ public partial class LessonChatViewModel : ViewModelBase
         try
         {
             fallbackFilePath = await SaveRealtimeFallbackAudioFileAsync(audioBytes);
-            var fallbackTranscript = await lessonChatBackendService.SendAudioForTranscriptionAsync(fallbackFilePath, CancellationToken.None);
+            var fallbackTranscript = await lessonChatBackendService.SendAudioForTranscriptionAsync(fallbackFilePath, studyLanguage, CancellationToken.None);
             var validation = LessonTranscriptValidator.Validate(fallbackTranscript);
             Task? applyValidTranscriptTask = null;
             await Application.Current.Dispatcher.InvokeAsync(() =>
@@ -4062,6 +4083,10 @@ public partial class LessonChatViewModel : ViewModelBase
             UserMessage = hintUserMessage,
             LastBotMessage = lastBotMessage,
             NativeLanguageName = nativeLanguageName,
+            TargetLanguageId = studyLanguage.Id,
+            TargetLanguageName = studyLanguage.EnglishName,
+            TargetLanguageNativeName = studyLanguage.NativeName,
+            TargetLanguageCode = studyLanguage.Bcp47Code,
             TutorAvatarId = tutorAvatarId,
             UserDisplayName = this.UserDisplayName,
             LearningGoal = this.LearningGoal,
@@ -4544,6 +4569,10 @@ public partial class LessonChatViewModel : ViewModelBase
             SourceMessageKind = target.SourceMessageKind,
             LastBotMessage = lastBotMessage,
             NativeLanguageName = nativeLanguageName,
+            TargetLanguageId = studyLanguage.Id,
+            TargetLanguageName = studyLanguage.EnglishName,
+            TargetLanguageNativeName = studyLanguage.NativeName,
+            TargetLanguageCode = studyLanguage.Bcp47Code,
             TutorAvatarId = tutorAvatarId,
             UserDisplayName = UserDisplayName,
             LearningGoal = LearningGoal,
@@ -4611,6 +4640,11 @@ public partial class LessonChatViewModel : ViewModelBase
             SelectedContextTitle = GetSelectedContextTitle(),
             SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
             LearningGoal = LearningGoal,
+            TargetLanguage = studyLanguage.EnglishName,
+            TargetLanguageName = studyLanguage.EnglishName,
+            TargetLanguageId = studyLanguage.Id,
+            TargetLanguageNativeName = studyLanguage.NativeName,
+            TargetLanguageCode = studyLanguage.Bcp47Code,
             LessonType = lessonScenario.Metadata.LessonType,
             FinalUserTurnCount = LearnerTurnCount,
             Messages = summaryMessages
@@ -4688,7 +4722,7 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         try
         {
-            var translatedText = await lessonChatBackendService.TranslateTextAsync(message.Text, nativeLanguageName);
+            var translatedText = await lessonChatBackendService.TranslateTextAsync(message.Text, nativeLanguageName, studyLanguage);
             message.TranslationText = translatedText;
             message.IsTranslationVisible = true;
             BackendStatusText = BackendConstants.BackendStatusConnected;
@@ -4704,12 +4738,12 @@ public partial class LessonChatViewModel : ViewModelBase
     private async Task TranslateSelectedFeedbackAsync(Feedback feedback)
     {
         var translations = await Task.WhenAll(
-            lessonChatBackendService.TranslateTextAsync(feedback.ShortText, nativeLanguageName),
-            lessonChatBackendService.TranslateTextAsync(feedback.CorrectedVersion, nativeLanguageName),
-            lessonChatBackendService.TranslateTextAsync(feedback.GrammarTip, nativeLanguageName),
-            lessonChatBackendService.TranslateTextAsync(feedback.VocabularyTip, nativeLanguageName),
-            lessonChatBackendService.TranslateTextAsync(feedback.CultureTip, nativeLanguageName),
-            lessonChatBackendService.TranslateTextAsync(feedback.NaturalVersion, nativeLanguageName));
+            lessonChatBackendService.TranslateTextAsync(feedback.ShortText, nativeLanguageName, studyLanguage),
+            lessonChatBackendService.TranslateTextAsync(feedback.CorrectedVersion, nativeLanguageName, studyLanguage),
+            lessonChatBackendService.TranslateTextAsync(feedback.GrammarTip, nativeLanguageName, studyLanguage),
+            lessonChatBackendService.TranslateTextAsync(feedback.VocabularyTip, nativeLanguageName, studyLanguage),
+            lessonChatBackendService.TranslateTextAsync(feedback.CultureTip, nativeLanguageName, studyLanguage),
+            lessonChatBackendService.TranslateTextAsync(feedback.NaturalVersion, nativeLanguageName, studyLanguage));
 
         feedback.ShortTextTranslation = translations[0];
         feedback.CorrectedVersionTranslation = translations[1];

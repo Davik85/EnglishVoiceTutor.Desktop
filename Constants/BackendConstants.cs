@@ -42,7 +42,7 @@ public static class BackendConstants
     public const string RealtimePreStartOpeningSpeechPurpose = "realtime_pre_start_opening";
     public const string ConversationModeTtsPurpose = "conversation_mode_tts";
 
-    public const string ConversationModeTtsInstructions = "Speak in a calm, friendly English tutor voice. Use an even pace and steady volume. Do not shout. Do not rush near the end of sentences. Keep the tone warm, patient, and encouraging. Use natural pauses between sentences. Pronounce clearly for an English learner.";
+    public const string ConversationModeTtsInstructions = "Speak in a calm, friendly target-language tutor voice. Use an even pace and steady volume. Do not shout. Do not rush near the end of sentences. Keep the tone warm, patient, and encouraging. Use natural pauses between sentences. Pronounce clearly for a target-language learner. Speak only in the selected target language unless quoting the learner.";
 
     public const string BackendUnavailableMessage = "Backend is unavailable. Please start the local backend and try again.";
     public const string BackendInvalidResponseMessage = "Backend returned an invalid response.";

@@ -11,4 +11,12 @@ public sealed class AudioSpeechRequest
     public string? Instructions { get; init; }
 
     public double? SpeechSpeed { get; init; }
+
+    public string TargetLanguageId { get; init; } = string.Empty;
+
+    public string TargetLanguageName { get; init; } = string.Empty;
+
+    public string TargetLanguageNativeName { get; init; } = string.Empty;
+
+    public string TargetLanguageCode { get; init; } = string.Empty;
 }

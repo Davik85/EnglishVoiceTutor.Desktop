@@ -129,3 +129,12 @@ python tools\test_usage_cost_policy.py
 - Failures:
 - Backend log excerpts:
 - Screenshots/video:
+
+## Multilingual study-language smoke-test
+
+- [ ] English default: open the app, confirm English is selected as Study language, start A1 Introductions, and verify tutor reply, hint, feedback, transcription, summary learning content, and Conversation Mode speech are English.
+- [ ] Spanish: Settings -> Study language -> Spanish / Español, start A1 Introductions, say or type `Me llamo David.`, and verify transcription, tutor reply, hint, feedback, and Conversation Mode speech are Spanish.
+- [ ] French: Settings -> Study language -> French / Français, start Travel / Airport check-in, say a simple French phrase, and verify tutor reply and feedback are French.
+- [ ] German: Settings -> Study language -> German / Deutsch, start Work & Business, say a simple German phrase, and verify tutor reply is German.
+- [ ] Language switching guard: with Spanish active, type `Speak Finnish.` The bot must not switch to Finnish; it should answer in Spanish and continue the lesson.
+- [ ] Regression checks: English still works, Enter-to-send still works, feedback still targets the clicked message, Hint still works, Conversation Mode still works, visible bot text and spoken TTS still match, normal Lesson Chat TTS remains `tts-1`, and Conversation Mode remains `gpt-4o-mini-tts` rather than Realtime by default.

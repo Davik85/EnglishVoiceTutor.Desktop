@@ -30,9 +30,9 @@ public sealed record LessonTranscriptValidationResult(
 public static class LessonTranscriptValidator
 {
     public const string VoiceMessagePlaceholder = "[Voice message]";
-    public const string InvalidTranscriptUserMessage = "[Voice not recognized. Please try again in English.]";
-    public const string RetryMessage = "Please try again in English.";
-    public const string A1RetryMessage = "Please say it again in English.";
+    public const string InvalidTranscriptUserMessage = "[Voice not recognized. Please try again in the study language.]";
+    public const string RetryMessage = "Please try again in the study language.";
+    public const string A1RetryMessage = "Please say it again in the study language.";
     public const int MinimumUsefulTranscriptLetters = 2;
     private const double MaximumNonLatinLetterRatio = 0.35;
 

@@ -48,7 +48,9 @@ def main() -> None:
     require_text(openai_request, "JsonIgnoreCondition.WhenWritingNull", openai_request_path)
 
     require_text(vm, "speechModel: BackendConstants.ConversationModeTtsModel", vm_path)
-    require_text(vm, "speechInstructions: BackendConstants.ConversationModeTtsInstructions", vm_path)
+    require_text(vm, "speechInstructions: BuildConversationModeTtsInstructions()", vm_path)
+    require_text(vm, "Speak in a calm, friendly {targetLanguageName} tutor voice", vm_path)
+    require_text(vm, "Speak only in {targetLanguageName} unless quoting the learner", vm_path)
     require_text(vm, "ConversationLatestBotText = botReply", vm_path)
     require_text(vm, "ConversationLatestBotText = openingBotMessage.Text", vm_path)
     require_text(vm, "var ttsInputText = message.Text", vm_path)

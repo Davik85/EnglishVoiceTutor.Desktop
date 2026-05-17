@@ -2,6 +2,7 @@ using System.IO;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Desktop.Services;
 
@@ -72,6 +73,7 @@ public class UserSettingsService
         {
             InterfaceLanguageId = InterfaceLanguageOptions.DetectFromCurrentCulture().Id,
             NativeLanguageName = AppConstants.NativeLanguageRussian,
+            StudyLanguageId = StudyLanguageCatalog.DefaultStudyLanguageId,
             SelectedTutorAvatarId = TutorAvatarOptions.DefaultAvatarId,
             UserDisplayName = string.Empty,
             LearningGoal = string.Empty,
@@ -89,6 +91,7 @@ public class UserSettingsService
             settings.NativeLanguageName = AppConstants.NativeLanguageRussian;
         }
 
+        settings.StudyLanguageId = StudyLanguageCatalog.GetById(settings.StudyLanguageId).Id;
         settings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(settings.SelectedTutorAvatarId).Id;
         settings.UserDisplayName = NormalizeOptionalText(settings.UserDisplayName);
         settings.LearningGoal = NormalizeOptionalText(settings.LearningGoal);

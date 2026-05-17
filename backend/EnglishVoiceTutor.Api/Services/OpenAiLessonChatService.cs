@@ -112,8 +112,10 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         }
 
         var guardedReply = _tutorIdentityGuard.PreventWrongTutorSelfIntroduction(lessonReply, _avatarProfileProvider.GetById(request.TutorAvatarId));
+        var isEnglishTargetLanguage = string.IsNullOrWhiteSpace(request.TargetLanguageId)
+            || string.Equals(request.TargetLanguageId, "en", StringComparison.OrdinalIgnoreCase);
         if (AssistantOutputLanguageGuard.IsLanguageSwitchRequest(request.UserMessage)
-            || AssistantOutputLanguageGuard.IsClearlyNonEnglishTutorOutput(guardedReply.BotReply))
+            || (isEnglishTargetLanguage && AssistantOutputLanguageGuard.IsClearlyNonEnglishTutorOutput(guardedReply.BotReply)))
         {
             _logger.LogWarning(
                 "AssistantOutputLanguageViolation Model={Model}; LessonId={LessonId}; Level={Level}; Topic={Topic}; Subtopic={Subtopic}; BotReplyLength={BotReplyLength}; LanguageSwitchRequest={LanguageSwitchRequest}.",
@@ -124,7 +126,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
                 string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
                 guardedReply.BotReply.Length,
                 AssistantOutputLanguageGuard.IsLanguageSwitchRequest(request.UserMessage));
-            guardedReply = AssistantOutputLanguageGuard.CreateSafeEnglishFallback(request, guardedReply);
+            guardedReply = AssistantOutputLanguageGuard.CreateSafeTargetLanguageFallback(request, guardedReply);
         }
 
         if (LessonLimitHelper.ShouldEndLessonNow(request) && !guardedReply.IsLessonComplete)

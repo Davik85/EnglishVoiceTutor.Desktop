@@ -1,0 +1,62 @@
+[
+  {
+    "id": "en",
+    "englishName": "English",
+    "nativeName": "English",
+    "bcp47Code": "en",
+    "transcriptionLanguageCode": "en",
+    "tutorInstructionName": "English",
+    "languageLockName": "English",
+    "isDefault": true
+  },
+  {
+    "id": "fr",
+    "englishName": "French",
+    "nativeName": "Français",
+    "bcp47Code": "fr",
+    "transcriptionLanguageCode": "fr",
+    "tutorInstructionName": "French",
+    "languageLockName": "French",
+    "isDefault": false
+  },
+  {
+    "id": "de",
+    "englishName": "German",
+    "nativeName": "Deutsch",
+    "bcp47Code": "de",
+    "transcriptionLanguageCode": "de",
+    "tutorInstructionName": "German",
+    "languageLockName": "German",
+    "isDefault": false
+  },
+  {
+    "id": "pt",
+    "englishName": "Portuguese",
+    "nativeName": "Português",
+    "bcp47Code": "pt",
+    "transcriptionLanguageCode": "pt",
+    "tutorInstructionName": "Portuguese",
+    "languageLockName": "Portuguese",
+    "isDefault": false
+  },
+  {
+    "id": "es",
+    "englishName": "Spanish",
+    "nativeName": "Español",
+    "bcp47Code": "es",
+    "transcriptionLanguageCode": "es",
+    "tutorInstructionName": "Spanish",
+    "languageLockName": "Spanish",
+    "isDefault": false
+  },
+  {
+    "id": "it",
+    "englishName": "Italian",
+    "nativeName": "Italiano",
+    "bcp47Code": "it",
+    "transcriptionLanguageCode": "it",
+    "tutorInstructionName": "Italian",
+    "languageLockName": "Italian",
+    "isDefault": false
+  }
+]
