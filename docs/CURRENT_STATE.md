@@ -221,3 +221,7 @@ The desktop app uses a focused Soft Learning Desktop style rather than a raw dem
 - Level choices use a calm progression palette from fresh green (A1) through mint/cyan (A2), warm amber (B1), and soft violet (B2).
 - Topic and situation cards use restrained theme accents: blue for Everyday English, travel green, office blue, professional navy, warm cafe peach, and lavender for Free Conversation.
 - Visual polish must remain presentation-only and must not change lesson behavior, navigation, prompts, lesson JSON, Realtime, normal TTS, backend routing, or lesson state logic.
+
+## Current desktop presentation polish
+
+The desktop UI keeps the Soft Learning Desktop presentation layer: rounded controls/cards/inputs, soft chat cards, and topic/level identity colors. Recent usability polish is presentation-only and adds Enter-to-send for the Lesson Chat text input plus selectable/copyable chat message text; these UI changes must not alter lesson logic, prompts, TTS routing, Realtime schemas, or lesson JSON.

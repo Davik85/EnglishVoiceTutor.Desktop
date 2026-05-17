@@ -39,10 +39,12 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <StackPanel Margin="0,8,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button Content="{Binding BackButtonText}" Command="{Binding BackCommand}" Margin="6,0" Width="110" Height="40" Style="{StaticResource SecondaryButtonStyle}" />
-                        <Button Content="{Binding HistoryButtonText}" Command="{Binding HistoryCommand}" Margin="6,0" Width="110" Height="40" Style="{StaticResource SecondaryButtonStyle}" />
-                        <Button Content="{Binding SettingsButtonText}" Command="{Binding SettingsCommand}" Margin="6,0" Width="110" Height="40" Style="{StaticResource SecondaryButtonStyle}" />
+                    <StackPanel Margin="0,8,0,0" HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="{Binding BackButtonText}" Command="{Binding BackCommand}" Margin="6,0" MinWidth="110" MinHeight="40" Style="{StaticResource SecondaryButtonStyle}" />
+                            <Button Content="{Binding HistoryButtonText}" Command="{Binding HistoryCommand}" Margin="6,0" MinWidth="150" MinHeight="40" Style="{StaticResource SecondaryButtonStyle}" />
+                        </StackPanel>
+                        <Button Content="{Binding SettingsButtonText}" Command="{Binding SettingsCommand}" Margin="6,10,6,0" MinWidth="120" MinHeight="40" HorizontalAlignment="Center" Style="{StaticResource SecondaryButtonStyle}" />
                     </StackPanel>
 
                     <TextBlock Margin="0,16,0,0" Text="{Binding StatusMessage}" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" />
