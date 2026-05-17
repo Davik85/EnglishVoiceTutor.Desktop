@@ -154,6 +154,10 @@ def main() -> int:
         assert_contains(chat, command_binding, f"chat action remains available: {command_binding}")
     assert_contains(chat, "CanShowFeedbackAction", "user message template preserves View feedback visibility condition")
     assert_contains(chat, '<WrapPanel Margin="0,8,0,0" Orientation="Horizontal">', "chat action row wraps instead of clipping feedback action")
+    assert_contains(chat, "HasSelectedFeedbackPanel", "global bottom feedback panel remains available")
+    assert_contains(chat, "SelectedFeedbackSourceText, Mode=OneWay", "global feedback panel displays selected source phrase safely")
+    if "{Binding IsFeedbackVisible}" in chat:
+        raise AssertionError("Feedback panel must be global, not inline inside each message template.")
 
     for realtime_test in REALTIME_SCHEMA_TESTS:
         assert_contains(read(realtime_test), "realtime", f"existing realtime policy test still present: {realtime_test.name}")

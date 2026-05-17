@@ -40,6 +40,9 @@ def main() -> int:
     assert_contains(vm, "isFeedbackEligible: feedbackEligible", "setup context feedback eligibility")
     assert_contains(msg, "return \"ContextSelection\";", "setup context feedback kind")
     assert_contains(xaml, "{Binding CanShowFeedbackAction}", "View feedback button eligibility binding")
+    assert_contains(xaml, "{Binding HasSelectedFeedbackPanel}", "global selected feedback panel")
+    assert_contains(xaml, "{Binding SelectedFeedbackSourceText, Mode=OneWay}", "global feedback source phrase binding")
+    assert_contains(xaml, "{Binding SelectedFeedback.ShortText, Mode=OneWay}", "read-only feedback summary binding is one-way")
 
     feedback_request = re.search(r"private LessonChatBackendRequest BuildLessonFeedbackRequest[\s\S]+?\n    }", vm)
     if not feedback_request:
