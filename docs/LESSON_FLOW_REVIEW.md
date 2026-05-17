@@ -125,3 +125,7 @@ Conversation Mode uses the same lesson methodology and the same chat reply flow 
 - Letting Conversation Mode continue after the final tutor message.
 - Summarizing only the last exchange instead of the whole valid conversation.
 - Speaking text in Conversation Mode that differs from the visible bot text.
+
+## Study-language lesson flow note
+
+The lesson flow uses one shared set of lesson JSON scenarios for all study languages. The selected Settings study language is passed as runtime context so tutor replies, roleplay, hints, feedback, generated summary content, transcription, and Conversation Mode speech adapt to English, French, German, Portuguese, Spanish, or Italian without duplicating scenario trees. English remains the default.

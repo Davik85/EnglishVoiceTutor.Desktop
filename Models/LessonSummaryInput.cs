@@ -9,6 +9,10 @@ public sealed class LessonSummaryInput
     public string SelectedContextVariantId { get; init; } = string.Empty;
     public string LearningGoal { get; init; } = string.Empty;
     public string TargetLanguage { get; init; } = "English";
+    public string TargetLanguageName { get; init; } = "English";
+    public string TargetLanguageId { get; init; } = "en";
+    public string TargetLanguageNativeName { get; init; } = "English";
+    public string TargetLanguageCode { get; init; } = "en";
     public string LessonType { get; init; } = string.Empty;
     public int FinalUserTurnCount { get; init; }
     public IReadOnlyList<LessonSummaryMessage> Messages { get; init; } = [];

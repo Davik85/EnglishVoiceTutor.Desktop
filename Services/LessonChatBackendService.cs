@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Desktop.Services;
 
@@ -168,6 +169,7 @@ public sealed class LessonChatBackendService
     // Stable voice pipeline: used by normal voice input and default TTS Conversation Mode.
     public async Task<string> SendAudioForTranscriptionAsync(
         string audioFilePath,
+        StudyLanguageDefinition? targetLanguage = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(audioFilePath) || !File.Exists(audioFilePath))
@@ -178,6 +180,8 @@ public sealed class LessonChatBackendService
         using var httpClient = CreateHttpClient();
         await using var audioStream = File.OpenRead(audioFilePath);
         using var formContent = new MultipartFormDataContent();
+        var resolvedTargetLanguage = targetLanguage ?? StudyLanguageCatalog.English;
+        Debug.WriteLine($"Audio transcription request starting: TargetLanguageId={resolvedTargetLanguage.Id}; TranscriptionLanguageCode={resolvedTargetLanguage.TranscriptionLanguageCode}.");
         using var audioContent = new StreamContent(audioStream);
         audioContent.Headers.ContentType = new MediaTypeHeaderValue(BackendConstants.WavContentType);
 
@@ -185,6 +189,10 @@ public sealed class LessonChatBackendService
             audioContent,
             BackendConstants.MultipartFileFieldName,
             Path.GetFileName(audioFilePath));
+        formContent.Add(new StringContent(resolvedTargetLanguage.Id), "targetLanguageId");
+        formContent.Add(new StringContent(resolvedTargetLanguage.EnglishName), "targetLanguageName");
+        formContent.Add(new StringContent(resolvedTargetLanguage.NativeName), "targetLanguageNativeName");
+        formContent.Add(new StringContent(resolvedTargetLanguage.TranscriptionLanguageCode), "targetLanguageCode");
 
         using var response = await httpClient.PostAsync(
             CreateEndpointUri(BackendConstants.AudioTranscriptionEndpoint),
@@ -213,7 +221,8 @@ public sealed class LessonChatBackendService
         string purpose = BackendConstants.LessonChatTtsPurpose,
         double? speechSpeed = null,
         string? model = null,
-        string? instructions = null)
+        string? instructions = null,
+        StudyLanguageDefinition? targetLanguage = null)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -226,6 +235,7 @@ public sealed class LessonChatBackendService
         var inputLength = text.Length;
         var resolvedModel = string.IsNullOrWhiteSpace(model) ? BackendConstants.LessonChatTtsModel : model;
         var instructionsToSend = BackendConstants.SpeechModelSupportsInstructions(resolvedModel) ? instructions : null;
+        var resolvedTargetLanguage = targetLanguage ?? StudyLanguageCatalog.English;
 
         Debug.WriteLine($"Bot voice backend TTS request starting: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={resolvedModel}; SpeechSpeed={speechSpeed?.ToString(CultureInfo.InvariantCulture) ?? "default"}; HasInstructions={!string.IsNullOrWhiteSpace(instructionsToSend)}; InstructionsLength={instructionsToSend?.Length ?? 0}; InputLength={inputLength}.");
 
@@ -239,7 +249,11 @@ public sealed class LessonChatBackendService
                     Purpose = purpose,
                     Model = resolvedModel,
                     Instructions = instructionsToSend,
-                    SpeechSpeed = speechSpeed
+                    SpeechSpeed = speechSpeed,
+                    TargetLanguageId = resolvedTargetLanguage.Id,
+                    TargetLanguageName = resolvedTargetLanguage.EnglishName,
+                    TargetLanguageNativeName = resolvedTargetLanguage.NativeName,
+                    TargetLanguageCode = resolvedTargetLanguage.Bcp47Code
                 },
                 JsonOptions,
                 cancellationToken);
@@ -318,6 +332,7 @@ public sealed class LessonChatBackendService
     public async Task<string> TranslateTextAsync(
         string text,
         string targetLanguage,
+        StudyLanguageDefinition? sourceLanguage = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(targetLanguage))
@@ -326,13 +341,18 @@ public sealed class LessonChatBackendService
         }
 
         using var httpClient = CreateHttpClient();
+        var resolvedSourceLanguage = sourceLanguage ?? StudyLanguageCatalog.English;
 
         using var response = await httpClient.PostAsJsonAsync(
             CreateEndpointUri(BackendConstants.TranslationEndpoint),
             new TranslationBackendRequest
             {
                 Text = text,
-                TargetLanguage = targetLanguage
+                TargetLanguage = targetLanguage,
+                SourceLanguageId = resolvedSourceLanguage.Id,
+                SourceLanguageName = resolvedSourceLanguage.EnglishName,
+                SourceLanguageNativeName = resolvedSourceLanguage.NativeName,
+                SourceLanguageCode = resolvedSourceLanguage.Bcp47Code
             },
             JsonOptions,
             cancellationToken);

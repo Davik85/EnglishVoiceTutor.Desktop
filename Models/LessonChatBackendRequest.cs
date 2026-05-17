@@ -14,6 +14,14 @@ public sealed class LessonChatBackendRequest
 
     public string NativeLanguageName { get; init; } = string.Empty;
 
+    public string TargetLanguageId { get; init; } = string.Empty;
+
+    public string TargetLanguageName { get; init; } = string.Empty;
+
+    public string TargetLanguageNativeName { get; init; } = string.Empty;
+
+    public string TargetLanguageCode { get; init; } = string.Empty;
+
     public string TutorAvatarId { get; init; } = string.Empty;
 
     public string UserDisplayName { get; init; } = string.Empty;

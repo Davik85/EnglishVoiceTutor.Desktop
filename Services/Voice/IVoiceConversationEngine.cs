@@ -49,7 +49,10 @@ public sealed record VoiceSessionStartRequest
     public string TutorRole { get; init; } = string.Empty;
     public string UserRole { get; init; } = string.Empty;
     public string Situation { get; init; } = string.Empty;
+    public string TargetLanguageId { get; init; } = "en";
     public string TargetLanguageName { get; init; } = "English";
+    public string TargetLanguageNativeName { get; init; } = "English";
+    public string TargetLanguageCode { get; init; } = "en";
     public string NativeLanguageName { get; init; } = string.Empty;
     public string UserDisplayName { get; init; } = string.Empty;
     public string LearningGoal { get; init; } = string.Empty;
