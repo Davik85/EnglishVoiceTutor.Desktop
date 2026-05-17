@@ -42,7 +42,7 @@ The WPF desktop app currently uses ViewModel-first navigation with these impleme
 
 Lesson content lives under `Content/Lessons/<TopicFolder>/<lesson>.json` and is loaded by `LessonContentService`. The current audit passes with 26 lesson JSON files:
 
-- Everyday English: asking for help, introductions, making plans, small talk with a neighbor, talking about your day.
+- Daily Life: asking for help, introductions, making plans, small talk with a neighbor, talking about your day. Internal lesson IDs and the legacy `Content/Lessons/EverydayEnglish` folder name are preserved for compatibility.
 - Free Conversation: open conversation.
 - Job Interview: asking questions at the end, strengths and weaknesses, tell me about yourself, why do you want this job, work experience.
 - Restaurant & Cafe: asking about ingredients, booking a table, handling a wrong order, ordering food, paying the bill.

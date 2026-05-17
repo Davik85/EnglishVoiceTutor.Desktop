@@ -18,7 +18,7 @@ $Levels = @(
 
 $ExpectedRegistry = [ordered]@{
     EverydayEnglish = [ordered]@{
-        Topic = 'Everyday English'
+        Topic = 'Daily Life'
         Files = [ordered]@{
             'introductions.json' = 'Introductions'
             'small_talk_with_a_neighbor.json' = 'Small talk with a neighbor'
