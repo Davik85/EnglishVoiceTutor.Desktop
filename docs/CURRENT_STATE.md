@@ -211,3 +211,12 @@ The current baseline for the next product-development phase is:
 - Lightweight hang diagnostics exist around backend calls, speech playback, recording, Realtime lifecycle, and cleanup paths.
 
 Known limitations remain intentionally out of scope for this cleanup pass: methodology/scenario quality needs iterative polish, all 26 lessons still need scenario QA, Realtime recognition may still need retry/fallback tuning, pricing constants need real values and real-session measurements, `LessonChatViewModel` remains large, UI polish is not complete, and multiple tutor avatars are planned later rather than in this stabilization pass.
+
+## UI styling direction
+
+The desktop app uses a soft, light learning-product style rather than a raw demo look. Shared XAML resources define rounded buttons, text inputs, cards, and the main app frame so new screens should reuse the same visual system instead of duplicating inline values.
+
+- Corners are intentionally rounded: small controls use a medium radius, while cards and main containers use a larger radius.
+- The window content sits inside a subtle light-blue frame to keep the app feeling neat and contained.
+- Level choices use a calm progression palette from fresh green (A1) through mint/cyan (A2), warm amber (B1), and soft violet (B2).
+- Topic and situation cards use restrained theme accents: blue for Everyday English, travel green, office blue, professional navy, warm cafe peach, and lavender for Free Conversation.

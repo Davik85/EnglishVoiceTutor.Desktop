@@ -9,9 +9,9 @@
              mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="900">
-    <Grid Background="#FFF6F8FB">
+    <Grid Background="{StaticResource AppBackgroundBrush}">
         <Grid.Resources>
-            <Style x:Key="SecondaryLessonButtonStyle" TargetType="Button">
+            <Style x:Key="SecondaryLessonButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
                 <Setter Property="Height" Value="38" />
                 <Setter Property="Background" Value="White" />
                 <Setter Property="Foreground" Value="#FF1E3A56" />
@@ -20,7 +20,7 @@
             </Style>
             <converters:AvatarAnimationUriConverter x:Key="AvatarAnimationUriConverter" />
 
-            <Style x:Key="PrimaryLessonButtonStyle" TargetType="Button">
+            <Style x:Key="PrimaryLessonButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
                 <Setter Property="Height" Value="38" />
                 <Setter Property="Background" Value="#FF1E3A56" />
                 <Setter Property="Foreground" Value="White" />
@@ -37,9 +37,9 @@
                     Padding="24"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
-                    Background="White"
-                    CornerRadius="16"
-                    BorderBrush="#FFE1E8F0"
+                    Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="{StaticResource CornerLarge}"
+                    BorderBrush="{StaticResource BorderSoftBrush}"
                     BorderThickness="1">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -262,7 +262,7 @@
                                         IsEnabled="{Binding IsLessonOptionsEnabled}"
                                         Command="{Binding ToggleConversationModeCommand}">
                                     <Button.Style>
-                                        <Style TargetType="Button">
+                                        <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
                                             <Setter Property="Visibility" Value="Collapsed" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
@@ -277,9 +277,9 @@
 
                         <Border Grid.Column="2"
                                 Padding="24"
-                                Background="White"
-                                CornerRadius="16"
-                                BorderBrush="#FFE1E8F0"
+                                Background="{StaticResource SurfaceBrush}"
+                                CornerRadius="{StaticResource CornerLarge}"
+                                BorderBrush="{StaticResource BorderSoftBrush}"
                                 BorderThickness="1">
                             <Border.Style>
                                 <Style TargetType="Border">
@@ -330,7 +330,7 @@
                                                                     HorizontalAlignment="Left"
                                                                     Content="{Binding TranslateButtonText}"
                                                                     Command="{Binding ToggleTranslationCommand}"
-                                                                    Background="White"
+                                                                    Background="{StaticResource SurfaceBrush}"
                                                                     Foreground="#FF506172"
                                                                     FontSize="11"
                                                                     BorderBrush="#FFD4DEE8"
@@ -342,13 +342,13 @@
                                                                     Content="{Binding DataContext.PlayVoiceButtonText, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                     Command="{Binding DataContext.PlayBotVoiceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                     CommandParameter="{Binding}"
-                                                                    Background="White"
+                                                                    Background="{StaticResource SurfaceBrush}"
                                                                     Foreground="#FF506172"
                                                                     FontSize="11"
                                                                     BorderBrush="#FFD4DEE8"
                                                                     Cursor="Hand">
                                                                 <Button.Style>
-                                                                    <Style TargetType="Button">
+                                                                    <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
                                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                                         <Style.Triggers>
                                                                             <DataTrigger Binding="{Binding ShowPlayVoiceButton}" Value="True">
@@ -365,13 +365,13 @@
                                                                     Content="{Binding DataContext.ViewFeedbackButtonText, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                     Command="{Binding DataContext.ViewFeedbackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                                     CommandParameter="{Binding}"
-                                                                    Background="White"
+                                                                    Background="{StaticResource SurfaceBrush}"
                                                                     Foreground="#FF506172"
                                                                     FontSize="11"
                                                                     BorderBrush="#FFD4DEE8"
                                                                     Cursor="Hand">
                                                                 <Button.Style>
-                                                                    <Style TargetType="Button">
+                                                                    <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
                                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                                         <Style.Triggers>
                                                                             <DataTrigger Binding="{Binding IsFeedbackEligible}" Value="True">
@@ -383,7 +383,7 @@
                                                             </Button>
                                                         </StackPanel>
 
-                                                        <Border Margin="0,8,0,0" Padding="8" Background="White" BorderBrush="#FFE1E8F0" BorderThickness="1" CornerRadius="8">
+                                                        <Border Margin="0,8,0,0" Padding="8" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="8">
                                                             <Border.Style>
                                                                 <Style TargetType="Border">
                                                                     <Setter Property="Visibility" Value="Collapsed" />
@@ -479,7 +479,7 @@
                                                         HorizontalAlignment="Left"
                                                         Content="{Binding FeedbackTranslateButtonText}"
                                                         Command="{Binding ToggleFeedbackTranslationCommand}"
-                                                        Background="White"
+                                                        Background="{StaticResource SurfaceBrush}"
                                                         Foreground="#FF506172"
                                                         FontSize="11"
                                                         BorderBrush="#FFD4DEE8"
