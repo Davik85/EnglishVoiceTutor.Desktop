@@ -381,105 +381,6 @@
                                                             </StackPanel>
                                                         </Border>
 
-                                                        <Border Margin="0,12,0,2" Padding="14" Background="{StaticResource StatusMessageBrush}" BorderBrush="{StaticResource LevelB1BorderBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerTextInput}" MaxWidth="760" HorizontalAlignment="Stretch">
-                                                            <Border.Style>
-                                                                <Style TargetType="Border">
-                                                                    <Setter Property="Visibility" Value="Collapsed" />
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding IsFeedbackVisible}" Value="True">
-                                                                            <Setter Property="Visibility" Value="Visible" />
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </Border.Style>
-                                                            <StackPanel>
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <TextBlock Text="{Binding DataContext.FeedbackPanelTitle, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
-                                                                    <Button Margin="8,0,0,0"
-                                                                            Padding="6,1"
-                                                                            Content="{Binding DataContext.ClickToCloseText, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                            Command="{Binding DataContext.CloseFeedbackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                            Background="Transparent"
-                                                                            BorderThickness="0"
-                                                                            Foreground="{StaticResource TextMutedBrush}"
-                                                                            FontSize="11"
-                                                                            Cursor="Hand" />
-                                                                </StackPanel>
-
-                                                                <StackPanel Margin="0,10,0,0">
-                                                                    <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderAccentSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
-                                                                        <StackPanel>
-                                                                            <TextBlock Text="Feedback for" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Text}" ToolTip="{Binding Text}" MaxHeight="64" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
-                                                                        </StackPanel>
-                                                                    </Border>
-
-                                                                    <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
-                                                                        <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackLoading}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
-                                                                        <TextBlock Text="Loading feedback..." FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" />
-                                                                    </Border>
-
-                                                                    <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderAccentSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
-                                                                        <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding Feedback.HasShortText}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
-                                                                        <StackPanel>
-                                                                            <TextBlock Text="Quick summary" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Feedback.ShortText}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Feedback.ShortTextTranslation}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsFeedbackTranslationVisible, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
-                                                                        </StackPanel>
-                                                                    </Border>
-
-                                                                    <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
-                                                                        <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding Feedback.HasCorrectedVersion}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
-                                                                        <StackPanel>
-                                                                            <TextBlock Text="{Binding DataContext.FeedbackCorrectedVersionTitle, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource AccentBrush}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Feedback.CorrectedVersion}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Feedback.CorrectedVersionTranslation}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsFeedbackTranslationVisible, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
-                                                                        </StackPanel>
-                                                                    </Border>
-
-                                                                    <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
-                                                                        <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding Feedback.HasGrammarTip}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
-                                                                        <StackPanel>
-                                                                            <TextBlock Text="{Binding DataContext.FeedbackGrammarTipTitle, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource AccentBrush}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Feedback.GrammarTip}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Feedback.GrammarTipTranslation}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsFeedbackTranslationVisible, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
-                                                                        </StackPanel>
-                                                                    </Border>
-
-                                                                    <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
-                                                                        <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding Feedback.HasVocabularyTip}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
-                                                                        <StackPanel>
-                                                                            <TextBlock Text="{Binding DataContext.FeedbackVocabularyTipTitle, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource AccentBrush}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Feedback.VocabularyTip}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Feedback.VocabularyTipTranslation}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsFeedbackTranslationVisible, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
-                                                                        </StackPanel>
-                                                                    </Border>
-
-                                                                    <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
-                                                                        <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding Feedback.HasCultureTip}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
-                                                                        <StackPanel>
-                                                                            <TextBlock Text="{Binding DataContext.FeedbackCultureTipTitle, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource AccentBrush}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Feedback.CultureTip}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Feedback.CultureTipTranslation}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsFeedbackTranslationVisible, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
-                                                                        </StackPanel>
-                                                                    </Border>
-
-                                                                    <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
-                                                                        <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding Feedback.HasNaturalVersion}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
-                                                                        <StackPanel>
-                                                                            <TextBlock Text="{Binding DataContext.FeedbackNaturalVersionTitle, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource AccentBrush}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Feedback.NaturalVersion}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
-                                                                            <TextBox Margin="0,4,0,0" Text="{Binding Feedback.NaturalVersionTranslation}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsFeedbackTranslationVisible, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
-                                                                        </StackPanel>
-                                                                    </Border>
-
-                                                                    <TextBlock Margin="0,0,0,0" FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
-                                                                        <Run Text="{Binding DataContext.FeedbackTranslationHeader, RelativeSource={RelativeSource AncestorType=ItemsControl}, Mode=OneWay}" />
-                                                                        <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding DataContext.IsFeedbackTranslationVisible, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-                                                                    </TextBlock>
-                                                                </StackPanel>
-                                                            </StackPanel>
-                                                        </Border>
                                                     </StackPanel>
                                                 </Border>
                                             </DataTemplate>
@@ -487,7 +388,141 @@
                                     </ItemsControl>
                                 </ScrollViewer>
 
-                                <StackPanel Grid.Row="1" Margin="0,8,0,12">
+                                <Border Grid.Row="1"
+                                        Margin="0,10,0,12"
+                                        Padding="14"
+                                        Background="{StaticResource StatusMessageBrush}"
+                                        BorderBrush="{StaticResource LevelB1BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="{StaticResource CornerTextInput}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasSelectedFeedbackPanel}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding FeedbackPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                                            <Button Margin="8,0,0,0"
+                                                    Padding="6,1"
+                                                    Content="{Binding ClickToCloseText}"
+                                                    Command="{Binding CloseFeedbackCommand}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Foreground="{StaticResource TextMutedBrush}"
+                                                    FontSize="11"
+                                                    Cursor="Hand" />
+                                        </StackPanel>
+
+                                        <StackPanel Margin="0,10,0,0">
+                                            <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderAccentSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Feedback for" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                                                    <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedbackSourceText, Mode=OneWay}" ToolTip="{Binding SelectedFeedbackSourceText, Mode=OneWay}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSelectedFeedbackLoading}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="Loading feedback..." FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" />
+                                            </Border>
+
+                                            <StackPanel>
+                                                <StackPanel.Style>
+                                                    <Style TargetType="StackPanel">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasSelectedFeedback}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </StackPanel.Style>
+
+                                                <Button Margin="0,0,0,8"
+                                                        Padding="8,3"
+                                                        HorizontalAlignment="Left"
+                                                        Content="{Binding FeedbackTranslateButtonText}"
+                                                        Command="{Binding ToggleFeedbackTranslationCommand}"
+                                                        Background="{StaticResource SurfaceBrush}"
+                                                        Foreground="{StaticResource TextSecondaryBrush}"
+                                                        FontSize="11"
+                                                        BorderBrush="{StaticResource BorderAccentSoftBrush}"
+                                                        Cursor="Hand" />
+
+                                                <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
+                                                    <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding SelectedFeedback.HasShortText}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
+                                                    <StackPanel>
+                                                        <TextBlock Text="Quick summary" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource AccentBrush}" />
+                                                        <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.ShortText, Mode=OneWay}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
+                                                        <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.ShortTextTranslation, Mode=OneWay}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
+                                                    <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding SelectedFeedback.HasCorrectedVersion}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding FeedbackCorrectedVersionTitle}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource AccentBrush}" />
+                                                        <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.CorrectedVersion, Mode=OneWay}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
+                                                        <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.CorrectedVersionTranslation, Mode=OneWay}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
+                                                    <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding SelectedFeedback.HasGrammarTip}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding FeedbackGrammarTipTitle}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource AccentBrush}" />
+                                                        <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.GrammarTip, Mode=OneWay}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
+                                                        <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.GrammarTipTranslation, Mode=OneWay}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
+                                                    <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding SelectedFeedback.HasVocabularyTip}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding FeedbackVocabularyTipTitle}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource AccentBrush}" />
+                                                        <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.VocabularyTip, Mode=OneWay}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
+                                                        <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.VocabularyTipTranslation, Mode=OneWay}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
+                                                    <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding SelectedFeedback.HasCultureTip}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding FeedbackCultureTipTitle}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource AccentBrush}" />
+                                                        <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.CultureTip, Mode=OneWay}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
+                                                        <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.CultureTipTranslation, Mode=OneWay}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
+                                                    <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding SelectedFeedback.HasNaturalVersion}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding FeedbackNaturalVersionTitle}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource AccentBrush}" />
+                                                        <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.NaturalVersion, Mode=OneWay}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
+                                                        <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.NaturalVersionTranslation, Mode=OneWay}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
+                                                    </StackPanel>
+                                                </Border>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel Grid.Row="2" Margin="0,8,0,12">
                                     <StackPanel.Style>
                                         <Style TargetType="StackPanel">
                                             <Setter Property="Visibility" Value="Collapsed" />

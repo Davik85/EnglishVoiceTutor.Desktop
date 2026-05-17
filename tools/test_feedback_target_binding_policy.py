@@ -6,6 +6,16 @@ import pathlib
 import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+READ_ONLY_FEEDBACK_PROPERTIES = [
+    "ShortText",
+    "CorrectedVersion",
+    "GrammarTip",
+    "VocabularyTip",
+    "CultureTip",
+    "NaturalVersion",
+    "MoreNaturalVersion",
+    "SourceText",
+]
 
 
 def read(rel: str) -> str:
@@ -15,6 +25,11 @@ def read(rel: str) -> str:
 def assert_contains(text: str, needle: str, label: str) -> None:
     if needle not in text:
         raise AssertionError(f"Missing {label}: {needle}")
+
+
+def assert_not_contains(text: str, needle: str, label: str) -> None:
+    if needle in text:
+        raise AssertionError(f"Unexpected {label}: {needle}")
 
 
 def extract_method(text: str, signature: str) -> str:
@@ -34,6 +49,16 @@ def extract_method(text: str, signature: str) -> str:
     raise AssertionError(f"Could not extract method: {signature}")
 
 
+def assert_feedback_textbox_bindings_are_one_way(xaml: str) -> None:
+    for match in re.finditer(r"<TextBox\b[^>]*\bText=\"\{Binding (?P<binding>[^\"]+)\}\"", xaml):
+        binding = match.group("binding")
+        for property_name in READ_ONLY_FEEDBACK_PROPERTIES:
+            if re.search(rf"(?:^|\.){re.escape(property_name)}(?:\s*,|$)", binding) and "Mode=OneWay" not in binding:
+                raise AssertionError(
+                    f"Feedback TextBox binding to read-only property {property_name} must specify Mode=OneWay: {binding}"
+                )
+
+
 def main() -> int:
     xaml = read("Views/LessonChatView.xaml")
     vm = read("ViewModels/LessonChatViewModel.cs")
@@ -45,25 +70,25 @@ def main() -> int:
     for needle in [
         "public int MessageId => Id;",
         "public string SourceMessageKind",
-        "private bool isFeedbackVisible;",
-        "private bool isFeedbackLoading;",
-        "public bool HasVisibleFeedback => IsFeedbackVisible && Feedback is not null;",
-        "public void ShowFeedback()",
-        "public void HideFeedback()",
+        "public bool CanShowFeedbackAction",
     ]:
         assert_contains(msg, needle, f"message feedback targeting state {needle}")
 
     assert_contains(xaml, "CommandParameter=\"{Binding}\"", "View feedback passes clicked message")
-    assert_contains(xaml, "{Binding IsFeedbackVisible}", "inline feedback visibility under message")
-    assert_contains(xaml, "Text=\"Feedback for\"", "feedback source phrase label")
-    assert_contains(xaml, "Text=\"{Binding Text}\" ToolTip=\"{Binding Text}\"", "feedback source phrase binding")
-    assert_contains(xaml, "{Binding Feedback.ShortText}", "inline quick summary binding")
-    assert_contains(xaml, "{Binding Feedback.HasCorrectedVersion}", "empty corrected section hidden")
-    assert_contains(xaml, "{Binding Feedback.HasGrammarTip}", "empty grammar section hidden")
-    assert_contains(xaml, "{Binding Feedback.HasVocabularyTip}", "empty vocabulary section hidden")
-    assert_contains(xaml, "{Binding Feedback.HasCultureTip}", "empty culture section hidden")
-    assert_contains(xaml, "{Binding Feedback.HasNaturalVersion}", "empty natural section hidden")
     assert_contains(xaml, "{Binding CanShowFeedbackAction}", "technical and bot messages do not show feedback action")
+    assert_not_contains(xaml, "{Binding IsFeedbackVisible}", "inline feedback visibility under message")
+    assert_not_contains(xaml, "{Binding Feedback.ShortText}", "inline quick summary binding")
+    assert_contains(xaml, "Grid.Row=\"1\"", "global bottom feedback panel row")
+    assert_contains(xaml, "{Binding HasSelectedFeedbackPanel}", "global selected feedback panel visibility")
+    assert_contains(xaml, "Text=\"Feedback for\"", "feedback source phrase label")
+    assert_contains(xaml, "Text=\"{Binding SelectedFeedbackSourceText, Mode=OneWay}\"", "selected source phrase binding")
+    assert_contains(xaml, "{Binding SelectedFeedback.HasCorrectedVersion}", "empty corrected section hidden")
+    assert_contains(xaml, "{Binding SelectedFeedback.HasGrammarTip}", "empty grammar section hidden")
+    assert_contains(xaml, "{Binding SelectedFeedback.HasVocabularyTip}", "empty vocabulary section hidden")
+    assert_contains(xaml, "{Binding SelectedFeedback.HasCultureTip}", "empty culture section hidden")
+    assert_contains(xaml, "{Binding SelectedFeedback.HasNaturalVersion}", "empty natural section hidden")
+    assert_contains(xaml, "ToggleFeedbackTranslationCommand", "feedback translate button remains available")
+    assert_feedback_textbox_bindings_are_one_way(xaml)
 
     view_feedback = extract_method(vm, "private async Task ViewFeedbackAsync(ChatMessageViewModel? message)")
     for needle in [
@@ -72,9 +97,8 @@ def main() -> int:
         "var requestedText = requestedMessage.Text.Trim();",
         "var requestedSourceKind = requestedMessage.SourceMessageKind;",
         "new FeedbackRequestTarget(",
-        "HideVisibleFeedbackExcept(requestedMessageId);",
         "SelectedFeedbackMessageId = requestedMessageId;",
-        "requestedMessage.ShowFeedback();",
+        "SelectedFeedbackSourceText = requestedText;",
         "feedbackByMessageId.TryGetValue(requestedMessageId",
         "feedbackByMessageId[requestedMessageId] = feedback;",
         "SelectedFeedbackMessageId != requestedMessageId",
@@ -87,11 +111,19 @@ def main() -> int:
     display_feedback = extract_method(vm, "private void DisplayFeedbackForRequestedMessage(FeedbackRequestTarget requestedTarget, Feedback feedback, bool fromCache)")
     for needle in [
         "requestedTarget.Message.SetFeedback(feedback);",
-        "requestedTarget.Message.ShowFeedback();",
-        "displayedUnderMessageId={requestedTarget.Message.MessageId}",
+        "SelectedFeedbackSourceText = requestedTarget.Text;",
+        "SelectedFeedback = feedback;",
+        "displayedUnderMessageId={SelectedFeedbackMessageId}",
         "staleResultIgnored=False",
     ]:
-        assert_contains(display_feedback, needle, f"feedback displayed under requested message {needle}")
+        assert_contains(display_feedback, needle, f"global feedback displays requested message {needle}")
+
+    for needle in [
+        "private int selectedFeedbackMessageId;",
+        "private string selectedFeedbackSourceText = string.Empty;",
+        "public bool HasSelectedFeedbackPanel",
+    ]:
+        assert_contains(vm, needle, f"selected global feedback state {needle}")
 
     build_request = extract_method(vm, "private LessonChatBackendRequest BuildLessonFeedbackRequest(FeedbackRequestTarget target)")
     for needle in [

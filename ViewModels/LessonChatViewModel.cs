@@ -121,10 +121,18 @@ public partial class LessonChatViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelectedFeedback))]
+    [NotifyPropertyChangedFor(nameof(HasSelectedFeedbackPanel))]
     private Feedback? selectedFeedback;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedFeedbackPanel))]
     private int selectedFeedbackMessageId;
+
+    [ObservableProperty]
+    private string selectedFeedbackSourceText = string.Empty;
+
+    [ObservableProperty]
+    private bool isSelectedFeedbackLoading;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FeedbackTranslateButtonText))]
@@ -251,6 +259,8 @@ public partial class LessonChatViewModel : ViewModelBase
     private LessonPhase currentLessonPhase = LessonPhase.SetupContextSelection;
 
     public bool HasSelectedFeedback => SelectedFeedback is not null;
+
+    public bool HasSelectedFeedbackPanel => SelectedFeedbackMessageId > 0 || SelectedFeedback is not null;
 
     public bool HasCurrentHint => !string.IsNullOrWhiteSpace(CurrentHintText);
 
@@ -3455,10 +3465,11 @@ public partial class LessonChatViewModel : ViewModelBase
             requestedMessage.LessonTurnNumber,
             requestedTextLength);
 
-        HideVisibleFeedbackExcept(requestedMessageId);
         SelectedFeedbackMessageId = requestedMessageId;
+        SelectedFeedbackSourceText = requestedText;
+        SelectedFeedback = null;
+        IsSelectedFeedbackLoading = false;
         IsFeedbackTranslationVisible = false;
-        requestedMessage.ShowFeedback();
 
         Debug.WriteLine($"Feedback view requested: requestedMessageId={requestedMessageId}; requestedSourceKind={requestedSourceKind}; requestedTextLength={requestedTextLength}; resultMessageId=0; displayedUnderMessageId={requestedMessageId}; staleResultIgnored=False.");
 
@@ -3477,16 +3488,19 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        requestedMessage.IsFeedbackLoading = true;
+        if (SelectedFeedbackMessageId == requestedMessageId)
+        {
+            IsSelectedFeedbackLoading = true;
+        }
+
         feedback = await GenerateFeedbackForMessageAsync(requestedTarget);
-        requestedMessage.IsFeedbackLoading = false;
+        if (SelectedFeedbackMessageId == requestedMessageId)
+        {
+            IsSelectedFeedbackLoading = false;
+        }
+
         if (feedback is null)
         {
-            if (SelectedFeedbackMessageId == requestedMessageId)
-            {
-                requestedMessage.HideFeedback();
-            }
-
             return;
         }
 
@@ -3502,33 +3516,22 @@ public partial class LessonChatViewModel : ViewModelBase
         DisplayFeedbackForRequestedMessage(requestedTarget, feedback, fromCache: false);
     }
 
-    private void HideVisibleFeedbackExcept(int messageId)
-    {
-        foreach (var existingMessage in Messages)
-        {
-            if (existingMessage.MessageId != messageId)
-            {
-                existingMessage.HideFeedback();
-            }
-        }
-    }
-
     private void DisplayFeedbackForRequestedMessage(FeedbackRequestTarget requestedTarget, Feedback feedback, bool fromCache)
     {
         var requestedMessageId = requestedTarget.MessageId;
         if (SelectedFeedbackMessageId != requestedMessageId)
         {
-            requestedTarget.Message.HideFeedback();
             Debug.WriteLine($"Feedback display skipped as stale: requestedMessageId={requestedMessageId}; requestedSourceKind={requestedTarget.SourceMessageKind}; requestedTextLength={requestedTarget.TextLength}; resultMessageId={requestedMessageId}; displayedUnderMessageId={SelectedFeedbackMessageId}; staleResultIgnored=True; FromCache={fromCache}.");
             return;
         }
 
         requestedTarget.Message.SetFeedback(feedback);
-        requestedTarget.Message.ShowFeedback();
+        SelectedFeedbackSourceText = requestedTarget.Text;
         SelectedFeedback = feedback;
+        IsSelectedFeedbackLoading = false;
         IsFeedbackTranslationVisible = false;
         StatusMessage = feedback.ShortText;
-        Debug.WriteLine($"Feedback displayed: requestedMessageId={requestedMessageId}; requestedSourceKind={requestedTarget.SourceMessageKind}; requestedTextLength={requestedTarget.TextLength}; resultMessageId={requestedMessageId}; displayedUnderMessageId={requestedTarget.Message.MessageId}; staleResultIgnored=False; FromCache={fromCache}.");
+        Debug.WriteLine($"Feedback displayed: requestedMessageId={requestedMessageId}; requestedSourceKind={requestedTarget.SourceMessageKind}; requestedTextLength={requestedTarget.TextLength}; resultMessageId={requestedMessageId}; displayedUnderMessageId={SelectedFeedbackMessageId}; staleResultIgnored=False; FromCache={fromCache}.");
     }
 
     private bool CanViewFeedback(ChatMessageViewModel? message)
@@ -3605,9 +3608,10 @@ public partial class LessonChatViewModel : ViewModelBase
     [RelayCommand]
     private void CloseFeedback()
     {
-        HideVisibleFeedbackExcept(0);
         SelectedFeedback = null;
         SelectedFeedbackMessageId = 0;
+        SelectedFeedbackSourceText = string.Empty;
+        IsSelectedFeedbackLoading = false;
         StatusMessage = string.Empty;
         IsFeedbackTranslationVisible = false;
     }
