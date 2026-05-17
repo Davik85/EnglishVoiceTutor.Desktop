@@ -46,6 +46,8 @@ public partial class ChatMessageViewModel : ViewModelBase
 
     public bool IsFeedbackEligible { get; private set; }
 
+    public bool CanShowFeedbackAction => !IsFromBot && IsFeedbackEligible && !IsTechnicalMessage && CountsAsValidLessonTurn;
+
     public bool ShowPlayVoiceButton => IsFromBot;
 
     [ObservableProperty]
@@ -142,6 +144,7 @@ public partial class ChatMessageViewModel : ViewModelBase
         OnPropertyChanged(nameof(CountsAsValidLessonTurn));
         OnPropertyChanged(nameof(IsTechnicalMessage));
         OnPropertyChanged(nameof(IsFeedbackEligible));
+        OnPropertyChanged(nameof(CanShowFeedbackAction));
     }
 
     public void MarkAsInvalidLearnerTranscript(string retryText)
@@ -151,6 +154,7 @@ public partial class ChatMessageViewModel : ViewModelBase
         IsFeedbackEligible = false;
         OnPropertyChanged(nameof(CountsAsValidLessonTurn));
         OnPropertyChanged(nameof(IsFeedbackEligible));
+        OnPropertyChanged(nameof(CanShowFeedbackAction));
     }
 
     public void SetFeedback(Feedback value)
