@@ -120,6 +120,27 @@ public partial class LessonChatViewModel : ViewModelBase
     private string currentHintText = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasConversationLatestBotText))]
+    private string conversationLatestBotText = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasConversationLatestUserText))]
+    private string conversationLatestUserText = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasConversationHintText))]
+    private string conversationHintText = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasConversationHintText))]
+    [NotifyCanExecuteChangedFor(nameof(ConversationHintCommand))]
+    private bool isConversationHintVisible;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ConversationHintCommand))]
+    private bool isConversationHintLoading;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelectedFeedback))]
     [NotifyPropertyChangedFor(nameof(HasSelectedFeedbackPanel))]
     private Feedback? selectedFeedback;
@@ -159,6 +180,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
     [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ConversationHintCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
     [NotifyCanExecuteChangedFor(nameof(BackCommand))]
     private bool isSending;
@@ -170,6 +192,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
     [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ConversationHintCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
     [NotifyCanExecuteChangedFor(nameof(BackCommand))]
     private bool isRecording;
@@ -193,6 +216,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ConversationHintCommand))]
     [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
     [NotifyCanExecuteChangedFor(nameof(BackCommand))]
@@ -206,6 +230,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ConversationHintCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
     [NotifyCanExecuteChangedFor(nameof(BackCommand))]
     [NotifyCanExecuteChangedFor(nameof(PlayBotVoiceCommand))]
@@ -224,6 +249,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(IsLessonInputEnabled))]
     [NotifyPropertyChangedFor(nameof(CanTypeText))]
     [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ConversationHintCommand))]
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(HintCommand))]
@@ -243,6 +269,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(CanTypeText))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ConversationHintCommand))]
     private ConversationModeState currentConversationModeState = ConversationModeState.NotStarted;
 
     [ObservableProperty]
@@ -252,6 +279,7 @@ public partial class LessonChatViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(SendMessageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleVoiceRecordingCommand))]
     [NotifyCanExecuteChangedFor(nameof(HintCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ConversationHintCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
     [NotifyCanExecuteChangedFor(nameof(FinishLessonCommand))]
     [NotifyCanExecuteChangedFor(nameof(BackCommand))]
@@ -263,6 +291,12 @@ public partial class LessonChatViewModel : ViewModelBase
     public bool HasSelectedFeedbackPanel => SelectedFeedbackMessageId > 0 || SelectedFeedback is not null;
 
     public bool HasCurrentHint => !string.IsNullOrWhiteSpace(CurrentHintText);
+
+    public bool HasConversationLatestBotText => !string.IsNullOrWhiteSpace(ConversationLatestBotText);
+
+    public bool HasConversationLatestUserText => !string.IsNullOrWhiteSpace(ConversationLatestUserText);
+
+    public bool HasConversationHintText => IsConversationHintVisible && !string.IsNullOrWhiteSpace(ConversationHintText);
 
     public bool IsLessonLimitReached => LearnerTurnCount >= GetFinalTurn();
 
@@ -583,6 +617,7 @@ public partial class LessonChatViewModel : ViewModelBase
             : RenderLessonTemplate(this.lessonScenario.LessonSetup.SetupMessage.Trim());
         AddMessage(TutorAvatarDisplayName, setupMessage, true);
         lastBotMessage = setupMessage;
+        ConversationLatestBotText = setupMessage;
         _ = CheckBackendHealthAsync();
         _ = CheckBackendConfigStatusAsync();
         LogLessonStateSnapshot("lesson initialization");
@@ -813,6 +848,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 return;
             }
 
+            HideConversationHint();
+            ConversationLatestUserText = string.Empty;
             SetConversationModeState(ConversationModeState.Recording, "record_start_requested");
             ResetRealtimeCommittedAudioBuffer();
             Debug.WriteLine($"Realtime microphone capture starting: SessionId={realtimeSessionId}; AudioInputDeviceId={audioInputDeviceId}; State={CurrentConversationModeState}.");
@@ -1116,6 +1153,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             if (IsConversationModeEnabled)
             {
+                ClearConversationOverlayState(clearPhrases: true);
                 await StopRealtimeConversationAsync("user_exit_conversation_mode");
                 IsConversationModeEnabled = false;
                 SetConversationModeState(ConversationModeState.NotStarted, "conversation_mode_off");
@@ -1125,6 +1163,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             if (IsGuidedRoleplayLesson() && CurrentLessonPhase == LessonPhase.SetupContextSelection)
             {
+                ResetConversationOverlayForEntry();
                 IsConversationModeEnabled = true;
                 SetConversationModeState(ConversationModeState.NotStarted, "setup_realtime_deferred");
                 StatusMessage = "Choose a situation to start the conversation.";
@@ -1139,6 +1178,7 @@ public partial class LessonChatViewModel : ViewModelBase
             try
             {
                 PrepareForRealtimeConversationStartup("conversation_mode_start_requested");
+                ResetConversationOverlayForEntry();
                 IsConversationModeEnabled = true;
                 SetConversationModeState(ConversationModeState.Starting, "conversation_mode_start_requested");
                 await EnsureRealtimeSessionStartedAsync(CancellationToken.None);
@@ -2390,8 +2430,10 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private void PrepareRealtimeAssistantPlaceholder()
     {
+        HideConversationHint();
         BotStatus = BackendConstants.BotStatusThinking;
         IsSending = true;
+        ConversationLatestBotText = string.Empty;
         RefreshAvatarState();
         realtimeAssistantMessage = AddMessage(TutorAvatarDisplayName, $"{TutorAvatarDisplayName} is speaking...", true);
         realtimeAudioPlaybackService.StartSession(realtimeSessionId, string.Empty);
@@ -2436,6 +2478,7 @@ public partial class LessonChatViewModel : ViewModelBase
             isRealtimeSessionStarted = false;
             realtimeUserTranscriptBuffer.Clear();
             realtimeUserPlaceholderItemId = string.Empty;
+            ClearConversationOverlayState(clearPhrases: true);
             pendingTranscriptByItemId.Clear();
             pendingTranscriptFailureByItemId.Clear();
             SetConversationModeState(IsCompletedAwaitingFinish ? ConversationModeState.CompletedAwaitingFinish : ConversationModeState.NotStarted, mappedReason);
@@ -2803,6 +2846,8 @@ public partial class LessonChatViewModel : ViewModelBase
 
             realtimeAssistantMessage.Text = args.TranscriptSoFar;
             lastBotMessage = args.TranscriptSoFar;
+            ConversationLatestBotText = args.TranscriptSoFar;
+            HideConversationHint();
             OnPropertyChanged(nameof(LatestBotMessageText));
         });
     }
@@ -2822,6 +2867,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 realtimeAssistantMessage.Text = finalTranscript;
             }
             lastBotMessage = finalTranscript;
+            ConversationLatestBotText = finalTranscript;
+            HideConversationHint();
             OnPropertyChanged(nameof(LatestBotMessageText));
             realtimeAudioPlaybackService.CompleteResponse(args.SessionId, args.ResponseId);
             IsSending = false;
@@ -2891,6 +2938,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 {
                     target.Text = transcriptSoFar;
                 }
+                ConversationLatestUserText = transcriptSoFar;
+                HideConversationHint();
             }
         });
     }
@@ -3012,6 +3061,8 @@ public partial class LessonChatViewModel : ViewModelBase
         realtimeUserTranscriptBuffer.Append(normalizedTranscript);
         var turnResult = LessonTurnPolicy.EvaluateUserInput(BuildTurnPolicyContext(), isValidEnglishTranscript: true);
         target.MarkAsValidLearnerTurn(normalizedTranscript, turnResult.LearnerTurnCountAfter);
+        ConversationLatestUserText = normalizedTranscript;
+        HideConversationHint();
         ViewFeedbackCommand.NotifyCanExecuteChanged();
         LearnerTurnCount = turnResult.LearnerTurnCountAfter;
         Debug.WriteLine($"Realtime placeholder replaced with transcript: SessionId={sessionId}; ItemId={itemId}; UserPlaceholderMessageId={target.Id}; TranscriptLength={target.Text.Length}; LearnerTurnCount={LearnerTurnCount}; Source={stateReason}.");
@@ -3663,6 +3714,34 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
+
+    private void ResetConversationOverlayForEntry()
+    {
+        ConversationLatestBotText = lastBotMessage;
+        ConversationLatestUserText = string.Empty;
+        ClearConversationOverlayState(clearPhrases: false);
+    }
+
+    private void HideConversationHint()
+    {
+        if (IsConversationHintVisible)
+        {
+            IsConversationHintVisible = false;
+        }
+    }
+
+    private void ClearConversationOverlayState(bool clearPhrases)
+    {
+        IsConversationHintVisible = false;
+        ConversationHintText = string.Empty;
+
+        if (clearPhrases)
+        {
+            ConversationLatestUserText = string.Empty;
+            ConversationLatestBotText = string.Empty;
+        }
+    }
+
     [RelayCommand]
     private void CloseFeedback()
     {
@@ -3680,25 +3759,102 @@ public partial class LessonChatViewModel : ViewModelBase
         CurrentHintText = string.Empty;
     }
 
+
+    private async Task<string> BuildLessonHintTextAsync(string userMessage)
+    {
+        if (CurrentLessonPhase == LessonPhase.SetupContextSelection)
+        {
+            return BuildSetupContextHint();
+        }
+
+        if (CurrentLessonPhase == LessonPhase.ActiveRoleplay && LearnerTurnCount == 0 && !string.IsNullOrWhiteSpace(lessonScenario.HintRules.ExampleHint))
+        {
+            return lessonScenario.HintRules.ExampleHint.Trim();
+        }
+
+        var hintUserMessage = string.IsNullOrWhiteSpace(userMessage)
+            ? AppConstants.HintFallbackUserMessage
+            : userMessage.Trim();
+        var softWrapUpTurn = GetSoftWrapUpTurn();
+        var finalTurn = GetFinalTurn();
+
+        var hintText = await lessonChatBackendService.SendLessonHintRequestAsync(new LessonChatBackendRequest
+        {
+            SelectedLevel = SelectedLevel,
+            TopicTitle = SelectedTopic.Title,
+            SubtopicTitle = SelectedSubtopic.Title,
+            UserMessage = hintUserMessage,
+            LastBotMessage = lastBotMessage,
+            NativeLanguageName = nativeLanguageName,
+            TutorAvatarId = tutorAvatarId,
+            UserDisplayName = this.UserDisplayName,
+            LearningGoal = this.LearningGoal,
+            LearnerTurnCount = LearnerTurnCount,
+            SoftLearnerTurnLimit = softWrapUpTurn,
+            HardLearnerTurnLimit = finalTurn,
+            RemainingLearnerTurns = Math.Max(finalTurn - LearnerTurnCount, 0),
+            ShouldStartWrappingUp = LearnerTurnCount >= softWrapUpTurn,
+            ShouldEndLessonNow = LearnerTurnCount >= finalTurn,
+            RecentMessages = GetRecentConversationMessages(),
+            LessonPhase = CurrentLessonPhase.ToString(),
+            LessonScenarioId = lessonScenario.Id,
+            Level = SelectedLevel,
+            Topic = lessonScenario.Metadata.Topic,
+            Subtopic = lessonScenario.Metadata.Subtopic,
+            LessonGoal = lessonScenario.LearningGoal.Goal,
+            LessonType = lessonScenario.Metadata.LessonType,
+            AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
+            SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
+            SelectedContextTitle = GetSelectedContextTitle(),
+            SelectedContextOpeningLine = GetSelectedContextOpeningLine(),
+            SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant),
+            SelectedContextOpeningIntent = selectedContextVariant?.OpeningIntent ?? string.Empty,
+            UserTurnNumber = LearnerTurnCount,
+            SoftWrapUpAfterUserTurn = softWrapUpTurn,
+            FinalMessageAtUserTurn = finalTurn,
+            TargetLanguageKeyPhrases = lessonScenario.TargetLanguage.KeyPhrases,
+            GrammarFocus = lessonScenario.TargetLanguage.GrammarFocus,
+            ConversationOpening = lessonScenario.ConversationFlow.Opening,
+            ConversationFirstUserTask = lessonScenario.ConversationFlow.FirstUserTask,
+            ConversationGuidedPracticeFollowUpQuestions = lessonScenario.ConversationFlow.GuidedPracticeFollowUpQuestions,
+            ConversationVariationOrComplication = lessonScenario.ConversationFlow.VariationOrComplication,
+            ConversationCorrectionMoment = lessonScenario.ConversationFlow.CorrectionMoment,
+            ConversationWrapUpMessage = lessonScenario.ConversationFlow.WrapUpMessage,
+            ConversationFinalMessage = GetFinalLessonMessage(),
+            ConversationWrapUpIntent = lessonScenario.ConversationFlow.WrapUpIntent,
+            ConversationFinalMessageIntent = lessonScenario.ConversationFlow.FinalMessageIntent,
+            RoleplayBeats = lessonScenario.RoleplayBeats.Select(beat => new ScenarioRoleplayBeat { Id = beat.Id, Intent = beat.Intent }).ToArray(),
+            ReciprocalQuestionIfUserAsksTutorName = lessonScenario.ReciprocalQuestionHandling.IfUserAsksTutorName,
+            ReciprocalQuestionIfUserAsksSimplePersonalQuestion = lessonScenario.ReciprocalQuestionHandling.IfUserAsksSimplePersonalQuestion,
+            ReciprocalQuestionMustNotIgnoreUserQuestion = lessonScenario.ReciprocalQuestionHandling.MustNotIgnoreUserQuestion,
+            ReciprocalQuestionMustNotRefuseScenarioCompatibleQuestions = lessonScenario.ReciprocalQuestionHandling.MustNotRefuseScenarioCompatibleQuestions,
+            ExpectedScenarioProgression = lessonScenario.ExpectedScenarioProgression,
+            FeedbackRulesSummary = BuildFeedbackRulesSummary(),
+            TutorProfileId = tutorAvatarId,
+            ActiveLevelProfileDifficultyNotes = activeLevelProfile.DifficultyNotes,
+            ActiveLevelProfileTutorLanguageStyle = activeLevelProfile.TutorLanguageStyle,
+            ActiveLevelProfileExpectedUserResponse = activeLevelProfile.ExpectedUserResponse,
+            ActiveLevelProfileFeedbackStrictness = activeLevelProfile.FeedbackStrictness,
+            ActiveLevelProfileHintStrategy = activeLevelProfile.HintStrategy,
+            ActiveLevelProfileCorrectionPriority = activeLevelProfile.CorrectionPriority,
+            ActiveLevelProfileConversationDepth = activeLevelProfile.ConversationDepth,
+            ActiveLevelProfileExampleGoodAnswer = activeLevelProfile.ExampleGoodAnswer,
+            ActiveLevelProfileExampleStretchAnswer = activeLevelProfile.ExampleStretchAnswer,
+            ActiveLevelProfileAddedKeyPhrases = activeLevelProfile.AddedKeyPhrases,
+            ActiveLevelProfileAddedUsefulConstructions = activeLevelProfile.AddedUsefulConstructions,
+            ActiveLevelProfileAddedGrammarFocus = activeLevelProfile.AddedGrammarFocus
+        });
+
+        return string.IsNullOrWhiteSpace(hintText)
+            ? localizedText.MockHintText
+            : hintText.Trim();
+    }
+
     [RelayCommand(CanExecute = nameof(CanRequestHint))]
     private async Task HintAsync()
     {
         if (!CanRequestHint())
         {
-            return;
-        }
-
-        if (CurrentLessonPhase == LessonPhase.SetupContextSelection)
-        {
-            CurrentHintText = BuildSetupContextHint();
-            StatusMessage = string.Empty;
-            return;
-        }
-
-        if (CurrentLessonPhase == LessonPhase.ActiveRoleplay && LearnerTurnCount == 0 && !string.IsNullOrWhiteSpace(lessonScenario.HintRules.ExampleHint))
-        {
-            CurrentHintText = lessonScenario.HintRules.ExampleHint.Trim();
-            StatusMessage = string.Empty;
             return;
         }
 
@@ -3708,83 +3864,8 @@ public partial class LessonChatViewModel : ViewModelBase
 
         try
         {
-            var hintUserMessage = string.IsNullOrWhiteSpace(UserInput)
-                ? AppConstants.HintFallbackUserMessage
-                : UserInput.Trim();
-            var softWrapUpTurn = GetSoftWrapUpTurn();
-            var finalTurn = GetFinalTurn();
-
-            var hintText = await lessonChatBackendService.SendLessonHintRequestAsync(new LessonChatBackendRequest
-            {
-                SelectedLevel = SelectedLevel,
-                TopicTitle = SelectedTopic.Title,
-                SubtopicTitle = SelectedSubtopic.Title,
-                UserMessage = hintUserMessage,
-                LastBotMessage = lastBotMessage,
-                NativeLanguageName = nativeLanguageName,
-                TutorAvatarId = tutorAvatarId,
-                UserDisplayName = this.UserDisplayName,
-                LearningGoal = this.LearningGoal,
-                LearnerTurnCount = LearnerTurnCount,
-                SoftLearnerTurnLimit = softWrapUpTurn,
-                HardLearnerTurnLimit = finalTurn,
-                RemainingLearnerTurns = Math.Max(finalTurn - LearnerTurnCount, 0),
-                ShouldStartWrappingUp = LearnerTurnCount >= softWrapUpTurn,
-                ShouldEndLessonNow = LearnerTurnCount >= finalTurn,
-                RecentMessages = GetRecentConversationMessages(),
-                LessonPhase = CurrentLessonPhase.ToString(),
-                LessonScenarioId = lessonScenario.Id,
-                Level = SelectedLevel,
-                Topic = lessonScenario.Metadata.Topic,
-                Subtopic = lessonScenario.Metadata.Subtopic,
-                LessonGoal = lessonScenario.LearningGoal.Goal,
-                LessonType = lessonScenario.Metadata.LessonType,
-                AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
-                SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
-                SelectedContextTitle = GetSelectedContextTitle(),
-                SelectedContextOpeningLine = GetSelectedContextOpeningLine(),
-                SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant),
-                SelectedContextOpeningIntent = selectedContextVariant?.OpeningIntent ?? string.Empty,
-                UserTurnNumber = LearnerTurnCount,
-                SoftWrapUpAfterUserTurn = softWrapUpTurn,
-                FinalMessageAtUserTurn = finalTurn,
-                TargetLanguageKeyPhrases = lessonScenario.TargetLanguage.KeyPhrases,
-                GrammarFocus = lessonScenario.TargetLanguage.GrammarFocus,
-                ConversationOpening = lessonScenario.ConversationFlow.Opening,
-                ConversationFirstUserTask = lessonScenario.ConversationFlow.FirstUserTask,
-                ConversationGuidedPracticeFollowUpQuestions = lessonScenario.ConversationFlow.GuidedPracticeFollowUpQuestions,
-                ConversationVariationOrComplication = lessonScenario.ConversationFlow.VariationOrComplication,
-                ConversationCorrectionMoment = lessonScenario.ConversationFlow.CorrectionMoment,
-                ConversationWrapUpMessage = lessonScenario.ConversationFlow.WrapUpMessage,
-                ConversationFinalMessage = GetFinalLessonMessage(),
-                ConversationWrapUpIntent = lessonScenario.ConversationFlow.WrapUpIntent,
-                ConversationFinalMessageIntent = lessonScenario.ConversationFlow.FinalMessageIntent,
-                RoleplayBeats = lessonScenario.RoleplayBeats.Select(beat => new ScenarioRoleplayBeat { Id = beat.Id, Intent = beat.Intent }).ToArray(),
-                ReciprocalQuestionIfUserAsksTutorName = lessonScenario.ReciprocalQuestionHandling.IfUserAsksTutorName,
-                ReciprocalQuestionIfUserAsksSimplePersonalQuestion = lessonScenario.ReciprocalQuestionHandling.IfUserAsksSimplePersonalQuestion,
-                ReciprocalQuestionMustNotIgnoreUserQuestion = lessonScenario.ReciprocalQuestionHandling.MustNotIgnoreUserQuestion,
-                ReciprocalQuestionMustNotRefuseScenarioCompatibleQuestions = lessonScenario.ReciprocalQuestionHandling.MustNotRefuseScenarioCompatibleQuestions,
-                ExpectedScenarioProgression = lessonScenario.ExpectedScenarioProgression,
-                FeedbackRulesSummary = BuildFeedbackRulesSummary(),
-                TutorProfileId = tutorAvatarId,
-                ActiveLevelProfileDifficultyNotes = activeLevelProfile.DifficultyNotes,
-                ActiveLevelProfileTutorLanguageStyle = activeLevelProfile.TutorLanguageStyle,
-                ActiveLevelProfileExpectedUserResponse = activeLevelProfile.ExpectedUserResponse,
-                ActiveLevelProfileFeedbackStrictness = activeLevelProfile.FeedbackStrictness,
-                ActiveLevelProfileHintStrategy = activeLevelProfile.HintStrategy,
-                ActiveLevelProfileCorrectionPriority = activeLevelProfile.CorrectionPriority,
-                ActiveLevelProfileConversationDepth = activeLevelProfile.ConversationDepth,
-                ActiveLevelProfileExampleGoodAnswer = activeLevelProfile.ExampleGoodAnswer,
-                ActiveLevelProfileExampleStretchAnswer = activeLevelProfile.ExampleStretchAnswer,
-                ActiveLevelProfileAddedKeyPhrases = activeLevelProfile.AddedKeyPhrases,
-                ActiveLevelProfileAddedUsefulConstructions = activeLevelProfile.AddedUsefulConstructions,
-                ActiveLevelProfileAddedGrammarFocus = activeLevelProfile.AddedGrammarFocus
-            });
-
+            CurrentHintText = await BuildLessonHintTextAsync(UserInput);
             BackendStatusText = BackendConstants.BackendStatusConnected;
-            CurrentHintText = string.IsNullOrWhiteSpace(hintText)
-                ? localizedText.MockHintText
-                : hintText.Trim();
             StatusMessage = string.Empty;
         }
         catch
@@ -3801,10 +3882,55 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand(CanExecute = nameof(CanRequestConversationHint))]
+    private async Task ConversationHintAsync()
+    {
+        if (IsConversationHintVisible)
+        {
+            IsConversationHintVisible = false;
+            return;
+        }
+
+        if (!CanRequestConversationHint())
+        {
+            return;
+        }
+
+        IsConversationHintLoading = true;
+
+        try
+        {
+            ConversationHintText = await BuildLessonHintTextAsync(ConversationLatestUserText);
+            BackendStatusText = BackendConstants.BackendStatusConnected;
+            IsConversationHintVisible = true;
+            StatusMessage = string.Empty;
+        }
+        catch
+        {
+            BackendStatusText = BackendConstants.BackendStatusUnavailable;
+            ConversationHintText = localizedText.MockHintText;
+            IsConversationHintVisible = true;
+            StatusMessage = localizedText.BackendUnavailableMessage;
+        }
+        finally
+        {
+            IsConversationHintLoading = false;
+        }
+    }
+
     private bool CanRequestHint()
     {
         // Hints are intentionally allowed during SetupContextSelection so the learner can see valid context choices.
         return CanAcceptLessonInput;
+    }
+
+    private bool CanRequestConversationHint()
+    {
+        return IsConversationModeEnabled
+            && !hasFinishedLesson
+            && !IsCompletedAwaitingFinish
+            && !IsLessonLimitReached
+            && !IsConversationHintLoading;
     }
 
     private string GetFinalLessonMessage()
@@ -3934,6 +4060,7 @@ public partial class LessonChatViewModel : ViewModelBase
         SendMessageCommand.NotifyCanExecuteChanged();
         ToggleVoiceRecordingCommand.NotifyCanExecuteChanged();
         HintCommand.NotifyCanExecuteChanged();
+        ConversationHintCommand.NotifyCanExecuteChanged();
         ToggleConversationModeCommand.NotifyCanExecuteChanged();
         BackCommand.NotifyCanExecuteChanged();
         FinishLessonCommand.NotifyCanExecuteChanged();
@@ -3942,6 +4069,7 @@ public partial class LessonChatViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsLessonInputEnabled));
         OnPropertyChanged(nameof(CanTypeText));
         OnPropertyChanged(nameof(IsConversationRecordButtonEnabled));
+        OnPropertyChanged(nameof(HasConversationHintText));
         LogTextInputState("after_refresh_all_command_states", CanSendMessage());
         LogRealtimeRecordState("after_refresh_all_command_states");
     }
@@ -3994,6 +4122,7 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             CancelCurrentBotVoice(BotVoiceCancellationReasons.BackOrFinishCancel);
             await CleanupCurrentSessionBotVoiceFilesAsync();
+            ClearConversationOverlayState(clearPhrases: true);
             await StopRealtimeConversationAsync("user_back");
             navigateBack();
         }

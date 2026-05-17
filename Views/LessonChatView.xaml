@@ -174,14 +174,62 @@
                                         </Style>
                                     </Grid.Style>
                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                                        <Border Padding="12,9"
+                                                MaxWidth="520"
+                                                Margin="0,0,0,8"
+                                                Background="#DFFFFFFF"
+                                                BorderBrush="#88CAD8E6"
+                                                BorderThickness="1"
+                                                CornerRadius="18">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasConversationLatestUserText}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <StackPanel>
+                                                <TextBlock Text="You:"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource AccentBrush}"
+                                                           TextAlignment="Center" />
+                                                <TextBlock Margin="0,3,0,0"
+                                                           Text="{Binding ConversationLatestUserText}"
+                                                           FontSize="13"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           TextWrapping="Wrap"
+                                                           TextAlignment="Center" />
+                                            </StackPanel>
+                                        </Border>
+
                                         <Border Padding="14"
                                                 MaxWidth="640"
                                                 Background="#EEFFFFFF"
                                                 BorderBrush="{StaticResource BorderAccentSoftBrush}"
                                                 BorderThickness="1"
                                                 CornerRadius="{StaticResource CornerPanel}">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasConversationLatestBotText}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
                                             <StackPanel>
-                                                <TextBlock Text="{Binding LatestBotMessageText}"
+                                                <TextBlock Text="{Binding TutorAvatarDisplayName, StringFormat={}{0}:}"
+                                                           FontSize="13"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource AccentBrush}"
+                                                           TextAlignment="Center" />
+                                                <TextBlock Margin="0,4,0,0"
+                                                           Text="{Binding ConversationLatestBotText}"
                                                            FontSize="15"
                                                            Foreground="{StaticResource TextPrimaryBrush}"
                                                            TextWrapping="Wrap"
@@ -240,6 +288,67 @@
                                         </Button>
                                     </StackPanel>
                                 </Grid>
+
+                                <Border MinWidth="220"
+                                        MaxWidth="420"
+                                        Margin="18,0,18,96"
+                                        Padding="14,10"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Bottom"
+                                        Background="#EAFBF7EF"
+                                        BorderBrush="#99CAD8E6"
+                                        BorderThickness="1"
+                                        CornerRadius="18">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasConversationHintText}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel>
+                                        <TextBlock Text="Hint"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource AccentBrush}" />
+                                        <TextBlock Margin="0,4,0,0"
+                                                   Text="{Binding ConversationHintText}"
+                                                   FontSize="13"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Button MinWidth="92"
+                                        Height="42"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Bottom"
+                                        Margin="14,0,0,14"
+                                        Padding="16,0"
+                                        Background="#EFFFFFFF"
+                                        BorderBrush="#99CAD8E6"
+                                        BorderThickness="1"
+                                        Foreground="{StaticResource AccentBrush}"
+                                        FontSize="14"
+                                        FontWeight="SemiBold"
+                                        Content="Hint"
+                                        ToolTip="Show a short suggested answer"
+                                        Cursor="Hand"
+                                        Command="{Binding ConversationHintCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
 
                                 <Button Width="42"
                                         Height="42"
