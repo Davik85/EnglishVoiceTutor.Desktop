@@ -177,7 +177,9 @@ static async Task<IResult> HandleLessonChatFeedbackAsync(
     CancellationToken cancellationToken)
 {
     var logger = loggerFactory.CreateLogger("LessonChatFeedbackEndpoint");
-    logger.LogInformation("LessonChatFeedbackEndpoint sourceMessageLength={UserMessageLength}; lessonType={LessonType}; topic={Topic}; subtopic={Subtopic}; userTurnNumber={UserTurnNumber}.",
+    logger.LogInformation("LessonChatFeedbackEndpoint sourceMessageId={SourceMessageId}; sourceMessageKind={SourceMessageKind}; sourceMessageLength={UserMessageLength}; lessonType={LessonType}; topic={Topic}; subtopic={Subtopic}; userTurnNumber={UserTurnNumber}.",
+        request.SourceMessageId,
+        request.SourceMessageKind,
         request.UserMessage?.Trim().Length ?? 0,
         request.LessonType,
         string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,

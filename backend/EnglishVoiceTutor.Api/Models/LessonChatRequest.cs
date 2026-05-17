@@ -89,6 +89,10 @@ public sealed class LessonChatRequest
 
     public string RequestPurpose { get; set; } = string.Empty;
 
+    public int SourceMessageId { get; init; }
+
+    public string SourceMessageKind { get; init; } = string.Empty;
+
     public string TutorProfileId { get; init; } = string.Empty;
 
     public string ActiveLevelProfileDifficultyNotes { get; init; } = string.Empty;
