@@ -10,6 +10,7 @@ DESIGN_SYSTEM = ROOT / "Resources" / "DesignSystem.xaml"
 LEVEL_VIEW = ROOT / "Views" / "LevelSelectionView.xaml"
 HOME_VIEW = ROOT / "Views" / "HomeView.xaml"
 LESSON_CHAT_VIEW = ROOT / "Views" / "LessonChatView.xaml"
+LESSON_CHAT_VIEW_CODE_BEHIND = ROOT / "Views" / "LessonChatView.xaml.cs"
 REALTIME_SCHEMA_TESTS = [
     ROOT / "tools" / "test_realtime_ga_session_schema.py",
     ROOT / "tools" / "test_realtime_ga_content_schema.py",
@@ -92,10 +93,30 @@ def main() -> int:
         assert_min_width(tag, f"lesson {binding}", minimum)
 
     assert_contains(chat, "AcceptsReturn=\"False\"", "single-line input documents Shift+Enter no-op behavior")
-    assert_contains(chat, "<TextBox.InputBindings>", "lesson text input bindings")
-    assert_contains(chat, "<KeyBinding Key=\"Enter\"", "Enter-to-send key binding")
-    assert_contains(chat, "Modifiers=\"None\"", "Enter sends only without Shift modifiers")
-    assert_contains(chat, "Command=\"{Binding SendMessageCommand}\"", "Enter invokes existing send command")
+    if "Key=\"Enter\"" in chat:
+        raise AssertionError("LessonChatView.xaml must not use Key=\"Enter\" because WPF XAML parsing requires Key=\"Return\" for the main Enter key.")
+
+    code_behind = read(LESSON_CHAT_VIEW_CODE_BEHIND)
+    has_return_key_binding = "<KeyBinding Key=\"Return\"" in chat
+    has_safe_preview_handler = "PreviewKeyDown=\"LessonInputTextBox_PreviewKeyDown\"" in chat
+    if not (has_return_key_binding or has_safe_preview_handler):
+        raise AssertionError("Lesson text input must support Enter-to-send via Key=\"Return\" or a named safe PreviewKeyDown handler.")
+
+    if has_return_key_binding:
+        assert_contains(chat, "<TextBox.InputBindings>", "lesson text input bindings")
+        assert_contains(chat, "Modifiers=\"None\"", "Enter sends only without Shift modifiers")
+        assert_contains(chat, "Command=\"{Binding SendMessageCommand}\"", "Enter invokes existing send command")
+
+    if has_safe_preview_handler:
+        for handler_requirement in [
+            "LessonInputTextBox_PreviewKeyDown",
+            "Key.Return",
+            "ModifierKeys.Shift",
+            "SendMessageCommand.CanExecute(null)",
+            "SendMessageCommand.Execute(null)",
+            "e.Handled = true",
+        ]:
+            assert_contains(code_behind, handler_requirement, f"safe Enter-to-send handler {handler_requirement}")
 
     if chat.count("Style=\"{StaticResource SelectableChatTextBoxStyle}\"") < 2:
         raise AssertionError("Chat body and translation text must use selectable read-only TextBox styling.")
