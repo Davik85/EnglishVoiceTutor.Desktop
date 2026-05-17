@@ -99,11 +99,14 @@ static async Task<IResult> HandleLessonChatReplyAsync(
     CancellationToken cancellationToken)
 {
     var logger = loggerFactory.CreateLogger("LessonChatReplyEndpoint");
-    logger.LogInformation("LessonChatReplyEndpoint lessonType={LessonType}; topic={Topic}; subtopic={Subtopic}; userTurnNumber={UserTurnNumber}.",
+    logger.LogInformation("LessonChatReplyEndpoint lessonType={LessonType}; topic={Topic}; subtopic={Subtopic}; userTurnNumber={UserTurnNumber}; TargetLanguageId={TargetLanguageId}; TargetLanguageName={TargetLanguageName}; TargetLanguageCode={TargetLanguageCode}.",
         request.LessonType,
         string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
         string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
-        request.UserTurnNumber);
+        request.UserTurnNumber,
+        string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
+        string.IsNullOrWhiteSpace(request.TargetLanguageName) ? StudyLanguageCatalog.English.EnglishName : request.TargetLanguageName,
+        string.IsNullOrWhiteSpace(request.TargetLanguageCode) ? StudyLanguageCatalog.English.Bcp47Code : request.TargetLanguageCode);
 
     if (string.IsNullOrWhiteSpace(request.UserMessage))
     {
@@ -156,8 +159,19 @@ static async Task<IResult> HandleMockLessonChatReplyAsync(
 static async Task<IResult> HandleLessonChatHintAsync(
     LessonChatRequest request,
     ILessonHintService lessonHintService,
+    ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
+    var logger = loggerFactory.CreateLogger("LessonChatHintEndpoint");
+    logger.LogInformation("LessonChatHintEndpoint lessonType={LessonType}; topic={Topic}; subtopic={Subtopic}; lessonPhase={LessonPhase}; TargetLanguageId={TargetLanguageId}; TargetLanguageName={TargetLanguageName}; TargetLanguageCode={TargetLanguageCode}.",
+        request.LessonType,
+        string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
+        string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
+        request.LessonPhase,
+        string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
+        string.IsNullOrWhiteSpace(request.TargetLanguageName) ? StudyLanguageCatalog.English.EnglishName : request.TargetLanguageName,
+        string.IsNullOrWhiteSpace(request.TargetLanguageCode) ? StudyLanguageCatalog.English.Bcp47Code : request.TargetLanguageCode);
+
     if (string.IsNullOrWhiteSpace(request.UserMessage))
     {
         return Results.BadRequest(new
@@ -178,14 +192,17 @@ static async Task<IResult> HandleLessonChatFeedbackAsync(
     CancellationToken cancellationToken)
 {
     var logger = loggerFactory.CreateLogger("LessonChatFeedbackEndpoint");
-    logger.LogInformation("LessonChatFeedbackEndpoint sourceMessageId={SourceMessageId}; sourceMessageKind={SourceMessageKind}; sourceMessageLength={UserMessageLength}; lessonType={LessonType}; topic={Topic}; subtopic={Subtopic}; userTurnNumber={UserTurnNumber}.",
+    logger.LogInformation("LessonChatFeedbackEndpoint sourceMessageId={SourceMessageId}; sourceMessageKind={SourceMessageKind}; sourceMessageLength={UserMessageLength}; lessonType={LessonType}; topic={Topic}; subtopic={Subtopic}; userTurnNumber={UserTurnNumber}; TargetLanguageId={TargetLanguageId}; TargetLanguageName={TargetLanguageName}; TargetLanguageCode={TargetLanguageCode}.",
         request.SourceMessageId,
         request.SourceMessageKind,
         request.UserMessage?.Trim().Length ?? 0,
         request.LessonType,
         string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
         string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
-        request.UserTurnNumber);
+        request.UserTurnNumber,
+        string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
+        string.IsNullOrWhiteSpace(request.TargetLanguageName) ? StudyLanguageCatalog.English.EnglishName : request.TargetLanguageName,
+        string.IsNullOrWhiteSpace(request.TargetLanguageCode) ? StudyLanguageCatalog.English.Bcp47Code : request.TargetLanguageCode);
 
     if (string.IsNullOrWhiteSpace(request.UserMessage))
     {

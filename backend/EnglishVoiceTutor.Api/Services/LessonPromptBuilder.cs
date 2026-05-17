@@ -314,6 +314,7 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("Do not switch to another language even if the learner asks.");
         prompt.AppendLine($"If the learner uses another language, gently answer in {targetLanguage.TutorInstructionName} and guide them back to the lesson.");
         prompt.AppendLine($"The lesson JSON scenario text is a semantic plan. Adapt it naturally into {targetLanguage.TutorInstructionName}; do not treat English wording in JSON as the output language.");
+        prompt.AppendLine($"The lesson JSON scenario text is semantic metadata. Use it for meaning, scenario, and teaching intent, then express tutor-facing output in {targetLanguage.TutorInstructionName}.");
         prompt.AppendLine();
     }
 
