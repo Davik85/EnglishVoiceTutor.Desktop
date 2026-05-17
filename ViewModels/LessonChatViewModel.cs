@@ -471,7 +471,7 @@ public partial class LessonChatViewModel : ViewModelBase
         && !IsCompletedAwaitingFinish
         && !IsLessonLimitReached;
 
-    private bool ShouldAutoPlayBotVoice => !IsRealtimeConversationActive && !IsLessonCompleteAwaitingFinish && IsBotVoiceAutoPlayEnabled;
+    private bool ShouldAutoPlayBotVoice => !IsConversationModeEnabled && !IsRealtimeConversationActive && !IsLessonCompleteAwaitingFinish && IsBotVoiceAutoPlayEnabled;
 
     private bool CanStartNormalRecording()
     {
@@ -750,6 +750,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private bool CanPlayBotVoice(ChatMessageViewModel? message)
     {
         return CanReviewExistingMessages
+            && !IsConversationModeEnabled
             && !IsRealtimeConversationActive
             && !IsBotVoicePlaying
             && message is not null
@@ -1238,28 +1239,46 @@ public partial class LessonChatViewModel : ViewModelBase
         SetConversationModeState(ConversationModeState.NotStarted, "conversation_mode_off");
     }
 
-    private Task StartTtsConversationModeAsync()
+    private async Task StartTtsConversationModeAsync()
     {
         CancelCurrentBotVoice(BotVoiceCancellationReasons.RealtimeStartupCancel);
         audioPlaybackService.StopPlayback();
         IsBotVoicePlaying = false;
         ResetConversationOverlayForEntry();
         IsConversationModeEnabled = true;
+        BackendStatusText = BackendConstants.BackendStatusConnected;
 
-        if (IsGuidedRoleplayLesson() && CurrentLessonPhase == LessonPhase.SetupContextSelection)
+        var openingBotMessage = SelectCurrentConversationOpeningBotMessage();
+        if (openingBotMessage is not null)
         {
-            SetConversationModeState(ConversationModeState.NotStarted, "setup_tts_conversation_deferred");
+            ConversationLatestBotText = openingBotMessage.Text;
+        }
+
+        Debug.WriteLine($"Conversation mode started with TTS provider: Provider={CurrentConversationModeVoiceProvider}; CurrentLessonPhase={CurrentLessonPhase}; UsesTranscriptionEndpoint=True; UsesLessonChatEndpoint=True; UsesAudioSpeechEndpoint=True; RealtimeWebSocketOpened=False; RealtimeSessionStarted={isRealtimeSessionStarted}; TtsPurpose={BackendConstants.ConversationModeTtsPurpose}; TtsModel={BackendConstants.TtsModelName}; TtsVoice=coral; TtsSpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; OpeningMessageId={openingBotMessage?.Id.ToString(CultureInfo.InvariantCulture) ?? "none"}.");
+
+        if (openingBotMessage is null)
+        {
+            SetConversationModeState(ConversationModeState.Ready, "tts_conversation_mode_start_succeeded_no_opening_message");
+            StatusMessage = IsGuidedRoleplayLesson() && CurrentLessonPhase == LessonPhase.SetupContextSelection
+                ? "Choose a situation to start the conversation."
+                : string.Empty;
+            RefreshAllCommandStates();
+            return;
+        }
+
+        await PlayConversationModeBotVoiceAsync(openingBotMessage, isOpeningPlayback: true);
+        if (IsTtsConversationModeActive
+            && IsGuidedRoleplayLesson()
+            && CurrentLessonPhase == LessonPhase.SetupContextSelection
+            && string.IsNullOrWhiteSpace(StatusMessage))
+        {
             StatusMessage = "Choose a situation to start the conversation.";
         }
-        else
-        {
-            SetConversationModeState(ConversationModeState.Ready, "tts_conversation_mode_start_succeeded");
-            StatusMessage = string.Empty;
-        }
+    }
 
-        BackendStatusText = BackendConstants.BackendStatusConnected;
-        Debug.WriteLine($"Conversation mode started with TTS provider: Provider={CurrentConversationModeVoiceProvider}; CurrentLessonPhase={CurrentLessonPhase}; UsesTranscriptionEndpoint=True; UsesLessonChatEndpoint=True; UsesAudioSpeechEndpoint=True; RealtimeWebSocketOpened=False; RealtimeSessionStarted={isRealtimeSessionStarted}; TtsPurpose={BackendConstants.ConversationModeTtsPurpose}; TtsModel={BackendConstants.TtsModelName}; TtsVoice=coral; TtsSpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}.");
-        return Task.CompletedTask;
+    private ChatMessageViewModel? SelectCurrentConversationOpeningBotMessage()
+    {
+        return Messages.LastOrDefault(message => message.IsFromBot && !message.IsTechnicalMessage && !string.IsNullOrWhiteSpace(message.Text));
     }
 
     private async Task StartRealtimeConversationModeAsync()
@@ -1455,7 +1474,15 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        if (IsRealtimeConversationActive && !allowDuringRealtimeOpeningPlayback)
+        var isConversationModeSpeechPurpose = string.Equals(speechPurpose, BackendConstants.ConversationModeTtsPurpose, StringComparison.Ordinal);
+        if (IsConversationModeEnabled && !isConversationModeSpeechPurpose && !allowDuringRealtimeOpeningPlayback)
+        {
+            Debug.WriteLine($"Skipping normal bot voice {(isAutoPlay ? "auto-play" : "manual play")} during active Conversation Mode: MessageId={message.Id}; SessionId={realtimeSessionId}; RequestedPurpose={speechPurpose}.");
+            StatusMessage = string.Empty;
+            return;
+        }
+
+        if (IsRealtimeConversationActive && !allowDuringRealtimeOpeningPlayback && !isConversationModeSpeechPurpose)
         {
             Debug.WriteLine($"Skipping bot voice {(isAutoPlay ? "auto-play" : "manual play")} during active Conversation Mode: MessageId={message.Id}; SessionId={realtimeSessionId}.");
             StatusMessage = string.Empty;
@@ -1476,7 +1503,15 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        if (IsRealtimeConversationActive && !allowDuringRealtimeOpeningPlayback)
+        if (IsConversationModeEnabled && !isConversationModeSpeechPurpose && !allowDuringRealtimeOpeningPlayback)
+        {
+            Debug.WriteLine($"Skipped normal bot voice {(isAutoPlay ? "auto-play" : "manual play")} after waiting because Conversation Mode became active: MessageId={message.Id}; SessionId={realtimeSessionId}; RequestedPurpose={speechPurpose}.");
+            botVoiceSemaphore.Release();
+            StatusMessage = string.Empty;
+            return;
+        }
+
+        if (IsRealtimeConversationActive && !allowDuringRealtimeOpeningPlayback && !isConversationModeSpeechPurpose)
         {
             Debug.WriteLine($"Skipped bot voice {(isAutoPlay ? "auto-play" : "manual play")} after waiting because Conversation Mode became active: MessageId={message.Id}; SessionId={realtimeSessionId}.");
             botVoiceSemaphore.Release();
@@ -1489,9 +1524,11 @@ public partial class LessonChatViewModel : ViewModelBase
         var playbackStarted = false;
         var totalStopwatch = Stopwatch.StartNew();
         var selectedBotVoicePath = AudioConstants.BotVoiceDefaultPathName;
-        var operationName = allowDuringRealtimeOpeningPlayback
-            ? "realtime_pre_start_opening_playback_voice"
-            : isAutoPlay ? "auto_play_bot_voice" : "play_voice";
+        var operationName = isConversationModeSpeechPurpose
+            ? "conversation_mode_tts_voice"
+            : allowDuringRealtimeOpeningPlayback
+                ? "realtime_pre_start_opening_playback_voice"
+                : isAutoPlay ? "auto_play_bot_voice" : "play_voice";
         var operationStopwatch = StartUiOperationDiagnostics(
             operationName,
             TtsPlaybackPreparationWarningThresholdMilliseconds,
@@ -1504,12 +1541,12 @@ public partial class LessonChatViewModel : ViewModelBase
             {
                 usedAutoPlayVoice = true;
             }
-            else if (!allowDuringRealtimeOpeningPlayback)
+            else if (!allowDuringRealtimeOpeningPlayback && !isConversationModeSpeechPurpose)
             {
                 usedManualPlayVoice = true;
             }
             RefreshAvatarState();
-            StatusMessage = allowDuringRealtimeOpeningPlayback ? $"{TutorAvatarDisplayName} is speaking..." : localizedText.PlayingBotVoiceMessage;
+            StatusMessage = isConversationModeSpeechPurpose || allowDuringRealtimeOpeningPlayback ? $"{TutorAvatarDisplayName} is speaking..." : localizedText.PlayingBotVoiceMessage;
 
             var rawBotVoiceText = message.Text.Trim();
             var isSetupVoiceMessage = IsSetupVoiceMessage(message);
@@ -1578,35 +1615,50 @@ public partial class LessonChatViewModel : ViewModelBase
     }
 
 
-    private async Task PlayConversationModeBotVoiceAsync(ChatMessageViewModel message)
+    private Task PlayConversationModeBotVoiceAsync(ChatMessageViewModel message)
+    {
+        return PlayConversationModeBotVoiceAsync(message, isOpeningPlayback: false);
+    }
+
+    private async Task PlayConversationModeBotVoiceAsync(ChatMessageViewModel message, bool isOpeningPlayback)
     {
         if (!IsTtsConversationModeActive || string.IsNullOrWhiteSpace(message.Text))
         {
             return;
         }
 
+        var playbackFailed = false;
         try
         {
             CancelCurrentBotVoice(BotVoiceCancellationReasons.NewerMessageCancel);
-            SetConversationModeState(ConversationModeState.PlayingAssistantAudio, "tts_bot_voice_playback_starting");
+            audioPlaybackService.StopPlayback();
+            SetConversationModeState(
+                isOpeningPlayback ? ConversationModeState.OpeningPlayback : ConversationModeState.PlayingAssistantAudio,
+                isOpeningPlayback ? "tts_opening_bot_voice_playback_starting" : "tts_bot_voice_playback_starting");
+            Debug.WriteLine($"Conversation Mode TTS playback requested: MessageId={message.Id}; IsOpeningPlayback={isOpeningPlayback}; Purpose={BackendConstants.ConversationModeTtsPurpose}; Model={BackendConstants.TtsModelName}; Voice=coral; SpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; RealtimeWebSocketOpened=False.");
             await PlayBotVoiceForMessageCoreAsync(
                 message,
                 isAutoPlay: false,
-                allowDuringRealtimeOpeningPlayback: true,
+                allowDuringRealtimeOpeningPlayback: false,
                 speechPurpose: BackendConstants.ConversationModeTtsPurpose,
                 cancellationToken: CancellationToken.None,
                 speechSpeed: ConversationModeTtsSpeechSpeed);
         }
         catch (Exception exception)
         {
-            Debug.WriteLine($"Conversation Mode TTS playback failed: MessageId={message.Id}; Purpose={BackendConstants.ConversationModeTtsPurpose}; SpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; {exception}");
+            playbackFailed = true;
+            Debug.WriteLine($"Conversation Mode TTS playback failed: MessageId={message.Id}; IsOpeningPlayback={isOpeningPlayback}; Purpose={BackendConstants.ConversationModeTtsPurpose}; SpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; {exception}");
             StatusMessage = BackendConstants.VoicePlaybackUnavailableMessage;
         }
         finally
         {
             if (IsTtsConversationModeActive && !IsCompletedAwaitingFinish)
             {
-                SetConversationModeState(ConversationModeState.Ready, "tts_bot_voice_playback_finished");
+                SetConversationModeState(ConversationModeState.Ready, isOpeningPlayback ? "tts_opening_bot_voice_playback_finished" : "tts_bot_voice_playback_finished");
+                if (!playbackFailed && string.Equals(StatusMessage, $"{TutorAvatarDisplayName} is speaking...", StringComparison.Ordinal))
+                {
+                    StatusMessage = string.Empty;
+                }
             }
         }
     }
@@ -3446,7 +3498,8 @@ public partial class LessonChatViewModel : ViewModelBase
         if (IsTtsConversationModeActive)
         {
             ConversationLatestBotText = roleplayStartMessage.Text;
-            SetConversationModeState(ConversationModeState.Ready, "tts_context_selected_ready");
+            SetConversationModeState(ConversationModeState.WaitingForAssistant, "tts_context_selected_waiting_for_opening_voice");
+            await PlayConversationModeBotVoiceAsync(roleplayStartMessage);
         }
 
         await TryStartRealtimeAfterGuidedContextSelectionAsync();
@@ -4557,7 +4610,7 @@ public partial class LessonChatViewModel : ViewModelBase
             return false;
         }
 
-        return !IsRealtimeConversationActive && message.ShowPlayVoiceButton && CurrentLessonPhase != LessonPhase.SetupContextSelection;
+        return !IsConversationModeEnabled && !IsRealtimeConversationActive && message.ShowPlayVoiceButton && CurrentLessonPhase != LessonPhase.SetupContextSelection;
     }
 
     private void QueueBotVoiceFirstSegmentPrefetch(ChatMessageViewModel message)

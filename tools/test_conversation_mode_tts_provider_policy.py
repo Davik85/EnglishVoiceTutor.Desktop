@@ -18,8 +18,12 @@ def require_text(text: str, needle: str, path: str) -> None:
 
 
 def method_body(text: str, method_name: str) -> str:
-    marker = f"{method_name}("
-    start = text.find(marker)
+    markers = [f"private async Task {method_name}(" , f"private Task {method_name}(", f"{method_name}("]
+    start = -1
+    for marker in markers:
+        start = text.find(marker)
+        if start >= 0:
+            break
     require(start >= 0, f"Missing method {method_name}")
     brace_start = text.find("{", start)
     depth = 0
@@ -65,6 +69,19 @@ def main() -> None:
     require("EnsureRealtimeSessionStartedAsync" not in start_tts_body, "Default TTS start must not create a Realtime session")
     require("CreateRealtimeVoiceWebSocketUri" not in start_tts_body, "Default TTS start must not build/open /api/realtime-voice WebSocket")
     require("RealtimeVoiceEndpoint" not in start_tts_body and "/api/realtime-voice" not in start_tts_body, "Default TTS start must not reference /api/realtime-voice")
+
+    require_text(vm, "SelectCurrentConversationOpeningBotMessage", vm_path)
+    require_text(vm, "ConversationLatestBotText = openingBotMessage.Text", vm_path)
+    require_text(vm, "PlayConversationModeBotVoiceAsync(openingBotMessage, isOpeningPlayback: true)", vm_path)
+    require_text(vm, "ConversationModeState.OpeningPlayback", vm_path)
+    require_text(vm, "tts_opening_bot_voice_playback_finished", vm_path)
+    require_text(vm, "VoicePlaybackUnavailableMessage", vm_path)
+
+    start_tts_body = method_body(vm, "StartTtsConversationModeAsync")
+    require("AddMessage(" not in start_tts_body, "TTS Conversation Mode entry must not duplicate the visible bot message in chat history")
+    require("PlayConversationModeBotVoiceAsync(openingBotMessage, isOpeningPlayback: true)" in start_tts_body, "TTS Conversation Mode entry must speak the current/latest bot message")
+    require("BackendConstants.ConversationModeTtsPurpose" in start_tts_body, "TTS Conversation Mode entry must log/use the Conversation Mode TTS purpose")
+    require("ConversationModeTtsSpeechSpeed" in start_tts_body, "TTS Conversation Mode entry must use/log the named Conversation Mode speed")
     require_text(vm, "StartRealtimeConversationModeAsync", vm_path)
     require_text(vm, "EnsureRealtimeSessionStartedAsync", vm_path)
 
@@ -92,6 +109,14 @@ def main() -> None:
     require_text(vm, "botVoiceSemaphore", vm_path)
     require_text(vm, "IsBotVoicePlaying", vm_path)
     require_text(vm, "PlayConversationModeBotVoiceAsync", vm_path)
+    require_text(vm, "!IsConversationModeEnabled && !IsRealtimeConversationActive && !IsLessonCompleteAwaitingFinish && IsBotVoiceAutoPlayEnabled", vm_path)
+    require_text(vm, "Skipping normal bot voice", vm_path)
+    require_text(vm, "return !IsConversationModeEnabled && !IsRealtimeConversationActive && message.ShowPlayVoiceButton", vm_path)
+    require_text(vm, "speechPurpose: BackendConstants.ConversationModeTtsPurpose", vm_path)
+    require_text(vm, "speechSpeed: ConversationModeTtsSpeechSpeed", vm_path)
+    require_text(vm, "allowDuringRealtimeOpeningPlayback: false", vm_path)
+    require_text(vm, "tts_context_selected_waiting_for_opening_voice", vm_path)
+    require_text(vm, "await PlayConversationModeBotVoiceAsync(roleplayStartMessage)", vm_path)
     require_text(vm, "VoicePlaybackUnavailableMessage", vm_path)
 
     require_text(vm, "ConversationLatestUserText = trimmedTranscriptionText", vm_path)
