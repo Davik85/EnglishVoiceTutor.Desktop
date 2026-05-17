@@ -19,15 +19,12 @@
                     Padding="32"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
-                    Background="{StaticResource SurfaceBrush}"
-                    CornerRadius="{StaticResource CornerLarge}"
-                    BorderBrush="{StaticResource BorderSoftBrush}"
-                    BorderThickness="1">
+                    Style="{StaticResource MainContentCardStyle}">
                 <StackPanel>
-                    <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" Foreground="#FF1C2B3A" TextAlignment="Center" />
-                    <TextBlock Margin="0,10,0,0" Text="{Binding Subtitle}" FontSize="15" Foreground="#FF3A4A5B" TextAlignment="Center" TextWrapping="Wrap" />
-                    <TextBlock Margin="0,18,0,0" Text="{Binding CurrentLevelText}" FontSize="14" FontWeight="SemiBold" Foreground="#FF1E3A56" TextAlignment="Center" />
-                    <TextBlock Margin="0,6,0,0" Text="{Binding TopicText}" FontSize="14" Foreground="#FF3A4A5B" TextAlignment="Center" />
+                    <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" TextAlignment="Center" />
+                    <TextBlock Margin="0,10,0,0" Text="{Binding Subtitle}" FontSize="15" Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" />
+                    <TextBlock Margin="0,18,0,0" Text="{Binding CurrentLevelText}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" TextAlignment="Center" />
+                    <TextBlock Margin="0,6,0,0" Text="{Binding TopicText}" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center" />
 
                     <ItemsControl Margin="0,22,0,0" ItemsSource="{Binding Subtopics}">
                         <ItemsControl.ItemTemplate>
@@ -43,8 +40,8 @@
                                         </MultiBinding>
                                     </Button.Tag>
                                     <StackPanel>
-                                        <TextBlock Text="{Binding DisplayTitle}" FontSize="16" FontWeight="SemiBold" Foreground="#FF1E3A56" />
-                                        <TextBlock Margin="0,4,0,0" Text="{Binding DisplayDescription}" FontSize="13" Foreground="#FF3A4A5B" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding DisplayTitle}" FontSize="16" FontWeight="SemiBold" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                        <TextBlock Margin="0,4,0,0" Text="{Binding DisplayDescription}" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Button>
                             </DataTemplate>
@@ -56,7 +53,7 @@
                         <Button Content="{Binding BackButtonText}" Command="{Binding BackCommand}" Margin="6,0" Width="110" Height="40" Style="{StaticResource SecondaryButtonStyle}" />
                     </StackPanel>
 
-                    <TextBlock Margin="0,16,0,0" Text="{Binding StatusMessage}" FontSize="13" Foreground="#FF3A4A5B" TextAlignment="Center" TextWrapping="Wrap" />
+                    <TextBlock Margin="0,16,0,0" Text="{Binding StatusMessage}" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
         </ScrollViewer>

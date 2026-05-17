@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Windows.Data;
+using EnglishVoiceTutor.Desktop.Models;
 
 namespace EnglishVoiceTutor.Desktop.Converters;
 
@@ -13,9 +14,15 @@ public sealed class SelectionEqualsConverter : IMultiValueConverter
             return string.Empty;
         }
 
-        return ReferenceEquals(values[0], values[1]) || values[0].Equals(values[1])
-            ? "Selected"
-            : string.Empty;
+        var isSelected = ReferenceEquals(values[0], values[1]) || values[0].Equals(values[1]);
+        if (!isSelected)
+        {
+            return string.Empty;
+        }
+
+        return values[1] is Subtopic subtopic
+            ? FormattableString.Invariant($"Selected{subtopic.TopicId}")
+            : "Selected";
     }
 
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

@@ -10,13 +10,13 @@
         <Style x:Key="SettingsSectionTitleStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="16" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#FF1E3A56" />
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
         </Style>
 
         <Style x:Key="SettingsSectionSubtitleStyle" TargetType="TextBlock">
             <Setter Property="Margin" Value="0,6,0,0" />
             <Setter Property="FontSize" Value="13" />
-            <Setter Property="Foreground" Value="#FF5B6B7B" />
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
 
@@ -24,7 +24,7 @@
             <Setter Property="Margin" Value="0,14,0,0" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#FF1E3A56" />
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
         </Style>
 
         <Style x:Key="SettingsTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource SoftTextBoxStyle}">
@@ -48,9 +48,9 @@
 
         <Style x:Key="SettingsSectionCardStyle" TargetType="Border">
             <Setter Property="Padding" Value="18" />
-            <Setter Property="Background" Value="#FFFBFCFE" />
-            <Setter Property="CornerRadius" Value="12" />
-            <Setter Property="BorderBrush" Value="#FFE1E8F0" />
+            <Setter Property="Background" Value="{StaticResource SurfaceSoftBrush}" />
+            <Setter Property="CornerRadius" Value="{StaticResource CornerPanel}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSoftBrush}" />
             <Setter Property="BorderThickness" Value="1" />
         </Style>
 
@@ -58,7 +58,7 @@
             <Setter Property="Margin" Value="0,4,0,0" />
             <Setter Property="FontSize" Value="15" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#FF1C2B3A" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
 
@@ -66,14 +66,14 @@
             <Setter Property="Margin" Value="0,0,10,6" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#FF5B6B7B" />
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
 
         <Style x:Key="AvatarProfileValueStyle" TargetType="TextBlock">
             <Setter Property="Margin" Value="0,0,0,6" />
             <Setter Property="FontSize" Value="12" />
-            <Setter Property="Foreground" Value="#FF1C2B3A" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
 
@@ -81,14 +81,14 @@
             <Setter Property="Margin" Value="0,0,12,8" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#FF5B6B7B" />
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
 
         <Style x:Key="DiagnosticsValueStyle" TargetType="TextBlock">
             <Setter Property="Margin" Value="0,0,0,8" />
             <Setter Property="FontSize" Value="12" />
-            <Setter Property="Foreground" Value="#FF1C2B3A" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
     </UserControl.Resources>
@@ -102,10 +102,7 @@
                     Padding="28"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
-                    Background="{StaticResource SurfaceBrush}"
-                    CornerRadius="{StaticResource CornerLarge}"
-                    BorderBrush="{StaticResource BorderSoftBrush}"
-                    BorderThickness="1">
+                    Style="{StaticResource MainContentCardStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -118,17 +115,17 @@
                         <TextBlock Text="{Binding Title}"
                                    FontSize="30"
                                    FontWeight="SemiBold"
-                                   Foreground="#FF1C2B3A"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
                                    TextAlignment="Center" />
                         <TextBlock Margin="0,10,0,0"
                                    Text="{Binding Subtitle}"
                                    FontSize="14"
-                                   Foreground="#FF3A4A5B"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
                                    TextAlignment="Center"
                                    TextWrapping="Wrap" />
                     </StackPanel>
 
-                    <Border Grid.Row="1" Margin="0,20,0,0" Height="1" Background="#FFE1E8F0" />
+                    <Border Grid.Row="1" Margin="0,20,0,0" Height="1" Background="{StaticResource BorderSoftBrush}" />
 
                     <Grid Grid.Row="2" Margin="0,20,0,0">
                         <Grid.ColumnDefinitions>
@@ -178,12 +175,12 @@
                                             <TextBlock Text="{Binding AvatarProfileTitle}"
                                                        FontSize="14"
                                                        FontWeight="SemiBold"
-                                                       Foreground="#FF1E3A56" />
+                                                       Foreground="{StaticResource AccentBrush}" />
                                             <TextBlock Margin="0,2,0,10"
                                                        Text="{Binding SelectedTutorAvatarDisplayName}"
                                                        FontSize="13"
                                                        FontWeight="SemiBold"
-                                                       Foreground="#FF1C2B3A"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
                                                        TextWrapping="Wrap" />
 
                                             <Grid>
@@ -275,7 +272,7 @@
                                     <TextBlock Margin="0,10,0,0"
                                                Text="{Binding MicrophoneStatusText}"
                                                FontSize="12"
-                                               Foreground="#FF3A4A5B"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
@@ -351,7 +348,7 @@
                                     <TextBlock Margin="0,8,0,0"
                                                Text="{Binding DiagnosticsCopyStatusText}"
                                                FontSize="12"
-                                               Foreground="#FF3A4A5B"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
@@ -402,7 +399,7 @@
                         <TextBlock Margin="0,14,0,0"
                                    Text="{Binding StatusMessage}"
                                    FontSize="13"
-                                   Foreground="#FF3A4A5B"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
                                    TextAlignment="Center"
                                    TextWrapping="Wrap" />
                     </StackPanel>

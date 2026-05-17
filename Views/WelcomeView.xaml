@@ -11,21 +11,18 @@
                 Padding="40"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Background="{StaticResource SurfaceBrush}"
-                CornerRadius="{StaticResource CornerLarge}"
-                BorderBrush="{StaticResource BorderSoftBrush}"
-                BorderThickness="1">
+                Style="{StaticResource MainContentCardStyle}">
             <StackPanel>
                 <TextBlock Text="{Binding AppTitle}"
                            FontSize="42"
                            FontWeight="SemiBold"
-                           Foreground="#FF1C2B3A"
+                           Foreground="{StaticResource TextPrimaryBrush}"
                            TextAlignment="Center" />
 
                 <TextBlock Margin="0,12,0,0"
                            Text="{Binding Subtitle}"
                            FontSize="18"
-                           Foreground="#FF3A4A5B"
+                           Foreground="{StaticResource TextSecondaryBrush}"
                            TextAlignment="Center"
                            TextWrapping="Wrap" />
 
@@ -34,24 +31,24 @@
                         Background="{StaticResource SurfaceSoftBrush}"
                         BorderBrush="{StaticResource BorderAccentSoftBrush}"
                         BorderThickness="1"
-                        CornerRadius="{StaticResource CornerMedium}">
+                        CornerRadius="{StaticResource CornerTile}">
                     <StackPanel>
                         <TextBlock Text="{Binding HowItWorksTitle}"
                                    FontSize="18"
                                    FontWeight="SemiBold"
-                                   Foreground="#FF1C2B3A" />
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
                         <TextBlock Margin="0,14,0,0"
                                    Text="{Binding ChooseTopicStep}"
                                    FontSize="16"
-                                   Foreground="#FF2E4053" />
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
                         <TextBlock Margin="0,8,0,0"
                                    Text="{Binding PracticeStep}"
                                    FontSize="16"
-                                   Foreground="#FF2E4053" />
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
                         <TextBlock Margin="0,8,0,0"
                                    Text="{Binding CorrectionsStep}"
                                    FontSize="16"
-                                   Foreground="#FF2E4053" />
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
                     </StackPanel>
                 </Border>
 
@@ -78,14 +75,14 @@
                 <TextBlock Margin="0,16,0,0"
                            Text="{Binding StatusMessage}"
                            FontSize="13"
-                           Foreground="#FF3A4A5B"
+                           Foreground="{StaticResource TextSecondaryBrush}"
                            TextAlignment="Center"
                            TextWrapping="Wrap" />
 
                 <TextBlock Margin="0,24,0,0"
                            Text="{Binding FooterNote}"
                            FontSize="13"
-                           Foreground="#FF66788A"
+                           Foreground="{StaticResource TextMutedBrush}"
                            TextAlignment="Center"
                            TextWrapping="Wrap" />
             </StackPanel>
