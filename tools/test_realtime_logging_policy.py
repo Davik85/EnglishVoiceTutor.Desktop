@@ -61,6 +61,7 @@ def main() -> None:
         'Realtime first assistant audio delta ms',
         'Realtime first assistant transcript delta ms',
         'Realtime assistant response completed ms',
+        'DesktopStopReason={DesktopStopReason}',
     ]:
         require_text(service, needle)
 

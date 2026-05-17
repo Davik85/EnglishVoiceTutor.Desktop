@@ -249,8 +249,11 @@ public sealed class RealtimeVoiceSessionService
                 StartTranscriptionTimeout(cancellationToken);
                 break;
             case "session.stop":
-                logger.LogInformation("Realtime desktop stop/cancel received. SessionId={SessionId}; ResponseId={ResponseId}; SessionReady={SessionReady}.", sessionId, activeResponseId, isSessionReady);
-                await DisconnectAsync("client_stop", cancellationToken);
+                var desktopStopReason = payload.ValueKind == JsonValueKind.Object && payload.TryGetProperty("reason", out var reasonProperty)
+                    ? reasonProperty.GetString() ?? "unknown"
+                    : "unknown";
+                logger.LogInformation("Realtime desktop stop/cancel received. SessionId={SessionId}; ResponseId={ResponseId}; DesktopStopReason={DesktopStopReason}; SessionReady={SessionReady}.", sessionId, activeResponseId, desktopStopReason, isSessionReady);
+                await DisconnectAsync($"client_stop:{desktopStopReason}", cancellationToken);
                 break;
             default:
                 logger.LogWarning("Realtime ignored unknown desktop message. SessionId={SessionId}; MessageType={MessageType}; Reason=unknown_desktop_message_type.", sessionId, type);

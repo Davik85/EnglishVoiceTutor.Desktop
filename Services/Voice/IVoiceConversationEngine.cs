@@ -10,7 +10,7 @@ public interface IVoiceConversationEngine
     Task StartUserAudioAsync(CancellationToken cancellationToken);
     Task AppendUserAudioAsync(ReadOnlyMemory<byte> audioChunk, CancellationToken cancellationToken);
     Task CommitUserAudioAsync(CancellationToken cancellationToken);
-    Task StopSessionAsync(CancellationToken cancellationToken);
+    Task StopSessionAsync(CancellationToken cancellationToken, string reason = "unknown");
     event EventHandler<AssistantAudioChunkReceivedEventArgs>? AssistantAudioChunkReceived;
     event EventHandler<AssistantTranscriptDeltaEventArgs>? AssistantTranscriptDeltaReceived;
     event EventHandler<AssistantTurnCompletedEventArgs>? AssistantTurnCompleted;

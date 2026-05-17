@@ -1116,7 +1116,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             if (IsConversationModeEnabled)
             {
-                await StopRealtimeConversationAsync("conversation_mode_off");
+                await StopRealtimeConversationAsync("user_exit_conversation_mode");
                 IsConversationModeEnabled = false;
                 SetConversationModeState(ConversationModeState.NotStarted, "conversation_mode_off");
                 LogLessonStateSnapshot("Conversation Mode toggle off");
@@ -1150,7 +1150,7 @@ public partial class LessonChatViewModel : ViewModelBase
             }
             catch (Exception exception)
             {
-                await CleanupRealtimeAfterFaultAsync("conversation_mode_start_failed");
+                await CleanupRealtimeAfterFaultAsync("fatal_realtime_error");
                 BackendStatusText = BackendConstants.BackendStatusUnavailable;
                 StatusMessage = "Conversation Mode could not start. Please try again.";
                 Debug.WriteLine($"Conversation mode start failed: RealtimeSessionId={realtimeSessionId}; ExceptionType={exception.GetType().FullName}; Message={exception.Message}; {exception}");
@@ -2401,7 +2401,14 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         var previousState = CurrentConversationModeState;
         var mappedReason = MapRealtimeLifecycleReason(reason);
-        Debug.WriteLine($"StopRealtimeConversationAsync requested: SessionId={realtimeSessionId}; Reason={mappedReason}; RawReason={reason}; PreviousState={previousState}; IsStarted={isRealtimeSessionStarted}; IsRecording={IsRecording}; IsSending={IsSending}; IsBotVoicePlaying={IsBotVoicePlaying}; IsRealtimePlaybackActive={IsRealtimePlaybackActive()}.");
+        Debug.WriteLine($"StopRealtimeConversationAsync requested: SessionId={realtimeSessionId}; Reason={mappedReason}; RawReason={reason}; PreviousState={previousState}; IsStarted={isRealtimeSessionStarted}; IsRecording={IsRecording}; IsSending={IsSending}; IsBotVoicePlaying={IsBotVoicePlaying}; IsRealtimePlaybackActive={IsRealtimePlaybackActive()}; RealtimePlaybackServiceActive={realtimeAudioPlaybackService.IsPlaybackActive}.");
+        if (ShouldBlockRealtimeStop(mappedReason))
+        {
+            Debug.WriteLine($"Realtime stop/cancel blocked during assistant turn: SessionId={realtimeSessionId}; Reason={mappedReason}; RawReason={reason}; PreviousState={previousState}; IsSending={IsSending}; IsBotVoicePlaying={IsBotVoicePlaying}; IsRealtimePlaybackActive={IsRealtimePlaybackActive()}; RealtimePlaybackServiceActive={realtimeAudioPlaybackService.IsPlaybackActive}.");
+            RefreshAllCommandStates();
+            return;
+        }
+
         var stopwatch = StartUiOperationDiagnostics(
             "realtime_conversation_stop",
             UiOperationWarningThresholdMilliseconds,
@@ -2415,7 +2422,7 @@ public partial class LessonChatViewModel : ViewModelBase
             realtimeAudioPlaybackService.Stop(mappedReason);
             SafeStopRealtimeMicrophone(mappedReason);
             Debug.WriteLine($"Realtime engine StopSessionAsync requested: SessionId={realtimeSessionId}; Reason={mappedReason}; RawReason={reason}.");
-            await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None);
+            await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None, mappedReason);
         }
         catch (Exception exception)
         {
@@ -2443,18 +2450,49 @@ public partial class LessonChatViewModel : ViewModelBase
         }
     }
 
+    private bool ShouldBlockRealtimeStop(string mappedReason)
+    {
+        if (!isRealtimeSessionStarted || !IsConversationModeEnabled)
+        {
+            return false;
+        }
+
+        if (IsExplicitRealtimeStopReason(mappedReason))
+        {
+            return false;
+        }
+
+        var assistantTurnActive = CurrentConversationModeState == ConversationModeState.PlayingAssistantAudio
+            || CurrentConversationModeState == ConversationModeState.WaitingForAssistant
+            || IsSending
+            || realtimeAudioPlaybackService.IsPlaybackActive;
+        return assistantTurnActive;
+    }
+
+    private static bool IsExplicitRealtimeStopReason(string mappedReason)
+    {
+        return mappedReason is "user_exit_conversation_mode"
+            or "user_back"
+            or "window_closing"
+            or "lesson_finished"
+            or "fatal_realtime_error"
+            or "microphone_failure";
+    }
+
 
     private static string MapRealtimeLifecycleReason(string reason)
     {
         return reason switch
         {
-            "back" => "user_clicked_back",
-            "conversation_mode_off" => "user_clicked_conversation_mode_exit",
-            "finish_lesson" => "user_clicked_finish_lesson",
-            "lesson_complete" => "final_cleanup",
-            "conversation_mode_start_failed" or "guided_context_realtime_start_failed" or "session_error_recoverable" or "receive_loop_failed" or "fallback_text_send_failed" => "runtime_failure",
-            "assistant_audio_delta" => "assistant_playback_started",
-            "assistant_turn_completed" or "assistant_playback_completed" or "assistant_turn_completed_waiting_for_playback" or "assistant_turn_completed_no_playback" => "assistant_playback_completed",
+            "user_exit_conversation_mode" => "user_exit_conversation_mode",
+            "user_back" => "user_back",
+            "window_closing" => "window_closing",
+            "lesson_finished" => "lesson_finished",
+            "fatal_realtime_error" or "receive_loop_failed" or "fallback_text_send_failed" => "fatal_realtime_error",
+            "microphone_failure" => "microphone_failure",
+            "assistant_audio_playback_failure" => "assistant_audio_playback_failure",
+            "assistant_audio_delta" => "assistant_audio_playback_started",
+            "assistant_turn_completed" or "assistant_playback_completed" or "assistant_turn_completed_waiting_for_playback" or "assistant_turn_completed_no_playback" => "assistant_audio_playback_completed",
             "realtime_pre_start_opening_playback_finished" => "opening_playback_completed",
             "cleanup_finally" => "cleanup_finally",
             _ when string.IsNullOrWhiteSpace(reason) => "unknown",
@@ -2512,6 +2550,14 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         var mappedReason = MapRealtimeLifecycleReason(reason);
         Debug.WriteLine($"CleanupRealtimeAfterFaultAsync requested: SessionId={realtimeSessionId}; Reason={mappedReason}; RawReason={reason}; State={CurrentConversationModeState}; IsStarted={isRealtimeSessionStarted}; IsRealtimePlaybackActive={IsRealtimePlaybackActive()}.");
+        if (ShouldBlockRealtimeStop(mappedReason))
+        {
+            Debug.WriteLine($"Realtime fault cleanup stop/cancel blocked during assistant turn: SessionId={realtimeSessionId}; Reason={mappedReason}; RawReason={reason}; State={CurrentConversationModeState}; IsSending={IsSending}; IsBotVoicePlaying={IsBotVoicePlaying}; IsRealtimePlaybackActive={IsRealtimePlaybackActive()}; RealtimePlaybackServiceActive={realtimeAudioPlaybackService.IsPlaybackActive}.");
+            SetConversationModeState(ConversationModeState.PlayingAssistantAudio, "blocked_fault_cleanup_during_assistant_playback");
+            RefreshAllCommandStates();
+            return;
+        }
+
         ResolveRealtimePlaceholderAsStatus(RealtimeVoiceTranscriptionUnavailableText, mappedReason);
         Debug.WriteLine($"Realtime audio playback stop requested by fault cleanup: SessionId={realtimeSessionId}; Reason={mappedReason}; RawReason={reason}.");
         realtimeAudioPlaybackService.Stop(mappedReason);
@@ -2519,7 +2565,7 @@ public partial class LessonChatViewModel : ViewModelBase
         try
         {
             Debug.WriteLine($"Realtime engine StopSessionAsync requested by fault cleanup: SessionId={realtimeSessionId}; Reason={mappedReason}; RawReason={reason}.");
-            await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None);
+            await realtimeVoiceEngine.StopSessionAsync(CancellationToken.None, mappedReason);
         }
         catch (Exception exception)
         {
@@ -2722,10 +2768,22 @@ public partial class LessonChatViewModel : ViewModelBase
                 return;
             }
 
-            realtimeAudioPlaybackService.AddAudioChunk(args.SessionId, args.ResponseId, args.AudioChunk);
-            IsBotVoicePlaying = true;
-            SetConversationModeState(ConversationModeState.PlayingAssistantAudio, "assistant_audio_delta");
+            try
+            {
+                realtimeAudioPlaybackService.AddAudioChunk(args.SessionId, args.ResponseId, args.AudioChunk);
+                IsBotVoicePlaying = true;
+                SetConversationModeState(ConversationModeState.PlayingAssistantAudio, "assistant_audio_delta");
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine($"Realtime assistant audio playback failure was non-fatal: SessionId={args.SessionId}; ResponseId={args.ResponseId}; Reason=assistant_audio_playback_failure; StopConversationModeRequested=False; {exception}");
+                IsBotVoicePlaying = false;
+                SetConversationModeState(isRealtimeSessionStarted ? ConversationModeState.Ready : ConversationModeState.NotStarted, "assistant_audio_playback_failure_nonfatal");
+                StatusMessage = "Conversation Mode is still active, but assistant audio could not play.";
+            }
+
             RefreshAvatarState();
+            RefreshAllCommandStates();
         });
     }
 
@@ -3047,7 +3105,7 @@ public partial class LessonChatViewModel : ViewModelBase
         Debug.WriteLine($"Realtime session error: SessionId={args.SessionId}; ResponseId={args.ResponseId}; Message={args.Message}; Exception={args.Exception}");
         StatusMessage = BackendConstants.RealtimeUnavailableMessage;
         isStartingRealtimeSession = false;
-        await CleanupRealtimeAfterFaultAsync("session_error_recoverable");
+        await CleanupRealtimeAfterFaultAsync("fatal_realtime_error");
         RefreshAllCommandStates();
         LogLessonStateSnapshot("Realtime session error recovery");
     }
@@ -3181,7 +3239,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
         catch (Exception exception)
         {
-            await CleanupRealtimeAfterFaultAsync("guided_context_realtime_start_failed");
+            await CleanupRealtimeAfterFaultAsync("fatal_realtime_error");
             BackendStatusText = BackendConstants.BackendStatusUnavailable;
             StatusMessage = BackendConstants.RealtimeUnavailableMessage;
             Debug.WriteLine($"Realtime start after guided context selection failed: RealtimeSessionId={realtimeSessionId}; ExceptionType={exception.GetType().FullName}; Message={exception.Message}; {exception}");
@@ -3798,7 +3856,7 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             CancelCurrentBotVoice(BotVoiceCancellationReasons.BackOrFinishCancel);
             await CleanupCurrentSessionBotVoiceFilesAsync();
-            await StopRealtimeConversationAsync("finish_lesson");
+            await StopRealtimeConversationAsync("lesson_finished");
             CompleteLesson();
         }
         finally
@@ -3821,7 +3879,7 @@ public partial class LessonChatViewModel : ViewModelBase
         UserInput = string.Empty;
         BotStatus = BackendConstants.BotStatusReady;
         StatusMessage = AppConstants.LessonCompleteAwaitingFinishMessage;
-        _ = StopRealtimeConversationAsync("lesson_complete");
+        _ = StopRealtimeConversationAsync("lesson_finished");
         RefreshLessonCompletionState();
         LogLessonStateSnapshot("final limit reached");
     }
@@ -3936,7 +3994,7 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             CancelCurrentBotVoice(BotVoiceCancellationReasons.BackOrFinishCancel);
             await CleanupCurrentSessionBotVoiceFilesAsync();
-            await StopRealtimeConversationAsync("back");
+            await StopRealtimeConversationAsync("user_back");
             navigateBack();
         }
         finally
