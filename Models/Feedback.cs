@@ -58,6 +58,18 @@ public sealed class Feedback
 
     public string NaturalVersionTranslation { get; set; }
 
+    public bool HasShortText => !string.IsNullOrWhiteSpace(ShortText);
+
+    public bool HasCorrectedVersion => !string.IsNullOrWhiteSpace(CorrectedVersion);
+
+    public bool HasGrammarTip => !string.IsNullOrWhiteSpace(GrammarTip);
+
+    public bool HasVocabularyTip => !string.IsNullOrWhiteSpace(VocabularyTip);
+
+    public bool HasCultureTip => !string.IsNullOrWhiteSpace(CultureTip);
+
+    public bool HasNaturalVersion => !string.IsNullOrWhiteSpace(NaturalVersion);
+
     public bool HasTranslations =>
         !string.IsNullOrWhiteSpace(ShortTextTranslation)
         && !string.IsNullOrWhiteSpace(CorrectedVersionTranslation)

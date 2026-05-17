@@ -113,8 +113,8 @@ def main() -> int:
         tag = extract_first_tag(chat, "Button", binding)
         assert_min_width(tag, f"lesson {binding}", minimum)
 
+    assert_contains(chat, "x:Name=\"LessonInputTextBox\"", "stable lesson input TextBox name")
     assert_contains(chat, "AcceptsReturn=\"False\"", "single-line input documents Shift+Enter no-op behavior")
-    assert_contains(chat, "PreviewKeyDown=\"LessonInputTextBox_PreviewKeyDown\"", "scoped Lesson Chat input PreviewKeyDown handler")
     if "Key=\"Enter\"" in chat:
         raise AssertionError("LessonChatView.xaml must not use XAML KeyBinding Key=\"Enter\".")
     if "Key=\"Return\"" in chat:
@@ -123,6 +123,11 @@ def main() -> int:
     code_behind = read(LESSON_CHAT_VIEW_CODE_BEHIND)
     for handler_requirement in [
         "LessonInputTextBox_PreviewKeyDown",
+        "LessonInputTextBox_KeyDown",
+        "LessonInputTextBox.AddHandler",
+        "Keyboard.PreviewKeyDownEvent",
+        "Keyboard.KeyDownEvent",
+        "handledEventsToo: true",
         "Key.Return",
         "Key.Enter",
         "e.SystemKey == Key.Return",
@@ -135,12 +140,13 @@ def main() -> int:
         "SendCanExecute=",
         "SendMessageCommand.CanExecute(null)",
         "SendMessageCommand.Execute(null)",
+        "isLessonInputEnterSendInProgress",
         "e.Handled = true",
     ]:
         assert_contains(code_behind, handler_requirement, f"safe Enter-to-send handler {handler_requirement}")
 
     if code_behind.count("SendMessageCommand.Execute(null)") != 1:
-        raise AssertionError("Lesson input PreviewKeyDown handler must execute SendMessageCommand exactly once.")
+        raise AssertionError("Lesson input Enter handler must execute SendMessageCommand exactly once.")
 
     if chat.count("Style=\"{StaticResource SelectableChatTextBoxStyle}\"") < 2:
         raise AssertionError("Chat body and translation text must use selectable read-only TextBox styling.")

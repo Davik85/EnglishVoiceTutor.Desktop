@@ -66,6 +66,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly Dictionary<string, string> pendingTranscriptByItemId = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> pendingTranscriptFailureByItemId = new(StringComparer.Ordinal);
     private readonly HashSet<int> spokenRealtimeOpeningMessageIds = [];
+    private readonly Dictionary<int, Feedback> feedbackByMessageId = [];
     private readonly List<byte> realtimeCommittedAudioBuffer = [];
     private int realtimeCommittedAudioChunkCount;
     private int realtimeCommittedAudioBytes;
@@ -111,6 +112,9 @@ public partial class LessonChatViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelectedFeedback))]
     private Feedback? selectedFeedback;
+
+    [ObservableProperty]
+    private int selectedFeedbackMessageId;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FeedbackTranslateButtonText))]
@@ -3425,21 +3429,59 @@ public partial class LessonChatViewModel : ViewModelBase
             return;
         }
 
-        var feedback = message.Feedback;
+        var requestedMessage = message;
+        var requestedMessageId = requestedMessage.MessageId;
+        var requestedTextLength = requestedMessage.Text.Trim().Length;
+        SelectedFeedbackMessageId = requestedMessageId;
+        IsFeedbackTranslationVisible = false;
+
+        Debug.WriteLine($"Feedback view requested: MessageId={requestedMessageId}; Source={requestedMessage.Source}; SourceMessageKind={GetFeedbackSourceMessageKind(requestedMessage)}; TextLength={requestedTextLength}; CurrentSelectedFeedbackMessageId={SelectedFeedbackMessageId}.");
+
+        if (feedbackByMessageId.TryGetValue(requestedMessageId, out var cachedFeedback))
+        {
+            requestedMessage.SetFeedback(cachedFeedback);
+            DisplayFeedbackForRequestedMessage(requestedMessageId, cachedFeedback, requestedTextLength, fromCache: true);
+            return;
+        }
+
+        var feedback = requestedMessage.Feedback;
+        if (feedback is not null)
+        {
+            feedbackByMessageId[requestedMessageId] = feedback;
+            DisplayFeedbackForRequestedMessage(requestedMessageId, feedback, requestedTextLength, fromCache: true);
+            return;
+        }
+
+        feedback = await GenerateFeedbackForMessageAsync(requestedMessage);
         if (feedback is null)
         {
-            feedback = await GenerateFeedbackForMessageAsync(message);
-            if (feedback is null)
-            {
-                return;
-            }
+            return;
+        }
 
-            message.SetFeedback(feedback);
+        requestedMessage.SetFeedback(feedback);
+        feedbackByMessageId[requestedMessageId] = feedback;
+
+        if (SelectedFeedbackMessageId != requestedMessageId)
+        {
+            Debug.WriteLine($"Feedback result ignored as stale: RequestedMessageId={requestedMessageId}; CurrentSelectedFeedbackMessageId={SelectedFeedbackMessageId}; TextLength={requestedTextLength}; Displayed=False.");
+            return;
+        }
+
+        DisplayFeedbackForRequestedMessage(requestedMessageId, feedback, requestedTextLength, fromCache: false);
+    }
+
+    private void DisplayFeedbackForRequestedMessage(int requestedMessageId, Feedback feedback, int requestedTextLength, bool fromCache)
+    {
+        if (SelectedFeedbackMessageId != requestedMessageId)
+        {
+            Debug.WriteLine($"Feedback display skipped as stale: RequestedMessageId={requestedMessageId}; CurrentSelectedFeedbackMessageId={SelectedFeedbackMessageId}; TextLength={requestedTextLength}; FromCache={fromCache}; Displayed=False.");
+            return;
         }
 
         SelectedFeedback = feedback;
         IsFeedbackTranslationVisible = false;
         StatusMessage = feedback.ShortText;
+        Debug.WriteLine($"Feedback displayed: MessageId={requestedMessageId}; CurrentSelectedFeedbackMessageId={SelectedFeedbackMessageId}; TextLength={requestedTextLength}; FromCache={fromCache}; Displayed=True.");
     }
 
     private bool CanViewFeedback(ChatMessageViewModel? message)
@@ -3517,6 +3559,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private void CloseFeedback()
     {
         SelectedFeedback = null;
+        SelectedFeedbackMessageId = 0;
         StatusMessage = string.Empty;
         IsFeedbackTranslationVisible = false;
     }
@@ -3959,13 +4002,18 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         try
         {
+            Debug.WriteLine($"Feedback request starting: MessageId={message.MessageId}; Source={message.Source}; SourceMessageKind={GetFeedbackSourceMessageKind(message)}; TextLength={message.Text.Trim().Length}; CurrentSelectedFeedbackMessageId={SelectedFeedbackMessageId}.");
             var response = await lessonChatBackendService.SendLessonFeedbackRequestAsync(BuildLessonFeedbackRequest(message));
             return MapFeedback(response);
         }
         catch (Exception exception)
         {
             Debug.WriteLine($"Feedback request failed: MessageId={message.Id}; Source={message.Source}; TextLength={message.Text.Trim().Length}; {exception}");
-            StatusMessage = localizedText.BackendUnavailableMessage;
+            if (SelectedFeedbackMessageId == message.MessageId)
+            {
+                StatusMessage = localizedText.BackendUnavailableMessage;
+            }
+
             return null;
         }
     }
@@ -3978,6 +4026,8 @@ public partial class LessonChatViewModel : ViewModelBase
             TopicTitle = SelectedTopic.Title,
             SubtopicTitle = SelectedSubtopic.Title,
             UserMessage = message.Text.Trim(),
+            SourceMessageId = message.MessageId,
+            SourceMessageKind = GetFeedbackSourceMessageKind(message),
             LastBotMessage = lastBotMessage,
             NativeLanguageName = nativeLanguageName,
             TutorAvatarId = tutorAvatarId,
@@ -4013,6 +4063,26 @@ public partial class LessonChatViewModel : ViewModelBase
             ActiveLevelProfileAddedUsefulConstructions = activeLevelProfile.AddedUsefulConstructions,
             ActiveLevelProfileAddedGrammarFocus = activeLevelProfile.AddedGrammarFocus
         };
+    }
+
+    private static string GetFeedbackSourceMessageKind(ChatMessageViewModel message)
+    {
+        if (!message.CountsAsValidLessonTurn && string.Equals(message.LessonPhase, LessonPhase.SetupContextSelection.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            return "ContextSelection";
+        }
+
+        if (string.Equals(message.Source, ChatMessageSource.RealtimeVoice, StringComparison.OrdinalIgnoreCase))
+        {
+            return "RealtimeTranscript";
+        }
+
+        if (string.Equals(message.Source, ChatMessageSource.LessonChatVoice, StringComparison.OrdinalIgnoreCase))
+        {
+            return "NormalVoiceTranscript";
+        }
+
+        return "ActiveRoleplay";
     }
 
     private LessonSummaryInput BuildLessonSummaryInput()

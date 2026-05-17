@@ -24,6 +24,7 @@ def assert_contains(text: str, needle: str, label: str) -> None:
 def main() -> int:
     prompt_builder = read(PROMPT_BUILDER)
     realtime_service = read(REALTIME_SERVICE)
+    tutor_guard = read(ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "TutorIdentityGuard.cs")
     desktop_vm = read(DESKTOP_VM)
     elena = json.loads(read(ELENA_PROFILE))
 
@@ -75,6 +76,10 @@ def main() -> int:
         "GetSelectedContextOpeningLine()",
     ]:
         assert_contains(desktop_vm, needle, "desktop realtime tutor profile request")
+
+    assert_contains(tutor_guard, "CommonWordsThatAreNotTutorNames", "tutor guard common-word false-positive filter")
+    assert_contains(tutor_guard, "\"working\"", "tutor guard does not flag working as a tutor name")
+    assert_contains(tutor_guard, "(?<name>[A-Z][a-z]+)", "tutor guard still detects capitalized wrong names such as Nastya")
 
     print("Tutor profile realtime policy checks passed.")
     return 0
