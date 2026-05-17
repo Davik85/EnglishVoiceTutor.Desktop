@@ -160,27 +160,27 @@
         <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderAccentSoftBrush}" />
         <Style.Triggers>
-            <DataTrigger Binding="{Binding Id}" Value="1">
+            <DataTrigger Binding="{Binding ThemeKey}" Value="1">
                 <Setter Property="Background" Value="{StaticResource TopicEverydayBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource TopicEverydayBorderBrush}" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding Id}" Value="2">
+            <DataTrigger Binding="{Binding ThemeKey}" Value="2">
                 <Setter Property="Background" Value="{StaticResource TopicTravelBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource TopicTravelBorderBrush}" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding Id}" Value="3">
+            <DataTrigger Binding="{Binding ThemeKey}" Value="3">
                 <Setter Property="Background" Value="{StaticResource TopicBusinessBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource TopicBusinessBorderBrush}" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding Id}" Value="4">
+            <DataTrigger Binding="{Binding ThemeKey}" Value="4">
                 <Setter Property="Background" Value="{StaticResource TopicInterviewBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource TopicInterviewBorderBrush}" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding Id}" Value="5">
+            <DataTrigger Binding="{Binding ThemeKey}" Value="5">
                 <Setter Property="Background" Value="{StaticResource TopicRestaurantBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource TopicRestaurantBorderBrush}" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding Id}" Value="6">
+            <DataTrigger Binding="{Binding ThemeKey}" Value="6">
                 <Setter Property="Background" Value="{StaticResource TopicFreeConversationBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource TopicFreeConversationBorderBrush}" />
             </DataTrigger>
@@ -197,31 +197,36 @@
         <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderAccentSoftBrush}" />
         <Style.Triggers>
-            <DataTrigger Binding="{Binding TopicId}" Value="1">
+            <DataTrigger Binding="{Binding TopicThemeKey}" Value="1">
                 <Setter Property="Background" Value="{StaticResource TopicEverydayBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource TopicEverydayBorderBrush}" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding TopicId}" Value="2">
+            <DataTrigger Binding="{Binding TopicThemeKey}" Value="2">
                 <Setter Property="Background" Value="{StaticResource TopicTravelBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource TopicTravelBorderBrush}" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding TopicId}" Value="3">
+            <DataTrigger Binding="{Binding TopicThemeKey}" Value="3">
                 <Setter Property="Background" Value="{StaticResource TopicBusinessBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource TopicBusinessBorderBrush}" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding TopicId}" Value="4">
+            <DataTrigger Binding="{Binding TopicThemeKey}" Value="4">
                 <Setter Property="Background" Value="{StaticResource TopicInterviewBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource TopicInterviewBorderBrush}" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding TopicId}" Value="5">
+            <DataTrigger Binding="{Binding TopicThemeKey}" Value="5">
                 <Setter Property="Background" Value="{StaticResource TopicRestaurantBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource TopicRestaurantBorderBrush}" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding TopicId}" Value="6">
+            <DataTrigger Binding="{Binding TopicThemeKey}" Value="6">
                 <Setter Property="Background" Value="{StaticResource TopicFreeConversationBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource TopicFreeConversationBorderBrush}" />
             </DataTrigger>
             <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="BorderThickness" Value="2" />
+            </Trigger>
+            <Trigger Property="Tag" Value="Selected">
+                <Setter Property="Background" Value="{StaticResource SelectedTileBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource SelectedTileBorderBrush}" />
                 <Setter Property="BorderThickness" Value="2" />
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">

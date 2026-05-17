@@ -4,9 +4,14 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:models="clr-namespace:EnglishVoiceTutor.Desktop.Models"
+             xmlns:converters="clr-namespace:EnglishVoiceTutor.Desktop.Converters"
              mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="900">
+    <UserControl.Resources>
+        <converters:SelectionEqualsConverter x:Key="SelectionEqualsConverter" />
+    </UserControl.Resources>
+
     <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <Border MaxWidth="760"
@@ -31,6 +36,12 @@
                                         CommandParameter="{Binding}"
                                         Margin="0,0,0,10"
                                         Style="{StaticResource SubtopicTileButtonStyle}">
+                                    <Button.Tag>
+                                        <MultiBinding Converter="{StaticResource SelectionEqualsConverter}">
+                                            <Binding Path="DataContext.SelectedSubtopic" RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                            <Binding />
+                                        </MultiBinding>
+                                    </Button.Tag>
                                     <StackPanel>
                                         <TextBlock Text="{Binding DisplayTitle}" FontSize="16" FontWeight="SemiBold" Foreground="#FF1E3A56" />
                                         <TextBlock Margin="0,4,0,0" Text="{Binding DisplayDescription}" FontSize="13" Foreground="#FF3A4A5B" TextWrapping="Wrap" />
