@@ -237,7 +237,15 @@ public partial class LessonSummaryViewModel : ViewModelBase
         if (userTurns.Length > 0)
         {
             var examples = string.Join("; ", userTurns.Take(4).Select(message => $"\"{message.Text}\""));
-            return $"You practiced {summaryInput.SubtopicTitle} in {summaryInput.TargetLanguage} across {userTurns.Length} learner turn(s). Useful learner phrases included: {examples}.";
+            return summaryInput.TargetLanguageId switch
+            {
+                "fr" => $"Tu as pratiqué {summaryInput.SubtopicTitle} en français pendant {userTurns.Length} tour(s). Phrases utiles de l’apprenant : {examples}.",
+                "de" => $"Du hast {summaryInput.SubtopicTitle} auf Deutsch in {userTurns.Length} Lernrunde(n) geübt. Nützliche Sätze: {examples}.",
+                "pt" => $"Você praticou {summaryInput.SubtopicTitle} em português em {userTurns.Length} turno(s). Frases úteis: {examples}.",
+                "es" => $"Practicaste {summaryInput.SubtopicTitle} en español durante {userTurns.Length} turno(s). Frases útiles: {examples}.",
+                "it" => $"Hai praticato {summaryInput.SubtopicTitle} in italiano in {userTurns.Length} turno/i. Frasi utili: {examples}.",
+                _ => $"You practiced {summaryInput.SubtopicTitle} in {summaryInput.TargetLanguage} across {userTurns.Length} learner turn(s). Useful learner phrases included: {examples}."
+            };
         }
 
         return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackGoodText;
@@ -261,7 +269,16 @@ public partial class LessonSummaryViewModel : ViewModelBase
         var userTurns = GetValidUserTurns(summaryInput).Select(message => message.Text).Take(3).ToArray();
         if (userTurns.Length > 0)
         {
-            return $"Next focus: keep using complete target-language sentences in the same situation. Review: {string.Join("; ", userTurns)}.";
+            var review = string.Join("; ", userTurns);
+            return summaryInput.TargetLanguageId switch
+            {
+                "fr" => $"Prochain objectif : continue à utiliser des phrases complètes en français dans la même situation. À revoir : {review}.",
+                "de" => $"Nächster Fokus: Verwende weiter vollständige deutsche Sätze in derselben Situation. Wiederholung: {review}.",
+                "pt" => $"Próximo foco: continue usando frases completas em português na mesma situação. Revise: {review}.",
+                "es" => $"Próximo objetivo: sigue usando frases completas en español en la misma situación. Repasa: {review}.",
+                "it" => $"Prossimo obiettivo: continua a usare frasi complete in italiano nella stessa situazione. Ripassa: {review}.",
+                _ => $"Next focus: keep using complete target-language sentences in the same situation. Review: {review}."
+            };
         }
 
         return (localizedText ?? AppLocalization.GetText(null)).SummaryFallbackImproveText;

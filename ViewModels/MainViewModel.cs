@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
@@ -103,6 +104,21 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         userSettings.AudioInputDeviceId = audioInputDeviceId;
         userSettingsService.Save(userSettings);
         lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
+        Debug.WriteLine($"Settings saved: StudyLanguageId={userSettings.StudyLanguageId}; InterfaceLanguageId={userSettings.InterfaceLanguageId}; TutorAvatarId={userSettings.SelectedTutorAvatarId}; BackendBaseUrlConfigured={!string.IsNullOrWhiteSpace(userSettings.BackendBaseUrl)}. Start a new lesson to apply changed study language to lesson content.");
+    }
+
+    private void RefreshMutableUserSettingsFromPersistedSettings()
+    {
+        var persistedSettings = userSettingsService.Load();
+        userSettings.InterfaceLanguageId = persistedSettings.InterfaceLanguageId;
+        userSettings.NativeLanguageName = persistedSettings.NativeLanguageName;
+        userSettings.StudyLanguageId = persistedSettings.StudyLanguageId;
+        userSettings.SelectedTutorAvatarId = persistedSettings.SelectedTutorAvatarId;
+        userSettings.UserDisplayName = persistedSettings.UserDisplayName;
+        userSettings.LearningGoal = persistedSettings.LearningGoal;
+        userSettings.BackendBaseUrl = persistedSettings.BackendBaseUrl;
+        userSettings.AudioInputDeviceId = persistedSettings.AudioInputDeviceId;
+        lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
     }
 
     private void SaveLessonHistory(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput)
@@ -155,6 +171,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private LessonChatViewModel CreateLessonChatViewModel(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic)
     {
+        RefreshMutableUserSettingsFromPersistedSettings();
+        Debug.WriteLine($"Starting lesson with StudyLanguageId={userSettings.StudyLanguageId}; Topic={selectedTopic.Title}; Subtopic={selectedSubtopic.Title}; Level={selectedLevel}.");
         return new LessonChatViewModel(
             AppLocalization.GetText(userSettings.InterfaceLanguageId),
             selectedLevel,

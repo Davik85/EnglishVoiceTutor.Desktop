@@ -629,9 +629,14 @@ public partial class LessonChatViewModel : ViewModelBase
         CurrentLessonPhase = IsFreeConversationLesson()
             ? LessonPhase.ActiveRoleplay
             : LessonPhase.SetupContextSelection;
-        var setupMessage = string.IsNullOrWhiteSpace(this.lessonScenario.LessonSetup.SetupMessage)
-            ? AppConstants.MockBotFirstMessage
-            : RenderLessonTemplate(this.lessonScenario.LessonSetup.SetupMessage.Trim());
+        Debug.WriteLine($"Starting lesson with StudyLanguageId={this.studyLanguage.Id}; StudyLanguageName={this.studyLanguage.EnglishName}; TargetLanguageCode={this.studyLanguage.Bcp47Code}; Topic={SelectedTopic.Title}; Subtopic={SelectedSubtopic.Title}; Level={SelectedLevel}.");
+        var setupMessage = LocalizedLessonTextService.BuildSetupMessage(
+            this.lessonScenario,
+            SelectedSubtopic.Title,
+            UserDisplayName,
+            this.studyLanguage,
+            RenderLessonTemplate);
+        Debug.WriteLine($"Opening message created: Source={LocalizedLessonTextService.OpeningMessageSource}; TargetLanguageId={this.studyLanguage.Id}; GeneratedLocally=True; InputScenarioMetadataOnly=True; OutputLength={setupMessage.Length}.");
         AddMessage(TutorAvatarDisplayName, setupMessage, true);
         lastBotMessage = setupMessage;
         ConversationLatestBotText = setupMessage;
@@ -2421,6 +2426,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
         try
         {
+            Debug.WriteLine($"Lesson chat reply request: TargetLanguageId={studyLanguage.Id}; TargetLanguageName={studyLanguage.EnglishName}; TargetLanguageCode={studyLanguage.Bcp47Code}; Topic={SelectedTopic.Title}; Subtopic={SelectedSubtopic.Title}; SelectedContext={GetSelectedContextTitle()}.");
             var response = await lessonChatBackendService.SendLessonMessageAsync(new LessonChatBackendRequest
             {
                 SelectedLevel = SelectedLevel,
@@ -3517,6 +3523,7 @@ public partial class LessonChatViewModel : ViewModelBase
             selectedCustomContextTitle = string.Empty;
 
             var startMessage = $"{GetSelectedContextConfirmationLine(matchedVariant)}\n\n{GetSelectedContextOpeningLine()}";
+            Debug.WriteLine($"Opening message created: Source=context selection target-language builder; TargetLanguageId={studyLanguage.Id}; GeneratedLocally=True; InputScenarioMetadataOnly=True; OutputLength={startMessage.Length}.");
             await StartActiveRoleplayAfterContextSelectionAsync(startMessage, learnerTurnCountBefore);
             return true;
         }
@@ -3529,7 +3536,9 @@ public partial class LessonChatViewModel : ViewModelBase
             var openingLine = string.IsNullOrWhiteSpace(lessonScenario.ConversationFlow.DefaultOpeningExample)
                 ? "Hi! Nice to meet you. What's your name?"
                 : GetSelectedContextOpeningLine();
-            await StartActiveRoleplayAfterContextSelectionAsync($"Good idea. Let's keep it simple: {userMessage.Trim()}.\n\n{openingLine}", learnerTurnCountBefore);
+            var customContextStartMessage = LocalizedLessonTextService.BuildCustomContextStartMessage(userMessage, openingLine, studyLanguage);
+            Debug.WriteLine($"Opening message created: Source=custom context target-language builder; TargetLanguageId={studyLanguage.Id}; GeneratedLocally=True; InputScenarioMetadataOnly=True; OutputLength={customContextStartMessage.Length}.");
+            await StartActiveRoleplayAfterContextSelectionAsync(customContextStartMessage, learnerTurnCountBefore);
             return true;
         }
 
@@ -3658,29 +3667,21 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private string GetInvalidContextRedirect()
     {
-        if (!string.IsNullOrWhiteSpace(lessonScenario.LessonSetup.ContextSelection.InvalidContextRedirect))
-        {
-            return lessonScenario.LessonSetup.ContextSelection.InvalidContextRedirect.Trim();
-        }
+        var englishRedirect = !string.IsNullOrWhiteSpace(lessonScenario.LessonSetup.ContextSelection.InvalidContextRedirect)
+            ? lessonScenario.LessonSetup.ContextSelection.InvalidContextRedirect.Trim()
+            : !string.IsNullOrWhiteSpace(lessonScenario.ControlledVariation.InvalidContextRedirect)
+                ? lessonScenario.ControlledVariation.InvalidContextRedirect.Trim()
+                : $"That sounds interesting, but this lesson is about {SelectedSubtopic.Title.ToLowerInvariant()}. Please choose a situation that matches this lesson.";
 
-        if (!string.IsNullOrWhiteSpace(lessonScenario.ControlledVariation.InvalidContextRedirect))
-        {
-            return lessonScenario.ControlledVariation.InvalidContextRedirect.Trim();
-        }
-
-        return $"That sounds interesting, but this lesson is about {SelectedSubtopic.Title.ToLowerInvariant()}. Please choose a situation that matches this lesson.";
+        return LocalizedLessonTextService.BuildInvalidContextRedirect(englishRedirect, SelectedSubtopic.Title, studyLanguage);
     }
 
     private string BuildSetupContextHint()
     {
-        var titles = lessonScenario.ControlledVariation.ContextVariants
-            .Take(3)
-            .Select(variant => $"\"{variant.Title}\"")
-            .ToArray();
-
-        return titles.Length == 0
-            ? $"Choose a simple situation about {SelectedSubtopic.Title.ToLowerInvariant()}."
-            : $"You can choose: {string.Join(", ", titles)}.";
+        return LocalizedLessonTextService.BuildSetupContextHint(
+            lessonScenario.ControlledVariation.ContextVariants,
+            SelectedSubtopic.Title,
+            studyLanguage);
     }
 
     private string ResolveScenarioPlaceholders(string value)
@@ -3692,17 +3693,17 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private string GetSelectedContextOpeningLine()
     {
-        return ResolveScenarioPlaceholders(selectedContextVariant?.OpeningLine ?? lessonScenario.ConversationFlow.DefaultOpeningExample);
+        var englishOpeningLine = ResolveScenarioPlaceholders(selectedContextVariant?.OpeningLine ?? lessonScenario.ConversationFlow.DefaultOpeningExample);
+        return LocalizedLessonTextService.BuildContextOpeningLine(englishOpeningLine, lessonScenario, studyLanguage);
     }
 
     private string GetSelectedContextConfirmationLine(ContextVariant variant)
     {
-        if (!string.IsNullOrWhiteSpace(variant.ContextConfirmationLine))
-        {
-            return ResolveScenarioPlaceholders(variant.ContextConfirmationLine);
-        }
+        var englishConfirmationLine = !string.IsNullOrWhiteSpace(variant.ContextConfirmationLine)
+            ? ResolveScenarioPlaceholders(variant.ContextConfirmationLine)
+            : $"Great! Let's imagine {BuildContextConfirmationText(variant)}.";
 
-        return $"Great! Let's imagine {BuildContextConfirmationText(variant)}.";
+        return LocalizedLessonTextService.BuildContextConfirmationLine(variant, studyLanguage, englishConfirmationLine);
     }
 
     private static string BuildContextConfirmationText(ContextVariant variant)
@@ -4066,7 +4067,8 @@ public partial class LessonChatViewModel : ViewModelBase
 
         if (CurrentLessonPhase == LessonPhase.ActiveRoleplay && LearnerTurnCount == 0 && !string.IsNullOrWhiteSpace(lessonScenario.HintRules.ExampleHint))
         {
-            return lessonScenario.HintRules.ExampleHint.Trim();
+            Debug.WriteLine($"Hint request handled locally: TargetLanguageId={studyLanguage.Id}; Source=target-language example hint; LessonPhase={CurrentLessonPhase}.");
+            return LocalizedLessonTextService.BuildExampleHint(lessonScenario.HintRules.ExampleHint, studyLanguage);
         }
 
         var hintUserMessage = string.IsNullOrWhiteSpace(userMessage)
@@ -4075,6 +4077,7 @@ public partial class LessonChatViewModel : ViewModelBase
         var softWrapUpTurn = GetSoftWrapUpTurn();
         var finalTurn = GetFinalTurn();
 
+        Debug.WriteLine($"Hint request: TargetLanguageId={studyLanguage.Id}; Topic={SelectedTopic.Title}; Subtopic={SelectedSubtopic.Title}; LessonPhase={CurrentLessonPhase}.");
         var hintText = await lessonChatBackendService.SendLessonHintRequestAsync(new LessonChatBackendRequest
         {
             SelectedLevel = SelectedLevel,
@@ -4236,9 +4239,11 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private string GetFinalLessonMessage()
     {
-        return string.IsNullOrWhiteSpace(lessonScenario.ConversationFlow.FinalMessage)
+        var englishFinalMessage = string.IsNullOrWhiteSpace(lessonScenario.ConversationFlow.FinalMessage)
             ? AppConstants.LessonCompleteAwaitingFinishMessage
             : lessonScenario.ConversationFlow.FinalMessage.Trim();
+
+        return LocalizedLessonTextService.BuildFinalLessonMessage(englishFinalMessage, studyLanguage);
     }
 
     private void RefreshAvatarState()
@@ -4542,6 +4547,7 @@ public partial class LessonChatViewModel : ViewModelBase
         try
         {
             Debug.WriteLine($"Feedback request starting: requestedMessageId={target.MessageId}; requestedSourceKind={target.SourceMessageKind}; requestedTextLength={target.TextLength}; resultMessageId=0; displayedUnderMessageId={SelectedFeedbackMessageId}; staleResultIgnored=False.");
+            Debug.WriteLine($"Feedback request: TargetLanguageId={studyLanguage.Id}; SourceMessageId={target.MessageId}; SourceMessageKind={target.SourceMessageKind}; LessonPhase={target.LessonPhase}.");
             var response = await lessonChatBackendService.SendLessonFeedbackRequestAsync(BuildLessonFeedbackRequest(target));
             return MapFeedback(response);
         }
@@ -4630,7 +4636,7 @@ public partial class LessonChatViewModel : ViewModelBase
             })
             .ToArray();
 
-        Debug.WriteLine($"Lesson summary input built: MessageCount={summaryMessages.Length}; UserTurnCount={summaryMessages.Count(message => string.Equals(message.Role, "user", StringComparison.OrdinalIgnoreCase))}; RealtimeUserTurnCount={summaryMessages.Count(message => string.Equals(message.Source, ChatMessageSource.RealtimeVoice, StringComparison.OrdinalIgnoreCase))}; FinalUserTurnCount={LearnerTurnCount}.");
+        Debug.WriteLine($"Lesson summary input built: MessageCount={summaryMessages.Length}; UserTurnCount={summaryMessages.Count(message => string.Equals(message.Role, "user", StringComparison.OrdinalIgnoreCase))}; RealtimeUserTurnCount={summaryMessages.Count(message => string.Equals(message.Source, ChatMessageSource.RealtimeVoice, StringComparison.OrdinalIgnoreCase))}; FinalUserTurnCount={LearnerTurnCount}; TargetLanguageId={studyLanguage.Id}.");
 
         return new LessonSummaryInput
         {

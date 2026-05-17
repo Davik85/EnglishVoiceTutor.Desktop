@@ -99,7 +99,7 @@ public sealed class LessonChatBackendService
         CancellationToken cancellationToken = default)
     {
         using var httpClient = CreateHttpClient();
-        Debug.WriteLine($"Sending lesson chat request to {BackendConstants.LessonChatReplyEndpoint}");
+        Debug.WriteLine($"Sending lesson chat request to {BackendConstants.LessonChatReplyEndpoint}: TargetLanguageId={request.TargetLanguageId}; TargetLanguageName={request.TargetLanguageName}; TargetLanguageCode={request.TargetLanguageCode}; Topic={request.TopicTitle}; Subtopic={request.SubtopicTitle}.");
 
         using var response = await httpClient.PostAsJsonAsync(
             CreateEndpointUri(BackendConstants.LessonChatReplyEndpoint),
@@ -123,6 +123,7 @@ public sealed class LessonChatBackendService
         CancellationToken cancellationToken = default)
     {
         using var httpClient = CreateHttpClient();
+        Debug.WriteLine($"Sending lesson feedback request to {BackendConstants.LessonChatFeedbackEndpoint}: TargetLanguageId={request.TargetLanguageId}; SourceMessageId={request.SourceMessageId}; SourceMessageKind={request.SourceMessageKind}; Topic={request.TopicTitle}; Subtopic={request.SubtopicTitle}.");
 
         using var response = await httpClient.PostAsJsonAsync(
             CreateEndpointUri(BackendConstants.LessonChatFeedbackEndpoint),
@@ -147,6 +148,7 @@ public sealed class LessonChatBackendService
         CancellationToken cancellationToken = default)
     {
         using var httpClient = CreateHttpClient();
+        Debug.WriteLine($"Sending lesson hint request to {BackendConstants.LessonChatHintEndpoint}: TargetLanguageId={request.TargetLanguageId}; Topic={request.TopicTitle}; Subtopic={request.SubtopicTitle}; LessonPhase={request.LessonPhase}.");
 
         using var response = await httpClient.PostAsJsonAsync(
             CreateEndpointUri(BackendConstants.LessonChatHintEndpoint),
@@ -237,7 +239,7 @@ public sealed class LessonChatBackendService
         var instructionsToSend = BackendConstants.SpeechModelSupportsInstructions(resolvedModel) ? instructions : null;
         var resolvedTargetLanguage = targetLanguage ?? StudyLanguageCatalog.English;
 
-        Debug.WriteLine($"Bot voice backend TTS request starting: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={resolvedModel}; SpeechSpeed={speechSpeed?.ToString(CultureInfo.InvariantCulture) ?? "default"}; HasInstructions={!string.IsNullOrWhiteSpace(instructionsToSend)}; InstructionsLength={instructionsToSend?.Length ?? 0}; InputLength={inputLength}.");
+        Debug.WriteLine($"Bot voice backend TTS request starting: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={resolvedModel}; SpeechSpeed={speechSpeed?.ToString(CultureInfo.InvariantCulture) ?? "default"}; HasInstructions={!string.IsNullOrWhiteSpace(instructionsToSend)}; InstructionsLength={instructionsToSend?.Length ?? 0}; InputLength={inputLength}; TargetLanguageId={resolvedTargetLanguage.Id}; TargetLanguageCode={resolvedTargetLanguage.Bcp47Code}.");
 
         try
         {
@@ -268,7 +270,7 @@ public sealed class LessonChatBackendService
             }
 
             var contentType = response.Content.Headers.ContentType?.MediaType ?? BackendConstants.SpeechResponseContentType;
-            Debug.WriteLine($"Bot voice backend TTS request completed: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={resolvedModel}; SpeechSpeed={speechSpeed?.ToString(CultureInfo.InvariantCulture) ?? "default"}; HasInstructions={!string.IsNullOrWhiteSpace(instructionsToSend)}; InstructionsLength={instructionsToSend?.Length ?? 0}; InputLength={inputLength}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}; ContentType={contentType}; AudioBytes={audioBytes.Length}.");
+            Debug.WriteLine($"Bot voice backend TTS request completed: Endpoint={BackendConstants.AudioSpeechEndpoint}; Purpose={purpose}; Model={resolvedModel}; SpeechSpeed={speechSpeed?.ToString(CultureInfo.InvariantCulture) ?? "default"}; HasInstructions={!string.IsNullOrWhiteSpace(instructionsToSend)}; InstructionsLength={instructionsToSend?.Length ?? 0}; InputLength={inputLength}; TargetLanguageId={resolvedTargetLanguage.Id}; TargetLanguageCode={resolvedTargetLanguage.Bcp47Code}; ElapsedMilliseconds={stopwatch.ElapsedMilliseconds}; ContentType={contentType}; AudioBytes={audioBytes.Length}.");
             return new BotSpeechBackendResponse(audioBytes, contentType, GetAudioFileExtension(contentType));
         }
         catch (Exception exception)
