@@ -162,7 +162,9 @@ def main() -> int:
     assert_contains(prompt, "Nice. Do you live here now?", "A1 second-turn example")
     assert_contains(vm, "GetSelectedContextConfirmationLine(matchedVariant)", "selected context confirmation line")
     assert_contains(vm, "GetSelectedContextOpeningLine()", "profile-resolved selected context opening")
-    assert_contains(vm, "await TryAutoPlayNewestBotVoiceAsync(botMessage);\n            CurrentLessonPhase = LessonPhase.Completed", "final assistant message before completion")
+    assert_contains(vm, "await PlayConversationModeBotVoiceAsync(botMessage);", "Conversation Mode TTS final assistant playback before completion")
+    assert_contains(vm, "await TryAutoPlayNewestBotVoiceAsync(botMessage);", "normal final assistant message playback before completion")
+    assert_contains(vm, "CurrentLessonPhase = LessonPhase.Completed", "final assistant message before completion")
 
     print("Lesson turn policy checks passed.")
     return 0

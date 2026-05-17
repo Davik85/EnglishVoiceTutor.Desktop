@@ -210,7 +210,7 @@ static async Task<IResult> HandleLessonChatFeedbackAsync(
     }
 }
 
-// ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
+// Stable TTS pipeline: used by normal Lesson Chat voice playback and default TTS Conversation Mode.
 static async Task<IResult> HandleAudioTranscriptionAsync(
     HttpRequest request,
     AudioTranscriptionService audioTranscriptionService,
@@ -345,7 +345,7 @@ static async Task<IResult> HandleTranslationAsync(
         return Results.Problem(ApiConstants.TranslationError);
     }
 }
-// ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
+// Stable TTS pipeline: used by normal Lesson Chat voice playback and default TTS Conversation Mode.
 static async Task<IResult> HandleAudioSpeechStreamAsync(
     AudioSpeechRequest request,
     AudioSpeechService audioSpeechService,
@@ -432,7 +432,7 @@ static async Task<IResult> HandleAudioSpeechStreamAsync(
     }
 }
 
-// ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
+// Stable TTS pipeline: used by normal Lesson Chat voice playback and default TTS Conversation Mode.
 static async Task<IResult> HandleAudioSpeechAsync(
     AudioSpeechRequest request,
     AudioSpeechService audioSpeechService,
@@ -451,7 +451,7 @@ static async Task<IResult> HandleAudioSpeechAsync(
 
     try
     {
-        var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, request.Purpose, cancellationToken);
+        var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, request.Purpose, request.SpeechSpeed, cancellationToken);
 
         return Results.File(audioBytes, OpenAiConstants.SpeechResponseContentType);
     }

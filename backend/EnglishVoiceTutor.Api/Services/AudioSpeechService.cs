@@ -7,11 +7,12 @@ using EnglishVoiceTutor.Api.Models;
 
 namespace EnglishVoiceTutor.Api.Services;
 
-// ChainedVoiceFallback: Not for realtime conversation mode. Used only when Realtime is unavailable or voice mode disabled.
+// Stable TTS pipeline: used by normal Lesson Chat voice playback and default TTS Conversation Mode.
 public sealed class AudioSpeechService
 {
     public const string DefaultPurpose = "lesson_chat_tts";
     public const string RealtimePreStartOpeningPurpose = "realtime_pre_start_opening";
+    public const string ConversationModeTtsPurpose = "conversation_mode_tts";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private const string MissingApiKeyMessage = "OpenAI speech generation is not configured.";
     private const string OpenAiRequestFailedMessage = "OpenAI speech generation request failed.";
@@ -32,7 +33,7 @@ public sealed class AudioSpeechService
         _logger = logger;
     }
 
-    public async Task<byte[]> CreateSpeechAsync(string text, string? purpose = null, CancellationToken clientCancellationToken = default)
+    public async Task<byte[]> CreateSpeechAsync(string text, string? purpose = null, double? speechSpeed = null, CancellationToken clientCancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -47,13 +48,14 @@ public sealed class AudioSpeechService
         }
 
         var normalizedPurpose = NormalizePurpose(purpose);
+        var resolvedSpeechSpeed = ResolveSpeechSpeed(normalizedPurpose, speechSpeed);
 
         var request = new OpenAiAudioSpeechRequest
         {
             Model = OpenAiConstants.DefaultBotVoiceSpeechModel,
             Input = text.Trim(),
             Voice = OpenAiConstants.DefaultSpeechVoice,
-            Speed = OpenAiConstants.DefaultSpeechSpeed,
+            Speed = resolvedSpeechSpeed,
             ResponseFormat = OpenAiConstants.DefaultSpeechResponseFormat
         };
 
@@ -100,7 +102,26 @@ public sealed class AudioSpeechService
             return RealtimePreStartOpeningPurpose;
         }
 
+        if (string.Equals(purpose, ConversationModeTtsPurpose, StringComparison.OrdinalIgnoreCase))
+        {
+            return ConversationModeTtsPurpose;
+        }
+
         return DefaultPurpose;
+    }
+
+    private static double ResolveSpeechSpeed(string purpose, double? requestedSpeechSpeed)
+    {
+        if (string.Equals(purpose, ConversationModeTtsPurpose, StringComparison.OrdinalIgnoreCase))
+        {
+            return requestedSpeechSpeed is > 0 and <= 1.0
+                ? requestedSpeechSpeed.Value
+                : OpenAiConstants.ConversationModeTtsSpeechSpeed;
+        }
+
+        return requestedSpeechSpeed is > 0
+            ? requestedSpeechSpeed.Value
+            : OpenAiConstants.DefaultSpeechSpeed;
     }
 
     private async Task<byte[]> SendAudioSpeechRequestAsync(
