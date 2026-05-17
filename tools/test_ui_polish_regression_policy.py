@@ -71,6 +71,16 @@ def main() -> int:
     assert_contains(design, "HorizontalContentAlignment", "shared button horizontal content centering")
     assert_contains(design, "VerticalContentAlignment", "shared button vertical content centering")
     assert_contains(design, "SelectableChatTextBoxStyle", "selectable chat text style")
+    assert_contains(design, "LessonSupportPanelBackgroundBrush", "shared warm lesson support panel background")
+    assert_contains(design, "LessonSupportPanelBorderBrush", "shared amber lesson support panel border")
+    assert_contains(design, "LessonSupportPanelStyle", "shared feedback/hint support panel style")
+    support_panel_style = extract_style(design, "LessonSupportPanelStyle")
+    for support_panel_property in [
+        'Background" Value="{StaticResource LessonSupportPanelBackgroundBrush}',
+        'BorderBrush" Value="{StaticResource LessonSupportPanelBorderBrush}',
+        'CornerRadius" Value="{StaticResource CornerTextInput}',
+    ]:
+        assert_contains(support_panel_style, support_panel_property, f"lesson support panel {support_panel_property}")
     selectable_style = extract_style(design, "SelectableChatTextBoxStyle")
     for selectable_property in [
         "IsReadOnly\" Value=\"True",
@@ -150,11 +160,17 @@ def main() -> int:
 
     if chat.count("Style=\"{StaticResource SelectableChatTextBoxStyle}\"") < 2:
         raise AssertionError("Chat body and translation text must use selectable read-only TextBox styling.")
-    for command_binding in ["ToggleTranslationCommand", "PlayBotVoiceCommand", "ViewFeedbackCommand"]:
+    for command_binding in ["ToggleTranslationCommand", "PlayBotVoiceCommand", "ViewFeedbackCommand", "HintCommand", "ToggleFeedbackTranslationCommand"]:
         assert_contains(chat, command_binding, f"chat action remains available: {command_binding}")
     assert_contains(chat, "CanShowFeedbackAction", "user message template preserves View feedback visibility condition")
     assert_contains(chat, '<WrapPanel Margin="0,8,0,0" Orientation="Horizontal">', "chat action row wraps instead of clipping feedback action")
     assert_contains(chat, "HasSelectedFeedbackPanel", "global bottom feedback panel remains available")
+    assert_contains(chat, 'x:Name="FeedbackPanelCard"', "feedback panel exposes a card-level close target")
+    assert_contains(chat, 'PreviewMouseLeftButtonUp="FeedbackPanelCard_PreviewMouseLeftButtonUp"', "feedback panel close is not limited to hint text")
+    assert_contains(code_behind, "CloseFeedbackCommand.Execute(null)", "feedback card click delegates to close command")
+    assert_contains(code_behind, "dependencyObject is Button", "feedback translate button remains interactive under card-wide close")
+    assert_contains(chat, 'Style="{StaticResource LessonSupportPanelStyle}"', "hint panel uses shared warm support panel style")
+    assert_contains(chat, 'BasedOn="{StaticResource LessonSupportPanelStyle}"', "feedback panel uses shared warm support panel style")
     assert_contains(chat, "SelectedFeedbackSourceText, Mode=OneWay", "global feedback panel displays selected source phrase safely")
     if "{Binding IsFeedbackVisible}" in chat:
         raise AssertionError("Feedback panel must be global, not inline inside each message template.")
