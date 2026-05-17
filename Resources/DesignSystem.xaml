@@ -79,6 +79,8 @@
     <SolidColorBrush x:Key="BotMessageBrush" Color="#FFEAF3FF" />
     <SolidColorBrush x:Key="UserMessageBrush" Color="#FFF8FBFF" />
     <SolidColorBrush x:Key="StatusMessageBrush" Color="#FFFFF1CC" />
+    <SolidColorBrush x:Key="LessonSupportPanelBackgroundBrush" Color="#FFFFF1CC" />
+    <SolidColorBrush x:Key="LessonSupportPanelBorderBrush" Color="#FFE7C66F" />
     <SolidColorBrush x:Key="DisabledBackgroundBrush" Color="#FFF1F6FB" />
     <SolidColorBrush x:Key="DisabledTextBrush" Color="#FF8DA0B2" />
 
@@ -348,6 +350,14 @@
         <Setter Property="CornerRadius" Value="{StaticResource CornerPanel}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderSoftBrush}" />
         <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style x:Key="LessonSupportPanelStyle" TargetType="Border">
+        <Setter Property="Padding" Value="14" />
+        <Setter Property="Background" Value="{StaticResource LessonSupportPanelBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource LessonSupportPanelBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource CornerTextInput}" />
     </Style>
 
     <Style x:Key="ChatMessageBubbleStyle" TargetType="Border">

@@ -120,6 +120,54 @@ public partial class LessonChatView : UserControl
             new Action(() => isLessonInputEnterSendInProgress = false));
     }
 
+    private void FeedbackPanelCard_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!ReferenceEquals(sender, FeedbackPanelCard))
+        {
+            return;
+        }
+
+        if (IsEventFromFeedbackInteractiveControl(e.OriginalSource))
+        {
+            return;
+        }
+
+        if (DataContext is not LessonChatViewModel viewModel || !viewModel.CloseFeedbackCommand.CanExecute(null))
+        {
+            return;
+        }
+
+        viewModel.CloseFeedbackCommand.Execute(null);
+        e.Handled = true;
+        Debug.WriteLine("Feedback panel card closed from card-wide click target.");
+    }
+
+    private bool IsEventFromFeedbackInteractiveControl(object originalSource)
+    {
+        if (originalSource is not DependencyObject sourceDependencyObject)
+        {
+            return false;
+        }
+
+        DependencyObject? dependencyObject = sourceDependencyObject;
+        while (dependencyObject is not null)
+        {
+            if (ReferenceEquals(dependencyObject, FeedbackPanelCard))
+            {
+                return false;
+            }
+
+            if (dependencyObject is Button)
+            {
+                return true;
+            }
+
+            dependencyObject = GetParentObject(dependencyObject);
+        }
+
+        return false;
+    }
+
     private bool IsEventFromLessonInput(object originalSource)
     {
         if (ReferenceEquals(originalSource, LessonInputTextBox))
