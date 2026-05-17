@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Shared.StudyLanguages;
@@ -9,6 +10,108 @@ public static class LocalizedLessonTextService
 {
     public const string OpeningMessageSource = "target-language localized semantic lesson setup builder";
     // The lesson JSON scenario text is semantic metadata.
+
+    public sealed record LocalizedScenarioOption(int Number, string CanonicalTitle, string LocalizedTitle, ContextVariant Variant);
+
+    public sealed record LocalizedScenarioSelection(string CanonicalScenario, string LocalizedScenario, ContextVariant Variant);
+
+    public static IReadOnlyList<LocalizedScenarioOption> GetLocalizedScenarioOptions(
+        LessonScenario lessonScenario,
+        StudyLanguageDefinition studyLanguage)
+    {
+        var language = ResolveLanguage(studyLanguage);
+        return lessonScenario.ControlledVariation.ContextVariants
+            .Select((variant, index) => new LocalizedScenarioOption(
+                index + 1,
+                variant.Title.Trim(),
+                AdaptShortScenarioText(variant.Title, language),
+                variant))
+            .ToArray();
+    }
+
+    public static bool TryResolveLocalizedScenarioSelection(
+        string inputText,
+        LessonScenario lessonScenario,
+        StudyLanguageDefinition studyLanguage,
+        out string canonicalScenario,
+        out string localizedScenario,
+        out ContextVariant? matchedVariant)
+    {
+        canonicalScenario = string.Empty;
+        localizedScenario = string.Empty;
+        matchedVariant = null;
+
+        var normalizedInput = NormalizeScenarioSelection(inputText);
+        if (string.IsNullOrWhiteSpace(normalizedInput))
+        {
+            return false;
+        }
+
+        var options = GetLocalizedScenarioOptions(lessonScenario, studyLanguage);
+        if (int.TryParse(normalizedInput, NumberStyles.Integer, CultureInfo.InvariantCulture, out var optionNumber))
+        {
+            var numberedOption = options.FirstOrDefault(option => option.Number == optionNumber);
+            if (numberedOption is not null)
+            {
+                canonicalScenario = numberedOption.CanonicalTitle;
+                localizedScenario = numberedOption.LocalizedTitle;
+                matchedVariant = numberedOption.Variant;
+                return true;
+            }
+        }
+
+        foreach (var option in options)
+        {
+            var localizedCandidates = new[] { option.LocalizedTitle, option.CanonicalTitle }
+                .Concat(option.Variant.Aliases)
+                .Where(candidate => !string.IsNullOrWhiteSpace(candidate));
+
+            foreach (var candidate in localizedCandidates)
+            {
+                var normalizedCandidate = NormalizeScenarioSelection(candidate);
+                if (ScenarioSelectionMatches(normalizedInput, normalizedCandidate))
+                {
+                    canonicalScenario = option.CanonicalTitle;
+                    localizedScenario = option.LocalizedTitle;
+                    matchedVariant = option.Variant;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public static string NormalizeScenarioSelection(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalizedForm = value.Trim().Replace('_', ' ').Normalize(NormalizationForm.FormD);
+        var builder = new System.Text.StringBuilder(normalizedForm.Length);
+        foreach (var character in normalizedForm)
+        {
+            var category = CharUnicodeInfo.GetUnicodeCategory(character);
+            if (category == UnicodeCategory.NonSpacingMark)
+            {
+                continue;
+            }
+
+            builder.Append(char.IsLetterOrDigit(character) ? char.ToLowerInvariant(character) : ' ');
+        }
+
+        return string.Join(' ', builder.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    private static bool ScenarioSelectionMatches(string normalizedInput, string normalizedCandidate)
+    {
+        return !string.IsNullOrWhiteSpace(normalizedCandidate)
+            && (normalizedInput.Equals(normalizedCandidate, StringComparison.OrdinalIgnoreCase)
+                || normalizedInput.Contains(normalizedCandidate, StringComparison.OrdinalIgnoreCase)
+                || normalizedCandidate.Contains(normalizedInput, StringComparison.OrdinalIgnoreCase));
+    }
 
     public static string BuildSetupMessage(
         LessonScenario lessonScenario,

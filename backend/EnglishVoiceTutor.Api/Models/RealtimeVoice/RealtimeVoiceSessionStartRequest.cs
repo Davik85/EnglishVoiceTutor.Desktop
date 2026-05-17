@@ -35,6 +35,7 @@ public sealed record RealtimeVoiceSessionStartRequest
     public string LearningGoal { get; init; } = string.Empty;
     public string SelectedContextVariantId { get; init; } = string.Empty;
     public string SelectedContextTitle { get; init; } = string.Empty;
+    public string SelectedContextLocalizedTitle { get; init; } = string.Empty;
     public string SelectedContextOpeningLine { get; init; } = string.Empty;
     public string SelectedContextConfirmationLine { get; init; } = string.Empty;
     public string SelectedContextOpeningIntent { get; init; } = string.Empty;

@@ -47,6 +47,8 @@ public sealed class LessonChatRequest
 
     public string SelectedContextTitle { get; init; } = string.Empty;
 
+    public string SelectedContextLocalizedTitle { get; init; } = string.Empty;
+
     public string SelectedContextOpeningLine { get; init; } = string.Empty;
 
     public string SelectedContextConfirmationLine { get; init; } = string.Empty;

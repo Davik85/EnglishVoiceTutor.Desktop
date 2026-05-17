@@ -6,6 +6,7 @@ public sealed class LessonSummaryInput
     public string TopicTitle { get; init; } = string.Empty;
     public string SubtopicTitle { get; init; } = string.Empty;
     public string SelectedContextTitle { get; init; } = string.Empty;
+    public string SelectedContextLocalizedTitle { get; init; } = string.Empty;
     public string SelectedContextVariantId { get; init; } = string.Empty;
     public string LearningGoal { get; init; } = string.Empty;
     public string TargetLanguage { get; init; } = "English";
