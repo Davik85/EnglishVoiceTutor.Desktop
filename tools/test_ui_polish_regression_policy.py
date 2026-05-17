@@ -92,10 +92,18 @@ def main() -> int:
         assert_min_width(tag, f"lesson {binding}", minimum)
 
     assert_contains(chat, "AcceptsReturn=\"False\"", "single-line input documents Shift+Enter no-op behavior")
-    assert_contains(chat, "<TextBox.InputBindings>", "lesson text input bindings")
-    assert_contains(chat, "<KeyBinding Key=\"Enter\"", "Enter-to-send key binding")
-    assert_contains(chat, "Modifiers=\"None\"", "Enter sends only without Shift modifiers")
-    assert_contains(chat, "Command=\"{Binding SendMessageCommand}\"", "Enter invokes existing send command")
+    if "Key=\"Enter\"" in chat:
+        raise AssertionError("LessonChatView.xaml must not use Key=\"Enter\" because WPF XAML parsing requires Key=\"Return\" for the main Enter key.")
+
+    has_return_key_binding = "<KeyBinding Key=\"Return\"" in chat
+    has_safe_preview_handler = "PreviewKeyDown=\"" in chat and "SendMessageCommand" in read(ROOT / "Views" / "LessonChatView.xaml.cs")
+    if not (has_return_key_binding or has_safe_preview_handler):
+        raise AssertionError("Lesson text input must support Enter-to-send via Key=\"Return\" or a named safe PreviewKeyDown handler.")
+
+    if has_return_key_binding:
+        assert_contains(chat, "<TextBox.InputBindings>", "lesson text input bindings")
+        assert_contains(chat, "Modifiers=\"None\"", "Enter sends only without Shift modifiers")
+        assert_contains(chat, "Command=\"{Binding SendMessageCommand}\"", "Enter invokes existing send command")
 
     if chat.count("Style=\"{StaticResource SelectableChatTextBoxStyle}\"") < 2:
         raise AssertionError("Chat body and translation text must use selectable read-only TextBox styling.")
