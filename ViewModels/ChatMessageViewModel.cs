@@ -26,6 +26,29 @@ public partial class ChatMessageViewModel : ViewModelBase
 
     public string Source { get; }
 
+    public string SourceMessageKind
+    {
+        get
+        {
+            if (!CountsAsValidLessonTurn && string.Equals(LessonPhase, EnglishVoiceTutor.Desktop.Models.LessonPhase.SetupContextSelection.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return "ContextSelection";
+            }
+
+            if (string.Equals(Source, ChatMessageSource.RealtimeVoice, StringComparison.OrdinalIgnoreCase))
+            {
+                return "RealtimeTranscript";
+            }
+
+            if (string.Equals(Source, ChatMessageSource.LessonChatVoice, StringComparison.OrdinalIgnoreCase))
+            {
+                return "NormalVoiceTranscript";
+            }
+
+            return "ActiveRoleplay";
+        }
+    }
+
     public int LessonTurnNumber { get; private set; }
 
     public string LessonPhase { get; }
@@ -53,10 +76,19 @@ public partial class ChatMessageViewModel : ViewModelBase
     public bool ShowPlayVoiceButton => IsFromBot;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasVisibleFeedback))]
+    private bool isFeedbackVisible;
+
+    [ObservableProperty]
+    private bool isFeedbackLoading;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasFeedback))]
     private Feedback? feedback;
 
     public bool HasFeedback => Feedback is not null;
+
+    public bool HasVisibleFeedback => IsFeedbackVisible && Feedback is not null;
 
     public string TranslationHeader => $"{localizedText.TranslationLabel} ({nativeLanguageName})";
 
@@ -147,6 +179,7 @@ public partial class ChatMessageViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsTechnicalMessage));
         OnPropertyChanged(nameof(IsFeedbackEligible));
         OnPropertyChanged(nameof(CanShowFeedbackAction));
+        OnPropertyChanged(nameof(SourceMessageKind));
     }
 
     public void MarkAsInvalidLearnerTranscript(string retryText)
@@ -157,11 +190,23 @@ public partial class ChatMessageViewModel : ViewModelBase
         OnPropertyChanged(nameof(CountsAsValidLessonTurn));
         OnPropertyChanged(nameof(IsFeedbackEligible));
         OnPropertyChanged(nameof(CanShowFeedbackAction));
+        OnPropertyChanged(nameof(SourceMessageKind));
     }
 
     public void SetFeedback(Feedback value)
     {
         Feedback = value;
+    }
+
+    public void ShowFeedback()
+    {
+        IsFeedbackVisible = true;
+    }
+
+    public void HideFeedback()
+    {
+        IsFeedbackVisible = false;
+        IsFeedbackLoading = false;
     }
 
     [RelayCommand]

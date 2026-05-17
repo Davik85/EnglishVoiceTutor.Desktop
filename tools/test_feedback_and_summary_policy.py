@@ -38,15 +38,15 @@ def main() -> int:
     assert_contains(vm, "private ChatMessageViewModel AddSetupContextLearnerMessage", "setup context feedback metadata helper")
     assert_contains(vm, "countsAsValidLessonTurn: false", "setup context feedback does not imply turn count")
     assert_contains(vm, "isFeedbackEligible: feedbackEligible", "setup context feedback eligibility")
-    assert_contains(vm, "return \"ContextSelection\";", "setup context feedback kind")
+    assert_contains(msg, "return \"ContextSelection\";", "setup context feedback kind")
     assert_contains(xaml, "{Binding CanShowFeedbackAction}", "View feedback button eligibility binding")
 
     feedback_request = re.search(r"private LessonChatBackendRequest BuildLessonFeedbackRequest[\s\S]+?\n    }", vm)
     if not feedback_request:
         raise AssertionError("Feedback request builder not found.")
-    assert_contains(feedback_request.group(0), "UserMessage = message.Text.Trim()", "selected message text in feedback request")
-    assert_contains(feedback_request.group(0), "SourceMessageId = message.MessageId", "selected message id in feedback request")
-    assert_contains(feedback_request.group(0), "SourceMessageKind = GetFeedbackSourceMessageKind(message)", "selected message kind in feedback request")
+    assert_contains(feedback_request.group(0), "UserMessage = target.Text", "selected message text in feedback request")
+    assert_contains(feedback_request.group(0), "SourceMessageId = target.MessageId", "selected message id in feedback request")
+    assert_contains(feedback_request.group(0), "SourceMessageKind = target.SourceMessageKind", "selected message kind in feedback request")
     can_view = re.search(r"private bool CanViewFeedback[\s\S]+?\n    }", vm)
     if not can_view:
         raise AssertionError("CanViewFeedback method not found.")
