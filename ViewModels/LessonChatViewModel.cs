@@ -41,6 +41,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private int messageCounter;
     private string lastBotMessage = AppConstants.MockBotFirstMessage;
     private ContextVariant? selectedContextVariant;
+    private string selectedLocalizedContextTitle = string.Empty;
     private string selectedCustomContextTitle = string.Empty;
     private bool isTranscribingAudio;
     private bool hasFinishedLesson;
@@ -2346,7 +2347,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
         if (CurrentLessonPhase == LessonPhase.SetupContextSelection && !IsFreeConversationLesson())
         {
-            return await HandleContextSelectionMessageAsync(userMessage);
+            return await HandleContextSelectionMessageAsync(userMessage, messageSource);
         }
 
         if (CurrentLessonPhase == LessonPhase.Completed)
@@ -2459,6 +2460,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
                 SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
                 SelectedContextTitle = GetSelectedContextTitle(),
+                SelectedContextLocalizedTitle = GetSelectedLocalizedContextTitle(),
                 SelectedContextOpeningLine = GetSelectedContextOpeningLine(),
                 SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant),
                 SelectedContextOpeningIntent = selectedContextVariant?.OpeningIntent ?? string.Empty,
@@ -2690,6 +2692,7 @@ public partial class LessonChatViewModel : ViewModelBase
             LearningGoal = LearningGoal,
             SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
             SelectedContextTitle = GetSelectedContextTitle(),
+            SelectedContextLocalizedTitle = GetSelectedLocalizedContextTitle(),
             SelectedContextOpeningLine = GetSelectedContextOpeningLine(),
             SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant),
             SelectedContextOpeningIntent = selectedContextVariant?.OpeningIntent ?? string.Empty,
@@ -3511,19 +3514,21 @@ public partial class LessonChatViewModel : ViewModelBase
         });
     }
 
-    private async Task<bool> HandleContextSelectionMessageAsync(string userMessage)
+    private async Task<bool> HandleContextSelectionMessageAsync(string userMessage, string messageSource)
     {
         var learnerTurnCountBefore = LearnerTurnCount;
-        AddSetupContextLearnerMessage(userMessage, ChatMessageSource.Typed);
+        AddSetupContextLearnerMessage(userMessage, messageSource);
 
-        var matchedVariant = FindMatchingContextVariant(userMessage);
+        var matchedVariant = FindMatchingContextVariant(userMessage, out var canonicalScenario, out var localizedScenario);
         if (matchedVariant is not null)
         {
             selectedContextVariant = matchedVariant;
+            selectedLocalizedContextTitle = localizedScenario;
             selectedCustomContextTitle = string.Empty;
 
             var startMessage = $"{GetSelectedContextConfirmationLine(matchedVariant)}\n\n{GetSelectedContextOpeningLine()}";
-            Debug.WriteLine($"Opening message created: Source=context selection target-language builder; TargetLanguageId={studyLanguage.Id}; GeneratedLocally=True; InputScenarioMetadataOnly=True; OutputLength={startMessage.Length}.");
+            Debug.WriteLine($"Localized scenario selection resolved: TargetLanguageId={studyLanguage.Id}; InputPreview={GetLimitedTranscriptPreview(userMessage)}; CanonicalScenario={canonicalScenario}; LocalizedScenario={localizedScenario}; SelectedContextVariantId={matchedVariant.Id}; CountsAsActiveRoleplayTurn=False.");
+            Debug.WriteLine($"Opening message created: Source=context selection target-language builder; TargetLanguageId={studyLanguage.Id}; CanonicalScenario={canonicalScenario}; LocalizedScenario={localizedScenario}; GeneratedLocally=True; InputScenarioMetadataOnly=True; OutputLength={startMessage.Length}.");
             await StartActiveRoleplayAfterContextSelectionAsync(startMessage, learnerTurnCountBefore);
             return true;
         }
@@ -3531,6 +3536,7 @@ public partial class LessonChatViewModel : ViewModelBase
         if (IsValidCustomContext(userMessage))
         {
             selectedContextVariant = null;
+            selectedLocalizedContextTitle = userMessage.Trim();
             selectedCustomContextTitle = userMessage.Trim();
 
             var openingLine = string.IsNullOrWhiteSpace(lessonScenario.ConversationFlow.DefaultOpeningExample)
@@ -3542,8 +3548,20 @@ public partial class LessonChatViewModel : ViewModelBase
             return true;
         }
 
-        AddMessage(TutorAvatarDisplayName, GetInvalidContextRedirect(), true);
-        lastBotMessage = GetInvalidContextRedirect();
+        var redirect = GetInvalidContextRedirect();
+        var redirectMessage = AddMessage(TutorAvatarDisplayName, redirect, true);
+        lastBotMessage = redirect;
+        if (IsTtsConversationModeActive)
+        {
+            ConversationLatestBotText = redirect;
+            HideConversationHint();
+            SetConversationModeState(ConversationModeState.WaitingForAssistant, "tts_invalid_context_selection_waiting_for_retry_voice");
+            await PlayConversationModeBotVoiceAsync(redirectMessage);
+        }
+        else
+        {
+            await TryAutoPlayNewestBotVoiceAsync(redirectMessage);
+        }
         OnPropertyChanged(nameof(LatestBotMessageText));
         StatusMessage = string.Empty;
         LogLessonStateSnapshot("context selection invalid");
@@ -3618,32 +3636,21 @@ public partial class LessonChatViewModel : ViewModelBase
         return botMessage;
     }
 
-    private ContextVariant? FindMatchingContextVariant(string userMessage)
+    private ContextVariant? FindMatchingContextVariant(string userMessage, out string canonicalScenario, out string localizedScenario)
     {
-        var normalizedInput = NormalizeForContextMatching(userMessage);
-        if (string.IsNullOrWhiteSpace(normalizedInput))
+        if (LocalizedLessonTextService.TryResolveLocalizedScenarioSelection(
+                userMessage,
+                lessonScenario,
+                studyLanguage,
+                out canonicalScenario,
+                out localizedScenario,
+                out var matchedVariant))
         {
-            return null;
+            return matchedVariant;
         }
 
-        foreach (var variant in lessonScenario.ControlledVariation.ContextVariants)
-        {
-            var candidates = new[] { variant.Id, variant.Title }
-                .Concat(variant.Aliases)
-                .Where(candidate => !string.IsNullOrWhiteSpace(candidate));
-
-            foreach (var candidate in candidates)
-            {
-                var normalizedCandidate = NormalizeForContextMatching(candidate);
-                if (normalizedInput.Equals(normalizedCandidate, StringComparison.OrdinalIgnoreCase)
-                    || normalizedInput.Contains(normalizedCandidate, StringComparison.OrdinalIgnoreCase)
-                    || normalizedCandidate.Contains(normalizedInput, StringComparison.OrdinalIgnoreCase))
-                {
-                    return variant;
-                }
-            }
-        }
-
+        canonicalScenario = string.Empty;
+        localizedScenario = string.Empty;
         return null;
     }
 
@@ -3726,9 +3733,22 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private static string NormalizeForContextMatching(string value)
     {
-        return string.IsNullOrWhiteSpace(value)
-            ? string.Empty
-            : value.Trim().Replace('_', ' ').ToLowerInvariant();
+        return LocalizedLessonTextService.NormalizeScenarioSelection(value);
+    }
+
+    private string GetSelectedLocalizedContextTitle()
+    {
+        if (!string.IsNullOrWhiteSpace(selectedLocalizedContextTitle))
+        {
+            return selectedLocalizedContextTitle;
+        }
+
+        if (selectedContextVariant is not null)
+        {
+            return LocalizedLessonTextService.AdaptShortScenarioText(selectedContextVariant.Title, studyLanguage);
+        }
+
+        return selectedCustomContextTitle;
     }
 
     private string GetSelectedContextTitle()
@@ -4110,6 +4130,7 @@ public partial class LessonChatViewModel : ViewModelBase
             AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
             SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
             SelectedContextTitle = GetSelectedContextTitle(),
+            SelectedContextLocalizedTitle = GetSelectedLocalizedContextTitle(),
             SelectedContextOpeningLine = GetSelectedContextOpeningLine(),
             SelectedContextConfirmationLine = selectedContextVariant is null ? string.Empty : GetSelectedContextConfirmationLine(selectedContextVariant),
             SelectedContextOpeningIntent = selectedContextVariant?.OpeningIntent ?? string.Empty,
@@ -4594,6 +4615,7 @@ public partial class LessonChatViewModel : ViewModelBase
             AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
             SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
             SelectedContextTitle = GetSelectedContextTitle(),
+            SelectedContextLocalizedTitle = GetSelectedLocalizedContextTitle(),
             UserTurnNumber = target.LessonTurnNumber,
             TargetLanguageKeyPhrases = lessonScenario.TargetLanguage.KeyPhrases,
             GrammarFocus = lessonScenario.TargetLanguage.GrammarFocus,
@@ -4644,6 +4666,7 @@ public partial class LessonChatViewModel : ViewModelBase
             TopicTitle = SelectedTopic.Title,
             SubtopicTitle = SelectedSubtopic.Title,
             SelectedContextTitle = GetSelectedContextTitle(),
+            SelectedContextLocalizedTitle = GetSelectedLocalizedContextTitle(),
             SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
             LearningGoal = LearningGoal,
             TargetLanguage = studyLanguage.EnglishName,

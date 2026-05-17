@@ -135,7 +135,12 @@ public sealed class LessonPromptBuilder
         }
         else
         {
-            prompt.AppendLine($"This is guided roleplay. Continue the selected scenario: {chatRequest.SelectedContextTitle}.");
+            prompt.AppendLine($"This is guided roleplay. Continue the selected canonical scenario: {chatRequest.SelectedContextTitle}.");
+            if (!string.IsNullOrWhiteSpace(chatRequest.SelectedContextLocalizedTitle))
+            {
+                prompt.AppendLine($"Localized selected scenario shown to learner: {chatRequest.SelectedContextLocalizedTitle}.");
+            }
+            prompt.AppendLine("The canonical scenario metadata may be in English; it is stable semantic identity, not an instruction to answer in English.");
             prompt.AppendLine($"Continue from the last visible tutor message: {chatRequest.LastBotMessage}.");
             prompt.AppendLine("Do not ask the learner to choose a topic, choose a situation, or request unrelated help/tips.");
             prompt.AppendLine("If the learner goes off-topic, briefly acknowledge and redirect back to the selected lesson goal and context.");
@@ -536,7 +541,17 @@ public sealed class LessonPromptBuilder
 
         if (!string.IsNullOrWhiteSpace(request.SelectedContextTitle))
         {
-            prompt.AppendLine($"- Selected roleplay context: {request.SelectedContextTitle}");
+            prompt.AppendLine($"- Selected roleplay canonical context: {request.SelectedContextTitle}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SelectedContextLocalizedTitle))
+        {
+            prompt.AppendLine($"- Selected roleplay localized display context: {request.SelectedContextLocalizedTitle}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SelectedContextTitle) || !string.IsNullOrWhiteSpace(request.SelectedContextLocalizedTitle))
+        {
+            prompt.AppendLine("- The canonical context may be English lesson metadata; the localized context is the learner-visible target-language selection when available.");
         }
 
         if (!string.IsNullOrWhiteSpace(request.SelectedContextVariantId))
@@ -912,6 +927,7 @@ public sealed class LessonPromptBuilder
             AiTutorPromptInstructions = request.AiTutorPromptInstructions,
             SelectedContextVariantId = request.SelectedContextVariantId,
             SelectedContextTitle = request.SelectedContextTitle,
+            SelectedContextLocalizedTitle = request.SelectedContextLocalizedTitle,
             SelectedContextOpeningLine = request.SelectedContextOpeningLine,
             SelectedContextConfirmationLine = request.SelectedContextConfirmationLine,
             SelectedContextOpeningIntent = request.SelectedContextOpeningIntent,
