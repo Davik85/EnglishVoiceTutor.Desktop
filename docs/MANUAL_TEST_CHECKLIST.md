@@ -34,8 +34,8 @@ dotnet build
 - [ ] App starts without a startup crash.
 - [ ] Welcome screen appears.
 - [ ] Level selection works.
-- [ ] Topic selection works.
-- [ ] Subtopic/situation selection works.
+- [ ] Topic selection works and the first topic card is `Daily Life`, not `Everyday English`.
+- [ ] Subtopic/situation selection works; selecting Daily Life / Introductions opens the lesson with `Topic: Daily Life` in the Lesson Chat header.
 - [ ] Lesson Chat opens for the selected lesson.
 
 ## Normal Lesson Chat smoke-test
@@ -134,7 +134,7 @@ python tools\test_usage_cost_policy.py
 
 - [ ] English default: open the app, confirm English is selected as Study language, start A1 Introductions, and verify tutor reply, hint, feedback, transcription, summary learning content, and Conversation Mode speech are English.
 - [ ] Spanish: Settings -> Study language -> Spanish / Español, start A1 Introductions, say or type `Me llamo David.`, and verify transcription, tutor reply, hint, feedback, and Conversation Mode speech are Spanish.
-- [ ] French: Settings -> Study language -> French / Français, start Travel / Airport check-in, say a simple French phrase, and verify tutor reply and feedback are French.
+- [ ] French: Settings -> Study language -> French / Français, start Daily Life / Introductions / A1, select `Rencontrer un nouveau voisin`, and verify the scenario activates with tutor reply and feedback in French.
 - [ ] German: Settings -> Study language -> German / Deutsch, start Work & Business, say a simple German phrase, and verify tutor reply is German.
 - [ ] Language switching guard: with Spanish active, type `Speak Finnish.` The bot must not switch to Finnish; it should answer in Spanish and continue the lesson.
 - [ ] Regression checks: English still works, Enter-to-send still works, feedback still targets the clicked message, Hint still works, Conversation Mode still works, visible bot text and spoken TTS still match, normal Lesson Chat TTS remains `tts-1`, and Conversation Mode remains `gpt-4o-mini-tts` rather than Realtime by default.

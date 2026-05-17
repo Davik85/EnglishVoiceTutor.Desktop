@@ -128,4 +128,4 @@ Conversation Mode uses the same lesson methodology and the same chat reply flow 
 
 ## Study-language lesson flow note
 
-The lesson flow uses one shared set of lesson JSON scenarios for all study languages. The selected Settings study language is passed as runtime context so tutor replies, roleplay, hints, feedback, generated summary content, transcription, and Conversation Mode speech adapt to English, French, German, Portuguese, Spanish, or Italian without duplicating scenario trees. English remains the default.
+The lesson flow uses one shared set of lesson JSON scenarios for all study languages, including the user-facing Daily Life topic whose legacy `Content/Lessons/EverydayEnglish` folder and `everyday_english_*` IDs remain internal compatibility details. The selected Settings study language is passed as runtime context so tutor replies, roleplay, hints, feedback, generated summary content, transcription, and Conversation Mode speech adapt to English, French, German, Portuguese, Spanish, or Italian without duplicating scenario trees. English remains the default.

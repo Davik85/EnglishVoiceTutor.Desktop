@@ -76,7 +76,7 @@ Do not start large refactors before smoke-test results are recorded. `LessonChat
 ## Study-language follow-ups
 
 - Validate multilingual study-language behavior manually for English, Spanish, French, and German before release.
-- Keep the single shared lesson JSON scenario tree; do not create per-language lesson folders or translated JSON copies.
+- Keep the single shared lesson JSON scenario tree; do not create per-language lesson folders or translated JSON copies, and keep the Daily Life topic's legacy internal paths/IDs stable unless a migration is planned.
 - Consider a future data-storage/product task for richer native-language/translation-target preferences. Current study-language persistence uses the existing settings file only.
 - UI/interface localization is separate from study-language support and remains future work.
 - Realtime remains future/non-default; do not make it the default Conversation Mode provider without a separate provider-switch plan.

@@ -21,7 +21,7 @@ LEVELS = [
 
 EXPECTED_REGISTRY = {
     "EverydayEnglish": {
-        "topic": "Everyday English",
+        "topic": "Daily Life",
         "files": {
             "introductions.json": "Introductions",
             "small_talk_with_a_neighbor.json": "Small talk with a neighbor",

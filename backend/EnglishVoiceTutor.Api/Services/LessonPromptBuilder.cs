@@ -516,8 +516,8 @@ public sealed class LessonPromptBuilder
     {
         prompt.AppendLine(LessonContextHeader);
         prompt.AppendLine($"- Level: {ChooseFirstNonEmpty(request.Level, request.SelectedLevel)}");
-        prompt.AppendLine($"- Topic: {ChooseFirstNonEmpty(request.Topic, request.TopicTitle)}");
-        prompt.AppendLine($"- Situation/Subtopic: {ChooseFirstNonEmpty(request.Subtopic, request.SubtopicTitle)}");
+        prompt.AppendLine($"- Topic: {ChooseFirstNonEmpty(request.TopicTitle, request.Topic)}");
+        prompt.AppendLine($"- Situation/Subtopic: {ChooseFirstNonEmpty(request.SubtopicTitle, request.Subtopic)}");
 
         if (!string.IsNullOrWhiteSpace(request.LessonPhase))
         {

@@ -82,8 +82,8 @@ def main() -> int:
     assert_contains(refresh, "OnPropertyChanged(nameof(IsLessonInputEnabled));", "input enabled refresh")
     assert_contains(refresh, "OnPropertyChanged(nameof(CanTypeText));", "text edit refresh")
 
-    context_handler = extract_method(vm, "private async Task<bool> HandleContextSelectionMessageAsync(string userMessage)")
-    assert_contains(context_handler, "AddSetupContextLearnerMessage(userMessage, ChatMessageSource.Typed)", "context selection adds feedback-eligible learner metadata")
+    context_handler = extract_method(vm, "private async Task<bool> HandleContextSelectionMessageAsync(string userMessage, string messageSource)")
+    assert_contains(context_handler, "AddSetupContextLearnerMessage(userMessage, messageSource)", "context selection adds feedback-eligible learner metadata")
     setup_context_helper = extract_method(vm, "private ChatMessageViewModel AddSetupContextLearnerMessage(string text, string source)")
     assert_contains(setup_context_helper, "countsAsValidLessonTurn: false", "context selection does not count as active learner turn")
     assert_contains(setup_context_helper, "isTechnicalMessage: false", "context selection learner text is not technical")

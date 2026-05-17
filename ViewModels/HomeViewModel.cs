@@ -83,7 +83,7 @@ public partial class HomeViewModel : ViewModelBase
     {
         var canonicalTopics = new[]
         {
-            new Topic(1, "Everyday English", "Small talk, introductions, and daily situations."),
+            new Topic(1, "Daily Life", "Small talk, introductions, and daily situations."),
             new Topic(2, "Travel", "Airports, hotels, directions, and transport."),
             new Topic(3, "Work & Business", "Meetings, emails, calls, and workplace conversations."),
             new Topic(4, "Job Interview", "Practice common interview questions and answers."),
