@@ -6,6 +6,7 @@ public sealed record DiagnosticsLocalizedText(
     string AppVersionLabel,
     string BackendUrlLabel,
     string BackendStatusLabel,
+    string DatabaseStatusLabel,
     string AiStatusLabel,
     string SettingsFileLabel,
     string LessonHistoryFileLabel,

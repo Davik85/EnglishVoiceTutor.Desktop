@@ -26,6 +26,7 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly Action<string, string, string, string, string, string, string, string> saveSettings;
     private readonly Action navigateBack;
     private readonly LessonChatBackendService lessonChatBackendService;
+    private readonly BackendDiagnosticsService backendDiagnosticsService;
     private readonly AudioInputDeviceService audioInputDeviceService;
     private readonly AudioRecordingService audioRecordingService;
     private readonly LessonHistoryItem? latestLesson;
@@ -35,7 +36,10 @@ public partial class SettingsViewModel : ViewModelBase
     private SettingsLocalizedText localizedText;
     private DiagnosticsLocalizedText diagnosticsLocalizedText;
     private DiagnosticBackendStatus backendStatus = DiagnosticBackendStatus.Unknown;
+    private DiagnosticDatabaseStatus databaseStatus = DiagnosticDatabaseStatus.Unknown;
     private DiagnosticAiStatus aiStatus = DiagnosticAiStatus.Unknown;
+    private string databaseProviderText = string.Empty;
+    private string databaseErrorText = string.Empty;
     private bool isRefreshingAudioInputDevices;
     private bool isSelectedAudioInputDeviceUnavailable;
 
@@ -117,6 +121,8 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string DiagnosticsBackendStatusLabel => diagnosticsLocalizedText.BackendStatusLabel;
 
+    public string DiagnosticsDatabaseStatusLabel => diagnosticsLocalizedText.DatabaseStatusLabel;
+
     public string DiagnosticsAiStatusLabel => diagnosticsLocalizedText.AiStatusLabel;
 
     public string DiagnosticsSettingsFileLabel => diagnosticsLocalizedText.SettingsFileLabel;
@@ -142,6 +148,8 @@ public partial class SettingsViewModel : ViewModelBase
     public string DiagnosticsBackendUrlText => BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl);
 
     public string DiagnosticsBackendStatusText => LocalizeBackendStatus(backendStatus);
+
+    public string DiagnosticsDatabaseStatusText => LocalizeDatabaseStatus(databaseStatus);
 
     public string DiagnosticsAiStatusText => LocalizeAiStatus(aiStatus);
 
@@ -263,6 +271,7 @@ public partial class SettingsViewModel : ViewModelBase
         string lessonHistoryFilePath,
         IReadOnlyList<LessonHistoryItem> lessonHistory,
         LessonChatBackendService lessonChatBackendService,
+        BackendDiagnosticsService backendDiagnosticsService,
         AudioInputDeviceService audioInputDeviceService,
         AudioRecordingService audioRecordingService,
         Action<string, string, string, string, string, string, string, string> saveSettings,
@@ -281,6 +290,7 @@ public partial class SettingsViewModel : ViewModelBase
         lessonHistoryFilePathText = lessonHistoryFilePath;
         appVersionText = BuildAppVersionText();
         this.lessonChatBackendService = lessonChatBackendService;
+        this.backendDiagnosticsService = backendDiagnosticsService;
         this.audioInputDeviceService = audioInputDeviceService;
         this.audioRecordingService = audioRecordingService;
         this.saveSettings = saveSettings;
@@ -371,16 +381,22 @@ public partial class SettingsViewModel : ViewModelBase
     private async Task RefreshDiagnosticsAsync()
     {
         DiagnosticsCopyStatusText = string.Empty;
-        SetDiagnosticStatuses(DiagnosticBackendStatus.Checking, DiagnosticAiStatus.Checking);
+        SetDiagnosticStatuses(DiagnosticBackendStatus.Checking, DiagnosticDatabaseStatus.Checking, DiagnosticAiStatus.Checking);
 
-        var isBackendHealthy = await lessonChatBackendService.CheckHealthAsync(BackendBaseUrl);
-        if (!isBackendHealthy)
+        var diagnosticsResult = await backendDiagnosticsService.CheckAsync(BackendBaseUrl);
+        DatabaseProviderText = diagnosticsResult.DatabaseHealth?.Provider ?? string.Empty;
+        DatabaseErrorText = diagnosticsResult.DatabaseError ?? string.Empty;
+
+        if (!diagnosticsResult.IsBackendHealthy)
         {
-            SetDiagnosticStatuses(DiagnosticBackendStatus.Unavailable, DiagnosticAiStatus.Unavailable);
+            SetDiagnosticStatuses(DiagnosticBackendStatus.Unavailable, DiagnosticDatabaseStatus.Unavailable, DiagnosticAiStatus.Unavailable);
             return;
         }
 
         BackendStatus = DiagnosticBackendStatus.Connected;
+        DatabaseStatus = diagnosticsResult.IsDatabaseHealthy
+            ? DiagnosticDatabaseStatus.Healthy
+            : DiagnosticDatabaseStatus.Unavailable;
         var configStatus = await lessonChatBackendService.GetBackendConfigStatusAsync(BackendBaseUrl);
         AiStatus = MapAiStatus(configStatus);
     }
@@ -428,6 +444,49 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
+    private DiagnosticDatabaseStatus DatabaseStatus
+    {
+        get => databaseStatus;
+        set
+        {
+            if (databaseStatus == value)
+            {
+                return;
+            }
+
+            databaseStatus = value;
+            OnPropertyChanged(nameof(DiagnosticsDatabaseStatusText));
+        }
+    }
+
+    private string DatabaseProviderText
+    {
+        get => databaseProviderText;
+        set
+        {
+            if (databaseProviderText == value)
+            {
+                return;
+            }
+
+            databaseProviderText = value;
+        }
+    }
+
+    private string DatabaseErrorText
+    {
+        get => databaseErrorText;
+        set
+        {
+            if (databaseErrorText == value)
+            {
+                return;
+            }
+
+            databaseErrorText = value;
+        }
+    }
+
     private DiagnosticAiStatus AiStatus
     {
         get => aiStatus;
@@ -443,9 +502,10 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    private void SetDiagnosticStatuses(DiagnosticBackendStatus nextBackendStatus, DiagnosticAiStatus nextAiStatus)
+    private void SetDiagnosticStatuses(DiagnosticBackendStatus nextBackendStatus, DiagnosticDatabaseStatus nextDatabaseStatus, DiagnosticAiStatus nextAiStatus)
     {
         BackendStatus = nextBackendStatus;
+        DatabaseStatus = nextDatabaseStatus;
         AiStatus = nextAiStatus;
     }
 
@@ -492,6 +552,7 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(DiagnosticsAppVersionLabel));
         OnPropertyChanged(nameof(DiagnosticsBackendUrlLabel));
         OnPropertyChanged(nameof(DiagnosticsBackendStatusLabel));
+        OnPropertyChanged(nameof(DiagnosticsDatabaseStatusLabel));
         OnPropertyChanged(nameof(DiagnosticsAiStatusLabel));
         OnPropertyChanged(nameof(DiagnosticsSettingsFileLabel));
         OnPropertyChanged(nameof(DiagnosticsLessonHistoryFileLabel));
@@ -505,6 +566,7 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(CopyDiagnosticsText));
         OnPropertyChanged(nameof(DiagnosticsCopyStatusText));
         OnPropertyChanged(nameof(DiagnosticsBackendStatusText));
+        OnPropertyChanged(nameof(DiagnosticsDatabaseStatusText));
         OnPropertyChanged(nameof(DiagnosticsAiStatusText));
         OnPropertyChanged(nameof(SaveButtonText));
         OnPropertyChanged(nameof(BackButtonText));
@@ -577,6 +639,17 @@ public partial class SettingsViewModel : ViewModelBase
         AppendDiagnosticsLine(report, DiagnosticsAppVersionLabel, AppVersionText);
         AppendDiagnosticsLine(report, DiagnosticsBackendUrlLabel, DiagnosticsBackendUrlText);
         AppendDiagnosticsLine(report, DiagnosticsBackendStatusLabel, DiagnosticsBackendStatusText);
+        AppendDiagnosticsLine(report, DiagnosticsDatabaseStatusLabel, DiagnosticsDatabaseStatusText);
+        if (!string.IsNullOrWhiteSpace(DatabaseProviderText))
+        {
+            AppendDiagnosticsLine(report, "Database provider", DatabaseProviderText);
+        }
+
+        if (!string.IsNullOrWhiteSpace(DatabaseErrorText))
+        {
+            AppendDiagnosticsLine(report, "Database error", DatabaseErrorText);
+        }
+
         AppendDiagnosticsLine(report, DiagnosticsAiStatusLabel, DiagnosticsAiStatusText);
         AppendDiagnosticsLine(report, DiagnosticsSettingsFileLabel, SettingsFilePathText);
         AppendDiagnosticsLine(report, DiagnosticsLessonHistoryFileLabel, LessonHistoryFilePathText);
@@ -604,6 +677,17 @@ public partial class SettingsViewModel : ViewModelBase
             DiagnosticBackendStatus.Connected => diagnosticsLocalizedText.ConnectedStatus,
             DiagnosticBackendStatus.Unavailable => diagnosticsLocalizedText.UnavailableStatus,
             DiagnosticBackendStatus.Checking => diagnosticsLocalizedText.CheckingStatus,
+            _ => diagnosticsLocalizedText.UnknownStatus
+        };
+    }
+
+    private string LocalizeDatabaseStatus(DiagnosticDatabaseStatus status)
+    {
+        return status switch
+        {
+            DiagnosticDatabaseStatus.Healthy => diagnosticsLocalizedText.ConnectedStatus,
+            DiagnosticDatabaseStatus.Unavailable => diagnosticsLocalizedText.UnavailableStatus,
+            DiagnosticDatabaseStatus.Checking => diagnosticsLocalizedText.CheckingStatus,
             _ => diagnosticsLocalizedText.UnknownStatus
         };
     }
@@ -703,6 +787,14 @@ public partial class SettingsViewModel : ViewModelBase
         Unknown,
         Checking,
         Connected,
+        Unavailable
+    }
+
+    private enum DiagnosticDatabaseStatus
+    {
+        Unknown,
+        Checking,
+        Healthy,
         Unavailable
     }
 

@@ -13,6 +13,7 @@ public static class BackendConstants
     public const string AudioSpeechStreamEndpoint = "/api/audio/speech-stream";
     public const string RealtimeVoiceEndpoint = "/api/realtime-voice";
     public const string HealthEndpoint = "/api/health";
+    public const string DatabaseHealthEndpoint = "/api/health/database";
     public const string BackendConfigStatusEndpoint = "/api/backend/config-status";
     public const int BackendRequestTimeoutSeconds = 30;
     public const int BackendHealthTimeoutSeconds = 5;
