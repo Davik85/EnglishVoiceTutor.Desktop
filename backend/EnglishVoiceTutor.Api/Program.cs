@@ -1,11 +1,24 @@
 using System.Net;
 using EnglishVoiceTutor.Api.Constants;
+using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Shared.StudyLanguages;
+using Microsoft.EntityFrameworkCore;
 using HttpBadHttpRequestException = Microsoft.AspNetCore.Http.BadHttpRequestException;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var defaultConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(defaultConnectionString))
+{
+    throw new InvalidOperationException("Connection string 'DefaultConnection' is required. Configure it in appsettings.Development.json, user secrets, or environment variables before starting the backend.");
+}
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseNpgsql(defaultConnectionString);
+});
 
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient(OpenAiConstants.AudioSpeechHttpClientName, httpClient =>
