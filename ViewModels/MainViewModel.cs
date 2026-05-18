@@ -13,6 +13,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 {
     private readonly UserSettingsService userSettingsService = new();
     private readonly LessonChatBackendService lessonChatBackendService = new();
+    private readonly BackendDiagnosticsService backendDiagnosticsService = new();
     private readonly AudioRecordingService audioRecordingService = new();
     private readonly AudioInputDeviceService audioInputDeviceService = new();
     private readonly AudioPlaybackService audioPlaybackService = new();
@@ -86,6 +87,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             lessonHistoryService.LessonHistoryFilePath,
             lessonHistory,
             lessonChatBackendService,
+            backendDiagnosticsService,
             audioInputDeviceService,
             audioRecordingService,
             SaveSettings,

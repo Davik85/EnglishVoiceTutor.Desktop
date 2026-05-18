@@ -308,6 +308,7 @@
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
 
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding DiagnosticsAppVersionLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
@@ -319,29 +320,32 @@
                                         <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding DiagnosticsBackendStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
                                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DiagnosticsBackendStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
 
-                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding DiagnosticsAiStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DiagnosticsAiStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding DiagnosticsDatabaseStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DiagnosticsDatabaseStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
 
-                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding DiagnosticsSettingsFileLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SettingsFilePathText}" Style="{StaticResource DiagnosticsValueStyle}" />
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding DiagnosticsAiStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DiagnosticsAiStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
 
-                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding DiagnosticsLessonHistoryFileLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LessonHistoryFilePathText}" Style="{StaticResource DiagnosticsValueStyle}" />
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding DiagnosticsSettingsFileLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SettingsFilePathText}" Style="{StaticResource DiagnosticsValueStyle}" />
 
-                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{Binding DiagnosticsInterfaceLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding DiagnosticsInterfaceLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
+                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{Binding DiagnosticsLessonHistoryFileLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LessonHistoryFilePathText}" Style="{StaticResource DiagnosticsValueStyle}" />
 
-                                        <TextBlock Grid.Row="7" Grid.Column="0" Text="{Binding DiagnosticsNativeLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding DiagnosticsNativeLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
+                                        <TextBlock Grid.Row="7" Grid.Column="0" Text="{Binding DiagnosticsInterfaceLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding DiagnosticsInterfaceLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
 
-                                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{Binding DiagnosticsStudyLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding DiagnosticsStudyLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
+                                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{Binding DiagnosticsNativeLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding DiagnosticsNativeLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
 
-                                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{Binding DiagnosticsTutorAvatarLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding DiagnosticsTutorAvatarText}" Style="{StaticResource DiagnosticsValueStyle}" />
+                                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{Binding DiagnosticsStudyLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding DiagnosticsStudyLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
 
-                                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{Binding DiagnosticsMicrophoneLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding DiagnosticsMicrophoneText}" Style="{StaticResource DiagnosticsValueStyle}" />
+                                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{Binding DiagnosticsTutorAvatarLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding DiagnosticsTutorAvatarText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                        <TextBlock Grid.Row="11" Grid.Column="0" Text="{Binding DiagnosticsMicrophoneLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                        <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding DiagnosticsMicrophoneText}" Style="{StaticResource DiagnosticsValueStyle}" />
                                     </Grid>
 
                                     <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
