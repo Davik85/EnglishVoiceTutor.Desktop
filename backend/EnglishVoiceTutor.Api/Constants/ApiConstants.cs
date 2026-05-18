@@ -4,6 +4,9 @@ public static class ApiConstants
 {
     public const string ServiceName = "EnglishVoiceTutor.Api";
     public const string HealthOkStatus = "ok";
+    public const string HealthyStatus = "Healthy";
+    public const string UnhealthyStatus = "Unhealthy";
+    public const string DatabaseHealthUnavailableError = "Database connection is unavailable.";
     public const string MockBotReplyText = "Thanks. I received your answer, and the tutor reply will appear here when AI chat is enabled.";
     public const string MockHintText = "You can say: Hi, my name is David.";
     public const string EmptyUserMessageError = "User message is required.";
@@ -28,6 +31,7 @@ public static class ApiConstants
 
     public const string HealthRoute = "/health";
     public const string ApiHealthRoute = "/api/health";
+    public const string DatabaseHealthRoute = "/api/health/database";
     public const string LessonChatReplyRoute = "/api/lesson-chat/reply";
     public const string LessonChatMockReplyRoute = "/api/lesson-chat/mock-reply";
     public const string LessonChatHintRoute = "/api/lesson-chat/hint";
