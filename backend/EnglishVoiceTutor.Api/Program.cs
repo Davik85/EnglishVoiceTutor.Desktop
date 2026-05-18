@@ -40,13 +40,15 @@ builder.Services.AddScoped<AudioSpeechService>();
 builder.Services.AddScoped<RealtimeVoiceSessionService>();
 builder.Services.AddScoped<DevUserProvider>();
 builder.Services.AddScoped<IUserSettingsService, UserSettingsService>();
+builder.Services.AddScoped<IHealthService, HealthService>();
 
 var app = builder.Build();
 
 app.UseWebSockets();
 
-app.MapGet(ApiConstants.HealthRoute, CreateHealthResponse);
-app.MapGet(ApiConstants.ApiHealthRoute, CreateHealthResponse);
+app.MapGet(ApiConstants.HealthRoute, HandleHealthAsync);
+app.MapGet(ApiConstants.ApiHealthRoute, HandleHealthAsync);
+app.MapGet(ApiConstants.DatabaseHealthRoute, HandleDatabaseHealthAsync);
 
 app.MapGet(ApiConstants.BackendConfigStatusRoute, (OpenAiOptionsProvider optionsProvider) =>
 {
@@ -101,13 +103,25 @@ static async Task HandleRealtimeVoiceAsync(
     await realtimeVoiceSessionService.RunGatewayAsync(webSocket, context.RequestAborted);
 }
 
-static IResult CreateHealthResponse()
+static IResult HandleHealthAsync(IHealthService healthService)
 {
-    return Results.Ok(new
+    var response = healthService.GetHealth();
+
+    return Results.Ok(response);
+}
+
+static async Task<IResult> HandleDatabaseHealthAsync(
+    IHealthService healthService,
+    CancellationToken cancellationToken)
+{
+    var response = await healthService.GetDatabaseHealthAsync(cancellationToken);
+
+    if (response.CanConnect)
     {
-        status = ApiConstants.HealthOkStatus,
-        service = ApiConstants.ServiceName
-    });
+        return Results.Ok(response);
+    }
+
+    return Results.Json(response, statusCode: StatusCodes.Status503ServiceUnavailable);
 }
 
 static async Task<IResult> HandleGetDevUserSettingsAsync(
