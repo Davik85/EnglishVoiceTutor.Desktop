@@ -1,5 +1,6 @@
 using System.Net;
 using EnglishVoiceTutor.Api.Constants;
+using EnglishVoiceTutor.Api.Contracts.UserSettings;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services;
@@ -37,6 +38,8 @@ builder.Services.AddScoped<AudioTranscriptionService>();
 builder.Services.AddScoped<TranslationService>();
 builder.Services.AddScoped<AudioSpeechService>();
 builder.Services.AddScoped<RealtimeVoiceSessionService>();
+builder.Services.AddScoped<DevUserProvider>();
+builder.Services.AddScoped<IUserSettingsService, UserSettingsService>();
 
 var app = builder.Build();
 
@@ -68,6 +71,8 @@ app.MapPost(ApiConstants.AudioTranscriptionRoute, HandleAudioTranscriptionAsync)
 app.MapPost(ApiConstants.TranslationRoute, HandleTranslationAsync);
 app.MapPost(ApiConstants.AudioSpeechRoute, HandleAudioSpeechAsync);
 app.MapPost(ApiConstants.AudioSpeechStreamRoute, HandleAudioSpeechStreamAsync);
+app.MapGet(ApiConstants.DevUserSettingsRoute, HandleGetDevUserSettingsAsync);
+app.MapPut(ApiConstants.DevUserSettingsRoute, HandleUpdateDevUserSettingsAsync);
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
@@ -103,6 +108,35 @@ static IResult CreateHealthResponse()
         status = ApiConstants.HealthOkStatus,
         service = ApiConstants.ServiceName
     });
+}
+
+static async Task<IResult> HandleGetDevUserSettingsAsync(
+    IUserSettingsService userSettingsService,
+    CancellationToken cancellationToken)
+{
+    var settings = await userSettingsService.GetDevUserSettingsAsync(cancellationToken);
+
+    return Results.Ok(settings);
+}
+
+static async Task<IResult> HandleUpdateDevUserSettingsAsync(
+    UpdateUserSettingsRequest request,
+    IUserSettingsService userSettingsService,
+    CancellationToken cancellationToken)
+{
+    try
+    {
+        var settings = await userSettingsService.UpdateDevUserSettingsAsync(request, cancellationToken);
+
+        return Results.Ok(settings);
+    }
+    catch (UserSettingsValidationException exception)
+    {
+        return Results.BadRequest(new
+        {
+            error = exception.Message
+        });
+    }
 }
 
 static async Task<IResult> HandleLessonChatReplyAsync(
