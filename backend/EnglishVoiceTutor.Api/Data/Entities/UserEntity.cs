@@ -11,7 +11,7 @@ public sealed class UserEntity
 
     public UserProfileEntity? Profile { get; set; }
     public UserSettingsEntity? Settings { get; set; }
-    public ICollection<LessonSessionEntity> Sessions { get; set; } = [];
+    public ICollection<LessonSessionEntity> LessonSessions { get; set; } = [];
     public ICollection<UsageEventEntity> UsageEvents { get; set; } = [];
     public ICollection<DailyUsageCounterEntity> DailyUsageCounters { get; set; } = [];
     public ICollection<SubscriptionEntity> Subscriptions { get; set; } = [];

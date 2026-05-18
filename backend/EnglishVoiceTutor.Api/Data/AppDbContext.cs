@@ -78,7 +78,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.Property(settings => settings.StudyLanguage).IsRequired().HasMaxLength(EntityConstants.Lengths.LanguageCodeMaxLength);
         entity.Property(settings => settings.ExplanationLanguage).IsRequired().HasMaxLength(EntityConstants.Lengths.LanguageCodeMaxLength);
         entity.Property(settings => settings.SpeechVoice).IsRequired().HasMaxLength(EntityConstants.Lengths.ShortTextMaxLength);
-        entity.Property(settings => settings.SpeechSpeed).HasPrecision(EntityConstants.DecimalPrecision.SpeechSpeedPrecision, EntityConstants.DecimalPrecision.SpeechSpeedScale);
+        entity.Property(settings => settings.SpeechSpeed).HasPrecision(EntityConstants.Precision.SpeechSpeedPrecision, EntityConstants.Precision.SpeechSpeedScale);
         entity.Property(settings => settings.CreatedAt).IsRequired();
         entity.Property(settings => settings.UpdatedAt).IsRequired();
         entity.HasIndex(settings => settings.UserId).IsUnique();
@@ -120,7 +120,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.Property(session => session.SelectedContextTitle).HasMaxLength(EntityConstants.Lengths.ContextTitleMaxLength);
         entity.Property(session => session.ModeUsed).IsRequired().HasMaxLength(EntityConstants.Lengths.ModeMaxLength);
         entity.Property(session => session.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
-        entity.Property(session => session.EstimatedCost).HasPrecision(EntityConstants.DecimalPrecision.CostPrecision, EntityConstants.DecimalPrecision.CostScale);
+        entity.Property(session => session.EstimatedCost).HasPrecision(EntityConstants.Precision.CostPrecision, EntityConstants.Precision.CostScale);
         entity.Property(session => session.StartedAt).IsRequired();
         entity.Property(session => session.CreatedAt).IsRequired();
         entity.Property(session => session.UpdatedAt).IsRequired();
@@ -128,7 +128,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.HasIndex(session => session.StartedAt);
         entity.HasIndex(session => session.Status);
         entity.HasOne(session => session.User)
-            .WithMany(user => user.Sessions)
+            .WithMany(user => user.LessonSessions)
             .HasForeignKey(session => session.UserId)
             .OnDelete(DeleteBehavior.Restrict);
     }
@@ -142,7 +142,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.Property(message => message.Text).IsRequired().HasMaxLength(EntityConstants.Lengths.LongTextMaxLength);
         entity.Property(message => message.Source).IsRequired().HasMaxLength(EntityConstants.Lengths.SourceMaxLength);
         entity.Property(message => message.StudyLanguage).IsRequired().HasMaxLength(EntityConstants.Lengths.LanguageCodeMaxLength);
-        entity.Property(message => message.TranscriptConfidence).HasPrecision(EntityConstants.DecimalPrecision.TranscriptConfidencePrecision, EntityConstants.DecimalPrecision.TranscriptConfidenceScale);
+        entity.Property(message => message.TranscriptConfidence).HasPrecision(EntityConstants.Precision.TranscriptConfidencePrecision, EntityConstants.Precision.TranscriptConfidenceScale);
         entity.Property(message => message.CreatedAt).IsRequired();
         entity.HasIndex(message => message.SessionId);
         entity.HasOne(message => message.Session)
@@ -201,7 +201,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.HasKey(usageEvent => usageEvent.Id);
         entity.Property(usageEvent => usageEvent.Operation).IsRequired().HasMaxLength(EntityConstants.Lengths.OperationMaxLength);
         entity.Property(usageEvent => usageEvent.Model).HasMaxLength(EntityConstants.Lengths.ModelMaxLength);
-        entity.Property(usageEvent => usageEvent.EstimatedCost).HasPrecision(EntityConstants.DecimalPrecision.CostPrecision, EntityConstants.DecimalPrecision.CostScale);
+        entity.Property(usageEvent => usageEvent.EstimatedCost).HasPrecision(EntityConstants.Precision.CostPrecision, EntityConstants.Precision.CostScale);
         entity.Property(usageEvent => usageEvent.CreatedAt).IsRequired();
         entity.HasIndex(usageEvent => usageEvent.UserId);
         entity.HasIndex(usageEvent => usageEvent.SessionId);
@@ -222,7 +222,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.ToTable(EntityConstants.TableNames.DailyUsageCounters);
         entity.HasKey(counter => counter.Id);
         entity.Property(counter => counter.StudyLanguage).IsRequired().HasMaxLength(EntityConstants.Lengths.LanguageCodeMaxLength);
-        entity.Property(counter => counter.EstimatedCost).HasPrecision(EntityConstants.DecimalPrecision.CostPrecision, EntityConstants.DecimalPrecision.CostScale);
+        entity.Property(counter => counter.EstimatedCost).HasPrecision(EntityConstants.Precision.CostPrecision, EntityConstants.Precision.CostScale);
         entity.Property(counter => counter.CreatedAt).IsRequired();
         entity.Property(counter => counter.UpdatedAt).IsRequired();
         entity.HasIndex(counter => new { counter.UserId, counter.UsageDate, counter.StudyLanguage }).IsUnique();
@@ -256,7 +256,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         var entity = modelBuilder.Entity<PaymentEntity>();
         entity.ToTable(EntityConstants.TableNames.Payments);
         entity.HasKey(payment => payment.Id);
-        entity.Property(payment => payment.Amount).HasPrecision(EntityConstants.DecimalPrecision.MoneyPrecision, EntityConstants.DecimalPrecision.MoneyScale);
+        entity.Property(payment => payment.Amount).HasPrecision(EntityConstants.Precision.MoneyPrecision, EntityConstants.Precision.MoneyScale);
         entity.Property(payment => payment.Currency).IsRequired().HasMaxLength(EntityConstants.Lengths.CurrencyMaxLength);
         entity.Property(payment => payment.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
         entity.Property(payment => payment.Provider).IsRequired().HasMaxLength(EntityConstants.Lengths.ProviderMaxLength);

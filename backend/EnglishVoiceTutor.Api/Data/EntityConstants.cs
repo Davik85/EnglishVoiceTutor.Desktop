@@ -54,7 +54,7 @@ public static class EntityConstants
         public const int LongTextMaxLength = 20000;
     }
 
-    public static class DecimalPrecision
+    public static class Precision
     {
         public const int MoneyPrecision = 18;
         public const int MoneyScale = 2;
