@@ -14,6 +14,9 @@ This implementation connects **normal Lesson Chat** in the desktop app to backen
 - Desktop attempts to finish the backend lesson session when lesson is finished or when user leaves via back navigation.
 - Calls are best-effort and non-blocking for local lesson flow.
 - If backend is unavailable, lesson still opens and works locally.
+- Lesson Chat status near the lesson title refers to **lesson history sync/session tracking** state (for example: `History sync: active`), not overall backend health.
+- Backend/Database/AI health should be checked in **Settings Diagnostics**.
+- If history sync is unavailable, the lesson still works locally.
 
 ## Current payload notes
 

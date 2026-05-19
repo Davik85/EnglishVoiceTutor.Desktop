@@ -60,7 +60,7 @@
                             <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" TextAlignment="Center" />
                             <StackPanel Margin="14,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Ellipse Width="10" Height="10" Margin="0,0,7,0" Fill="{Binding BotStatusIndicatorBrush}" ToolTip="{Binding BotStatusText}" />
-                                <Ellipse Width="10" Height="10" Margin="0,0,7,0" Fill="{Binding BackendStatusIndicatorBrush}" ToolTip="{Binding BackendStatusText}" />
+                                <Ellipse Width="10" Height="10" Margin="0,0,7,0" Fill="{Binding HistorySyncStatusIndicatorBrush}" ToolTip="{Binding HistorySyncStatusText}" />
                                 <Ellipse Width="10" Height="10" Fill="{Binding AiStatusIndicatorBrush}" ToolTip="{Binding AiStatusText}" />
                             </StackPanel>
                         </StackPanel>
