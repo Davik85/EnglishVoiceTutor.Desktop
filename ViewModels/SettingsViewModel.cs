@@ -27,6 +27,7 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly Action navigateBack;
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly BackendDiagnosticsService backendDiagnosticsService;
+    private readonly BackendUserSettingsClient backendUserSettingsClient;
     private readonly AudioInputDeviceService audioInputDeviceService;
     private readonly AudioRecordingService audioRecordingService;
     private readonly LessonHistoryItem? latestLesson;
@@ -38,6 +39,12 @@ public partial class SettingsViewModel : ViewModelBase
     private DiagnosticBackendStatus backendStatus = DiagnosticBackendStatus.Unknown;
     private DiagnosticDatabaseStatus databaseStatus = DiagnosticDatabaseStatus.Unknown;
     private DiagnosticAiStatus aiStatus = DiagnosticAiStatus.Unknown;
+    private BackendSettingsSyncStatus backendSettingsSyncStatus = BackendSettingsSyncStatus.NotChecked;
+    private DateTimeOffset? lastBackendSettingsSyncTime;
+    private string backendSettingsSpeechVoice = BackendConstants.DefaultBackendSettingsSpeechVoice;
+    private decimal backendSettingsSpeechSpeed = BackendConstants.DefaultBackendSettingsSpeechSpeed;
+    private bool backendSettingsConversationModeEnabled = BackendConstants.DefaultBackendSettingsConversationModeEnabled;
+    private bool isApplyingBackendSettings;
     private string databaseProviderText = string.Empty;
     private string databaseErrorText = string.Empty;
     private bool isRefreshingAudioInputDevices;
@@ -272,6 +279,7 @@ public partial class SettingsViewModel : ViewModelBase
         IReadOnlyList<LessonHistoryItem> lessonHistory,
         LessonChatBackendService lessonChatBackendService,
         BackendDiagnosticsService backendDiagnosticsService,
+        BackendUserSettingsClient backendUserSettingsClient,
         AudioInputDeviceService audioInputDeviceService,
         AudioRecordingService audioRecordingService,
         Action<string, string, string, string, string, string, string, string> saveSettings,
@@ -291,6 +299,7 @@ public partial class SettingsViewModel : ViewModelBase
         appVersionText = BuildAppVersionText();
         this.lessonChatBackendService = lessonChatBackendService;
         this.backendDiagnosticsService = backendDiagnosticsService;
+        this.backendUserSettingsClient = backendUserSettingsClient;
         this.audioInputDeviceService = audioInputDeviceService;
         this.audioRecordingService = audioRecordingService;
         this.saveSettings = saveSettings;
@@ -303,16 +312,16 @@ public partial class SettingsViewModel : ViewModelBase
         LessonsTodayText = CountLessonsToday(lessonHistory).ToString();
         CurrentStreakText = CalculateCurrentStreak(lessonHistory).ToString();
         RefreshAudioInputDevices(currentAudioInputDeviceId, showUnavailableStatus: false);
+        _ = LoadBackendUserSettingsAsync();
     }
 
     [RelayCommand]
-    private void Save()
+    private async Task SaveAsync()
     {
-        var selectedAvatar = SelectedTutorAvatarOption ?? TutorAvatarOptions.Elena;
-        var selectedAudioInputDeviceId = SelectedAudioInputDeviceOption?.Id ?? AudioConstants.DefaultAudioInputDeviceId;
-        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguage, SelectedStudyLanguage.Id, selectedAvatar.Id, UserDisplayName, LearningGoal, BackendBaseUrl, selectedAudioInputDeviceId);
+        SaveCurrentSettingsLocally();
         BackendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl);
         StatusMessage = localizedText.SettingsSavedMessage;
+        await SyncBackendUserSettingsAsync();
     }
 
     [RelayCommand]
@@ -390,6 +399,7 @@ public partial class SettingsViewModel : ViewModelBase
         if (!diagnosticsResult.IsBackendHealthy)
         {
             SetDiagnosticStatuses(DiagnosticBackendStatus.Unavailable, DiagnosticDatabaseStatus.Unavailable, DiagnosticAiStatus.Unavailable);
+            SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
             return;
         }
 
@@ -399,6 +409,7 @@ public partial class SettingsViewModel : ViewModelBase
             : DiagnosticDatabaseStatus.Unavailable;
         var configStatus = await lessonChatBackendService.GetBackendConfigStatusAsync(BackendBaseUrl);
         AiStatus = MapAiStatus(configStatus);
+        await LoadBackendUserSettingsAsync();
     }
 
     partial void OnSelectedInterfaceLanguageOptionChanged(InterfaceLanguageOption value)
@@ -418,6 +429,18 @@ public partial class SettingsViewModel : ViewModelBase
         }
 
         DiagnosticsCopyStatusText = string.Empty;
+    }
+
+    partial void OnSelectedStudyLanguageChanged(StudyLanguageDefinition value)
+    {
+        if (isApplyingBackendSettings)
+        {
+            return;
+        }
+
+        DiagnosticsCopyStatusText = string.Empty;
+        SaveCurrentSettingsLocally();
+        _ = SyncBackendUserSettingsAsync();
     }
 
     partial void OnSelectedAudioInputDeviceOptionChanged(AudioInputDeviceOption? value)
@@ -656,6 +679,8 @@ public partial class SettingsViewModel : ViewModelBase
         AppendDiagnosticsLine(report, DiagnosticsInterfaceLanguageLabel, DiagnosticsInterfaceLanguageText);
         AppendDiagnosticsLine(report, DiagnosticsNativeLanguageLabel, DiagnosticsNativeLanguageText);
         AppendDiagnosticsLine(report, DiagnosticsStudyLanguageLabel, DiagnosticsStudyLanguageText);
+        AppendDiagnosticsLine(report, "Backend settings sync", GetBackendSettingsSyncStatusText());
+        AppendDiagnosticsLine(report, "Last backend settings sync time", GetLastBackendSettingsSyncTimeText());
         AppendDiagnosticsLine(report, DiagnosticsTutorAvatarLabel, DiagnosticsTutorAvatarText);
         AppendDiagnosticsLine(report, DiagnosticsMicrophoneLabel, DiagnosticsMicrophoneText);
         AppendDiagnosticsLine(report, DiagnosticsCurrentDateTimeLabel, DateTimeOffset.Now.ToString("u"));
@@ -668,6 +693,135 @@ public partial class SettingsViewModel : ViewModelBase
         report.Append(label);
         report.Append(": ");
         report.AppendLine(value);
+    }
+
+    private async Task LoadBackendUserSettingsAsync()
+    {
+        try
+        {
+            var result = await backendUserSettingsClient.GetAsync(BackendBaseUrl);
+            if (!result.IsSuccess || result.Value is null)
+            {
+                SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+                return;
+            }
+
+            ApplyBackendUserSettings(result.Value);
+            SaveCurrentSettingsLocally();
+            SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Available);
+        }
+        catch
+        {
+            SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+        }
+    }
+
+    private async Task SyncBackendUserSettingsAsync()
+    {
+        try
+        {
+            var request = new UpdateBackendUserSettingsRequest
+            {
+                StudyLanguage = GetSupportedBackendStudyLanguage(SelectedStudyLanguage),
+                ExplanationLanguage = string.IsNullOrWhiteSpace(SelectedNativeLanguage)
+                    ? AppConstants.NativeLanguageRussian
+                    : SelectedNativeLanguage.Trim(),
+                SpeechVoice = string.IsNullOrWhiteSpace(backendSettingsSpeechVoice)
+                    ? BackendConstants.DefaultBackendSettingsSpeechVoice
+                    : backendSettingsSpeechVoice.Trim(),
+                SpeechSpeed = backendSettingsSpeechSpeed <= 0
+                    ? BackendConstants.DefaultBackendSettingsSpeechSpeed
+                    : backendSettingsSpeechSpeed,
+                ConversationModeEnabled = backendSettingsConversationModeEnabled
+            };
+
+            var result = await backendUserSettingsClient.UpdateAsync(BackendBaseUrl, request);
+            if (!result.IsSuccess || result.Value is null)
+            {
+                SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+                return;
+            }
+
+            ApplyBackendUserSettings(result.Value);
+            SaveCurrentSettingsLocally();
+            SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Available);
+        }
+        catch
+        {
+            SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+        }
+    }
+
+    private void ApplyBackendUserSettings(BackendUserSettingsResponse settings)
+    {
+        backendSettingsSpeechVoice = string.IsNullOrWhiteSpace(settings.SpeechVoice)
+            ? BackendConstants.DefaultBackendSettingsSpeechVoice
+            : settings.SpeechVoice.Trim();
+        backendSettingsSpeechSpeed = settings.SpeechSpeed <= 0
+            ? BackendConstants.DefaultBackendSettingsSpeechSpeed
+            : settings.SpeechSpeed;
+        backendSettingsConversationModeEnabled = settings.ConversationModeEnabled;
+
+        var backendStudyLanguage = GetStudyLanguageByBackendValue(settings.StudyLanguage);
+        isApplyingBackendSettings = true;
+        try
+        {
+            SelectedStudyLanguage = backendStudyLanguage;
+        }
+        finally
+        {
+            isApplyingBackendSettings = false;
+        }
+    }
+
+    private void SaveCurrentSettingsLocally()
+    {
+        var selectedAvatar = SelectedTutorAvatarOption ?? TutorAvatarOptions.Elena;
+        var selectedAudioInputDeviceId = SelectedAudioInputDeviceOption?.Id ?? AudioConstants.DefaultAudioInputDeviceId;
+        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguage, SelectedStudyLanguage.Id, selectedAvatar.Id, UserDisplayName, LearningGoal, BackendBaseUrl, selectedAudioInputDeviceId);
+    }
+
+    private void SetBackendSettingsSyncStatus(BackendSettingsSyncStatus status)
+    {
+        backendSettingsSyncStatus = status;
+        if (status == BackendSettingsSyncStatus.Available)
+        {
+            lastBackendSettingsSyncTime = DateTimeOffset.Now;
+        }
+    }
+
+    private string GetBackendSettingsSyncStatusText()
+    {
+        return backendSettingsSyncStatus switch
+        {
+            BackendSettingsSyncStatus.Available => "available",
+            BackendSettingsSyncStatus.Unavailable => "unavailable",
+            _ => "not checked"
+        };
+    }
+
+    private string GetLastBackendSettingsSyncTimeText()
+    {
+        return lastBackendSettingsSyncTime?.ToString("u") ?? "not checked";
+    }
+
+    private static string GetSupportedBackendStudyLanguage(StudyLanguageDefinition? studyLanguage)
+    {
+        var supportedLanguage = StudyLanguageCatalog.GetById(studyLanguage?.Id);
+        return supportedLanguage.EnglishName;
+    }
+
+    private static StudyLanguageDefinition GetStudyLanguageByBackendValue(string? backendStudyLanguage)
+    {
+        if (string.IsNullOrWhiteSpace(backendStudyLanguage))
+        {
+            return StudyLanguageCatalog.English;
+        }
+
+        return StudyLanguageCatalog.All.FirstOrDefault(language =>
+                string.Equals(language.EnglishName, backendStudyLanguage.Trim(), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(language.Id, backendStudyLanguage.Trim(), StringComparison.OrdinalIgnoreCase))
+            ?? StudyLanguageCatalog.English;
     }
 
     private string LocalizeBackendStatus(DiagnosticBackendStatus status)
@@ -795,6 +949,13 @@ public partial class SettingsViewModel : ViewModelBase
         Unknown,
         Checking,
         Healthy,
+        Unavailable
+    }
+
+    private enum BackendSettingsSyncStatus
+    {
+        NotChecked,
+        Available,
         Unavailable
     }
 
