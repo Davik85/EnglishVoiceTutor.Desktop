@@ -15,7 +15,9 @@ public static class BackendConstants
     public const string HealthEndpoint = "/api/health";
     public const string DatabaseHealthEndpoint = "/api/health/database";
     public const string BackendConfigStatusEndpoint = "/api/backend/config-status";
+    public const string DevUserSettingsEndpoint = "/api/dev/user-settings";
     public const int BackendRequestTimeoutSeconds = 30;
+    public const int BackendUserSettingsTimeoutSeconds = 5;
     public const int BackendHealthTimeoutSeconds = 5;
     public const int BotVoiceRequestTimeoutSeconds = 20;
     public const int BotVoiceFirstAudioTimeoutSeconds = 5;
@@ -67,6 +69,9 @@ public static class BackendConstants
     public const string AiStatusNotConfigured = "AI: not configured";
     public const string AiStatusUnavailable = "AI: unavailable";
     public const string OpenAiConfiguredStatus = "configured";
+    public const string DefaultBackendSettingsSpeechVoice = "coral";
+    public const decimal DefaultBackendSettingsSpeechSpeed = 1.0m;
+    public const bool DefaultBackendSettingsConversationModeEnabled = true;
 
     public const string BotStatusReady = "Ready";
     public const string BotStatusThinking = "Thinking";
