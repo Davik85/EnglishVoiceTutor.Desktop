@@ -1,5 +1,7 @@
+using System.Data.Common;
 using System.Net;
 using EnglishVoiceTutor.Api.Constants;
+using EnglishVoiceTutor.Api.Contracts.Common;
 using EnglishVoiceTutor.Api.Contracts.UserSettings;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Models;
@@ -126,18 +128,32 @@ static async Task<IResult> HandleDatabaseHealthAsync(
 
 static async Task<IResult> HandleGetDevUserSettingsAsync(
     IUserSettingsService userSettingsService,
+    ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
-    var settings = await userSettingsService.GetDevUserSettingsAsync(cancellationToken);
+    var logger = loggerFactory.CreateLogger("DevUserSettingsEndpoint");
 
-    return Results.Ok(settings);
+    try
+    {
+        var settings = await userSettingsService.GetDevUserSettingsAsync(cancellationToken);
+
+        return Results.Ok(settings);
+    }
+    catch (Exception exception) when (IsUserSettingsStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev user settings GET failed because storage is unavailable.");
+        return Results.Json(CreateUserSettingsStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
 }
 
 static async Task<IResult> HandleUpdateDevUserSettingsAsync(
     UpdateUserSettingsRequest request,
     IUserSettingsService userSettingsService,
+    ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
+    var logger = loggerFactory.CreateLogger("DevUserSettingsEndpoint");
+
     try
     {
         var settings = await userSettingsService.UpdateDevUserSettingsAsync(request, cancellationToken);
@@ -151,6 +167,31 @@ static async Task<IResult> HandleUpdateDevUserSettingsAsync(
             error = exception.Message
         });
     }
+    catch (Exception exception) when (IsUserSettingsStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev user settings PUT failed because storage is unavailable.");
+        return Results.Json(CreateUserSettingsStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+
+static bool IsUserSettingsStorageUnavailable(Exception exception)
+{
+    return exception is DbException
+        or TimeoutException
+        or InvalidOperationException
+        or DbUpdateException
+        || exception.InnerException is not null && IsUserSettingsStorageUnavailable(exception.InnerException);
+}
+
+static ErrorResponse CreateUserSettingsStorageUnavailableResponse()
+{
+    return new ErrorResponse
+    {
+        Status = "ServiceUnavailable",
+        Message = "User settings storage is unavailable.",
+        CheckedAtUtc = DateTimeOffset.UtcNow
+    };
 }
 
 static async Task<IResult> HandleLessonChatReplyAsync(
