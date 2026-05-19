@@ -27,6 +27,8 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly StudyLanguageDefinition studyLanguage;
     private readonly string tutorAvatarId;
     private readonly LessonChatBackendService lessonChatBackendService;
+    private readonly BackendLessonSessionClient backendLessonSessionClient;
+    private readonly string backendBaseUrl;
     private readonly AudioRecordingService audioRecordingService;
     private readonly AudioPlaybackService audioPlaybackService;
     private readonly BotVoiceTempFileCleanupService botVoiceTempFileCleanupService;
@@ -45,6 +47,8 @@ public partial class LessonChatViewModel : ViewModelBase
     private string selectedCustomContextTitle = string.Empty;
     private bool isTranscribingAudio;
     private bool hasFinishedLesson;
+    private Guid? backendLessonSessionId;
+    private bool backendLessonSessionFinished;
     private bool usedManualPlayVoice;
     private bool usedAutoPlayVoice;
     private readonly SemaphoreSlim botVoiceSemaphore = new(1, 1);
@@ -581,6 +585,8 @@ public partial class LessonChatViewModel : ViewModelBase
         TutorProfile? tutorProfile,
         LessonScenario? lessonScenario,
         LessonChatBackendService lessonChatBackendService,
+        BackendLessonSessionClient backendLessonSessionClient,
+        string backendBaseUrl,
         AudioRecordingService audioRecordingService,
         AudioPlaybackService audioPlaybackService,
         BotVoiceTempFileCleanupService botVoiceTempFileCleanupService,
@@ -602,6 +608,8 @@ public partial class LessonChatViewModel : ViewModelBase
         this.lessonScenario = lessonScenario ?? new LessonScenario();
         activeLevelProfile = ResolveActiveLevelProfile(this.lessonScenario, selectedLevel);
         this.lessonChatBackendService = lessonChatBackendService;
+        this.backendLessonSessionClient = backendLessonSessionClient;
+        this.backendBaseUrl = backendBaseUrl;
         this.audioRecordingService = audioRecordingService;
         this.audioPlaybackService = audioPlaybackService;
         this.botVoiceTempFileCleanupService = botVoiceTempFileCleanupService;
@@ -643,6 +651,7 @@ public partial class LessonChatViewModel : ViewModelBase
         ConversationLatestBotText = setupMessage;
         _ = CheckBackendHealthAsync();
         _ = CheckBackendConfigStatusAsync();
+        _ = TryStartBackendLessonSessionAsync();
         LogLessonStateSnapshot("lesson initialization");
     }
 
@@ -4434,6 +4443,7 @@ public partial class LessonChatViewModel : ViewModelBase
         RefreshAllCommandStates();
         LogLessonStateSnapshot("Finish lesson clicked");
         ViewFeedbackCommand.NotifyCanExecuteChanged();
+        _ = TryFinishBackendLessonSessionAsync("finish_lesson");
         finishLesson(BuildLessonSummaryInput());
     }
 
@@ -4450,6 +4460,7 @@ public partial class LessonChatViewModel : ViewModelBase
             CancelCurrentBotVoice(BotVoiceCancellationReasons.BackOrFinishCancel);
             await CleanupCurrentSessionBotVoiceFilesAsync();
             await StopConversationModeAsync("user_back");
+            await TryFinishBackendLessonSessionAsync("back_navigation");
             navigateBack();
         }
         finally
@@ -4639,6 +4650,66 @@ public partial class LessonChatViewModel : ViewModelBase
     private static string GetFeedbackSourceMessageKind(ChatMessageViewModel message)
     {
         return message.SourceMessageKind;
+    }
+
+    private async Task TryStartBackendLessonSessionAsync()
+    {
+        var request = new StartBackendLessonSessionRequest
+        {
+            LessonContentId = BuildStableLessonContentId(),
+            StudyLanguage = studyLanguage.EnglishName,
+            TopicId = SelectedTopic.Id.ToString(CultureInfo.InvariantCulture),
+            TopicTitle = SelectedTopic.Title,
+            SubtopicId = SelectedSubtopic.Id.ToString(CultureInfo.InvariantCulture),
+            SubtopicTitle = SelectedSubtopic.Title,
+            Level = SelectedLevel,
+            SelectedContextId = selectedContextVariant?.Id,
+            SelectedContextTitle = selectedContextVariant?.Title,
+            ModeUsed = "text"
+        };
+
+        var result = await backendLessonSessionClient.StartAsync(backendBaseUrl, request);
+        if (!result.IsSuccess || result.Value is null)
+        {
+            Debug.WriteLine($"Backend lesson session start skipped. Reason={result.ErrorMessage ?? "unknown"}.");
+            return;
+        }
+
+        backendLessonSessionId = result.Value.Id;
+        Debug.WriteLine($"Backend lesson session started. SessionId={backendLessonSessionId}; StudyLanguage={request.StudyLanguage}; TopicId={request.TopicId}; SubtopicId={request.SubtopicId}; Level={request.Level}; SelectedContextId={request.SelectedContextId ?? "null"}.");
+    }
+
+    private async Task TryFinishBackendLessonSessionAsync(string reason)
+    {
+        if (backendLessonSessionFinished || backendLessonSessionId is null)
+        {
+            return;
+        }
+
+        var request = new FinishBackendLessonSessionRequest
+        {
+            ValidTurnCount = LearnerTurnCount
+        };
+
+        var result = await backendLessonSessionClient.FinishAsync(backendBaseUrl, backendLessonSessionId.Value, request);
+        if (!result.IsSuccess)
+        {
+            Debug.WriteLine($"Backend lesson session finish skipped. SessionId={backendLessonSessionId}; Reason={reason}; Error={result.ErrorMessage ?? "unknown"}; ValidTurnCount={request.ValidTurnCount}.");
+            return;
+        }
+
+        backendLessonSessionFinished = true;
+        Debug.WriteLine($"Backend lesson session finished. SessionId={backendLessonSessionId}; Reason={reason}; ValidTurnCount={request.ValidTurnCount}.");
+    }
+
+    private string BuildStableLessonContentId()
+    {
+        if (!string.IsNullOrWhiteSpace(lessonScenario.Id))
+        {
+            return lessonScenario.Id;
+        }
+
+        return $"topic-{SelectedTopic.Id}-subtopic-{SelectedSubtopic.Id}-level-{SelectedLevel.Trim().ToLowerInvariant()}";
     }
 
     private LessonSummaryInput BuildLessonSummaryInput()
