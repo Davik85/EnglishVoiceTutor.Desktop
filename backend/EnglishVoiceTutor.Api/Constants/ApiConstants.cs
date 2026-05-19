@@ -43,4 +43,7 @@ public static class ApiConstants
     public const string AudioSpeechStreamRoute = "/api/audio/speech-stream";
     public const string RealtimeVoiceRoute = "/api/realtime-voice";
     public const string DevUserSettingsRoute = "/api/dev/user-settings";
+    public const string DevLessonSessionsRoute = "/api/dev/lesson-sessions";
+    public const string DevLessonSessionByIdRoute = "/api/dev/lesson-sessions/{sessionId:guid}";
+    public const string DevLessonSessionFinishRoute = "/api/dev/lesson-sessions/{sessionId:guid}/finish";
 }
