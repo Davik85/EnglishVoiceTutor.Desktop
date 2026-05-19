@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Net;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Common;
+using EnglishVoiceTutor.Api.Contracts.LessonMessages;
 using EnglishVoiceTutor.Api.Contracts.LessonSessions;
 using EnglishVoiceTutor.Api.Contracts.UserSettings;
 using EnglishVoiceTutor.Api.Data;
@@ -44,6 +45,7 @@ builder.Services.AddScoped<RealtimeVoiceSessionService>();
 builder.Services.AddScoped<DevUserProvider>();
 builder.Services.AddScoped<IUserSettingsService, UserSettingsService>();
 builder.Services.AddScoped<ILessonSessionService, LessonSessionService>();
+builder.Services.AddScoped<ILessonMessageService, LessonMessageService>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 
 var app = builder.Build();
@@ -83,6 +85,8 @@ app.MapPost(ApiConstants.DevLessonSessionsRoute, HandleCreateDevLessonSessionAsy
 app.MapPut(ApiConstants.DevLessonSessionFinishRoute, HandleFinishDevLessonSessionAsync);
 app.MapGet(ApiConstants.DevLessonSessionsRoute, HandleGetDevLessonSessionsAsync);
 app.MapGet(ApiConstants.DevLessonSessionByIdRoute, HandleGetDevLessonSessionByIdAsync);
+app.MapPost(ApiConstants.DevLessonSessionMessagesRoute, HandleCreateDevLessonMessageAsync);
+app.MapGet(ApiConstants.DevLessonSessionMessagesRoute, HandleGetDevLessonMessagesAsync);
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
@@ -222,6 +226,60 @@ static async Task<IResult> HandleGetDevLessonSessionByIdAsync(
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
         logger.LogWarning(exception, "Dev lesson session by id GET failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+
+static async Task<IResult> HandleCreateDevLessonMessageAsync(
+    Guid sessionId,
+    CreateLessonMessageRequest request,
+    ILessonMessageService lessonMessageService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevLessonMessagesEndpoint");
+
+    try
+    {
+        var createdMessage = await lessonMessageService.CreateDevLessonMessageAsync(sessionId, request, cancellationToken);
+        return Results.Created($"/api/dev/lesson-sessions/{sessionId}/messages/{createdMessage.Id}", createdMessage);
+    }
+    catch (LessonMessageValidationException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (KeyNotFoundException)
+    {
+        return Results.NotFound(new { error = "Lesson session was not found." });
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev lesson message POST failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleGetDevLessonMessagesAsync(
+    Guid sessionId,
+    ILessonMessageService lessonMessageService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevLessonMessagesEndpoint");
+
+    try
+    {
+        var messages = await lessonMessageService.GetDevLessonMessagesAsync(sessionId, cancellationToken);
+        return Results.Ok(messages);
+    }
+    catch (KeyNotFoundException)
+    {
+        return Results.NotFound(new { error = "Lesson session was not found." });
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev lesson messages GET failed because storage is unavailable.");
         return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }
