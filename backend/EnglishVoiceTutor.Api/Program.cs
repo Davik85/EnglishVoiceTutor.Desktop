@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Net;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Common;
+using EnglishVoiceTutor.Api.Contracts.LessonSessions;
 using EnglishVoiceTutor.Api.Contracts.UserSettings;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Models;
@@ -42,6 +43,7 @@ builder.Services.AddScoped<AudioSpeechService>();
 builder.Services.AddScoped<RealtimeVoiceSessionService>();
 builder.Services.AddScoped<DevUserProvider>();
 builder.Services.AddScoped<IUserSettingsService, UserSettingsService>();
+builder.Services.AddScoped<ILessonSessionService, LessonSessionService>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 
 var app = builder.Build();
@@ -77,6 +79,10 @@ app.MapPost(ApiConstants.AudioSpeechRoute, HandleAudioSpeechAsync);
 app.MapPost(ApiConstants.AudioSpeechStreamRoute, HandleAudioSpeechStreamAsync);
 app.MapGet(ApiConstants.DevUserSettingsRoute, HandleGetDevUserSettingsAsync);
 app.MapPut(ApiConstants.DevUserSettingsRoute, HandleUpdateDevUserSettingsAsync);
+app.MapPost(ApiConstants.DevLessonSessionsRoute, HandleCreateDevLessonSessionAsync);
+app.MapPut(ApiConstants.DevLessonSessionFinishRoute, HandleFinishDevLessonSessionAsync);
+app.MapGet(ApiConstants.DevLessonSessionsRoute, HandleGetDevLessonSessionsAsync);
+app.MapGet(ApiConstants.DevLessonSessionByIdRoute, HandleGetDevLessonSessionByIdAsync);
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
@@ -124,6 +130,119 @@ static async Task<IResult> HandleDatabaseHealthAsync(
     }
 
     return Results.Json(response, statusCode: StatusCodes.Status503ServiceUnavailable);
+}
+
+
+
+static async Task<IResult> HandleCreateDevLessonSessionAsync(
+    StartLessonSessionRequest request,
+    ILessonSessionService lessonSessionService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevLessonSessionsEndpoint");
+
+    try
+    {
+        var createdSession = await lessonSessionService.StartDevLessonSessionAsync(request, cancellationToken);
+        return Results.Created($"/api/dev/lesson-sessions/{createdSession.Id}", createdSession);
+    }
+    catch (LessonSessionValidationException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev lesson session POST failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleFinishDevLessonSessionAsync(
+    Guid sessionId,
+    FinishLessonSessionRequest request,
+    ILessonSessionService lessonSessionService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevLessonSessionsEndpoint");
+
+    try
+    {
+        var updatedSession = await lessonSessionService.FinishDevLessonSessionAsync(sessionId, request, cancellationToken);
+        return Results.Ok(updatedSession);
+    }
+    catch (LessonSessionValidationException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (KeyNotFoundException)
+    {
+        return Results.NotFound(new { error = "Lesson session was not found." });
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev lesson session finish PUT failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleGetDevLessonSessionsAsync(
+    ILessonSessionService lessonSessionService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevLessonSessionsEndpoint");
+
+    try
+    {
+        var sessions = await lessonSessionService.GetRecentDevLessonSessionsAsync(cancellationToken);
+        return Results.Ok(sessions);
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev lesson sessions GET failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleGetDevLessonSessionByIdAsync(
+    Guid sessionId,
+    ILessonSessionService lessonSessionService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevLessonSessionsEndpoint");
+
+    try
+    {
+        var session = await lessonSessionService.GetDevLessonSessionByIdAsync(sessionId, cancellationToken);
+        return session is null ? Results.NotFound(new { error = "Lesson session was not found." }) : Results.Ok(session);
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev lesson session by id GET failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static bool IsLessonSessionStorageUnavailable(Exception exception)
+{
+    return exception is DbException
+        or TimeoutException
+        or InvalidOperationException
+        or DbUpdateException
+        || exception.InnerException is not null && IsLessonSessionStorageUnavailable(exception.InnerException);
+}
+
+static ErrorResponse CreateLessonSessionStorageUnavailableResponse()
+{
+    return new ErrorResponse
+    {
+        Status = "ServiceUnavailable",
+        Message = "Lesson session storage is unavailable.",
+        CheckedAtUtc = DateTimeOffset.UtcNow
+    };
 }
 
 static async Task<IResult> HandleGetDevUserSettingsAsync(
