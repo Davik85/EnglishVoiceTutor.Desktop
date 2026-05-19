@@ -65,6 +65,10 @@ public static class BackendConstants
     public const string BackendStatusChecking = "Backend: checking...";
     public const string BackendStatusConnected = "Backend: connected";
     public const string BackendStatusUnavailable = "Backend: unavailable";
+    public const string HistorySyncStatusNotStarted = "History sync: not started";
+    public const string HistorySyncStatusActive = "History sync: active";
+    public const string HistorySyncStatusUnavailable = "History sync: unavailable";
+    public const string HistorySyncStatusFinished = "History sync: finished";
     public const string BackendHealthCheckFailedMessage = "Backend health check failed. Please start the local backend.";
 
     public const string AiStatusChecking = "AI: checking...";

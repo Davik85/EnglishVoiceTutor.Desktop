@@ -187,6 +187,10 @@ public partial class LessonChatViewModel : ViewModelBase
     private string backendStatusText = BackendConstants.BackendStatusChecking;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HistorySyncStatusIndicatorBrush))]
+    private string historySyncStatusText = BackendConstants.HistorySyncStatusNotStarted;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AiStatusIndicatorBrush))]
     private string aiStatusText = BackendConstants.AiStatusChecking;
 
@@ -350,6 +354,14 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         BackendConstants.BackendStatusConnected => BackendConstants.StatusIndicatorReadyBrush,
         BackendConstants.BackendStatusChecking => BackendConstants.StatusIndicatorCheckingBrush,
+        _ => BackendConstants.StatusIndicatorUnavailableBrush
+    };
+
+    public string HistorySyncStatusIndicatorBrush => HistorySyncStatusText switch
+    {
+        BackendConstants.HistorySyncStatusActive => BackendConstants.StatusIndicatorReadyBrush,
+        BackendConstants.HistorySyncStatusNotStarted => BackendConstants.StatusIndicatorCheckingBrush,
+        BackendConstants.HistorySyncStatusFinished => BackendConstants.StatusIndicatorCheckingBrush,
         _ => BackendConstants.StatusIndicatorUnavailableBrush
     };
 
@@ -4671,11 +4683,13 @@ public partial class LessonChatViewModel : ViewModelBase
         var result = await backendLessonSessionClient.StartAsync(backendBaseUrl, request);
         if (!result.IsSuccess || result.Value is null)
         {
+            HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
             Debug.WriteLine($"Backend lesson session start skipped. Reason={result.ErrorMessage ?? "unknown"}.");
             return;
         }
 
         backendLessonSessionId = result.Value.Id;
+        HistorySyncStatusText = BackendConstants.HistorySyncStatusActive;
         Debug.WriteLine($"Backend lesson session started. SessionId={backendLessonSessionId}; StudyLanguage={request.StudyLanguage}; TopicId={request.TopicId}; SubtopicId={request.SubtopicId}; Level={request.Level}; SelectedContextId={request.SelectedContextId ?? "null"}.");
     }
 
@@ -4683,6 +4697,10 @@ public partial class LessonChatViewModel : ViewModelBase
     {
         if (backendLessonSessionFinished || backendLessonSessionId is null)
         {
+            if (backendLessonSessionFinished)
+            {
+                HistorySyncStatusText = BackendConstants.HistorySyncStatusFinished;
+            }
             return;
         }
 
@@ -4694,11 +4712,13 @@ public partial class LessonChatViewModel : ViewModelBase
         var result = await backendLessonSessionClient.FinishAsync(backendBaseUrl, backendLessonSessionId.Value, request);
         if (!result.IsSuccess)
         {
+            HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
             Debug.WriteLine($"Backend lesson session finish skipped. SessionId={backendLessonSessionId}; Reason={reason}; Error={result.ErrorMessage ?? "unknown"}; ValidTurnCount={request.ValidTurnCount}.");
             return;
         }
 
         backendLessonSessionFinished = true;
+        HistorySyncStatusText = BackendConstants.HistorySyncStatusFinished;
         Debug.WriteLine($"Backend lesson session finished. SessionId={backendLessonSessionId}; Reason={reason}; ValidTurnCount={request.ValidTurnCount}.");
     }
 
