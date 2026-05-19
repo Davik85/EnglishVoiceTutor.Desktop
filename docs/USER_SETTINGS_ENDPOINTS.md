@@ -100,3 +100,24 @@ Example invalid language response:
 - The desktop app is not connected to these endpoints yet.
 - These endpoints do not change Lesson Chat, Conversation Mode, TTS, STT, prompts, or lesson JSON loading behavior.
 - No billing or subscription runtime logic is added here.
+
+
+## Database unavailable behavior (local development)
+
+When PostgreSQL is unavailable (for example, the local container is stopped), both endpoints return `503 Service Unavailable` with a short safe error payload.
+
+- `GET /api/dev/user-settings` returns `503 Service Unavailable`.
+- `PUT /api/dev/user-settings` returns `503 Service Unavailable`.
+- The response does not include secrets, connection strings, hostnames, provider internals, or stack traces.
+- This is expected during local development when database storage is temporarily unavailable.
+- The desktop app keeps local settings fallback behavior and should continue to work without crashing.
+
+Example `503` response:
+
+```json
+{
+  "status": "ServiceUnavailable",
+  "message": "User settings storage is unavailable.",
+  "checkedAtUtc": "2026-05-19T12:00:00Z"
+}
+```
