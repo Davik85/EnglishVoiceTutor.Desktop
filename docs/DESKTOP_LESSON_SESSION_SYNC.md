@@ -35,3 +35,15 @@ At lesson open time, selected context may not yet be finalized.
 ## Auth/user note
 
 Dev lesson session endpoints currently use temporary dev user behavior on backend side until auth is introduced.
+
+## Lesson messages persistence (Normal Lesson Chat)
+
+Desktop normal Lesson Chat now sends lesson messages to backend `lesson_messages` for the active backend lesson session.
+
+- User lesson answers are saved with `role=user`.
+- Assistant bot replies are saved with `role=assistant`.
+- User typed messages are saved with `source=typed`.
+- User voice-transcribed messages are saved with `source=voice_transcript` when the message source is distinguishable in the ViewModel.
+- Assistant replies are saved with `source=bot_reply`.
+- Setup/context selection messages are not saved as valid lesson turns in this task.
+- Feedback, summary, and usage/cost logs are still not saved in this task.

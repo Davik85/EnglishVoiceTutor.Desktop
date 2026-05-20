@@ -16,6 +16,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly BackendDiagnosticsService backendDiagnosticsService = new();
     private readonly BackendUserSettingsClient backendUserSettingsClient = new();
     private readonly BackendLessonSessionClient backendLessonSessionClient = new();
+    private readonly BackendLessonMessageClient backendLessonMessageClient = new();
     private readonly AudioRecordingService audioRecordingService = new();
     private readonly AudioInputDeviceService audioInputDeviceService = new();
     private readonly AudioPlaybackService audioPlaybackService = new();
@@ -192,6 +193,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             LoadLessonScenarioForSubtopic(selectedTopic, selectedSubtopic),
             lessonChatBackendService,
             backendLessonSessionClient,
+            backendLessonMessageClient,
             userSettings.BackendBaseUrl,
             audioRecordingService,
             audioPlaybackService,
