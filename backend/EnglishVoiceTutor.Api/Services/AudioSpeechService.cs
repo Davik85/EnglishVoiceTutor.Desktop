@@ -102,7 +102,7 @@ public sealed class AudioSpeechService
             ResponseFormat = OpenAiConstants.DefaultBotVoiceStreamResponseFormat
         };
 
-        return await StreamAudioSpeechRequestAsync(request, options.ApiKey, outputStream, normalizedPurpose, clientCancellationToken);
+        return await StreamAudioSpeechRequestAsync(request, options.ApiKey, outputStream, normalizedPurpose, null, clientCancellationToken);
     }
 
     private static string NormalizePurpose(string? purpose)
