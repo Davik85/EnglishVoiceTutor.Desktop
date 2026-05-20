@@ -28,6 +28,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly string tutorAvatarId;
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly BackendLessonSessionClient backendLessonSessionClient;
+    private readonly BackendLessonMessageClient backendLessonMessageClient;
     private readonly string backendBaseUrl;
     private readonly AudioRecordingService audioRecordingService;
     private readonly AudioPlaybackService audioPlaybackService;
@@ -598,6 +599,7 @@ public partial class LessonChatViewModel : ViewModelBase
         LessonScenario? lessonScenario,
         LessonChatBackendService lessonChatBackendService,
         BackendLessonSessionClient backendLessonSessionClient,
+        BackendLessonMessageClient backendLessonMessageClient,
         string backendBaseUrl,
         AudioRecordingService audioRecordingService,
         AudioPlaybackService audioPlaybackService,
@@ -621,6 +623,7 @@ public partial class LessonChatViewModel : ViewModelBase
         activeLevelProfile = ResolveActiveLevelProfile(this.lessonScenario, selectedLevel);
         this.lessonChatBackendService = lessonChatBackendService;
         this.backendLessonSessionClient = backendLessonSessionClient;
+        this.backendLessonMessageClient = backendLessonMessageClient;
         this.backendBaseUrl = backendBaseUrl;
         this.audioRecordingService = audioRecordingService;
         this.audioPlaybackService = audioPlaybackService;
@@ -2413,6 +2416,7 @@ public partial class LessonChatViewModel : ViewModelBase
         if (nextLearnerTurnCount >= finalTurn)
         {
             AddLearnerMessage(userMessage, messageSource, nextLearnerTurnCount, feedback: null);
+            _ = TrySaveBackendLessonMessageAsync("user", userMessage, MapBackendLessonMessageSource(messageSource), nextLearnerTurnCount, isValidLessonTurn: true);
             if (IsTtsConversationModeActive)
             {
                 ConversationLatestUserText = userMessage;
@@ -2523,6 +2527,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             var mappedFeedback = MapFeedback(response.Feedback);
             AddLearnerMessage(userMessage, messageSource, nextLearnerTurnCount, mappedFeedback);
+            _ = TrySaveBackendLessonMessageAsync("user", userMessage, MapBackendLessonMessageSource(messageSource), nextLearnerTurnCount, isValidLessonTurn: true);
             if (IsTtsConversationModeActive)
             {
                 ConversationLatestUserText = userMessage;
@@ -2532,6 +2537,7 @@ public partial class LessonChatViewModel : ViewModelBase
             LearnerTurnCount = nextLearnerTurnCount;
             var botReply = response.BotReply;
             var botMessage = AddMessage(TutorAvatarDisplayName, botReply, true);
+            _ = TrySaveBackendLessonMessageAsync("assistant", botReply, "bot_reply", nextLearnerTurnCount, isValidLessonTurn: false);
             lastBotMessage = botReply;
             if (IsTtsConversationModeActive)
             {
@@ -4662,6 +4668,44 @@ public partial class LessonChatViewModel : ViewModelBase
     private static string GetFeedbackSourceMessageKind(ChatMessageViewModel message)
     {
         return message.SourceMessageKind;
+    }
+
+
+    private static string MapBackendLessonMessageSource(string source)
+    {
+        return source switch
+        {
+            ChatMessageSource.Typed => "typed",
+            ChatMessageSource.LessonChatVoice => "voice_transcript",
+            _ => "typed"
+        };
+    }
+
+    private async Task TrySaveBackendLessonMessageAsync(string role, string text, string source, int turnNumber, bool isValidLessonTurn)
+    {
+        if (backendLessonSessionId is null || string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        var request = new CreateBackendLessonMessageRequest
+        {
+            Role = role,
+            Text = text,
+            Source = source,
+            TurnNumber = turnNumber,
+            IsValidLessonTurn = isValidLessonTurn,
+            StudyLanguage = studyLanguage.EnglishName,
+            TranscriptConfidence = null,
+            AudioDurationMs = null
+        };
+
+        var result = await backendLessonMessageClient.CreateAsync(backendBaseUrl, backendLessonSessionId.Value, request);
+        if (!result.Succeeded)
+        {
+            HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
+            Debug.WriteLine($"Backend lesson message save failed. SessionId={backendLessonSessionId}; Role={role}; Source={source}; TurnNumber={turnNumber}; Error={result.SafeErrorMessage ?? "unknown"}.");
+        }
     }
 
     private async Task TryStartBackendLessonSessionAsync()
