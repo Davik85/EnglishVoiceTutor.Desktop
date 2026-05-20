@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
+using EnglishVoiceTutor.Api.Services.Usage;
 
 namespace EnglishVoiceTutor.Api.Services;
 
@@ -29,17 +30,23 @@ public sealed class OpenAiLessonHintService : ILessonHintService
     private readonly MockLessonHintService _mockLessonHintService;
     private readonly LessonPromptBuilder _lessonPromptBuilder;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly DevUserProvider _devUserProvider;
+    private readonly IUsageEventService _usageEventService;
 
     public OpenAiLessonHintService(
         OpenAiOptionsProvider optionsProvider,
         MockLessonHintService mockLessonHintService,
         LessonPromptBuilder lessonPromptBuilder,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        DevUserProvider devUserProvider,
+        IUsageEventService usageEventService)
     {
         _optionsProvider = optionsProvider;
         _mockLessonHintService = mockLessonHintService;
         _lessonPromptBuilder = lessonPromptBuilder;
         _httpClientFactory = httpClientFactory;
+        _devUserProvider = devUserProvider;
+        _usageEventService = usageEventService;
     }
 
     public async Task<LessonHintResponse> CreateHintAsync(LessonChatRequest request, CancellationToken cancellationToken = default)
@@ -84,6 +91,18 @@ public sealed class OpenAiLessonHintService : ILessonHintService
             {
                 return await _mockLessonHintService.CreateHintAsync(request, cancellationToken);
             }
+
+            await _usageEventService.TryRecordAsync(new UsageEventRecord
+            {
+                UserId = _devUserProvider.GetDevUserId(),
+                Operation = UsageConstants.Operations.LessonChatHint,
+                Model = options.Model,
+                StudyLanguage = request.TargetLanguageId,
+                Status = UsageConstants.Statuses.Success,
+                EstimatedCost = 0m,
+                InputTokens = parsedResponse.Usage?.InputTokens,
+                OutputTokens = parsedResponse.Usage?.OutputTokens
+            }, cancellationToken);
 
             var outputText = ExtractOutputText(parsedResponse);
             var hint = JsonSerializer.Deserialize<LessonHintResponse>(outputText, JsonOptions);

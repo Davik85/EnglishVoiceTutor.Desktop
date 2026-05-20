@@ -167,3 +167,9 @@ Backend lesson summary endpoints now exist for `lesson_summaries`, but the deskt
 `lesson_summaries` now persists dedicated semantic fields for long-term learning artifacts: `summary` (required), `strengths`, `improvements`, `vocabulary`, `grammar`, `next_steps` (nullable), plus `created_at` and `updated_at` (required).
 
 This replaces the earlier temporary workaround mapping into unrelated columns.
+
+
+## Usage events implementation note
+- Backend usage event persistence foundation is implemented.
+- Detailed usage events may later be aggregated/retained per retention policy updates.
+- Daily limits are not enforced yet.
