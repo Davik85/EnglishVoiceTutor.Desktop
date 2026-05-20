@@ -87,10 +87,29 @@ public sealed class LessonHistoryService(AppDbContext dbContext, DevUserProvider
             return null;
         }
 
-        var messages = await dbContext.LessonMessages
+        var rawMessages = await dbContext.LessonMessages
             .AsNoTracking()
             .Where(message => message.SessionId == sessionId)
             .OrderBy(message => message.TurnNumber)
+            .ThenBy(message => message.CreatedAt)
+            .Select(message => new
+            {
+                message.Id,
+                message.Role,
+                message.Text,
+                message.Source,
+                message.TurnNumber,
+                message.IsValidLessonTurn,
+                message.StudyLanguage,
+                message.TranscriptConfidence,
+                message.AudioDurationMs,
+                message.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var messages = rawMessages
+            .OrderBy(message => message.TurnNumber)
+            .ThenBy(message => GetMessageRoleDisplayOrder(message.Role))
             .ThenBy(message => message.CreatedAt)
             .Select(message => new LessonHistoryMessageResponse(
                 message.Id,
@@ -103,7 +122,7 @@ public sealed class LessonHistoryService(AppDbContext dbContext, DevUserProvider
                 message.TranscriptConfidence,
                 message.AudioDurationMs,
                 message.CreatedAt))
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return new LessonHistoryDetailResponse(
             session.Id,
@@ -127,6 +146,26 @@ public sealed class LessonHistoryService(AppDbContext dbContext, DevUserProvider
             session.UpdatedAt,
             session.Summary,
             messages);
+    }
+
+    private static int GetMessageRoleDisplayOrder(string role)
+    {
+        if (string.Equals(role, LessonMessageConstants.User, StringComparison.OrdinalIgnoreCase))
+        {
+            return LessonHistoryConstants.UserMessageDisplayOrder;
+        }
+
+        if (string.Equals(role, LessonMessageConstants.Assistant, StringComparison.OrdinalIgnoreCase))
+        {
+            return LessonHistoryConstants.AssistantMessageDisplayOrder;
+        }
+
+        if (string.Equals(role, LessonMessageConstants.System, StringComparison.OrdinalIgnoreCase))
+        {
+            return LessonHistoryConstants.SystemMessageDisplayOrder;
+        }
+
+        return LessonHistoryConstants.UnknownMessageDisplayOrder;
     }
 
     private static string? BuildSummaryPreview(string? summary)
