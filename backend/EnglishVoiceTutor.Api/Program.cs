@@ -4,6 +4,7 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Common;
 using EnglishVoiceTutor.Api.Contracts.LessonMessages;
 using EnglishVoiceTutor.Api.Contracts.LessonSessions;
+using EnglishVoiceTutor.Api.Contracts.LessonSummaries;
 using EnglishVoiceTutor.Api.Contracts.UserSettings;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Models;
@@ -46,6 +47,7 @@ builder.Services.AddScoped<DevUserProvider>();
 builder.Services.AddScoped<IUserSettingsService, UserSettingsService>();
 builder.Services.AddScoped<ILessonSessionService, LessonSessionService>();
 builder.Services.AddScoped<ILessonMessageService, LessonMessageService>();
+builder.Services.AddScoped<ILessonSummaryService, LessonSummaryService>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 
 var app = builder.Build();
@@ -87,6 +89,9 @@ app.MapGet(ApiConstants.DevLessonSessionsRoute, HandleGetDevLessonSessionsAsync)
 app.MapGet(ApiConstants.DevLessonSessionByIdRoute, HandleGetDevLessonSessionByIdAsync);
 app.MapPost(ApiConstants.DevLessonSessionMessagesRoute, HandleCreateDevLessonMessageAsync);
 app.MapGet(ApiConstants.DevLessonSessionMessagesRoute, HandleGetDevLessonMessagesAsync);
+app.MapPut(ApiConstants.DevLessonSessionSummaryRoute, HandleUpsertDevLessonSummaryAsync);
+app.MapGet(ApiConstants.DevLessonSessionSummaryRoute, HandleGetDevLessonSummaryAsync);
+app.MapGet(ApiConstants.DevLessonSummariesRoute, HandleGetDevLessonSummariesAsync);
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
@@ -231,6 +236,78 @@ static async Task<IResult> HandleGetDevLessonSessionByIdAsync(
 }
 
 
+
+static async Task<IResult> HandleUpsertDevLessonSummaryAsync(
+    Guid sessionId,
+    UpsertLessonSummaryRequest request,
+    ILessonSummaryService lessonSummaryService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevLessonSummariesEndpoint");
+
+    try
+    {
+        var summary = await lessonSummaryService.UpsertDevLessonSummaryAsync(sessionId, request, cancellationToken);
+        return Results.Ok(summary);
+    }
+    catch (LessonSummaryValidationException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (KeyNotFoundException)
+    {
+        return Results.NotFound(new { error = "Lesson session was not found." });
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev lesson summary PUT failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleGetDevLessonSummaryAsync(
+    Guid sessionId,
+    ILessonSummaryService lessonSummaryService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevLessonSummariesEndpoint");
+
+    try
+    {
+        var summary = await lessonSummaryService.GetDevLessonSummaryAsync(sessionId, cancellationToken);
+        return Results.Ok(summary);
+    }
+    catch (KeyNotFoundException)
+    {
+        return Results.NotFound(new { error = "Lesson session summary was not found." });
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev lesson summary GET failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleGetDevLessonSummariesAsync(
+    ILessonSummaryService lessonSummaryService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevLessonSummariesEndpoint");
+
+    try
+    {
+        var summaries = await lessonSummaryService.GetRecentDevLessonSummariesAsync(cancellationToken);
+        return Results.Ok(summaries);
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev lesson summaries GET failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
 static async Task<IResult> HandleCreateDevLessonMessageAsync(
     Guid sessionId,
     CreateLessonMessageRequest request,
