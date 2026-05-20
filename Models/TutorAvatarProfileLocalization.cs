@@ -67,9 +67,9 @@ public static class TutorAvatarProfileLocalization
             [TutorAvatarOptions.NelliAvatarId] = new Dictionary<string, TutorAvatarLocalizedProfileText>(StringComparer.OrdinalIgnoreCase)
             {
                 [InterfaceLanguageOptions.EnglishId] = new(
-                    ShortDescription: "18, future graphic design student; likes drawing and computer games.",
+                    ShortDescription: "18, Milan, future graphic design student; likes drawing and computer games.",
                     AgeText: "18",
-                    Location: "—",
+                    Location: "Milan",
                     Role: "Future graphic design student",
                     InterestsText: "Drawing, computer games",
                     PersonalityText: "Kind, cheerful, likes jokes",
