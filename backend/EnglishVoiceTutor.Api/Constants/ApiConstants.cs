@@ -49,4 +49,6 @@ public static class ApiConstants
     public const string DevLessonSessionMessagesRoute = "/api/dev/lesson-sessions/{sessionId:guid}/messages";
     public const string DevLessonSessionSummaryRoute = "/api/dev/lesson-sessions/{sessionId:guid}/summary";
     public const string DevLessonSummariesRoute = "/api/dev/lesson-summaries";
+    public const string DevLessonHistoryRoute = "/api/dev/lesson-history";
+    public const string DevLessonHistoryBySessionIdRoute = "/api/dev/lesson-history/{sessionId:guid}";
 }
