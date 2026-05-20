@@ -268,7 +268,7 @@ public sealed class AudioSpeechService
             _logger.LogInformation("Developer usage summary: Operation=tts; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; InputCharacters={InputCharacters}; OutputBytes={OutputBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", request.Model, request.Voice, request.ResponseFormat, purpose, request.Input.Length, audioBytes.Length, EstimateWavDurationSeconds(audioBytes.LongLength), PricingConstants.OpenAi.Tts1PerMillionCharactersUsd == 0m ? "tts_pricing" : string.Empty);
             await _usageEventService.TryRecordAsync(new UsageEventRecord
             {
-                UserId = _devUserProvider.GetUserId(),
+                UserId = _devUserProvider.GetDevUserId(),
                 Operation = UsageConstants.Operations.Tts,
                 Model = request.Model,
                 Status = UsageConstants.Statuses.Success,

@@ -94,7 +94,7 @@ public sealed class OpenAiLessonHintService : ILessonHintService
 
             await _usageEventService.TryRecordAsync(new UsageEventRecord
             {
-                UserId = _devUserProvider.GetUserId(),
+                UserId = _devUserProvider.GetDevUserId(),
                 Operation = UsageConstants.Operations.LessonChatHint,
                 Model = options.Model,
                 StudyLanguage = request.TargetLanguageId,

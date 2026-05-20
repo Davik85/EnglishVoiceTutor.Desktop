@@ -54,7 +54,7 @@ public sealed class AudioTranscriptionService
         var durationSeconds = EstimatePcmWavDurationSeconds(audioFile.Length);
         await _usageEventService.TryRecordAsync(new UsageEventRecord
         {
-            UserId = _devUserProvider.GetUserId(),
+            UserId = _devUserProvider.GetDevUserId(),
             Operation = UsageConstants.Operations.AudioTranscription,
             Model = OpenAiConstants.DefaultTranscriptionModel,
             StudyLanguage = resolvedTargetLanguage.Id,

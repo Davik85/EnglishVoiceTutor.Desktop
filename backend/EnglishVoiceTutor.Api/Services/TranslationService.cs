@@ -62,7 +62,7 @@ public sealed class TranslationService
             var openAiResponse = await SendResponsesApiRequestAsync(trimmedText, sourceLanguage, targetLanguage, options, cancellationToken);
             await _usageEventService.TryRecordAsync(new UsageEventRecord
             {
-                UserId = _devUserProvider.GetUserId(),
+                UserId = _devUserProvider.GetDevUserId(),
                 Operation = UsageConstants.Operations.Translation,
                 Model = options.Model,
                 StudyLanguage = request.TargetLanguage,

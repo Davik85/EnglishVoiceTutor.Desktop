@@ -243,7 +243,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
     {
         await _usageEventService.TryRecordAsync(new UsageEventRecord
         {
-            UserId = _devUserProvider.GetUserId(),
+            UserId = _devUserProvider.GetDevUserId(),
             SessionId = null,
             Operation = operation,
             Model = model,

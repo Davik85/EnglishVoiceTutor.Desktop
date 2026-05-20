@@ -423,7 +423,7 @@ static async Task<IResult> HandleGetDevUsageEventsAsync(
 
     try
     {
-        var userId = devUserProvider.GetUserId();
+        var userId = devUserProvider.GetDevUserId();
         var events = await dbContext.UsageEvents
             .AsNoTracking()
             .Where(item => item.UserId == userId)
