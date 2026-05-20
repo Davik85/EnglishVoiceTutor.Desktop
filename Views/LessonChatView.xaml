@@ -107,7 +107,7 @@
                             <Border.Style>
                                 <Style TargetType="Border">
                                     <Setter Property="Grid.ColumnSpan" Value="1" />
-                                    <Setter Property="HorizontalAlignment" Value="Center" />
+                                    <Setter Property="HorizontalAlignment" Value="Stretch" />
                                     <Setter Property="MaxWidth" Value="360" />
                                     <Setter Property="MinHeight" Value="500" />
                                     <Style.Triggers>
@@ -115,27 +115,19 @@
                                             <Setter Property="Grid.ColumnSpan" Value="3" />
                                             <Setter Property="MaxWidth" Value="760" />
                                             <Setter Property="MinHeight" Value="660" />
+                                            <Setter Property="Height" Value="660" />
+                                            <Setter Property="MaxHeight" Value="660" />
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
                             <Grid>
-                                <Image HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
+                                <Image HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Stretch"
                                        Stretch="UniformToFill"
-                                       RenderTransformOrigin="0.5,0.5"
                                        RenderOptions.BitmapScalingMode="HighQuality"
-                                       gif:AnimationBehavior.SourceUri="{Binding AvatarAnimationAssetUri, Converter={StaticResource AvatarAnimationUriConverter}}">
-                                    <Image.RenderTransform>
-                                        <TransformGroup>
-                                            <ScaleTransform ScaleX="{Binding AvatarImageScale}"
-                                                            ScaleY="{Binding AvatarImageScale}" />
-                                            <TranslateTransform X="{Binding AvatarImageOffsetX}"
-                                                                Y="{Binding AvatarImageOffsetY}" />
-                                        </TransformGroup>
-                                    </Image.RenderTransform>
-                                </Image>
+                                       gif:AnimationBehavior.SourceUri="{Binding AvatarAnimationAssetUri, Converter={StaticResource AvatarAnimationUriConverter}}" />
 
                                 <Border IsHitTestVisible="False">
                                     <Border.Background>

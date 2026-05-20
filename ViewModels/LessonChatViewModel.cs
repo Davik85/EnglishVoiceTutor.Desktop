@@ -268,10 +268,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ConversationModeButtonText))]
-    [NotifyPropertyChangedFor(nameof(AvatarImageScale))]
-    [NotifyPropertyChangedFor(nameof(AvatarImageOffsetX))]
-    [NotifyPropertyChangedFor(nameof(AvatarImageOffsetY))]
-    [NotifyPropertyChangedFor(nameof(IsLessonInputEnabled))]
+        [NotifyPropertyChangedFor(nameof(IsLessonInputEnabled))]
     [NotifyPropertyChangedFor(nameof(CanTypeText))]
     [NotifyCanExecuteChangedFor(nameof(ToggleConversationModeCommand))]
     [NotifyCanExecuteChangedFor(nameof(ConversationHintCommand))]
@@ -387,18 +384,6 @@ public partial class LessonChatViewModel : ViewModelBase
     public string AvatarAnimationAssetPath => AvatarConstants.GetAnimationPath(CurrentAvatarState, tutorAvatarId);
 
     public Uri AvatarAnimationAssetUri => AvatarConstants.ToPackUri(AvatarAnimationAssetPath);
-
-    public double AvatarImageScale => IsConversationModeEnabled
-        ? tutorAvatar.ConversationImageScale
-        : tutorAvatar.ChatImageScale;
-
-    public double AvatarImageOffsetX => IsConversationModeEnabled
-        ? tutorAvatar.ConversationOffsetX
-        : tutorAvatar.ChatOffsetX;
-
-    public double AvatarImageOffsetY => IsConversationModeEnabled
-        ? tutorAvatar.ConversationOffsetY
-        : tutorAvatar.ChatOffsetY;
 
 
     public string SendButtonText => localizedText.SendButtonText;
