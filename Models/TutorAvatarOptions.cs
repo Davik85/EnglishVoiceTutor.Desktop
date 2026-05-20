@@ -11,7 +11,9 @@ public static class TutorAvatarOptions
 
     public static readonly TutorAvatarOption Nelli = new(
         Id: NelliAvatarId,
-        DisplayName: "Nelli");
+        DisplayName: "Nelli",
+        ConversationImageScale: 0.94,
+        ConversationOffsetY: 22.0);
 
     public static readonly IReadOnlyList<TutorAvatarOption> All =
     [
