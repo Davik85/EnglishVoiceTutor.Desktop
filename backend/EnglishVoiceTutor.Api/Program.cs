@@ -100,6 +100,7 @@ app.MapGet(ApiConstants.DevLessonSummariesRoute, HandleGetDevLessonSummariesAsyn
 app.MapGet(ApiConstants.DevLessonHistoryRoute, HandleGetDevLessonHistoryAsync);
 app.MapGet(ApiConstants.DevLessonHistoryBySessionIdRoute, HandleGetDevLessonHistoryDetailAsync);
 app.MapGet(ApiConstants.DevUsageEventsRoute, HandleGetDevUsageEventsAsync);
+app.MapGet(ApiConstants.DevDailyUsageCountersRoute, HandleGetDevDailyUsageCountersAsync);
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
@@ -463,6 +464,56 @@ static async Task<IResult> HandleGetDevUsageEventsAsync(
         }, statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }
+
+static async Task<IResult> HandleGetDevDailyUsageCountersAsync(
+    AppDbContext dbContext,
+    DevUserProvider devUserProvider,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevDailyUsageCountersEndpoint");
+
+    try
+    {
+        var userId = devUserProvider.GetDevUserId();
+        var counters = await dbContext.DailyUsageCounters
+            .AsNoTracking()
+            .Where(item => item.UserId == userId)
+            .OrderByDescending(item => item.UsageDate)
+            .ThenByDescending(item => item.UpdatedAt)
+            .Take(50)
+            .Select(item => new DailyUsageCounterResponse
+            {
+                Id = item.Id,
+                UserId = item.UserId,
+                UsageDate = item.UsageDate,
+                StudyLanguage = item.StudyLanguage,
+                LessonsStarted = item.LessonsStarted,
+                LessonsCompleted = item.LessonsCompleted,
+                HintsUsed = item.HintsUsed,
+                FeedbackRequests = item.FeedbackRequests,
+                TranscriptionSeconds = item.TranscriptionSeconds,
+                TtsSeconds = item.TtsSeconds,
+                EstimatedCost = item.EstimatedCost,
+                CreatedAt = item.CreatedAt,
+                UpdatedAt = item.UpdatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        return Results.Ok(new DailyUsageCounterListResponse { Items = counters });
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev daily usage counters GET failed because storage is unavailable.");
+        return Results.Json(new ErrorResponse
+        {
+            Status = ApiConstants.UnhealthyStatus,
+            Message = "Daily usage counters are unavailable because storage is not reachable.",
+            CheckedAtUtc = DateTimeOffset.UtcNow
+        }, statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
 static bool IsLessonSessionStorageUnavailable(Exception exception)
 {
     return exception is DbException
