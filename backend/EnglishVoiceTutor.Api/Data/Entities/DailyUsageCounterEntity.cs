@@ -8,6 +8,7 @@ public sealed class DailyUsageCounterEntity
     public string StudyLanguage { get; set; } = string.Empty;
     public int LessonsStarted { get; set; }
     public int LessonsCompleted { get; set; }
+    public int ChatReplyCount { get; set; }
     public int HintsUsed { get; set; }
     public int FeedbackRequests { get; set; }
     public int TranscriptionSeconds { get; set; }

@@ -88,7 +88,7 @@ For MVP, keep policy practical and simple:
 
 - Store **lesson_sessions**.
 - Store **lesson_messages** for now to validate lesson history behavior, feedback quality, and future summary quality.
-- Store **lesson_summaries** once summary persistence is implemented.
+- Store **lesson_summaries** (persistence is implemented).
 - Do **not** store raw audio.
 - Do **not** store unnecessary provider secrets.
 - Keep architecture simple until auth/subscriptions runtime logic is implemented.
@@ -135,10 +135,7 @@ As product maturity grows:
 
 ### Not implemented yet
 
-- lesson_summaries persistence
 - feedback_results persistence
-- usage_events persistence
-- daily_usage_counters runtime aggregation
 - auth/JWT
 - payment/subscription runtime logic
 - mobile sync
@@ -160,7 +157,7 @@ This document is intentionally a product/technical policy draft to guide impleme
 
 ## Implementation status note
 
-Backend lesson summary endpoints now exist for `lesson_summaries`, but the desktop summary flow is not connected yet.
+Backend lesson summary endpoints now exist for `lesson_summaries`, and summary persistence is implemented.
 
 ## Lesson summary schema note
 
@@ -178,3 +175,7 @@ This replaces the earlier temporary workaround mapping into unrelated columns.
 ## Daily usage counters implementation note
 - `daily_usage_counters` runtime aggregation is implemented.
 - Detailed `usage_events` may later be aggregated/retained via explicit retention policy updates.
+
+
+## Desktop sync implementation note
+- Desktop lesson history backend sync is implemented (see `docs/DESKTOP_LESSON_HISTORY_BACKEND_SYNC.md`).

@@ -490,6 +490,7 @@ static async Task<IResult> HandleGetDevDailyUsageCountersAsync(
                 StudyLanguage = item.StudyLanguage,
                 LessonsStarted = item.LessonsStarted,
                 LessonsCompleted = item.LessonsCompleted,
+                ChatReplyCount = item.ChatReplyCount,
                 HintsUsed = item.HintsUsed,
                 FeedbackRequests = item.FeedbackRequests,
                 TranscriptionSeconds = item.TranscriptionSeconds,

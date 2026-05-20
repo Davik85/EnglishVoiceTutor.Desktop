@@ -13,10 +13,19 @@
 ## Behavior
 - Logging is **best effort**.
 - Backend requests are **not blocked** if usage persistence fails.
-- Successful usage events now update `daily_usage_counters` as a best-effort runtime aggregation keyed by user/date/study language.
+- Successful usage events update `daily_usage_counters` via best-effort runtime aggregation keyed by user/date/study language.
 - Daily limits are **not enforced** yet.
 - `status` is stored as one of: `success`, `failed`, or `skipped`.
 - `studyLanguage` is stored when a safe request/session language value is available.
+
+## Aggregation mapping to daily counters
+- `lesson_chat_reply` -> `chatReplyCount`
+- `lesson_chat_hint` -> `hintsUsed`
+- `lesson_chat_feedback` -> `feedbackRequests`
+- `audio_transcription` -> `transcriptionSeconds`
+- `tts` -> `ttsSeconds`
+
+`lessonsStarted` and `lessonsCompleted` are reserved for session lifecycle counters and are not incremented from chat reply usage events.
 
 ## Data safety
 Usage events do not store:
@@ -37,5 +46,3 @@ Usage events do not store:
 - Limit enforcement remains deferred.
 - CMS/admin panel
 - subscription/billing enforcement
-- daily limit enforcement
-- `daily_usage_counters` runtime connection
