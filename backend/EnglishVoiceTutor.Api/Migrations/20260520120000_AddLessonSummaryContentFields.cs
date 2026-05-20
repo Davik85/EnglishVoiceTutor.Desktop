@@ -26,13 +26,6 @@ public partial class AddLessonSummaryContentFields : Migration
             nullable: true);
 
         migrationBuilder.AddColumn<string>(
-            name: "NextSteps",
-            table: "lesson_summaries",
-            type: "character varying(4096)",
-            maxLength: 4096,
-            nullable: true);
-
-        migrationBuilder.AddColumn<string>(
             name: "Strengths",
             table: "lesson_summaries",
             type: "character varying(4096)",
@@ -63,10 +56,10 @@ public partial class AddLessonSummaryContentFields : Migration
 
         migrationBuilder.Sql("""
             UPDATE lesson_summaries
-            SET \"Summary\" = COALESCE(\"WhatWentWell\", ''),
-                \"Strengths\" = \"MistakesToReview\",
-                \"Improvements\" = \"WhatToImprove\",
-                \"UpdatedAt\" = \"CreatedAt\"
+            SET "Summary" = COALESCE("WhatWentWell", ''),
+                "Strengths" = "MistakesToReview",
+                "Improvements" = "WhatToImprove",
+                "UpdatedAt" = "CreatedAt"
             """);
     }
 
@@ -75,7 +68,6 @@ public partial class AddLessonSummaryContentFields : Migration
     {
         migrationBuilder.DropColumn(name: "Grammar", table: "lesson_summaries");
         migrationBuilder.DropColumn(name: "Improvements", table: "lesson_summaries");
-        migrationBuilder.DropColumn(name: "NextSteps", table: "lesson_summaries");
         migrationBuilder.DropColumn(name: "Strengths", table: "lesson_summaries");
         migrationBuilder.DropColumn(name: "Summary", table: "lesson_summaries");
         migrationBuilder.DropColumn(name: "UpdatedAt", table: "lesson_summaries");
