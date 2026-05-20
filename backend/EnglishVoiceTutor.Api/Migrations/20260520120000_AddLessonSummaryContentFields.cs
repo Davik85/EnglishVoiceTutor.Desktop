@@ -56,10 +56,10 @@ public partial class AddLessonSummaryContentFields : Migration
 
         migrationBuilder.Sql("""
             UPDATE lesson_summaries
-            SET \"Summary\" = COALESCE(\"WhatWentWell\", ''),
-                \"Strengths\" = \"MistakesToReview\",
-                \"Improvements\" = \"WhatToImprove\",
-                \"UpdatedAt\" = \"CreatedAt\"
+            SET "Summary" = COALESCE("WhatWentWell", ''),
+                "Strengths" = "MistakesToReview",
+                "Improvements" = "WhatToImprove",
+                "UpdatedAt" = "CreatedAt"
             """);
     }
 
