@@ -138,7 +138,7 @@ As product maturity grows:
 - lesson_summaries persistence
 - feedback_results persistence
 - usage_events persistence
-- daily_usage_counters runtime logic
+- daily_usage_counters runtime aggregation
 - auth/JWT
 - payment/subscription runtime logic
 - mobile sync
@@ -173,3 +173,8 @@ This replaces the earlier temporary workaround mapping into unrelated columns.
 - Backend usage event persistence foundation is implemented.
 - Detailed usage events may later be aggregated/retained per retention policy updates.
 - Daily limits are not enforced yet.
+
+
+## Daily usage counters implementation note
+- `daily_usage_counters` runtime aggregation is implemented.
+- Detailed `usage_events` may later be aggregated/retained via explicit retention policy updates.

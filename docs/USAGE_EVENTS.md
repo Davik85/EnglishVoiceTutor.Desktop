@@ -13,7 +13,7 @@
 ## Behavior
 - Logging is **best effort**.
 - Backend requests are **not blocked** if usage persistence fails.
-- Current implementation persists `usage_events` only; daily counter runtime updates are deferred.
+- Successful usage events now update `daily_usage_counters` as a best-effort runtime aggregation keyed by user/date/study language.
 - Daily limits are **not enforced** yet.
 - `status` is stored as one of: `success`, `failed`, or `skipped`.
 - `studyLanguage` is stored when a safe request/session language value is available.
@@ -34,6 +34,7 @@ Usage events do not store:
 - intended for local development verification only.
 
 ## Out of scope (current)
+- Limit enforcement remains deferred.
 - CMS/admin panel
 - subscription/billing enforcement
 - daily limit enforcement
