@@ -87,9 +87,28 @@ public sealed class LessonHistoryService(AppDbContext dbContext, DevUserProvider
             return null;
         }
 
-        var messages = await dbContext.LessonMessages
+        var rawMessages = await dbContext.LessonMessages
             .AsNoTracking()
             .Where(message => message.SessionId == sessionId)
+            .OrderBy(message => message.TurnNumber)
+            .ThenBy(message => GetMessageRoleDisplayOrder(message.Role))
+            .ThenBy(message => message.CreatedAt)
+            .Select(message => new
+            {
+                message.Id,
+                message.Role,
+                message.Text,
+                message.Source,
+                message.TurnNumber,
+                message.IsValidLessonTurn,
+                message.StudyLanguage,
+                message.TranscriptConfidence,
+                message.AudioDurationMs,
+                message.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var messages = rawMessages
             .OrderBy(message => message.TurnNumber)
             .ThenBy(message => GetMessageRoleDisplayOrder(message.Role))
             .ThenBy(message => message.CreatedAt)
@@ -104,7 +123,7 @@ public sealed class LessonHistoryService(AppDbContext dbContext, DevUserProvider
                 message.TranscriptConfidence,
                 message.AudioDurationMs,
                 message.CreatedAt))
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return new LessonHistoryDetailResponse(
             session.Id,
