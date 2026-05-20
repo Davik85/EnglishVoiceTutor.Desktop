@@ -247,7 +247,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             SessionId = null,
             Operation = operation,
             Model = model,
-            StudyLanguage = request.TargetLanguageId,
+            StudyLanguage = ResolveStudyLanguage(request.TargetLanguageName, request.TargetLanguageId),
             Status = UsageConstants.Statuses.Success,
             EstimatedCost = 0m,
             InputTokens = response.Usage?.InputTokens,
@@ -265,6 +265,21 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         }
 
         return UsageConstants.Operations.LessonChatReply;
+    }
+
+    private static string? ResolveStudyLanguage(string? targetLanguageName, string? targetLanguageId)
+    {
+        if (!string.IsNullOrWhiteSpace(targetLanguageName))
+        {
+            return targetLanguageName.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(targetLanguageId))
+        {
+            return targetLanguageId.Trim();
+        }
+
+        return null;
     }
 
     private static string ExtractOutputText(OpenAiResponsesResponse response)

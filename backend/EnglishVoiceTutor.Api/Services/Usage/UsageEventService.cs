@@ -1,5 +1,6 @@
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
+using EnglishVoiceTutor.Api.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services.Usage;
@@ -23,6 +24,8 @@ public sealed class UsageEventService(AppDbContext dbContext, ILogger<UsageEvent
                 SessionId = record.SessionId,
                 Operation = record.Operation,
                 Model = record.Model,
+                StudyLanguage = NormalizeOptional(record.StudyLanguage),
+                Status = NormalizeStatus(record.Status),
                 InputTokens = record.InputTokens,
                 OutputTokens = record.OutputTokens,
                 AudioInputTokens = record.AudioInputTokens,
@@ -40,5 +43,30 @@ public sealed class UsageEventService(AppDbContext dbContext, ILogger<UsageEvent
         {
             logger.LogWarning("Failed to persist usage event. Operation={Operation}; Status={Status}; UserId={UserId}; SessionId={SessionId}; Error={ErrorType}.", record.Operation, record.Status, record.UserId, record.SessionId, exception.GetType().Name);
         }
+    }
+
+    private static string NormalizeStatus(string status)
+    {
+        if (string.Equals(status, UsageConstants.Statuses.Success, StringComparison.OrdinalIgnoreCase))
+        {
+            return UsageConstants.Statuses.Success;
+        }
+
+        if (string.Equals(status, UsageConstants.Statuses.Failed, StringComparison.OrdinalIgnoreCase))
+        {
+            return UsageConstants.Statuses.Failed;
+        }
+
+        if (string.Equals(status, UsageConstants.Statuses.Skipped, StringComparison.OrdinalIgnoreCase))
+        {
+            return UsageConstants.Statuses.Skipped;
+        }
+
+        return UsageConstants.Statuses.Skipped;
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

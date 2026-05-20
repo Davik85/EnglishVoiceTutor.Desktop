@@ -65,7 +65,7 @@ public sealed class TranslationService
                 UserId = _devUserProvider.GetDevUserId(),
                 Operation = UsageConstants.Operations.Translation,
                 Model = options.Model,
-                StudyLanguage = request.TargetLanguage,
+                StudyLanguage = ResolveStudyLanguage(request.TargetLanguage),
                 Status = UsageConstants.Statuses.Success,
                 EstimatedCost = 0m,
                 InputTokens = openAiResponse.Usage?.InputTokens,
@@ -90,6 +90,11 @@ public sealed class TranslationService
         {
             return CreateFallbackResponse(trimmedText);
         }
+    }
+
+    private static string? ResolveStudyLanguage(string? targetLanguage)
+    {
+        return string.IsNullOrWhiteSpace(targetLanguage) ? null : targetLanguage.Trim();
     }
 
     private async Task<OpenAiResponsesResponse> SendResponsesApiRequestAsync(

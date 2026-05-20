@@ -450,7 +450,7 @@ static async Task<IResult> HandleGetDevUsageEventsAsync(
             })
             .ToListAsync(cancellationToken);
 
-        return Results.Ok(new UsageEventListResponse { Events = events });
+        return Results.Ok(new UsageEventListResponse { Items = events });
     }
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
@@ -949,7 +949,7 @@ static async Task<IResult> HandleAudioSpeechAsync(
             string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
             string.IsNullOrWhiteSpace(request.TargetLanguageCode) ? StudyLanguageCatalog.English.Bcp47Code : request.TargetLanguageCode);
 
-        var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, request.Purpose, request.SpeechSpeed, request.Model, request.Instructions, cancellationToken);
+        var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, request.Purpose, request.SpeechSpeed, request.Model, request.Instructions, request.TargetLanguageName, request.TargetLanguageId, cancellationToken);
 
         return Results.File(audioBytes, OpenAiConstants.SpeechResponseContentType);
     }

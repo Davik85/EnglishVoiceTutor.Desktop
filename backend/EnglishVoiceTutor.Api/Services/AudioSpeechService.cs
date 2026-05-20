@@ -40,7 +40,7 @@ public sealed class AudioSpeechService
         _logger = logger;
     }
 
-    public async Task<byte[]> CreateSpeechAsync(string text, string? purpose = null, double? speechSpeed = null, string? model = null, string? instructions = null, CancellationToken clientCancellationToken = default)
+    public async Task<byte[]> CreateSpeechAsync(string text, string? purpose = null, double? speechSpeed = null, string? model = null, string? instructions = null, string? targetLanguageName = null, string? targetLanguageId = null, CancellationToken clientCancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -69,7 +69,7 @@ public sealed class AudioSpeechService
             ResponseFormat = OpenAiConstants.DefaultSpeechResponseFormat
         };
 
-        return await SendAudioSpeechRequestAsync(request, options.ApiKey, normalizedPurpose, clientCancellationToken);
+        return await SendAudioSpeechRequestAsync(request, options.ApiKey, normalizedPurpose, ResolveStudyLanguage(targetLanguageName, targetLanguageId), clientCancellationToken);
     }
 
 
@@ -159,10 +159,26 @@ public sealed class AudioSpeechService
         return string.Equals(model, OpenAiConstants.ConversationModeTtsModel, StringComparison.Ordinal);
     }
 
+    private static string? ResolveStudyLanguage(string? targetLanguageName, string? targetLanguageId)
+    {
+        if (!string.IsNullOrWhiteSpace(targetLanguageName))
+        {
+            return targetLanguageName.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(targetLanguageId))
+        {
+            return targetLanguageId.Trim();
+        }
+
+        return null;
+    }
+
     private async Task<byte[]> SendAudioSpeechRequestAsync(
         OpenAiAudioSpeechRequest request,
         string apiKey,
         string purpose,
+        string? studyLanguage,
         CancellationToken clientCancellationToken)
     {
         var timeout = TimeSpan.FromSeconds(OpenAiConstants.OpenAiSpeechTimeoutSeconds);
@@ -271,6 +287,7 @@ public sealed class AudioSpeechService
                 UserId = _devUserProvider.GetDevUserId(),
                 Operation = UsageConstants.Operations.Tts,
                 Model = request.Model,
+                StudyLanguage = studyLanguage,
                 Status = UsageConstants.Statuses.Success,
                 EstimatedCost = 0m,
                 InputCharacters = request.Input.Length,
@@ -354,6 +371,7 @@ public sealed class AudioSpeechService
         string apiKey,
         Stream outputStream,
         string purpose,
+        string? studyLanguage,
         CancellationToken clientCancellationToken)
     {
         using var overallCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(OpenAiConstants.BotVoiceStreamOverallTimeoutSeconds));
