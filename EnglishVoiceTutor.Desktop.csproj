@@ -15,8 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Assets/Avatars/*.gif" />
-    <Resource Include="Assets/Avatars/*.gif" />
+    <None Remove="Assets/Avatars/**/*.gif" />
+    <Resource Include="Assets/Avatars/**/*.gif" />
   </ItemGroup>
 
   <ItemGroup>

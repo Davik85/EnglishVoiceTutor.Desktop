@@ -380,7 +380,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
     public string AvatarStateDisplayText => AvatarConstants.GetDisplayText(CurrentAvatarState);
 
-    public string AvatarAnimationAssetPath => AvatarConstants.GetAnimationPath(CurrentAvatarState);
+    public string AvatarAnimationAssetPath => AvatarConstants.GetAnimationPath(CurrentAvatarState, tutorAvatarId);
 
     public Uri AvatarAnimationAssetUri => AvatarConstants.ToPackUri(AvatarAnimationAssetPath);
 
