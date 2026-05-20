@@ -23,7 +23,7 @@ Returns one lesson session detail for the temporary dev user.
 
 Response shape (`LessonHistoryDetailResponse`):
 - full session metadata.
-- `messages`: full session messages ordered by `turnNumber`, then `createdAt`.
+- `messages`: full session messages in conversation display order: `turnNumber` ascending, then role order (`user`, `assistant`, `system`, unknown), then `createdAt` ascending.
 - `summary`: optional summary block when one exists.
 
 Possible responses:
