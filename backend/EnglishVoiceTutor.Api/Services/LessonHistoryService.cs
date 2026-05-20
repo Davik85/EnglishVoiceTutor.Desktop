@@ -91,7 +91,6 @@ public sealed class LessonHistoryService(AppDbContext dbContext, DevUserProvider
             .AsNoTracking()
             .Where(message => message.SessionId == sessionId)
             .OrderBy(message => message.TurnNumber)
-            .ThenBy(message => GetMessageRoleDisplayOrder(message.Role))
             .ThenBy(message => message.CreatedAt)
             .Select(message => new
             {
