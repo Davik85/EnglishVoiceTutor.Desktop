@@ -16,6 +16,7 @@ Daily limits are **not enforced yet**.
 
 ## Runtime behavior
 
+- `chatReplyCount` requires EF migration `AddDailyUsageChatReplyCount` (`20260520150000_AddDailyUsageChatReplyCount`) to be applied in the database.
 - Usage event logging is **implemented** and remains best-effort.
 - Daily counter aggregation is **implemented** and remains best-effort.
 - If daily counter update fails, the main user request still succeeds.

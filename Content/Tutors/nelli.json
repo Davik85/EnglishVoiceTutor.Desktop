@@ -2,8 +2,8 @@
   "id": "nelli",
   "displayName": "Nelli",
   "age": 18,
-  "homeCity": "",
-  "countryOrRegion": "",
+  "homeCity": "Milan",
+  "countryOrRegion": "Italy",
   "studies": "future graphic design student",
   "hobbies": [
     "drawing",

@@ -46,9 +46,9 @@ public sealed class UsageEventService(AppDbContext dbContext, ILogger<UsageEvent
 
             await TryUpdateDailyCounterAsync(usageEvent, cancellationToken);
         }
-        catch (Exception exception) when (exception is DbUpdateException or DbUpdateConcurrencyException or InvalidOperationException)
+        catch (Exception exception)
         {
-            logger.LogWarning("Failed to persist usage event. Operation={Operation}; Status={Status}; UserId={UserId}; SessionId={SessionId}; Error={ErrorType}.", record.Operation, record.Status, record.UserId, record.SessionId, exception.GetType().Name);
+            logger.LogWarning("Usage event persistence failed; continuing without blocking the user request. Operation={Operation}; Status={Status}; UserId={UserId}; SessionId={SessionId}; Error={ErrorType}.", record.Operation, record.Status, record.UserId, record.SessionId, exception.GetType().Name);
         }
     }
 
@@ -108,9 +108,9 @@ public sealed class UsageEventService(AppDbContext dbContext, ILogger<UsageEvent
 
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (Exception exception) when (exception is DbUpdateException or DbUpdateConcurrencyException or InvalidOperationException)
+        catch (Exception exception)
         {
-            logger.LogWarning("Failed to update daily usage counter. UsageEventId={UsageEventId}; Operation={Operation}; UserId={UserId}; Error={ErrorType}.", usageEvent.Id, usageEvent.Operation, usageEvent.UserId, exception.GetType().Name);
+            logger.LogWarning("Daily usage counter update failed; continuing without blocking the user request. UsageEventId={UsageEventId}; Operation={Operation}; UserId={UserId}; Error={ErrorType}.", usageEvent.Id, usageEvent.Operation, usageEvent.UserId, exception.GetType().Name);
         }
     }
 

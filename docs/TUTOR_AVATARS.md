@@ -20,6 +20,7 @@ Tutor identity is loaded from `Content/Tutors/*.json` and remains separate from 
 ### Nelli (`nelli`)
 - Display name: Nelli
 - Age: 18
+- City: Milan
 - Role: future graphic design student
 - Interests: drawing, computer games
 - Personality: kind, cheerful, likes jokes
