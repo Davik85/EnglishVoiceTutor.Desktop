@@ -25,43 +25,52 @@ Tutor identity is loaded from `Content/Tutors/*.json` and remains separate from 
 - Personality: kind, cheerful, likes jokes
 - Speaking style: friendly, playful, light, supportive
 
-## Assets
+## Avatar state files
 
-Lesson avatar state animations are shared assets in:
+Each avatar can provide these files:
 
-- `Assets/Avatars/avatar-idle.gif`
-- `Assets/Avatars/avatar-listening.gif`
-- `Assets/Avatars/avatar-transcribing.gif`
-- `Assets/Avatars/avatar-thinking.gif`
-- `Assets/Avatars/avatar-speaking.gif`
+- `avatar-idle.gif`
+- `avatar-listening.gif`
+- `avatar-speaking.gif`
+- `avatar-thinking.gif`
+- `avatar-transcribing.gif`
 
-Project settings include GIFs as WPF `Resource` in `EnglishVoiceTutor.Desktop.csproj`.
+## Folder structure
 
-### Nelli GIF path
+Preferred per-avatar structure:
 
-If product-specific tutor GIFs are introduced, place Nelli's GIF at:
+- `Assets/Avatars/elena/`
+- `Assets/Avatars/nelli/`
 
-- `Assets/Avatars/nelli.gif`
+Full expected Nelli paths:
 
-Current app behavior uses shared state animations and does not yet switch per tutor. If a tutor-specific GIF is missing in future wiring, keep fallback behavior to the existing shared avatar resources (and `Assets/Avatars/avatar-fallback.png` for image fallback).
+- `Assets/Avatars/nelli/avatar-idle.gif`
+- `Assets/Avatars/nelli/avatar-listening.gif`
+- `Assets/Avatars/nelli/avatar-speaking.gif`
+- `Assets/Avatars/nelli/avatar-thinking.gif`
+- `Assets/Avatars/nelli/avatar-transcribing.gif`
+
+## Fallback order
+
+For each avatar state, desktop resolves animation in this order:
+
+1. selected avatar nested path (`Assets/Avatars/{avatarId}/avatar-{state}.gif`)
+2. Elena nested path (`Assets/Avatars/elena/avatar-{state}.gif`)
+3. legacy flat path (`Assets/Avatars/avatar-{state}.gif`)
+4. safe app fallback (no crash; animated source can be empty when assets are unavailable)
+
+Legacy flat GIF files in `Assets/Avatars/` are intentionally kept for compatibility.
 
 ## How to add a future avatar
 
 1. Add a tutor option in `Models/TutorAvatarOptions.cs`.
 2. Add localized card/profile text in `Models/TutorAvatarProfileLocalization.cs`.
 3. Add a tutor profile JSON file in `Content/Tutors/<avatar-id>.json`.
-4. Verify settings selection persists via existing `UserSettings.SelectedTutorAvatarId` pipeline.
-5. Verify lesson chat display name and prompt personality come from selected tutor profile.
-6. Keep lesson scenario JSON avatar-neutral (do not inject tutor identity into lesson JSON).
+4. Put per-state GIFs in `Assets/Avatars/<avatar-id>/`.
+5. Verify settings selection persists via `UserSettings.SelectedTutorAvatarId` pipeline.
+6. Verify lesson chat display name and prompt personality come from selected tutor profile.
+7. Keep lesson scenario JSON avatar-neutral (do not hardcode tutor identity in lesson JSON).
 
-## Typical files to update
+## Deferred work
 
-- `Models/TutorAvatarOptions.cs`
-- `Models/TutorAvatarProfileLocalization.cs`
-- `Content/Tutors/*.json`
-- (Optional docs) `docs/TUTOR_AVATARS.md`
-
-## Current limitations
-
-- No CMS/admin avatar management yet (deferred).
-- No dedicated per-tutor animation pipeline yet; lesson avatar animations are shared by state.
+- CMS/admin avatar management is deferred.
