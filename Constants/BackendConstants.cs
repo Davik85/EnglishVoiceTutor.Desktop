@@ -19,11 +19,13 @@ public static class BackendConstants
     public const string DevLessonSessionsEndpoint = "/api/dev/lesson-sessions";
     public const string DevLessonSessionFinishEndpointTemplate = "/api/dev/lesson-sessions/{0}/finish";
     public const string DevLessonSessionMessagesEndpointTemplate = "/api/dev/lesson-sessions/{0}/messages";
+    public const string DevLessonSessionSummaryEndpointTemplate = "/api/dev/lesson-sessions/{0}/summary";
     public const int BackendRequestTimeoutSeconds = 30;
     public const int BackendUserSettingsTimeoutSeconds = 5;
     public const int BackendHealthTimeoutSeconds = 5;
     public const int LessonSessionRequestTimeoutSeconds = 5;
     public const int LessonMessageRequestTimeoutSeconds = 5;
+    public const int LessonSummaryRequestTimeoutSeconds = 5;
     public const int BotVoiceRequestTimeoutSeconds = 20;
     public const int BotVoiceFirstAudioTimeoutSeconds = 5;
     public const int BotVoiceSegmentTimeoutSeconds = 15;
