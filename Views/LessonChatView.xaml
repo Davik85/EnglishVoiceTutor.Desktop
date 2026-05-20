@@ -115,16 +115,14 @@
                                             <Setter Property="Grid.ColumnSpan" Value="3" />
                                             <Setter Property="MaxWidth" Value="760" />
                                             <Setter Property="MinHeight" Value="660" />
-                                            <Setter Property="Height" Value="660" />
-                                            <Setter Property="MaxHeight" Value="660" />
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
                             <Grid>
-                                <Image HorizontalAlignment="Stretch"
-                                       VerticalAlignment="Stretch"
+                                <Image HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
                                        Stretch="UniformToFill"
                                        RenderTransformOrigin="0.5,0.5"
                                        RenderOptions.BitmapScalingMode="HighQuality"
