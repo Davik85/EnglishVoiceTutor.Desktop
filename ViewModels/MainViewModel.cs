@@ -18,6 +18,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly BackendLessonSessionClient backendLessonSessionClient = new();
     private readonly BackendLessonMessageClient backendLessonMessageClient = new();
     private readonly BackendLessonSummaryClient backendLessonSummaryClient = new();
+    private readonly BackendLessonHistoryClient backendLessonHistoryClient = new();
     private readonly AudioRecordingService audioRecordingService = new();
     private readonly AudioInputDeviceService audioInputDeviceService = new();
     private readonly AudioPlaybackService audioPlaybackService = new();
@@ -337,6 +338,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         return new LessonHistoryViewModel(
             AppLocalization.GetText(userSettings.InterfaceLanguageId),
             lessonHistoryService,
+            backendLessonHistoryClient,
+            userSettings.BackendBaseUrl,
+            selectedLevel,
             () => NavigateToHome(selectedLevel));
     }
 
