@@ -35,6 +35,9 @@ namespace EnglishVoiceTutor.Api.Migrations
                         .HasPrecision(18, 6)
                         .HasColumnType("numeric(18,6)");
 
+                    b.Property<int>("ChatReplyCount")
+                        .HasColumnType("integer");
+
                     b.Property<int>("FeedbackRequests")
                         .HasColumnType("integer");
 

@@ -86,7 +86,7 @@ public sealed class UsageEventService(AppDbContext dbContext, ILogger<UsageEvent
                 switch (usageEvent.Operation)
                 {
                     case UsageConstants.Operations.LessonChatReply:
-                        counter.LessonsStarted += 1;
+                        counter.ChatReplyCount += 1;
                         break;
                     case UsageConstants.Operations.LessonChatHint:
                         counter.HintsUsed += 1;

@@ -16,8 +16,8 @@ Daily limits are **not enforced yet**.
 
 ## Runtime behavior
 
-- Usage event logging remains **best-effort**.
-- Daily counter aggregation also remains **best-effort**.
+- Usage event logging is **implemented** and remains best-effort.
+- Daily counter aggregation is **implemented** and remains best-effort.
 - If daily counter update fails, the main user request still succeeds.
 - Only usage events with `status = success` increment operation counters.
 - `estimatedCost` is aggregated into daily estimated cost.
@@ -30,13 +30,13 @@ Daily limits are **not enforced yet**.
 
 ## Current operation mapping
 
-- `lesson_chat_reply` increments `lessonsStarted`
+- `lesson_chat_reply` increments `chatReplyCount`
 - `lesson_chat_hint` increments `hintsUsed`
 - `lesson_chat_feedback` increments `feedbackRequests`
 - `audio_transcription` adds to `transcriptionSeconds`
 - `tts` adds to `ttsSeconds`
 
-Fields that are present in schema but not incremented in this task remain deferred.
+`lessonsStarted` and `lessonsCompleted` are reserved for lesson session lifecycle counters (session start/finish) and are not incremented by chat replies.
 
 ## Dev verification endpoint
 
