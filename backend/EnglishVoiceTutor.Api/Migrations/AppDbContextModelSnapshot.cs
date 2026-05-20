@@ -143,10 +143,16 @@ partial class AppDbContextModelSnapshot : ModelSnapshot
             {
                 b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
                 b.Property<DateTimeOffset>("CreatedAt").HasColumnType("timestamp with time zone");
+                b.Property<string>("Grammar").HasMaxLength(4096).HasColumnType("character varying(4096)");
+                b.Property<string>("Improvements").HasMaxLength(4096).HasColumnType("character varying(4096)");
                 b.Property<string>("MistakesToReview").HasMaxLength(4096).HasColumnType("character varying(4096)");
                 b.Property<string>("NextSteps").HasMaxLength(4096).HasColumnType("character varying(4096)");
                 b.Property<Guid>("SessionId").HasColumnType("uuid");
+                b.Property<string>("Strengths").HasMaxLength(4096).HasColumnType("character varying(4096)");
+                b.Property<string>("Summary").IsRequired().HasMaxLength(4096).HasColumnType("character varying(4096)");
+                b.Property<DateTimeOffset>("UpdatedAt").HasColumnType("timestamp with time zone");
                 b.Property<string>("UsefulPhrases").HasMaxLength(4096).HasColumnType("character varying(4096)");
+                b.Property<string>("Vocabulary").HasMaxLength(4096).HasColumnType("character varying(4096)");
                 b.Property<string>("WhatToImprove").HasMaxLength(4096).HasColumnType("character varying(4096)");
                 b.Property<string>("WhatWentWell").HasMaxLength(4096).HasColumnType("character varying(4096)");
                 b.HasKey("Id");

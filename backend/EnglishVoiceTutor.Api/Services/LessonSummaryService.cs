@@ -24,17 +24,20 @@ public sealed class LessonSummaryService(AppDbContext dbContext, DevUserProvider
             {
                 Id = Guid.NewGuid(),
                 SessionId = sessionId,
-                CreatedAt = now
+                CreatedAt = now,
+                UpdatedAt = now
             };
 
             dbContext.LessonSummaries.Add(summary);
         }
 
-        summary.WhatWentWell = request.Summary.Trim();
-        summary.WhatToImprove = TrimOrNull(request.Improvements);
-        summary.UsefulPhrases = MergeVocabularyAndGrammar(request.Vocabulary, request.Grammar);
-        summary.MistakesToReview = TrimOrNull(request.Strengths);
+        summary.Summary = request.Summary.Trim();
+        summary.Strengths = TrimOrNull(request.Strengths);
+        summary.Improvements = TrimOrNull(request.Improvements);
+        summary.Vocabulary = TrimOrNull(request.Vocabulary);
+        summary.Grammar = TrimOrNull(request.Grammar);
         summary.NextSteps = TrimOrNull(request.NextSteps);
+        summary.UpdatedAt = now;
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -93,14 +96,14 @@ public sealed class LessonSummaryService(AppDbContext dbContext, DevUserProvider
             session.TopicTitle,
             session.SubtopicTitle,
             session.Level,
-            summary.WhatWentWell ?? string.Empty,
-            summary.MistakesToReview,
-            summary.WhatToImprove,
-            summary.UsefulPhrases,
-            null,
+            summary.Summary,
+            summary.Strengths,
+            summary.Improvements,
+            summary.Vocabulary,
+            summary.Grammar,
             summary.NextSteps,
             summary.CreatedAt,
-            summary.CreatedAt);
+            summary.UpdatedAt);
     }
 
     private static void ValidateUpsertRequest(UpsertLessonSummaryRequest request)
@@ -109,20 +112,6 @@ public sealed class LessonSummaryService(AppDbContext dbContext, DevUserProvider
         {
             throw new LessonSummaryValidationException("Summary is required.");
         }
-    }
-
-    private static string? MergeVocabularyAndGrammar(string? vocabulary, string? grammar)
-    {
-        var v = TrimOrNull(vocabulary);
-        var g = TrimOrNull(grammar);
-
-        return (v, g) switch
-        {
-            (null, null) => null,
-            (not null, null) => v,
-            (null, not null) => g,
-            _ => $"Vocabulary: {v}\nGrammar: {g}"
-        };
     }
 
     private static string? TrimOrNull(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
