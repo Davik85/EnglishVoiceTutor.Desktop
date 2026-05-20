@@ -63,6 +63,17 @@ public static class TutorAvatarProfileLocalization
                     InterestsText: "Padel, arte",
                     PersonalityText: "Amigável, acolhedora, encorajadora, natural",
                     SpeakingStyleText: "Curto, claro, encorajador, conversacional")
+            },
+            [TutorAvatarOptions.NelliAvatarId] = new Dictionary<string, TutorAvatarLocalizedProfileText>(StringComparer.OrdinalIgnoreCase)
+            {
+                [InterfaceLanguageOptions.EnglishId] = new(
+                    ShortDescription: "18, future graphic design student; likes drawing and computer games.",
+                    AgeText: "18",
+                    Location: "—",
+                    Role: "Future graphic design student",
+                    InterestsText: "Drawing, computer games",
+                    PersonalityText: "Kind, cheerful, likes jokes",
+                    SpeakingStyleText: "Friendly, playful, light, supportive")
             }
         });
 
@@ -75,6 +86,12 @@ public static class TutorAvatarProfileLocalization
             && profileTextByLanguageId.TryGetValue(normalizedLanguageId, out var localizedProfileText))
         {
             return localizedProfileText;
+        }
+
+        if (ProfileTextByAvatarId.Value.TryGetValue(normalizedAvatarId, out profileTextByLanguageId)
+            && profileTextByLanguageId.TryGetValue(InterfaceLanguageOptions.EnglishId, out var englishProfileText))
+        {
+            return englishProfileText;
         }
 
         return ProfileTextByAvatarId.Value[TutorAvatarOptions.DefaultAvatarId][InterfaceLanguageOptions.EnglishId];
