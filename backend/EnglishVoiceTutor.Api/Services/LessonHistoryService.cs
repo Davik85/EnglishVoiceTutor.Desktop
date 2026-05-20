@@ -91,6 +91,7 @@ public sealed class LessonHistoryService(AppDbContext dbContext, DevUserProvider
             .AsNoTracking()
             .Where(message => message.SessionId == sessionId)
             .OrderBy(message => message.TurnNumber)
+            .ThenBy(message => GetMessageRoleDisplayOrder(message.Role))
             .ThenBy(message => message.CreatedAt)
             .Select(message => new LessonHistoryMessageResponse(
                 message.Id,
@@ -127,6 +128,26 @@ public sealed class LessonHistoryService(AppDbContext dbContext, DevUserProvider
             session.UpdatedAt,
             session.Summary,
             messages);
+    }
+
+    private static int GetMessageRoleDisplayOrder(string role)
+    {
+        if (string.Equals(role, LessonMessageConstants.User, StringComparison.OrdinalIgnoreCase))
+        {
+            return LessonHistoryConstants.UserMessageDisplayOrder;
+        }
+
+        if (string.Equals(role, LessonMessageConstants.Assistant, StringComparison.OrdinalIgnoreCase))
+        {
+            return LessonHistoryConstants.AssistantMessageDisplayOrder;
+        }
+
+        if (string.Equals(role, LessonMessageConstants.System, StringComparison.OrdinalIgnoreCase))
+        {
+            return LessonHistoryConstants.SystemMessageDisplayOrder;
+        }
+
+        return LessonHistoryConstants.UnknownMessageDisplayOrder;
     }
 
     private static string? BuildSummaryPreview(string? summary)
