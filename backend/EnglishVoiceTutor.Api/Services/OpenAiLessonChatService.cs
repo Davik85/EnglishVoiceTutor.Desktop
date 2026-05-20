@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
+using EnglishVoiceTutor.Api.Services.Usage;
 
 namespace EnglishVoiceTutor.Api.Services;
 
@@ -73,6 +74,8 @@ public sealed class OpenAiLessonChatService : ILessonChatService
     private readonly TutorIdentityGuard _tutorIdentityGuard;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<OpenAiLessonChatService> _logger;
+    private readonly DevUserProvider _devUserProvider;
+    private readonly IUsageEventService _usageEventService;
 
     public OpenAiLessonChatService(
         OpenAiOptionsProvider optionsProvider,
@@ -80,6 +83,8 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         TutorAvatarProfileProvider avatarProfileProvider,
         TutorIdentityGuard tutorIdentityGuard,
         IHttpClientFactory httpClientFactory,
+        DevUserProvider devUserProvider,
+        IUsageEventService usageEventService,
         ILogger<OpenAiLessonChatService> logger)
     {
         _optionsProvider = optionsProvider;
@@ -87,6 +92,8 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         _avatarProfileProvider = avatarProfileProvider;
         _tutorIdentityGuard = tutorIdentityGuard;
         _httpClientFactory = httpClientFactory;
+        _devUserProvider = devUserProvider;
+        _usageEventService = usageEventService;
         _logger = logger;
     }
 
@@ -102,7 +109,9 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         }
 
         var openAiResponse = await SendResponsesApiRequestAsync(request, options, cancellationToken);
-        LogResponsesUsage(string.IsNullOrWhiteSpace(request.RequestPurpose) ? "lesson_chat_reply" : request.RequestPurpose, request, options.Model, openAiResponse);
+        var operation = ResolveOperation(request.RequestPurpose);
+        await TryRecordUsageAsync(operation, request, options.Model, openAiResponse, cancellationToken);
+        LogResponsesUsage(operation, request, options.Model, openAiResponse);
         var outputText = ExtractOutputText(openAiResponse);
         var lessonReply = JsonSerializer.Deserialize<LessonChatResponse>(outputText, JsonOptions);
 
@@ -226,6 +235,36 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             metrics.AudioOutputTokens,
             metrics.HasExactUsage,
             PricingConstants.OpenAi.ChatTextInputPerMillionTokensUsd == 0m || PricingConstants.OpenAi.ChatTextOutputPerMillionTokensUsd == 0m ? "chat_pricing" : string.Empty);
+    }
+
+
+
+    private async Task TryRecordUsageAsync(string operation, LessonChatRequest request, string model, OpenAiResponsesResponse response, CancellationToken cancellationToken)
+    {
+        await _usageEventService.TryRecordAsync(new UsageEventRecord
+        {
+            UserId = _devUserProvider.GetUserId(),
+            SessionId = null,
+            Operation = operation,
+            Model = model,
+            StudyLanguage = request.TargetLanguageId,
+            Status = UsageConstants.Statuses.Success,
+            EstimatedCost = 0m,
+            InputTokens = response.Usage?.InputTokens,
+            OutputTokens = response.Usage?.OutputTokens,
+            AudioInputTokens = response.Usage?.InputTokensDetails?.AudioTokens,
+            AudioOutputTokens = response.Usage?.OutputTokensDetails?.AudioTokens
+        }, cancellationToken);
+    }
+
+    private static string ResolveOperation(string purpose)
+    {
+        if (string.Equals(purpose, "feedback", StringComparison.OrdinalIgnoreCase))
+        {
+            return UsageConstants.Operations.LessonChatFeedback;
+        }
+
+        return UsageConstants.Operations.LessonChatReply;
     }
 
     private static string ExtractOutputText(OpenAiResponsesResponse response)

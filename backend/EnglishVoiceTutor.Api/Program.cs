@@ -10,6 +10,8 @@ using EnglishVoiceTutor.Api.Contracts.UserSettings;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services;
+using EnglishVoiceTutor.Api.Services.Usage;
+using EnglishVoiceTutor.Api.Contracts.Usage;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 using Microsoft.EntityFrameworkCore;
 using HttpBadHttpRequestException = Microsoft.AspNetCore.Http.BadHttpRequestException;
@@ -51,6 +53,7 @@ builder.Services.AddScoped<ILessonMessageService, LessonMessageService>();
 builder.Services.AddScoped<ILessonSummaryService, LessonSummaryService>();
 builder.Services.AddScoped<ILessonHistoryService, LessonHistoryService>();
 builder.Services.AddScoped<IHealthService, HealthService>();
+builder.Services.AddScoped<IUsageEventService, UsageEventService>();
 
 var app = builder.Build();
 
@@ -96,6 +99,7 @@ app.MapGet(ApiConstants.DevLessonSessionSummaryRoute, HandleGetDevLessonSummaryA
 app.MapGet(ApiConstants.DevLessonSummariesRoute, HandleGetDevLessonSummariesAsync);
 app.MapGet(ApiConstants.DevLessonHistoryRoute, HandleGetDevLessonHistoryAsync);
 app.MapGet(ApiConstants.DevLessonHistoryBySessionIdRoute, HandleGetDevLessonHistoryDetailAsync);
+app.MapGet(ApiConstants.DevUsageEventsRoute, HandleGetDevUsageEventsAsync);
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
@@ -407,6 +411,58 @@ static async Task<IResult> HandleGetDevLessonMessagesAsync(
     }
 }
 
+
+
+static async Task<IResult> HandleGetDevUsageEventsAsync(
+    AppDbContext dbContext,
+    DevUserProvider devUserProvider,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevUsageEventsEndpoint");
+
+    try
+    {
+        var userId = devUserProvider.GetUserId();
+        var events = await dbContext.UsageEvents
+            .AsNoTracking()
+            .Where(item => item.UserId == userId)
+            .OrderByDescending(item => item.CreatedAt)
+            .Take(50)
+            .Select(item => new UsageEventResponse
+            {
+                Id = item.Id,
+                UserId = item.UserId,
+                SessionId = item.SessionId,
+                Operation = item.Operation,
+                Model = item.Model,
+                StudyLanguage = item.StudyLanguage,
+                Status = item.Status,
+                EstimatedCost = item.EstimatedCost,
+                InputTokens = item.InputTokens,
+                OutputTokens = item.OutputTokens,
+                InputCharacters = item.InputChars,
+                OutputBytes = item.OutputBytes,
+                InputAudioTokens = item.AudioInputTokens,
+                OutputAudioTokens = item.AudioOutputTokens,
+                EstimatedDurationSeconds = item.AudioDurationMs.HasValue ? item.AudioDurationMs.Value / 1000m : null,
+                CreatedAt = item.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        return Results.Ok(new UsageEventListResponse { Events = events });
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev usage events GET failed because storage is unavailable.");
+        return Results.Json(new ErrorResponse
+        {
+            Status = ApiConstants.UnhealthyStatus,
+            Message = "Usage events are unavailable because storage is not reachable.",
+            CheckedAtUtc = DateTimeOffset.UtcNow
+        }, statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
 static bool IsLessonSessionStorageUnavailable(Exception exception)
 {
     return exception is DbException

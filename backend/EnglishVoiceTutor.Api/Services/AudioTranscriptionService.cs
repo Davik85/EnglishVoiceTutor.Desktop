@@ -4,6 +4,7 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using Microsoft.AspNetCore.Http;
 using EnglishVoiceTutor.Shared.StudyLanguages;
+using EnglishVoiceTutor.Api.Services.Usage;
 
 namespace EnglishVoiceTutor.Api.Services;
 
@@ -16,14 +17,20 @@ public sealed class AudioTranscriptionService
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<AudioTranscriptionService> _logger;
+    private readonly DevUserProvider _devUserProvider;
+    private readonly IUsageEventService _usageEventService;
 
     public AudioTranscriptionService(
         OpenAiOptionsProvider optionsProvider,
         IHttpClientFactory httpClientFactory,
+        DevUserProvider devUserProvider,
+        IUsageEventService usageEventService,
         ILogger<AudioTranscriptionService> logger)
     {
         _optionsProvider = optionsProvider;
         _httpClientFactory = httpClientFactory;
+        _devUserProvider = devUserProvider;
+        _usageEventService = usageEventService;
         _logger = logger;
     }
 
@@ -45,6 +52,18 @@ public sealed class AudioTranscriptionService
 
         var openAiResponse = await SendAudioTranscriptionRequestAsync(audioFile, options.ApiKey, resolvedTargetLanguage, cancellationToken);
         var durationSeconds = EstimatePcmWavDurationSeconds(audioFile.Length);
+        await _usageEventService.TryRecordAsync(new UsageEventRecord
+        {
+            UserId = _devUserProvider.GetUserId(),
+            Operation = UsageConstants.Operations.AudioTranscription,
+            Model = OpenAiConstants.DefaultTranscriptionModel,
+            StudyLanguage = resolvedTargetLanguage.Id,
+            Status = UsageConstants.Statuses.Success,
+            EstimatedCost = 0m,
+            InputCharacters = openAiResponse.Text.Trim().Length,
+            OutputBytes = null,
+            EstimatedDurationSeconds = (decimal)durationSeconds
+        }, cancellationToken);
         _logger.LogInformation("Developer usage summary: Operation=audio_transcription; Model={Model}; Language={Language}; InputAudioBytes={InputAudioBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; TranscriptCharacters={TranscriptCharacters}; Status=success; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", OpenAiConstants.DefaultTranscriptionModel, resolvedTargetLanguage.TranscriptionLanguageCode, audioFile.Length, durationSeconds, openAiResponse.Text.Trim().Length, PricingConstants.OpenAi.TranscriptionPerMinuteUsd == 0m ? "transcription_pricing" : string.Empty);
 
         return new AudioTranscriptionResponse

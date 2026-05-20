@@ -207,6 +207,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.HasKey(usageEvent => usageEvent.Id);
         entity.Property(usageEvent => usageEvent.Operation).IsRequired().HasMaxLength(EntityConstants.Lengths.OperationMaxLength);
         entity.Property(usageEvent => usageEvent.Model).HasMaxLength(EntityConstants.Lengths.ModelMaxLength);
+        entity.Property(usageEvent => usageEvent.StudyLanguage).HasMaxLength(EntityConstants.Lengths.LanguageCodeMaxLength);
+        entity.Property(usageEvent => usageEvent.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
         entity.Property(usageEvent => usageEvent.EstimatedCost).HasPrecision(EntityConstants.Precision.CostPrecision, EntityConstants.Precision.CostScale);
         entity.Property(usageEvent => usageEvent.CreatedAt).IsRequired();
         entity.HasIndex(usageEvent => usageEvent.UserId);

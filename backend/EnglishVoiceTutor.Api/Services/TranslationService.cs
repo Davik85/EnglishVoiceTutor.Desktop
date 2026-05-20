@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
+using EnglishVoiceTutor.Api.Services.Usage;
 
 namespace EnglishVoiceTutor.Api.Services;
 
@@ -31,11 +32,15 @@ public sealed class TranslationService
 
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly DevUserProvider _devUserProvider;
+    private readonly IUsageEventService _usageEventService;
 
-    public TranslationService(OpenAiOptionsProvider optionsProvider, IHttpClientFactory httpClientFactory)
+    public TranslationService(OpenAiOptionsProvider optionsProvider, IHttpClientFactory httpClientFactory, DevUserProvider devUserProvider, IUsageEventService usageEventService)
     {
         _optionsProvider = optionsProvider;
         _httpClientFactory = httpClientFactory;
+        _devUserProvider = devUserProvider;
+        _usageEventService = usageEventService;
     }
 
     public async Task<TranslationResponse> TranslateAsync(
@@ -55,6 +60,19 @@ public sealed class TranslationService
         try
         {
             var openAiResponse = await SendResponsesApiRequestAsync(trimmedText, sourceLanguage, targetLanguage, options, cancellationToken);
+            await _usageEventService.TryRecordAsync(new UsageEventRecord
+            {
+                UserId = _devUserProvider.GetUserId(),
+                Operation = UsageConstants.Operations.Translation,
+                Model = options.Model,
+                StudyLanguage = request.TargetLanguage,
+                Status = UsageConstants.Statuses.Success,
+                EstimatedCost = 0m,
+                InputTokens = openAiResponse.Usage?.InputTokens,
+                OutputTokens = openAiResponse.Usage?.OutputTokens,
+                InputCharacters = trimmedText.Length
+            }, cancellationToken);
+
             var outputText = ExtractOutputText(openAiResponse);
             var translation = JsonSerializer.Deserialize<TranslationResponse>(outputText, JsonOptions);
 
