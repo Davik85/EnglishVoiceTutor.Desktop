@@ -17,6 +17,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly BackendUserSettingsClient backendUserSettingsClient = new();
     private readonly BackendLessonSessionClient backendLessonSessionClient = new();
     private readonly BackendLessonMessageClient backendLessonMessageClient = new();
+    private readonly BackendLessonSummaryClient backendLessonSummaryClient = new();
     private readonly AudioRecordingService audioRecordingService = new();
     private readonly AudioInputDeviceService audioInputDeviceService = new();
     private readonly AudioPlaybackService audioPlaybackService = new();
@@ -62,10 +63,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
     }
 
-    public void NavigateToLessonSummary(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput)
+    public void NavigateToLessonSummary(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput, Guid? backendLessonSessionId)
     {
         SaveLessonHistory(selectedLevel, selectedTopic, selectedSubtopic, summaryInput);
         CurrentViewModel = CreateLessonSummaryViewModel(selectedLevel, selectedTopic, selectedSubtopic, summaryInput);
+        _ = TrySaveLessonSummaryAsync(summaryInput, backendLessonSessionId);
     }
 
     public void NavigateToLessonHistory(string selectedLevel)
@@ -144,6 +146,41 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         lessonHistoryService.Add(item);
     }
 
+
+    private async Task TrySaveLessonSummaryAsync(LessonSummaryInput summaryInput, Guid? backendLessonSessionId)
+    {
+        if (!backendLessonSessionId.HasValue)
+        {
+            Debug.WriteLine("Backend lesson summary save skipped. Reason=session_id_unavailable.");
+            return;
+        }
+
+        var summaryText = LessonSummaryViewModel.BuildGoodText(summaryInput, AppLocalization.GetText(userSettings.InterfaceLanguageId)).Trim();
+        if (string.IsNullOrWhiteSpace(summaryText))
+        {
+            Debug.WriteLine($"Backend lesson summary save skipped. SessionId={backendLessonSessionId}; Reason=empty_summary_text.");
+            return;
+        }
+
+        var request = new UpsertBackendLessonSummaryRequest
+        {
+            Summary = summaryText,
+            Strengths = null,
+            Improvements = null,
+            Vocabulary = null,
+            Grammar = null,
+            NextSteps = null
+        };
+
+        var result = await backendLessonSummaryClient.UpsertAsync(userSettings.BackendBaseUrl, backendLessonSessionId.Value, request);
+        if (!result.Succeeded)
+        {
+            Debug.WriteLine($"Backend lesson summary save failed. SessionId={backendLessonSessionId}; Error={result.SafeErrorMessage ?? "unknown"}.");
+            return;
+        }
+
+        Debug.WriteLine($"Backend lesson summary saved. SessionId={backendLessonSessionId}; SummaryId={result.Summary?.Id}.");
+    }
     private WelcomeViewModel CreateWelcomeViewModel()
     {
         return new WelcomeViewModel(AppLocalization.GetText(userSettings.InterfaceLanguageId), NavigateToLevelSelection, () => NavigateToSettings(NavigateToWelcome));
@@ -200,7 +237,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             botVoiceTempFileCleanupService,
             userSettings.AudioInputDeviceId,
             () => NavigateToSubtopics(selectedLevel, selectedTopic),
-            summaryInput => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic, summaryInput));
+            (summaryInput, backendLessonSessionId) => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic, summaryInput, backendLessonSessionId));
     }
 
     private TutorProfile LoadTutorProfile(string tutorAvatarId)

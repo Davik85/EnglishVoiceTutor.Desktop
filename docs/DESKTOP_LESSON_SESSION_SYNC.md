@@ -47,3 +47,13 @@ Desktop normal Lesson Chat now sends lesson messages to backend `lesson_messages
 - Assistant replies are saved with `source=bot_reply`.
 - Setup/context selection messages are not saved as valid lesson turns in this task.
 - Feedback, summary, and usage/cost logs are still not saved in this task.
+
+## Lesson summary persistence (Normal Lesson Chat)
+
+Desktop normal Lesson Chat now saves the visible lesson summary to backend `lesson_summaries` for the active backend lesson session.
+
+- Summary save is best-effort and non-blocking.
+- If the current desktop summary is plain text, only `summary` is persisted and optional semantic fields (`strengths`, `improvements`, `vocabulary`, `grammar`, `next_steps`) are sent as `null`.
+- Summary persistence is attempted only when a backend lesson session id is available.
+- Feedback results and usage/cost events are still not saved in this task.
+- Conversation Mode summary is not connected unless it shares this exact normal Lesson Chat summary lifecycle.

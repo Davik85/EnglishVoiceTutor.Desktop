@@ -22,7 +22,7 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 public partial class LessonChatViewModel : ViewModelBase
 {
     private readonly Action navigateBack;
-    private readonly Action<LessonSummaryInput> finishLesson;
+    private readonly Action<LessonSummaryInput, Guid?> finishLesson;
     private readonly string nativeLanguageName;
     private readonly StudyLanguageDefinition studyLanguage;
     private readonly string tutorAvatarId;
@@ -606,7 +606,7 @@ public partial class LessonChatViewModel : ViewModelBase
         BotVoiceTempFileCleanupService botVoiceTempFileCleanupService,
         string audioInputDeviceId,
         Action navigateBack,
-        Action<LessonSummaryInput> finishLesson)
+        Action<LessonSummaryInput, Guid?> finishLesson)
     {
         this.localizedText = localizedText;
         SelectedLevel = selectedLevel;
@@ -4462,7 +4462,7 @@ public partial class LessonChatViewModel : ViewModelBase
         LogLessonStateSnapshot("Finish lesson clicked");
         ViewFeedbackCommand.NotifyCanExecuteChanged();
         _ = TryFinishBackendLessonSessionAsync("finish_lesson");
-        finishLesson(BuildLessonSummaryInput());
+        finishLesson(BuildLessonSummaryInput(), backendLessonSessionId);
     }
 
     [RelayCommand(CanExecute = nameof(CanGoBack))]
