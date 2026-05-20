@@ -45,6 +45,21 @@ Responses:
 
 On storage outages, endpoints return a safe short `503 ServiceUnavailable` body and do not expose stack traces, connection strings, provider internals, or host details.
 
+## Data schema
+
+`lesson_summaries` now stores dedicated semantic fields for summary content:
+
+- `summary` (required)
+- `strengths` (nullable)
+- `improvements` (nullable)
+- `vocabulary` (nullable)
+- `grammar` (nullable)
+- `next_steps` (nullable)
+- `created_at` (required)
+- `updated_at` (required, updated on each upsert)
+
+No semantic workaround mapping is used in endpoint persistence.
+
 ## Current limitations
 
 - Desktop Summary button/flow is **not connected** to these endpoints yet.

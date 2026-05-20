@@ -161,3 +161,9 @@ This document is intentionally a product/technical policy draft to guide impleme
 ## Implementation status note
 
 Backend lesson summary endpoints now exist for `lesson_summaries`, but the desktop summary flow is not connected yet.
+
+## Lesson summary schema note
+
+`lesson_summaries` now persists dedicated semantic fields for long-term learning artifacts: `summary` (required), `strengths`, `improvements`, `vocabulary`, `grammar`, `next_steps` (nullable), plus `created_at` and `updated_at` (required).
+
+This replaces the earlier temporary workaround mapping into unrelated columns.

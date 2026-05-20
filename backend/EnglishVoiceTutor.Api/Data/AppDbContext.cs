@@ -185,8 +185,14 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.Property(summary => summary.WhatToImprove).HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
         entity.Property(summary => summary.UsefulPhrases).HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
         entity.Property(summary => summary.MistakesToReview).HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
+        entity.Property(summary => summary.Summary).IsRequired().HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
+        entity.Property(summary => summary.Strengths).HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
+        entity.Property(summary => summary.Improvements).HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
+        entity.Property(summary => summary.Vocabulary).HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
+        entity.Property(summary => summary.Grammar).HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
         entity.Property(summary => summary.NextSteps).HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
         entity.Property(summary => summary.CreatedAt).IsRequired();
+        entity.Property(summary => summary.UpdatedAt).IsRequired();
         entity.HasIndex(summary => summary.SessionId).IsUnique();
         entity.HasOne(summary => summary.Session)
             .WithOne(session => session.Summary)
