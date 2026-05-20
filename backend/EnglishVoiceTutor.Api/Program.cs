@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Net;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Common;
+using EnglishVoiceTutor.Api.Contracts.LessonHistory;
 using EnglishVoiceTutor.Api.Contracts.LessonMessages;
 using EnglishVoiceTutor.Api.Contracts.LessonSessions;
 using EnglishVoiceTutor.Api.Contracts.LessonSummaries;
@@ -48,6 +49,7 @@ builder.Services.AddScoped<IUserSettingsService, UserSettingsService>();
 builder.Services.AddScoped<ILessonSessionService, LessonSessionService>();
 builder.Services.AddScoped<ILessonMessageService, LessonMessageService>();
 builder.Services.AddScoped<ILessonSummaryService, LessonSummaryService>();
+builder.Services.AddScoped<ILessonHistoryService, LessonHistoryService>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 
 var app = builder.Build();
@@ -92,6 +94,8 @@ app.MapGet(ApiConstants.DevLessonSessionMessagesRoute, HandleGetDevLessonMessage
 app.MapPut(ApiConstants.DevLessonSessionSummaryRoute, HandleUpsertDevLessonSummaryAsync);
 app.MapGet(ApiConstants.DevLessonSessionSummaryRoute, HandleGetDevLessonSummaryAsync);
 app.MapGet(ApiConstants.DevLessonSummariesRoute, HandleGetDevLessonSummariesAsync);
+app.MapGet(ApiConstants.DevLessonHistoryRoute, HandleGetDevLessonHistoryAsync);
+app.MapGet(ApiConstants.DevLessonHistoryBySessionIdRoute, HandleGetDevLessonHistoryDetailAsync);
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
@@ -236,6 +240,48 @@ static async Task<IResult> HandleGetDevLessonSessionByIdAsync(
 }
 
 
+
+
+static async Task<IResult> HandleGetDevLessonHistoryAsync(
+    ILessonHistoryService lessonHistoryService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevLessonHistoryEndpoint");
+
+    try
+    {
+        var history = await lessonHistoryService.GetRecentDevLessonHistoryAsync(cancellationToken);
+        return Results.Ok(history);
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev lesson history list GET failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleGetDevLessonHistoryDetailAsync(
+    Guid sessionId,
+    ILessonHistoryService lessonHistoryService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevLessonHistoryEndpoint");
+
+    try
+    {
+        var detail = await lessonHistoryService.GetDevLessonHistoryDetailAsync(sessionId, cancellationToken);
+        return detail is null
+            ? Results.NotFound(new { error = "Lesson session was not found." })
+            : Results.Ok(detail);
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev lesson history detail GET failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
 
 static async Task<IResult> HandleUpsertDevLessonSummaryAsync(
     Guid sessionId,
