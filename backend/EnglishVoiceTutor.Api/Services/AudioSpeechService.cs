@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
+using EnglishVoiceTutor.Api.Services.Usage;
 
 namespace EnglishVoiceTutor.Api.Services;
 
@@ -22,14 +23,20 @@ public sealed class AudioSpeechService
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<AudioSpeechService> _logger;
+    private readonly DevUserProvider _devUserProvider;
+    private readonly IUsageEventService _usageEventService;
 
     public AudioSpeechService(
         OpenAiOptionsProvider optionsProvider,
         IHttpClientFactory httpClientFactory,
+        DevUserProvider devUserProvider,
+        IUsageEventService usageEventService,
         ILogger<AudioSpeechService> logger)
     {
         _optionsProvider = optionsProvider;
         _httpClientFactory = httpClientFactory;
+        _devUserProvider = devUserProvider;
+        _usageEventService = usageEventService;
         _logger = logger;
     }
 
@@ -259,6 +266,17 @@ public sealed class AudioSpeechService
                 audioBytes.Length);
 
             _logger.LogInformation("Developer usage summary: Operation=tts; Model={Model}; Voice={Voice}; Format={Format}; Purpose={Purpose}; InputCharacters={InputCharacters}; OutputBytes={OutputBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", request.Model, request.Voice, request.ResponseFormat, purpose, request.Input.Length, audioBytes.Length, EstimateWavDurationSeconds(audioBytes.LongLength), PricingConstants.OpenAi.Tts1PerMillionCharactersUsd == 0m ? "tts_pricing" : string.Empty);
+            await _usageEventService.TryRecordAsync(new UsageEventRecord
+            {
+                UserId = _devUserProvider.GetUserId(),
+                Operation = UsageConstants.Operations.Tts,
+                Model = request.Model,
+                Status = UsageConstants.Statuses.Success,
+                EstimatedCost = 0m,
+                InputCharacters = request.Input.Length,
+                OutputBytes = audioBytes.Length,
+                EstimatedDurationSeconds = (decimal)EstimateWavDurationSeconds(audioBytes.LongLength)
+            }, clientCancellationToken);
 
             return audioBytes;
         }

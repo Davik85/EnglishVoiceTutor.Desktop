@@ -7,6 +7,8 @@ public sealed class UsageEventEntity
     public Guid? SessionId { get; set; }
     public string Operation { get; set; } = string.Empty;
     public string? Model { get; set; }
+    public string? StudyLanguage { get; set; }
+    public string Status { get; set; } = string.Empty;
     public long? InputTokens { get; set; }
     public long? OutputTokens { get; set; }
     public long? AudioInputTokens { get; set; }
