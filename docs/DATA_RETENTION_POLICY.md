@@ -156,3 +156,8 @@ Reason:
 ## Scope Note
 
 This document is intentionally a product/technical policy draft to guide implementation decisions. It is not a final legal/privacy notice and does not claim formal GDPR/152-FZ compliance at this stage.
+
+
+## Implementation status note
+
+Backend lesson summary endpoints now exist for `lesson_summaries`, but the desktop summary flow is not connected yet.
