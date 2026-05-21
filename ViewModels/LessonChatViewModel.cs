@@ -77,6 +77,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly Dictionary<string, string> pendingTranscriptFailureByItemId = new(StringComparer.Ordinal);
     private readonly HashSet<int> spokenRealtimeOpeningMessageIds = [];
     private readonly Dictionary<int, Feedback> feedbackByMessageId = [];
+    private readonly Dictionary<int, Task<Guid?>> pendingBackendMessagePersistenceByMessageId = [];
     private readonly List<byte> realtimeCommittedAudioBuffer = [];
     private int realtimeCommittedAudioChunkCount;
     private int realtimeCommittedAudioBytes;
@@ -87,6 +88,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private const int RealtimeStartupWarningThresholdMilliseconds = 8000;
     private const int TtsPlaybackPreparationWarningThresholdMilliseconds = 5000;
     private const int RecordingStopCommitWarningThresholdMilliseconds = 5000;
+    private const int FeedbackBlockedTextPreviewMaxLength = 120;
     private static readonly ConversationModeVoiceProvider CurrentConversationModeVoiceProvider = ResolveConversationModeVoiceProvider(BackendConstants.DefaultConversationModeVoiceProvider);
     private const double ConversationModeTtsSpeechSpeed = BackendConstants.ConversationModeTtsSpeechSpeed;
 
@@ -3395,6 +3397,15 @@ public partial class LessonChatViewModel : ViewModelBase
         realtimeUserTranscriptBuffer.Append(normalizedTranscript);
         var turnResult = LessonTurnPolicy.EvaluateUserInput(BuildTurnPolicyContext(), isValidEnglishTranscript: true);
         target.MarkAsValidLearnerTurn(normalizedTranscript, turnResult.LearnerTurnCountAfter);
+        var persistenceTask = TrySaveBackendLessonMessageAsync(
+            "user",
+            normalizedTranscript,
+            MapBackendLessonMessageSource(ChatMessageSource.RealtimeVoice),
+            turnResult.LearnerTurnCountAfter,
+            isValidLessonTurn: true);
+        pendingBackendMessagePersistenceByMessageId[target.MessageId] = persistenceTask;
+        target.BackendMessageId = await persistenceTask;
+        pendingBackendMessagePersistenceByMessageId.Remove(target.MessageId);
         ConversationLatestUserText = normalizedTranscript;
         HideConversationHint();
         ViewFeedbackCommand.NotifyCanExecuteChanged();
@@ -3920,10 +3931,24 @@ public partial class LessonChatViewModel : ViewModelBase
         var requestedText = requestedMessage.Text.Trim();
         var requestedSourceKind = requestedMessage.SourceMessageKind;
         var requestedTextLength = requestedText.Length;
+        if (requestedMessage.BackendMessageId is null
+            && pendingBackendMessagePersistenceByMessageId.TryGetValue(requestedMessageId, out var pendingPersistenceTask))
+        {
+            requestedMessage.BackendMessageId = await pendingPersistenceTask;
+            pendingBackendMessagePersistenceByMessageId.Remove(requestedMessageId);
+        }
+
         if (backendLessonSessionId is null || requestedMessage.BackendMessageId is null)
         {
             StatusMessage = FeedbackNotReadyMessage;
-            Debug.WriteLine($"Feedback view blocked because backend lesson identifiers are unavailable: LocalMessageId={requestedMessageId}; HasBackendSessionId={backendLessonSessionId is not null}; HasBackendMessageId={requestedMessage.BackendMessageId is not null}; BackendSessionId={backendLessonSessionId}; BackendMessageId={requestedMessage.BackendMessageId}.");
+            Debug.WriteLine(
+                $"Feedback view blocked because backend lesson identifiers are unavailable: LocalMessageId={requestedMessageId}; " +
+                $"TextPreviewLength={GetTextPreviewLength(requestedText)}; " +
+                $"HasBackendSessionId={backendLessonSessionId is not null}; " +
+                $"HasBackendMessageId={requestedMessage.BackendMessageId is not null}; " +
+                $"MessageRole={(requestedMessage.IsFromBot ? "assistant" : "user")}; " +
+                $"MessageSource={requestedMessage.Source}; " +
+                $"BackendSessionId={backendLessonSessionId}; BackendMessageId={requestedMessage.BackendMessageId}.");
             return;
         }
         var requestedTarget = new FeedbackRequestTarget(
@@ -4711,8 +4736,19 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             ChatMessageSource.Typed => "typed",
             ChatMessageSource.LessonChatVoice => "voice_transcript",
+            ChatMessageSource.RealtimeVoice => "realtime_voice_transcript",
             _ => "typed"
         };
+    }
+
+    private static int GetTextPreviewLength(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return 0;
+        }
+
+        return Math.Min(text.Length, FeedbackBlockedTextPreviewMaxLength);
     }
 
     private async Task<Guid?> TrySaveBackendLessonMessageAsync(string role, string text, string source, int turnNumber, bool isValidLessonTurn)
