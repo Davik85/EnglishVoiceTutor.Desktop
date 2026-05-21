@@ -56,6 +56,7 @@ builder.Services.AddScoped<IHealthService, HealthService>();
 builder.Services.AddScoped<UsageStudyLanguageNormalizer>();
 builder.Services.AddScoped<IUsageEventService, UsageEventService>();
 builder.Services.AddScoped<IFreeLimitStatusService, FreeLimitStatusService>();
+builder.Services.AddScoped<IFreeLimitGuardService, FreeLimitGuardService>();
 
 var app = builder.Build();
 
@@ -633,6 +634,7 @@ static ErrorResponse CreateUserSettingsStorageUnavailableResponse()
 static async Task<IResult> HandleLessonChatReplyAsync(
     LessonChatRequest request,
     ILessonChatService lessonChatService,
+    IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -654,8 +656,18 @@ static async Task<IResult> HandleLessonChatReplyAsync(
         });
     }
 
+    var targetLanguageName = string.IsNullOrWhiteSpace(request.TargetLanguageName)
+        ? StudyLanguageCatalog.English.EnglishName
+        : request.TargetLanguageName;
+
     try
     {
+        var limitExceeded = await freeLimitGuardService.CheckChatReplyLimitAsync(targetLanguageName, cancellationToken);
+        if (limitExceeded is not null)
+        {
+            return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
+        }
+
         request.RequestPurpose = "typed_lesson_chat";
         var response = await lessonChatService.CreateReplyAsync(request, cancellationToken);
 
@@ -697,6 +709,7 @@ static async Task<IResult> HandleMockLessonChatReplyAsync(
 static async Task<IResult> HandleLessonChatHintAsync(
     LessonChatRequest request,
     ILessonHintService lessonHintService,
+    IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -718,6 +731,16 @@ static async Task<IResult> HandleLessonChatHintAsync(
         });
     }
 
+    var targetLanguageName = string.IsNullOrWhiteSpace(request.TargetLanguageName)
+        ? StudyLanguageCatalog.English.EnglishName
+        : request.TargetLanguageName;
+
+    var limitExceeded = await freeLimitGuardService.CheckHintLimitAsync(targetLanguageName, cancellationToken);
+    if (limitExceeded is not null)
+    {
+        return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
+    }
+
     var response = await lessonHintService.CreateHintAsync(request, cancellationToken);
 
     return Results.Ok(response);
@@ -726,6 +749,7 @@ static async Task<IResult> HandleLessonChatHintAsync(
 static async Task<IResult> HandleLessonChatFeedbackAsync(
     LessonChatRequest request,
     ILessonChatService lessonChatService,
+    IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -770,6 +794,7 @@ static async Task<IResult> HandleLessonChatFeedbackAsync(
 static async Task<IResult> HandleAudioTranscriptionAsync(
     HttpRequest request,
     AudioTranscriptionService audioTranscriptionService,
+    IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -811,6 +836,12 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
             {
                 error = ApiConstants.EmptyAudioFileError
             });
+        }
+
+        var limitExceeded = await freeLimitGuardService.CheckTranscriptionLimitAsync(targetLanguage.EnglishName, cancellationToken);
+        if (limitExceeded is not null)
+        {
+            return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
         }
 
         var response = await audioTranscriptionService.TranscribeAsync(audioFile, targetLanguage, cancellationToken);
@@ -915,6 +946,7 @@ static async Task<IResult> HandleTranslationAsync(
 static async Task<IResult> HandleAudioSpeechStreamAsync(
     AudioSpeechRequest request,
     AudioSpeechService audioSpeechService,
+    IFreeLimitGuardService freeLimitGuardService,
     HttpContext httpContext,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
@@ -933,8 +965,18 @@ static async Task<IResult> HandleAudioSpeechStreamAsync(
         ? OpenAiConstants.PcmContentType
         : OpenAiConstants.WavContentType;
 
+    var targetLanguageName = string.IsNullOrWhiteSpace(request.TargetLanguageName)
+        ? StudyLanguageCatalog.English.EnglishName
+        : request.TargetLanguageName;
+
     try
     {
+        var limitExceeded = await freeLimitGuardService.CheckTtsLimitAsync(targetLanguageName, cancellationToken);
+        if (limitExceeded is not null)
+        {
+            return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
+        }
+
         var metrics = await audioSpeechService.StreamSpeechAsync(request.Text, response.Body, request.Purpose, cancellationToken);
         logger.LogInformation(
             "Audio speech stream endpoint completed. Endpoint={Endpoint}; FirstHeaderMs={FirstHeaderMs}; FirstChunkMs={FirstChunkMs}; FirstChunkWrittenMs={FirstChunkWrittenMs}; TotalMs={TotalMs}; TotalBytes={TotalBytes}.",
@@ -1002,6 +1044,7 @@ static async Task<IResult> HandleAudioSpeechStreamAsync(
 static async Task<IResult> HandleAudioSpeechAsync(
     AudioSpeechRequest request,
     AudioSpeechService audioSpeechService,
+    IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -1014,9 +1057,18 @@ static async Task<IResult> HandleAudioSpeechAsync(
     }
 
     var logger = loggerFactory.CreateLogger("AudioSpeechEndpoint");
+    var targetLanguageName = string.IsNullOrWhiteSpace(request.TargetLanguageName)
+        ? StudyLanguageCatalog.English.EnglishName
+        : request.TargetLanguageName;
 
     try
     {
+        var limitExceeded = await freeLimitGuardService.CheckTtsLimitAsync(targetLanguageName, cancellationToken);
+        if (limitExceeded is not null)
+        {
+            return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
+        }
+
         logger.LogInformation(
             "Audio speech endpoint request accepted. Endpoint={Endpoint}; Model={Model}; Purpose={Purpose}; SpeechSpeed={SpeechSpeed}; HasInstructions={HasInstructions}; InstructionsLength={InstructionsLength}; InputLength={InputLength}; TargetLanguageId={TargetLanguageId}; TargetLanguageCode={TargetLanguageCode}.",
             "audio/speech",
