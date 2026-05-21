@@ -67,6 +67,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private readonly SemaphoreSlim realtimeRecordingSemaphore = new(1, 1);
     private const string RealtimeVoicePendingText = LessonTranscriptValidator.VoiceMessagePlaceholder;
     private const string RealtimeVoiceTranscriptionUnavailableText = LessonTranscriptValidator.InvalidTranscriptUserMessage;
+    private const string FeedbackNotReadyMessage = "Feedback is not ready yet. Please try again in a moment.";
     private ChatMessageViewModel? realtimeAssistantMessage;
     private ChatMessageViewModel? realtimeUserPlaceholderMessage;
     private string realtimeUserPlaceholderItemId = string.Empty;
@@ -2625,7 +2626,8 @@ public partial class LessonChatViewModel : ViewModelBase
         try
         {
             await EnsureRealtimeSessionStartedAsync(CancellationToken.None);
-            AddLearnerMessage(userMessage, ChatMessageSource.RealtimeVoice, nextLearnerTurnCount, feedback: null);
+            var learnerMessage = AddLearnerMessage(userMessage, ChatMessageSource.RealtimeVoice, nextLearnerTurnCount, feedback: null);
+            learnerMessage.BackendMessageId = await TrySaveBackendLessonMessageAsync("user", userMessage, MapBackendLessonMessageSource(ChatMessageSource.RealtimeVoice), nextLearnerTurnCount, isValidLessonTurn: true);
             LearnerTurnCount = nextLearnerTurnCount;
             if (LearnerTurnCount >= finalTurn)
             {
@@ -3920,8 +3922,8 @@ public partial class LessonChatViewModel : ViewModelBase
         var requestedTextLength = requestedText.Length;
         if (backendLessonSessionId is null || requestedMessage.BackendMessageId is null)
         {
-            StatusMessage = localizedText.BackendUnavailableMessage;
-            Debug.WriteLine($"Feedback view blocked because backend lesson message id is unavailable: LocalMessageId={requestedMessageId}; BackendSessionId={backendLessonSessionId}; BackendMessageId={requestedMessage.BackendMessageId}.");
+            StatusMessage = FeedbackNotReadyMessage;
+            Debug.WriteLine($"Feedback view blocked because backend lesson identifiers are unavailable: LocalMessageId={requestedMessageId}; HasBackendSessionId={backendLessonSessionId is not null}; HasBackendMessageId={requestedMessage.BackendMessageId is not null}; BackendSessionId={backendLessonSessionId}; BackendMessageId={requestedMessage.BackendMessageId}.");
             return;
         }
         var requestedTarget = new FeedbackRequestTarget(
@@ -4626,6 +4628,7 @@ public partial class LessonChatViewModel : ViewModelBase
         try
         {
             Debug.WriteLine($"Feedback request starting: requestedMessageId={target.MessageId}; requestedSourceKind={target.SourceMessageKind}; requestedTextLength={target.TextLength}; resultMessageId=0; displayedUnderMessageId={SelectedFeedbackMessageId}; staleResultIgnored=False.");
+            Debug.WriteLine($"Feedback request identifiers: HasBackendSessionId={backendLessonSessionId is not null}; HasBackendMessageId={target.BackendMessageId != Guid.Empty}; BackendSessionId={backendLessonSessionId}; SourcePersistedMessageId={target.BackendMessageId}.");
             Debug.WriteLine($"Feedback request: TargetLanguageId={studyLanguage.Id}; SourceMessageId={target.MessageId}; SourceMessageKind={target.SourceMessageKind}; LessonPhase={target.LessonPhase}.");
             var response = await lessonChatBackendService.SendLessonFeedbackRequestAsync(BuildLessonFeedbackRequest(target));
             return MapFeedback(response);
