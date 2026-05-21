@@ -115,6 +115,8 @@ public sealed class LessonChatBackendRequest
     public string RequestPurpose { get; set; } = string.Empty;
 
     public int SourceMessageId { get; init; }
+    public Guid? SourcePersistedMessageId { get; init; }
+    public Guid? BackendSessionId { get; init; }
 
     public string SourceMessageKind { get; init; } = string.Empty;
 

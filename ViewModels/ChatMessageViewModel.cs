@@ -14,6 +14,7 @@ public partial class ChatMessageViewModel : ViewModelBase
     public int Id { get; }
 
     public int MessageId => Id;
+    public Guid? BackendMessageId { get; set; }
 
     public string Sender { get; }
 
