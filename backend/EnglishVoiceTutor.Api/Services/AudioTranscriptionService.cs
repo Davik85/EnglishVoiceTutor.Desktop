@@ -19,21 +19,18 @@ public sealed class AudioTranscriptionService
     private readonly ILogger<AudioTranscriptionService> _logger;
     private readonly DevUserProvider _devUserProvider;
     private readonly IUsageEventService _usageEventService;
-    private readonly TranslationService _translationService;
 
     public AudioTranscriptionService(
         OpenAiOptionsProvider optionsProvider,
         IHttpClientFactory httpClientFactory,
         DevUserProvider devUserProvider,
         IUsageEventService usageEventService,
-        TranslationService translationService,
         ILogger<AudioTranscriptionService> logger)
     {
         _optionsProvider = optionsProvider;
         _httpClientFactory = httpClientFactory;
         _devUserProvider = devUserProvider;
         _usageEventService = usageEventService;
-        _translationService = translationService;
         _logger = logger;
     }
 
@@ -54,8 +51,7 @@ public sealed class AudioTranscriptionService
         }
 
         var openAiResponse = await SendAudioTranscriptionRequestAsync(audioFile, options.ApiKey, resolvedTargetLanguage, cancellationToken);
-        var rawTranscript = openAiResponse.Text.Trim();
-        var normalizationResult = await NormalizeTranscriptToTargetLanguageAsync(rawTranscript, resolvedTargetLanguage, cancellationToken);
+        var transcriptText = openAiResponse.Text.Trim();
 
         var durationSeconds = EstimatePcmWavDurationSeconds(audioFile.Length);
         await _usageEventService.TryRecordAsync(new UsageEventRecord
@@ -66,52 +62,24 @@ public sealed class AudioTranscriptionService
             StudyLanguage = resolvedTargetLanguage.Id,
             Status = UsageConstants.Statuses.Success,
             EstimatedCost = 0m,
-            InputCharacters = normalizationResult.Text.Length,
+            InputCharacters = transcriptText.Length,
             OutputBytes = null,
             EstimatedDurationSeconds = (decimal)durationSeconds
         }, cancellationToken);
 
         _logger.LogInformation(
-            "Audio transcription completed. TargetLanguageId={TargetLanguageId}; TargetLanguageName={TargetLanguageName}; TranscriptionLanguageCode={TranscriptionLanguageCode}; TranscriptLength={TranscriptLength}; TargetLanguageNormalizationUsed={TargetLanguageNormalizationUsed}.",
+            "Audio transcription completed. TargetLanguageId={TargetLanguageId}; TargetLanguageName={TargetLanguageName}; TranscriptionLanguageCode={TranscriptionLanguageCode}; TranscriptLength={TranscriptLength}.",
             resolvedTargetLanguage.Id,
             resolvedTargetLanguage.EnglishName,
             resolvedTargetLanguage.TranscriptionLanguageCode,
-            normalizationResult.Text.Length,
-            normalizationResult.NormalizationUsed);
+            transcriptText.Length);
 
-        _logger.LogInformation("Developer usage summary: Operation=audio_transcription; Model={Model}; Language={Language}; InputAudioBytes={InputAudioBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; TranscriptCharacters={TranscriptCharacters}; Status=success; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", OpenAiConstants.DefaultTranscriptionModel, resolvedTargetLanguage.TranscriptionLanguageCode, audioFile.Length, durationSeconds, normalizationResult.Text.Length, PricingConstants.OpenAi.TranscriptionPerMinuteUsd == 0m ? "transcription_pricing" : string.Empty);
+        _logger.LogInformation("Developer usage summary: Operation=audio_transcription; Model={Model}; Language={Language}; InputAudioBytes={InputAudioBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; TranscriptCharacters={TranscriptCharacters}; Status=success; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", OpenAiConstants.DefaultTranscriptionModel, resolvedTargetLanguage.TranscriptionLanguageCode, audioFile.Length, durationSeconds, transcriptText.Length, PricingConstants.OpenAi.TranscriptionPerMinuteUsd == 0m ? "transcription_pricing" : string.Empty);
 
         return new AudioTranscriptionResponse
         {
-            Text = normalizationResult.Text
+            Text = transcriptText
         };
-    }
-
-    private async Task<TranscriptNormalizationResult> NormalizeTranscriptToTargetLanguageAsync(
-        string rawTranscript,
-        StudyLanguageDefinition targetLanguage,
-        CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(rawTranscript))
-        {
-            return new TranscriptNormalizationResult(rawTranscript, false);
-        }
-
-        var translation = await _translationService.TranslateAsync(new TranslationRequest
-        {
-            Text = rawTranscript,
-            SourceLanguageName = OpenAiConstants.TranscriptionNormalizationSourceLanguage,
-            TargetLanguage = targetLanguage.EnglishName
-        }, cancellationToken);
-
-        var normalizedText = translation.TranslatedText?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(normalizedText))
-        {
-            return new TranscriptNormalizationResult(rawTranscript, false);
-        }
-
-        var normalizationUsed = !string.Equals(rawTranscript, normalizedText, StringComparison.Ordinal);
-        return new TranscriptNormalizationResult(normalizedText, normalizationUsed);
     }
 
     private async Task<OpenAiAudioTranscriptionResponse> SendAudioTranscriptionRequestAsync(
@@ -172,6 +140,4 @@ public sealed class AudioTranscriptionService
         var audioBytes = Math.Max(0, bytes - wavHeaderBytes);
         return audioBytes / (double)(sampleRate * channels * bytesPerSample);
     }
-
-    private readonly record struct TranscriptNormalizationResult(string Text, bool NormalizationUsed);
 }

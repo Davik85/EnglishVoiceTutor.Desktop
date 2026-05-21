@@ -10,8 +10,7 @@ public static class OpenAiConstants
     public const string AudioSpeechEndpoint = "https://api.openai.com/v1/audio/speech";
     public const string DefaultTranscriptionModel = "gpt-4o-mini-transcribe";
     public const string TranscriptionLanguage = "en";
-    public const string TranscriptionPromptTemplate = "Transcribe or translate the user's speech into {0}. Return only the final text in {0}.";
-    public const string TranscriptionNormalizationSourceLanguage = "Auto-detected speech language";
+    public const string TranscriptionPromptTemplate = "Transcribe the learner's speech accurately in {0}. Do not add, translate, or paraphrase. Return only the spoken text.";
     public const string HighQualitySpeechModel = "gpt-4o-mini-tts";
     public const string NormalChatTtsModel = "tts-1";
     public const string ConversationModeTtsModel = HighQualitySpeechModel;
