@@ -410,12 +410,12 @@
                                               behaviors:ScrollViewerAutoScrollBehavior.AutoScrollToBottom="True">
                                     <StackPanel>
                                         <ItemsControl ItemsSource="{Binding Messages}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border Style="{StaticResource ChatMessageBubbleStyle}">
-                                                    <StackPanel>
-                                                        <TextBlock Text="{Binding Sender}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
-                                                        <TextBox Margin="0,4,0,0" Text="{Binding Text}" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Style="{StaticResource ChatMessageBubbleStyle}">
+                                                        <StackPanel>
+                                                            <TextBlock Text="{Binding Sender}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                                                            <TextBox Margin="0,4,0,0" Text="{Binding Text}" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
 
                                                         <WrapPanel Margin="0,8,0,0" Orientation="Horizontal">
                                                             <Button Padding="8,2"
@@ -492,54 +492,49 @@
                                                             </StackPanel>
                                                         </Border>
 
-                                                    </StackPanel>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                
-<Border x:Name="FeedbackPanelCard"
-                                        Grid.Row="1"
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <Border x:Name="FeedbackPanelCard"
                                         Margin="0,10,0,12"
                                         Cursor="Hand"
                                         PreviewMouseLeftButtonUp="FeedbackPanelCard_PreviewMouseLeftButtonUp">
-                                    <Border.Style>
-                                        <Style TargetType="Border" BasedOn="{StaticResource LessonSupportPanelStyle}">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding HasSelectedFeedbackPanel}" Value="True">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <StackPanel>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding FeedbackPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
-                                            <Button Margin="8,0,0,0"
-                                                    Padding="6,1"
-                                                    Content="{Binding ClickToCloseText}"
-                                                    Command="{Binding CloseFeedbackCommand}"
-                                                    Background="Transparent"
-                                                    BorderThickness="0"
-                                                    Foreground="{StaticResource TextMutedBrush}"
-                                                    FontSize="11"
-                                                    Cursor="Hand" />
-                                        </StackPanel>
-
-                                        <StackPanel Margin="0,10,0,0">
-                                            <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderAccentSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
-                                                <StackPanel>
-                                                    <TextBlock Text="Feedback for" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
-                                                    <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedbackSourceText, Mode=OneWay}" ToolTip="{Binding SelectedFeedbackSourceText, Mode=OneWay}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
+                                            <Border.Style>
+                                                <Style TargetType="Border" BasedOn="{StaticResource LessonSupportPanelStyle}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasSelectedFeedbackPanel}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding FeedbackPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                                                    <Button Margin="8,0,0,0"
+                                                            Padding="6,1"
+                                                            Content="{Binding ClickToCloseText}"
+                                                            Command="{Binding CloseFeedbackCommand}"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Foreground="{StaticResource TextMutedBrush}"
+                                                            FontSize="11"
+                                                            Cursor="Hand" />
                                                 </StackPanel>
-                                            
-                                    </StackPanel>
-                                </ScrollViewer>
 
-                                </Border>
+                                                <StackPanel Margin="0,10,0,0">
+                                                    <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderAccentSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
+                                                        <StackPanel>
+                                                            <TextBlock Text="Feedback for" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                                                            <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedbackSourceText, Mode=OneWay}" ToolTip="{Binding SelectedFeedbackSourceText, Mode=OneWay}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
+                                                        </StackPanel>
+                                                    </Border>
 
-                                            <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
+                                                    <Border Margin="0,0,0,8" Padding="10" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderSoftBrush}" BorderThickness="1" CornerRadius="{StaticResource CornerSmall}">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
                                                         <Setter Property="Visibility" Value="Collapsed" />
@@ -629,10 +624,12 @@
                                                         <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.NaturalVersionTranslation, Mode=OneWay}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
                                                     </StackPanel>
                                                 </Border>
+                                                    </StackPanel>
+                                                </StackPanel>
                                             </StackPanel>
-                                        </StackPanel>
+                                        </Border>
                                     </StackPanel>
-                                </Border>
+                                </ScrollViewer>
 
                                 <StackPanel Grid.Row="2" Margin="0,8,0,12">
                                     <StackPanel.Style>
