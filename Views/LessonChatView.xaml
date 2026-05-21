@@ -666,8 +666,9 @@
                                         </StackPanel>
                                     </Button>
                                 </Border>
-                                    </StackPanel>
-                                </ScrollViewer>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Border>
 
                                 <StackPanel Grid.Row="1">
                                     <TextBox x:Name="LessonInputTextBox"
