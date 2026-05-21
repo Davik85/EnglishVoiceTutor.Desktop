@@ -808,7 +808,7 @@ public partial class LessonChatViewModel : ViewModelBase
         if (IsRecording)
         {
             await StopVoiceRecordingAsync();
-            return null;
+            return;
         }
 
         await StartVoiceRecordingAsync();
