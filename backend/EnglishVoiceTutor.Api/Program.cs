@@ -959,11 +959,26 @@ static async Task TryPersistFeedbackResultAsync(
     try
     {
         var userId = devUserProvider.GetDevUserId();
-        var sourceText = request.UserMessage.Trim();
-
-        var message = await dbContext.LessonMessages
+        var messageQuery = dbContext.LessonMessages
             .AsNoTracking()
-            .Where(existing => existing.Session.UserId == userId && existing.Role == LessonMessageConstants.User && existing.Text == sourceText)
+            .Where(existing => existing.Session.UserId == userId && existing.Role == LessonMessageConstants.User);
+
+        if (request.BackendSessionId.HasValue)
+        {
+            messageQuery = messageQuery.Where(existing => existing.SessionId == request.BackendSessionId.Value);
+        }
+
+        if (request.SourcePersistedMessageId.HasValue)
+        {
+            messageQuery = messageQuery.Where(existing => existing.Id == request.SourcePersistedMessageId.Value);
+        }
+        else
+        {
+            var sourceText = request.UserMessage.Trim();
+            messageQuery = messageQuery.Where(existing => existing.Text == sourceText);
+        }
+
+        var message = await messageQuery
             .OrderByDescending(existing => existing.CreatedAt)
             .Select(existing => new { existing.Id, existing.SessionId })
             .FirstOrDefaultAsync(cancellationToken);
