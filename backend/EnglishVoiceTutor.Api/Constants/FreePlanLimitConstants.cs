@@ -4,6 +4,11 @@ public static class FreePlanLimitConstants
 {
     public const string PlanId = "free_dev";
     public const string Source = "daily_usage_counters";
+    public const string LimitReachedErrorMessage = "Free daily limit reached.";
+    public const string LimitTypeChatReplies = "chat_replies";
+    public const string LimitTypeHints = "hints";
+    public const string LimitTypeTranscriptionSeconds = "transcription_seconds";
+    public const string LimitTypeTtsSeconds = "tts_seconds";
 
     public const int ChatReplyLimitPerDay = 20;
     public const int HintLimitPerDay = 5;

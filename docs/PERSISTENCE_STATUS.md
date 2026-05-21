@@ -22,7 +22,9 @@
 - [x] Lesson summaries endpoints (`/api/dev/lesson-sessions/{sessionId}/summary`, `/api/dev/lesson-summaries`)
 - [x] Lesson history endpoints (`/api/dev/lesson-history`, `/api/dev/lesson-history/{sessionId}`)
 - [x] Dev diagnostics endpoints for usage/counters (`/api/dev/usage-events`, `/api/dev/daily-usage-counters`)
-- [x] Free plan diagnostics endpoint (`GET /api/dev/free-limit-status`) is backend-only, read-only, reports diagnostics only, and does not enforce limits.
+- [x] Free plan diagnostics endpoint (`GET /api/dev/free-limit-status`) is backend-only and reports daily free-limit diagnostics.
+- [x] Soft free-limit enforcement is implemented for dev backend expensive operations (`lesson-chat/reply`, `lesson-chat/hint`, `audio/transcribe`, `audio/speech`, and `audio/speech-stream`) and returns HTTP 429 before provider calls when the relevant daily limit is reached.
+- [x] Free-limit enforcement is still dev-user based and not production auth/billing enforcement.
 
 ## Desktop integrations already connected
 
@@ -42,7 +44,7 @@
 
 ## Pending backend features
 
-- [ ] Daily limit enforcement (free-tier runtime enforcement).
+- [x] Daily limit enforcement (soft backend free-tier runtime enforcement for dev user).
 - [ ] Subscription/billing runtime enforcement.
 - [ ] Auth/JWT and production user identities.
 - [ ] `feedback_results` persistence wiring (if still disconnected in runtime flow).
