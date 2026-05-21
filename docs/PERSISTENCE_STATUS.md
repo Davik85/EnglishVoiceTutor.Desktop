@@ -37,6 +37,7 @@
 - [x] `usage_events` stores aggregate metadata (operation/model/studyLanguage/status/timing/cost), not raw audio.
 - [x] `usage_events` does not store full prompts, full provider payloads, API keys, or secrets.
 - [x] `lesson_chat_reply` increments `chatReplyCount` in `daily_usage_counters`.
+- [x] Free-limit diagnostics normalize study-language aliases (for example `English`/`en`) during read aggregation, and new daily counter writes use normalized canonical study language values.
 - [x] `lessonsStarted` / `lessonsCompleted` are reserved for future lesson lifecycle counters.
 
 ## Pending backend features

@@ -5,9 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services.Usage;
 
-public sealed class UsageEventService(AppDbContext dbContext, ILogger<UsageEventService> logger) : IUsageEventService
+public sealed class UsageEventService(
+    AppDbContext dbContext,
+    UsageStudyLanguageNormalizer usageStudyLanguageNormalizer,
+    ILogger<UsageEventService> logger) : IUsageEventService
 {
-    private const string UnknownStudyLanguage = "unknown";
 
     public async Task TryRecordAsync(UsageEventRecord record, CancellationToken cancellationToken = default)
     {
@@ -57,7 +59,7 @@ public sealed class UsageEventService(AppDbContext dbContext, ILogger<UsageEvent
         try
         {
             var usageDate = DateOnly.FromDateTime(usageEvent.CreatedAt.UtcDateTime.Date);
-            var studyLanguage = string.IsNullOrWhiteSpace(usageEvent.StudyLanguage) ? UnknownStudyLanguage : usageEvent.StudyLanguage.Trim();
+            var studyLanguage = usageStudyLanguageNormalizer.NormalizeOrUnknown(usageEvent.StudyLanguage);
             var now = DateTimeOffset.UtcNow;
 
             var counter = await dbContext.DailyUsageCounters

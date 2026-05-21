@@ -7,7 +7,8 @@ namespace EnglishVoiceTutor.Api.Services.Usage;
 
 public sealed class FreeLimitStatusService(
     AppDbContext dbContext,
-    DevUserProvider devUserProvider) : IFreeLimitStatusService
+    DevUserProvider devUserProvider,
+    UsageStudyLanguageNormalizer usageStudyLanguageNormalizer) : IFreeLimitStatusService
 {
     public async Task<FreeLimitStatusResponse> GetDevFreeLimitStatusAsync(string? studyLanguage, CancellationToken cancellationToken)
     {
@@ -15,18 +16,23 @@ public sealed class FreeLimitStatusService(
         var usageDate = DateOnly.FromDateTime(DateTime.UtcNow);
         var resolvedStudyLanguage = await ResolveStudyLanguageAsync(userId, studyLanguage, cancellationToken);
 
-        var counter = await dbContext.DailyUsageCounters
+        var aliases = usageStudyLanguageNormalizer.GetAliasesForCanonical(resolvedStudyLanguage);
+
+        var counters = await dbContext.DailyUsageCounters
             .AsNoTracking()
             .Where(item => item.UserId == userId
                 && item.UsageDate == usageDate
-                && item.StudyLanguage == resolvedStudyLanguage)
-            .FirstOrDefaultAsync(cancellationToken);
+                && aliases.Contains(item.StudyLanguage))
+            .ToListAsync(cancellationToken);
 
-        var chatReplyCount = counter?.ChatReplyCount ?? 0;
-        var hintsUsed = counter?.HintsUsed ?? 0;
-        var transcriptionSeconds = counter?.TranscriptionSeconds ?? 0;
-        var ttsSeconds = counter?.TtsSeconds ?? 0;
-        var estimatedCost = counter?.EstimatedCost ?? 0m;
+        var chatReplyCount = counters.Sum(item => item.ChatReplyCount);
+        var hintsUsed = counters.Sum(item => item.HintsUsed);
+        var transcriptionSeconds = counters.Sum(item => item.TranscriptionSeconds);
+        var ttsSeconds = counters.Sum(item => item.TtsSeconds);
+        var estimatedCost = counters.Sum(item => item.EstimatedCost);
+
+        DateTimeOffset? createdAt = counters.Count == 0 ? null : counters.Min(item => item.CreatedAt);
+        DateTimeOffset? counterUpdatedAt = counters.Count == 0 ? null : counters.Max(item => item.UpdatedAt);
 
         return new FreeLimitStatusResponse
         {
@@ -54,8 +60,8 @@ public sealed class FreeLimitStatusService(
             EstimatedCostLimit = FreePlanLimitConstants.EstimatedCostLimitPerDay,
             EstimatedCostRemaining = Remaining(FreePlanLimitConstants.EstimatedCostLimitPerDay, estimatedCost),
             EstimatedCostLimitExceeded = estimatedCost >= FreePlanLimitConstants.EstimatedCostLimitPerDay,
-            CreatedAt = counter?.CreatedAt,
-            CounterUpdatedAt = counter?.UpdatedAt,
+            CreatedAt = createdAt,
+            CounterUpdatedAt = counterUpdatedAt,
             CheckedAtUtc = DateTimeOffset.UtcNow,
             Source = FreePlanLimitConstants.Source
         };
@@ -65,7 +71,7 @@ public sealed class FreeLimitStatusService(
     {
         if (!string.IsNullOrWhiteSpace(studyLanguage))
         {
-            return studyLanguage.Trim();
+            return usageStudyLanguageNormalizer.NormalizeOrDefault(studyLanguage, StudyLanguageConstants.DefaultStudyLanguage);
         }
 
         var userStudyLanguage = await dbContext.UserSettings
@@ -76,7 +82,7 @@ public sealed class FreeLimitStatusService(
 
         if (!string.IsNullOrWhiteSpace(userStudyLanguage))
         {
-            return userStudyLanguage.Trim();
+            return usageStudyLanguageNormalizer.NormalizeOrDefault(userStudyLanguage, StudyLanguageConstants.DefaultStudyLanguage);
         }
 
         return StudyLanguageConstants.DefaultStudyLanguage;
