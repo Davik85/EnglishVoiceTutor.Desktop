@@ -3934,8 +3934,27 @@ public partial class LessonChatViewModel : ViewModelBase
         if (requestedMessage.BackendMessageId is null
             && pendingBackendMessagePersistenceByMessageId.TryGetValue(requestedMessageId, out var pendingPersistenceTask))
         {
+            Debug.WriteLine(
+                $"Feedback view awaiting pending persistence: LocalMessageId={requestedMessageId}; " +
+                $"HasBackendSessionId={backendLessonSessionId is not null}; " +
+                $"HasBackendMessageId=False; " +
+                $"MessageRole={(requestedMessage.IsFromBot ? "assistant" : "user")}; " +
+                $"MessageSource={requestedMessage.Source}; " +
+                $"TextLength={requestedTextLength}; " +
+                $"PersistenceInFlight=True.");
             requestedMessage.BackendMessageId = await pendingPersistenceTask;
             pendingBackendMessagePersistenceByMessageId.Remove(requestedMessageId);
+        }
+
+        if (requestedMessage.BackendMessageId is null)
+        {
+            var persistedMessageId = await TrySaveBackendLessonMessageAsync(
+                "user",
+                requestedText,
+                MapBackendLessonMessageSource(requestedMessage.Source),
+                requestedMessage.LessonTurnNumber,
+                requestedMessage.CountsAsValidLessonTurn);
+            requestedMessage.BackendMessageId = persistedMessageId;
         }
 
         if (backendLessonSessionId is null || requestedMessage.BackendMessageId is null)
@@ -3948,6 +3967,8 @@ public partial class LessonChatViewModel : ViewModelBase
                 $"HasBackendMessageId={requestedMessage.BackendMessageId is not null}; " +
                 $"MessageRole={(requestedMessage.IsFromBot ? "assistant" : "user")}; " +
                 $"MessageSource={requestedMessage.Source}; " +
+                $"TextLength={requestedTextLength}; " +
+                $"PersistenceInFlight={pendingBackendMessagePersistenceByMessageId.ContainsKey(requestedMessageId)}; " +
                 $"BackendSessionId={backendLessonSessionId}; BackendMessageId={requestedMessage.BackendMessageId}.");
             return;
         }
