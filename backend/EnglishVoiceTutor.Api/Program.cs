@@ -54,6 +54,7 @@ builder.Services.AddScoped<ILessonSummaryService, LessonSummaryService>();
 builder.Services.AddScoped<ILessonHistoryService, LessonHistoryService>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 builder.Services.AddScoped<IUsageEventService, UsageEventService>();
+builder.Services.AddScoped<IFreeLimitStatusService, FreeLimitStatusService>();
 
 var app = builder.Build();
 
@@ -101,6 +102,7 @@ app.MapGet(ApiConstants.DevLessonHistoryRoute, HandleGetDevLessonHistoryAsync);
 app.MapGet(ApiConstants.DevLessonHistoryBySessionIdRoute, HandleGetDevLessonHistoryDetailAsync);
 app.MapGet(ApiConstants.DevUsageEventsRoute, HandleGetDevUsageEventsAsync);
 app.MapGet(ApiConstants.DevDailyUsageCountersRoute, HandleGetDevDailyUsageCountersAsync);
+app.MapGet(ApiConstants.DevFreeLimitStatusRoute, HandleGetDevFreeLimitStatusAsync);
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
@@ -510,6 +512,31 @@ static async Task<IResult> HandleGetDevDailyUsageCountersAsync(
         {
             Status = ApiConstants.UnhealthyStatus,
             Message = "Daily usage counters are unavailable because storage is not reachable.",
+            CheckedAtUtc = DateTimeOffset.UtcNow
+        }, statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleGetDevFreeLimitStatusAsync(
+    string? studyLanguage,
+    IFreeLimitStatusService freeLimitStatusService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevFreeLimitStatusEndpoint");
+
+    try
+    {
+        var response = await freeLimitStatusService.GetDevFreeLimitStatusAsync(studyLanguage, cancellationToken);
+        return Results.Ok(response);
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev free limit status GET failed because storage is unavailable.");
+        return Results.Json(new ErrorResponse
+        {
+            Status = ApiConstants.UnhealthyStatus,
+            Message = "Free limit status is unavailable because storage is not reachable.",
             CheckedAtUtc = DateTimeOffset.UtcNow
         }, statusCode: StatusCodes.Status503ServiceUnavailable);
     }
