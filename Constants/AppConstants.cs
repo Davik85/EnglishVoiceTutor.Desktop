@@ -78,9 +78,11 @@ public static class AppConstants
     public const string TranscribingAudioMessage = "Transcribing your voice...";
     public const string TranscriptionCompletedMessage = "Voice transcription is ready. Review the text and press Send.";
     public const string TranscriptionFailedMessage = "Could not transcribe the recording. Please try again or type your answer.";
+    public const string TranscriptionFreeLimitMessage = "You have reached today's free voice transcription limit. You can continue by typing your answer.";
     public const string EmptyTranscriptionMessage = "No speech was recognized. Please try again.";
     public const string EmptyMessageWarning = "Please type your answer before sending.";
     public const string MockHintText = "Hint: Try answering with a short complete sentence.";
+    public const string HintFreeLimitMessage = "You have reached today's free hint limit. You can keep practicing without hints.";
     public const string HintFallbackUserMessage = "I need a hint for what to say next.";
     public const string MockBotFirstMessage = "Hi! Let's practice this situation. Are you ready?";
     public const int RecentConversationMessagesLimit = 10;
@@ -94,6 +96,8 @@ public static class AppConstants
     public const string PlayVoiceButtonText = "Play voice";
     public const string PlayingBotVoiceMessage = "Playing AI-generated bot voice...";
     public const string BotVoiceFailedMessage = "Could not play bot voice. Please try again.";
+    public const string BotVoiceFreeLimitMessage = "You have reached today's free voice playback limit. You can continue reading the text replies.";
+    public const string ChatReplyFreeLimitMessage = "You have reached today's free chat reply limit. Please try again tomorrow.";
     public const string HideTranslationButtonText = "Hide translation";
     public const string TranslationLabel = "Translation";
     public const string TranslationLoadingText = "Translating...";

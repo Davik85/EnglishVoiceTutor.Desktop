@@ -8,6 +8,9 @@ public static class UsageConstants
     {
         public const string LessonChatReply = "lesson_chat_reply";
         public const string LessonChatHint = "lesson_chat_hint";
+        public const string AudioTranscribe = "audio_transcribe";
+        public const string AudioSpeech = "audio_speech";
+        public const string AudioSpeechStream = "audio_speech_stream";
         public const string LessonChatFeedback = "lesson_chat_feedback";
         public const string LessonSummary = "lesson_summary";
         public const string Translation = "translation";

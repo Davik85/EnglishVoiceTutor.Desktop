@@ -1059,6 +1059,12 @@ public partial class LessonChatViewModel : ViewModelBase
                 UserInput = string.Empty;
             }
         }
+        catch (FreeLimitExceededException exception)
+        {
+            BackendStatusText = BackendConstants.BackendStatusConnected;
+            StatusMessage = exception.UserFacingMessage;
+            Debug.WriteLine($"Voice transcription free limit reached; recording state will be reset. Operation={exception.Operation}; LimitType={exception.LimitType}; Used={exception.Used}; Limit={exception.Limit}.");
+        }
         catch (AudioTranscriptionBackendException exception)
         {
             BackendStatusText = BackendConstants.BackendStatusConnected;
@@ -4222,6 +4228,12 @@ public partial class LessonChatViewModel : ViewModelBase
             BackendStatusText = BackendConstants.BackendStatusConnected;
             StatusMessage = string.Empty;
         }
+        catch (FreeLimitExceededException exception)
+        {
+            BackendStatusText = BackendConstants.BackendStatusConnected;
+            CurrentHintText = exception.UserFacingMessage;
+            StatusMessage = string.Empty;
+        }
         catch
         {
             BackendStatusText = BackendConstants.BackendStatusUnavailable;
@@ -4256,6 +4268,13 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             ConversationHintText = await BuildLessonHintTextAsync(ConversationLatestUserText);
             BackendStatusText = BackendConstants.BackendStatusConnected;
+            IsConversationHintVisible = true;
+            StatusMessage = string.Empty;
+        }
+        catch (FreeLimitExceededException exception)
+        {
+            BackendStatusText = BackendConstants.BackendStatusConnected;
+            ConversationHintText = exception.UserFacingMessage;
             IsConversationHintVisible = true;
             StatusMessage = string.Empty;
         }
