@@ -31,8 +31,8 @@ public sealed class FreeLimitStatusService(
         var ttsSeconds = counters.Sum(item => item.TtsSeconds);
         var estimatedCost = counters.Sum(item => item.EstimatedCost);
 
-        var createdAt = counters.Count == 0 ? null : counters.Min(item => item.CreatedAt);
-        var counterUpdatedAt = counters.Count == 0 ? null : counters.Max(item => item.UpdatedAt);
+        DateTimeOffset? createdAt = counters.Count == 0 ? null : counters.Min(item => item.CreatedAt);
+        DateTimeOffset? counterUpdatedAt = counters.Count == 0 ? null : counters.Max(item => item.UpdatedAt);
 
         return new FreeLimitStatusResponse
         {
