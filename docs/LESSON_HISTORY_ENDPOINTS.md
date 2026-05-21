@@ -34,7 +34,12 @@ Possible responses:
 ## Temporary dev user behavior
 Both endpoints only return records for the current temporary dev user ID. This is deliberate for current development and can be swapped later with authenticated user identity.
 
+## Current implementation status
+- Backend lesson history list/detail endpoints are implemented.
+- Desktop Lesson History backend list read is implemented with local JSON fallback when backend is unavailable.
+- Endpoints are development endpoints and not public authenticated APIs yet.
+
 ## Known limitations
-- Desktop Lesson History screen is not connected to these backend endpoints yet.
-- `feedback_results` and `usage_events` are not included yet.
+- No auth/JWT or production user accounts yet.
+- `feedback_results` is not connected to lesson history responses yet.
 - CMS/admin panel is not implemented yet.

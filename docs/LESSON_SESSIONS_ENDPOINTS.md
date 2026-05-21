@@ -1,16 +1,14 @@
 # Dev Lesson Session Endpoints
 
-These endpoints add the first backend-only session history layer for lesson runs.
+These endpoints provide the backend session history layer for lesson runs.
 
 ## Scope
 
 - Temporary dev user only (same identity source as `/api/dev/user-settings`).
-- Backend-only in this phase.
-- Desktop Lesson Chat is **not** connected to these endpoints yet.
-- Lesson messages are **not** saved yet.
-- Feedback is **not** saved yet.
-- Summary is **not** saved yet.
-- Usage/cost logs are **not** saved yet (session `estimatedCost` currently starts at `0`).
+- Backend development endpoints in this phase.
+- Desktop normal Lesson Chat is connected for best-effort create/finish session tracking.
+- Session rows are persisted in PostgreSQL via EF Core.
+- Session `estimatedCost` currently remains a persisted numeric field without subscription enforcement.
 
 ## Routes
 
@@ -93,3 +91,8 @@ Returns:
 
 All lesson-session endpoints return a safe short `503` JSON error body when storage is unavailable.
 No stack trace or provider internals are returned to clients.
+
+## Current limitations
+- Daily limits are not enforced.
+- Subscription/billing enforcement is not implemented.
+- Auth/JWT and production accounts are not implemented.
