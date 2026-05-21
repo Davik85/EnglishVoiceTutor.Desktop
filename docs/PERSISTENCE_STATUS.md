@@ -1,75 +1,44 @@
 # Persistence Status Checklist
 
-## Implemented tables/features
+## Implemented now
 
-- [x] PostgreSQL + EF Core persistence foundation is active.
-- [x] `users`
-- [x] `user_settings`
-- [x] `lesson_sessions`
-- [x] `lesson_messages`
-- [x] `lesson_summaries`
-- [x] `usage_events`
-- [x] `daily_usage_counters`
-- [x] `daily_usage_counters.chat_reply_count` (EF migration `20260520150000_AddDailyUsageChatReplyCount`)
-- [x] Backend aggregates successful usage events into daily counters by `(user, usageDate, studyLanguage)`.
+- PostgreSQL + EF Core persistence foundation is active.
+- Runtime persistence is implemented for:
+  - `lesson_sessions`
+  - `lesson_messages`
+  - `lesson_summaries`
+  - `usage_events`
+  - `daily_usage_counters` (including `chat_reply_count`)
+  - `feedback_results` (best-effort runtime save on successful `/api/lesson-chat/feedback` calls)
+- Free-limit block is complete for the current dev-user scope:
+  - `GET /api/dev/free-limit-status`
+  - study language normalization for usage counters
+  - soft backend free-limit enforcement (HTTP 429 before provider calls)
+  - desktop user-friendly HTTP 429 free-limit UX
 
-## Implemented dev endpoints
+## Implemented read endpoints
 
-- [x] Health endpoint: `GET /health`
-- [x] Database health endpoint: `GET /api/health/database`
-- [x] User settings endpoints (`/api/dev/user-settings`)
-- [x] Lesson sessions endpoints (`/api/dev/lesson-sessions`)
-- [x] Lesson summaries endpoints (`/api/dev/lesson-sessions/{sessionId}/summary`, `/api/dev/lesson-summaries`)
-- [x] Lesson history endpoints (`/api/dev/lesson-history`, `/api/dev/lesson-history/{sessionId}`)
-- [x] Dev diagnostics endpoints for usage/counters (`/api/dev/usage-events`, `/api/dev/daily-usage-counters`)
-- [x] Free plan diagnostics endpoint (`GET /api/dev/free-limit-status`) is backend-only and reports daily free-limit diagnostics.
-- [x] Soft free-limit enforcement is implemented for dev backend expensive operations (`lesson-chat/reply`, `lesson-chat/hint`, `audio/transcribe`, `audio/speech`, and `audio/speech-stream`) and returns HTTP 429 before provider calls when the relevant daily limit is reached.
-- [x] Free-limit enforcement is still dev-user based and not production auth/billing enforcement.
-- [x] Desktop now displays user-friendly free-limit messages for HTTP 429 responses instead of misleading generic fallbacks.
+- `GET /api/dev/lesson-history`
+- `GET /api/dev/lesson-history/{sessionId}`
+  - session metadata
+  - messages
+  - summary (optional)
+  - feedback results list (`feedbackResults`) with `messageId` references
+- `GET /api/dev/usage-events`
+- `GET /api/dev/daily-usage-counters`
+- `GET /api/dev/free-limit-status`
+- `GET /api/dev/feedback-results` (dev diagnostics, safe fields only)
 
-## Desktop integrations already connected
+## Data safety constraints (current)
 
-- [x] Desktop diagnostics checks backend + database health endpoints.
-- [x] Desktop lesson session create/finish sync to backend (best effort).
-- [x] Desktop lesson message persistence to backend (best effort).
-- [x] Desktop lesson summary persistence to backend (best effort).
-- [x] Desktop Lesson History reads backend list first, with local JSON fallback.
+- No raw audio is stored in persistence tables.
+- No full prompts are stored.
+- No full provider payloads are stored.
+- No API keys or secrets are stored.
 
-## Data handling clarifications
+## Next recommended backend focus
 
-- [x] `usage_events` stores aggregate metadata (operation/model/studyLanguage/status/timing/cost), not raw audio.
-- [x] `usage_events` does not store full prompts, full provider payloads, API keys, or secrets.
-- [x] `lesson_chat_reply` increments `chatReplyCount` in `daily_usage_counters`.
-- [x] Free-limit diagnostics normalize study-language aliases (for example `English`/`en`) during read aggregation, and new daily counter writes use normalized canonical study language values.
-- [x] `lessonsStarted` / `lessonsCompleted` are reserved for future lesson lifecycle counters.
-
-## Pending backend features
-
-- [x] Daily limit enforcement (soft backend free-tier runtime enforcement for dev user).
-- [ ] Subscription/billing runtime enforcement.
-- [ ] Auth/JWT and production user identities.
-- [ ] `feedback_results` persistence wiring (if still disconnected in runtime flow).
-- [ ] Content versioning workflow.
-- [ ] CMS/admin backend role workflows.
-
-## Pending desktop features
-
-- [ ] Mobile sync.
-- [ ] Broader history/detail UX integration beyond current list-first backend read.
-
-## Pending release/security features
-
-- [ ] Server deployment to Contabo.
-- [ ] Production auth/roles hardening for admin/content management.
-- [ ] CMS/admin panel (after auth + roles + content versioning).
-
-## Recommended next steps
-
-1. Continue backend persistence wiring for `feedback_results`.
-2. Add auth/JWT and real accounts.
-3. Add subscription/payment enforcement.
-4. Add CMS/admin panel only after roles/content versioning.
-
-## Notes
-
-- DBeaver is for local developer inspection only; it is not a CMS/admin surface.
+1. feedback_results persistence wiring validation/observability hardening
+2. auth/JWT and real accounts
+3. subscription/payment enforcement
+4. CMS/admin panel only after auth/roles/content versioning

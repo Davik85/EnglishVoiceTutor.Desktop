@@ -21,4 +21,5 @@ public sealed record LessonHistoryDetailResponse(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     LessonHistorySummaryResponse? Summary,
-    IReadOnlyList<LessonHistoryMessageResponse> Messages);
+    IReadOnlyList<LessonHistoryMessageResponse> Messages,
+    IReadOnlyList<LessonHistoryFeedbackResponse> FeedbackResults);
