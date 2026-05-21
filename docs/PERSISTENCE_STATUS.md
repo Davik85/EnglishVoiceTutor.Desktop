@@ -22,6 +22,7 @@
 - [x] Lesson summaries endpoints (`/api/dev/lesson-sessions/{sessionId}/summary`, `/api/dev/lesson-summaries`)
 - [x] Lesson history endpoints (`/api/dev/lesson-history`, `/api/dev/lesson-history/{sessionId}`)
 - [x] Dev diagnostics endpoints for usage/counters (`/api/dev/usage-events`, `/api/dev/daily-usage-counters`)
+- [x] Free plan diagnostics endpoint (`GET /api/dev/free-limit-status`) is backend-only, read-only, reports diagnostics only, and does not enforce limits.
 
 ## Desktop integrations already connected
 
