@@ -462,27 +462,4 @@ public sealed class LessonChatBackendService
         throw new FreeLimitExceededException(operation, limitType, used, limit, remaining, studyLanguage, userMessage);
     }
 }
-    private static async Task ThrowFreeLimitExceededExceptionIfNeededAsync(
-        HttpResponseMessage response,
-        string defaultUserMessage,
-        CancellationToken cancellationToken)
-    {
-        if (response.StatusCode != HttpStatusCode.TooManyRequests)
-        {
-            return;
-        }
-
-        var payload = await response.Content.ReadFromJsonAsync<FreeLimitExceededResponse>(JsonOptions, cancellationToken);
-        var operation = payload?.Operation ?? string.Empty;
-        var limitType = payload?.LimitType ?? string.Empty;
-        var used = payload?.Used ?? 0;
-        var limit = payload?.Limit ?? 0;
-        var remaining = payload?.Remaining ?? 0;
-        var studyLanguage = payload?.StudyLanguage ?? string.Empty;
-        var userMessage = used > 0 && limit > 0
-            ? $"{defaultUserMessage.TrimEnd('.')} ({used}/{limit})."
-            : defaultUserMessage;
-
-        throw new FreeLimitExceededException(operation, limitType, used, limit, remaining, studyLanguage, userMessage);
-    }
 
