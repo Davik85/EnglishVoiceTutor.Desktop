@@ -674,9 +674,34 @@ static async Task<IResult> HandleLessonChatReplyAsync(
 
         return Results.Ok(response);
     }
+    catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+    {
+        logger.LogError(
+            exception,
+            "Lesson chat provider call failed. operation={Operation}; targetLanguageId={TargetLanguageId}; lessonId={LessonId}; tutorProfileId={TutorProfileId}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
+            UsageConstants.Operations.LessonChatReply,
+            string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
+            request.LessonId,
+            request.TutorProfileId,
+            exception.GetType().Name,
+            exception.Message);
+
+        return Results.Problem(
+            title: "Lesson chat reply timed out.",
+            detail: "The lesson chat provider timed out while creating a reply. Please try again.",
+            statusCode: StatusCodes.Status504GatewayTimeout);
+    }
     catch (Exception exception)
     {
-        logger.LogError(exception, "LessonChatReplyEndpoint failed to create a real lesson chat reply.");
+        logger.LogError(
+            exception,
+            "Lesson chat provider call failed. operation={Operation}; targetLanguageId={TargetLanguageId}; lessonId={LessonId}; tutorProfileId={TutorProfileId}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
+            UsageConstants.Operations.LessonChatReply,
+            string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
+            request.LessonId,
+            request.TutorProfileId,
+            exception.GetType().Name,
+            exception.Message);
 
         return Results.Problem(
             title: "Lesson chat reply failed.",
