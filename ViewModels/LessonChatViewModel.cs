@@ -5051,6 +5051,11 @@ public partial class LessonChatViewModel : ViewModelBase
 
     private string MapBackendFailureToUserMessage(Exception exception)
     {
+        if (exception is OperationCanceledException && exception is not TaskCanceledException)
+        {
+            return string.Empty;
+        }
+
         if (exception is TaskCanceledException || exception is TimeoutException || exception.InnerException is TimeoutException)
         {
             return BackendConstants.BackendRequestTimedOutMessage;
@@ -5075,15 +5080,22 @@ public partial class LessonChatViewModel : ViewModelBase
                 return BackendConstants.BackendReturnedErrorMessage;
             }
 
+            if (httpRequestException.StatusCode.HasValue)
+            {
+                return BackendConstants.BackendReturnedErrorMessage;
+            }
+
             if (httpRequestException.HttpRequestError is HttpRequestError.ConnectionError
                 or HttpRequestError.NameResolutionError
                 or HttpRequestError.Unknown)
             {
                 return localizedText.BackendUnavailableMessage;
             }
+
+            return BackendConstants.BackendUnexpectedResponseMessage;
         }
 
-        return localizedText.BackendUnavailableMessage;
+        return BackendConstants.BackendUnexpectedResponseMessage;
     }
 
     private static class BotVoiceCancellationReasons

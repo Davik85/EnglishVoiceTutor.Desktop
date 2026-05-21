@@ -13,6 +13,7 @@ public sealed class AudioTranscriptionService
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private const string OpenAiRequestFailedMessage = "OpenAI audio transcription request failed.";
     private const string OpenAiResponseMissingMessage = "OpenAI audio transcription response is empty.";
+    private const int TranscriptPreviewMaxLength = 80;
 
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -68,11 +69,23 @@ public sealed class AudioTranscriptionService
         }, cancellationToken);
 
         _logger.LogInformation(
-            "Audio transcription completed. TargetLanguageId={TargetLanguageId}; TargetLanguageName={TargetLanguageName}; TranscriptionLanguageCode={TranscriptionLanguageCode}; TranscriptLength={TranscriptLength}.",
+            "Audio transcription completed. TargetLanguageId={TargetLanguageId}; TargetLanguageName={TargetLanguageName}; TranscriptionLanguageCode={TranscriptionLanguageCode}; TranscriptLength={TranscriptLength}; AudioFileLength={AudioFileLength}; EstimatedDurationSeconds={EstimatedDurationSeconds}.",
             resolvedTargetLanguage.Id,
             resolvedTargetLanguage.EnglishName,
             resolvedTargetLanguage.TranscriptionLanguageCode,
-            transcriptText.Length);
+            transcriptText.Length,
+            audioFile.Length,
+            durationSeconds);
+
+        if (IsDevelopmentEnvironment())
+        {
+            var transcriptPreview = BuildTranscriptPreview(transcriptText);
+            _logger.LogInformation(
+                "Audio transcription preview. TargetLanguageId={TargetLanguageId}; TranscriptPreview=\"{TranscriptPreview}\"; TranscriptLength={TranscriptLength}.",
+                resolvedTargetLanguage.Id,
+                transcriptPreview,
+                transcriptText.Length);
+        }
 
         _logger.LogInformation("Developer usage summary: Operation=audio_transcription; Model={Model}; Language={Language}; InputAudioBytes={InputAudioBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; TranscriptCharacters={TranscriptCharacters}; Status=success; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", OpenAiConstants.DefaultTranscriptionModel, resolvedTargetLanguage.TranscriptionLanguageCode, audioFile.Length, durationSeconds, transcriptText.Length, PricingConstants.OpenAi.TranscriptionPerMinuteUsd == 0m ? "transcription_pricing" : string.Empty);
 
@@ -105,9 +118,6 @@ public sealed class AudioTranscriptionService
         formContent.Add(
             new StringContent(targetLanguage.TranscriptionLanguageCode),
             OpenAiConstants.MultipartLanguageFieldName);
-        formContent.Add(
-            new StringContent(string.Format(OpenAiConstants.TranscriptionPromptTemplate, targetLanguage.EnglishName)),
-            OpenAiConstants.MultipartPromptFieldName);
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, OpenAiConstants.AudioTranscriptionsEndpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue(OpenAiConstants.AuthorizationScheme, apiKey);
@@ -129,6 +139,22 @@ public sealed class AudioTranscriptionService
         }
 
         return parsedResponse;
+    }
+
+
+    private bool IsDevelopmentEnvironment()
+    {
+        return string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Development", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildTranscriptPreview(string transcriptText)
+    {
+        if (transcriptText.Length <= TranscriptPreviewMaxLength)
+        {
+            return transcriptText;
+        }
+
+        return transcriptText[..TranscriptPreviewMaxLength];
     }
 
     private static double EstimatePcmWavDurationSeconds(long bytes)
