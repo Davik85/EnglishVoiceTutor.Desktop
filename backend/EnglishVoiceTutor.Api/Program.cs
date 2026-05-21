@@ -678,10 +678,10 @@ static async Task<IResult> HandleLessonChatReplyAsync(
     {
         logger.LogError(
             exception,
-            "Lesson chat provider call failed. operation={Operation}; targetLanguageId={TargetLanguageId}; lessonId={LessonId}; tutorProfileId={TutorProfileId}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
+            "Lesson chat provider call failed. operation={Operation}; lessonScenarioId={LessonScenarioId}; targetLanguageId={TargetLanguageId}; tutorProfileId={TutorProfileId}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
             UsageConstants.Operations.LessonChatReply,
-            string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
             request.LessonScenarioId,
+            string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
             request.TutorProfileId,
             exception.GetType().Name,
             exception.Message);
@@ -695,10 +695,10 @@ static async Task<IResult> HandleLessonChatReplyAsync(
     {
         logger.LogError(
             exception,
-            "Lesson chat provider call failed. operation={Operation}; targetLanguageId={TargetLanguageId}; lessonId={LessonId}; tutorProfileId={TutorProfileId}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
+            "Lesson chat provider call failed. operation={Operation}; lessonScenarioId={LessonScenarioId}; targetLanguageId={TargetLanguageId}; tutorProfileId={TutorProfileId}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
             UsageConstants.Operations.LessonChatReply,
-            string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
             request.LessonScenarioId,
+            string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
             request.TutorProfileId,
             exception.GetType().Name,
             exception.Message);
