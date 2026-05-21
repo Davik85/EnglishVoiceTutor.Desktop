@@ -681,7 +681,7 @@ static async Task<IResult> HandleLessonChatReplyAsync(
             "Lesson chat provider call failed. operation={Operation}; targetLanguageId={TargetLanguageId}; lessonId={LessonId}; tutorProfileId={TutorProfileId}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
             UsageConstants.Operations.LessonChatReply,
             string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
-            request.LessonId,
+            request.LessonScenarioId,
             request.TutorProfileId,
             exception.GetType().Name,
             exception.Message);
@@ -698,7 +698,7 @@ static async Task<IResult> HandleLessonChatReplyAsync(
             "Lesson chat provider call failed. operation={Operation}; targetLanguageId={TargetLanguageId}; lessonId={LessonId}; tutorProfileId={TutorProfileId}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
             UsageConstants.Operations.LessonChatReply,
             string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
-            request.LessonId,
+            request.LessonScenarioId,
             request.TutorProfileId,
             exception.GetType().Name,
             exception.Message);
