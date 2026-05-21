@@ -3,7 +3,10 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Net;
+using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
@@ -2595,10 +2598,9 @@ public partial class LessonChatViewModel : ViewModelBase
 
             return true;
         }
-        catch
+        catch (Exception exception)
         {
-            BackendStatusText = BackendConstants.BackendStatusUnavailable;
-            StatusMessage = localizedText.BackendUnavailableMessage;
+            ApplyBackendOperationFailure("lesson_chat_reply", exception);
             if (IsTtsConversationModeActive && !IsCompletedAwaitingFinish)
             {
                 SetConversationModeState(ConversationModeState.Ready, "tts_lesson_reply_failed");
@@ -4290,11 +4292,10 @@ public partial class LessonChatViewModel : ViewModelBase
             CurrentHintText = exception.UserFacingMessage;
             StatusMessage = string.Empty;
         }
-        catch
+        catch (Exception exception)
         {
-            BackendStatusText = BackendConstants.BackendStatusUnavailable;
+            ApplyBackendOperationFailure("lesson_hint", exception);
             CurrentHintText = localizedText.MockHintText;
-            StatusMessage = localizedText.BackendUnavailableMessage;
         }
         finally
         {
@@ -4334,12 +4335,11 @@ public partial class LessonChatViewModel : ViewModelBase
             IsConversationHintVisible = true;
             StatusMessage = string.Empty;
         }
-        catch
+        catch (Exception exception)
         {
-            BackendStatusText = BackendConstants.BackendStatusUnavailable;
+            ApplyBackendOperationFailure("conversation_hint", exception);
             ConversationHintText = localizedText.MockHintText;
             IsConversationHintVisible = true;
-            StatusMessage = localizedText.BackendUnavailableMessage;
         }
         finally
         {
@@ -4684,7 +4684,7 @@ public partial class LessonChatViewModel : ViewModelBase
             Debug.WriteLine($"Feedback request failed: requestedMessageId={target.MessageId}; requestedSourceKind={target.SourceMessageKind}; requestedTextLength={target.TextLength}; resultMessageId=0; displayedUnderMessageId={SelectedFeedbackMessageId}; staleResultIgnored=False; {exception}");
             if (SelectedFeedbackMessageId == target.MessageId)
             {
-                StatusMessage = localizedText.BackendUnavailableMessage;
+                ApplyBackendOperationFailure("lesson_feedback", exception);
             }
 
             return null;
@@ -5035,6 +5035,55 @@ public partial class LessonChatViewModel : ViewModelBase
             string.Empty,
             string.Empty,
             string.Empty);
+    }
+
+    private void ApplyBackendOperationFailure(string operationName, Exception exception)
+    {
+        var userMessage = MapBackendFailureToUserMessage(exception);
+        var isUnavailable = string.Equals(userMessage, localizedText.BackendUnavailableMessage, StringComparison.Ordinal);
+        BackendStatusText = isUnavailable
+            ? BackendConstants.BackendStatusUnavailable
+            : BackendConstants.BackendStatusConnected;
+        StatusMessage = userMessage;
+        var statusCode = (exception as HttpRequestException)?.StatusCode;
+        Debug.WriteLine($"Backend operation failed: Operation={operationName}; ExceptionType={exception.GetType().Name}; StatusCode={(int?)statusCode};");
+    }
+
+    private string MapBackendFailureToUserMessage(Exception exception)
+    {
+        if (exception is TaskCanceledException || exception is TimeoutException || exception.InnerException is TimeoutException)
+        {
+            return BackendConstants.BackendRequestTimedOutMessage;
+        }
+
+        if (exception is JsonException || exception is FormatException || exception is InvalidOperationException)
+        {
+            return BackendConstants.BackendUnexpectedResponseMessage;
+        }
+
+        if (exception is HttpRequestException httpRequestException)
+        {
+            if (httpRequestException.StatusCode is HttpStatusCode.BadRequest)
+            {
+                return BackendConstants.BackendValidationErrorMessage;
+            }
+
+            if (httpRequestException.StatusCode is HttpStatusCode.InternalServerError
+                or HttpStatusCode.BadGateway
+                or HttpStatusCode.ServiceUnavailable)
+            {
+                return BackendConstants.BackendReturnedErrorMessage;
+            }
+
+            if (httpRequestException.HttpRequestError is HttpRequestError.ConnectionError
+                or HttpRequestError.NameResolutionError
+                or HttpRequestError.Unknown)
+            {
+                return localizedText.BackendUnavailableMessage;
+            }
+        }
+
+        return localizedText.BackendUnavailableMessage;
     }
 
     private static class BotVoiceCancellationReasons
