@@ -2,6 +2,8 @@ namespace EnglishVoiceTutor.Api.Constants;
 
 public static class UsageConstants
 {
+    public const string UnknownStudyLanguage = "unknown";
+
     public static class Operations
     {
         public const string LessonChatReply = "lesson_chat_reply";

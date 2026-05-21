@@ -53,6 +53,7 @@ builder.Services.AddScoped<ILessonMessageService, LessonMessageService>();
 builder.Services.AddScoped<ILessonSummaryService, LessonSummaryService>();
 builder.Services.AddScoped<ILessonHistoryService, LessonHistoryService>();
 builder.Services.AddScoped<IHealthService, HealthService>();
+builder.Services.AddScoped<UsageStudyLanguageNormalizer>();
 builder.Services.AddScoped<IUsageEventService, UsageEventService>();
 builder.Services.AddScoped<IFreeLimitStatusService, FreeLimitStatusService>();
 
