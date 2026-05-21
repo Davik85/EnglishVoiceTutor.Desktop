@@ -99,6 +99,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private sealed record FeedbackRequestTarget(
         ChatMessageViewModel Message,
         int MessageId,
+        Guid? BackendMessageId,
         string Text,
         string SourceMessageKind,
         string Source,
@@ -2423,8 +2424,8 @@ public partial class LessonChatViewModel : ViewModelBase
 
         if (nextLearnerTurnCount >= finalTurn)
         {
-            AddLearnerMessage(userMessage, messageSource, nextLearnerTurnCount, feedback: null);
-            _ = TrySaveBackendLessonMessageAsync("user", userMessage, MapBackendLessonMessageSource(messageSource), nextLearnerTurnCount, isValidLessonTurn: true);
+            var learnerMessage = AddLearnerMessage(userMessage, messageSource, nextLearnerTurnCount, feedback: null);
+            learnerMessage.BackendMessageId = await TrySaveBackendLessonMessageAsync("user", userMessage, MapBackendLessonMessageSource(messageSource), nextLearnerTurnCount, isValidLessonTurn: true);
             if (IsTtsConversationModeActive)
             {
                 ConversationLatestUserText = userMessage;
@@ -2534,8 +2535,8 @@ public partial class LessonChatViewModel : ViewModelBase
             });
 
             var mappedFeedback = MapFeedback(response.Feedback);
-            AddLearnerMessage(userMessage, messageSource, nextLearnerTurnCount, mappedFeedback);
-            _ = TrySaveBackendLessonMessageAsync("user", userMessage, MapBackendLessonMessageSource(messageSource), nextLearnerTurnCount, isValidLessonTurn: true);
+            var learnerMessage = AddLearnerMessage(userMessage, messageSource, nextLearnerTurnCount, mappedFeedback);
+            learnerMessage.BackendMessageId = await TrySaveBackendLessonMessageAsync("user", userMessage, MapBackendLessonMessageSource(messageSource), nextLearnerTurnCount, isValidLessonTurn: true);
             if (IsTtsConversationModeActive)
             {
                 ConversationLatestUserText = userMessage;
@@ -3917,9 +3918,16 @@ public partial class LessonChatViewModel : ViewModelBase
         var requestedText = requestedMessage.Text.Trim();
         var requestedSourceKind = requestedMessage.SourceMessageKind;
         var requestedTextLength = requestedText.Length;
+        if (backendLessonSessionId is null || requestedMessage.BackendMessageId is null)
+        {
+            StatusMessage = localizedText.BackendUnavailableMessage;
+            Debug.WriteLine($"Feedback view blocked because backend lesson message id is unavailable: LocalMessageId={requestedMessageId}; BackendSessionId={backendLessonSessionId}; BackendMessageId={requestedMessage.BackendMessageId}.");
+            return;
+        }
         var requestedTarget = new FeedbackRequestTarget(
             requestedMessage,
             requestedMessageId,
+            requestedMessage.BackendMessageId,
             requestedText,
             requestedSourceKind,
             requestedMessage.Source,
@@ -4643,6 +4651,8 @@ public partial class LessonChatViewModel : ViewModelBase
             SubtopicTitle = SelectedSubtopic.Title,
             UserMessage = target.Text,
             SourceMessageId = target.MessageId,
+            SourcePersistedMessageId = target.BackendMessageId,
+            BackendSessionId = backendLessonSessionId,
             SourceMessageKind = target.SourceMessageKind,
             LastBotMessage = lastBotMessage,
             NativeLanguageName = nativeLanguageName,
@@ -4702,11 +4712,11 @@ public partial class LessonChatViewModel : ViewModelBase
         };
     }
 
-    private async Task TrySaveBackendLessonMessageAsync(string role, string text, string source, int turnNumber, bool isValidLessonTurn)
+    private async Task<Guid?> TrySaveBackendLessonMessageAsync(string role, string text, string source, int turnNumber, bool isValidLessonTurn)
     {
         if (backendLessonSessionId is null || string.IsNullOrWhiteSpace(text))
         {
-            return;
+            return null;
         }
 
         var request = new CreateBackendLessonMessageRequest
@@ -4726,7 +4736,10 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
             Debug.WriteLine($"Backend lesson message save failed. SessionId={backendLessonSessionId}; Role={role}; Source={source}; TurnNumber={turnNumber}; Error={result.SafeErrorMessage ?? "unknown"}.");
+            return null;
         }
+
+        return result.Message?.Id;
     }
 
     private async Task TryStartBackendLessonSessionAsync()
