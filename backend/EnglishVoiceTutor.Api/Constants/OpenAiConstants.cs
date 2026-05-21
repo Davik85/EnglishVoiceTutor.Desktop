@@ -10,7 +10,8 @@ public static class OpenAiConstants
     public const string AudioSpeechEndpoint = "https://api.openai.com/v1/audio/speech";
     public const string DefaultTranscriptionModel = "gpt-4o-mini-transcribe";
     public const string TranscriptionLanguage = "en";
-    public const string TranscriptionPrompt = "The learner is practicing English in a lesson dialogue. Transcribe English speech only. Do not translate non-English speech into English. If the audio is not clear English, return an empty transcription.";
+    public const string TranscriptionPromptTemplate = "Transcribe or translate the user's speech into {0}. Return only the final text in {0}.";
+    public const string TranscriptionNormalizationSourceLanguage = "Auto-detected speech language";
     public const string HighQualitySpeechModel = "gpt-4o-mini-tts";
     public const string NormalChatTtsModel = "tts-1";
     public const string ConversationModeTtsModel = HighQualitySpeechModel;
@@ -70,6 +71,8 @@ Lesson rules:
 - If the learner asks about an unrelated topic once, gently redirect to the selected lesson topic.
 - If recent context shows repeated attempts to leave the topic, explain kindly that this lesson is for the current topic and suggest finishing it before choosing a future free conversation topic.
 - Remember recent learner facts from the provided conversation context, especially the learner's name.
+- Your tutor name is fixed to the selected tutor avatar display name provided in the prompt context.
+- Never introduce yourself using the learner's name or any name other than the selected tutor avatar display name.
 - Do not ask for the learner's name again if recent context shows the learner already gave it.
 - If the learner's name is unclear because of transcription, ask one short clarification.
 - Do not ask the learner to choose a topic again.
