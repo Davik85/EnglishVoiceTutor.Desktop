@@ -386,7 +386,11 @@
                         <Border Grid.Column="2"
                                 MinHeight="500"
                                 MaxHeight="680"
-                                Padding="24">
+                                Padding="24"
+                                Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource FrameBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource CornerPanel}">
                             <Border.Style>
                                 <Style TargetType="Border" BasedOn="{StaticResource SoftPanelStyle}">
                                     <Setter Property="Visibility" Value="Visible" />
@@ -404,12 +408,18 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <ScrollViewer Grid.Row="0"
-                                              VerticalScrollBarVisibility="Auto"
-                                              HorizontalScrollBarVisibility="Disabled"
-                                              behaviors:ScrollViewerMouseWheelBehavior.BubbleMouseWheelWhenAtEdge="True"
-                                              behaviors:ScrollViewerAutoScrollBehavior.AutoScrollToBottom="True">
-                                    <StackPanel>
+                                <Border Grid.Row="0"
+                                        Margin="0,0,0,14"
+                                        Padding="12"
+                                        Background="{StaticResource SurfaceSoftBrush}"
+                                        BorderBrush="{StaticResource BorderSoftBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="{StaticResource CornerPanel}">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                                  HorizontalScrollBarVisibility="Disabled"
+                                                  behaviors:ScrollViewerMouseWheelBehavior.BubbleMouseWheelWhenAtEdge="True"
+                                                  behaviors:ScrollViewerAutoScrollBehavior.AutoScrollToBottom="True">
+                                        <StackPanel>
                                         <ItemsControl ItemsSource="{Binding Messages}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
