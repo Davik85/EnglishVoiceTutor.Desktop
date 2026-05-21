@@ -81,7 +81,7 @@ public sealed class AudioTranscriptionService
         {
             var transcriptPreview = BuildTranscriptPreview(transcriptText);
             _logger.LogInformation(
-                "Audio transcription preview. TargetLanguageId={TargetLanguageId}; TranscriptPreview="{TranscriptPreview}"; TranscriptLength={TranscriptLength}.",
+                "Audio transcription preview. TargetLanguageId={TargetLanguageId}; TranscriptPreview=\"{TranscriptPreview}\"; TranscriptLength={TranscriptLength}.",
                 resolvedTargetLanguage.Id,
                 transcriptPreview,
                 transcriptText.Length);
