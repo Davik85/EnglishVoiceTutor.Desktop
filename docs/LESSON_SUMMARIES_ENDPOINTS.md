@@ -38,7 +38,7 @@ Returns recent summaries for the dev user.
 - Limited to recent items.
 
 Responses:
-- `200 OK` with list payload.
+- `200 OK` with list payload (`{ items: [...] }`).
 - `503 Service Unavailable` when database storage is unavailable.
 
 ## Database unavailable behavior
@@ -47,7 +47,7 @@ On storage outages, endpoints return a safe short `503 ServiceUnavailable` body 
 
 ## Data schema
 
-`lesson_summaries` now stores dedicated semantic fields for summary content:
+`lesson_summaries` stores dedicated semantic fields for summary content:
 
 - `summary` (required)
 - `strengths` (nullable)
@@ -60,9 +60,9 @@ On storage outages, endpoints return a safe short `503 ServiceUnavailable` body 
 
 No semantic workaround mapping is used in endpoint persistence.
 
-## Current limitations
+## Current status and limitations
 
-- Desktop Summary button/flow is **not connected** to these endpoints yet.
-- Summary generation behavior is **unchanged** in this step.
-- Feedback persistence is **not connected** yet.
-- Usage/cost persistence is **not connected** yet.
+- Backend summary persistence is implemented.
+- Desktop normal Lesson Chat summary persistence is implemented as best-effort when a backend session id exists.
+- Daily limits, auth/JWT, and billing/subscription enforcement are not implemented.
+- `feedback_results` persistence is not connected yet.
