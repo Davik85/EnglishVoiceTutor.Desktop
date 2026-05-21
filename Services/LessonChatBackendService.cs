@@ -100,24 +100,41 @@ public sealed class LessonChatBackendService
     {
         using var httpClient = CreateHttpClient();
         Debug.WriteLine($"Sending lesson chat request to {BackendConstants.LessonChatReplyEndpoint}: TargetLanguageId={request.TargetLanguageId}; TargetLanguageName={request.TargetLanguageName}; TargetLanguageCode={request.TargetLanguageCode}; Topic={request.TopicTitle}; Subtopic={request.SubtopicTitle}.");
-
-        using var response = await httpClient.PostAsJsonAsync(
-            CreateEndpointUri(BackendConstants.LessonChatReplyEndpoint),
-            request,
-            JsonOptions,
-            cancellationToken);
-
-        await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.ChatReplyFreeLimitMessage, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        var backendResponse = await response.Content.ReadFromJsonAsync<LessonChatBackendResponse>(JsonOptions, cancellationToken);
-
-        if (backendResponse is null || string.IsNullOrWhiteSpace(backendResponse.BotReply) || backendResponse.Feedback is null)
+        try
         {
-            throw new InvalidOperationException(BackendConstants.BackendInvalidResponseMessage);
-        }
+            using var response = await httpClient.PostAsJsonAsync(
+                CreateEndpointUri(BackendConstants.LessonChatReplyEndpoint),
+                request,
+                JsonOptions,
+                cancellationToken);
 
-        return backendResponse;
+            await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.ChatReplyFreeLimitMessage, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var backendResponse = await response.Content.ReadFromJsonAsync<LessonChatBackendResponse>(JsonOptions, cancellationToken);
+
+            if (backendResponse is null || string.IsNullOrWhiteSpace(backendResponse.BotReply) || backendResponse.Feedback is null)
+            {
+                throw new InvalidOperationException(BackendConstants.BackendInvalidResponseMessage);
+            }
+
+            return backendResponse;
+        }
+        catch (HttpRequestException exception)
+        {
+            Debug.WriteLine($"Backend request failed: Operation=lesson_chat_reply; StatusCode={(int?)exception.StatusCode}; ExceptionType={exception.GetType().Name}.");
+            throw;
+        }
+        catch (TaskCanceledException exception)
+        {
+            Debug.WriteLine($"Backend request failed: Operation=lesson_chat_reply; StatusCode=; ExceptionType={exception.GetType().Name}.");
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Backend request failed: Operation=lesson_chat_reply; StatusCode=; ExceptionType={exception.GetType().Name}.");
+            throw;
+        }
     }
     public async Task<BackendFeedbackDto> SendLessonFeedbackRequestAsync(
         LessonChatBackendRequest request,
@@ -462,4 +479,3 @@ public sealed class LessonChatBackendService
         throw new FreeLimitExceededException(operation, limitType, used, limit, remaining, studyLanguage, userMessage);
     }
 }
-
