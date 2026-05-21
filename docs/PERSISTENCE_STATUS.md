@@ -25,6 +25,7 @@
 - [x] Free plan diagnostics endpoint (`GET /api/dev/free-limit-status`) is backend-only and reports daily free-limit diagnostics.
 - [x] Soft free-limit enforcement is implemented for dev backend expensive operations (`lesson-chat/reply`, `lesson-chat/hint`, `audio/transcribe`, `audio/speech`, and `audio/speech-stream`) and returns HTTP 429 before provider calls when the relevant daily limit is reached.
 - [x] Free-limit enforcement is still dev-user based and not production auth/billing enforcement.
+- [x] Desktop now displays user-friendly free-limit messages for HTTP 429 responses instead of misleading generic fallbacks.
 
 ## Desktop integrations already connected
 
@@ -64,13 +65,10 @@
 
 ## Recommended next steps
 
-1. Verify `daily_usage_counters` endpoint after `ChatReplyCount` migration.
-2. Add read-only free-limit diagnostics endpoint.
-3. Add soft free-limit enforcement later.
-4. Add `feedback_results` persistence.
-5. Add auth/JWT and real accounts.
-6. Add subscription/payment enforcement.
-7. Add CMS/admin panel only after roles/content versioning.
+1. Continue backend persistence wiring for `feedback_results`.
+2. Add auth/JWT and real accounts.
+3. Add subscription/payment enforcement.
+4. Add CMS/admin panel only after roles/content versioning.
 
 ## Notes
 
