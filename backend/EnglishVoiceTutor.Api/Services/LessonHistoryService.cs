@@ -124,6 +124,24 @@ public sealed class LessonHistoryService(AppDbContext dbContext, DevUserProvider
                 message.CreatedAt))
             .ToList();
 
+        var feedbackResults = await dbContext.FeedbackResults
+            .AsNoTracking()
+            .Where(feedback => feedback.SessionId == sessionId)
+            .OrderBy(feedback => feedback.CreatedAt)
+            .Select(feedback => new LessonHistoryFeedbackResponse(
+                feedback.Id,
+                feedback.SessionId,
+                feedback.MessageId,
+                feedback.FeedbackType,
+                feedback.CorrectedText,
+                feedback.Explanation,
+                feedback.GrammarTip,
+                feedback.VocabularyTip,
+                feedback.CultureTip,
+                feedback.Praise,
+                feedback.CreatedAt))
+            .ToListAsync(cancellationToken);
+
         return new LessonHistoryDetailResponse(
             session.Id,
             session.UserId,
@@ -145,7 +163,8 @@ public sealed class LessonHistoryService(AppDbContext dbContext, DevUserProvider
             session.CreatedAt,
             session.UpdatedAt,
             session.Summary,
-            messages);
+            messages,
+            feedbackResults);
     }
 
     private static int GetMessageRoleDisplayOrder(string role)

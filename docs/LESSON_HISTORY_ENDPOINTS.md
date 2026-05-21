@@ -25,6 +25,7 @@ Response shape (`LessonHistoryDetailResponse`):
 - full session metadata.
 - `messages`: full session messages in conversation display order: `turnNumber` ascending, then role order (`user`, `assistant`, `system`, unknown), then `createdAt` ascending.
 - `summary`: optional summary block when one exists.
+- `feedbackResults`: feedback rows linked to the session, each with `messageId`, feedback text fields, and `createdAt`.
 
 Possible responses:
 - `200 OK`: detail payload.
@@ -36,10 +37,10 @@ Both endpoints only return records for the current temporary dev user ID. This i
 
 ## Current implementation status
 - Backend lesson history list/detail endpoints are implemented.
+- Lesson history detail now includes persisted `feedback_results` via `feedbackResults`.
 - Desktop Lesson History backend list read is implemented with local JSON fallback when backend is unavailable.
 - Endpoints are development endpoints and not public authenticated APIs yet.
 
 ## Known limitations
 - No auth/JWT or production user accounts yet.
-- `feedback_results` is not connected to lesson history responses yet.
 - CMS/admin panel is not implemented yet.

@@ -105,6 +105,7 @@ app.MapGet(ApiConstants.DevLessonHistoryBySessionIdRoute, HandleGetDevLessonHist
 app.MapGet(ApiConstants.DevUsageEventsRoute, HandleGetDevUsageEventsAsync);
 app.MapGet(ApiConstants.DevDailyUsageCountersRoute, HandleGetDevDailyUsageCountersAsync);
 app.MapGet(ApiConstants.DevFreeLimitStatusRoute, HandleGetDevFreeLimitStatusAsync);
+app.MapGet(ApiConstants.DevFeedbackResultsRoute, HandleGetDevFeedbackResultsAsync);
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
@@ -750,6 +751,8 @@ static async Task<IResult> HandleLessonChatFeedbackAsync(
     LessonChatRequest request,
     ILessonChatService lessonChatService,
     IFreeLimitGuardService freeLimitGuardService,
+    AppDbContext dbContext,
+    DevUserProvider devUserProvider,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -778,6 +781,7 @@ static async Task<IResult> HandleLessonChatFeedbackAsync(
     {
         request.RequestPurpose = "feedback";
         var feedback = await lessonChatService.CreateFeedbackAsync(request, cancellationToken);
+        await TryPersistFeedbackResultAsync(request, feedback, dbContext, devUserProvider, logger, cancellationToken);
         return Results.Ok(feedback);
     }
     catch (Exception exception)
@@ -900,6 +904,97 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
     {
         logger.LogError(exception, "Unexpected audio transcription request failure.");
         return Results.Problem(ApiConstants.AudioTranscriptionError);
+    }
+}
+
+static async Task<IResult> HandleGetDevFeedbackResultsAsync(
+    AppDbContext dbContext,
+    DevUserProvider devUserProvider,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("DevFeedbackResultsEndpoint");
+
+    try
+    {
+        var userId = devUserProvider.GetDevUserId();
+        var items = await dbContext.FeedbackResults
+            .AsNoTracking()
+            .Where(feedback => feedback.Session.UserId == userId)
+            .OrderByDescending(feedback => feedback.CreatedAt)
+            .Take(50)
+            .Select(feedback => new
+            {
+                feedback.Id,
+                feedback.SessionId,
+                feedback.MessageId,
+                feedback.FeedbackType,
+                feedback.CorrectedText,
+                feedback.Explanation,
+                feedback.GrammarTip,
+                feedback.VocabularyTip,
+                feedback.CultureTip,
+                feedback.Praise,
+                feedback.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        return Results.Ok(new { items });
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Dev feedback results GET failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task TryPersistFeedbackResultAsync(
+    LessonChatRequest request,
+    FeedbackDto feedback,
+    AppDbContext dbContext,
+    DevUserProvider devUserProvider,
+    ILogger logger,
+    CancellationToken cancellationToken)
+{
+    try
+    {
+        var userId = devUserProvider.GetDevUserId();
+        var sourceText = request.UserMessage.Trim();
+
+        var message = await dbContext.LessonMessages
+            .AsNoTracking()
+            .Where(existing => existing.Session.UserId == userId && existing.Role == LessonMessageConstants.User && existing.Text == sourceText)
+            .OrderByDescending(existing => existing.CreatedAt)
+            .Select(existing => new { existing.Id, existing.SessionId })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (message is null)
+        {
+            logger.LogInformation("Feedback persistence skipped because source lesson message was not found for current dev user.");
+            return;
+        }
+
+        var entity = new EnglishVoiceTutor.Api.Data.Entities.FeedbackResultEntity
+        {
+            Id = Guid.NewGuid(),
+            SessionId = message.SessionId,
+            MessageId = message.Id,
+            FeedbackType = request.SourceMessageKind.Trim().Length > 0 ? request.SourceMessageKind.Trim() : "lesson_feedback",
+            CorrectedText = feedback.CorrectedVersion,
+            Explanation = feedback.ShortText,
+            GrammarTip = feedback.GrammarTip,
+            VocabularyTip = feedback.VocabularyTip,
+            CultureTip = feedback.CultureTip,
+            Praise = feedback.NaturalVersion,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        dbContext.FeedbackResults.Add(entity);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+    catch (Exception exception)
+    {
+        logger.LogWarning(exception, "Feedback persistence failed. Feedback response was returned successfully, but saving feedback_results was skipped.");
     }
 }
 
