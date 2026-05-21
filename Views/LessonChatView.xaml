@@ -384,6 +384,8 @@
                         </Border>
 
                         <Border Grid.Column="2"
+                                MinHeight="500"
+                                MaxHeight="680"
                                 Padding="24">
                             <Border.Style>
                                 <Style TargetType="Border" BasedOn="{StaticResource SoftPanelStyle}">
@@ -397,8 +399,7 @@
                             </Border.Style>
                             <Grid>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
@@ -624,16 +625,14 @@
                                                         <TextBox Margin="0,4,0,0" Text="{Binding SelectedFeedback.NaturalVersionTranslation, Mode=OneWay}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource SelectableChatTextBoxStyle}"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding IsFeedbackTranslationVisible}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
                                                     </StackPanel>
                                                 </Border>
-                                                    </StackPanel>
-                                                </StackPanel>
                                             </StackPanel>
-                                        </Border>
+                                        </StackPanel>
                                     </StackPanel>
-                                </ScrollViewer>
+                                </Border>
 
-                                <StackPanel Grid.Row="2" Margin="0,8,0,12">
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
+                                <Border Margin="0,8,0,12">
+                                    <Border.Style>
+                                        <Style TargetType="Border" BasedOn="{StaticResource LessonSupportPanelStyle}">
                                             <Setter Property="Visibility" Value="Collapsed" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding HasCurrentHint}" Value="True">
@@ -641,27 +640,26 @@
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
-                                    </StackPanel.Style>
-
+                                    </Border.Style>
                                     <Button Command="{Binding CloseHintCommand}"
                                             Background="Transparent"
                                             BorderThickness="0"
                                             Cursor="Hand"
                                             HorizontalContentAlignment="Stretch">
-                                        <Border Style="{StaticResource LessonSupportPanelStyle}">
-                                            <StackPanel>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding HintPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
-                                                    <TextBlock Margin="8,2,0,0" Text="{Binding ClickToCloseText}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" />
-                                                </StackPanel>
-
-                                                <TextBlock Margin="0,8,0,0" Text="{Binding CurrentHintText}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" TextWrapping="Wrap" />
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding HintPanelTitle}" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
+                                                <TextBlock Margin="8,2,0,0" Text="{Binding ClickToCloseText}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" />
                                             </StackPanel>
-                                        </Border>
-                                    </Button>
-                                </StackPanel>
 
-                                <StackPanel Grid.Row="3">
+                                            <TextBlock Margin="0,8,0,0" Text="{Binding CurrentHintText}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Button>
+                                </Border>
+                                    </StackPanel>
+                                </ScrollViewer>
+
+                                <StackPanel Grid.Row="1">
                                     <TextBox x:Name="LessonInputTextBox"
                                              MinHeight="42"
                                              Margin="0,0,0,12"
