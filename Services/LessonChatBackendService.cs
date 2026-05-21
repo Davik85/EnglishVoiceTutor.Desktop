@@ -107,6 +107,7 @@ public sealed class LessonChatBackendService
             JsonOptions,
             cancellationToken);
 
+        await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.ChatReplyFreeLimitMessage, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var backendResponse = await response.Content.ReadFromJsonAsync<LessonChatBackendResponse>(JsonOptions, cancellationToken);
@@ -156,6 +157,7 @@ public sealed class LessonChatBackendService
             JsonOptions,
             cancellationToken);
 
+        await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.HintFreeLimitMessage, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var backendResponse = await response.Content.ReadFromJsonAsync<LessonHintBackendResponse>(JsonOptions, cancellationToken);
@@ -201,6 +203,7 @@ public sealed class LessonChatBackendService
             formContent,
             cancellationToken);
 
+        await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.TranscriptionFreeLimitMessage, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
             throw new AudioTranscriptionBackendException(response.StatusCode);
@@ -260,6 +263,7 @@ public sealed class LessonChatBackendService
                 JsonOptions,
                 cancellationToken);
 
+            await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.BotVoiceFreeLimitMessage, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var audioBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
@@ -434,3 +438,27 @@ public sealed class LessonChatBackendService
         return BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath);
     }
 }
+    private static async Task ThrowFreeLimitExceededExceptionIfNeededAsync(
+        HttpResponseMessage response,
+        string defaultUserMessage,
+        CancellationToken cancellationToken)
+    {
+        if (response.StatusCode != HttpStatusCode.TooManyRequests)
+        {
+            return;
+        }
+
+        var payload = await response.Content.ReadFromJsonAsync<FreeLimitExceededResponse>(JsonOptions, cancellationToken);
+        var operation = payload?.Operation ?? string.Empty;
+        var limitType = payload?.LimitType ?? string.Empty;
+        var used = payload?.Used ?? 0;
+        var limit = payload?.Limit ?? 0;
+        var remaining = payload?.Remaining ?? 0;
+        var studyLanguage = payload?.StudyLanguage ?? string.Empty;
+        var userMessage = used > 0 && limit > 0
+            ? $"{defaultUserMessage.TrimEnd('.')} ({used}/{limit})."
+            : defaultUserMessage;
+
+        throw new FreeLimitExceededException(operation, limitType, used, limit, remaining, studyLanguage, userMessage);
+    }
+

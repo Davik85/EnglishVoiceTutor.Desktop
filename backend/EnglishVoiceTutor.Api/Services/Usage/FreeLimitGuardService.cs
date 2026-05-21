@@ -9,7 +9,7 @@ public sealed class FreeLimitGuardService(IFreeLimitStatusService freeLimitStatu
     {
         var status = await freeLimitStatusService.GetDevFreeLimitStatusAsync(studyLanguage, cancellationToken);
         return status.ChatReplyLimitExceeded || status.ChatReplyRemaining <= 0
-            ? CreateExceededResponse(status, "lesson_chat_reply", FreePlanLimitConstants.LimitTypeChatReplies, status.ChatReplyCount, status.ChatReplyLimit, status.ChatReplyRemaining)
+            ? CreateExceededResponse(status, UsageConstants.Operations.LessonChatReply, FreePlanLimitConstants.LimitTypeChatReplies, status.ChatReplyCount, status.ChatReplyLimit, status.ChatReplyRemaining)
             : null;
     }
 
@@ -17,7 +17,7 @@ public sealed class FreeLimitGuardService(IFreeLimitStatusService freeLimitStatu
     {
         var status = await freeLimitStatusService.GetDevFreeLimitStatusAsync(studyLanguage, cancellationToken);
         return status.HintLimitExceeded || status.HintRemaining <= 0
-            ? CreateExceededResponse(status, "lesson_chat_hint", FreePlanLimitConstants.LimitTypeHints, status.HintsUsed, status.HintLimit, status.HintRemaining)
+            ? CreateExceededResponse(status, UsageConstants.Operations.LessonChatHint, FreePlanLimitConstants.LimitTypeHints, status.HintsUsed, status.HintLimit, status.HintRemaining)
             : null;
     }
 
@@ -25,7 +25,7 @@ public sealed class FreeLimitGuardService(IFreeLimitStatusService freeLimitStatu
     {
         var status = await freeLimitStatusService.GetDevFreeLimitStatusAsync(studyLanguage, cancellationToken);
         return status.TranscriptionLimitExceeded || status.TranscriptionSecondsRemaining <= 0
-            ? CreateExceededResponse(status, "audio_transcribe", FreePlanLimitConstants.LimitTypeTranscriptionSeconds, status.TranscriptionSeconds, status.TranscriptionSecondsLimit, status.TranscriptionSecondsRemaining)
+            ? CreateExceededResponse(status, UsageConstants.Operations.AudioTranscribe, FreePlanLimitConstants.LimitTypeTranscriptionSeconds, status.TranscriptionSeconds, status.TranscriptionSecondsLimit, status.TranscriptionSecondsRemaining)
             : null;
     }
 
@@ -33,7 +33,7 @@ public sealed class FreeLimitGuardService(IFreeLimitStatusService freeLimitStatu
     {
         var status = await freeLimitStatusService.GetDevFreeLimitStatusAsync(studyLanguage, cancellationToken);
         return status.TtsLimitExceeded || status.TtsSecondsRemaining <= 0
-            ? CreateExceededResponse(status, "audio_speech", FreePlanLimitConstants.LimitTypeTtsSeconds, status.TtsSeconds, status.TtsSecondsLimit, status.TtsSecondsRemaining)
+            ? CreateExceededResponse(status, UsageConstants.Operations.AudioSpeech, FreePlanLimitConstants.LimitTypeTtsSeconds, status.TtsSeconds, status.TtsSecondsLimit, status.TtsSecondsRemaining)
             : null;
     }
 
