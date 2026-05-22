@@ -1,21 +1,16 @@
 # Persistence Status Checklist
 
-## Implemented now
+## Implemented and validated now
 
-- PostgreSQL + EF Core persistence foundation is active.
-- Runtime persistence is implemented for:
+- PostgreSQL + EF Core persistence foundation is implemented and active.
+- Runtime persistence is implemented and validated for:
   - `lesson_sessions`
   - `lesson_messages`
   - `lesson_summaries`
   - `usage_events`
   - `daily_usage_counters` (including `chat_reply_count`)
-  - `feedback_results` (best-effort runtime save on successful `/api/lesson-chat/feedback` calls)
-- Free-limit diagnostics and soft-enforcement wiring are complete for the current dev-user scope:
-  - `GET /api/dev/free-limit-status`
-  - study language normalization for usage counters
-  - configurable backend free-limit enforcement (HTTP 429 before provider calls when enabled)
-  - desktop user-friendly HTTP 429 free-limit UX
-  - Development defaults to diagnostics-only mode (`FreeLimits:EnforcementEnabled=false`) so local MVP testing is not blocked
+  - `feedback_results`
+- `feedback_results` runtime records are linked to `sessionId`/`messageId` after View feedback flow and are validated through dev read endpoints.
 
 ## Implemented read endpoints
 
@@ -30,6 +25,18 @@
 - `GET /api/dev/free-limit-status`
 - `GET /api/dev/feedback-results` (dev diagnostics, safe fields only)
 
+## Free-limit status (MVP)
+
+- Free-limit diagnostics are implemented and active.
+- Soft enforcement wiring is implemented and configurable via `FreeLimits:EnforcementEnabled`.
+- Development is intentionally diagnostics-only: `FreeLimits:EnforcementEnabled=false`.
+- In diagnostics-only mode, counters and diagnostics stay active:
+  - `usage_events` still persist.
+  - `daily_usage_counters` still increment.
+  - `GET /api/dev/free-limit-status` remains usable.
+- In diagnostics-only Development mode, lesson chat/hint/STT/TTS are not blocked by HTTP 429.
+- Existing HTTP 429 enforcement behavior remains available when `FreeLimits:EnforcementEnabled=true`.
+
 ## Data safety constraints (current)
 
 - No raw audio is stored in persistence tables.
@@ -37,16 +44,11 @@
 - No full provider payloads are stored.
 - No API keys or secrets are stored.
 
-## Next recommended backend focus
+## Recommended next backend/product order
 
-1. feedback_results persistence wiring validation/observability hardening
-2. auth/JWT and real accounts
-3. subscription/payment enforcement
-4. CMS/admin panel only after auth/roles/content versioning
-
-## Free-limit enforcement mode (MVP)
-
-- Diagnostics are always active: `usage_events`, `daily_usage_counters`, and `GET /api/dev/free-limit-status` continue to track and expose limit status.
-- Soft enforcement is controlled by `FreeLimits:EnforcementEnabled`.
-- Local Development is configured for diagnostics-only mode (`false`) to prevent HTTP 429 blocks during lesson chat, hints, transcription, and TTS testing.
-- Enforcement can be re-enabled later by setting `FreeLimits:EnforcementEnabled=true` for billing/subscription rollout work.
+1. Final small stabilization pass
+   - monitor STT quality with real short learner phrases
+   - harden TutorIdentityGuard / tutor identity behavior if warnings continue
+2. Auth/JWT and real accounts
+3. Subscription/payment enforcement
+4. CMS/admin panel only after auth, roles, content versioning, draft/published workflow, audit trail, and rollback

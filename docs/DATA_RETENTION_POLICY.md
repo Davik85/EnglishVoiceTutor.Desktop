@@ -23,6 +23,7 @@ The PostgreSQL + EF Core storage foundation is implemented for:
 - `lesson_summaries`
 - `usage_events`
 - `daily_usage_counters`
+- `feedback_results`
 
 Also implemented:
 - backend health and database health endpoints
@@ -36,7 +37,22 @@ Also implemented:
 - Counters aggregate **successful** usage events by `(user, UTC date, study language)`.
 - `lesson_chat_reply` increments `chatReplyCount`.
 - `lessonsStarted` and `lessonsCompleted` are reserved for future lesson lifecycle counters.
-- Daily limits are **not enforced** yet.
+- Free-limit diagnostics stay active in Development diagnostics-only mode.
+- Free-limit enforcement exists but can be disabled via `FreeLimits:EnforcementEnabled=false` for local MVP testing.
+
+## Stored now (MVP)
+
+- Lesson history content needed for product behavior may be stored, including lesson messages and transcript text.
+- Lesson summaries may be stored.
+- Usage event metadata and daily aggregated counters may be stored.
+- Feedback results may be stored as safe structured learning output linked to session/message context.
+
+## Not stored now (MVP)
+
+- Raw audio files are not stored in persistence tables.
+- Full prompts are not stored.
+- Full provider payloads are not stored.
+- Secrets/API keys are not stored in persistence tables.
 
 ## Not implemented yet
 
@@ -47,7 +63,6 @@ Also implemented:
 - content versioning workflow
 - mobile sync
 - Contabo server deployment
-- `feedback_results` runtime persistence wiring (if still disconnected)
 
 ## Data minimization rules
 

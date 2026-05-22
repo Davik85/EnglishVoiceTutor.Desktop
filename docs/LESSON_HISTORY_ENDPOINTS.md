@@ -37,7 +37,7 @@ Both endpoints only return records for the current temporary dev user ID. This i
 
 ## Current implementation status
 - Backend lesson history list/detail endpoints are implemented.
-- Lesson history detail now includes persisted `feedback_results` via `feedbackResults`.
+- Lesson history detail includes persisted `feedback_results` via `feedbackResults` with `messageId` references.
 - Desktop Lesson History backend list read is implemented with local JSON fallback when backend is unavailable.
 - Endpoints are development endpoints and not public authenticated APIs yet.
 
