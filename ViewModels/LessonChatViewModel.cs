@@ -860,7 +860,8 @@ public partial class LessonChatViewModel : ViewModelBase
 
         try
         {
-            audioRecordingService.StartRecording(audioInputDeviceId);
+            var recordingFilePath = audioRecordingService.StartRecording(audioInputDeviceId);
+            Debug.WriteLine($"Voice recording started: StartedAtUtc={DateTimeOffset.UtcNow:O}; FileName={Path.GetFileName(recordingFilePath)}; AutoSendEnabled={IsVoiceAutoSendEnabled};");
             CurrentHintText = string.Empty;
             if (IsTtsConversationModeActive)
             {
@@ -967,6 +968,8 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             savedFilePath = audioRecordingService.StopRecording();
             var recordingDuration = audioRecordingService.LastRecordingDuration;
+            var savedFileInfo = string.IsNullOrWhiteSpace(savedFilePath) ? null : new FileInfo(savedFilePath);
+            Debug.WriteLine($"Voice recording stopped: StoppedAtUtc={DateTimeOffset.UtcNow:O}; FileName={Path.GetFileName(savedFilePath)}; FileSizeBytes={(savedFileInfo?.Exists == true ? savedFileInfo.Length : 0)}; DurationMs={recordingDuration.TotalMilliseconds:F0}; AutoSendEnabled={IsVoiceAutoSendEnabled};");
             IsRecording = false;
 
             if (string.IsNullOrWhiteSpace(savedFilePath))

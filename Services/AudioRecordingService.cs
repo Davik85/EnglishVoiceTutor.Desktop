@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using EnglishVoiceTutor.Desktop.Constants;
@@ -57,6 +58,7 @@ public sealed class AudioRecordingService : IDisposable
         writer = fileWriter;
         currentFilePath = filePath;
         recordingStartedAt = DateTimeOffset.UtcNow;
+        Debug.WriteLine($"Voice recording started: StartedAtUtc={recordingStartedAt.Value:O}; FileName={Path.GetFileName(filePath)}.");
         LastRecordingDuration = TimeSpan.Zero;
         IsRecording = true;
 
@@ -82,6 +84,9 @@ public sealed class AudioRecordingService : IDisposable
         finally
         {
             CleanupRecordingResources();
+            var stoppedAt = DateTimeOffset.UtcNow;
+            var savedFileInfo = string.IsNullOrWhiteSpace(savedFilePath) ? null : new FileInfo(savedFilePath);
+            Debug.WriteLine($"Voice recording stopped: StoppedAtUtc={stoppedAt:O}; FileName={Path.GetFileName(savedFilePath)}; FileSizeBytes={(savedFileInfo?.Exists == true ? savedFileInfo.Length : 0)}; DurationMs={LastRecordingDuration.TotalMilliseconds:F0};");
             recordingStartedAt = null;
             currentFilePath = null;
             IsRecording = false;
