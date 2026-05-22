@@ -6,6 +6,8 @@ public sealed class FreeLimitStatusResponse
     public DateOnly UsageDate { get; set; }
     public string StudyLanguage { get; set; } = string.Empty;
     public string PlanId { get; set; } = string.Empty;
+    public bool EnforcementEnabled { get; set; }
+    public string EnforcementMode { get; set; } = string.Empty;
 
     public int ChatReplyCount { get; set; }
     public int ChatReplyLimit { get; set; }

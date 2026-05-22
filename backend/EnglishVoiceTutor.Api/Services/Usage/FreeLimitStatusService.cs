@@ -1,15 +1,19 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Usage;
 using EnglishVoiceTutor.Api.Data;
+using EnglishVoiceTutor.Api.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace EnglishVoiceTutor.Api.Services.Usage;
 
 public sealed class FreeLimitStatusService(
     AppDbContext dbContext,
     DevUserProvider devUserProvider,
-    UsageStudyLanguageNormalizer usageStudyLanguageNormalizer) : IFreeLimitStatusService
+    UsageStudyLanguageNormalizer usageStudyLanguageNormalizer,
+    IOptions<FreeLimitOptions> freeLimitOptions) : IFreeLimitStatusService
 {
+    private readonly FreeLimitOptions options = freeLimitOptions.Value;
     public async Task<FreeLimitStatusResponse> GetDevFreeLimitStatusAsync(string? studyLanguage, CancellationToken cancellationToken)
     {
         var userId = devUserProvider.GetDevUserId();
@@ -40,6 +44,10 @@ public sealed class FreeLimitStatusService(
             UsageDate = usageDate,
             StudyLanguage = resolvedStudyLanguage,
             PlanId = FreePlanLimitConstants.PlanId,
+            EnforcementEnabled = options.EnforcementEnabled,
+            EnforcementMode = options.EnforcementEnabled
+                ? FreeLimitOptions.EnforcementModeEnforcing
+                : FreeLimitOptions.EnforcementModeDiagnosticsOnly,
             ChatReplyCount = chatReplyCount,
             ChatReplyLimit = FreePlanLimitConstants.ChatReplyLimitPerDay,
             ChatReplyRemaining = Remaining(FreePlanLimitConstants.ChatReplyLimitPerDay, chatReplyCount),
