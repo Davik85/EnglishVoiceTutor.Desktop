@@ -10,11 +10,12 @@
   - `usage_events`
   - `daily_usage_counters` (including `chat_reply_count`)
   - `feedback_results` (best-effort runtime save on successful `/api/lesson-chat/feedback` calls)
-- Free-limit block is complete for the current dev-user scope:
+- Free-limit diagnostics and soft-enforcement wiring are complete for the current dev-user scope:
   - `GET /api/dev/free-limit-status`
   - study language normalization for usage counters
-  - soft backend free-limit enforcement (HTTP 429 before provider calls)
+  - configurable backend free-limit enforcement (HTTP 429 before provider calls when enabled)
   - desktop user-friendly HTTP 429 free-limit UX
+  - Development defaults to diagnostics-only mode (`FreeLimits:EnforcementEnabled=false`) so local MVP testing is not blocked
 
 ## Implemented read endpoints
 
@@ -42,3 +43,10 @@
 2. auth/JWT and real accounts
 3. subscription/payment enforcement
 4. CMS/admin panel only after auth/roles/content versioning
+
+## Free-limit enforcement mode (MVP)
+
+- Diagnostics are always active: `usage_events`, `daily_usage_counters`, and `GET /api/dev/free-limit-status` continue to track and expose limit status.
+- Soft enforcement is controlled by `FreeLimits:EnforcementEnabled`.
+- Local Development is configured for diagnostics-only mode (`false`) to prevent HTTP 429 blocks during lesson chat, hints, transcription, and TTS testing.
+- Enforcement can be re-enabled later by setting `FreeLimits:EnforcementEnabled=true` for billing/subscription rollout work.

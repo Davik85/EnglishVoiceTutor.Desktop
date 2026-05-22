@@ -9,6 +9,7 @@ using EnglishVoiceTutor.Api.Contracts.LessonSummaries;
 using EnglishVoiceTutor.Api.Contracts.UserSettings;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Models;
+using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Api.Services.Usage;
 using EnglishVoiceTutor.Api.Contracts.Usage;
@@ -28,6 +29,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(defaultConnectionString);
 });
+
+builder.Services.Configure<FreeLimitOptions>(builder.Configuration.GetSection(FreeLimitOptions.SectionName));
 
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient(OpenAiConstants.AudioSpeechHttpClientName, httpClient =>
