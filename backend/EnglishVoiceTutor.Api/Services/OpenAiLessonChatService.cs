@@ -120,7 +120,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             throw new InvalidOperationException(OpenAiResponseInvalidMessage);
         }
 
-        var guardedReply = _tutorIdentityGuard.PreventWrongTutorSelfIntroduction(lessonReply, _avatarProfileProvider.GetById(request.TutorAvatarId));
+        var guardedReply = _tutorIdentityGuard.PreventWrongTutorSelfIntroduction(lessonReply, _avatarProfileProvider.GetById(request.TutorAvatarId), operation);
         var isEnglishTargetLanguage = string.IsNullOrWhiteSpace(request.TargetLanguageId)
             || string.Equals(request.TargetLanguageId, "en", StringComparison.OrdinalIgnoreCase);
         if (AssistantOutputLanguageGuard.IsLanguageSwitchRequest(request.UserMessage)
