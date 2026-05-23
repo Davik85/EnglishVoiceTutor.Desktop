@@ -4,12 +4,14 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Services.Auth;
 
 namespace EnglishVoiceTutor.Desktop.Services;
 
 public sealed class BackendLessonSessionClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly AuthSessionStorageService authSessionStorageService = new();
 
     public async Task<BackendLessonSessionClientResult> StartAsync(
         string? backendBaseUrl,
@@ -22,21 +24,23 @@ public sealed class BackendLessonSessionClient
 
         try
         {
-            using var response = await httpClient.PostAsJsonAsync(
-                BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.DevLessonSessionsEndpoint),
-                request,
-                JsonOptions,
-                cancellationToken);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.DevLessonSessionsEndpoint))
+            {
+                Content = JsonContent.Create(request, options: JsonOptions)
+            };
+            var authSession = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+            AuthenticatedRequestHelper.AddBearerTokenIfPresent(httpRequest, authSession?.AccessToken);
+            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
                 return BackendLessonSessionClientResult.Failure($"Backend lesson session POST failed with HTTP {(int)response.StatusCode}.");
             }
 
-            var session = await response.Content.ReadFromJsonAsync<BackendLessonSessionResponse>(JsonOptions, cancellationToken);
-            return session is null
+            var lessonSession = await response.Content.ReadFromJsonAsync<BackendLessonSessionResponse>(JsonOptions, cancellationToken);
+            return lessonSession is null
                 ? BackendLessonSessionClientResult.Failure("Backend lesson session POST returned an empty response.")
-                : BackendLessonSessionClientResult.Success(session);
+                : BackendLessonSessionClientResult.Success(lessonSession);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -60,21 +64,23 @@ public sealed class BackendLessonSessionClient
 
         try
         {
-            using var response = await httpClient.PutAsJsonAsync(
-                BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, string.Format(BackendConstants.DevLessonSessionFinishEndpointTemplate, sessionId)),
-                request,
-                JsonOptions,
-                cancellationToken);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Put, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, string.Format(BackendConstants.DevLessonSessionFinishEndpointTemplate, sessionId)))
+            {
+                Content = JsonContent.Create(request, options: JsonOptions)
+            };
+            var authSession = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+            AuthenticatedRequestHelper.AddBearerTokenIfPresent(httpRequest, authSession?.AccessToken);
+            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
                 return BackendLessonSessionClientResult.Failure($"Backend lesson session PUT failed with HTTP {(int)response.StatusCode}.");
             }
 
-            var session = await response.Content.ReadFromJsonAsync<BackendLessonSessionResponse>(JsonOptions, cancellationToken);
-            return session is null
+            var lessonSession = await response.Content.ReadFromJsonAsync<BackendLessonSessionResponse>(JsonOptions, cancellationToken);
+            return lessonSession is null
                 ? BackendLessonSessionClientResult.Failure("Backend lesson session PUT returned an empty response.")
-                : BackendLessonSessionClientResult.Success(session);
+                : BackendLessonSessionClientResult.Success(lessonSession);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
