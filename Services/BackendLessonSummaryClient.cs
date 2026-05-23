@@ -4,12 +4,14 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Services.Auth;
 
 namespace EnglishVoiceTutor.Desktop.Services;
 
 public sealed class BackendLessonSummaryClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly AuthSessionStorageService authSessionStorageService = new();
 
     public async Task<BackendLessonSummaryClientResult> UpsertAsync(
         string? backendBaseUrl,
@@ -24,11 +26,13 @@ public sealed class BackendLessonSummaryClient
         try
         {
             var endpoint = string.Format(BackendConstants.DevLessonSessionSummaryEndpointTemplate, sessionId);
-            using var response = await httpClient.PutAsJsonAsync(
-                BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpoint),
-                request,
-                JsonOptions,
-                cancellationToken);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Put, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpoint))
+            {
+                Content = JsonContent.Create(request, options: JsonOptions)
+            };
+            var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+            AuthenticatedRequestHelper.AddBearerTokenIfPresent(httpRequest, session?.AccessToken);
+            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {

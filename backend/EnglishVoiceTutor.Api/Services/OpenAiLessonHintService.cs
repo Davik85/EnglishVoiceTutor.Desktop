@@ -4,6 +4,7 @@ using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services.Usage;
+using EnglishVoiceTutor.Api.Services.Auth;
 
 namespace EnglishVoiceTutor.Api.Services;
 
@@ -30,7 +31,7 @@ public sealed class OpenAiLessonHintService : ILessonHintService
     private readonly MockLessonHintService _mockLessonHintService;
     private readonly LessonPromptBuilder _lessonPromptBuilder;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly DevUserProvider _devUserProvider;
+    private readonly IRequestUserResolver _requestUserResolver;
     private readonly IUsageEventService _usageEventService;
 
     public OpenAiLessonHintService(
@@ -38,14 +39,14 @@ public sealed class OpenAiLessonHintService : ILessonHintService
         MockLessonHintService mockLessonHintService,
         LessonPromptBuilder lessonPromptBuilder,
         IHttpClientFactory httpClientFactory,
-        DevUserProvider devUserProvider,
+        IRequestUserResolver requestUserResolver,
         IUsageEventService usageEventService)
     {
         _optionsProvider = optionsProvider;
         _mockLessonHintService = mockLessonHintService;
         _lessonPromptBuilder = lessonPromptBuilder;
         _httpClientFactory = httpClientFactory;
-        _devUserProvider = devUserProvider;
+        _requestUserResolver = requestUserResolver;
         _usageEventService = usageEventService;
     }
 
@@ -94,7 +95,7 @@ public sealed class OpenAiLessonHintService : ILessonHintService
 
             await _usageEventService.TryRecordAsync(new UsageEventRecord
             {
-                UserId = _devUserProvider.GetDevUserId(),
+                UserId = _requestUserResolver.ResolveCurrentUser().UserId,
                 Operation = UsageConstants.Operations.LessonChatHint,
                 Model = options.Model,
                 StudyLanguage = ResolveStudyLanguage(request.TargetLanguageName, request.TargetLanguageId),

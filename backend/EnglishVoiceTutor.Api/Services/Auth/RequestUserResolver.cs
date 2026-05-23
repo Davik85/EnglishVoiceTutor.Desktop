@@ -20,18 +20,21 @@ public sealed class RequestUserResolver(
 
     public ResolvedRequestUser ResolveCurrentUser()
     {
+        var hasAuthorizationHeader = !string.IsNullOrWhiteSpace(httpContextAccessor.HttpContext?.Request.Headers.Authorization);
         var principal = httpContextAccessor.HttpContext?.User;
         if (principal?.Identity?.IsAuthenticated == true)
         {
             var authenticatedUserId = ClaimsUserAccessor.TryGetUserId(principal);
             if (authenticatedUserId.HasValue)
             {
+                logger.LogInformation("Request user resolved: Source={Source}; AuthorizationHeaderPresent={AuthorizationHeaderPresent}.", AuthenticatedSource, hasAuthorizationHeader);
                 return new ResolvedRequestUser(authenticatedUserId.Value, AuthenticatedSource);
             }
         }
 
         if (hostEnvironment.IsDevelopment())
         {
+            logger.LogInformation("Request user resolved: Source={Source}; AuthorizationHeaderPresent={AuthorizationHeaderPresent}.", DevelopmentSource, hasAuthorizationHeader);
             return new ResolvedRequestUser(devUserProvider.GetDevUserId(), DevelopmentSource);
         }
 
