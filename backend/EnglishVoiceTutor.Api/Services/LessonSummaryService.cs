@@ -4,9 +4,11 @@ using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
+using EnglishVoiceTutor.Api.Services.Auth;
+
 namespace EnglishVoiceTutor.Api.Services;
 
-public sealed class LessonSummaryService(AppDbContext dbContext, DevUserProvider devUserProvider) : ILessonSummaryService
+public sealed class LessonSummaryService(AppDbContext dbContext, IRequestUserResolver requestUserResolver) : ILessonSummaryService
 {
     public async Task<LessonSummaryResponse> UpsertDevLessonSummaryAsync(Guid sessionId, UpsertLessonSummaryRequest request, CancellationToken cancellationToken)
     {
@@ -59,7 +61,7 @@ public sealed class LessonSummaryService(AppDbContext dbContext, DevUserProvider
 
     public async Task<LessonSummaryListResponse> GetRecentDevLessonSummariesAsync(CancellationToken cancellationToken)
     {
-        var userId = devUserProvider.GetDevUserId();
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
 
         var items = await dbContext.LessonSummaries
             .Where(summary => summary.Session.UserId == userId)
@@ -73,7 +75,7 @@ public sealed class LessonSummaryService(AppDbContext dbContext, DevUserProvider
 
     private async Task<LessonSessionEntity> GetDevUserSessionAsync(Guid sessionId, CancellationToken cancellationToken)
     {
-        var userId = devUserProvider.GetDevUserId();
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
         var session = await dbContext.LessonSessions
             .SingleOrDefaultAsync(existing => existing.Id == sessionId && existing.UserId == userId, cancellationToken);
 

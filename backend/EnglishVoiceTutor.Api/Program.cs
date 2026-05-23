@@ -66,6 +66,7 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient(OpenAiConstants.AudioSpeechHttpClientName, httpClient =>
@@ -98,6 +99,7 @@ builder.Services.AddScoped<IFreeLimitGuardService, FreeLimitGuardService>();
 builder.Services.AddScoped<IPasswordHasher<EnglishVoiceTutor.Api.Data.Entities.UserEntity>, PasswordHasher<EnglishVoiceTutor.Api.Data.Entities.UserEntity>>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IRequestUserResolver, RequestUserResolver>();
 
 var app = builder.Build();
 
@@ -884,7 +886,7 @@ static async Task<IResult> HandleLessonChatFeedbackAsync(
     ILessonChatService lessonChatService,
     IFreeLimitGuardService freeLimitGuardService,
     AppDbContext dbContext,
-    DevUserProvider devUserProvider,
+    IRequestUserResolver requestUserResolver,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -913,7 +915,7 @@ static async Task<IResult> HandleLessonChatFeedbackAsync(
     {
         request.RequestPurpose = "feedback";
         var feedback = await lessonChatService.CreateFeedbackAsync(request, cancellationToken);
-        await TryPersistFeedbackResultAsync(request, feedback, dbContext, devUserProvider, logger, cancellationToken);
+        await TryPersistFeedbackResultAsync(request, feedback, dbContext, requestUserResolver, logger, cancellationToken);
         return Results.Ok(feedback);
     }
     catch (Exception exception)
@@ -1088,13 +1090,14 @@ static async Task TryPersistFeedbackResultAsync(
     LessonChatRequest request,
     FeedbackDto feedback,
     AppDbContext dbContext,
-    DevUserProvider devUserProvider,
+    IRequestUserResolver requestUserResolver,
     ILogger logger,
     CancellationToken cancellationToken)
 {
     try
     {
-        var userId = devUserProvider.GetDevUserId();
+        var resolvedUser = requestUserResolver.ResolveCurrentUser();
+        var userId = resolvedUser.UserId;
         var messageQuery = dbContext.LessonMessages
             .AsNoTracking()
             .Where(existing => existing.Session.UserId == userId && existing.Role == LessonMessageConstants.User);
@@ -1121,7 +1124,7 @@ static async Task TryPersistFeedbackResultAsync(
 
         if (message is null)
         {
-            logger.LogInformation("Feedback persistence skipped because source lesson message was not found for current dev user.");
+            logger.LogInformation("Feedback persistence skipped because source lesson message was not found for the resolved user. Source={UserSource}.", resolvedUser.Source);
             return;
         }
 
