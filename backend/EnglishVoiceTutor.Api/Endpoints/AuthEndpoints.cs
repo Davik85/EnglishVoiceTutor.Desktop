@@ -20,6 +20,8 @@ public static class AuthEndpoints
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        var logger = loggerFactory.CreateLogger("AuthEndpoints");
+
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
         {
             return Results.BadRequest(new { error = "Email and password are required." });
@@ -33,12 +35,12 @@ public static class AuthEndpoints
         try
         {
             var response = await authService.RegisterAsync(request, cancellationToken);
-            loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Auth register completed. Result=Created");
+            logger.LogInformation("Auth register completed. Result=Created");
             return Results.Created(ApiConstants.AuthMeRoute, response);
         }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        catch (AuthDuplicateEmailException)
         {
-            loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Auth register completed. Result=Conflict");
+            logger.LogInformation("Auth register completed. Result=Conflict; Reason=DuplicateEmail");
             return Results.Conflict(new { error = AuthConstants.DuplicateEmailError });
         }
     }

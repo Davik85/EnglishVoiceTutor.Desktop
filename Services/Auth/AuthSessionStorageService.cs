@@ -49,10 +49,17 @@ public sealed class AuthSessionStorageService
 
             var json = await File.ReadAllTextAsync(authSessionFilePath, cancellationToken);
             var session = JsonSerializer.Deserialize<StoredAuthSession>(json, SerializerOptions);
+            if (session is null)
+            {
+                await ClearAsync(cancellationToken);
+                return null;
+            }
+
             return session;
         }
         catch
         {
+            await ClearAsync(cancellationToken);
             return null;
         }
     }

@@ -4,14 +4,26 @@ using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace EnglishVoiceTutor.Api.Services.Auth;
 
 public sealed class AuthService(AppDbContext dbContext, IPasswordHasher<UserEntity> passwordHasher, IJwtTokenService jwtTokenService) : IAuthService
 {
+    private const string UniqueViolationSqlState = "23505";
+
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken)
     {
         var normalizedEmail = NormalizeEmail(request.Email);
+        var existingUser = await dbContext.Users
+            .AsNoTracking()
+            .AnyAsync(candidate => candidate.Email == normalizedEmail, cancellationToken);
+
+        if (existingUser)
+        {
+            throw new AuthDuplicateEmailException();
+        }
+
         var createdAt = DateTimeOffset.UtcNow;
 
         var user = new UserEntity
@@ -41,7 +53,15 @@ public sealed class AuthService(AppDbContext dbContext, IPasswordHasher<UserEnti
         }
 
         dbContext.Users.Add(user);
-        await dbContext.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (IsUniqueEmailViolation(exception))
+        {
+            throw new AuthDuplicateEmailException();
+        }
 
         return jwtTokenService.CreateAuthResponse(user, displayName, createdAt);
     }
@@ -98,4 +118,12 @@ public sealed class AuthService(AppDbContext dbContext, IPasswordHasher<UserEnti
 
         return displayName.Trim();
     }
+
+    private static bool IsUniqueEmailViolation(DbUpdateException exception)
+    {
+        return exception.InnerException is PostgresException postgresException
+            && postgresException.SqlState == UniqueViolationSqlState;
+    }
 }
+
+public sealed class AuthDuplicateEmailException : Exception;

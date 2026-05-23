@@ -425,16 +425,23 @@ public partial class SettingsViewModel : ViewModelBase
                 return;
             }
 
-            var user = await authBackendService.GetMeAsync(session.AccessToken);
-            if (user is null)
+            var meResult = await authBackendService.GetMeAsync(session.AccessToken);
+            if (meResult.Status == AuthMeResultStatus.InvalidSession)
             {
                 await authBackendService.LogoutAsync();
                 ClearAccountState();
                 await LoadDevelopmentSettingsAsync();
+                StatusMessage = SessionExpiredFallbackMessageText;
                 return;
             }
 
-            ApplyAuthenticatedUser(user);
+            if (meResult.Status == AuthMeResultStatus.BackendUnavailable || meResult.User is null)
+            {
+                StatusMessage = BackendUnavailableMessageText;
+                return;
+            }
+
+            ApplyAuthenticatedUser(meResult.User);
             await LoadAuthenticatedSettingsAsync(session.AccessToken);
             StatusMessage = "Session restored.";
         }

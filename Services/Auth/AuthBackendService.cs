@@ -37,11 +37,11 @@ public sealed class AuthBackendService
         return AuthenticateAsync(BackendConstants.AuthLoginEndpoint, request, cancellationToken);
     }
 
-    public async Task<AuthUserDto?> GetMeAsync(string accessToken, CancellationToken cancellationToken = default)
+    public async Task<AuthMeResult> GetMeAsync(string accessToken, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(accessToken))
         {
-            return null;
+            return AuthMeResult.InvalidSession();
         }
 
         using var httpClient = CreateHttpClient();
@@ -54,19 +54,20 @@ public sealed class AuthBackendService
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
                 await sessionStorageService.ClearAsync(cancellationToken);
-                return null;
+                return AuthMeResult.InvalidSession();
             }
 
             if (!response.IsSuccessStatusCode)
             {
-                return null;
+                return AuthMeResult.BackendUnavailable();
             }
 
-            return await response.Content.ReadFromJsonAsync<AuthUserDto>(JsonOptions, cancellationToken);
+            var user = await response.Content.ReadFromJsonAsync<AuthUserDto>(JsonOptions, cancellationToken);
+            return user is null ? AuthMeResult.BackendUnavailable() : AuthMeResult.Success(user);
         }
         catch
         {
-            return null;
+            return AuthMeResult.BackendUnavailable();
         }
     }
 
@@ -142,4 +143,27 @@ public sealed class AuthBackendService
 
         return httpClient;
     }
+}
+
+public enum AuthMeResultStatus
+{
+    Success = 0,
+    InvalidSession = 1,
+    BackendUnavailable = 2
+}
+
+public sealed class AuthMeResult
+{
+    private AuthMeResult(AuthMeResultStatus status, AuthUserDto? user)
+    {
+        Status = status;
+        User = user;
+    }
+
+    public AuthMeResultStatus Status { get; }
+    public AuthUserDto? User { get; }
+
+    public static AuthMeResult Success(AuthUserDto user) => new(AuthMeResultStatus.Success, user);
+    public static AuthMeResult InvalidSession() => new(AuthMeResultStatus.InvalidSession, null);
+    public static AuthMeResult BackendUnavailable() => new(AuthMeResultStatus.BackendUnavailable, null);
 }
