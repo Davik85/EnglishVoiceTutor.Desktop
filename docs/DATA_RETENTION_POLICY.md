@@ -1,20 +1,12 @@
 # Data Retention and Storage Policy (Draft)
 
-## Purpose
+Review date: 2026-05-23.
 
-This document captures the current technical retention posture for backend persistence in EnglishVoiceTutor.
+This is a technical MVP retention policy draft (not a legal policy).
 
-It explains:
-- what is stored now
-- what is explicitly not stored
-- what is implemented vs deferred
-- how current storage supports desktop and future sync
+## Implemented persistence scope
 
-This is a product/technical draft, not a legal policy.
-
-## Implemented persistence foundation
-
-The PostgreSQL + EF Core storage foundation is implemented for:
+Backend persistence foundation (PostgreSQL + EF Core) is implemented for:
 - `users`
 - `user_profiles`
 - `user_settings`
@@ -25,60 +17,35 @@ The PostgreSQL + EF Core storage foundation is implemented for:
 - `daily_usage_counters`
 - `feedback_results`
 
-Also implemented:
-- backend health and database health endpoints
-- backend lesson history endpoints
-- desktop lesson history backend read with local JSON fallback
-
-## Implemented usage/counter behavior
-
-- `usage_events` persistence is implemented.
-- `daily_usage_counters` runtime aggregation is implemented.
-- Counters aggregate **successful** usage events by `(user, UTC date, study language)`.
-- `lesson_chat_reply` increments `chatReplyCount`.
-- `lessonsStarted` and `lessonsCompleted` are reserved for future lesson lifecycle counters.
-- Free-limit diagnostics stay active in Development diagnostics-only mode.
-- Free-limit enforcement exists but can be disabled via `FreeLimits:EnforcementEnabled=false` for local MVP testing.
-
 ## Stored now (MVP)
 
-- Lesson history content needed for product behavior may be stored, including lesson messages and transcript text.
-- Lesson summaries may be stored.
+- Lesson messages/transcript text may be stored as learning history.
+- Lesson summaries may be stored as learning history.
+- Feedback results may be stored as learning history.
 - Usage event metadata and daily aggregated counters may be stored.
-- Feedback results may be stored as safe structured learning output linked to session/message context.
+
+## Sensitive/auth data handling
+
+- Passwords are stored only as backend password hashes.
+- JWT tokens are not stored in backend persistence tables.
+- Desktop `auth-session.json` is temporary MVP local token storage and must be hardened/replaced before production.
 
 ## Not stored now (MVP)
 
-- Raw audio files are not stored in persistence tables.
-- Full prompts are not stored.
-- Full provider payloads are not stored.
-- Secrets/API keys are not stored in persistence tables.
+- Raw audio is not persisted.
+- Full prompts are not persisted.
+- Provider payloads are not persisted.
+- Secrets/API keys are not persisted.
 
-## Not implemented yet
+## Development free-limit note
 
-- auth/JWT
-- production user accounts
-- subscription/billing runtime enforcement
-- CMS/admin UI
-- content versioning workflow
-- mobile sync
-- Contabo server deployment
+- Development can run diagnostics-only free-limit mode (`FreeLimits:EnforcementEnabled=false`).
+- In this mode, counters still increment while lesson actions are not blocked.
 
-## Data minimization rules
+## Future work (not implemented)
 
-By default, do not store:
-- raw audio files
-- API keys/secrets
-- connection strings/passwords in source control
-- full prompts/provider payloads unless explicitly required
-- stack traces/secrets in API responses
-
-Current usage-event policy:
-- store aggregate metadata only (operation/model/studyLanguage/status/duration/cost)
-- do not store raw audio, full prompts, provider secrets, or full provider payloads
-
-## Tooling clarification
-
-- DBeaver is for local developer DB inspection only.
-- DBeaver is not a CMS/admin panel.
-- CMS/admin should come later, after auth/roles/content versioning.
+- Production-wide auth enforcement for all runtime endpoints
+- Roles/authorization layers
+- Subscription/payment enforcement
+- CMS/admin workflow
+- Contabo deployment

@@ -1,14 +1,12 @@
-# Dev Lesson Session Endpoints
+# Lesson Session Endpoints
 
-These endpoints provide the backend session history layer for lesson runs.
+Review date: 2026-05-23.
 
-## Scope
+## Status
 
-- Temporary dev user only (same identity source as `/api/dev/user-settings`).
-- Backend development endpoints in this phase.
-- Desktop normal Lesson Chat is connected for best-effort create/finish session tracking.
-- Session rows are persisted in PostgreSQL via EF Core.
-- Session `estimatedCost` currently remains a persisted numeric field without subscription enforcement.
+- **Implemented + Validated:** create/finish/read session endpoints.
+- **Development-only:** current routes are under `/api/dev/*`.
+- **Transitional MVP behavior:** request identity is auth-aware in Development.
 
 ## Routes
 
@@ -17,82 +15,29 @@ These endpoints provide the backend session history layer for lesson runs.
 - `GET /api/dev/lesson-sessions`
 - `GET /api/dev/lesson-sessions/{sessionId}`
 
-## Temporary dev user behavior
+## Runtime identity resolution (Development)
 
-- User id is resolved from `DevUserProvider`.
-- If the dev user row does not exist, backend creates a minimal user row once:
-  - `email = dev-user@local.test`
-  - `status = active`
+- With valid Bearer token: resolve authenticated user.
+- Without token: use dev-user fallback.
+- Authenticated and dev session history/counters remain isolated.
 
-## Status values
+## Request/response summary
 
-- `Active`
-- `Finished`
+- `POST` creates an active session.
+- `PUT .../finish` marks a session finished.
+- `GET` list returns recent sessions (newest first, capped).
+- `GET` detail returns one session for resolved user.
 
-## modeUsed values
+Common responses:
+- `200 OK` / `201 Created` on success.
+- `400 Bad Request` for validation errors.
+- `404 Not Found` when session is not visible to resolved user.
+- `503 Service Unavailable` when storage is unavailable.
 
-- `text`
-- `normal_voice`
-- `conversation_mode`
-- `realtime_future`
+## Known limitations / future hardening
 
-## Request/response behavior
-
-### `POST /api/dev/lesson-sessions`
-Creates a new active lesson session.
-
-Validation:
-- `lessonContentId` required
-- `studyLanguage` required and must be supported study language
-- `topicId` required
-- `topicTitle` required
-- `subtopicId` required
-- `subtopicTitle` required
-- `level` required
-- `modeUsed` required and must be one of supported mode values
-
-Returns:
-- `201 Created` + lesson session payload
-- `400 Bad Request` for validation errors
-- `503 Service Unavailable` when database storage is unavailable
-
-### `PUT /api/dev/lesson-sessions/{sessionId}/finish`
-Marks an existing dev-user session as finished.
-
-Validation:
-- `validTurnCount >= 0`
-
-Returns:
-- `200 OK` + updated lesson session payload
-- `400 Bad Request` for validation errors
-- `404 Not Found` if session does not exist for dev user
-- `503 Service Unavailable` when database storage is unavailable
-
-### `GET /api/dev/lesson-sessions`
-Returns recent sessions for the dev user.
-
-Returns:
-- `200 OK` + `{ items: [...] }`
-- `503 Service Unavailable` when database storage is unavailable
-
-Notes:
-- Results are sorted by newest first.
-- Maximum recent sessions returned: `50`.
-
-### `GET /api/dev/lesson-sessions/{sessionId}`
-Returns one session by id for the dev user.
-
-Returns:
-- `200 OK` + lesson session payload
-- `404 Not Found` if missing for dev user
-- `503 Service Unavailable` when database storage is unavailable
-
-## Database unavailable behavior
-
-All lesson-session endpoints return a safe short `503` JSON error body when storage is unavailable.
-No stack trace or provider internals are returned to clients.
-
-## Current limitations
-- Daily limits are not enforced.
-- Subscription/billing enforcement is not implemented.
-- Auth/JWT and production accounts are not implemented.
+- Dev endpoints remain available for local diagnostics.
+- Login exists but is not required for Lesson Chat in MVP.
+- Production auth enforcement is not enabled for all runtime endpoints yet.
+- Future production API naming should move away from `/api/dev` for authenticated user-facing session APIs.
+- Subscription/payment enforcement is not implemented.

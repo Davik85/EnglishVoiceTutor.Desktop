@@ -1,46 +1,39 @@
-# Dev Lesson History Endpoints
+# Lesson History Endpoints
 
-## Overview
-This document describes backend-only development endpoints for reading persisted lesson history.
+Review date: 2026-05-23.
 
-Current behavior is intentionally scoped to the temporary dev user identity provided by `DevUserProvider`.
+## Status
+
+- **Implemented + Validated:** lesson history list/detail endpoints.
+- **Development-only:** current route namespace remains `/api/dev/*` for local diagnostics.
+- **Transitional MVP behavior:** runtime identity is auth-aware even on dev endpoints.
 
 ## Endpoints
 
 ### GET `/api/dev/lesson-history`
-Returns recent lesson sessions for the temporary dev user.
-
-Response shape (`LessonHistoryListResponse`):
-- `items`: up to 50 recent sessions ordered by `startedAt` descending.
-- each item includes session metadata, `hasSummary`, `summaryPreview`, and `messageCount`.
-
-Possible responses:
-- `200 OK`: history list payload.
-- `503 Service Unavailable`: storage unavailable with safe short `ErrorResponse` body.
+Returns recent lesson sessions for the resolved runtime user.
 
 ### GET `/api/dev/lesson-history/{sessionId}`
-Returns one lesson session detail for the temporary dev user.
+Returns lesson session detail for the resolved runtime user, including:
+- session metadata
+- messages
+- optional summary
+- `feedbackResults` (when available)
 
-Response shape (`LessonHistoryDetailResponse`):
-- full session metadata.
-- `messages`: full session messages in conversation display order: `turnNumber` ascending, then role order (`user`, `assistant`, `system`, unknown), then `createdAt` ascending.
-- `summary`: optional summary block when one exists.
-- `feedbackResults`: feedback rows linked to the session, each with `messageId`, feedback text fields, and `createdAt`.
+## Runtime identity resolution (Development)
 
-Possible responses:
-- `200 OK`: detail payload.
-- `404 Not Found`: session does not exist for dev user.
-- `503 Service Unavailable`: storage unavailable with safe short `ErrorResponse` body.
+- If Bearer token is present and valid, endpoints resolve the authenticated user.
+- Without token, endpoints use Development dev-user fallback.
+- Authenticated and dev histories remain isolated.
 
-## Temporary dev user behavior
-Both endpoints only return records for the current temporary dev user ID. This is deliberate for current development and can be swapped later with authenticated user identity.
+## Response behavior
 
-## Current implementation status
-- Backend lesson history list/detail endpoints are implemented.
-- Lesson history detail includes persisted `feedback_results` via `feedbackResults` with `messageId` references.
-- Desktop Lesson History backend list read is implemented with local JSON fallback when backend is unavailable.
-- Endpoints are development endpoints and not public authenticated APIs yet.
+- `200 OK` on success.
+- `404 Not Found` when session is not visible to resolved user.
+- `503 Service Unavailable` when storage is unavailable (safe short error body).
 
-## Known limitations
-- No auth/JWT or production user accounts yet.
-- CMS/admin panel is not implemented yet.
+## Known limitations / future hardening
+
+- Dev endpoints remain available for local diagnostics.
+- Production auth enforcement for all runtime endpoints is not enabled yet.
+- Future production API naming should move away from `/api/dev` for authenticated user-facing history.

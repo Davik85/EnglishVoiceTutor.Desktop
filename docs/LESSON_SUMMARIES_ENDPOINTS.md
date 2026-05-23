@@ -1,68 +1,40 @@
-# Lesson Summaries Backend Endpoints (Dev)
+# Lesson Summaries Endpoints
 
-These endpoints persist and read lesson summaries for existing **dev lesson sessions**.
+Review date: 2026-05-23.
 
-Summaries are the primary long-term learning artifact because they capture practice outcomes, improvement areas, and next actions that are reused across later lessons.
+## Status
 
-## Temporary dev-user behavior
-
-All endpoints use the current temporary backend dev user provider. A summary is only accessible if the underlying lesson session belongs to that dev user.
+- **Implemented + Validated:** summary upsert/read/list persistence.
+- **Development-only:** current route namespace is `/api/dev/*`.
+- **Transitional MVP behavior:** runtime identity is auth-aware in Development.
 
 ## Endpoints
 
-### PUT `/api/dev/lesson-sessions/{sessionId}/summary`
-Upserts the summary for an existing dev lesson session.
+- `PUT /api/dev/lesson-sessions/{sessionId}/summary`
+- `GET /api/dev/lesson-sessions/{sessionId}/summary`
+- `GET /api/dev/lesson-summaries`
 
-- If the session has no summary row yet, one is created.
-- If the session already has a summary row, that row is updated.
-- Does **not** create a lesson session.
+## Runtime identity resolution (Development)
 
-Responses:
-- `200 OK` with summary payload.
-- `400 Bad Request` when `summary` is empty.
-- `404 Not Found` when the session does not exist for the dev user.
-- `503 Service Unavailable` when database storage is unavailable.
+- With valid Bearer token: resolve authenticated user.
+- Without token: use dev-user fallback.
+- Authenticated and dev summary history remain isolated.
 
-### GET `/api/dev/lesson-sessions/{sessionId}/summary`
-Reads the summary for an existing dev lesson session.
+## Behavior summary
 
-Responses:
-- `200 OK` with summary payload.
-- `404 Not Found` when the session is missing for the dev user or no summary exists.
-- `503 Service Unavailable` when database storage is unavailable.
+- PUT upserts summary for existing lesson session.
+- GET by session returns summary for that session when visible to resolved user.
+- GET list returns recent summaries for resolved user.
 
-### GET `/api/dev/lesson-summaries`
-Returns recent summaries for the dev user.
+Common responses:
+- `200 OK` on success.
+- `400 Bad Request` when summary content is invalid/empty (PUT).
+- `404 Not Found` when session/summary is not visible to resolved user.
+- `503 Service Unavailable` when storage is unavailable.
 
-- Ordered by newest first.
-- Limited to recent items.
+## Known limitations / future hardening
 
-Responses:
-- `200 OK` with list payload (`{ items: [...] }`).
-- `503 Service Unavailable` when database storage is unavailable.
-
-## Database unavailable behavior
-
-On storage outages, endpoints return a safe short `503 ServiceUnavailable` body and do not expose stack traces, connection strings, provider internals, or host details.
-
-## Data schema
-
-`lesson_summaries` stores dedicated semantic fields for summary content:
-
-- `summary` (required)
-- `strengths` (nullable)
-- `improvements` (nullable)
-- `vocabulary` (nullable)
-- `grammar` (nullable)
-- `next_steps` (nullable)
-- `created_at` (required)
-- `updated_at` (required, updated on each upsert)
-
-No semantic workaround mapping is used in endpoint persistence.
-
-## Current status and limitations
-
-- Backend summary persistence is implemented.
-- Desktop normal Lesson Chat summary persistence is implemented as best-effort when a backend session id exists.
-- Daily limits, auth/JWT, and billing/subscription enforcement are not implemented.
-- `feedback_results` persistence is not connected yet.
+- Dev endpoints remain available for local diagnostics.
+- Production auth enforcement for all runtime endpoints is not enabled yet.
+- Future production API naming should move away from `/api/dev` for authenticated user-facing summary APIs.
+- Subscription/payment enforcement is not implemented.
