@@ -7,7 +7,9 @@ using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Models.Auth;
 using EnglishVoiceTutor.Desktop.Services;
+using EnglishVoiceTutor.Desktop.Services.Auth;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
@@ -22,6 +24,10 @@ public partial class SettingsViewModel : ViewModelBase
     private const string StudyLanguageTitleText = "Study language";
     private const string StudyLanguageSubtitleText = "Choose the language you want to practice. This does not change the app UI language.";
     private const string DiagnosticsStudyLanguageLabelText = "Study language";
+    private const string DefaultAccountSignedOutText = "Not signed in";
+    private const string LoginFailedMessageText = "Login failed. Check your email and password.";
+    private const string RegisterFailedMessageText = "Registration failed. Please review your details and try again.";
+    private const string BackendUnavailableMessageText = "Backend is unavailable. Check the backend URL and try again.";
 
     private readonly Action<string, string, string, string, string, string, string, string> saveSettings;
     private readonly Action navigateBack;
@@ -30,6 +36,7 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly BackendUserSettingsClient backendUserSettingsClient;
     private readonly AudioInputDeviceService audioInputDeviceService;
     private readonly AudioRecordingService audioRecordingService;
+    private readonly AuthBackendService authBackendService;
     private readonly LessonHistoryItem? latestLesson;
     private readonly string appVersionText;
     private readonly string settingsFilePathText;
@@ -187,6 +194,15 @@ public partial class SettingsViewModel : ViewModelBase
     public string CurrentStreakText { get; }
 
     public string LastCompletedLessonText => BuildLastCompletedLessonText(latestLesson, localizedText.NoCompletedLessonsText);
+    public string AccountTitle => "Account";
+    public string AccountSubtitle => "Optional sign-in for account session features. Lesson Chat works without login.";
+    public string AccountEmailLabel => "Email";
+    public string AccountPasswordLabel => "Password";
+    public string AccountDisplayNameLabel => "Display name (for registration)";
+    public string AccountRegisterButtonText => "Register";
+    public string AccountLoginButtonText => "Login";
+    public string AccountLogoutButtonText => "Logout";
+    public string CurrentAccountLabel => "Current account";
 
     public IReadOnlyList<InterfaceLanguageOption> AvailableInterfaceLanguages { get; } = InterfaceLanguageOptions.All;
 
@@ -260,6 +276,22 @@ public partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     private string diagnosticsCopyStatusText = string.Empty;
+    [ObservableProperty]
+    private string email = string.Empty;
+    [ObservableProperty]
+    private string password = string.Empty;
+    [ObservableProperty]
+    private string displayName = string.Empty;
+    [ObservableProperty]
+    private string currentUserEmail = string.Empty;
+    [ObservableProperty]
+    private string currentUserDisplayName = string.Empty;
+    [ObservableProperty]
+    private bool isAuthenticated;
+    [ObservableProperty]
+    private bool isBusy;
+    [ObservableProperty]
+    private string errorMessage = string.Empty;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DiagnosticsMicrophoneText))]
@@ -280,6 +312,7 @@ public partial class SettingsViewModel : ViewModelBase
         LessonChatBackendService lessonChatBackendService,
         BackendDiagnosticsService backendDiagnosticsService,
         BackendUserSettingsClient backendUserSettingsClient,
+        AuthBackendService authBackendService,
         AudioInputDeviceService audioInputDeviceService,
         AudioRecordingService audioRecordingService,
         Action<string, string, string, string, string, string, string, string> saveSettings,
@@ -300,6 +333,7 @@ public partial class SettingsViewModel : ViewModelBase
         this.lessonChatBackendService = lessonChatBackendService;
         this.backendDiagnosticsService = backendDiagnosticsService;
         this.backendUserSettingsClient = backendUserSettingsClient;
+        this.authBackendService = authBackendService;
         this.audioInputDeviceService = audioInputDeviceService;
         this.audioRecordingService = audioRecordingService;
         this.saveSettings = saveSettings;
@@ -313,6 +347,90 @@ public partial class SettingsViewModel : ViewModelBase
         CurrentStreakText = CalculateCurrentStreak(lessonHistory).ToString();
         RefreshAudioInputDevices(currentAudioInputDeviceId, showUnavailableStatus: false);
         _ = LoadBackendUserSettingsAsync();
+        _ = RestoreSessionAsync();
+    }
+
+    [RelayCommand]
+    private async Task RegisterAsync()
+    {
+        if (!TryValidateCredentials(requireDisplayName: true))
+        {
+            return;
+        }
+
+        await AuthenticateAsync(
+            () => authBackendService.RegisterAsync(new RegisterRequest
+            {
+                Email = Email.Trim(),
+                Password = Password,
+                DisplayName = string.IsNullOrWhiteSpace(DisplayName) ? null : DisplayName.Trim()
+            }),
+            RegisterFailedMessageText);
+    }
+
+    [RelayCommand]
+    private async Task LoginAsync()
+    {
+        if (!TryValidateCredentials(requireDisplayName: false))
+        {
+            return;
+        }
+
+        await AuthenticateAsync(
+            () => authBackendService.LoginAsync(new LoginRequest
+            {
+                Email = Email.Trim(),
+                Password = Password
+            }),
+            LoginFailedMessageText);
+    }
+
+    [RelayCommand]
+    private async Task LogoutAsync()
+    {
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+        try
+        {
+            await authBackendService.LogoutAsync();
+            ClearAccountState();
+            StatusMessage = "Signed out.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task RestoreSessionAsync()
+    {
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+        try
+        {
+            var session = await authBackendService.TryRestoreSessionAsync();
+            if (session is null)
+            {
+                ClearAccountState();
+                return;
+            }
+
+            var user = await authBackendService.GetMeAsync(session.AccessToken);
+            if (user is null)
+            {
+                await authBackendService.LogoutAsync();
+                ClearAccountState();
+                return;
+            }
+
+            ApplyAuthenticatedUser(user);
+            StatusMessage = "Session restored.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]
@@ -429,6 +547,11 @@ public partial class SettingsViewModel : ViewModelBase
         }
 
         DiagnosticsCopyStatusText = string.Empty;
+    }
+
+    partial void OnBackendBaseUrlChanged(string value)
+    {
+        authBackendService.SetBackendBaseUrl(value);
     }
 
     partial void OnSelectedStudyLanguageChanged(StudyLanguageDefinition value)
@@ -714,6 +837,66 @@ public partial class SettingsViewModel : ViewModelBase
         {
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
         }
+    }
+
+    private bool TryValidateCredentials(bool requireDisplayName)
+    {
+        ErrorMessage = string.Empty;
+        if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+        {
+            ErrorMessage = "Email and password are required.";
+            return false;
+        }
+
+        if (requireDisplayName && string.IsNullOrWhiteSpace(DisplayName))
+        {
+            ErrorMessage = "Display name is required for registration.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task AuthenticateAsync(Func<Task<AuthResponse?>> authenticateAsync, string failureMessage)
+    {
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+        try
+        {
+            var response = await authenticateAsync();
+            if (response is null || response.User is null)
+            {
+                ErrorMessage = failureMessage;
+                return;
+            }
+
+            ApplyAuthenticatedUser(response.User);
+            Password = string.Empty;
+            StatusMessage = "Signed in.";
+        }
+        catch
+        {
+            ErrorMessage = BackendUnavailableMessageText;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void ApplyAuthenticatedUser(AuthUserDto user)
+    {
+        CurrentUserEmail = user.Email;
+        CurrentUserDisplayName = user.DisplayName ?? string.Empty;
+        IsAuthenticated = true;
+    }
+
+    private void ClearAccountState()
+    {
+        CurrentUserEmail = string.Empty;
+        CurrentUserDisplayName = string.Empty;
+        IsAuthenticated = false;
+        Password = string.Empty;
     }
 
     private async Task SyncBackendUserSettingsAsync()

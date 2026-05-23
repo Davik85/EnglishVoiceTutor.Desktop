@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-05-22.
+Review date: 2026-05-23.
 
 This document records the current MVP state after the recent stabilization work. It describes the validated behavior that documentation should reflect; it is not a request to change runtime behavior.
 
@@ -69,7 +69,6 @@ STT quality is improved after rollback/stabilization, but remains an MVP known-r
 ## Not implemented yet
 
 - Contabo deployment
-- desktop login UI
 - production rollout of authenticated user flows in desktop
 - billing/subscription runtime enforcement
 - CMS/admin panel
@@ -89,9 +88,9 @@ STT quality is improved after rollback/stabilization, but remains an MVP known-r
 - Auth/JWT backend foundation is implemented (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`).
 - Authenticated user settings endpoints are implemented: `GET /api/me/settings` and `PUT /api/me/settings`.
 - Existing dev endpoint `GET/PUT /api/dev/user-settings` remains available for local MVP testing.
-- Desktop login UI is still not implemented in this repository state.
+- Desktop optional Account UI is implemented in Settings (register/login/restore/logout).
 
 - Desktop auth client/storage foundation is implemented (auth models, auth backend client, and local MVP token session storage).
-- Desktop login UI is still not implemented.
+- Desktop optional login is implemented and session state is restored from local storage when valid.
 - Lesson Chat still works without login in Development.
 - Token storage is temporary MVP local JSON storage and should be hardened before production.
