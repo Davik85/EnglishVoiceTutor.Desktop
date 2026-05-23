@@ -271,6 +271,12 @@
                                                Text="{Binding CurrentUserDisplayName}"
                                                FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}" />
+                                    <TextBlock Text="{Binding SettingsSourceLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                    <TextBlock Margin="0,6,0,0"
+                                               Text="{Binding SettingsSource}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" />
 
                                     <TextBlock Text="{Binding AccountEmailLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
                                     <TextBox Style="{StaticResource SettingsTextBoxStyle}"
