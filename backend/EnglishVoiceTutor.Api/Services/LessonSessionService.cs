@@ -4,9 +4,11 @@ using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
+using EnglishVoiceTutor.Api.Services.Auth;
+
 namespace EnglishVoiceTutor.Api.Services;
 
-public sealed class LessonSessionService(AppDbContext dbContext, DevUserProvider devUserProvider) : ILessonSessionService
+public sealed class LessonSessionService(AppDbContext dbContext, IRequestUserResolver requestUserResolver) : ILessonSessionService
 {
     private const string DefaultUserEmail = "dev-user@local.test";
     private const string DefaultUserPasswordHash = "temporary-dev-user-no-password-login";
@@ -53,7 +55,7 @@ public sealed class LessonSessionService(AppDbContext dbContext, DevUserProvider
     {
         ValidateFinishRequest(request);
 
-        var userId = devUserProvider.GetDevUserId();
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
         var session = await dbContext.LessonSessions
             .SingleOrDefaultAsync(existing => existing.Id == sessionId && existing.UserId == userId, cancellationToken);
 
@@ -75,7 +77,7 @@ public sealed class LessonSessionService(AppDbContext dbContext, DevUserProvider
 
     public async Task<LessonSessionListResponse> GetRecentDevLessonSessionsAsync(CancellationToken cancellationToken)
     {
-        var userId = devUserProvider.GetDevUserId();
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
 
         var sessions = await dbContext.LessonSessions
             .Where(session => session.UserId == userId)
@@ -90,7 +92,7 @@ public sealed class LessonSessionService(AppDbContext dbContext, DevUserProvider
 
     public async Task<LessonSessionResponse?> GetDevLessonSessionByIdAsync(Guid sessionId, CancellationToken cancellationToken)
     {
-        var userId = devUserProvider.GetDevUserId();
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
 
         return await dbContext.LessonSessions
             .Where(session => session.Id == sessionId && session.UserId == userId)
@@ -100,7 +102,7 @@ public sealed class LessonSessionService(AppDbContext dbContext, DevUserProvider
 
     private async Task<UserEntity> EnsureDevUserExistsAsync(CancellationToken cancellationToken)
     {
-        var userId = devUserProvider.GetDevUserId();
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
         var user = await dbContext.Users.SingleOrDefaultAsync(existing => existing.Id == userId, cancellationToken);
 
         if (user is not null)

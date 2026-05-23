@@ -3,13 +3,15 @@ using EnglishVoiceTutor.Api.Contracts.LessonHistory;
 using EnglishVoiceTutor.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
+using EnglishVoiceTutor.Api.Services.Auth;
+
 namespace EnglishVoiceTutor.Api.Services;
 
-public sealed class LessonHistoryService(AppDbContext dbContext, DevUserProvider devUserProvider) : ILessonHistoryService
+public sealed class LessonHistoryService(AppDbContext dbContext, IRequestUserResolver requestUserResolver) : ILessonHistoryService
 {
     public async Task<LessonHistoryListResponse> GetRecentDevLessonHistoryAsync(CancellationToken cancellationToken)
     {
-        var userId = devUserProvider.GetDevUserId();
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
 
         var items = await dbContext.LessonSessions
             .AsNoTracking()
@@ -41,7 +43,7 @@ public sealed class LessonHistoryService(AppDbContext dbContext, DevUserProvider
 
     public async Task<LessonHistoryDetailResponse?> GetDevLessonHistoryDetailAsync(Guid sessionId, CancellationToken cancellationToken)
     {
-        var userId = devUserProvider.GetDevUserId();
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
 
         var session = await dbContext.LessonSessions
             .AsNoTracking()

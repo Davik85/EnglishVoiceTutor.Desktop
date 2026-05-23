@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Services.Auth;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Desktop.Services;
@@ -33,6 +34,7 @@ public sealed class LessonChatBackendService
     private const string HealthyStatus = "ok";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private string backendBaseUrl = BackendConstants.DefaultBackendBaseUrl;
+    private readonly AuthSessionStorageService authSessionStorageService = new();
 
     public void SetBackendBaseUrl(string? value)
     {
@@ -102,11 +104,8 @@ public sealed class LessonChatBackendService
         Debug.WriteLine($"Sending lesson chat request to {BackendConstants.LessonChatReplyEndpoint}: TargetLanguageId={request.TargetLanguageId}; TargetLanguageName={request.TargetLanguageName}; TargetLanguageCode={request.TargetLanguageCode}; Topic={request.TopicTitle}; Subtopic={request.SubtopicTitle}.");
         try
         {
-            using var response = await httpClient.PostAsJsonAsync(
-                CreateEndpointUri(BackendConstants.LessonChatReplyEndpoint),
-                request,
-                JsonOptions,
-                cancellationToken);
+            using var httpRequest = await CreateAuthenticatedJsonRequestAsync(HttpMethod.Post, BackendConstants.LessonChatReplyEndpoint, request, cancellationToken);
+            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
             await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.ChatReplyFreeLimitMessage, cancellationToken);
             response.EnsureSuccessStatusCode();
@@ -143,11 +142,8 @@ public sealed class LessonChatBackendService
         using var httpClient = CreateHttpClient();
         Debug.WriteLine($"Sending lesson feedback request to {BackendConstants.LessonChatFeedbackEndpoint}: TargetLanguageId={request.TargetLanguageId}; SourceMessageId={request.SourceMessageId}; SourceMessageKind={request.SourceMessageKind}; Topic={request.TopicTitle}; Subtopic={request.SubtopicTitle}.");
 
-        using var response = await httpClient.PostAsJsonAsync(
-            CreateEndpointUri(BackendConstants.LessonChatFeedbackEndpoint),
-            request,
-            JsonOptions,
-            cancellationToken);
+        using var httpRequest = await CreateAuthenticatedJsonRequestAsync(HttpMethod.Post, BackendConstants.LessonChatFeedbackEndpoint, request, cancellationToken);
+        using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
         response.EnsureSuccessStatusCode();
 
@@ -168,11 +164,8 @@ public sealed class LessonChatBackendService
         using var httpClient = CreateHttpClient();
         Debug.WriteLine($"Sending lesson hint request to {BackendConstants.LessonChatHintEndpoint}: TargetLanguageId={request.TargetLanguageId}; Topic={request.TopicTitle}; Subtopic={request.SubtopicTitle}; LessonPhase={request.LessonPhase}.");
 
-        using var response = await httpClient.PostAsJsonAsync(
-            CreateEndpointUri(BackendConstants.LessonChatHintEndpoint),
-            request,
-            JsonOptions,
-            cancellationToken);
+        using var httpRequest = await CreateAuthenticatedJsonRequestAsync(HttpMethod.Post, BackendConstants.LessonChatHintEndpoint, request, cancellationToken);
+        using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
         await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.HintFreeLimitMessage, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -226,10 +219,9 @@ public sealed class LessonChatBackendService
             formContent.Add(new StringContent(transcriptionContext.Trim()), "transcriptionContext");
         }
 
-        using var response = await httpClient.PostAsync(
-            CreateEndpointUri(BackendConstants.AudioTranscriptionEndpoint),
-            formContent,
-            cancellationToken);
+        using var transcriptionRequest = await CreateAuthenticatedRequestAsync(HttpMethod.Post, BackendConstants.AudioTranscriptionEndpoint, cancellationToken);
+        transcriptionRequest.Content = formContent;
+        using var response = await httpClient.SendAsync(transcriptionRequest, cancellationToken);
 
         await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.TranscriptionFreeLimitMessage, cancellationToken);
         if (!response.IsSuccessStatusCode)
@@ -274,9 +266,7 @@ public sealed class LessonChatBackendService
 
         try
         {
-            using var response = await httpClient.PostAsJsonAsync(
-                endpointUri,
-                new AudioSpeechBackendRequest
+            using var speechRequest = await CreateAuthenticatedJsonRequestAsync(HttpMethod.Post, BackendConstants.AudioSpeechEndpoint, new AudioSpeechBackendRequest
                 {
                     Text = text,
                     Purpose = purpose,
@@ -287,9 +277,8 @@ public sealed class LessonChatBackendService
                     TargetLanguageName = resolvedTargetLanguage.EnglishName,
                     TargetLanguageNativeName = resolvedTargetLanguage.NativeName,
                     TargetLanguageCode = resolvedTargetLanguage.Bcp47Code
-                },
-                JsonOptions,
-                cancellationToken);
+                }, cancellationToken);
+            using var response = await httpClient.SendAsync(speechRequest, cancellationToken);
 
             await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.BotVoiceFreeLimitMessage, cancellationToken);
             response.EnsureSuccessStatusCode();
@@ -339,10 +328,8 @@ public sealed class LessonChatBackendService
                 Purpose = BackendConstants.LessonChatTtsPurpose
             },
             JsonOptions);
-        using var request = new HttpRequestMessage(HttpMethod.Post, endpointUri)
-        {
-            Content = new StringContent(requestJson, Encoding.UTF8, "application/json")
-        };
+        using var request = await CreateAuthenticatedRequestAsync(HttpMethod.Post, BackendConstants.AudioSpeechStreamEndpoint, cancellationToken);
+        request.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
 
         using var response = await httpClient.SendAsync(
             request,
@@ -430,6 +417,21 @@ public sealed class LessonChatBackendService
         }
 
         return httpClient;
+    }
+
+    private async Task<HttpRequestMessage> CreateAuthenticatedJsonRequestAsync<T>(HttpMethod method, string endpoint, T payload, CancellationToken cancellationToken)
+    {
+        var request = await CreateAuthenticatedRequestAsync(method, endpoint, cancellationToken);
+        request.Content = JsonContent.Create(payload, options: JsonOptions);
+        return request;
+    }
+
+    private async Task<HttpRequestMessage> CreateAuthenticatedRequestAsync(HttpMethod method, string endpoint, CancellationToken cancellationToken)
+    {
+        var request = new HttpRequestMessage(method, CreateEndpointUri(endpoint));
+        var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+        AuthenticatedRequestHelper.AddBearerTokenIfPresent(request, session?.AccessToken);
+        return request;
     }
 
 

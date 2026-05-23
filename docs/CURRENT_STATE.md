@@ -94,3 +94,4 @@ STT quality is improved after rollback/stabilization, but remains an MVP known-r
 - Desktop optional login is implemented and session state is restored from local storage when valid.
 - Lesson Chat still works without login in Development.
 - Token storage is temporary MVP local JSON storage and should be hardened before production.
+- Lesson runtime persistence is now auth-aware: signed-in requests use JWT user identity; signed-out Development requests continue using dev-user fallback without blocking Lesson Chat.

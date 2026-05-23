@@ -5,18 +5,20 @@ using EnglishVoiceTutor.Api.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
+using EnglishVoiceTutor.Api.Services.Auth;
+
 namespace EnglishVoiceTutor.Api.Services.Usage;
 
 public sealed class FreeLimitStatusService(
     AppDbContext dbContext,
-    DevUserProvider devUserProvider,
+    IRequestUserResolver requestUserResolver,
     UsageStudyLanguageNormalizer usageStudyLanguageNormalizer,
     IOptions<FreeLimitOptions> freeLimitOptions) : IFreeLimitStatusService
 {
     private readonly FreeLimitOptions options = freeLimitOptions.Value;
     public async Task<FreeLimitStatusResponse> GetDevFreeLimitStatusAsync(string? studyLanguage, CancellationToken cancellationToken)
     {
-        var userId = devUserProvider.GetDevUserId();
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
         var usageDate = DateOnly.FromDateTime(DateTime.UtcNow);
         var resolvedStudyLanguage = await ResolveStudyLanguageAsync(userId, studyLanguage, cancellationToken);
 

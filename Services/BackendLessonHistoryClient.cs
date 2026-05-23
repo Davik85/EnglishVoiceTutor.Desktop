@@ -4,12 +4,14 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Services.Auth;
 
 namespace EnglishVoiceTutor.Desktop.Services;
 
 public sealed class BackendLessonHistoryClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly AuthSessionStorageService authSessionStorageService = new();
 
     public async Task<BackendLessonHistoryClientResult> GetHistoryAsync(
         string? backendBaseUrl,
@@ -19,9 +21,10 @@ public sealed class BackendLessonHistoryClient
 
         try
         {
-            using var response = await httpClient.GetAsync(
-                BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.DevLessonHistoryEndpoint),
-                cancellationToken);
+            using var request = new HttpRequestMessage(HttpMethod.Get, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.DevLessonHistoryEndpoint));
+            var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+            AuthenticatedRequestHelper.AddBearerTokenIfPresent(request, session?.AccessToken);
+            using var response = await httpClient.SendAsync(request, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 using EnglishVoiceTutor.Api.Services.Usage;
 
+using EnglishVoiceTutor.Api.Services.Auth;
+
 namespace EnglishVoiceTutor.Api.Services;
 
 public sealed class AudioTranscriptionService
@@ -18,19 +20,19 @@ public sealed class AudioTranscriptionService
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<AudioTranscriptionService> _logger;
-    private readonly DevUserProvider _devUserProvider;
+    private readonly IRequestUserResolver _requestUserResolver;
     private readonly IUsageEventService _usageEventService;
 
     public AudioTranscriptionService(
         OpenAiOptionsProvider optionsProvider,
         IHttpClientFactory httpClientFactory,
-        DevUserProvider devUserProvider,
+        IRequestUserResolver requestUserResolver,
         IUsageEventService usageEventService,
         ILogger<AudioTranscriptionService> logger)
     {
         _optionsProvider = optionsProvider;
         _httpClientFactory = httpClientFactory;
-        _devUserProvider = devUserProvider;
+        _requestUserResolver = requestUserResolver;
         _usageEventService = usageEventService;
         _logger = logger;
     }
@@ -57,7 +59,7 @@ public sealed class AudioTranscriptionService
         var durationSeconds = EstimatePcmWavDurationSeconds(audioFile.Length);
         await _usageEventService.TryRecordAsync(new UsageEventRecord
         {
-            UserId = _devUserProvider.GetDevUserId(),
+            UserId = _requestUserResolver.ResolveCurrentUser().UserId,
             Operation = UsageConstants.Operations.AudioTranscription,
             Model = OpenAiConstants.DefaultTranscriptionModel,
             StudyLanguage = resolvedTargetLanguage.Id,
