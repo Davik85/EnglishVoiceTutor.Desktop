@@ -283,7 +283,8 @@
                                              Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" />
 
                                     <TextBlock Text="{Binding AccountPasswordLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <PasswordBox Style="{StaticResource SettingsPasswordBoxStyle}"
+                                    <PasswordBox x:Name="AccountPasswordBox"
+                                                 Style="{StaticResource SettingsPasswordBoxStyle}"
                                                  PasswordChanged="AccountPasswordBox_OnPasswordChanged" />
 
                                     <TextBlock Text="{Binding AccountDisplayNameLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
