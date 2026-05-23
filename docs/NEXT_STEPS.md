@@ -1,6 +1,6 @@
 # Next Steps
 
-Review date: 2026-05-22.
+Review date: 2026-05-23.
 
 This roadmap starts from the current confirmed MVP state where desktop/backend builds pass, lesson content audit passes, persistence foundation is active, feedback_results persistence is validated, and Development uses diagnostics-only free-limit mode (`FreeLimits:EnforcementEnabled=false`).
 
@@ -9,7 +9,7 @@ This roadmap starts from the current confirmed MVP state where desktop/backend b
 1. Final small stabilization pass
    - monitor STT quality with real short learner phrases
    - harden TutorIdentityGuard / tutor identity behavior if warnings continue
-2. Desktop login UI and staged rollout of authenticated desktop endpoints (`/api/me/settings`)
+2. Staged rollout of authenticated desktop endpoints (`/api/me/settings`)
 3. Subscription/payment enforcement
 4. CMS/admin panel only after auth, roles, content versioning, draft/published workflow, audit trail, and rollback
 
@@ -31,7 +31,7 @@ This roadmap starts from the current confirmed MVP state where desktop/backend b
 
 ## Auth foundation status
 
-- Desktop auth client/storage foundation is implemented without adding login UI yet.
+- Desktop auth client/storage foundation and optional Account UI are implemented.
 - Current desktop settings source remains `/api/dev/user-settings` for now.
-- Future work: add login UI, session lifecycle UX, and migrate desktop settings calls to authenticated endpoints.
+- Future work: migrate desktop settings calls to authenticated endpoints and harden account/session UX.
 - Current token storage is MVP local JSON storage and should be replaced with hardened secure storage before production.

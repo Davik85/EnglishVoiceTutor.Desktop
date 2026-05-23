@@ -5,6 +5,7 @@ using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Services;
+using EnglishVoiceTutor.Desktop.Services.Auth;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
@@ -19,6 +20,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly BackendLessonMessageClient backendLessonMessageClient = new();
     private readonly BackendLessonSummaryClient backendLessonSummaryClient = new();
     private readonly BackendLessonHistoryClient backendLessonHistoryClient = new();
+    private readonly AuthBackendService authBackendService = new();
     private readonly AudioRecordingService audioRecordingService = new();
     private readonly AudioInputDeviceService audioInputDeviceService = new();
     private readonly AudioPlaybackService audioPlaybackService = new();
@@ -36,6 +38,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         botVoiceTempFileCleanupService.CleanupOldBotVoiceFiles();
         userSettings = userSettingsService.Load();
         lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
+        authBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
         currentViewModel = CreateWelcomeViewModel();
     }
 
@@ -95,6 +98,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             lessonChatBackendService,
             backendDiagnosticsService,
             backendUserSettingsClient,
+            authBackendService,
             audioInputDeviceService,
             audioRecordingService,
             SaveSettings,
@@ -113,6 +117,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         userSettings.AudioInputDeviceId = audioInputDeviceId;
         userSettingsService.Save(userSettings);
         lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
+        authBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
         Debug.WriteLine($"Settings saved: StudyLanguageId={userSettings.StudyLanguageId}; InterfaceLanguageId={userSettings.InterfaceLanguageId}; TutorAvatarId={userSettings.SelectedTutorAvatarId}; BackendBaseUrlConfigured={!string.IsNullOrWhiteSpace(userSettings.BackendBaseUrl)}. Start a new lesson to apply changed study language to lesson content.");
     }
 
@@ -128,6 +133,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         userSettings.BackendBaseUrl = persistedSettings.BackendBaseUrl;
         userSettings.AudioInputDeviceId = persistedSettings.AudioInputDeviceId;
         lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
+        authBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
     }
 
     private void SaveLessonHistory(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput)
