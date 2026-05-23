@@ -90,3 +90,8 @@ STT quality is improved after rollback/stabilization, but remains an MVP known-r
 - Authenticated user settings endpoints are implemented: `GET /api/me/settings` and `PUT /api/me/settings`.
 - Existing dev endpoint `GET/PUT /api/dev/user-settings` remains available for local MVP testing.
 - Desktop login UI is still not implemented in this repository state.
+
+- Desktop auth client/storage foundation is implemented (auth models, auth backend client, and local MVP token session storage).
+- Desktop login UI is still not implemented.
+- Lesson Chat still works without login in Development.
+- Token storage is temporary MVP local JSON storage and should be hardened before production.
