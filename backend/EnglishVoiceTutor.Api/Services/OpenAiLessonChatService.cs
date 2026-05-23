@@ -76,7 +76,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
     private readonly TutorIdentityGuard _tutorIdentityGuard;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<OpenAiLessonChatService> _logger;
-    private readonly DevUserProvider _devUserProvider;
+    private readonly IRequestUserResolver _requestUserResolver;
     private readonly IUsageEventService _usageEventService;
 
     public OpenAiLessonChatService(
@@ -94,7 +94,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         _avatarProfileProvider = avatarProfileProvider;
         _tutorIdentityGuard = tutorIdentityGuard;
         _httpClientFactory = httpClientFactory;
-        _devUserProvider = devUserProvider;
+        _requestUserResolver = requestUserResolver;
         _usageEventService = usageEventService;
         _logger = logger;
     }

@@ -25,7 +25,7 @@ public sealed class AudioSpeechService
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<AudioSpeechService> _logger;
-    private readonly DevUserProvider _devUserProvider;
+    private readonly IRequestUserResolver _requestUserResolver;
     private readonly IUsageEventService _usageEventService;
 
     public AudioSpeechService(
@@ -37,7 +37,7 @@ public sealed class AudioSpeechService
     {
         _optionsProvider = optionsProvider;
         _httpClientFactory = httpClientFactory;
-        _devUserProvider = devUserProvider;
+        _requestUserResolver = requestUserResolver;
         _usageEventService = usageEventService;
         _logger = logger;
     }

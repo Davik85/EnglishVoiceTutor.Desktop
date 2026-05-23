@@ -20,7 +20,7 @@ public sealed class AudioTranscriptionService
     private readonly OpenAiOptionsProvider _optionsProvider;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<AudioTranscriptionService> _logger;
-    private readonly DevUserProvider _devUserProvider;
+    private readonly IRequestUserResolver _requestUserResolver;
     private readonly IUsageEventService _usageEventService;
 
     public AudioTranscriptionService(
@@ -32,7 +32,7 @@ public sealed class AudioTranscriptionService
     {
         _optionsProvider = optionsProvider;
         _httpClientFactory = httpClientFactory;
-        _devUserProvider = devUserProvider;
+        _requestUserResolver = requestUserResolver;
         _usageEventService = usageEventService;
         _logger = logger;
     }
