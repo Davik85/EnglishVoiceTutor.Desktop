@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -1005,7 +1006,11 @@ public partial class LessonChatViewModel : ViewModelBase
                 $"isTranscribingAudio={isTranscribingAudio}.");
             StatusMessage = localizedText.TranscribingAudioMessage;
 
-            var transcriptionText = await lessonChatBackendService.SendAudioForTranscriptionAsync(savedFilePath, studyLanguage);
+            var transcriptionText = await lessonChatBackendService.SendAudioForTranscriptionAsync(
+                savedFilePath,
+                studyLanguage,
+                BuildTranscriptionContextHint(),
+                CurrentLessonPhase.ToString());
             BackendStatusText = BackendConstants.BackendStatusConnected;
             var transcriptValidation = LessonTranscriptValidator.Validate(transcriptionText);
             var trimmedTranscriptionText = transcriptValidation.NormalizedTranscript;
@@ -3071,7 +3076,12 @@ public partial class LessonChatViewModel : ViewModelBase
         try
         {
             fallbackFilePath = await SaveRealtimeFallbackAudioFileAsync(audioBytes);
-            var fallbackTranscript = await lessonChatBackendService.SendAudioForTranscriptionAsync(fallbackFilePath, studyLanguage, CancellationToken.None);
+            var fallbackTranscript = await lessonChatBackendService.SendAudioForTranscriptionAsync(
+                fallbackFilePath,
+                studyLanguage,
+                BuildTranscriptionContextHint(),
+                CurrentLessonPhase.ToString(),
+                CancellationToken.None);
             var validation = LessonTranscriptValidator.Validate(fallbackTranscript);
             Task? applyValidTranscriptTask = null;
             await Application.Current.Dispatcher.InvokeAsync(() =>
@@ -3743,6 +3753,36 @@ public partial class LessonChatViewModel : ViewModelBase
             lessonScenario.ControlledVariation.ContextVariants,
             SelectedSubtopic.Title,
             studyLanguage);
+    }
+
+    private string BuildTranscriptionContextHint()
+    {
+        if (CurrentLessonPhase == LessonPhase.SetupContextSelection && IsGuidedRoleplayLesson())
+        {
+            var scenarioTitles = lessonScenario.ControlledVariation.ContextVariants
+                .Select(variant => variant.Title?.Trim())
+                .Where(title => !string.IsNullOrWhiteSpace(title))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            if (scenarioTitles.Length == 0)
+            {
+                return "The learner is choosing a roleplay scenario title. Transcribe exactly what the learner says. Do not translate, rewrite, or paraphrase.";
+            }
+
+            return $"The learner may say one of these scenario titles: {string.Join("; ", scenarioTitles)}. Transcribe exactly what the learner says. Do not translate, rewrite, or paraphrase.";
+        }
+
+        if (CurrentLessonPhase == LessonPhase.ActiveRoleplay)
+        {
+            var selectedContextTitle = GetSelectedContextTitle();
+            if (!string.IsNullOrWhiteSpace(selectedContextTitle))
+            {
+                return $"Active roleplay context: {selectedContextTitle}. Transcribe exactly what the learner says.";
+            }
+        }
+
+        return string.Empty;
     }
 
     private string ResolveScenarioPlaceholders(string value)

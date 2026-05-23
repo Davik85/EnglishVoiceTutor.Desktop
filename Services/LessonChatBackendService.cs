@@ -191,6 +191,8 @@ public sealed class LessonChatBackendService
     public async Task<string> SendAudioForTranscriptionAsync(
         string audioFilePath,
         StudyLanguageDefinition? targetLanguage = null,
+        string? transcriptionContext = null,
+        string? lessonPhase = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(audioFilePath) || !File.Exists(audioFilePath))
@@ -214,6 +216,15 @@ public sealed class LessonChatBackendService
         formContent.Add(new StringContent(resolvedTargetLanguage.EnglishName), "targetLanguageName");
         formContent.Add(new StringContent(resolvedTargetLanguage.NativeName), "targetLanguageNativeName");
         formContent.Add(new StringContent(resolvedTargetLanguage.TranscriptionLanguageCode), "targetLanguageCode");
+        if (!string.IsNullOrWhiteSpace(lessonPhase))
+        {
+            formContent.Add(new StringContent(lessonPhase.Trim()), "lessonPhase");
+        }
+
+        if (!string.IsNullOrWhiteSpace(transcriptionContext))
+        {
+            formContent.Add(new StringContent(transcriptionContext.Trim()), "transcriptionContext");
+        }
 
         using var response = await httpClient.PostAsync(
             CreateEndpointUri(BackendConstants.AudioTranscriptionEndpoint),

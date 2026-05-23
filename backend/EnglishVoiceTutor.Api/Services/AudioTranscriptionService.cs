@@ -38,6 +38,7 @@ public sealed class AudioTranscriptionService
     public async Task<AudioTranscriptionResponse> TranscribeAsync(
         IFormFile audioFile,
         StudyLanguageDefinition? targetLanguage = null,
+        string? transcriptionContext = null,
         CancellationToken cancellationToken = default)
     {
         var options = _optionsProvider.GetOptions();
@@ -51,7 +52,7 @@ public sealed class AudioTranscriptionService
             };
         }
 
-        var openAiResponse = await SendAudioTranscriptionRequestAsync(audioFile, options.ApiKey, resolvedTargetLanguage, cancellationToken);
+        var openAiResponse = await SendAudioTranscriptionRequestAsync(audioFile, options.ApiKey, resolvedTargetLanguage, transcriptionContext, cancellationToken);
         var transcriptText = openAiResponse.Text.Trim();
         var durationSeconds = EstimatePcmWavDurationSeconds(audioFile.Length);
         await _usageEventService.TryRecordAsync(new UsageEventRecord
@@ -87,6 +88,7 @@ public sealed class AudioTranscriptionService
         IFormFile audioFile,
         string apiKey,
         StudyLanguageDefinition targetLanguage,
+        string? transcriptionContext,
         CancellationToken cancellationToken)
     {
         var httpClient = _httpClientFactory.CreateClient();
@@ -106,8 +108,11 @@ public sealed class AudioTranscriptionService
         formContent.Add(
             new StringContent(targetLanguage.TranscriptionLanguageCode),
             OpenAiConstants.MultipartLanguageFieldName);
+        var transcriptionPrompt = string.IsNullOrWhiteSpace(transcriptionContext)
+            ? $"The learner is practicing {targetLanguage.EnglishName}. Transcribe the learner audio in {targetLanguage.EnglishName}."
+            : $"The learner is practicing {targetLanguage.EnglishName}. {transcriptionContext.Trim()}";
         formContent.Add(
-            new StringContent($"The learner is practicing {targetLanguage.EnglishName}. Transcribe the learner audio in {targetLanguage.EnglishName}."),
+            new StringContent(transcriptionPrompt),
             OpenAiConstants.MultipartPromptFieldName);
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, OpenAiConstants.AudioTranscriptionsEndpoint);
