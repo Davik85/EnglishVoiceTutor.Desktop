@@ -848,6 +848,8 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
         var audioFile = form.Files.GetFile(OpenAiConstants.MultipartFileFieldName);
         var targetLanguageId = form["targetLanguageId"].ToString();
         var targetLanguageCode = form["targetLanguageCode"].ToString();
+        var lessonPhase = form["lessonPhase"].ToString();
+        var transcriptionContext = form["transcriptionContext"].ToString();
         var targetLanguage = StudyLanguageCatalog.GetById(targetLanguageId);
 
         if (!string.IsNullOrWhiteSpace(targetLanguageCode))
@@ -856,11 +858,13 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
         }
 
         logger.LogInformation(
-            "Audio transcription form read completed. FileName={FileName}; FileLength={FileLength}; TargetLanguageId={TargetLanguageId}; TranscriptionLanguageCode={TranscriptionLanguageCode}.",
+            "Audio transcription form read completed. FileName={FileName}; FileLength={FileLength}; TargetLanguageId={TargetLanguageId}; TranscriptionLanguageCode={TranscriptionLanguageCode}; LessonPhase={LessonPhase}; HasTranscriptionContext={HasTranscriptionContext}.",
             audioFile?.FileName ?? "<missing>",
             audioFile?.Length ?? 0,
             targetLanguage.Id,
-            targetLanguage.TranscriptionLanguageCode);
+            targetLanguage.TranscriptionLanguageCode,
+            string.IsNullOrWhiteSpace(lessonPhase) ? "<unspecified>" : lessonPhase.Trim(),
+            !string.IsNullOrWhiteSpace(transcriptionContext));
 
         if (audioFile is null || audioFile.Length <= 0)
         {
@@ -876,7 +880,7 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
             return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
         }
 
-        var response = await audioTranscriptionService.TranscribeAsync(audioFile, targetLanguage, cancellationToken);
+        var response = await audioTranscriptionService.TranscribeAsync(audioFile, targetLanguage, transcriptionContext, cancellationToken);
         var transcriptionLength = response.Text?.Length ?? 0;
 
         logger.LogInformation("Audio transcription completed successfully. TranscriptionLength={TranscriptionLength}; TargetLanguageId={TargetLanguageId}; TranscriptionLanguageCode={TranscriptionLanguageCode}.", transcriptionLength, targetLanguage.Id, targetLanguage.TranscriptionLanguageCode);

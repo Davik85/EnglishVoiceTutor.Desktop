@@ -155,8 +155,9 @@ public sealed class LessonPromptBuilder
     {
         prompt.AppendLine($"Respond to the learner's latest message as {avatarProfile.DisplayName}, the selected tutor avatar, as part of the selected situation.");
         prompt.AppendLine("Use learner profile as stable context and recent conversation as active lesson context.");
-        prompt.AppendLine("If the learner profile includes a display name, you may address the learner by name naturally, but do not repeat it in every message.");
-        prompt.AppendLine("Do not ask for the learner's name if the learner profile already includes a display name.");
+        prompt.AppendLine("Learner profile display name is personalization metadata, not an automatically spoken roleplay fact.");
+        prompt.AppendLine("Treat the learner's name as known only when current lesson/session conversation context includes it.");
+        prompt.AppendLine("For introduction scenarios, ask the learner's name when it has not appeared in the current lesson/session conversation yet.");
         prompt.AppendLine("If the learner profile includes a learning goal, use it as gentle context without overriding the selected topic or situation.");
         prompt.AppendLine("Interpret the learner message by the provided lesson phase first, not by phrase matching.");
         prompt.AppendLine("The lesson is already in active roleplay unless the request explicitly says setup phase.");
