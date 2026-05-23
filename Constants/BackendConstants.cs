@@ -16,6 +16,7 @@ public static class BackendConstants
     public const string DatabaseHealthEndpoint = "/api/health/database";
     public const string BackendConfigStatusEndpoint = "/api/backend/config-status";
     public const string DevUserSettingsEndpoint = "/api/dev/user-settings";
+    public const string MeSettingsEndpoint = "/api/me/settings";
     public const string DevLessonSessionsEndpoint = "/api/dev/lesson-sessions";
     public const string DevLessonSessionFinishEndpointTemplate = "/api/dev/lesson-sessions/{0}/finish";
     public const string DevLessonSessionMessagesEndpointTemplate = "/api/dev/lesson-sessions/{0}/messages";

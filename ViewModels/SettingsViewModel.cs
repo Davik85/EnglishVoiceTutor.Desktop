@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Windows;
@@ -25,6 +26,9 @@ public partial class SettingsViewModel : ViewModelBase
     private const string StudyLanguageSubtitleText = "Choose the language you want to practice. This does not change the app UI language.";
     private const string DiagnosticsStudyLanguageLabelText = "Study language";
     private const string DefaultAccountSignedOutText = "Not signed in";
+    private const string SettingsSourceAuthenticatedText = "Authenticated account";
+    private const string SettingsSourceDevelopmentText = "Local development user";
+    private const string SessionExpiredFallbackMessageText = "Session expired. Using local development settings.";
     private const string LoginFailedMessageText = "Login failed. Check your email and password.";
     private const string RegisterFailedMessageText = "Registration failed. Please review your details and try again.";
     private const string BackendUnavailableMessageText = "Backend is unavailable. Check the backend URL and try again.";
@@ -203,6 +207,7 @@ public partial class SettingsViewModel : ViewModelBase
     public string AccountLoginButtonText => "Login";
     public string AccountLogoutButtonText => "Logout";
     public string CurrentAccountLabel => "Current account";
+    public string SettingsSourceLabel => "Settings source";
 
     public IReadOnlyList<InterfaceLanguageOption> AvailableInterfaceLanguages { get; } = InterfaceLanguageOptions.All;
 
@@ -292,6 +297,8 @@ public partial class SettingsViewModel : ViewModelBase
     private bool isBusy;
     [ObservableProperty]
     private string errorMessage = string.Empty;
+    [ObservableProperty]
+    private string settingsSource = SettingsSourceDevelopmentText;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DiagnosticsMicrophoneText))]
@@ -346,7 +353,6 @@ public partial class SettingsViewModel : ViewModelBase
         LessonsTodayText = CountLessonsToday(lessonHistory).ToString();
         CurrentStreakText = CalculateCurrentStreak(lessonHistory).ToString();
         RefreshAudioInputDevices(currentAudioInputDeviceId, showUnavailableStatus: false);
-        _ = LoadBackendUserSettingsAsync();
         _ = RestoreSessionAsync();
     }
 
@@ -394,6 +400,7 @@ public partial class SettingsViewModel : ViewModelBase
         {
             await authBackendService.LogoutAsync();
             ClearAccountState();
+            await LoadSettingsForCurrentSessionAsync();
             StatusMessage = "Signed out.";
         }
         finally
@@ -413,6 +420,7 @@ public partial class SettingsViewModel : ViewModelBase
             if (session is null)
             {
                 ClearAccountState();
+                await LoadDevelopmentSettingsAsync();
                 return;
             }
 
@@ -421,10 +429,12 @@ public partial class SettingsViewModel : ViewModelBase
             {
                 await authBackendService.LogoutAsync();
                 ClearAccountState();
+                await LoadDevelopmentSettingsAsync();
                 return;
             }
 
             ApplyAuthenticatedUser(user);
+            await LoadAuthenticatedSettingsAsync(session.AccessToken);
             StatusMessage = "Session restored.";
         }
         finally
@@ -439,7 +449,7 @@ public partial class SettingsViewModel : ViewModelBase
         SaveCurrentSettingsLocally();
         BackendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl);
         StatusMessage = localizedText.SettingsSavedMessage;
-        await SyncBackendUserSettingsAsync();
+        await SaveBackendUserSettingsAsync();
     }
 
     [RelayCommand]
@@ -527,7 +537,7 @@ public partial class SettingsViewModel : ViewModelBase
             : DiagnosticDatabaseStatus.Unavailable;
         var configStatus = await lessonChatBackendService.GetBackendConfigStatusAsync(BackendBaseUrl);
         AiStatus = MapAiStatus(configStatus);
-        await LoadBackendUserSettingsAsync();
+        await LoadSettingsForCurrentSessionAsync();
     }
 
     partial void OnSelectedInterfaceLanguageOptionChanged(InterfaceLanguageOption value)
@@ -563,7 +573,7 @@ public partial class SettingsViewModel : ViewModelBase
 
         DiagnosticsCopyStatusText = string.Empty;
         SaveCurrentSettingsLocally();
-        _ = SyncBackendUserSettingsAsync();
+        _ = SaveBackendUserSettingsAsync();
     }
 
     partial void OnSelectedAudioInputDeviceOptionChanged(AudioInputDeviceOption? value)
@@ -818,23 +828,75 @@ public partial class SettingsViewModel : ViewModelBase
         report.AppendLine(value);
     }
 
-    private async Task LoadBackendUserSettingsAsync()
+    private async Task LoadSettingsForCurrentSessionAsync()
+    {
+        var session = await authBackendService.TryRestoreSessionAsync();
+        if (session is null)
+        {
+            await LoadDevelopmentSettingsAsync();
+            return;
+        }
+
+        await LoadAuthenticatedSettingsAsync(session.AccessToken);
+    }
+
+    private async Task LoadAuthenticatedSettingsAsync(string accessToken)
     {
         try
         {
-            var result = await backendUserSettingsClient.GetAsync(BackendBaseUrl);
-            if (!result.IsSuccess || result.Value is null)
+            var result = await backendUserSettingsClient.GetAuthenticatedSettingsAsync(BackendBaseUrl, accessToken);
+            if (!result.IsSuccess)
+            {
+                if (result.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    await authBackendService.LogoutAsync();
+                    ClearAccountState();
+                    await LoadDevelopmentSettingsAsync();
+                    StatusMessage = SessionExpiredFallbackMessageText;
+                    return;
+                }
+
+                SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+                return;
+            }
+
+            if (result.Value is null)
             {
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
                 return;
             }
 
             ApplyBackendUserSettings(result.Value);
+            SettingsSource = SettingsSourceAuthenticatedText;
             SaveCurrentSettingsLocally();
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Available);
         }
         catch
         {
+            SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+        }
+    }
+
+    private async Task LoadDevelopmentSettingsAsync()
+    {
+        try
+        {
+            var result = await backendUserSettingsClient.GetDevelopmentSettingsAsync(BackendBaseUrl);
+            if (!result.IsSuccess || result.Value is null)
+            {
+                SettingsSource = SettingsSourceDevelopmentText;
+                SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+                return;
+            }
+
+            ApplyBackendUserSettings(result.Value);
+            SettingsSource = SettingsSourceDevelopmentText;
+            SaveCurrentSettingsLocally();
+            SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Available);
+        }
+        catch
+        {
+            SettingsSource = SettingsSourceDevelopmentText;
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
         }
     }
@@ -872,6 +934,7 @@ public partial class SettingsViewModel : ViewModelBase
 
             ApplyAuthenticatedUser(response.User);
             Password = string.Empty;
+            await LoadSettingsForCurrentSessionAsync();
             StatusMessage = "Signed in.";
         }
         catch
@@ -899,7 +962,7 @@ public partial class SettingsViewModel : ViewModelBase
         Password = string.Empty;
     }
 
-    private async Task SyncBackendUserSettingsAsync()
+    private async Task SaveBackendUserSettingsAsync()
     {
         try
         {
@@ -918,14 +981,34 @@ public partial class SettingsViewModel : ViewModelBase
                 ConversationModeEnabled = backendSettingsConversationModeEnabled
             };
 
-            var result = await backendUserSettingsClient.UpdateAsync(BackendBaseUrl, request);
-            if (!result.IsSuccess || result.Value is null)
+            var session = await authBackendService.TryRestoreSessionAsync();
+            var result = session is null
+                ? await backendUserSettingsClient.UpdateDevelopmentSettingsAsync(BackendBaseUrl, request)
+                : await backendUserSettingsClient.UpdateAuthenticatedSettingsAsync(BackendBaseUrl, session.AccessToken, request);
+
+            if (!result.IsSuccess)
+            {
+                if (result.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    await authBackendService.LogoutAsync();
+                    ClearAccountState();
+                    await LoadDevelopmentSettingsAsync();
+                    StatusMessage = SessionExpiredFallbackMessageText;
+                    return;
+                }
+
+                SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+                return;
+            }
+
+            if (result.Value is null)
             {
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
                 return;
             }
 
             ApplyBackendUserSettings(result.Value);
+            SettingsSource = session is null ? SettingsSourceDevelopmentText : SettingsSourceAuthenticatedText;
             SaveCurrentSettingsLocally();
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Available);
         }
