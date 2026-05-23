@@ -13,6 +13,12 @@ using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Api.Services.Usage;
 using EnglishVoiceTutor.Api.Contracts.Usage;
+using EnglishVoiceTutor.Api.Endpoints;
+using EnglishVoiceTutor.Api.Services.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 using Microsoft.EntityFrameworkCore;
 using HttpBadHttpRequestException = Microsoft.AspNetCore.Http.BadHttpRequestException;
@@ -31,6 +37,34 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 builder.Services.Configure<FreeLimitOptions>(builder.Configuration.GetSection(FreeLimitOptions.SectionName));
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+
+var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+    ?? throw new InvalidOperationException("Jwt configuration section is required.");
+
+if (string.IsNullOrWhiteSpace(jwtOptions.SigningKey) || jwtOptions.SigningKey.Length < JwtOptions.MinimumSigningKeyLength)
+{
+    throw new InvalidOperationException($"Jwt:SigningKey must be configured and be at least {JwtOptions.MinimumSigningKeyLength} characters.");
+}
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient(OpenAiConstants.AudioSpeechHttpClientName, httpClient =>
@@ -60,10 +94,15 @@ builder.Services.AddScoped<UsageStudyLanguageNormalizer>();
 builder.Services.AddScoped<IUsageEventService, UsageEventService>();
 builder.Services.AddScoped<IFreeLimitStatusService, FreeLimitStatusService>();
 builder.Services.AddScoped<IFreeLimitGuardService, FreeLimitGuardService>();
+builder.Services.AddScoped<IPasswordHasher<EnglishVoiceTutor.Api.Data.Entities.UserEntity>, PasswordHasher<EnglishVoiceTutor.Api.Data.Entities.UserEntity>>();
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
 app.UseWebSockets();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet(ApiConstants.HealthRoute, HandleHealthAsync);
 app.MapGet(ApiConstants.ApiHealthRoute, HandleHealthAsync);
@@ -110,6 +149,7 @@ app.MapGet(ApiConstants.DevDailyUsageCountersRoute, HandleGetDevDailyUsageCounte
 app.MapGet(ApiConstants.DevFreeLimitStatusRoute, HandleGetDevFreeLimitStatusAsync);
 app.MapGet(ApiConstants.DevFeedbackResultsRoute, HandleGetDevFeedbackResultsAsync);
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
+app.MapAuthEndpoints();
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
     ApiConstants.ServiceName,
