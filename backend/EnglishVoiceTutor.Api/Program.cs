@@ -469,7 +469,7 @@ static async Task<IResult> HandleGetDevLessonMessagesAsync(
 
 static async Task<IResult> HandleGetDevUsageEventsAsync(
     AppDbContext dbContext,
-    DevUserProvider devUserProvider,
+    IRequestUserResolver requestUserResolver,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -477,7 +477,8 @@ static async Task<IResult> HandleGetDevUsageEventsAsync(
 
     try
     {
-        var userId = devUserProvider.GetDevUserId();
+        var resolvedUser = requestUserResolver.ResolveCurrentUser();
+        var userId = resolvedUser.UserId;
         var events = await dbContext.UsageEvents
             .AsNoTracking()
             .Where(item => item.UserId == userId)
@@ -520,7 +521,7 @@ static async Task<IResult> HandleGetDevUsageEventsAsync(
 
 static async Task<IResult> HandleGetDevDailyUsageCountersAsync(
     AppDbContext dbContext,
-    DevUserProvider devUserProvider,
+    IRequestUserResolver requestUserResolver,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -528,7 +529,8 @@ static async Task<IResult> HandleGetDevDailyUsageCountersAsync(
 
     try
     {
-        var userId = devUserProvider.GetDevUserId();
+        var resolvedUser = requestUserResolver.ResolveCurrentUser();
+        var userId = resolvedUser.UserId;
         var counters = await dbContext.DailyUsageCounters
             .AsNoTracking()
             .Where(item => item.UserId == userId)
@@ -1047,7 +1049,7 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
 
 static async Task<IResult> HandleGetDevFeedbackResultsAsync(
     AppDbContext dbContext,
-    DevUserProvider devUserProvider,
+    IRequestUserResolver requestUserResolver,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
@@ -1055,7 +1057,9 @@ static async Task<IResult> HandleGetDevFeedbackResultsAsync(
 
     try
     {
-        var userId = devUserProvider.GetDevUserId();
+        var resolvedUser = requestUserResolver.ResolveCurrentUser();
+        var userId = resolvedUser.UserId;
+        logger.LogInformation("Dev feedback results endpoint resolved user source: {UserSource}.", resolvedUser.Source);
         var items = await dbContext.FeedbackResults
             .AsNoTracking()
             .Where(feedback => feedback.Session.UserId == userId)
