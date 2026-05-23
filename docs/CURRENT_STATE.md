@@ -2,96 +2,86 @@
 
 Review date: 2026-05-23.
 
-This document records the current MVP state after the recent stabilization work. It describes the validated behavior that documentation should reflect; it is not a request to change runtime behavior.
+This document records the current confirmed MVP status after auth foundation, optional desktop account UX, and auth-aware runtime persistence updates.
 
-## Current MVP summary
+## MVP core flow
 
-The MVP core lesson flow works:
-
-1. App start and navigation through level, topic, subtopic, and lesson chat are implemented.
-2. Lesson Chat works by typed input and normal voice input.
-3. Enter-to-send and the normal Send button both work.
-4. Normal voice recording, transcription, lesson chat replies, Play voice, Translate, Hint, View feedback, and lesson summary work.
-5. Feedback and hint UI are readable and use the warm card style.
-6. Conversation Mode works by using the stable TTS provider by default, not the Realtime provider.
-7. Realtime remains in the repository for future testing and provider-switch work, but it is not the default MVP Conversation Mode path.
-
-## Latest confirmed validation state
-
-- Desktop builds successfully.
-- Backend builds successfully.
+**Implemented + Validated**
+- Desktop build succeeds.
+- Desktop Release build succeeds.
+- Backend build succeeds.
 - Lesson content audit passes.
+- App starts without login.
+- Lesson Chat opens and works without login.
+
+## Auth and account status
+
+**Implemented + Validated**
+- Backend Auth/JWT foundation is implemented:
+  - `POST /api/auth/register`
+  - `POST /api/auth/login`
+  - `GET /api/auth/me` (Bearer token)
+- Optional desktop Account UI is implemented inside Settings:
+  - register/login/logout
+  - `auth-session.json` created after register/login
+  - `auth-session.json` removed after logout
+  - password box clears after successful register/login/logout
+  - token is not shown in UI
+  - password is not shown as plain text
+- Login remains optional for MVP.
+
+## Settings status
+
+**Implemented + Validated**
+- Settings is auth-aware:
+  - signed out -> `GET/PUT /api/dev/user-settings`
+  - signed in -> `GET/PUT /api/me/settings`
+- `GET /api/me/settings` returns `401` without token.
+- Logout returns Settings to dev settings source (`/api/dev/user-settings`).
+
+## Lesson runtime and persistence status
+
+**Implemented + Validated**
 - PostgreSQL + EF Core persistence foundation works.
-- lesson sessions/messages/summaries persistence works.
-- usage events and daily usage counters persistence works.
-- feedback_results persistence works and is linked to session/message after View feedback.
-- `GET /api/dev/feedback-results` works.
-- `GET /api/dev/lesson-history/{sessionId}` includes messages, summary, and feedbackResults.
-- `GET /api/dev/free-limit-status` works.
+- Lesson persistence works for sessions/messages/summaries.
+- Lesson runtime persistence is auth-aware:
+  - signed out -> Development dev-user fallback
+  - signed in -> authenticated JWT user persistence
+- Lesson Chat does not require login.
+- Dev-user and authenticated-user counters/history are isolated.
+- Lesson history detail includes messages, summary, and feedback results where available.
 
-## Free-limit mode (current MVP)
+## Free-limit status
 
-- Free-limit diagnostics remain active.
-- Free-limit enforcement is configurable.
+**Development-only + Validated**
 - Development uses diagnostics-only mode: `FreeLimits:EnforcementEnabled=false`.
-- In diagnostics-only mode, usage counters still increment, but Lesson Chat / Hint / STT / TTS are not blocked by HTTP 429.
-- Existing HTTP 429 enforcement behavior remains available when `FreeLimits:EnforcementEnabled=true`.
-- Billing/subscription enforcement is future work and should not be confused with current diagnostics mode.
+- Counters still increment.
+- Lesson Chat / Hint / STT / TTS are not blocked in Development diagnostics-only mode.
 
-## Lesson Chat UI stabilization state
+## Data handling status
 
-Lesson Chat UI has been stabilized for MVP testing:
+**Implemented + Validated**
+- `feedback_results` persistence works.
+- Raw audio is not stored.
+- Full prompts are not stored.
+- Provider payloads are not stored.
+- Secrets/API keys/JWT tokens/passwords are not stored in persistence tables.
 
-- right chat card is visually clearer;
-- inner chat scroll area exists;
-- feedback/hint are inside the chat scroll area;
-- avatar panel is bounded and no longer stretches badly.
+## Existing EF migrations
 
-## Voice/STT stabilization state
+**Implemented (unchanged)**
+- `20260518000000_InitialProductStorageSchema`
+- `20260520120000_AddLessonSummaryContentFields`
+- `20260520132002_AddUsageEventStatusAndStudyLanguage`
+- `20260520150000_AddDailyUsageChatReplyCount`
+- No new EF migration was created for recent auth-aware runtime work.
 
-Voice/STT flow has been stabilized after recent regressions:
+## Known limitations and future production hardening
 
-- no TranslationService normalization in AudioTranscriptionService;
-- no post-transcription rewriting;
-- backend returns direct provider transcript text with `Trim()` only;
-- usage tracking for `audio_transcription` remains active;
-- development transcript preview logging exists for local debugging.
-
-STT quality is improved after rollback/stabilization, but remains an MVP known-risk area that should continue to be monitored.
-
-## Known stabilization items (concise)
-
-- STT quality should continue to be monitored with real short learner phrases.
-- Development transcript preview logging is useful for local debugging.
-- TutorIdentityGuard may still log warnings when model output confuses learner name and tutor self-introduction.
-- If these warnings continue, the next stabilization step before larger product work should be tutor identity hardening.
-
-## Not implemented yet
-
-- Contabo deployment
-- production rollout of authenticated user flows in desktop
-- billing/subscription runtime enforcement
-- CMS/admin panel
-
-## Recommended next backend/product order
-
-1. Final small stabilization pass
-   - monitor STT quality
-   - harden TutorIdentityGuard / tutor identity behavior if warnings continue
-2. Auth/JWT and real accounts
-3. Subscription/payment enforcement
-4. CMS/admin panel only after auth, roles, content versioning, draft/published workflow, audit trail, and rollback
-
-
-## Auth and user settings status
-
-- Auth/JWT backend foundation is implemented (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`).
-- Authenticated user settings endpoints are implemented: `GET /api/me/settings` and `PUT /api/me/settings`.
-- Existing dev endpoint `GET/PUT /api/dev/user-settings` remains available for local MVP testing.
-- Desktop optional Account UI is implemented in Settings (register/login/restore/logout).
-
-- Desktop auth client/storage foundation is implemented (auth models, auth backend client, and local MVP token session storage).
-- Desktop optional login is implemented and session state is restored from local storage when valid.
-- Lesson Chat still works without login in Development.
-- Token storage is temporary MVP local JSON storage and should be hardened before production.
-- Lesson runtime persistence is now auth-aware: signed-in requests use JWT user identity; signed-out Development requests continue using dev-user fallback without blocking Lesson Chat.
+**Future work**
+- Production auth enforcement for all runtime endpoints is not enabled yet.
+- Local token storage (`auth-session.json`) is MVP-only and must be hardened/replaced before production.
+- Roles are not implemented.
+- Billing/subscription enforcement is not implemented.
+- CMS/admin panel is not implemented.
+- Contabo deployment has not been done.

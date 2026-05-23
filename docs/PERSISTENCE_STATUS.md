@@ -1,63 +1,58 @@
 # Persistence Status Checklist
 
-## Implemented and validated now
+Review date: 2026-05-23.
 
-- PostgreSQL + EF Core persistence foundation is implemented and active.
-- Runtime persistence is implemented and validated for:
-  - `lesson_sessions`
-  - `lesson_messages`
-  - `lesson_summaries`
-  - `usage_events`
-  - `daily_usage_counters` (including `chat_reply_count`)
-  - `feedback_results`
-- `feedback_results` runtime records are linked to `sessionId`/`messageId` after View feedback flow and are validated through dev read endpoints.
+## Implemented and validated
 
-## Implemented read endpoints
+- PostgreSQL + EF Core persistence foundation is active.
+- `lesson_sessions`, `lesson_messages`, and `lesson_summaries` persist correctly.
+- `feedback_results` persist correctly.
+- `usage_events` and `daily_usage_counters` persist correctly (including `chat_reply_count`).
+- Lesson history detail includes messages, summary, and `feedbackResults` where available.
 
+## Runtime identity behavior (auth-aware)
+
+**Implemented + Validated**
+- Runtime persistence is auth-aware:
+  - without token in Development -> dev-user fallback
+  - with Bearer token -> authenticated user
+- Authenticated-user and dev-user counters/history are isolated.
+- Request user resolution order:
+  1. authenticated JWT user
+  2. Development dev-user fallback when no token
+
+## Dev read endpoints (current MVP)
+
+**Implemented + Development-only**
 - `GET /api/dev/lesson-history`
 - `GET /api/dev/lesson-history/{sessionId}`
-  - session metadata
-  - messages
-  - summary (optional)
-  - feedback results list (`feedbackResults`) with `messageId` references
 - `GET /api/dev/usage-events`
 - `GET /api/dev/daily-usage-counters`
 - `GET /api/dev/free-limit-status`
-- `GET /api/dev/feedback-results` (dev diagnostics, safe fields only)
+- `GET /api/dev/feedback-results`
 
-## Free-limit status (MVP)
+Dev endpoints remain available for local diagnostics.
 
-- Free-limit diagnostics are implemented and active.
-- Soft enforcement wiring is implemented and configurable via `FreeLimits:EnforcementEnabled`.
-- Development is intentionally diagnostics-only: `FreeLimits:EnforcementEnabled=false`.
-- In diagnostics-only mode, counters and diagnostics stay active:
-  - `usage_events` still persist.
-  - `daily_usage_counters` still increment.
-  - `GET /api/dev/free-limit-status` remains usable.
-- In diagnostics-only Development mode, lesson chat/hint/STT/TTS are not blocked by HTTP 429.
-- Existing HTTP 429 enforcement behavior remains available when `FreeLimits:EnforcementEnabled=true`.
+## Free-limit mode
 
-## Data safety constraints (current)
+**Development-only + Validated**
+- Diagnostics-only mode in Development: `FreeLimits:EnforcementEnabled=false`.
+- Counters and diagnostics remain active.
+- Lesson Chat / Hint / STT / TTS are not blocked in this mode.
 
-- No raw audio is stored in persistence tables.
-- No full prompts are stored.
-- No full provider payloads are stored.
-- No API keys or secrets are stored.
+## Data safety constraints
 
-## Recommended next backend/product order
+**Implemented + Validated**
+- Raw audio is not persisted.
+- Full prompts are not persisted.
+- Provider payloads are not persisted.
+- Secrets/API keys are not persisted.
+- JWT tokens are not persisted in backend tables.
+- Passwords are not persisted as plain text.
+- `auth-session.json` is desktop-local MVP token storage and is not backend persistence.
 
-1. Final small stabilization pass
-   - monitor STT quality with real short learner phrases
-   - harden TutorIdentityGuard / tutor identity behavior if warnings continue
-2. Auth/JWT and real accounts
-3. Subscription/payment enforcement
-4. CMS/admin panel only after auth, roles, content versioning, draft/published workflow, audit trail, and rollback
+## Future work
 
-
-## Authenticated settings endpoints
-
-- Auth/JWT foundation is implemented.
-- Authenticated user settings endpoints are implemented: `GET /api/me/settings`, `PUT /api/me/settings`.
-- Existing dev endpoints remain available for local MVP testing (`/api/dev/user-settings`, `/api/dev/free-limit-status`).
-- Desktop login UI is still not implemented.
-- Runtime lesson persistence now resolves user from JWT when available and falls back to Development dev-user identity when unauthenticated.
+- Enable production-grade auth enforcement for runtime endpoints.
+- Add billing/subscription enforcement later.
+- Add CMS/admin later (after roles and content workflow hardening).
