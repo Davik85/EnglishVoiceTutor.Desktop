@@ -5,6 +5,8 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services.Usage;
 
+using EnglishVoiceTutor.Api.Services.Auth;
+
 namespace EnglishVoiceTutor.Api.Services;
 
 public sealed class OpenAiLessonChatService : ILessonChatService
@@ -83,7 +85,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
         TutorAvatarProfileProvider avatarProfileProvider,
         TutorIdentityGuard tutorIdentityGuard,
         IHttpClientFactory httpClientFactory,
-        DevUserProvider devUserProvider,
+        IRequestUserResolver requestUserResolver,
         IUsageEventService usageEventService,
         ILogger<OpenAiLessonChatService> logger)
     {
@@ -243,7 +245,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
     {
         await _usageEventService.TryRecordAsync(new UsageEventRecord
         {
-            UserId = _devUserProvider.GetDevUserId(),
+            UserId = _requestUserResolver.ResolveCurrentUser().UserId,
             SessionId = request.BackendSessionId,
             Operation = operation,
             Model = model,

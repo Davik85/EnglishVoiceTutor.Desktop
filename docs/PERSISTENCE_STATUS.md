@@ -60,3 +60,4 @@
 - Authenticated user settings endpoints are implemented: `GET /api/me/settings`, `PUT /api/me/settings`.
 - Existing dev endpoints remain available for local MVP testing (`/api/dev/user-settings`, `/api/dev/free-limit-status`).
 - Desktop login UI is still not implemented.
+- Runtime lesson persistence now resolves user from JWT when available and falls back to Development dev-user identity when unauthenticated.

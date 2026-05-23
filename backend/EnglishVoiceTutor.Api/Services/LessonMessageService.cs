@@ -4,9 +4,11 @@ using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
+using EnglishVoiceTutor.Api.Services.Auth;
+
 namespace EnglishVoiceTutor.Api.Services;
 
-public sealed class LessonMessageService(AppDbContext dbContext, DevUserProvider devUserProvider) : ILessonMessageService
+public sealed class LessonMessageService(AppDbContext dbContext, IRequestUserResolver requestUserResolver) : ILessonMessageService
 {
     private const decimal MinTranscriptConfidence = 0m;
     private const decimal MaxTranscriptConfidence = 1m;
@@ -16,7 +18,7 @@ public sealed class LessonMessageService(AppDbContext dbContext, DevUserProvider
     {
         ValidateCreateRequest(request);
 
-        var userId = devUserProvider.GetDevUserId();
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
         var sessionExists = await dbContext.LessonSessions
             .AnyAsync(session => session.Id == sessionId && session.UserId == userId, cancellationToken);
 
@@ -49,7 +51,7 @@ public sealed class LessonMessageService(AppDbContext dbContext, DevUserProvider
 
     public async Task<LessonMessageListResponse> GetDevLessonMessagesAsync(Guid sessionId, CancellationToken cancellationToken)
     {
-        var userId = devUserProvider.GetDevUserId();
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
         var sessionExists = await dbContext.LessonSessions
             .AnyAsync(session => session.Id == sessionId && session.UserId == userId, cancellationToken);
 

@@ -35,3 +35,4 @@ This roadmap starts from the current confirmed MVP state where desktop/backend b
 - Current desktop settings source remains `/api/dev/user-settings` for now.
 - Future work: migrate desktop settings calls to authenticated endpoints and harden account/session UX.
 - Current token storage is MVP local JSON storage and should be replaced with hardened secure storage before production.
+- Future work: enforce authenticated runtime persistence in Production (login remains optional in Development fallback mode for now).
