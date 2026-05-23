@@ -17,6 +17,7 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 
 public partial class SettingsViewModel : ViewModelBase
 {
+    public event EventHandler? ClearPasswordRequested;
     private const string AppVersionFallbackText = "local build";
     private const string OpenAiNotConfiguredStatus = "not_configured";
     private const string DiagnosticsReportTitle = "English Voice Tutor Desktop diagnostics";
@@ -933,7 +934,7 @@ public partial class SettingsViewModel : ViewModelBase
             }
 
             ApplyAuthenticatedUser(response.User);
-            Password = string.Empty;
+            RequestPasswordClear();
             await LoadSettingsForCurrentSessionAsync();
             StatusMessage = "Signed in.";
         }
@@ -959,7 +960,13 @@ public partial class SettingsViewModel : ViewModelBase
         CurrentUserEmail = string.Empty;
         CurrentUserDisplayName = string.Empty;
         IsAuthenticated = false;
+        RequestPasswordClear();
+    }
+
+    private void RequestPasswordClear()
+    {
         Password = string.Empty;
+        ClearPasswordRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private async Task SaveBackendUserSettingsAsync()
