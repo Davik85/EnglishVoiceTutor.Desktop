@@ -69,8 +69,8 @@ STT quality is improved after rollback/stabilization, but remains an MVP known-r
 ## Not implemented yet
 
 - Contabo deployment
-- auth/JWT
-- real production user accounts
+- desktop login UI
+- production rollout of authenticated user flows in desktop
 - billing/subscription runtime enforcement
 - CMS/admin panel
 
@@ -82,3 +82,11 @@ STT quality is improved after rollback/stabilization, but remains an MVP known-r
 2. Auth/JWT and real accounts
 3. Subscription/payment enforcement
 4. CMS/admin panel only after auth, roles, content versioning, draft/published workflow, audit trail, and rollback
+
+
+## Auth and user settings status
+
+- Auth/JWT backend foundation is implemented (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`).
+- Authenticated user settings endpoints are implemented: `GET /api/me/settings` and `PUT /api/me/settings`.
+- Existing dev endpoint `GET/PUT /api/dev/user-settings` remains available for local MVP testing.
+- Desktop login UI is still not implemented in this repository state.

@@ -9,7 +9,7 @@ This roadmap starts from the current confirmed MVP state where desktop/backend b
 1. Final small stabilization pass
    - monitor STT quality with real short learner phrases
    - harden TutorIdentityGuard / tutor identity behavior if warnings continue
-2. Auth/JWT and real accounts
+2. Desktop login UI and wiring to authenticated endpoints (`/api/me/settings`)
 3. Subscription/payment enforcement
 4. CMS/admin panel only after auth, roles, content versioning, draft/published workflow, audit trail, and rollback
 

@@ -52,3 +52,11 @@
 2. Auth/JWT and real accounts
 3. Subscription/payment enforcement
 4. CMS/admin panel only after auth, roles, content versioning, draft/published workflow, audit trail, and rollback
+
+
+## Authenticated settings endpoints
+
+- Auth/JWT foundation is implemented.
+- Authenticated user settings endpoints are implemented: `GET /api/me/settings`, `PUT /api/me/settings`.
+- Existing dev endpoints remain available for local MVP testing (`/api/dev/user-settings`, `/api/dev/free-limit-status`).
+- Desktop login UI is still not implemented.

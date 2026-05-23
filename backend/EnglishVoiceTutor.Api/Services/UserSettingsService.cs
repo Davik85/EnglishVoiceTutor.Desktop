@@ -11,10 +11,11 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
     public const decimal MinSpeechSpeed = 0.5m;
     public const decimal MaxSpeechSpeed = 2.0m;
 
-    private const string DefaultUserEmail = "dev-user@local.test";
+    private const string DefaultUserEmailPrefix = "user";
+    private const string DefaultUserEmailDomain = "local.test";
     private const string DefaultUserPasswordHash = "temporary-dev-user-no-password-login";
     private const string DefaultUserStatus = "active";
-    private const string DefaultDisplayName = "Dev User";
+    private const string DefaultDisplayName = "User";
     private const string DefaultNativeLanguage = "Russian";
     private const string DefaultCurrentLevel = "A1";
     private const string DefaultSelectedTutorId = "elena";
@@ -24,22 +25,18 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
     private const decimal DefaultSpeechSpeed = 1.0m;
     private const bool DefaultConversationModeEnabled = true;
 
-    public async Task<UserSettingsResponse> GetDevUserSettingsAsync(CancellationToken cancellationToken)
+    public async Task<UserSettingsResponse> GetOrCreateAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var userId = devUserProvider.GetDevUserId();
-        var settings = await LoadOrCreateDevUserSettingsAsync(userId, cancellationToken);
-
+        var settings = await LoadOrCreateUserSettingsAsync(userId, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-
         return ToResponse(settings);
     }
 
-    public async Task<UserSettingsResponse> UpdateDevUserSettingsAsync(UpdateUserSettingsRequest request, CancellationToken cancellationToken)
+    public async Task<UserSettingsResponse> UpdateAsync(Guid userId, UpdateUserSettingsRequest request, CancellationToken cancellationToken)
     {
         ValidateUpdateRequest(request);
 
-        var userId = devUserProvider.GetDevUserId();
-        var settings = await LoadOrCreateDevUserSettingsAsync(userId, cancellationToken);
+        var settings = await LoadOrCreateUserSettingsAsync(userId, cancellationToken);
         var now = DateTimeOffset.UtcNow;
 
         settings.StudyLanguage = StudyLanguageConstants.ToCanonicalValue(request.StudyLanguage);
@@ -54,7 +51,17 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         return ToResponse(settings);
     }
 
-    private async Task<UserSettingsEntity> LoadOrCreateDevUserSettingsAsync(Guid userId, CancellationToken cancellationToken)
+    public Task<UserSettingsResponse> GetDevUserSettingsAsync(CancellationToken cancellationToken)
+    {
+        return GetOrCreateAsync(devUserProvider.GetDevUserId(), cancellationToken);
+    }
+
+    public Task<UserSettingsResponse> UpdateDevUserSettingsAsync(UpdateUserSettingsRequest request, CancellationToken cancellationToken)
+    {
+        return UpdateAsync(devUserProvider.GetDevUserId(), request, cancellationToken);
+    }
+
+    private async Task<UserSettingsEntity> LoadOrCreateUserSettingsAsync(Guid userId, CancellationToken cancellationToken)
     {
         var user = await dbContext.Users
             .Include(existingUser => existingUser.Profile)
@@ -68,7 +75,7 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
             user = new UserEntity
             {
                 Id = userId,
-                Email = DefaultUserEmail,
+                Email = BuildDefaultEmail(userId),
                 PasswordHash = DefaultUserPasswordHash,
                 Status = DefaultUserStatus,
                 CreatedAt = now
@@ -114,6 +121,11 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         }
 
         return user.Settings;
+    }
+
+    private static string BuildDefaultEmail(Guid userId)
+    {
+        return $"{DefaultUserEmailPrefix}-{userId:N}@{DefaultUserEmailDomain}";
     }
 
     private static void ValidateUpdateRequest(UpdateUserSettingsRequest request)

@@ -15,6 +15,7 @@ using EnglishVoiceTutor.Api.Services.Usage;
 using EnglishVoiceTutor.Api.Contracts.Usage;
 using EnglishVoiceTutor.Api.Endpoints;
 using EnglishVoiceTutor.Api.Services.Auth;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -133,6 +134,8 @@ app.MapPost(ApiConstants.AudioSpeechRoute, HandleAudioSpeechAsync);
 app.MapPost(ApiConstants.AudioSpeechStreamRoute, HandleAudioSpeechStreamAsync);
 app.MapGet(ApiConstants.DevUserSettingsRoute, HandleGetDevUserSettingsAsync);
 app.MapPut(ApiConstants.DevUserSettingsRoute, HandleUpdateDevUserSettingsAsync);
+app.MapGet(ApiConstants.MeUserSettingsRoute, HandleGetAuthenticatedUserSettingsAsync).RequireAuthorization();
+app.MapPut(ApiConstants.MeUserSettingsRoute, HandleUpdateAuthenticatedUserSettingsAsync).RequireAuthorization();
 app.MapPost(ApiConstants.DevLessonSessionsRoute, HandleCreateDevLessonSessionAsync);
 app.MapPut(ApiConstants.DevLessonSessionFinishRoute, HandleFinishDevLessonSessionAsync);
 app.MapGet(ApiConstants.DevLessonSessionsRoute, HandleGetDevLessonSessionsAsync);
@@ -605,6 +608,67 @@ static ErrorResponse CreateLessonSessionStorageUnavailableResponse()
         Message = "Lesson session storage is unavailable.",
         CheckedAtUtc = DateTimeOffset.UtcNow
     };
+}
+
+
+static async Task<IResult> HandleGetAuthenticatedUserSettingsAsync(
+    ClaimsPrincipal principal,
+    IUserSettingsService userSettingsService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("AuthenticatedUserSettingsEndpoint");
+    var userId = ClaimsUserAccessor.TryGetUserId(principal);
+
+    if (!userId.HasValue)
+    {
+        return Results.Unauthorized();
+    }
+
+    try
+    {
+        var settings = await userSettingsService.GetOrCreateAsync(userId.Value, cancellationToken);
+        return Results.Ok(settings);
+    }
+    catch (Exception exception) when (IsUserSettingsStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Authenticated user settings GET failed because storage is unavailable.");
+        return Results.Json(CreateUserSettingsStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleUpdateAuthenticatedUserSettingsAsync(
+    ClaimsPrincipal principal,
+    UpdateUserSettingsRequest request,
+    IUserSettingsService userSettingsService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("AuthenticatedUserSettingsEndpoint");
+    var userId = ClaimsUserAccessor.TryGetUserId(principal);
+
+    if (!userId.HasValue)
+    {
+        return Results.Unauthorized();
+    }
+
+    try
+    {
+        var settings = await userSettingsService.UpdateAsync(userId.Value, request, cancellationToken);
+        return Results.Ok(settings);
+    }
+    catch (UserSettingsValidationException exception)
+    {
+        return Results.BadRequest(new
+        {
+            error = exception.Message
+        });
+    }
+    catch (Exception exception) when (IsUserSettingsStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Authenticated user settings PUT failed because storage is unavailable.");
+        return Results.Json(CreateUserSettingsStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
 }
 
 static async Task<IResult> HandleGetDevUserSettingsAsync(
