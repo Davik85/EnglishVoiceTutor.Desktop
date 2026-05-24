@@ -21,7 +21,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly BackendLessonMessageClient backendLessonMessageClient = new();
     private readonly BackendLessonSummaryClient backendLessonSummaryClient = new();
     private readonly BackendLessonHistoryClient backendLessonHistoryClient = new();
-    private readonly BackendLessonAccessDecisionClient backendLessonAccessDecisionClient = new();
+    private readonly LessonStartGuardService lessonStartGuardService = new();
     private readonly AuthBackendService authBackendService = new();
     private readonly AudioRecordingService audioRecordingService = new();
     private readonly AudioInputDeviceService audioInputDeviceService = new();
@@ -66,7 +66,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public void NavigateToLessonChat(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic)
     {
-        _ = RunLessonAccessPreflightCheckAsync();
+        _ = RunLessonStartGuardCheckAsync();
         CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
     }
 
@@ -193,27 +193,20 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         Debug.WriteLine($"Backend lesson summary saved. SessionId={backendLessonSessionId}; SummaryId={result.Summary?.Id}.");
     }
 
-    private async Task RunLessonAccessPreflightCheckAsync()
+    private async Task RunLessonStartGuardCheckAsync()
     {
         try
         {
-            var result = await backendLessonAccessDecisionClient.GetAsync(userSettings.BackendBaseUrl);
-            var source = result.Value?.Source ?? "unavailable";
-            var canStartNewLesson = result.Value?.CanStartNewLesson;
-            var decision = result.Value?.Decision ?? "unavailable";
-            var reason = result.Value?.Reason ?? "unavailable";
-            var enforcementEnabled = result.Value?.EnforcementEnabled;
-            var freeLessonRemainingToday = result.Value?.FreeLessonRemainingToday;
-            var freeLessonUsedToday = result.Value?.FreeLessonUsedToday;
+            var result = await lessonStartGuardService.CheckAsync(userSettings.BackendBaseUrl);
 
             Debug.WriteLine(
-                $"Lesson access preflight completed. IsSuccess={result.IsSuccess}; Source={source}; CanStartNewLesson={canStartNewLesson}; Decision={decision}; Reason={reason}; EnforcementEnabled={enforcementEnabled}; FreeLessonRemainingToday={freeLessonRemainingToday}; FreeLessonUsedToday={freeLessonUsedToday}.");
+                $"Lesson start guard check completed. ShouldAllowStart={result.ShouldAllowStart}; IsBackendDecisionAvailable={result.IsBackendDecisionAvailable}; Source={result.Source}; CanStartNewLesson={result.CanStartNewLesson}; Decision={result.Decision}; Reason={result.Reason}; EnforcementEnabled={result.EnforcementEnabled}; FreeLessonRemainingToday={result.FreeLessonRemainingToday}; FreeLessonUsedToday={result.FreeLessonUsedToday}.");
 
-            // Lesson access decision is read-only until enforcement is explicitly enabled.
+            // Lesson start guard is read-only until enforcement is explicitly enabled.
         }
         catch (Exception exception)
         {
-            Debug.WriteLine($"Lesson access preflight failed unexpectedly. Error={exception.Message}.");
+            Debug.WriteLine($"Lesson start guard check failed unexpectedly. Error={exception.Message}.");
         }
     }
 
