@@ -102,6 +102,7 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRequestUserResolver, RequestUserResolver>();
 builder.Services.AddScoped<ISubscriptionStatusService, SubscriptionStatusService>();
+builder.Services.AddScoped<IFreeLessonConsumptionService, FreeLessonConsumptionService>();
 builder.Services.AddScoped<ISubscriptionPlanCatalogService, SubscriptionPlanCatalogService>();
 builder.Services.AddScoped<ISubscriptionDiagnosticsService, SubscriptionDiagnosticsService>();
 

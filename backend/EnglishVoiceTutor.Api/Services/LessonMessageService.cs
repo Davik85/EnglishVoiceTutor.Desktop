@@ -5,10 +5,12 @@ using EnglishVoiceTutor.Api.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 using EnglishVoiceTutor.Api.Services.Auth;
+using EnglishVoiceTutor.Api.Services.Subscriptions;
+using Microsoft.Extensions.Logging;
 
 namespace EnglishVoiceTutor.Api.Services;
 
-public sealed class LessonMessageService(AppDbContext dbContext, IRequestUserResolver requestUserResolver) : ILessonMessageService
+public sealed class LessonMessageService(AppDbContext dbContext, IRequestUserResolver requestUserResolver, IFreeLessonConsumptionService freeLessonConsumptionService, ILogger<LessonMessageService> logger) : ILessonMessageService
 {
     private const decimal MinTranscriptConfidence = 0m;
     private const decimal MaxTranscriptConfidence = 1m;
@@ -45,6 +47,25 @@ public sealed class LessonMessageService(AppDbContext dbContext, IRequestUserRes
 
         dbContext.LessonMessages.Add(message);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (message.Role == LessonMessageConstants.User && message.IsValidLessonTurn)
+        {
+            try
+            {
+                await freeLessonConsumptionService.TryRecordConsumptionAsync(
+                    message.SessionId,
+                    userId,
+                    message.StudyLanguage,
+                    cancellationToken);
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception,
+                    "Free lesson consumption tracking failed for SessionId={SessionId}, UserId={UserId}.",
+                    message.SessionId,
+                    userId);
+            }
+        }
 
         return ToResponse(message);
     }
