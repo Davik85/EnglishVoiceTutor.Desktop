@@ -61,4 +61,5 @@ public static class ApiConstants
     public const string DevFeedbackResultsRoute = "/api/dev/feedback-results";
     public const string MeSubscriptionStatusRoute = "/api/me/subscription-status";
     public const string DevSubscriptionStatusRoute = "/api/dev/subscription-status";
+    public const string DevSubscriptionDiagnosticsScenarioRoute = "/api/dev/subscription-diagnostics/scenarios/{scenario}";
 }

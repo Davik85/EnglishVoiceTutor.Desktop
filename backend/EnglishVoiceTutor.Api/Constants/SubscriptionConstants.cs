@@ -62,6 +62,37 @@ public static class SubscriptionConstants
         public const string ForcePlanRefresh = "force_plan_refresh";
     }
 
+
+    public static class Diagnostics
+    {
+        public const string ScenarioReset = "reset";
+        public const string ScenarioActivePremiumEntitlement = "active_premium_entitlement";
+        public const string ScenarioActiveTrialGrant = "active_trial_grant";
+        public const string ScenarioExpiredPremiumEntitlement = "expired_premium_entitlement";
+        public const string ScenarioExpiredTrialGrant = "expired_trial_grant";
+        public const string ScenarioDailyFreeLessonConsumed = "daily_free_lesson_consumed";
+
+        public const string Reason = "Development subscription diagnostics scenario.";
+        public const string SourcePlatform = "development_diagnostics";
+
+        public const string LessonContentId = "dev_subscription_diagnostics_lesson";
+        public const string TopicId = "dev_subscription_diagnostics_topic";
+        public const string TopicTitle = "Subscription Diagnostics";
+        public const string SubtopicId = "dev_subscription_diagnostics_subtopic";
+        public const string SubtopicTitle = "Daily Free Lesson Consumed";
+        public const string Level = "A1";
+        public const string ContextId = "dev_subscription_diagnostics_context";
+        public const string ContextTitle = "Development Diagnostics";
+        public const string Mode = "chat";
+        public const string SessionStatus = "active";
+
+        public const int ActivePremiumStartOffsetMinutes = 5;
+        public const int ActivePremiumDurationDays = 30;
+        public const int ExpiredPremiumStartOffsetDays = 40;
+        public const int ExpiredOffsetDays = 1;
+        public const int ExpiredTrialGrantOffsetDays = 10;
+    }
+
     public const int PremiumTrialDays = 7;
     public const int FreeLessonsPerDay = 1;
     public const int FreeLessonConsumptionMessageThreshold = 3;
