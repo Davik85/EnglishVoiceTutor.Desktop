@@ -15,6 +15,7 @@ using EnglishVoiceTutor.Api.Services.Usage;
 using EnglishVoiceTutor.Api.Contracts.Usage;
 using EnglishVoiceTutor.Api.Endpoints;
 using EnglishVoiceTutor.Api.Services.Auth;
+using EnglishVoiceTutor.Api.Services.Subscriptions;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -100,6 +101,7 @@ builder.Services.AddScoped<IPasswordHasher<EnglishVoiceTutor.Api.Data.Entities.U
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRequestUserResolver, RequestUserResolver>();
+builder.Services.AddScoped<ISubscriptionStatusService, SubscriptionStatusService>();
 
 var app = builder.Build();
 
@@ -155,6 +157,7 @@ app.MapGet(ApiConstants.DevFreeLimitStatusRoute, HandleGetDevFreeLimitStatusAsyn
 app.MapGet(ApiConstants.DevFeedbackResultsRoute, HandleGetDevFeedbackResultsAsync);
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 app.MapAuthEndpoints();
+app.MapSubscriptionStatusEndpoints();
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
     ApiConstants.ServiceName,

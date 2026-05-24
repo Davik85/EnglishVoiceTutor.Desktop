@@ -17,4 +17,9 @@ public sealed class UserEntity
     public ICollection<SubscriptionEntity> Subscriptions { get; set; } = [];
     public ICollection<PaymentEntity> Payments { get; set; } = [];
     public ICollection<DeviceEntity> Devices { get; set; } = [];
+    public ICollection<EntitlementEntity> Entitlements { get; set; } = [];
+    public ICollection<TrialGrantEntity> TrialGrants { get; set; } = [];
+    public ICollection<DailyFreeLessonUsageEntity> DailyFreeLessonUsages { get; set; } = [];
+    public ICollection<AdminActionEntity> AdminActionsCreated { get; set; } = [];
+    public ICollection<AdminActionEntity> AdminActionsReceived { get; set; } = [];
 }

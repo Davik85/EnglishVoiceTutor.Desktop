@@ -17,6 +17,12 @@ public static class EntityConstants
         public const string Subscriptions = "subscriptions";
         public const string Payments = "payments";
         public const string Devices = "devices";
+        public const string Plans = "plans";
+        public const string Entitlements = "entitlements";
+        public const string TrialGrants = "trial_grants";
+        public const string DailyFreeLessonUsage = "daily_free_lesson_usage";
+        public const string BillingEvents = "billing_events";
+        public const string AdminActions = "admin_actions";
     }
 
     public static class Lengths
@@ -52,6 +58,17 @@ public static class EntityConstants
         public const int ShortTextMaxLength = 512;
         public const int MediumTextMaxLength = 4096;
         public const int LongTextMaxLength = 20000;
+        public const int PlanDisplayNameMaxLength = 128;
+        public const int PlanTierMaxLength = 64;
+        public const int EntitlementTypeMaxLength = 128;
+        public const int EntitlementSourceMaxLength = 64;
+        public const int EntitlementReasonMaxLength = 512;
+        public const int BillingEventTypeMaxLength = 128;
+        public const int ProviderEventIdMaxLength = 256;
+        public const int DeviceFingerprintHashMaxLength = 256;
+        public const int MetadataJsonMaxLength = 4096;
+        public const int ErrorMessageMaxLength = 1024;
+        public const int ActionTypeMaxLength = 128;
     }
 
     public static class Precision
