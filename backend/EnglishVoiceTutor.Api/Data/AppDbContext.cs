@@ -18,6 +18,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<SubscriptionEntity> Subscriptions => Set<SubscriptionEntity>();
     public DbSet<PaymentEntity> Payments => Set<PaymentEntity>();
     public DbSet<DeviceEntity> Devices => Set<DeviceEntity>();
+    public DbSet<PlanEntity> Plans => Set<PlanEntity>();
+    public DbSet<EntitlementEntity> Entitlements => Set<EntitlementEntity>();
+    public DbSet<TrialGrantEntity> TrialGrants => Set<TrialGrantEntity>();
+    public DbSet<DailyFreeLessonUsageEntity> DailyFreeLessonUsages => Set<DailyFreeLessonUsageEntity>();
+    public DbSet<BillingEventEntity> BillingEvents => Set<BillingEventEntity>();
+    public DbSet<AdminActionEntity> AdminActions => Set<AdminActionEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,6 +43,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureSubscriptions(modelBuilder);
         ConfigurePayments(modelBuilder);
         ConfigureDevices(modelBuilder);
+        ConfigurePlans(modelBuilder);
+        ConfigureEntitlements(modelBuilder);
+        ConfigureTrialGrants(modelBuilder);
+        ConfigureDailyFreeLessonUsage(modelBuilder);
+        ConfigureBillingEvents(modelBuilder);
+        ConfigureAdminActions(modelBuilder);
     }
 
     private static void ConfigureUsers(ModelBuilder modelBuilder)
@@ -249,13 +261,20 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.Property(subscription => subscription.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
         entity.Property(subscription => subscription.Provider).IsRequired().HasMaxLength(EntityConstants.Lengths.ProviderMaxLength);
         entity.Property(subscription => subscription.ProviderSubscriptionId).HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
+        entity.Property(subscription => subscription.ProviderCustomerId).HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
+        entity.Property(subscription => subscription.CancelAtPeriodEnd).IsRequired();
         entity.Property(subscription => subscription.StartedAt).IsRequired();
         entity.Property(subscription => subscription.CreatedAt).IsRequired();
         entity.Property(subscription => subscription.UpdatedAt).IsRequired();
-        entity.HasIndex(subscription => subscription.UserId);
+        entity.HasIndex(subscription => new { subscription.UserId, subscription.Status, subscription.Provider, subscription.ProviderSubscriptionId });
         entity.HasOne(subscription => subscription.User)
             .WithMany(user => user.Subscriptions)
             .HasForeignKey(subscription => subscription.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<PlanEntity>()
+            .WithMany(plan => plan.Subscriptions)
+            .HasPrincipalKey(plan => plan.PlanId)
+            .HasForeignKey(subscription => subscription.PlanId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 
@@ -294,4 +313,89 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .HasForeignKey(device => device.UserId)
             .OnDelete(DeleteBehavior.Restrict);
     }
+
+    private static void ConfigurePlans(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<PlanEntity>();
+        entity.ToTable(EntityConstants.TableNames.Plans);
+        entity.HasKey(plan => plan.Id);
+        entity.Property(plan => plan.PlanId).IsRequired().HasMaxLength(EntityConstants.Lengths.PlanIdMaxLength);
+        entity.Property(plan => plan.DisplayName).IsRequired().HasMaxLength(EntityConstants.Lengths.PlanDisplayNameMaxLength);
+        entity.Property(plan => plan.Tier).IsRequired().HasMaxLength(EntityConstants.Lengths.PlanTierMaxLength);
+        entity.Property(plan => plan.IsActive).IsRequired();
+        entity.Property(plan => plan.CreatedAt).IsRequired();
+        entity.Property(plan => plan.UpdatedAt).IsRequired();
+        entity.HasIndex(plan => plan.PlanId).IsUnique();
+    }
+
+    private static void ConfigureEntitlements(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<EntitlementEntity>();
+        entity.ToTable(EntityConstants.TableNames.Entitlements);
+        entity.HasKey(entitlement => entitlement.Id);
+        entity.Property(entitlement => entitlement.PlanId).IsRequired().HasMaxLength(EntityConstants.Lengths.PlanIdMaxLength);
+        entity.Property(entitlement => entitlement.EntitlementType).IsRequired().HasMaxLength(EntityConstants.Lengths.EntitlementTypeMaxLength);
+        entity.Property(entitlement => entitlement.Source).IsRequired().HasMaxLength(EntityConstants.Lengths.EntitlementSourceMaxLength);
+        entity.Property(entitlement => entitlement.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
+        entity.Property(entitlement => entitlement.Reason).HasMaxLength(EntityConstants.Lengths.EntitlementReasonMaxLength);
+        entity.Property(entitlement => entitlement.CreatedAt).IsRequired();
+        entity.Property(entitlement => entitlement.UpdatedAt).IsRequired();
+        entity.HasIndex(entitlement => new { entitlement.UserId, entitlement.Status, entitlement.StartsAtUtc, entitlement.ExpiresAtUtc });
+        entity.HasOne(entitlement => entitlement.User).WithMany(user => user.Entitlements).HasForeignKey(entitlement => entitlement.UserId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne(entitlement => entitlement.Subscription).WithMany(subscription => subscription.Entitlements).HasForeignKey(entitlement => entitlement.SubscriptionId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<PlanEntity>().WithMany(plan => plan.Entitlements).HasPrincipalKey(plan => plan.PlanId).HasForeignKey(entitlement => entitlement.PlanId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureTrialGrants(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<TrialGrantEntity>();
+        entity.ToTable(EntityConstants.TableNames.TrialGrants);
+        entity.HasKey(trial => trial.Id);
+        entity.Property(trial => trial.SourcePlatform).IsRequired().HasMaxLength(EntityConstants.Lengths.PlatformMaxLength);
+        entity.Property(trial => trial.DeviceFingerprintHash).HasMaxLength(EntityConstants.Lengths.DeviceFingerprintHashMaxLength);
+        entity.Property(trial => trial.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
+        entity.Property(trial => trial.CreatedAt).IsRequired();
+        entity.HasIndex(trial => new { trial.UserId, trial.Status });
+        entity.HasOne(trial => trial.User).WithMany(user => user.TrialGrants).HasForeignKey(trial => trial.UserId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureDailyFreeLessonUsage(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<DailyFreeLessonUsageEntity>();
+        entity.ToTable(EntityConstants.TableNames.DailyFreeLessonUsage);
+        entity.HasKey(usage => usage.Id);
+        entity.Property(usage => usage.StudyLanguage).IsRequired().HasMaxLength(EntityConstants.Lengths.LanguageCodeMaxLength);
+        entity.Property(usage => usage.CreatedAt).IsRequired();
+        entity.HasIndex(usage => new { usage.UserId, usage.UsageDate }).IsUnique();
+        entity.HasOne(usage => usage.User).WithMany(user => user.DailyFreeLessonUsages).HasForeignKey(usage => usage.UserId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne(usage => usage.LessonSession).WithMany().HasForeignKey(usage => usage.LessonSessionId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureBillingEvents(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<BillingEventEntity>();
+        entity.ToTable(EntityConstants.TableNames.BillingEvents);
+        entity.HasKey(billingEvent => billingEvent.Id);
+        entity.Property(billingEvent => billingEvent.BillingProvider).IsRequired().HasMaxLength(EntityConstants.Lengths.ProviderMaxLength);
+        entity.Property(billingEvent => billingEvent.EventType).IsRequired().HasMaxLength(EntityConstants.Lengths.BillingEventTypeMaxLength);
+        entity.Property(billingEvent => billingEvent.ProviderEventId).IsRequired().HasMaxLength(EntityConstants.Lengths.ProviderEventIdMaxLength);
+        entity.Property(billingEvent => billingEvent.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
+        entity.Property(billingEvent => billingEvent.SafeMetadataJson).HasMaxLength(EntityConstants.Lengths.MetadataJsonMaxLength);
+        entity.Property(billingEvent => billingEvent.ErrorMessage).HasMaxLength(EntityConstants.Lengths.ErrorMessageMaxLength);
+        entity.HasIndex(billingEvent => new { billingEvent.BillingProvider, billingEvent.ProviderEventId }).IsUnique();
+    }
+
+    private static void ConfigureAdminActions(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AdminActionEntity>();
+        entity.ToTable(EntityConstants.TableNames.AdminActions);
+        entity.HasKey(action => action.Id);
+        entity.Property(action => action.ActionType).IsRequired().HasMaxLength(EntityConstants.Lengths.ActionTypeMaxLength);
+        entity.Property(action => action.Reason).IsRequired().HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
+        entity.Property(action => action.SafeMetadataJson).HasMaxLength(EntityConstants.Lengths.MetadataJsonMaxLength);
+        entity.HasIndex(action => new { action.TargetUserId, action.CreatedAtUtc });
+        entity.HasOne(action => action.AdminUser).WithMany(user => user.AdminActionsCreated).HasForeignKey(action => action.AdminUserId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne(action => action.TargetUser).WithMany(user => user.AdminActionsReceived).HasForeignKey(action => action.TargetUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+
 }
