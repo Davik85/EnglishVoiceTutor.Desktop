@@ -25,12 +25,15 @@ public sealed class BackendLessonMessageClient
 
         try
         {
-            var endpoint = string.Format(BackendConstants.DevLessonSessionMessagesEndpointTemplate, sessionId);
+            var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+            var endpointTemplate = string.IsNullOrWhiteSpace(session?.AccessToken)
+                ? BackendConstants.DevLessonSessionMessagesEndpointTemplate
+                : BackendConstants.MeLessonSessionMessagesEndpointTemplate;
+            var endpoint = string.Format(endpointTemplate, sessionId);
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpoint))
             {
                 Content = JsonContent.Create(request, options: JsonOptions)
             };
-            var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
             AuthenticatedRequestHelper.AddBearerTokenIfPresent(httpRequest, session?.AccessToken);
             using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 

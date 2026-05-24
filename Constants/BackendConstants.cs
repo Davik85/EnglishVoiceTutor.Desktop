@@ -18,8 +18,11 @@ public static class BackendConstants
     public const string DevUserSettingsEndpoint = "/api/dev/user-settings";
     public const string MeSettingsEndpoint = "/api/me/settings";
     public const string DevLessonSessionsEndpoint = "/api/dev/lesson-sessions";
+    public const string MeLessonSessionsEndpoint = "/api/me/lesson-sessions";
     public const string DevLessonSessionFinishEndpointTemplate = "/api/dev/lesson-sessions/{0}/finish";
+    public const string MeLessonSessionFinishEndpointTemplate = "/api/me/lesson-sessions/{0}/finish";
     public const string DevLessonSessionMessagesEndpointTemplate = "/api/dev/lesson-sessions/{0}/messages";
+    public const string MeLessonSessionMessagesEndpointTemplate = "/api/me/lesson-sessions/{0}/messages";
     public const string DevLessonSessionSummaryEndpointTemplate = "/api/dev/lesson-sessions/{0}/summary";
     public const string DevLessonHistoryEndpoint = "/api/dev/lesson-history";
     public const string DevLessonHistoryDetailEndpointTemplate = "/api/dev/lesson-history/{0}";

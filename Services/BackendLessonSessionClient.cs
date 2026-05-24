@@ -24,11 +24,14 @@ public sealed class BackendLessonSessionClient
 
         try
         {
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.DevLessonSessionsEndpoint))
+            var authSession = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+            var endpoint = string.IsNullOrWhiteSpace(authSession?.AccessToken)
+                ? BackendConstants.DevLessonSessionsEndpoint
+                : BackendConstants.MeLessonSessionsEndpoint;
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpoint))
             {
                 Content = JsonContent.Create(request, options: JsonOptions)
             };
-            var authSession = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
             AuthenticatedRequestHelper.AddBearerTokenIfPresent(httpRequest, authSession?.AccessToken);
             using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
@@ -64,11 +67,14 @@ public sealed class BackendLessonSessionClient
 
         try
         {
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Put, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, string.Format(BackendConstants.DevLessonSessionFinishEndpointTemplate, sessionId)))
+            var authSession = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+            var endpointTemplate = string.IsNullOrWhiteSpace(authSession?.AccessToken)
+                ? BackendConstants.DevLessonSessionFinishEndpointTemplate
+                : BackendConstants.MeLessonSessionFinishEndpointTemplate;
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Put, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, string.Format(endpointTemplate, sessionId)))
             {
                 Content = JsonContent.Create(request, options: JsonOptions)
             };
-            var authSession = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
             AuthenticatedRequestHelper.AddBearerTokenIfPresent(httpRequest, authSession?.AccessToken);
             using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
