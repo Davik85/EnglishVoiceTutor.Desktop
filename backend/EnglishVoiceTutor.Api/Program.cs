@@ -102,6 +102,7 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRequestUserResolver, RequestUserResolver>();
 builder.Services.AddScoped<ISubscriptionStatusService, SubscriptionStatusService>();
+builder.Services.AddScoped<ILessonAccessDecisionService, LessonAccessDecisionService>();
 builder.Services.AddScoped<IFreeLessonConsumptionService, FreeLessonConsumptionService>();
 builder.Services.AddScoped<ISubscriptionPlanCatalogService, SubscriptionPlanCatalogService>();
 builder.Services.AddScoped<ISubscriptionDiagnosticsService, SubscriptionDiagnosticsService>();
@@ -167,6 +168,7 @@ app.MapGet(ApiConstants.DevFeedbackResultsRoute, HandleGetDevFeedbackResultsAsyn
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 app.MapAuthEndpoints();
 app.MapSubscriptionStatusEndpoints();
+app.MapLessonAccessDecisionEndpoints();
 app.MapSubscriptionDiagnosticsEndpoints();
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
