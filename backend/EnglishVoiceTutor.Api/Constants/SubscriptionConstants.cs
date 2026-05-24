@@ -93,6 +93,31 @@ public static class SubscriptionConstants
         public const int ExpiredTrialGrantOffsetDays = 10;
     }
 
+
+    public static class LessonAccessSources
+    {
+        public const string Authenticated = "authenticated";
+        public const string Development = "development";
+    }
+
+    public static class LessonAccessDecisions
+    {
+        public const string AllowedPremium = "allowed_premium";
+        public const string AllowedTrial = "allowed_trial";
+        public const string AllowedFreeRemaining = "allowed_free_remaining";
+        public const string AllowedEnforcementDisabled = "allowed_enforcement_disabled";
+        public const string BlockedFreeLimitUsed = "blocked_free_limit_used";
+    }
+
+    public static class LessonAccessReasons
+    {
+        public const string PremiumActive = "Premium access is active.";
+        public const string TrialActive = "Trial access is active.";
+        public const string FreeLessonRemaining = "A free lesson is still available today.";
+        public const string FreeLimitUsedButEnforcementDisabled = "Free lesson has already been used today, but enforcement is disabled.";
+        public const string FreeLimitUsed = "Free lesson has already been used today.";
+    }
+
     public const int PremiumTrialDays = 7;
     public const int FreeLessonsPerDay = 1;
     public const int FreeLessonConsumptionMessageThreshold = 3;
