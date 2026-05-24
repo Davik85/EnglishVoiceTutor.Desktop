@@ -71,19 +71,22 @@ public sealed class SubscriptionDiagnosticsService(
             .Where(grant => grant.UserId == userId && grant.SourcePlatform == SubscriptionConstants.Diagnostics.SourcePlatform)
             .ToListAsync(cancellationToken);
 
-        var diagnosticDailyUsage = await dbContext.DailyFreeLessonUsages
+        var todayDailyUsage = await dbContext.DailyFreeLessonUsages
             .Where(usage => usage.UserId == userId && usage.UsageDate == todayUtc)
             .Join(
                 dbContext.LessonSessions,
                 usage => usage.LessonSessionId,
                 session => session.Id,
                 (usage, session) => new { usage, session })
-            .Where(pair => pair.session.LessonContentId == SubscriptionConstants.Diagnostics.LessonContentId)
             .ToListAsync(cancellationToken);
+
+        var diagnosticDailyUsage = todayDailyUsage
+            .Where(pair => pair.session.LessonContentId == SubscriptionConstants.Diagnostics.LessonContentId)
+            .ToList();
 
         dbContext.Entitlements.RemoveRange(diagnosticEntitlements);
         dbContext.TrialGrants.RemoveRange(diagnosticTrialGrants);
-        dbContext.DailyFreeLessonUsages.RemoveRange(diagnosticDailyUsage.Select(pair => pair.usage));
+        dbContext.DailyFreeLessonUsages.RemoveRange(todayDailyUsage.Select(pair => pair.usage));
         dbContext.LessonSessions.RemoveRange(diagnosticDailyUsage.Select(pair => pair.session));
     }
 
