@@ -64,6 +64,8 @@ public static class ApiConstants
     public const string DevFreeLimitStatusRoute = "/api/dev/free-limit-status";
     public const string DevFeedbackResultsRoute = "/api/dev/feedback-results";
     public const string MeSubscriptionStatusRoute = "/api/me/subscription-status";
+    public const string MeLessonAccessRoute = "/api/me/lesson-access";
     public const string DevSubscriptionStatusRoute = "/api/dev/subscription-status";
+    public const string DevLessonAccessRoute = "/api/dev/lesson-access";
     public const string DevSubscriptionDiagnosticsScenarioRoute = "/api/dev/subscription-diagnostics/scenarios/{scenario}";
 }
