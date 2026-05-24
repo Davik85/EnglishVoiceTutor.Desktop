@@ -33,12 +33,14 @@ public partial class SettingsViewModel : ViewModelBase
     private const string LoginFailedMessageText = "Login failed. Check your email and password.";
     private const string RegisterFailedMessageText = "Registration failed. Please review your details and try again.";
     private const string BackendUnavailableMessageText = "Backend is unavailable. Check the backend URL and try again.";
+    private const string SubscriptionStatusUnavailableText = "Subscription status: unavailable";
 
     private readonly Action<string, string, string, string, string, string, string, string> saveSettings;
     private readonly Action navigateBack;
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly BackendDiagnosticsService backendDiagnosticsService;
     private readonly BackendUserSettingsClient backendUserSettingsClient;
+    private readonly BackendSubscriptionStatusClient backendSubscriptionStatusClient;
     private readonly AudioInputDeviceService audioInputDeviceService;
     private readonly AudioRecordingService audioRecordingService;
     private readonly AuthBackendService authBackendService;
@@ -209,6 +211,14 @@ public partial class SettingsViewModel : ViewModelBase
     public string AccountLogoutButtonText => "Logout";
     public string CurrentAccountLabel => "Current account";
     public string SettingsSourceLabel => "Settings source";
+    public string SubscriptionStatusTitle => "Subscription status";
+    public string SubscriptionPlanLabel => "Plan";
+    public string SubscriptionPremiumLabel => "Premium";
+    public string SubscriptionTrialLabel => "Trial";
+    public string SubscriptionFreeLessonLabel => "Free lesson today";
+    public string SubscriptionEnforcementLabel => "Enforcement";
+    public string SubscriptionSourceLabel => "Source";
+    public string SubscriptionCheckedAtLabel => "Checked";
 
     public IReadOnlyList<InterfaceLanguageOption> AvailableInterfaceLanguages { get; } = InterfaceLanguageOptions.All;
 
@@ -300,6 +310,20 @@ public partial class SettingsViewModel : ViewModelBase
     private string errorMessage = string.Empty;
     [ObservableProperty]
     private string settingsSource = SettingsSourceDevelopmentText;
+    [ObservableProperty]
+    private string subscriptionPlanText = SubscriptionStatusUnavailableText;
+    [ObservableProperty]
+    private string subscriptionPremiumText = SubscriptionStatusUnavailableText;
+    [ObservableProperty]
+    private string subscriptionTrialText = SubscriptionStatusUnavailableText;
+    [ObservableProperty]
+    private string subscriptionFreeLessonText = SubscriptionStatusUnavailableText;
+    [ObservableProperty]
+    private string subscriptionEnforcementText = SubscriptionStatusUnavailableText;
+    [ObservableProperty]
+    private string subscriptionSourceText = SubscriptionStatusUnavailableText;
+    [ObservableProperty]
+    private string subscriptionCheckedAtText = SubscriptionStatusUnavailableText;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DiagnosticsMicrophoneText))]
@@ -320,6 +344,7 @@ public partial class SettingsViewModel : ViewModelBase
         LessonChatBackendService lessonChatBackendService,
         BackendDiagnosticsService backendDiagnosticsService,
         BackendUserSettingsClient backendUserSettingsClient,
+        BackendSubscriptionStatusClient backendSubscriptionStatusClient,
         AuthBackendService authBackendService,
         AudioInputDeviceService audioInputDeviceService,
         AudioRecordingService audioRecordingService,
@@ -341,6 +366,7 @@ public partial class SettingsViewModel : ViewModelBase
         this.lessonChatBackendService = lessonChatBackendService;
         this.backendDiagnosticsService = backendDiagnosticsService;
         this.backendUserSettingsClient = backendUserSettingsClient;
+        this.backendSubscriptionStatusClient = backendSubscriptionStatusClient;
         this.authBackendService = authBackendService;
         this.audioInputDeviceService = audioInputDeviceService;
         this.audioRecordingService = audioRecordingService;
@@ -402,6 +428,7 @@ public partial class SettingsViewModel : ViewModelBase
             await authBackendService.LogoutAsync();
             ClearAccountState();
             await LoadSettingsForCurrentSessionAsync();
+            await RefreshSubscriptionStatusAsync();
             StatusMessage = "Signed out.";
         }
         finally
@@ -422,6 +449,7 @@ public partial class SettingsViewModel : ViewModelBase
             {
                 ClearAccountState();
                 await LoadDevelopmentSettingsAsync();
+                await RefreshSubscriptionStatusAsync();
                 return;
             }
 
@@ -431,6 +459,7 @@ public partial class SettingsViewModel : ViewModelBase
                 await authBackendService.LogoutAsync();
                 ClearAccountState();
                 await LoadDevelopmentSettingsAsync();
+                await RefreshSubscriptionStatusAsync();
                 StatusMessage = SessionExpiredFallbackMessageText;
                 return;
             }
@@ -443,6 +472,7 @@ public partial class SettingsViewModel : ViewModelBase
 
             ApplyAuthenticatedUser(meResult.User);
             await LoadAuthenticatedSettingsAsync(session.AccessToken);
+            await RefreshSubscriptionStatusAsync();
             StatusMessage = "Session restored.";
         }
         finally
@@ -546,6 +576,7 @@ public partial class SettingsViewModel : ViewModelBase
         var configStatus = await lessonChatBackendService.GetBackendConfigStatusAsync(BackendBaseUrl);
         AiStatus = MapAiStatus(configStatus);
         await LoadSettingsForCurrentSessionAsync();
+        await RefreshSubscriptionStatusAsync();
     }
 
     partial void OnSelectedInterfaceLanguageOptionChanged(InterfaceLanguageOption value)
@@ -943,6 +974,7 @@ public partial class SettingsViewModel : ViewModelBase
             ApplyAuthenticatedUser(response.User);
             RequestPasswordClear();
             await LoadSettingsForCurrentSessionAsync();
+            await RefreshSubscriptionStatusAsync();
             StatusMessage = "Signed in.";
         }
         catch
@@ -1030,6 +1062,47 @@ public partial class SettingsViewModel : ViewModelBase
         {
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
         }
+    }
+
+    private async Task RefreshSubscriptionStatusAsync()
+    {
+        try
+        {
+            var result = await backendSubscriptionStatusClient.GetAsync(BackendBaseUrl);
+            if (!result.IsSuccess || result.Value is null)
+            {
+                ResetSubscriptionStatus();
+                return;
+            }
+
+            var status = result.Value;
+            SubscriptionPlanText = $"Plan: {(!string.IsNullOrWhiteSpace(status.PlanName) ? status.PlanName : "Free")}";
+            SubscriptionPremiumText = $"Premium: {(status.PremiumActive ? "Active" : "Not active")}";
+            SubscriptionTrialText = status.TrialActive && status.TrialEndsAtUtc is not null
+                ? $"Trial: Active until {status.TrialEndsAtUtc.Value:u}"
+                : "Trial: Not active";
+            SubscriptionFreeLessonText = status.FreeLessonUsedToday
+                ? "Free lesson today: Used"
+                : $"Free lesson today: {Math.Max(status.FreeLessonRemainingToday, 0)} remaining";
+            SubscriptionEnforcementText = $"Enforcement: {(status.EnforcementEnabled ? "On" : "Off")}";
+            SubscriptionSourceText = $"Source: {status.Source}";
+            SubscriptionCheckedAtText = $"Checked: {status.CheckedAtUtc:u}";
+        }
+        catch
+        {
+            ResetSubscriptionStatus();
+        }
+    }
+
+    private void ResetSubscriptionStatus()
+    {
+        SubscriptionPlanText = SubscriptionStatusUnavailableText;
+        SubscriptionPremiumText = SubscriptionStatusUnavailableText;
+        SubscriptionTrialText = SubscriptionStatusUnavailableText;
+        SubscriptionFreeLessonText = SubscriptionStatusUnavailableText;
+        SubscriptionEnforcementText = SubscriptionStatusUnavailableText;
+        SubscriptionSourceText = SubscriptionStatusUnavailableText;
+        SubscriptionCheckedAtText = SubscriptionStatusUnavailableText;
     }
 
     private void ApplyBackendUserSettings(BackendUserSettingsResponse settings)

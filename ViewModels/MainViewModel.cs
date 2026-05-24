@@ -16,6 +16,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly LessonChatBackendService lessonChatBackendService = new();
     private readonly BackendDiagnosticsService backendDiagnosticsService = new();
     private readonly BackendUserSettingsClient backendUserSettingsClient = new();
+    private readonly BackendSubscriptionStatusClient backendSubscriptionStatusClient = new();
     private readonly BackendLessonSessionClient backendLessonSessionClient = new();
     private readonly BackendLessonMessageClient backendLessonMessageClient = new();
     private readonly BackendLessonSummaryClient backendLessonSummaryClient = new();
@@ -98,6 +99,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             lessonChatBackendService,
             backendDiagnosticsService,
             backendUserSettingsClient,
+            backendSubscriptionStatusClient,
             authBackendService,
             audioInputDeviceService,
             audioRecordingService,

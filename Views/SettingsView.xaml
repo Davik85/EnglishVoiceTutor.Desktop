@@ -277,6 +277,42 @@
                                                FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding SubscriptionStatusTitle}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                    <TextBlock Margin="0,6,0,0"
+                                               Text="{Binding SubscriptionPlanText}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               Text="{Binding SubscriptionPremiumText}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               Text="{Binding SubscriptionTrialText}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               Text="{Binding SubscriptionFreeLessonText}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               Text="{Binding SubscriptionEnforcementText}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               Text="{Binding SubscriptionSourceText}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               Text="{Binding SubscriptionCheckedAtText}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" />
 
                                     <TextBlock Text="{Binding AccountEmailLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
                                     <TextBox Style="{StaticResource SettingsTextBoxStyle}"
