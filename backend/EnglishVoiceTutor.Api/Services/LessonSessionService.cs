@@ -15,7 +15,7 @@ public sealed class LessonSessionService(AppDbContext dbContext, IRequestUserRes
     private const string DefaultUserStatus = "active";
     private const int MinValidTurnCount = 0;
 
-    public async Task<LessonSessionResponse> StartDevLessonSessionAsync(StartLessonSessionRequest request, CancellationToken cancellationToken)
+    public async Task<LessonSessionResponse> StartLessonSessionAsync(StartLessonSessionRequest request, CancellationToken cancellationToken)
     {
         ValidateStartRequest(request);
 
@@ -51,7 +51,7 @@ public sealed class LessonSessionService(AppDbContext dbContext, IRequestUserRes
         return ToResponse(session);
     }
 
-    public async Task<LessonSessionResponse> FinishDevLessonSessionAsync(Guid sessionId, FinishLessonSessionRequest request, CancellationToken cancellationToken)
+    public async Task<LessonSessionResponse> FinishLessonSessionAsync(Guid sessionId, FinishLessonSessionRequest request, CancellationToken cancellationToken)
     {
         ValidateFinishRequest(request);
 
@@ -75,7 +75,7 @@ public sealed class LessonSessionService(AppDbContext dbContext, IRequestUserRes
         return ToResponse(session);
     }
 
-    public async Task<LessonSessionListResponse> GetRecentDevLessonSessionsAsync(CancellationToken cancellationToken)
+    public async Task<LessonSessionListResponse> GetRecentLessonSessionsAsync(CancellationToken cancellationToken)
     {
         var userId = requestUserResolver.ResolveCurrentUser().UserId;
 
@@ -90,7 +90,7 @@ public sealed class LessonSessionService(AppDbContext dbContext, IRequestUserRes
         return new LessonSessionListResponse(sessions);
     }
 
-    public async Task<LessonSessionResponse?> GetDevLessonSessionByIdAsync(Guid sessionId, CancellationToken cancellationToken)
+    public async Task<LessonSessionResponse?> GetLessonSessionByIdAsync(Guid sessionId, CancellationToken cancellationToken)
     {
         var userId = requestUserResolver.ResolveCurrentUser().UserId;
 

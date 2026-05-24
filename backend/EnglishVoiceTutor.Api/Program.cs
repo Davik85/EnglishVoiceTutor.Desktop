@@ -144,11 +144,17 @@ app.MapPut(ApiConstants.DevUserSettingsRoute, HandleUpdateDevUserSettingsAsync);
 app.MapGet(ApiConstants.MeUserSettingsRoute, HandleGetAuthenticatedUserSettingsAsync).RequireAuthorization();
 app.MapPut(ApiConstants.MeUserSettingsRoute, HandleUpdateAuthenticatedUserSettingsAsync).RequireAuthorization();
 app.MapPost(ApiConstants.DevLessonSessionsRoute, HandleCreateDevLessonSessionAsync);
-app.MapPut(ApiConstants.DevLessonSessionFinishRoute, HandleFinishDevLessonSessionAsync);
+app.MapPut(ApiConstants.DevLessonSessionFinishRoute, HandleFinishLessonSessionAsync);
 app.MapGet(ApiConstants.DevLessonSessionsRoute, HandleGetDevLessonSessionsAsync);
-app.MapGet(ApiConstants.DevLessonSessionByIdRoute, HandleGetDevLessonSessionByIdAsync);
-app.MapPost(ApiConstants.DevLessonSessionMessagesRoute, HandleCreateDevLessonMessageAsync);
-app.MapGet(ApiConstants.DevLessonSessionMessagesRoute, HandleGetDevLessonMessagesAsync);
+app.MapGet(ApiConstants.DevLessonSessionByIdRoute, HandleGetLessonSessionByIdAsync);
+app.MapPost(ApiConstants.DevLessonSessionMessagesRoute, HandleCreateLessonMessageAsync);
+app.MapGet(ApiConstants.DevLessonSessionMessagesRoute, HandleGetLessonMessagesAsync);
+app.MapPost(ApiConstants.MeLessonSessionsRoute, HandleCreateDevLessonSessionAsync).RequireAuthorization();
+app.MapPut(ApiConstants.MeLessonSessionFinishRoute, HandleFinishLessonSessionAsync).RequireAuthorization();
+app.MapGet(ApiConstants.MeLessonSessionsRoute, HandleGetDevLessonSessionsAsync).RequireAuthorization();
+app.MapGet(ApiConstants.MeLessonSessionByIdRoute, HandleGetLessonSessionByIdAsync).RequireAuthorization();
+app.MapPost(ApiConstants.MeLessonSessionMessagesRoute, HandleCreateLessonMessageAsync).RequireAuthorization();
+app.MapGet(ApiConstants.MeLessonSessionMessagesRoute, HandleGetLessonMessagesAsync).RequireAuthorization();
 app.MapPut(ApiConstants.DevLessonSessionSummaryRoute, HandleUpsertDevLessonSummaryAsync);
 app.MapGet(ApiConstants.DevLessonSessionSummaryRoute, HandleGetDevLessonSummaryAsync);
 app.MapGet(ApiConstants.DevLessonSummariesRoute, HandleGetDevLessonSummariesAsync);
@@ -222,7 +228,7 @@ static async Task<IResult> HandleCreateDevLessonSessionAsync(
 
     try
     {
-        var createdSession = await lessonSessionService.StartDevLessonSessionAsync(request, cancellationToken);
+        var createdSession = await lessonSessionService.StartLessonSessionAsync(request, cancellationToken);
         return Results.Created($"/api/dev/lesson-sessions/{createdSession.Id}", createdSession);
     }
     catch (LessonSessionValidationException exception)
@@ -236,7 +242,7 @@ static async Task<IResult> HandleCreateDevLessonSessionAsync(
     }
 }
 
-static async Task<IResult> HandleFinishDevLessonSessionAsync(
+static async Task<IResult> HandleFinishLessonSessionAsync(
     Guid sessionId,
     FinishLessonSessionRequest request,
     ILessonSessionService lessonSessionService,
@@ -247,7 +253,7 @@ static async Task<IResult> HandleFinishDevLessonSessionAsync(
 
     try
     {
-        var updatedSession = await lessonSessionService.FinishDevLessonSessionAsync(sessionId, request, cancellationToken);
+        var updatedSession = await lessonSessionService.FinishLessonSessionAsync(sessionId, request, cancellationToken);
         return Results.Ok(updatedSession);
     }
     catch (LessonSessionValidationException exception)
@@ -274,7 +280,7 @@ static async Task<IResult> HandleGetDevLessonSessionsAsync(
 
     try
     {
-        var sessions = await lessonSessionService.GetRecentDevLessonSessionsAsync(cancellationToken);
+        var sessions = await lessonSessionService.GetRecentLessonSessionsAsync(cancellationToken);
         return Results.Ok(sessions);
     }
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
@@ -284,7 +290,7 @@ static async Task<IResult> HandleGetDevLessonSessionsAsync(
     }
 }
 
-static async Task<IResult> HandleGetDevLessonSessionByIdAsync(
+static async Task<IResult> HandleGetLessonSessionByIdAsync(
     Guid sessionId,
     ILessonSessionService lessonSessionService,
     ILoggerFactory loggerFactory,
@@ -294,7 +300,7 @@ static async Task<IResult> HandleGetDevLessonSessionByIdAsync(
 
     try
     {
-        var session = await lessonSessionService.GetDevLessonSessionByIdAsync(sessionId, cancellationToken);
+        var session = await lessonSessionService.GetLessonSessionByIdAsync(sessionId, cancellationToken);
         return session is null ? Results.NotFound(new { error = "Lesson session was not found." }) : Results.Ok(session);
     }
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
@@ -419,7 +425,7 @@ static async Task<IResult> HandleGetDevLessonSummariesAsync(
         return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }
-static async Task<IResult> HandleCreateDevLessonMessageAsync(
+static async Task<IResult> HandleCreateLessonMessageAsync(
     Guid sessionId,
     CreateLessonMessageRequest request,
     ILessonMessageService lessonMessageService,
@@ -430,7 +436,7 @@ static async Task<IResult> HandleCreateDevLessonMessageAsync(
 
     try
     {
-        var createdMessage = await lessonMessageService.CreateDevLessonMessageAsync(sessionId, request, cancellationToken);
+        var createdMessage = await lessonMessageService.CreateLessonMessageAsync(sessionId, request, cancellationToken);
         return Results.Created($"/api/dev/lesson-sessions/{sessionId}/messages/{createdMessage.Id}", createdMessage);
     }
     catch (LessonMessageValidationException exception)
@@ -448,7 +454,7 @@ static async Task<IResult> HandleCreateDevLessonMessageAsync(
     }
 }
 
-static async Task<IResult> HandleGetDevLessonMessagesAsync(
+static async Task<IResult> HandleGetLessonMessagesAsync(
     Guid sessionId,
     ILessonMessageService lessonMessageService,
     ILoggerFactory loggerFactory,
@@ -458,7 +464,7 @@ static async Task<IResult> HandleGetDevLessonMessagesAsync(
 
     try
     {
-        var messages = await lessonMessageService.GetDevLessonMessagesAsync(sessionId, cancellationToken);
+        var messages = await lessonMessageService.GetLessonMessagesAsync(sessionId, cancellationToken);
         return Results.Ok(messages);
     }
     catch (KeyNotFoundException)

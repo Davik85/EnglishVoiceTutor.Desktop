@@ -16,7 +16,7 @@ public sealed class LessonMessageService(AppDbContext dbContext, IRequestUserRes
     private const decimal MaxTranscriptConfidence = 1m;
     private const int MinAudioDurationMs = 0;
 
-    public async Task<LessonMessageResponse> CreateDevLessonMessageAsync(Guid sessionId, CreateLessonMessageRequest request, CancellationToken cancellationToken)
+    public async Task<LessonMessageResponse> CreateLessonMessageAsync(Guid sessionId, CreateLessonMessageRequest request, CancellationToken cancellationToken)
     {
         ValidateCreateRequest(request);
 
@@ -70,7 +70,7 @@ public sealed class LessonMessageService(AppDbContext dbContext, IRequestUserRes
         return ToResponse(message);
     }
 
-    public async Task<LessonMessageListResponse> GetDevLessonMessagesAsync(Guid sessionId, CancellationToken cancellationToken)
+    public async Task<LessonMessageListResponse> GetLessonMessagesAsync(Guid sessionId, CancellationToken cancellationToken)
     {
         var userId = requestUserResolver.ResolveCurrentUser().UserId;
         var sessionExists = await dbContext.LessonSessions
