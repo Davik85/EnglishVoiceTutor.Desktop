@@ -21,6 +21,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly BackendLessonMessageClient backendLessonMessageClient = new();
     private readonly BackendLessonSummaryClient backendLessonSummaryClient = new();
     private readonly BackendLessonHistoryClient backendLessonHistoryClient = new();
+    private readonly BackendLessonAccessDecisionClient backendLessonAccessDecisionClient = new();
     private readonly AuthBackendService authBackendService = new();
     private readonly AudioRecordingService audioRecordingService = new();
     private readonly AudioInputDeviceService audioInputDeviceService = new();
@@ -65,6 +66,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public void NavigateToLessonChat(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic)
     {
+        _ = RunLessonAccessPreflightCheckAsync();
         CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
     }
 
@@ -190,6 +192,31 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         Debug.WriteLine($"Backend lesson summary saved. SessionId={backendLessonSessionId}; SummaryId={result.Summary?.Id}.");
     }
+
+    private async Task RunLessonAccessPreflightCheckAsync()
+    {
+        try
+        {
+            var result = await backendLessonAccessDecisionClient.GetAsync(userSettings.BackendBaseUrl);
+            var source = result.Value?.Source ?? "unavailable";
+            var canStartNewLesson = result.Value?.CanStartNewLesson;
+            var decision = result.Value?.Decision ?? "unavailable";
+            var reason = result.Value?.Reason ?? "unavailable";
+            var enforcementEnabled = result.Value?.EnforcementEnabled;
+            var freeLessonRemainingToday = result.Value?.FreeLessonRemainingToday;
+            var freeLessonUsedToday = result.Value?.FreeLessonUsedToday;
+
+            Debug.WriteLine(
+                $"Lesson access preflight completed. IsSuccess={result.IsSuccess}; Source={source}; CanStartNewLesson={canStartNewLesson}; Decision={decision}; Reason={reason}; EnforcementEnabled={enforcementEnabled}; FreeLessonRemainingToday={freeLessonRemainingToday}; FreeLessonUsedToday={freeLessonUsedToday}.");
+
+            // Lesson access decision is read-only until enforcement is explicitly enabled.
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Lesson access preflight failed unexpectedly. Error={exception.Message}.");
+        }
+    }
+
     private WelcomeViewModel CreateWelcomeViewModel()
     {
         return new WelcomeViewModel(AppLocalization.GetText(userSettings.InterfaceLanguageId), NavigateToLevelSelection, () => NavigateToSettings(NavigateToWelcome));
