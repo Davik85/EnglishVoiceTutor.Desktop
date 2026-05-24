@@ -17,6 +17,8 @@ public static class BackendConstants
     public const string BackendConfigStatusEndpoint = "/api/backend/config-status";
     public const string DevUserSettingsEndpoint = "/api/dev/user-settings";
     public const string MeSettingsEndpoint = "/api/me/settings";
+    public const string DevSubscriptionStatusEndpoint = "/api/dev/subscription-status";
+    public const string MeSubscriptionStatusEndpoint = "/api/me/subscription-status";
     public const string DevLessonSessionsEndpoint = "/api/dev/lesson-sessions";
     public const string MeLessonSessionsEndpoint = "/api/me/lesson-sessions";
     public const string DevLessonSessionFinishEndpointTemplate = "/api/dev/lesson-sessions/{0}/finish";
@@ -32,6 +34,7 @@ public static class BackendConstants
     public const int BackendRequestTimeoutSeconds = 30;
     public const int BackendUserSettingsTimeoutSeconds = 5;
     public const int BackendHealthTimeoutSeconds = 5;
+    public const int BackendSubscriptionStatusTimeoutSeconds = 5;
     public const int LessonSessionRequestTimeoutSeconds = 5;
     public const int LessonMessageRequestTimeoutSeconds = 5;
     public const int LessonSummaryRequestTimeoutSeconds = 5;
