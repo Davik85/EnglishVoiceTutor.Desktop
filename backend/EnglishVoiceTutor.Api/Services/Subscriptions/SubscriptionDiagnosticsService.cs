@@ -9,11 +9,14 @@ namespace EnglishVoiceTutor.Api.Services.Subscriptions;
 
 public sealed class SubscriptionDiagnosticsService(
     AppDbContext dbContext,
-    ISubscriptionStatusService subscriptionStatusService) : ISubscriptionDiagnosticsService
+    ISubscriptionStatusService subscriptionStatusService,
+    ISubscriptionPlanCatalogService subscriptionPlanCatalogService) : ISubscriptionDiagnosticsService
 {
     public async Task<SubscriptionDiagnosticScenarioResponse> ApplyScenarioAsync(string scenario, Guid userId, string source, CancellationToken cancellationToken)
     {
         var normalizedScenario = scenario.Trim().ToLowerInvariant();
+
+        await subscriptionPlanCatalogService.EnsureDefaultPlansAsync(cancellationToken);
 
         switch (normalizedScenario)
         {
