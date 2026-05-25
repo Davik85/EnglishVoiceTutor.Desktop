@@ -107,6 +107,7 @@ public static class SubscriptionConstants
         public const string AllowedFreeRemaining = "allowed_free_remaining";
         public const string AllowedEnforcementDisabled = "allowed_enforcement_disabled";
         public const string BlockedFreeLimitUsed = "blocked_free_limit_used";
+        public const string LessonAccessDeniedError = "lesson_access_denied";
     }
 
     public static class LessonAccessReasons

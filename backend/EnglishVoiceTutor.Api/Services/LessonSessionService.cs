@@ -41,7 +41,29 @@ public sealed class LessonSessionService(
             lessonAccessDecision.PremiumActive,
             lessonAccessDecision.TrialActive);
 
-        // Lesson access is dry-run only until enforcement is explicitly enabled.
+        if (lessonAccessDecision.EnforcementEnabled && !lessonAccessDecision.CanStartNewLesson)
+        {
+            logger.LogInformation(
+                "Lesson session start denied: Source={Source}; Decision={Decision}; Reason={Reason}; EnforcementEnabled={EnforcementEnabled}; FreeLessonRemainingToday={FreeLessonRemainingToday}; FreeLessonUsedToday={FreeLessonUsedToday}; PremiumActive={PremiumActive}; TrialActive={TrialActive}.",
+                lessonAccessDecision.Source,
+                lessonAccessDecision.Decision,
+                lessonAccessDecision.Reason,
+                lessonAccessDecision.EnforcementEnabled,
+                lessonAccessDecision.FreeLessonRemainingToday,
+                lessonAccessDecision.FreeLessonUsedToday,
+                lessonAccessDecision.PremiumActive,
+                lessonAccessDecision.TrialActive);
+
+            throw new LessonAccessDeniedException(
+                lessonAccessDecision.Decision,
+                lessonAccessDecision.Reason,
+                lessonAccessDecision.EnforcementEnabled,
+                lessonAccessDecision.FreeLessonUsedToday,
+                lessonAccessDecision.FreeLessonRemainingToday,
+                lessonAccessDecision.PremiumActive,
+                lessonAccessDecision.TrialActive);
+        }
+
         var now = DateTimeOffset.UtcNow;
 
         var session = new LessonSessionEntity
