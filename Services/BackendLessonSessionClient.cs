@@ -10,6 +10,7 @@ namespace EnglishVoiceTutor.Desktop.Services;
 
 public sealed class BackendLessonSessionClient
 {
+    private const string LessonAccessDeniedErrorCode = "lesson_access_denied";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly AuthSessionStorageService authSessionStorageService = new();
 
@@ -37,6 +38,15 @@ public sealed class BackendLessonSessionClient
 
             if (!response.IsSuccessStatusCode)
             {
+                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    var lessonAccessDenied = await TryReadLessonAccessDeniedResponseAsync(response, cancellationToken);
+                    if (lessonAccessDenied is not null)
+                    {
+                        return BackendLessonSessionClientResult.LessonAccessDenied(lessonAccessDenied);
+                    }
+                }
+
                 return BackendLessonSessionClientResult.Failure($"Backend lesson session POST failed with HTTP {(int)response.StatusCode}.");
             }
 
@@ -95,6 +105,27 @@ public sealed class BackendLessonSessionClient
         catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
         {
             return BackendLessonSessionClientResult.Failure("Backend lesson session PUT is unavailable.");
+        }
+    }
+
+
+    private static async Task<BackendLessonAccessDeniedResponse?> TryReadLessonAccessDeniedResponseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var deniedResponse = await response.Content.ReadFromJsonAsync<BackendLessonAccessDeniedResponse>(JsonOptions, cancellationToken);
+            if (deniedResponse is null)
+            {
+                return null;
+            }
+
+            return string.Equals(deniedResponse.Error, LessonAccessDeniedErrorCode, StringComparison.OrdinalIgnoreCase)
+                ? deniedResponse
+                : null;
+        }
+        catch (Exception exception) when (exception is JsonException or NotSupportedException or InvalidOperationException)
+        {
+            return null;
         }
     }
 

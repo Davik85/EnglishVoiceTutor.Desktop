@@ -4871,6 +4871,19 @@ public partial class LessonChatViewModel : ViewModelBase
         };
 
         var result = await backendLessonSessionClient.StartAsync(backendBaseUrl, request);
+        if (result.IsLessonAccessDenied)
+        {
+            HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
+            Debug.WriteLine($"Backend lesson session denied. Decision={result.AccessDeniedDecision}; Reason={result.AccessDeniedReason}; EnforcementEnabled={result.EnforcementEnabled}; FreeLessonUsedToday={result.FreeLessonUsedToday}; FreeLessonRemainingToday={result.FreeLessonRemainingToday}.");
+            MessageBox.Show(
+                BackendConstants.LessonStartUnavailableMessage,
+                BackendConstants.LessonStartUnavailableTitle,
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            navigateBack();
+            return;
+        }
+
         if (!result.IsSuccess || result.Value is null)
         {
             HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
