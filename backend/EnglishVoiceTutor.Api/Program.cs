@@ -239,6 +239,20 @@ static async Task<IResult> HandleCreateDevLessonSessionAsync(
     {
         return Results.BadRequest(new { error = exception.Message });
     }
+    catch (LessonAccessDeniedException exception)
+    {
+        logger.LogInformation(
+            "Lesson session creation forbidden: Source={Source}; Decision={Decision}; Reason={Reason}; EnforcementEnabled={EnforcementEnabled}; FreeLessonRemainingToday={FreeLessonRemainingToday}; FreeLessonUsedToday={FreeLessonUsedToday}; PremiumActive={PremiumActive}; TrialActive={TrialActive}.",
+            RequestUserResolver.DevelopmentSource,
+            exception.Decision,
+            exception.Reason,
+            exception.EnforcementEnabled,
+            exception.FreeLessonRemainingToday,
+            exception.FreeLessonUsedToday,
+            exception.PremiumActive,
+            exception.TrialActive);
+        return Results.Json(CreateLessonAccessDeniedResponse(exception), statusCode: StatusCodes.Status403Forbidden);
+    }
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
         logger.LogWarning(exception, "Dev lesson session POST failed because storage is unavailable.");
@@ -628,6 +642,21 @@ static ErrorResponse CreateLessonSessionStorageUnavailableResponse()
         Status = "ServiceUnavailable",
         Message = "Lesson session storage is unavailable.",
         CheckedAtUtc = DateTimeOffset.UtcNow
+    };
+}
+
+static object CreateLessonAccessDeniedResponse(LessonAccessDeniedException exception)
+{
+    return new
+    {
+        error = SubscriptionConstants.LessonAccessDecisions.LessonAccessDeniedError,
+        decision = exception.Decision,
+        reason = exception.Reason,
+        enforcementEnabled = exception.EnforcementEnabled,
+        freeLessonUsedToday = exception.FreeLessonUsedToday,
+        freeLessonRemainingToday = exception.FreeLessonRemainingToday,
+        premiumActive = exception.PremiumActive,
+        trialActive = exception.TrialActive
     };
 }
 
