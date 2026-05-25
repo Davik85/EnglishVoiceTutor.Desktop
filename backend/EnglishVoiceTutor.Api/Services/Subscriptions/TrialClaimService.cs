@@ -39,7 +39,7 @@ public sealed class TrialClaimService(
             UserId = userId,
             GrantedAtUtc = now,
             ExpiresAtUtc = now.AddDays(SubscriptionConstants.PremiumTrialDays),
-            SourcePlatform = SubscriptionConstants.AccountTrialClaimSource,
+            SourcePlatform = source,
             Status = SubscriptionConstants.Entitlements.StatusActive,
             CreatedAt = now
         };

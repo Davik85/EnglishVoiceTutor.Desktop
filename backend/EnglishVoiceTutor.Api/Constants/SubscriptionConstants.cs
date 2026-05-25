@@ -120,6 +120,7 @@ public static class SubscriptionConstants
     }
 
     public const string AccountTrialClaimSource = "account_trial_claim";
+    public const string AccountRegistrationTrialSource = "account_registration";
     public const string TrialClaimedSuccessMessage = "Trial claimed successfully.";
     public const string TrialAlreadyClaimedMessage = "Trial has already been claimed for this account.";
 
