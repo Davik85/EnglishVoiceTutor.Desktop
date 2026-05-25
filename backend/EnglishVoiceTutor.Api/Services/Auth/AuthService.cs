@@ -2,13 +2,19 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Auth;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
+using EnglishVoiceTutor.Api.Services.Subscriptions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 namespace EnglishVoiceTutor.Api.Services.Auth;
 
-public sealed class AuthService(AppDbContext dbContext, IPasswordHasher<UserEntity> passwordHasher, IJwtTokenService jwtTokenService) : IAuthService
+public sealed class AuthService(
+    AppDbContext dbContext,
+    IPasswordHasher<UserEntity> passwordHasher,
+    IJwtTokenService jwtTokenService,
+    ITrialClaimService trialClaimService,
+    ILogger<AuthService> logger) : IAuthService
 {
     private const string UniqueViolationSqlState = "23505";
 
@@ -62,6 +68,17 @@ public sealed class AuthService(AppDbContext dbContext, IPasswordHasher<UserEnti
         {
             throw new AuthDuplicateEmailException();
         }
+
+        var trialClaimResult = await trialClaimService.ClaimTrialAsync(
+            user.Id,
+            SubscriptionConstants.AccountRegistrationTrialSource,
+            cancellationToken);
+
+        logger.LogInformation(
+            "Registration trial claim completed. UserId={UserId}; TrialClaimed={TrialClaimed}; TrialEndsAtUtc={TrialEndsAtUtc}",
+            user.Id,
+            trialClaimResult.Claimed,
+            trialClaimResult.TrialEndsAtUtc);
 
         return jwtTokenService.CreateAuthResponse(user, displayName, createdAt);
     }
