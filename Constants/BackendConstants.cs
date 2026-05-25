@@ -71,6 +71,9 @@ public static class BackendConstants
 
     public const string ConversationModeTtsInstructions = "Speak in a calm, friendly target-language tutor voice. Use an even pace and steady volume. Do not shout. Do not rush near the end of sentences. Keep the tone warm, patient, and encouraging. Use natural pauses between sentences. Pronounce clearly for a target-language learner. Speak only in the selected target language unless quoting the learner.";
 
+    public const string LessonStartUnavailableTitle = "Lesson unavailable";
+    public const string LessonStartUnavailableMessage = "Your free lesson for today has already been used. You can try again tomorrow.";
+
     public const string BackendUnavailableMessage = "Backend is unavailable. Please start the local backend and try again.";
     public const string BackendReturnedErrorMessage = "The backend returned an error. Please check the backend console log.";
     public const string BackendValidationErrorMessage = "The backend request was invalid. Please review your input and try again.";
