@@ -202,7 +202,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string LastCompletedLessonText => BuildLastCompletedLessonText(latestLesson, localizedText.NoCompletedLessonsText);
     public string AccountTitle => "Account";
-    public string AccountSubtitle => "Optional sign-in for account session features. Lesson Chat works without login.";
+    public string AccountSubtitle => "Sign in or register to start your 7-day trial and access lessons.";
     public string AccountEmailLabel => "Email";
     public string AccountPasswordLabel => "Password";
     public string AccountDisplayNameLabel => "Display name (for registration)";
