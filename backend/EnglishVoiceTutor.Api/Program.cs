@@ -42,6 +42,8 @@ builder.Services.Configure<FreeLimitOptions>(builder.Configuration.GetSection(Fr
 builder.Services.Configure<SubscriptionEnforcementOptions>(
     builder.Configuration.GetSection(SubscriptionEnforcementOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<DevelopmentTestAccountOptions>(
+    builder.Configuration.GetSection(DevelopmentTestAccountOptions.SectionName));
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt configuration section is required.");
@@ -109,6 +111,7 @@ builder.Services.AddScoped<IFreeLessonConsumptionService, FreeLessonConsumptionS
 builder.Services.AddScoped<ISubscriptionPlanCatalogService, SubscriptionPlanCatalogService>();
 builder.Services.AddScoped<ISubscriptionDiagnosticsService, SubscriptionDiagnosticsService>();
 builder.Services.AddScoped<ITrialClaimService, TrialClaimService>();
+builder.Services.AddScoped<IDevelopmentTestAccountService, DevelopmentTestAccountService>();
 
 var app = builder.Build();
 

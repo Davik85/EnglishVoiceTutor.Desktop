@@ -123,6 +123,8 @@ public static class SubscriptionConstants
     public const string AccountRegistrationTrialSource = "account_registration";
     public const string TrialClaimedSuccessMessage = "Trial claimed successfully.";
     public const string TrialAlreadyClaimedMessage = "Trial has already been claimed for this account.";
+    public const string DevelopmentTestAccountPremiumSource = "development_test_account";
+    public const string DevelopmentTestAccountPremiumReason = "Development test account unlimited Premium access.";
 
     public const int PremiumTrialDays = 7;
     public const int FreeLessonsPerDay = 1;
