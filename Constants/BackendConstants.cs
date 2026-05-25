@@ -75,6 +75,8 @@ public static class BackendConstants
 
     public const string LessonStartUnavailableTitle = "Lesson unavailable";
     public const string LessonStartUnavailableMessage = "Your free lesson for today has already been used. You can try again tomorrow.";
+    public const string LessonStartRequiresSignInTitle = "Sign in required";
+    public const string LessonStartRequiresSignInMessage = "Please sign in or create an account to start your 7-day trial and begin lessons.";
 
     public const string BackendUnavailableMessage = "Backend is unavailable. Please start the local backend and try again.";
     public const string BackendReturnedErrorMessage = "The backend returned an error. Please check the backend console log.";

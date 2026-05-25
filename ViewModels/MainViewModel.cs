@@ -24,6 +24,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly BackendLessonHistoryClient backendLessonHistoryClient = new();
     private readonly LessonStartGuardService lessonStartGuardService = new();
     private readonly AuthBackendService authBackendService = new();
+    private readonly AuthSessionStorageService authSessionStorageService = new();
     private readonly AudioRecordingService audioRecordingService = new();
     private readonly AudioInputDeviceService audioInputDeviceService = new();
     private readonly AudioPlaybackService audioPlaybackService = new();
@@ -197,6 +198,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
+            var session = await authSessionStorageService.GetValidSessionOrNullAsync();
+            if (session is null)
+            {
+                MessageBox.Show(
+                    BackendConstants.LessonStartRequiresSignInMessage,
+                    BackendConstants.LessonStartRequiresSignInTitle,
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
             var result = await lessonStartGuardService.CheckAsync(userSettings.BackendBaseUrl);
 
             Debug.WriteLine(
