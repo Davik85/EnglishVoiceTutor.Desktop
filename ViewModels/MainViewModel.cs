@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
@@ -66,8 +67,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public void NavigateToLessonChat(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic)
     {
-        _ = RunLessonStartGuardCheckAsync();
-        CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
+        _ = TryNavigateToLessonChatAsync(selectedLevel, selectedTopic, selectedSubtopic);
     }
 
     public void NavigateToLessonSummary(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput, Guid? backendLessonSessionId)
@@ -193,7 +193,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         Debug.WriteLine($"Backend lesson summary saved. SessionId={backendLessonSessionId}; SummaryId={result.Summary?.Id}.");
     }
 
-    private async Task RunLessonStartGuardCheckAsync()
+    private async Task TryNavigateToLessonChatAsync(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic)
     {
         try
         {
@@ -202,11 +202,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             Debug.WriteLine(
                 $"Lesson start guard check completed. ShouldAllowStart={result.ShouldAllowStart}; IsBackendDecisionAvailable={result.IsBackendDecisionAvailable}; Source={result.Source}; CanStartNewLesson={result.CanStartNewLesson}; Decision={result.Decision}; Reason={result.Reason}; EnforcementEnabled={result.EnforcementEnabled}; FreeLessonRemainingToday={result.FreeLessonRemainingToday}; FreeLessonUsedToday={result.FreeLessonUsedToday}.");
 
-            // Lesson start guard is read-only until enforcement is explicitly enabled.
+            if (!result.ShouldAllowStart)
+            {
+                MessageBox.Show(
+                    BackendConstants.LessonStartUnavailableMessage,
+                    BackendConstants.LessonStartUnavailableTitle,
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
         }
         catch (Exception exception)
         {
-            Debug.WriteLine($"Lesson start guard check failed unexpectedly. Error={exception.Message}.");
+            Debug.WriteLine($"Lesson start guard check failed unexpectedly. Error={exception.Message}. Allowing lesson start by fallback.");
+            CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
         }
     }
 
