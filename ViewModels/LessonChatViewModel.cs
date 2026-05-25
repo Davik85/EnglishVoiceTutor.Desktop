@@ -1011,7 +1011,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 studyLanguage,
                 BuildTranscriptionContextHint(),
                 CurrentLessonPhase.ToString());
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             var transcriptValidation = LessonTranscriptValidator.Validate(transcriptionText);
             var trimmedTranscriptionText = transcriptValidation.NormalizedTranscript;
             var shouldAutoSend = ShouldAutoSendTranscribedVoiceResult();
@@ -1076,20 +1076,20 @@ public partial class LessonChatViewModel : ViewModelBase
         }
         catch (FreeLimitExceededException exception)
         {
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             StatusMessage = exception.UserFacingMessage;
             Debug.WriteLine($"Voice transcription free limit reached; recording state will be reset. Operation={exception.Operation}; LimitType={exception.LimitType}; Used={exception.Used}; Limit={exception.Limit}.");
         }
         catch (AudioTranscriptionBackendException exception)
         {
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             StatusMessage = localizedText.TranscriptionFailedMessage;
             Debug.WriteLine($"Voice transcription backend failure; recording state will be reset. StatusCode={exception.StatusCode}.");
         }
         catch (OperationCanceledException exception)
         {
             Debug.WriteLine($"Voice transcription canceled; recording state will be reset. {exception}");
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             StatusMessage = localizedText.TranscriptionFailedMessage;
         }
         catch
@@ -1303,7 +1303,7 @@ public partial class LessonChatViewModel : ViewModelBase
         IsBotVoicePlaying = false;
         ResetConversationOverlayForEntry();
         IsConversationModeEnabled = true;
-        BackendStatusText = BackendConstants.BackendStatusConnected;
+        MarkBackendAvailable();
 
         var openingBotMessage = SelectCurrentConversationOpeningBotMessage();
         if (openingBotMessage is not null)
@@ -1639,7 +1639,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 speechInstructions);
 
             Debug.WriteLine($"Bot voice playback completed ms for message {message.Id}: Path={selectedBotVoicePath}; TotalElapsedMilliseconds={totalStopwatch.ElapsedMilliseconds}; SegmentCount={segmentsToSpeak.Count}.");
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
         }
         catch (OperationCanceledException exception)
         {
@@ -2569,7 +2569,7 @@ public partial class LessonChatViewModel : ViewModelBase
             }
             OnPropertyChanged(nameof(LatestBotMessageText));
 
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             StatusMessage = string.Empty;
             BotStatus = BackendConstants.BotStatusReady;
             IsSending = false;
@@ -2687,7 +2687,7 @@ public partial class LessonChatViewModel : ViewModelBase
             await realtimeVoiceEngine.StartSessionAsync(BuildVoiceSessionStartRequest(), cancellationToken);
             isRealtimeSessionStarted = true;
             isStartingRealtimeSession = false;
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             SetConversationModeState(ConversationModeState.Ready, "ensure_realtime_session_started");
             LogRealtimeRecordState("after_session_ready_start_task_completed");
             Debug.WriteLine($"Desktop realtime session start ms: SessionId={realtimeSessionId}; RealtimeSessionStartMs={stopwatch.ElapsedMilliseconds}; TutorProfileId={tutorProfile.Id}; TutorDisplayName={tutorProfile.DisplayName}; LessonType={lessonScenario.Metadata.LessonType}; Topic={lessonScenario.Metadata.Topic}; Subtopic={lessonScenario.Metadata.Subtopic}; Level={SelectedLevel}; SelectedContextTitle={GetSelectedContextTitle()}.");
@@ -3489,7 +3489,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             isRealtimeSessionStarted = true;
             isStartingRealtimeSession = false;
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             StatusMessage = "Conversation Mode ready";
             SetConversationModeState(ConversationModeState.Ready, "session_ready_event");
             Debug.WriteLine($"Realtime session.ready handled by view model: SessionId={args.SessionId}; Model={args.Model}; Voice={args.Voice}; ReadyMs={args.ElapsedMilliseconds}; CanStartRealtimeRecording={CanStartRealtimeRecording}; RecordBlockReason={GetRealtimeRecordBlockReason()}.");
@@ -3931,12 +3931,21 @@ public partial class LessonChatViewModel : ViewModelBase
 
         if (isBackendHealthy)
         {
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             return;
         }
 
         BackendStatusText = BackendConstants.BackendStatusUnavailable;
         StatusMessage = localizedText.BackendHealthCheckFailedMessage;
+    }
+
+    private void MarkBackendAvailable()
+    {
+        BackendStatusText = BackendConstants.BackendStatusConnected;
+        if (string.Equals(StatusMessage, localizedText.BackendHealthCheckFailedMessage, StringComparison.Ordinal))
+        {
+            StatusMessage = string.Empty;
+        }
     }
 
 
@@ -4326,12 +4335,12 @@ public partial class LessonChatViewModel : ViewModelBase
         try
         {
             CurrentHintText = await BuildLessonHintTextAsync(UserInput);
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             StatusMessage = string.Empty;
         }
         catch (FreeLimitExceededException exception)
         {
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             CurrentHintText = exception.UserFacingMessage;
             StatusMessage = string.Empty;
         }
@@ -4367,13 +4376,13 @@ public partial class LessonChatViewModel : ViewModelBase
         try
         {
             ConversationHintText = await BuildLessonHintTextAsync(ConversationLatestUserText);
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             IsConversationHintVisible = true;
             StatusMessage = string.Empty;
         }
         catch (FreeLimitExceededException exception)
         {
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             ConversationHintText = exception.UserFacingMessage;
             IsConversationHintVisible = true;
             StatusMessage = string.Empty;
@@ -4870,6 +4879,7 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         backendLessonSessionId = result.Value.Id;
+        MarkBackendAvailable();
         HistorySyncStatusText = BackendConstants.HistorySyncStatusActive;
         Debug.WriteLine($"Backend lesson session started. SessionId={backendLessonSessionId}; StudyLanguage={request.StudyLanguage}; TopicId={request.TopicId}; SubtopicId={request.SubtopicId}; Level={request.Level}; SelectedContextId={request.SelectedContextId ?? "null"}.");
     }
@@ -5026,7 +5036,7 @@ public partial class LessonChatViewModel : ViewModelBase
             var translatedText = await lessonChatBackendService.TranslateTextAsync(message.Text, nativeLanguageName, studyLanguage);
             message.TranslationText = translatedText;
             message.IsTranslationVisible = true;
-            BackendStatusText = BackendConstants.BackendStatusConnected;
+            MarkBackendAvailable();
             StatusMessage = string.Empty;
         }
         catch
@@ -5052,7 +5062,7 @@ public partial class LessonChatViewModel : ViewModelBase
         feedback.VocabularyTipTranslation = translations[3];
         feedback.CultureTipTranslation = translations[4];
         feedback.NaturalVersionTranslation = translations[5];
-        BackendStatusText = BackendConstants.BackendStatusConnected;
+        MarkBackendAvailable();
     }
 
     private static string NormalizeOptionalText(string? value)
