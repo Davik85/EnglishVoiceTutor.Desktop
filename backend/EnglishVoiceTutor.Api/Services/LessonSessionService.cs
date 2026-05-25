@@ -2,13 +2,18 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.LessonSessions;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
+using EnglishVoiceTutor.Api.Services.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 
 using EnglishVoiceTutor.Api.Services.Auth;
 
 namespace EnglishVoiceTutor.Api.Services;
 
-public sealed class LessonSessionService(AppDbContext dbContext, IRequestUserResolver requestUserResolver) : ILessonSessionService
+public sealed class LessonSessionService(
+    AppDbContext dbContext,
+    IRequestUserResolver requestUserResolver,
+    ILessonAccessDecisionService lessonAccessDecisionService,
+    ILogger<LessonSessionService> logger) : ILessonSessionService
 {
     private const string DefaultUserEmail = "dev-user@local.test";
     private const string DefaultUserPasswordHash = "temporary-dev-user-no-password-login";
@@ -19,7 +24,24 @@ public sealed class LessonSessionService(AppDbContext dbContext, IRequestUserRes
     {
         ValidateStartRequest(request);
 
-        var user = await EnsureDevUserExistsAsync(cancellationToken);
+        var resolvedUser = requestUserResolver.ResolveCurrentUser();
+        var user = await EnsureUserExistsAsync(resolvedUser.UserId, cancellationToken);
+        var lessonAccessSource = ResolveLessonAccessSource(resolvedUser.Source);
+        var lessonAccessDecision = await lessonAccessDecisionService.GetDecisionAsync(user.Id, lessonAccessSource, cancellationToken);
+
+        logger.LogInformation(
+            "Lesson session start access dry-run: Source={Source}; CanStartNewLesson={CanStartNewLesson}; Decision={Decision}; Reason={Reason}; EnforcementEnabled={EnforcementEnabled}; FreeLessonRemainingToday={FreeLessonRemainingToday}; FreeLessonUsedToday={FreeLessonUsedToday}; PremiumActive={PremiumActive}; TrialActive={TrialActive}.",
+            lessonAccessDecision.Source,
+            lessonAccessDecision.CanStartNewLesson,
+            lessonAccessDecision.Decision,
+            lessonAccessDecision.Reason,
+            lessonAccessDecision.EnforcementEnabled,
+            lessonAccessDecision.FreeLessonRemainingToday,
+            lessonAccessDecision.FreeLessonUsedToday,
+            lessonAccessDecision.PremiumActive,
+            lessonAccessDecision.TrialActive);
+
+        // Lesson access is dry-run only until enforcement is explicitly enabled.
         var now = DateTimeOffset.UtcNow;
 
         var session = new LessonSessionEntity
@@ -100,9 +122,18 @@ public sealed class LessonSessionService(AppDbContext dbContext, IRequestUserRes
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    private async Task<UserEntity> EnsureDevUserExistsAsync(CancellationToken cancellationToken)
+    private static string ResolveLessonAccessSource(string source)
     {
-        var userId = requestUserResolver.ResolveCurrentUser().UserId;
+        return source switch
+        {
+            RequestUserResolver.AuthenticatedSource => SubscriptionConstants.LessonAccessSources.Authenticated,
+            RequestUserResolver.DevelopmentSource => SubscriptionConstants.LessonAccessSources.Development,
+            _ => SubscriptionConstants.LessonAccessSources.Development
+        };
+    }
+
+    private async Task<UserEntity> EnsureUserExistsAsync(Guid userId, CancellationToken cancellationToken)
+    {
         var user = await dbContext.Users.SingleOrDefaultAsync(existing => existing.Id == userId, cancellationToken);
 
         if (user is not null)
