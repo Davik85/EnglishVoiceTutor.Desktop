@@ -68,4 +68,5 @@ public static class ApiConstants
     public const string DevSubscriptionStatusRoute = "/api/dev/subscription-status";
     public const string DevLessonAccessRoute = "/api/dev/lesson-access";
     public const string DevSubscriptionDiagnosticsScenarioRoute = "/api/dev/subscription-diagnostics/scenarios/{scenario}";
+    public const string MeSubscriptionDiagnosticsScenarioRoute = "/api/me/subscription-diagnostics/scenarios/{scenario}";
 }
