@@ -34,6 +34,8 @@ public partial class SettingsViewModel : ViewModelBase
     private const string RegisterFailedMessageText = "Registration failed. Please review your details and try again.";
     private const string BackendUnavailableMessageText = "Backend is unavailable. Check the backend URL and try again.";
     private const string SubscriptionStatusUnavailableText = "Subscription status: unavailable";
+    private const string SignedOutSubscriptionPromptText = "Sign in to view your account status.";
+    private const string SignedOutSubscriptionPlaceholderText = "—";
 
     private readonly Action<string, string, string, string, string, string, string, string> saveSettings;
     private readonly Action navigateBack;
@@ -202,7 +204,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string LastCompletedLessonText => BuildLastCompletedLessonText(latestLesson, localizedText.NoCompletedLessonsText);
     public string AccountTitle => "Account";
-    public string AccountSubtitle => "Sign in or register to start your 7-day trial and access lessons.";
+    public string AccountSubtitle => "Sign in or create an account to start lessons. A 7-day trial starts automatically after registration.";
     public string AccountEmailLabel => "Email";
     public string AccountPasswordLabel => "Password";
     public string AccountDisplayNameLabel => "Display name (for registration)";
@@ -1068,6 +1070,13 @@ public partial class SettingsViewModel : ViewModelBase
     {
         try
         {
+            var session = await authBackendService.TryRestoreSessionAsync();
+            if (session is null)
+            {
+                ApplySignedOutSubscriptionStatus();
+                return;
+            }
+
             var result = await backendSubscriptionStatusClient.GetAsync(BackendBaseUrl);
             if (!result.IsSuccess || result.Value is null)
             {
@@ -1085,13 +1094,24 @@ public partial class SettingsViewModel : ViewModelBase
                 ? "Free lesson today: Used"
                 : $"Free lesson today: {Math.Max(status.FreeLessonRemainingToday, 0)} remaining";
             SubscriptionEnforcementText = $"Enforcement: {(status.EnforcementEnabled ? "On" : "Off")}";
-            SubscriptionSourceText = $"Source: {status.Source}";
+            SubscriptionSourceText = "Source: authenticated";
             SubscriptionCheckedAtText = $"Checked: {status.CheckedAtUtc:u}";
         }
         catch
         {
             ResetSubscriptionStatus();
         }
+    }
+
+    private void ApplySignedOutSubscriptionStatus()
+    {
+        SubscriptionPlanText = SignedOutSubscriptionPromptText;
+        SubscriptionPremiumText = SignedOutSubscriptionPlaceholderText;
+        SubscriptionTrialText = SignedOutSubscriptionPlaceholderText;
+        SubscriptionFreeLessonText = SignedOutSubscriptionPlaceholderText;
+        SubscriptionEnforcementText = SignedOutSubscriptionPlaceholderText;
+        SubscriptionSourceText = SignedOutSubscriptionPlaceholderText;
+        SubscriptionCheckedAtText = SignedOutSubscriptionPlaceholderText;
     }
 
     private void ResetSubscriptionStatus()
