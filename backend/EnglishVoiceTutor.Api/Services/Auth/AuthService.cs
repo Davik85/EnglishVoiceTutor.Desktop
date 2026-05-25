@@ -14,6 +14,7 @@ public sealed class AuthService(
     IPasswordHasher<UserEntity> passwordHasher,
     IJwtTokenService jwtTokenService,
     ITrialClaimService trialClaimService,
+    IDevelopmentTestAccountService developmentTestAccountService,
     ILogger<AuthService> logger) : IAuthService
 {
     private const string UniqueViolationSqlState = "23505";
@@ -80,6 +81,8 @@ public sealed class AuthService(
             trialClaimResult.Claimed,
             trialClaimResult.TrialEndsAtUtc);
 
+        await developmentTestAccountService.EnsureUnlimitedPremiumAccessIfConfiguredAsync(user.Id, user.Email, cancellationToken);
+
         return jwtTokenService.CreateAuthResponse(user, displayName, createdAt);
     }
 
@@ -105,6 +108,8 @@ public sealed class AuthService(
 
         user.LastLoginAt = DateTimeOffset.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await developmentTestAccountService.EnsureUnlimitedPremiumAccessIfConfiguredAsync(user.Id, user.Email, cancellationToken);
 
         return jwtTokenService.CreateAuthResponse(user, user.Profile?.DisplayName, user.CreatedAt);
     }
