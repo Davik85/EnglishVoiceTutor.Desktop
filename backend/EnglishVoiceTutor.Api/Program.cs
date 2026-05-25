@@ -39,6 +39,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 builder.Services.Configure<FreeLimitOptions>(builder.Configuration.GetSection(FreeLimitOptions.SectionName));
+builder.Services.Configure<SubscriptionEnforcementOptions>(
+    builder.Configuration.GetSection(SubscriptionEnforcementOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()

@@ -1,11 +1,15 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Subscription;
 using EnglishVoiceTutor.Api.Data;
+using EnglishVoiceTutor.Api.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace EnglishVoiceTutor.Api.Services.Subscriptions;
 
-public sealed class SubscriptionStatusService(AppDbContext dbContext) : ISubscriptionStatusService
+public sealed class SubscriptionStatusService(
+    AppDbContext dbContext,
+    IOptions<SubscriptionEnforcementOptions> subscriptionEnforcementOptions) : ISubscriptionStatusService
 {
     public async Task<SubscriptionStatusResponse> GetStatusAsync(Guid userId, string source, CancellationToken cancellationToken)
     {
@@ -16,7 +20,8 @@ public sealed class SubscriptionStatusService(AppDbContext dbContext) : ISubscri
         {
             UserId = userId,
             Source = source,
-            CheckedAtUtc = now
+            CheckedAtUtc = now,
+            EnforcementEnabled = subscriptionEnforcementOptions.Value.Enabled
         };
 
         var activeSubscription = await dbContext.Subscriptions
