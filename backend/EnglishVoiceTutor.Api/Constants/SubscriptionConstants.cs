@@ -119,6 +119,10 @@ public static class SubscriptionConstants
         public const string FreeLimitUsed = "Free lesson has already been used today.";
     }
 
+    public const string AccountTrialClaimSource = "account_trial_claim";
+    public const string TrialClaimedSuccessMessage = "Trial claimed successfully.";
+    public const string TrialAlreadyClaimedMessage = "Trial has already been claimed for this account.";
+
     public const int PremiumTrialDays = 7;
     public const int FreeLessonsPerDay = 1;
     public const int FreeLessonConsumptionMessageThreshold = 3;

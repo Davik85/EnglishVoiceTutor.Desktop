@@ -108,6 +108,7 @@ builder.Services.AddScoped<ILessonAccessDecisionService, LessonAccessDecisionSer
 builder.Services.AddScoped<IFreeLessonConsumptionService, FreeLessonConsumptionService>();
 builder.Services.AddScoped<ISubscriptionPlanCatalogService, SubscriptionPlanCatalogService>();
 builder.Services.AddScoped<ISubscriptionDiagnosticsService, SubscriptionDiagnosticsService>();
+builder.Services.AddScoped<ITrialClaimService, TrialClaimService>();
 
 var app = builder.Build();
 
@@ -172,6 +173,7 @@ app.MapAuthEndpoints();
 app.MapSubscriptionStatusEndpoints();
 app.MapLessonAccessDecisionEndpoints();
 app.MapSubscriptionDiagnosticsEndpoints();
+app.MapTrialClaimEndpoints();
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
     ApiConstants.ServiceName,
