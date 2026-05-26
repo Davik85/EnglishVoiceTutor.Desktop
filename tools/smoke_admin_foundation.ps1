@@ -164,7 +164,7 @@ $normalHeaders = $null
 
 Write-Step "Verify GET /admin/ static admin shell"
 $adminShellUrl = "$BaseUrl$AdminShellPath"
-$adminShellResponse = Invoke-WebRequest -Method $MethodGet -Uri $adminShellUrl
+$adminShellResponse = Invoke-WebRequest -Method $MethodGet -Uri $adminShellUrl -UseBasicParsing
 Assert-Equal -Expected $StatusOk -Actual ([int]$adminShellResponse.StatusCode) -Message "admin shell status"
 Write-Pass "Admin shell static page is reachable"
 
