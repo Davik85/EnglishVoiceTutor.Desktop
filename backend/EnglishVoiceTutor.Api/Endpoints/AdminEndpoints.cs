@@ -12,6 +12,7 @@ public static class AdminEndpoints
     private const string EmailQueryKey = "email";
     private const string EmailRequiredError = "Email query parameter is required.";
     private const string UserIdRouteKey = "userId";
+    private const string EntitlementIdRouteKey = "entitlementId";
 
     public static void MapAdminEndpoints(this WebApplication app)
     {
@@ -22,6 +23,9 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
         app.MapPost(ApiConstants.AdminUserPremiumGrantsRoute, GrantManualPremiumAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
+        app.MapPost(ApiConstants.AdminUserPremiumGrantRevokeRoute, RevokeManualPremiumAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
     }
 
@@ -112,6 +116,58 @@ public static class AdminEndpoints
         return Results.Created(
             ApiConstants.AdminUserPremiumGrantsRoute.Replace("{userId:guid}", userId.ToString()),
             result.Response);
+    }
+
+    private static async Task<IResult> RevokeManualPremiumAsync(
+        ClaimsPrincipal principal,
+        Guid userId,
+        Guid entitlementId,
+        AdminManualPremiumRevokeRequest request,
+        IAdminPremiumRevokeService adminPremiumRevokeService,
+        CancellationToken cancellationToken)
+    {
+        var adminUserId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!adminUserId.HasValue)
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await adminPremiumRevokeService.RevokePremiumAsync(
+            adminUserId.Value,
+            userId,
+            entitlementId,
+            request,
+            cancellationToken);
+
+        if (result.IsInvalid)
+        {
+            return Results.BadRequest(new Dictionary<string, string[]>
+            {
+                [AdminPremiumRevokeConstants.ReasonFieldName] = [result.ErrorMessage ?? string.Empty]
+            });
+        }
+
+        if (result.IsNotFound)
+        {
+            var routeKey = result.ErrorCode == nameof(AdminPremiumRevokeConstants.TargetUserNotFoundError)
+                ? UserIdRouteKey
+                : EntitlementIdRouteKey;
+
+            return Results.NotFound(new Dictionary<string, string[]>
+            {
+                [routeKey] = [result.ErrorMessage ?? string.Empty]
+            });
+        }
+
+        if (result.IsConflict)
+        {
+            return Results.Conflict(new Dictionary<string, string[]>
+            {
+                [EntitlementIdRouteKey] = [result.ErrorMessage ?? AdminPremiumRevokeConstants.EntitlementNotRevokableError]
+            });
+        }
+
+        return Results.Ok(result.Response);
     }
 }
 

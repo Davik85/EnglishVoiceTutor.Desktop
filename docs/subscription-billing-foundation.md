@@ -217,3 +217,20 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not create subscription/payment records.
 - It does not require a database migration.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
+## Admin Foundation v6 (manual Premium revoke)
+
+- Admin Foundation v6 adds a backend-only manual Premium revoke endpoint.
+- Endpoint: `POST /api/admin/users/{userId}/premium-grants/{entitlementId}/revoke`.
+- It is protected by the existing bootstrap admin policy.
+- It can revoke only active `manual_admin` Premium entitlements.
+- It does not revoke trial/provider/subscription/store entitlements.
+- It requires a clear reason.
+- It writes an audit action via `AdminAuditService` / `admin_actions`.
+- It does not delete entitlement history.
+- It does not add free allowance reset.
+- It does not add CMS UI.
+- It does not add Paddle checkout/webhooks.
+- It does not create or mutate subscription/payment records.
+- It does not require a database migration.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
