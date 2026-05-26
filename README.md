@@ -83,6 +83,12 @@ Detailed review docs live in `docs/`:
 - `docs/NEXT_STEPS.md`
 - `docs/subscription-billing-foundation.md`
 
+Development admin smoke test (requires a running Development backend at `http://localhost:5000`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
+```
+
 Common validation commands from the repository root:
 
 ```powershell
