@@ -186,3 +186,17 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not add Paddle checkout/webhooks.
 - It does not require a database migration.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
+## Admin Foundation v4 (audit service foundation)
+
+- Admin Foundation v4 adds a backend-only audit service foundation for future admin mutations.
+- It uses the existing `admin_actions` storage.
+- It does not add CMS UI.
+- It does not add any new mutation endpoint.
+- It does not add manual Premium grant/revoke.
+- It does not add free allowance reset.
+- It does not write audit actions for read-only diagnostics.
+- It does not add Paddle checkout/webhooks.
+- It does not require a database migration.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Future admin mutations must call the audit service with a clear reason and safe metadata only.

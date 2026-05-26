@@ -131,6 +131,7 @@ builder.Services.AddScoped<ITrialClaimService, TrialClaimService>();
 builder.Services.AddScoped<IDevelopmentTestAccountService, DevelopmentTestAccountService>();
 builder.Services.AddScoped<IBillingCheckoutService, BillingCheckoutService>();
 builder.Services.AddScoped<IAdminUserLookupService, AdminUserLookupService>();
+builder.Services.AddScoped<IAdminAuditService, AdminAuditService>();
 
 var app = builder.Build();
 
