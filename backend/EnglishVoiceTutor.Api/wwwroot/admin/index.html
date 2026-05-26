@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>English Voice Tutor Admin</title>
+    <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+    <main class="layout" aria-live="polite">
+        <section id="login-card" class="card login-card">
+            <h1>English Voice Tutor Admin</h1>
+            <p class="muted">Sign in with a Development bootstrap admin account.</p>
+            <form id="login-form" novalidate>
+                <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="username" required /></div>
+                <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required /></div>
+                <button id="sign-in-button" type="submit">Sign in</button>
+            </form>
+            <p id="login-error" class="error" role="alert"></p>
+        </section>
+        <section id="dashboard" class="hidden">
+            <header class="dashboard-header"><h1>Admin Shell</h1><button id="logout-button" type="button">Logout</button></header>
+            <div class="grid">
+                <article class="card">
+                    <h2>Capabilities Check</h2>
+                    <dl class="meta">
+                        <dt>Admin source</dt><dd id="admin-source">-</dd>
+                        <dt>Environment</dt><dd id="environment">-</dd>
+                        <dt>Checked timestamp</dt><dd id="checked-at">-</dd>
+                    </dl>
+                    <ul id="capabilities-list" class="capability-list"></ul>
+                </article>
+                <article class="card">
+                    <h2>Future Sections</h2>
+                    <ul class="placeholder-list">
+                        <li>User Lookup</li><li>User Diagnostics</li><li>Audit Log</li><li>Premium Grant</li><li>Premium Revoke</li><li>Free Lesson Reset</li>
+                        <li>Billing / Paddle <span class="badge unavailable">disabled</span></li>
+                        <li>Production Roles <span class="badge unavailable">disabled</span></li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+    </main>
+    <script src="/admin/admin.js"></script>
+</body>
+</html>

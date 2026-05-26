@@ -143,6 +143,8 @@ var app = builder.Build();
 app.UseWebSockets();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.MapGet(ApiConstants.HealthRoute, HandleHealthAsync);
 app.MapGet(ApiConstants.ApiHealthRoute, HandleHealthAsync);

@@ -24,6 +24,7 @@ $AuthLoginPath = "/api/auth/login"
 $AdminMePath = "/api/admin/me"
 $AdminUsersByEmailPath = "/api/admin/users/by-email"
 $AdminCapabilitiesPath = "/api/admin/capabilities"
+$AdminShellPath = "/admin/"
 $AdminAuditActionsPathTemplate = "/api/admin/users/{0}/audit-actions"
 $AdminPremiumGrantsPathTemplate = "/api/admin/users/{0}/premium-grants"
 $AdminPremiumRevokePathTemplate = "/api/admin/users/{0}/premium-grants/{1}/revoke"
@@ -159,6 +160,13 @@ function Assert-PropertyExists {
 
 $adminHeaders = $null
 $normalHeaders = $null
+
+
+Write-Step "Verify GET /admin/ static admin shell"
+$adminShellUrl = "$BaseUrl$AdminShellPath"
+$adminShellResponse = Invoke-WebRequest -Method $MethodGet -Uri $adminShellUrl
+Assert-Equal -Expected $StatusOk -Actual ([int]$adminShellResponse.StatusCode) -Message "admin shell status"
+Write-Pass "Admin shell static page is reachable"
 
 Write-Step "Login as admin"
 $adminLoginUrl = "$BaseUrl$AuthLoginPath"
