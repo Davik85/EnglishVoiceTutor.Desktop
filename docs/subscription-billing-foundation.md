@@ -1,6 +1,6 @@
 # Subscription & Billing Foundation (Current State)
 
-This document describes the **current implemented foundation** for account, trial, subscription, entitlement, free-limit enforcement, development test accounts, and billing checkout skeleton behavior.
+This document describes the **current implemented foundation** for account, trial, subscription, entitlement, free-limit enforcement, development test accounts, billing checkout skeleton behavior, and backend-only admin bootstrap diagnostics.
 
 English Voice Tutor is designed as an international product for desktop now and mobile apps later. The backend is the single source of truth for account, trial, subscription, entitlement, free allowance, lesson history, usage, limits, and billing state.
 
@@ -21,8 +21,8 @@ English Voice Tutor is designed as an international product for desktop now and 
 
 - Free plan currently allows **1 free lesson per day**.
 - A free lesson is consumed only after both conditions are true in the same lesson session:
-  1. lesson session has started;
-  2. learner sends at least 3 valid user messages.
+  1. Lesson session has started.
+  2. Learner sends at least 3 valid user messages.
 - Current lesson continuation is not blocked by this daily free-limit rule.
 - Starting another new lesson can be blocked when subscription enforcement is enabled.
 
@@ -101,16 +101,17 @@ Current config section:
 - No production admin roles yet.
 - No provider reconciliation job yet.
 - No desktop paywall/upgrade UI yet.
+- No manual grant/revoke/reset actions yet.
 
 ## Roadmap (recommended order)
 
 1. CMS/admin foundation:
-   - roles
-   - audit trail
-   - user lookup
-   - manual Premium grant/revoke
-   - free allowance reset
-   - entitlement inspection
+   - Roles.
+   - Audit trail.
+   - User lookup.
+   - Manual Premium grant/revoke.
+   - Free allowance reset.
+   - Entitlement inspection.
 2. Provider-agnostic billing provider adapter interface.
 3. Paddle checkout adapter.
 4. Paddle webhook ingestion.
@@ -118,6 +119,33 @@ Current config section:
 6. Entitlement reconciliation.
 7. Desktop upgrade/paywall UI.
 8. Future Apple/Google mobile entitlement bridge.
+
+## Admin Foundation v1 (backend-only bootstrap)
+
+- Admin Foundation v1 is backend-only.
+- Access is Development/config bootstrap admin access (`AdminBootstrap:Enabled` with configured bootstrap emails).
+- Endpoint surface currently includes only: `GET /api/admin/me`.
+- `GET /api/admin/me` requires a valid Bearer token and bootstrap admin authorization and returns a read-only self-check payload.
+- No CMS/admin UI is implemented.
+- No user search is included in v1.
+- No manual grant/revoke/reset actions are implemented.
+- Paddle checkout and webhooks are deferred.
+- `admin_actions` storage exists for future audited admin mutations, but `/api/admin/me` does **not** write audit actions.
+
+## Admin Foundation v2 (backend-only exact user lookup)
+
+- Admin Foundation v2 is backend-only and read-only.
+- Added endpoint: `GET /api/admin/users/by-email?email=user@example.com`.
+- Endpoint is protected by `AdminAuthorizationConstants.BootstrapAdminPolicyName`.
+- Lookup is exact by normalized email (trim + lower-invariant), with no broad search or partial matching.
+- Returns a safe response containing user overview, profile/settings snapshot, subscription status, and checked timestamp.
+- No CMS/admin UI is implemented.
+- No manual grant/revoke/reset actions are implemented.
+- No Paddle checkout/webhook behavior is introduced.
+- No audit writes are performed for this read-only lookup.
+
+- Latest confirmed EF migration after Admin Foundation v2 remains `20260524061817_AddSubscriptionFoundationV1`.
+- Admin Foundation v1/v2 did not require a database migration.
 
 ## Safe local test commands (PowerShell)
 
@@ -142,32 +170,7 @@ Useful API checks (authenticated unless noted):
 - `GET /api/me/subscription-status`
 - `GET /api/me/lesson-access`
 - `POST /api/me/billing/checkout-session`
+- `GET /api/admin/me`
+- `GET /api/admin/users/by-email?email=user@example.com`
 
 Do not use real tokens or secrets in shared docs/scripts.
-
-
-## Admin Foundation v1 (backend-only bootstrap)
-
-- Admin foundation v1 is backend-only and currently intended for Development diagnostics.
-- Access model is config-based bootstrap admin emails, gated by Development environment and `AdminBootstrap:Enabled`.
-- Endpoint surface is read-only and currently includes only: `GET /api/admin/me`.
-- `GET /api/admin/me` requires a valid Bearer token and admin bootstrap authorization; it returns a small self-check payload and does not mutate state.
-- No CMS/admin UI is implemented yet.
-- No user search tooling yet.
-- No manual Premium grant/revoke yet.
-- No free allowance reset actions yet.
-- Paddle checkout and Paddle webhooks remain deferred.
-- `admin_actions` storage exists for future audited admin mutations, but `/api/admin/me` does not write audit actions because it is a read-only self-check endpoint.
-
-## Admin Foundation v2 (backend-only exact user lookup)
-
-- Admin foundation v2 is backend-only and read-only.
-- Added endpoint: `GET /api/admin/users/by-email?email=user@example.com`.
-- Endpoint is protected by `AdminAuthorizationConstants.BootstrapAdminPolicyName` (bootstrap admin policy).
-- Lookup is exact by normalized email (trim + lower-invariant), no broad search or partial match.
-- Returns a safe user overview payload (user, profile, settings, subscription status, checked timestamp) without sensitive secrets.
-- No CMS/admin UI is implemented yet.
-- No manual premium grant/revoke/reset actions are implemented yet.
-- No Paddle checkout/webhook functionality is introduced in admin v2.
-- No audit writes are performed for this read-only lookup endpoint.
-- Future step: richer user diagnostics details and audited support actions.
