@@ -27,6 +27,9 @@ public static class AdminEndpoints
 
         app.MapPost(ApiConstants.AdminUserPremiumGrantRevokeRoute, RevokeManualPremiumAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
+        app.MapGet(ApiConstants.AdminUserAuditActionsRoute, GetTargetUserAuditActionsAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
     }
 
     private static IResult GetAdminMe(ClaimsPrincipal principal)
@@ -118,6 +121,36 @@ public static class AdminEndpoints
             result.Response);
     }
 
+
+    private static async Task<IResult> GetTargetUserAuditActionsAsync(
+        Guid userId,
+        [AsParameters] AdminAuditActionsQuery query,
+        IAdminAuditLogService adminAuditLogService,
+        CancellationToken cancellationToken)
+    {
+        var result = await adminAuditLogService.GetTargetUserAuditActionsAsync(
+            userId,
+            query.Limit,
+            cancellationToken);
+
+        if (result.IsInvalid)
+        {
+            return Results.BadRequest(new Dictionary<string, string[]>
+            {
+                [AdminAuditLogConstants.LimitQueryKey] = [result.ErrorMessage ?? string.Empty]
+            });
+        }
+
+        if (result.IsNotFound)
+        {
+            return Results.NotFound(new Dictionary<string, string[]>
+            {
+                [UserIdRouteKey] = [result.ErrorMessage ?? AdminAuditLogConstants.TargetUserNotFoundError]
+            });
+        }
+
+        return Results.Ok(result.Response);
+    }
     private static async Task<IResult> RevokeManualPremiumAsync(
         ClaimsPrincipal principal,
         Guid userId,
@@ -174,4 +207,9 @@ public static class AdminEndpoints
 public sealed class AdminUserLookupQuery
 {
     public string? Email { get; init; }
+}
+
+public sealed class AdminAuditActionsQuery
+{
+    public int? Limit { get; init; }
 }

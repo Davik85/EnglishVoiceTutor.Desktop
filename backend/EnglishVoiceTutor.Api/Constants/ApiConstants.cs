@@ -71,6 +71,7 @@ public static class ApiConstants
     public const string AdminUserByEmailRoute = "/api/admin/users/by-email";
     public const string AdminUserPremiumGrantsRoute = "/api/admin/users/{userId:guid}/premium-grants";
     public const string AdminUserPremiumGrantRevokeRoute = "/api/admin/users/{userId:guid}/premium-grants/{entitlementId:guid}/revoke";
+    public const string AdminUserAuditActionsRoute = "/api/admin/users/{userId:guid}/audit-actions";
     public const string DevSubscriptionStatusRoute = "/api/dev/subscription-status";
     public const string DevLessonAccessRoute = "/api/dev/lesson-access";
     public const string DevSubscriptionDiagnosticsScenarioRoute = "/api/dev/subscription-diagnostics/scenarios/{scenario}";
