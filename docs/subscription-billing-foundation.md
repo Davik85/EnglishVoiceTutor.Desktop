@@ -249,3 +249,20 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not create or mutate subscription/payment records.
 - It does not require a database migration.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
+## Admin Foundation v8 (free lesson allowance reset)
+
+- Admin Foundation v8 adds a backend-only free lesson allowance reset endpoint.
+- Endpoint: `POST /api/admin/users/{userId}/free-lesson-allowance/reset`.
+- It is protected by the existing bootstrap admin policy.
+- It resets the daily free lesson allowance by deleting the `DailyFreeLessonUsage` record for a target user and date.
+- If `usageDate` is omitted, backend uses today in UTC.
+- It requires a clear reason.
+- It writes an audit action via `AdminAuditService` / `admin_actions`.
+- It does not delete lesson sessions or lesson messages.
+- It does not reset `DailyUsageCounters` or old per-operation usage counters.
+- It does not change Premium/trial/subscription/payment records.
+- It does not add CMS UI.
+- It does not add Paddle checkout/webhooks.
+- It does not require a database migration.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
