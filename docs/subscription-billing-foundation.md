@@ -266,3 +266,22 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not add Paddle checkout/webhooks.
 - It does not require a database migration.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
+## Admin Foundation v9 (local smoke test script)
+
+- Admin Foundation v9 adds a local PowerShell smoke test script.
+- Script: `tools/smoke_admin_foundation.ps1`.
+- It verifies existing Admin Foundation v1-v8 behavior against a running Development backend.
+- It does not start the backend automatically.
+- It does not add backend behavior.
+- It does not add CMS UI.
+- It does not add Paddle checkout/webhooks.
+- It does not require a database migration.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
+Usage example:
+
+```powershell
+cd C:\dev\EnglishVoiceTutor.Desktop
+powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
+```
