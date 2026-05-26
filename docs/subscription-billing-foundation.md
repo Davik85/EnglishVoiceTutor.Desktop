@@ -144,3 +144,17 @@ Useful API checks (authenticated unless noted):
 - `POST /api/me/billing/checkout-session`
 
 Do not use real tokens or secrets in shared docs/scripts.
+
+
+## Admin Foundation v1 (backend-only bootstrap)
+
+- Admin foundation v1 is backend-only and currently intended for Development diagnostics.
+- Access model is config-based bootstrap admin emails, gated by Development environment and `AdminBootstrap:Enabled`.
+- Endpoint surface is read-only and currently includes only: `GET /api/admin/me`.
+- `GET /api/admin/me` requires a valid Bearer token and admin bootstrap authorization; it returns a small self-check payload and does not mutate state.
+- No CMS/admin UI is implemented yet.
+- No user search tooling yet.
+- No manual Premium grant/revoke yet.
+- No free allowance reset actions yet.
+- Paddle checkout and Paddle webhooks remain deferred.
+- `admin_actions` storage exists for future audited admin mutations, but `/api/admin/me` does not write audit actions because it is a read-only self-check endpoint.

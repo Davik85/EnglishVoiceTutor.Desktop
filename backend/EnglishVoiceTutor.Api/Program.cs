@@ -17,8 +17,10 @@ using EnglishVoiceTutor.Api.Endpoints;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
 using EnglishVoiceTutor.Api.Services.Billing;
+using EnglishVoiceTutor.Api.Services.Admin;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -47,6 +49,8 @@ builder.Services.Configure<DevelopmentTestAccountOptions>(
     builder.Configuration.GetSection(DevelopmentTestAccountOptions.SectionName));
 builder.Services.Configure<BillingOptions>(
     builder.Configuration.GetSection(BillingOptions.SectionName));
+builder.Services.Configure<AdminBootstrapOptions>(
+    builder.Configuration.GetSection(AdminBootstrapOptions.SectionName));
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt configuration section is required.");
@@ -73,7 +77,17 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddScoped<IBootstrapAdminAccessService, BootstrapAdminAccessService>();
+builder.Services.AddSingleton<IAuthorizationHandler, BootstrapAdminAuthorizationHandler>();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AdminAuthorizationConstants.BootstrapAdminPolicyName, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new BootstrapAdminRequirement());
+    });
+});
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHttpClient();
@@ -182,6 +196,7 @@ app.MapLessonAccessDecisionEndpoints();
 app.MapSubscriptionDiagnosticsEndpoints();
 app.MapTrialClaimEndpoints();
 app.MapBillingCheckoutEndpoints();
+app.MapAdminEndpoints();
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
     ApiConstants.ServiceName,
