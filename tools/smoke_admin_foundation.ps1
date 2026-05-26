@@ -186,7 +186,7 @@ Assert-Equal -Expected $AdminSourceDevelopmentBootstrap -Actual $adminMe.Body.ad
 Write-Pass "Admin identity check succeeded"
 
 Write-Step "Verify admin user lookup by email"
-$lookupUrl = "$BaseUrl$AdminUsersByEmailPath?email=$([uri]::EscapeDataString($NormalEmail))"
+$lookupUrl = "{0}{1}?email={2}" -f $BaseUrl, $AdminUsersByEmailPath, [uri]::EscapeDataString($NormalEmail)
 $lookup = Invoke-ExpectStatusCode -Method $MethodGet -Url $lookupUrl -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusOk)
 Assert-PropertyExists -Object $lookup.Body -PropertyName "user" -Message "Lookup must include user"
 Assert-PropertyExists -Object $lookup.Body.user -PropertyName "userId" -Message "Lookup user must include userId"
@@ -266,7 +266,7 @@ Write-Pass "Audit action types verified"
 
 Write-Step "Verify expected error statuses"
 Invoke-ExpectStatusCode -Method $MethodGet -Url $adminMeUrl -Headers $null -Body $null -ExpectedStatusCodes @($StatusUnauthorized) | Out-Null
-Invoke-ExpectStatusCode -Method $MethodGet -Url "$BaseUrl$AdminUsersByEmailPath?email=$([uri]::EscapeDataString($AdminEmail))" -Headers $normalHeaders -Body $null -ExpectedStatusCodes @($StatusForbidden) | Out-Null
+Invoke-ExpectStatusCode -Method $MethodGet -Url ("{0}{1}?email={2}" -f $BaseUrl, $AdminUsersByEmailPath, [uri]::EscapeDataString($AdminEmail)) -Headers $normalHeaders -Body $null -ExpectedStatusCodes @($StatusForbidden) | Out-Null
 Invoke-ExpectStatusCode -Method $MethodGet -Url "$BaseUrl$([string]::Format($AdminAuditActionsPathTemplate, $targetUserId))?limit=0" -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusBadRequest) | Out-Null
 Invoke-ExpectStatusCode -Method $MethodGet -Url "$BaseUrl$([string]::Format($AdminAuditActionsPathTemplate, $MissingUserAuditUserId))" -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusNotFound) | Out-Null
 Invoke-ExpectStatusCode -Method $MethodPost -Url $grantUrl -Headers $adminHeaders -Body @{ durationDays = 1; reason = "" } -ExpectedStatusCodes @($StatusBadRequest) | Out-Null
