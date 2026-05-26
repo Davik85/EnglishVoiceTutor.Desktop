@@ -30,6 +30,9 @@ public static class AdminEndpoints
 
         app.MapGet(ApiConstants.AdminUserAuditActionsRoute, GetTargetUserAuditActionsAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
+        app.MapPost(ApiConstants.AdminUserFreeLessonAllowanceResetRoute, ResetFreeLessonAllowanceAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
     }
 
     private static IResult GetAdminMe(ClaimsPrincipal principal)
@@ -151,6 +154,52 @@ public static class AdminEndpoints
 
         return Results.Ok(result.Response);
     }
+    private static async Task<IResult> ResetFreeLessonAllowanceAsync(
+        ClaimsPrincipal principal,
+        Guid userId,
+        AdminFreeLessonAllowanceResetRequest request,
+        IAdminFreeLessonAllowanceResetService adminFreeLessonAllowanceResetService,
+        CancellationToken cancellationToken)
+    {
+        var adminUserId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!adminUserId.HasValue)
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await adminFreeLessonAllowanceResetService.ResetFreeLessonAllowanceAsync(
+            adminUserId.Value,
+            userId,
+            request,
+            cancellationToken);
+
+        if (result.IsInvalid)
+        {
+            var errorKey = result.ErrorCode == nameof(AdminFreeLessonAllowanceResetConstants.UsageDateInvalidError)
+                ? AdminFreeLessonAllowanceResetConstants.UsageDateFieldName
+                : AdminFreeLessonAllowanceResetConstants.ReasonFieldName;
+
+            return Results.BadRequest(new Dictionary<string, string[]>
+            {
+                [errorKey] = [result.ErrorMessage ?? string.Empty]
+            });
+        }
+
+        if (result.IsNotFound)
+        {
+            var errorKey = result.ErrorCode == nameof(AdminFreeLessonAllowanceResetConstants.TargetUserNotFoundError)
+                ? UserIdRouteKey
+                : AdminFreeLessonAllowanceResetConstants.UsageDateFieldName;
+
+            return Results.NotFound(new Dictionary<string, string[]>
+            {
+                [errorKey] = [result.ErrorMessage ?? string.Empty]
+            });
+        }
+
+        return Results.Ok(result.Response);
+    }
+
     private static async Task<IResult> RevokeManualPremiumAsync(
         ClaimsPrincipal principal,
         Guid userId,
