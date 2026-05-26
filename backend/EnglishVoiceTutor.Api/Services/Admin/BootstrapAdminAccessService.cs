@@ -1,6 +1,7 @@
 using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Auth;
 using Microsoft.Extensions.Options;
+using System.Security.Claims;
 
 namespace EnglishVoiceTutor.Api.Services.Admin;
 
