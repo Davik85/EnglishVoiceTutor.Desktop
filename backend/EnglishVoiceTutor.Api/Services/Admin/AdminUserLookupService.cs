@@ -93,7 +93,7 @@ public sealed class AdminUserLookupService(
         var activeEntitlementsTask = dbContext.Entitlements
             .AsNoTracking()
             .Where(entitlement => entitlement.UserId == user.Id)
-            .Where(entitlement => entitlement.Status == SubscriptionConstants.EntitlementStatusActive)
+            .Where(entitlement => entitlement.Status == SubscriptionConstants.Entitlements.StatusActive)
             .Where(entitlement => entitlement.StartsAtUtc <= now)
             .Where(entitlement => entitlement.ExpiresAtUtc == null || entitlement.ExpiresAtUtc > now)
             .OrderBy(entitlement => entitlement.ExpiresAtUtc == null)
