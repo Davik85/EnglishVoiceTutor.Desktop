@@ -37,12 +37,12 @@ public sealed class AdminUserLookupService(
             return new AdminUserLookupResult();
         }
 
-        var subscriptionStatusTask = subscriptionStatusService.GetStatusAsync(
+        var subscriptionStatus = await subscriptionStatusService.GetStatusAsync(
             user.Id,
             AdminAuthorizationConstants.AdminUserLookupSource,
             cancellationToken);
 
-        var recentLessonSessionsTask = dbContext.LessonSessions
+        var recentLessonSessions = await dbContext.LessonSessions
             .AsNoTracking()
             .Where(session => session.UserId == user.Id)
             .OrderByDescending(session => session.StartedAt)
@@ -68,7 +68,7 @@ public sealed class AdminUserLookupService(
             })
             .ToListAsync(cancellationToken);
 
-        var dailyUsageCountersTask = dbContext.DailyUsageCounters
+        var dailyUsageCounters = await dbContext.DailyUsageCounters
             .AsNoTracking()
             .Where(counter => counter.UserId == user.Id)
             .OrderByDescending(counter => counter.UsageDate)
@@ -90,7 +90,7 @@ public sealed class AdminUserLookupService(
             .ToListAsync(cancellationToken);
 
         var now = DateTimeOffset.UtcNow;
-        var activeEntitlementsTask = dbContext.Entitlements
+        var activeEntitlements = await dbContext.Entitlements
             .AsNoTracking()
             .Where(entitlement => entitlement.UserId == user.Id)
             .Where(entitlement => entitlement.Status == SubscriptionConstants.Entitlements.StatusActive)
@@ -114,7 +114,7 @@ public sealed class AdminUserLookupService(
             })
             .ToListAsync(cancellationToken);
 
-        var recentUsageEventsTask = dbContext.UsageEvents
+        var recentUsageEvents = await dbContext.UsageEvents
             .AsNoTracking()
             .Where(usageEvent => usageEvent.UserId == user.Id)
             .OrderByDescending(usageEvent => usageEvent.CreatedAt)
@@ -138,13 +138,6 @@ public sealed class AdminUserLookupService(
                 CreatedAt = usageEvent.CreatedAt
             })
             .ToListAsync(cancellationToken);
-
-        await Task.WhenAll(
-            subscriptionStatusTask,
-            recentLessonSessionsTask,
-            dailyUsageCountersTask,
-            activeEntitlementsTask,
-            recentUsageEventsTask);
 
         return new AdminUserLookupResult
         {
@@ -178,11 +171,11 @@ public sealed class AdminUserLookupService(
                         SpeechSpeed = user.Settings.SpeechSpeed,
                         ConversationModeEnabled = user.Settings.ConversationModeEnabled
                     },
-                SubscriptionStatus = subscriptionStatusTask.Result,
-                RecentLessonSessions = recentLessonSessionsTask.Result,
-                DailyUsageCounters = dailyUsageCountersTask.Result,
-                ActiveEntitlements = activeEntitlementsTask.Result,
-                RecentUsageEvents = recentUsageEventsTask.Result,
+                SubscriptionStatus = subscriptionStatus,
+                RecentLessonSessions = recentLessonSessions,
+                DailyUsageCounters = dailyUsageCounters,
+                ActiveEntitlements = activeEntitlements,
+                RecentUsageEvents = recentUsageEvents,
                 CheckedAtUtc = DateTimeOffset.UtcNow
             }
         };
