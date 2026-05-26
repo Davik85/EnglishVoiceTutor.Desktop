@@ -285,3 +285,17 @@ Usage example:
 cd C:\dev\EnglishVoiceTutor.Desktop
 powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 ```
+
+## Admin Foundation v10 (admin capabilities endpoint)
+
+- Admin Foundation v10 adds a backend-only read-only capabilities endpoint for the future CMS/Admin UI.
+- Endpoint: `GET /api/admin/capabilities`.
+- It is protected by the existing bootstrap admin policy.
+- It tells future UI which admin capabilities are currently available.
+- It confirms CMS UI, production roles, billing provider, Paddle checkout/webhooks, and mobile store bridge are not available yet.
+- It does not write audit actions.
+- It does not add CMS UI.
+- It does not add Paddle checkout/webhooks.
+- It does not add new admin mutation behavior.
+- It does not require a database migration.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
