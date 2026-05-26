@@ -47,6 +47,8 @@ builder.Services.Configure<DevelopmentTestAccountOptions>(
     builder.Configuration.GetSection(DevelopmentTestAccountOptions.SectionName));
 builder.Services.Configure<BillingOptions>(
     builder.Configuration.GetSection(BillingOptions.SectionName));
+builder.Services.Configure<AdminBootstrapOptions>(
+    builder.Configuration.GetSection(AdminBootstrapOptions.SectionName));
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt configuration section is required.");
@@ -73,7 +75,22 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddScoped<EnglishVoiceTutor.Api.Services.Admin.IBootstrapAdminAccessService, EnglishVoiceTutor.Api.Services.Admin.BootstrapAdminAccessService>();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AdminAuthorizationConstants.BootstrapAdminPolicyName, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context =>
+        {
+            var accessService = context.HttpContext?.RequestServices
+                .GetRequiredService<EnglishVoiceTutor.Api.Services.Admin.IBootstrapAdminAccessService>();
+
+            return accessService is not null && accessService.IsBootstrapAdmin(context.User);
+        });
+    });
+});
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHttpClient();
@@ -182,6 +199,7 @@ app.MapLessonAccessDecisionEndpoints();
 app.MapSubscriptionDiagnosticsEndpoints();
 app.MapTrialClaimEndpoints();
 app.MapBillingCheckoutEndpoints();
+app.MapAdminEndpoints();
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
     ApiConstants.ServiceName,

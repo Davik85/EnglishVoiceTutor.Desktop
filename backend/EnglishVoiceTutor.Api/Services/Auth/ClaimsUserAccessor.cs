@@ -10,4 +10,9 @@ public static class ClaimsUserAccessor
         var value = principal.FindFirstValue(AuthClaimTypes.UserId);
         return Guid.TryParse(value, out var userId) ? userId : null;
     }
+
+    public static string? TryGetUserEmail(ClaimsPrincipal principal)
+    {
+        return principal.FindFirstValue(ClaimTypes.Email);
+    }
 }
