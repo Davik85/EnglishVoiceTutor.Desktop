@@ -54,6 +54,17 @@ public static class SubscriptionConstants
         public const string Ignored = "ignored";
     }
 
+
+
+    public static class Billing
+    {
+        public const string BillingProviderNotConfiguredCode = "billing_provider_not_configured";
+        public const string BillingCheckoutDisabledMessage = "Billing checkout is not configured yet.";
+        public const string DefaultCheckoutCurrency = "USD";
+        public const string DefaultPremiumPlanId = Plans.PremiumPlanId;
+        public const string CheckoutModeSubscription = "subscription";
+    }
+
     public static class AdminActionTypes
     {
         public const string GrantPremium = "grant_premium";

@@ -16,6 +16,7 @@ using EnglishVoiceTutor.Api.Contracts.Usage;
 using EnglishVoiceTutor.Api.Endpoints;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
+using EnglishVoiceTutor.Api.Services.Billing;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -44,6 +45,8 @@ builder.Services.Configure<SubscriptionEnforcementOptions>(
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<DevelopmentTestAccountOptions>(
     builder.Configuration.GetSection(DevelopmentTestAccountOptions.SectionName));
+builder.Services.Configure<BillingOptions>(
+    builder.Configuration.GetSection(BillingOptions.SectionName));
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt configuration section is required.");
@@ -112,6 +115,7 @@ builder.Services.AddScoped<ISubscriptionPlanCatalogService, SubscriptionPlanCata
 builder.Services.AddScoped<ISubscriptionDiagnosticsService, SubscriptionDiagnosticsService>();
 builder.Services.AddScoped<ITrialClaimService, TrialClaimService>();
 builder.Services.AddScoped<IDevelopmentTestAccountService, DevelopmentTestAccountService>();
+builder.Services.AddScoped<IBillingCheckoutService, BillingCheckoutService>();
 
 var app = builder.Build();
 
@@ -177,6 +181,7 @@ app.MapSubscriptionStatusEndpoints();
 app.MapLessonAccessDecisionEndpoints();
 app.MapSubscriptionDiagnosticsEndpoints();
 app.MapTrialClaimEndpoints();
+app.MapBillingCheckoutEndpoints();
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
     ApiConstants.ServiceName,

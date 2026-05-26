@@ -66,6 +66,7 @@ public static class ApiConstants
     public const string MeSubscriptionStatusRoute = "/api/me/subscription-status";
     public const string MeLessonAccessRoute = "/api/me/lesson-access";
     public const string MeTrialClaimRoute = "/api/me/trial/claim";
+    public const string MeBillingCheckoutSessionRoute = "/api/me/billing/checkout-session";
     public const string DevSubscriptionStatusRoute = "/api/dev/subscription-status";
     public const string DevLessonAccessRoute = "/api/dev/lesson-access";
     public const string DevSubscriptionDiagnosticsScenarioRoute = "/api/dev/subscription-diagnostics/scenarios/{scenario}";
