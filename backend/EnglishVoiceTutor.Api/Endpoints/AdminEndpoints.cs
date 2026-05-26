@@ -11,6 +11,7 @@ public static class AdminEndpoints
 {
     private const string EmailQueryKey = "email";
     private const string EmailRequiredError = "Email query parameter is required.";
+    private const string UserIdRouteKey = "userId";
 
     public static void MapAdminEndpoints(this WebApplication app)
     {
@@ -18,6 +19,9 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
         app.MapGet(ApiConstants.AdminUserByEmailRoute, GetAdminUserByEmailAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
+        app.MapPost(ApiConstants.AdminUserPremiumGrantsRoute, GrantManualPremiumAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
     }
 
@@ -64,6 +68,50 @@ public static class AdminEndpoints
         }
 
         return Results.Ok(lookupResult.Response);
+    }
+
+    private static async Task<IResult> GrantManualPremiumAsync(
+        ClaimsPrincipal principal,
+        Guid userId,
+        AdminManualPremiumGrantRequest request,
+        IAdminPremiumGrantService adminPremiumGrantService,
+        CancellationToken cancellationToken)
+    {
+        var adminUserId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!adminUserId.HasValue)
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await adminPremiumGrantService.GrantPremiumAsync(
+            adminUserId.Value,
+            userId,
+            request,
+            cancellationToken);
+
+        if (result.IsInvalid)
+        {
+            var errorKey = result.ErrorCode == nameof(AdminPremiumGrantConstants.DurationDaysOutOfRangeError)
+                ? AdminPremiumGrantConstants.DurationDaysFieldName
+                : AdminPremiumGrantConstants.ReasonFieldName;
+
+            return Results.BadRequest(new Dictionary<string, string[]>
+            {
+                [errorKey] = [result.ErrorMessage ?? string.Empty]
+            });
+        }
+
+        if (result.IsNotFound)
+        {
+            return Results.NotFound(new Dictionary<string, string[]>
+            {
+                [UserIdRouteKey] = [result.ErrorMessage ?? AdminPremiumGrantConstants.TargetUserNotFoundError]
+            });
+        }
+
+        return Results.Created(
+            ApiConstants.AdminUserPremiumGrantsRoute.Replace("{userId:guid}", userId.ToString()),
+            result.Response);
     }
 }
 

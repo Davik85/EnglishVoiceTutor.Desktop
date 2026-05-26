@@ -200,3 +200,20 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not require a database migration.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
 - Future admin mutations must call the audit service with a clear reason and safe metadata only.
+
+
+## Admin Foundation v5 (manual Premium grant)
+
+- Admin Foundation v5 adds a backend-only manual Premium grant endpoint.
+- Endpoint: `POST /api/admin/users/{userId}/premium-grants`.
+- It is protected by the existing bootstrap admin policy.
+- It creates a manual active Premium entitlement with source `manual_admin`.
+- It requires a clear reason and bounded `durationDays`.
+- It writes an audit action via `AdminAuditService` into `admin_actions`.
+- It does not add revoke.
+- It does not add free allowance reset.
+- It does not add CMS UI.
+- It does not add Paddle checkout/webhooks.
+- It does not create subscription/payment records.
+- It does not require a database migration.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
