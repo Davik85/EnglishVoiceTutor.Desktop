@@ -234,3 +234,18 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not create or mutate subscription/payment records.
 - It does not require a database migration.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
+## Admin Foundation v7 (read-only audit log)
+
+- Admin Foundation v7 adds a backend-only read-only audit log endpoint.
+- Endpoint: `GET /api/admin/users/{userId}/audit-actions`.
+- It is protected by the existing bootstrap admin policy.
+- It returns recent audit actions for a target user.
+- It supports a bounded `limit` query parameter.
+- It does not write audit actions.
+- It does not add CMS UI.
+- It does not add grant/revoke/reset behavior.
+- It does not add Paddle checkout/webhooks.
+- It does not create or mutate subscription/payment records.
+- It does not require a database migration.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
