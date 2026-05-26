@@ -81,6 +81,7 @@ Detailed review docs live in `docs/`:
 - `docs/COST_MODEL.md`
 - `docs/MANUAL_TEST_CHECKLIST.md`
 - `docs/NEXT_STEPS.md`
+- `docs/subscription-billing-foundation.md`
 
 Common validation commands from the repository root:
 
