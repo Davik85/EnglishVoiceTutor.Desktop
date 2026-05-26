@@ -174,3 +174,15 @@ Useful API checks (authenticated unless noted):
 - `GET /api/admin/users/by-email?email=user@example.com`
 
 Do not use real tokens or secrets in shared docs/scripts.
+
+## Admin Foundation v3 (backend-only read-only diagnostics)
+
+- Admin Foundation v3 extends the exact user lookup response with read-only diagnostics.
+- It includes recent lesson sessions, daily usage counters, active entitlements, and recent usage events.
+- It is protected by the existing bootstrap admin policy.
+- It does not add CMS UI.
+- It does not add manual grant/revoke/reset.
+- It does not write audit actions.
+- It does not add Paddle checkout/webhooks.
+- It does not require a database migration.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
