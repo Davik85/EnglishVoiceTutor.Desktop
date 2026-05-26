@@ -23,6 +23,7 @@ $StatusNotFound = 404
 $AuthLoginPath = "/api/auth/login"
 $AdminMePath = "/api/admin/me"
 $AdminUsersByEmailPath = "/api/admin/users/by-email"
+$AdminCapabilitiesPath = "/api/admin/capabilities"
 $AdminAuditActionsPathTemplate = "/api/admin/users/{0}/audit-actions"
 $AdminPremiumGrantsPathTemplate = "/api/admin/users/{0}/premium-grants"
 $AdminPremiumRevokePathTemplate = "/api/admin/users/{0}/premium-grants/{1}/revoke"
@@ -185,6 +186,26 @@ Assert-Equal -Expected $true -Actual $adminMe.Body.isAdmin -Message "admin/me is
 Assert-Equal -Expected $AdminSourceDevelopmentBootstrap -Actual $adminMe.Body.adminSource -Message "admin/me adminSource"
 Write-Pass "Admin identity check succeeded"
 
+Write-Step "Verify GET /api/admin/capabilities"
+$adminCapabilitiesUrl = "$BaseUrl$AdminCapabilitiesPath"
+$adminCapabilities = Invoke-ExpectStatusCode -Method $MethodGet -Url $adminCapabilitiesUrl -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusOk)
+Assert-Equal -Expected $AdminSourceDevelopmentBootstrap -Actual $adminCapabilities.Body.adminSource -Message "admin/capabilities adminSource"
+Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.adminSelfCheck -Message "capabilities.adminSelfCheck"
+Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.userLookupByEmail -Message "capabilities.userLookupByEmail"
+Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.userDiagnostics -Message "capabilities.userDiagnostics"
+Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.auditLogRead -Message "capabilities.auditLogRead"
+Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.manualPremiumGrant -Message "capabilities.manualPremiumGrant"
+Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.manualPremiumRevoke -Message "capabilities.manualPremiumRevoke"
+Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.freeLessonAllowanceReset -Message "capabilities.freeLessonAllowanceReset"
+Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.localSmokeTestScript -Message "capabilities.localSmokeTestScript"
+Assert-Equal -Expected $false -Actual $adminCapabilities.Body.capabilities.cmsUiAvailable -Message "capabilities.cmsUiAvailable"
+Assert-Equal -Expected $false -Actual $adminCapabilities.Body.capabilities.productionRolesAvailable -Message "capabilities.productionRolesAvailable"
+Assert-Equal -Expected $false -Actual $adminCapabilities.Body.capabilities.billingProviderConfigured -Message "capabilities.billingProviderConfigured"
+Assert-Equal -Expected $false -Actual $adminCapabilities.Body.capabilities.paddleCheckoutAvailable -Message "capabilities.paddleCheckoutAvailable"
+Assert-Equal -Expected $false -Actual $adminCapabilities.Body.capabilities.paddleWebhooksAvailable -Message "capabilities.paddleWebhooksAvailable"
+Assert-Equal -Expected $false -Actual $adminCapabilities.Body.capabilities.mobileStoreEntitlementBridgeAvailable -Message "capabilities.mobileStoreEntitlementBridgeAvailable"
+Write-Pass "Admin capabilities check succeeded"
+
 Write-Step "Verify admin user lookup by email"
 $lookupUrl = "{0}{1}?email={2}" -f $BaseUrl, $AdminUsersByEmailPath, [uri]::EscapeDataString($NormalEmail)
 $lookup = Invoke-ExpectStatusCode -Method $MethodGet -Url $lookupUrl -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusOk)
@@ -266,6 +287,8 @@ Write-Pass "Audit action types verified"
 
 Write-Step "Verify expected error statuses"
 Invoke-ExpectStatusCode -Method $MethodGet -Url $adminMeUrl -Headers $null -Body $null -ExpectedStatusCodes @($StatusUnauthorized) | Out-Null
+Invoke-ExpectStatusCode -Method $MethodGet -Url $adminCapabilitiesUrl -Headers $null -Body $null -ExpectedStatusCodes @($StatusUnauthorized) | Out-Null
+Invoke-ExpectStatusCode -Method $MethodGet -Url $adminCapabilitiesUrl -Headers $normalHeaders -Body $null -ExpectedStatusCodes @($StatusForbidden) | Out-Null
 Invoke-ExpectStatusCode -Method $MethodGet -Url ("{0}{1}?email={2}" -f $BaseUrl, $AdminUsersByEmailPath, [uri]::EscapeDataString($AdminEmail)) -Headers $normalHeaders -Body $null -ExpectedStatusCodes @($StatusForbidden) | Out-Null
 Invoke-ExpectStatusCode -Method $MethodGet -Url "$BaseUrl$([string]::Format($AdminAuditActionsPathTemplate, $targetUserId))?limit=0" -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusBadRequest) | Out-Null
 Invoke-ExpectStatusCode -Method $MethodGet -Url "$BaseUrl$([string]::Format($AdminAuditActionsPathTemplate, $MissingUserAuditUserId))" -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusNotFound) | Out-Null

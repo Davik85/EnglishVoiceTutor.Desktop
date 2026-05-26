@@ -19,6 +19,9 @@ public static class AdminEndpoints
         app.MapGet(ApiConstants.AdminMeRoute, GetAdminMe)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
+        app.MapGet(ApiConstants.AdminCapabilitiesRoute, GetAdminCapabilities)
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
         app.MapGet(ApiConstants.AdminUserByEmailRoute, GetAdminUserByEmailAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
@@ -55,6 +58,12 @@ public static class AdminEndpoints
         };
 
         return Results.Ok(response);
+    }
+
+
+    private static IResult GetAdminCapabilities(IAdminCapabilitiesService adminCapabilitiesService)
+    {
+        return Results.Ok(adminCapabilitiesService.GetCapabilities());
     }
 
     private static async Task<IResult> GetAdminUserByEmailAsync(
