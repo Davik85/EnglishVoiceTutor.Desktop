@@ -77,7 +77,7 @@ builder.Services
         };
     });
 
-builder.Services.AddScoped<IBootstrapAdminAccessService, BootstrapAdminAccessService>();
+builder.Services.AddSingleton<IBootstrapAdminAccessService, BootstrapAdminAccessService>();
 builder.Services.AddSingleton<IAuthorizationHandler, BootstrapAdminAuthorizationHandler>();
 
 builder.Services.AddAuthorization(options =>
