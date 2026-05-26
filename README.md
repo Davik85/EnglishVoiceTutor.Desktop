@@ -102,3 +102,9 @@ dotnet build
 ```
 
 Recommended next work: short regression smoke-test, then MVP infrastructure work for local/user data, accounts, usage limits, payment, packaging, release preparation, and support diagnostics.
+
+
+## Local admin shell
+
+- Local admin shell: http://localhost:5000/admin/
+- Requires running backend and a configured Development bootstrap admin.

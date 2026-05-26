@@ -299,3 +299,19 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not add new admin mutation behavior.
 - It does not require a database migration.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
+
+## CMS UI Phase 1 (backend-hosted admin shell)
+
+- CMS UI Phase 1 adds a backend-hosted static admin shell.
+- URL: `/admin/`.
+- It uses existing `/api/auth/login` and `/api/admin/capabilities`.
+- The shell stores the JWT token only in memory for this phase.
+- The shell displays capabilities and placeholder admin sections.
+- It does not implement user lookup UI yet.
+- It does not implement grant/revoke/reset UI yet.
+- It does not add new admin mutation behavior.
+- It does not add Paddle checkout/webhooks.
+- It does not add production roles.
+- It does not require a database migration.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
