@@ -8,6 +8,10 @@ public sealed class AdminUserLookupResponse
     public AdminUserProfileSnapshot? Profile { get; set; }
     public AdminUserSettingsSnapshot? Settings { get; set; }
     public SubscriptionStatusResponse SubscriptionStatus { get; set; } = new();
+    public IReadOnlyList<AdminUserLessonSessionSnapshot> RecentLessonSessions { get; set; } = [];
+    public IReadOnlyList<AdminUserDailyUsageCounterSnapshot> DailyUsageCounters { get; set; } = [];
+    public IReadOnlyList<AdminUserEntitlementSnapshot> ActiveEntitlements { get; set; } = [];
+    public IReadOnlyList<AdminUserUsageEventSnapshot> RecentUsageEvents { get; set; } = [];
     public DateTimeOffset CheckedAtUtc { get; set; }
 }
 
