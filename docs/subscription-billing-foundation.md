@@ -158,3 +158,16 @@ Do not use real tokens or secrets in shared docs/scripts.
 - No free allowance reset actions yet.
 - Paddle checkout and Paddle webhooks remain deferred.
 - `admin_actions` storage exists for future audited admin mutations, but `/api/admin/me` does not write audit actions because it is a read-only self-check endpoint.
+
+## Admin Foundation v2 (backend-only exact user lookup)
+
+- Admin foundation v2 is backend-only and read-only.
+- Added endpoint: `GET /api/admin/users/by-email?email=user@example.com`.
+- Endpoint is protected by `AdminAuthorizationConstants.BootstrapAdminPolicyName` (bootstrap admin policy).
+- Lookup is exact by normalized email (trim + lower-invariant), no broad search or partial match.
+- Returns a safe user overview payload (user, profile, settings, subscription status, checked timestamp) without sensitive secrets.
+- No CMS/admin UI is implemented yet.
+- No manual premium grant/revoke/reset actions are implemented yet.
+- No Paddle checkout/webhook functionality is introduced in admin v2.
+- No audit writes are performed for this read-only lookup endpoint.
+- Future step: richer user diagnostics details and audited support actions.
