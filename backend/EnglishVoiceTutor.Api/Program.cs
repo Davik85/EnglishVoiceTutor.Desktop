@@ -17,8 +17,10 @@ using EnglishVoiceTutor.Api.Endpoints;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
 using EnglishVoiceTutor.Api.Services.Billing;
+using EnglishVoiceTutor.Api.Services.Admin;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -75,20 +77,15 @@ builder.Services
         };
     });
 
-builder.Services.AddScoped<EnglishVoiceTutor.Api.Services.Admin.IBootstrapAdminAccessService, EnglishVoiceTutor.Api.Services.Admin.BootstrapAdminAccessService>();
+builder.Services.AddScoped<IBootstrapAdminAccessService, BootstrapAdminAccessService>();
+builder.Services.AddSingleton<IAuthorizationHandler, BootstrapAdminAuthorizationHandler>();
 
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(AdminAuthorizationConstants.BootstrapAdminPolicyName, policy =>
     {
         policy.RequireAuthenticatedUser();
-        policy.RequireAssertion(context =>
-        {
-            var accessService = context.HttpContext?.RequestServices
-                .GetRequiredService<EnglishVoiceTutor.Api.Services.Admin.IBootstrapAdminAccessService>();
-
-            return accessService is not null && accessService.IsBootstrapAdmin(context.User);
-        });
+        policy.AddRequirements(new BootstrapAdminRequirement());
     });
 });
 builder.Services.AddHttpContextAccessor();
