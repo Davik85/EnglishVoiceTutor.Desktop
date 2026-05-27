@@ -1,6 +1,6 @@
 # Subscription & Billing Foundation (Current State)
 
-This document describes the **current implemented foundation** for account, trial, subscription, entitlement, free-limit enforcement, development test accounts, billing checkout skeleton behavior, and backend-only admin bootstrap diagnostics.
+This document describes the **current implemented foundation** for account/trial/subscription/entitlement/free-limit enforcement, development test accounts, provider-agnostic billing checkout skeleton behavior, completed local Development CMS/admin support foundation v1, and deferred global billing provider work.
 
 English Voice Tutor is designed as an international product for desktop now and mobile apps later. The backend is the single source of truth for account, trial, subscription, entitlement, free allowance, lesson history, usage, limits, and billing state.
 
@@ -91,34 +91,75 @@ Current config section:
   - Manual admin grant via future CMS/admin tooling
 - Backend remains the only source of truth for entitlement state.
 
+## CMS/admin support foundation v1 checkpoint
+
+- CMS/admin support foundation v1 is completed for local Development support workflows.
+- It is not a production RBAC/admin system.
+- It uses Development/config bootstrap admin access.
+- The local admin shell is backend-hosted at `/admin/`.
+- Tabs: Overview, User Lookup, Premium, Free Lesson, Audit Log, System.
+- Admin shell JWT remains memory-only.
+- It supports:
+  - Exact user lookup by email.
+  - Read-only user diagnostics.
+  - Premium entitlement schedule inspection.
+  - Manual Premium grant.
+  - Manual Premium revoke.
+  - Free lesson allowance reset.
+  - Read-only audit log.
+  - Capabilities view.
+- Admin mutations require a reason and write audit actions.
+- Static admin shell audit script (`tools/audit_admin_shell.ps1`) guards required tabs/forms/controls/endpoints and forbids `localStorage`/`sessionStorage` usage in `admin.js`.
+- Smoke script (`tools/smoke_admin_foundation.ps1`) runs the admin shell audit first.
+- No database migration was required.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Paddle checkout/webhooks are still not implemented.
+
 ## Deferred / Not implemented yet
 
+- No production admin roles/RBAC yet.
+- No production admin deployment/security hardening yet.
 - No Paddle checkout integration yet.
 - No Paddle webhook ingestion yet.
 - No Apple App Store / Google Play integration yet.
 - No real payment acceptance yet.
-- No CMS/admin panel yet.
-- No production admin roles yet.
 - No provider reconciliation job yet.
 - No desktop paywall/upgrade UI yet.
-- No manual grant/revoke/reset actions yet.
 
 ## Roadmap (recommended order)
 
-1. CMS/admin foundation:
-   - Roles.
-   - Audit trail.
-   - User lookup.
-   - Manual Premium grant/revoke.
-   - Free allowance reset.
-   - Entitlement inspection.
-2. Provider-agnostic billing provider adapter interface.
-3. Paddle checkout adapter.
-4. Paddle webhook ingestion.
-5. Billing event persistence and idempotency checks.
-6. Entitlement reconciliation.
-7. Desktop upgrade/paywall UI.
-8. Future Apple/Google mobile entitlement bridge.
+- ✅ Completed: CMS/admin support foundation v1 (local Development support/admin workflows).
+
+1. Provider-agnostic billing provider adapter interface.
+2. Paddle checkout adapter.
+3. Paddle webhook ingestion.
+4. Billing event persistence and idempotency checks.
+5. Entitlement reconciliation.
+6. Desktop upgrade/paywall UI.
+7. Future Apple/Google mobile entitlement bridge.
+8. Production admin roles/RBAC and hardening.
+
+## Validation checkpoint
+
+Commands:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\audit_admin_shell.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\audit_lesson_content.ps1
+dotnet build
+dotnet build -c Release
+cd backend\EnglishVoiceTutor.Api
+dotnet build
+dotnet ef migrations list --project .\EnglishVoiceTutor.Api.csproj --startup-project .\EnglishVoiceTutor.Api.csproj
+```
+
+Expected results:
+
+- Admin shell audit passes.
+- Lesson content audit passes.
+- Desktop Debug/Release builds pass.
+- Backend build passes.
+- Latest migration remains `20260524061817_AddSubscriptionFoundationV1`.
 
 ## Admin Foundation v1 (backend-only bootstrap)
 
