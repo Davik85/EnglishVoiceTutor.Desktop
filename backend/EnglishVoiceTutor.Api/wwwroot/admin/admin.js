@@ -2,7 +2,8 @@
     const ApiPaths = {
         login: "/api/auth/login",
         capabilities: "/api/admin/capabilities",
-        userLookupByEmail: "/api/admin/users/by-email"
+        userLookupByEmail: "/api/admin/users/by-email",
+        auditActionsTemplate: "/api/admin/users/{userId}/audit-actions"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404 };
@@ -11,7 +12,10 @@
         userNotFound: "User was not found.",
         signInAgain: "Please sign in again.",
         accessDenied: "Access denied. This account is not an admin.",
-        lookupFailed: "Unable to load user."
+        lookupFailed: "Unable to load user.",
+        invalidAuditLimit: "Invalid audit log limit.",
+        auditTargetNotFound: "User or audit log target was not found.",
+        auditLoadFailed: "Unable to load audit log."
     };
 
     const CapabilityLabels = {
@@ -26,7 +30,16 @@
         productionRolesPlaceholder: "Production Roles"
     };
 
+    const SummaryFields = ["userId", "email", "status", "createdAt", "lastLoginAt"];
+    const SubscriptionFields = ["planId", "planName", "premiumActive", "trialActive", "trialEndsAtUtc", "subscriptionStatus", "billingProvider", "currentPeriodEndUtc", "freeLessonUsedToday", "freeLessonRemainingToday", "enforcementEnabled", "source", "checkedAtUtc"];
+    const ActiveEntitlementColumns = ["entitlementId", "planId", "entitlementType", "source", "status", "startsAtUtc", "expiresAtUtc", "reason", "createdAt", "updatedAt"];
+    const LessonSessionColumns = ["sessionId", "lessonContentId", "studyLanguage", "topicTitle", "subtopicTitle", "level", "modeUsed", "status", "startedAt", "finishedAt", "validTurnCount", "estimatedCost"];
+    const DailyUsageColumns = ["usageDate", "studyLanguage", "lessonsStarted", "lessonsCompleted", "chatReplyCount", "hintsUsed", "feedbackRequests", "transcriptionSeconds", "ttsSeconds", "estimatedCost", "updatedAt"];
+    const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
+    const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
+
     let accessToken = null;
+    let selectedUserId = null;
 
     const loginCard = document.getElementById("login-card");
     const dashboard = document.getElementById("dashboard");
@@ -46,40 +59,43 @@
     const lookupErrorElement = document.getElementById("lookup-error");
     const lookupResultElement = document.getElementById("lookup-result");
 
-    const SummaryFields = ["userId", "email", "status", "createdAt", "lastLoginAt"];
-    const SubscriptionFields = ["planId", "planName", "premiumActive", "trialActive", "trialEndsAtUtc", "subscriptionStatus", "billingProvider", "currentPeriodEndUtc", "freeLessonUsedToday", "freeLessonRemainingToday", "enforcementEnabled", "source", "checkedAtUtc"];
+    const auditCardElement = document.getElementById("audit-card");
+    const auditSelectedUserIdElement = document.getElementById("audit-selected-user-id");
+    const auditLimitElement = document.getElementById("audit-limit");
+    const loadAuditButton = document.getElementById("load-audit-button");
+    const auditLoadingElement = document.getElementById("audit-loading");
+    const auditErrorElement = document.getElementById("audit-error");
+    const auditResultElement = document.getElementById("audit-result");
 
-    const ActiveEntitlementColumns = ["entitlementId", "planId", "entitlementType", "source", "status", "startsAtUtc", "expiresAtUtc", "reason", "createdAt", "updatedAt"];
-    const LessonSessionColumns = ["sessionId", "lessonContentId", "studyLanguage", "topicTitle", "subtopicTitle", "level", "modeUsed", "status", "startedAt", "finishedAt", "validTurnCount", "estimatedCost"];
-    const DailyUsageColumns = ["usageDate", "studyLanguage", "lessonsStarted", "lessonsCompleted", "chatReplyCount", "hintsUsed", "feedbackRequests", "transcriptionSeconds", "ttsSeconds", "estimatedCost", "updatedAt"];
-    const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
-
-    function setDashboardVisible(isVisible) {
-        dashboard.classList.toggle("hidden", !isVisible);
-        loginCard.classList.toggle("hidden", isVisible);
-    }
-
+    function setDashboardVisible(isVisible) { dashboard.classList.toggle("hidden", !isVisible); loginCard.classList.toggle("hidden", isVisible); }
     function setError(message) { loginError.textContent = message; }
     function setLookupError(message) { lookupErrorElement.textContent = message || ""; }
+    function setAuditError(message) { auditErrorElement.textContent = message || ""; }
 
     function setLookupLoading(isLoading) {
         lookupLoadingElement.classList.toggle("hidden", !isLoading);
         searchUserButton.disabled = isLoading;
     }
 
-    function clearUserLookupResult() {
-        lookupResultElement.textContent = "";
+    function setAuditLoading(isLoading) {
+        auditLoadingElement.classList.toggle("hidden", !isLoading);
+        loadAuditButton.disabled = isLoading || !selectedUserId;
+        auditLimitElement.disabled = isLoading || !selectedUserId;
+    }
+
+    function clearUserLookupResult() { lookupResultElement.textContent = ""; }
+
+    function clearAuditLog() {
+        auditCardElement.classList.toggle("hidden", !selectedUserId);
+        auditSelectedUserIdElement.textContent = selectedUserId || "-";
+        auditResultElement.textContent = "";
+        setAuditError("");
+        setAuditLoading(false);
     }
 
     function formatValue(value) {
-        if (value === null || value === undefined || value === "") {
-            return "-";
-        }
-
-        if (typeof value === "boolean") {
-            return value ? "Yes" : "No";
-        }
-
+        if (value === null || value === undefined || value === "") { return "-"; }
+        if (typeof value === "boolean") { return value ? "Yes" : "No"; }
         return String(value);
     }
 
@@ -95,7 +111,6 @@
 
         const list = document.createElement("dl");
         list.className = "kv-list";
-
         Object.keys(data).forEach((key) => {
             const dt = document.createElement("dt");
             dt.textContent = key;
@@ -104,7 +119,6 @@
             list.appendChild(dt);
             list.appendChild(dd);
         });
-
         container.appendChild(list);
     }
 
@@ -120,7 +134,6 @@
 
         const tableWrap = document.createElement("div");
         tableWrap.className = "table-wrap";
-
         const table = document.createElement("table");
         table.className = "compact-table";
 
@@ -162,9 +175,7 @@
 
     function pickFields(source, fields) {
         const result = {};
-        fields.forEach((field) => {
-            result[field] = source && typeof source === "object" ? source[field] : null;
-        });
+        fields.forEach((field) => { result[field] = source && typeof source === "object" ? source[field] : null; });
         return result;
     }
 
@@ -221,15 +232,28 @@
         lookupResultElement.appendChild(eventsSection);
     }
 
+    function renderAuditLog(payload) {
+        const items = payload && Array.isArray(payload.items) ? payload.items : [];
+        renderTable(auditResultElement, items, AuditColumns, "No audit actions.");
+    }
+
+    function getSelectedAuditLimit() {
+        const parsedLimit = Number.parseInt(auditLimitElement.value, 10);
+        const allowedLimits = [10, 25, 50, 100];
+        return allowedLimits.includes(parsedLimit) ? parsedLimit : 10;
+    }
+
     function resetDashboard() {
         adminSourceElement.textContent = "-";
         environmentElement.textContent = "-";
         checkedAtElement.textContent = "-";
-        capabilitiesListElement.innerHTML = "";
+        capabilitiesListElement.textContent = "";
         setLookupError("");
         setLookupLoading(false);
         clearUserLookupResult();
         lookupForm.reset();
+        selectedUserId = null;
+        clearAuditLog();
     }
 
     function resetSession() {
@@ -241,7 +265,7 @@
     }
 
     function renderCapabilities(capabilities) {
-        capabilitiesListElement.innerHTML = "";
+        capabilitiesListElement.textContent = "";
         Object.keys(capabilities).forEach((key) => {
             const value = Boolean(capabilities[key]);
             const item = document.createElement("li");
@@ -273,28 +297,50 @@
     async function fetchUserByEmail(email) {
         const encodedEmail = encodeURIComponent(email);
         const response = await fetch(`${ApiPaths.userLookupByEmail}?email=${encodedEmail}`, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
+        if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.emailRequired); }
+        if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.userNotFound); }
+        if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
+        if (!response.ok) { throw new Error(ErrorMessages.lookupFailed); }
+        return response.json();
+    }
 
-        if (response.status === HttpStatus.badRequest) {
-            throw new Error(ErrorMessages.emailRequired);
-        }
+    async function fetchAuditActions(userId, limit) {
+        const endpoint = ApiPaths.auditActionsTemplate.replace("{userId}", encodeURIComponent(userId));
+        const response = await fetch(`${endpoint}?limit=${encodeURIComponent(limit)}`, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
 
-        if (response.status === HttpStatus.notFound) {
-            throw new Error(ErrorMessages.userNotFound);
-        }
-
-        if (response.status === HttpStatus.unauthorized) {
-            throw new Error(ErrorMessages.signInAgain);
-        }
-
-        if (response.status === HttpStatus.forbidden) {
-            throw new Error(ErrorMessages.accessDenied);
-        }
-
-        if (!response.ok) {
-            throw new Error(ErrorMessages.lookupFailed);
-        }
+        if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.invalidAuditLimit); }
+        if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.auditTargetNotFound); }
+        if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
+        if (!response.ok) { throw new Error(ErrorMessages.auditLoadFailed); }
 
         return response.json();
+    }
+
+    async function loadAuditLogForSelectedUser() {
+        if (!selectedUserId) {
+            clearAuditLog();
+            return;
+        }
+
+        setAuditError("");
+        setAuditLoading(true);
+
+        try {
+            const payload = await fetchAuditActions(selectedUserId, getSelectedAuditLimit());
+            renderAuditLog(payload);
+        } catch (error) {
+            auditResultElement.textContent = "";
+            const message = error instanceof Error ? error.message : ErrorMessages.auditLoadFailed;
+            setAuditError(message);
+            if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) {
+                resetSession();
+                setError(message);
+            }
+        } finally {
+            setAuditLoading(false);
+        }
     }
 
     loginForm.addEventListener("submit", async (event) => {
@@ -330,6 +376,8 @@
 
         const email = String(lookupEmailInput.value || "").trim();
         if (!email) {
+            selectedUserId = null;
+            clearAuditLog();
             setLookupError(ErrorMessages.emailRequired);
             return;
         }
@@ -339,10 +387,15 @@
         try {
             const payload = await fetchUserByEmail(email);
             renderUserLookupResult(payload);
+            selectedUserId = payload && payload.user ? payload.user.userId : null;
+            clearAuditLog();
+            await loadAuditLogForSelectedUser();
         } catch (error) {
+            selectedUserId = null;
+            clearUserLookupResult();
+            clearAuditLog();
             const message = error instanceof Error ? error.message : ErrorMessages.lookupFailed;
             setLookupError(message);
-
             if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) {
                 resetSession();
                 setError(message);
@@ -352,7 +405,9 @@
         }
     });
 
-    logoutButton.addEventListener("click", () => {
-        resetSession();
+    loadAuditButton.addEventListener("click", async () => {
+        await loadAuditLogForSelectedUser();
     });
+
+    logoutButton.addEventListener("click", () => { resetSession(); });
 })();
