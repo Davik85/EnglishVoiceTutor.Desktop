@@ -36,6 +36,26 @@
                 <div id="lookup-result" class="lookup-result"></div>
             </article>
 
+            <article id="grant-card" class="card grant-card hidden" aria-labelledby="grant-heading">
+                <h2 id="grant-heading">Manual Premium Grant</h2>
+                <p class="selected-user-line">Selected user email: <span id="grant-selected-user-email">-</span></p>
+                <p class="selected-user-line">Selected user ID: <span id="grant-selected-user-id">-</span></p>
+                <form id="grant-form" novalidate>
+                    <div class="field">
+                        <label for="grant-duration-days">Duration (days)</label>
+                        <input id="grant-duration-days" name="grant-duration-days" type="number" min="1" max="365" step="1" required />
+                    </div>
+                    <div class="field">
+                        <label for="grant-reason">Reason</label>
+                        <textarea id="grant-reason" name="grant-reason" rows="3" required></textarea>
+                    </div>
+                    <button id="grant-button" type="submit">Grant Premium</button>
+                </form>
+                <p id="grant-loading" class="grant-loading hidden" role="status">Submitting grant request...</p>
+                <p id="grant-error" class="error" role="alert"></p>
+                <p id="grant-success" class="success" role="status"></p>
+            </article>
+
             <article id="audit-card" class="card audit-card hidden" aria-labelledby="audit-log-heading">
                 <h2 id="audit-log-heading">Audit Log</h2>
                 <p class="selected-user-line">Selected user ID: <span id="audit-selected-user-id">-</span></p>
@@ -72,7 +92,7 @@
                     <ul class="placeholder-list">
                         <li>User Diagnostics <span class="badge available">available</span></li>
                         <li>Audit Log <span class="badge available">read-only</span></li>
-                        <li>Premium Grant</li>
+                        <li>Premium Grant <span class="badge available">available in UI</span></li>
                         <li>Premium Revoke</li>
                         <li>Free Lesson Reset</li>
                         <li>Billing / Paddle <span class="badge unavailable">disabled</span></li>
