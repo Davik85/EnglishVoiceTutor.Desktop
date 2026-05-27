@@ -108,3 +108,4 @@ Recommended next work: short regression smoke-test, then MVP infrastructure work
 
 - Local admin shell: http://localhost:5000/admin/
 - Requires running backend and a configured Development bootstrap admin.
+- The local admin shell currently supports capabilities view and read-only user lookup.
