@@ -388,3 +388,17 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not require a database migration.
 - JWT remains in memory only for this phase.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
+## CMS UI Phase 6 (free lesson allowance reset UI)
+
+- CMS UI Phase 6 adds a Free Lesson Allowance Reset section for the currently looked-up user.
+- It uses the existing `POST /api/admin/users/{userId}/free-lesson-allowance/reset` endpoint.
+- It requires `usageDate` and `reason` in the UI.
+- It asks for confirmation before calling the backend.
+- After successful reset, it refreshes user lookup and audit log.
+- It does not add new backend endpoints.
+- It does not add Paddle checkout/webhooks.
+- It does not add production roles.
+- It does not require a database migration.
+- JWT remains in memory only for this phase.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.

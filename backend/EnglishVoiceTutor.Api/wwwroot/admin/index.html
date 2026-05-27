@@ -80,6 +80,33 @@
                 <p id="revoke-success" class="success" role="status"></p>
             </article>
 
+            
+            <article id="free-lesson-reset-card" class="card free-lesson-reset-card hidden" aria-labelledby="free-lesson-reset-heading">
+                <h2 id="free-lesson-reset-heading">Free Lesson Allowance Reset</h2>
+                <p class="selected-user-line">Selected user email: <span id="free-lesson-reset-selected-user-email">-</span></p>
+                <p class="selected-user-line">Selected user ID: <span id="free-lesson-reset-selected-user-id">-</span></p>
+                <dl class="meta free-lesson-reset-meta">
+                    <dt>Free lesson used today</dt><dd id="free-lesson-reset-used-today">-</dd>
+                    <dt>Free lesson remaining today</dt><dd id="free-lesson-reset-remaining-today">-</dd>
+                    <dt>Enforcement enabled</dt><dd id="free-lesson-reset-enforcement-enabled">-</dd>
+                    <dt>Checked at (UTC)</dt><dd id="free-lesson-reset-checked-at-utc">-</dd>
+                </dl>
+                <form id="free-lesson-reset-form" novalidate>
+                    <div class="field">
+                        <label for="free-lesson-reset-usage-date">Usage date (UTC, yyyy-MM-dd)</label>
+                        <input id="free-lesson-reset-usage-date" name="free-lesson-reset-usage-date" type="date" required />
+                    </div>
+                    <div class="field">
+                        <label for="free-lesson-reset-reason">Reason</label>
+                        <textarea id="free-lesson-reset-reason" name="free-lesson-reset-reason" rows="3" required></textarea>
+                    </div>
+                    <button id="free-lesson-reset-button" type="submit">Reset free lesson allowance</button>
+                </form>
+                <p id="free-lesson-reset-loading" class="free-lesson-reset-loading hidden" role="status">Submitting reset request...</p>
+                <p id="free-lesson-reset-error" class="error" role="alert"></p>
+                <p id="free-lesson-reset-success" class="success" role="status"></p>
+            </article>
+
             <article id="audit-card" class="card audit-card hidden" aria-labelledby="audit-log-heading">
                 <h2 id="audit-log-heading">Audit Log</h2>
                 <p class="selected-user-line">Selected user ID: <span id="audit-selected-user-id">-</span></p>
@@ -118,7 +145,7 @@
                         <li>Audit Log <span class="badge available">read-only</span></li>
                         <li>Premium Grant <span class="badge available">available in UI</span></li>
                         <li>Premium Revoke <span class="badge available">available in UI</span></li>
-                        <li>Free Lesson Reset</li>
+                        <li>Free Lesson Reset <span class="badge available">available in UI</span></li>
                         <li>Billing / Paddle <span class="badge unavailable">disabled</span></li>
                         <li>Production Roles <span class="badge unavailable">disabled</span></li>
                     </ul>

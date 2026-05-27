@@ -5,7 +5,8 @@
         userLookupByEmail: "/api/admin/users/by-email",
         auditActionsTemplate: "/api/admin/users/{userId}/audit-actions",
         manualPremiumGrantTemplate: "/api/admin/users/{userId}/premium-grants",
-        manualPremiumRevokeTemplate: "/api/admin/users/{userId}/premium-grants/{entitlementId}/revoke"
+        manualPremiumRevokeTemplate: "/api/admin/users/{userId}/premium-grants/{entitlementId}/revoke",
+        freeLessonAllowanceResetTemplate: "/api/admin/users/{userId}/free-lesson-allowance/reset"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
@@ -25,7 +26,10 @@
         revokeNotFound: "Selected user or entitlement was not found.",
         revokeConflict: "This entitlement cannot be revoked.",
         revokeFailed: "Unable to revoke Premium.",
-        revokeNoEntitlements: "No revokable manual Premium entitlements."
+        revokeNoEntitlements: "No revokable manual Premium entitlements.",
+        resetInvalid: "Reset request is invalid. Check usage date and reason.",
+        resetNotFound: "No consumed free lesson allowance was found for this user and date.",
+        resetFailed: "Unable to reset free lesson allowance."
     };
 
     const SummaryFields = ["userId", "email", "status", "createdAt", "lastLoginAt"];
@@ -90,12 +94,76 @@
     const auditErrorElement = document.getElementById("audit-error");
     const auditResultElement = document.getElementById("audit-result");
 
+    const freeLessonResetCard = document.getElementById("free-lesson-reset-card");
+    const freeLessonResetForm = document.getElementById("free-lesson-reset-form");
+    const freeLessonResetSelectedUserEmailElement = document.getElementById("free-lesson-reset-selected-user-email");
+    const freeLessonResetSelectedUserIdElement = document.getElementById("free-lesson-reset-selected-user-id");
+    const freeLessonResetUsedTodayElement = document.getElementById("free-lesson-reset-used-today");
+    const freeLessonResetRemainingTodayElement = document.getElementById("free-lesson-reset-remaining-today");
+    const freeLessonResetEnforcementEnabledElement = document.getElementById("free-lesson-reset-enforcement-enabled");
+    const freeLessonResetCheckedAtUtcElement = document.getElementById("free-lesson-reset-checked-at-utc");
+    const freeLessonResetUsageDateInput = document.getElementById("free-lesson-reset-usage-date");
+    const freeLessonResetReasonInput = document.getElementById("free-lesson-reset-reason");
+    const freeLessonResetButton = document.getElementById("free-lesson-reset-button");
+    const freeLessonResetLoadingElement = document.getElementById("free-lesson-reset-loading");
+    const freeLessonResetErrorElement = document.getElementById("free-lesson-reset-error");
+    const freeLessonResetSuccessElement = document.getElementById("free-lesson-reset-success");
+
     const setDashboardVisible = (isVisible) => { dashboard.classList.toggle("hidden", !isVisible); loginCard.classList.toggle("hidden", isVisible); };
     const setError = (message) => { loginError.textContent = message; };
     const setLookupError = (message) => { lookupErrorElement.textContent = message || ""; };
     const setAuditError = (message) => { auditErrorElement.textContent = message || ""; };
     const setGrantError = (message) => { grantErrorElement.textContent = message || ""; };
     const setGrantSuccess = (message) => { grantSuccessElement.textContent = message || ""; };
+
+
+    function getTodayUtcDateString() { return new Date().toISOString().slice(0, 10); }
+    function setFreeLessonResetError(message) { freeLessonResetErrorElement.textContent = message || ""; }
+    function setFreeLessonResetSuccess(message) { freeLessonResetSuccessElement.textContent = message || ""; }
+    function clearFreeLessonResetMessages() { setFreeLessonResetError(""); setFreeLessonResetSuccess(""); }
+    function updateFreeLessonResetControlsState(isLoading) {
+        const shouldDisable = isLoading || !selectedUserId;
+        freeLessonResetUsageDateInput.disabled = shouldDisable;
+        freeLessonResetReasonInput.disabled = shouldDisable;
+        freeLessonResetButton.disabled = shouldDisable;
+    }
+    function setFreeLessonResetLoading(isLoading) {
+        freeLessonResetLoadingElement.classList.toggle("hidden", !isLoading);
+        updateFreeLessonResetControlsState(isLoading);
+    }
+    function renderFreeLessonResetSnapshot(payload) {
+        const status = payload && payload.subscriptionStatus ? payload.subscriptionStatus : null;
+        freeLessonResetUsedTodayElement.textContent = formatValue(status ? status.freeLessonUsedToday : null);
+        freeLessonResetRemainingTodayElement.textContent = formatValue(status ? status.freeLessonRemainingToday : null);
+        freeLessonResetEnforcementEnabledElement.textContent = formatValue(status ? status.enforcementEnabled : null);
+        freeLessonResetCheckedAtUtcElement.textContent = formatValue(payload?.checkedAtUtc || status?.checkedAtUtc || null);
+    }
+    function clearFreeLessonResetState() {
+        freeLessonResetSelectedUserEmailElement.textContent = "-";
+        freeLessonResetSelectedUserIdElement.textContent = "-";
+        renderFreeLessonResetSnapshot(null);
+        freeLessonResetReasonInput.value = "";
+        freeLessonResetUsageDateInput.value = getTodayUtcDateString();
+        clearFreeLessonResetMessages();
+        setFreeLessonResetLoading(false);
+    }
+    function setFreeLessonResetVisible(isVisible) {
+        freeLessonResetCard.classList.toggle("hidden", !isVisible);
+        freeLessonResetSelectedUserEmailElement.textContent = isVisible ? (selectedUserEmail || "-") : "-";
+        freeLessonResetSelectedUserIdElement.textContent = isVisible ? (selectedUserId || "-") : "-";
+        if (!isVisible) { clearFreeLessonResetState(); }
+        else {
+            renderFreeLessonResetSnapshot(selectedUserLookupPayload || null);
+            if (!String(freeLessonResetUsageDateInput.value || "").trim()) { freeLessonResetUsageDateInput.value = getTodayUtcDateString(); }
+            updateFreeLessonResetControlsState(false);
+        }
+    }
+    function validateFreeLessonResetInput() {
+        const usageDate = String(freeLessonResetUsageDateInput.value || "").trim();
+        const reason = String(freeLessonResetReasonInput.value || "").trim();
+        if (!usageDate || !/^\d{4}-\d{2}-\d{2}$/.test(usageDate) || !reason) { return { isValid: false, message: ErrorMessages.resetInvalid }; }
+        return { isValid: true, usageDate, reason };
+    }
 
     function updateGrantControlsState(isLoading) {
         const shouldDisable = isLoading || !selectedUserId;
@@ -265,7 +333,7 @@
     function resetDashboard() {
         adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; capabilitiesListElement.textContent = "";
         setLookupError(""); setLookupLoading(false); clearUserLookupResult(); lookupForm.reset(); selectedUserId = null; selectedUserEmail = null; selectedUserLookupPayload = null;
-        setGrantVisible(false); setRevokeVisible(false); clearGrantState(); clearRevokeState(); grantForm.reset(); revokeForm.reset(); clearAuditLog();
+        setGrantVisible(false); setRevokeVisible(false); setFreeLessonResetVisible(false); clearGrantState(); clearRevokeState(); clearFreeLessonResetState(); grantForm.reset(); revokeForm.reset(); freeLessonResetForm.reset(); clearAuditLog();
     }
 
     function resetSession() { accessToken = null; loginForm.reset(); setError(""); resetDashboard(); setDashboardVisible(false); }
@@ -310,6 +378,7 @@
         selectedUserLookupPayload = payload;
         setGrantVisible(Boolean(selectedUserId));
         setRevokeVisible(Boolean(selectedUserId));
+        setFreeLessonResetVisible(Boolean(selectedUserId));
         await loadAuditLogForSelectedUser();
     }
 
@@ -393,6 +462,45 @@
         } finally { setRevokeLoading(false); }
     }
 
+
+    async function resetFreeLessonAllowanceForSelectedUser() {
+        if (!selectedUserId || !selectedUserEmail) { return; }
+        clearFreeLessonResetMessages();
+        const validation = validateFreeLessonResetInput();
+        if (!validation.isValid) { setFreeLessonResetError(validation.message); return; }
+
+        const confirmed = window.confirm(`Reset free lesson allowance for ${selectedUserEmail} on ${validation.usageDate}?`);
+        if (!confirmed) { return; }
+
+        setFreeLessonResetLoading(true);
+        try {
+            const endpoint = ApiPaths.freeLessonAllowanceResetTemplate.replace("{userId}", encodeURIComponent(selectedUserId));
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+                body: JSON.stringify({ usageDate: validation.usageDate, reason: validation.reason })
+            });
+
+            if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.resetInvalid); }
+            if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.resetNotFound); }
+            if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
+            if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
+            if (!response.ok) { throw new Error(ErrorMessages.resetFailed); }
+
+            const payload = await response.json();
+            setFreeLessonResetSuccess(`Free lesson allowance reset for ${validation.usageDate}. Removed usage ID: ${payload.removedDailyFreeLessonUsageId || "-"}.`);
+            freeLessonResetReasonInput.value = "";
+            await refreshSelectedUserAfterMutation();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : ErrorMessages.resetFailed;
+            setFreeLessonResetError(message);
+            if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) {
+                resetSession();
+                setError(message);
+            }
+        } finally { setFreeLessonResetLoading(false); }
+    }
+
     async function loadAuditLogForSelectedUser() {
         if (!selectedUserId) { clearAuditLog(); return; }
         setAuditError(""); setAuditLoading(true);
@@ -424,7 +532,7 @@
     lookupForm.addEventListener("submit", async (event) => {
         event.preventDefault(); setLookupError(""); clearUserLookupResult(); clearGrantState();
         const email = String(lookupEmailInput.value || "").trim();
-        if (!email) { selectedUserId = null; selectedUserEmail = null; setGrantVisible(false); clearAuditLog(); setLookupError(ErrorMessages.emailRequired); return; }
+        if (!email) { selectedUserId = null; selectedUserEmail = null; selectedUserLookupPayload = null; setGrantVisible(false); setRevokeVisible(false); setFreeLessonResetVisible(false); clearAuditLog(); setLookupError(ErrorMessages.emailRequired); return; }
         setLookupLoading(true);
         try {
             const payload = await fetchUserByEmail(email);
@@ -434,10 +542,11 @@
             selectedUserLookupPayload = payload;
             setGrantVisible(Boolean(selectedUserId));
             setRevokeVisible(Boolean(selectedUserId));
+            setFreeLessonResetVisible(Boolean(selectedUserId));
             clearAuditLog();
             await loadAuditLogForSelectedUser();
         } catch (error) {
-            selectedUserId = null; selectedUserEmail = null; selectedUserLookupPayload = null; clearUserLookupResult(); setGrantVisible(false); setRevokeVisible(false); clearGrantState(); clearRevokeState(); clearAuditLog();
+            selectedUserId = null; selectedUserEmail = null; selectedUserLookupPayload = null; clearUserLookupResult(); setGrantVisible(false); setRevokeVisible(false); setFreeLessonResetVisible(false); clearGrantState(); clearRevokeState(); clearFreeLessonResetState(); clearAuditLog();
             const message = error instanceof Error ? error.message : ErrorMessages.lookupFailed; setLookupError(message);
             if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) { resetSession(); setError(message); }
         } finally { setLookupLoading(false); }
@@ -446,6 +555,7 @@
     grantForm.addEventListener("submit", async (event) => { event.preventDefault(); await grantPremiumForSelectedUser(); });
     revokeEntitlementIdElement.addEventListener("change", () => { renderSelectedRevokeEntitlementDetails(); updateRevokeControlsState(false); });
     revokeForm.addEventListener("submit", async (event) => { event.preventDefault(); await revokePremiumForSelectedUser(); });
+    freeLessonResetForm.addEventListener("submit", async (event) => { event.preventDefault(); await resetFreeLessonAllowanceForSelectedUser(); });
     loadAuditButton.addEventListener("click", async () => { await loadAuditLogForSelectedUser(); });
     logoutButton.addEventListener("click", () => { resetSession(); });
 })();
