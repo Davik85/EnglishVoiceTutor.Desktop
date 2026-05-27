@@ -37,9 +37,11 @@ $requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "t
 function Add-Error([string]$message) { $errors.Add($message) }
 
 function Assert-ContainsOnceById {
-    param([string]$htmlContent, [string]$id)
-    $pattern = [regex]::new("id\\s*=\\s*(['\"])" + [regex]::Escape($id) + "\\1", [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
-    $matchCount = $pattern.Matches($htmlContent).Count
+    param([hashtable]$idCounts, [string]$id)
+    $matchCount = 0
+    if ($idCounts.ContainsKey($id)) {
+        $matchCount = [int]$idCounts[$id]
+    }
     if ($matchCount -ne 1) {
         Add-Error "index.html: expected exactly one id '$id', found $matchCount."
     }
@@ -49,12 +51,21 @@ if (-not (Test-Path -LiteralPath $indexPath)) {
     Add-Error "Missing file: $indexPath"
 } else {
     $indexContent = Get-Content -LiteralPath $indexPath -Raw
-    $allIdMatches = [regex]::Matches($indexContent, 'id\s*=\s*(["'"'"''])([^"'"'"'']+)\1', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
-    $allIds = @()
-    foreach ($m in $allIdMatches) { $allIds += $m.Groups[2].Value }
-    $duplicateIds = $allIds | Group-Object | Where-Object { $_.Count -gt 1 }
-    foreach ($dup in $duplicateIds) {
-        Add-Error "index.html: duplicate id '$($dup.Name)' found $($dup.Count) times."
+    $idAttributeRegex = [regex]'id\s*=\s*(["''])(?<id>[^"'']+)\1'
+    $allIdMatches = $idAttributeRegex.Matches($indexContent)
+    $idCounts = @{}
+    foreach ($match in $allIdMatches) {
+        $idValue = $match.Groups["id"].Value
+        if ($idCounts.ContainsKey($idValue)) {
+            $idCounts[$idValue] = [int]$idCounts[$idValue] + 1
+        } else {
+            $idCounts[$idValue] = 1
+        }
+    }
+    foreach ($entry in $idCounts.GetEnumerator()) {
+        if ([int]$entry.Value -gt 1) {
+            Add-Error "index.html: duplicate id '$($entry.Key)' found $($entry.Value) times."
+        }
     }
 
     $requiredIndexIds = @(
@@ -62,7 +73,7 @@ if (-not (Test-Path -LiteralPath $indexPath)) {
         $requiredPremiumControlIds + $requiredFreeLessonLookupIds + $requiredFreeLessonResetIds + $requiredAuditIds + $requiredSystemIds
     )
     foreach ($id in $requiredIndexIds) {
-        Assert-ContainsOnceById -htmlContent $indexContent -id $id
+        Assert-ContainsOnceById -idCounts $idCounts -id $id
     }
 }
 
@@ -101,6 +112,12 @@ if (-not (Test-Path -LiteralPath $cssPath)) {
             Add-Error "admin.css: missing selector/style reference '$selector'."
         }
     }
+}
+
+$scriptPath = $MyInvocation.MyCommand.Path
+$scriptSource = Get-Content -LiteralPath $scriptPath -Raw
+if ($scriptSource.IndexOf("['\"\"]", [System.StringComparison]::Ordinal) -ge 0) {
+    Add-Error "audit_admin_shell.ps1: forbidden fragment ['\"\"] found. Use quote-safe single-quoted regex patterns."
 }
 
 Write-Host "Admin shell audit"
