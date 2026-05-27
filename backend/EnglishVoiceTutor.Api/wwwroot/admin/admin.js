@@ -78,19 +78,25 @@
     const setGrantError = (message) => { grantErrorElement.textContent = message || ""; };
     const setGrantSuccess = (message) => { grantSuccessElement.textContent = message || ""; };
 
+    function updateGrantControlsState(isLoading) {
+        const shouldDisable = isLoading || !selectedUserId;
+        grantButton.disabled = shouldDisable;
+        grantDurationDaysInput.disabled = shouldDisable;
+        grantReasonInput.disabled = shouldDisable;
+    }
+
     function setGrantVisible(isVisible) {
         grantCard.classList.toggle("hidden", !isVisible);
         grantSelectedUserEmailElement.textContent = isVisible ? (selectedUserEmail || "-") : "-";
         grantSelectedUserIdElement.textContent = isVisible ? (selectedUserId || "-") : "-";
+        updateGrantControlsState(false);
     }
 
     function setLookupLoading(isLoading) { lookupLoadingElement.classList.toggle("hidden", !isLoading); searchUserButton.disabled = isLoading; }
 
     function setGrantLoading(isLoading) {
         grantLoadingElement.classList.toggle("hidden", !isLoading);
-        grantButton.disabled = isLoading || !selectedUserId;
-        grantDurationDaysInput.disabled = isLoading || !selectedUserId;
-        grantReasonInput.disabled = isLoading || !selectedUserId;
+        updateGrantControlsState(isLoading);
     }
 
     function setAuditLoading(isLoading) {
