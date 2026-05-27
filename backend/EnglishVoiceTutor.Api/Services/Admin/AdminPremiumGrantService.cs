@@ -62,6 +62,17 @@ public sealed class AdminPremiumGrantService(
         }
 
         var now = DateTimeOffset.UtcNow;
+        var latestActivePremiumExpiry = await dbContext.Entitlements
+            .AsNoTracking()
+            .Where(entitlement => entitlement.UserId == targetUserId)
+            .Where(entitlement => entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType)
+            .Where(entitlement => entitlement.Status == SubscriptionConstants.Entitlements.StatusActive)
+            .Where(entitlement => entitlement.ExpiresAtUtc > now)
+            .MaxAsync(entitlement => (DateTimeOffset?)entitlement.ExpiresAtUtc, cancellationToken);
+
+        var startsAtUtc = latestActivePremiumExpiry ?? now;
+        var expiresAtUtc = startsAtUtc.AddDays(request.DurationDays);
+
         var entitlement = new EntitlementEntity
         {
             Id = Guid.NewGuid(),
@@ -71,8 +82,8 @@ public sealed class AdminPremiumGrantService(
             EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType,
             Source = SubscriptionConstants.Entitlements.SourceManualAdmin,
             Status = SubscriptionConstants.Entitlements.StatusActive,
-            StartsAtUtc = now,
-            ExpiresAtUtc = now.AddDays(request.DurationDays),
+            StartsAtUtc = startsAtUtc,
+            ExpiresAtUtc = expiresAtUtc,
             Reason = normalizedReason,
             CreatedAt = now,
             UpdatedAt = now
