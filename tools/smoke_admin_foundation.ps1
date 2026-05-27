@@ -162,6 +162,17 @@ $adminHeaders = $null
 $normalHeaders = $null
 
 
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$auditScriptPath = Join-Path $repoRoot "tools/audit_admin_shell.ps1"
+
+Write-Step "Run admin shell static audit"
+& powershell -ExecutionPolicy Bypass -File $auditScriptPath
+if ($LASTEXITCODE -ne 0) {
+    throw "Admin shell static audit failed."
+}
+Write-Pass "Admin shell static audit passed"
+
+
 Write-Step "Verify GET /admin/ static admin shell"
 $adminShellUrl = "$BaseUrl$AdminShellPath"
 $adminShellResponse = Invoke-WebRequest -Method $MethodGet -Uri $adminShellUrl -UseBasicParsing
