@@ -179,6 +179,11 @@
         setRevokeLoading(false);
     }
 
+    function clearRevokeMessages() {
+        setRevokeError("");
+        setRevokeSuccess("");
+    }
+
     function setRevokeVisible(isVisible) {
         revokeCard.classList.toggle("hidden", !isVisible);
         revokeSelectedUserEmailElement.textContent = isVisible ? (selectedUserEmail || "-") : "-";
@@ -349,7 +354,7 @@
 
     async function revokePremiumForSelectedUser() {
         if (!selectedUserId || !selectedUserEmail) { return; }
-        clearRevokeState();
+        clearRevokeMessages();
         const validation = validateRevokeInput();
         if (!validation.isValid) { setRevokeError(validation.message); return; }
 
