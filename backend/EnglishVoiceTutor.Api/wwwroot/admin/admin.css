@@ -48,3 +48,8 @@ button:disabled { background: #93a7d7; cursor: not-allowed; }
     .lookup-form, .audit-controls { align-items: stretch; flex-direction: column; }
     .audit-limit-field { max-width: none; }
 }
+
+.grant-card { margin-bottom: 20px; }
+textarea { border: 1px solid #c5ced9; border-radius: 8px; font-family: inherit; font-size: 16px; padding: 10px 12px; resize: vertical; }
+.grant-loading { color: #1d4ed8; font-weight: 600; margin: 10px 0 0; }
+.success { color: #166534; min-height: 24px; margin: 8px 0 0; }

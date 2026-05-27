@@ -345,3 +345,20 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not require a database migration.
 - JWT remains in memory only for this phase.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
+
+## CMS UI Phase 4 (manual Premium grant UI)
+
+- CMS UI Phase 4 adds a Manual Premium Grant section for the currently looked-up user.
+- It uses the existing `POST /api/admin/users/{userId}/premium-grants` endpoint.
+- It requires `durationDays` and `reason`.
+- It asks for confirmation before calling the backend.
+- After successful grant, it refreshes user lookup and audit log.
+- It does not add new backend endpoints.
+- It does not add revoke UI.
+- It does not add free lesson reset UI.
+- It does not add Paddle checkout/webhooks.
+- It does not add production roles.
+- It does not require a database migration.
+- JWT remains in memory only for this phase.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.

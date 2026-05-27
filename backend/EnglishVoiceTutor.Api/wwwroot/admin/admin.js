@@ -3,7 +3,8 @@
         login: "/api/auth/login",
         capabilities: "/api/admin/capabilities",
         userLookupByEmail: "/api/admin/users/by-email",
-        auditActionsTemplate: "/api/admin/users/{userId}/audit-actions"
+        auditActionsTemplate: "/api/admin/users/{userId}/audit-actions",
+        manualPremiumGrantTemplate: "/api/admin/users/{userId}/premium-grants"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404 };
@@ -15,19 +16,10 @@
         lookupFailed: "Unable to load user.",
         invalidAuditLimit: "Invalid audit log limit.",
         auditTargetNotFound: "User or audit log target was not found.",
-        auditLoadFailed: "Unable to load audit log."
-    };
-
-    const CapabilityLabels = {
-        adminSelfCheck: "Admin Self Check",
-        userLookupByEmail: "User Lookup by Email",
-        userDiagnosticsRead: "User Diagnostics (Read)",
-        auditLogRead: "Audit Log (Read)",
-        manualPremiumGrant: "Manual Premium Grant",
-        manualPremiumRevoke: "Manual Premium Revoke",
-        freeLessonAllowanceReset: "Free Lesson Allowance Reset",
-        billingPaddlePlaceholder: "Billing / Paddle",
-        productionRolesPlaceholder: "Production Roles"
+        auditLoadFailed: "Unable to load audit log.",
+        grantInvalid: "Grant request is invalid. Check duration and reason.",
+        grantUserNotFound: "Selected user was not found.",
+        grantFailed: "Unable to grant Premium."
     };
 
     const SummaryFields = ["userId", "email", "status", "createdAt", "lastLoginAt"];
@@ -40,6 +32,7 @@
 
     let accessToken = null;
     let selectedUserId = null;
+    let selectedUserEmail = null;
 
     const loginCard = document.getElementById("login-card");
     const dashboard = document.getElementById("dashboard");
@@ -59,6 +52,17 @@
     const lookupErrorElement = document.getElementById("lookup-error");
     const lookupResultElement = document.getElementById("lookup-result");
 
+    const grantCard = document.getElementById("grant-card");
+    const grantForm = document.getElementById("grant-form");
+    const grantSelectedUserEmailElement = document.getElementById("grant-selected-user-email");
+    const grantSelectedUserIdElement = document.getElementById("grant-selected-user-id");
+    const grantDurationDaysInput = document.getElementById("grant-duration-days");
+    const grantReasonInput = document.getElementById("grant-reason");
+    const grantButton = document.getElementById("grant-button");
+    const grantLoadingElement = document.getElementById("grant-loading");
+    const grantErrorElement = document.getElementById("grant-error");
+    const grantSuccessElement = document.getElementById("grant-success");
+
     const auditCardElement = document.getElementById("audit-card");
     const auditSelectedUserIdElement = document.getElementById("audit-selected-user-id");
     const auditLimitElement = document.getElementById("audit-limit");
@@ -67,14 +71,26 @@
     const auditErrorElement = document.getElementById("audit-error");
     const auditResultElement = document.getElementById("audit-result");
 
-    function setDashboardVisible(isVisible) { dashboard.classList.toggle("hidden", !isVisible); loginCard.classList.toggle("hidden", isVisible); }
-    function setError(message) { loginError.textContent = message; }
-    function setLookupError(message) { lookupErrorElement.textContent = message || ""; }
-    function setAuditError(message) { auditErrorElement.textContent = message || ""; }
+    const setDashboardVisible = (isVisible) => { dashboard.classList.toggle("hidden", !isVisible); loginCard.classList.toggle("hidden", isVisible); };
+    const setError = (message) => { loginError.textContent = message; };
+    const setLookupError = (message) => { lookupErrorElement.textContent = message || ""; };
+    const setAuditError = (message) => { auditErrorElement.textContent = message || ""; };
+    const setGrantError = (message) => { grantErrorElement.textContent = message || ""; };
+    const setGrantSuccess = (message) => { grantSuccessElement.textContent = message || ""; };
 
-    function setLookupLoading(isLoading) {
-        lookupLoadingElement.classList.toggle("hidden", !isLoading);
-        searchUserButton.disabled = isLoading;
+    function setGrantVisible(isVisible) {
+        grantCard.classList.toggle("hidden", !isVisible);
+        grantSelectedUserEmailElement.textContent = isVisible ? (selectedUserEmail || "-") : "-";
+        grantSelectedUserIdElement.textContent = isVisible ? (selectedUserId || "-") : "-";
+    }
+
+    function setLookupLoading(isLoading) { lookupLoadingElement.classList.toggle("hidden", !isLoading); searchUserButton.disabled = isLoading; }
+
+    function setGrantLoading(isLoading) {
+        grantLoadingElement.classList.toggle("hidden", !isLoading);
+        grantButton.disabled = isLoading || !selectedUserId;
+        grantDurationDaysInput.disabled = isLoading || !selectedUserId;
+        grantReasonInput.disabled = isLoading || !selectedUserId;
     }
 
     function setAuditLoading(isLoading) {
@@ -83,7 +99,13 @@
         auditLimitElement.disabled = isLoading || !selectedUserId;
     }
 
-    function clearUserLookupResult() { lookupResultElement.textContent = ""; }
+    const clearUserLookupResult = () => { lookupResultElement.textContent = ""; };
+
+    function clearGrantState() {
+        setGrantError("");
+        setGrantSuccess("");
+        setGrantLoading(false);
+    }
 
     function clearAuditLog() {
         auditCardElement.classList.toggle("hidden", !selectedUserId);
@@ -93,210 +115,38 @@
         setAuditLoading(false);
     }
 
-    function formatValue(value) {
-        if (value === null || value === undefined || value === "") { return "-"; }
-        if (typeof value === "boolean") { return value ? "Yes" : "No"; }
-        return String(value);
-    }
+    const formatValue = (value) => (value === null || value === undefined || value === "") ? "-" : (typeof value === "boolean" ? (value ? "Yes" : "No") : String(value));
+    function renderKeyValueList(container, data, emptyMessage) { container.textContent = ""; if (!data || typeof data !== "object" || Object.keys(data).length === 0) { const p = document.createElement("p"); p.className = "empty-state"; p.textContent = emptyMessage; container.appendChild(p); return; } const list = document.createElement("dl"); list.className = "kv-list"; Object.keys(data).forEach((key) => { const dt = document.createElement("dt"); dt.textContent = key; const dd = document.createElement("dd"); dd.textContent = formatValue(data[key]); list.appendChild(dt); list.appendChild(dd); }); container.appendChild(list); }
+    function renderTable(container, items, columns, emptyMessage) { container.textContent = ""; if (!Array.isArray(items) || items.length === 0) { const p = document.createElement("p"); p.className = "empty-state"; p.textContent = emptyMessage; container.appendChild(p); return; } const wrap = document.createElement("div"); wrap.className = "table-wrap"; const table = document.createElement("table"); table.className = "compact-table"; const thead = document.createElement("thead"); const hr = document.createElement("tr"); columns.forEach((column) => { const th = document.createElement("th"); th.scope = "col"; th.textContent = column; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead); const tbody = document.createElement("tbody"); items.forEach((item) => { const row = document.createElement("tr"); columns.forEach((column) => { const td = document.createElement("td"); td.textContent = formatValue(item ? item[column] : null); row.appendChild(td); }); tbody.appendChild(row); }); table.appendChild(tbody); wrap.appendChild(table); container.appendChild(wrap); }
 
-    function renderKeyValueList(container, data, emptyMessage) {
-        container.textContent = "";
-        if (!data || typeof data !== "object" || Object.keys(data).length === 0) {
-            const empty = document.createElement("p");
-            empty.className = "empty-state";
-            empty.textContent = emptyMessage;
-            container.appendChild(empty);
-            return;
-        }
-
-        const list = document.createElement("dl");
-        list.className = "kv-list";
-        Object.keys(data).forEach((key) => {
-            const dt = document.createElement("dt");
-            dt.textContent = key;
-            const dd = document.createElement("dd");
-            dd.textContent = formatValue(data[key]);
-            list.appendChild(dt);
-            list.appendChild(dd);
-        });
-        container.appendChild(list);
-    }
-
-    function renderTable(container, items, columns, emptyMessage) {
-        container.textContent = "";
-        if (!Array.isArray(items) || items.length === 0) {
-            const empty = document.createElement("p");
-            empty.className = "empty-state";
-            empty.textContent = emptyMessage;
-            container.appendChild(empty);
-            return;
-        }
-
-        const tableWrap = document.createElement("div");
-        tableWrap.className = "table-wrap";
-        const table = document.createElement("table");
-        table.className = "compact-table";
-
-        const thead = document.createElement("thead");
-        const headRow = document.createElement("tr");
-        columns.forEach((column) => {
-            const th = document.createElement("th");
-            th.scope = "col";
-            th.textContent = column;
-            headRow.appendChild(th);
-        });
-        thead.appendChild(headRow);
-        table.appendChild(thead);
-
-        const tbody = document.createElement("tbody");
-        items.forEach((item) => {
-            const row = document.createElement("tr");
-            columns.forEach((column) => {
-                const cell = document.createElement("td");
-                cell.textContent = formatValue(item ? item[column] : null);
-                row.appendChild(cell);
-            });
-            tbody.appendChild(row);
-        });
-
-        table.appendChild(tbody);
-        tableWrap.appendChild(table);
-        container.appendChild(tableWrap);
-    }
-
-    function createSection(title) {
-        const section = document.createElement("section");
-        section.className = "lookup-section";
-        const heading = document.createElement("h3");
-        heading.textContent = title;
-        section.appendChild(heading);
-        return section;
-    }
-
-    function pickFields(source, fields) {
-        const result = {};
-        fields.forEach((field) => { result[field] = source && typeof source === "object" ? source[field] : null; });
-        return result;
-    }
+    const createSection = (title) => { const s = document.createElement("section"); s.className = "lookup-section"; const h = document.createElement("h3"); h.textContent = title; s.appendChild(h); return s; };
+    const pickFields = (source, fields) => { const result = {}; fields.forEach((field) => { result[field] = source && typeof source === "object" ? source[field] : null; }); return result; };
 
     function renderUserLookupResult(payload) {
         clearUserLookupResult();
-
-        const userSection = createSection("User Summary");
-        const userContainer = document.createElement("div");
-        renderKeyValueList(userContainer, pickFields(payload.user, SummaryFields), "No user data.");
-        userSection.appendChild(userContainer);
-        lookupResultElement.appendChild(userSection);
-
-        const subscriptionSection = createSection("Subscription Status");
-        const subscriptionContainer = document.createElement("div");
-        const subscription = Object.assign({}, pickFields(payload.subscriptionStatus, SubscriptionFields), { checkedAtUtc: payload.checkedAtUtc || payload.subscriptionStatus?.checkedAtUtc || null });
-        renderKeyValueList(subscriptionContainer, subscription, "No subscription status data.");
-        subscriptionSection.appendChild(subscriptionContainer);
-        lookupResultElement.appendChild(subscriptionSection);
-
-        const profileSection = createSection("Profile");
-        const profileContainer = document.createElement("div");
-        renderKeyValueList(profileContainer, payload.profile, "No profile data.");
-        profileSection.appendChild(profileContainer);
-        lookupResultElement.appendChild(profileSection);
-
-        const settingsSection = createSection("Settings");
-        const settingsContainer = document.createElement("div");
-        renderKeyValueList(settingsContainer, payload.settings, "No settings data.");
-        settingsSection.appendChild(settingsContainer);
-        lookupResultElement.appendChild(settingsSection);
-
-        const entitlementsSection = createSection("Active Entitlements");
-        const entitlementsContainer = document.createElement("div");
-        renderTable(entitlementsContainer, payload.activeEntitlements, ActiveEntitlementColumns, "No active entitlements.");
-        entitlementsSection.appendChild(entitlementsContainer);
-        lookupResultElement.appendChild(entitlementsSection);
-
-        const lessonsSection = createSection("Recent Lesson Sessions");
-        const lessonsContainer = document.createElement("div");
-        renderTable(lessonsContainer, payload.recentLessonSessions, LessonSessionColumns, "No recent lesson sessions.");
-        lessonsSection.appendChild(lessonsContainer);
-        lookupResultElement.appendChild(lessonsSection);
-
-        const countersSection = createSection("Daily Usage Counters");
-        const countersContainer = document.createElement("div");
-        renderTable(countersContainer, payload.dailyUsageCounters, DailyUsageColumns, "No daily usage counters.");
-        countersSection.appendChild(countersContainer);
-        lookupResultElement.appendChild(countersSection);
-
-        const eventsSection = createSection("Recent Usage Events");
-        const eventsContainer = document.createElement("div");
-        renderTable(eventsContainer, payload.recentUsageEvents, UsageEventColumns, "No recent usage events.");
-        eventsSection.appendChild(eventsContainer);
-        lookupResultElement.appendChild(eventsSection);
+        const userSection = createSection("User Summary"); const userContainer = document.createElement("div"); renderKeyValueList(userContainer, pickFields(payload.user, SummaryFields), "No user data."); userSection.appendChild(userContainer); lookupResultElement.appendChild(userSection);
+        const subscriptionSection = createSection("Subscription Status"); const subscriptionContainer = document.createElement("div"); const subscription = Object.assign({}, pickFields(payload.subscriptionStatus, SubscriptionFields), { checkedAtUtc: payload.checkedAtUtc || payload.subscriptionStatus?.checkedAtUtc || null }); renderKeyValueList(subscriptionContainer, subscription, "No subscription status data."); subscriptionSection.appendChild(subscriptionContainer); lookupResultElement.appendChild(subscriptionSection);
+        const profileSection = createSection("Profile"); const profileContainer = document.createElement("div"); renderKeyValueList(profileContainer, payload.profile, "No profile data."); profileSection.appendChild(profileContainer); lookupResultElement.appendChild(profileSection);
+        const settingsSection = createSection("Settings"); const settingsContainer = document.createElement("div"); renderKeyValueList(settingsContainer, payload.settings, "No settings data."); settingsSection.appendChild(settingsContainer); lookupResultElement.appendChild(settingsSection);
+        const entitlementsSection = createSection("Active Entitlements"); const entitlementsContainer = document.createElement("div"); renderTable(entitlementsContainer, payload.activeEntitlements, ActiveEntitlementColumns, "No active entitlements."); entitlementsSection.appendChild(entitlementsContainer); lookupResultElement.appendChild(entitlementsSection);
+        const lessonsSection = createSection("Recent Lesson Sessions"); const lessonsContainer = document.createElement("div"); renderTable(lessonsContainer, payload.recentLessonSessions, LessonSessionColumns, "No recent lesson sessions."); lessonsSection.appendChild(lessonsContainer); lookupResultElement.appendChild(lessonsSection);
+        const countersSection = createSection("Daily Usage Counters"); const countersContainer = document.createElement("div"); renderTable(countersContainer, payload.dailyUsageCounters, DailyUsageColumns, "No daily usage counters."); countersSection.appendChild(countersContainer); lookupResultElement.appendChild(countersSection);
+        const eventsSection = createSection("Recent Usage Events"); const eventsContainer = document.createElement("div"); renderTable(eventsContainer, payload.recentUsageEvents, UsageEventColumns, "No recent usage events."); eventsSection.appendChild(eventsContainer); lookupResultElement.appendChild(eventsSection);
     }
 
-    function renderAuditLog(payload) {
-        const items = payload && Array.isArray(payload.items) ? payload.items : [];
-        renderTable(auditResultElement, items, AuditColumns, "No audit actions.");
-    }
-
-    function getSelectedAuditLimit() {
-        const parsedLimit = Number.parseInt(auditLimitElement.value, 10);
-        const allowedLimits = [10, 25, 50, 100];
-        return allowedLimits.includes(parsedLimit) ? parsedLimit : 10;
-    }
+    const renderAuditLog = (payload) => renderTable(auditResultElement, payload && Array.isArray(payload.items) ? payload.items : [], AuditColumns, "No audit actions.");
+    const getSelectedAuditLimit = () => [10, 25, 50, 100].includes(Number.parseInt(auditLimitElement.value, 10)) ? Number.parseInt(auditLimitElement.value, 10) : 10;
 
     function resetDashboard() {
-        adminSourceElement.textContent = "-";
-        environmentElement.textContent = "-";
-        checkedAtElement.textContent = "-";
-        capabilitiesListElement.textContent = "";
-        setLookupError("");
-        setLookupLoading(false);
-        clearUserLookupResult();
-        lookupForm.reset();
-        selectedUserId = null;
-        clearAuditLog();
+        adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; capabilitiesListElement.textContent = "";
+        setLookupError(""); setLookupLoading(false); clearUserLookupResult(); lookupForm.reset(); selectedUserId = null; selectedUserEmail = null;
+        setGrantVisible(false); clearGrantState(); grantForm.reset(); clearAuditLog();
     }
 
-    function resetSession() {
-        accessToken = null;
-        loginForm.reset();
-        setError("");
-        resetDashboard();
-        setDashboardVisible(false);
-    }
-
-    function renderCapabilities(capabilities) {
-        capabilitiesListElement.textContent = "";
-        Object.keys(capabilities).forEach((key) => {
-            const value = Boolean(capabilities[key]);
-            const item = document.createElement("li");
-            item.textContent = CapabilityLabels[key] || key;
-            const badge = document.createElement("span");
-            badge.className = `badge ${value ? "available" : "unavailable"}`;
-            badge.textContent = value ? "available" : "unavailable";
-            item.appendChild(badge);
-            capabilitiesListElement.appendChild(item);
-        });
-    }
-
-    async function login(email, password) {
-        const response = await fetch(ApiPaths.login, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
-        if (!response.ok) { throw new Error("Login failed. Check your email and password."); }
-        const body = await response.json();
-        if (!body || !body.accessToken) { throw new Error("Login failed. Access token is missing."); }
-        accessToken = body.accessToken;
-    }
-
-    async function fetchCapabilities() {
-        const response = await fetch(ApiPaths.capabilities, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
-        if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
-        if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
-        if (!response.ok) { throw new Error("Unable to load admin capabilities."); }
-        return response.json();
-    }
+    function resetSession() { accessToken = null; loginForm.reset(); setError(""); resetDashboard(); setDashboardVisible(false); }
 
     async function fetchUserByEmail(email) {
-        const encodedEmail = encodeURIComponent(email);
-        const response = await fetch(`${ApiPaths.userLookupByEmail}?email=${encodedEmail}`, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
+        const response = await fetch(`${ApiPaths.userLookupByEmail}?email=${encodeURIComponent(email)}`, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
         if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.emailRequired); }
         if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.userNotFound); }
         if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
@@ -306,108 +156,123 @@
     }
 
     async function fetchAuditActions(userId, limit) {
-        const endpoint = ApiPaths.auditActionsTemplate.replace("{userId}", encodeURIComponent(userId));
-        const response = await fetch(`${endpoint}?limit=${encodeURIComponent(limit)}`, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
-
+        const response = await fetch(`${ApiPaths.auditActionsTemplate.replace("{userId}", encodeURIComponent(userId))}?limit=${encodeURIComponent(limit)}`, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
         if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.invalidAuditLimit); }
         if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.auditTargetNotFound); }
         if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
         if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
         if (!response.ok) { throw new Error(ErrorMessages.auditLoadFailed); }
-
         return response.json();
     }
 
-    async function loadAuditLogForSelectedUser() {
-        if (!selectedUserId) {
-            clearAuditLog();
-            return;
+    function validateGrantInput() {
+        const durationDaysRaw = String(grantDurationDaysInput.value || "").trim();
+        const reason = String(grantReasonInput.value || "").trim();
+        const durationDays = Number.parseInt(durationDaysRaw, 10);
+        if (!durationDaysRaw || !Number.isInteger(durationDays) || String(durationDays) !== durationDaysRaw || durationDays < 1 || durationDays > 365) {
+            return { isValid: false, message: ErrorMessages.grantInvalid };
         }
+        if (!reason) { return { isValid: false, message: ErrorMessages.grantInvalid }; }
+        return { isValid: true, durationDays, reason };
+    }
 
-        setAuditError("");
-        setAuditLoading(true);
+    async function refreshSelectedUserAfterMutation() {
+        if (!selectedUserEmail) { return; }
+        const payload = await fetchUserByEmail(selectedUserEmail);
+        renderUserLookupResult(payload);
+        selectedUserId = payload?.user?.userId || null;
+        selectedUserEmail = payload?.user?.email || selectedUserEmail;
+        setGrantVisible(Boolean(selectedUserId));
+        await loadAuditLogForSelectedUser();
+    }
 
+    async function grantPremiumForSelectedUser() {
+        if (!selectedUserId || !selectedUserEmail) { return; }
+        clearGrantState();
+        const validation = validateGrantInput();
+        if (!validation.isValid) { setGrantError(validation.message); return; }
+
+        const confirmed = window.confirm(`Grant Premium to ${selectedUserEmail} for ${validation.durationDays} day(s)?`);
+        if (!confirmed) { return; }
+
+        setGrantLoading(true);
         try {
-            const payload = await fetchAuditActions(selectedUserId, getSelectedAuditLimit());
-            renderAuditLog(payload);
+            const endpoint = ApiPaths.manualPremiumGrantTemplate.replace("{userId}", encodeURIComponent(selectedUserId));
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+                body: JSON.stringify({ durationDays: validation.durationDays, reason: validation.reason })
+            });
+
+            if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.grantInvalid); }
+            if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.grantUserNotFound); }
+            if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
+            if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
+            if (!(response.status === 200 || response.status === 201)) { throw new Error(ErrorMessages.grantFailed); }
+
+            const payload = await response.json();
+            setGrantSuccess(`Premium granted. Entitlement ID: ${payload.entitlementId || "-"}. Expires at: ${payload.expiresAtUtc || "-"}.`);
+            grantReasonInput.value = "";
+            await refreshSelectedUserAfterMutation();
         } catch (error) {
-            auditResultElement.textContent = "";
-            const message = error instanceof Error ? error.message : ErrorMessages.auditLoadFailed;
-            setAuditError(message);
+            const message = error instanceof Error ? error.message : ErrorMessages.grantFailed;
+            setGrantError(message);
             if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) {
                 resetSession();
                 setError(message);
             }
-        } finally {
-            setAuditLoading(false);
-        }
+        } finally { setGrantLoading(false); }
+    }
+
+    async function loadAuditLogForSelectedUser() {
+        if (!selectedUserId) { clearAuditLog(); return; }
+        setAuditError(""); setAuditLoading(true);
+        try { renderAuditLog(await fetchAuditActions(selectedUserId, getSelectedAuditLimit())); }
+        catch (error) { auditResultElement.textContent = ""; const message = error instanceof Error ? error.message : ErrorMessages.auditLoadFailed; setAuditError(message); if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) { resetSession(); setError(message); } }
+        finally { setAuditLoading(false); }
     }
 
     loginForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        setError("");
-        signInButton.disabled = true;
-
-        const formData = new FormData(loginForm);
-        const email = String(formData.get("email") || "").trim();
-        const password = String(formData.get("password") || "");
-
+        event.preventDefault(); setError(""); signInButton.disabled = true;
         try {
-            await login(email, password);
-            const capabilitiesPayload = await fetchCapabilities();
-            adminSourceElement.textContent = capabilitiesPayload.adminSource || "-";
-            environmentElement.textContent = capabilitiesPayload.environment || "-";
-            checkedAtElement.textContent = capabilitiesPayload.checkedAtUtc || "-";
-            renderCapabilities(capabilitiesPayload.capabilities || {});
+            const formData = new FormData(loginForm);
+            const loginResponse = await fetch(ApiPaths.login, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: String(formData.get("email") || "").trim(), password: String(formData.get("password") || "") }) });
+            if (!loginResponse.ok) { throw new Error("Login failed. Check your email and password."); }
+            const loginBody = await loginResponse.json(); if (!loginBody?.accessToken) { throw new Error("Login failed. Access token is missing."); }
+            accessToken = loginBody.accessToken;
+            const capabilitiesResponse = await fetch(ApiPaths.capabilities, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
+            if (capabilitiesResponse.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
+            if (capabilitiesResponse.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
+            if (!capabilitiesResponse.ok) { throw new Error("Unable to load admin capabilities."); }
+            const capabilitiesPayload = await capabilitiesResponse.json();
+            adminSourceElement.textContent = capabilitiesPayload.adminSource || "-"; environmentElement.textContent = capabilitiesPayload.environment || "-"; checkedAtElement.textContent = capabilitiesPayload.checkedAtUtc || "-";
+            capabilitiesListElement.textContent = ""; Object.keys(capabilitiesPayload.capabilities || {}).forEach((key) => { const value = Boolean(capabilitiesPayload.capabilities[key]); const item = document.createElement("li"); item.textContent = key; const badge = document.createElement("span"); badge.className = `badge ${value ? "available" : "unavailable"}`; badge.textContent = value ? "available" : "unavailable"; item.appendChild(badge); capabilitiesListElement.appendChild(item); });
             setDashboardVisible(true);
-            setLookupError("");
-        } catch (error) {
-            resetSession();
-            setError(error instanceof Error ? error.message : "Unexpected error.");
-        } finally {
-            signInButton.disabled = false;
-        }
+        } catch (error) { resetSession(); setError(error instanceof Error ? error.message : "Unexpected error."); }
+        finally { signInButton.disabled = false; }
     });
 
     lookupForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        setLookupError("");
-        clearUserLookupResult();
-
+        event.preventDefault(); setLookupError(""); clearUserLookupResult(); clearGrantState();
         const email = String(lookupEmailInput.value || "").trim();
-        if (!email) {
-            selectedUserId = null;
-            clearAuditLog();
-            setLookupError(ErrorMessages.emailRequired);
-            return;
-        }
-
+        if (!email) { selectedUserId = null; selectedUserEmail = null; setGrantVisible(false); clearAuditLog(); setLookupError(ErrorMessages.emailRequired); return; }
         setLookupLoading(true);
-
         try {
             const payload = await fetchUserByEmail(email);
             renderUserLookupResult(payload);
-            selectedUserId = payload && payload.user ? payload.user.userId : null;
+            selectedUserId = payload?.user?.userId || null;
+            selectedUserEmail = payload?.user?.email || null;
+            setGrantVisible(Boolean(selectedUserId));
             clearAuditLog();
             await loadAuditLogForSelectedUser();
         } catch (error) {
-            selectedUserId = null;
-            clearUserLookupResult();
-            clearAuditLog();
-            const message = error instanceof Error ? error.message : ErrorMessages.lookupFailed;
-            setLookupError(message);
-            if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) {
-                resetSession();
-                setError(message);
-            }
-        } finally {
-            setLookupLoading(false);
-        }
+            selectedUserId = null; selectedUserEmail = null; clearUserLookupResult(); setGrantVisible(false); clearGrantState(); clearAuditLog();
+            const message = error instanceof Error ? error.message : ErrorMessages.lookupFailed; setLookupError(message);
+            if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) { resetSession(); setError(message); }
+        } finally { setLookupLoading(false); }
     });
 
-    loadAuditButton.addEventListener("click", async () => {
-        await loadAuditLogForSelectedUser();
-    });
-
+    grantForm.addEventListener("submit", async (event) => { event.preventDefault(); await grantPremiumForSelectedUser(); });
+    loadAuditButton.addEventListener("click", async () => { await loadAuditLogForSelectedUser(); });
     logoutButton.addEventListener("click", () => { resetSession(); });
 })();
