@@ -11,6 +11,7 @@ public sealed class AdminUserLookupResponse
     public IReadOnlyList<AdminUserLessonSessionSnapshot> RecentLessonSessions { get; set; } = [];
     public IReadOnlyList<AdminUserDailyUsageCounterSnapshot> DailyUsageCounters { get; set; } = [];
     public IReadOnlyList<AdminUserEntitlementSnapshot> ActiveEntitlements { get; set; } = [];
+    public IReadOnlyList<AdminUserEntitlementSnapshot> PremiumEntitlementSchedule { get; set; } = [];
     public IReadOnlyList<AdminUserUsageEventSnapshot> RecentUsageEvents { get; set; } = [];
     public DateTimeOffset CheckedAtUtc { get; set; }
 }

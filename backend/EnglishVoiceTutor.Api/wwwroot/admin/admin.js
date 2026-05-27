@@ -24,7 +24,7 @@
 
     const SummaryFields = ["userId", "email", "status", "createdAt", "lastLoginAt"];
     const SubscriptionFields = ["planId", "planName", "premiumActive", "trialActive", "trialEndsAtUtc", "subscriptionStatus", "billingProvider", "currentPeriodEndUtc", "freeLessonUsedToday", "freeLessonRemainingToday", "enforcementEnabled", "source", "checkedAtUtc"];
-    const ActiveEntitlementColumns = ["entitlementId", "planId", "entitlementType", "source", "status", "startsAtUtc", "expiresAtUtc", "reason", "createdAt", "updatedAt"];
+    const EntitlementColumns = ["entitlementId", "planId", "entitlementType", "source", "status", "startsAtUtc", "expiresAtUtc", "reason", "createdAt", "updatedAt"];
     const LessonSessionColumns = ["sessionId", "lessonContentId", "studyLanguage", "topicTitle", "subtopicTitle", "level", "modeUsed", "status", "startedAt", "finishedAt", "validTurnCount", "estimatedCost"];
     const DailyUsageColumns = ["usageDate", "studyLanguage", "lessonsStarted", "lessonsCompleted", "chatReplyCount", "hintsUsed", "feedbackRequests", "transcriptionSeconds", "ttsSeconds", "estimatedCost", "updatedAt"];
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
@@ -134,7 +134,8 @@
         const subscriptionSection = createSection("Subscription Status"); const subscriptionContainer = document.createElement("div"); const subscription = Object.assign({}, pickFields(payload.subscriptionStatus, SubscriptionFields), { checkedAtUtc: payload.checkedAtUtc || payload.subscriptionStatus?.checkedAtUtc || null }); renderKeyValueList(subscriptionContainer, subscription, "No subscription status data."); subscriptionSection.appendChild(subscriptionContainer); lookupResultElement.appendChild(subscriptionSection);
         const profileSection = createSection("Profile"); const profileContainer = document.createElement("div"); renderKeyValueList(profileContainer, payload.profile, "No profile data."); profileSection.appendChild(profileContainer); lookupResultElement.appendChild(profileSection);
         const settingsSection = createSection("Settings"); const settingsContainer = document.createElement("div"); renderKeyValueList(settingsContainer, payload.settings, "No settings data."); settingsSection.appendChild(settingsContainer); lookupResultElement.appendChild(settingsSection);
-        const entitlementsSection = createSection("Active Entitlements"); const entitlementsContainer = document.createElement("div"); renderTable(entitlementsContainer, payload.activeEntitlements, ActiveEntitlementColumns, "No active entitlements."); entitlementsSection.appendChild(entitlementsContainer); lookupResultElement.appendChild(entitlementsSection);
+        const premiumScheduleSection = createSection("Premium Entitlement Schedule"); const premiumScheduleContainer = document.createElement("div"); renderTable(premiumScheduleContainer, payload.premiumEntitlementSchedule, EntitlementColumns, "No current or scheduled Premium entitlements."); premiumScheduleSection.appendChild(premiumScheduleContainer); lookupResultElement.appendChild(premiumScheduleSection);
+        const entitlementsSection = createSection("Active Entitlements"); const entitlementsContainer = document.createElement("div"); renderTable(entitlementsContainer, payload.activeEntitlements, EntitlementColumns, "No active entitlements."); entitlementsSection.appendChild(entitlementsContainer); lookupResultElement.appendChild(entitlementsSection);
         const lessonsSection = createSection("Recent Lesson Sessions"); const lessonsContainer = document.createElement("div"); renderTable(lessonsContainer, payload.recentLessonSessions, LessonSessionColumns, "No recent lesson sessions."); lessonsSection.appendChild(lessonsContainer); lookupResultElement.appendChild(lessonsSection);
         const countersSection = createSection("Daily Usage Counters"); const countersContainer = document.createElement("div"); renderTable(countersContainer, payload.dailyUsageCounters, DailyUsageColumns, "No daily usage counters."); countersSection.appendChild(countersContainer); lookupResultElement.appendChild(countersSection);
         const eventsSection = createSection("Recent Usage Events"); const eventsContainer = document.createElement("div"); renderTable(eventsContainer, payload.recentUsageEvents, UsageEventColumns, "No recent usage events."); eventsSection.appendChild(eventsContainer); lookupResultElement.appendChild(eventsSection);
@@ -217,7 +218,7 @@
             if (!(response.status === 200 || response.status === 201)) { throw new Error(ErrorMessages.grantFailed); }
 
             const payload = await response.json();
-            setGrantSuccess(`Premium granted. Entitlement ID: ${payload.entitlementId || "-"}. Expires at: ${payload.expiresAtUtc || "-"}.`);
+            setGrantSuccess(`Premium granted. Entitlement ID: ${payload.entitlementId || "-"}. Starts at: ${payload.startsAtUtc || "-"}. Expires at: ${payload.expiresAtUtc || "-"}.`);
             grantReasonInput.value = "";
             await refreshSelectedUserAfterMutation();
         } catch (error) {

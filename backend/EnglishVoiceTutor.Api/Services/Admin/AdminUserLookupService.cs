@@ -13,6 +13,7 @@ public sealed class AdminUserLookupService(
     private const int RecentLessonSessionsLimit = 10;
     private const int DailyUsageCountersLimit = 14;
     private const int ActiveEntitlementsLimit = 10;
+    private const int PremiumEntitlementScheduleLimit = 20;
     private const int RecentUsageEventsLimit = 20;
 
     public async Task<AdminUserLookupResult> GetByEmailAsync(string? email, CancellationToken cancellationToken)
@@ -114,6 +115,32 @@ public sealed class AdminUserLookupService(
             })
             .ToListAsync(cancellationToken);
 
+        var premiumEntitlementSchedule = await dbContext.Entitlements
+            .AsNoTracking()
+            .Where(entitlement => entitlement.UserId == user.Id)
+            .Where(entitlement => entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType)
+            .Where(entitlement => entitlement.Status == SubscriptionConstants.Entitlements.StatusActive)
+            .Where(entitlement => entitlement.ExpiresAtUtc == null || entitlement.ExpiresAtUtc > now)
+            .OrderBy(entitlement => entitlement.StartsAtUtc)
+            .ThenBy(entitlement => entitlement.ExpiresAtUtc == null)
+            .ThenBy(entitlement => entitlement.ExpiresAtUtc)
+            .ThenBy(entitlement => entitlement.CreatedAt)
+            .Take(PremiumEntitlementScheduleLimit)
+            .Select(entitlement => new AdminUserEntitlementSnapshot
+            {
+                EntitlementId = entitlement.Id,
+                PlanId = entitlement.PlanId,
+                EntitlementType = entitlement.EntitlementType,
+                Source = entitlement.Source,
+                Status = entitlement.Status,
+                StartsAtUtc = entitlement.StartsAtUtc,
+                ExpiresAtUtc = entitlement.ExpiresAtUtc,
+                Reason = entitlement.Reason,
+                CreatedAt = entitlement.CreatedAt,
+                UpdatedAt = entitlement.UpdatedAt
+            })
+            .ToListAsync(cancellationToken);
+
         var recentUsageEvents = await dbContext.UsageEvents
             .AsNoTracking()
             .Where(usageEvent => usageEvent.UserId == user.Id)
@@ -175,6 +202,7 @@ public sealed class AdminUserLookupService(
                 RecentLessonSessions = recentLessonSessions,
                 DailyUsageCounters = dailyUsageCounters,
                 ActiveEntitlements = activeEntitlements,
+                PremiumEntitlementSchedule = premiumEntitlementSchedule,
                 RecentUsageEvents = recentUsageEvents,
                 CheckedAtUtc = DateTimeOffset.UtcNow
             }

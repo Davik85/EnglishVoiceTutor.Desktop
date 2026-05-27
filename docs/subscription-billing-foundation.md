@@ -258,6 +258,16 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It resets the daily free lesson allowance by deleting the `DailyFreeLessonUsage` record for a target user and date.
 - If `usageDate` is omitted, backend uses today in UTC.
 - It requires a clear reason.
+
+## Admin User Lookup Premium schedule visibility
+
+- Manual Premium grants may now be stacked into the future.
+- `ActiveEntitlements` shows only currently active entitlements.
+- `PremiumEntitlementSchedule` shows current and future active Premium entitlements.
+- CMS UI shows this schedule so support/admin can verify that a grant was issued even if it starts later.
+- No database migration is required.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- No Paddle checkout/webhooks were added.
 - It writes an audit action via `AdminAuditService` / `admin_actions`.
 - It does not delete lesson sessions or lesson messages.
 - It does not reset `DailyUsageCounters` or old per-operation usage counters.
