@@ -18,6 +18,7 @@
             </form>
             <p id="login-error" class="error" role="alert"></p>
         </section>
+
         <section id="dashboard" class="hidden">
             <header class="dashboard-header"><h1>Admin Shell</h1><button id="logout-button" type="button">Logout</button></header>
             <div class="grid">
@@ -30,15 +31,34 @@
                     </dl>
                     <ul id="capabilities-list" class="capability-list"></ul>
                 </article>
+
                 <article class="card">
                     <h2>Future Sections</h2>
                     <ul class="placeholder-list">
-                        <li>User Lookup</li><li>User Diagnostics</li><li>Audit Log</li><li>Premium Grant</li><li>Premium Revoke</li><li>Free Lesson Reset</li>
+                        <li>User Diagnostics</li>
+                        <li>Audit Log</li>
+                        <li>Premium Grant</li>
+                        <li>Premium Revoke</li>
+                        <li>Free Lesson Reset</li>
                         <li>Billing / Paddle <span class="badge unavailable">disabled</span></li>
                         <li>Production Roles <span class="badge unavailable">disabled</span></li>
                     </ul>
                 </article>
             </div>
+
+            <article class="card lookup-card">
+                <h2>User Lookup</h2>
+                <form id="lookup-form" class="lookup-form" novalidate>
+                    <div class="field lookup-field">
+                        <label for="lookup-email">User email</label>
+                        <input id="lookup-email" name="lookup-email" type="email" autocomplete="off" required />
+                    </div>
+                    <button id="search-user-button" type="submit">Search user</button>
+                </form>
+                <p id="lookup-loading" class="lookup-loading hidden" role="status">Loading user...</p>
+                <p id="lookup-error" class="error" role="alert"></p>
+                <div id="lookup-result" class="lookup-result"></div>
+            </article>
         </section>
     </main>
     <script src="/admin/admin.js"></script>

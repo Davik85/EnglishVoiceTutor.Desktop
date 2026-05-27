@@ -315,3 +315,17 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not add production roles.
 - It does not require a database migration.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
+## CMS UI Phase 2 (read-only user lookup)
+
+- CMS UI Phase 2 adds a read-only User Lookup section to the backend-hosted admin shell.
+- It uses the existing `GET /api/admin/users/by-email?email=...` endpoint.
+- It displays user summary, subscription status, profile/settings snapshots, active entitlements, recent lesson sessions, daily usage counters, and recent usage events.
+- It does not add new backend endpoints.
+- It does not add grant/revoke/reset UI.
+- It does not call admin mutation endpoints.
+- It does not add Paddle checkout/webhooks.
+- It does not add production roles.
+- It does not require a database migration.
+- JWT remains in memory only for this phase.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
