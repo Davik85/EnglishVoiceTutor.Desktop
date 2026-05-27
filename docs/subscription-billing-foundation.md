@@ -329,3 +329,19 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not require a database migration.
 - JWT remains in memory only for this phase.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
+## CMS UI Phase 3 (read-only audit log)
+
+- CMS UI Phase 3 adds a read-only Audit Log section for the currently looked-up user.
+- It uses the existing `GET /api/admin/users/{userId}/audit-actions?limit=...` endpoint.
+- It automatically loads audit actions after successful user lookup.
+- It supports bounded limit selection.
+- It displays action type, reason, admin user id, action id, timestamp, and safe metadata as plain text.
+- It does not add new backend endpoints.
+- It does not add grant/revoke/reset UI.
+- It does not call admin mutation endpoints.
+- It does not add Paddle checkout/webhooks.
+- It does not add production roles.
+- It does not require a database migration.
+- JWT remains in memory only for this phase.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
