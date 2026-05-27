@@ -32,7 +32,7 @@ $requiredJsLookupRefs = @("user-lookup", "premium", "free-lesson")
 $requiredJsFunctionRefs = @("updateSelectedUserHeader", "updateUserRequiredEmptyStates", "applySelectedUserPayload", "clearSelectedUserState")
 $forbiddenJsStorageTokens = @("localStorage", "sessionStorage")
 
-$requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "tab-panel", "selected-user-summary", "empty-state-card", "compact-lookup-card")
+$requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "tab-panel", "selected-user-summary", "empty-state-card", "compact-table")
 
 function Add-Error([string]$message) { $errors.Add($message) }
 
