@@ -82,6 +82,18 @@
                     </div>
 
                     <div id="tab-panel-premium" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-premium">
+                        <article class="card lookup-card compact-lookup-card">
+                            <h2>User Search</h2>
+                            <form id="premium-lookup-form" class="lookup-form" novalidate>
+                                <div class="field lookup-field">
+                                    <label for="premium-lookup-email">User email</label>
+                                    <input id="premium-lookup-email" name="premium-lookup-email" type="email" autocomplete="off" required />
+                                </div>
+                                <button id="premium-search-user-button" type="submit">Search user</button>
+                            </form>
+                            <p id="premium-lookup-loading" class="lookup-loading hidden" role="status">Loading user...</p>
+                            <p id="premium-lookup-error" class="error" role="alert"></p>
+                        </article>
                         <article id="premium-empty-state" class="card empty-state-card"><p>Search for a user first.</p></article>
                         <div id="premium-content" class="hidden">
                             <article class="card"><h2>Premium Entitlement Schedule</h2><div id="premium-entitlement-schedule-result"></div></article>
@@ -96,6 +108,18 @@
                     </div>
 
                     <div id="tab-panel-free-lesson" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-free-lesson">
+                        <article class="card lookup-card compact-lookup-card">
+                            <h2>User Search</h2>
+                            <form id="free-lesson-lookup-form" class="lookup-form" novalidate>
+                                <div class="field lookup-field">
+                                    <label for="free-lesson-lookup-email">User email</label>
+                                    <input id="free-lesson-lookup-email" name="free-lesson-lookup-email" type="email" autocomplete="off" required />
+                                </div>
+                                <button id="free-lesson-search-user-button" type="submit">Search user</button>
+                            </form>
+                            <p id="free-lesson-lookup-loading" class="lookup-loading hidden" role="status">Loading user...</p>
+                            <p id="free-lesson-lookup-error" class="error" role="alert"></p>
+                        </article>
                         <article id="free-lesson-empty-state" class="card empty-state-card"><p>Search for a user first.</p></article>
                         <article id="free-lesson-reset-card" class="card free-lesson-reset-card hidden" aria-labelledby="free-lesson-reset-heading">
 <h2 id="free-lesson-reset-heading">Free Lesson Allowance Reset</h2><p class="selected-user-line">Selected user email: <span id="free-lesson-reset-selected-user-email">-</span></p><p class="selected-user-line">Selected user ID: <span id="free-lesson-reset-selected-user-id">-</span></p><dl class="meta free-lesson-reset-meta"><dt>Free lesson used today</dt><dd id="free-lesson-reset-used-today">-</dd><dt>Free lesson remaining today</dt><dd id="free-lesson-reset-remaining-today">-</dd><dt>Enforcement enabled</dt><dd id="free-lesson-reset-enforcement-enabled">-</dd><dt>Checked at (UTC)</dt><dd id="free-lesson-reset-checked-at-utc">-</dd></dl><form id="free-lesson-reset-form" novalidate><div class="field"><label for="free-lesson-reset-usage-date">Usage date (UTC, yyyy-MM-dd)</label><input id="free-lesson-reset-usage-date" name="free-lesson-reset-usage-date" type="date" required /></div><div class="field"><label for="free-lesson-reset-reason">Reason</label><textarea id="free-lesson-reset-reason" name="free-lesson-reset-reason" rows="3" required></textarea></div><button id="free-lesson-reset-button" type="submit">Reset free lesson allowance</button></form><p id="free-lesson-reset-loading" class="free-lesson-reset-loading hidden" role="status">Submitting reset request...</p><p id="free-lesson-reset-error" class="error" role="alert"></p><p id="free-lesson-reset-success" class="success" role="status"></p>
