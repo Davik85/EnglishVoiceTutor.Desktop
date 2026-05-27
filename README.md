@@ -108,5 +108,5 @@ Recommended next work: short regression smoke-test, then MVP infrastructure work
 
 - Local admin shell: http://localhost:5000/admin/
 - Requires running backend and a configured Development bootstrap admin.
-- The local admin shell currently supports capabilities view, read-only user lookup, read-only per-user audit log, manual Premium grant, and manual Premium revoke for selected users.
+- The local admin shell currently supports capabilities view, read-only user lookup, read-only per-user audit log, manual Premium grant/revoke, and free lesson allowance reset for selected users.
 - User lookup also shows a Premium entitlement schedule (current + future active Premium grants) in addition to currently active entitlements.

@@ -57,3 +57,7 @@ textarea { border: 1px solid #c5ced9; border-radius: 8px; font-family: inherit; 
 .revoke-card { margin-bottom: 20px; }
 .revoke-loading { color: #1d4ed8; font-weight: 600; margin: 10px 0 0; }
 textarea[readonly] { background: #f8fafc; color: #374151; }
+
+.free-lesson-reset-card { margin-bottom: 20px; }
+.free-lesson-reset-loading { color: #1d4ed8; font-weight: 600; margin: 10px 0 0; }
+.free-lesson-reset-meta { margin-top: 12px; }
