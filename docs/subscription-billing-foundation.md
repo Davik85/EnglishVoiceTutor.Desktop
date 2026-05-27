@@ -402,3 +402,16 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not require a database migration.
 - JWT remains in memory only for this phase.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
+## CMS UI Phase 7 (tabbed admin layout)
+
+- CMS UI Phase 7 reorganizes the existing backend-hosted admin shell into a left-navigation tabbed layout.
+- Tabs: Overview, User Lookup, Premium, Free Lesson, Audit Log, System.
+- This phase does not add new backend endpoints.
+- This phase does not change admin API behavior.
+- Existing grant/revoke/reset/audit/user lookup flows remain the same.
+- This phase does not add Paddle checkout/webhooks.
+- This phase does not add production roles.
+- This phase does not require a database migration.
+- JWT remains in memory only.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
