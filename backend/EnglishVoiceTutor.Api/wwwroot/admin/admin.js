@@ -4,10 +4,11 @@
         capabilities: "/api/admin/capabilities",
         userLookupByEmail: "/api/admin/users/by-email",
         auditActionsTemplate: "/api/admin/users/{userId}/audit-actions",
-        manualPremiumGrantTemplate: "/api/admin/users/{userId}/premium-grants"
+        manualPremiumGrantTemplate: "/api/admin/users/{userId}/premium-grants",
+        manualPremiumRevokeTemplate: "/api/admin/users/{userId}/premium-grants/{entitlementId}/revoke"
     };
 
-    const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404 };
+    const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
     const ErrorMessages = {
         emailRequired: "Email is required or invalid.",
         userNotFound: "User was not found.",
@@ -19,7 +20,12 @@
         auditLoadFailed: "Unable to load audit log.",
         grantInvalid: "Grant request is invalid. Check duration and reason.",
         grantUserNotFound: "Selected user was not found.",
-        grantFailed: "Unable to grant Premium."
+        grantFailed: "Unable to grant Premium.",
+        revokeInvalid: "Revoke request is invalid. Reason is required.",
+        revokeNotFound: "Selected user or entitlement was not found.",
+        revokeConflict: "This entitlement cannot be revoked.",
+        revokeFailed: "Unable to revoke Premium.",
+        revokeNoEntitlements: "No revokable manual Premium entitlements."
     };
 
     const SummaryFields = ["userId", "email", "status", "createdAt", "lastLoginAt"];
@@ -33,6 +39,7 @@
     let accessToken = null;
     let selectedUserId = null;
     let selectedUserEmail = null;
+    let selectedUserLookupPayload = null;
 
     const loginCard = document.getElementById("login-card");
     const dashboard = document.getElementById("dashboard");
@@ -63,6 +70,18 @@
     const grantErrorElement = document.getElementById("grant-error");
     const grantSuccessElement = document.getElementById("grant-success");
 
+    const revokeCard = document.getElementById("revoke-card");
+    const revokeForm = document.getElementById("revoke-form");
+    const revokeSelectedUserEmailElement = document.getElementById("revoke-selected-user-email");
+    const revokeSelectedUserIdElement = document.getElementById("revoke-selected-user-id");
+    const revokeEntitlementIdElement = document.getElementById("revoke-entitlement-id");
+    const revokeEntitlementPreviewElement = document.getElementById("revoke-entitlement-preview");
+    const revokeReasonInput = document.getElementById("revoke-reason");
+    const revokeButton = document.getElementById("revoke-button");
+    const revokeLoadingElement = document.getElementById("revoke-loading");
+    const revokeErrorElement = document.getElementById("revoke-error");
+    const revokeSuccessElement = document.getElementById("revoke-success");
+
     const auditCardElement = document.getElementById("audit-card");
     const auditSelectedUserIdElement = document.getElementById("audit-selected-user-id");
     const auditLimitElement = document.getElementById("audit-limit");
@@ -90,6 +109,100 @@
         grantSelectedUserEmailElement.textContent = isVisible ? (selectedUserEmail || "-") : "-";
         grantSelectedUserIdElement.textContent = isVisible ? (selectedUserId || "-") : "-";
         updateGrantControlsState(false);
+    }
+
+
+    const setRevokeError = (message) => { revokeErrorElement.textContent = message || ""; };
+    const setRevokeSuccess = (message) => { revokeSuccessElement.textContent = message || ""; };
+
+    function getRevokablePremiumEntitlements(payload) {
+        const schedule = payload && Array.isArray(payload.premiumEntitlementSchedule) ? payload.premiumEntitlementSchedule : [];
+        return schedule.filter((entry) => entry
+            && entry.planId === "premium"
+            && entry.entitlementType === "premium_access"
+            && entry.source === "manual_admin"
+            && entry.status === "active");
+    }
+
+    function updateRevokeControlsState(isLoading) {
+        const hasUser = Boolean(selectedUserId);
+        const hasEntitlements = revokeEntitlementIdElement.options.length > 0 && revokeEntitlementIdElement.value;
+        const shouldDisable = isLoading || !hasUser || !hasEntitlements;
+        revokeEntitlementIdElement.disabled = isLoading || !hasUser || !hasEntitlements;
+        revokeReasonInput.disabled = shouldDisable;
+        revokeButton.disabled = shouldDisable;
+    }
+
+    function renderSelectedRevokeEntitlementDetails() {
+        const entitlements = getRevokablePremiumEntitlements(selectedUserLookupPayload || {});
+        const selected = entitlements.find((item) => String(item.entitlementId || "") === revokeEntitlementIdElement.value);
+        if (!selected) { revokeEntitlementPreviewElement.value = ErrorMessages.revokeNoEntitlements; return; }
+        revokeEntitlementPreviewElement.value = [
+            `Entitlement ID: ${formatValue(selected.entitlementId)}`,
+            `Plan: ${formatValue(selected.planId)}`,
+            `Type: ${formatValue(selected.entitlementType)}`,
+            `Source: ${formatValue(selected.source)}`,
+            `Status: ${formatValue(selected.status)}`,
+            `Starts at (UTC): ${formatValue(selected.startsAtUtc)}`,
+            `Expires at (UTC): ${formatValue(selected.expiresAtUtc)}`,
+            `Reason: ${formatValue(selected.reason)}`
+        ].join("\n");
+    }
+
+    function renderRevokeEntitlementOptions(payload) {
+        const entitlements = getRevokablePremiumEntitlements(payload);
+        revokeEntitlementIdElement.textContent = "";
+        if (entitlements.length === 0) {
+            revokeEntitlementPreviewElement.value = ErrorMessages.revokeNoEntitlements;
+            updateRevokeControlsState(false);
+            return;
+        }
+
+        entitlements.forEach((entry) => {
+            const option = document.createElement("option");
+            const fallback = String(entry.entitlementId || "-");
+            const reasonOrId = String(entry.reason || "").trim() || fallback;
+            option.value = fallback;
+            option.textContent = `${formatValue(entry.startsAtUtc)} → ${formatValue(entry.expiresAtUtc)} | ${reasonOrId}`;
+            revokeEntitlementIdElement.appendChild(option);
+        });
+
+        revokeEntitlementIdElement.selectedIndex = 0;
+        renderSelectedRevokeEntitlementDetails();
+        updateRevokeControlsState(false);
+    }
+
+    function clearRevokeState() {
+        setRevokeError("");
+        setRevokeSuccess("");
+        revokeReasonInput.value = "";
+        setRevokeLoading(false);
+    }
+
+    function setRevokeVisible(isVisible) {
+        revokeCard.classList.toggle("hidden", !isVisible);
+        revokeSelectedUserEmailElement.textContent = isVisible ? (selectedUserEmail || "-") : "-";
+        revokeSelectedUserIdElement.textContent = isVisible ? (selectedUserId || "-") : "-";
+        if (!isVisible) {
+            revokeEntitlementIdElement.textContent = "";
+            revokeEntitlementPreviewElement.value = "";
+            clearRevokeState();
+        }
+        else {
+            renderRevokeEntitlementOptions(selectedUserLookupPayload || {});
+        }
+    }
+
+    function setRevokeLoading(isLoading) {
+        revokeLoadingElement.classList.toggle("hidden", !isLoading);
+        updateRevokeControlsState(isLoading);
+    }
+
+    function validateRevokeInput() {
+        const entitlementId = String(revokeEntitlementIdElement.value || "").trim();
+        const reason = String(revokeReasonInput.value || "").trim();
+        if (!entitlementId || !reason) { return { isValid: false, message: ErrorMessages.revokeInvalid }; }
+        return { isValid: true, entitlementId, reason };
     }
 
     function setLookupLoading(isLoading) { lookupLoadingElement.classList.toggle("hidden", !isLoading); searchUserButton.disabled = isLoading; }
@@ -146,8 +259,8 @@
 
     function resetDashboard() {
         adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; capabilitiesListElement.textContent = "";
-        setLookupError(""); setLookupLoading(false); clearUserLookupResult(); lookupForm.reset(); selectedUserId = null; selectedUserEmail = null;
-        setGrantVisible(false); clearGrantState(); grantForm.reset(); clearAuditLog();
+        setLookupError(""); setLookupLoading(false); clearUserLookupResult(); lookupForm.reset(); selectedUserId = null; selectedUserEmail = null; selectedUserLookupPayload = null;
+        setGrantVisible(false); setRevokeVisible(false); clearGrantState(); clearRevokeState(); grantForm.reset(); revokeForm.reset(); clearAuditLog();
     }
 
     function resetSession() { accessToken = null; loginForm.reset(); setError(""); resetDashboard(); setDashboardVisible(false); }
@@ -189,7 +302,9 @@
         renderUserLookupResult(payload);
         selectedUserId = payload?.user?.userId || null;
         selectedUserEmail = payload?.user?.email || selectedUserEmail;
+        selectedUserLookupPayload = payload;
         setGrantVisible(Boolean(selectedUserId));
+        setRevokeVisible(Boolean(selectedUserId));
         await loadAuditLogForSelectedUser();
     }
 
@@ -231,6 +346,48 @@
         } finally { setGrantLoading(false); }
     }
 
+
+    async function revokePremiumForSelectedUser() {
+        if (!selectedUserId || !selectedUserEmail) { return; }
+        clearRevokeState();
+        const validation = validateRevokeInput();
+        if (!validation.isValid) { setRevokeError(validation.message); return; }
+
+        const confirmed = window.confirm(`Revoke Premium entitlement ${validation.entitlementId} for ${selectedUserEmail}?`);
+        if (!confirmed) { return; }
+
+        setRevokeLoading(true);
+        try {
+            const endpoint = ApiPaths.manualPremiumRevokeTemplate
+                .replace("{userId}", encodeURIComponent(selectedUserId))
+                .replace("{entitlementId}", encodeURIComponent(validation.entitlementId));
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+                body: JSON.stringify({ reason: validation.reason })
+            });
+
+            if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.revokeInvalid); }
+            if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.revokeNotFound); }
+            if (response.status === HttpStatus.conflict) { throw new Error(ErrorMessages.revokeConflict); }
+            if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
+            if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
+            if (!response.ok) { throw new Error(ErrorMessages.revokeFailed); }
+
+            const payload = await response.json();
+            setRevokeSuccess(`Premium revoked. Entitlement ID: ${payload.entitlementId || validation.entitlementId}. Revoked at: ${payload.revokedAtUtc || "-"}.`);
+            revokeReasonInput.value = "";
+            await refreshSelectedUserAfterMutation();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : ErrorMessages.revokeFailed;
+            setRevokeError(message);
+            if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) {
+                resetSession();
+                setError(message);
+            }
+        } finally { setRevokeLoading(false); }
+    }
+
     async function loadAuditLogForSelectedUser() {
         if (!selectedUserId) { clearAuditLog(); return; }
         setAuditError(""); setAuditLoading(true);
@@ -269,17 +426,21 @@
             renderUserLookupResult(payload);
             selectedUserId = payload?.user?.userId || null;
             selectedUserEmail = payload?.user?.email || null;
+            selectedUserLookupPayload = payload;
             setGrantVisible(Boolean(selectedUserId));
+            setRevokeVisible(Boolean(selectedUserId));
             clearAuditLog();
             await loadAuditLogForSelectedUser();
         } catch (error) {
-            selectedUserId = null; selectedUserEmail = null; clearUserLookupResult(); setGrantVisible(false); clearGrantState(); clearAuditLog();
+            selectedUserId = null; selectedUserEmail = null; selectedUserLookupPayload = null; clearUserLookupResult(); setGrantVisible(false); setRevokeVisible(false); clearGrantState(); clearRevokeState(); clearAuditLog();
             const message = error instanceof Error ? error.message : ErrorMessages.lookupFailed; setLookupError(message);
             if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) { resetSession(); setError(message); }
         } finally { setLookupLoading(false); }
     });
 
     grantForm.addEventListener("submit", async (event) => { event.preventDefault(); await grantPremiumForSelectedUser(); });
+    revokeEntitlementIdElement.addEventListener("change", () => { renderSelectedRevokeEntitlementDetails(); updateRevokeControlsState(false); });
+    revokeForm.addEventListener("submit", async (event) => { event.preventDefault(); await revokePremiumForSelectedUser(); });
     loadAuditButton.addEventListener("click", async () => { await loadAuditLogForSelectedUser(); });
     logoutButton.addEventListener("click", () => { resetSession(); });
 })();

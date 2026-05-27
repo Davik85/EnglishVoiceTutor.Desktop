@@ -53,3 +53,7 @@ button:disabled { background: #93a7d7; cursor: not-allowed; }
 textarea { border: 1px solid #c5ced9; border-radius: 8px; font-family: inherit; font-size: 16px; padding: 10px 12px; resize: vertical; }
 .grant-loading { color: #1d4ed8; font-weight: 600; margin: 10px 0 0; }
 .success { color: #166534; min-height: 24px; margin: 8px 0 0; }
+
+.revoke-card { margin-bottom: 20px; }
+.revoke-loading { color: #1d4ed8; font-weight: 600; margin: 10px 0 0; }
+textarea[readonly] { background: #f8fafc; color: #374151; }
