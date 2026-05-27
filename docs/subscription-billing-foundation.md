@@ -415,3 +415,5 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - This phase does not require a database migration.
 - JWT remains in memory only.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- CMS UI regression guard: static admin shell audit covers tab IDs, user search forms, premium controls, free lesson reset controls, audit controls, endpoint constants, and memory-only JWT guard.
+- This guard is UI/testing only; it does not change backend endpoints, migrations, Paddle/webhooks, or desktop UI.

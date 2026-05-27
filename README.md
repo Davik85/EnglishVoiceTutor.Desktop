@@ -111,3 +111,8 @@ Recommended next work: short regression smoke-test, then MVP infrastructure work
 - The local admin shell currently supports capabilities view, read-only user lookup, read-only per-user audit log, manual Premium grant/revoke, and free lesson allowance reset for selected users.
 - The local admin shell is organized into tabs: Overview, User Lookup, Premium, Free Lesson, Audit Log, and System.
 - User lookup also shows a Premium entitlement schedule (current + future active Premium grants) in addition to currently active entitlements.
+- It does not require a database migration.
+- JWT remains in memory only for this phase.
+- Static admin shell audit script: `powershell -ExecutionPolicy Bypass -File tools\audit_admin_shell.ps1`.
+- The existing smoke script (`tools/smoke_admin_foundation.ps1`) now runs this admin shell audit before backend HTTP smoke checks.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
