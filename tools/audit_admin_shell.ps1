@@ -116,8 +116,9 @@ if (-not (Test-Path -LiteralPath $cssPath)) {
 
 $scriptPath = $MyInvocation.MyCommand.Path
 $scriptSource = Get-Content -LiteralPath $scriptPath -Raw
-if ($scriptSource.IndexOf("['\"\"]", [System.StringComparison]::Ordinal) -ge 0) {
-    Add-Error "audit_admin_shell.ps1: forbidden fragment ['\"\"] found. Use quote-safe single-quoted regex patterns."
+$forbiddenRegexFragment = "[{0}\{1}]" -f "'", '"'
+if ($scriptSource.IndexOf($forbiddenRegexFragment, [System.StringComparison]::Ordinal) -ge 0) {
+    Add-Error "audit_admin_shell.ps1: forbidden fragment $forbiddenRegexFragment found. Use quote-safe single-quoted regex patterns."
 }
 
 Write-Host "Admin shell audit"
