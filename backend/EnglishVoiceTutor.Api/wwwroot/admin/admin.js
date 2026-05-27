@@ -40,6 +40,7 @@
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
     const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", system: "system" });
+    const LookupSources = Object.freeze({ userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson" });
 
     let accessToken = null;
     let selectedUserId = null;
@@ -66,6 +67,16 @@
     const lookupLoadingElement = document.getElementById("lookup-loading");
     const lookupErrorElement = document.getElementById("lookup-error");
     const lookupResultElement = document.getElementById("lookup-result");
+    const premiumLookupForm = document.getElementById("premium-lookup-form");
+    const premiumLookupEmailInput = document.getElementById("premium-lookup-email");
+    const premiumSearchUserButton = document.getElementById("premium-search-user-button");
+    const premiumLookupLoadingElement = document.getElementById("premium-lookup-loading");
+    const premiumLookupErrorElement = document.getElementById("premium-lookup-error");
+    const freeLessonLookupForm = document.getElementById("free-lesson-lookup-form");
+    const freeLessonLookupEmailInput = document.getElementById("free-lesson-lookup-email");
+    const freeLessonSearchUserButton = document.getElementById("free-lesson-search-user-button");
+    const freeLessonLookupLoadingElement = document.getElementById("free-lesson-lookup-loading");
+    const freeLessonLookupErrorElement = document.getElementById("free-lesson-lookup-error");
     const premiumScheduleResultElement = document.getElementById("premium-entitlement-schedule-result");
     const activeEntitlementsResultElement = document.getElementById("active-entitlements-result");
     const premiumContentElement = document.getElementById("premium-content");
@@ -151,7 +162,7 @@
 
     const setDashboardVisible = (isVisible) => { dashboard.classList.toggle("hidden", !isVisible); loginCard.classList.toggle("hidden", isVisible); };
     const setError = (message) => { loginError.textContent = message; };
-    const setLookupError = (message) => { lookupErrorElement.textContent = message || ""; };
+    const setLookupError = (message) => { setLookupSourceError(LookupSources.userLookup, message); };
     const setAuditError = (message) => { auditErrorElement.textContent = message || ""; };
     const setGrantError = (message) => { grantErrorElement.textContent = message || ""; };
     const setGrantSuccess = (message) => { grantSuccessElement.textContent = message || ""; };
@@ -318,7 +329,28 @@
         return { isValid: true, entitlementId, reason };
     }
 
-    function setLookupLoading(isLoading) { lookupLoadingElement.classList.toggle("hidden", !isLoading); searchUserButton.disabled = isLoading; }
+    function getLookupElements(source) {
+        if (source === LookupSources.premium) { return { emailInput: premiumLookupEmailInput, loadingElement: premiumLookupLoadingElement, errorElement: premiumLookupErrorElement, submitButton: premiumSearchUserButton }; }
+        if (source === LookupSources.freeLesson) { return { emailInput: freeLessonLookupEmailInput, loadingElement: freeLessonLookupLoadingElement, errorElement: freeLessonLookupErrorElement, submitButton: freeLessonSearchUserButton }; }
+        return { emailInput: lookupEmailInput, loadingElement: lookupLoadingElement, errorElement: lookupErrorElement, submitButton: searchUserButton };
+    }
+
+    function setLookupSourceError(source, message) {
+        const elements = getLookupElements(source);
+        if (elements.errorElement) { elements.errorElement.textContent = message || ""; }
+    }
+
+    function clearLookupErrors() {
+        Object.values(LookupSources).forEach((source) => setLookupSourceError(source, ""));
+    }
+
+    function setLookupSourceLoading(source, isLoading) {
+        const elements = getLookupElements(source);
+        if (elements.loadingElement) { elements.loadingElement.classList.toggle("hidden", !isLoading); }
+        if (elements.submitButton) { elements.submitButton.disabled = isLoading; }
+    }
+
+    function setLookupLoading(isLoading) { setLookupSourceLoading(LookupSources.userLookup, isLoading); }
 
     function setGrantLoading(isLoading) {
         grantLoadingElement.classList.toggle("hidden", !isLoading);
@@ -372,7 +404,7 @@
 
     function resetDashboard() {
         adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; capabilitiesListElement.textContent = "";
-        setLookupError(""); setLookupLoading(false); clearUserLookupResult(); lookupForm.reset(); selectedUserId = null; selectedUserEmail = null; selectedUserLookupPayload = null;
+        setLookupError(""); setLookupLoading(false); setLookupSourceLoading(LookupSources.premium, false); setLookupSourceLoading(LookupSources.freeLesson, false); clearLookupErrors(); clearUserLookupResult(); lookupForm.reset(); premiumLookupForm.reset(); freeLessonLookupForm.reset(); clearSelectedUserState();
         setGrantVisible(false); setRevokeVisible(false); setFreeLessonResetVisible(false); clearGrantState(); clearRevokeState(); clearFreeLessonResetState(); grantForm.reset(); revokeForm.reset(); freeLessonResetForm.reset(); clearAuditLog();
     }
 
@@ -409,17 +441,74 @@
         return { isValid: true, durationDays, reason };
     }
 
-    async function refreshSelectedUserAfterMutation() {
-        if (!selectedUserEmail) { return; }
-        const payload = await fetchUserByEmail(selectedUserEmail);
+    function syncLookupEmailInputs(email) {
+        const value = email || "";
+        lookupEmailInput.value = value;
+        premiumLookupEmailInput.value = value;
+        freeLessonLookupEmailInput.value = value;
+    }
+
+    async function applySelectedUserPayload(payload) {
         renderUserLookupResult(payload);
         selectedUserId = payload?.user?.userId || null;
-        selectedUserEmail = payload?.user?.email || selectedUserEmail;
-        selectedUserLookupPayload = payload;
+        selectedUserEmail = payload?.user?.email || null;
+        selectedUserLookupPayload = payload || null;
+        syncLookupEmailInputs(selectedUserEmail);
+        updateSelectedUserHeader();
+        updateUserRequiredEmptyStates();
         setGrantVisible(Boolean(selectedUserId));
         setRevokeVisible(Boolean(selectedUserId));
         setFreeLessonResetVisible(Boolean(selectedUserId));
+        clearAuditLog();
         await loadAuditLogForSelectedUser();
+    }
+
+    function clearSelectedUserState() {
+        selectedUserId = null;
+        selectedUserEmail = null;
+        selectedUserLookupPayload = null;
+        syncLookupEmailInputs("");
+        updateSelectedUserHeader();
+        updateUserRequiredEmptyStates();
+        setGrantVisible(false);
+        setRevokeVisible(false);
+        setFreeLessonResetVisible(false);
+        clearGrantState();
+        clearRevokeState();
+        clearFreeLessonResetState();
+        clearAuditLog();
+    }
+
+    async function handleLookupSubmit(source) {
+        clearLookupErrors();
+        clearUserLookupResult();
+        clearGrantState();
+        const email = String(getLookupElements(source).emailInput?.value || "").trim();
+        if (!email) {
+            clearSelectedUserState();
+            setLookupSourceError(source, ErrorMessages.emailRequired);
+            return;
+        }
+
+        setLookupSourceLoading(source, true);
+        try {
+            const payload = await fetchUserByEmail(email);
+            await applySelectedUserPayload(payload);
+        } catch (error) {
+            clearUserLookupResult();
+            clearSelectedUserState();
+            const message = error instanceof Error ? error.message : ErrorMessages.lookupFailed;
+            setLookupSourceError(source, message);
+            if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) { resetSession(); setError(message); }
+        } finally {
+            setLookupSourceLoading(source, false);
+        }
+    }
+
+    async function refreshSelectedUserAfterMutation() {
+        if (!selectedUserEmail) { return; }
+        const payload = await fetchUserByEmail(selectedUserEmail);
+        await applySelectedUserPayload(payload);
     }
 
     async function grantPremiumForSelectedUser() {
@@ -569,28 +658,9 @@
         finally { signInButton.disabled = false; }
     });
 
-    lookupForm.addEventListener("submit", async (event) => {
-        event.preventDefault(); setLookupError(""); clearUserLookupResult(); clearGrantState();
-        const email = String(lookupEmailInput.value || "").trim();
-        if (!email) { selectedUserId = null; selectedUserEmail = null; selectedUserLookupPayload = null; setGrantVisible(false); setRevokeVisible(false); setFreeLessonResetVisible(false); clearAuditLog(); setLookupError(ErrorMessages.emailRequired); return; }
-        setLookupLoading(true);
-        try {
-            const payload = await fetchUserByEmail(email);
-            renderUserLookupResult(payload);
-            selectedUserId = payload?.user?.userId || null;
-            selectedUserEmail = payload?.user?.email || null;
-            selectedUserLookupPayload = payload;
-            setGrantVisible(Boolean(selectedUserId));
-            setRevokeVisible(Boolean(selectedUserId));
-            setFreeLessonResetVisible(Boolean(selectedUserId));
-            clearAuditLog();
-            await loadAuditLogForSelectedUser();
-        } catch (error) {
-            selectedUserId = null; selectedUserEmail = null; selectedUserLookupPayload = null; clearUserLookupResult(); setGrantVisible(false); setRevokeVisible(false); setFreeLessonResetVisible(false); clearGrantState(); clearRevokeState(); clearFreeLessonResetState(); clearAuditLog();
-            const message = error instanceof Error ? error.message : ErrorMessages.lookupFailed; setLookupError(message);
-            if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) { resetSession(); setError(message); }
-        } finally { setLookupLoading(false); }
-    });
+    lookupForm.addEventListener("submit", async (event) => { event.preventDefault(); await handleLookupSubmit(LookupSources.userLookup); });
+    premiumLookupForm.addEventListener("submit", async (event) => { event.preventDefault(); await handleLookupSubmit(LookupSources.premium); });
+    freeLessonLookupForm.addEventListener("submit", async (event) => { event.preventDefault(); await handleLookupSubmit(LookupSources.freeLesson); });
 
     grantForm.addEventListener("submit", async (event) => { event.preventDefault(); await grantPremiumForSelectedUser(); });
     revokeEntitlementIdElement.addEventListener("change", () => { renderSelectedRevokeEntitlementDetails(); updateRevokeControlsState(false); });
