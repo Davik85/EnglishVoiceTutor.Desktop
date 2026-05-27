@@ -39,6 +39,7 @@
     const DailyUsageColumns = ["usageDate", "studyLanguage", "lessonsStarted", "lessonsCompleted", "chatReplyCount", "hintsUsed", "feedbackRequests", "transcriptionSeconds", "ttsSeconds", "estimatedCost", "updatedAt"];
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
+    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", system: "system" });
 
     let accessToken = null;
     let selectedUserId = null;
@@ -51,6 +52,9 @@
     const loginError = document.getElementById("login-error");
     const signInButton = document.getElementById("sign-in-button");
     const logoutButton = document.getElementById("logout-button");
+    const selectedUserSummaryElement = document.getElementById("selected-user-summary");
+    const tabButtons = Array.from(document.querySelectorAll(".admin-tab-button"));
+    const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
     const adminSourceElement = document.getElementById("admin-source");
     const environmentElement = document.getElementById("environment");
     const checkedAtElement = document.getElementById("checked-at");
@@ -62,6 +66,12 @@
     const lookupLoadingElement = document.getElementById("lookup-loading");
     const lookupErrorElement = document.getElementById("lookup-error");
     const lookupResultElement = document.getElementById("lookup-result");
+    const premiumScheduleResultElement = document.getElementById("premium-entitlement-schedule-result");
+    const activeEntitlementsResultElement = document.getElementById("active-entitlements-result");
+    const premiumContentElement = document.getElementById("premium-content");
+    const premiumEmptyStateElement = document.getElementById("premium-empty-state");
+    const freeLessonEmptyStateElement = document.getElementById("free-lesson-empty-state");
+    const auditEmptyStateElement = document.getElementById("audit-empty-state");
 
     const grantCard = document.getElementById("grant-card");
     const grantForm = document.getElementById("grant-form");
@@ -108,6 +118,36 @@
     const freeLessonResetLoadingElement = document.getElementById("free-lesson-reset-loading");
     const freeLessonResetErrorElement = document.getElementById("free-lesson-reset-error");
     const freeLessonResetSuccessElement = document.getElementById("free-lesson-reset-success");
+
+    function activateTab(tabId) {
+        tabButtons.forEach((button) => {
+            const isActive = button.dataset.tabId === tabId;
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-selected", isActive ? "true" : "false");
+        });
+        tabPanels.forEach((panel) => {
+            const panelTabId = panel.id.replace("tab-panel-", "");
+            const isActive = panelTabId === tabId;
+            panel.classList.toggle("hidden", !isActive);
+            panel.setAttribute("aria-hidden", isActive ? "false" : "true");
+        });
+    }
+
+    function initializeTabs() {
+        tabButtons.forEach((button) => button.addEventListener("click", () => activateTab(button.dataset.tabId || Tabs.overview)));
+    }
+
+    function updateSelectedUserHeader() {
+        selectedUserSummaryElement.textContent = selectedUserEmail ? `Selected user: ${selectedUserEmail}` : "Selected user: -";
+    }
+
+    function updateUserRequiredEmptyStates() {
+        const hasUser = Boolean(selectedUserId);
+        premiumEmptyStateElement.classList.toggle("hidden", hasUser);
+        premiumContentElement.classList.toggle("hidden", !hasUser);
+        freeLessonEmptyStateElement.classList.toggle("hidden", hasUser);
+        auditEmptyStateElement.classList.toggle("hidden", hasUser);
+    }
 
     const setDashboardVisible = (isVisible) => { dashboard.classList.toggle("hidden", !isVisible); loginCard.classList.toggle("hidden", isVisible); };
     const setError = (message) => { loginError.textContent = message; };
@@ -320,8 +360,8 @@
         const subscriptionSection = createSection("Subscription Status"); const subscriptionContainer = document.createElement("div"); const subscription = Object.assign({}, pickFields(payload.subscriptionStatus, SubscriptionFields), { checkedAtUtc: payload.checkedAtUtc || payload.subscriptionStatus?.checkedAtUtc || null }); renderKeyValueList(subscriptionContainer, subscription, "No subscription status data."); subscriptionSection.appendChild(subscriptionContainer); lookupResultElement.appendChild(subscriptionSection);
         const profileSection = createSection("Profile"); const profileContainer = document.createElement("div"); renderKeyValueList(profileContainer, payload.profile, "No profile data."); profileSection.appendChild(profileContainer); lookupResultElement.appendChild(profileSection);
         const settingsSection = createSection("Settings"); const settingsContainer = document.createElement("div"); renderKeyValueList(settingsContainer, payload.settings, "No settings data."); settingsSection.appendChild(settingsContainer); lookupResultElement.appendChild(settingsSection);
-        const premiumScheduleSection = createSection("Premium Entitlement Schedule"); const premiumScheduleContainer = document.createElement("div"); renderTable(premiumScheduleContainer, payload.premiumEntitlementSchedule, EntitlementColumns, "No current or scheduled Premium entitlements."); premiumScheduleSection.appendChild(premiumScheduleContainer); lookupResultElement.appendChild(premiumScheduleSection);
-        const entitlementsSection = createSection("Active Entitlements"); const entitlementsContainer = document.createElement("div"); renderTable(entitlementsContainer, payload.activeEntitlements, EntitlementColumns, "No active entitlements."); entitlementsSection.appendChild(entitlementsContainer); lookupResultElement.appendChild(entitlementsSection);
+        renderTable(premiumScheduleResultElement, payload.premiumEntitlementSchedule, EntitlementColumns, "No current or scheduled Premium entitlements.");
+        renderTable(activeEntitlementsResultElement, payload.activeEntitlements, EntitlementColumns, "No active entitlements.");
         const lessonsSection = createSection("Recent Lesson Sessions"); const lessonsContainer = document.createElement("div"); renderTable(lessonsContainer, payload.recentLessonSessions, LessonSessionColumns, "No recent lesson sessions."); lessonsSection.appendChild(lessonsContainer); lookupResultElement.appendChild(lessonsSection);
         const countersSection = createSection("Daily Usage Counters"); const countersContainer = document.createElement("div"); renderTable(countersContainer, payload.dailyUsageCounters, DailyUsageColumns, "No daily usage counters."); countersSection.appendChild(countersContainer); lookupResultElement.appendChild(countersSection);
         const eventsSection = createSection("Recent Usage Events"); const eventsContainer = document.createElement("div"); renderTable(eventsContainer, payload.recentUsageEvents, UsageEventColumns, "No recent usage events."); eventsSection.appendChild(eventsContainer); lookupResultElement.appendChild(eventsSection);
@@ -524,7 +564,7 @@
             const capabilitiesPayload = await capabilitiesResponse.json();
             adminSourceElement.textContent = capabilitiesPayload.adminSource || "-"; environmentElement.textContent = capabilitiesPayload.environment || "-"; checkedAtElement.textContent = capabilitiesPayload.checkedAtUtc || "-";
             capabilitiesListElement.textContent = ""; Object.keys(capabilitiesPayload.capabilities || {}).forEach((key) => { const value = Boolean(capabilitiesPayload.capabilities[key]); const item = document.createElement("li"); item.textContent = key; const badge = document.createElement("span"); badge.className = `badge ${value ? "available" : "unavailable"}`; badge.textContent = value ? "available" : "unavailable"; item.appendChild(badge); capabilitiesListElement.appendChild(item); });
-            setDashboardVisible(true);
+            setDashboardVisible(true); initializeTabs(); activateTab(Tabs.overview); updateSelectedUserHeader(); updateUserRequiredEmptyStates();
         } catch (error) { resetSession(); setError(error instanceof Error ? error.message : "Unexpected error."); }
         finally { signInButton.disabled = false; }
     });
@@ -558,4 +598,6 @@
     freeLessonResetForm.addEventListener("submit", async (event) => { event.preventDefault(); await resetFreeLessonAllowanceForSelectedUser(); });
     loadAuditButton.addEventListener("click", async () => { await loadAuditLogForSelectedUser(); });
     logoutButton.addEventListener("click", () => { resetSession(); });
+    updateSelectedUserHeader();
+    updateUserRequiredEmptyStates();
 })();

@@ -20,136 +20,100 @@
         </section>
 
         <section id="dashboard" class="hidden">
-            <header class="dashboard-header"><h1>Admin Shell</h1><button id="logout-button" type="button">Logout</button></header>
-
-            <article class="card lookup-card">
-                <h2>User Lookup</h2>
-                <form id="lookup-form" class="lookup-form" novalidate>
-                    <div class="field lookup-field">
-                        <label for="lookup-email">User email</label>
-                        <input id="lookup-email" name="lookup-email" type="email" autocomplete="off" required />
-                    </div>
-                    <button id="search-user-button" type="submit">Search user</button>
-                </form>
-                <p id="lookup-loading" class="lookup-loading hidden" role="status">Loading user...</p>
-                <p id="lookup-error" class="error" role="alert"></p>
-                <div id="lookup-result" class="lookup-result"></div>
-            </article>
-
-            <article id="grant-card" class="card grant-card hidden" aria-labelledby="grant-heading">
-                <h2 id="grant-heading">Manual Premium Grant</h2>
-                <p class="selected-user-line">Selected user email: <span id="grant-selected-user-email">-</span></p>
-                <p class="selected-user-line">Selected user ID: <span id="grant-selected-user-id">-</span></p>
-                <form id="grant-form" novalidate>
-                    <div class="field">
-                        <label for="grant-duration-days">Duration (days)</label>
-                        <input id="grant-duration-days" name="grant-duration-days" type="number" min="1" max="365" step="1" required />
-                    </div>
-                    <div class="field">
-                        <label for="grant-reason">Reason</label>
-                        <textarea id="grant-reason" name="grant-reason" rows="3" required></textarea>
-                    </div>
-                    <button id="grant-button" type="submit">Grant Premium</button>
-                </form>
-                <p id="grant-loading" class="grant-loading hidden" role="status">Submitting grant request...</p>
-                <p id="grant-error" class="error" role="alert"></p>
-                <p id="grant-success" class="success" role="status"></p>
-            </article>
-
-            <article id="revoke-card" class="card revoke-card hidden" aria-labelledby="revoke-heading">
-                <h2 id="revoke-heading">Manual Premium Revoke</h2>
-                <p class="selected-user-line">Selected user email: <span id="revoke-selected-user-email">-</span></p>
-                <p class="selected-user-line">Selected user ID: <span id="revoke-selected-user-id">-</span></p>
-                <form id="revoke-form" novalidate>
-                    <div class="field">
-                        <label for="revoke-entitlement-id">Premium entitlement</label>
-                        <select id="revoke-entitlement-id" name="revoke-entitlement-id" required></select>
-                    </div>
-                    <div class="field">
-                        <label for="revoke-entitlement-preview">Selected entitlement details</label>
-                        <textarea id="revoke-entitlement-preview" name="revoke-entitlement-preview" rows="4" readonly></textarea>
-                    </div>
-                    <div class="field">
-                        <label for="revoke-reason">Reason</label>
-                        <textarea id="revoke-reason" name="revoke-reason" rows="3" required></textarea>
-                    </div>
-                    <button id="revoke-button" type="submit">Revoke Premium</button>
-                </form>
-                <p id="revoke-loading" class="revoke-loading hidden" role="status">Submitting revoke request...</p>
-                <p id="revoke-error" class="error" role="alert"></p>
-                <p id="revoke-success" class="success" role="status"></p>
-            </article>
-
-            
-            <article id="free-lesson-reset-card" class="card free-lesson-reset-card hidden" aria-labelledby="free-lesson-reset-heading">
-                <h2 id="free-lesson-reset-heading">Free Lesson Allowance Reset</h2>
-                <p class="selected-user-line">Selected user email: <span id="free-lesson-reset-selected-user-email">-</span></p>
-                <p class="selected-user-line">Selected user ID: <span id="free-lesson-reset-selected-user-id">-</span></p>
-                <dl class="meta free-lesson-reset-meta">
-                    <dt>Free lesson used today</dt><dd id="free-lesson-reset-used-today">-</dd>
-                    <dt>Free lesson remaining today</dt><dd id="free-lesson-reset-remaining-today">-</dd>
-                    <dt>Enforcement enabled</dt><dd id="free-lesson-reset-enforcement-enabled">-</dd>
-                    <dt>Checked at (UTC)</dt><dd id="free-lesson-reset-checked-at-utc">-</dd>
-                </dl>
-                <form id="free-lesson-reset-form" novalidate>
-                    <div class="field">
-                        <label for="free-lesson-reset-usage-date">Usage date (UTC, yyyy-MM-dd)</label>
-                        <input id="free-lesson-reset-usage-date" name="free-lesson-reset-usage-date" type="date" required />
-                    </div>
-                    <div class="field">
-                        <label for="free-lesson-reset-reason">Reason</label>
-                        <textarea id="free-lesson-reset-reason" name="free-lesson-reset-reason" rows="3" required></textarea>
-                    </div>
-                    <button id="free-lesson-reset-button" type="submit">Reset free lesson allowance</button>
-                </form>
-                <p id="free-lesson-reset-loading" class="free-lesson-reset-loading hidden" role="status">Submitting reset request...</p>
-                <p id="free-lesson-reset-error" class="error" role="alert"></p>
-                <p id="free-lesson-reset-success" class="success" role="status"></p>
-            </article>
-
-            <article id="audit-card" class="card audit-card hidden" aria-labelledby="audit-log-heading">
-                <h2 id="audit-log-heading">Audit Log</h2>
-                <p class="selected-user-line">Selected user ID: <span id="audit-selected-user-id">-</span></p>
-                <div class="audit-controls">
-                    <div class="field audit-limit-field">
-                        <label for="audit-limit">Audit limit</label>
-                        <select id="audit-limit" name="audit-limit">
-                            <option value="10" selected>10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </div>
-                    <button id="load-audit-button" type="button">Load audit log</button>
+            <header class="dashboard-header">
+                <div>
+                    <h1>Admin Shell</h1>
+                    <p id="selected-user-summary" class="selected-user-summary">Selected user: -</p>
                 </div>
-                <p id="audit-loading" class="audit-loading hidden" role="status">Loading audit log...</p>
-                <p id="audit-error" class="error" role="alert"></p>
-                <div id="audit-result" class="audit-result"></div>
-            </article>
+                <button id="logout-button" type="button">Logout</button>
+            </header>
 
-            <div class="grid">
-                <article class="card">
-                    <h2>Capabilities Check</h2>
-                    <dl class="meta">
-                        <dt>Admin source</dt><dd id="admin-source">-</dd>
-                        <dt>Environment</dt><dd id="environment">-</dd>
-                        <dt>Checked timestamp</dt><dd id="checked-at">-</dd>
-                    </dl>
-                    <ul id="capabilities-list" class="capability-list"></ul>
-                </article>
+            <div class="admin-shell">
+                <nav class="admin-sidebar" role="tablist" aria-label="Admin sections">
+                    <button id="tab-button-overview" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-overview" aria-selected="false" data-tab-id="overview">Overview</button>
+                    <button id="tab-button-user-lookup" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-user-lookup" aria-selected="false" data-tab-id="user-lookup">User Lookup</button>
+                    <button id="tab-button-premium" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-premium" aria-selected="false" data-tab-id="premium">Premium</button>
+                    <button id="tab-button-free-lesson" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-free-lesson" aria-selected="false" data-tab-id="free-lesson">Free Lesson</button>
+                    <button id="tab-button-audit-log" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-audit-log" aria-selected="false" data-tab-id="audit-log">Audit Log</button>
+                    <button id="tab-button-system" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-system" aria-selected="false" data-tab-id="system">System</button>
+                </nav>
 
-                <article class="card">
-                    <h2>Future Sections</h2>
-                    <ul class="placeholder-list">
-                        <li>User Diagnostics <span class="badge available">available</span></li>
-                        <li>Audit Log <span class="badge available">read-only</span></li>
-                        <li>Premium Grant <span class="badge available">available in UI</span></li>
-                        <li>Premium Revoke <span class="badge available">available in UI</span></li>
-                        <li>Free Lesson Reset <span class="badge available">available in UI</span></li>
-                        <li>Billing / Paddle <span class="badge unavailable">disabled</span></li>
-                        <li>Production Roles <span class="badge unavailable">disabled</span></li>
-                    </ul>
-                </article>
+                <section class="admin-content">
+                    <div id="tab-panel-overview" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-overview">
+                        <div class="grid">
+                            <article class="card">
+                                <h2>Admin status</h2>
+                                <dl class="meta">
+                                    <dt>Admin source</dt><dd id="admin-source">-</dd>
+                                    <dt>Environment</dt><dd id="environment">-</dd>
+                                    <dt>Checked timestamp</dt><dd id="checked-at">-</dd>
+                                </dl>
+                            </article>
+                            <article class="card">
+                                <h2>Available workflows</h2>
+                                <ul class="placeholder-list">
+                                    <li>User Lookup <span class="badge available">available</span></li>
+                                    <li>Premium Grant <span class="badge available">available</span></li>
+                                    <li>Premium Revoke <span class="badge available">available</span></li>
+                                    <li>Free Lesson Reset <span class="badge available">available</span></li>
+                                    <li>Audit Log <span class="badge available">read-only</span></li>
+                                </ul>
+                            </article>
+                        </div>
+                        <article class="card">
+                            <p class="muted">Development bootstrap admin shell. Backend APIs remain the source of truth.</p>
+                        </article>
+                    </div>
+
+                    <div id="tab-panel-user-lookup" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-user-lookup">
+                        <article class="card lookup-card">
+                            <h2>User Lookup</h2>
+                            <form id="lookup-form" class="lookup-form" novalidate>
+                                <div class="field lookup-field">
+                                    <label for="lookup-email">User email</label>
+                                    <input id="lookup-email" name="lookup-email" type="email" autocomplete="off" required />
+                                </div>
+                                <button id="search-user-button" type="submit">Search user</button>
+                            </form>
+                            <p id="lookup-loading" class="lookup-loading hidden" role="status">Loading user...</p>
+                            <p id="lookup-error" class="error" role="alert"></p>
+                            <div id="lookup-result" class="lookup-result"></div>
+                        </article>
+                    </div>
+
+                    <div id="tab-panel-premium" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-premium">
+                        <article id="premium-empty-state" class="card empty-state-card"><p>Search for a user first.</p></article>
+                        <div id="premium-content" class="hidden">
+                            <article class="card"><h2>Premium Entitlement Schedule</h2><div id="premium-entitlement-schedule-result"></div></article>
+                            <article class="card"><h2>Active Entitlements</h2><div id="active-entitlements-result"></div></article>
+                            <article id="grant-card" class="card grant-card" aria-labelledby="grant-heading">
+<h2 id="grant-heading">Manual Premium Grant</h2><p class="selected-user-line">Selected user email: <span id="grant-selected-user-email">-</span></p><p class="selected-user-line">Selected user ID: <span id="grant-selected-user-id">-</span></p><form id="grant-form" novalidate><div class="field"><label for="grant-duration-days">Duration (days)</label><input id="grant-duration-days" name="grant-duration-days" type="number" min="1" max="365" step="1" required /></div><div class="field"><label for="grant-reason">Reason</label><textarea id="grant-reason" name="grant-reason" rows="3" required></textarea></div><button id="grant-button" type="submit">Grant Premium</button></form><p id="grant-loading" class="grant-loading hidden" role="status">Submitting grant request...</p><p id="grant-error" class="error" role="alert"></p><p id="grant-success" class="success" role="status"></p>
+</article>
+                            <article id="revoke-card" class="card revoke-card" aria-labelledby="revoke-heading">
+<h2 id="revoke-heading">Manual Premium Revoke</h2><p class="selected-user-line">Selected user email: <span id="revoke-selected-user-email">-</span></p><p class="selected-user-line">Selected user ID: <span id="revoke-selected-user-id">-</span></p><form id="revoke-form" novalidate><div class="field"><label for="revoke-entitlement-id">Premium entitlement</label><select id="revoke-entitlement-id" name="revoke-entitlement-id" required></select></div><div class="field"><label for="revoke-entitlement-preview">Selected entitlement details</label><textarea id="revoke-entitlement-preview" name="revoke-entitlement-preview" rows="4" readonly></textarea></div><div class="field"><label for="revoke-reason">Reason</label><textarea id="revoke-reason" name="revoke-reason" rows="3" required></textarea></div><button id="revoke-button" type="submit">Revoke Premium</button></form><p id="revoke-loading" class="revoke-loading hidden" role="status">Submitting revoke request...</p><p id="revoke-error" class="error" role="alert"></p><p id="revoke-success" class="success" role="status"></p>
+</article>
+                        </div>
+                    </div>
+
+                    <div id="tab-panel-free-lesson" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-free-lesson">
+                        <article id="free-lesson-empty-state" class="card empty-state-card"><p>Search for a user first.</p></article>
+                        <article id="free-lesson-reset-card" class="card free-lesson-reset-card hidden" aria-labelledby="free-lesson-reset-heading">
+<h2 id="free-lesson-reset-heading">Free Lesson Allowance Reset</h2><p class="selected-user-line">Selected user email: <span id="free-lesson-reset-selected-user-email">-</span></p><p class="selected-user-line">Selected user ID: <span id="free-lesson-reset-selected-user-id">-</span></p><dl class="meta free-lesson-reset-meta"><dt>Free lesson used today</dt><dd id="free-lesson-reset-used-today">-</dd><dt>Free lesson remaining today</dt><dd id="free-lesson-reset-remaining-today">-</dd><dt>Enforcement enabled</dt><dd id="free-lesson-reset-enforcement-enabled">-</dd><dt>Checked at (UTC)</dt><dd id="free-lesson-reset-checked-at-utc">-</dd></dl><form id="free-lesson-reset-form" novalidate><div class="field"><label for="free-lesson-reset-usage-date">Usage date (UTC, yyyy-MM-dd)</label><input id="free-lesson-reset-usage-date" name="free-lesson-reset-usage-date" type="date" required /></div><div class="field"><label for="free-lesson-reset-reason">Reason</label><textarea id="free-lesson-reset-reason" name="free-lesson-reset-reason" rows="3" required></textarea></div><button id="free-lesson-reset-button" type="submit">Reset free lesson allowance</button></form><p id="free-lesson-reset-loading" class="free-lesson-reset-loading hidden" role="status">Submitting reset request...</p><p id="free-lesson-reset-error" class="error" role="alert"></p><p id="free-lesson-reset-success" class="success" role="status"></p>
+</article>
+                    </div>
+
+                    <div id="tab-panel-audit-log" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-audit-log">
+                        <article id="audit-empty-state" class="card empty-state-card"><p>Search for a user first.</p></article>
+                        <article id="audit-card" class="card audit-card hidden" aria-labelledby="audit-log-heading">
+<h2 id="audit-log-heading">Audit Log</h2><p class="selected-user-line">Selected user ID: <span id="audit-selected-user-id">-</span></p><div class="audit-controls"><div class="field audit-limit-field"><label for="audit-limit">Audit limit</label><select id="audit-limit" name="audit-limit"><option value="10" selected>10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></div><button id="load-audit-button" type="button">Load audit log</button></div><p id="audit-loading" class="audit-loading hidden" role="status">Loading audit log...</p><p id="audit-error" class="error" role="alert"></p><div id="audit-result" class="audit-result"></div>
+</article>
+                    </div>
+
+                    <div id="tab-panel-system" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-system">
+                        <article class="card"><h2>Capabilities Check</h2><ul id="capabilities-list" class="capability-list"></ul></article>
+                        <article class="card"><h2>Future Sections / Deferred Scope</h2><ul class="placeholder-list"><li>Billing / Paddle <span class="badge unavailable">disabled</span></li><li>Production Roles <span class="badge unavailable">disabled</span></li><li>Mobile Store Bridge <span class="badge unavailable">disabled</span></li></ul></article>
+                    </div>
+                </section>
             </div>
         </section>
     </main>
