@@ -56,6 +56,30 @@
                 <p id="grant-success" class="success" role="status"></p>
             </article>
 
+            <article id="revoke-card" class="card revoke-card hidden" aria-labelledby="revoke-heading">
+                <h2 id="revoke-heading">Manual Premium Revoke</h2>
+                <p class="selected-user-line">Selected user email: <span id="revoke-selected-user-email">-</span></p>
+                <p class="selected-user-line">Selected user ID: <span id="revoke-selected-user-id">-</span></p>
+                <form id="revoke-form" novalidate>
+                    <div class="field">
+                        <label for="revoke-entitlement-id">Premium entitlement</label>
+                        <select id="revoke-entitlement-id" name="revoke-entitlement-id" required></select>
+                    </div>
+                    <div class="field">
+                        <label for="revoke-entitlement-preview">Selected entitlement details</label>
+                        <textarea id="revoke-entitlement-preview" name="revoke-entitlement-preview" rows="4" readonly></textarea>
+                    </div>
+                    <div class="field">
+                        <label for="revoke-reason">Reason</label>
+                        <textarea id="revoke-reason" name="revoke-reason" rows="3" required></textarea>
+                    </div>
+                    <button id="revoke-button" type="submit">Revoke Premium</button>
+                </form>
+                <p id="revoke-loading" class="revoke-loading hidden" role="status">Submitting revoke request...</p>
+                <p id="revoke-error" class="error" role="alert"></p>
+                <p id="revoke-success" class="success" role="status"></p>
+            </article>
+
             <article id="audit-card" class="card audit-card hidden" aria-labelledby="audit-log-heading">
                 <h2 id="audit-log-heading">Audit Log</h2>
                 <p class="selected-user-line">Selected user ID: <span id="audit-selected-user-id">-</span></p>
@@ -93,7 +117,7 @@
                         <li>User Diagnostics <span class="badge available">available</span></li>
                         <li>Audit Log <span class="badge available">read-only</span></li>
                         <li>Premium Grant <span class="badge available">available in UI</span></li>
-                        <li>Premium Revoke</li>
+                        <li>Premium Revoke <span class="badge available">available in UI</span></li>
                         <li>Free Lesson Reset</li>
                         <li>Billing / Paddle <span class="badge unavailable">disabled</span></li>
                         <li>Production Roles <span class="badge unavailable">disabled</span></li>
