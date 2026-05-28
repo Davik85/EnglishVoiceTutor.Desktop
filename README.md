@@ -111,6 +111,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_checkout_
 
 This optional smoke creates a real Paddle sandbox transaction and prints the checkout URL, but it does not complete payment, call webhooks, or activate internal entitlement state.
 
+Paddle webhook ingestion smoke requires a running backend with `PaddleWebhook__Enabled=true` and `PaddleWebhook__SecretKey=test_webhook_secret`:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_webhook_ingestion.ps1
+```
+
 Common validation commands from the repository root:
 
 ```powershell
@@ -137,4 +143,4 @@ Recommended next work: short regression smoke-test, then MVP infrastructure work
 - JWT remains in memory only for this phase.
 - Static admin shell audit script: `powershell -ExecutionPolicy Bypass -File tools\audit_admin_shell.ps1`.
 - The existing smoke script (`tools/smoke_admin_foundation.ps1`) now runs this admin shell audit before backend HTTP smoke checks.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.

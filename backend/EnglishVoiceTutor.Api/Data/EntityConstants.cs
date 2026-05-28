@@ -22,6 +22,7 @@ public static class EntityConstants
         public const string TrialGrants = "trial_grants";
         public const string DailyFreeLessonUsage = "daily_free_lesson_usage";
         public const string BillingEvents = "billing_events";
+        public const string PaddleWebhookEvents = "paddle_webhook_events";
         public const string AdminActions = "admin_actions";
     }
 
@@ -64,6 +65,7 @@ public static class EntityConstants
         public const int EntitlementSourceMaxLength = 64;
         public const int EntitlementReasonMaxLength = 512;
         public const int BillingEventTypeMaxLength = 128;
+        public const int PaddleWebhookSignatureHeaderMaxLength = 1024;
         public const int ProviderEventIdMaxLength = 256;
         public const int DeviceFingerprintHashMaxLength = 256;
         public const int MetadataJsonMaxLength = 4096;
