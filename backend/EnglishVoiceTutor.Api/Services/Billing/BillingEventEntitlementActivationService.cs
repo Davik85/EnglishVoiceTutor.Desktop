@@ -95,6 +95,74 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             completedAtUtc);
     }
 
+    public async Task<BillingEventEntitlementActivationResult> ActivateProviderEventAsync(
+        string billingProvider,
+        string providerEventId,
+        CancellationToken cancellationToken)
+    {
+        var startedAtUtc = DateTimeOffset.UtcNow;
+        var checkedCount = 0;
+        var activatedCount = 0;
+        var blockedCount = 0;
+        var failedCount = 0;
+        var alreadySkippedCount = 0;
+
+        var billingEventId = await dbContext.BillingEvents
+            .AsNoTracking()
+            .Where(candidate => candidate.BillingProvider == billingProvider
+                && candidate.ProviderEventId == providerEventId)
+            .Select(candidate => (Guid?)candidate.Id)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (billingEventId is not null)
+        {
+            checkedCount = 1;
+
+            try
+            {
+                var result = await ActivateBillingEventAsync(billingEventId.Value, cancellationToken);
+                switch (result)
+                {
+                    case ActivationEventResult.Activated:
+                        activatedCount++;
+                        break;
+                    case ActivationEventResult.Blocked:
+                        blockedCount++;
+                        break;
+                    case ActivationEventResult.AlreadySkipped:
+                        alreadySkippedCount++;
+                        break;
+                    case ActivationEventResult.Failed:
+                        failedCount++;
+                        break;
+                }
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                failedCount++;
+                dbContext.ChangeTracker.Clear();
+                await TryMarkBillingEventFailedAsync(billingEventId.Value, cancellationToken);
+
+                logger.LogError(
+                    exception,
+                    "Billing event entitlement activation failed unexpectedly. BillingEventId={BillingEventId}; BillingProvider={BillingProvider}; ProviderEventId={ProviderEventId}.",
+                    billingEventId.Value,
+                    billingProvider,
+                    providerEventId);
+            }
+        }
+
+        var completedAtUtc = DateTimeOffset.UtcNow;
+        return new BillingEventEntitlementActivationResult(
+            checkedCount,
+            activatedCount,
+            blockedCount,
+            failedCount,
+            alreadySkippedCount,
+            startedAtUtc,
+            completedAtUtc);
+    }
+
     private async Task<ActivationEventResult> ActivateBillingEventAsync(
         Guid billingEventId,
         CancellationToken cancellationToken)

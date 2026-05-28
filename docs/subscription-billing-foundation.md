@@ -177,6 +177,11 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - No database migration was required because the current schema already had the required billing event metadata and entitlement columns.
 - Latest confirmed EF migration remains `20260528000000_AddPaddleWebhookEvents`.
 - Webhook smoke now registers a real local test user, extracts the `evt_user_id` claim from the JWT locally, sends a signed `transaction.completed` payload with a future billing period, and verifies entitlement activation.
+- Paddle webhook request processing is event-scoped: a signed `POST /api/billing/webhooks/paddle` normalizes, reconciles, and activates/blocks/fails only the current Paddle event identified by the incoming provider event id.
+- Broad batch processing methods remain reserved for future worker, backfill, and reconciliation tooling rather than the synchronous webhook request flow.
+- This prevents one incoming webhook from mutating unrelated old `received` or `reconciliation_pending` billing events.
+- No migration was required for this event-scoped webhook flow change.
+- Latest confirmed migration remains `20260528000000_AddPaddleWebhookEvents`.
 
 ## Deferred / Not implemented yet
 

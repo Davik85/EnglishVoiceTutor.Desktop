@@ -90,7 +90,7 @@ public static class PaddleWebhookEndpoints
         {
             normalizationResult = ingestionResult.EventId is null
                 ? new PaddleWebhookEventNormalizationResult(0, 0, 0, 0, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
-                : await webhookEventNormalizer.NormalizeReceivedEventAsync(ingestionResult.EventId, cancellationToken);
+                : await webhookEventNormalizer.NormalizeEventAsync(ingestionResult.EventId, cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -109,15 +109,18 @@ public static class PaddleWebhookEndpoints
         BillingEventReconciliationDecisionResult reconciliationResult;
         try
         {
-            reconciliationResult = await reconciliationDecisionService.ProcessReceivedEventsAsync(
-                BillingEventReconciliationDecisionService.DefaultProcessLimit,
-                cancellationToken);
+            reconciliationResult = ingestionResult.EventId is null
+                ? new BillingEventReconciliationDecisionResult(0, 0, 0, 0, 0, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+                : await reconciliationDecisionService.ProcessProviderEventAsync(
+                    SubscriptionConstants.BillingProviders.Paddle,
+                    ingestionResult.EventId,
+                    cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             var completedAtUtc = DateTimeOffset.UtcNow;
             reconciliationResult = new BillingEventReconciliationDecisionResult(0, 0, 0, 0, 1, completedAtUtc, completedAtUtc);
-            logger.LogError(exception, "Billing event reconciliation decision processing failed after Paddle webhook normalization.");
+            logger.LogError(exception, "Billing event reconciliation decision processing failed after Paddle webhook normalization. EventId={PaddleEventId}.", ingestionResult.EventId);
         }
 
         logger.LogInformation(
@@ -131,15 +134,18 @@ public static class PaddleWebhookEndpoints
         BillingEventEntitlementActivationResult entitlementActivationResult;
         try
         {
-            entitlementActivationResult = await entitlementActivationService.ActivatePendingEntitlementsAsync(
-                BillingEventEntitlementActivationService.DefaultActivationLimit,
-                cancellationToken);
+            entitlementActivationResult = ingestionResult.EventId is null
+                ? new BillingEventEntitlementActivationResult(0, 0, 0, 0, 0, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+                : await entitlementActivationService.ActivateProviderEventAsync(
+                    SubscriptionConstants.BillingProviders.Paddle,
+                    ingestionResult.EventId,
+                    cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             var completedAtUtc = DateTimeOffset.UtcNow;
             entitlementActivationResult = new BillingEventEntitlementActivationResult(0, 0, 0, 1, 0, completedAtUtc, completedAtUtc);
-            logger.LogError(exception, "Billing event entitlement activation failed after reconciliation decision processing.");
+            logger.LogError(exception, "Billing event entitlement activation failed after reconciliation decision processing. EventId={PaddleEventId}.", ingestionResult.EventId);
         }
 
         logger.LogInformation(

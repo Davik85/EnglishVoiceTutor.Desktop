@@ -46,66 +46,12 @@ public sealed class BillingEventReconciliationDecisionService : IBillingEventRec
 
         foreach (var billingEvent in billingEvents)
         {
-            checkedCount++;
-
-            try
-            {
-                var nowUtc = DateTimeOffset.UtcNow;
-                if (!string.Equals(
-                    billingEvent.EventType,
-                    SubscriptionConstants.BillingEventTypes.TransactionCompleted,
-                    StringComparison.OrdinalIgnoreCase))
-                {
-                    MarkIgnored(billingEvent, nowUtc);
-                    ignoredCount++;
-                }
-                else if (!TryReadMetadata(billingEvent.SafeMetadataJson, out var metadata))
-                {
-                    MarkBlocked(
-                        billingEvent,
-                        nowUtc,
-                        SubscriptionConstants.BillingEventReconciliation.InvalidBillingEventMetadataMessage);
-                    blockedCount++;
-                }
-                else if (metadata.InternalUserId is null)
-                {
-                    MarkBlocked(
-                        billingEvent,
-                        nowUtc,
-                        SubscriptionConstants.BillingEventReconciliation.MissingInternalUserIdMessage);
-                    blockedCount++;
-                }
-                else if (!string.Equals(
-                    metadata.InternalPlanId,
-                    SubscriptionConstants.Plans.PremiumPlanId,
-                    StringComparison.OrdinalIgnoreCase))
-                {
-                    MarkBlocked(
-                        billingEvent,
-                        nowUtc,
-                        SubscriptionConstants.BillingEventReconciliation.UnsupportedPlanIdMessage);
-                    blockedCount++;
-                }
-                else
-                {
-                    MarkPending(billingEvent, nowUtc);
-                    markedPendingCount++;
-                }
-
-                await dbContext.SaveChangesAsync(cancellationToken);
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
-            {
-                failedCount++;
-                dbContext.ChangeTracker.Clear();
-                logger.LogError(
-                    exception,
-                    "Billing event reconciliation decision failed. BillingEventId={BillingEventId}; BillingProvider={BillingProvider}; EventType={EventType}; ProviderEventId={ProviderEventId}.",
-                    billingEvent.Id,
-                    billingEvent.BillingProvider,
-                    billingEvent.EventType,
-                    billingEvent.ProviderEventId);
-            }
+            var result = await ProcessBillingEventAsync(billingEvent, countAlreadyProcessedAsChecked: true, cancellationToken);
+            checkedCount += result.CheckedCount;
+            markedPendingCount += result.MarkedPendingCount;
+            ignoredCount += result.IgnoredCount;
+            blockedCount += result.BlockedCount;
+            failedCount += result.FailedCount;
         }
 
         var completedAtUtc = DateTimeOffset.UtcNow;
@@ -117,6 +63,122 @@ public sealed class BillingEventReconciliationDecisionService : IBillingEventRec
             failedCount,
             startedAtUtc,
             completedAtUtc);
+    }
+
+    public async Task<BillingEventReconciliationDecisionResult> ProcessProviderEventAsync(
+        string billingProvider,
+        string providerEventId,
+        CancellationToken cancellationToken)
+    {
+        var startedAtUtc = DateTimeOffset.UtcNow;
+        var billingEvent = await dbContext.BillingEvents.SingleOrDefaultAsync(
+            candidate => candidate.BillingProvider == billingProvider
+                && candidate.ProviderEventId == providerEventId,
+            cancellationToken);
+
+        if (billingEvent is null)
+        {
+            var completedAtUtc = DateTimeOffset.UtcNow;
+            return new BillingEventReconciliationDecisionResult(0, 0, 0, 0, 0, startedAtUtc, completedAtUtc);
+        }
+
+        var result = await ProcessBillingEventAsync(billingEvent, countAlreadyProcessedAsChecked: true, cancellationToken);
+        return result with { StartedAtUtc = startedAtUtc, CompletedAtUtc = DateTimeOffset.UtcNow };
+    }
+
+    private async Task<BillingEventReconciliationDecisionResult> ProcessBillingEventAsync(
+        BillingEventEntity billingEvent,
+        bool countAlreadyProcessedAsChecked,
+        CancellationToken cancellationToken)
+    {
+        var startedAtUtc = DateTimeOffset.UtcNow;
+        var checkedCount = countAlreadyProcessedAsChecked || billingEvent.Status == SubscriptionConstants.BillingEventStatuses.Received ? 1 : 0;
+        var markedPendingCount = 0;
+        var ignoredCount = 0;
+        var blockedCount = 0;
+        var failedCount = 0;
+
+        if (billingEvent.Status != SubscriptionConstants.BillingEventStatuses.Received)
+        {
+            var completedAtUtc = DateTimeOffset.UtcNow;
+            return new BillingEventReconciliationDecisionResult(
+                checkedCount,
+                markedPendingCount,
+                ignoredCount,
+                blockedCount,
+                failedCount,
+                startedAtUtc,
+                completedAtUtc);
+        }
+
+        try
+        {
+            var nowUtc = DateTimeOffset.UtcNow;
+            if (!string.Equals(
+                billingEvent.EventType,
+                SubscriptionConstants.BillingEventTypes.TransactionCompleted,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                MarkIgnored(billingEvent, nowUtc);
+                ignoredCount++;
+            }
+            else if (!TryReadMetadata(billingEvent.SafeMetadataJson, out var metadata))
+            {
+                MarkBlocked(
+                    billingEvent,
+                    nowUtc,
+                    SubscriptionConstants.BillingEventReconciliation.InvalidBillingEventMetadataMessage);
+                blockedCount++;
+            }
+            else if (metadata.InternalUserId is null)
+            {
+                MarkBlocked(
+                    billingEvent,
+                    nowUtc,
+                    SubscriptionConstants.BillingEventReconciliation.MissingInternalUserIdMessage);
+                blockedCount++;
+            }
+            else if (!string.Equals(
+                metadata.InternalPlanId,
+                SubscriptionConstants.Plans.PremiumPlanId,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                MarkBlocked(
+                    billingEvent,
+                    nowUtc,
+                    SubscriptionConstants.BillingEventReconciliation.UnsupportedPlanIdMessage);
+                blockedCount++;
+            }
+            else
+            {
+                MarkPending(billingEvent, nowUtc);
+                markedPendingCount++;
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            failedCount++;
+            dbContext.ChangeTracker.Clear();
+            logger.LogError(
+                exception,
+                "Billing event reconciliation decision failed. BillingEventId={BillingEventId}; BillingProvider={BillingProvider}; EventType={EventType}; ProviderEventId={ProviderEventId}.",
+                billingEvent.Id,
+                billingEvent.BillingProvider,
+                billingEvent.EventType,
+                billingEvent.ProviderEventId);
+        }
+
+        var finishedAtUtc = DateTimeOffset.UtcNow;
+        return new BillingEventReconciliationDecisionResult(
+            checkedCount,
+            markedPendingCount,
+            ignoredCount,
+            blockedCount,
+            failedCount,
+            startedAtUtc,
+            finishedAtUtc);
     }
 
     private static int NormalizeLimit(int limit)

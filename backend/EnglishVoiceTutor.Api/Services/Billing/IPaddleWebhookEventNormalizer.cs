@@ -9,4 +9,8 @@ public interface IPaddleWebhookEventNormalizer
     Task<PaddleWebhookEventNormalizationResult> NormalizeReceivedEventAsync(
         string paddleEventId,
         CancellationToken cancellationToken);
+
+    Task<PaddleWebhookEventNormalizationResult> NormalizeEventAsync(
+        string paddleEventId,
+        CancellationToken cancellationToken);
 }
