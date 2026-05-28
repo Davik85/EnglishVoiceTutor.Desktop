@@ -38,19 +38,23 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         return await NormalizeWebhookEventsAsync(webhookEvents, cancellationToken);
     }
 
-    public async Task<PaddleWebhookEventNormalizationResult> NormalizeReceivedEventAsync(
+    public Task<PaddleWebhookEventNormalizationResult> NormalizeReceivedEventAsync(
         string paddleEventId,
         CancellationToken cancellationToken)
     {
-        var webhookEvents = await dbContext.PaddleWebhookEvents
-            .Where(webhookEvent => webhookEvent.PaddleEventId == paddleEventId
-                && webhookEvent.ProcessingStatus == SubscriptionConstants.BillingEventStatuses.Received)
-            .OrderBy(webhookEvent => webhookEvent.ReceivedAtUtc)
-            .ThenBy(webhookEvent => webhookEvent.Id)
-            .Take(1)
-            .ToListAsync(cancellationToken);
+        return NormalizeEventAsync(paddleEventId, cancellationToken);
+    }
 
-        return await NormalizeWebhookEventsAsync(webhookEvents, cancellationToken);
+    public async Task<PaddleWebhookEventNormalizationResult> NormalizeEventAsync(
+        string paddleEventId,
+        CancellationToken cancellationToken)
+    {
+        var webhookEvent = await dbContext.PaddleWebhookEvents
+            .SingleOrDefaultAsync(candidate => candidate.PaddleEventId == paddleEventId, cancellationToken);
+
+        return await NormalizeWebhookEventsAsync(
+            webhookEvent is null ? [] : [webhookEvent],
+            cancellationToken);
     }
 
     private async Task<PaddleWebhookEventNormalizationResult> NormalizeWebhookEventsAsync(
