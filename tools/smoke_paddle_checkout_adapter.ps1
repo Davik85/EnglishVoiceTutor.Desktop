@@ -110,8 +110,8 @@ try {
     Write-Host "  Billing__Provider=paddle" -ForegroundColor Yellow
     Write-Host "  PaddleBilling__CheckoutAdapterEnabled=false" -ForegroundColor Yellow
     Write-Host "  PaddleBilling__Environment=sandbox" -ForegroundColor Yellow
-    Write-Host "  PaddleBilling__ApiKey=\"\"" -ForegroundColor Yellow
-    Write-Host "  PaddleBilling__PremiumPriceId=\"\"" -ForegroundColor Yellow
+    Write-Host '  PaddleBilling__ApiKey=""' -ForegroundColor Yellow
+    Write-Host '  PaddleBilling__PremiumPriceId=""' -ForegroundColor Yellow
     Write-Host ""
 
     Write-Host "Paddle checkout adapter smoke test" -ForegroundColor Yellow
