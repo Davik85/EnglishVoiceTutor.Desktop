@@ -26,6 +26,24 @@ public static class BillingCheckoutEndpoints
             return Results.Unauthorized();
         }
 
+        if (string.IsNullOrWhiteSpace(request.PlanId))
+        {
+            return Results.BadRequest(new
+            {
+                ErrorCode = SubscriptionConstants.Billing.InvalidBillingCheckoutRequestCode,
+                Message = SubscriptionConstants.Billing.PlanIdRequiredMessage
+            });
+        }
+
+        if (!string.Equals(request.PlanId, SubscriptionConstants.Billing.DefaultPremiumPlanId, StringComparison.OrdinalIgnoreCase))
+        {
+            return Results.BadRequest(new
+            {
+                ErrorCode = SubscriptionConstants.Billing.InvalidBillingCheckoutRequestCode,
+                Message = SubscriptionConstants.Billing.UnsupportedPlanIdMessage
+            });
+        }
+
         var response = await billingCheckoutService.CreateCheckoutSessionAsync(userId.Value, request, cancellationToken);
         return Results.Ok(response);
     }

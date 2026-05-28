@@ -58,6 +58,7 @@ Endpoint:
 
 Current behavior:
 - Requires authorization (unauthenticated request returns `401`).
+- Expected invalid checkout requests return `400` with safe validation payloads and are handled at the endpoint layer (not as unhandled server exceptions).
 - Returns disabled/provider-not-configured response now:
   - `created=false`
   - `checkoutEnabled=false`
@@ -68,6 +69,9 @@ Current behavior:
 - No external payment provider call is made.
 - No billing event is written.
 - No subscription or entitlement state is mutated.
+- No Paddle checkout or webhook behavior is implemented.
+- No database migration was required.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
 
 Current config section:
 
