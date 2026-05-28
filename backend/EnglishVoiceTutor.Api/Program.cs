@@ -51,6 +51,8 @@ builder.Services.Configure<BillingOptions>(
     builder.Configuration.GetSection(BillingOptions.SectionName));
 builder.Services.Configure<PaddleBillingOptions>(
     builder.Configuration.GetSection(PaddleBillingOptions.SectionName));
+builder.Services.Configure<PaddleWebhookOptions>(
+    builder.Configuration.GetSection(PaddleWebhookOptions.SectionName));
 builder.Services.Configure<AdminBootstrapOptions>(
     builder.Configuration.GetSection(AdminBootstrapOptions.SectionName));
 
@@ -136,6 +138,8 @@ builder.Services.AddScoped<IBillingProviderCheckoutAdapter, DisabledBillingProvi
 builder.Services.AddScoped<IBillingProviderCheckoutAdapter>(services => services.GetRequiredService<PaddleBillingProviderCheckoutAdapter>());
 builder.Services.AddScoped<IBillingProviderCheckoutAdapterResolver, BillingProviderCheckoutAdapterResolver>();
 builder.Services.AddScoped<IBillingCheckoutService, BillingCheckoutService>();
+builder.Services.AddSingleton<IPaddleWebhookSignatureVerifier, PaddleWebhookSignatureVerifier>();
+builder.Services.AddScoped<IPaddleWebhookIngestionService, PaddleWebhookIngestionService>();
 builder.Services.AddScoped<IAdminUserLookupService, AdminUserLookupService>();
 builder.Services.AddSingleton<IAdminCapabilitiesService, AdminCapabilitiesService>();
 builder.Services.AddScoped<IAdminAuditService, AdminAuditService>();
@@ -211,6 +215,7 @@ app.MapLessonAccessDecisionEndpoints();
 app.MapSubscriptionDiagnosticsEndpoints();
 app.MapTrialClaimEndpoints();
 app.MapBillingCheckoutEndpoints();
+app.MapPaddleWebhookEndpoints();
 app.MapAdminEndpoints();
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",

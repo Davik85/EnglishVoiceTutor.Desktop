@@ -69,9 +69,9 @@ Current behavior:
 - No external payment provider call is made.
 - No billing event is written.
 - No subscription or entitlement state is mutated.
-- No Paddle checkout or webhook behavior is implemented.
+- Paddle checkout transaction creation v1 is implemented separately; Paddle webhook behavior is now limited to ingestion, signature verification, raw event persistence, and idempotency readiness.
 - No database migration was required.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 Current config section:
 
@@ -116,15 +116,47 @@ Current config section:
 - Static admin shell audit script (`tools/audit_admin_shell.ps1`) guards required tabs/forms/controls/endpoints and forbids `localStorage`/`sessionStorage` usage in `admin.js`.
 - Smoke script (`tools/smoke_admin_foundation.ps1`) runs the admin shell audit first.
 - No database migration was required.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
-- Paddle checkout/webhooks are still not implemented.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
+- Paddle checkout transaction creation v1 exists; Paddle webhook ingestion foundation v1 now stores signed raw events for idempotency without activating Premium.
+
+## Paddle webhook ingestion foundation v1
+
+Endpoint:
+- `POST /api/billing/webhooks/paddle`
+
+Current behavior:
+- The endpoint is protected by Paddle `Paddle-Signature` verification, not JWT authentication.
+- The endpoint reads the raw request body and verifies it before JSON parsing because Paddle signs `<timestamp>:<raw_body>`.
+- Signature verification uses the `ts` and `h1` values from `Paddle-Signature`, HMAC-SHA256 with the configured notification destination secret, timing-safe comparison, and timestamp tolerance.
+- If `PaddleWebhook:Enabled=false`, the endpoint returns `404` to hide the disabled webhook endpoint.
+- If the endpoint is enabled but the secret is blank, it returns `503` with the safe message `Paddle webhook is not configured.`
+- Missing, invalid, or stale signatures return `401`.
+- Invalid JSON after valid signature verification returns `400`.
+- Events are stored in `paddle_webhook_events` for idempotency and future processing.
+- Duplicate Paddle event ids return `200` with `duplicate=true` and do not insert a second row.
+- New valid events return `200` with `accepted=true` and `duplicate=false`.
+- No Premium activation is performed in this step.
+- No entitlement, subscription, or payment mutation is performed in this step.
+- No internal payment records are created from webhooks in this step.
+- Reconciliation is deferred.
+- The Paddle webhook secret must be stored in environment variables, user secrets, or secure deployment configuration. Do not put real webhook secrets in appsettings or client code.
+- The new EF migration `AddPaddleWebhookEvents` is required because webhook idempotency and future reconciliation need the `paddle_webhook_events` persistence table.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents` after this update.
+- Local webhook ingestion smoke script: `tools/smoke_paddle_webhook_ingestion.ps1`.
+
+Safe local configuration example:
+
+```powershell
+$env:PaddleWebhook__Enabled = "true"
+$env:PaddleWebhook__SecretKey = "test_webhook_secret"
+$env:PaddleWebhook__TimestampToleranceSeconds = "300"
+```
 
 ## Deferred / Not implemented yet
 
 - No production admin roles/RBAC yet.
 - No production admin deployment/security hardening yet.
-- No Paddle checkout integration yet.
-- No Paddle webhook ingestion yet.
+- No further Paddle checkout work beyond transaction creation v1 and webhook ingestion foundation v1 yet.
 - No Apple App Store / Google Play integration yet.
 - No real payment acceptance yet.
 - No provider reconciliation job yet.
@@ -163,7 +195,7 @@ Expected results:
 - Lesson content audit passes.
 - Desktop Debug/Release builds pass.
 - Backend build passes.
-- Latest migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest migration becomes `AddPaddleWebhookEvents`.
 
 ## Admin Foundation v1 (backend-only bootstrap)
 
@@ -174,7 +206,7 @@ Expected results:
 - No CMS/admin UI is implemented.
 - No user search is included in v1.
 - No manual grant/revoke/reset actions are implemented.
-- Paddle checkout and webhooks are deferred.
+- Paddle checkout transaction creation v1 and Paddle webhook ingestion foundation v1 exist; entitlement activation and reconciliation are deferred.
 - `admin_actions` storage exists for future audited admin mutations, but `/api/admin/me` does **not** write audit actions.
 
 ## Admin Foundation v2 (backend-only exact user lookup)
@@ -186,10 +218,10 @@ Expected results:
 - Returns a safe response containing user overview, profile/settings snapshot, subscription status, and checked timestamp.
 - No CMS/admin UI is implemented.
 - No manual grant/revoke/reset actions are implemented.
-- No Paddle checkout/webhook behavior is introduced.
+- No additional Paddle checkout/webhook behavior is introduced by this diagnostics section.
 - No audit writes are performed for this read-only lookup.
 
-- Latest confirmed EF migration after Admin Foundation v2 remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 - Admin Foundation v1/v2 did not require a database migration.
 
 ## Safe local test commands (PowerShell)
@@ -230,7 +262,7 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not write audit actions.
 - It does not add Paddle checkout/webhooks.
 - It does not require a database migration.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 ## Admin Foundation v4 (audit service foundation)
 
@@ -243,7 +275,7 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not write audit actions for read-only diagnostics.
 - It does not add Paddle checkout/webhooks.
 - It does not require a database migration.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 - Future admin mutations must call the audit service with a clear reason and safe metadata only.
 
 
@@ -261,7 +293,7 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not add Paddle checkout/webhooks.
 - It does not create subscription/payment records.
 - It does not require a database migration.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 ## Admin Foundation v6 (manual Premium revoke)
 
@@ -278,7 +310,7 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not add Paddle checkout/webhooks.
 - It does not create or mutate subscription/payment records.
 - It does not require a database migration.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 ## Admin Foundation v7 (read-only audit log)
 
@@ -293,7 +325,7 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not add Paddle checkout/webhooks.
 - It does not create or mutate subscription/payment records.
 - It does not require a database migration.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 ## Admin Foundation v8 (free lesson allowance reset)
 
@@ -311,7 +343,7 @@ Do not use real tokens or secrets in shared docs/scripts.
 - `PremiumEntitlementSchedule` shows current and future active Premium entitlements.
 - CMS UI shows this schedule so support/admin can verify that a grant was issued even if it starts later.
 - No database migration is required.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 - No Paddle checkout/webhooks were added.
 - It writes an audit action via `AdminAuditService` / `admin_actions`.
 - It does not delete lesson sessions or lesson messages.
@@ -320,7 +352,7 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not add CMS UI.
 - It does not add Paddle checkout/webhooks.
 - It does not require a database migration.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 ## Admin Foundation v9 (local smoke test script)
 
@@ -332,7 +364,7 @@ Do not use real tokens or secrets in shared docs/scripts.
 - It does not add CMS UI.
 - It does not add Paddle checkout/webhooks.
 - It does not require a database migration.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 Usage example:
 
@@ -353,7 +385,7 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not add Paddle checkout/webhooks.
 - It does not add new admin mutation behavior.
 - It does not require a database migration.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 
 ## CMS UI Phase 1 (backend-hosted admin shell)
@@ -369,7 +401,7 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not add Paddle checkout/webhooks.
 - It does not add production roles.
 - It does not require a database migration.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 ## CMS UI Phase 2 (read-only user lookup)
 
@@ -383,7 +415,7 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not add production roles.
 - It does not require a database migration.
 - JWT remains in memory only for this phase.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 ## CMS UI Phase 3 (read-only audit log)
 
@@ -399,7 +431,7 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not add production roles.
 - It does not require a database migration.
 - JWT remains in memory only for this phase.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 
 ## CMS UI Phase 4 (manual Premium grant UI)
@@ -416,7 +448,7 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not add production roles.
 - It does not require a database migration.
 - JWT remains in memory only for this phase.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 ## CMS UI Phase 5 (manual Premium revoke UI)
 
@@ -432,7 +464,7 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not add production roles.
 - It does not require a database migration.
 - JWT remains in memory only for this phase.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 ## CMS UI Phase 6 (free lesson allowance reset UI)
 
@@ -446,7 +478,7 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not add production roles.
 - It does not require a database migration.
 - JWT remains in memory only for this phase.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 ## CMS UI Phase 7 (tabbed admin layout)
 
@@ -459,7 +491,7 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - This phase does not add production roles.
 - This phase does not require a database migration.
 - JWT remains in memory only.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 - CMS UI regression guard: static admin shell audit covers tab IDs, user search forms, premium controls, free lesson reset controls, audit controls, endpoint constants, and memory-only JWT guard.
 - This guard is UI/testing only; it does not change backend endpoints, migrations, Paddle/webhooks, or desktop UI.
 
@@ -471,10 +503,10 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - No real checkout session is created.
 - No external provider call is made.
 - No Paddle checkout integration was added.
-- No Paddle webhook ingestion was added.
+- Paddle webhook ingestion foundation v1 is now added separately and only stores signed raw events for idempotency.
 - No subscription/payment/entitlement/billing event mutation was added.
 - No database migration was required.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 - This prepares the backend for a future Paddle adapter without coupling the core checkout endpoint to Paddle.
 
 ## Billing checkout smoke test
@@ -486,7 +518,7 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not mutate subscriptions, entitlements, payments, or billing events.
 - It requires a running local backend.
 - No database migration is required.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 ## Paddle checkout adapter smoke test
 
@@ -498,19 +530,19 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - It does not call Paddle or any external provider.
 - It does not mutate subscriptions, entitlements, payments, or billing events.
 - No database migration is required.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
 
 ## Paddle Checkout Adapter Configuration Foundation
 
 - Added `PaddleBilling` options with safe non-secret defaults (`CheckoutAdapterEnabled=false`, `Environment=sandbox`, empty `ApiKey`, empty `PremiumPriceId`).
 - Added a provider-agnostic Paddle checkout adapter registration path so `IBillingProviderCheckoutAdapterResolver` can resolve `paddle` safely.
 - The Paddle adapter now calls Paddle only when explicitly enabled and fully configured.
-- The Paddle adapter can create real Paddle checkout transactions and return `checkoutUrl`; webhooks and entitlement activation remain deferred.
-- No Paddle webhook ingestion was added.
+- The Paddle adapter can create real Paddle checkout transactions and return `checkoutUrl`; webhook ingestion foundation v1 stores signed raw events, while entitlement activation remains deferred.
+- Paddle webhook ingestion foundation v1 is now added separately and only stores signed raw events for idempotency.
 - No subscription/payment/entitlement/billing event mutation was added.
 - No database migration was required.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
-- Webhook ingestion, billing event persistence, idempotency, and entitlement reconciliation remain deferred.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
+- Webhook ingestion idempotency is now implemented in `paddle_webhook_events`; entitlement reconciliation remains deferred.
 - Do not put Paddle secrets in appsettings; use user secrets, environment variables, or secure deployment configuration.
 
 ## Paddle checkout transaction creation v1
@@ -526,12 +558,12 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
   - `PaddleBilling__PremiumPriceId=<price id>`
 - Paddle API keys must be stored in environment variables, user secrets, or secure deployment configuration; never store them in `appsettings.json` or client code.
 - This step creates a Paddle transaction through the backend and returns `checkoutUrl` only.
-- This step does not implement Paddle webhooks.
+- Paddle webhook ingestion foundation v1 is implemented separately and only stores signed raw events for idempotency.
 - This step does not activate Premium.
 - This step does not create internal billing events.
 - This step does not mutate subscriptions, entitlements, payments, or billing event tables.
 - No database migration was required.
-- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
-- Entitlement activation is deferred to webhook ingestion, billing event persistence, idempotency, and entitlement reconciliation.
+- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
+- Entitlement activation remains deferred; webhook ingestion now only verifies signatures, persists raw events, and prepares idempotency.
 - Optional real sandbox smoke script: `tools/smoke_paddle_checkout_live_sandbox.ps1`.
 - The optional real sandbox smoke requires `-AllowRealPaddleCall` and creates a real Paddle sandbox transaction only; it does not complete payment, call webhooks, or check entitlement activation.

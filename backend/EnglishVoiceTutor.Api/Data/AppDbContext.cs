@@ -23,6 +23,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<TrialGrantEntity> TrialGrants => Set<TrialGrantEntity>();
     public DbSet<DailyFreeLessonUsageEntity> DailyFreeLessonUsages => Set<DailyFreeLessonUsageEntity>();
     public DbSet<BillingEventEntity> BillingEvents => Set<BillingEventEntity>();
+    public DbSet<PaddleWebhookEventEntity> PaddleWebhookEvents => Set<PaddleWebhookEventEntity>();
     public DbSet<AdminActionEntity> AdminActions => Set<AdminActionEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -48,6 +49,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureTrialGrants(modelBuilder);
         ConfigureDailyFreeLessonUsage(modelBuilder);
         ConfigureBillingEvents(modelBuilder);
+        ConfigurePaddleWebhookEvents(modelBuilder);
         ConfigureAdminActions(modelBuilder);
     }
 
@@ -383,6 +385,34 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.Property(billingEvent => billingEvent.SafeMetadataJson).HasMaxLength(EntityConstants.Lengths.MetadataJsonMaxLength);
         entity.Property(billingEvent => billingEvent.ErrorMessage).HasMaxLength(EntityConstants.Lengths.ErrorMessageMaxLength);
         entity.HasIndex(billingEvent => new { billingEvent.BillingProvider, billingEvent.ProviderEventId }).IsUnique();
+    }
+
+
+    private static void ConfigurePaddleWebhookEvents(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<PaddleWebhookEventEntity>();
+        entity.ToTable(EntityConstants.TableNames.PaddleWebhookEvents);
+        entity.HasKey(webhookEvent => webhookEvent.Id);
+        entity.Property(webhookEvent => webhookEvent.PaddleEventId).IsRequired().HasMaxLength(EntityConstants.Lengths.ProviderEventIdMaxLength);
+        entity.Property(webhookEvent => webhookEvent.EventType).IsRequired().HasMaxLength(EntityConstants.Lengths.BillingEventTypeMaxLength);
+        entity.Property(webhookEvent => webhookEvent.ProcessingStatus).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
+        entity.Property(webhookEvent => webhookEvent.PaddleNotificationId).HasMaxLength(EntityConstants.Lengths.ProviderEventIdMaxLength);
+        entity.Property(webhookEvent => webhookEvent.PaddleTransactionId).HasMaxLength(EntityConstants.Lengths.ProviderEventIdMaxLength);
+        entity.Property(webhookEvent => webhookEvent.PaddleSubscriptionId).HasMaxLength(EntityConstants.Lengths.ProviderEventIdMaxLength);
+        entity.Property(webhookEvent => webhookEvent.PaddleCustomerId).HasMaxLength(EntityConstants.Lengths.ProviderEventIdMaxLength);
+        entity.Property(webhookEvent => webhookEvent.InternalPlanId).HasMaxLength(EntityConstants.Lengths.PlanIdMaxLength);
+        entity.Property(webhookEvent => webhookEvent.RawPayload).IsRequired();
+        entity.Property(webhookEvent => webhookEvent.SignatureHeader).HasMaxLength(EntityConstants.Lengths.PaddleWebhookSignatureHeaderMaxLength);
+        entity.Property(webhookEvent => webhookEvent.ReceivedAtUtc).IsRequired();
+        entity.Property(webhookEvent => webhookEvent.CreatedAt).IsRequired();
+        entity.Property(webhookEvent => webhookEvent.UpdatedAt).IsRequired();
+        entity.HasIndex(webhookEvent => webhookEvent.PaddleEventId).IsUnique();
+        entity.HasIndex(webhookEvent => webhookEvent.EventType);
+        entity.HasIndex(webhookEvent => webhookEvent.PaddleTransactionId);
+        entity.HasIndex(webhookEvent => webhookEvent.PaddleSubscriptionId);
+        entity.HasIndex(webhookEvent => webhookEvent.InternalUserId);
+        entity.HasIndex(webhookEvent => webhookEvent.ProcessingStatus);
+        entity.HasIndex(webhookEvent => webhookEvent.ReceivedAtUtc);
     }
 
     private static void ConfigureAdminActions(ModelBuilder modelBuilder)
