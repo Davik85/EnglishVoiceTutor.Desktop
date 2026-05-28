@@ -52,6 +52,7 @@ public static class PaddleWebhookEndpoints
         var rawBody = await reader.ReadToEndAsync(cancellationToken);
 
         var nowUtc = DateTimeOffset.UtcNow;
+        var logger = loggerFactory.CreateLogger("PaddleWebhookEndpoint");
         var tolerance = TimeSpan.FromSeconds(Math.Max(0, webhookOptions.TimestampToleranceSeconds));
         var verificationResult = signatureVerifier.Verify(
             rawBody,
@@ -62,7 +63,6 @@ public static class PaddleWebhookEndpoints
 
         if (!verificationResult.IsValid)
         {
-            var logger = loggerFactory.CreateLogger("PaddleWebhookEndpoint");
             logger.LogWarning(
                 "Paddle webhook signature verification failed. ErrorCode={ErrorCode}; Timestamp={Timestamp:o}.",
                 verificationResult.ErrorCode,
@@ -83,7 +83,6 @@ public static class PaddleWebhookEndpoints
             });
         }
 
-        var logger = loggerFactory.CreateLogger("PaddleWebhookEndpoint");
         PaddleWebhookEventNormalizationResult normalizationResult;
         try
         {
