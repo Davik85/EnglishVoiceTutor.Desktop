@@ -580,3 +580,20 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - No external Paddle calls are made by normalization.
 - No database migration was required because the existing `BillingEventEntity` and `PaddleWebhookEventEntity` schema was sufficient.
 - Latest confirmed EF migration remains `20260528000000_AddPaddleWebhookEvents`.
+
+
+## Entitlement reconciliation decision foundation v1
+
+- Normalized `billing_events` are now inspected for future entitlement reconciliation eligibility.
+- Paddle `transaction.completed` events with safe metadata containing `internalUserId` and `internalPlanId=premium` are marked `reconciliation_pending`.
+- Unsupported billing event types are marked `ignored`.
+- Invalid or missing safe metadata is marked `reconciliation_blocked`.
+- This step does not activate Premium.
+- This step does not create entitlements.
+- This step does not mutate subscriptions or payments.
+- This step does not call Paddle.
+- This step does not add final reconciliation.
+- Raw webhook events remain in `paddle_webhook_events`.
+- Provider-agnostic event decisions live in `billing_events`.
+- No database migration was required because no schema changed.
+- Latest confirmed EF migration remains `20260528000000_AddPaddleWebhookEvents`.

@@ -22,6 +22,7 @@ public static class PaddleWebhookEndpoints
         IPaddleWebhookSignatureVerifier signatureVerifier,
         IPaddleWebhookIngestionService ingestionService,
         IPaddleWebhookEventNormalizer webhookEventNormalizer,
+        IBillingEventReconciliationDecisionService reconciliationDecisionService,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
@@ -104,6 +105,28 @@ public static class PaddleWebhookEndpoints
             normalizationResult.AlreadyNormalizedCount,
             normalizationResult.FailedCount);
 
+        BillingEventReconciliationDecisionResult reconciliationResult;
+        try
+        {
+            reconciliationResult = await reconciliationDecisionService.ProcessReceivedEventsAsync(
+                BillingEventReconciliationDecisionService.DefaultProcessLimit,
+                cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            var completedAtUtc = DateTimeOffset.UtcNow;
+            reconciliationResult = new BillingEventReconciliationDecisionResult(0, 0, 0, 0, 1, completedAtUtc, completedAtUtc);
+            logger.LogError(exception, "Billing event reconciliation decision processing failed after Paddle webhook normalization.");
+        }
+
+        logger.LogInformation(
+            "Billing event reconciliation decision processing completed after Paddle webhook normalization. CheckedCount={CheckedCount}; MarkedPendingCount={MarkedPendingCount}; IgnoredCount={IgnoredCount}; BlockedCount={BlockedCount}; FailedCount={FailedCount}.",
+            reconciliationResult.CheckedCount,
+            reconciliationResult.MarkedPendingCount,
+            reconciliationResult.IgnoredCount,
+            reconciliationResult.BlockedCount,
+            reconciliationResult.FailedCount);
+
         return Results.Ok(new
         {
             accepted = true,
@@ -112,6 +135,12 @@ public static class PaddleWebhookEndpoints
             normalized = normalizationResult.NormalizedCount > 0 || normalizationResult.AlreadyNormalizedCount > 0,
             billingEventCreated = normalizationResult.NormalizedCount > 0,
             existingBillingEvent = ingestionResult.IsDuplicate || normalizationResult.AlreadyNormalizedCount > 0,
+            reconciliationChecked = reconciliationResult.CheckedCount,
+            reconciliationPending = reconciliationResult.MarkedPendingCount > 0,
+            reconciliationPendingCount = reconciliationResult.MarkedPendingCount,
+            reconciliationIgnored = reconciliationResult.IgnoredCount,
+            reconciliationBlocked = reconciliationResult.BlockedCount,
+            reconciliationFailed = reconciliationResult.FailedCount,
             message = ingestionResult.Message
         });
     }
