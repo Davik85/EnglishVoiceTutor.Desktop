@@ -129,6 +129,8 @@ builder.Services.AddScoped<ISubscriptionPlanCatalogService, SubscriptionPlanCata
 builder.Services.AddScoped<ISubscriptionDiagnosticsService, SubscriptionDiagnosticsService>();
 builder.Services.AddScoped<ITrialClaimService, TrialClaimService>();
 builder.Services.AddScoped<IDevelopmentTestAccountService, DevelopmentTestAccountService>();
+builder.Services.AddScoped<IBillingProviderCheckoutAdapter, DisabledBillingProviderCheckoutAdapter>();
+builder.Services.AddScoped<IBillingProviderCheckoutAdapterResolver, BillingProviderCheckoutAdapterResolver>();
 builder.Services.AddScoped<IBillingCheckoutService, BillingCheckoutService>();
 builder.Services.AddScoped<IAdminUserLookupService, AdminUserLookupService>();
 builder.Services.AddSingleton<IAdminCapabilitiesService, AdminCapabilitiesService>();

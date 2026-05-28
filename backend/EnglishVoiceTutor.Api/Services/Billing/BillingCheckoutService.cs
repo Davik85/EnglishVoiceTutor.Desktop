@@ -8,15 +8,20 @@ namespace EnglishVoiceTutor.Api.Services.Billing;
 public sealed class BillingCheckoutService : IBillingCheckoutService
 {
     private readonly IOptions<BillingOptions> billingOptions;
+    private readonly IBillingProviderCheckoutAdapterResolver adapterResolver;
     private readonly ILogger<BillingCheckoutService> logger;
 
-    public BillingCheckoutService(IOptions<BillingOptions> billingOptions, ILogger<BillingCheckoutService> logger)
+    public BillingCheckoutService(
+        IOptions<BillingOptions> billingOptions,
+        IBillingProviderCheckoutAdapterResolver adapterResolver,
+        ILogger<BillingCheckoutService> logger)
     {
         this.billingOptions = billingOptions;
+        this.adapterResolver = adapterResolver;
         this.logger = logger;
     }
 
-    public Task<CreateBillingCheckoutSessionResponse> CreateCheckoutSessionAsync(
+    public async Task<CreateBillingCheckoutSessionResponse> CreateCheckoutSessionAsync(
         Guid userId,
         CreateBillingCheckoutSessionRequest request,
         CancellationToken cancellationToken)
@@ -34,9 +39,9 @@ public sealed class BillingCheckoutService : IBillingCheckoutService
         }
 
         var options = billingOptions.Value;
-        var provider = string.IsNullOrWhiteSpace(options.Provider)
-            ? SubscriptionConstants.BillingProviders.None
-            : options.Provider.Trim().ToLowerInvariant();
+        var provider = NormalizeProvider(options.Provider);
+        var checkoutEnabled = options.CheckoutEnabled
+            && !string.Equals(provider, SubscriptionConstants.BillingProviders.None, StringComparison.OrdinalIgnoreCase);
 
         logger.LogInformation(
             "Billing checkout session requested. UserId={UserId}; Provider={Provider}; CheckoutEnabled={CheckoutEnabled}; PlanId={PlanId}.",
@@ -45,33 +50,38 @@ public sealed class BillingCheckoutService : IBillingCheckoutService
             options.CheckoutEnabled,
             request.PlanId);
 
-        var checkoutEnabled = options.CheckoutEnabled && !string.Equals(provider, SubscriptionConstants.BillingProviders.None, StringComparison.OrdinalIgnoreCase);
-
-        if (!checkoutEnabled)
+        var providerRequest = new BillingProviderCheckoutRequest
         {
-            return Task.FromResult(new CreateBillingCheckoutSessionResponse
-            {
-                Created = false,
-                CheckoutEnabled = false,
-                Provider = SubscriptionConstants.BillingProviders.None,
-                PlanId = request.PlanId,
-                CheckoutUrl = string.Empty,
-                ErrorCode = SubscriptionConstants.Billing.BillingProviderNotConfiguredCode,
-                Message = SubscriptionConstants.Billing.BillingCheckoutDisabledMessage,
-                CheckedAtUtc = DateTimeOffset.UtcNow
-            });
-        }
-
-        return Task.FromResult(new CreateBillingCheckoutSessionResponse
-        {
-            Created = false,
-            CheckoutEnabled = false,
-            Provider = provider,
+            UserId = userId,
             PlanId = request.PlanId,
-            CheckoutUrl = string.Empty,
-            ErrorCode = SubscriptionConstants.Billing.BillingProviderNotConfiguredCode,
-            Message = SubscriptionConstants.Billing.BillingCheckoutDisabledMessage,
-            CheckedAtUtc = DateTimeOffset.UtcNow
-        });
+            Provider = checkoutEnabled ? provider : SubscriptionConstants.BillingProviders.None,
+            ReturnUrl = options.SuccessUrl ?? string.Empty,
+            CancelUrl = options.CancelUrl ?? string.Empty,
+            Currency = SubscriptionConstants.Billing.DefaultCheckoutCurrency,
+            Mode = SubscriptionConstants.Billing.CheckoutModeSubscription,
+            RequestedAtUtc = DateTimeOffset.UtcNow
+        };
+
+        var adapter = adapterResolver.Resolve(providerRequest.Provider);
+        var result = await adapter.CreateCheckoutSessionAsync(providerRequest, cancellationToken);
+
+        return new CreateBillingCheckoutSessionResponse
+        {
+            Created = result.Created,
+            CheckoutEnabled = result.CheckoutEnabled,
+            Provider = result.Provider,
+            PlanId = result.PlanId,
+            CheckoutUrl = result.CheckoutUrl,
+            ErrorCode = result.ErrorCode,
+            Message = result.Message,
+            CheckedAtUtc = result.CheckedAtUtc
+        };
+    }
+
+    private static string NormalizeProvider(string provider)
+    {
+        return string.IsNullOrWhiteSpace(provider)
+            ? SubscriptionConstants.BillingProviders.None
+            : provider.Trim().ToLowerInvariant();
     }
 }
