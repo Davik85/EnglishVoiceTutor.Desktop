@@ -111,11 +111,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_checkout_
 
 This optional smoke creates a real Paddle sandbox transaction and prints the checkout URL, but it does not complete payment, call webhooks, or activate internal entitlement state.
 
-Paddle webhook ingestion smoke requires a running backend with `PaddleWebhook__Enabled=true` and `PaddleWebhook__SecretKey=test_webhook_secret`; it also verifies immediate billing event normalization, reconciliation decision response fields, entitlement activation from validated `reconciliation_pending` billing events, and backend access/status after `provider_event` entitlement activation:
+Paddle webhook smoke verifies signed ingestion, normalization, reconciliation decision, entitlement activation, duplicate idempotency, unsigned/invalid-signature rejection, and backend access/status recognition of `provider_event` Premium entitlement. Start the backend with local placeholder webhook settings only; do not use real secrets in tracked files:
 
 ```powershell
+$env:PaddleWebhook__Enabled = "true"
+$env:PaddleWebhook__SecretKey = "test_webhook_secret"
+$env:PaddleWebhook__TimestampToleranceSeconds = "300"
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_webhook_ingestion.ps1
 ```
+
+Detailed billing architecture and deferred scope are documented in `docs/subscription-billing-foundation.md`.
 
 Common validation commands from the repository root:
 
@@ -143,4 +148,4 @@ Recommended next work: short regression smoke-test, then MVP infrastructure work
 - JWT remains in memory only for this phase.
 - Static admin shell audit script: `powershell -ExecutionPolicy Bypass -File tools\audit_admin_shell.ps1`.
 - The existing smoke script (`tools/smoke_admin_foundation.ps1`) now runs this admin shell audit before backend HTTP smoke checks.
-- Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
+- Latest confirmed EF migration remains `20260528000000_AddPaddleWebhookEvents`.
