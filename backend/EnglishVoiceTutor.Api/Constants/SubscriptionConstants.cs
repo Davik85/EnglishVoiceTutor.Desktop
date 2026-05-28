@@ -71,6 +71,19 @@ public static class SubscriptionConstants
         public const string InvalidBillingEventMetadataMessage = "Invalid billing event metadata.";
     }
 
+    public static class BillingEventActivation
+    {
+        public const string MissingBillingPeriodEndMessage = "Missing billing period end for entitlement activation.";
+        public const string BillingPeriodEndNotFutureMessage = "Billing period end is not in the future.";
+        public const string UserNotFoundMessage = "User not found for entitlement activation.";
+        public const string UnsupportedPlanIdMessage = "Unsupported plan id for entitlement activation.";
+        public const string ActivatedReason = "Entitlement activated from provider billing event.";
+        public const string InvalidBillingEventMetadataMessage = "Invalid billing event metadata for entitlement activation.";
+        public const string MissingInternalUserIdMessage = "Missing internal user id for entitlement activation.";
+        public const string InvalidInternalUserIdMessage = "Invalid internal user id for entitlement activation.";
+        public const string UnexpectedProcessingErrorMessage = "Unexpected entitlement activation processing error.";
+    }
+
     public static class Billing
     {
         public const string BillingProviderNotConfiguredCode = "billing_provider_not_configured";

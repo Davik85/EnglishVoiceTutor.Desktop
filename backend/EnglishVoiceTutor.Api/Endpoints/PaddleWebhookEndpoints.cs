@@ -23,6 +23,7 @@ public static class PaddleWebhookEndpoints
         IPaddleWebhookIngestionService ingestionService,
         IPaddleWebhookEventNormalizer webhookEventNormalizer,
         IBillingEventReconciliationDecisionService reconciliationDecisionService,
+        IBillingEventEntitlementActivationService entitlementActivationService,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
@@ -127,6 +128,28 @@ public static class PaddleWebhookEndpoints
             reconciliationResult.BlockedCount,
             reconciliationResult.FailedCount);
 
+        BillingEventEntitlementActivationResult entitlementActivationResult;
+        try
+        {
+            entitlementActivationResult = await entitlementActivationService.ActivatePendingEntitlementsAsync(
+                BillingEventEntitlementActivationService.DefaultActivationLimit,
+                cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            var completedAtUtc = DateTimeOffset.UtcNow;
+            entitlementActivationResult = new BillingEventEntitlementActivationResult(0, 0, 0, 1, 0, completedAtUtc, completedAtUtc);
+            logger.LogError(exception, "Billing event entitlement activation failed after reconciliation decision processing.");
+        }
+
+        logger.LogInformation(
+            "Billing event entitlement activation completed after reconciliation decision processing. CheckedCount={CheckedCount}; ActivatedCount={ActivatedCount}; BlockedCount={BlockedCount}; FailedCount={FailedCount}; AlreadySkippedCount={AlreadySkippedCount}.",
+            entitlementActivationResult.CheckedCount,
+            entitlementActivationResult.ActivatedCount,
+            entitlementActivationResult.BlockedCount,
+            entitlementActivationResult.FailedCount,
+            entitlementActivationResult.AlreadySkippedCount);
+
         return Results.Ok(new
         {
             accepted = true,
@@ -141,6 +164,11 @@ public static class PaddleWebhookEndpoints
             reconciliationIgnored = reconciliationResult.IgnoredCount,
             reconciliationBlocked = reconciliationResult.BlockedCount,
             reconciliationFailed = reconciliationResult.FailedCount,
+            entitlementActivationChecked = entitlementActivationResult.CheckedCount,
+            entitlementActivated = entitlementActivationResult.ActivatedCount > 0,
+            entitlementActivatedCount = entitlementActivationResult.ActivatedCount,
+            entitlementActivationBlocked = entitlementActivationResult.BlockedCount,
+            entitlementActivationFailed = entitlementActivationResult.FailedCount,
             message = ingestionResult.Message
         });
     }

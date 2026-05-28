@@ -117,7 +117,7 @@ Current config section:
 - Smoke script (`tools/smoke_admin_foundation.ps1`) runs the admin shell audit first.
 - No database migration was required.
 - Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
-- Paddle checkout transaction creation v1 exists; Paddle webhook ingestion foundation v1 now stores signed raw events for idempotency without activating Premium.
+- Paddle checkout transaction creation v1 exists; Paddle webhook ingestion foundation v1 stores signed raw events for idempotency, and entitlement activation foundation v1 can activate Premium from validated provider-agnostic billing events.
 
 ## Paddle webhook ingestion foundation v1
 
@@ -135,10 +135,11 @@ Current behavior:
 - Events are stored in `paddle_webhook_events` for idempotency and future processing.
 - Duplicate Paddle event ids return `200` with `duplicate=true` and do not insert a second row.
 - New valid events return `200` with `accepted=true` and `duplicate=false`.
-- No Premium activation is performed in this step.
-- No entitlement, subscription, or payment mutation is performed in this step.
+- After durable raw ingestion, the endpoint runs normalization, reconciliation decision processing, and entitlement activation foundation v1.
+- Premium entitlement activation is allowed only from validated provider-agnostic `billing_events`; raw webhook payloads are not used directly for business-state mutation.
+- Subscription and payment mutation remain deferred.
 - No internal payment records are created from webhooks in this step.
-- Reconciliation is deferred.
+- Full subscription reconciliation is deferred.
 - The Paddle webhook secret must be stored in environment variables, user secrets, or secure deployment configuration. Do not put real webhook secrets in appsettings or client code.
 - The new EF migration `AddPaddleWebhookEvents` is required because webhook idempotency and future reconciliation need the `paddle_webhook_events` persistence table.
 - Latest confirmed EF migration becomes `AddPaddleWebhookEvents` after this update.
@@ -151,6 +152,31 @@ $env:PaddleWebhook__Enabled = "true"
 $env:PaddleWebhook__SecretKey = "test_webhook_secret"
 $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 ```
+
+## Entitlement activation foundation v1
+
+- `reconciliation_pending` provider-agnostic `billing_events` can now create Premium `EntitlementEntity` rows when all strict validation passes.
+- Activation currently requires:
+  - billing provider `paddle`;
+  - event type `transaction.completed`;
+  - a valid `internalUserId` in `SafeMetadataJson`;
+  - an existing backend user for that id;
+  - `internalPlanId` equal to `premium`;
+  - `billingPeriodEndsAtUtc` present, parseable, and in the future.
+- `billingPeriodStartsAtUtc` is used as the entitlement start when present and valid; otherwise activation uses the current UTC processing time.
+- Activation creates a Premium `EntitlementEntity` with source `provider_event`, status `active`, `SubscriptionId = null`, and a safe reason referencing the provider event.
+- Existing events without `billingPeriodEndsAtUtc` are blocked instead of granting open-ended Premium.
+- Duplicate webhook events do not create duplicate billing events and therefore do not create duplicate entitlements.
+- This step does **not** update `SubscriptionEntity`.
+- This step does **not** create or update `PaymentEntity`.
+- This step does **not** implement cancellation, expiry, revocation, or renewal handling.
+- This step does **not** implement full subscription reconciliation.
+- This step does **not** call Paddle.
+- Raw Paddle webhook events remain in `paddle_webhook_events`.
+- Provider-agnostic `billing_events` remain the processing source for reconciliation decisions and entitlement activation.
+- No database migration was required because the current schema already had the required billing event metadata and entitlement columns.
+- Latest confirmed EF migration remains `20260528000000_AddPaddleWebhookEvents`.
+- Webhook smoke now registers a real local test user, extracts the `evt_user_id` claim from the JWT locally, sends a signed `transaction.completed` payload with a future billing period, and verifies entitlement activation.
 
 ## Deferred / Not implemented yet
 
@@ -564,7 +590,7 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - This step does not mutate subscriptions, entitlements, payments, or billing event tables.
 - No database migration was required.
 - Latest confirmed EF migration becomes `AddPaddleWebhookEvents`.
-- Entitlement activation remains deferred; webhook ingestion now only verifies signatures, persists raw events, and prepares idempotency.
+- Entitlement activation foundation v1 is implemented separately from checkout transaction creation and can activate Premium only after webhook ingestion, normalization, and reconciliation decision processing.
 - Optional real sandbox smoke script: `tools/smoke_paddle_checkout_live_sandbox.ps1`.
 - The optional real sandbox smoke requires `-AllowRealPaddleCall` and creates a real Paddle sandbox transaction only; it does not complete payment, call webhooks, or check entitlement activation.
 

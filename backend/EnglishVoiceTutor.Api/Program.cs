@@ -142,6 +142,7 @@ builder.Services.AddSingleton<IPaddleWebhookSignatureVerifier, PaddleWebhookSign
 builder.Services.AddScoped<IPaddleWebhookIngestionService, PaddleWebhookIngestionService>();
 builder.Services.AddScoped<IPaddleWebhookEventNormalizer, PaddleWebhookEventNormalizer>();
 builder.Services.AddScoped<IBillingEventReconciliationDecisionService, BillingEventReconciliationDecisionService>();
+builder.Services.AddScoped<IBillingEventEntitlementActivationService, BillingEventEntitlementActivationService>();
 builder.Services.AddScoped<IAdminUserLookupService, AdminUserLookupService>();
 builder.Services.AddSingleton<IAdminCapabilitiesService, AdminCapabilitiesService>();
 builder.Services.AddScoped<IAdminAuditService, AdminAuditService>();

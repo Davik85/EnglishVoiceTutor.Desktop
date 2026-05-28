@@ -153,6 +153,7 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
 
     private static string CreateSafeMetadataJson(PaddleWebhookEventEntity webhookEvent)
     {
+        var billingPeriod = ExtractBillingPeriod(webhookEvent.RawPayload);
         var safeMetadata = new
         {
             paddleEventId = webhookEvent.PaddleEventId,
@@ -162,11 +163,66 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
             paddleCustomerId = webhookEvent.PaddleCustomerId,
             internalUserId = webhookEvent.InternalUserId,
             internalPlanId = webhookEvent.InternalPlanId,
+            billingPeriodStartsAtUtc = billingPeriod.StartsAtUtc,
+            billingPeriodEndsAtUtc = billingPeriod.EndsAtUtc,
             occurredAtUtc = webhookEvent.OccurredAtUtc,
             receivedAtUtc = webhookEvent.ReceivedAtUtc
         };
 
         return JsonSerializer.Serialize(safeMetadata, SafeMetadataJsonOptions);
+    }
+
+    private static BillingPeriodMetadata ExtractBillingPeriod(string rawPayload)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(rawPayload);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object || !TryGetObject(root, "data", out var data))
+            {
+                return BillingPeriodMetadata.Empty;
+            }
+
+            if (!TryGetObject(data, "billing_period", out var billingPeriod))
+            {
+                return BillingPeriodMetadata.Empty;
+            }
+
+            return new BillingPeriodMetadata(
+                TryParseDateTimeOffset(GetString(billingPeriod, "starts_at")),
+                TryParseDateTimeOffset(GetString(billingPeriod, "ends_at")));
+        }
+        catch (JsonException)
+        {
+            return BillingPeriodMetadata.Empty;
+        }
+    }
+
+    private static bool TryGetObject(JsonElement element, string propertyName, out JsonElement value)
+    {
+        if (element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.Object)
+        {
+            value = property;
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static string? GetString(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var property))
+        {
+            return null;
+        }
+
+        return property.ValueKind == JsonValueKind.String ? property.GetString() : null;
+    }
+
+    private static DateTimeOffset? TryParseDateTimeOffset(string? value)
+    {
+        return DateTimeOffset.TryParse(value, out var parsed) ? parsed.ToUniversalTime() : null;
     }
 
     private static void MarkWebhookEventNormalized(PaddleWebhookEventEntity webhookEvent, DateTimeOffset nowUtc)
@@ -229,5 +285,10 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
     {
         return exception.InnerException is PostgresException postgresException
             && postgresException.SqlState == PostgresErrorCodes.UniqueViolation;
+    }
+
+    private sealed record BillingPeriodMetadata(DateTimeOffset? StartsAtUtc, DateTimeOffset? EndsAtUtc)
+    {
+        public static BillingPeriodMetadata Empty { get; } = new(null, null);
     }
 }
