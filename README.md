@@ -89,10 +89,18 @@ Development admin smoke test (requires a running Development backend at `http://
 powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 ```
 
-Billing checkout smoke test requires a running backend:
+Billing checkout smoke tests require a running backend:
+
+- Default billing smoke:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_billing_checkout.ps1
+```
+
+- Paddle adapter smoke (start backend with Paddle env overrides first):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_checkout_adapter.ps1
 ```
 
 Common validation commands from the repository root:
