@@ -21,6 +21,7 @@ public static class PaddleWebhookEndpoints
         IOptions<PaddleWebhookOptions> options,
         IPaddleWebhookSignatureVerifier signatureVerifier,
         IPaddleWebhookIngestionService ingestionService,
+        IPaddleWebhookEventNormalizer webhookEventNormalizer,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
@@ -82,11 +83,36 @@ public static class PaddleWebhookEndpoints
             });
         }
 
+        var logger = loggerFactory.CreateLogger("PaddleWebhookEndpoint");
+        PaddleWebhookEventNormalizationResult normalizationResult;
+        try
+        {
+            normalizationResult = ingestionResult.EventId is null
+                ? new PaddleWebhookEventNormalizationResult(0, 0, 0, 0, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+                : await webhookEventNormalizer.NormalizeReceivedEventAsync(ingestionResult.EventId, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            var completedAtUtc = DateTimeOffset.UtcNow;
+            normalizationResult = new PaddleWebhookEventNormalizationResult(0, 0, 0, 1, completedAtUtc, completedAtUtc);
+            logger.LogError(exception, "Paddle webhook normalization failed after raw event ingestion. EventId={PaddleEventId}.", ingestionResult.EventId);
+        }
+
+        logger.LogInformation(
+            "Paddle webhook normalization completed after ingestion. CheckedCount={CheckedCount}; NormalizedCount={NormalizedCount}; AlreadyNormalizedCount={AlreadyNormalizedCount}; FailedCount={FailedCount}.",
+            normalizationResult.CheckedCount,
+            normalizationResult.NormalizedCount,
+            normalizationResult.AlreadyNormalizedCount,
+            normalizationResult.FailedCount);
+
         return Results.Ok(new
         {
             accepted = true,
             duplicate = ingestionResult.IsDuplicate,
             eventId = ingestionResult.EventId,
+            normalized = normalizationResult.NormalizedCount > 0 || normalizationResult.AlreadyNormalizedCount > 0,
+            billingEventCreated = normalizationResult.NormalizedCount > 0,
+            existingBillingEvent = ingestionResult.IsDuplicate || normalizationResult.AlreadyNormalizedCount > 0,
             message = ingestionResult.Message
         });
     }

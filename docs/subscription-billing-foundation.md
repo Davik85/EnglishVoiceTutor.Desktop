@@ -567,3 +567,16 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - Entitlement activation remains deferred; webhook ingestion now only verifies signatures, persists raw events, and prepares idempotency.
 - Optional real sandbox smoke script: `tools/smoke_paddle_checkout_live_sandbox.ps1`.
 - The optional real sandbox smoke requires `-AllowRealPaddleCall` and creates a real Paddle sandbox transaction only; it does not complete payment, call webhooks, or check entitlement activation.
+
+## Billing event normalization foundation v1
+
+- Paddle webhook ingestion now normalizes accepted signed Paddle events into provider-agnostic `billing_events` rows immediately after the raw webhook event is safely stored.
+- Normalization is idempotent through the existing unique `billing_events` constraint on provider + provider event ID (`BillingProvider` + `ProviderEventId`).
+- `paddle_webhook_events` remains the raw signed event ingestion table and stores the original signed webhook payload separately from the normalized billing stream.
+- `billing_events` is the provider-agnostic event stream for future reconciliation and stores only safe metadata, not raw payloads, signatures, or secrets.
+- No Premium activation is performed in this step.
+- No entitlement, subscription, or payment mutation is performed in this step.
+- No final entitlement reconciliation is performed in this step.
+- No external Paddle calls are made by normalization.
+- No database migration was required because the existing `BillingEventEntity` and `PaddleWebhookEventEntity` schema was sufficient.
+- Latest confirmed EF migration remains `20260528000000_AddPaddleWebhookEvents`.

@@ -161,7 +161,7 @@ Write-Host "Paddle webhook ingestion smoke test"
 Write-Host ("BaseUrl: {0}" -f $BaseUrl)
 Write-Host "Expected backend environment:"
 Write-Host "  PaddleWebhook__Enabled=true"
-Write-Host "  PaddleWebhook__SecretKey=\"test_webhook_secret\""
+Write-Host '  PaddleWebhook__SecretKey="test_webhook_secret"'
 Write-Host "  PaddleWebhook__TimestampToleranceSeconds=300"
 Write-Host ""
 
@@ -193,14 +193,18 @@ $first = Invoke-WebhookPost -RawBody $payload -Headers $headers
 Assert-StatusCode -Response $first -ExpectedStatusCode 200 -Scenario "first signed webhook"
 Assert-JsonFlag -Body $first.Body -PropertyName "accepted" -ExpectedValue $true -Scenario "first signed webhook"
 Assert-JsonFlag -Body $first.Body -PropertyName "duplicate" -ExpectedValue $false -Scenario "first signed webhook"
-Write-Pass "First signed webhook returned HTTP 200 with accepted=true duplicate=false."
+Assert-JsonFlag -Body $first.Body -PropertyName "normalized" -ExpectedValue $true -Scenario "first signed webhook"
+Assert-JsonFlag -Body $first.Body -PropertyName "billingEventCreated" -ExpectedValue $true -Scenario "first signed webhook"
+Write-Pass "First signed webhook returned HTTP 200 with accepted=true duplicate=false normalized=true billingEventCreated=true."
 
 Write-Step "Posting duplicate signed webhook."
 $duplicate = Invoke-WebhookPost -RawBody $payload -Headers $headers
 Assert-StatusCode -Response $duplicate -ExpectedStatusCode 200 -Scenario "duplicate signed webhook"
 Assert-JsonFlag -Body $duplicate.Body -PropertyName "accepted" -ExpectedValue $true -Scenario "duplicate signed webhook"
 Assert-JsonFlag -Body $duplicate.Body -PropertyName "duplicate" -ExpectedValue $true -Scenario "duplicate signed webhook"
-Write-Pass "Duplicate signed webhook returned HTTP 200 with accepted=true duplicate=true."
+Assert-JsonFlag -Body $duplicate.Body -PropertyName "billingEventCreated" -ExpectedValue $false -Scenario "duplicate signed webhook"
+Assert-JsonFlag -Body $duplicate.Body -PropertyName "existingBillingEvent" -ExpectedValue $true -Scenario "duplicate signed webhook"
+Write-Pass "Duplicate signed webhook returned HTTP 200 with accepted=true duplicate=true billingEventCreated=false existingBillingEvent=true."
 
 Write-Step "Posting unsigned webhook; it must be rejected."
 $unsigned = Invoke-WebhookPost -RawBody $payload
@@ -212,4 +216,4 @@ $invalid = Invoke-WebhookPost -RawBody $payload -Headers @{ "Paddle-Signature" =
 Assert-StatusCode -Response $invalid -ExpectedStatusCode 401 -Scenario "invalid signature webhook"
 Write-Pass "Invalid signature webhook returned HTTP 401."
 
-Write-Pass "Paddle webhook ingestion smoke test passed."
+Write-Pass "Paddle webhook ingestion and normalization smoke test passed."
