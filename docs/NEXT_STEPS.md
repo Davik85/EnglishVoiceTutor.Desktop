@@ -16,9 +16,15 @@ This roadmap starts from the current confirmed MVP state where:
    - reduce noisy duplicate-email logs if needed
    - review expired-token fallback behavior
    - keep dev fallback safe for local testing
-2. Start subscription/payment foundation only after current auth/runtime identity is stable.
-3. Add subscription/payment enforcement later.
-4. Add CMS/admin panel later, only after:
+2. Continue subscription/payment foundation beyond the completed Paddle checkout/webhook/entitlement activation foundation:
+   - cancellation/expiry/revocation handling
+   - renewal handling
+   - subscription status reconciliation
+   - payment record persistence if needed
+   - production Paddle webhook configuration
+   - desktop upgrade/paywall UI
+   - future Apple/Google mobile entitlement bridge
+3. Add broader production admin/RBAC/content-management work later, only after:
    - roles
    - content versioning
    - draft/published workflow
@@ -35,3 +41,7 @@ This roadmap starts from the current confirmed MVP state where:
 - auth-aware Lesson Chat runtime persistence
 - read-only free-limit diagnostics
 - Development diagnostics-only mode
+- Paddle checkout transaction creation v1 behind explicit configuration
+- Paddle webhook ingestion, normalization, reconciliation decision, and entitlement activation foundation v1
+- Backend access/status recognition of `provider_event` Premium entitlement
+- local Development CMS/admin support foundation v1
