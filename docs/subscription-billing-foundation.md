@@ -458,3 +458,17 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
 - CMS UI regression guard: static admin shell audit covers tab IDs, user search forms, premium controls, free lesson reset controls, audit controls, endpoint constants, and memory-only JWT guard.
 - This guard is UI/testing only; it does not change backend endpoints, migrations, Paddle/webhooks, or desktop UI.
+
+## Billing Provider Adapter Foundation v1
+
+- Added a provider-agnostic checkout adapter interface foundation in backend billing services.
+- Existing endpoint remains `POST /api/me/billing/checkout-session`.
+- Existing public API behavior remains disabled/provider-not-configured by default.
+- No real checkout session is created.
+- No external provider call is made.
+- No Paddle checkout integration was added.
+- No Paddle webhook ingestion was added.
+- No subscription/payment/entitlement/billing event mutation was added.
+- No database migration was required.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- This prepares the backend for a future Paddle adapter without coupling the core checkout endpoint to Paddle.
