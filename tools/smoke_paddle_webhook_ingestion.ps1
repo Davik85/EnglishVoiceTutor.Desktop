@@ -88,6 +88,49 @@ function Read-HttpResponseBody {
 }
 
 
+
+function Invoke-JsonGet {
+    param(
+        [string]$RequestUri,
+        [hashtable]$Headers = @{}
+    )
+
+    $requestParameters = @{
+        Uri = $RequestUri
+        Method = "Get"
+        UseBasicParsing = $true
+    }
+
+    if (($null -ne $Headers) -and ($Headers.Count -gt 0)) {
+        $requestParameters.Headers = $Headers
+    }
+
+    try {
+        $response = Invoke-WebRequest @requestParameters
+        return [pscustomobject]@{
+            StatusCode = [int]$response.StatusCode
+            Body = $response.Content
+        }
+    }
+    catch [System.Net.WebException] {
+        $httpResponse = $_.Exception.Response
+        if ($null -eq $httpResponse) {
+            Fail "No HTTP response was returned. Check that backend is running and endpoint did not crash."
+        }
+
+        try {
+            $body = Read-HttpResponseBody -Response $httpResponse
+            return [pscustomobject]@{
+                StatusCode = [int]$httpResponse.StatusCode
+                Body = $body
+            }
+        }
+        finally {
+            $httpResponse.Dispose()
+        }
+    }
+}
+
 function Invoke-JsonPost {
     param(
         [string]$RequestUri,
@@ -261,6 +304,21 @@ function Assert-JsonNumber {
     }
 }
 
+
+function Assert-JsonString {
+    param(
+        [string]$Body,
+        [string]$PropertyName,
+        [string]$ExpectedValue,
+        [string]$Scenario
+    )
+
+    $json = $Body | ConvertFrom-Json
+    if ([string]$json.$PropertyName -ne $ExpectedValue) {
+        Fail ("{0}: expected {1}={2}. Body: {3}" -f $Scenario, $PropertyName, $ExpectedValue, $Body)
+    }
+}
+
 function Assert-BodyDoesNotContain {
     param(
         [string]$Body,
@@ -350,6 +408,22 @@ Assert-JsonNumber -Body $first.Body -PropertyName "entitlementActivationFailed" 
 Assert-BodyDoesNotContain -Body $first.Body -Needle "payment" -Scenario "first signed webhook"
 Assert-BodyDoesNotContain -Body $first.Body -Needle "subscription" -Scenario "first signed webhook"
 Write-Pass "First signed webhook returned HTTP 200 and activated Premium entitlement for the real smoke user."
+
+
+Write-Step "Verify backend access/status sees provider-event Premium entitlement."
+$authHeaders = @{ "Authorization" = ("Bearer {0}" -f $accessToken) }
+
+$lessonAccessResponse = Invoke-JsonGet -RequestUri ($BaseUrl.TrimEnd('/') + "/api/me/lesson-access") -Headers $authHeaders
+Assert-StatusCode -Response $lessonAccessResponse -ExpectedStatusCode 200 -Scenario "authenticated lesson access after provider-event entitlement activation"
+Assert-JsonFlag -Body $lessonAccessResponse.Body -PropertyName "premiumActive" -ExpectedValue $true -Scenario "authenticated lesson access after provider-event entitlement activation"
+Assert-JsonFlag -Body $lessonAccessResponse.Body -PropertyName "canStartNewLesson" -ExpectedValue $true -Scenario "authenticated lesson access after provider-event entitlement activation"
+Assert-JsonString -Body $lessonAccessResponse.Body -PropertyName "decision" -ExpectedValue "allowed_premium" -Scenario "authenticated lesson access after provider-event entitlement activation"
+
+$subscriptionStatusResponse = Invoke-JsonGet -RequestUri ($BaseUrl.TrimEnd('/') + "/api/me/subscription-status") -Headers $authHeaders
+Assert-StatusCode -Response $subscriptionStatusResponse -ExpectedStatusCode 200 -Scenario "authenticated subscription status after provider-event entitlement activation"
+Assert-JsonFlag -Body $subscriptionStatusResponse.Body -PropertyName "premiumActive" -ExpectedValue $true -Scenario "authenticated subscription status after provider-event entitlement activation"
+Assert-JsonString -Body $subscriptionStatusResponse.Body -PropertyName "planId" -ExpectedValue "premium" -Scenario "authenticated subscription status after provider-event entitlement activation"
+Write-Pass "Backend access/status recognizes provider-event Premium entitlement."
 
 Write-Step "Posting duplicate signed webhook."
 $duplicate = Invoke-WebhookPost -RawBody $payload -Headers $headers
