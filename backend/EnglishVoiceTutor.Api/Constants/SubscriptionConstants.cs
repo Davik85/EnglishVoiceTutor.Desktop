@@ -54,9 +54,22 @@ public static class SubscriptionConstants
         public const string Failed = "failed";
         public const string NormalizationFailed = "normalization_failed";
         public const string Ignored = "ignored";
+        public const string ReconciliationPending = "reconciliation_pending";
+        public const string ReconciliationBlocked = "reconciliation_blocked";
     }
 
+    public static class BillingEventTypes
+    {
+        public const string TransactionCompleted = "transaction.completed";
+    }
 
+    public static class BillingEventReconciliation
+    {
+        public const string UnsupportedBillingEventTypeMessage = "Unsupported billing event type for entitlement reconciliation.";
+        public const string MissingInternalUserIdMessage = "Missing internal user id for entitlement reconciliation.";
+        public const string UnsupportedPlanIdMessage = "Unsupported plan id for entitlement reconciliation.";
+        public const string InvalidBillingEventMetadataMessage = "Invalid billing event metadata.";
+    }
 
     public static class Billing
     {
