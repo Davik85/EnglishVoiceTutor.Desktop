@@ -488,6 +488,18 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 - No database migration is required.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
 
+## Paddle checkout adapter smoke test
+
+- `tools/smoke_paddle_checkout_adapter.ps1` verifies the safe `provider=paddle` adapter path.
+- It requires a local backend started with `Billing__CheckoutEnabled=true` and `Billing__Provider=paddle`.
+- It expects `PaddleBilling__CheckoutAdapterEnabled=false`.
+- It verifies `provider=paddle`, `created=false`, `checkoutEnabled=false`, empty `checkoutUrl`, and `paddle_checkout_not_configured`.
+- It does not create a real checkout session.
+- It does not call Paddle or any external provider.
+- It does not mutate subscriptions, entitlements, payments, or billing events.
+- No database migration is required.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+
 ## Paddle Checkout Adapter Configuration Foundation
 
 - Added `PaddleBilling` options with safe non-secret defaults (`CheckoutAdapterEnabled=false`, `Environment=sandbox`, empty `ApiKey`, empty `PremiumPriceId`).
