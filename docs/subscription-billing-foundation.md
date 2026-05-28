@@ -504,11 +504,34 @@ powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 
 - Added `PaddleBilling` options with safe non-secret defaults (`CheckoutAdapterEnabled=false`, `Environment=sandbox`, empty `ApiKey`, empty `PremiumPriceId`).
 - Added a provider-agnostic Paddle checkout adapter registration path so `IBillingProviderCheckoutAdapterResolver` can resolve `paddle` safely.
-- The Paddle adapter does not call Paddle yet.
-- The Paddle adapter does not create real checkout sessions yet.
+- The Paddle adapter now calls Paddle only when explicitly enabled and fully configured.
+- The Paddle adapter can create real Paddle checkout transactions and return `checkoutUrl`; webhooks and entitlement activation remain deferred.
 - No Paddle webhook ingestion was added.
 - No subscription/payment/entitlement/billing event mutation was added.
 - No database migration was required.
 - Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
-- Real checkout remains deferred until Paddle API call, webhook ingestion, billing event persistence, idempotency, and entitlement reconciliation are implemented.
-- Do not put Paddle secrets in appsettings; use user secrets or environment variables later.
+- Webhook ingestion, billing event persistence, idempotency, and entitlement reconciliation remain deferred.
+- Do not put Paddle secrets in appsettings; use user secrets, environment variables, or secure deployment configuration.
+
+## Paddle checkout transaction creation v1
+
+- Backend can create a Paddle sandbox/live checkout transaction when explicitly configured.
+- Existing endpoint remains `POST /api/me/billing/checkout-session`.
+- Real Paddle checkout is controlled by all of these settings being supplied outside client code:
+  - `Billing__CheckoutEnabled=true`
+  - `Billing__Provider=paddle`
+  - `PaddleBilling__CheckoutAdapterEnabled=true`
+  - `PaddleBilling__Environment=sandbox` or `PaddleBilling__Environment=live`
+  - `PaddleBilling__ApiKey=<secret>`
+  - `PaddleBilling__PremiumPriceId=<price id>`
+- Paddle API keys must be stored in environment variables, user secrets, or secure deployment configuration; never store them in `appsettings.json` or client code.
+- This step creates a Paddle transaction through the backend and returns `checkoutUrl` only.
+- This step does not implement Paddle webhooks.
+- This step does not activate Premium.
+- This step does not create internal billing events.
+- This step does not mutate subscriptions, entitlements, payments, or billing event tables.
+- No database migration was required.
+- Latest confirmed EF migration remains `20260524061817_AddSubscriptionFoundationV1`.
+- Entitlement activation is deferred to webhook ingestion, billing event persistence, idempotency, and entitlement reconciliation.
+- Optional real sandbox smoke script: `tools/smoke_paddle_checkout_live_sandbox.ps1`.
+- The optional real sandbox smoke requires `-AllowRealPaddleCall` and creates a real Paddle sandbox transaction only; it does not complete payment, call webhooks, or check entitlement activation.

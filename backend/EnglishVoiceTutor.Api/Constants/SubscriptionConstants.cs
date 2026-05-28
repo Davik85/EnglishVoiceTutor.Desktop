@@ -64,7 +64,16 @@ public static class SubscriptionConstants
         public const string PaddleCheckoutNotConfiguredCode = "paddle_checkout_not_configured";
         public const string PaddleCheckoutNotConfiguredMessage = "Paddle checkout is not configured yet.";
         public const string PaddleCheckoutAdapterDisabledMessage = "Paddle checkout adapter is disabled.";
+        public const string PaddleCheckoutFailedCode = "paddle_checkout_failed";
+        public const string PaddleCheckoutFailedMessage = "Unable to create Paddle checkout session.";
+        public const string PaddleCheckoutUrlMissingCode = "paddle_checkout_url_missing";
+        public const string PaddleCheckoutUrlMissingMessage = "Paddle checkout URL was not returned.";
+        public const string PaddleCheckoutCreatedMessage = "Checkout session created.";
+        public const string PaddleApiVersionHeaderName = "Paddle-Version";
+        public const string PaddleApiVersion = "1";
+        public const string PaddleCheckoutSourceDesktopBackend = "desktop_backend";
         public const string DefaultPaddleEnvironment = "sandbox";
+        public const string LivePaddleEnvironment = "live";
         public const string PlanIdRequiredMessage = "PlanId is required.";
         public const string UnsupportedPlanIdMessage = "Unsupported plan id.";
         public const string DefaultCheckoutCurrency = "USD";

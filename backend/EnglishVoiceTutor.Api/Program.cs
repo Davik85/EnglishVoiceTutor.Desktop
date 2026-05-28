@@ -93,6 +93,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient<PaddleBillingProviderCheckoutAdapter>();
 builder.Services.AddHttpClient(OpenAiConstants.AudioSpeechHttpClientName, httpClient =>
 {
     httpClient.Timeout = Timeout.InfiniteTimeSpan;
@@ -132,7 +133,7 @@ builder.Services.AddScoped<ISubscriptionDiagnosticsService, SubscriptionDiagnost
 builder.Services.AddScoped<ITrialClaimService, TrialClaimService>();
 builder.Services.AddScoped<IDevelopmentTestAccountService, DevelopmentTestAccountService>();
 builder.Services.AddScoped<IBillingProviderCheckoutAdapter, DisabledBillingProviderCheckoutAdapter>();
-builder.Services.AddScoped<IBillingProviderCheckoutAdapter, PaddleBillingProviderCheckoutAdapter>();
+builder.Services.AddScoped<IBillingProviderCheckoutAdapter>(services => services.GetRequiredService<PaddleBillingProviderCheckoutAdapter>());
 builder.Services.AddScoped<IBillingProviderCheckoutAdapterResolver, BillingProviderCheckoutAdapterResolver>();
 builder.Services.AddScoped<IBillingCheckoutService, BillingCheckoutService>();
 builder.Services.AddScoped<IAdminUserLookupService, AdminUserLookupService>();
