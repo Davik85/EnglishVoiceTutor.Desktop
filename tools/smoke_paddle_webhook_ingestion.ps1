@@ -8,6 +8,24 @@ $secret = "test_webhook_secret"
 $route = "/api/billing/webhooks/paddle"
 $uri = ($BaseUrl.TrimEnd('/') + $route)
 
+function Write-Step {
+    param([string]$Message)
+
+    Write-Host ("[STEP] {0}" -f $Message)
+}
+
+function Write-Pass {
+    param([string]$Message)
+
+    Write-Host ("[PASS] {0}" -f $Message)
+}
+
+function Fail {
+    param([string]$Message)
+
+    throw $Message
+}
+
 function New-RandomSuffix {
     return ([Guid]::NewGuid().ToString("N").Substring(0, 12))
 }
@@ -48,14 +66,47 @@ function New-PaddleSignature {
     return ("ts={0};h1={1}" -f $Timestamp, (ConvertTo-HexString -Bytes $hash))
 }
 
+function Read-HttpResponseBody {
+    param([System.Net.WebResponse]$Response)
+
+    if ($null -eq $Response) {
+        return ""
+    }
+
+    $stream = $Response.GetResponseStream()
+    if ($null -eq $stream) {
+        return ""
+    }
+
+    $reader = New-Object System.IO.StreamReader($stream)
+    try {
+        return $reader.ReadToEnd()
+    }
+    finally {
+        $reader.Dispose()
+    }
+}
+
 function Invoke-WebhookPost {
     param(
         [string]$RawBody,
         [hashtable]$Headers = @{}
     )
 
+    $requestParameters = @{
+        Uri = $uri
+        Method = "Post"
+        ContentType = "application/json"
+        Body = $RawBody
+        UseBasicParsing = $true
+    }
+
+    if (($null -ne $Headers) -and ($Headers.Count -gt 0)) {
+        $requestParameters.Headers = $Headers
+    }
+
     try {
-        $response = Invoke-WebRequest -Uri $uri -Method Post -ContentType "application/json" -Headers $Headers -Body $RawBody -UseBasicParsing
+        $response = Invoke-WebRequest @requestParameters
         return [pscustomobject]@{
             StatusCode = [int]$response.StatusCode
             Body = $response.Content
@@ -64,21 +115,18 @@ function Invoke-WebhookPost {
     catch [System.Net.WebException] {
         $httpResponse = $_.Exception.Response
         if ($null -eq $httpResponse) {
-            throw
+            Fail "No HTTP response was returned. Check that backend is running and endpoint did not crash."
         }
 
-        $reader = New-Object System.IO.StreamReader($httpResponse.GetResponseStream())
         try {
-            $body = $reader.ReadToEnd()
+            $body = Read-HttpResponseBody -Response $httpResponse
+            return [pscustomobject]@{
+                StatusCode = [int]$httpResponse.StatusCode
+                Body = $body
+            }
         }
         finally {
-            $reader.Dispose()
             $httpResponse.Dispose()
-        }
-
-        return [pscustomobject]@{
-            StatusCode = [int]$httpResponse.StatusCode
-            Body = $body
         }
     }
 }
@@ -91,7 +139,7 @@ function Assert-StatusCode {
     )
 
     if ($Response.StatusCode -ne $ExpectedStatusCode) {
-        throw ("{0}: expected HTTP {1}, got {2}. Body: {3}" -f $Scenario, $ExpectedStatusCode, $Response.StatusCode, $Response.Body)
+        Fail ("{0}: expected HTTP {1}, got {2}. Body: {3}" -f $Scenario, $ExpectedStatusCode, $Response.StatusCode, $Response.Body)
     }
 }
 
@@ -105,9 +153,17 @@ function Assert-JsonFlag {
 
     $json = $Body | ConvertFrom-Json
     if ($json.$PropertyName -ne $ExpectedValue) {
-        throw ("{0}: expected {1}={2}. Body: {3}" -f $Scenario, $PropertyName, $ExpectedValue, $Body)
+        Fail ("{0}: expected {1}={2}. Body: {3}" -f $Scenario, $PropertyName, $ExpectedValue, $Body)
     }
 }
+
+Write-Host "Paddle webhook ingestion smoke test"
+Write-Host ("BaseUrl: {0}" -f $BaseUrl)
+Write-Host "Expected backend environment:"
+Write-Host "  PaddleWebhook__Enabled=true"
+Write-Host "  PaddleWebhook__SecretKey=\"test_webhook_secret\""
+Write-Host "  PaddleWebhook__TimestampToleranceSeconds=300"
+Write-Host ""
 
 $eventSuffix = New-RandomSuffix
 $transactionSuffix = New-RandomSuffix
@@ -132,20 +188,28 @@ $timestamp = Get-UnixTimestamp
 $signature = New-PaddleSignature -RawBody $payload -SecretKey $secret -Timestamp $timestamp
 $headers = @{ "Paddle-Signature" = $signature }
 
+Write-Step "Posting first signed webhook."
 $first = Invoke-WebhookPost -RawBody $payload -Headers $headers
 Assert-StatusCode -Response $first -ExpectedStatusCode 200 -Scenario "first signed webhook"
 Assert-JsonFlag -Body $first.Body -PropertyName "accepted" -ExpectedValue $true -Scenario "first signed webhook"
 Assert-JsonFlag -Body $first.Body -PropertyName "duplicate" -ExpectedValue $false -Scenario "first signed webhook"
+Write-Pass "First signed webhook returned HTTP 200 with accepted=true duplicate=false."
 
+Write-Step "Posting duplicate signed webhook."
 $duplicate = Invoke-WebhookPost -RawBody $payload -Headers $headers
 Assert-StatusCode -Response $duplicate -ExpectedStatusCode 200 -Scenario "duplicate signed webhook"
 Assert-JsonFlag -Body $duplicate.Body -PropertyName "accepted" -ExpectedValue $true -Scenario "duplicate signed webhook"
 Assert-JsonFlag -Body $duplicate.Body -PropertyName "duplicate" -ExpectedValue $true -Scenario "duplicate signed webhook"
+Write-Pass "Duplicate signed webhook returned HTTP 200 with accepted=true duplicate=true."
 
+Write-Step "Posting unsigned webhook; it must be rejected."
 $unsigned = Invoke-WebhookPost -RawBody $payload
 Assert-StatusCode -Response $unsigned -ExpectedStatusCode 401 -Scenario "unsigned webhook"
+Write-Pass "Unsigned webhook returned HTTP 401."
 
+Write-Step "Posting invalid signature webhook; it must be rejected."
 $invalid = Invoke-WebhookPost -RawBody $payload -Headers @{ "Paddle-Signature" = "ts=$timestamp;h1=0000000000000000000000000000000000000000000000000000000000000000" }
 Assert-StatusCode -Response $invalid -ExpectedStatusCode 401 -Scenario "invalid signature webhook"
+Write-Pass "Invalid signature webhook returned HTTP 401."
 
-Write-Host "[PASS] Paddle webhook ingestion smoke test passed."
+Write-Pass "Paddle webhook ingestion smoke test passed."
