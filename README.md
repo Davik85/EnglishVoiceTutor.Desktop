@@ -97,11 +97,19 @@ Billing checkout smoke tests require a running backend:
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_billing_checkout.ps1
 ```
 
-- Paddle adapter smoke (start backend with Paddle env overrides first):
+- Paddle adapter smoke (start backend with safe disabled Paddle env overrides first; no real Paddle credentials are required):
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_checkout_adapter.ps1
 ```
+
+- Optional real Paddle sandbox checkout smoke (start backend first with Paddle environment variables or user secrets; do not put real API keys in tracked files):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_checkout_live_sandbox.ps1 -AllowRealPaddleCall
+```
+
+This optional smoke creates a real Paddle sandbox transaction and prints the checkout URL, but it does not complete payment, call webhooks, or activate internal entitlement state.
 
 Common validation commands from the repository root:
 

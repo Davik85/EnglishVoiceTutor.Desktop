@@ -1,3 +1,7 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Options;
 using Microsoft.Extensions.Options;
@@ -6,49 +10,159 @@ namespace EnglishVoiceTutor.Api.Services.Billing;
 
 public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheckoutAdapter
 {
+    private const string TransactionsPath = "/transactions";
+    private const string PaddleRequestIdHeaderName = "Paddle-Request-Id";
+
+    private readonly HttpClient httpClient;
     private readonly PaddleBillingOptions options;
     private readonly ILogger<PaddleBillingProviderCheckoutAdapter> logger;
 
     public PaddleBillingProviderCheckoutAdapter(
+        HttpClient httpClient,
         IOptions<PaddleBillingOptions> options,
         ILogger<PaddleBillingProviderCheckoutAdapter> logger)
     {
+        this.httpClient = httpClient;
         this.options = options.Value;
         this.logger = logger;
     }
 
     public string ProviderId => SubscriptionConstants.BillingProviders.Paddle;
 
-    public Task<BillingProviderCheckoutResult> CreateCheckoutSessionAsync(
+    public async Task<BillingProviderCheckoutResult> CreateCheckoutSessionAsync(
         BillingProviderCheckoutRequest request,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        var environment = GetNormalizedEnvironment();
+
         if (!options.CheckoutAdapterEnabled)
         {
-            logger.LogInformation("Paddle checkout adapter resolved but disabled. PlanId={PlanId}; Environment={Environment}.", request.PlanId, GetNormalizedEnvironment());
-            return Task.FromResult(CreateResult(request.PlanId, SubscriptionConstants.Billing.PaddleCheckoutAdapterDisabledMessage));
+            logger.LogInformation("Paddle checkout adapter resolved but disabled. PlanId={PlanId}; Environment={Environment}.", request.PlanId, environment);
+            return CreateNotConfiguredResult(request.PlanId, SubscriptionConstants.Billing.PaddleCheckoutAdapterDisabledMessage);
         }
 
         if (string.IsNullOrWhiteSpace(options.ApiKey))
         {
-            logger.LogInformation("Paddle checkout adapter resolved but API key is not configured. PlanId={PlanId}; Environment={Environment}.", request.PlanId, GetNormalizedEnvironment());
-            return Task.FromResult(CreateResult(request.PlanId, SubscriptionConstants.Billing.PaddleCheckoutNotConfiguredMessage));
+            logger.LogInformation("Paddle checkout adapter resolved but API key is not configured. PlanId={PlanId}; Environment={Environment}.", request.PlanId, environment);
+            return CreateNotConfiguredResult(request.PlanId, SubscriptionConstants.Billing.PaddleCheckoutNotConfiguredMessage);
         }
 
         if (string.Equals(request.PlanId, SubscriptionConstants.Plans.PremiumPlanId, StringComparison.OrdinalIgnoreCase)
             && string.IsNullOrWhiteSpace(options.PremiumPriceId))
         {
-            logger.LogInformation("Paddle checkout adapter resolved but Premium price id is not configured. PlanId={PlanId}; Environment={Environment}.", request.PlanId, GetNormalizedEnvironment());
-            return Task.FromResult(CreateResult(request.PlanId, SubscriptionConstants.Billing.PaddleCheckoutNotConfiguredMessage));
+            logger.LogInformation("Paddle checkout adapter resolved but Premium price id is not configured. PlanId={PlanId}; Environment={Environment}.", request.PlanId, environment);
+            return CreateNotConfiguredResult(request.PlanId, SubscriptionConstants.Billing.PaddleCheckoutNotConfiguredMessage);
         }
 
-        logger.LogInformation("Paddle checkout adapter resolved. External checkout creation is not implemented yet. PlanId={PlanId}; Environment={Environment}.", request.PlanId, GetNormalizedEnvironment());
-        return Task.FromResult(CreateResult(request.PlanId, SubscriptionConstants.Billing.PaddleCheckoutNotConfiguredMessage));
+        var baseUrl = GetBaseUrl(environment);
+        if (string.IsNullOrWhiteSpace(baseUrl) || !Uri.TryCreate(baseUrl, UriKind.Absolute, out var baseUri))
+        {
+            logger.LogWarning("Paddle checkout adapter base URL is not configured correctly. PlanId={PlanId}; Environment={Environment}.", request.PlanId, environment);
+            return CreateNotConfiguredResult(request.PlanId, SubscriptionConstants.Billing.PaddleCheckoutNotConfiguredMessage);
+        }
+
+        var transactionUri = new Uri(baseUri, TransactionsPath);
+        var payload = new
+        {
+            collection_mode = "automatic",
+            items = new[]
+            {
+                new
+                {
+                    price_id = options.PremiumPriceId.Trim(),
+                    quantity = 1
+                }
+            },
+            custom_data = new
+            {
+                evt_user_id = request.UserId.ToString(),
+                evt_plan_id = SubscriptionConstants.Plans.PremiumPlanId,
+                evt_checkout_source = SubscriptionConstants.Billing.PaddleCheckoutSourceDesktopBackend
+            }
+        };
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, transactionUri)
+        {
+            Content = JsonContent.Create(payload)
+        };
+
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", options.ApiKey.Trim());
+        httpRequest.Headers.TryAddWithoutValidation(
+            SubscriptionConstants.Billing.PaddleApiVersionHeaderName,
+            GetApiVersion());
+
+        try
+        {
+            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+            var paddleRequestId = GetHeaderValue(response, PaddleRequestIdHeaderName);
+
+            if (response.StatusCode != HttpStatusCode.Created)
+            {
+                logger.LogWarning(
+                    "Paddle checkout transaction creation failed. StatusCode={StatusCode}; PaddleRequestId={PaddleRequestId}; PlanId={PlanId}; Environment={Environment}; UserId={UserId}.",
+                    (int)response.StatusCode,
+                    paddleRequestId,
+                    request.PlanId,
+                    environment,
+                    request.UserId);
+                return CreateFailedResult(request.PlanId);
+            }
+
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            var parsedResponse = ParsePaddleCheckoutResponse(responseBody);
+
+            if (string.IsNullOrWhiteSpace(parsedResponse.CheckoutUrl))
+            {
+                logger.LogWarning(
+                    "Paddle checkout transaction response did not include checkout URL. PaddleRequestId={PaddleRequestId}; PaddleTransactionId={PaddleTransactionId}; PlanId={PlanId}; Environment={Environment}; UserId={UserId}.",
+                    paddleRequestId,
+                    parsedResponse.TransactionId,
+                    request.PlanId,
+                    environment,
+                    request.UserId);
+                return CreateUrlMissingResult(request.PlanId);
+            }
+
+            logger.LogInformation(
+                "Paddle checkout transaction created. PaddleRequestId={PaddleRequestId}; PaddleTransactionId={PaddleTransactionId}; PlanId={PlanId}; Environment={Environment}; UserId={UserId}.",
+                paddleRequestId,
+                parsedResponse.TransactionId,
+                request.PlanId,
+                environment,
+                request.UserId);
+
+            return new BillingProviderCheckoutResult
+            {
+                Created = true,
+                CheckoutEnabled = true,
+                Provider = SubscriptionConstants.BillingProviders.Paddle,
+                PlanId = request.PlanId,
+                CheckoutUrl = parsedResponse.CheckoutUrl,
+                ErrorCode = string.Empty,
+                Message = GetCheckoutCreatedMessage(),
+                CheckedAtUtc = DateTimeOffset.UtcNow
+            };
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogWarning("Paddle checkout transaction creation timed out. PlanId={PlanId}; Environment={Environment}; UserId={UserId}.", request.PlanId, environment, request.UserId);
+            return CreateFailedResult(request.PlanId);
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogWarning(ex, "Paddle checkout transaction creation HTTP request failed. PlanId={PlanId}; Environment={Environment}; UserId={UserId}.", request.PlanId, environment, request.UserId);
+            return CreateFailedResult(request.PlanId);
+        }
+        catch (JsonException ex)
+        {
+            logger.LogWarning(ex, "Paddle checkout transaction response could not be parsed. PlanId={PlanId}; Environment={Environment}; UserId={UserId}.", request.PlanId, environment, request.UserId);
+            return CreateUrlMissingResult(request.PlanId);
+        }
     }
 
-    private BillingProviderCheckoutResult CreateResult(string planId, string message)
+    private BillingProviderCheckoutResult CreateNotConfiguredResult(string planId, string message)
     {
         return new BillingProviderCheckoutResult
         {
@@ -63,10 +177,102 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
         };
     }
 
+    private BillingProviderCheckoutResult CreateFailedResult(string planId)
+    {
+        return new BillingProviderCheckoutResult
+        {
+            Created = false,
+            CheckoutEnabled = false,
+            Provider = SubscriptionConstants.BillingProviders.Paddle,
+            PlanId = planId,
+            CheckoutUrl = string.Empty,
+            ErrorCode = SubscriptionConstants.Billing.PaddleCheckoutFailedCode,
+            Message = SubscriptionConstants.Billing.PaddleCheckoutFailedMessage,
+            CheckedAtUtc = DateTimeOffset.UtcNow
+        };
+    }
+
+    private BillingProviderCheckoutResult CreateUrlMissingResult(string planId)
+    {
+        return new BillingProviderCheckoutResult
+        {
+            Created = false,
+            CheckoutEnabled = false,
+            Provider = SubscriptionConstants.BillingProviders.Paddle,
+            PlanId = planId,
+            CheckoutUrl = string.Empty,
+            ErrorCode = SubscriptionConstants.Billing.PaddleCheckoutUrlMissingCode,
+            Message = SubscriptionConstants.Billing.PaddleCheckoutUrlMissingMessage,
+            CheckedAtUtc = DateTimeOffset.UtcNow
+        };
+    }
+
     private string GetNormalizedEnvironment()
     {
-        return string.IsNullOrWhiteSpace(options.Environment)
+        var environment = string.IsNullOrWhiteSpace(options.Environment)
             ? SubscriptionConstants.Billing.DefaultPaddleEnvironment
             : options.Environment.Trim().ToLowerInvariant();
+
+        return string.Equals(environment, SubscriptionConstants.Billing.LivePaddleEnvironment, StringComparison.OrdinalIgnoreCase)
+            ? SubscriptionConstants.Billing.LivePaddleEnvironment
+            : SubscriptionConstants.Billing.DefaultPaddleEnvironment;
     }
+
+    private string GetBaseUrl(string environment)
+    {
+        return string.Equals(environment, SubscriptionConstants.Billing.LivePaddleEnvironment, StringComparison.OrdinalIgnoreCase)
+            ? options.LiveBaseUrl
+            : options.SandboxBaseUrl;
+    }
+
+    private string GetApiVersion()
+    {
+        return string.IsNullOrWhiteSpace(options.ApiVersion)
+            ? SubscriptionConstants.Billing.PaddleApiVersion
+            : options.ApiVersion.Trim();
+    }
+
+    private string GetCheckoutCreatedMessage()
+    {
+        return string.IsNullOrWhiteSpace(options.CheckoutCreatedMessage)
+            ? SubscriptionConstants.Billing.PaddleCheckoutCreatedMessage
+            : options.CheckoutCreatedMessage.Trim();
+    }
+
+    private static string GetHeaderValue(HttpResponseMessage response, string headerName)
+    {
+        if (response.Headers.TryGetValues(headerName, out var values))
+        {
+            return values.FirstOrDefault() ?? string.Empty;
+        }
+
+        return string.Empty;
+    }
+
+    private static PaddleCheckoutResponse ParsePaddleCheckoutResponse(string responseBody)
+    {
+        using var document = JsonDocument.Parse(responseBody);
+        var root = document.RootElement;
+
+        if (!root.TryGetProperty("data", out var data))
+        {
+            return new PaddleCheckoutResponse(string.Empty, string.Empty);
+        }
+
+        var transactionId = data.TryGetProperty("id", out var idElement) && idElement.ValueKind == JsonValueKind.String
+            ? idElement.GetString() ?? string.Empty
+            : string.Empty;
+
+        var checkoutUrl = string.Empty;
+        if (data.TryGetProperty("checkout", out var checkout)
+            && checkout.TryGetProperty("url", out var urlElement)
+            && urlElement.ValueKind == JsonValueKind.String)
+        {
+            checkoutUrl = urlElement.GetString() ?? string.Empty;
+        }
+
+        return new PaddleCheckoutResponse(transactionId, checkoutUrl);
+    }
+
+    private sealed record PaddleCheckoutResponse(string TransactionId, string CheckoutUrl);
 }
