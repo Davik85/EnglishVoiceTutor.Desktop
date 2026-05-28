@@ -61,6 +61,10 @@ public static class SubscriptionConstants
         public const string BillingProviderNotConfiguredCode = "billing_provider_not_configured";
         public const string InvalidBillingCheckoutRequestCode = "invalid_billing_checkout_request";
         public const string BillingCheckoutDisabledMessage = "Billing checkout is not configured yet.";
+        public const string PaddleCheckoutNotConfiguredCode = "paddle_checkout_not_configured";
+        public const string PaddleCheckoutNotConfiguredMessage = "Paddle checkout is not configured yet.";
+        public const string PaddleCheckoutAdapterDisabledMessage = "Paddle checkout adapter is disabled.";
+        public const string DefaultPaddleEnvironment = "sandbox";
         public const string PlanIdRequiredMessage = "PlanId is required.";
         public const string UnsupportedPlanIdMessage = "Unsupported plan id.";
         public const string DefaultCheckoutCurrency = "USD";
