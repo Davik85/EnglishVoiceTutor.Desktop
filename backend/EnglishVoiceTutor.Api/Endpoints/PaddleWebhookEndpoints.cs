@@ -42,7 +42,9 @@ public static class PaddleWebhookEndpoints
             : null;
         if (string.IsNullOrWhiteSpace(signatureHeader))
         {
-            return Results.Unauthorized();
+            return PaddleWebhookUnauthorized(
+                "paddle_webhook_signature_missing",
+                "Paddle webhook signature is required.");
         }
 
         using var reader = new StreamReader(httpContext.Request.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, leaveOpen: false);
@@ -65,7 +67,9 @@ public static class PaddleWebhookEndpoints
                 verificationResult.ErrorCode,
                 verificationResult.Timestamp);
 
-            return Results.Unauthorized();
+            return PaddleWebhookUnauthorized(
+                MapSignatureVerificationErrorCode(verificationResult.ErrorCode),
+                MapSignatureVerificationMessage(verificationResult.ErrorCode));
         }
 
         var ingestionResult = await ingestionService.IngestAsync(rawBody, signatureHeader, nowUtc, cancellationToken);
@@ -85,5 +89,34 @@ public static class PaddleWebhookEndpoints
             eventId = ingestionResult.EventId,
             message = ingestionResult.Message
         });
+    }
+
+    private static IResult PaddleWebhookUnauthorized(string errorCode, string message)
+    {
+        return Results.Json(
+            new
+            {
+                errorCode,
+                message
+            },
+            statusCode: StatusCodes.Status401Unauthorized);
+    }
+
+    private static string MapSignatureVerificationErrorCode(string verificationErrorCode)
+    {
+        return verificationErrorCode switch
+        {
+            "missing_signature" => "paddle_webhook_signature_missing",
+            _ => "paddle_webhook_signature_invalid"
+        };
+    }
+
+    private static string MapSignatureVerificationMessage(string verificationErrorCode)
+    {
+        return verificationErrorCode switch
+        {
+            "missing_signature" => "Paddle webhook signature is required.",
+            _ => "Paddle webhook signature is invalid."
+        };
     }
 }
