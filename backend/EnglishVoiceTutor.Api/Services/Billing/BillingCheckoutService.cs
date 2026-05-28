@@ -30,12 +30,12 @@ public sealed class BillingCheckoutService : IBillingCheckoutService
 
         if (string.IsNullOrWhiteSpace(request.PlanId))
         {
-            throw new BadHttpRequestException("PlanId is required.", StatusCodes.Status400BadRequest);
+            throw new ArgumentException(SubscriptionConstants.Billing.PlanIdRequiredMessage, nameof(request.PlanId));
         }
 
         if (!string.Equals(request.PlanId, SubscriptionConstants.Billing.DefaultPremiumPlanId, StringComparison.OrdinalIgnoreCase))
         {
-            throw new BadHttpRequestException("Unsupported plan id.", StatusCodes.Status400BadRequest);
+            throw new ArgumentException(SubscriptionConstants.Billing.UnsupportedPlanIdMessage, nameof(request.PlanId));
         }
 
         var options = billingOptions.Value;

@@ -59,7 +59,10 @@ public static class SubscriptionConstants
     public static class Billing
     {
         public const string BillingProviderNotConfiguredCode = "billing_provider_not_configured";
+        public const string InvalidBillingCheckoutRequestCode = "invalid_billing_checkout_request";
         public const string BillingCheckoutDisabledMessage = "Billing checkout is not configured yet.";
+        public const string PlanIdRequiredMessage = "PlanId is required.";
+        public const string UnsupportedPlanIdMessage = "Unsupported plan id.";
         public const string DefaultCheckoutCurrency = "USD";
         public const string DefaultPremiumPlanId = Plans.PremiumPlanId;
         public const string CheckoutModeSubscription = "subscription";
