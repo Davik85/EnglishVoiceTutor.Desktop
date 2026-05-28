@@ -87,6 +87,96 @@ function Read-HttpResponseBody {
     }
 }
 
+
+function Invoke-JsonPost {
+    param(
+        [string]$RequestUri,
+        [string]$RawBody,
+        [hashtable]$Headers = @{}
+    )
+
+    $requestParameters = @{
+        Uri = $RequestUri
+        Method = "Post"
+        ContentType = "application/json"
+        Body = $RawBody
+        UseBasicParsing = $true
+    }
+
+    if (($null -ne $Headers) -and ($Headers.Count -gt 0)) {
+        $requestParameters.Headers = $Headers
+    }
+
+    try {
+        $response = Invoke-WebRequest @requestParameters
+        return [pscustomobject]@{
+            StatusCode = [int]$response.StatusCode
+            Body = $response.Content
+        }
+    }
+    catch [System.Net.WebException] {
+        $httpResponse = $_.Exception.Response
+        if ($null -eq $httpResponse) {
+            Fail "No HTTP response was returned. Check that backend is running and endpoint did not crash."
+        }
+
+        try {
+            $body = Read-HttpResponseBody -Response $httpResponse
+            return [pscustomobject]@{
+                StatusCode = [int]$httpResponse.StatusCode
+                Body = $body
+            }
+        }
+        finally {
+            $httpResponse.Dispose()
+        }
+    }
+}
+
+function ConvertFrom-Base64UrlString {
+    param([string]$Value)
+
+    $base64 = $Value.Replace('-', '+').Replace('_', '/')
+    switch ($base64.Length % 4) {
+        2 { $base64 = $base64 + "==" }
+        3 { $base64 = $base64 + "=" }
+        0 { }
+        default { Fail "Invalid base64url value in JWT payload." }
+    }
+
+    return [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($base64))
+}
+
+function Get-JwtClaimValue {
+    param(
+        [string]$AccessToken,
+        [string]$ClaimName
+    )
+
+    $parts = $AccessToken.Split('.')
+    if ($parts.Length -lt 2) {
+        Fail "Access token is not a JWT."
+    }
+
+    $payloadJson = ConvertFrom-Base64UrlString -Value $parts[1]
+    $payload = $payloadJson | ConvertFrom-Json
+    return $payload.$ClaimName
+}
+
+function Assert-JsonNumberAtLeast {
+    param(
+        [string]$Body,
+        [string]$PropertyName,
+        [int]$MinimumValue,
+        [string]$Scenario
+    )
+
+    $json = $Body | ConvertFrom-Json
+    if ([int]$json.$PropertyName -lt $MinimumValue) {
+        Fail ("{0}: expected {1}>={2}. Body: {3}" -f $Scenario, $PropertyName, $MinimumValue, $Body)
+    }
+}
+
 function Invoke-WebhookPost {
     param(
         [string]$RawBody,
@@ -191,10 +281,35 @@ Write-Host '  PaddleWebhook__SecretKey="test_webhook_secret"'
 Write-Host "  PaddleWebhook__TimestampToleranceSeconds=300"
 Write-Host ""
 
+Write-Step "Registering a local smoke test user for entitlement activation."
+$userSuffix = New-RandomSuffix
+$testEmail = ("paddle-webhook-smoke-{0}@example.test" -f $userSuffix)
+$testPassword = ("SmokeTest!{0}" -f $userSuffix)
+$registerBody = ([ordered]@{
+    email = $testEmail
+    password = $testPassword
+    displayName = "Paddle Webhook Smoke"
+} | ConvertTo-Json -Depth 5 -Compress)
+$registerResponse = Invoke-JsonPost -RequestUri ($BaseUrl.TrimEnd('/') + "/api/auth/register") -RawBody $registerBody
+Assert-StatusCode -Response $registerResponse -ExpectedStatusCode 201 -Scenario "register smoke user"
+$authJson = $registerResponse.Body | ConvertFrom-Json
+$accessToken = $authJson.accessToken
+if ([string]::IsNullOrWhiteSpace($accessToken)) {
+    Fail ("register smoke user: accessToken was missing. Body: {0}" -f $registerResponse.Body)
+}
+
+$userId = Get-JwtClaimValue -AccessToken $accessToken -ClaimName "evt_user_id"
+$parsedUserId = [Guid]::Empty
+if (-not ([Guid]::TryParse($userId, [ref]$parsedUserId))) {
+    Fail ("register smoke user: evt_user_id claim was missing or invalid. Claim: {0}" -f $userId)
+}
+Write-Pass ("Registered smoke user and extracted evt_user_id={0} from JWT." -f $userId)
+
 $eventSuffix = New-RandomSuffix
 $transactionSuffix = New-RandomSuffix
-$userId = [Guid]::NewGuid().ToString()
 $occurredAt = [DateTimeOffset]::UtcNow.ToString("o")
+$billingPeriodStartsAt = [DateTimeOffset]::UtcNow.ToString("o")
+$billingPeriodEndsAt = [DateTimeOffset]::UtcNow.AddDays(7).ToString("o")
 
 $payloadObject = [ordered]@{
     event_id = ("evt_test_{0}" -f $eventSuffix)
@@ -205,6 +320,10 @@ $payloadObject = [ordered]@{
         custom_data = [ordered]@{
             evt_user_id = $userId
             evt_plan_id = "premium"
+        }
+        billing_period = [ordered]@{
+            starts_at = $billingPeriodStartsAt
+            ends_at = $billingPeriodEndsAt
         }
     }
 }
@@ -223,11 +342,13 @@ Assert-JsonFlag -Body $first.Body -PropertyName "normalized" -ExpectedValue $tru
 Assert-JsonFlag -Body $first.Body -PropertyName "billingEventCreated" -ExpectedValue $true -Scenario "first signed webhook"
 Assert-JsonFlag -Body $first.Body -PropertyName "reconciliationPending" -ExpectedValue $true -Scenario "first signed webhook"
 Assert-JsonNumber -Body $first.Body -PropertyName "reconciliationFailed" -ExpectedValue 0 -Scenario "first signed webhook"
-Assert-BodyDoesNotContain -Body $first.Body -Needle "activate" -Scenario "first signed webhook"
-Assert-BodyDoesNotContain -Body $first.Body -Needle "entitlement" -Scenario "first signed webhook"
+Assert-JsonFlag -Body $first.Body -PropertyName "entitlementActivated" -ExpectedValue $true -Scenario "first signed webhook"
+Assert-JsonNumberAtLeast -Body $first.Body -PropertyName "entitlementActivatedCount" -MinimumValue 1 -Scenario "first signed webhook"
+Assert-JsonNumber -Body $first.Body -PropertyName "entitlementActivationBlocked" -ExpectedValue 0 -Scenario "first signed webhook"
+Assert-JsonNumber -Body $first.Body -PropertyName "entitlementActivationFailed" -ExpectedValue 0 -Scenario "first signed webhook"
 Assert-BodyDoesNotContain -Body $first.Body -Needle "payment" -Scenario "first signed webhook"
 Assert-BodyDoesNotContain -Body $first.Body -Needle "subscription" -Scenario "first signed webhook"
-Write-Pass "First signed webhook returned HTTP 200 with accepted=true duplicate=false normalized=true billingEventCreated=true reconciliationPending=true."
+Write-Pass "First signed webhook returned HTTP 200 and activated Premium entitlement for the real smoke user."
 
 Write-Step "Posting duplicate signed webhook."
 $duplicate = Invoke-WebhookPost -RawBody $payload -Headers $headers
@@ -238,7 +359,8 @@ Assert-JsonFlag -Body $duplicate.Body -PropertyName "billingEventCreated" -Expec
 Assert-JsonFlag -Body $duplicate.Body -PropertyName "existingBillingEvent" -ExpectedValue $true -Scenario "duplicate signed webhook"
 Assert-JsonFlag -Body $duplicate.Body -PropertyName "reconciliationPending" -ExpectedValue $false -Scenario "duplicate signed webhook"
 Assert-JsonNumber -Body $duplicate.Body -PropertyName "reconciliationFailed" -ExpectedValue 0 -Scenario "duplicate signed webhook"
-Write-Pass "Duplicate signed webhook returned HTTP 200 with accepted=true duplicate=true billingEventCreated=false existingBillingEvent=true and no duplicate reconciliation decision."
+Assert-JsonNumber -Body $duplicate.Body -PropertyName "entitlementActivatedCount" -ExpectedValue 0 -Scenario "duplicate signed webhook"
+Write-Pass "Duplicate signed webhook returned HTTP 200 with accepted=true duplicate=true billingEventCreated=false existingBillingEvent=true and no duplicate entitlement activation."
 
 Write-Step "Posting unsigned webhook; it must be rejected."
 $unsigned = Invoke-WebhookPost -RawBody $payload
@@ -250,4 +372,4 @@ $invalid = Invoke-WebhookPost -RawBody $payload -Headers @{ "Paddle-Signature" =
 Assert-StatusCode -Response $invalid -ExpectedStatusCode 401 -Scenario "invalid signature webhook"
 Write-Pass "Invalid signature webhook returned HTTP 401."
 
-Write-Pass "Paddle webhook ingestion, normalization, and reconciliation decision smoke test passed."
+Write-Pass "Paddle webhook ingestion, normalization, reconciliation decision, and entitlement activation smoke test passed."
