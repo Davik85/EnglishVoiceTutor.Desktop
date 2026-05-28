@@ -49,8 +49,10 @@ public static class SubscriptionConstants
     public static class BillingEventStatuses
     {
         public const string Received = "received";
+        public const string Normalized = "normalized";
         public const string Processed = "processed";
         public const string Failed = "failed";
+        public const string NormalizationFailed = "normalization_failed";
         public const string Ignored = "ignored";
     }
 

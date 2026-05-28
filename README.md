@@ -111,7 +111,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_checkout_
 
 This optional smoke creates a real Paddle sandbox transaction and prints the checkout URL, but it does not complete payment, call webhooks, or activate internal entitlement state.
 
-Paddle webhook ingestion smoke requires a running backend with `PaddleWebhook__Enabled=true` and `PaddleWebhook__SecretKey=test_webhook_secret`:
+Paddle webhook ingestion smoke requires a running backend with `PaddleWebhook__Enabled=true` and `PaddleWebhook__SecretKey=test_webhook_secret`; it also verifies immediate billing event normalization response fields:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_webhook_ingestion.ps1
