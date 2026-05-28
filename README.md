@@ -89,6 +89,12 @@ Development admin smoke test (requires a running Development backend at `http://
 powershell -ExecutionPolicy Bypass -File tools\smoke_admin_foundation.ps1
 ```
 
+Billing checkout smoke test requires a running backend:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_billing_checkout.ps1
+```
+
 Common validation commands from the repository root:
 
 ```powershell
