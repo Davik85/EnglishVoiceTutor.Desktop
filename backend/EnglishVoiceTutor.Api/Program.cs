@@ -49,6 +49,8 @@ builder.Services.Configure<DevelopmentTestAccountOptions>(
     builder.Configuration.GetSection(DevelopmentTestAccountOptions.SectionName));
 builder.Services.Configure<BillingOptions>(
     builder.Configuration.GetSection(BillingOptions.SectionName));
+builder.Services.Configure<PaddleBillingOptions>(
+    builder.Configuration.GetSection(PaddleBillingOptions.SectionName));
 builder.Services.Configure<AdminBootstrapOptions>(
     builder.Configuration.GetSection(AdminBootstrapOptions.SectionName));
 
@@ -130,6 +132,7 @@ builder.Services.AddScoped<ISubscriptionDiagnosticsService, SubscriptionDiagnost
 builder.Services.AddScoped<ITrialClaimService, TrialClaimService>();
 builder.Services.AddScoped<IDevelopmentTestAccountService, DevelopmentTestAccountService>();
 builder.Services.AddScoped<IBillingProviderCheckoutAdapter, DisabledBillingProviderCheckoutAdapter>();
+builder.Services.AddScoped<IBillingProviderCheckoutAdapter, PaddleBillingProviderCheckoutAdapter>();
 builder.Services.AddScoped<IBillingProviderCheckoutAdapterResolver, BillingProviderCheckoutAdapterResolver>();
 builder.Services.AddScoped<IBillingCheckoutService, BillingCheckoutService>();
 builder.Services.AddScoped<IAdminUserLookupService, AdminUserLookupService>();
