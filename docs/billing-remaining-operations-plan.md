@@ -2,7 +2,7 @@
 
 Review date: 2026-05-29.
 
-Status: Step 4B implemented; remaining operations still planned only.
+Status: Step 4C setup checklist and local config guard added; remaining lifecycle operations still planned only.
 
 The current Paddle billing lifecycle foundation is completed through Step 4B. This document records the implemented resumed/activated snapshot-only policy and continues to plan the remaining billing operations without implementing unrelated backend, desktop, Admin UI, database, configuration, smoke-script, or test changes.
 
@@ -10,8 +10,9 @@ The current Paddle billing lifecycle foundation is completed through Step 4B. Th
 
 - Title: Billing Remaining Operations Plan.
 - Review date: 2026-05-29.
-- Status: Step 4B implemented; remaining operations still planned only.
+- Status: Step 4C setup checklist and local config guard added; remaining lifecycle operations still planned only.
 - Current lifecycle foundation: completed through Step 4B.
+- Current setup checklist: Step 4C production Paddle webhook setup documentation and local config guard.
 
 ## 2. Non-negotiable architecture boundaries
 
@@ -84,7 +85,9 @@ Plan:
   - never revoke trial/manual/admin/provider/future-mobile entitlements accidentally.
 - Manual admin revocation should remain separate from provider webhook automation.
 
-## 7. Remaining operation D: production Paddle webhook setup checklist
+## 7. Current operation D: production Paddle webhook setup checklist
+
+Step 4C adds `docs/paddle-production-webhook-setup.md` and `tools/smoke_paddle_production_config_guard.ps1` as documentation/tooling only. This does not prove production deployment and does not change billing lifecycle behavior.
 
 Plan:
 
@@ -97,6 +100,7 @@ Plan:
 - Verify missing secret returns `503`.
 - Define a rotation procedure for webhook secret/API key.
 - Define an incident procedure if a secret is exposed.
+- Run `tools/smoke_paddle_production_config_guard.ps1` locally to validate configuration shape without calling Paddle or printing secrets.
 
 ## 8. Remaining operation E: desktop upgrade/paywall UI plan
 
@@ -144,7 +148,7 @@ Plan:
 
 - Step 4A: this planning document only.
 - Step 4B: `subscription.resumed` / `subscription.activated` snapshot-only handling.
-- Step 4C: production Paddle webhook setup checklist and dry-run validation.
+- Step 4C: production Paddle webhook setup checklist and dry-run validation (`docs/paddle-production-webhook-setup.md`, `tools/smoke_paddle_production_config_guard.ps1`).
 - Step 4D: desktop upgrade/paywall UI plan.
 - Step 4E: refund/chargeback adjustment model design.
 - Step 4F: background reconciliation job design.
