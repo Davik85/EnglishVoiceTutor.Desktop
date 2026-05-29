@@ -23,6 +23,7 @@ public static class PaddleWebhookEndpoints
         IPaddleWebhookIngestionService ingestionService,
         IPaddleWebhookEventNormalizer webhookEventNormalizer,
         IBillingEventReconciliationDecisionService reconciliationDecisionService,
+        IBillingEventSubscriptionSnapshotService subscriptionSnapshotService,
         IBillingEventEntitlementActivationService entitlementActivationService,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
@@ -105,6 +106,32 @@ public static class PaddleWebhookEndpoints
             normalizationResult.NormalizedCount,
             normalizationResult.AlreadyNormalizedCount,
             normalizationResult.FailedCount);
+
+        BillingEventSubscriptionSnapshotResult subscriptionSnapshotResult;
+        try
+        {
+            subscriptionSnapshotResult = ingestionResult.EventId is null
+                ? new BillingEventSubscriptionSnapshotResult(0, 0, 0, 0, 0, 0, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+                : await subscriptionSnapshotService.ProcessProviderEventAsync(
+                    SubscriptionConstants.BillingProviders.Paddle,
+                    ingestionResult.EventId,
+                    cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            var completedAtUtc = DateTimeOffset.UtcNow;
+            subscriptionSnapshotResult = new BillingEventSubscriptionSnapshotResult(0, 0, 0, 0, 1, 0, completedAtUtc, completedAtUtc);
+            logger.LogError(exception, "Billing event subscription lifecycle snapshot processing failed after Paddle webhook normalization. EventId={PaddleEventId}.", ingestionResult.EventId);
+        }
+
+        logger.LogInformation(
+            "Billing event subscription lifecycle snapshot processing completed after Paddle webhook normalization. CheckedCount={CheckedCount}; UpsertedCount={UpsertedCount}; IgnoredOlderCount={IgnoredOlderCount}; BlockedCount={BlockedCount}; FailedCount={FailedCount}; AlreadySkippedCount={AlreadySkippedCount}.",
+            subscriptionSnapshotResult.CheckedCount,
+            subscriptionSnapshotResult.UpsertedCount,
+            subscriptionSnapshotResult.IgnoredOlderCount,
+            subscriptionSnapshotResult.BlockedCount,
+            subscriptionSnapshotResult.FailedCount,
+            subscriptionSnapshotResult.AlreadySkippedCount);
 
         BillingEventReconciliationDecisionResult reconciliationResult;
         try

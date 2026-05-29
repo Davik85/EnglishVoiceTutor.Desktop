@@ -155,7 +155,9 @@ public sealed class PaddleWebhookIngestionService : IPaddleWebhookIngestionServi
             eventType.StartsWith("customer.", StringComparison.OrdinalIgnoreCase) ? dataId : null);
 
         Guid? internalUserId = null;
-        var internalUserIdValue = customData.HasValue ? GetString(customData.Value, "evt_user_id") : null;
+        var internalUserIdValue = customData.HasValue
+            ? FirstNonEmpty(GetString(customData.Value, "evt_user_id"), GetString(customData.Value, "internalUserId"))
+            : null;
         if (Guid.TryParse(internalUserIdValue, out var parsedInternalUserId))
         {
             internalUserId = parsedInternalUserId;
@@ -170,7 +172,9 @@ public sealed class PaddleWebhookIngestionService : IPaddleWebhookIngestionServi
             subscriptionId,
             customerId,
             internalUserId,
-            customData.HasValue ? GetString(customData.Value, "evt_plan_id") : null);
+            customData.HasValue
+                ? FirstNonEmpty(GetString(customData.Value, "evt_plan_id"), GetString(customData.Value, "internalPlanId"))
+                : null);
     }
 
     private static JsonElement? GetObject(JsonElement element, string propertyName)
