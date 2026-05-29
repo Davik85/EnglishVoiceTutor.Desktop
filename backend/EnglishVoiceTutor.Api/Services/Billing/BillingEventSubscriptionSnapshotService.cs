@@ -207,7 +207,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
             FirstNonEmpty(metadata.PaddleCustomerId),
             FirstNonEmpty(metadata.PaddlePriceId),
             FirstNonEmpty(metadata.PaddleProductId),
-            MapSubscriptionStatus(metadata.PaddleStatus),
+            MapSubscriptionStatus(metadata.PaddleStatus, billingEvent.EventType),
             metadata.BillingPeriodStartsAtUtc,
             metadata.BillingPeriodEndsAtUtc,
             metadata.CancelAtPeriodEnd,
@@ -229,15 +229,15 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         subscription.Status = snapshot.Status;
         subscription.Provider = billingEvent.BillingProvider;
         subscription.ProviderSubscriptionId = snapshot.ProviderSubscriptionId;
-        subscription.ProviderCustomerId = snapshot.ProviderCustomerId;
-        subscription.ProviderPriceId = snapshot.ProviderPriceId;
-        subscription.ProviderProductId = snapshot.ProviderProductId;
-        subscription.CurrentPeriodStartUtc = snapshot.BillingPeriodStartsAtUtc;
-        subscription.CurrentPeriodEndUtc = snapshot.BillingPeriodEndsAtUtc;
-        subscription.ExpiresAt = snapshot.BillingPeriodEndsAtUtc;
-        subscription.CancelAtPeriodEnd = snapshot.CancelAtPeriodEnd;
-        subscription.ScheduledChangeAction = snapshot.ScheduledChangeAction;
-        subscription.ScheduledChangeEffectiveAtUtc = snapshot.ScheduledChangeEffectiveAtUtc;
+        subscription.ProviderCustomerId = snapshot.ProviderCustomerId ?? subscription.ProviderCustomerId;
+        subscription.ProviderPriceId = snapshot.ProviderPriceId ?? subscription.ProviderPriceId;
+        subscription.ProviderProductId = snapshot.ProviderProductId ?? subscription.ProviderProductId;
+        subscription.CurrentPeriodStartUtc = snapshot.BillingPeriodStartsAtUtc ?? subscription.CurrentPeriodStartUtc;
+        subscription.CurrentPeriodEndUtc = snapshot.BillingPeriodEndsAtUtc ?? subscription.CurrentPeriodEndUtc;
+        subscription.ExpiresAt = snapshot.BillingPeriodEndsAtUtc ?? subscription.ExpiresAt;
+        subscription.CancelAtPeriodEnd = subscription.CancelAtPeriodEnd || snapshot.CancelAtPeriodEnd || IsScheduledCancellation(snapshot.ScheduledChangeAction);
+        subscription.ScheduledChangeAction = snapshot.ScheduledChangeAction ?? subscription.ScheduledChangeAction;
+        subscription.ScheduledChangeEffectiveAtUtc = snapshot.ScheduledChangeEffectiveAtUtc ?? subscription.ScheduledChangeEffectiveAtUtc;
         subscription.LastProviderEventId = snapshot.ProviderEventId;
         subscription.LastProviderEventType = snapshot.ProviderEventType;
         subscription.LastProviderEventOccurredAtUtc = snapshot.EventOccurredAtUtc;
@@ -249,7 +249,8 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
     {
         return billingEvent.BillingProvider == SubscriptionConstants.BillingProviders.Paddle
             && (string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionCreated, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionUpdated, StringComparison.OrdinalIgnoreCase));
+                || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionUpdated, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionPastDue, StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool IsOlderProviderEvent(SubscriptionEntity subscription, DateTimeOffset? incomingEventOccurredAtUtc)
@@ -259,8 +260,21 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
             && incomingEventOccurredAtUtc.Value < subscription.LastProviderEventOccurredAtUtc.Value;
     }
 
-    private static string MapSubscriptionStatus(string? providerStatus)
+    private static bool IsScheduledCancellation(string? scheduledChangeAction)
     {
+        return string.Equals(
+            scheduledChangeAction?.Trim(),
+            SubscriptionConstants.ScheduledChangeActions.Cancel,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string MapSubscriptionStatus(string? providerStatus, string eventType)
+    {
+        if (string.Equals(eventType, SubscriptionConstants.BillingEventTypes.SubscriptionPastDue, StringComparison.OrdinalIgnoreCase))
+        {
+            return SubscriptionConstants.SubscriptionStatuses.PastDue;
+        }
+
         return providerStatus?.Trim().ToLowerInvariant() switch
         {
             SubscriptionConstants.SubscriptionStatuses.Active => SubscriptionConstants.SubscriptionStatuses.Active,

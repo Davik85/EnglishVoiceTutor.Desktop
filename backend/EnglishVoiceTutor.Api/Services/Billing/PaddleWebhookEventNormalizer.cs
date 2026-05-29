@@ -247,7 +247,7 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
                 price.PriceId,
                 price.ProductId,
                 billingPeriod,
-                GetBoolean(data, "cancel_at_period_end") ?? string.Equals(scheduledChange.Action, "cancel", StringComparison.OrdinalIgnoreCase),
+                GetBoolean(data, "cancel_at_period_end") ?? string.Equals(scheduledChange.Action, SubscriptionConstants.ScheduledChangeActions.Cancel, StringComparison.OrdinalIgnoreCase),
                 scheduledChange.Action,
                 scheduledChange.EffectiveAtUtc);
         }

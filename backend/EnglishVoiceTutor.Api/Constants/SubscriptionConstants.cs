@@ -65,6 +65,12 @@ public static class SubscriptionConstants
         public const string TransactionPaymentFailed = "transaction.payment_failed";
         public const string SubscriptionCreated = "subscription.created";
         public const string SubscriptionUpdated = "subscription.updated";
+        public const string SubscriptionPastDue = "subscription.past_due";
+    }
+
+    public static class ScheduledChangeActions
+    {
+        public const string Cancel = "cancel";
     }
 
     public static class PaymentStatuses
