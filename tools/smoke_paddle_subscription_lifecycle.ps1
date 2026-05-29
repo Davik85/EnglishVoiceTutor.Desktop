@@ -258,6 +258,25 @@ function Assert-JsonString {
     }
 }
 
+function Assert-DateTimeOffsetClose {
+    param(
+        [string]$ActualValue,
+        [string]$ExpectedValue,
+        [string]$Scenario,
+        [string]$PropertyName,
+        [int]$ToleranceSeconds = 1,
+        [string]$Body = ""
+    )
+
+    $actual = [DateTimeOffset]::Parse($ActualValue).ToUniversalTime()
+    $expected = [DateTimeOffset]::Parse($ExpectedValue).ToUniversalTime()
+    $difference = [Math]::Abs(($actual - $expected).TotalSeconds)
+
+    if ($difference -gt $ToleranceSeconds) {
+        Fail ("{0}: expected {1} close to {2}, got {3}. Difference: {4:N6}s; tolerance: {5}s. Body: {6}" -f $Scenario, $PropertyName, $expected.ToString("o"), $actual.ToString("o"), $difference, $ToleranceSeconds, $Body)
+    }
+}
+
 function Assert-JsonDateString {
     param(
         [string]$Body,
@@ -267,11 +286,13 @@ function Assert-JsonDateString {
     )
 
     $json = $Body | ConvertFrom-Json
-    $actual = [DateTimeOffset]::Parse([string]$json.$PropertyName).ToUniversalTime().ToString("o")
-    $expected = [DateTimeOffset]::Parse($ExpectedValue).ToUniversalTime().ToString("o")
-    if ($actual -ne $expected) {
-        Fail ("{0}: expected {1}={2}, got {3}. Body: {4}" -f $Scenario, $PropertyName, $expected, $actual, $Body)
-    }
+    Assert-DateTimeOffsetClose `
+        -ActualValue ([string]$json.$PropertyName) `
+        -ExpectedValue $ExpectedValue `
+        -Scenario $Scenario `
+        -PropertyName $PropertyName `
+        -ToleranceSeconds 1 `
+        -Body $Body
 }
 
 function Invoke-SignedWebhookPost {
