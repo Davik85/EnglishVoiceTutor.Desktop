@@ -183,7 +183,8 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - Actual `subscription.canceled` updates `SubscriptionEntity.Status = Canceled`.
 - Actual `subscription.paused` updates `SubscriptionEntity.Status = Paused`.
 - `SubscriptionEntity` stores subscription lifecycle data only and does not grant Premium access by itself.
-- `subscription.resumed` / `subscription.activated` restore behavior is not implemented yet.
+- `subscription.resumed` and `subscription.activated` update only `SubscriptionEntity` snapshot/status to active and do not restore Premium by themselves.
+- Premium restoration still requires valid `transaction.completed` through the existing entitlement activation/extension path.
 
 ## Payment persistence snapshot foundation v1
 
@@ -234,7 +235,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - Actual `subscription.canceled` expires only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context.
 - Actual `subscription.paused` expires only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context.
 - Manual/admin/trial/development/future-mobile entitlements are not touched by this provider-event expiry path.
-- This expiry policy does not implement `subscription.resumed` or `subscription.activated` restore behavior.
+- `subscription.resumed` and `subscription.activated` are snapshot-only active-status events and do not reverse provider-event entitlement expiry by themselves.
 
 ## Event-scoped webhook request processing
 
@@ -291,6 +292,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - `tools/smoke_paddle_entitlement_extension.ps1`
 - `tools/smoke_paddle_cancellation_past_due_policy.ps1`
 - `tools/smoke_paddle_canceled_paused_expiry_policy.ps1`
+- `tools/smoke_paddle_resumed_activated_snapshot_policy.ps1`
 
 ## Latest confirmed validation
 
@@ -348,8 +350,7 @@ Current Paddle billing and entitlement work does **not** complete all production
 Deferred scope / next roadmap:
 - Production Paddle webhook configuration is not completed yet.
 - Desktop upgrade/paywall UI is not implemented yet.
-- `subscription.resumed` behavior is not implemented yet.
-- `subscription.activated` restore behavior is not implemented yet.
+- `subscription.resumed` / `subscription.activated` grace-access restoration before `transaction.completed` is not implemented.
 - Refund handling is not implemented yet.
 - Chargeback handling is not implemented yet.
 - Manual revocation automation is not implemented yet.

@@ -68,6 +68,8 @@ public static class SubscriptionConstants
         public const string SubscriptionPastDue = "subscription.past_due";
         public const string SubscriptionCanceled = "subscription.canceled";
         public const string SubscriptionPaused = "subscription.paused";
+        public const string SubscriptionResumed = "subscription.resumed";
+        public const string SubscriptionActivated = "subscription.activated";
     }
 
     public static class ScheduledChangeActions

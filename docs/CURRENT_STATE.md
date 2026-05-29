@@ -4,7 +4,7 @@ Review date: 2026-05-29.
 
 ## Short summary
 
-EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. Lesson Chat, account login, trial entitlement, free lesson access checks, local Development admin support, and the provider-agnostic billing lifecycle foundation through Step 3C are implemented and validated. Paddle is the current desktop/web provider adapter, but backend account, subscription, entitlement, usage, limits, lesson history, payment, and Premium/free status remain the source of truth.
+EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. Lesson Chat, account login, trial entitlement, free lesson access checks, local Development admin support, and the provider-agnostic billing lifecycle foundation through Step 4B is implemented and validated where local tooling is available. Paddle is the current desktop/web provider adapter, but backend account, subscription, entitlement, usage, limits, lesson history, payment, and Premium/free status remain the source of truth.
 
 ## Product architecture principle
 
@@ -106,7 +106,7 @@ Study language is the language of lessons, hints, feedback, summary, transcripti
 
 ## Paddle billing lifecycle foundation status
 
-**Implemented and validated through Step 3C**
+**Implemented through Step 4B**
 
 1. Provider-agnostic checkout foundation:
    - `POST /api/me/billing/checkout-session` exists.
@@ -158,7 +158,11 @@ Study language is the language of lessons, hints, feedback, summary, transcripti
    - Actual `subscription.paused` updates `SubscriptionEntity.Status = Paused`.
    - Actual `subscription.paused` expires only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context.
    - Manual/admin/trial/development/future-mobile entitlements are not touched by this provider-event expiry path.
-   - `subscription.resumed` / `subscription.activated` restore behavior is not implemented yet.
+9. Resumed / activated snapshot-only policy:
+   - `subscription.resumed` updates `SubscriptionEntity` snapshot/status to active.
+   - `subscription.activated` updates `SubscriptionEntity` snapshot/status to active.
+   - `subscription.resumed` and `subscription.activated` do not create, extend, or restore Premium by themselves.
+   - Premium restoration still requires a valid `transaction.completed` through the existing entitlement activation/extension path.
 
 ## Admin/support foundation status
 
@@ -220,6 +224,7 @@ Current smoke scripts:
 - `tools/smoke_paddle_entitlement_extension.ps1`
 - `tools/smoke_paddle_cancellation_past_due_policy.ps1`
 - `tools/smoke_paddle_canceled_paused_expiry_policy.ps1`
+- `tools/smoke_paddle_resumed_activated_snapshot_policy.ps1`
 
 Latest confirmed validation:
 
@@ -253,14 +258,13 @@ Latest confirmed validation:
 - Entitlement activation can create or extend Premium `EntitlementEntity` rows from validated `reconciliation_pending` billing events.
 - `SubscriptionEntity` is mutated only by subscription lifecycle snapshot processing and does not grant Premium access by itself.
 - Actual `subscription.canceled` and `subscription.paused` events can shorten only active `provider_event` Premium `EntitlementEntity` rows for the resolved internal user/provider subscription context.
+- `subscription.resumed` and `subscription.activated` update only `SubscriptionEntity` snapshot/status and do not restore Premium by themselves.
 - `PaymentEntity` is mutated only by payment persistence snapshot processing and is not used for access decisions.
 
 ## Known limitations / deferred scope
 
 - Production Paddle webhook configuration is not completed yet.
 - Desktop upgrade/paywall UI is not implemented yet.
-- `subscription.resumed` behavior is not implemented yet.
-- `subscription.activated` restore behavior is not implemented yet.
 - Refund handling is not implemented yet.
 - Chargeback handling is not implemented yet.
 - Manual revocation automation is not implemented yet.
@@ -271,9 +275,8 @@ Latest confirmed validation:
 
 ## Next recommended phase
 
-The next phase is planning remaining billing operations only. Do not implement remaining lifecycle behavior before a plan is approved. Recommended planning topics:
+The next phase is planning the still-deferred billing operations only. Do not implement remaining lifecycle behavior before a plan is approved. Recommended planning topics:
 
-- `subscription.resumed` / `subscription.activated` restore policy;
 - refunds / chargebacks policy;
 - manual revocation automation policy;
 - production Paddle webhook setup checklist;

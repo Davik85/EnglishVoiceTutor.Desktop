@@ -9,7 +9,7 @@ This roadmap starts from the current confirmed MVP state where:
 - optional desktop Account UI is implemented,
 - Settings and Lesson Chat runtime persistence are auth-aware,
 - Development free-limit mode is diagnostics-only,
-- Paddle checkout, webhook ingestion, subscription snapshots, payment snapshots, entitlement activation/extension, scheduled-cancellation policy, past-due policy, and actual canceled/paused expiry policy are implemented and validated through Step 3C.
+- Paddle checkout, webhook ingestion, subscription snapshots, payment snapshots, entitlement activation/extension, scheduled-cancellation policy, past-due policy, actual canceled/paused expiry policy, and resumed/activated snapshot-only policy are implemented through Step 4B.
 
 ## Recommended next backend/product order
 
@@ -19,7 +19,6 @@ This roadmap starts from the current confirmed MVP state where:
    - keep dev fallback safe for local testing
 2. Plan remaining billing operations before implementation
    - next planning document: `docs/billing-remaining-operations-plan.md`
-   - `subscription.resumed` / `subscription.activated` restore policy
    - refund and chargeback policy
    - manual revocation automation policy
    - production Paddle webhook setup checklist
