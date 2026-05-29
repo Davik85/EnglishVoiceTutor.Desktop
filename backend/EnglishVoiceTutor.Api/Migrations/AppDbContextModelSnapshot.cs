@@ -586,13 +586,6 @@ namespace EnglishVoiceTutor.Api.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<string>("ScheduledChangeAction")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTimeOffset?>("ScheduledChangeEffectiveAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("timestamp with time zone");
 
