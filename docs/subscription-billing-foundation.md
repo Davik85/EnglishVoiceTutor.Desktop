@@ -31,7 +31,8 @@ English Voice Tutor is an international product for desktop now and future mobil
 - Active Premium entitlement allows lesson start.
 - Premium access bypasses free-lesson daily limits.
 - Premium can come from trial, Development test-account grants, local admin grants, or validated provider billing events.
-- Provider billing activation currently creates `EntitlementEntity` rows from validated `reconciliation_pending` `billing_events` only.
+- Provider billing activation creates or extends `provider_event` Premium `EntitlementEntity` rows from validated `reconciliation_pending` `transaction.completed` `billing_events` only; later valid period ends extend access, and older/equal period ends do not shorten it.
+- Cancellation, pause, past-due expiry, revocation, refunds, and chargebacks remain deferred lifecycle work.
 - In local Development, a configured development test account can simulate unlimited Premium entitlement.
 
 ## Enforcement model

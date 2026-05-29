@@ -234,6 +234,7 @@ public static class PaddleWebhookEndpoints
             entitlementActivationChecked = entitlementActivationResult.CheckedCount,
             entitlementActivated = entitlementActivationResult.ActivatedCount > 0,
             entitlementActivatedCount = entitlementActivationResult.ActivatedCount,
+            entitlementExpiresAtUtc = entitlementActivationResult.EntitlementExpiresAtUtc,
             entitlementActivationBlocked = entitlementActivationResult.BlockedCount,
             entitlementActivationFailed = entitlementActivationResult.FailedCount,
             message = ingestionResult.Message

@@ -7,4 +7,5 @@ public sealed record BillingEventEntitlementActivationResult(
     int FailedCount,
     int AlreadySkippedCount,
     DateTimeOffset StartedAtUtc,
-    DateTimeOffset CompletedAtUtc);
+    DateTimeOffset CompletedAtUtc,
+    DateTimeOffset? EntitlementExpiresAtUtc = null);
