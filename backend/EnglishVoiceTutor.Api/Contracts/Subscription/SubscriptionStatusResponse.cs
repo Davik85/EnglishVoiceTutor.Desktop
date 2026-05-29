@@ -8,11 +8,15 @@ public sealed class SubscriptionStatusResponse
     public string PlanId { get; set; } = SubscriptionConstants.Plans.FreePlanId;
     public string PlanName { get; set; } = SubscriptionConstants.Plans.FreePlanName;
     public bool PremiumActive { get; set; }
+    public DateTimeOffset? PremiumEntitlementExpiresAtUtc { get; set; }
     public bool TrialActive { get; set; }
     public DateTimeOffset? TrialEndsAtUtc { get; set; }
     public string SubscriptionStatus { get; set; } = SubscriptionConstants.SubscriptionStatuses.None;
     public string BillingProvider { get; set; } = SubscriptionConstants.BillingProviders.None;
     public DateTimeOffset? CurrentPeriodEndUtc { get; set; }
+    public bool CancelAtPeriodEnd { get; set; }
+    public string? ScheduledChangeAction { get; set; }
+    public DateTimeOffset? ScheduledChangeEffectiveAtUtc { get; set; }
     public bool FreeLessonUsedToday { get; set; }
     public int FreeLessonRemainingToday { get; set; } = SubscriptionConstants.FreeLessonsPerDay;
     public string FreeLessonConsumptionRule { get; set; } = SubscriptionConstants.FreeLessonConsumptionRule;

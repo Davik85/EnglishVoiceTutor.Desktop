@@ -24,31 +24,36 @@ public sealed class SubscriptionStatusService(
             EnforcementEnabled = subscriptionEnforcementOptions.Value.Enabled
         };
 
-        var activeSubscription = await dbContext.Subscriptions
+        var latestSubscription = await dbContext.Subscriptions
             .AsNoTracking()
-            .Where(subscription => subscription.UserId == userId && subscription.Status == SubscriptionConstants.SubscriptionStatuses.Active)
+            .Where(subscription => subscription.UserId == userId)
             .OrderByDescending(subscription => subscription.UpdatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (activeSubscription is not null)
+        if (latestSubscription is not null)
         {
-            response.SubscriptionStatus = activeSubscription.Status;
-            response.BillingProvider = activeSubscription.Provider;
-            response.CurrentPeriodEndUtc = activeSubscription.CurrentPeriodEndUtc;
+            response.SubscriptionStatus = latestSubscription.Status;
+            response.BillingProvider = latestSubscription.Provider;
+            response.CurrentPeriodEndUtc = latestSubscription.CurrentPeriodEndUtc;
+            response.CancelAtPeriodEnd = latestSubscription.CancelAtPeriodEnd;
+            response.ScheduledChangeAction = latestSubscription.ScheduledChangeAction;
+            response.ScheduledChangeEffectiveAtUtc = latestSubscription.ScheduledChangeEffectiveAtUtc;
         }
 
-        var premiumEntitlementActive = await dbContext.Entitlements
+        var premiumEntitlement = await dbContext.Entitlements
             .AsNoTracking()
-            .AnyAsync(entitlement =>
+            .Where(entitlement =>
                 entitlement.UserId == userId &&
                 entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType &&
                 entitlement.Status == SubscriptionConstants.Entitlements.StatusActive &&
                 entitlement.StartsAtUtc <= now &&
-                (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > now),
-                cancellationToken);
+                (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > now))
+            .OrderByDescending(entitlement => entitlement.ExpiresAtUtc)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        response.PremiumActive = premiumEntitlementActive;
-        if (premiumEntitlementActive)
+        response.PremiumActive = premiumEntitlement is not null;
+        response.PremiumEntitlementExpiresAtUtc = premiumEntitlement?.ExpiresAtUtc;
+        if (premiumEntitlement is not null)
         {
             response.PlanId = SubscriptionConstants.Plans.PremiumPlanId;
             response.PlanName = SubscriptionConstants.Plans.PremiumPlanName;

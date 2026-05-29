@@ -174,9 +174,12 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 
 ## Subscription lifecycle snapshot foundation v1
 
-- Paddle `subscription.created` and `subscription.updated` events can now upsert a provider-agnostic `SubscriptionEntity` snapshot for an existing internal user.
+- Paddle `subscription.created`, `subscription.updated`, and `subscription.past_due` events can now upsert a provider-agnostic `SubscriptionEntity` snapshot for an existing internal user.
 - Snapshot persistence is idempotent by provider + provider subscription id and ignores older provider events when a newer lifecycle event was already applied.
+- Scheduled cancellation metadata from `subscription.updated` is recorded as snapshot state without early Premium revocation or entitlement shortening.
+- `subscription.past_due` is recorded as `past_due` snapshot state without entitlement extension or revocation.
 - This snapshot stores subscription lifecycle data only; it does not grant, revoke, pause, resume, renew, expire, or otherwise change Premium entitlement/access behavior.
+- Immediate cancellation, pause/resume effects, manual revocation, refunds, chargebacks, and full reconciliation remain deferred.
 - `PaymentEntity` is not mutated by this flow.
 
 ## Entitlement reconciliation decision foundation v1
