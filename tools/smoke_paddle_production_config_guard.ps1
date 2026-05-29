@@ -92,7 +92,9 @@ function Write-ConfigStatus {
 
 function Add-Issue {
     param(
-        [Parameter(Mandatory = $true)][System.Collections.Generic.List[string]]$Issues,
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [System.Collections.Generic.List[string]]$Issues,
         [Parameter(Mandatory = $true)][string]$Message
     )
 
@@ -101,7 +103,9 @@ function Add-Issue {
 
 function Require-Set {
     param(
-        [Parameter(Mandatory = $true)][System.Collections.Generic.List[string]]$Issues,
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [System.Collections.Generic.List[string]]$Issues,
         [Parameter(Mandatory = $true)][string]$Name,
         [AllowNull()][string]$Value
     )
@@ -217,7 +221,7 @@ if ($useLiveGradeChecks) {
     Require-Set -Issues $issues -Name $PaddlePremiumPriceIdName -Value $paddlePremiumPriceId
 }
 
-if (($AllVariableNames | Where-Object { Test-IsSet ($config[$_]) }).Count -eq 0) {
+if (@($AllVariableNames | Where-Object { Test-IsSet ($config[$_]) }).Count -eq 0) {
     $warnings.Add("No Paddle billing environment variables are set. For local dev smoke only, set the test variables used by existing smoke scripts. For sandbox/live readiness, rerun with -Strict and secure environment configuration.") | Out-Null
 }
 
