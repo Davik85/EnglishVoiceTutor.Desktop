@@ -2,7 +2,7 @@
 
 Review date: 2026-05-29.
 
-Status: Step 4C setup checklist and local config guard added; remaining lifecycle operations still planned only.
+Status: Step 4C setup checklist/local config guard and Step 4D desktop upgrade/paywall UI plan added; remaining lifecycle operations still planned only.
 
 The current Paddle billing lifecycle foundation is completed through Step 4B. This document records the implemented resumed/activated snapshot-only policy and continues to plan the remaining billing operations without implementing unrelated backend, desktop, Admin UI, database, configuration, smoke-script, or test changes.
 
@@ -10,9 +10,10 @@ The current Paddle billing lifecycle foundation is completed through Step 4B. Th
 
 - Title: Billing Remaining Operations Plan.
 - Review date: 2026-05-29.
-- Status: Step 4C setup checklist and local config guard added; remaining lifecycle operations still planned only.
+- Status: Step 4C setup checklist/local config guard and Step 4D desktop upgrade/paywall UI plan added; remaining lifecycle operations still planned only.
 - Current lifecycle foundation: completed through Step 4B.
 - Current setup checklist: Step 4C production Paddle webhook setup documentation and local config guard.
+- Current desktop UI plan: Step 4D desktop upgrade/paywall UI planning document (`docs/desktop-upgrade-paywall-ui-plan.md`) added; desktop paywall UI remains deferred and is not implemented.
 
 ## 2. Non-negotiable architecture boundaries
 
@@ -102,9 +103,11 @@ Plan:
 - Define an incident procedure if a secret is exposed.
 - Run `tools/smoke_paddle_production_config_guard.ps1` locally to validate configuration shape without calling Paddle or printing secrets.
 
-## 8. Remaining operation E: desktop upgrade/paywall UI plan
+## 8. Current operation E: desktop upgrade/paywall UI plan
 
-Plan:
+Step 4D adds `docs/desktop-upgrade-paywall-ui-plan.md` as a planning document only. Desktop upgrade/paywall UI remains deferred until actual desktop UI code is implemented in a later approved task.
+
+Plan summary:
 
 - Desktop should not decide Premium locally.
 - Desktop should call backend access/status endpoints.
@@ -112,9 +115,12 @@ Plan:
 - Checkout session should be requested from backend.
 - Desktop should open `checkoutUrl` but not activate Premium locally.
 - Desktop should refresh backend subscription/access status after checkout completion.
+- Paddle should remain behind the backend/provider adapter.
+- Future mobile should follow the same backend-account/backend-entitlement model.
 
-UX states:
+Planned UX states are detailed in `docs/desktop-upgrade-paywall-ui-plan.md` and include:
 
+- Signed out;
 - Free with allowance remaining;
 - Free allowance used;
 - Trial active;
@@ -149,7 +155,7 @@ Plan:
 - Step 4A: this planning document only.
 - Step 4B: `subscription.resumed` / `subscription.activated` snapshot-only handling.
 - Step 4C: production Paddle webhook setup checklist and dry-run validation (`docs/paddle-production-webhook-setup.md`, `tools/smoke_paddle_production_config_guard.ps1`).
-- Step 4D: desktop upgrade/paywall UI plan.
+- Step 4D: desktop upgrade/paywall UI plan (`docs/desktop-upgrade-paywall-ui-plan.md`) as documentation only; desktop paywall UI remains deferred.
 - Step 4E: refund/chargeback adjustment model design.
 - Step 4F: background reconciliation job design.
 - Step 4G: Apple/Google mobile entitlement bridge design.
