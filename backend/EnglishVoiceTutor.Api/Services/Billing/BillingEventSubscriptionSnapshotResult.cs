@@ -7,5 +7,7 @@ public sealed record BillingEventSubscriptionSnapshotResult(
     int BlockedCount,
     int FailedCount,
     int AlreadySkippedCount,
+    int ProviderEventEntitlementExpiredCount,
+    DateTimeOffset? ProviderEventEntitlementExpiresAtUtc,
     DateTimeOffset StartedAtUtc,
     DateTimeOffset CompletedAtUtc);

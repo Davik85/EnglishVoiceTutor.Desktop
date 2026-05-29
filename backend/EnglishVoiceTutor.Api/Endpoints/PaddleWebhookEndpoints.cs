@@ -138,7 +138,7 @@ public static class PaddleWebhookEndpoints
         try
         {
             subscriptionSnapshotResult = ingestionResult.EventId is null
-                ? new BillingEventSubscriptionSnapshotResult(0, 0, 0, 0, 0, 0, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+                ? new BillingEventSubscriptionSnapshotResult(0, 0, 0, 0, 0, 0, 0, null, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
                 : await subscriptionSnapshotService.ProcessProviderEventAsync(
                     SubscriptionConstants.BillingProviders.Paddle,
                     ingestionResult.EventId,
@@ -147,7 +147,7 @@ public static class PaddleWebhookEndpoints
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             var completedAtUtc = DateTimeOffset.UtcNow;
-            subscriptionSnapshotResult = new BillingEventSubscriptionSnapshotResult(0, 0, 0, 0, 1, 0, completedAtUtc, completedAtUtc);
+            subscriptionSnapshotResult = new BillingEventSubscriptionSnapshotResult(0, 0, 0, 0, 1, 0, 0, null, completedAtUtc, completedAtUtc);
             logger.LogError(exception, "Billing event subscription lifecycle snapshot processing failed after Paddle webhook normalization. EventId={PaddleEventId}.", ingestionResult.EventId);
         }
 
@@ -231,6 +231,8 @@ public static class PaddleWebhookEndpoints
             reconciliationIgnored = reconciliationResult.IgnoredCount,
             reconciliationBlocked = reconciliationResult.BlockedCount,
             reconciliationFailed = reconciliationResult.FailedCount,
+            providerEventEntitlementExpiredCount = subscriptionSnapshotResult.ProviderEventEntitlementExpiredCount,
+            providerEventEntitlementExpiresAtUtc = subscriptionSnapshotResult.ProviderEventEntitlementExpiresAtUtc,
             entitlementActivationChecked = entitlementActivationResult.CheckedCount,
             entitlementActivated = entitlementActivationResult.ActivatedCount > 0,
             entitlementActivatedCount = entitlementActivationResult.ActivatedCount,

@@ -182,6 +182,7 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
             cancelAtPeriodEnd = subscriptionSnapshot.CancelAtPeriodEnd,
             scheduledChangeAction = subscriptionSnapshot.ScheduledChangeAction,
             scheduledChangeEffectiveAtUtc = subscriptionSnapshot.ScheduledChangeEffectiveAtUtc,
+            effectiveAtUtc = subscriptionSnapshot.EffectiveAtUtc,
             occurredAtUtc = webhookEvent.OccurredAtUtc,
             receivedAtUtc = webhookEvent.ReceivedAtUtc
         };
@@ -249,7 +250,10 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
                 billingPeriod,
                 GetBoolean(data, "cancel_at_period_end") ?? string.Equals(scheduledChange.Action, SubscriptionConstants.ScheduledChangeActions.Cancel, StringComparison.OrdinalIgnoreCase),
                 scheduledChange.Action,
-                scheduledChange.EffectiveAtUtc);
+                scheduledChange.EffectiveAtUtc,
+                FirstDateTimeOffset(
+                    TryParseDateTimeOffset(GetString(data, "effective_at")),
+                    scheduledChange.EffectiveAtUtc));
         }
         catch (JsonException)
         {
@@ -405,6 +409,11 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         return values.FirstOrDefault(value => value.HasValue);
     }
 
+    private static DateTimeOffset? FirstDateTimeOffset(params DateTimeOffset?[] values)
+    {
+        return values.FirstOrDefault(value => value.HasValue);
+    }
+
     private static void MarkWebhookEventNormalized(PaddleWebhookEventEntity webhookEvent, DateTimeOffset nowUtc)
     {
         webhookEvent.ProcessingStatus = SubscriptionConstants.BillingEventStatuses.Normalized;
@@ -503,7 +512,8 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         BillingPeriodMetadata BillingPeriod,
         bool CancelAtPeriodEnd,
         string? ScheduledChangeAction,
-        DateTimeOffset? ScheduledChangeEffectiveAtUtc)
+        DateTimeOffset? ScheduledChangeEffectiveAtUtc,
+        DateTimeOffset? EffectiveAtUtc)
     {
         public static SubscriptionSnapshotMetadata Empty { get; } = new(
             null,
@@ -511,6 +521,7 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
             null,
             BillingPeriodMetadata.Empty,
             false,
+            null,
             null,
             null);
     }

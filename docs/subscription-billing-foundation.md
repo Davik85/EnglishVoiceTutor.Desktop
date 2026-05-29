@@ -264,6 +264,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - `tools/smoke_paddle_checkout_adapter.ps1`
 - `tools/smoke_paddle_checkout_live_sandbox.ps1`
 - `tools/smoke_paddle_webhook_ingestion.ps1`
+- `tools/smoke_paddle_canceled_paused_expiry_policy.ps1`
 - `tools/smoke_admin_foundation.ps1`
 
 ### Paddle webhook ingestion smoke coverage
@@ -300,7 +301,9 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 Current Paddle billing and entitlement work does **not** complete the full subscription lifecycle.
 
 Deferred scope / next roadmap:
-- cancellation, expiry, and revocation handling;
+- actual `subscription.canceled` and `subscription.paused` now expire only active `provider_event` Premium entitlements for the resolved internal user/provider subscription context;
+- scheduled cancellation and `subscription.past_due` still do not revoke Premium early;
+- `subscription.resumed` / `subscription.activated` restore behavior, refunds, chargebacks, manual revocation automation, and full reconciliation remain deferred;
 - renewal handling;
 - subscription status reconciliation;
 - full subscription reconciliation;
@@ -316,7 +319,8 @@ Deferred scope / next roadmap:
 - Normalization writes provider-agnostic `billing_events` with safe metadata only.
 - Reconciliation decision updates only the current normalized provider event decision state.
 - Entitlement activation can create Premium `EntitlementEntity` rows from validated `reconciliation_pending` billing events.
-- `SubscriptionEntity` is mutated only by subscription lifecycle snapshot processing.
+- `SubscriptionEntity` is mutated only by subscription lifecycle snapshot processing and does not grant Premium access by itself.
+- Actual `subscription.canceled` and `subscription.paused` events can shorten only active `provider_event` Premium `EntitlementEntity` rows; trial/manual/admin/development/future-mobile entitlement sources are not touched.
 - `PaymentEntity` is mutated only by payment persistence snapshot processing and is not used for access decisions.
 - Admin UI was not changed.
 - Desktop UI was not changed.

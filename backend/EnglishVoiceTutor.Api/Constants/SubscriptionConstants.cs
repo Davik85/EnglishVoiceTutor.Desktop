@@ -66,6 +66,8 @@ public static class SubscriptionConstants
         public const string SubscriptionCreated = "subscription.created";
         public const string SubscriptionUpdated = "subscription.updated";
         public const string SubscriptionPastDue = "subscription.past_due";
+        public const string SubscriptionCanceled = "subscription.canceled";
+        public const string SubscriptionPaused = "subscription.paused";
     }
 
     public static class ScheduledChangeActions
@@ -128,6 +130,7 @@ public static class SubscriptionConstants
         public const string InvalidBillingEventMetadataMessage = "Invalid billing event metadata for subscription lifecycle snapshot.";
         public const string OlderProviderEventIgnoredMessage = "Older subscription lifecycle provider event ignored.";
         public const string UnexpectedProcessingErrorMessage = "Unexpected subscription lifecycle snapshot processing error.";
+        public const string ExpiredProviderEventEntitlementReason = "Provider-event Premium entitlement expired by subscription lifecycle event.";
     }
 
     public static class Billing
