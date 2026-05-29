@@ -7,6 +7,13 @@ $ErrorActionPreference = "Stop"
 $secret = "test_webhook_secret"
 $route = "/api/billing/webhooks/paddle"
 $webhookUri = ($BaseUrl.TrimEnd('/') + $route)
+$jsonContentType = "application/json"
+$dateTimeComparisonToleranceSeconds = 1
+$httpMethodsWithJsonBody = @(
+    "POST",
+    "PUT",
+    "PATCH"
+)
 
 function Write-Step {
     param([string]$Message)
@@ -88,7 +95,7 @@ function Invoke-JsonRequest {
     param(
         [string]$Method,
         [string]$RequestUri,
-        [string]$RawBody = $null,
+        [string]$RawBody,
         [hashtable]$Headers = @{}
     )
 
@@ -98,8 +105,14 @@ function Invoke-JsonRequest {
         UseBasicParsing = $true
     }
 
-    if ($null -ne $RawBody) {
-        $requestParameters.ContentType = "application/json"
+    $normalizedMethod = $Method.ToUpperInvariant()
+    $hasRawBody = $PSBoundParameters.ContainsKey("RawBody")
+    if ($hasRawBody) {
+        if (-not ($httpMethodsWithJsonBody -contains $normalizedMethod)) {
+            Fail ("{0} {1}: request body is only supported for JSON body methods ({2})." -f $normalizedMethod, $RequestUri, ($httpMethodsWithJsonBody -join ", "))
+        }
+
+        $requestParameters.ContentType = $jsonContentType
         $requestParameters.Body = $RawBody
     }
 
@@ -408,7 +421,7 @@ Assert-JsonFlag -Body $firstResponse.Body -PropertyName "entitlementActivated" -
 Assert-JsonNumber -Body $firstResponse.Body -PropertyName "entitlementActivatedCount" -ExpectedValue 1 -Scenario "first transaction.completed"
 Assert-JsonNumber -Body $firstResponse.Body -PropertyName "entitlementActivationBlocked" -ExpectedValue 0 -Scenario "first transaction.completed"
 Assert-JsonNumber -Body $firstResponse.Body -PropertyName "entitlementActivationFailed" -ExpectedValue 0 -Scenario "first transaction.completed"
-Assert-JsonDateWithinSeconds -Body $firstResponse.Body -PropertyName "entitlementExpiresAtUtc" -ExpectedValue $firstPeriodEndsAt -ToleranceSeconds 1 -Scenario "first transaction.completed"
+Assert-JsonDateWithinSeconds -Body $firstResponse.Body -PropertyName "entitlementExpiresAtUtc" -ExpectedValue $firstPeriodEndsAt -ToleranceSeconds $dateTimeComparisonToleranceSeconds -Scenario "first transaction.completed"
 Assert-PremiumStatus -Headers $primaryUser.Headers -ExpectedPremiumActive $true -Scenario "after first transaction.completed"
 Write-Pass "First transaction.completed created a provider-event Premium entitlement."
 
@@ -430,7 +443,7 @@ Assert-StatusCode -Response $renewalResponse -ExpectedStatusCode 200 -Scenario "
 Assert-JsonFlag -Body $renewalResponse.Body -PropertyName "duplicate" -ExpectedValue $false -Scenario "renewal transaction.completed"
 Assert-JsonFlag -Body $renewalResponse.Body -PropertyName "entitlementActivated" -ExpectedValue $true -Scenario "renewal transaction.completed"
 Assert-JsonNumber -Body $renewalResponse.Body -PropertyName "entitlementActivatedCount" -ExpectedValue 1 -Scenario "renewal transaction.completed"
-Assert-JsonDateWithinSeconds -Body $renewalResponse.Body -PropertyName "entitlementExpiresAtUtc" -ExpectedValue $renewalPeriodEndsAt -ToleranceSeconds 1 -Scenario "renewal transaction.completed"
+Assert-JsonDateWithinSeconds -Body $renewalResponse.Body -PropertyName "entitlementExpiresAtUtc" -ExpectedValue $renewalPeriodEndsAt -ToleranceSeconds $dateTimeComparisonToleranceSeconds -Scenario "renewal transaction.completed"
 Assert-PremiumStatus -Headers $primaryUser.Headers -ExpectedPremiumActive $true -Scenario "after renewal transaction.completed"
 Write-Pass "Renewal-like transaction.completed extended the provider-event Premium entitlement."
 
@@ -441,7 +454,7 @@ Assert-StatusCode -Response $olderResponse -ExpectedStatusCode 200 -Scenario "ol
 Assert-JsonFlag -Body $olderResponse.Body -PropertyName "duplicate" -ExpectedValue $false -Scenario "older transaction.completed"
 Assert-JsonFlag -Body $olderResponse.Body -PropertyName "entitlementActivated" -ExpectedValue $false -Scenario "older transaction.completed"
 Assert-JsonNumber -Body $olderResponse.Body -PropertyName "entitlementActivatedCount" -ExpectedValue 0 -Scenario "older transaction.completed"
-Assert-JsonDateWithinSeconds -Body $olderResponse.Body -PropertyName "entitlementExpiresAtUtc" -ExpectedValue $renewalPeriodEndsAt -ToleranceSeconds 1 -Scenario "older transaction.completed"
+Assert-JsonDateWithinSeconds -Body $olderResponse.Body -PropertyName "entitlementExpiresAtUtc" -ExpectedValue $renewalPeriodEndsAt -ToleranceSeconds $dateTimeComparisonToleranceSeconds -Scenario "older transaction.completed"
 Assert-PremiumStatus -Headers $primaryUser.Headers -ExpectedPremiumActive $true -Scenario "after older transaction.completed"
 Write-Pass "Older out-of-order transaction.completed did not shorten the provider-event Premium entitlement."
 
