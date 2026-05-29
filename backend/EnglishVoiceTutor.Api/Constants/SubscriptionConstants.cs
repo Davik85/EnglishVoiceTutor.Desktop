@@ -21,6 +21,7 @@ public static class SubscriptionConstants
         public const string Canceled = "canceled";
         public const string Expired = "expired";
         public const string Paused = "paused";
+        public const string Unknown = "unknown";
     }
 
     public static class BillingProviders
@@ -61,6 +62,8 @@ public static class SubscriptionConstants
     public static class BillingEventTypes
     {
         public const string TransactionCompleted = "transaction.completed";
+        public const string SubscriptionCreated = "subscription.created";
+        public const string SubscriptionUpdated = "subscription.updated";
     }
 
     public static class BillingEventReconciliation
@@ -82,6 +85,18 @@ public static class SubscriptionConstants
         public const string MissingInternalUserIdMessage = "Missing internal user id for entitlement activation.";
         public const string InvalidInternalUserIdMessage = "Invalid internal user id for entitlement activation.";
         public const string UnexpectedProcessingErrorMessage = "Unexpected entitlement activation processing error.";
+    }
+
+
+    public static class SubscriptionLifecycleSnapshot
+    {
+        public const string MissingInternalUserIdMessage = "Missing internal user id for subscription lifecycle snapshot.";
+        public const string InvalidInternalUserIdMessage = "Invalid internal user id for subscription lifecycle snapshot.";
+        public const string UserNotFoundMessage = "User not found for subscription lifecycle snapshot.";
+        public const string MissingProviderSubscriptionIdMessage = "Missing provider subscription id for subscription lifecycle snapshot.";
+        public const string InvalidBillingEventMetadataMessage = "Invalid billing event metadata for subscription lifecycle snapshot.";
+        public const string OlderProviderEventIgnoredMessage = "Older subscription lifecycle provider event ignored.";
+        public const string UnexpectedProcessingErrorMessage = "Unexpected subscription lifecycle snapshot processing error.";
     }
 
     public static class Billing

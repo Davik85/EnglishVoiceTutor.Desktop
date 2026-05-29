@@ -161,6 +161,14 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - Normalization does not mutate `PaymentEntity`.
 - Normalization does not directly mutate `EntitlementEntity`.
 
+
+## Subscription lifecycle snapshot foundation v1
+
+- Paddle `subscription.created` and `subscription.updated` events can now upsert a provider-agnostic `SubscriptionEntity` snapshot for an existing internal user.
+- Snapshot persistence is idempotent by provider + provider subscription id and ignores older provider events when a newer lifecycle event was already applied.
+- This snapshot stores subscription lifecycle data only; it does not grant, revoke, pause, resume, renew, expire, or otherwise change Premium entitlement/access behavior.
+- `PaymentEntity` is not mutated by this flow.
+
 ## Entitlement reconciliation decision foundation v1
 
 - Normalized `billing_events` are inspected for entitlement reconciliation eligibility.
@@ -201,6 +209,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 
 - A Paddle webhook request processes only the current Paddle provider event id.
 - The request normalizes only the current Paddle event.
+- The request processes subscription lifecycle snapshot logic only for the current provider event.
 - The request processes reconciliation decision logic only for the current provider event.
 - The request activates entitlement only for the current provider event when strict activation validation passes.
 - The request must not process old unrelated `received` or `reconciliation_pending` billing events.

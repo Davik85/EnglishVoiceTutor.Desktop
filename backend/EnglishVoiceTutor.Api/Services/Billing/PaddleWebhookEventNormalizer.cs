@@ -157,7 +157,7 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
 
     private static string CreateSafeMetadataJson(PaddleWebhookEventEntity webhookEvent)
     {
-        var billingPeriod = ExtractBillingPeriod(webhookEvent.RawPayload);
+        var subscriptionSnapshot = ExtractSubscriptionSnapshot(webhookEvent.RawPayload);
         var safeMetadata = new
         {
             paddleEventId = webhookEvent.PaddleEventId,
@@ -167,8 +167,14 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
             paddleCustomerId = webhookEvent.PaddleCustomerId,
             internalUserId = webhookEvent.InternalUserId,
             internalPlanId = webhookEvent.InternalPlanId,
-            billingPeriodStartsAtUtc = billingPeriod.StartsAtUtc,
-            billingPeriodEndsAtUtc = billingPeriod.EndsAtUtc,
+            paddleStatus = subscriptionSnapshot.Status,
+            paddlePriceId = subscriptionSnapshot.PriceId,
+            paddleProductId = subscriptionSnapshot.ProductId,
+            billingPeriodStartsAtUtc = subscriptionSnapshot.BillingPeriod.StartsAtUtc,
+            billingPeriodEndsAtUtc = subscriptionSnapshot.BillingPeriod.EndsAtUtc,
+            cancelAtPeriodEnd = subscriptionSnapshot.CancelAtPeriodEnd,
+            scheduledChangeAction = subscriptionSnapshot.ScheduledChangeAction,
+            scheduledChangeEffectiveAtUtc = subscriptionSnapshot.ScheduledChangeEffectiveAtUtc,
             occurredAtUtc = webhookEvent.OccurredAtUtc,
             receivedAtUtc = webhookEvent.ReceivedAtUtc
         };
@@ -176,7 +182,7 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         return JsonSerializer.Serialize(safeMetadata, SafeMetadataJsonOptions);
     }
 
-    private static BillingPeriodMetadata ExtractBillingPeriod(string rawPayload)
+    private static SubscriptionSnapshotMetadata ExtractSubscriptionSnapshot(string rawPayload)
     {
         try
         {
@@ -184,22 +190,74 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object || !TryGetObject(root, "data", out var data))
             {
-                return BillingPeriodMetadata.Empty;
+                return SubscriptionSnapshotMetadata.Empty;
             }
 
-            if (!TryGetObject(data, "billing_period", out var billingPeriod))
-            {
-                return BillingPeriodMetadata.Empty;
-            }
+            var billingPeriod = ExtractBillingPeriod(data);
+            var scheduledChange = ExtractScheduledChange(data);
+            var price = ExtractPrice(data);
 
-            return new BillingPeriodMetadata(
-                TryParseDateTimeOffset(GetString(billingPeriod, "starts_at")),
-                TryParseDateTimeOffset(GetString(billingPeriod, "ends_at")));
+            return new SubscriptionSnapshotMetadata(
+                GetString(data, "status"),
+                price.PriceId,
+                price.ProductId,
+                billingPeriod,
+                GetBoolean(data, "cancel_at_period_end") ?? string.Equals(scheduledChange.Action, "cancel", StringComparison.OrdinalIgnoreCase),
+                scheduledChange.Action,
+                scheduledChange.EffectiveAtUtc);
         }
         catch (JsonException)
         {
+            return SubscriptionSnapshotMetadata.Empty;
+        }
+    }
+
+    private static BillingPeriodMetadata ExtractBillingPeriod(JsonElement data)
+    {
+        if (!TryGetObject(data, "current_billing_period", out var billingPeriod)
+            && !TryGetObject(data, "billing_period", out billingPeriod))
+        {
             return BillingPeriodMetadata.Empty;
         }
+
+        return new BillingPeriodMetadata(
+            TryParseDateTimeOffset(GetString(billingPeriod, "starts_at")),
+            TryParseDateTimeOffset(GetString(billingPeriod, "ends_at")));
+    }
+
+    private static ScheduledChangeMetadata ExtractScheduledChange(JsonElement data)
+    {
+        if (!TryGetObject(data, "scheduled_change", out var scheduledChange))
+        {
+            return ScheduledChangeMetadata.Empty;
+        }
+
+        return new ScheduledChangeMetadata(
+            GetString(scheduledChange, "action"),
+            TryParseDateTimeOffset(GetString(scheduledChange, "effective_at")));
+    }
+
+    private static PriceMetadata ExtractPrice(JsonElement data)
+    {
+        if (TryGetArray(data, "items", out var items))
+        {
+            foreach (var item in items.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object || !TryGetObject(item, "price", out var price))
+                {
+                    continue;
+                }
+
+                var priceId = GetString(price, "id");
+                var productId = FirstNonEmpty(GetString(price, "product_id"), GetNestedString(price, "product", "id"));
+                if (!string.IsNullOrWhiteSpace(priceId) || !string.IsNullOrWhiteSpace(productId))
+                {
+                    return new PriceMetadata(priceId, productId);
+                }
+            }
+        }
+
+        return PriceMetadata.Empty;
     }
 
     private static bool TryGetObject(JsonElement element, string propertyName, out JsonElement value)
@@ -214,6 +272,23 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         return false;
     }
 
+    private static bool TryGetArray(JsonElement element, string propertyName, out JsonElement value)
+    {
+        if (element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.Array)
+        {
+            value = property;
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static string? GetNestedString(JsonElement element, string objectPropertyName, string stringPropertyName)
+    {
+        return TryGetObject(element, objectPropertyName, out var nestedObject) ? GetString(nestedObject, stringPropertyName) : null;
+    }
+
     private static string? GetString(JsonElement element, string propertyName)
     {
         if (!element.TryGetProperty(propertyName, out var property))
@@ -224,9 +299,29 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         return property.ValueKind == JsonValueKind.String ? property.GetString() : null;
     }
 
+    private static bool? GetBoolean(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var property))
+        {
+            return null;
+        }
+
+        return property.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            _ => null
+        };
+    }
+
     private static DateTimeOffset? TryParseDateTimeOffset(string? value)
     {
         return DateTimeOffset.TryParse(value, out var parsed) ? parsed.ToUniversalTime() : null;
+    }
+
+    private static string? FirstNonEmpty(params string?[] values)
+    {
+        return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim();
     }
 
     private static void MarkWebhookEventNormalized(PaddleWebhookEventEntity webhookEvent, DateTimeOffset nowUtc)
@@ -294,5 +389,34 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
     private sealed record BillingPeriodMetadata(DateTimeOffset? StartsAtUtc, DateTimeOffset? EndsAtUtc)
     {
         public static BillingPeriodMetadata Empty { get; } = new(null, null);
+    }
+
+    private sealed record ScheduledChangeMetadata(string? Action, DateTimeOffset? EffectiveAtUtc)
+    {
+        public static ScheduledChangeMetadata Empty { get; } = new(null, null);
+    }
+
+    private sealed record PriceMetadata(string? PriceId, string? ProductId)
+    {
+        public static PriceMetadata Empty { get; } = new(null, null);
+    }
+
+    private sealed record SubscriptionSnapshotMetadata(
+        string? Status,
+        string? PriceId,
+        string? ProductId,
+        BillingPeriodMetadata BillingPeriod,
+        bool CancelAtPeriodEnd,
+        string? ScheduledChangeAction,
+        DateTimeOffset? ScheduledChangeEffectiveAtUtc)
+    {
+        public static SubscriptionSnapshotMetadata Empty { get; } = new(
+            null,
+            null,
+            null,
+            BillingPeriodMetadata.Empty,
+            false,
+            null,
+            null);
     }
 }

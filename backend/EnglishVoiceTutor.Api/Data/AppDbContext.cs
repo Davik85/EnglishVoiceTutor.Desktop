@@ -264,11 +264,19 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.Property(subscription => subscription.Provider).IsRequired().HasMaxLength(EntityConstants.Lengths.ProviderMaxLength);
         entity.Property(subscription => subscription.ProviderSubscriptionId).HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
         entity.Property(subscription => subscription.ProviderCustomerId).HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
+        entity.Property(subscription => subscription.ProviderPriceId).HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
+        entity.Property(subscription => subscription.ProviderProductId).HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
         entity.Property(subscription => subscription.CancelAtPeriodEnd).IsRequired();
+        entity.Property(subscription => subscription.ScheduledChangeAction).HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
+        entity.Property(subscription => subscription.LastProviderEventId).HasMaxLength(EntityConstants.Lengths.ProviderEventIdMaxLength);
+        entity.Property(subscription => subscription.LastProviderEventType).HasMaxLength(EntityConstants.Lengths.BillingEventTypeMaxLength);
         entity.Property(subscription => subscription.StartedAt).IsRequired();
         entity.Property(subscription => subscription.CreatedAt).IsRequired();
         entity.Property(subscription => subscription.UpdatedAt).IsRequired();
         entity.HasIndex(subscription => new { subscription.UserId, subscription.Status, subscription.Provider, subscription.ProviderSubscriptionId });
+        entity.HasIndex(subscription => new { subscription.Provider, subscription.ProviderSubscriptionId })
+            .IsUnique()
+            .HasFilter("\"ProviderSubscriptionId\" IS NOT NULL");
         entity.HasOne(subscription => subscription.User)
             .WithMany(user => user.Subscriptions)
             .HasForeignKey(subscription => subscription.UserId)
