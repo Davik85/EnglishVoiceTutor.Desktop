@@ -199,6 +199,7 @@ Current confirmed EF migrations:
 - `20260520150000_AddDailyUsageChatReplyCount`
 - `20260524061817_AddSubscriptionFoundationV1`
 - `20260528000000_AddPaddleWebhookEvents`
+- `20260528010000_AddPaddleSubscriptionLifecycleSnapshotV1`
 - `20260529000000_AddPaddlePaymentPersistenceV1`
 
 Latest confirmed EF migration:
