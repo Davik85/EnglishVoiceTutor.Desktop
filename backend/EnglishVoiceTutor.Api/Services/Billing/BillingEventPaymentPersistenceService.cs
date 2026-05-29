@@ -9,6 +9,9 @@ namespace EnglishVoiceTutor.Api.Services.Billing;
 
 public sealed class BillingEventPaymentPersistenceService : IBillingEventPaymentPersistenceService
 {
+    private const int TimestampComparisonToleranceSeconds = 1;
+
+    private static readonly TimeSpan TimestampComparisonTolerance = TimeSpan.FromSeconds(TimestampComparisonToleranceSeconds);
     private static readonly JsonSerializerOptions MetadataJsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly AppDbContext dbContext;
@@ -261,12 +264,24 @@ public sealed class BillingEventPaymentPersistenceService : IBillingEventPayment
             && string.Equals(payment.Status, snapshot.Status, StringComparison.Ordinal)
             && string.Equals(payment.ProviderEventId, snapshot.ProviderEventId, StringComparison.Ordinal)
             && string.Equals(payment.ProviderEventType, snapshot.ProviderEventType, StringComparison.Ordinal)
-            && payment.ProviderEventOccurredAtUtc == snapshot.ProviderEventOccurredAtUtc
+            && AreNullableTimestampsEquivalent(payment.ProviderEventOccurredAtUtc, snapshot.ProviderEventOccurredAtUtc)
             && string.Equals(payment.SafeMetadataJson, snapshot.SafeMetadataJson, StringComparison.Ordinal)
-            && payment.BilledAt == snapshot.BilledAt
-            && payment.PaidAt == snapshot.PaidAt
-            && payment.CompletedAt == snapshot.CompletedAt
-            && payment.FailedAt == snapshot.FailedAt;
+            && AreNullableTimestampsEquivalent(payment.BilledAt, snapshot.BilledAt)
+            && AreNullableTimestampsEquivalent(payment.PaidAt, snapshot.PaidAt)
+            && AreNullableTimestampsEquivalent(payment.CompletedAt, snapshot.CompletedAt)
+            && AreNullableTimestampsEquivalent(payment.FailedAt, snapshot.FailedAt);
+    }
+
+    private static bool AreNullableTimestampsEquivalent(DateTimeOffset? persistedValue, DateTimeOffset? incomingValue)
+    {
+        if (persistedValue is null || incomingValue is null)
+        {
+            return persistedValue is null && incomingValue is null;
+        }
+
+        var persistedUtc = persistedValue.Value.ToUniversalTime();
+        var incomingUtc = incomingValue.Value.ToUniversalTime();
+        return (persistedUtc - incomingUtc).Duration() <= TimestampComparisonTolerance;
     }
 
     private static void ApplySnapshot(
