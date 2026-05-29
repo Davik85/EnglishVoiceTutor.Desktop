@@ -88,31 +88,32 @@ public sealed class BillingEventPaymentPersistenceService : IBillingEventPayment
                 billingEvent.BillingProvider,
                 metadata.PaddleSubscriptionId,
                 cancellationToken);
+            var snapshot = CreatePaymentSnapshot(
+                billingEvent,
+                metadata,
+                status,
+                internalSubscriptionId);
+
+            if (payment is not null && HasCurrentIncomingSnapshot(payment, snapshot))
+            {
+                alreadyCurrentCount++;
+                return CreateResult();
+            }
 
             if (payment is null)
             {
                 payment = new PaymentEntity
                 {
                     Id = Guid.NewGuid(),
-                    UserId = metadata.InternalUserId!.Value,
                     CreatedAt = nowUtc
                 };
                 dbContext.Payments.Add(payment);
             }
 
-            var changed = ApplySnapshot(
+            ApplySnapshot(
                 payment,
-                billingEvent,
-                metadata,
-                status,
-                internalSubscriptionId,
+                snapshot,
                 nowUtc);
-
-            if (!changed && dbContext.Entry(payment).State != EntityState.Added)
-            {
-                alreadyCurrentCount++;
-                return CreateResult();
-            }
 
             await dbContext.SaveChangesAsync(cancellationToken);
             persistedOrUpdatedCount++;
@@ -204,58 +205,103 @@ public sealed class BillingEventPaymentPersistenceService : IBillingEventPayment
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    private static bool ApplySnapshot(
-        PaymentEntity payment,
+    private static PaymentSnapshot CreatePaymentSnapshot(
         BillingEventEntity billingEvent,
         PaymentSafeMetadata metadata,
         string status,
-        Guid? internalSubscriptionId,
+        Guid? internalSubscriptionId)
+    {
+        var completedAtUtc = status == SubscriptionConstants.PaymentStatuses.Completed
+            ? metadata.CompletedAtUtc ?? metadata.OccurredAtUtc
+            : null;
+        var failedAtUtc = status == SubscriptionConstants.PaymentStatuses.Failed
+            ? metadata.FailedAtUtc ?? metadata.OccurredAtUtc
+            : null;
+
+        return new PaymentSnapshot(
+            metadata.InternalUserId!.Value,
+            internalSubscriptionId,
+            metadata.InternalPlanId ?? string.Empty,
+            billingEvent.BillingProvider,
+            metadata.PaddleTransactionId,
+            metadata.PaddleCustomerId,
+            metadata.PaddleSubscriptionId,
+            metadata.PaddlePriceId,
+            metadata.PaddleProductId,
+            metadata.AmountMinor,
+            ConvertAmount(metadata.AmountMinor),
+            NormalizeCurrency(metadata.Currency),
+            status,
+            billingEvent.ProviderEventId,
+            billingEvent.EventType,
+            metadata.OccurredAtUtc,
+            billingEvent.SafeMetadataJson,
+            metadata.BilledAtUtc,
+            metadata.PaidAtUtc,
+            completedAtUtc,
+            failedAtUtc);
+    }
+
+    private static bool HasCurrentIncomingSnapshot(PaymentEntity payment, PaymentSnapshot snapshot)
+    {
+        // SubscriptionId is resolved from local subscription state, not from the incoming provider snapshot.
+        // Excluding it here keeps duplicate provider events idempotent after subscription snapshot processing
+        // creates the local subscription.
+        return payment.UserId == snapshot.UserId
+            && string.Equals(payment.InternalPlanId, snapshot.InternalPlanId, StringComparison.Ordinal)
+            && string.Equals(payment.Provider, snapshot.Provider, StringComparison.Ordinal)
+            && string.Equals(payment.ProviderPaymentId, snapshot.ProviderPaymentId, StringComparison.Ordinal)
+            && string.Equals(payment.ProviderCustomerId, snapshot.ProviderCustomerId, StringComparison.Ordinal)
+            && string.Equals(payment.ProviderSubscriptionId, snapshot.ProviderSubscriptionId, StringComparison.Ordinal)
+            && string.Equals(payment.ProviderPriceId, snapshot.ProviderPriceId, StringComparison.Ordinal)
+            && string.Equals(payment.ProviderProductId, snapshot.ProviderProductId, StringComparison.Ordinal)
+            && payment.AmountMinor == snapshot.AmountMinor
+            && payment.Amount == snapshot.Amount
+            && string.Equals(payment.Currency, snapshot.Currency, StringComparison.Ordinal)
+            && string.Equals(payment.Status, snapshot.Status, StringComparison.Ordinal)
+            && string.Equals(payment.ProviderEventId, snapshot.ProviderEventId, StringComparison.Ordinal)
+            && string.Equals(payment.ProviderEventType, snapshot.ProviderEventType, StringComparison.Ordinal)
+            && payment.ProviderEventOccurredAtUtc == snapshot.ProviderEventOccurredAtUtc
+            && string.Equals(payment.SafeMetadataJson, snapshot.SafeMetadataJson, StringComparison.Ordinal)
+            && payment.BilledAt == snapshot.BilledAt
+            && payment.PaidAt == snapshot.PaidAt
+            && payment.CompletedAt == snapshot.CompletedAt
+            && payment.FailedAt == snapshot.FailedAt;
+    }
+
+    private static void ApplySnapshot(
+        PaymentEntity payment,
+        PaymentSnapshot snapshot,
         DateTimeOffset nowUtc)
     {
-        var changed = false;
-
-        changed |= SetIfDifferent(payment.UserId, metadata.InternalUserId!.Value, value => payment.UserId = value);
-        changed |= SetIfDifferent(payment.SubscriptionId, internalSubscriptionId, value => payment.SubscriptionId = value);
-        changed |= SetIfDifferent(payment.InternalPlanId, metadata.InternalPlanId ?? string.Empty, value => payment.InternalPlanId = value);
-        changed |= SetIfDifferent(payment.Provider, billingEvent.BillingProvider, value => payment.Provider = value);
-        changed |= SetIfDifferent(payment.ProviderPaymentId, metadata.PaddleTransactionId, value => payment.ProviderPaymentId = value);
-        changed |= SetIfDifferent(payment.ProviderCustomerId, metadata.PaddleCustomerId, value => payment.ProviderCustomerId = value);
-        changed |= SetIfDifferent(payment.ProviderSubscriptionId, metadata.PaddleSubscriptionId, value => payment.ProviderSubscriptionId = value);
-        changed |= SetIfDifferent(payment.ProviderPriceId, metadata.PaddlePriceId, value => payment.ProviderPriceId = value);
-        changed |= SetIfDifferent(payment.ProviderProductId, metadata.PaddleProductId, value => payment.ProviderProductId = value);
-        changed |= SetIfDifferent(payment.AmountMinor, metadata.AmountMinor, value => payment.AmountMinor = value);
-        changed |= SetIfDifferent(payment.Amount, ConvertAmount(metadata.AmountMinor), value => payment.Amount = value);
-        changed |= SetIfDifferent(payment.Currency, NormalizeCurrency(metadata.Currency), value => payment.Currency = value);
-        changed |= SetIfDifferent(payment.Status, status, value => payment.Status = value);
-        changed |= SetIfDifferent(payment.ProviderEventId, billingEvent.ProviderEventId, value => payment.ProviderEventId = value);
-        changed |= SetIfDifferent(payment.ProviderEventType, billingEvent.EventType, value => payment.ProviderEventType = value);
-        changed |= SetIfDifferent(payment.ProviderEventOccurredAtUtc, metadata.OccurredAtUtc, value => payment.ProviderEventOccurredAtUtc = value);
-        changed |= SetIfDifferent(payment.SafeMetadataJson, billingEvent.SafeMetadataJson, value => payment.SafeMetadataJson = value);
-        changed |= SetIfDifferent(payment.BilledAt, metadata.BilledAtUtc, value => payment.BilledAt = value);
-        changed |= SetIfDifferent(payment.PaidAt, metadata.PaidAtUtc, value => payment.PaidAt = value);
-
-        if (status == SubscriptionConstants.PaymentStatuses.Completed)
-        {
-            changed |= SetIfDifferent(payment.CompletedAt, metadata.CompletedAtUtc ?? metadata.OccurredAtUtc, value => payment.CompletedAt = value);
-        }
-        else if (status == SubscriptionConstants.PaymentStatuses.Failed)
-        {
-            changed |= SetIfDifferent(payment.FailedAt, metadata.FailedAtUtc ?? metadata.OccurredAtUtc, value => payment.FailedAt = value);
-        }
+        payment.UserId = snapshot.UserId;
+        payment.SubscriptionId = snapshot.SubscriptionId;
+        payment.InternalPlanId = snapshot.InternalPlanId;
+        payment.Provider = snapshot.Provider;
+        payment.ProviderPaymentId = snapshot.ProviderPaymentId;
+        payment.ProviderCustomerId = snapshot.ProviderCustomerId;
+        payment.ProviderSubscriptionId = snapshot.ProviderSubscriptionId;
+        payment.ProviderPriceId = snapshot.ProviderPriceId;
+        payment.ProviderProductId = snapshot.ProviderProductId;
+        payment.AmountMinor = snapshot.AmountMinor;
+        payment.Amount = snapshot.Amount;
+        payment.Currency = snapshot.Currency;
+        payment.Status = snapshot.Status;
+        payment.ProviderEventId = snapshot.ProviderEventId;
+        payment.ProviderEventType = snapshot.ProviderEventType;
+        payment.ProviderEventOccurredAtUtc = snapshot.ProviderEventOccurredAtUtc;
+        payment.SafeMetadataJson = snapshot.SafeMetadataJson;
+        payment.BilledAt = snapshot.BilledAt;
+        payment.PaidAt = snapshot.PaidAt;
+        payment.CompletedAt = snapshot.CompletedAt;
+        payment.FailedAt = snapshot.FailedAt;
 
         if (payment.CreatedAt == default)
         {
             payment.CreatedAt = nowUtc;
-            changed = true;
         }
 
-        if (changed || payment.UpdatedAt == default)
-        {
-            payment.UpdatedAt = nowUtc;
-            changed = true;
-        }
-
-        return changed;
+        payment.UpdatedAt = nowUtc;
     }
 
     private static bool IsSupportedPaymentEventType(string eventType)
@@ -307,22 +353,34 @@ public sealed class BillingEventPaymentPersistenceService : IBillingEventPayment
         }
     }
 
-    private static bool SetIfDifferent<T>(T currentValue, T newValue, Action<T> setter)
-    {
-        if (EqualityComparer<T>.Default.Equals(currentValue, newValue))
-        {
-            return false;
-        }
-
-        setter(newValue);
-        return true;
-    }
-
     private static bool IsUniqueConstraintViolation(DbUpdateException exception)
     {
         return exception.InnerException is PostgresException postgresException
             && postgresException.SqlState == PostgresErrorCodes.UniqueViolation;
     }
+
+    private sealed record PaymentSnapshot(
+        Guid UserId,
+        Guid? SubscriptionId,
+        string InternalPlanId,
+        string Provider,
+        string? ProviderPaymentId,
+        string? ProviderCustomerId,
+        string? ProviderSubscriptionId,
+        string? ProviderPriceId,
+        string? ProviderProductId,
+        long? AmountMinor,
+        decimal Amount,
+        string Currency,
+        string Status,
+        string ProviderEventId,
+        string ProviderEventType,
+        DateTimeOffset? ProviderEventOccurredAtUtc,
+        string? SafeMetadataJson,
+        DateTimeOffset? BilledAt,
+        DateTimeOffset? PaidAt,
+        DateTimeOffset? CompletedAt,
+        DateTimeOffset? FailedAt);
 
     private sealed class PaymentSafeMetadata
     {
