@@ -143,6 +143,7 @@ builder.Services.AddScoped<IPaddleWebhookIngestionService, PaddleWebhookIngestio
 builder.Services.AddScoped<IPaddleWebhookEventNormalizer, PaddleWebhookEventNormalizer>();
 builder.Services.AddScoped<IBillingEventReconciliationDecisionService, BillingEventReconciliationDecisionService>();
 builder.Services.AddScoped<IBillingEventSubscriptionSnapshotService, BillingEventSubscriptionSnapshotService>();
+builder.Services.AddScoped<IBillingEventPaymentPersistenceService, BillingEventPaymentPersistenceService>();
 builder.Services.AddScoped<IBillingEventEntitlementActivationService, BillingEventEntitlementActivationService>();
 builder.Services.AddScoped<IAdminUserLookupService, AdminUserLookupService>();
 builder.Services.AddSingleton<IAdminCapabilitiesService, AdminCapabilitiesService>();

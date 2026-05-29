@@ -158,6 +158,7 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
     private static string CreateSafeMetadataJson(PaddleWebhookEventEntity webhookEvent)
     {
         var subscriptionSnapshot = ExtractSubscriptionSnapshot(webhookEvent.RawPayload);
+        var transactionSnapshot = ExtractTransactionSnapshot(webhookEvent.RawPayload);
         var safeMetadata = new
         {
             paddleEventId = webhookEvent.PaddleEventId,
@@ -167,9 +168,15 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
             paddleCustomerId = webhookEvent.PaddleCustomerId,
             internalUserId = webhookEvent.InternalUserId,
             internalPlanId = webhookEvent.InternalPlanId,
-            paddleStatus = subscriptionSnapshot.Status,
-            paddlePriceId = subscriptionSnapshot.PriceId,
-            paddleProductId = subscriptionSnapshot.ProductId,
+            paddleStatus = FirstNonEmpty(transactionSnapshot.Status, subscriptionSnapshot.Status),
+            paddlePriceId = FirstNonEmpty(transactionSnapshot.PriceId, subscriptionSnapshot.PriceId),
+            paddleProductId = FirstNonEmpty(transactionSnapshot.ProductId, subscriptionSnapshot.ProductId),
+            amountMinor = transactionSnapshot.AmountMinor,
+            currency = transactionSnapshot.Currency,
+            billedAtUtc = transactionSnapshot.BilledAtUtc,
+            paidAtUtc = transactionSnapshot.PaidAtUtc,
+            completedAtUtc = transactionSnapshot.CompletedAtUtc,
+            failedAtUtc = transactionSnapshot.FailedAtUtc,
             billingPeriodStartsAtUtc = subscriptionSnapshot.BillingPeriod.StartsAtUtc,
             billingPeriodEndsAtUtc = subscriptionSnapshot.BillingPeriod.EndsAtUtc,
             cancelAtPeriodEnd = subscriptionSnapshot.CancelAtPeriodEnd,
@@ -180,6 +187,44 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         };
 
         return JsonSerializer.Serialize(safeMetadata, SafeMetadataJsonOptions);
+    }
+
+
+    private static TransactionSnapshotMetadata ExtractTransactionSnapshot(string rawPayload)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(rawPayload);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object || !TryGetObject(root, "data", out var data))
+            {
+                return TransactionSnapshotMetadata.Empty;
+            }
+
+            var price = ExtractPrice(data);
+            var amountMinor = FirstLong(
+                GetNestedLong(data, "details", "totals", "total"),
+                GetNestedLong(data, "details", "totals", "grand_total"),
+                GetLong(data, "amount"));
+
+            return new TransactionSnapshotMetadata(
+                GetString(data, "status"),
+                price.PriceId,
+                price.ProductId,
+                amountMinor,
+                FirstNonEmpty(
+                    GetString(data, "currency_code"),
+                    GetString(data, "currency"),
+                    GetNestedString(data, "details", "currency_code")),
+                TryParseDateTimeOffset(GetString(data, "billed_at")),
+                TryParseDateTimeOffset(GetString(data, "paid_at")),
+                TryParseDateTimeOffset(FirstNonEmpty(GetString(data, "completed_at"), GetString(data, "updated_at"))),
+                TryParseDateTimeOffset(FirstNonEmpty(GetString(data, "failed_at"), GetString(data, "updated_at"))));
+        }
+        catch (JsonException)
+        {
+            return TransactionSnapshotMetadata.Empty;
+        }
     }
 
     private static SubscriptionSnapshotMetadata ExtractSubscriptionSnapshot(string rawPayload)
@@ -289,6 +334,17 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         return TryGetObject(element, objectPropertyName, out var nestedObject) ? GetString(nestedObject, stringPropertyName) : null;
     }
 
+    private static long? GetNestedLong(JsonElement element, string firstObjectPropertyName, string secondObjectPropertyName, string numberPropertyName)
+    {
+        if (!TryGetObject(element, firstObjectPropertyName, out var firstObject)
+            || !TryGetObject(firstObject, secondObjectPropertyName, out var secondObject))
+        {
+            return null;
+        }
+
+        return GetLong(secondObject, numberPropertyName);
+    }
+
     private static string? GetString(JsonElement element, string propertyName)
     {
         if (!element.TryGetProperty(propertyName, out var property))
@@ -297,6 +353,26 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         }
 
         return property.ValueKind == JsonValueKind.String ? property.GetString() : null;
+    }
+
+    private static long? GetLong(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var property))
+        {
+            return null;
+        }
+
+        if (property.ValueKind == JsonValueKind.Number && property.TryGetInt64(out var number))
+        {
+            return number;
+        }
+
+        if (property.ValueKind == JsonValueKind.String && long.TryParse(property.GetString(), out var stringNumber))
+        {
+            return stringNumber;
+        }
+
+        return null;
     }
 
     private static bool? GetBoolean(JsonElement element, string propertyName)
@@ -322,6 +398,11 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
     private static string? FirstNonEmpty(params string?[] values)
     {
         return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim();
+    }
+
+    private static long? FirstLong(params long?[] values)
+    {
+        return values.FirstOrDefault(value => value.HasValue);
     }
 
     private static void MarkWebhookEventNormalized(PaddleWebhookEventEntity webhookEvent, DateTimeOffset nowUtc)
@@ -399,6 +480,20 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
     private sealed record PriceMetadata(string? PriceId, string? ProductId)
     {
         public static PriceMetadata Empty { get; } = new(null, null);
+    }
+
+    private sealed record TransactionSnapshotMetadata(
+        string? Status,
+        string? PriceId,
+        string? ProductId,
+        long? AmountMinor,
+        string? Currency,
+        DateTimeOffset? BilledAtUtc,
+        DateTimeOffset? PaidAtUtc,
+        DateTimeOffset? CompletedAtUtc,
+        DateTimeOffset? FailedAtUtc)
+    {
+        public static TransactionSnapshotMetadata Empty { get; } = new(null, null, null, null, null, null, null, null, null);
     }
 
     private sealed record SubscriptionSnapshotMetadata(

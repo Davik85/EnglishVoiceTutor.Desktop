@@ -405,7 +405,6 @@ Assert-JsonNumber -Body $first.Body -PropertyName "entitlementActivationChecked"
 Assert-JsonNumber -Body $first.Body -PropertyName "entitlementActivatedCount" -ExpectedValue 1 -Scenario "first signed webhook"
 Assert-JsonNumber -Body $first.Body -PropertyName "entitlementActivationBlocked" -ExpectedValue 0 -Scenario "first signed webhook"
 Assert-JsonNumber -Body $first.Body -PropertyName "entitlementActivationFailed" -ExpectedValue 0 -Scenario "first signed webhook"
-Assert-BodyDoesNotContain -Body $first.Body -Needle "payment" -Scenario "first signed webhook"
 Assert-BodyDoesNotContain -Body $first.Body -Needle "subscription" -Scenario "first signed webhook"
 Write-Pass "First signed webhook returned HTTP 200 and activated Premium entitlement for the real smoke user."
 

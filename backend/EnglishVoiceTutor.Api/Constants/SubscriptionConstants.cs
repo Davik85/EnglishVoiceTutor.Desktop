@@ -62,8 +62,33 @@ public static class SubscriptionConstants
     public static class BillingEventTypes
     {
         public const string TransactionCompleted = "transaction.completed";
+        public const string TransactionPaymentFailed = "transaction.payment_failed";
         public const string SubscriptionCreated = "subscription.created";
         public const string SubscriptionUpdated = "subscription.updated";
+    }
+
+    public static class PaymentStatuses
+    {
+        public const string Pending = "pending";
+        public const string Billed = "billed";
+        public const string Paid = "paid";
+        public const string Completed = "completed";
+        public const string Failed = "failed";
+        public const string PastDue = "past_due";
+        public const string Canceled = "canceled";
+        public const string Refunded = "refunded";
+        public const string Unknown = "unknown";
+    }
+
+    public static class PaymentPersistence
+    {
+        public const string MissingInternalUserIdMessage = "Missing internal user id for payment persistence.";
+        public const string InvalidInternalUserIdMessage = "Invalid internal user id for payment persistence.";
+        public const string UserNotFoundMessage = "User not found for payment persistence.";
+        public const string UnsupportedPlanIdMessage = "Unsupported plan id for payment persistence.";
+        public const string MissingProviderTransactionIdMessage = "Missing provider transaction id for payment persistence.";
+        public const string InvalidBillingEventMetadataMessage = "Invalid billing event metadata for payment persistence.";
+        public const string UnsupportedBillingEventTypeMessage = "Unsupported billing event type for payment persistence.";
     }
 
     public static class BillingEventReconciliation

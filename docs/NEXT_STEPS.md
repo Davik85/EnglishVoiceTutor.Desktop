@@ -20,7 +20,6 @@ This roadmap starts from the current confirmed MVP state where:
    - cancellation/expiry/revocation handling
    - renewal handling
    - subscription status reconciliation
-   - payment record persistence if needed
    - production Paddle webhook configuration
    - desktop upgrade/paywall UI
    - future Apple/Google mobile entitlement bridge
@@ -43,5 +42,6 @@ This roadmap starts from the current confirmed MVP state where:
 - Development diagnostics-only mode
 - Paddle checkout transaction creation v1 behind explicit configuration
 - Paddle webhook ingestion, normalization, reconciliation decision, and entitlement activation foundation v1
+- Paddle transaction payment persistence snapshot foundation v1
 - Backend access/status recognition of `provider_event` Premium entitlement
 - local Development CMS/admin support foundation v1

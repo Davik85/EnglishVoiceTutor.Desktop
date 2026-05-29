@@ -293,14 +293,27 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         var entity = modelBuilder.Entity<PaymentEntity>();
         entity.ToTable(EntityConstants.TableNames.Payments);
         entity.HasKey(payment => payment.Id);
+        entity.Property(payment => payment.InternalPlanId).IsRequired().HasMaxLength(EntityConstants.Lengths.PlanIdMaxLength);
         entity.Property(payment => payment.Amount).HasPrecision(EntityConstants.Precision.MoneyPrecision, EntityConstants.Precision.MoneyScale);
         entity.Property(payment => payment.Currency).IsRequired().HasMaxLength(EntityConstants.Lengths.CurrencyMaxLength);
         entity.Property(payment => payment.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
         entity.Property(payment => payment.Provider).IsRequired().HasMaxLength(EntityConstants.Lengths.ProviderMaxLength);
         entity.Property(payment => payment.ProviderPaymentId).HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
+        entity.Property(payment => payment.ProviderCustomerId).HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
+        entity.Property(payment => payment.ProviderSubscriptionId).HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
+        entity.Property(payment => payment.ProviderPriceId).HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
+        entity.Property(payment => payment.ProviderProductId).HasMaxLength(EntityConstants.Lengths.ExternalIdMaxLength);
+        entity.Property(payment => payment.ProviderEventId).HasMaxLength(EntityConstants.Lengths.ProviderEventIdMaxLength);
+        entity.Property(payment => payment.ProviderEventType).HasMaxLength(EntityConstants.Lengths.BillingEventTypeMaxLength);
+        entity.Property(payment => payment.SafeMetadataJson).HasMaxLength(EntityConstants.Lengths.MetadataJsonMaxLength);
         entity.Property(payment => payment.ProviderPayloadJson).HasMaxLength(EntityConstants.Lengths.LongTextMaxLength);
         entity.Property(payment => payment.CreatedAt).IsRequired();
+        entity.Property(payment => payment.UpdatedAt).IsRequired();
         entity.HasIndex(payment => payment.UserId);
+        entity.HasIndex(payment => payment.SubscriptionId);
+        entity.HasIndex(payment => new { payment.Provider, payment.ProviderPaymentId })
+            .IsUnique()
+            .HasFilter("\"ProviderPaymentId\" IS NOT NULL");
         entity.HasOne(payment => payment.User)
             .WithMany(user => user.Payments)
             .HasForeignKey(payment => payment.UserId)
