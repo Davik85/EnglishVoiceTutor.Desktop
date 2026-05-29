@@ -345,7 +345,9 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
                 || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionUpdated, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionPastDue, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionCanceled, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionPaused, StringComparison.OrdinalIgnoreCase));
+                || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionPaused, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionResumed, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionActivated, StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool IsOlderProviderEvent(SubscriptionEntity subscription, DateTimeOffset? incomingEventOccurredAtUtc)
@@ -378,6 +380,12 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         if (string.Equals(eventType, SubscriptionConstants.BillingEventTypes.SubscriptionPaused, StringComparison.OrdinalIgnoreCase))
         {
             return SubscriptionConstants.SubscriptionStatuses.Paused;
+        }
+
+        if (string.Equals(eventType, SubscriptionConstants.BillingEventTypes.SubscriptionResumed, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(eventType, SubscriptionConstants.BillingEventTypes.SubscriptionActivated, StringComparison.OrdinalIgnoreCase))
+        {
+            return SubscriptionConstants.SubscriptionStatuses.Active;
         }
 
         return providerStatus?.Trim().ToLowerInvariant() switch

@@ -2,16 +2,16 @@
 
 Review date: 2026-05-29.
 
-Status: planning only, not implemented.
+Status: Step 4B implemented; remaining operations still planned only.
 
-The current Paddle billing lifecycle foundation is completed through Step 3C. This document plans the remaining billing operations and intentionally does not implement backend, desktop, Admin UI, database, configuration, smoke-script, or test changes.
+The current Paddle billing lifecycle foundation is completed through Step 4B. This document records the implemented resumed/activated snapshot-only policy and continues to plan the remaining billing operations without implementing unrelated backend, desktop, Admin UI, database, configuration, smoke-script, or test changes.
 
 ## 1. Title and status
 
 - Title: Billing Remaining Operations Plan.
 - Review date: 2026-05-29.
-- Status: planning only, not implemented.
-- Current lifecycle foundation: completed through Step 3C.
+- Status: Step 4B implemented; remaining operations still planned only.
+- Current lifecycle foundation: completed through Step 4B.
 
 ## 2. Non-negotiable architecture boundaries
 
@@ -26,35 +26,36 @@ The current Paddle billing lifecycle foundation is completed through Step 3C. Th
 
 ## 3. Current completed baseline
 
-The completed Step 3C baseline includes:
+The completed Step 4B baseline includes:
 
 - checkout skeleton and Paddle checkout adapter behind explicit configuration;
 - webhook ingestion that verifies `Paddle-Signature`, stores raw Paddle events, and handles disabled/missing-secret/signature-failure cases safely;
 - provider-agnostic billing event normalization into `billing_events` after durable raw event ingestion;
-- subscription snapshots for `subscription.created`, `subscription.updated`, and `subscription.past_due`;
+- subscription snapshots for `subscription.created`, `subscription.updated`, `subscription.past_due`, `subscription.resumed`, and `subscription.activated`;
 - payment snapshots for `transaction.completed` and `transaction.payment_failed`;
 - entitlement activation/extension from valid `transaction.completed` events mapped to Premium;
 - scheduled cancellation policy that records cancellation-at-period-end metadata without early Premium revocation;
 - `past_due` policy that records subscription status without entitlement creation, extension, or revocation;
 - actual `subscription.canceled` and `subscription.paused` policy that expires only active `provider_event` Premium entitlements for the resolved internal user/provider subscription context;
-- current Paddle smoke scripts covering checkout/webhook ingestion, event normalization, subscription snapshots, payment snapshots, entitlement activation/extension, scheduled cancellation, past-due behavior, and actual canceled/paused expiry behavior.
+- current Paddle smoke scripts covering checkout/webhook ingestion, event normalization, subscription snapshots, payment snapshots, entitlement activation/extension, scheduled cancellation, past-due behavior, actual canceled/paused expiry behavior, and resumed/activated snapshot-only behavior.
 
-## 4. Remaining operation A: subscription.resumed / subscription.activated restore policy
+## 4. Implemented operation A: subscription.resumed / subscription.activated snapshot-only policy
 
-Plan:
+Implemented Step 4B behavior:
 
-- `subscription.resumed` should update the `SubscriptionEntity` snapshot/status to active/resumed when received.
-- `subscription.activated` should update the `SubscriptionEntity` snapshot/status to active when received.
-- Neither event should grant Premium by itself in the first implementation slice.
-- Premium restoration should happen only through valid `transaction.completed` because Paddle resume/activation flows include transaction events when billing is collected.
-- If a future business rule needs grace access on resume before `transaction.completed`, it must be a separate explicit product decision.
+- `subscription.resumed` updates the `SubscriptionEntity` snapshot/status to active when received.
+- `subscription.activated` updates the `SubscriptionEntity` snapshot/status to active when received.
+- Neither event grants, extends, or restores Premium by itself.
+- Premium restoration still requires a valid `transaction.completed` through the existing entitlement activation/extension path.
+- Any future grace-access behavior on resume before `transaction.completed` must be a separate explicit product decision.
 
-Future smoke coverage should verify:
+Smoke coverage verifies:
 
 - resumed updates the subscription snapshot;
 - activated updates the subscription snapshot;
 - resumed/activated alone do not create Premium;
-- a following valid `transaction.completed` restores or extends Premium.
+- resumed/activated do not restore Premium after canceled/paused;
+- a following valid `transaction.completed` restores Premium through the entitlement activation path.
 
 ## 5. Remaining operation B: refunds and chargebacks policy
 
