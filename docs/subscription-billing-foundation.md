@@ -1,8 +1,8 @@
 # Subscription & Billing Foundation (Current State)
 
-This document describes the current implemented foundation for account, trial, subscription, entitlement, free-limit enforcement, development test accounts, provider-agnostic checkout, Paddle billing/webhook ingestion, entitlement activation, and local Development CMS/admin support.
+This document describes the current implemented foundation for account, trial, subscription, entitlement, free-limit enforcement, development test accounts, provider-agnostic checkout, Paddle billing/webhook ingestion, Paddle subscription/payment snapshots, entitlement activation/extension, canceled/paused expiry policy, and local Development CMS/admin support.
 
-English Voice Tutor is an international product for desktop now and future mobile clients later. The backend is the backend source of truth for account, trial, subscription, entitlement, free allowance, lesson history, usage, limits, and billing state. Desktop and future mobile clients must rely on backend state, not local payment assumptions.
+English Voice Tutor is a global, cross-platform, provider-agnostic product for desktop now and future mobile clients later. The backend is the source of truth for account, trial, subscription, entitlement, Premium/free status, daily free allowance, lesson history, usage, limits, payments, and billing state. Desktop and future mobile clients must rely on backend access/status decisions, not local payment assumptions.
 
 ## Account requirement for normal lesson start
 
@@ -30,9 +30,13 @@ English Voice Tutor is an international product for desktop now and future mobil
 
 - Active Premium entitlement allows lesson start.
 - Premium access bypasses free-lesson daily limits.
+- `EntitlementEntity` remains the source of Premium access.
 - Premium can come from trial, Development test-account grants, local admin grants, or validated provider billing events.
-- Provider billing activation creates or extends `provider_event` Premium `EntitlementEntity` rows from validated `reconciliation_pending` `transaction.completed` `billing_events` only; later valid period ends extend access, and older/equal period ends do not shorten it.
-- Cancellation, pause, past-due expiry, revocation, refunds, and chargebacks remain deferred lifecycle work.
+- Valid provider billing activation creates or extends `provider_event` Premium `EntitlementEntity` rows from validated `reconciliation_pending` `transaction.completed` `billing_events` only.
+- Later valid period ends extend existing provider-event access; duplicate or older events do not duplicate or shorten entitlement.
+- Actual `subscription.canceled` and `subscription.paused` events expire only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context.
+- Scheduled cancellation and past-due snapshots do not revoke Premium early.
+- Manual/admin/trial/development/future-mobile entitlements are not touched by the provider-event canceled/paused expiry path.
 - In local Development, a configured development test account can simulate unlimited Premium entitlement.
 
 ## Enforcement model
@@ -42,7 +46,7 @@ English Voice Tutor is an international product for desktop now and future mobil
 - Local override example:
   - `SubscriptionEnforcement__Enabled=true`
 - Backend is the enforcement authority for lesson-start access.
-- Desktop preflight checks improve UX, but the backend remains the backend source of truth.
+- Desktop preflight checks improve UX, but the backend remains the source of truth.
 - Existing/current lesson continuation is not blocked by this enforcement; enforcement is about starting new lessons.
 
 ## Development unlimited Premium test accounts
@@ -86,13 +90,15 @@ Current config section:
 ## Provider-agnostic billing direction
 
 - Internal plan ids stay independent from provider-specific plan/price ids.
-- Paddle is the current web/desktop checkout provider foundation, but the integration stays adapter-based.
-- Future entitlement/billing sources are expected to include:
+- Paddle is the current web/desktop checkout provider adapter, but the integration stays adapter-based.
+- Paddle must not be hardcoded into lesson/business access logic.
+- Future entitlement/billing sources may include:
   - Paddle for web/desktop checkout.
   - Apple App Store for future iOS.
   - Google Play for future Android.
   - Manual admin grants via CMS/admin tooling.
-- The backend remains the backend source of truth for entitlement state.
+- The Apple/Google mobile entitlement bridge is not implemented yet.
+- The backend remains the source of truth for entitlement state.
 
 ## Paddle checkout transaction creation v1
 
@@ -115,7 +121,7 @@ Current completed behavior:
 - Checkout transaction creation does **not** mutate `SubscriptionEntity`.
 - Checkout transaction creation does **not** mutate `PaymentEntity`.
 - Checkout transaction creation does **not** mutate `EntitlementEntity`.
-- Entitlement activation foundation v1 is separate and can activate Premium only after webhook ingestion, normalization, reconciliation decision processing, and strict activation validation.
+- Entitlement activation is separate and can activate Premium only after webhook ingestion, normalization, reconciliation decision processing, and strict activation validation.
 - Optional real sandbox smoke script: `tools/smoke_paddle_checkout_live_sandbox.ps1`.
 - The optional real sandbox smoke requires `-AllowRealPaddleCall` and creates a real Paddle sandbox transaction only; it does not complete payment, call webhooks, or activate internal entitlement state.
 
@@ -136,11 +142,8 @@ Current completed behavior:
 - Raw Paddle webhook events are stored in `paddle_webhook_events`.
 - Duplicate Paddle event ids are accepted idempotently and return `200` with `duplicate=true` without inserting a second raw event row.
 - New valid events return `200` with `accepted=true` and `duplicate=false`.
-- After durable raw ingestion, the request flow runs normalization, reconciliation decision processing, and entitlement activation foundation v1 for the current provider event only.
-- Premium entitlement activation is allowed only from validated provider-agnostic `billing_events`; raw webhook payloads are not used directly for business-state mutation.
-- Subscription and payment mutation remain deferred.
-- No internal payment records are created from webhooks in this step.
-- Full subscription reconciliation is deferred.
+- After durable raw ingestion, the request flow runs normalization, subscription/payment snapshot processing, reconciliation decision processing, and entitlement activation/expiry policy for the current provider event only.
+- Premium entitlement activation is allowed only from validated provider-agnostic `billing_events`; raw webhook payloads are not used directly for access-state mutation.
 - The Paddle webhook secret must be stored in environment variables, user secrets, or secure deployment configuration. Do not put real webhook secrets in tracked files or client code.
 
 Safe local configuration example:
@@ -158,29 +161,39 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - `billing_events` is the provider-agnostic event stream for reconciliation decisions and stores safe metadata only, not raw payloads, signatures, API keys, webhook secrets, or other secrets.
 - Normalization is idempotent through the existing unique `billing_events` constraint on provider + provider event id.
 - Normalization does not call Paddle.
-- Normalization does not mutate `SubscriptionEntity`.
-- Normalization now carries safe transaction snapshot metadata used by downstream payment persistence.
-- Normalization does not directly mutate `PaymentEntity`.
-- Normalization does not directly mutate `EntitlementEntity`.
-
-
-## Payment persistence snapshot foundation v1
-
-- Paddle `transaction.completed` and `transaction.payment_failed` events can now upsert a minimal provider-agnostic `PaymentEntity` diagnostic snapshot for an existing internal user when safe metadata maps to the Premium plan.
-- Payment snapshots are idempotent by billing provider + provider transaction id.
-- `transaction.completed` stores a `completed` payment snapshot and still relies on the existing entitlement activation flow for Premium access.
-- `transaction.payment_failed` stores a `failed` payment snapshot and does not activate, revoke, or otherwise mutate Premium access.
-- `PaymentEntity` is diagnostic payment history only and is not used as an access source.
+- Normalization carries safe subscription/payment/entitlement metadata used by downstream provider-agnostic processing.
+- Normalization does not directly grant Premium access.
 
 ## Subscription lifecycle snapshot foundation v1
 
-- Paddle `subscription.created`, `subscription.updated`, and `subscription.past_due` events can now upsert a provider-agnostic `SubscriptionEntity` snapshot for an existing internal user.
-- Snapshot persistence is idempotent by provider + provider subscription id and ignores older provider events when a newer lifecycle event was already applied.
-- Scheduled cancellation metadata from `subscription.updated` is recorded as snapshot state without early Premium revocation or entitlement shortening.
-- `subscription.past_due` is recorded as `past_due` snapshot state without entitlement extension or revocation.
-- This snapshot stores subscription lifecycle data only; it does not grant, revoke, pause, resume, renew, expire, or otherwise change Premium entitlement/access behavior.
-- Immediate cancellation, pause/resume effects, manual revocation, refunds, chargebacks, and full reconciliation remain deferred.
-- `PaymentEntity` is not mutated by this flow.
+- Paddle `subscription.created` and `subscription.updated` events upsert a provider-agnostic `SubscriptionEntity` snapshot for an existing internal user.
+- Duplicate `subscription.created` is idempotent.
+- `subscription.updated` updates provider snapshot/current period data.
+- Older out-of-order `subscription.updated` events do not regress `SubscriptionEntity` state.
+- `subscription.created` and `subscription.updated` do not activate Premium by themselves.
+- Scheduled cancellation metadata from `subscription.updated` is recorded in `SubscriptionEntity`.
+- `cancelAtPeriodEnd`, `scheduledChangeAction`, and `scheduledChangeEffectiveAtUtc` are exposed safely where needed for diagnostics/status.
+- Scheduled cancellation does not revoke Premium early.
+- Scheduled cancellation does not shorten existing `provider_event` entitlement.
+- Paddle `subscription.past_due` is recorded as `SubscriptionEntity` snapshot/status.
+- `subscription.past_due` does not create entitlement.
+- `subscription.past_due` does not extend entitlement.
+- `subscription.past_due` does not revoke already active entitlement.
+- A user without active entitlement does not become Premium from `subscription.past_due`.
+- Actual `subscription.canceled` updates `SubscriptionEntity.Status = Canceled`.
+- Actual `subscription.paused` updates `SubscriptionEntity.Status = Paused`.
+- `SubscriptionEntity` stores subscription lifecycle data only and does not grant Premium access by itself.
+- `subscription.resumed` / `subscription.activated` restore behavior is not implemented yet.
+
+## Payment persistence snapshot foundation v1
+
+- Paddle `transaction.completed` and `transaction.payment_failed` events upsert a minimal provider-agnostic `PaymentEntity` diagnostic snapshot for an existing internal user when safe metadata maps to the Premium plan.
+- `PaymentEntity` stores provider-agnostic payment/transaction trail.
+- Payment snapshots are idempotent by billing provider + provider transaction id.
+- Duplicate `transaction.completed` and `transaction.payment_failed` events do not duplicate `PaymentEntity`.
+- `transaction.completed` stores a `completed` payment snapshot and still relies on the existing entitlement activation flow for Premium access.
+- `transaction.payment_failed` stores a `failed` payment snapshot and does not activate Premium.
+- `PaymentEntity` is diagnostic payment history only and is not used as an access source.
 
 ## Entitlement reconciliation decision foundation v1
 
@@ -190,14 +203,16 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - Malformed, invalid, or missing required safe metadata is blocked and does not become eligible for activation.
 - This is provider-agnostic processing over `billing_events`.
 - This step does not activate Premium by itself.
-- This step does not mutate `SubscriptionEntity`.
-- This step does not use `PaymentEntity` as an access source.
+- This step does not use `SubscriptionEntity` or `PaymentEntity` as an access source.
 - This step does not call Paddle.
 - Raw webhook events remain in `paddle_webhook_events`.
 
-## Entitlement activation foundation v1
+## Entitlement activation and extension foundation v1
 
 - Valid `reconciliation_pending` Paddle `transaction.completed` events can create Premium `EntitlementEntity` rows.
+- Valid later `transaction.completed` events can extend an existing `provider_event` Premium entitlement.
+- Duplicate `transaction.completed` does not duplicate entitlement.
+- Older `transaction.completed` does not shorten entitlement.
 - Activation currently requires:
   - `provider=paddle`;
   - `eventType=transaction.completed`;
@@ -207,33 +222,39 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
   - `billingPeriodEndsAtUtc` present, parseable, and in the future;
   - `source=provider_event`.
 - `billingPeriodStartsAtUtc` is used as the entitlement start when present and valid; otherwise activation uses the current UTC processing time.
-- Activation creates a Premium `EntitlementEntity` with source `provider_event`, status `active`, `SubscriptionId = null`, and a safe reason referencing the provider event.
+- Activation creates or extends a Premium `EntitlementEntity` with source `provider_event`, status `active`, and a safe reason referencing the provider event.
 - Existing events without a future `billingPeriodEndsAtUtc` are blocked instead of granting open-ended Premium.
-- Duplicate webhook events do not create duplicate `billing_events` and therefore do not create duplicate entitlements.
-- `SubscriptionEntity` is not mutated by this flow.
-- Payment persistence may already have upserted a diagnostic `PaymentEntity` for the same provider event, but activation does not read `PaymentEntity` and does not use it as an access source.
-- No cancellation, expiry, revocation, or renewal handling is implemented yet.
-- No full subscription reconciliation is implemented yet.
+- Activation does not read `PaymentEntity` and does not use it as an access source.
 - Activation does not call Paddle.
 - Raw Paddle webhook events remain in `paddle_webhook_events`.
 - Provider-agnostic `billing_events` remain the processing source for reconciliation decisions and entitlement activation.
+
+## Actual canceled / paused expiry policy foundation v1
+
+- Actual `subscription.canceled` expires only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context.
+- Actual `subscription.paused` expires only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context.
+- Manual/admin/trial/development/future-mobile entitlements are not touched by this provider-event expiry path.
+- This expiry policy does not implement `subscription.resumed` or `subscription.activated` restore behavior.
 
 ## Event-scoped webhook request processing
 
 - A Paddle webhook request processes only the current Paddle provider event id.
 - The request normalizes only the current Paddle event.
 - The request processes subscription lifecycle snapshot logic only for the current provider event.
+- The request processes payment snapshot logic only for the current provider event.
 - The request processes reconciliation decision logic only for the current provider event.
-- The request activates entitlement only for the current provider event when strict activation validation passes.
+- The request activates, extends, or expires entitlement only for the current provider event when strict validation passes.
 - The request must not process old unrelated `received` or `reconciliation_pending` billing events.
 - Broad/batch processing is reserved for future worker/backfill tooling.
 
 ## Backend access/status verification
 
-- The Paddle webhook smoke verifies that a `provider_event` Premium entitlement is visible to existing backend access/status endpoints.
 - Backend access/status endpoints recognize provider-event Premium entitlement as backend state.
+- `EntitlementEntity` remains the source of Premium access.
+- `SubscriptionEntity` alone must not grant Premium access.
+- `PaymentEntity` must not grant Premium access.
 - Desktop and future mobile clients must rely on backend state, not local payment assumptions.
-- Desktop UI was not changed for this foundation step.
+- Desktop upgrade/paywall UI was not implemented for this foundation step.
 - Future mobile UI was not added for this foundation step.
 
 ## CMS/admin support foundation v1 checkpoint
@@ -256,7 +277,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - Admin mutations require a reason and write audit actions.
 - Static admin shell audit script (`tools/audit_admin_shell.ps1`) guards required tabs/forms/controls/endpoints and forbids `localStorage`/`sessionStorage` usage in `admin.js`.
 - Smoke script (`tools/smoke_admin_foundation.ps1`) runs the admin shell audit first.
-- Admin UI was not changed for Paddle entitlement activation/access smoke verification.
+- Admin UI was not changed for Paddle lifecycle documentation.
 
 ## Current smoke scripts
 
@@ -264,23 +285,47 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - `tools/smoke_paddle_checkout_adapter.ps1`
 - `tools/smoke_paddle_checkout_live_sandbox.ps1`
 - `tools/smoke_paddle_webhook_ingestion.ps1`
-- `tools/smoke_paddle_canceled_paused_expiry_policy.ps1`
 - `tools/smoke_admin_foundation.ps1`
+- `tools/smoke_paddle_subscription_lifecycle.ps1`
+- `tools/smoke_paddle_payment_persistence.ps1`
+- `tools/smoke_paddle_entitlement_extension.ps1`
+- `tools/smoke_paddle_cancellation_past_due_policy.ps1`
+- `tools/smoke_paddle_canceled_paused_expiry_policy.ps1`
 
-### Paddle webhook ingestion smoke coverage
+## Latest confirmed validation
 
-`tools/smoke_paddle_webhook_ingestion.ps1` verifies:
+- `tools/audit_lesson_content.ps1` passed.
+- Desktop Debug build passed.
+- Desktop Release build passed.
+- Backend build passed.
+- `dotnet ef migrations list` shows latest migration `20260529000000_AddPaddlePaymentPersistenceV1`.
+- `dotnet ef database update` reports the database is already up to date.
+- `dotnet ef migrations has-pending-model-changes` reports no model changes.
+- `tools/smoke_paddle_canceled_paused_expiry_policy.ps1` passed.
+- `tools/smoke_paddle_cancellation_past_due_policy.ps1` passed.
+- `tools/smoke_paddle_entitlement_extension.ps1` passed.
+- `tools/smoke_paddle_payment_persistence.ps1` passed.
+- `tools/smoke_paddle_subscription_lifecycle.ps1` passed.
+- `tools/smoke_paddle_webhook_ingestion.ps1` passed.
+
+### Paddle lifecycle smoke coverage
+
+The Paddle lifecycle smoke scripts verify:
 
 - signed webhook accepted;
 - normalization into `billing_events`;
-- reconciliation decision for the current provider event;
-- entitlement activation from validated `reconciliation_pending` billing events;
+- event-scoped processing for the current provider event;
+- subscription snapshot idempotency and out-of-order protection;
+- payment snapshot idempotency;
+- entitlement activation and extension from validated `reconciliation_pending` billing events;
+- scheduled cancellation metadata recording without early revocation;
+- past-due snapshot recording without entitlement creation, extension, or revocation;
+- actual canceled/paused expiry of only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context;
 - backend access/status sees Premium from a `provider_event` entitlement;
-- duplicate webhook does not duplicate entitlement;
 - unsigned webhook returns `401`;
 - invalid signature returns `401`.
 
-Required local backend configuration for the webhook smoke:
+Required local backend configuration for webhook smokes:
 
 ```powershell
 $env:PaddleWebhook__Enabled = "true"
@@ -288,40 +333,42 @@ $env:PaddleWebhook__SecretKey = "test_webhook_secret"
 $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 ```
 
-`test_webhook_secret` is a local smoke-test placeholder only. Do not use or commit real Paddle API keys, webhook secrets, or price ids.
+`test_webhook_secret` is a local smoke-test placeholder only. Do not use or commit real Paddle API keys, webhook secrets, price ids, customer ids, or transaction ids.
 
 ## Current latest EF migration
 
-- Latest confirmed EF migration remains `20260528000000_AddPaddleWebhookEvents`.
-- No new migration was created after entitlement activation/access smoke verification.
-- No schema change is required by the current entitlement activation/access verification.
+- Latest confirmed EF migration is `20260529000000_AddPaddlePaymentPersistenceV1`.
+- `dotnet ef database update` reports the database is already up to date.
+- `dotnet ef migrations has-pending-model-changes` reports no model changes.
 
 ## Explicit non-goals and deferred scope
 
-Current Paddle billing and entitlement work does **not** complete the full subscription lifecycle.
+Current Paddle billing and entitlement work does **not** complete all production billing operations.
 
 Deferred scope / next roadmap:
-- actual `subscription.canceled` and `subscription.paused` now expire only active `provider_event` Premium entitlements for the resolved internal user/provider subscription context;
-- scheduled cancellation and `subscription.past_due` still do not revoke Premium early;
-- `subscription.resumed` / `subscription.activated` restore behavior, refunds, chargebacks, manual revocation automation, and full reconciliation remain deferred;
-- renewal handling;
-- subscription status reconciliation;
-- full subscription reconciliation;
-- production Paddle webhook configuration;
-- production billing rollout hardening;
-- desktop upgrade/paywall UI;
-- future Apple/Google mobile entitlement bridge.
+- Production Paddle webhook configuration is not completed yet.
+- Desktop upgrade/paywall UI is not implemented yet.
+- `subscription.resumed` behavior is not implemented yet.
+- `subscription.activated` restore behavior is not implemented yet.
+- Refund handling is not implemented yet.
+- Chargeback handling is not implemented yet.
+- Manual revocation automation is not implemented yet.
+- Full subscription reconciliation / background reconciliation job is not implemented yet.
+- Future Apple App Store / Google Play mobile entitlement bridge is not implemented yet.
+- Production RBAC/admin system is not implemented yet.
+- Contabo deployment is not part of this task.
 
 ## Current mutation boundaries
 
 - Checkout transaction creation returns `checkoutUrl` only and does not activate Premium.
 - Raw webhook ingestion writes `paddle_webhook_events`.
 - Normalization writes provider-agnostic `billing_events` with safe metadata only.
+- Subscription lifecycle processing updates `SubscriptionEntity` snapshots only; `SubscriptionEntity` does not grant Premium access by itself.
+- Payment persistence updates `PaymentEntity` diagnostic snapshots only; `PaymentEntity` is not used for access decisions.
 - Reconciliation decision updates only the current normalized provider event decision state.
-- Entitlement activation can create Premium `EntitlementEntity` rows from validated `reconciliation_pending` billing events.
-- `SubscriptionEntity` is mutated only by subscription lifecycle snapshot processing and does not grant Premium access by itself.
-- Actual `subscription.canceled` and `subscription.paused` events can shorten only active `provider_event` Premium `EntitlementEntity` rows; trial/manual/admin/development/future-mobile entitlement sources are not touched.
-- `PaymentEntity` is mutated only by payment persistence snapshot processing and is not used for access decisions.
+- Entitlement activation can create or extend Premium `EntitlementEntity` rows from validated `reconciliation_pending` billing events.
+- Actual `subscription.canceled` and `subscription.paused` events can shorten only active `provider_event` Premium `EntitlementEntity` rows for the resolved internal user/provider subscription context.
+- Trial/manual/admin/development/future-mobile entitlements are not touched by the provider-event canceled/paused expiry path.
 - Admin UI was not changed.
 - Desktop UI was not changed.
 - Latest payment persistence schema migration is `20260529000000_AddPaddlePaymentPersistenceV1`.
