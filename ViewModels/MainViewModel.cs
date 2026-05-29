@@ -7,6 +7,7 @@ using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Services;
 using EnglishVoiceTutor.Desktop.Services.Auth;
+using EnglishVoiceTutor.Desktop.Services.Access;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
@@ -202,14 +203,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (session is null)
             {
                 MessageBox.Show(
-                    BackendConstants.LessonStartRequiresSignInMessage,
+                    AccessDisplayStateMapper.MapSignedOut().Message,
                     BackendConstants.LessonStartRequiresSignInTitle,
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
                 return;
             }
 
-            var result = await lessonStartGuardService.CheckAsync(userSettings.BackendBaseUrl);
+            var result = await lessonStartGuardService.CheckAsync(userSettings.BackendBaseUrl, isSignedIn: true);
 
             Debug.WriteLine(
                 $"Lesson start guard check completed. ShouldAllowStart={result.ShouldAllowStart}; IsBackendDecisionAvailable={result.IsBackendDecisionAvailable}; Source={result.Source}; CanStartNewLesson={result.CanStartNewLesson}; Decision={result.Decision}; Reason={result.Reason}; EnforcementEnabled={result.EnforcementEnabled}; FreeLessonRemainingToday={result.FreeLessonRemainingToday}; FreeLessonUsedToday={result.FreeLessonUsedToday}.");
@@ -217,7 +218,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (!result.ShouldAllowStart)
             {
                 MessageBox.Show(
-                    BackendConstants.LessonStartUnavailableMessage,
+                    result.AccessDisplay.Message,
                     BackendConstants.LessonStartUnavailableTitle,
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
