@@ -24,6 +24,7 @@ public static class PaddleWebhookEndpoints
         IPaddleWebhookEventNormalizer webhookEventNormalizer,
         IBillingEventReconciliationDecisionService reconciliationDecisionService,
         IBillingEventSubscriptionSnapshotService subscriptionSnapshotService,
+        IBillingEventPaymentPersistenceService paymentPersistenceService,
         IBillingEventEntitlementActivationService entitlementActivationService,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
@@ -106,6 +107,32 @@ public static class PaddleWebhookEndpoints
             normalizationResult.NormalizedCount,
             normalizationResult.AlreadyNormalizedCount,
             normalizationResult.FailedCount);
+
+
+        BillingEventPaymentPersistenceResult paymentPersistenceResult;
+        try
+        {
+            paymentPersistenceResult = ingestionResult.EventId is null
+                ? new BillingEventPaymentPersistenceResult(0, 0, 0, 0, 0, null, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+                : await paymentPersistenceService.ProcessProviderEventAsync(
+                    SubscriptionConstants.BillingProviders.Paddle,
+                    ingestionResult.EventId,
+                    cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            var completedAtUtc = DateTimeOffset.UtcNow;
+            paymentPersistenceResult = new BillingEventPaymentPersistenceResult(0, 0, 0, 0, 1, null, completedAtUtc, completedAtUtc);
+            logger.LogError(exception, "Billing event payment persistence failed after Paddle webhook normalization. EventId={PaddleEventId}.", ingestionResult.EventId);
+        }
+
+        logger.LogInformation(
+            "Billing event payment persistence completed after Paddle webhook normalization. CheckedCount={CheckedCount}; PersistedOrUpdatedCount={PersistedOrUpdatedCount}; AlreadyCurrentCount={AlreadyCurrentCount}; BlockedCount={BlockedCount}; FailedCount={FailedCount}.",
+            paymentPersistenceResult.CheckedCount,
+            paymentPersistenceResult.PersistedOrUpdatedCount,
+            paymentPersistenceResult.AlreadyCurrentCount,
+            paymentPersistenceResult.BlockedCount,
+            paymentPersistenceResult.FailedCount);
 
         BillingEventSubscriptionSnapshotResult subscriptionSnapshotResult;
         try
@@ -191,6 +218,13 @@ public static class PaddleWebhookEndpoints
             normalized = normalizationResult.NormalizedCount > 0 || normalizationResult.AlreadyNormalizedCount > 0,
             billingEventCreated = normalizationResult.NormalizedCount > 0,
             existingBillingEvent = ingestionResult.IsDuplicate || normalizationResult.AlreadyNormalizedCount > 0,
+            paymentPersistenceChecked = paymentPersistenceResult.CheckedCount,
+            paymentPersistedOrUpdated = paymentPersistenceResult.PersistedOrUpdatedCount > 0,
+            paymentPersistedOrUpdatedCount = paymentPersistenceResult.PersistedOrUpdatedCount,
+            paymentAlreadyCurrentCount = paymentPersistenceResult.AlreadyCurrentCount,
+            paymentPersistenceBlocked = paymentPersistenceResult.BlockedCount,
+            paymentPersistenceFailed = paymentPersistenceResult.FailedCount,
+            paymentStatus = paymentPersistenceResult.PaymentStatus,
             reconciliationChecked = reconciliationResult.CheckedCount,
             reconciliationPending = reconciliationResult.MarkedPendingCount > 0,
             reconciliationPendingCount = reconciliationResult.MarkedPendingCount,

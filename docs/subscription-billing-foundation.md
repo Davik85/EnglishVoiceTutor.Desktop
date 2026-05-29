@@ -158,9 +158,18 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - Normalization is idempotent through the existing unique `billing_events` constraint on provider + provider event id.
 - Normalization does not call Paddle.
 - Normalization does not mutate `SubscriptionEntity`.
-- Normalization does not mutate `PaymentEntity`.
+- Normalization now carries safe transaction snapshot metadata used by downstream payment persistence.
+- Normalization does not directly mutate `PaymentEntity`.
 - Normalization does not directly mutate `EntitlementEntity`.
 
+
+## Payment persistence snapshot foundation v1
+
+- Paddle `transaction.completed` and `transaction.payment_failed` events can now upsert a minimal provider-agnostic `PaymentEntity` diagnostic snapshot for an existing internal user when safe metadata maps to the Premium plan.
+- Payment snapshots are idempotent by billing provider + provider transaction id.
+- `transaction.completed` stores a `completed` payment snapshot and still relies on the existing entitlement activation flow for Premium access.
+- `transaction.payment_failed` stores a `failed` payment snapshot and does not activate, revoke, or otherwise mutate Premium access.
+- `PaymentEntity` is diagnostic payment history only and is not used as an access source.
 
 ## Subscription lifecycle snapshot foundation v1
 
@@ -178,7 +187,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - This is provider-agnostic processing over `billing_events`.
 - This step does not activate Premium by itself.
 - This step does not mutate `SubscriptionEntity`.
-- This step does not mutate `PaymentEntity`.
+- This step does not use `PaymentEntity` as an access source.
 - This step does not call Paddle.
 - Raw webhook events remain in `paddle_webhook_events`.
 
@@ -198,7 +207,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - Existing events without a future `billingPeriodEndsAtUtc` are blocked instead of granting open-ended Premium.
 - Duplicate webhook events do not create duplicate `billing_events` and therefore do not create duplicate entitlements.
 - `SubscriptionEntity` is not mutated by this flow.
-- `PaymentEntity` is not mutated by this flow.
+- Payment persistence may already have upserted a diagnostic `PaymentEntity` for the same provider event, but activation does not read `PaymentEntity` and does not use it as an access source.
 - No cancellation, expiry, revocation, or renewal handling is implemented yet.
 - No full subscription reconciliation is implemented yet.
 - Activation does not call Paddle.
@@ -291,7 +300,6 @@ Deferred scope / next roadmap:
 - renewal handling;
 - subscription status reconciliation;
 - full subscription reconciliation;
-- payment record persistence if needed;
 - production Paddle webhook configuration;
 - production billing rollout hardening;
 - desktop upgrade/paywall UI;
@@ -304,8 +312,8 @@ Deferred scope / next roadmap:
 - Normalization writes provider-agnostic `billing_events` with safe metadata only.
 - Reconciliation decision updates only the current normalized provider event decision state.
 - Entitlement activation can create Premium `EntitlementEntity` rows from validated `reconciliation_pending` billing events.
-- `SubscriptionEntity` is not mutated by this Paddle flow.
-- `PaymentEntity` is not mutated by this Paddle flow.
+- `SubscriptionEntity` is mutated only by subscription lifecycle snapshot processing.
+- `PaymentEntity` is mutated only by payment persistence snapshot processing and is not used for access decisions.
 - Admin UI was not changed.
 - Desktop UI was not changed.
-- Database schema was not changed after `20260528000000_AddPaddleWebhookEvents`.
+- Latest payment persistence schema migration is `20260529000000_AddPaddlePaymentPersistenceV1`.
