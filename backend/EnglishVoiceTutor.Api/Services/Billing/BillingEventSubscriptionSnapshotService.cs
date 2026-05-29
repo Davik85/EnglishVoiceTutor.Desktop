@@ -34,6 +34,8 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         var blockedCount = 0;
         var failedCount = 0;
         var alreadySkippedCount = 0;
+        var providerEventEntitlementExpiredCount = 0;
+        DateTimeOffset? providerEventEntitlementExpiresAtUtc = null;
 
         var billingEventId = await dbContext.BillingEvents
             .AsNoTracking()
@@ -44,7 +46,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
 
         if (billingEventId is null)
         {
-            return CreateResult(startedAtUtc, checkedCount, upsertedCount, ignoredOlderCount, blockedCount, failedCount, alreadySkippedCount);
+            return CreateResult(startedAtUtc, checkedCount, upsertedCount, ignoredOlderCount, blockedCount, failedCount, alreadySkippedCount, providerEventEntitlementExpiredCount, providerEventEntitlementExpiresAtUtc);
         }
 
         checkedCount = 1;
@@ -52,7 +54,9 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         try
         {
             var result = await ProcessBillingEventAsync(billingEventId.Value, cancellationToken);
-            switch (result)
+            providerEventEntitlementExpiredCount += result.ProviderEventEntitlementExpiredCount;
+            providerEventEntitlementExpiresAtUtc = result.ProviderEventEntitlementExpiresAtUtc;
+            switch (result.Result)
             {
                 case SubscriptionSnapshotEventResult.Upserted:
                     upsertedCount++;
@@ -85,10 +89,10 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
                 providerEventId);
         }
 
-        return CreateResult(startedAtUtc, checkedCount, upsertedCount, ignoredOlderCount, blockedCount, failedCount, alreadySkippedCount);
+        return CreateResult(startedAtUtc, checkedCount, upsertedCount, ignoredOlderCount, blockedCount, failedCount, alreadySkippedCount, providerEventEntitlementExpiredCount, providerEventEntitlementExpiresAtUtc);
     }
 
-    private async Task<SubscriptionSnapshotEventResult> ProcessBillingEventAsync(
+    private async Task<SubscriptionSnapshotEventOutcome> ProcessBillingEventAsync(
         Guid billingEventId,
         CancellationToken cancellationToken)
     {
@@ -100,19 +104,19 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         if (billingEvent is null)
         {
             await transaction.CommitAsync(cancellationToken);
-            return SubscriptionSnapshotEventResult.AlreadySkipped;
+            return SubscriptionSnapshotEventOutcome.AlreadySkipped();
         }
 
         if (!IsSupportedSubscriptionLifecycleEvent(billingEvent))
         {
             await transaction.CommitAsync(cancellationToken);
-            return SubscriptionSnapshotEventResult.AlreadySkipped;
+            return SubscriptionSnapshotEventOutcome.AlreadySkipped();
         }
 
         if (billingEvent.Status != SubscriptionConstants.BillingEventStatuses.Received)
         {
             await transaction.CommitAsync(cancellationToken);
-            return SubscriptionSnapshotEventResult.AlreadySkipped;
+            return SubscriptionSnapshotEventOutcome.AlreadySkipped();
         }
 
         var nowUtc = DateTimeOffset.UtcNow;
@@ -125,7 +129,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
                 validation.ErrorMessage ?? SubscriptionConstants.SubscriptionLifecycleSnapshot.InvalidBillingEventMetadataMessage);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-            return SubscriptionSnapshotEventResult.Blocked;
+            return SubscriptionSnapshotEventOutcome.Blocked();
         }
 
         var existingSubscription = await dbContext.Subscriptions.SingleOrDefaultAsync(
@@ -140,7 +144,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
             billingEvent.ErrorMessage = SubscriptionConstants.SubscriptionLifecycleSnapshot.OlderProviderEventIgnoredMessage;
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-            return SubscriptionSnapshotEventResult.IgnoredOlder;
+            return SubscriptionSnapshotEventOutcome.IgnoredOlder();
         }
 
         if (existingSubscription is null)
@@ -160,13 +164,25 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
 
         ApplySnapshot(existingSubscription, billingEvent, validation, nowUtc);
 
+        var entitlementExpiry = IsEntitlementExpiryLifecycleEvent(billingEvent.EventType)
+            ? await ExpireActiveProviderEventPremiumEntitlementsAsync(
+                existingSubscription,
+                validation.InternalUserId!.Value,
+                ResolveEntitlementExpiryUtc(validation, nowUtc),
+                nowUtc,
+                billingEvent,
+                cancellationToken)
+            : EntitlementExpiryOutcome.None;
+
         billingEvent.Status = SubscriptionConstants.BillingEventStatuses.Processed;
         billingEvent.ProcessedAtUtc = nowUtc;
         billingEvent.ErrorMessage = null;
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        return SubscriptionSnapshotEventResult.Upserted;
+        return SubscriptionSnapshotEventOutcome.Upserted(
+            entitlementExpiry.ExpiredCount,
+            entitlementExpiry.ExpiresAtUtc);
     }
 
     private async Task<SubscriptionSnapshotValidationResult> ValidateBillingEventAsync(
@@ -213,6 +229,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
             metadata.CancelAtPeriodEnd,
             FirstNonEmpty(metadata.ScheduledChangeAction),
             metadata.ScheduledChangeEffectiveAtUtc,
+            metadata.EffectiveAtUtc,
             metadata.OccurredAtUtc,
             metadata.PaddleEventId,
             metadata.EventType);
@@ -245,12 +262,90 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         subscription.UpdatedAt = nowUtc;
     }
 
+    private async Task<EntitlementExpiryOutcome> ExpireActiveProviderEventPremiumEntitlementsAsync(
+        SubscriptionEntity subscription,
+        Guid internalUserId,
+        DateTimeOffset requestedExpiresAtUtc,
+        DateTimeOffset nowUtc,
+        BillingEventEntity billingEvent,
+        CancellationToken cancellationToken)
+    {
+        var activeEntitlements = await dbContext.Entitlements
+            .Where(entitlement => entitlement.UserId == internalUserId
+                && entitlement.PlanId == SubscriptionConstants.Plans.PremiumPlanId
+                && entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType
+                && entitlement.Source == SubscriptionConstants.Entitlements.SourceProviderEvent
+                && entitlement.Status == SubscriptionConstants.Entitlements.StatusActive
+                && entitlement.StartsAtUtc <= nowUtc
+                && (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > nowUtc)
+                && (entitlement.SubscriptionId == null || entitlement.SubscriptionId == subscription.Id))
+            .ToListAsync(cancellationToken);
+
+        var expiredCount = 0;
+        DateTimeOffset? latestExpiresAtUtc = null;
+
+        foreach (var entitlement in activeEntitlements)
+        {
+            if (entitlement.ExpiresAtUtc.HasValue && entitlement.ExpiresAtUtc.Value <= requestedExpiresAtUtc)
+            {
+                continue;
+            }
+
+            entitlement.SubscriptionId ??= subscription.Id;
+            entitlement.ExpiresAtUtc = requestedExpiresAtUtc;
+            entitlement.Reason = CreateEntitlementExpiryReason(billingEvent);
+            entitlement.UpdatedAt = nowUtc;
+
+            expiredCount++;
+            latestExpiresAtUtc = MaxDateTimeOffset(latestExpiresAtUtc, requestedExpiresAtUtc);
+        }
+
+        return new EntitlementExpiryOutcome(expiredCount, latestExpiresAtUtc);
+    }
+
+    private static DateTimeOffset ResolveEntitlementExpiryUtc(
+        SubscriptionSnapshotValidationResult snapshot,
+        DateTimeOffset nowUtc)
+    {
+        return snapshot.EffectiveAtUtc
+            ?? snapshot.EventOccurredAtUtc
+            ?? nowUtc;
+    }
+
+    private static bool IsEntitlementExpiryLifecycleEvent(string eventType)
+    {
+        return string.Equals(eventType, SubscriptionConstants.BillingEventTypes.SubscriptionCanceled, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(eventType, SubscriptionConstants.BillingEventTypes.SubscriptionPaused, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static DateTimeOffset? MaxDateTimeOffset(DateTimeOffset? current, DateTimeOffset? candidate)
+    {
+        if (current is null)
+        {
+            return candidate;
+        }
+
+        if (candidate is null)
+        {
+            return current;
+        }
+
+        return candidate.Value > current.Value ? candidate : current;
+    }
+
+    private static string CreateEntitlementExpiryReason(BillingEventEntity billingEvent)
+    {
+        return $"{SubscriptionConstants.SubscriptionLifecycleSnapshot.ExpiredProviderEventEntitlementReason} Provider={billingEvent.BillingProvider}; ProviderEventType={billingEvent.EventType}; ProviderEventId={billingEvent.ProviderEventId}.";
+    }
+
     private static bool IsSupportedSubscriptionLifecycleEvent(BillingEventEntity billingEvent)
     {
         return billingEvent.BillingProvider == SubscriptionConstants.BillingProviders.Paddle
             && (string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionCreated, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionUpdated, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionPastDue, StringComparison.OrdinalIgnoreCase));
+                || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionPastDue, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionCanceled, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(billingEvent.EventType, SubscriptionConstants.BillingEventTypes.SubscriptionPaused, StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool IsOlderProviderEvent(SubscriptionEntity subscription, DateTimeOffset? incomingEventOccurredAtUtc)
@@ -273,6 +368,16 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         if (string.Equals(eventType, SubscriptionConstants.BillingEventTypes.SubscriptionPastDue, StringComparison.OrdinalIgnoreCase))
         {
             return SubscriptionConstants.SubscriptionStatuses.PastDue;
+        }
+
+        if (string.Equals(eventType, SubscriptionConstants.BillingEventTypes.SubscriptionCanceled, StringComparison.OrdinalIgnoreCase))
+        {
+            return SubscriptionConstants.SubscriptionStatuses.Canceled;
+        }
+
+        if (string.Equals(eventType, SubscriptionConstants.BillingEventTypes.SubscriptionPaused, StringComparison.OrdinalIgnoreCase))
+        {
+            return SubscriptionConstants.SubscriptionStatuses.Paused;
         }
 
         return providerStatus?.Trim().ToLowerInvariant() switch
@@ -359,7 +464,9 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         int ignoredOlderCount,
         int blockedCount,
         int failedCount,
-        int alreadySkippedCount)
+        int alreadySkippedCount,
+        int providerEventEntitlementExpiredCount,
+        DateTimeOffset? providerEventEntitlementExpiresAtUtc)
     {
         return new BillingEventSubscriptionSnapshotResult(
             checkedCount,
@@ -368,6 +475,8 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
             blockedCount,
             failedCount,
             alreadySkippedCount,
+            providerEventEntitlementExpiredCount,
+            providerEventEntitlementExpiresAtUtc,
             startedAtUtc,
             DateTimeOffset.UtcNow);
     }
@@ -379,6 +488,31 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         Blocked,
         Failed,
         AlreadySkipped
+    }
+
+    private sealed record SubscriptionSnapshotEventOutcome(
+        SubscriptionSnapshotEventResult Result,
+        int ProviderEventEntitlementExpiredCount,
+        DateTimeOffset? ProviderEventEntitlementExpiresAtUtc)
+    {
+        public static SubscriptionSnapshotEventOutcome Upserted(
+            int providerEventEntitlementExpiredCount,
+            DateTimeOffset? providerEventEntitlementExpiresAtUtc) =>
+            new(SubscriptionSnapshotEventResult.Upserted, providerEventEntitlementExpiredCount, providerEventEntitlementExpiresAtUtc);
+
+        public static SubscriptionSnapshotEventOutcome IgnoredOlder() =>
+            new(SubscriptionSnapshotEventResult.IgnoredOlder, 0, null);
+
+        public static SubscriptionSnapshotEventOutcome Blocked() =>
+            new(SubscriptionSnapshotEventResult.Blocked, 0, null);
+
+        public static SubscriptionSnapshotEventOutcome AlreadySkipped() =>
+            new(SubscriptionSnapshotEventResult.AlreadySkipped, 0, null);
+    }
+
+    private sealed record EntitlementExpiryOutcome(int ExpiredCount, DateTimeOffset? ExpiresAtUtc)
+    {
+        public static EntitlementExpiryOutcome None { get; } = new(0, null);
     }
 
     private sealed class BillingEventSubscriptionSafeMetadata
@@ -397,6 +531,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         public bool CancelAtPeriodEnd { get; set; }
         public string? ScheduledChangeAction { get; set; }
         public DateTimeOffset? ScheduledChangeEffectiveAtUtc { get; set; }
+        public DateTimeOffset? EffectiveAtUtc { get; set; }
         public DateTimeOffset? OccurredAtUtc { get; set; }
     }
 
@@ -414,6 +549,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
         bool CancelAtPeriodEnd,
         string? ScheduledChangeAction,
         DateTimeOffset? ScheduledChangeEffectiveAtUtc,
+        DateTimeOffset? EffectiveAtUtc,
         DateTimeOffset? EventOccurredAtUtc,
         string? ProviderEventId,
         string? ProviderEventType,
@@ -432,6 +568,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
             bool cancelAtPeriodEnd,
             string? scheduledChangeAction,
             DateTimeOffset? scheduledChangeEffectiveAtUtc,
+            DateTimeOffset? effectiveAtUtc,
             DateTimeOffset? eventOccurredAtUtc,
             string? providerEventId,
             string? providerEventType) =>
@@ -449,6 +586,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
                 cancelAtPeriodEnd,
                 scheduledChangeAction,
                 scheduledChangeEffectiveAtUtc,
+                effectiveAtUtc,
                 eventOccurredAtUtc,
                 providerEventId,
                 providerEventType,
@@ -467,6 +605,7 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
                 null,
                 null,
                 false,
+                null,
                 null,
                 null,
                 null,
