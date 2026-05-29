@@ -21,7 +21,7 @@ This roadmap starts from the current confirmed MVP state where:
    - next planning document: `docs/billing-remaining-operations-plan.md`
    - refund and chargeback policy
    - manual revocation automation policy
-   - production Paddle webhook setup checklist
+   - production Paddle webhook setup checklist (`docs/paddle-production-webhook-setup.md`) and safe local config guard (`tools/smoke_paddle_production_config_guard.ps1`)
    - desktop upgrade/paywall UI plan
    - future Apple App Store / Google Play mobile entitlement bridge plan
    - optional background subscription reconciliation job
@@ -43,6 +43,7 @@ This roadmap starts from the current confirmed MVP state where:
 - read-only free-limit diagnostics
 - Development diagnostics-only mode
 - Paddle checkout transaction creation v1 behind explicit configuration
+- Paddle production webhook setup checklist and safe local config guard as documentation/tooling only
 - Paddle webhook ingestion, normalization, reconciliation decision, and event-scoped processing foundation v1
 - Paddle subscription lifecycle snapshot foundation v1 for `subscription.created`, `subscription.updated`, and `subscription.past_due`
 - Paddle transaction payment persistence snapshot foundation v1 for `transaction.completed` and `transaction.payment_failed`
