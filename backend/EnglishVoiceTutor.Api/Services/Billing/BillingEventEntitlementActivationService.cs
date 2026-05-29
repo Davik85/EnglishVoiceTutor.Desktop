@@ -36,11 +36,11 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         var blockedCount = 0;
         var failedCount = 0;
         var alreadySkippedCount = 0;
+        DateTimeOffset? latestEntitlementExpiresAtUtc = null;
 
         var billingEventIds = await dbContext.BillingEvents
             .AsNoTracking()
-            .Where(billingEvent => billingEvent.BillingProvider == SubscriptionConstants.BillingProviders.Paddle
-                && billingEvent.Status == SubscriptionConstants.BillingEventStatuses.ReconciliationPending
+            .Where(billingEvent => billingEvent.Status == SubscriptionConstants.BillingEventStatuses.ReconciliationPending
                 && billingEvent.EventType == SubscriptionConstants.BillingEventTypes.TransactionCompleted)
             .OrderBy(billingEvent => billingEvent.ReceivedAtUtc)
             .ThenBy(billingEvent => billingEvent.Id)
@@ -54,8 +54,10 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         {
             try
             {
-                var result = await ActivateBillingEventAsync(billingEventId, cancellationToken);
-                switch (result)
+                var activationOutcome = await ActivateBillingEventAsync(billingEventId, cancellationToken);
+                latestEntitlementExpiresAtUtc = MaxDateTimeOffset(latestEntitlementExpiresAtUtc, activationOutcome.EntitlementExpiresAtUtc);
+
+                switch (activationOutcome.Result)
                 {
                     case ActivationEventResult.Activated:
                         activatedCount++;
@@ -92,7 +94,8 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             failedCount,
             alreadySkippedCount,
             startedAtUtc,
-            completedAtUtc);
+            completedAtUtc,
+            latestEntitlementExpiresAtUtc);
     }
 
     public async Task<BillingEventEntitlementActivationResult> ActivateProviderEventAsync(
@@ -106,6 +109,7 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         var blockedCount = 0;
         var failedCount = 0;
         var alreadySkippedCount = 0;
+        DateTimeOffset? entitlementExpiresAtUtc = null;
 
         var billingEventId = await dbContext.BillingEvents
             .AsNoTracking()
@@ -120,8 +124,10 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
 
             try
             {
-                var result = await ActivateBillingEventAsync(billingEventId.Value, cancellationToken);
-                switch (result)
+                var activationOutcome = await ActivateBillingEventAsync(billingEventId.Value, cancellationToken);
+                entitlementExpiresAtUtc = activationOutcome.EntitlementExpiresAtUtc;
+
+                switch (activationOutcome.Result)
                 {
                     case ActivationEventResult.Activated:
                         activatedCount++;
@@ -160,10 +166,11 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             failedCount,
             alreadySkippedCount,
             startedAtUtc,
-            completedAtUtc);
+            completedAtUtc,
+            entitlementExpiresAtUtc);
     }
 
-    private async Task<ActivationEventResult> ActivateBillingEventAsync(
+    private async Task<ActivationEventOutcome> ActivateBillingEventAsync(
         Guid billingEventId,
         CancellationToken cancellationToken)
     {
@@ -175,15 +182,14 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         if (billingEvent is null)
         {
             await transaction.CommitAsync(cancellationToken);
-            return ActivationEventResult.AlreadySkipped;
+            return ActivationEventOutcome.AlreadySkipped();
         }
 
-        if (billingEvent.BillingProvider != SubscriptionConstants.BillingProviders.Paddle
-            || billingEvent.Status != SubscriptionConstants.BillingEventStatuses.ReconciliationPending
+        if (billingEvent.Status != SubscriptionConstants.BillingEventStatuses.ReconciliationPending
             || billingEvent.EventType != SubscriptionConstants.BillingEventTypes.TransactionCompleted)
         {
             await transaction.CommitAsync(cancellationToken);
-            return ActivationEventResult.AlreadySkipped;
+            return ActivationEventOutcome.AlreadySkipped();
         }
 
         var nowUtc = DateTimeOffset.UtcNow;
@@ -193,24 +199,49 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             MarkBlocked(billingEvent, nowUtc, validation.ErrorMessage ?? SubscriptionConstants.BillingEventActivation.InvalidBillingEventMetadataMessage);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-            return ActivationEventResult.Blocked;
+            return ActivationEventOutcome.Blocked();
         }
 
-        dbContext.Entitlements.Add(new EntitlementEntity
+        var entitlement = await FindCurrentProviderEventEntitlementAsync(
+            validation.InternalUserId!.Value,
+            nowUtc,
+            cancellationToken);
+
+        var entitlementChanged = false;
+        var effectiveExpiresAtUtc = validation.BillingPeriodEndsAtUtc;
+
+        if (entitlement is null)
         {
-            Id = Guid.NewGuid(),
-            UserId = validation.InternalUserId!.Value,
-            PlanId = SubscriptionConstants.Plans.PremiumPlanId,
-            SubscriptionId = null,
-            EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType,
-            Source = SubscriptionConstants.Entitlements.SourceProviderEvent,
-            Status = SubscriptionConstants.Entitlements.StatusActive,
-            StartsAtUtc = validation.BillingPeriodStartsAtUtc ?? nowUtc,
-            ExpiresAtUtc = validation.BillingPeriodEndsAtUtc,
-            Reason = CreateActivationReason(billingEvent),
-            CreatedAt = nowUtc,
-            UpdatedAt = nowUtc
-        });
+            dbContext.Entitlements.Add(new EntitlementEntity
+            {
+                Id = Guid.NewGuid(),
+                UserId = validation.InternalUserId.Value,
+                PlanId = SubscriptionConstants.Plans.PremiumPlanId,
+                SubscriptionId = null,
+                EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType,
+                Source = SubscriptionConstants.Entitlements.SourceProviderEvent,
+                Status = SubscriptionConstants.Entitlements.StatusActive,
+                StartsAtUtc = validation.BillingPeriodStartsAtUtc ?? nowUtc,
+                ExpiresAtUtc = validation.BillingPeriodEndsAtUtc,
+                Reason = CreateActivationReason(billingEvent),
+                CreatedAt = nowUtc,
+                UpdatedAt = nowUtc
+            });
+
+            entitlementChanged = true;
+        }
+        else if (entitlement.ExpiresAtUtc is not null && validation.BillingPeriodEndsAtUtc > entitlement.ExpiresAtUtc.Value)
+        {
+            entitlement.ExpiresAtUtc = validation.BillingPeriodEndsAtUtc;
+            entitlement.Reason = CreateActivationReason(billingEvent);
+            entitlement.UpdatedAt = nowUtc;
+            effectiveExpiresAtUtc = entitlement.ExpiresAtUtc;
+            entitlementChanged = true;
+        }
+        else
+        {
+            effectiveExpiresAtUtc = entitlement.ExpiresAtUtc;
+        }
 
         billingEvent.Status = SubscriptionConstants.BillingEventStatuses.Processed;
         billingEvent.ProcessedAtUtc = nowUtc;
@@ -218,7 +249,10 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        return ActivationEventResult.Activated;
+
+        return entitlementChanged
+            ? ActivationEventOutcome.Activated(effectiveExpiresAtUtc)
+            : ActivationEventOutcome.AlreadyCurrent(effectiveExpiresAtUtc);
     }
 
     private async Task<ActivationValidationResult> ValidateBillingEventAsync(
@@ -313,6 +347,41 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         billingEvent.ErrorMessage = reason;
     }
 
+
+    private Task<EntitlementEntity?> FindCurrentProviderEventEntitlementAsync(
+        Guid userId,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.Entitlements
+            .Where(entitlement => entitlement.UserId == userId
+                && entitlement.PlanId == SubscriptionConstants.Plans.PremiumPlanId
+                && entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType
+                && entitlement.Source == SubscriptionConstants.Entitlements.SourceProviderEvent
+                && entitlement.Status == SubscriptionConstants.Entitlements.StatusActive
+                && entitlement.StartsAtUtc <= nowUtc
+                && (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > nowUtc))
+            .OrderByDescending(entitlement => entitlement.ExpiresAtUtc == null)
+            .ThenByDescending(entitlement => entitlement.ExpiresAtUtc)
+            .ThenBy(entitlement => entitlement.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private static DateTimeOffset? MaxDateTimeOffset(DateTimeOffset? current, DateTimeOffset? candidate)
+    {
+        if (current is null)
+        {
+            return candidate;
+        }
+
+        if (candidate is null)
+        {
+            return current;
+        }
+
+        return candidate.Value > current.Value ? candidate : current;
+    }
+
     private static string CreateActivationReason(BillingEventEntity billingEvent)
     {
         return $"{SubscriptionConstants.BillingEventActivation.ActivatedReason} Provider={billingEvent.BillingProvider}; ProviderEventId={billingEvent.ProviderEventId}.";
@@ -342,6 +411,22 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         {
             return false;
         }
+    }
+
+
+    private sealed record ActivationEventOutcome(ActivationEventResult Result, DateTimeOffset? EntitlementExpiresAtUtc)
+    {
+        public static ActivationEventOutcome Activated(DateTimeOffset? entitlementExpiresAtUtc) =>
+            new(ActivationEventResult.Activated, entitlementExpiresAtUtc);
+
+        public static ActivationEventOutcome AlreadyCurrent(DateTimeOffset? entitlementExpiresAtUtc) =>
+            new(ActivationEventResult.AlreadySkipped, entitlementExpiresAtUtc);
+
+        public static ActivationEventOutcome AlreadySkipped() =>
+            new(ActivationEventResult.AlreadySkipped, null);
+
+        public static ActivationEventOutcome Blocked() =>
+            new(ActivationEventResult.Blocked, null);
     }
 
     private enum ActivationEventResult
