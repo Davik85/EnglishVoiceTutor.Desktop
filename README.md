@@ -111,16 +111,21 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_checkout_
 
 This optional smoke creates a real Paddle sandbox transaction and prints the checkout URL, but it does not complete payment, call webhooks, or activate internal entitlement state.
 
-Paddle webhook smoke verifies signed ingestion, normalization, reconciliation decision, entitlement activation, duplicate idempotency, unsigned/invalid-signature rejection, and backend access/status recognition of `provider_event` Premium entitlement. Start the backend with local placeholder webhook settings only; do not use real secrets in tracked files:
+Paddle lifecycle smoke tests verify signed ingestion, normalization, subscription snapshots, payment snapshots, entitlement activation/extension, scheduled-cancellation and past-due policy, actual canceled/paused expiry policy, duplicate idempotency, unsigned/invalid-signature rejection, and backend access/status recognition of `provider_event` Premium entitlement. Start the backend with local placeholder webhook settings only; do not use real secrets in tracked files:
 
 ```powershell
 $env:PaddleWebhook__Enabled = "true"
 $env:PaddleWebhook__SecretKey = "test_webhook_secret"
 $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_webhook_ingestion.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_subscription_lifecycle.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_payment_persistence.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_entitlement_extension.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_cancellation_past_due_policy.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_canceled_paused_expiry_policy.ps1
 ```
 
-Detailed billing architecture and deferred scope are documented in `docs/subscription-billing-foundation.md`.
+Detailed billing architecture, provider-agnostic access boundaries, and deferred scope are documented in `docs/subscription-billing-foundation.md`.
 
 Common validation commands from the repository root:
 
@@ -134,7 +139,7 @@ dotnet restore
 dotnet build
 ```
 
-Recommended next work: short regression smoke-test, then MVP infrastructure work for local/user data, accounts, usage limits, payment, packaging, release preparation, and support diagnostics.
+Recommended next work: plan remaining billing operations only: `subscription.resumed` / `subscription.activated` restore policy, refund/chargeback policy, manual revocation automation, production Paddle webhook setup, desktop upgrade/paywall UI, future Apple/Google mobile entitlement bridge, and optional background reconciliation.
 
 
 ## Local admin shell
@@ -148,4 +153,4 @@ Recommended next work: short regression smoke-test, then MVP infrastructure work
 - JWT remains in memory only for this phase.
 - Static admin shell audit script: `powershell -ExecutionPolicy Bypass -File tools\audit_admin_shell.ps1`.
 - The existing smoke script (`tools/smoke_admin_foundation.ps1`) now runs this admin shell audit before backend HTTP smoke checks.
-- Latest confirmed EF migration remains `20260528000000_AddPaddleWebhookEvents`.
+- Latest confirmed EF migration is `20260529000000_AddPaddlePaymentPersistenceV1`.
