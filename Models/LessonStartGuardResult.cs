@@ -1,3 +1,5 @@
+using EnglishVoiceTutor.Desktop.Models.Access;
+
 namespace EnglishVoiceTutor.Desktop.Models;
 
 public sealed record LessonStartGuardResult(
@@ -9,4 +11,5 @@ public sealed record LessonStartGuardResult(
     bool EnforcementEnabled,
     bool? CanStartNewLesson,
     bool? FreeLessonUsedToday,
-    int? FreeLessonRemainingToday);
+    int? FreeLessonRemainingToday,
+    AccessDisplayModel AccessDisplay);
