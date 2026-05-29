@@ -18,6 +18,7 @@ This roadmap starts from the current confirmed MVP state where:
    - review expired-token fallback behavior
    - keep dev fallback safe for local testing
 2. Plan remaining billing operations before implementation
+   - next planning document: `docs/billing-remaining-operations-plan.md`
    - `subscription.resumed` / `subscription.activated` restore policy
    - refund and chargeback policy
    - manual revocation automation policy
