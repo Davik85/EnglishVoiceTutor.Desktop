@@ -220,6 +220,7 @@ app.MapLessonAccessDecisionEndpoints();
 app.MapSubscriptionDiagnosticsEndpoints();
 app.MapTrialClaimEndpoints();
 app.MapBillingCheckoutEndpoints();
+app.MapPaddleCheckoutLaunchEndpoints();
 app.MapPaddleWebhookEndpoints();
 app.MapAdminEndpoints();
 

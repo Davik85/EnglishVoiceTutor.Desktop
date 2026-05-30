@@ -127,7 +127,7 @@ Important behavior:
 
 1. User clicks **Upgrade**.
 2. Desktop calls `POST /api/me/billing/checkout-session`.
-3. If the response has `checkoutUrl`, desktop opens it in the browser/system webview strategy to be decided later.
+3. If the response has `checkoutUrl`, desktop opens it in the browser/system webview strategy; the URL is a backend-hosted Paddle checkout launch page (`/checkout/paddle?...`), not a direct Paddle API or pay link.
 4. Desktop does not assume payment success.
 5. Desktop shows a waiting-for-confirmation / refresh-status state.
 6. Desktop refreshes backend access/status after checkout.
@@ -137,6 +137,7 @@ Notes:
 
 - Checkout itself does not activate Premium.
 - Desktop should not contain Paddle API keys, webhook secrets, price IDs, customer IDs, transaction IDs, or secret-bearing URLs.
+- Desktop should not call Paddle directly; the backend-hosted launch page loads Paddle.js and starts Paddle checkout.
 - Desktop should not include Paddle-specific business access logic beyond opening the backend-provided `checkoutUrl`.
 
 ## 7. Checkout result handling

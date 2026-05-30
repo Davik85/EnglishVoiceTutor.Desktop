@@ -102,7 +102,7 @@ function Assert-NotEmpty {
     }
 }
 
-function Assert-PaddleHostedCheckoutUrl {
+function Assert-BackendHostedCheckoutLaunchUrl {
     param(
         [string]$Value,
         [string]$Message
@@ -110,15 +110,20 @@ function Assert-PaddleHostedCheckoutUrl {
 
     $parsedUri = $null
     if (-not [System.Uri]::TryCreate($Value, [System.UriKind]::Absolute, [ref]$parsedUri)) {
-        throw "Assert-PaddleHostedCheckoutUrl failed: $Message. URL is not absolute."
+        throw "Assert-BackendHostedCheckoutLaunchUrl failed: $Message. URL is not absolute."
     }
 
-    if ($parsedUri.Scheme -ne "https" -or $parsedUri.Host -ne "pay.paddle.io" -or -not $parsedUri.AbsolutePath.StartsWith("/checkout/")) {
-        throw "Assert-PaddleHostedCheckoutUrl failed: $Message. Actual '$Value'."
+    $baseUri = [System.Uri]$BaseUrl
+    if ($parsedUri.Scheme -ne $baseUri.Scheme -or $parsedUri.Authority -ne $baseUri.Authority -or $parsedUri.AbsolutePath -ne "/checkout/paddle") {
+        throw "Assert-BackendHostedCheckoutLaunchUrl failed: $Message. Actual '$Value'."
     }
 
-    if ($parsedUri.Query -match "[?&]_ptxn=") {
-        throw "Assert-PaddleHostedCheckoutUrl failed: $Message. URL contains legacy _ptxn query parameter."
+    if ($Value -match "pay\.paddle\.io/checkout" -or $Value -match "/pay(\?|$)" -or $parsedUri.Query -match "[?&]_ptxn=") {
+        throw "Assert-BackendHostedCheckoutLaunchUrl failed: $Message. URL must not be direct Paddle checkout, /pay, or legacy _ptxn."
+    }
+
+    if ($parsedUri.Query -notmatch "[?&]transactionId=txn_") {
+        throw "Assert-BackendHostedCheckoutLaunchUrl failed: $Message. URL must contain transactionId."
     }
 }
 
@@ -129,7 +134,7 @@ try {
 
     Write-Host "This test creates a real Paddle sandbox transaction. No internal entitlement is activated." -ForegroundColor Yellow
     Write-Host "Backend must already be running with Paddle sandbox checkout environment variables configured outside this script." -ForegroundColor Yellow
-    Write-Host "Set PaddleBilling__HostedCheckoutUrl to a sandbox Paddle hosted checkout link when Paddle returns a default payment URL that the backend does not serve." -ForegroundColor Yellow
+    Write-Host "Set PaddleBilling__ClientSideToken to a Paddle public client-side token; never put the API key in desktop configuration." -ForegroundColor Yellow
     Write-Host "BaseUrl: $BaseUrl"
 
     if ([string]::IsNullOrWhiteSpace($Email)) {
@@ -190,12 +195,12 @@ try {
     Assert-Equal -Expected "paddle" -Actual $checkoutResult.Body.provider -Message "provider"
     Assert-Equal -Expected "premium" -Actual $checkoutResult.Body.planId -Message "planId"
     Assert-NotEmpty -Value $checkoutResult.Body.checkoutUrl -Message "checkoutUrl"
-    Assert-PaddleHostedCheckoutUrl -Value $checkoutResult.Body.checkoutUrl -Message "checkoutUrl must be Paddle hosted and must not be a broken /pay placeholder"
+    Assert-BackendHostedCheckoutLaunchUrl -Value $checkoutResult.Body.checkoutUrl -Message "checkoutUrl must be backend-hosted and must not be direct Paddle checkout or a broken /pay placeholder"
     Assert-Empty -Value $checkoutResult.Body.errorCode -Message "errorCode"
     Assert-Equal -Expected "Checkout session created." -Actual $checkoutResult.Body.message -Message "message"
     Assert-NotEmpty -Value $checkoutResult.Body.checkedAtUtc -Message "checkedAtUtc"
 
-    Write-Pass "Paddle sandbox checkout transaction was created"
+    Write-Pass "Paddle sandbox checkout transaction was created and backend-hosted launch URL was returned"
     Write-Host "checkoutUrl: $($checkoutResult.Body.checkoutUrl)" -ForegroundColor Green
     Write-Host "Payment completion, webhooks, and entitlement activation are intentionally not tested by this script." -ForegroundColor Yellow
 }

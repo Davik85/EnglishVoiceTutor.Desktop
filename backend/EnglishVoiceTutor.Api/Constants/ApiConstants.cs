@@ -68,6 +68,7 @@ public static class ApiConstants
     public const string MeTrialClaimRoute = "/api/me/trial/claim";
     public const string MeBillingCheckoutSessionRoute = "/api/me/billing/checkout-session";
     public const string PaddleBillingWebhookRoute = "/api/billing/webhooks/paddle";
+    public const string PaddleCheckoutLaunchRoute = "/checkout/paddle";
     public const string AdminMeRoute = "/api/admin/me";
     public const string AdminCapabilitiesRoute = "/api/admin/capabilities";
     public const string AdminUserByEmailRoute = "/api/admin/users/by-email";

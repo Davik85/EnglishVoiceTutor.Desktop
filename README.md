@@ -103,13 +103,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_billing_checkout
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_checkout_adapter.ps1
 ```
 
-- Optional real Paddle sandbox checkout smoke (start backend first with Paddle environment variables or user secrets; do not put real API keys in tracked files):
+- Paddle client-side token guard smoke (start backend with fake API/price values and `PaddleBilling__ClientSideToken` empty; it should stop before any Paddle API call):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_checkout_client_token_guard.ps1
+```
+
+- Optional real Paddle sandbox checkout smoke (start backend first with Paddle environment variables or user secrets, including `PaddleBilling__ClientSideToken`; do not put real API keys in tracked files):
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_checkout_live_sandbox.ps1 -AllowRealPaddleCall
 ```
 
-This optional smoke creates a real Paddle sandbox transaction and prints the checkout URL, but it does not complete payment, call webhooks, or activate internal entitlement state.
+This optional smoke creates a real Paddle sandbox transaction and prints the backend-hosted checkout launch URL, but it does not complete payment, call webhooks, or activate internal entitlement state.
 
 Paddle lifecycle smoke tests verify signed ingestion, normalization, subscription snapshots, payment snapshots, entitlement activation/extension, scheduled-cancellation and past-due policy, actual canceled/paused expiry policy, duplicate idempotency, unsigned/invalid-signature rejection, and backend access/status recognition of `provider_event` Premium entitlement. Start the backend with local placeholder webhook settings only; do not use real secrets in tracked files:
 
