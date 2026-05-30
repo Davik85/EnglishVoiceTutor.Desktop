@@ -22,11 +22,13 @@ $PaddleCheckoutAdapterEnabledName = "PaddleBilling__CheckoutAdapterEnabled"
 $PaddleEnvironmentName = "PaddleBilling__Environment"
 $PaddleApiKeyName = "PaddleBilling__ApiKey"
 $PaddlePremiumPriceIdName = "PaddleBilling__PremiumPriceId"
+$PaddleClientSideTokenName = "PaddleBilling__ClientSideToken"
 
 $SecretVariableNames = @(
     $PaddleWebhookSecretKeyName,
     $PaddleApiKeyName,
-    $PaddlePremiumPriceIdName
+    $PaddlePremiumPriceIdName,
+    $PaddleClientSideTokenName
 )
 
 $AllVariableNames = @(
@@ -38,7 +40,8 @@ $AllVariableNames = @(
     $PaddleCheckoutAdapterEnabledName,
     $PaddleEnvironmentName,
     $PaddleApiKeyName,
-    $PaddlePremiumPriceIdName
+    $PaddlePremiumPriceIdName,
+    $PaddleClientSideTokenName
 )
 
 function Get-ConfigValue {
@@ -141,6 +144,7 @@ $checkoutAdapterEnabled = $config[$PaddleCheckoutAdapterEnabledName]
 $paddleEnvironment = $config[$PaddleEnvironmentName]
 $paddleApiKey = $config[$PaddleApiKeyName]
 $paddlePremiumPriceId = $config[$PaddlePremiumPriceIdName]
+$paddleClientSideToken = $config[$PaddleClientSideTokenName]
 
 $isCheckoutEnabled = Test-IsTrueValue $checkoutEnabled
 $isCheckoutAdapterEnabled = Test-IsTrueValue $checkoutAdapterEnabled
@@ -201,6 +205,7 @@ if ($isCheckoutAdapterEnabled) {
 
     Require-Set -Issues $issues -Name $PaddleApiKeyName -Value $paddleApiKey
     Require-Set -Issues $issues -Name $PaddlePremiumPriceIdName -Value $paddlePremiumPriceId
+    Require-Set -Issues $issues -Name $PaddleClientSideTokenName -Value $paddleClientSideToken
 }
 elseif ($useRequiredChecks) {
     if (-not (Test-IsSet $checkoutAdapterEnabled)) {
@@ -213,12 +218,14 @@ elseif ($useRequiredChecks) {
 
     Require-Set -Issues $issues -Name $PaddleApiKeyName -Value $paddleApiKey
     Require-Set -Issues $issues -Name $PaddlePremiumPriceIdName -Value $paddlePremiumPriceId
+    Require-Set -Issues $issues -Name $PaddleClientSideTokenName -Value $paddleClientSideToken
 }
 
 if ($useLiveGradeChecks) {
     Require-Set -Issues $issues -Name $PaddleWebhookSecretKeyName -Value $webhookSecretKey
     Require-Set -Issues $issues -Name $PaddleApiKeyName -Value $paddleApiKey
     Require-Set -Issues $issues -Name $PaddlePremiumPriceIdName -Value $paddlePremiumPriceId
+    Require-Set -Issues $issues -Name $PaddleClientSideTokenName -Value $paddleClientSideToken
 }
 
 if (@($AllVariableNames | Where-Object { Test-IsSet ($config[$_]) }).Count -eq 0) {

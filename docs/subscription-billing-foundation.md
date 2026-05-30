@@ -114,8 +114,10 @@ Current completed behavior:
   - `PaddleBilling__Environment=sandbox` or `PaddleBilling__Environment=live`
   - `PaddleBilling__ApiKey=<secret>`
   - `PaddleBilling__PremiumPriceId=<price id>`
-- The backend calls the Paddle sandbox/live API and returns `checkoutUrl`.
-- Paddle API keys and price ids must be stored in environment variables, user secrets, or secure deployment configuration; never store real values in tracked files or client code.
+  - `PaddleBilling__ClientSideToken=<public client-side token>`
+- The backend calls the Paddle sandbox/live API to create a transaction and returns a backend-hosted launch page URL such as `/checkout/paddle?transactionId=txn_...` as `checkoutUrl`.
+- Paddle API keys and price ids must be stored in environment variables, user secrets, or secure deployment configuration; never store real values in tracked files or client code. The client-side token is public but should still be supplied by backend configuration and never hardcoded into desktop.
+- The backend-hosted launch page loads Paddle.js from `https://cdn.paddle.com/paddle/v2/paddle.js`, initializes Paddle in sandbox/live mode with `PaddleBilling__ClientSideToken`, and opens checkout for the transaction id.
 - Checkout transaction creation does **not** itself activate Premium.
 - Checkout transaction creation does **not** create internal `billing_events`.
 - Checkout transaction creation does **not** mutate `SubscriptionEntity`.

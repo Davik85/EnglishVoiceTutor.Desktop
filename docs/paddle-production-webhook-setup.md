@@ -92,12 +92,16 @@ PaddleBilling__CheckoutAdapterEnabled=true
 PaddleBilling__Environment=sandbox|live
 PaddleBilling__ApiKey=<secure Paddle API key>
 PaddleBilling__PremiumPriceId=<secure Paddle price id>
+PaddleBilling__ClientSideToken=<public Paddle client-side token>
 ```
 
 Warnings:
 
 - Do not put real values in `appsettings.json`, README files, documentation, screenshots, chat, or committed scripts.
 - Do not print real Paddle API keys, webhook secrets, price ids, customer ids, transaction ids, or production URLs that include secrets.
+- The desktop app opens the backend-hosted `/checkout/paddle` launch page returned by `POST /api/me/billing/checkout-session`; it does not call Paddle directly.
+- The launch page uses Paddle.js and `PaddleBilling__ClientSideToken` to open checkout for the Paddle transaction id.
+- Premium still activates only after a valid `transaction.completed` webhook is ingested and reconciled.
 - Use secure environment/deployment configuration supplied outside source control.
 
 ## Local config guard

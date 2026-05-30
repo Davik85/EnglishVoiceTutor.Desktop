@@ -116,18 +116,18 @@ function Assert-NoBrokenPayUrl {
 
 try {
     Write-Host "This smoke test expects the backend to be started with Billing__CheckoutEnabled=true and Billing__Provider=paddle." -ForegroundColor Yellow
-    Write-Host "It must not call Paddle or create a real checkout session." -ForegroundColor Yellow
+    Write-Host "It must not call Paddle or create a real checkout session because the client-side token guard should stop before the Paddle API call." -ForegroundColor Yellow
     Write-Host "Expected backend environment:" -ForegroundColor Yellow
     Write-Host "  Billing__CheckoutEnabled=true" -ForegroundColor Yellow
     Write-Host "  Billing__Provider=paddle" -ForegroundColor Yellow
-    Write-Host "  PaddleBilling__CheckoutAdapterEnabled=false" -ForegroundColor Yellow
+    Write-Host "  PaddleBilling__CheckoutAdapterEnabled=true" -ForegroundColor Yellow
     Write-Host "  PaddleBilling__Environment=sandbox" -ForegroundColor Yellow
-    Write-Host '  PaddleBilling__ApiKey=""' -ForegroundColor Yellow
-    Write-Host '  PaddleBilling__PremiumPriceId=""' -ForegroundColor Yellow
+    Write-Host '  PaddleBilling__ApiKey="fake_api_key_for_guard"' -ForegroundColor Yellow
+    Write-Host '  PaddleBilling__PremiumPriceId="pri_fake_for_guard"' -ForegroundColor Yellow
     Write-Host '  PaddleBilling__ClientSideToken=""' -ForegroundColor Yellow
     Write-Host ""
 
-    Write-Host "Paddle checkout adapter smoke test" -ForegroundColor Yellow
+    Write-Host "Paddle checkout client-side token guard smoke test" -ForegroundColor Yellow
     Write-Host "BaseUrl: $BaseUrl"
     Write-Host "Test email: $Email"
 
@@ -169,7 +169,7 @@ try {
     $headers = @{ Authorization = "Bearer $($authResult.Body.accessToken)" }
     Write-Pass "Auth succeeded"
 
-    Write-Step "Verify safe Paddle adapter disabled checkout response"
+    Write-Step "Verify safe missing Paddle client-side token checkout response"
     $checkoutBody = @{
         planId = "premium"
         returnUrl = "https://example.com/success"
@@ -186,12 +186,12 @@ try {
     Assert-Empty -Value $checkoutResult.Body.checkoutUrl -Message "checkoutUrl must be empty or null"
     Assert-NoBrokenPayUrl -Value $checkoutResult.Body.checkoutUrl -Message "checkoutUrl must not be a broken /pay placeholder"
     Assert-Equal -Expected "paddle_checkout_not_configured" -Actual $checkoutResult.Body.errorCode -Message "errorCode"
-    Assert-Equal -Expected "Paddle checkout adapter is disabled." -Actual $checkoutResult.Body.message -Message "message"
+    Assert-Equal -Expected "Paddle client-side checkout token is not configured." -Actual $checkoutResult.Body.message -Message "message"
     Assert-NotEmpty -Value $checkoutResult.Body.checkedAtUtc -Message "checkedAtUtc must be present"
 
-    Write-Pass "Safe Paddle adapter disabled response verified"
+    Write-Pass "Safe missing Paddle client-side token response verified"
     Write-Host "Run tools/smoke_paddle_checkout_live_sandbox.ps1 with PaddleBilling__ClientSideToken set to verify the backend-hosted /checkout/paddle launch URL." -ForegroundColor Yellow
-    Write-Pass "Paddle checkout adapter smoke test passed."
+    Write-Pass "Paddle checkout client-side token guard smoke test passed."
     exit 0
 }
 catch {

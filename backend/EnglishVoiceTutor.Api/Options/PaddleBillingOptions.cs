@@ -12,13 +12,13 @@ public sealed class PaddleBillingOptions
 
     public string PremiumPriceId { get; set; } = string.Empty;
 
+    public string ClientSideToken { get; set; } = string.Empty;
+
     public string ApiVersion { get; set; } = "1";
 
     public string SandboxBaseUrl { get; set; } = "https://sandbox-api.paddle.com";
 
     public string LiveBaseUrl { get; set; } = "https://api.paddle.com";
-
-    public string HostedCheckoutUrl { get; set; } = string.Empty;
 
     public string CheckoutCreatedMessage { get; set; } = "Checkout session created.";
 }
