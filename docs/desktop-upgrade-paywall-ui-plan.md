@@ -2,9 +2,9 @@
 
 Review date: 2026-05-29.
 
-Status: planning only, not implemented.
+Status: Step 4D-2 implemented; checkout remains deferred.
 
-This is Step 4D after the backend Paddle billing lifecycle foundation through Step 4B and the Step 4C production webhook setup checklist/config guard. It is a documentation-only plan for future Windows desktop upgrade and paywall UI. It does not implement UI code and does not change backend billing behavior.
+This is Step 4D after the backend Paddle billing lifecycle foundation through Step 4B and the Step 4C production webhook setup checklist/config guard. Step 4D-2 now implements a simple Windows desktop access/paywall panel after backend lesson-start denial. Checkout remains deferred and this document does not change backend billing behavior.
 
 ## 1. Purpose
 
@@ -170,8 +170,8 @@ Example copy direction, not final UI text:
 
 ## 9. First implementation slices after plan approval
 
-- Step 4D-1: add backend-state view model mapping for access/paywall states without changing UI layout much.
-- Step 4D-2: add a simple paywall/upgrade panel shown only after backend `lesson_access_denied`.
+- Step 4D-1: completed; backend-state view model mapping for access/paywall states was added without changing UI layout much.
+- Step 4D-2: completed; desktop now shows a simple backend-driven access/paywall panel after lesson-start denial, with checkout still unavailable.
 - Step 4D-3: call the checkout-session endpoint and open `checkoutUrl`.
 - Step 4D-4: add a refresh status action after checkout.
 - Step 4D-5: polish copy/layout.
@@ -181,7 +181,7 @@ Each implementation slice should keep backend access/status as the authority and
 
 ## 10. Non-goals
 
-- No UI implementation in this task.
+- No full checkout UI in this task.
 - No backend billing logic changes.
 - No local Premium decision.
 - No local Premium activation.
@@ -199,11 +199,11 @@ Each implementation slice should keep backend access/status as the authority and
 
 ## 11. Verification checklist for future UI implementation
 
-Future UI implementation should verify:
+Future checkout/status implementation should continue to verify:
 
-- signed-out user cannot start a normal lesson;
+- signed-out user cannot start a normal lesson and sees the access panel;
 - signed-in free user with allowance can start a new lesson;
-- free allowance used shows paywall only when backend denies a new lesson;
+- free allowance used shows the simple access/paywall panel only when backend denies a new lesson;
 - trial user is allowed when backend allows access;
 - Premium user is allowed when backend allows access;
 - checkout unavailable is handled calmly;
@@ -216,6 +216,6 @@ Future UI implementation should verify:
 - backend build;
 - relevant backend smoke scripts.
 
-## 12. Current deferral
+## 12. Current status
 
-Desktop upgrade/paywall UI remains deferred until actual UI code is implemented in a later approved task. This Step 4D document is only the plan and should not be cited as implemented paywall behavior.
+Step 4D-2 is implemented as a simple desktop access/paywall panel for backend lesson-start denial. Checkout remains deferred: the desktop still must not call the checkout-session endpoint or open `checkoutUrl` until Step 4D-3.

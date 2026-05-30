@@ -10,7 +10,7 @@ This roadmap starts from the current confirmed MVP state where:
 - Settings and Lesson Chat runtime persistence are auth-aware,
 - Development free-limit mode is diagnostics-only,
 - Paddle checkout, webhook ingestion, subscription snapshots, payment snapshots, entitlement activation/extension, scheduled-cancellation policy, past-due policy, actual canceled/paused expiry policy, and resumed/activated snapshot-only policy are implemented through Step 4B.
-- Step 4C production Paddle webhook setup checklist/config guard and Step 4D desktop upgrade/paywall UI plan are documentation/tooling only.
+- Step 4C production Paddle webhook setup checklist/config guard is documentation/tooling only, and Step 4D-2 desktop access/paywall panel is implemented without checkout.
 
 ## Recommended next backend/product order
 
@@ -23,7 +23,7 @@ This roadmap starts from the current confirmed MVP state where:
    - refund and chargeback policy
    - manual revocation automation policy
    - production Paddle webhook setup checklist (`docs/paddle-production-webhook-setup.md`) and safe local config guard (`tools/smoke_paddle_production_config_guard.ps1`)
-   - desktop upgrade/paywall UI plan (`docs/desktop-upgrade-paywall-ui-plan.md`) is added as Step 4D planning only; desktop paywall UI remains deferred until actual UI implementation
+   - desktop upgrade/paywall UI plan (`docs/desktop-upgrade-paywall-ui-plan.md`) now has Step 4D-2 implemented as a simple denial panel; checkout remains deferred to Step 4D-3
    - future Apple App Store / Google Play mobile entitlement bridge plan
    - optional background subscription reconciliation job
 3. Add broader production admin/RBAC/content-management work later, only after:
@@ -45,7 +45,7 @@ This roadmap starts from the current confirmed MVP state where:
 - Development diagnostics-only mode
 - Paddle checkout transaction creation v1 behind explicit configuration
 - Paddle production webhook setup checklist and safe local config guard as documentation/tooling only
-- Desktop upgrade/paywall UI plan as Step 4D documentation only (`docs/desktop-upgrade-paywall-ui-plan.md`); desktop paywall UI is not implemented yet
+- Desktop Step 4D-2 simple backend-driven access/paywall panel after lesson-start denial (`docs/desktop-upgrade-paywall-ui-plan.md`); checkout is not implemented yet
 - Paddle webhook ingestion, normalization, reconciliation decision, and event-scoped processing foundation v1
 - Paddle subscription lifecycle snapshot foundation v1 for `subscription.created`, `subscription.updated`, and `subscription.past_due`
 - Paddle transaction payment persistence snapshot foundation v1 for `transaction.completed` and `transaction.payment_failed`
