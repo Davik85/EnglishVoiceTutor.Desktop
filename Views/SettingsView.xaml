@@ -12,9 +12,11 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
         <sys:Double x:Key="SettingsNavigationWidth">176</sys:Double>
-        <sys:Double x:Key="SettingsCompactControlWidth">360</sys:Double>
-        <sys:Double x:Key="SettingsMicrophoneControlWidth">460</sys:Double>
-        <sys:Double x:Key="SettingsControlHeight">44</sys:Double>
+        <sys:Double x:Key="SettingsDropdownWidth">300</sys:Double>
+        <sys:Double x:Key="SettingsTextInputWidth">340</sys:Double>
+        <sys:Double x:Key="SettingsMicrophoneDropdownWidth">440</sys:Double>
+        <sys:Double x:Key="SettingsBackendUrlInputWidth">480</sys:Double>
+        <sys:Double x:Key="SettingsControlHeight">42</sys:Double>
         <Thickness x:Key="SettingsPagePadding">28,24,28,22</Thickness>
         <Thickness x:Key="SettingsSectionGap">0,16,0,0</Thickness>
 
@@ -39,15 +41,19 @@
         </Style>
 
         <Style x:Key="SettingsTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource SoftTextBoxStyle}">
-            <Setter Property="Width" Value="{StaticResource SettingsCompactControlWidth}" />
+            <Setter Property="Width" Value="{StaticResource SettingsTextInputWidth}" />
             <Setter Property="Height" Value="{StaticResource SettingsControlHeight}" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Margin" Value="0,6,0,0" />
         </Style>
 
+        <Style x:Key="SettingsBackendUrlTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource SettingsTextBoxStyle}">
+            <Setter Property="Width" Value="{StaticResource SettingsBackendUrlInputWidth}" />
+        </Style>
+
         <Style x:Key="SettingsPasswordBoxStyle" TargetType="PasswordBox">
-            <Setter Property="Width" Value="{StaticResource SettingsCompactControlWidth}" />
+            <Setter Property="Width" Value="{StaticResource SettingsTextInputWidth}" />
             <Setter Property="Height" Value="{StaticResource SettingsControlHeight}" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="Padding" Value="12,0,12,0" />
@@ -61,7 +67,7 @@
         </Style>
 
         <Style x:Key="SettingsComboBoxStyle" TargetType="ComboBox">
-            <Setter Property="Width" Value="{StaticResource SettingsCompactControlWidth}" />
+            <Setter Property="Width" Value="{StaticResource SettingsDropdownWidth}" />
             <Setter Property="Height" Value="{StaticResource SettingsControlHeight}" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="Margin" Value="0,12,0,0" />
@@ -71,7 +77,7 @@
         </Style>
 
         <Style x:Key="SettingsMicrophoneComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource SettingsComboBoxStyle}">
-            <Setter Property="Width" Value="{StaticResource SettingsMicrophoneControlWidth}" />
+            <Setter Property="Width" Value="{StaticResource SettingsMicrophoneDropdownWidth}" />
         </Style>
 
         <Style x:Key="SettingsComboBoxItemStyle" TargetType="ComboBoxItem">
@@ -94,6 +100,38 @@
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="TabStripPlacement" Value="Left" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid KeyboardNavigation.TabNavigation="Local">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <TabPanel Grid.Column="0"
+                                      Margin="0,0,18,0"
+                                      IsItemsHost="True"
+                                      KeyboardNavigation.TabIndex="1" />
+
+                            <Border Grid.Column="1"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    KeyboardNavigation.TabIndex="2"
+                                    KeyboardNavigation.TabNavigation="Local">
+                                <ContentPresenter x:Name="PART_SelectedContentHost"
+                                                  ContentSource="SelectedContent"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="SettingsTabItemStyle" TargetType="TabItem">
@@ -145,11 +183,14 @@
         <Style x:Key="SettingsTabContentScrollViewerStyle" TargetType="ScrollViewer">
             <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
-            <Setter Property="Padding" Value="20,0,6,0" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="0,0,6,0" />
         </Style>
 
         <Style x:Key="SettingsTabStackStyle" TargetType="StackPanel">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Top" />
         </Style>
 
         <Style x:Key="StatisticsValueStyle" TargetType="TextBlock">
@@ -215,11 +256,13 @@
             <Border Grid.Row="1" Margin="0,18,0,18" Height="1" Background="{StaticResource BorderSoftBrush}" />
 
             <TabControl Grid.Row="2"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
                         Style="{StaticResource SettingsTabControlStyle}"
                         ItemContainerStyle="{StaticResource SettingsTabItemStyle}">
                 <TabItem Header="{Binding LearningTabHeader, ElementName=Root}">
-                    <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
-                        <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                    <ScrollViewer x:Name="LearningContentScrollViewer" Style="{StaticResource SettingsTabContentScrollViewerStyle}">
+                        <StackPanel Width="{Binding ViewportWidth, ElementName=LearningContentScrollViewer}" Style="{StaticResource SettingsTabStackStyle}">
                             <Border Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="{Binding InterfaceLanguageTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
@@ -334,8 +377,8 @@
                 </TabItem>
 
                 <TabItem Header="{Binding AccountTabHeader, ElementName=Root}">
-                    <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
-                        <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                    <ScrollViewer x:Name="AccountContentScrollViewer" Style="{StaticResource SettingsTabContentScrollViewerStyle}">
+                        <StackPanel Width="{Binding ViewportWidth, ElementName=AccountContentScrollViewer}" Style="{StaticResource SettingsTabStackStyle}">
                             <Border Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="{Binding AccountTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
@@ -441,8 +484,8 @@
                 </TabItem>
 
                 <TabItem Header="{Binding AudioTabHeader, ElementName=Root}">
-                    <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
-                        <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                    <ScrollViewer x:Name="AudioContentScrollViewer" Style="{StaticResource SettingsTabContentScrollViewerStyle}">
+                        <StackPanel Width="{Binding ViewportWidth, ElementName=AudioContentScrollViewer}" Style="{StaticResource SettingsTabStackStyle}">
                             <Border Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="{Binding AudioInputTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
@@ -474,8 +517,8 @@
                 </TabItem>
 
                 <TabItem Header="{Binding ProgressTabHeader, ElementName=Root}">
-                    <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
-                        <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                    <ScrollViewer x:Name="ProgressContentScrollViewer" Style="{StaticResource SettingsTabContentScrollViewerStyle}">
+                        <StackPanel Width="{Binding ViewportWidth, ElementName=ProgressContentScrollViewer}" Style="{StaticResource SettingsTabStackStyle}">
                             <Border Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="{Binding LearningStatisticsTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
@@ -507,15 +550,15 @@
 
                 <TabItem Header="{Binding DiagnosticsTabHeader, ElementName=Root}"
                          Visibility="{Binding IsDiagnosticsTabVisible, ElementName=Root, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
-                        <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                    <ScrollViewer x:Name="DiagnosticsContentScrollViewer" Style="{StaticResource SettingsTabContentScrollViewerStyle}">
+                        <StackPanel Width="{Binding ViewportWidth, ElementName=DiagnosticsContentScrollViewer}" Style="{StaticResource SettingsTabStackStyle}">
                             <Border Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="{Binding ConnectionTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
                                     <TextBlock Text="{Binding BackendUrlSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
 
                                     <TextBlock Text="{Binding BackendUrlLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <TextBox Style="{StaticResource SettingsTextBoxStyle}"
+                                    <TextBox Style="{StaticResource SettingsBackendUrlTextBoxStyle}"
                                              Text="{Binding BackendBaseUrl, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                             </Border>
