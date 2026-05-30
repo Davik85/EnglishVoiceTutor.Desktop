@@ -81,6 +81,12 @@
                                     IsEnabled="{Binding IsAccessPanelPrimaryActionEnabled}"
                                     Style="{StaticResource PrimaryButtonStyle}"
                                     Visibility="{Binding IsAccessPanelPrimaryActionVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <Button Content="{Binding AccessPanelRefreshActionText}"
+                                    Margin="0,0,10,0"
+                                    Command="{Binding RefreshAccessStatusCommand}"
+                                    IsEnabled="{Binding IsAccessPanelRefreshActionEnabled}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Visibility="{Binding IsAccessPanelRefreshActionVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <Button Content="OK"
                                     Command="{Binding CloseAccessPanelCommand}"
                                     Style="{StaticResource SecondaryButtonStyle}" />

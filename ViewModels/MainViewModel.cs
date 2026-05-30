@@ -23,7 +23,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private const string AccessPanelUpgradeUnavailableTitle = "Upgrade unavailable";
     private const string AccessPanelDefaultTitle = "Lesson access";
     private const string AccessPanelUpgradeText = "Upgrade";
-    private const string CheckoutOpenedMessage = "Checkout opened. After payment, return to the app. Access updates after payment confirmation.";
+    private const string AccessPanelRefreshText = "Refresh status";
+    private const string CheckoutOpenedMessage = "Checkout opened. After payment, return to the app and refresh your status.";
+    private const string PremiumActiveAfterRefreshMessage = "Premium is active. You can start your lesson now.";
+    private const string PaymentConfirmationPendingMessage = "Payment confirmation has not arrived yet. Please wait a moment and refresh again.";
+    private const string RefreshStatusFailedMessage = "We could not refresh your status right now. Please try again.";
     private const string UpgradeUnavailableMessage = "Upgrade is temporarily unavailable. Please try again later.";
     private const string CheckoutStartFailedMessage = "We could not start checkout right now. Please try again.";
 
@@ -37,6 +41,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly BackendLessonSummaryClient backendLessonSummaryClient = new();
     private readonly BackendLessonHistoryClient backendLessonHistoryClient = new();
     private readonly BackendCheckoutSessionClient backendCheckoutSessionClient = new();
+    private readonly BackendLessonAccessDecisionClient backendLessonAccessDecisionClient = new();
     private readonly LessonStartGuardService lessonStartGuardService = new();
     private readonly AuthBackendService authBackendService = new();
     private readonly AuthSessionStorageService authSessionStorageService = new();
@@ -48,6 +53,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly LessonContentService lessonContentService = new();
     private readonly UserSettings userSettings;
     private AccessDisplayState currentAccessPanelState = AccessDisplayState.UnknownOrError;
+    private bool isCheckoutOpenedForCurrentPanel;
 
     [ObservableProperty]
     private ViewModelBase currentViewModel;
@@ -69,6 +75,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private bool isAccessPanelPrimaryActionEnabled;
+
+    [ObservableProperty]
+    private string accessPanelRefreshActionText = AccessPanelRefreshText;
+
+    [ObservableProperty]
+    private bool isAccessPanelRefreshActionVisible;
+
+    [ObservableProperty]
+    private bool isAccessPanelRefreshActionEnabled;
 
     public MainViewModel()
     {
@@ -270,11 +285,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void ShowAccessPanel(AccessDisplayModel accessDisplay)
     {
         currentAccessPanelState = accessDisplay.State;
+        isCheckoutOpenedForCurrentPanel = false;
         AccessPanelTitle = GetAccessPanelTitle(accessDisplay.State);
         AccessPanelMessage = accessDisplay.Message;
         AccessPanelPrimaryActionText = GetAccessPanelPrimaryActionText(accessDisplay.State) ?? string.Empty;
         IsAccessPanelPrimaryActionVisible = !string.IsNullOrWhiteSpace(AccessPanelPrimaryActionText);
         IsAccessPanelPrimaryActionEnabled = IsAccessPanelPrimaryActionEnabledFor(accessDisplay.State);
+        HideAccessPanelRefreshAction();
         IsAccessPanelVisible = true;
     }
 
@@ -316,6 +333,47 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         AccessPanelPrimaryActionText = string.Empty;
         IsAccessPanelPrimaryActionVisible = false;
         IsAccessPanelPrimaryActionEnabled = false;
+        isCheckoutOpenedForCurrentPanel = true;
+        ShowAccessPanelRefreshAction(isEnabled: true);
+    }
+
+    [RelayCommand]
+    private async Task RefreshAccessStatusAsync()
+    {
+        if (!isCheckoutOpenedForCurrentPanel)
+        {
+            return;
+        }
+
+        IsAccessPanelRefreshActionEnabled = false;
+
+        var session = await authSessionStorageService.GetValidSessionOrNullAsync();
+        if (session is null)
+        {
+            ShowAccessPanel(AccessDisplayStateMapper.MapSignedOut());
+            return;
+        }
+
+        var lessonAccessResult = await backendLessonAccessDecisionClient.GetAsync(userSettings.BackendBaseUrl);
+        var subscriptionStatusResult = await backendSubscriptionStatusClient.GetAsync(userSettings.BackendBaseUrl);
+        var lessonAccess = lessonAccessResult.Value;
+        var subscriptionStatus = subscriptionStatusResult.Value;
+
+        if (lessonAccess is null && subscriptionStatus is null)
+        {
+            Debug.WriteLine($"Access status refresh failed. LessonAccessError={lessonAccessResult.ErrorMessage ?? "unknown"}; SubscriptionStatusError={subscriptionStatusResult.ErrorMessage ?? "unknown"}.");
+            ShowRefreshStatusResult(AccessPanelAccessCheckUnavailableTitle, RefreshStatusFailedMessage, keepRefreshAvailable: true);
+            return;
+        }
+
+        var accessDisplay = AccessDisplayStateMapper.Map(isSignedIn: true, lessonAccess, subscriptionStatus);
+        if (accessDisplay.State == AccessDisplayState.PremiumActive)
+        {
+            ShowRefreshStatusResult(AccessPanelAccountStatusTitle, PremiumActiveAfterRefreshMessage, keepRefreshAvailable: false);
+            return;
+        }
+
+        ShowRefreshStatusResult(AccessPanelUpgradeOptionsTitle, PaymentConfirmationPendingMessage, keepRefreshAvailable: true);
     }
 
     [RelayCommand]
@@ -327,6 +385,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void HideAccessPanel()
     {
         currentAccessPanelState = AccessDisplayState.UnknownOrError;
+        isCheckoutOpenedForCurrentPanel = false;
+        HideAccessPanelRefreshAction();
         IsAccessPanelVisible = false;
     }
 
@@ -338,6 +398,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         AccessPanelPrimaryActionText = string.Empty;
         IsAccessPanelPrimaryActionVisible = false;
         IsAccessPanelPrimaryActionEnabled = false;
+        isCheckoutOpenedForCurrentPanel = false;
+        HideAccessPanelRefreshAction();
         IsAccessPanelVisible = true;
     }
 
@@ -349,7 +411,41 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         AccessPanelPrimaryActionText = string.Empty;
         IsAccessPanelPrimaryActionVisible = false;
         IsAccessPanelPrimaryActionEnabled = false;
+        isCheckoutOpenedForCurrentPanel = false;
+        HideAccessPanelRefreshAction();
         IsAccessPanelVisible = true;
+    }
+
+    private void ShowRefreshStatusResult(string title, string message, bool keepRefreshAvailable)
+    {
+        AccessPanelTitle = title;
+        AccessPanelMessage = message;
+        AccessPanelPrimaryActionText = string.Empty;
+        IsAccessPanelPrimaryActionVisible = false;
+        IsAccessPanelPrimaryActionEnabled = false;
+        isCheckoutOpenedForCurrentPanel = keepRefreshAvailable;
+
+        if (keepRefreshAvailable)
+        {
+            ShowAccessPanelRefreshAction(isEnabled: true);
+            return;
+        }
+
+        HideAccessPanelRefreshAction();
+    }
+
+    private void ShowAccessPanelRefreshAction(bool isEnabled)
+    {
+        AccessPanelRefreshActionText = AccessPanelRefreshText;
+        IsAccessPanelRefreshActionVisible = true;
+        IsAccessPanelRefreshActionEnabled = isEnabled;
+    }
+
+    private void HideAccessPanelRefreshAction()
+    {
+        AccessPanelRefreshActionText = AccessPanelRefreshText;
+        IsAccessPanelRefreshActionVisible = false;
+        IsAccessPanelRefreshActionEnabled = false;
     }
 
     private static bool TryOpenCheckoutUrl(string checkoutUrl)
