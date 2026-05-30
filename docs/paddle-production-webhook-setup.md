@@ -4,6 +4,8 @@ Review date: 2026-05-29.
 
 Status: setup checklist / not a secret store / not production deployment proof.
 
+For the broader production billing readiness checklist, see `docs/paddle-production-readiness-checklist.md`.
+
 ## Purpose
 
 This document describes how to configure a Paddle notification destination safely for sandbox and production, and how to validate local backend readiness without committing secrets. It is an operational setup checklist only; it does not prove that production delivery is working and it must not contain real Paddle credentials, secrets, identifiers, or secret-bearing URLs.

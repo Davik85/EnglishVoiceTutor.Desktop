@@ -22,6 +22,7 @@ This roadmap starts from the current confirmed MVP state where:
    - review expired-token fallback behavior
    - keep dev fallback safe for local testing
 2. Complete production billing readiness separately from sandbox validation
+   - next production-readiness document: `docs/paddle-production-readiness-checklist.md`
    - verify production Paddle webhook setup against `docs/paddle-production-webhook-setup.md` and the safe local config guard (`tools/smoke_paddle_production_config_guard.ps1`)
    - configure production checkout settings outside tracked files and client code
    - keep production billing marked incomplete until production webhook and checkout configuration are verified

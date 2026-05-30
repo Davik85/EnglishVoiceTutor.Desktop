@@ -357,7 +357,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 
 ## Explicit non-goals and deferred scope
 
-Current Paddle billing and entitlement work does **not** complete all production billing operations.
+Current Paddle billing and entitlement work does **not** complete all production billing operations. Production Paddle readiness planning is tracked in `docs/paddle-production-readiness-checklist.md`; that checklist is documentation-only and does not mark production billing as verified.
 
 Deferred scope / next roadmap:
 - Production Paddle webhook setup verification is not completed yet.
