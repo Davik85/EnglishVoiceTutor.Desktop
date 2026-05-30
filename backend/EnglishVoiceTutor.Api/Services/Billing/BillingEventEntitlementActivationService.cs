@@ -54,7 +54,13 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         {
             try
             {
-                var activationOutcome = await ActivateBillingEventAsync(billingEventId, cancellationToken);
+                var activationOutcome = await BillingSerializableTransactionRetryPolicy.ExecuteAsync(
+                    (_, retryCancellationToken) => ActivateBillingEventAsync(billingEventId, retryCancellationToken),
+                    dbContext.ChangeTracker.Clear,
+                    logger,
+                    "Billing event entitlement activation",
+                    billingEventId,
+                    cancellationToken);
                 latestEntitlementExpiresAtUtc = MaxDateTimeOffset(latestEntitlementExpiresAtUtc, activationOutcome.EntitlementExpiresAtUtc);
 
                 switch (activationOutcome.Result)
@@ -124,7 +130,13 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
 
             try
             {
-                var activationOutcome = await ActivateBillingEventAsync(billingEventId.Value, cancellationToken);
+                var activationOutcome = await BillingSerializableTransactionRetryPolicy.ExecuteAsync(
+                    (_, retryCancellationToken) => ActivateBillingEventAsync(billingEventId.Value, retryCancellationToken),
+                    dbContext.ChangeTracker.Clear,
+                    logger,
+                    "Billing event entitlement activation",
+                    billingEventId.Value,
+                    cancellationToken);
                 entitlementExpiresAtUtc = activationOutcome.EntitlementExpiresAtUtc;
 
                 switch (activationOutcome.Result)
