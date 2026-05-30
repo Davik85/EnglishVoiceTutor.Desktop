@@ -95,16 +95,7 @@
             <Setter Property="BorderThickness" Value="1" />
         </Style>
 
-        <Style x:Key="SettingsTabControlStyle" TargetType="TabControl">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="TabStripPlacement" Value="Left" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="VerticalContentAlignment" Value="Stretch" />
-        </Style>
-
-        <Style x:Key="SettingsTabItemStyle" TargetType="TabItem">
+        <Style x:Key="SettingsSectionNavigationButtonStyle" TargetType="RadioButton">
             <Setter Property="Width" Value="{StaticResource SettingsNavigationWidth}" />
             <Setter Property="MinHeight" Value="44" />
             <Setter Property="Padding" Value="16,10" />
@@ -115,11 +106,12 @@
             <Setter Property="Background" Value="{StaticResource SurfaceSoftBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderSoftBrush}" />
             <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="HorizontalContentAlignment" Value="Left" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="TabItem">
+                    <ControlTemplate TargetType="RadioButton">
                         <Border x:Name="NavigationItemBorder"
                                 MinHeight="{TemplateBinding MinHeight}"
                                 Padding="{TemplateBinding Padding}"
@@ -129,14 +121,16 @@
                                 CornerRadius="12">
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                              ContentSource="Header"
+                                              Content="{TemplateBinding Content}"
+                                              ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
                                               RecognizesAccessKey="True" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="NavigationItemBorder" Property="BorderBrush" Value="{StaticResource BorderAccentSoftBrush}" />
                             </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
+                            <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="NavigationItemBorder" Property="Background" Value="{StaticResource AccentBrush}" />
                                 <Setter TargetName="NavigationItemBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
                                 <Setter Property="Foreground" Value="White" />
@@ -150,15 +144,16 @@
             </Setter>
         </Style>
 
-        <Style x:Key="SettingsTabContentScrollViewerStyle" TargetType="ScrollViewer">
+        <Style x:Key="SettingsSectionScrollViewerStyle" TargetType="ScrollViewer">
             <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="VerticalAlignment" Value="Stretch" />
             <Setter Property="Padding" Value="0,0,6,0" />
+            <Setter Property="Margin" Value="18,0,0,0" />
         </Style>
 
-        <Style x:Key="SettingsTabStackStyle" TargetType="StackPanel">
+        <Style x:Key="SettingsSectionStackStyle" TargetType="StackPanel">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="VerticalAlignment" Value="Top" />
         </Style>
@@ -225,14 +220,39 @@
 
             <Border Grid.Row="1" Margin="0,18,0,18" Height="1" Background="{StaticResource BorderSoftBrush}" />
 
-            <TabControl Grid.Row="2"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        Style="{StaticResource SettingsTabControlStyle}"
-                        ItemContainerStyle="{StaticResource SettingsTabItemStyle}">
-                <TabItem Header="{Binding LearningTabHeader, ElementName=Root}">
-                    <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
-                        <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+            <Grid Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{StaticResource SettingsNavigationWidth}" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+                    <RadioButton x:Name="LearningSectionNav"
+                                 Content="{Binding LearningTabHeader, ElementName=Root}"
+                                 GroupName="SettingsSections"
+                                 IsChecked="True"
+                                 Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
+                    <RadioButton x:Name="AccountSectionNav"
+                                 Content="{Binding AccountTabHeader, ElementName=Root}"
+                                 GroupName="SettingsSections"
+                                 Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
+                    <RadioButton x:Name="AudioSectionNav"
+                                 Content="{Binding AudioTabHeader, ElementName=Root}"
+                                 GroupName="SettingsSections"
+                                 Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
+                    <RadioButton x:Name="ProgressSectionNav"
+                                 Content="{Binding ProgressTabHeader, ElementName=Root}"
+                                 GroupName="SettingsSections"
+                                 Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
+                    <RadioButton x:Name="DiagnosticsSectionNav"
+                                 Content="{Binding DiagnosticsTabHeader, ElementName=Root}"
+                                 GroupName="SettingsSections"
+                                 Style="{StaticResource SettingsSectionNavigationButtonStyle}"
+                                 Visibility="{Binding IsDiagnosticsTabVisible, ElementName=Root, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                </StackPanel>
+
+                <ScrollViewer x:Name="LearningSection" Grid.Column="1" Style="{StaticResource SettingsSectionScrollViewerStyle}" Visibility="{Binding IsChecked, ElementName=LearningSectionNav, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Style="{StaticResource SettingsSectionStackStyle}">
                             <Border Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="{Binding InterfaceLanguageTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
@@ -343,12 +363,10 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                    </ScrollViewer>
-                </TabItem>
+                </ScrollViewer>
 
-                <TabItem Header="{Binding AccountTabHeader, ElementName=Root}">
-                    <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
-                        <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                <ScrollViewer x:Name="AccountSection" Grid.Column="1" Style="{StaticResource SettingsSectionScrollViewerStyle}" Visibility="{Binding IsChecked, ElementName=AccountSectionNav, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Style="{StaticResource SettingsSectionStackStyle}">
                             <Border Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="{Binding AccountTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
@@ -450,12 +468,10 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                    </ScrollViewer>
-                </TabItem>
+                </ScrollViewer>
 
-                <TabItem Header="{Binding AudioTabHeader, ElementName=Root}">
-                    <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
-                        <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                <ScrollViewer x:Name="AudioSection" Grid.Column="1" Style="{StaticResource SettingsSectionScrollViewerStyle}" Visibility="{Binding IsChecked, ElementName=AudioSectionNav, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Style="{StaticResource SettingsSectionStackStyle}">
                             <Border Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="{Binding AudioInputTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
@@ -483,12 +499,10 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                    </ScrollViewer>
-                </TabItem>
+                </ScrollViewer>
 
-                <TabItem Header="{Binding ProgressTabHeader, ElementName=Root}">
-                    <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
-                        <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                <ScrollViewer x:Name="ProgressSection" Grid.Column="1" Style="{StaticResource SettingsSectionScrollViewerStyle}" Visibility="{Binding IsChecked, ElementName=ProgressSectionNav, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Style="{StaticResource SettingsSectionStackStyle}">
                             <Border Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="{Binding LearningStatisticsTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
@@ -515,13 +529,24 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                    </ScrollViewer>
-                </TabItem>
+                </ScrollViewer>
 
-                <TabItem Header="{Binding DiagnosticsTabHeader, ElementName=Root}"
-                         Visibility="{Binding IsDiagnosticsTabVisible, ElementName=Root, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
-                        <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                <ScrollViewer x:Name="DiagnosticsSection" Grid.Column="1">
+                    <ScrollViewer.Style>
+                        <Style TargetType="ScrollViewer" BasedOn="{StaticResource SettingsSectionScrollViewerStyle}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsChecked, ElementName=DiagnosticsSectionNav}" Value="True" />
+                                        <Condition Binding="{Binding IsDiagnosticsTabVisible, ElementName=Root}" Value="True" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ScrollViewer.Style>
+                        <StackPanel Style="{StaticResource SettingsSectionStackStyle}">
                             <Border Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="{Binding ConnectionTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
@@ -617,9 +642,9 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                    </ScrollViewer>
-                </TabItem>
-            </TabControl>
+                </ScrollViewer>
+
+            </Grid>
 
             <Border Grid.Row="3"
                     Margin="0,18,0,0"
