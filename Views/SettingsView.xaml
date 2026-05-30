@@ -222,11 +222,14 @@
 
             <Grid Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="{StaticResource SettingsNavigationWidth}" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+                <StackPanel Grid.Column="0"
+                            Width="{StaticResource SettingsNavigationWidth}"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top">
                     <RadioButton x:Name="LearningSectionNav"
                                  Content="{Binding LearningTabHeader, ElementName=Root}"
                                  GroupName="SettingsSections"
