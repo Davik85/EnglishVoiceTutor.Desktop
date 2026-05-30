@@ -258,6 +258,11 @@ Latest confirmed validation:
 - `tools/smoke_paddle_subscription_lifecycle.ps1` passed.
 - `tools/smoke_paddle_webhook_ingestion.ps1` passed.
 
+## Desktop Settings tabs
+
+- The desktop Settings screen is reorganized into Learning, Account, Audio, Progress, and Diagnostics tabs.
+- Diagnostics are separated from normal settings and controlled by a simple desktop visibility flag so the tab can be hidden before release.
+
 ## Current mutation boundaries
 
 - This current-state update is documentation-only.
