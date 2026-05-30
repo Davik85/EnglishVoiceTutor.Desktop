@@ -53,7 +53,13 @@ public sealed class BillingEventSubscriptionSnapshotService : IBillingEventSubsc
 
         try
         {
-            var result = await ProcessBillingEventAsync(billingEventId.Value, cancellationToken);
+            var result = await BillingSerializableTransactionRetryPolicy.ExecuteAsync(
+                (_, retryCancellationToken) => ProcessBillingEventAsync(billingEventId.Value, retryCancellationToken),
+                dbContext.ChangeTracker.Clear,
+                logger,
+                "Billing event subscription lifecycle snapshot processing",
+                billingEventId.Value,
+                cancellationToken);
             providerEventEntitlementExpiredCount += result.ProviderEventEntitlementExpiredCount;
             providerEventEntitlementExpiresAtUtc = result.ProviderEventEntitlementExpiresAtUtc;
             switch (result.Result)
