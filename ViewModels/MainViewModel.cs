@@ -256,8 +256,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
         catch (Exception exception)
         {
-            Debug.WriteLine($"Lesson start guard check failed unexpectedly. Error={exception.Message}. Allowing lesson start by fallback.");
-            CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
+            Debug.WriteLine($"Lesson start guard check failed unexpectedly. Error={exception.Message}. Blocking lesson start.");
+            ShowAccessPanel(AccessDisplayStateMapper.MapUnknownOrError());
         }
     }
 

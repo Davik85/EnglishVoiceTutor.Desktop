@@ -1,4 +1,5 @@
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Models.Access;
 using EnglishVoiceTutor.Desktop.Services.Access;
 
 namespace EnglishVoiceTutor.Desktop.Services;
@@ -30,28 +31,50 @@ public sealed class LessonStartGuardService
 
     public async Task<LessonStartGuardResult> CheckAsync(string? backendBaseUrl, bool isSignedIn, CancellationToken cancellationToken = default)
     {
-        var lessonAccessResult = await backendLessonAccessDecisionClient.GetAsync(backendBaseUrl, cancellationToken);
-        var subscriptionStatusResult = isSignedIn
-            ? await backendSubscriptionStatusClient.GetAsync(backendBaseUrl, cancellationToken)
-            : null;
-        var backendDecision = lessonAccessResult.Value;
-        var subscriptionStatus = subscriptionStatusResult?.Value;
+        if (!isSignedIn)
+        {
+            return CreateBlockedResult(AccessDisplayStateMapper.MapSignedOut());
+        }
 
-        var enforcementEnabled = backendDecision?.EnforcementEnabled ?? false;
-        var canStartNewLesson = backendDecision?.CanStartNewLesson;
-        var shouldAllowStart = !enforcementEnabled || canStartNewLesson != false;
+        var lessonAccessResult = await backendLessonAccessDecisionClient.GetAsync(backendBaseUrl, cancellationToken);
+        var subscriptionStatusResult = await backendSubscriptionStatusClient.GetAsync(backendBaseUrl, cancellationToken);
+        var backendDecision = lessonAccessResult.Value;
+        var subscriptionStatus = subscriptionStatusResult.Value;
+
+        if (backendDecision is null)
+        {
+            return CreateBlockedResult(AccessDisplayStateMapper.MapUnknownOrError());
+        }
+
+        var enforcementEnabled = backendDecision.EnforcementEnabled;
+        var canStartNewLesson = backendDecision.CanStartNewLesson;
         var accessDisplay = AccessDisplayStateMapper.Map(isSignedIn, backendDecision, subscriptionStatus);
 
         return new LessonStartGuardResult(
-            shouldAllowStart,
-            backendDecision is not null,
-            backendDecision?.Source ?? LocalFallbackSource,
-            backendDecision?.Decision ?? DefaultUnavailableValue,
-            backendDecision?.Reason ?? DefaultUnavailableValue,
+            canStartNewLesson,
+            IsBackendDecisionAvailable: true,
+            backendDecision.Source,
+            backendDecision.Decision,
+            backendDecision.Reason,
             enforcementEnabled,
             canStartNewLesson,
-            backendDecision?.FreeLessonUsedToday,
-            backendDecision?.FreeLessonRemainingToday,
+            backendDecision.FreeLessonUsedToday,
+            backendDecision.FreeLessonRemainingToday,
+            accessDisplay);
+    }
+
+    private static LessonStartGuardResult CreateBlockedResult(AccessDisplayModel accessDisplay)
+    {
+        return new LessonStartGuardResult(
+            ShouldAllowStart: false,
+            IsBackendDecisionAvailable: false,
+            LocalFallbackSource,
+            DefaultUnavailableValue,
+            DefaultUnavailableValue,
+            EnforcementEnabled: false,
+            CanStartNewLesson: null,
+            FreeLessonUsedToday: null,
+            FreeLessonRemainingToday: null,
             accessDisplay);
     }
 }
