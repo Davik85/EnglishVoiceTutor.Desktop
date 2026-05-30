@@ -279,6 +279,7 @@ Latest confirmed validation:
 
 ## Known limitations / deferred scope
 
+- Production Paddle readiness checklist exists at `docs/paddle-production-readiness-checklist.md`; it is planning/checklist documentation only and does not mean production billing is complete.
 - Production Paddle webhook setup verification is not completed yet.
 - Production checkout configuration is not completed yet.
 - Production payment setup is not yet complete; desktop upgrade/paywall flow currently exists for sandbox validation with manual Refresh status.
@@ -296,6 +297,7 @@ The next phase is planning the still-deferred billing operations only. Do not im
 
 - refunds / chargebacks policy;
 - manual revocation automation policy;
+- production Paddle readiness checklist: `docs/paddle-production-readiness-checklist.md`;
 - production Paddle webhook setup checklist;
 - production checkout configuration;
 - optional bounded refresh/polling decision later;
