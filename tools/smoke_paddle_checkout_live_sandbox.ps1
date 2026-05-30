@@ -102,6 +102,26 @@ function Assert-NotEmpty {
     }
 }
 
+function Assert-PaddleHostedCheckoutUrl {
+    param(
+        [string]$Value,
+        [string]$Message
+    )
+
+    $parsedUri = $null
+    if (-not [System.Uri]::TryCreate($Value, [System.UriKind]::Absolute, [ref]$parsedUri)) {
+        throw "Assert-PaddleHostedCheckoutUrl failed: $Message. URL is not absolute."
+    }
+
+    if ($parsedUri.Scheme -ne "https" -or $parsedUri.Host -ne "pay.paddle.io" -or -not $parsedUri.AbsolutePath.StartsWith("/checkout/")) {
+        throw "Assert-PaddleHostedCheckoutUrl failed: $Message. Actual '$Value'."
+    }
+
+    if ($parsedUri.Query -match "[?&]_ptxn=") {
+        throw "Assert-PaddleHostedCheckoutUrl failed: $Message. URL contains legacy _ptxn query parameter."
+    }
+}
+
 try {
     if (-not $AllowRealPaddleCall) {
         Fail "Refusing to create a real Paddle sandbox transaction without -AllowRealPaddleCall."
@@ -109,6 +129,7 @@ try {
 
     Write-Host "This test creates a real Paddle sandbox transaction. No internal entitlement is activated." -ForegroundColor Yellow
     Write-Host "Backend must already be running with Paddle sandbox checkout environment variables configured outside this script." -ForegroundColor Yellow
+    Write-Host "Set PaddleBilling__HostedCheckoutUrl to a sandbox Paddle hosted checkout link when Paddle returns a default payment URL that the backend does not serve." -ForegroundColor Yellow
     Write-Host "BaseUrl: $BaseUrl"
 
     if ([string]::IsNullOrWhiteSpace($Email)) {
@@ -169,6 +190,7 @@ try {
     Assert-Equal -Expected "paddle" -Actual $checkoutResult.Body.provider -Message "provider"
     Assert-Equal -Expected "premium" -Actual $checkoutResult.Body.planId -Message "planId"
     Assert-NotEmpty -Value $checkoutResult.Body.checkoutUrl -Message "checkoutUrl"
+    Assert-PaddleHostedCheckoutUrl -Value $checkoutResult.Body.checkoutUrl -Message "checkoutUrl must be Paddle hosted and must not be a broken /pay placeholder"
     Assert-Empty -Value $checkoutResult.Body.errorCode -Message "errorCode"
     Assert-Equal -Expected "Checkout session created." -Actual $checkoutResult.Body.message -Message "message"
     Assert-NotEmpty -Value $checkoutResult.Body.checkedAtUtc -Message "checkedAtUtc"

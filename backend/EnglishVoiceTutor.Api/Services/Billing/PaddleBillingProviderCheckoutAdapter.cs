@@ -112,23 +112,35 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
 
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
             var parsedResponse = ParsePaddleCheckoutResponse(responseBody);
+            var configuredHostedCheckoutUrl = BuildConfiguredHostedCheckoutUrl(parsedResponse.TransactionId);
+            var checkoutUrlPresent = !string.IsNullOrWhiteSpace(parsedResponse.CheckoutUrl);
+            var hostedCheckoutUrlConfigured = !string.IsNullOrWhiteSpace(options.HostedCheckoutUrl);
+            var responseCheckoutUrlUsable = IsUsableHostedCheckoutUrl(parsedResponse.CheckoutUrl);
+            var checkoutUrl = responseCheckoutUrlUsable
+                ? parsedResponse.CheckoutUrl
+                : configuredHostedCheckoutUrl;
+            var checkoutUrlUsable = IsUsableHostedCheckoutUrl(checkoutUrl);
 
-            if (string.IsNullOrWhiteSpace(parsedResponse.CheckoutUrl))
+            if (!checkoutUrlUsable)
             {
                 logger.LogWarning(
-                    "Paddle checkout transaction response did not include checkout URL. PaddleRequestId={PaddleRequestId}; PaddleTransactionId={PaddleTransactionId}; PlanId={PlanId}; Environment={Environment}; UserId={UserId}.",
+                    "Paddle checkout transaction response did not include a usable hosted checkout URL. PaddleRequestId={PaddleRequestId}; PaddleTransactionId={PaddleTransactionId}; CheckoutUrlPresent={CheckoutUrlPresent}; HostedCheckoutUrlConfigured={HostedCheckoutUrlConfigured}; PlanId={PlanId}; Environment={Environment}; UserId={UserId}.",
                     paddleRequestId,
                     parsedResponse.TransactionId,
+                    checkoutUrlPresent,
+                    hostedCheckoutUrlConfigured,
                     request.PlanId,
                     environment,
                     request.UserId);
-                return CreateUrlMissingResult(request.PlanId);
+                return CreateUrlUnavailableResult(request.PlanId);
             }
 
             logger.LogInformation(
-                "Paddle checkout transaction created. PaddleRequestId={PaddleRequestId}; PaddleTransactionId={PaddleTransactionId}; PlanId={PlanId}; Environment={Environment}; UserId={UserId}.",
+                "Paddle checkout transaction created with usable hosted checkout URL. PaddleRequestId={PaddleRequestId}; PaddleTransactionId={PaddleTransactionId}; CheckoutUrlPresent={CheckoutUrlPresent}; HostedCheckoutUrlConfigured={HostedCheckoutUrlConfigured}; PlanId={PlanId}; Environment={Environment}; UserId={UserId}.",
                 paddleRequestId,
                 parsedResponse.TransactionId,
+                checkoutUrlPresent,
+                hostedCheckoutUrlConfigured,
                 request.PlanId,
                 environment,
                 request.UserId);
@@ -139,7 +151,7 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
                 CheckoutEnabled = true,
                 Provider = SubscriptionConstants.BillingProviders.Paddle,
                 PlanId = request.PlanId,
-                CheckoutUrl = parsedResponse.CheckoutUrl,
+                CheckoutUrl = checkoutUrl,
                 ErrorCode = string.Empty,
                 Message = GetCheckoutCreatedMessage(),
                 CheckedAtUtc = DateTimeOffset.UtcNow
@@ -158,7 +170,7 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
         catch (JsonException ex)
         {
             logger.LogWarning(ex, "Paddle checkout transaction response could not be parsed. PlanId={PlanId}; Environment={Environment}; UserId={UserId}.", request.PlanId, environment, request.UserId);
-            return CreateUrlMissingResult(request.PlanId);
+            return CreateUrlUnavailableResult(request.PlanId);
         }
     }
 
@@ -192,7 +204,7 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
         };
     }
 
-    private BillingProviderCheckoutResult CreateUrlMissingResult(string planId)
+    private BillingProviderCheckoutResult CreateUrlUnavailableResult(string planId)
     {
         return new BillingProviderCheckoutResult
         {
@@ -201,10 +213,78 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
             Provider = SubscriptionConstants.BillingProviders.Paddle,
             PlanId = planId,
             CheckoutUrl = string.Empty,
-            ErrorCode = SubscriptionConstants.Billing.PaddleCheckoutUrlMissingCode,
-            Message = SubscriptionConstants.Billing.PaddleCheckoutUrlMissingMessage,
+            ErrorCode = SubscriptionConstants.Billing.PaddleCheckoutUrlUnavailableCode,
+            Message = SubscriptionConstants.Billing.PaddleCheckoutUrlUnavailableMessage,
             CheckedAtUtc = DateTimeOffset.UtcNow
         };
+    }
+
+    private string BuildConfiguredHostedCheckoutUrl(string transactionId)
+    {
+        if (string.IsNullOrWhiteSpace(options.HostedCheckoutUrl)
+            || string.IsNullOrWhiteSpace(transactionId)
+            || !Uri.TryCreate(options.HostedCheckoutUrl.Trim(), UriKind.Absolute, out var hostedCheckoutUri)
+            || !IsUsableHostedCheckoutUrl(hostedCheckoutUri)
+            || ContainsQueryParameter(
+                hostedCheckoutUri.Query,
+                SubscriptionConstants.Billing.PaddleHostedCheckoutTransactionIdParameterName))
+        {
+            return string.Empty;
+        }
+
+        return AppendQueryParameter(
+            hostedCheckoutUri,
+            SubscriptionConstants.Billing.PaddleHostedCheckoutTransactionIdParameterName,
+            transactionId.Trim());
+    }
+
+    private static bool IsUsableHostedCheckoutUrl(string checkoutUrl)
+    {
+        return !string.IsNullOrWhiteSpace(checkoutUrl)
+            && Uri.TryCreate(checkoutUrl.Trim(), UriKind.Absolute, out var uri)
+            && IsUsableHostedCheckoutUrl(uri);
+    }
+
+    private static bool IsUsableHostedCheckoutUrl(Uri checkoutUri)
+    {
+        if (!string.Equals(checkoutUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(checkoutUri.Host, SubscriptionConstants.Billing.PaddleHostedCheckoutHost, StringComparison.OrdinalIgnoreCase)
+            || !checkoutUri.AbsolutePath.StartsWith(SubscriptionConstants.Billing.PaddleHostedCheckoutPathPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return !ContainsQueryParameter(
+            checkoutUri.Query,
+            SubscriptionConstants.Billing.PaddleLegacyCheckoutTransactionIdParameterName);
+    }
+
+    private static string AppendQueryParameter(Uri uri, string name, string value)
+    {
+        var separator = string.IsNullOrEmpty(uri.Query) ? "?" : "&";
+        return string.Concat(uri.GetLeftPart(UriPartial.Path), uri.Query, separator, Uri.EscapeDataString(name), "=", Uri.EscapeDataString(value));
+    }
+
+    private static bool ContainsQueryParameter(string query, string name)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return false;
+        }
+
+        var trimmedQuery = query[0] == '?' ? query[1..] : query;
+        var parameters = trimmedQuery.Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var parameter in parameters)
+        {
+            var separatorIndex = parameter.IndexOf('=', StringComparison.Ordinal);
+            var parameterName = separatorIndex < 0 ? parameter : parameter[..separatorIndex];
+            if (string.Equals(Uri.UnescapeDataString(parameterName), name, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private string GetNormalizedEnvironment()

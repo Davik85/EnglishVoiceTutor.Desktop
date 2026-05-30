@@ -18,5 +18,7 @@ public sealed class PaddleBillingOptions
 
     public string LiveBaseUrl { get; set; } = "https://api.paddle.com";
 
+    public string HostedCheckoutUrl { get; set; } = string.Empty;
+
     public string CheckoutCreatedMessage { get; set; } = "Checkout session created.";
 }
