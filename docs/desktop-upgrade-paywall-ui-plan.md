@@ -1,10 +1,10 @@
 # Desktop Upgrade / Paywall UI Plan
 
-Review date: 2026-05-29.
+Review date: 2026-05-30.
 
-Status: Step 4D-4 implemented; manual refresh after checkout is available and remains backend-driven.
+Status: Steps 4D-1 through 4D-4 are implemented; the manual Paddle sandbox payment loop has been validated and remains backend-driven.
 
-This is Step 4D after the backend Paddle billing lifecycle foundation through Step 4B and the Step 4C production webhook setup checklist/config guard. Step 4D-2 now implements a simple Windows desktop access/paywall panel after backend lesson-start denial. Manual checkout launch and manual refresh after checkout are implemented, and this document does not change backend billing behavior.
+This is Step 4D after the backend Paddle billing lifecycle foundation through Step 4B and the Step 4C production webhook setup checklist/config guard. Steps 4D-1, 4D-2, 4D-3, and 4D-4 are implemented: backend-state mapping, a simple Windows desktop access/paywall panel after backend lesson-start denial, backend-only checkout launch, and manual backend-driven refresh after checkout. The manual sandbox payment loop has been validated end-to-end: **Upgrade -> Paddle Checkout -> transaction.completed webhook -> Premium active -> lesson allowed**. This document does not change backend billing behavior.
 
 ## 1. Purpose
 
@@ -176,7 +176,7 @@ Example copy direction, not final UI text:
 - Step 4D-3: completed; the access panel Upgrade action calls the backend checkout-session endpoint and opens only the backend-provided `checkoutUrl` when present.
 - Step 4D-4: completed; after checkout opens, the access panel shows a manual **Refresh status** action that asks backend lesson-access/subscription-status endpoints and does not activate Premium locally.
 - Step 4D-5: polish copy/layout.
-- Step 4D-6: optional bounded polling if needed.
+- Step 4D-6: optional bounded polling if needed; not implemented.
 
 Each implementation slice should keep backend access/status as the authority and should include focused build/manual verification before moving to the next slice.
 
@@ -219,4 +219,4 @@ Future checkout/status implementation should continue to verify:
 
 ## 12. Current status
 
-Step 4D-4 is implemented for manual refresh only: after checkout opens, the desktop can ask backend lesson-access/subscription-status endpoints for current state and update the access panel. Premium still depends on backend state, normally after valid webhook processing; the desktop does not decide payment success, does not activate Premium locally, and does not poll automatically.
+Steps 4D-1 through 4D-4 are implemented for backend-driven access display, paywall display, backend-only checkout launch, and manual refresh only. The manual sandbox payment loop has been validated end-to-end: **Upgrade -> Paddle Checkout -> transaction.completed webhook -> Premium active -> lesson allowed**. After checkout opens, the desktop can ask backend lesson-access/subscription-status endpoints for current state and update the access panel. Premium still depends on backend state after valid webhook processing; the desktop does not decide payment success, does not activate Premium locally, and does not poll automatically. Automatic polling remains optional future work and is not implemented.

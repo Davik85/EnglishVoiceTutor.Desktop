@@ -1,10 +1,10 @@
 # Current State
 
-Review date: 2026-05-29.
+Review date: 2026-05-30.
 
 ## Short summary
 
-EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. Lesson Chat, account login, trial entitlement, free lesson access checks, local Development admin support, and the provider-agnostic billing lifecycle foundation through Step 4B is implemented and validated where local tooling is available. Paddle is the current desktop/web provider adapter, but backend account, subscription, entitlement, usage, limits, lesson history, payment, and Premium/free status remain the source of truth.
+EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. Lesson Chat, account login, trial entitlement, free lesson access checks, local Development admin support, and the provider-agnostic billing lifecycle foundation through Step 4B is implemented and validated where local tooling is available. Desktop upgrade/paywall flow exists for sandbox use, manual Refresh status exists after checkout launch, and Paddle sandbox `transaction.completed` activation has been validated end-to-end. Paddle is the current desktop/web provider adapter, but backend account, subscription, entitlement, usage, limits, lesson history, payment, and Premium/free status remain the source of truth.
 
 ## Product architecture principle
 
@@ -164,6 +164,22 @@ Study language is the language of lessons, hints, feedback, summary, transcripti
    - `subscription.resumed` and `subscription.activated` do not create, extend, or restore Premium by themselves.
    - Premium restoration still requires a valid `transaction.completed` through the existing entitlement activation/extension path.
 
+## Desktop upgrade/paywall sandbox status
+
+**Implemented and validated for sandbox**
+
+- Desktop upgrade/paywall flow exists for sandbox validation and remains backend-driven.
+- Signed-out users cannot start normal lessons.
+- Users cannot start normal lessons when backend access cannot be checked.
+- Free lesson used with `SubscriptionEnforcement__Enabled=true` shows the Upgrade panel.
+- The Upgrade button calls backend only; desktop does not call Paddle directly.
+- Backend returns a backend-hosted checkout launch page such as `/checkout/paddle?transactionId=...`.
+- Desktop does not activate Premium locally.
+- Manual **Refresh status** exists after checkout is opened.
+- Refresh status asks backend for current account/access status, does not call checkout-session, does not open a browser, and does not start a lesson automatically.
+- Paddle sandbox `transaction.completed` webhook activation was validated: Premium becomes active after backend sees the webhook, and the user can start a lesson after backend reports Premium active.
+- Production payment setup is not yet complete; production webhook setup verification and production checkout configuration remain separate next work.
+
 ## Admin/support foundation status
 
 **Implemented for local Development support**
@@ -263,8 +279,9 @@ Latest confirmed validation:
 
 ## Known limitations / deferred scope
 
-- Production Paddle webhook configuration is not completed yet.
-- Desktop upgrade/paywall UI is not implemented yet.
+- Production Paddle webhook setup verification is not completed yet.
+- Production checkout configuration is not completed yet.
+- Production payment setup is not yet complete; desktop upgrade/paywall flow currently exists for sandbox validation with manual Refresh status.
 - Refund handling is not implemented yet.
 - Chargeback handling is not implemented yet.
 - Manual revocation automation is not implemented yet.
@@ -280,6 +297,7 @@ The next phase is planning the still-deferred billing operations only. Do not im
 - refunds / chargebacks policy;
 - manual revocation automation policy;
 - production Paddle webhook setup checklist;
-- desktop upgrade/paywall UI plan;
-- future Apple App Store / Google Play mobile entitlement bridge plan;
+- production checkout configuration;
+- optional bounded refresh/polling decision later;
+- mobile entitlement bridge later;
 - optional background reconciliation job.

@@ -4,6 +4,16 @@ This document describes the current implemented foundation for account, trial, s
 
 English Voice Tutor is a global, cross-platform, provider-agnostic product for desktop now and future mobile clients later. The backend is the source of truth for account, trial, subscription, entitlement, Premium/free status, daily free allowance, lesson history, usage, limits, payments, and billing state. Desktop and future mobile clients must rely on backend access/status decisions, not local payment assumptions.
 
+
+## Current Step 4F status note
+
+- Backend-hosted Paddle checkout launch page exists and is returned as a backend URL such as `/checkout/paddle?transactionId=...`.
+- The manual sandbox payment loop has been validated: **Upgrade -> Paddle Checkout -> transaction.completed webhook -> Premium active -> lesson allowed**.
+- A valid Paddle sandbox `transaction.completed` webhook activates Premium through the existing provider-event entitlement path.
+- Transient PostgreSQL serialization conflicts in billing processing are retried, including subscription snapshot processing and entitlement activation paths.
+- Premium access still comes from `EntitlementEntity`; `SubscriptionEntity` remains a provider-agnostic subscription snapshot only, and `PaymentEntity` remains diagnostic payment history only.
+- This sandbox validation does not mean production billing setup is complete; production webhook setup verification and production checkout configuration remain separate work.
+
 ## Account requirement for normal lesson start
 
 - Normal lesson start requires sign-in.
@@ -257,7 +267,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - `SubscriptionEntity` alone must not grant Premium access.
 - `PaymentEntity` must not grant Premium access.
 - Desktop and future mobile clients must rely on backend state, not local payment assumptions.
-- Desktop upgrade/paywall UI was not implemented for this foundation step.
+- Desktop upgrade/paywall UI exists for sandbox validation and remains backend-driven; desktop still does not activate Premium locally.
 - Future mobile UI was not added for this foundation step.
 
 ## CMS/admin support foundation v1 checkpoint
@@ -350,8 +360,8 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 Current Paddle billing and entitlement work does **not** complete all production billing operations.
 
 Deferred scope / next roadmap:
-- Production Paddle webhook configuration is not completed yet.
-- Desktop upgrade/paywall UI is not implemented yet.
+- Production Paddle webhook setup verification is not completed yet.
+- Desktop upgrade/paywall checkout launch with manual refresh exists for sandbox validation; automatic polling remains deferred.
 - `subscription.resumed` / `subscription.activated` grace-access restoration before `transaction.completed` is not implemented.
 - Refund handling is not implemented yet.
 - Chargeback handling is not implemented yet.
@@ -373,5 +383,5 @@ Deferred scope / next roadmap:
 - Actual `subscription.canceled` and `subscription.paused` events can shorten only active `provider_event` Premium `EntitlementEntity` rows for the resolved internal user/provider subscription context.
 - Trial/manual/admin/development/future-mobile entitlements are not touched by the provider-event canceled/paused expiry path.
 - Admin UI was not changed.
-- Desktop UI was not changed.
+- Desktop UI is outside this documentation update; the current desktop upgrade/paywall flow exists for sandbox validation and remains backend-driven.
 - Latest payment persistence schema migration is `20260529000000_AddPaddlePaymentPersistenceV1`.
