@@ -133,13 +133,14 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource AppBackgroundBrush}" Padding="24">
-        <Border MaxWidth="940"
-                Margin="0,20"
-                Padding="28"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Stretch"
-                Style="{StaticResource MainContentCardStyle}">
+    <Grid Background="{StaticResource AppBackgroundBrush}">
+        <Border Padding="24">
+            <Border MaxWidth="940"
+                    Margin="0,20"
+                    Padding="28"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Stretch"
+                    Style="{StaticResource MainContentCardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -581,6 +582,7 @@
                                TextWrapping="Wrap" />
                 </StackPanel>
             </Grid>
+            </Border>
         </Border>
     </Grid>
 </UserControl>
