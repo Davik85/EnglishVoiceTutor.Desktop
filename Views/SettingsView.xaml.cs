@@ -7,6 +7,30 @@ namespace EnglishVoiceTutor.Desktop.Views;
 
 public partial class SettingsView : UserControl
 {
+#if DEBUG
+    public const bool ShowDiagnosticsTab = true;
+#else
+    public const bool ShowDiagnosticsTab = false;
+#endif
+
+    private const string LearningTabHeaderText = "Learning";
+    private const string AccountTabHeaderText = "Account";
+    private const string AudioTabHeaderText = "Audio";
+    private const string ProgressTabHeaderText = "Progress";
+    private const string DiagnosticsTabHeaderText = "Diagnostics";
+
+    public bool IsDiagnosticsTabVisible => ShowDiagnosticsTab;
+
+    public string LearningTabHeader => LearningTabHeaderText;
+
+    public string AccountTabHeader => AccountTabHeaderText;
+
+    public string AudioTabHeader => AudioTabHeaderText;
+
+    public string ProgressTabHeader => ProgressTabHeaderText;
+
+    public string DiagnosticsTabHeader => DiagnosticsTabHeaderText;
+
     public SettingsView()
     {
         InitializeComponent();
