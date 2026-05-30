@@ -20,6 +20,7 @@ public static class BackendConstants
     public const string DevSubscriptionStatusEndpoint = "/api/dev/subscription-status";
     public const string MeSubscriptionStatusEndpoint = "/api/me/subscription-status";
     public const string MeTrialClaimEndpoint = "/api/me/trial/claim";
+    public const string MeBillingCheckoutSessionEndpoint = "/api/me/billing/checkout-session";
     public const string DevLessonAccessEndpoint = "/api/dev/lesson-access";
     public const string MeLessonAccessEndpoint = "/api/me/lesson-access";
     public const string DevLessonSessionsEndpoint = "/api/dev/lesson-sessions";
@@ -34,11 +35,13 @@ public static class BackendConstants
     public const string AuthRegisterEndpoint = "/api/auth/register";
     public const string AuthLoginEndpoint = "/api/auth/login";
     public const string AuthMeEndpoint = "/api/auth/me";
+    public const string BackendCheckoutPremiumPlanId = "premium";
     public const int BackendRequestTimeoutSeconds = 30;
     public const int BackendUserSettingsTimeoutSeconds = 5;
     public const int BackendHealthTimeoutSeconds = 5;
     public const int BackendSubscriptionStatusTimeoutSeconds = 5;
     public const int BackendTrialClaimTimeoutSeconds = 5;
+    public const int BackendCheckoutSessionTimeoutSeconds = 10;
     public const int BackendLessonAccessTimeoutSeconds = 5;
     public const int LessonSessionRequestTimeoutSeconds = 5;
     public const int LessonMessageRequestTimeoutSeconds = 5;
