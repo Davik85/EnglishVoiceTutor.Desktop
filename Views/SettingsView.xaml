@@ -3,10 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             x:Name="Root"
              mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="1000">
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
         <Style x:Key="SettingsSectionTitleStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="16" />
             <Setter Property="FontWeight" Value="SemiBold" />
@@ -30,6 +33,7 @@
         <Style x:Key="SettingsTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource SoftTextBoxStyle}">
             <Setter Property="Margin" Value="0,6,0,0" />
         </Style>
+
         <Style x:Key="SettingsPasswordBoxStyle" TargetType="PasswordBox">
             <Setter Property="Height" Value="42" />
             <Setter Property="Padding" Value="12,0,12,0" />
@@ -63,6 +67,31 @@
             <Setter Property="CornerRadius" Value="{StaticResource CornerPanel}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderSoftBrush}" />
             <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style x:Key="SettingsTabControlStyle" TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSoftBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+
+        <Style x:Key="SettingsTabItemStyle" TargetType="TabItem">
+            <Setter Property="MinWidth" Value="120" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+        </Style>
+
+        <Style x:Key="SettingsTabContentScrollViewerStyle" TargetType="ScrollViewer">
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="Padding" Value="0,18,6,0" />
+        </Style>
+
+        <Style x:Key="SettingsTabStackStyle" TargetType="StackPanel">
+            <Setter Property="MaxWidth" Value="720" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
         </Style>
 
         <Style x:Key="StatisticsValueStyle" TargetType="TextBlock">
@@ -105,432 +134,455 @@
     </UserControl.Resources>
 
     <Grid Background="{StaticResource AppBackgroundBrush}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Padding="24">
+        <Border Padding="24">
             <Border MaxWidth="940"
                     Margin="0,20"
                     Padding="28"
                     HorizontalAlignment="Center"
-                    VerticalAlignment="Top"
+                    VerticalAlignment="Stretch"
                     Style="{StaticResource MainContentCardStyle}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0">
-                        <TextBlock Text="{Binding Title}"
-                                   FontSize="30"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
-                                   TextAlignment="Center" />
-                        <TextBlock Margin="0,10,0,0"
-                                   Text="{Binding Subtitle}"
-                                   FontSize="14"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   TextAlignment="Center"
-                                   TextWrapping="Wrap" />
-                    </StackPanel>
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="{Binding Title}"
+                               FontSize="30"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               TextAlignment="Center" />
+                    <TextBlock Margin="0,10,0,0"
+                               Text="{Binding Subtitle}"
+                               FontSize="14"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap" />
+                </StackPanel>
 
-                    <Border Grid.Row="1" Margin="0,20,0,0" Height="1" Background="{StaticResource BorderSoftBrush}" />
+                <Border Grid.Row="1" Margin="0,20,0,0" Height="1" Background="{StaticResource BorderSoftBrush}" />
 
-                    <Grid Grid.Row="2" Margin="0,20,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
+                <TabControl Grid.Row="2"
+                            Margin="0,20,0,0"
+                            Style="{StaticResource SettingsTabControlStyle}"
+                            ItemContainerStyle="{StaticResource SettingsTabItemStyle}">
+                    <TabItem Header="{Binding LearningTabHeader, ElementName=Root}">
+                        <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
+                            <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                                <Border Style="{StaticResource SettingsSectionCardStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding InterfaceLanguageTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
 
-                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                            <Border Style="{StaticResource SettingsSectionCardStyle}">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding InterfaceLanguageTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                        <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
+                                                  ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
+                                                  ItemsSource="{Binding AvailableInterfaceLanguages}"
+                                                  SelectedItem="{Binding SelectedInterfaceLanguageOption, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMemberPath="DisplayName" />
 
-                                    <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
-                                              ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
-                                              ItemsSource="{Binding AvailableInterfaceLanguages}"
-                                              SelectedItem="{Binding SelectedInterfaceLanguageOption, UpdateSourceTrigger=PropertyChanged}"
-                                              DisplayMemberPath="DisplayName" />
+                                        <TextBlock Text="{Binding NativeLanguageTitle}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                        <TextBlock Text="{Binding NativeLanguageSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
 
-                                    <TextBlock Text="{Binding NativeLanguageTitle}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <TextBlock Text="{Binding NativeLanguageSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+                                        <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
+                                                  ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
+                                                  ItemsSource="{Binding SupportedNativeLanguages}"
+                                                  SelectedItem="{Binding SelectedNativeLanguage, UpdateSourceTrigger=PropertyChanged}" />
 
-                                    <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
-                                              ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
-                                              ItemsSource="{Binding SupportedNativeLanguages}"
-                                              SelectedItem="{Binding SelectedNativeLanguage, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Text="{Binding StudyLanguageTitle}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                        <TextBlock Text="{Binding StudyLanguageSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
 
-                                    <TextBlock Text="{Binding StudyLanguageTitle}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <TextBlock Text="{Binding StudyLanguageSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
-
-                                    <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
-                                              ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
-                                              ItemsSource="{Binding AvailableStudyLanguages}"
-                                              SelectedItem="{Binding SelectedStudyLanguage, UpdateSourceTrigger=PropertyChanged}"
-                                              DisplayMemberPath="DisplayName" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding TutorAvatarTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
-                                    <TextBlock Text="{Binding TutorAvatarSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
-
-                                    <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
-                                              ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
-                                              ItemsSource="{Binding AvailableTutorAvatars}"
-                                              SelectedItem="{Binding SelectedTutorAvatarOption, UpdateSourceTrigger=PropertyChanged}"
-                                              DisplayMemberPath="DisplayName" />
-
-                                    <Border Margin="0,12,0,0"
-                                            Padding="12"
-                                            Background="{StaticResource AppBackgroundBrush}"
-                                            CornerRadius="10"
-                                            BorderBrush="{StaticResource BorderSoftBrush}"
-                                            BorderThickness="1">
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding AvatarProfileTitle}"
-                                                       FontSize="14"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{StaticResource AccentBrush}" />
-                                            <TextBlock Margin="0,2,0,10"
-                                                       Text="{Binding SelectedTutorAvatarDisplayName}"
-                                                       FontSize="13"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                                       TextWrapping="Wrap" />
-
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                </Grid.RowDefinitions>
-
-                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding AvatarAgeLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
-                                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedTutorAvatarAgeText}" Style="{StaticResource AvatarProfileValueStyle}" />
-
-                                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding AvatarLocationLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
-                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedTutorAvatarLocation}" Style="{StaticResource AvatarProfileValueStyle}" />
-
-                                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding AvatarRoleLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
-                                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedTutorAvatarRole}" Style="{StaticResource AvatarProfileValueStyle}" />
-
-                                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding AvatarInterestsLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
-                                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedTutorAvatarInterestsText}" Style="{StaticResource AvatarProfileValueStyle}" />
-
-                                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding AvatarPersonalityLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
-                                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedTutorAvatarPersonalityText}" Style="{StaticResource AvatarProfileValueStyle}" />
-
-                                                <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding AvatarSpeakingStyleLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
-                                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedTutorAvatarSpeakingStyleText}" Style="{StaticResource AvatarProfileValueStyle}" />
-                                            </Grid>
-                                        </StackPanel>
-                                    </Border>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="1" Margin="12,0,0,0">
-                            <Border Style="{StaticResource SettingsSectionCardStyle}">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding UserProfileTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
-                                    <TextBlock Text="{Binding UserProfileSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
-
-                                    <TextBlock Text="{Binding UserDisplayNameLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <TextBox Style="{StaticResource SettingsTextBoxStyle}"
-                                             Text="{Binding UserDisplayName, UpdateSourceTrigger=PropertyChanged}" />
-
-                                    <TextBlock Text="{Binding LearningGoalLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <TextBox Style="{StaticResource SettingsTextBoxStyle}"
-                                             Text="{Binding LearningGoal, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding AccountTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
-                                    <TextBlock Text="{Binding AccountSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
-
-                                    <TextBlock Text="{Binding CurrentAccountLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <TextBlock Margin="0,6,0,0"
-                                               Text="{Binding CurrentUserEmail, TargetNullValue=Not signed in}"
-                                               FontSize="13"
-                                               Foreground="{StaticResource TextPrimaryBrush}" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding CurrentUserDisplayName}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}" />
-                                    <TextBlock Text="{Binding SettingsSourceLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <TextBlock Margin="0,6,0,0"
-                                               Text="{Binding SettingsSource}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" />
-                                    <TextBlock Text="{Binding SubscriptionStatusTitle}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <TextBlock Margin="0,6,0,0"
-                                               Text="{Binding SubscriptionPlanText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionPremiumText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionTrialText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionFreeLessonText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionEnforcementText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionSourceText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionCheckedAtText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" />
-
-                                    <TextBlock Text="{Binding AccountEmailLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <TextBox Style="{StaticResource SettingsTextBoxStyle}"
-                                             Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" />
-
-                                    <TextBlock Text="{Binding AccountPasswordLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <PasswordBox x:Name="AccountPasswordBox"
-                                                 Style="{StaticResource SettingsPasswordBoxStyle}"
-                                                 PasswordChanged="AccountPasswordBox_OnPasswordChanged" />
-
-                                    <TextBlock Text="{Binding AccountDisplayNameLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <TextBox Style="{StaticResource SettingsTextBoxStyle}"
-                                             Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" />
-
-                                    <WrapPanel Margin="0,14,0,0">
-                                        <Button MinWidth="110"
-                                                Height="34"
-                                                Content="{Binding AccountRegisterButtonText}"
-                                                Command="{Binding RegisterCommand}"
-                                                Style="{StaticResource PrimaryButtonStyle}" />
-                                        <Button MinWidth="90"
-                                                Height="34"
-                                                Margin="8,0,0,0"
-                                                Content="{Binding AccountLoginButtonText}"
-                                                Command="{Binding LoginCommand}"
-                                                Style="{StaticResource PrimaryButtonStyle}" />
-                                        <Button MinWidth="90"
-                                                Height="34"
-                                                Margin="8,0,0,0"
-                                                Content="{Binding AccountLogoutButtonText}"
-                                                Command="{Binding LogoutCommand}"
-                                                Style="{StaticResource SecondaryButtonStyle}" />
-                                    </WrapPanel>
-
-                                    <TextBlock Margin="0,10,0,0"
-                                               Text="{Binding ErrorMessage}"
-                                               FontSize="12"
-                                               Foreground="#FFB00020"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding ConnectionTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
-                                    <TextBlock Text="{Binding BackendUrlSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
-
-                                    <TextBlock Text="{Binding BackendUrlLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <TextBox Style="{StaticResource SettingsTextBoxStyle}"
-                                             Text="{Binding BackendBaseUrl, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                            </Border>
-
-
-
-                            <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding AudioInputTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
-
-                                    <TextBlock Text="{Binding MicrophoneLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
-                                              ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
-                                              ItemsSource="{Binding AudioInputDevices}"
-                                              SelectedItem="{Binding SelectedAudioInputDeviceOption, UpdateSourceTrigger=PropertyChanged}"
-                                              DisplayMemberPath="DisplayName" />
-
-                                    <Button MinWidth="150"
-                                            Height="34"
-                                            HorizontalAlignment="Left"
-                                            Margin="0,12,0,0"
-                                            Content="{Binding TestMicrophoneText}"
-                                            Command="{Binding TestMicrophoneCommand}"
-                                            Style="{StaticResource PrimaryButtonStyle}" />
-
-                                    <TextBlock Margin="0,10,0,0"
-                                               Text="{Binding MicrophoneStatusText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding DiagnosticsTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
-                                    <TextBlock Text="{Binding DiagnosticsSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
-
-                                    <Grid Margin="0,14,0,6">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="150" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding DiagnosticsAppVersionLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AppVersionText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding DiagnosticsBackendUrlLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DiagnosticsBackendUrlText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding DiagnosticsBackendStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DiagnosticsBackendStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding DiagnosticsDatabaseStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DiagnosticsDatabaseStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding DiagnosticsAiStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DiagnosticsAiStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding DiagnosticsSettingsFileLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SettingsFilePathText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{Binding DiagnosticsLessonHistoryFileLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LessonHistoryFilePathText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="7" Grid.Column="0" Text="{Binding DiagnosticsInterfaceLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding DiagnosticsInterfaceLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{Binding DiagnosticsNativeLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding DiagnosticsNativeLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{Binding DiagnosticsStudyLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding DiagnosticsStudyLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{Binding DiagnosticsTutorAvatarLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding DiagnosticsTutorAvatarText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="11" Grid.Column="0" Text="{Binding DiagnosticsMicrophoneLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding DiagnosticsMicrophoneText}" Style="{StaticResource DiagnosticsValueStyle}" />
-                                    </Grid>
-
-                                    <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
-                                        <Button MinWidth="150"
-                                                Height="34"
-                                                Content="{Binding RefreshDiagnosticsButtonText}"
-                                                Command="{Binding RefreshDiagnosticsCommand}"
-                                                Style="{StaticResource PrimaryButtonStyle}" />
-                                        <Button MinWidth="150"
-                                                Height="34"
-                                                Margin="10,0,0,0"
-                                                Content="{Binding CopyDiagnosticsText}"
-                                                Command="{Binding CopyDiagnosticsCommand}"
-                                                Style="{StaticResource PrimaryButtonStyle}" />
+                                        <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
+                                                  ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
+                                                  ItemsSource="{Binding AvailableStudyLanguages}"
+                                                  SelectedItem="{Binding SelectedStudyLanguage, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMemberPath="DisplayName" />
                                     </StackPanel>
+                                </Border>
 
-                                    <TextBlock Margin="0,8,0,0"
-                                               Text="{Binding DiagnosticsCopyStatusText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-                            </Border>
+                                <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding TutorAvatarTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                        <TextBlock Text="{Binding TutorAvatarSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
 
-                            <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding LearningStatisticsTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
-                                    <TextBlock Text="{Binding LearningStatisticsSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+                                        <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
+                                                  ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
+                                                  ItemsSource="{Binding AvailableTutorAvatars}"
+                                                  SelectedItem="{Binding SelectedTutorAvatarOption, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMemberPath="DisplayName" />
 
-                                    <UniformGrid Margin="0,14,0,0" Columns="2">
-                                        <StackPanel Margin="0,0,12,12">
-                                            <TextBlock Text="{Binding TotalCompletedLessonsLabel}" Style="{StaticResource SettingsFieldLabelStyle}" Margin="0" />
-                                            <TextBlock Text="{Binding TotalCompletedLessonsText}" Style="{StaticResource StatisticsValueStyle}" />
+                                        <Border Margin="0,12,0,0"
+                                                Padding="12"
+                                                Background="{StaticResource AppBackgroundBrush}"
+                                                CornerRadius="10"
+                                                BorderBrush="{StaticResource BorderSoftBrush}"
+                                                BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding AvatarProfileTitle}"
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource AccentBrush}" />
+                                                <TextBlock Margin="0,2,0,10"
+                                                           Text="{Binding SelectedTutorAvatarDisplayName}"
+                                                           FontSize="13"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           TextWrapping="Wrap" />
+
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+
+                                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding AvatarAgeLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
+                                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedTutorAvatarAgeText}" Style="{StaticResource AvatarProfileValueStyle}" />
+
+                                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding AvatarLocationLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
+                                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedTutorAvatarLocation}" Style="{StaticResource AvatarProfileValueStyle}" />
+
+                                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding AvatarRoleLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
+                                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedTutorAvatarRole}" Style="{StaticResource AvatarProfileValueStyle}" />
+
+                                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding AvatarInterestsLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
+                                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedTutorAvatarInterestsText}" Style="{StaticResource AvatarProfileValueStyle}" />
+
+                                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding AvatarPersonalityLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
+                                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedTutorAvatarPersonalityText}" Style="{StaticResource AvatarProfileValueStyle}" />
+
+                                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding AvatarSpeakingStyleLabel, StringFormat={}{0}:}" Style="{StaticResource AvatarProfileLabelStyle}" />
+                                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedTutorAvatarSpeakingStyleText}" Style="{StaticResource AvatarProfileValueStyle}" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding UserProfileTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                        <TextBlock Text="{Binding UserProfileSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+
+                                        <TextBlock Text="{Binding UserDisplayNameLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                        <TextBox Style="{StaticResource SettingsTextBoxStyle}"
+                                                 Text="{Binding UserDisplayName, UpdateSourceTrigger=PropertyChanged}" />
+
+                                        <TextBlock Text="{Binding LearningGoalLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                        <TextBox Style="{StaticResource SettingsTextBoxStyle}"
+                                                 Text="{Binding LearningGoal, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="{Binding AccountTabHeader, ElementName=Root}">
+                        <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
+                            <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                                <Border Style="{StaticResource SettingsSectionCardStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding AccountTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                        <TextBlock Text="{Binding AccountSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+
+                                        <TextBlock Text="{Binding CurrentAccountLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                        <TextBlock Margin="0,6,0,0"
+                                                   Text="{Binding CurrentUserEmail, TargetNullValue=Not signed in}"
+                                                   FontSize="13"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                        <TextBlock Margin="0,2,0,0"
+                                                   Text="{Binding CurrentUserDisplayName}"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" />
+
+                                        <TextBlock Text="{Binding SettingsSourceLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                        <TextBlock Margin="0,6,0,0"
+                                                   Text="{Binding SettingsSource}"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" />
+
+                                        <TextBlock Text="{Binding SubscriptionStatusTitle}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                        <TextBlock Margin="0,6,0,0"
+                                                   Text="{Binding SubscriptionPlanText}"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock Margin="0,2,0,0"
+                                                   Text="{Binding SubscriptionPremiumText}"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock Margin="0,2,0,0"
+                                                   Text="{Binding SubscriptionTrialText}"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock Margin="0,2,0,0"
+                                                   Text="{Binding SubscriptionFreeLessonText}"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock Margin="0,2,0,0"
+                                                   Text="{Binding SubscriptionEnforcementText}"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock Margin="0,2,0,0"
+                                                   Text="{Binding SubscriptionSourceText}"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock Margin="0,2,0,0"
+                                                   Text="{Binding SubscriptionCheckedAtText}"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" />
+
+                                        <TextBlock Text="{Binding AccountEmailLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                        <TextBox Style="{StaticResource SettingsTextBoxStyle}"
+                                                 Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" />
+
+                                        <TextBlock Text="{Binding AccountPasswordLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                        <PasswordBox x:Name="AccountPasswordBox"
+                                                     Style="{StaticResource SettingsPasswordBoxStyle}"
+                                                     PasswordChanged="AccountPasswordBox_OnPasswordChanged" />
+
+                                        <TextBlock Text="{Binding AccountDisplayNameLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                        <TextBox Style="{StaticResource SettingsTextBoxStyle}"
+                                                 Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" />
+
+                                        <WrapPanel Margin="0,14,0,0">
+                                            <Button MinWidth="110"
+                                                    Height="34"
+                                                    Content="{Binding AccountRegisterButtonText}"
+                                                    Command="{Binding RegisterCommand}"
+                                                    Style="{StaticResource PrimaryButtonStyle}" />
+                                            <Button MinWidth="90"
+                                                    Height="34"
+                                                    Margin="8,0,0,0"
+                                                    Content="{Binding AccountLoginButtonText}"
+                                                    Command="{Binding LoginCommand}"
+                                                    Style="{StaticResource PrimaryButtonStyle}" />
+                                            <Button MinWidth="90"
+                                                    Height="34"
+                                                    Margin="8,0,0,0"
+                                                    Content="{Binding AccountLogoutButtonText}"
+                                                    Command="{Binding LogoutCommand}"
+                                                    Style="{StaticResource SecondaryButtonStyle}" />
+                                        </WrapPanel>
+
+                                        <TextBlock Margin="0,10,0,0"
+                                                   Text="{Binding ErrorMessage}"
+                                                   FontSize="12"
+                                                   Foreground="#FFB00020"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="{Binding AudioTabHeader, ElementName=Root}">
+                        <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
+                            <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                                <Border Style="{StaticResource SettingsSectionCardStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding AudioInputTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+
+                                        <TextBlock Text="{Binding MicrophoneLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                        <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
+                                                  ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
+                                                  ItemsSource="{Binding AudioInputDevices}"
+                                                  SelectedItem="{Binding SelectedAudioInputDeviceOption, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMemberPath="DisplayName" />
+
+                                        <Button MinWidth="150"
+                                                Height="34"
+                                                HorizontalAlignment="Left"
+                                                Margin="0,12,0,0"
+                                                Content="{Binding TestMicrophoneText}"
+                                                Command="{Binding TestMicrophoneCommand}"
+                                                Style="{StaticResource PrimaryButtonStyle}" />
+
+                                        <TextBlock Margin="0,10,0,0"
+                                                   Text="{Binding MicrophoneStatusText}"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="{Binding ProgressTabHeader, ElementName=Root}">
+                        <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
+                            <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                                <Border Style="{StaticResource SettingsSectionCardStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding LearningStatisticsTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                        <TextBlock Text="{Binding LearningStatisticsSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+
+                                        <UniformGrid Margin="0,14,0,0" Columns="2">
+                                            <StackPanel Margin="0,0,12,12">
+                                                <TextBlock Text="{Binding TotalCompletedLessonsLabel}" Style="{StaticResource SettingsFieldLabelStyle}" Margin="0" />
+                                                <TextBlock Text="{Binding TotalCompletedLessonsText}" Style="{StaticResource StatisticsValueStyle}" />
+                                            </StackPanel>
+                                            <StackPanel Margin="0,0,0,12">
+                                                <TextBlock Text="{Binding LessonsTodayLabel}" Style="{StaticResource SettingsFieldLabelStyle}" Margin="0" />
+                                                <TextBlock Text="{Binding LessonsTodayText}" Style="{StaticResource StatisticsValueStyle}" />
+                                            </StackPanel>
+                                            <StackPanel Margin="0,0,12,0">
+                                                <TextBlock Text="{Binding CurrentStreakLabel}" Style="{StaticResource SettingsFieldLabelStyle}" Margin="0" />
+                                                <TextBlock Text="{Binding CurrentStreakText}" Style="{StaticResource StatisticsValueStyle}" />
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding LastCompletedLessonLabel}" Style="{StaticResource SettingsFieldLabelStyle}" Margin="0" />
+                                                <TextBlock Text="{Binding LastCompletedLessonText}" Style="{StaticResource StatisticsValueStyle}" />
+                                            </StackPanel>
+                                        </UniformGrid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="{Binding DiagnosticsTabHeader, ElementName=Root}"
+                             Visibility="{Binding IsDiagnosticsTabVisible, ElementName=Root, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ScrollViewer Style="{StaticResource SettingsTabContentScrollViewerStyle}">
+                            <StackPanel Style="{StaticResource SettingsTabStackStyle}">
+                                <Border Style="{StaticResource SettingsSectionCardStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding ConnectionTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                        <TextBlock Text="{Binding BackendUrlSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+
+                                        <TextBlock Text="{Binding BackendUrlLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                        <TextBox Style="{StaticResource SettingsTextBoxStyle}"
+                                                 Text="{Binding BackendBaseUrl, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Margin="0,16,0,0" Style="{StaticResource SettingsSectionCardStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding DiagnosticsTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                        <TextBlock Text="{Binding DiagnosticsSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+
+                                        <Grid Margin="0,14,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding DiagnosticsAppVersionLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AppVersionText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding DiagnosticsBackendUrlLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DiagnosticsBackendUrlText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding DiagnosticsBackendStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DiagnosticsBackendStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                            <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding DiagnosticsDatabaseStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DiagnosticsDatabaseStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                            <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding DiagnosticsAiStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DiagnosticsAiStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                            <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding DiagnosticsSettingsFileLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SettingsFilePathText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                            <TextBlock Grid.Row="6" Grid.Column="0" Text="{Binding DiagnosticsLessonHistoryFileLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                            <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LessonHistoryFilePathText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                            <TextBlock Grid.Row="7" Grid.Column="0" Text="{Binding DiagnosticsInterfaceLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                            <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding DiagnosticsInterfaceLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                            <TextBlock Grid.Row="8" Grid.Column="0" Text="{Binding DiagnosticsNativeLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                            <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding DiagnosticsNativeLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                            <TextBlock Grid.Row="9" Grid.Column="0" Text="{Binding DiagnosticsStudyLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                            <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding DiagnosticsStudyLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                            <TextBlock Grid.Row="10" Grid.Column="0" Text="{Binding DiagnosticsTutorAvatarLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                            <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding DiagnosticsTutorAvatarText}" Style="{StaticResource DiagnosticsValueStyle}" />
+
+                                            <TextBlock Grid.Row="11" Grid.Column="0" Text="{Binding DiagnosticsMicrophoneLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
+                                            <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding DiagnosticsMicrophoneText}" Style="{StaticResource DiagnosticsValueStyle}" />
+                                        </Grid>
+
+                                        <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                                            <Button MinWidth="150"
+                                                    Height="34"
+                                                    Content="{Binding RefreshDiagnosticsButtonText}"
+                                                    Command="{Binding RefreshDiagnosticsCommand}"
+                                                    Style="{StaticResource PrimaryButtonStyle}" />
+                                            <Button MinWidth="150"
+                                                    Height="34"
+                                                    Margin="10,0,0,0"
+                                                    Content="{Binding CopyDiagnosticsText}"
+                                                    Command="{Binding CopyDiagnosticsCommand}"
+                                                    Style="{StaticResource PrimaryButtonStyle}" />
                                         </StackPanel>
-                                        <StackPanel Margin="0,0,0,12">
-                                            <TextBlock Text="{Binding LessonsTodayLabel}" Style="{StaticResource SettingsFieldLabelStyle}" Margin="0" />
-                                            <TextBlock Text="{Binding LessonsTodayText}" Style="{StaticResource StatisticsValueStyle}" />
-                                        </StackPanel>
-                                        <StackPanel Margin="0,0,12,0">
-                                            <TextBlock Text="{Binding CurrentStreakLabel}" Style="{StaticResource SettingsFieldLabelStyle}" Margin="0" />
-                                            <TextBlock Text="{Binding CurrentStreakText}" Style="{StaticResource StatisticsValueStyle}" />
-                                        </StackPanel>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding LastCompletedLessonLabel}" Style="{StaticResource SettingsFieldLabelStyle}" Margin="0" />
-                                            <TextBlock Text="{Binding LastCompletedLessonText}" Style="{StaticResource StatisticsValueStyle}" />
-                                        </StackPanel>
-                                    </UniformGrid>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </Grid>
 
-                    <StackPanel Grid.Row="3" Margin="0,22,0,0">
-                        <WrapPanel HorizontalAlignment="Center" ItemHeight="38">
-                            <Button Width="100"
-                                    Height="38"
-                                    Margin="0,0,8,0"
-                                    Content="{Binding SaveButtonText}"
-                                    Command="{Binding SaveCommand}"
-                                    Style="{StaticResource PrimaryButtonStyle}" />
-                            <Button Width="100"
-                                    Height="38"
-                                    Content="{Binding BackButtonText}"
-                                    Command="{Binding BackCommand}"
-                                    Style="{StaticResource SecondaryButtonStyle}" />
-                        </WrapPanel>
+                                        <TextBlock Margin="0,8,0,0"
+                                                   Text="{Binding DiagnosticsCopyStatusText}"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
 
-                        <TextBlock Margin="0,14,0,0"
-                                   Text="{Binding StatusMessage}"
-                                   FontSize="13"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   TextAlignment="Center"
-                                   TextWrapping="Wrap" />
-                    </StackPanel>
-                </Grid>
+                <StackPanel Grid.Row="3" Margin="0,22,0,0">
+                    <WrapPanel HorizontalAlignment="Center" ItemHeight="38">
+                        <Button Width="100"
+                                Height="38"
+                                Margin="0,0,8,0"
+                                Content="{Binding SaveButtonText}"
+                                Command="{Binding SaveCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}" />
+                        <Button Width="100"
+                                Height="38"
+                                Content="{Binding BackButtonText}"
+                                Command="{Binding BackCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}" />
+                    </WrapPanel>
+
+                    <TextBlock Margin="0,14,0,0"
+                               Text="{Binding StatusMessage}"
+                               FontSize="13"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Grid>
             </Border>
-        </ScrollViewer>
+        </Border>
     </Grid>
 </UserControl>
