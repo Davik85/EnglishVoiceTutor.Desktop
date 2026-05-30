@@ -79,7 +79,7 @@ PaddleBilling__PremiumPriceId=<production Premium price id>
 PaddleBilling__ClientSideToken=<production client-side token>
 ```
 
-Production value rules:
+## Production value rules
 
 - Do not use `test_webhook_secret` in production.
 - Do not use a sandbox API key in production.
