@@ -147,10 +147,16 @@ public static class SubscriptionConstants
         public const string PaddleCheckoutFailedMessage = "Unable to create Paddle checkout session.";
         public const string PaddleCheckoutUrlMissingCode = "paddle_checkout_url_missing";
         public const string PaddleCheckoutUrlMissingMessage = "Paddle checkout URL was not returned.";
+        public const string PaddleCheckoutUrlUnavailableCode = "paddle_checkout_url_unavailable";
+        public const string PaddleCheckoutUrlUnavailableMessage = "Paddle checkout is temporarily unavailable.";
         public const string PaddleCheckoutCreatedMessage = "Checkout session created.";
         public const string PaddleApiVersionHeaderName = "Paddle-Version";
         public const string PaddleApiVersion = "1";
         public const string PaddleCheckoutSourceDesktopBackend = "desktop_backend";
+        public const string PaddleHostedCheckoutHost = "pay.paddle.io";
+        public const string PaddleHostedCheckoutPathPrefix = "/checkout/";
+        public const string PaddleHostedCheckoutTransactionIdParameterName = "transaction_id";
+        public const string PaddleLegacyCheckoutTransactionIdParameterName = "_ptxn";
         public const string DefaultPaddleEnvironment = "sandbox";
         public const string LivePaddleEnvironment = "live";
         public const string PlanIdRequiredMessage = "PlanId is required.";

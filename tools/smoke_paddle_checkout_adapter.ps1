@@ -102,6 +102,18 @@ function Assert-NotEmpty {
     }
 }
 
+function Assert-NoBrokenPayUrl {
+    param(
+        $Value,
+        [string]$Message
+    )
+
+    $url = [string]$Value
+    if ($url -match "/pay(\?|$)" -or $url -match "[?&]_ptxn=") {
+        throw "Assert-NoBrokenPayUrl failed: $Message. Actual '$url'."
+    }
+}
+
 try {
     Write-Host "This smoke test expects the backend to be started with Billing__CheckoutEnabled=true and Billing__Provider=paddle." -ForegroundColor Yellow
     Write-Host "It must not call Paddle or create a real checkout session." -ForegroundColor Yellow
@@ -171,6 +183,7 @@ try {
     Assert-Equal -Expected "paddle" -Actual $checkoutResult.Body.provider -Message "provider"
     Assert-Equal -Expected "premium" -Actual $checkoutResult.Body.planId -Message "planId"
     Assert-Empty -Value $checkoutResult.Body.checkoutUrl -Message "checkoutUrl must be empty or null"
+    Assert-NoBrokenPayUrl -Value $checkoutResult.Body.checkoutUrl -Message "checkoutUrl must not be a broken /pay placeholder"
     Assert-Equal -Expected "paddle_checkout_not_configured" -Actual $checkoutResult.Body.errorCode -Message "errorCode"
     Assert-Equal -Expected "Paddle checkout adapter is disabled." -Actual $checkoutResult.Body.message -Message "message"
     Assert-NotEmpty -Value $checkoutResult.Body.checkedAtUtc -Message "checkedAtUtc must be present"
