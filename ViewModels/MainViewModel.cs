@@ -1,10 +1,11 @@
 using System.Diagnostics;
-using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Models.Access;
 using EnglishVoiceTutor.Desktop.Services;
 using EnglishVoiceTutor.Desktop.Services.Auth;
 using EnglishVoiceTutor.Desktop.Services.Access;
@@ -14,6 +15,14 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 
 public partial class MainViewModel : ViewModelBase, IDisposable
 {
+    private const string AccessPanelSignedOutTitle = "Sign in required";
+    private const string AccessPanelUpgradeOptionsTitle = "Upgrade options";
+    private const string AccessPanelAccountStatusTitle = "Account status";
+    private const string AccessPanelSubscriptionInactiveTitle = "Subscription inactive";
+    private const string AccessPanelAccessCheckUnavailableTitle = "Access check unavailable";
+    private const string AccessPanelDefaultTitle = "Lesson access";
+    private const string AccessPanelUpgradeComingSoonText = "Upgrade coming soon";
+
     private readonly UserSettingsService userSettingsService = new();
     private readonly LessonChatBackendService lessonChatBackendService = new();
     private readonly BackendDiagnosticsService backendDiagnosticsService = new();
@@ -37,6 +46,24 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private ViewModelBase currentViewModel;
 
+    [ObservableProperty]
+    private bool isAccessPanelVisible;
+
+    [ObservableProperty]
+    private string accessPanelTitle = string.Empty;
+
+    [ObservableProperty]
+    private string accessPanelMessage = string.Empty;
+
+    [ObservableProperty]
+    private string accessPanelPrimaryActionText = string.Empty;
+
+    [ObservableProperty]
+    private bool isAccessPanelPrimaryActionVisible;
+
+    [ObservableProperty]
+    private bool isAccessPanelPrimaryActionEnabled;
+
     public MainViewModel()
     {
         audioRecordingService.CleanupOldRecordings();
@@ -49,21 +76,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public void NavigateToWelcome()
     {
+        HideAccessPanel();
         CurrentViewModel = CreateWelcomeViewModel();
     }
 
     public void NavigateToLevelSelection()
     {
+        HideAccessPanel();
         CurrentViewModel = CreateLevelSelectionViewModel();
     }
 
     public void NavigateToHome(string selectedLevel)
     {
+        HideAccessPanel();
         CurrentViewModel = CreateHomeViewModel(selectedLevel);
     }
 
     public void NavigateToSubtopics(string selectedLevel, Topic selectedTopic)
     {
+        HideAccessPanel();
         CurrentViewModel = CreateSubtopicsViewModel(selectedLevel, selectedTopic);
     }
 
@@ -74,6 +105,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public void NavigateToLessonSummary(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput, Guid? backendLessonSessionId)
     {
+        HideAccessPanel();
         SaveLessonHistory(selectedLevel, selectedTopic, selectedSubtopic, summaryInput);
         CurrentViewModel = CreateLessonSummaryViewModel(selectedLevel, selectedTopic, selectedSubtopic, summaryInput);
         _ = TrySaveLessonSummaryAsync(summaryInput, backendLessonSessionId);
@@ -81,11 +113,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public void NavigateToLessonHistory(string selectedLevel)
     {
+        HideAccessPanel();
         CurrentViewModel = CreateLessonHistoryViewModel(selectedLevel);
     }
 
     private void NavigateToSettings(Action navigateBack)
     {
+        HideAccessPanel();
         var lessonHistory = lessonHistoryService.Load();
 
         CurrentViewModel = new SettingsViewModel(
@@ -202,11 +236,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             var session = await authSessionStorageService.GetValidSessionOrNullAsync();
             if (session is null)
             {
-                MessageBox.Show(
-                    AccessDisplayStateMapper.MapSignedOut().Message,
-                    BackendConstants.LessonStartRequiresSignInTitle,
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                ShowAccessPanel(AccessDisplayStateMapper.MapSignedOut());
                 return;
             }
 
@@ -217,14 +247,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             if (!result.ShouldAllowStart)
             {
-                MessageBox.Show(
-                    result.AccessDisplay.Message,
-                    BackendConstants.LessonStartUnavailableTitle,
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                ShowAccessPanel(result.AccessDisplay);
                 return;
             }
 
+            HideAccessPanel();
             CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
         }
         catch (Exception exception)
@@ -232,6 +259,55 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             Debug.WriteLine($"Lesson start guard check failed unexpectedly. Error={exception.Message}. Allowing lesson start by fallback.");
             CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
         }
+    }
+
+    private void ShowAccessPanel(AccessDisplayModel accessDisplay)
+    {
+        AccessPanelTitle = GetAccessPanelTitle(accessDisplay.State);
+        AccessPanelMessage = accessDisplay.Message;
+        AccessPanelPrimaryActionText = GetAccessPanelPrimaryActionText(accessDisplay.State) ?? string.Empty;
+        IsAccessPanelPrimaryActionVisible = !string.IsNullOrWhiteSpace(AccessPanelPrimaryActionText);
+        IsAccessPanelPrimaryActionEnabled = IsAccessPanelPrimaryActionEnabledFor(accessDisplay.State);
+        IsAccessPanelVisible = true;
+    }
+
+    [RelayCommand]
+    private void CloseAccessPanel()
+    {
+        HideAccessPanel();
+    }
+
+    private void HideAccessPanel()
+    {
+        IsAccessPanelVisible = false;
+    }
+
+    private static string GetAccessPanelTitle(AccessDisplayState state)
+    {
+        return state switch
+        {
+            AccessDisplayState.SignedOut => AccessPanelSignedOutTitle,
+            AccessDisplayState.FreeAllowanceUsed => AccessPanelUpgradeOptionsTitle,
+            AccessDisplayState.PastDue => AccessPanelAccountStatusTitle,
+            AccessDisplayState.CanceledOrPaused => AccessPanelSubscriptionInactiveTitle,
+            AccessDisplayState.UnknownOrError or AccessDisplayState.CheckoutUnavailable => AccessPanelAccessCheckUnavailableTitle,
+            _ => AccessPanelDefaultTitle
+        };
+    }
+
+    private static string? GetAccessPanelPrimaryActionText(AccessDisplayState state)
+    {
+        return state == AccessDisplayState.FreeAllowanceUsed
+            ? AccessPanelUpgradeComingSoonText
+            : null;
+    }
+
+    private static bool IsAccessPanelPrimaryActionEnabledFor(AccessDisplayState state)
+    {
+        return state switch
+        {
+            _ => false
+        };
     }
 
     private WelcomeViewModel CreateWelcomeViewModel()
