@@ -1,183 +1,210 @@
 # Billing Remaining Operations Plan
 
-Review date: 2026-05-29.
+Review date: 2026-05-30.
 
-Status: Step 4C setup checklist/local config guard and Step 4D desktop upgrade/paywall UI plan added; remaining lifecycle operations still planned only.
+Status: planning document only; not implementation.
 
-The current Paddle billing lifecycle foundation is completed through Step 4B. This document records the implemented resumed/activated snapshot-only policy and continues to plan the remaining billing operations without implementing unrelated backend, desktop, Admin UI, database, configuration, smoke-script, or test changes.
+This document records the remaining billing operations plan after the completed sandbox billing/paywall loop and the Paddle production readiness checklist. Production billing is not yet verified. This task does not implement backend, desktop, Admin UI, database, configuration, smoke-script, or test changes.
 
-## 1. Title and status
+## 1. Current completed baseline
 
-- Title: Billing Remaining Operations Plan.
-- Review date: 2026-05-29.
-- Status: Step 4C setup checklist/local config guard and Step 4D desktop upgrade/paywall UI plan added; remaining lifecycle operations still planned only.
-- Current lifecycle foundation: completed through Step 4B.
-- Current setup checklist: Step 4C production Paddle webhook setup documentation and local config guard.
-- Current desktop UI plan: Step 4D desktop upgrade/paywall UI planning document (`docs/desktop-upgrade-paywall-ui-plan.md`) added; desktop paywall UI remains deferred and is not implemented.
+The current completed billing baseline includes:
 
-## 2. Non-negotiable architecture boundaries
+- provider-agnostic checkout foundation;
+- Paddle checkout transaction creation;
+- backend-hosted checkout launch page;
+- desktop Upgrade panel;
+- desktop manual Refresh status;
+- sandbox payment loop validated end-to-end: Upgrade -> backend checkout session -> backend-hosted Paddle checkout launch page -> Paddle Checkout -> sandbox payment -> `transaction.completed` webhook -> backend Premium activation -> desktop Refresh status -> Premium lesson access;
+- `transaction.completed` activates or extends Premium through `EntitlementEntity`;
+- subscription snapshots exist;
+- payment diagnostic snapshots exist;
+- canceled/paused expiry policy exists;
+- resumed/activated events are snapshot-only;
+- transient PostgreSQL serializable transaction conflicts are retried;
+- fake Paddle webhook smokes pass;
+- Step 4F documentation update is complete;
+- Step 4G Paddle production readiness checklist exists at `docs/paddle-production-readiness-checklist.md`.
 
-- English Voice Tutor is global, cross-platform, and provider-agnostic.
-- Paddle is the current desktop/web provider adapter.
-- Backend is the source of truth for billing state, access state, account state, subscription status, payments, usage, and entitlements.
-- `EntitlementEntity` remains the source of Premium access.
-- `SubscriptionEntity` is a snapshot only and must not grant Premium access by itself.
-- `PaymentEntity` is diagnostic payment history only and must not grant Premium access by itself.
-- Desktop and future mobile clients must rely on backend access/status endpoints.
-- Do not introduce YooKassa, Russia-only, or provider-specific business logic assumptions.
+## 2. Non-negotiable boundaries
 
-## 3. Current completed baseline
+The following boundaries must remain true for every future billing operation:
 
-The completed Step 4B baseline includes:
+- Backend remains the source of truth for Premium, free, trial, usage, and access decisions.
+- `EntitlementEntity` is the only Premium access source.
+- `SubscriptionEntity` does not grant Premium.
+- `PaymentEntity` does not grant Premium.
+- Desktop does not decide Premium.
+- Desktop does not activate Premium locally.
+- Checkout creation does not activate Premium.
+- Paddle stays behind the backend/provider adapter.
+- Production and sandbox configs must stay separate.
+- Future mobile entitlement bridge must use the same backend account/subscription/entitlement model.
+- Do not introduce YooKassa, Russia-only, or provider-specific access assumptions.
+- Do not add real Paddle API keys, client-side tokens, webhook secrets, price IDs, customer IDs, transaction IDs, OpenAI keys, or secret-bearing URLs to docs, code, tests, or log examples.
 
-- checkout skeleton and Paddle checkout adapter behind explicit configuration;
-- webhook ingestion that verifies `Paddle-Signature`, stores raw Paddle events, and handles disabled/missing-secret/signature-failure cases safely;
-- provider-agnostic billing event normalization into `billing_events` after durable raw event ingestion;
-- subscription snapshots for `subscription.created`, `subscription.updated`, `subscription.past_due`, `subscription.resumed`, and `subscription.activated`;
-- payment snapshots for `transaction.completed` and `transaction.payment_failed`;
-- entitlement activation/extension from valid `transaction.completed` events mapped to Premium;
-- scheduled cancellation policy that records cancellation-at-period-end metadata without early Premium revocation;
-- `past_due` policy that records subscription status without entitlement creation, extension, or revocation;
-- actual `subscription.canceled` and `subscription.paused` policy that expires only active `provider_event` Premium entitlements for the resolved internal user/provider subscription context;
-- current Paddle smoke scripts covering checkout/webhook ingestion, event normalization, subscription snapshots, payment snapshots, entitlement activation/extension, scheduled cancellation, past-due behavior, actual canceled/paused expiry behavior, and resumed/activated snapshot-only behavior.
+## 3. Remaining operation: refunds
 
-## 4. Implemented operation A: subscription.resumed / subscription.activated snapshot-only policy
+Plan only. Refund handling is not implemented by this document.
 
-Implemented Step 4B behavior:
+Paddle event types that likely matter include adjustment/refund-related events such as `adjustment.created` and `adjustment.updated`, but the exact event names, payload fields, statuses, and action values must be verified against current Paddle documentation before implementation.
 
-- `subscription.resumed` updates the `SubscriptionEntity` snapshot/status to active when received.
-- `subscription.activated` updates the `SubscriptionEntity` snapshot/status to active when received.
-- Neither event grants, extends, or restores Premium by itself.
-- Premium restoration still requires a valid `transaction.completed` through the existing entitlement activation/extension path.
-- Any future grace-access behavior on resume before `transaction.completed` must be a separate explicit product decision.
+Refunds must not be treated as normal cancellation automatically without an explicit product policy decision. A refund is a financial adjustment, while cancellation is a subscription lifecycle state; those concepts may overlap in some product decisions but should not be conflated by default.
 
-Smoke coverage verifies:
+Product decisions needed before implementation:
 
-- resumed updates the subscription snapshot;
-- activated updates the subscription snapshot;
-- resumed/activated alone do not create Premium;
-- resumed/activated do not restore Premium after canceled/paused;
-- a following valid `transaction.completed` restores Premium through the entitlement activation path.
+- Should a full refund revoke an existing `provider_event` Premium entitlement, shorten it to a specific timestamp, or leave access unchanged until manual review?
+- Should a partial refund do nothing to access, shorten access proportionally, or mark the account/payment for admin review?
+- What should happen if a refund is issued after the paid period was already used?
+- Should refund behavior differ for first purchase, renewal, upgrade, downgrade, or goodwill refund scenarios?
 
-## 5. Remaining operation B: refunds and chargebacks policy
+Recommended first implementation after policy approval:
 
-Plan:
+- persist the refund event safely and idempotently;
+- do not immediately revoke access until the refund access policy is approved;
+- add admin/audit visibility for refund diagnostics and decisions;
+- add smoke tests after policy approval, including full refund, partial refund, duplicate event, and out-of-order event cases.
 
-- Paddle financial adjustments should be handled via `adjustment.created` and `adjustment.updated` events.
-- Adjustment action values may include `refund`, `chargeback`, `chargeback_reverse`, `credit`, and `chargeback_warning`.
-- Do not immediately revoke Premium on every adjustment.
-- Full refund of the current paid period may expire `provider_event` Premium entitlement, but only after careful mapping to the related provider transaction/subscription and approved/completed adjustment status.
-- Partial refund should usually not revoke Premium automatically unless a product policy explicitly says so.
-- `chargeback` should likely expire `provider_event` Premium entitlement and create a support/audit flag, but must not touch trial/manual/admin/development/future-mobile entitlements.
-- `chargeback_reverse` should not automatically restore Premium until a policy is approved; restoration may require a new valid `transaction.completed` or manual/admin action.
-- Store adjustment diagnostics separately or extend `PaymentEntity` only if the data model supports it cleanly.
-- Do not implement this before a separate adjustment data model/smoke plan is approved.
+## 4. Remaining operation: chargebacks / disputes
 
-## 6. Remaining operation C: manual revocation automation policy
+Plan only. Chargeback/dispute handling is not implemented by this document.
 
-Plan:
+Chargebacks and disputes are higher risk than refunds because they can indicate payment fraud, account takeover, provider risk, or payment network action. Paddle event types that likely matter may include dispute, chargeback, or adjustment-related events, but exact event names and payload semantics must be verified against current Paddle documentation before implementation.
 
-- Local admin manual Premium revoke currently exists.
-- Future automation should define:
-  - who/what can revoke;
-  - reason required;
-  - audit log required;
-  - only the targeted entitlement source should be affected;
-  - never revoke trial/manual/admin/provider/future-mobile entitlements accidentally.
-- Manual admin revocation should remain separate from provider webhook automation.
+Policy decisions needed before implementation:
 
-## 7. Current operation D: production Paddle webhook setup checklist
+- Should a confirmed chargeback immediately revoke the relevant `provider_event` Premium entitlement?
+- Should a dispute merely mark the account for review until the dispute is resolved?
+- Should accounts with unresolved or lost disputes be blocked from future checkout?
+- Should a reversed/won dispute restore access automatically, require a new valid payment, or require manual/admin action?
 
-Step 4C adds `docs/paddle-production-webhook-setup.md` and `tools/smoke_paddle_production_config_guard.ps1` as documentation/tooling only. This does not prove production deployment and does not change billing lifecycle behavior.
+Recommended first implementation after policy approval:
 
-Plan:
+- persist dispute/chargeback events safely and idempotently;
+- add audit/admin visibility for the event, linked account, linked provider subscription, linked provider transaction/payment, and current entitlement state;
+- only then decide whether any automatic entitlement action is allowed.
 
-- Use the real Paddle notification destination secret only in secure environment/deployment configuration.
-- Never commit real Paddle API keys, webhook secrets, price ids, customer ids, or transaction ids.
-- Configure the notification destination for required event types.
-- Confirm sandbox first, then production.
-- Verify signature failures return `401`.
-- Verify disabled webhook returns `404`.
-- Verify missing secret returns `503`.
-- Define a rotation procedure for webhook secret/API key.
-- Define an incident procedure if a secret is exposed.
-- Run `tools/smoke_paddle_production_config_guard.ps1` locally to validate configuration shape without calling Paddle or printing secrets.
+## 5. Remaining operation: manual revocation automation
 
-## 8. Current operation E: desktop upgrade/paywall UI plan
+Plan only. Manual revocation automation is not implemented by this document.
 
-Step 4D adds `docs/desktop-upgrade-paywall-ui-plan.md` as a planning document only. Desktop upgrade/paywall UI remains deferred until actual desktop UI code is implemented in a later approved task.
+Admin can already manually grant/revoke Premium. Future automation needs a policy for when provider events should trigger automatic revocation, shortening, hold, or review.
 
-Plan summary:
+Rules for any future automation:
 
-- Desktop should not decide Premium locally.
-- Desktop should call backend access/status endpoints.
-- Paywall should be driven by backend denial/status.
-- Checkout session should be requested from backend.
-- Desktop should open `checkoutUrl` but not activate Premium locally.
-- Desktop should refresh backend subscription/access status after checkout completion.
-- Paddle should remain behind the backend/provider adapter.
-- Future mobile should follow the same backend-account/backend-entitlement model.
+- Keep manual/admin/trial/development/future-mobile entitlements separate from `provider_event` entitlements.
+- Do not let a Paddle provider event revoke non-provider entitlements.
+- Any automatic provider-event revocation must target only the entitlement source and provider context that the policy explicitly allows.
+- Every automatic revocation or shortening decision must be auditable with event id, provider, reason, old entitlement state, new entitlement state, and actor/system source.
+- Manual/admin override behavior must be explicitly defined before automation is enabled.
 
-Planned UX states are detailed in `docs/desktop-upgrade-paywall-ui-plan.md` and include:
+## 6. Remaining operation: background reconciliation job
 
-- Signed out;
-- Free with allowance remaining;
-- Free allowance used;
-- Trial active;
-- Premium active;
-- Past due;
-- Canceled/paused;
-- Checkout unavailable.
+Plan only. A background reconciliation job is not implemented by this document.
 
-## 9. Remaining operation F: future Apple/Google mobile entitlement bridge
+A backend reconciliation job may be needed for:
 
-Plan:
+- missed webhooks;
+- delayed webhooks;
+- out-of-order events;
+- production incident recovery;
+- validating local snapshots against provider state after operational problems.
 
-- Future mobile purchases must map to the same backend account and entitlement model.
-- Apple/Google should be provider adapters, not separate access systems.
-- Backend should normalize app store purchase/renewal/cancellation events into provider-agnostic entitlements.
-- Mobile clients must not decide Premium locally.
-- Need a separate future design for receipt validation / server notifications / entitlement reconciliation.
-- Do not implement now.
+Requirements for any future reconciliation job:
 
-## 10. Remaining operation G: optional background reconciliation job
+- It must be backend-only.
+- It must not use desktop state.
+- It must not directly grant Premium without strict validation of provider, account mapping, subscription/transaction identity, payment state, and product/price mapping.
+- It must be safe, idempotent, and auditable.
+- It should avoid broad destructive updates.
+- It should record what was checked, what changed, and why.
+- It can be deferred until after production webhook stability is proven.
 
-Plan:
+## 7. Remaining operation: production setup sequence
 
-- Current webhook flow is event-scoped.
-- Future reconciliation job could verify local state against provider state for missed/out-of-order events.
-- Keep it provider-adapter-based.
-- Do not make it required for normal lesson access.
-- Add idempotent repair behavior only after plan approval.
+Plan only. Production billing is not complete or verified by this document.
 
-## 11. Recommended implementation order
+Use `docs/paddle-production-readiness-checklist.md` as the production readiness checklist before enabling production billing. The production setup sequence must include:
 
-- Step 4A: this planning document only.
-- Step 4B: `subscription.resumed` / `subscription.activated` snapshot-only handling.
-- Step 4C: production Paddle webhook setup checklist and dry-run validation (`docs/paddle-production-webhook-setup.md`, `tools/smoke_paddle_production_config_guard.ps1`).
-- Step 4D: desktop upgrade/paywall UI plan (`docs/desktop-upgrade-paywall-ui-plan.md`) as documentation only; desktop paywall UI remains deferred.
-- Step 4E: refund/chargeback adjustment model design.
-- Step 4F: background reconciliation job design.
-- Step 4G: Apple/Google mobile entitlement bridge design.
+- production webhook destination verification;
+- production checkout configuration;
+- production environment separation from sandbox;
+- production config guard;
+- webhook endpoint sanity check;
+- real production smoke/manual verification only when ready.
 
-## 12. Explicit non-goals
+Production and sandbox configuration must stay separated. Documentation alone must not be treated as production enablement. Production billing remains incomplete until production webhook delivery, checkout configuration, provider credentials, product/price mapping, and manual smoke verification are completed safely outside tracked files and without committing secrets.
 
-- No code implementation in this task.
-- No production Paddle credentials.
-- No refund/chargeback automation yet.
-- No app store entitlement bridge yet.
-- No desktop paywall implementation yet.
-- No full reconciliation job yet.
+## 8. Remaining operation: optional bounded polling
 
-## 13. Verification checklist
+Plan only. Automatic desktop polling is not implemented by this document.
 
-Future implementation phases should include a short verification checklist with:
+Manual Refresh status exists now and is the current supported post-checkout desktop status update path.
 
-- EF migrations list;
-- database update;
-- pending model changes;
-- lesson content audit;
-- desktop Debug/Release build;
-- backend build;
-- relevant Paddle smoke scripts;
-- git status.
+If automatic polling is implemented later, it must be:
+
+- bounded only;
+- short duration;
+- backend-driven;
+- based on backend access/status responses;
+- never based on local Premium activation;
+- stopped after success, failure, user cancellation, or timeout;
+- safe when webhooks are delayed or missing;
+- optional UX improvement rather than an access authority.
+
+## 9. Remaining operation: future mobile entitlement bridge
+
+Plan only. The mobile entitlement bridge is not designed or implemented by this document.
+
+Future Apple App Store and Google Play purchases must map into the same backend account model used by desktop/web billing. Mobile clients must not decide Premium locally. The backend must normalize mobile store events into backend entitlement state using the same account/subscription/entitlement model and must keep access decisions server-side.
+
+This task does not design the full mobile bridge. Future design must cover account linking, receipt/server notification validation, renewal/cancellation/refund/dispute equivalents, entitlement source separation, idempotency, audit logs, and provider-specific edge cases without changing the core rule that `EntitlementEntity` is the Premium access source.
+
+## 10. Suggested implementation order
+
+Recommended order for remaining billing operations:
+
+1. Production Paddle readiness verification and configuration.
+2. Refund/chargeback policy document.
+3. Safe event persistence for refund/chargeback/dispute events.
+4. Admin/audit visibility for those events.
+5. Automatic `provider_event` entitlement action only after policy approval.
+6. Optional reconciliation job.
+7. Optional bounded desktop polling.
+8. Future mobile entitlement bridge.
+
+## 11. Explicit non-goals
+
+This planning update explicitly does not include:
+
+- no code implementation in this task;
+- no backend changes;
+- no desktop changes;
+- no EF migration;
+- no Admin UI changes;
+- no smoke script changes;
+- no configuration default changes;
+- no real secrets;
+- no production enablement by documentation alone;
+- no claim that refunds are implemented;
+- no claim that chargebacks/disputes are implemented;
+- no claim that reconciliation is implemented;
+- no claim that automatic desktop polling is implemented;
+- no claim that a mobile entitlement bridge is implemented.
+
+## 12. Verification checklist for this docs task
+
+Use this checklist to verify the Step 4H documentation update:
+
+- docs-only;
+- no code changes;
+- no backend changes;
+- no desktop changes;
+- no Admin UI changes;
+- no database entity changes;
+- no EF migration;
+- no smoke script changes;
+- no real secrets;
+- production billing still marked incomplete;
+- sandbox baseline preserved;
+- remaining operations clearly separated from implemented features.
