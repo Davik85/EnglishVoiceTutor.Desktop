@@ -77,7 +77,7 @@
                                     Orientation="Horizontal">
                             <Button Content="{Binding AccessPanelPrimaryActionText}"
                                     Margin="0,0,10,0"
-                                    Command="{Binding CloseAccessPanelCommand}"
+                                    Command="{Binding AccessPanelPrimaryActionCommand}"
                                     IsEnabled="{Binding IsAccessPanelPrimaryActionEnabled}"
                                     Style="{StaticResource PrimaryButtonStyle}"
                                     Visibility="{Binding IsAccessPanelPrimaryActionVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />

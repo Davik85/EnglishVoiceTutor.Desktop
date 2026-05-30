@@ -20,8 +20,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private const string AccessPanelAccountStatusTitle = "Account status";
     private const string AccessPanelSubscriptionInactiveTitle = "Subscription inactive";
     private const string AccessPanelAccessCheckUnavailableTitle = "Access check unavailable";
+    private const string AccessPanelUpgradeUnavailableTitle = "Upgrade unavailable";
     private const string AccessPanelDefaultTitle = "Lesson access";
-    private const string AccessPanelUpgradeComingSoonText = "Upgrade coming soon";
+    private const string AccessPanelUpgradeText = "Upgrade";
+    private const string CheckoutOpenedMessage = "Checkout opened. After payment, return to the app. Access updates after payment confirmation.";
+    private const string UpgradeUnavailableMessage = "Upgrade is temporarily unavailable. Please try again later.";
+    private const string CheckoutStartFailedMessage = "We could not start checkout right now. Please try again.";
 
     private readonly UserSettingsService userSettingsService = new();
     private readonly LessonChatBackendService lessonChatBackendService = new();
@@ -32,6 +36,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly BackendLessonMessageClient backendLessonMessageClient = new();
     private readonly BackendLessonSummaryClient backendLessonSummaryClient = new();
     private readonly BackendLessonHistoryClient backendLessonHistoryClient = new();
+    private readonly BackendCheckoutSessionClient backendCheckoutSessionClient = new();
     private readonly LessonStartGuardService lessonStartGuardService = new();
     private readonly AuthBackendService authBackendService = new();
     private readonly AuthSessionStorageService authSessionStorageService = new();
@@ -42,6 +47,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly LessonHistoryService lessonHistoryService = new();
     private readonly LessonContentService lessonContentService = new();
     private readonly UserSettings userSettings;
+    private AccessDisplayState currentAccessPanelState = AccessDisplayState.UnknownOrError;
 
     [ObservableProperty]
     private ViewModelBase currentViewModel;
@@ -263,12 +269,53 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void ShowAccessPanel(AccessDisplayModel accessDisplay)
     {
+        currentAccessPanelState = accessDisplay.State;
         AccessPanelTitle = GetAccessPanelTitle(accessDisplay.State);
         AccessPanelMessage = accessDisplay.Message;
         AccessPanelPrimaryActionText = GetAccessPanelPrimaryActionText(accessDisplay.State) ?? string.Empty;
         IsAccessPanelPrimaryActionVisible = !string.IsNullOrWhiteSpace(AccessPanelPrimaryActionText);
         IsAccessPanelPrimaryActionEnabled = IsAccessPanelPrimaryActionEnabledFor(accessDisplay.State);
         IsAccessPanelVisible = true;
+    }
+
+    [RelayCommand]
+    private async Task AccessPanelPrimaryActionAsync()
+    {
+        if (currentAccessPanelState != AccessDisplayState.FreeAllowanceUsed)
+        {
+            return;
+        }
+
+        IsAccessPanelPrimaryActionEnabled = false;
+
+        var result = await backendCheckoutSessionClient.CreateAsync(userSettings.BackendBaseUrl);
+        if (!result.IsSuccess)
+        {
+            Debug.WriteLine($"Backend checkout-session request failed. Error={result.ErrorMessage ?? "unknown"}; RequiresLogin={result.RequiresLogin}.");
+            ShowCheckoutStartFailedPanel();
+            return;
+        }
+
+        var checkoutUrl = result.Value?.CheckoutUrl;
+        if (string.IsNullOrWhiteSpace(checkoutUrl))
+        {
+            Debug.WriteLine($"Backend checkout-session did not return a checkout URL. Created={result.Value?.Created}; CheckoutEnabled={result.Value?.CheckoutEnabled}; ErrorCode={result.Value?.ErrorCode}.");
+            ShowUpgradeUnavailablePanel();
+            return;
+        }
+
+        if (!TryOpenCheckoutUrl(checkoutUrl))
+        {
+            Debug.WriteLine("Backend checkout-session returned a checkout URL, but the desktop could not open it.");
+            ShowCheckoutStartFailedPanel();
+            return;
+        }
+
+        AccessPanelTitle = AccessPanelUpgradeOptionsTitle;
+        AccessPanelMessage = CheckoutOpenedMessage;
+        AccessPanelPrimaryActionText = string.Empty;
+        IsAccessPanelPrimaryActionVisible = false;
+        IsAccessPanelPrimaryActionEnabled = false;
     }
 
     [RelayCommand]
@@ -279,7 +326,58 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void HideAccessPanel()
     {
+        currentAccessPanelState = AccessDisplayState.UnknownOrError;
         IsAccessPanelVisible = false;
+    }
+
+    private void ShowUpgradeUnavailablePanel()
+    {
+        currentAccessPanelState = AccessDisplayState.CheckoutUnavailable;
+        AccessPanelTitle = AccessPanelUpgradeUnavailableTitle;
+        AccessPanelMessage = UpgradeUnavailableMessage;
+        AccessPanelPrimaryActionText = string.Empty;
+        IsAccessPanelPrimaryActionVisible = false;
+        IsAccessPanelPrimaryActionEnabled = false;
+        IsAccessPanelVisible = true;
+    }
+
+    private void ShowCheckoutStartFailedPanel()
+    {
+        currentAccessPanelState = AccessDisplayState.CheckoutUnavailable;
+        AccessPanelTitle = AccessPanelUpgradeUnavailableTitle;
+        AccessPanelMessage = CheckoutStartFailedMessage;
+        AccessPanelPrimaryActionText = string.Empty;
+        IsAccessPanelPrimaryActionVisible = false;
+        IsAccessPanelPrimaryActionEnabled = false;
+        IsAccessPanelVisible = true;
+    }
+
+    private static bool TryOpenCheckoutUrl(string checkoutUrl)
+    {
+        if (!Uri.TryCreate(checkoutUrl, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        if (!string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = uri.ToString(),
+                UseShellExecute = true
+            });
+            return true;
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return false;
+        }
     }
 
     private static string GetAccessPanelTitle(AccessDisplayState state)
@@ -290,7 +388,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AccessDisplayState.FreeAllowanceUsed => AccessPanelUpgradeOptionsTitle,
             AccessDisplayState.PastDue => AccessPanelAccountStatusTitle,
             AccessDisplayState.CanceledOrPaused => AccessPanelSubscriptionInactiveTitle,
-            AccessDisplayState.UnknownOrError or AccessDisplayState.CheckoutUnavailable => AccessPanelAccessCheckUnavailableTitle,
+            AccessDisplayState.CheckoutUnavailable => AccessPanelUpgradeUnavailableTitle,
+            AccessDisplayState.UnknownOrError => AccessPanelAccessCheckUnavailableTitle,
             _ => AccessPanelDefaultTitle
         };
     }
@@ -298,7 +397,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private static string? GetAccessPanelPrimaryActionText(AccessDisplayState state)
     {
         return state == AccessDisplayState.FreeAllowanceUsed
-            ? AccessPanelUpgradeComingSoonText
+            ? AccessPanelUpgradeText
             : null;
     }
 
@@ -306,6 +405,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         return state switch
         {
+            AccessDisplayState.FreeAllowanceUsed => true,
             _ => false
         };
     }

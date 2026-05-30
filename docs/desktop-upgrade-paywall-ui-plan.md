@@ -171,8 +171,8 @@ Example copy direction, not final UI text:
 ## 9. First implementation slices after plan approval
 
 - Step 4D-1: completed; backend-state view model mapping for access/paywall states was added without changing UI layout much.
-- Step 4D-2: completed; desktop now shows a simple backend-driven access/paywall panel after lesson-start denial, with checkout still unavailable.
-- Step 4D-3: call the checkout-session endpoint and open `checkoutUrl`.
+- Step 4D-2: completed; desktop now shows a simple backend-driven access/paywall panel after lesson-start denial.
+- Step 4D-3: completed; the access panel Upgrade action calls the backend checkout-session endpoint and opens only the backend-provided `checkoutUrl` when present.
 - Step 4D-4: add a refresh status action after checkout.
 - Step 4D-5: polish copy/layout.
 - Step 4D-6: optional bounded polling if needed.
@@ -218,4 +218,4 @@ Future checkout/status implementation should continue to verify:
 
 ## 12. Current status
 
-Step 4D-2 is implemented as a simple desktop access/paywall panel for backend lesson-start denial. Checkout remains deferred: the desktop still must not call the checkout-session endpoint or open `checkoutUrl` until Step 4D-3.
+Step 4D-3 is implemented for desktop checkout launch only: the desktop requests a checkout session from backend and opens only the backend-provided `checkoutUrl` when present. Payment confirmation, status refresh, and any Premium access change remain backend-driven future work for Step 4D-4 and later.
