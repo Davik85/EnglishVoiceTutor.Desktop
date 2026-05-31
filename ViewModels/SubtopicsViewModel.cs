@@ -16,11 +16,11 @@ public partial class SubtopicsViewModel : ViewModelBase
     public Topic SelectedTopic { get; }
 
     public string Title => IsFreeConversationTopic()
-        ? "Start Free Conversation"
+        ? AppLocalization.GetLearnerUiText(localizedText.LanguageId, "Start Free Conversation")
         : string.Format(localizedText.SubtopicsTitleTemplate, SelectedTopic.DisplayTitle);
 
     public string Subtitle => IsFreeConversationTopic()
-        ? "Talk freely in English within safe and respectful boundaries."
+        ? AppLocalization.GetLearnerUiText(localizedText.LanguageId, "Talk freely in English within safe and respectful boundaries.")
         : localizedText.SubtopicsSubtitle;
 
     public string CurrentLevelText => $"{localizedText.CurrentLevelLabel} {SelectedLevel}";
