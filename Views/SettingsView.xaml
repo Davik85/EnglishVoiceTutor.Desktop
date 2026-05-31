@@ -256,24 +256,24 @@
                             HorizontalAlignment="Left"
                             VerticalAlignment="Top">
                     <RadioButton x:Name="LearningSectionNav"
-                                 Content="{Binding LearningTabHeader, ElementName=Root}"
+                                 Content="{Binding LearningTabHeader}"
                                  GroupName="SettingsSections"
                                  IsChecked="True"
                                  Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
                     <RadioButton x:Name="AccountSectionNav"
-                                 Content="{Binding AccountTabHeader, ElementName=Root}"
+                                 Content="{Binding AccountTitle}"
                                  GroupName="SettingsSections"
                                  Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
                     <RadioButton x:Name="AudioSectionNav"
-                                 Content="{Binding AudioTabHeader, ElementName=Root}"
+                                 Content="{Binding AudioInputTitle}"
                                  GroupName="SettingsSections"
                                  Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
                     <RadioButton x:Name="ProgressSectionNav"
-                                 Content="{Binding ProgressTabHeader, ElementName=Root}"
+                                 Content="{Binding ProgressTabHeader}"
                                  GroupName="SettingsSections"
                                  Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
                     <RadioButton x:Name="DiagnosticsSectionNav"
-                                 Content="{Binding DiagnosticsTabHeader, ElementName=Root}"
+                                 Content="{Binding DiagnosticsTitle}"
                                  GroupName="SettingsSections"
                                  Style="{StaticResource SettingsSectionNavigationButtonStyle}"
                                  Visibility="{Binding IsDiagnosticsTabVisible, ElementName=Root, Converter={StaticResource BooleanToVisibilityConverter}}" />

@@ -72,6 +72,7 @@ The current MVP baseline is documentation-first and behavior-stable:
 - Usage/cost logging exists, but exact pricing fields are still approximate or missing where pricing constants are not configured.
 - UI has the Soft Learning Desktop style: light blue frame, rounded cards/buttons/inputs, level colors, topic colors, and warm hint/feedback cards.
 - Step 5B-2 adds a centralized native/interface/explanation language foundation for global language preferences, with English UI fallback for languages that do not have localized UI text yet. Study languages were not expanded and remain English, French, German, Portuguese, Spanish, and Italian.
+- Step 5B-3 adds interface localization v1 for the supported interface language catalog. English fallback remains the default safety behavior for unknown languages or any missing UI text, and study languages were not expanded.
 
 Detailed review docs live in `docs/`:
 
