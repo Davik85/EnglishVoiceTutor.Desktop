@@ -170,3 +170,5 @@ Recommended next work: plan remaining billing operations only: `subscription.res
 Step 5B-3d completed a full learner-facing desktop UI localization pass for the release-ready Interface languages (`en`, `es`, `fr`, `de`, `it`, `pt`, `ru`, `pl`, `ar`, `ja`, `ko`, `sr`, `hr`, `bg`). Runtime English fallback remains a safety mechanism for unexpected missing text, not the expected path for release-ready interface languages. Native/Explanation languages remain broad, and Study languages were not expanded.
 
 Step 5B-3e completed Subtopics/Situations display localization for those release-ready Interface languages. Lesson JSON remains unchanged; runtime English fallback remains a safety mechanism only, Native/Explanation languages remain broad, and Study languages were not expanded.
+
+Step 5B-4 added a desktop release smoke gate in `docs/desktop-release-smoke-gate.md` and the safe local helper `tools/run_desktop_release_gate.ps1`. Localization is considered closed for the current phase. Future Interface languages should be added only 1-2 at a time after full localization QA, and production billing remains deferred until desktop hardening is complete.

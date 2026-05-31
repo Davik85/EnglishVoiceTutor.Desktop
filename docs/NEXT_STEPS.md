@@ -17,6 +17,8 @@ This roadmap starts from the current confirmed MVP state where:
 - Step 5A desktop release readiness audit is tracked in `docs/desktop-release-readiness-audit.md`.
 - The consolidated desktop release work plan is tracked in `docs/desktop-release-work-plan.md`.
 - Desktop release readiness is the first active priority before production billing rollout or broader CMS/Admin work.
+- Step 5B-4 desktop release smoke gate is tracked in `docs/desktop-release-smoke-gate.md`; run and pass it before moving to the next hardening item.
+- Localization is closed for the current release-hardening phase; future Interface languages should be added only 1-2 at a time after full localization QA.
 
 ## Recommended next product order
 

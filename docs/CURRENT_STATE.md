@@ -4,7 +4,7 @@ Review date: 2026-05-31.
 
 ## Short summary
 
-EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. Lesson Chat, account login, trial entitlement, free lesson access checks, local Development admin support, and the provider-agnostic billing lifecycle foundation through Step 4B is implemented and validated where local tooling is available. Desktop upgrade/paywall flow exists for sandbox use, manual Refresh status exists after checkout launch, and Paddle sandbox `transaction.completed` activation has been validated end-to-end. Paddle is the current desktop/web provider adapter, but backend account, subscription, entitlement, usage, limits, lesson history, payment, and Premium/free status remain the source of truth.
+EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. Lesson Chat, account login, trial entitlement, free lesson access checks, local Development admin support, and the provider-agnostic billing lifecycle foundation through Step 4B is implemented and validated where local tooling is available. Desktop upgrade/paywall flow exists for sandbox use, manual Refresh status exists after checkout launch, and Paddle sandbox `transaction.completed` activation has been validated end-to-end. The current localization phase is closed for release hardening, and Step 5B-4 adds a repeatable desktop release smoke gate. Paddle is the current desktop/web provider adapter, but backend account, subscription, entitlement, usage, limits, lesson history, payment, and Premium/free status remain the source of truth.
 
 ## Product architecture principle
 
@@ -51,7 +51,7 @@ Supported study languages:
 
 Study language is the language the user practices or learns in lessons. It is separate from native/interface/explanation language.
 
-Native language / interface language / explanation language is the language used for app UI localization, translation target, hints/explanations, feedback/explanation where applicable, and lesson summaries. The next desktop release-hardening plan includes expanding native/interface/explanation language options while keeping the Study language list unchanged unless a later approved task explicitly expands Study languages.
+Native language / interface language / explanation language is the language used for app UI localization, translation target, hints/explanations, feedback/explanation where applicable, and lesson summaries. The current localization phase is closed for release hardening: release-ready Interface languages are limited to the audited current list, Native/Explanation languages remain broad, and Study languages stay unchanged unless a later approved task explicitly expands Study languages.
 
 ## Auth/account/trial status
 
@@ -300,7 +300,7 @@ Latest confirmed validation:
 
 ## Next recommended phase
 
-The next recommended phase is desktop release hardening from `docs/desktop-release-work-plan.md`, based on the Step 5A audit in `docs/desktop-release-readiness-audit.md`.
+The next recommended phase is desktop release hardening from `docs/desktop-release-work-plan.md`, based on the Step 5A audit in `docs/desktop-release-readiness-audit.md`. Run and pass the Step 5B-4 smoke gate in `docs/desktop-release-smoke-gate.md` before moving to the next hardening item.
 
 Priority order:
 
