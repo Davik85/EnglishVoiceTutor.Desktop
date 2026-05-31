@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -36,6 +37,13 @@ public partial class SettingsViewModel : ViewModelBase
     private const string SubscriptionStatusUnavailableText = "Subscription status: unavailable";
     private const string SignedOutSubscriptionPromptText = "Sign in to view your account status.";
     private const string SignedOutSubscriptionPlaceholderText = "—";
+    private const string DiagnosticsMaskedValueText = "[masked]";
+    private static readonly Regex DiagnosticsSensitiveAssignmentPattern = new(
+        @"(""?'?\b(?:password|pwd|secret|token|api[_-]?key|apikey|authorization|access[_-]?token|refresh[_-]?token|webhook[_-]?secret|client[_-]?secret|payment[_-]?secret)\b""?'?\s*[:=]\s*""?'?)[^""',;\s}]+(""?'?)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    private static readonly Regex DiagnosticsBearerTokenPattern = new(
+        @"\bBearer\s+[A-Za-z0-9\-._~+/]+=*",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private readonly Action<string, string, string, string, string, string, string, string> saveSettings;
     private readonly Action navigateBack;
@@ -168,7 +176,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string AppVersionText => appVersionText;
 
-    public string DiagnosticsBackendUrlText => BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl);
+    public string DiagnosticsBackendUrlText => SanitizeDiagnosticsValue(BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl));
 
     public string DiagnosticsBackendStatusText => LocalizeBackendStatus(backendStatus);
 
@@ -866,7 +874,45 @@ public partial class SettingsViewModel : ViewModelBase
     {
         report.Append(label);
         report.Append(": ");
-        report.AppendLine(value);
+        report.AppendLine(SanitizeDiagnosticsValue(value));
+    }
+
+    private static string SanitizeDiagnosticsValue(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        var sanitizedValue = SanitizeDiagnosticsUri(value);
+        sanitizedValue = DiagnosticsBearerTokenPattern.Replace(sanitizedValue, $"Bearer {DiagnosticsMaskedValueText}");
+        sanitizedValue = DiagnosticsSensitiveAssignmentPattern.Replace(sanitizedValue, match =>
+            $"{match.Groups[1].Value}{DiagnosticsMaskedValueText}{match.Groups[2].Value}");
+
+        return sanitizedValue;
+    }
+
+    private static string SanitizeDiagnosticsUri(string value)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
+        {
+            return value;
+        }
+
+        if (string.IsNullOrEmpty(uri.UserInfo) && string.IsNullOrEmpty(uri.Query) && string.IsNullOrEmpty(uri.Fragment))
+        {
+            return value;
+        }
+
+        var sanitizedUri = new UriBuilder(uri)
+        {
+            UserName = string.Empty,
+            Password = string.Empty,
+            Query = string.Empty,
+            Fragment = string.Empty
+        };
+
+        return sanitizedUri.Uri.ToString().TrimEnd('/');
     }
 
     private async Task LoadSettingsForCurrentSessionAsync()
