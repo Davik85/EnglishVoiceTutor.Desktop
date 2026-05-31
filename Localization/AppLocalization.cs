@@ -43,12 +43,13 @@ public static class AppLocalization
 
     private static AppLocalizedText CreateText(string languageId, UiTerms t)
     {
+        var p = PhrasesByLanguageId.TryGetValue(languageId, out var localizedPhrases) ? localizedPhrases : EnglishPhrases;
         var settings = new SettingsLocalizedText(
             t.Settings,
-            "Configure your learning preferences.",
+            p.SettingsSubtitle,
             t.InterfaceLanguage,
             t.NativeLanguage,
-            "Translations will use this language later.",
+            p.NativeLanguageSubtitle,
             "Connection",
             "Backend URL",
             "Used by the app to reach the local or remote backend.",
@@ -57,7 +58,7 @@ public static class AppLocalization
             "Your name",
             "Learning goal",
             t.TutorAvatar,
-            "Choose who will guide your lesson chat.",
+            p.TutorAvatarSubtitle,
             "Avatar profile",
             "Age",
             "Location",
@@ -74,7 +75,7 @@ public static class AppLocalization
             "No completed lessons yet.",
             t.Save,
             t.Back,
-            $"{t.Settings} {t.Success.ToLowerInvariant()}.",
+            p.SettingsSavedMessage,
             t.Audio,
             t.Microphone,
             "System default",
@@ -84,7 +85,7 @@ public static class AppLocalization
             "No microphone found.",
             "Selected microphone is unavailable. Using system default.",
             t.StudyLanguage,
-            "Choose the language you want to practice. This does not change the app UI language.",
+            p.StudyLanguageSubtitle,
             t.Account,
             "Sign in or create an account to start lessons. A 7-day trial starts automatically after registration.",
             t.Email,
@@ -114,9 +115,9 @@ public static class AppLocalization
             languageId, settings,
             "Practice spoken English with short AI-powered lessons.", "How the MVP works", "• Choose a topic", "• Practice by text or voice", "• Get soft corrections and hints", t.StartLesson, t.Settings, "MVP build — AI, voice, and avatar will be connected step by step.",
             t.ChooseLevel, "We will use this level later to adapt lessons and corrections.", $"{t.Level}:", "Please select a level before continuing.", t.Continue, t.Back,
-            t.Home, "Start with a practical situation and practice step by step.", $"{t.Level}:", "Free MVP limit: 3 lessons today", "Lesson history", t.Settings,
+            t.Home, p.HomeSubtitle, $"{t.Level}:", p.DailyLimitText, "Lesson history", t.Settings,
             $"{t.ChooseSituation} for {{0}}", "Pick a realistic scenario for your short speaking lesson.", $"{t.Topic}:", $"{t.Situation}:", "Please choose a situation before starting the lesson.", t.StartLesson,
-            t.LessonChat, $"{t.Topic}:", $"{t.Situation}:", $"{t.Level}:", t.Send, t.StartRecording, t.StopRecording, t.Hint, "Auto-send voice", "Send transcribed voice automatically after recording.", "Auto-play bot voice", "Play bot voice automatically after each reply.", t.FinishLesson, t.ConversationMode, "Back to chat", "Back to chat", t.ShowTranslation, t.HideTranslation, t.Translation, t.PlayVoice, "View feedback", t.Hint, "Click to close", "Feedback", "Corrected version", "Grammar tip", "Vocabulary tip", "Culture tip", "More natural version", "Translate feedback", "Hide feedback translation", "Feedback translation", "Bot status:", "Ready", "Thinking",
+            t.LessonChat, $"{t.Topic}:", $"{t.Situation}:", $"{t.Level}:", t.Send, t.StartRecording, t.StopRecording, t.Hint, p.AutoSendVoiceLabel, p.AutoSendVoiceToolTip, p.AutoPlayBotVoiceLabel, p.AutoPlayBotVoiceToolTip, t.FinishLesson, t.ConversationMode, "Back to chat", "Back to chat", t.ShowTranslation, t.HideTranslation, t.Translation, t.PlayVoice, "View feedback", t.Hint, "Click to close", "Feedback", "Corrected version", "Grammar tip", "Vocabulary tip", "Culture tip", "More natural version", "Translate feedback", "Hide feedback translation", "Feedback translation", "Bot status:", "Ready", "Thinking",
             "Recording... Click Stop recording when you finish.", "Could not start voice recording. Please check your microphone.", "Could not stop voice recording. Please try again.", "Transcribing your voice...", "Voice transcription is ready. Review the text and press Send.", "Could not transcribe the recording. Please try again or type your answer.", "No speech was recognized. Please try again.", "Please type your answer before sending.", "Playing AI-generated bot voice...", "Could not play bot voice. Please try again.", "Backend is unavailable. Please start the local backend and try again.", "Backend health check failed. Please start the local backend.", "Translating...", "Could not translate this text. Please try again.", "Hint: Try answering with a short complete sentence.",
             t.Summary, t.WhatWentWell, t.WhatToImprove, t.UsefulPhrases, t.BackToLessons, t.Back, "You completed a short practice dialogue and received AI feedback on your response.", "Keep practicing full sentences and apply the feedback tips to improve grammar and vocabulary.", ["Could you help me, please?", "I would like to...", "Could you repeat that, please?", "That sounds good to me."],
             "Lesson history", "Recent completed lessons on this device.", "No completed lessons yet. Finish a lesson to see it here.", BuildTopicDisplayText(t), BuildSubtopicDisplayText());
@@ -149,6 +150,39 @@ public static class AppLocalization
 
     private sealed record UiTerms(string Settings, string Learning, string Account, string Audio, string Progress, string Diagnostics, string Save, string Back, string Continue, string Cancel, string Close, string Retry, string Loading, string Error, string Success, string StudyLanguage, string NativeLanguage, string InterfaceLanguage, string TutorAvatar, string LessonChat, string Topic, string Situation, string Level, string ConversationMode, string Send, string StartRecording, string StopRecording, string Hint, string Translation, string ShowTranslation, string HideTranslation, string PlayVoice, string FinishLesson, string Summary, string WhatWentWell, string WhatToImprove, string UsefulPhrases, string MistakesToReview, string NextSteps, string BackToLessons, string RepeatLesson, string Home, string ChooseLevel, string ChooseTopic, string ChooseSituation, string StartLesson, string Upgrade, string Premium, string Free, string RefreshStatus, string ContinueFree, string Login, string Register, string Logout, string Email, string Password, string DisplayName, string CurrentAccount, string SettingsSource, string SubscriptionStatus, string Plan, string Trial, string Microphone, string TestMicrophone, string RefreshMicrophones);
 
+    private sealed record UiPhrases(string SettingsSubtitle, string NativeLanguageSubtitle, string TutorAvatarSubtitle, string SettingsSavedMessage, string StudyLanguageSubtitle, string HomeSubtitle, string DailyLimitText, string AutoSendVoiceLabel, string AutoSendVoiceToolTip, string AutoPlayBotVoiceLabel, string AutoPlayBotVoiceToolTip);
+
+    private static readonly UiPhrases EnglishPhrases = new(
+        "Configure your learning preferences.",
+        "Translations will use this language later.",
+        "Choose who will guide your lesson chat.",
+        "Settings saved for this session.",
+        "Choose the language you want to practice. This does not change the app UI language.",
+        "Start with a practical situation and practice step by step.",
+        "Free MVP limit: 3 lessons today",
+        "Auto-send voice",
+        "Send transcribed voice automatically after recording.",
+        "Auto-play bot voice",
+        "Play bot voice automatically after each reply.");
+
+    private static readonly IReadOnlyDictionary<string, UiPhrases> PhrasesByLanguageId = new Dictionary<string, UiPhrases>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["en"] = EnglishPhrases,
+        ["es"] = new("Configura tus preferencias de aprendizaje.", "Las traducciones usarán este idioma más adelante.", "Elige quién guiará tu chat de lección.", "Ajustes guardados para esta sesión.", "Elige el idioma que quieres practicar. Esto no cambia el idioma de la interfaz.", "Empieza con una situación práctica y practica paso a paso.", "Límite gratis MVP: 3 lecciones hoy", "Enviar voz automáticamente", "Envía la voz transcrita automáticamente después de grabar.", "Reproducir voz del bot automáticamente", "Reproduce la voz del bot automáticamente después de cada respuesta."),
+        ["fr"] = new("Configurez vos préférences d’apprentissage.", "Les traductions utiliseront cette langue plus tard.", "Choisissez qui guidera votre chat de leçon.", "Paramètres enregistrés pour cette session.", "Choisissez la langue à pratiquer. Cela ne change pas la langue de l’interface.", "Commencez par une situation pratique et entraînez-vous étape par étape.", "Limite MVP gratuite : 3 leçons aujourd’hui", "Envoi vocal auto", "Envoie automatiquement la voix transcrite après l’enregistrement.", "Lecture auto de la voix du bot", "Lit automatiquement la voix du bot après chaque réponse."),
+        ["de"] = new("Konfiguriere deine Lernpräferenzen.", "Übersetzungen verwenden später diese Sprache.", "Wähle, wer deinen Lektionschat begleitet.", "Einstellungen für diese Sitzung gespeichert.", "Wähle die Sprache, die du üben möchtest. Das ändert nicht die Sprache der App-Oberfläche.", "Starte mit einer praktischen Situation und übe Schritt für Schritt.", "Kostenloses MVP-Limit: heute 3 Lektionen", "Sprache automatisch senden", "Sendet transkribierte Sprache nach der Aufnahme automatisch.", "Bot-Stimme automatisch abspielen", "Spielt die Bot-Stimme nach jeder Antwort automatisch ab."),
+        ["it"] = new("Configura le tue preferenze di apprendimento.", "Le traduzioni useranno questa lingua più avanti.", "Scegli chi guiderà la chat della lezione.", "Impostazioni salvate per questa sessione.", "Scegli la lingua che vuoi praticare. Questo non cambia la lingua dell’interfaccia.", "Inizia con una situazione pratica e fai pratica passo dopo passo.", "Limite MVP gratis: 3 lezioni oggi", "Invio vocale automatico", "Invia automaticamente la voce trascritta dopo la registrazione.", "Riproduzione automatica voce bot", "Riproduce automaticamente la voce del bot dopo ogni risposta."),
+        ["pt"] = new("Configure suas preferências de aprendizagem.", "As traduções usarão este idioma mais tarde.", "Escolha quem vai guiar o chat da lição.", "Configurações salvas para esta sessão.", "Escolha o idioma que você quer praticar. Isso não muda o idioma da interface.", "Comece com uma situação prática e pratique passo a passo.", "Limite grátis do MVP: 3 lições hoje", "Enviar voz automaticamente", "Envia a voz transcrita automaticamente após a gravação.", "Reproduzir voz do bot automaticamente", "Reproduz a voz do bot automaticamente após cada resposta."),
+        ["ru"] = new("Настройте свои учебные предпочтения.", "Позже переводы будут использовать этот язык.", "Выберите, кто будет вести чат урока.", "Настройки сохранены для этой сессии.", "Выберите язык для практики. Это не меняет язык интерфейса приложения.", "Начните с практической ситуации и тренируйтесь шаг за шагом.", "Бесплатный лимит MVP: 3 урока сегодня", "Автоотправка голоса", "Автоматически отправляет распознанную речь после записи.", "Автовоспроизведение голоса бота", "Автоматически воспроизводит голос бота после каждого ответа."),
+        ["pl"] = new("Skonfiguruj swoje preferencje nauki.", "Tłumaczenia będą później używać tego języka.", "Wybierz, kto poprowadzi czat lekcji.", "Ustawienia zapisane dla tej sesji.", "Wybierz język, który chcesz ćwiczyć. To nie zmienia języka interfejsu aplikacji.", "Zacznij od praktycznej sytuacji i ćwicz krok po kroku.", "Darmowy limit MVP: 3 lekcje dzisiaj", "Automatycznie wyślij głos", "Automatycznie wysyła transkrypcję głosu po nagraniu.", "Automatycznie odtwarzaj głos bota", "Automatycznie odtwarza głos bota po każdej odpowiedzi."),
+        ["ar"] = new("اضبط تفضيلات التعلم الخاصة بك.", "ستستخدم الترجمات هذه اللغة لاحقًا.", "اختر من سيرشد دردشة الدرس.", "تم حفظ الإعدادات لهذه الجلسة.", "اختر اللغة التي تريد ممارستها. هذا لا يغيّر لغة واجهة التطبيق.", "ابدأ بموقف عملي وتدرّب خطوة بخطوة.", "حد MVP المجاني: 3 دروس اليوم", "إرسال الصوت تلقائيًا", "يرسل الصوت المكتوب تلقائيًا بعد التسجيل.", "تشغيل صوت البوت تلقائيًا", "يشغّل صوت البوت تلقائيًا بعد كل رد."),
+        ["ja"] = new("学習設定を変更します。", "翻訳では後でこの言語を使用します。", "レッスンチャットを案内する相手を選びます。", "このセッションの設定を保存しました。", "練習したい言語を選びます。アプリの表示言語は変わりません。", "実用的な場面から始めて、段階的に練習します。", "無料MVP制限: 今日3レッスン", "音声を自動送信", "録音後、文字起こしした音声を自動で送信します。", "ボット音声を自動再生", "各返信後にボット音声を自動で再生します。"),
+        ["ko"] = new("학습 설정을 구성하세요.", "번역은 나중에 이 언어를 사용합니다.", "레슨 채팅을 안내할 튜터를 선택하세요.", "이 세션의 설정이 저장되었습니다.", "연습할 언어를 선택하세요. 앱 UI 언어는 변경되지 않습니다.", "실용적인 상황으로 시작해 단계별로 연습하세요.", "무료 MVP 제한: 오늘 3개 레슨", "음성 자동 전송", "녹음 후 변환된 음성을 자동으로 보냅니다.", "봇 음성 자동 재생", "각 답변 후 봇 음성을 자동으로 재생합니다."),
+        ["sr"] = new("Podesi svoje postavke učenja.", "Prevodi će kasnije koristiti ovaj jezik.", "Izaberi ko će voditi čet lekcije.", "Podešavanja su sačuvana za ovu sesiju.", "Izaberi jezik koji želiš da vežbaš. Ovo ne menja jezik interfejsa aplikacije.", "Počni sa praktičnom situacijom i vežbaj korak po korak.", "Besplatan MVP limit: 3 lekcije danas", "Automatski pošalji glas", "Automatski šalje transkribovani glas posle snimanja.", "Automatski pusti glas bota", "Automatski pušta glas bota posle svakog odgovora."),
+        ["hr"] = new("Postavi svoje postavke učenja.", "Prijevodi će kasnije koristiti ovaj jezik.", "Odaberi tko će voditi chat lekcije.", "Postavke su spremljene za ovu sesiju.", "Odaberi jezik koji želiš vježbati. To ne mijenja jezik sučelja aplikacije.", "Započni s praktičnom situacijom i vježbaj korak po korak.", "Besplatni MVP limit: 3 lekcije danas", "Automatski pošalji glas", "Automatski šalje transkribirani glas nakon snimanja.", "Automatski pusti glas bota", "Automatski pušta glas bota nakon svakog odgovora."),
+        ["bg"] = new("Настрой предпочитанията си за учене.", "Преводите ще използват този език по-късно.", "Избери кой ще води чата на урока.", "Настройките са запазени за тази сесия.", "Избери езика, който искаш да упражняваш. Това не променя езика на интерфейса.", "Започни с практическа ситуация и упражнявай стъпка по стъпка.", "Безплатен MVP лимит: 3 урока днес", "Автоматично изпращане на глас", "Автоматично изпраща транскрибирания глас след запис.", "Автоматично пускане на гласа на бота", "Автоматично пуска гласа на бота след всеки отговор.")
+    };
+
     private static readonly UiTerms EnglishTerms = new(
         "Settings", "Learning", "Account", "Audio", "Progress", "Diagnostics", "Save", "Back", "Continue", "Cancel", "Close", "Retry", "Loading", "Error", "Success", "Study language", "Native language", "Interface language", "Tutor avatar", "Lesson chat", "Topic", "Situation", "Level", "Conversation mode", "Send", "Start recording", "Stop recording", "Hint", "Translation", "Show translation", "Hide translation", "Play voice", "Finish lesson", "Summary", "What went well", "What to improve", "Useful phrases", "Mistakes to review", "Next steps", "Back to lessons", "Repeat lesson", "Home", "Choose level", "Choose topic", "Choose situation", "Start lesson", "Upgrade", "Premium", "Free", "Refresh status", "Continue with free plan", "Login", "Register", "Logout", "Email", "Password", "Display name", "Current account", "Settings source", "Subscription status", "Plan", "Trial", "Microphone", "Test microphone", "Refresh microphones");
     private static readonly UiTerms esTerms = new(
@@ -180,7 +214,7 @@ public static class AppLocalization
     private static readonly UiTerms jaTerms = new(
         "設定", "学習", "アカウント", "音声", "進捗", "診断", "保存", "戻る", "続ける", "キャンセル", "閉じる", "再試行", "読み込み中", "エラー", "成功", "学習言語", "母語", "表示言語", "チューターアバター", "レッスンチャット", "トピック", "場面", "レベル", "会話モード", "送信", "録音開始", "録音停止", "ヒント", "翻訳", "翻訳を表示", "翻訳を非表示", "音声を再生", "レッスン終了", "まとめ", "良かった点", "改善点", "便利なフレーズ", "復習する間違い", "次のステップ", "レッスンに戻る", "レッスンを繰り返す", "ホーム", "レベルを選ぶ", "トピックを選ぶ", "場面を選ぶ", "レッスン開始", "アップグレード", "プレミアム", "無料", "状態を更新", "無料プランで続ける", "ログイン", "登録", "ログアウト", "メール", "パスワード", "表示名", "現在のアカウント", "設定元", "サブスクリプション状態", "プラン", "トライアル", "マイク", "マイクをテスト", "マイクを更新");
     private static readonly UiTerms koTerms = new(
-        "設定", "学習", "アカウント", "音声", "進捗", "診断", "保存", "戻る", "続ける", "キャンセル", "閉じる", "再試行", "読み込み中", "エラー", "成功", "学習言語", "母語", "表示言語", "チューターアバター", "レッスンチャット", "トピック", "場面", "レベル", "会話モード", "送信", "録音開始", "録音停止", "ヒント", "翻訳", "翻訳を表示", "翻訳を非表示", "音声を再生", "レッスン終了", "まとめ", "良かった点", "改善点", "便利なフレーズ", "復習する間違い", "次のステップ", "レッスンに戻る", "レッスンを繰り返す", "ホーム", "レベルを選ぶ", "トピックを選ぶ", "場面を選ぶ", "レッスン開始", "アップグレード", "プレミアム", "無料", "状態を更新", "無料プランで続ける", "ログイン", "登録", "ログアウト", "メール", "パスワード", "表示名", "現在のアカウント", "設定元", "サブスクリプション状態", "プラン", "トライアル", "マイク", "マイクをテスト", "マイクを更新");
+        "설정", "학습", "계정", "오디오", "진행률", "진단", "저장", "뒤로", "계속", "취소", "닫기", "다시 시도", "로딩 중", "오류", "성공", "학습 언어", "모국어", "인터페이스 언어", "튜터 아바타", "레슨 채팅", "주제", "상황", "레벨", "대화 모드", "보내기", "녹음 시작", "녹음 중지", "힌트", "번역", "번역 보기", "번역 숨기기", "음성 재생", "레슨 끝내기", "요약", "잘한 점", "개선할 점", "유용한 표현", "복습할 실수", "다음 단계", "레슨으로 돌아가기", "레슨 반복", "홈", "레벨 선택", "주제 선택", "상황 선택", "레슨 시작", "업그레이드", "프리미엄", "무료", "상태 새로고침", "무료 플랜으로 계속", "로그인", "가입", "로그아웃", "이메일", "비밀번호", "표시 이름", "현재 계정", "설정 원본", "구독 상태", "플랜", "체험", "마이크", "마이크 테스트", "마이크 새로고침");
     private static readonly UiTerms viTerms = new(
         "Settings", "Learning", "Account", "Audio", "Progress", "Diagnostics", "Save", "Back", "Continue", "Cancel", "Close", "Retry", "Loading", "Error", "Success", "Study language", "Native language", "Interface language", "Tutor avatar", "Lesson chat", "Topic", "Situation", "Level", "Conversation mode", "Send", "Start recording", "Stop recording", "Hint", "Translation", "Show translation", "Hide translation", "Play voice", "Finish lesson", "Summary", "What went well", "What to improve", "Useful phrases", "Mistakes to review", "Next steps", "Back to lessons", "Repeat lesson", "Home", "Choose level", "Choose topic", "Choose situation", "Start lesson", "Upgrade", "Premium", "Free", "Refresh status", "Continue with free plan", "Login", "Register", "Logout", "Email", "Password", "Display name", "Current account", "Settings source", "Subscription status", "Plan", "Trial", "Microphone", "Test microphone", "Refresh microphones");
     private static readonly UiTerms idTerms = new(
