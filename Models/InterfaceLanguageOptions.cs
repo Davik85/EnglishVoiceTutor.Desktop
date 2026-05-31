@@ -22,8 +22,26 @@ public static class InterfaceLanguageOptions
     public static readonly InterfaceLanguageOption Italian = Create(NativeLanguageCatalog.GetByIdOrName(ItalianId));
     public static readonly InterfaceLanguageOption Portuguese = Create(NativeLanguageCatalog.GetByIdOrName(PortugueseId));
 
-    public static readonly IReadOnlyList<InterfaceLanguageOption> All = NativeLanguageCatalog.All
-        .Select(Create)
+    public static readonly IReadOnlyList<string> ReleaseReadyInterfaceLanguageIds =
+    [
+        EnglishId,
+        SpanishId,
+        FrenchId,
+        GermanId,
+        ItalianId,
+        PortugueseId,
+        RussianId,
+        "pl",
+        "ar",
+        "ja",
+        "ko",
+        "sr",
+        "hr",
+        "bg"
+    ];
+
+    public static readonly IReadOnlyList<InterfaceLanguageOption> All = ReleaseReadyInterfaceLanguageIds
+        .Select(languageId => Create(NativeLanguageCatalog.GetByIdOrName(languageId)))
         .ToArray();
 
     public static InterfaceLanguageOption GetById(string? id)
