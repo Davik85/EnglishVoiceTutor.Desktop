@@ -35,13 +35,13 @@ public static class AppLocalization
 
     public static string NormalizeLanguageId(string? languageId)
     {
-        return NativeLanguageCatalog.GetByIdOrName(languageId).Id;
+        return InterfaceLanguageOptions.GetById(languageId).Id;
     }
 
     private static IReadOnlyDictionary<string, AppLocalizedText> BuildTextByLanguageId()
     {
         var result = new Dictionary<string, AppLocalizedText>(StringComparer.OrdinalIgnoreCase);
-        foreach (var language in NativeLanguageCatalog.All)
+        foreach (var language in InterfaceLanguageOptions.All)
         {
             var terms = TermsByLanguageId.TryGetValue(language.Id, out var localizedTerms) ? localizedTerms : EnglishTerms;
             result[language.Id] = CreateText(language.Id, terms);
@@ -125,7 +125,7 @@ public static class AppLocalization
             l("Practice spoken English with short AI-powered lessons."), l("How the MVP works"), l("• Choose a topic"), l("• Practice by text or voice"), l("• Get soft corrections and hints"), t.StartLesson, t.Settings, l("MVP build — AI, voice, and avatar will be connected step by step."),
             t.ChooseLevel, l("We will use this level later to adapt lessons and corrections."), $"{t.Level}:", l("Please select a level before continuing."), t.Continue, t.Back,
             t.Home, p.HomeSubtitle, $"{t.Level}:", p.DailyLimitText, l("Lesson history"), t.Settings,
-            $"{t.ChooseSituation} for {{0}}", l("Pick a realistic scenario for your short speaking lesson."), $"{t.Topic}:", $"{t.Situation}:", l("Please choose a situation before starting the lesson."), t.StartLesson,
+            SubtopicsLocalization.GetTitleTemplate(languageId), SubtopicsLocalization.GetSubtitle(languageId), $"{t.Topic}:", $"{t.Situation}:", l("Please choose a situation before starting the lesson."), t.StartLesson,
             t.LessonChat, $"{t.Topic}:", $"{t.Situation}:", $"{t.Level}:", t.Send, t.StartRecording, t.StopRecording, t.Hint, p.AutoSendVoiceLabel, p.AutoSendVoiceToolTip, p.AutoPlayBotVoiceLabel, p.AutoPlayBotVoiceToolTip, t.FinishLesson, t.ConversationMode, l("Back to chat"), l("Back to chat"), t.ShowTranslation, t.HideTranslation, t.Translation, t.PlayVoice, l("View feedback"), t.Hint, l("Click to close"), l("Feedback"), l("Corrected version"), l("Grammar tip"), l("Vocabulary tip"), l("Culture tip"), l("More natural version"), l("Translate feedback"), l("Hide feedback translation"), l("Feedback translation"), l("Bot status:"), l("Ready"), l("Thinking"),
             l("Recording... Click Stop recording when you finish."), l("Could not start voice recording. Please check your microphone."), l("Could not stop voice recording. Please try again."), l("Transcribing your voice..."), l("Voice transcription is ready. Review the text and press Send."), l("Could not transcribe the recording. Please try again or type your answer."), l("No speech was recognized. Please try again."), l("Please type your answer before sending."), l("Playing AI-generated bot voice..."), l("Could not play bot voice. Please try again."), l("Backend is unavailable. Please start the local backend and try again."), l("Backend health check failed. Please start the local backend."), l("Translating..."), l("Could not translate this text. Please try again."), l("Hint: Try answering with a short complete sentence."),
             t.Summary, t.WhatWentWell, t.WhatToImprove, t.UsefulPhrases, t.BackToLessons, t.Back, l("You completed a short practice dialogue and received AI feedback on your response."), l("Keep practicing full sentences and apply the feedback tips to improve grammar and vocabulary."), [l("Could you help me, please?"), l("I would like to..."), l("Could you repeat that, please?"), l("That sounds good to me.")],
@@ -146,18 +146,7 @@ public static class AppLocalization
 
     private static IReadOnlyDictionary<string, LocalizedDisplayText> BuildSubtopicDisplayText(string languageId)
     {
-        string l(string englishText) => GetLearnerUiText(languageId, englishText);
-        return Map(
-            ("Introductions", l("Introductions"), l("Introduce yourself and ask basic personal questions.")),
-            ("Small talk with a neighbor", l("Small talk with a neighbor"), l("Have a friendly short conversation near home.")),
-            ("Asking for help", l("Asking for help"), l("Ask someone for help in a simple everyday situation.")),
-            ("Making plans", l("Making plans"), l("Plan an activity and agree on time and place.")),
-            ("Talking about your day", l("Talking about your day"), l("Describe your day and daily routine.")),
-            ("Airport check-in", l("Airport check-in"), l("Check in for a flight and confirm travel details.")),
-            ("Hotel check-in", l("Hotel check-in"), l("Check in at a hotel and ask common questions.")),
-            ("Asking for directions", l("Asking for directions"), l("Ask for and understand directions in a new city.")),
-            ("Ordering transport", l("Ordering transport"), l("Arrange a taxi or rideshare to your destination.")),
-            ("Lost luggage", l("Lost luggage"), l("Report lost baggage and explain your situation.")));
+        return SubtopicsLocalization.BuildSubtopicDisplayText(languageId);
     }
 
     private static LocalizedDisplayText GetDisplayText(IReadOnlyDictionary<string, LocalizedDisplayText> displayTextByTitle, string title, string description)
