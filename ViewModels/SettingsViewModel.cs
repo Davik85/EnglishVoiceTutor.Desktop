@@ -145,7 +145,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string DiagnosticsTitle => diagnosticsLocalizedText.Title;
 
-    private string LocalizeUiText(string englishText) => AppLocalization.GetLearnerUiText(selectedInterfaceLanguageOption.Id, englishText);
+    private string LocalizeUiText(string englishText) => AppLocalization.GetLearnerUiText(SelectedInterfaceLanguageOption.Id, englishText);
 
     public string DiagnosticsSubtitle => diagnosticsLocalizedText.Subtitle;
 
