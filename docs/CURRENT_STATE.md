@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-05-30.
+Review date: 2026-05-31.
 
 ## Short summary
 
@@ -49,7 +49,9 @@ Supported study languages:
 - Spanish
 - Italian
 
-Study language is the language of lessons, hints, feedback, summary, transcription, and TTS. It is not the UI language.
+Study language is the language the user practices or learns in lessons. It is separate from native/interface/explanation language.
+
+Native language / interface language / explanation language is the language used for app UI localization, translation target, hints/explanations, feedback/explanation where applicable, and lesson summaries. The next desktop release-hardening plan includes expanding native/interface/explanation language options while keeping the Study language list unchanged unless a later approved task explicitly expands Study languages.
 
 ## Auth/account/trial status
 
@@ -298,13 +300,26 @@ Latest confirmed validation:
 
 ## Next recommended phase
 
-The next phase is planning the still-deferred billing operations only. Do not implement remaining lifecycle behavior before a plan is approved. Recommended planning topics:
+The next recommended phase is desktop release hardening from `docs/desktop-release-work-plan.md`, based on the Step 5A audit in `docs/desktop-release-readiness-audit.md`.
 
-- refunds / chargebacks policy;
-- manual revocation automation policy;
-- production Paddle readiness checklist: `docs/paddle-production-readiness-checklist.md`;
-- production Paddle webhook setup checklist;
-- production checkout configuration;
-- optional bounded refresh/polling decision later;
-- mobile entitlement bridge later;
-- optional background reconciliation job.
+Priority order:
+
+1. Phase 5B desktop release hardening.
+   - Start with Settings final acceptance and Diagnostics Release gate.
+   - Include Step 5B-2 native languages and localization foundation.
+   - Keep Study language options separate from native/interface/explanation language options.
+   - Continue through backend/account UX, auth-session storage decision, lesson selection QA, Lesson Chat polish, voice/TTS/Conversation Mode acceptance, release diagnostics/config cleanup, packaging, security/privacy, manual checklist execution, and final P0/P1 triage.
+2. Phase 5C production billing readiness after desktop hardening.
+   - Production Paddle readiness checklist: `docs/paddle-production-readiness-checklist.md`.
+   - Production Paddle webhook setup checklist.
+   - Production checkout configuration.
+   - Refunds / chargebacks policy.
+   - Manual revocation automation policy.
+   - Optional bounded refresh/polling decision later.
+   - Mobile entitlement bridge later.
+   - Optional background reconciliation job.
+3. Phase 5D CMS/Admin operational readiness after desktop hardening.
+   - Start with read-only support/admin needs before full CMS.
+   - Keep broad production RBAC/content-management work deferred until desktop readiness and minimum operational support requirements are clear.
+
+Do not implement remaining production billing lifecycle behavior before a plan is approved. Production billing remains deferred, and the existing billing boundaries remain unchanged.

@@ -5,6 +5,9 @@ Review date: 2026-05-30
 Status:
 Audit only. No implementation in this step.
 
+Consolidated follow-up plan:
+See `docs/desktop-release-work-plan.md` for the Phase 5B desktop release work plan that aligns this audit with `docs/NEXT_STEPS.md` and `docs/CURRENT_STATE.md`.
+
 ## Executive summary
 
 English Voice Tutor Desktop is close enough for focused internal validation, but it is not ready for external MVP users without a short release-hardening pass.
@@ -512,26 +515,31 @@ These should not block the first controlled test release:
 
 ## Suggested implementation order
 
-1. **Settings final visual/manual acceptance**
+1. **Settings final visual/manual acceptance and Diagnostics Release gate**
    - Confirm Settings opens reliably.
    - Confirm Learning, Account, Audio, Progress, and Diagnostics separation.
    - Decide Diagnostics visibility for Release.
-2. **Backend unavailable/account UX**
+2. **Native languages and localization foundation**
+   - Expand native/interface/explanation language options as planned in `docs/desktop-release-work-plan.md`.
+   - Keep Study language options separate and unchanged unless a later approved task explicitly expands them.
+   - Keep translation targets, hints/explanations, feedback/explanation where applicable, and summaries aligned with backend-backed user settings.
+   - Keep desktop AI features backend-only with no OpenAI API key in desktop.
+3. **Backend unavailable/account UX**
    - Test backend stopped, wrong URL, timeout, 401, 403, and 500 across auth, settings, lesson access, chat, TTS, transcription, checkout, and refresh.
-3. **Lesson Chat release polish**
+4. **Lesson Chat release polish**
    - Review initial bot message, command states, disabled controls, status messages, Hint, Translate, Play voice, Finish, and Back.
-4. **Voice/recording reliability**
-   - Test microphone selection, unavailable device, permission denial, start/stop, transcription failure, and auto-send behavior.
-5. **Conversation Mode MVP acceptance**
+5. **Voice/recording reliability**
+   - Test microphone selection, unavailable device, permission denial, start/stop, transcription failure, and auto-send voice.
+6. **Conversation Mode MVP acceptance**
    - Test avatar layout, record UX, auto-send, auto-play, Hint, return/back, and small/medium window sizes.
-6. **Release diagnostics/config cleanup**
+7. **Release diagnostics/config cleanup**
    - Hide/default-off Diagnostics for normal Release users.
    - Verify copied diagnostics output safety.
    - Decide production backend URL/config path.
-7. **Installer/release package checklist**
-   - Decide zip vs installer, signing, clean-machine test, versioning, download, update, and rollback.
-8. **CMS/Admin v1 audit**
-   - After desktop readiness, separately audit support/admin operations needed before public release.
+8. **Installer/release package checklist**
+   - Decide zip vs installer, signing, clean-machine test, production backend URL, versioning, download, update, and rollback.
+9. **CMS/Admin v1 audit**
+   - After desktop readiness, separately audit only the minimum Admin/CMS operations needed for public support.
 
 ## Manual test checklist for desktop release
 
@@ -594,40 +602,51 @@ Use this checklist before sharing a controlled desktop build:
 
 ## Recommended next Codex tasks
 
-- **Step 5B-1: First-launch/app-shell acceptance notes**
-  - Audit only the visible first-run path and app-shell access panel copy.
-  - Produce a short findings doc or targeted UI copy patch if approved.
+Use `docs/desktop-release-work-plan.md` as the controlling consolidated plan for Phase 5B. Recommended next tasks are:
 
-- **Step 5B-2: Settings/Diagnostics Release gate**
-  - Verify how `IsDiagnosticsTabVisible` is controlled.
-  - Make Diagnostics hidden/default-off for normal Release if needed.
-  - Do not change settings layout unless specifically approved.
-
-- **Step 5B-3: Backend unavailable and account UX hardening**
-  - Test stopped backend, wrong URL, expired session, invalid credentials, 401/403/500.
-  - Improve only user-facing messages if needed.
-
-- **Step 5B-4: Auth session storage production decision**
-  - Document or implement secure OS-backed token storage for Windows.
-  - Keep migration safe for existing local tester sessions.
-
-- **Step 5B-5: Lesson selection and access-state QA**
-  - Validate signed-out, free available, free used, trial, Premium, past due, canceled/paused, checkout unavailable, and unknown/error states.
-
-- **Step 5B-6: Lesson Chat MVP polish**
-  - Review command states, status messages, initial bot text, Hint, Translate, Play voice, Finish, Back, and completed-awaiting-finish UX.
-
-- **Step 5B-7: Voice reliability pass**
-  - Test microphone selection, missing devices, permission failures, start/stop recording, transcription failure, and auto-send voice.
-
-- **Step 5B-8: Conversation Mode MVP acceptance**
-  - Validate avatar layout, record UX, auto-send, auto-play, return/back, and layout on common window sizes.
-
-- **Step 5B-9: Release package/signing checklist**
-  - Decide zip vs installer, signing, clean-machine test, production backend URL, versioning, download, update, and rollback.
-
-- **Step 5B-10: CMS/Admin v1 operational audit**
-  - After desktop readiness, audit only the minimum Admin/CMS operations needed for public support.
+1. **Step 5B-1: Settings final acceptance and Diagnostics Release gate**
+   - Confirm Settings stability and Release diagnostics visibility/output safety.
+2. **Step 5B-2: Native languages and localization foundation**
+   - Expand native/interface/explanation language planning and later implementation scope.
+   - Keep Study language options separate.
+   - Keep backend-backed settings as source of truth.
+   - Keep desktop AI features backend-only and do not store OpenAI keys in desktop.
+3. **Step 5B-3: Backend unavailable and Account UX hardening**
+   - Test stopped backend, wrong URL, expired session, invalid credentials, 401/403/500.
+4. **Step 5B-4: Auth session storage production decision**
+   - Document or implement secure OS-backed token storage for Windows in a later implementation step.
+5. **Step 5B-5: Lesson selection and access-state QA**
+   - Validate signed-out, free available, free used, trial, Premium, past due, canceled/paused, checkout unavailable, and unknown/error states.
+6. **Step 5B-6: Lesson Chat MVP polish**
+   - Review command states, status messages, initial bot text, Hint, Translate, Play voice, Finish, Back, and completed-awaiting-finish UX.
+7. **Step 5B-7: Voice recording/transcription reliability pass**
+   - Test microphone selection, missing devices, permission failures, start/stop recording, transcription failure, and auto-send voice.
+8. **Step 5B-8: Bot voice/TTS loading, failure, and avatar-state acceptance**
+   - Validate TTS loading/failure/retry states and avatar-state behavior.
+9. **Step 5B-9: Conversation Mode MVP acceptance or beta/hide decision**
+   - Validate avatar layout, record UX, auto-send, auto-play, return/back, and layout on common window sizes.
+10. **Step 5B-10: Avatar framing/profile/prompt acceptance pass**
+    - Review avatar framing, profiles, and tutor prompt behavior.
+11. **Step 5B-11: Lesson completion, early exit, summary, and progress manual test**
+    - Validate Finish, Back, summary, History, statistics, and progress behavior.
+12. **Step 5B-12: Free-limit/paywall desktop UX acceptance without billing logic changes**
+    - Validate free-limit/paywall UX while preserving backend-driven access decisions.
+13. **Step 5B-13: Release diagnostics/config cleanup and copied-output safety check**
+    - Verify Release diagnostics visibility and copied-output safety.
+14. **Step 5B-14: Release build config checklist and production backend URL decision**
+    - Decide backend URL/config expectations and verify no secrets in desktop release output.
+15. **Step 5B-15: Installer/signing/clean-machine release package checklist**
+    - Decide zip vs installer, signing, clean-machine test, versioning, download, update, and rollback.
+16. **Step 5B-16: Human lesson methodology/content sample review**
+    - Sample lesson quality without changing lesson JSON in this audit.
+17. **Step 5B-17: CMS/Admin operational readiness audit after desktop hardening**
+    - Audit minimum support/admin operations after desktop readiness.
+18. **Step 5B-18: Desktop security/privacy release checklist**
+    - Validate privacy, token, diagnostics, microphone/audio, AI/backend processing, and no-secrets expectations.
+19. **Step 5B-19: Run and record manual desktop release checklist results**
+    - Execute and record release checklist results for the intended package/environment.
+20. **Step 5B-20: Final P0/P1 triage**
+    - Decide controlled tester, internal-only, or broader release readiness.
 
 ## Explicit non-goals for this audit
 
