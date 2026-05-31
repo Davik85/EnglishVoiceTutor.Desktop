@@ -3,7 +3,7 @@
 Review date: 2026-05-31
 
 Status:
-Planning document. No implementation in this step.
+Implementation note added after Step 5B-1 desktop Settings acceptance and Diagnostics Release gate work.
 
 ## Source documents reviewed
 
@@ -75,6 +75,9 @@ Acceptance criteria:
 - Learning, Account, Audio, Progress, and Diagnostics separation is accepted.
 - Release Diagnostics visibility policy is documented and implemented in a later implementation step if needed.
 - Copied diagnostics output is manually reviewed and accepted as safe.
+
+Implementation note (2026-05-31):
+- Step 5B-1 has been implemented in desktop Settings: Diagnostics remains available by default in Debug builds, is hidden by default in Release builds, and can be enabled for Release support sessions with the explicit local `EVT_DESKTOP_DIAGNOSTICS` flag. Copied diagnostics output now masks common secret/token/key values and strips URL user-info, query strings, and fragments before display/copy.
 
 ### Step 5B-2: Native languages and localization foundation
 
