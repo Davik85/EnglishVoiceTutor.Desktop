@@ -15,6 +15,16 @@ public static class AppLocalization
 
     public static SettingsLocalizedText GetSettingsText(string? languageId) => GetText(languageId).Settings;
 
+    public static LocalizedDisplayText GetTopicDisplayText(string? languageId, string title, string description)
+    {
+        return GetDisplayText(GetText(languageId).TopicDisplayTextByTitle, title, description);
+    }
+
+    public static LocalizedDisplayText GetSubtopicDisplayText(string? languageId, string title, string description)
+    {
+        return GetDisplayText(GetText(languageId).SubtopicDisplayTextByTitle, title, description);
+    }
+
     public static string NormalizeLanguageId(string? languageId)
     {
         return NativeLanguageCatalog.GetByIdOrName(languageId).Id;
@@ -120,6 +130,16 @@ public static class AppLocalization
     private static IReadOnlyDictionary<string, LocalizedDisplayText> BuildSubtopicDisplayText()
     {
         return Map(("Introductions", "Introductions", "Introduce yourself and ask basic personal questions."), ("Small talk with a neighbor", "Small talk with a neighbor", "Have a friendly short conversation near home."), ("Asking for help", "Asking for help", "Ask someone for help in a simple everyday situation."), ("Making plans", "Making plans", "Plan an activity and agree on time and place."), ("Talking about your day", "Talking about your day", "Describe your day and daily routine."), ("Airport check-in", "Airport check-in", "Check in for a flight and confirm travel details."), ("Hotel check-in", "Hotel check-in", "Check in at a hotel and ask common questions."), ("Asking for directions", "Asking for directions", "Ask for and understand directions in a new city."), ("Ordering transport", "Ordering transport", "Arrange a taxi or rideshare to your destination."), ("Lost luggage", "Lost luggage", "Report lost baggage and explain your situation."));
+    }
+
+    private static LocalizedDisplayText GetDisplayText(IReadOnlyDictionary<string, LocalizedDisplayText> displayTextByTitle, string title, string description)
+    {
+        if (!string.IsNullOrWhiteSpace(title) && displayTextByTitle.TryGetValue(title, out var displayText))
+        {
+            return displayText;
+        }
+
+        return new LocalizedDisplayText(title, description);
     }
 
     private static IReadOnlyDictionary<string, LocalizedDisplayText> Map(params (string Key, string Title, string Description)[] values)
