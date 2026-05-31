@@ -9,6 +9,7 @@ using EnglishVoiceTutor.Desktop.Models.Access;
 using EnglishVoiceTutor.Desktop.Services;
 using EnglishVoiceTutor.Desktop.Services.Auth;
 using EnglishVoiceTutor.Desktop.Services.Access;
+using EnglishVoiceTutor.Shared.NativeLanguages;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
@@ -169,7 +170,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void SaveSettings(string interfaceLanguageId, string nativeLanguage, string studyLanguageId, string tutorAvatarId, string userDisplayName, string learningGoal, string backendBaseUrl, string audioInputDeviceId)
     {
         userSettings.InterfaceLanguageId = InterfaceLanguageOptions.GetById(interfaceLanguageId).Id;
-        userSettings.NativeLanguageName = nativeLanguage;
+        userSettings.NativeLanguageName = NativeLanguageCatalog.GetByIdOrName(nativeLanguage).Id;
         userSettings.StudyLanguageId = StudyLanguageCatalog.GetById(studyLanguageId).Id;
         userSettings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(tutorAvatarId).Id;
         userSettings.UserDisplayName = userDisplayName;

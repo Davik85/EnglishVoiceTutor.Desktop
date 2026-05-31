@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Services;
+using EnglishVoiceTutor.Shared.NativeLanguages;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
@@ -212,7 +213,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
     {
         if (!string.IsNullOrWhiteSpace(nativeLanguageName))
         {
-            return nativeLanguageName.Trim();
+            return NativeLanguageCatalog.GetByIdOrName(nativeLanguageName).EnglishName;
         }
 
         var interfaceLanguage = InterfaceLanguageOptions.GetById(interfaceLanguageId);

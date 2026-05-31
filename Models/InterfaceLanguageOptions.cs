@@ -1,4 +1,5 @@
 using System.Globalization;
+using EnglishVoiceTutor.Shared.NativeLanguages;
 
 namespace EnglishVoiceTutor.Desktop.Models;
 
@@ -13,34 +14,27 @@ public static class InterfaceLanguageOptions
     public const string PortugueseId = "pt";
     public const string DefaultLanguageId = EnglishId;
 
-    public static readonly InterfaceLanguageOption English = new(EnglishId, "English", EnglishId);
-    public static readonly InterfaceLanguageOption Russian = new(RussianId, "Русский", RussianId);
-    public static readonly InterfaceLanguageOption Spanish = new(SpanishId, "Español", SpanishId);
-    public static readonly InterfaceLanguageOption German = new(GermanId, "Deutsch", GermanId);
-    public static readonly InterfaceLanguageOption French = new(FrenchId, "Français", FrenchId);
-    public static readonly InterfaceLanguageOption Italian = new(ItalianId, "Italiano", ItalianId);
-    public static readonly InterfaceLanguageOption Portuguese = new(PortugueseId, "Português", PortugueseId);
+    public static readonly InterfaceLanguageOption English = Create(NativeLanguageCatalog.English);
+    public static readonly InterfaceLanguageOption Russian = Create(NativeLanguageCatalog.GetByIdOrName(RussianId));
+    public static readonly InterfaceLanguageOption Spanish = Create(NativeLanguageCatalog.GetByIdOrName(SpanishId));
+    public static readonly InterfaceLanguageOption German = Create(NativeLanguageCatalog.GetByIdOrName(GermanId));
+    public static readonly InterfaceLanguageOption French = Create(NativeLanguageCatalog.GetByIdOrName(FrenchId));
+    public static readonly InterfaceLanguageOption Italian = Create(NativeLanguageCatalog.GetByIdOrName(ItalianId));
+    public static readonly InterfaceLanguageOption Portuguese = Create(NativeLanguageCatalog.GetByIdOrName(PortugueseId));
 
-    public static readonly IReadOnlyList<InterfaceLanguageOption> All =
-    [
-        English,
-        Russian,
-        Spanish,
-        German,
-        French,
-        Italian,
-        Portuguese
-    ];
+    public static readonly IReadOnlyList<InterfaceLanguageOption> All = NativeLanguageCatalog.All
+        .Select(Create)
+        .ToArray();
 
     public static InterfaceLanguageOption GetById(string? id)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
-            return DetectFromCurrentCulture();
+            return English;
         }
 
         return All.FirstOrDefault(option => string.Equals(option.Id, id.Trim(), StringComparison.OrdinalIgnoreCase))
-            ?? DetectFromCurrentCulture();
+            ?? English;
     }
 
     public static InterfaceLanguageOption DetectFromCurrentCulture()
@@ -50,5 +44,20 @@ public static class InterfaceLanguageOptions
 
         return All.FirstOrDefault(option => string.Equals(option.CulturePrefix, culturePrefix, StringComparison.OrdinalIgnoreCase))
             ?? English;
+    }
+
+    private static InterfaceLanguageOption Create(NativeLanguageDefinition language)
+    {
+        return new InterfaceLanguageOption(
+            language.Id,
+            language.DisplayName,
+            GetCulturePrefix(language.Id),
+            language.EnglishName,
+            language.IsRightToLeft);
+    }
+
+    private static string GetCulturePrefix(string languageId)
+    {
+        return languageId.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? languageId;
     }
 }

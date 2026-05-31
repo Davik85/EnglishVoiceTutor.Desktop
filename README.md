@@ -71,6 +71,7 @@ The current MVP baseline is documentation-first and behavior-stable:
 - Conversation Mode TTS uses `gpt-4o-mini-tts`, voice `coral`, `purpose=conversation_mode_tts`, speed `1.0`, and calm speech instructions.
 - Usage/cost logging exists, but exact pricing fields are still approximate or missing where pricing constants are not configured.
 - UI has the Soft Learning Desktop style: light blue frame, rounded cards/buttons/inputs, level colors, topic colors, and warm hint/feedback cards.
+- Step 5B-2 adds a centralized native/interface/explanation language foundation for global language preferences, with English UI fallback for languages that do not have localized UI text yet. Study languages were not expanded and remain English, French, German, Portuguese, Spanish, and Italian.
 
 Detailed review docs live in `docs/`:
 

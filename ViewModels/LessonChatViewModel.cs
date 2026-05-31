@@ -17,6 +17,7 @@ using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Desktop.Services;
 using EnglishVoiceTutor.Desktop.Services.Voice;
 using EnglishVoiceTutor.Shared.LessonPolicies;
+using EnglishVoiceTutor.Shared.NativeLanguages;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 using System.Windows;
 using NAudio.Wave;
@@ -621,7 +622,7 @@ public partial class LessonChatViewModel : ViewModelBase
         SelectedLevel = selectedLevel;
         SelectedTopic = selectedTopic;
         SelectedSubtopic = selectedSubtopic;
-        this.nativeLanguageName = nativeLanguageName;
+        this.nativeLanguageName = NativeLanguageCatalog.GetByIdOrName(nativeLanguageName).EnglishName;
         this.studyLanguage = studyLanguage ?? StudyLanguageCatalog.English;
         UserDisplayName = NormalizeOptionalText(userDisplayName);
         LearningGoal = NormalizeOptionalText(learningGoal);

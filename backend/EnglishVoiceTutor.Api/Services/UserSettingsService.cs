@@ -2,6 +2,7 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.UserSettings;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
+using EnglishVoiceTutor.Shared.NativeLanguages;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services;
@@ -16,11 +17,11 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
     private const string DefaultUserPasswordHash = "temporary-dev-user-no-password-login";
     private const string DefaultUserStatus = "active";
     private const string DefaultDisplayName = "User";
-    private const string DefaultNativeLanguage = "Russian";
+    private const string DefaultNativeLanguage = NativeLanguageCatalog.DefaultLanguageId;
     private const string DefaultCurrentLevel = "A1";
     private const string DefaultSelectedTutorId = "elena";
     private const string DefaultTimezone = "UTC";
-    private const string DefaultExplanationLanguage = "Russian";
+    private const string DefaultExplanationLanguage = NativeLanguageCatalog.DefaultLanguageId;
     private const string DefaultSpeechVoice = OpenAiConstants.DefaultSpeechVoice;
     private const decimal DefaultSpeechSpeed = 1.0m;
     private const bool DefaultConversationModeEnabled = true;
@@ -40,7 +41,7 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         var now = DateTimeOffset.UtcNow;
 
         settings.StudyLanguage = StudyLanguageConstants.ToCanonicalValue(request.StudyLanguage);
-        settings.ExplanationLanguage = request.ExplanationLanguage.Trim();
+        settings.ExplanationLanguage = NativeLanguageCatalog.GetByIdOrName(request.ExplanationLanguage).Id;
         settings.SpeechVoice = request.SpeechVoice.Trim();
         settings.SpeechSpeed = request.SpeechSpeed;
         settings.ConversationModeEnabled = request.ConversationModeEnabled;
@@ -135,9 +136,9 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
             throw new UserSettingsValidationException($"Study language must be one of: {string.Join(", ", StudyLanguageConstants.SupportedStudyLanguages)}.");
         }
 
-        if (string.IsNullOrWhiteSpace(request.ExplanationLanguage))
+        if (!NativeLanguageCatalog.IsSupported(request.ExplanationLanguage))
         {
-            throw new UserSettingsValidationException("Explanation language is required.");
+            throw new UserSettingsValidationException("Explanation language must be a supported native/interface/explanation language code or name.");
         }
 
         if (string.IsNullOrWhiteSpace(request.SpeechVoice))
