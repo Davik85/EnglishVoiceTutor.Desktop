@@ -85,9 +85,9 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string NativeLanguageSubtitle => localizedText.NativeLanguageSubtitle;
 
-    public string StudyLanguageTitle => StudyLanguageTitleText;
+    public string StudyLanguageTitle => localizedText.StudyLanguageTitle;
 
-    public string StudyLanguageSubtitle => StudyLanguageSubtitleText;
+    public string StudyLanguageSubtitle => localizedText.StudyLanguageSubtitle;
 
     public string TutorAvatarTitle => localizedText.TutorAvatarTitle;
 
@@ -165,7 +165,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string DiagnosticsNativeLanguageLabel => diagnosticsLocalizedText.NativeLanguageLabel;
 
-    public string DiagnosticsStudyLanguageLabel => DiagnosticsStudyLanguageLabelText;
+    public string DiagnosticsStudyLanguageLabel => localizedText.StudyLanguageTitle;
 
     public string DiagnosticsTutorAvatarLabel => diagnosticsLocalizedText.TutorAvatarLabel;
 
@@ -212,24 +212,26 @@ public partial class SettingsViewModel : ViewModelBase
     public string CurrentStreakText { get; }
 
     public string LastCompletedLessonText => BuildLastCompletedLessonText(latestLesson, localizedText.NoCompletedLessonsText);
-    public string AccountTitle => "Account";
-    public string AccountSubtitle => "Sign in or create an account to start lessons. A 7-day trial starts automatically after registration.";
-    public string AccountEmailLabel => "Email";
-    public string AccountPasswordLabel => "Password";
-    public string AccountDisplayNameLabel => "Display name (for registration)";
-    public string AccountRegisterButtonText => "Register";
-    public string AccountLoginButtonText => "Login";
-    public string AccountLogoutButtonText => "Logout";
-    public string CurrentAccountLabel => "Current account";
-    public string SettingsSourceLabel => "Settings source";
-    public string SubscriptionStatusTitle => "Subscription status";
-    public string SubscriptionPlanLabel => "Plan";
-    public string SubscriptionPremiumLabel => "Premium";
-    public string SubscriptionTrialLabel => "Trial";
-    public string SubscriptionFreeLessonLabel => "Free lesson today";
-    public string SubscriptionEnforcementLabel => "Enforcement";
-    public string SubscriptionSourceLabel => "Source";
-    public string SubscriptionCheckedAtLabel => "Checked";
+    public string LearningTabHeader => localizedText.LearningTabHeader;
+    public string ProgressTabHeader => localizedText.ProgressTabHeader;
+    public string AccountTitle => localizedText.AccountTitle;
+    public string AccountSubtitle => localizedText.AccountSubtitle;
+    public string AccountEmailLabel => localizedText.AccountEmailLabel;
+    public string AccountPasswordLabel => localizedText.AccountPasswordLabel;
+    public string AccountDisplayNameLabel => localizedText.AccountDisplayNameLabel;
+    public string AccountRegisterButtonText => localizedText.AccountRegisterButtonText;
+    public string AccountLoginButtonText => localizedText.AccountLoginButtonText;
+    public string AccountLogoutButtonText => localizedText.AccountLogoutButtonText;
+    public string CurrentAccountLabel => localizedText.CurrentAccountLabel;
+    public string SettingsSourceLabel => localizedText.SettingsSourceLabel;
+    public string SubscriptionStatusTitle => localizedText.SubscriptionStatusTitle;
+    public string SubscriptionPlanLabel => localizedText.SubscriptionPlanLabel;
+    public string SubscriptionPremiumLabel => localizedText.SubscriptionPremiumLabel;
+    public string SubscriptionTrialLabel => localizedText.SubscriptionTrialLabel;
+    public string SubscriptionFreeLessonLabel => localizedText.SubscriptionFreeLessonLabel;
+    public string SubscriptionEnforcementLabel => localizedText.SubscriptionEnforcementLabel;
+    public string SubscriptionSourceLabel => localizedText.SubscriptionSourceLabel;
+    public string SubscriptionCheckedAtLabel => localizedText.SubscriptionCheckedAtLabel;
 
     public IReadOnlyList<InterfaceLanguageOption> AvailableInterfaceLanguages { get; } = InterfaceLanguageOptions.All;
 
@@ -776,6 +778,26 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(DiagnosticsAiStatusText));
         OnPropertyChanged(nameof(SaveButtonText));
         OnPropertyChanged(nameof(BackButtonText));
+        OnPropertyChanged(nameof(LearningTabHeader));
+        OnPropertyChanged(nameof(ProgressTabHeader));
+        OnPropertyChanged(nameof(AccountTitle));
+        OnPropertyChanged(nameof(AccountSubtitle));
+        OnPropertyChanged(nameof(AccountEmailLabel));
+        OnPropertyChanged(nameof(AccountPasswordLabel));
+        OnPropertyChanged(nameof(AccountDisplayNameLabel));
+        OnPropertyChanged(nameof(AccountRegisterButtonText));
+        OnPropertyChanged(nameof(AccountLoginButtonText));
+        OnPropertyChanged(nameof(AccountLogoutButtonText));
+        OnPropertyChanged(nameof(CurrentAccountLabel));
+        OnPropertyChanged(nameof(SettingsSourceLabel));
+        OnPropertyChanged(nameof(SubscriptionStatusTitle));
+        OnPropertyChanged(nameof(SubscriptionPlanLabel));
+        OnPropertyChanged(nameof(SubscriptionPremiumLabel));
+        OnPropertyChanged(nameof(SubscriptionTrialLabel));
+        OnPropertyChanged(nameof(SubscriptionFreeLessonLabel));
+        OnPropertyChanged(nameof(SubscriptionEnforcementLabel));
+        OnPropertyChanged(nameof(SubscriptionSourceLabel));
+        OnPropertyChanged(nameof(SubscriptionCheckedAtLabel));
     }
 
     private void RefreshAudioInputDevices(string? preferredAudioInputDeviceId, bool showUnavailableStatus)

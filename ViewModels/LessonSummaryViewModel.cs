@@ -170,7 +170,7 @@ public partial class LessonSummaryViewModel : ViewModelBase
         }
         catch
         {
-            TranslationErrorText = "Could not translate summary. Please try again.";
+            TranslationErrorText = localizedText.TranslationFailedText;
             IsTranslationVisible = false;
         }
         finally
