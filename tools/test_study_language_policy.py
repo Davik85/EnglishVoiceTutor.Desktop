@@ -86,6 +86,74 @@ REQUIRED_RELEASE_READY_PHRASES = [
     "AutoPlayBotVoiceToolTip",
 ]
 
+REQUIRED_LEARNER_UI_TEXTS = [
+    # Settings/Profile
+    "Your profile",
+    "This helps your tutor personalize lessons.",
+    "Your name",
+    "Learning goal",
+    "Avatar profile",
+    # Account/Audio/Subscription
+    "Sign in or create an account to start lessons. A 7-day trial starts automatically after registration.",
+    "System default",
+    "Microphone test completed.",
+    "No microphone found.",
+    "Subscription status: unavailable",
+    "Sign in to view your account status.",
+    "Active",
+    "Not active",
+    # Home/topic display
+    "Lesson history",
+    "Daily Life",
+    "Small talk, introductions, and daily situations.",
+    "Travel",
+    "Airports, hotels, directions, and transport.",
+    "Work & Business",
+    "Meetings, emails, calls, and workplace conversations.",
+    "Job Interview",
+    "Practice common interview questions and answers.",
+    "Restaurant & Cafe",
+    "Ordering food, booking tables, and polite requests.",
+    "Free Conversation",
+    "Open English conversation with safe, respectful boundaries.",
+    # Subtopics/Situations
+    "Start Free Conversation",
+    "Talk freely in English within safe and respectful boundaries.",
+    "Introductions",
+    "Airport check-in",
+    # Lesson chat
+    "Back to chat",
+    "View feedback",
+    "Click to close",
+    "Feedback",
+    "Corrected version",
+    "Grammar tip",
+    "Vocabulary tip",
+    "Culture tip",
+    "More natural version",
+    "Translate feedback",
+    "Hide feedback translation",
+    "Feedback translation",
+    "Bot status:",
+    "Ready",
+    "Thinking",
+    "Recording... Click Stop recording when you finish.",
+    "Transcribing your voice...",
+    "Voice transcription is ready. Review the text and press Send.",
+    "No speech was recognized. Please try again.",
+    "Please type your answer before sending.",
+    "Playing AI-generated bot voice...",
+    "Translating...",
+    "Could not translate this text. Please try again.",
+    # Lesson summary
+    "You completed a short practice dialogue and received AI feedback on your response.",
+    "Keep practicing full sentences and apply the feedback tips to improve grammar and vocabulary.",
+    "Could you help me, please?",
+    "Could you repeat that, please?",
+    "Recent completed lessons on this device.",
+    "No completed lessons yet. Finish a lesson to see it here.",
+]
+
 
 def read(relative: str) -> str:
     return (ROOT / relative).read_text(encoding="utf-8")
@@ -134,6 +202,27 @@ def parse_ui_terms(source: str) -> tuple[list[str], dict[str, list[str]], dict[s
 
     language_to_variable = dict(re.findall(r'\["([^"]+)"\]\s*=\s*(\w+)', source))
     return term_names, terms_by_variable, language_to_variable
+
+
+def parse_learner_ui_texts(source: str) -> dict[str, dict[str, str]]:
+    dictionary_match = re.search(
+        r"BuildLearnerUiTextByLanguageId\(\).*?return new Dictionary<string, IReadOnlyDictionary<string, string>>\(StringComparer.OrdinalIgnoreCase\)\s*\{(.*?)\n\s*\};\n\s*\}",
+        source,
+        re.S,
+    )
+    require(dictionary_match is not None, "Learner UI text dictionary is missing")
+    texts: dict[str, dict[str, str]] = {}
+    for language_match in re.finditer(
+        r'\["([^"]+)"\]\s*=\s*new Dictionary<string, string>\(StringComparer.OrdinalIgnoreCase\)\s*\{(.*?)\n\s*\}',
+        dictionary_match.group(1),
+        re.S,
+    ):
+        language_id = language_match.group(1)
+        values: dict[str, str] = {}
+        for key, value in re.findall(r'\["((?:[^"\\]|\\.)*)"\]\s*=\s*"((?:[^"\\]|\\.)*)"', language_match.group(2)):
+            values[key.replace('\\"', '"')] = value.replace('\\"', '"')
+        texts[language_id] = values
+    return texts
 
 
 def parse_ui_phrases(source: str) -> tuple[list[str], dict[str, list[str]]]:
@@ -199,6 +288,33 @@ def main() -> None:
             len(untranslated) <= 4,
             f"{language_id} has too many English core UI terms: {untranslated}",
         )
+
+    learner_ui_texts = parse_learner_ui_texts(app_localization)
+    for language_id in release_ready_ids:
+        if language_id == "en":
+            continue
+
+        require(language_id in learner_ui_texts, f"{language_id} is missing from learner UI text localization")
+        values = learner_ui_texts[language_id]
+        missing_texts = [text for text in REQUIRED_LEARNER_UI_TEXTS if text not in values]
+        require(not missing_texts, f"{language_id} is missing learner UI text coverage: {missing_texts}")
+        blank_texts = [text for text in REQUIRED_LEARNER_UI_TEXTS if not values[text].strip()]
+        require(not blank_texts, f"{language_id} has blank learner UI text translations: {blank_texts}")
+        untranslated_texts = [text for text in REQUIRED_LEARNER_UI_TEXTS if values[text] == text]
+        require(not untranslated_texts, f"{language_id} has English fallback learner UI text: {untranslated_texts}")
+
+    for topic_key in [
+        "Daily Life",
+        "Travel",
+        "Work & Business",
+        "Job Interview",
+        "Restaurant & Cafe",
+        "Free Conversation",
+    ]:
+        require_text(app_localization, f'("{topic_key}", l("{topic_key}")', "Localization/AppLocalization.cs")
+
+    require_text(app_localization, "NormalizeLanguageId(languageId)", "Localization/AppLocalization.cs")
+    require_text(app_localization, "TextByLanguageId.Value[InterfaceLanguageOptions.EnglishId]", "Localization/AppLocalization.cs")
 
     phrase_names, phrases_by_language = parse_ui_phrases(app_localization)
     phrase_index = {name: index for index, name in enumerate(phrase_names)}

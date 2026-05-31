@@ -34,7 +34,7 @@ def main() -> None:
 
     require_text(home_vm, 'new Topic(1, "Daily Life", "Small talk, introductions, and daily situations.")', "ViewModels/HomeViewModel.cs")
     require_absent(home_vm, 'new Topic(1, "Everyday English"', "ViewModels/HomeViewModel.cs")
-    require_text(localization, '("Daily Life", "Daily Life", "Small talk, introductions, and daily situations.")', "Localization/AppLocalization.cs")
+    require_text(localization, '("Daily Life", l("Daily Life"), l("Small talk, introductions, and daily situations."))', "Localization/AppLocalization.cs")
     require_absent(localization, '("Everyday English",', "Localization/AppLocalization.cs")
     require_text(prompt_builder, "ChooseFirstNonEmpty(request.TopicTitle, request.Topic)", "backend/EnglishVoiceTutor.Api/Services/LessonPromptBuilder.cs")
 

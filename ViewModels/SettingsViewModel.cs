@@ -145,6 +145,8 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string DiagnosticsTitle => diagnosticsLocalizedText.Title;
 
+    private string LocalizeUiText(string englishText) => AppLocalization.GetLearnerUiText(selectedInterfaceLanguageOption.Id, englishText);
+
     public string DiagnosticsSubtitle => diagnosticsLocalizedText.Subtitle;
 
     public string DiagnosticsAppVersionLabel => diagnosticsLocalizedText.AppVersionLabel;
@@ -411,7 +413,7 @@ public partial class SettingsViewModel : ViewModelBase
                 Password = Password,
                 DisplayName = string.IsNullOrWhiteSpace(DisplayName) ? null : DisplayName.Trim()
             }),
-            RegisterFailedMessageText);
+            LocalizeUiText(RegisterFailedMessageText));
     }
 
     [RelayCommand]
@@ -428,7 +430,7 @@ public partial class SettingsViewModel : ViewModelBase
                 Email = Email.Trim(),
                 Password = Password
             }),
-            LoginFailedMessageText);
+            LocalizeUiText(LoginFailedMessageText));
     }
 
     [RelayCommand]
@@ -442,7 +444,7 @@ public partial class SettingsViewModel : ViewModelBase
             ClearAccountState();
             await LoadSettingsForCurrentSessionAsync();
             await RefreshSubscriptionStatusAsync();
-            StatusMessage = "Signed out.";
+            StatusMessage = LocalizeUiText("Signed out.");
         }
         finally
         {
@@ -473,7 +475,7 @@ public partial class SettingsViewModel : ViewModelBase
                 ClearAccountState();
                 await LoadDevelopmentSettingsAsync();
                 await RefreshSubscriptionStatusAsync();
-                StatusMessage = SessionExpiredFallbackMessageText;
+                StatusMessage = LocalizeUiText(SessionExpiredFallbackMessageText);
                 return;
             }
 
@@ -962,7 +964,7 @@ public partial class SettingsViewModel : ViewModelBase
                     await authBackendService.LogoutAsync();
                     ClearAccountState();
                     await LoadDevelopmentSettingsAsync();
-                    StatusMessage = SessionExpiredFallbackMessageText;
+                    StatusMessage = LocalizeUiText(SessionExpiredFallbackMessageText);
                     return;
                 }
 
@@ -977,7 +979,7 @@ public partial class SettingsViewModel : ViewModelBase
             }
 
             ApplyBackendUserSettings(result.Value);
-            SettingsSource = SettingsSourceAuthenticatedText;
+            SettingsSource = LocalizeUiText(SettingsSourceAuthenticatedText);
             SaveCurrentSettingsLocally();
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Available);
         }
@@ -994,19 +996,19 @@ public partial class SettingsViewModel : ViewModelBase
             var result = await backendUserSettingsClient.GetDevelopmentSettingsAsync(BackendBaseUrl);
             if (!result.IsSuccess || result.Value is null)
             {
-                SettingsSource = SettingsSourceDevelopmentText;
+                SettingsSource = LocalizeUiText(SettingsSourceDevelopmentText);
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
                 return;
             }
 
             ApplyBackendUserSettings(result.Value);
-            SettingsSource = SettingsSourceDevelopmentText;
+            SettingsSource = LocalizeUiText(SettingsSourceDevelopmentText);
             SaveCurrentSettingsLocally();
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Available);
         }
         catch
         {
-            SettingsSource = SettingsSourceDevelopmentText;
+            SettingsSource = LocalizeUiText(SettingsSourceDevelopmentText);
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
         }
     }
@@ -1108,7 +1110,7 @@ public partial class SettingsViewModel : ViewModelBase
                     await authBackendService.LogoutAsync();
                     ClearAccountState();
                     await LoadDevelopmentSettingsAsync();
-                    StatusMessage = SessionExpiredFallbackMessageText;
+                    StatusMessage = LocalizeUiText(SessionExpiredFallbackMessageText);
                     return;
                 }
 
@@ -1123,7 +1125,7 @@ public partial class SettingsViewModel : ViewModelBase
             }
 
             ApplyBackendUserSettings(result.Value);
-            SettingsSource = session is null ? SettingsSourceDevelopmentText : SettingsSourceAuthenticatedText;
+            SettingsSource = session is null ? LocalizeUiText(SettingsSourceDevelopmentText) : LocalizeUiText(SettingsSourceAuthenticatedText);
             SaveCurrentSettingsLocally();
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Available);
         }
@@ -1152,17 +1154,17 @@ public partial class SettingsViewModel : ViewModelBase
             }
 
             var status = result.Value;
-            SubscriptionPlanText = $"Plan: {(!string.IsNullOrWhiteSpace(status.PlanName) ? status.PlanName : "Free")}";
-            SubscriptionPremiumText = $"Premium: {(status.PremiumActive ? "Active" : "Not active")}";
+            SubscriptionPlanText = $"{localizedText.SubscriptionPlanLabel}: {(!string.IsNullOrWhiteSpace(status.PlanName) ? status.PlanName : LocalizeUiText("Free"))}";
+            SubscriptionPremiumText = $"{localizedText.SubscriptionPremiumLabel}: {(status.PremiumActive ? LocalizeUiText("Active") : LocalizeUiText("Not active"))}";
             SubscriptionTrialText = status.TrialActive && status.TrialEndsAtUtc is not null
-                ? $"Trial: Active until {status.TrialEndsAtUtc.Value:u}"
-                : "Trial: Not active";
+                ? $"{localizedText.SubscriptionTrialLabel}: {LocalizeUiText("Active until")} {status.TrialEndsAtUtc.Value:u}"
+                : $"{localizedText.SubscriptionTrialLabel}: {LocalizeUiText("Not active")}";
             SubscriptionFreeLessonText = status.FreeLessonUsedToday
-                ? "Free lesson today: Used"
-                : $"Free lesson today: {Math.Max(status.FreeLessonRemainingToday, 0)} remaining";
-            SubscriptionEnforcementText = $"Enforcement: {(status.EnforcementEnabled ? "On" : "Off")}";
-            SubscriptionSourceText = "Source: authenticated";
-            SubscriptionCheckedAtText = $"Checked: {status.CheckedAtUtc:u}";
+                ? $"{localizedText.SubscriptionFreeLessonLabel}: {LocalizeUiText("Used")}"
+                : $"{localizedText.SubscriptionFreeLessonLabel}: {Math.Max(status.FreeLessonRemainingToday, 0)} {LocalizeUiText("remaining")}";
+            SubscriptionEnforcementText = $"{localizedText.SubscriptionEnforcementLabel}: {(status.EnforcementEnabled ? LocalizeUiText("On") : LocalizeUiText("Off"))}";
+            SubscriptionSourceText = $"{localizedText.SubscriptionSourceLabel}: {LocalizeUiText("authenticated")}";
+            SubscriptionCheckedAtText = $"{localizedText.SubscriptionCheckedAtLabel}: {status.CheckedAtUtc:u}";
         }
         catch
         {
@@ -1183,13 +1185,13 @@ public partial class SettingsViewModel : ViewModelBase
 
     private void ResetSubscriptionStatus()
     {
-        SubscriptionPlanText = SubscriptionStatusUnavailableText;
-        SubscriptionPremiumText = SubscriptionStatusUnavailableText;
-        SubscriptionTrialText = SubscriptionStatusUnavailableText;
-        SubscriptionFreeLessonText = SubscriptionStatusUnavailableText;
-        SubscriptionEnforcementText = SubscriptionStatusUnavailableText;
-        SubscriptionSourceText = SubscriptionStatusUnavailableText;
-        SubscriptionCheckedAtText = SubscriptionStatusUnavailableText;
+        SubscriptionPlanText = LocalizeUiText(SubscriptionStatusUnavailableText);
+        SubscriptionPremiumText = LocalizeUiText(SubscriptionStatusUnavailableText);
+        SubscriptionTrialText = LocalizeUiText(SubscriptionStatusUnavailableText);
+        SubscriptionFreeLessonText = LocalizeUiText(SubscriptionStatusUnavailableText);
+        SubscriptionEnforcementText = LocalizeUiText(SubscriptionStatusUnavailableText);
+        SubscriptionSourceText = LocalizeUiText(SubscriptionStatusUnavailableText);
+        SubscriptionCheckedAtText = LocalizeUiText(SubscriptionStatusUnavailableText);
     }
 
     private void ApplyBackendUserSettings(BackendUserSettingsResponse settings)
