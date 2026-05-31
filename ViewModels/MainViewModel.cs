@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
@@ -56,6 +57,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private AccessDisplayState currentAccessPanelState = AccessDisplayState.UnknownOrError;
     private bool isCheckoutOpenedForCurrentPanel;
 
+    public FlowDirection AppFlowDirection => InterfaceLanguageOptions.GetById(userSettings.InterfaceLanguageId).IsRightToLeft
+        ? FlowDirection.RightToLeft
+        : FlowDirection.LeftToRight;
+
     [ObservableProperty]
     private ViewModelBase currentViewModel;
 
@@ -85,6 +90,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private bool isAccessPanelRefreshActionEnabled;
+
+    public string AccessPanelCloseActionText => AppLocalization.GetText(userSettings.InterfaceLanguageId).Settings.CloseButtonText;
 
     public MainViewModel()
     {
@@ -178,6 +185,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         userSettings.BackendBaseUrl = backendBaseUrl;
         userSettings.AudioInputDeviceId = audioInputDeviceId;
         userSettingsService.Save(userSettings);
+        OnPropertyChanged(nameof(AppFlowDirection));
+        OnPropertyChanged(nameof(AccessPanelCloseActionText));
         lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
         authBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
         Debug.WriteLine($"Settings saved: StudyLanguageId={userSettings.StudyLanguageId}; InterfaceLanguageId={userSettings.InterfaceLanguageId}; TutorAvatarId={userSettings.SelectedTutorAvatarId}; BackendBaseUrlConfigured={!string.IsNullOrWhiteSpace(userSettings.BackendBaseUrl)}. Start a new lesson to apply changed study language to lesson content.");
@@ -437,14 +446,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void ShowAccessPanelRefreshAction(bool isEnabled)
     {
-        AccessPanelRefreshActionText = AccessPanelRefreshText;
+        AccessPanelRefreshActionText = AppLocalization.GetText(userSettings.InterfaceLanguageId).Settings.RefreshStatusButtonText;
         IsAccessPanelRefreshActionVisible = true;
         IsAccessPanelRefreshActionEnabled = isEnabled;
     }
 
     private void HideAccessPanelRefreshAction()
     {
-        AccessPanelRefreshActionText = AccessPanelRefreshText;
+        AccessPanelRefreshActionText = AppLocalization.GetText(userSettings.InterfaceLanguageId).Settings.RefreshStatusButtonText;
         IsAccessPanelRefreshActionVisible = false;
         IsAccessPanelRefreshActionEnabled = false;
     }
@@ -477,13 +486,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private static string GetAccessPanelTitle(AccessDisplayState state)
+    private string GetAccessPanelTitle(AccessDisplayState state)
     {
+        var text = AppLocalization.GetText(userSettings.InterfaceLanguageId);
         return state switch
         {
-            AccessDisplayState.SignedOut => AccessPanelSignedOutTitle,
-            AccessDisplayState.FreeAllowanceUsed => AccessPanelUpgradeOptionsTitle,
-            AccessDisplayState.PastDue => AccessPanelAccountStatusTitle,
+            AccessDisplayState.SignedOut => text.Settings.AccountTitle,
+            AccessDisplayState.FreeAllowanceUsed => text.Settings.SubscriptionPremiumLabel,
+            AccessDisplayState.PastDue => text.Settings.SubscriptionStatusTitle,
             AccessDisplayState.CanceledOrPaused => AccessPanelSubscriptionInactiveTitle,
             AccessDisplayState.CheckoutUnavailable => AccessPanelUpgradeUnavailableTitle,
             AccessDisplayState.UnknownOrError => AccessPanelAccessCheckUnavailableTitle,
@@ -491,10 +501,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         };
     }
 
-    private static string? GetAccessPanelPrimaryActionText(AccessDisplayState state)
+    private string? GetAccessPanelPrimaryActionText(AccessDisplayState state)
     {
         return state == AccessDisplayState.FreeAllowanceUsed
-            ? AccessPanelUpgradeText
+            ? AppLocalization.GetText(userSettings.InterfaceLanguageId).Settings.UpgradeButtonText
             : null;
     }
 

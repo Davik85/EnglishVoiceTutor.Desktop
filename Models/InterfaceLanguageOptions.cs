@@ -33,7 +33,8 @@ public static class InterfaceLanguageOptions
             return English;
         }
 
-        return All.FirstOrDefault(option => string.Equals(option.Id, id.Trim(), StringComparison.OrdinalIgnoreCase))
+        var language = NativeLanguageCatalog.GetByIdOrName(id);
+        return All.FirstOrDefault(option => string.Equals(option.Id, language.Id, StringComparison.OrdinalIgnoreCase))
             ?? English;
     }
 
