@@ -164,3 +164,7 @@ Recommended next work: plan remaining billing operations only: `subscription.res
 - Static admin shell audit script: `powershell -ExecutionPolicy Bypass -File tools\audit_admin_shell.ps1`.
 - The existing smoke script (`tools/smoke_admin_foundation.ps1`) now runs this admin shell audit before backend HTTP smoke checks.
 - Latest confirmed EF migration is `20260529000000_AddPaddlePaymentPersistenceV1`.
+
+## Interface localization
+
+Step 5B-3d completed a full learner-facing desktop UI localization pass for the release-ready Interface languages (`en`, `es`, `fr`, `de`, `it`, `pt`, `ru`, `pl`, `ar`, `ja`, `ko`, `sr`, `hr`, `bg`). Runtime English fallback remains a safety mechanism for unexpected missing text, not the expected path for release-ready interface languages. Native/Explanation languages remain broad, and Study languages were not expanded.
