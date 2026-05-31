@@ -7,6 +7,7 @@
   <ItemGroup>
     <Compile Include="../../Shared/LessonPolicies/**/*.cs" Link="Shared/LessonPolicies/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../Shared/StudyLanguages/**/*.cs" Link="Shared/StudyLanguages/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../Shared/NativeLanguages/**/*.cs" Link="Shared/NativeLanguages/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

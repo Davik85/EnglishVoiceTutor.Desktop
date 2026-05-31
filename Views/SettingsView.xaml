@@ -316,8 +316,9 @@
 
                                     <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
                                               ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
-                                              ItemsSource="{Binding SupportedNativeLanguages}"
-                                              SelectedItem="{Binding SelectedNativeLanguage, UpdateSourceTrigger=PropertyChanged}" />
+                                              ItemsSource="{Binding AvailableNativeLanguages}"
+                                              SelectedItem="{Binding SelectedNativeLanguageOption, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMemberPath="DisplayName" />
                                 </StackPanel>
                             </Border>
 

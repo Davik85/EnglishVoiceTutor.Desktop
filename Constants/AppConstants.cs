@@ -1,3 +1,5 @@
+using EnglishVoiceTutor.Shared.NativeLanguages;
+
 namespace EnglishVoiceTutor.Desktop.Constants;
 
 public static class AppConstants
@@ -42,21 +44,14 @@ public static class AppConstants
     public const string SettingsSavedMessage = "Settings saved for this session.";
     public const string BackButtonText = "Back";
 
-    public const string NativeLanguageRussian = "Russian";
-    public const string NativeLanguageSpanish = "Spanish";
-    public const string NativeLanguageGerman = "German";
-    public const string NativeLanguageFrench = "French";
-    public const string NativeLanguageItalian = "Italian";
-    public const string NativeLanguagePortuguese = "Portuguese";
-    public static readonly IReadOnlyList<string> SupportedNativeLanguages =
-    [
-        NativeLanguageRussian,
-        NativeLanguageSpanish,
-        NativeLanguageGerman,
-        NativeLanguageFrench,
-        NativeLanguageItalian,
-        NativeLanguagePortuguese
-    ];
+    public const string NativeLanguageEnglish = NativeLanguageCatalog.DefaultLanguageId;
+    public const string NativeLanguageRussian = "ru";
+    public const string NativeLanguageSpanish = "es";
+    public const string NativeLanguageGerman = "de";
+    public const string NativeLanguageFrench = "fr";
+    public const string NativeLanguageItalian = "it";
+    public const string NativeLanguagePortuguese = "pt";
+    public static readonly IReadOnlyList<NativeLanguageDefinition> SupportedNativeLanguages = NativeLanguageCatalog.All;
 
     public const string SubtopicsTitlePrefix = "Choose a situation for";
     public const string SubtopicsSubtitle = "Pick a realistic scenario for your short speaking lesson.";

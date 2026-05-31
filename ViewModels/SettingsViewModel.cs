@@ -12,6 +12,7 @@ using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Models.Auth;
 using EnglishVoiceTutor.Desktop.Services;
 using EnglishVoiceTutor.Desktop.Services.Auth;
+using EnglishVoiceTutor.Shared.NativeLanguages;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
@@ -190,7 +191,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string DiagnosticsInterfaceLanguageText => SelectedInterfaceLanguageOption.DisplayName;
 
-    public string DiagnosticsNativeLanguageText => SelectedNativeLanguage;
+    public string DiagnosticsNativeLanguageText => SelectedNativeLanguageOption.DisplayName;
 
     public string DiagnosticsStudyLanguageText => SelectedStudyLanguage.DisplayName;
 
@@ -232,7 +233,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public IReadOnlyList<InterfaceLanguageOption> AvailableInterfaceLanguages { get; } = InterfaceLanguageOptions.All;
 
-    public IReadOnlyList<string> SupportedNativeLanguages { get; } = AppConstants.SupportedNativeLanguages;
+    public IReadOnlyList<NativeLanguageDefinition> AvailableNativeLanguages { get; } = NativeLanguageCatalog.All;
 
     public IReadOnlyList<StudyLanguageDefinition> AvailableStudyLanguages { get; } = StudyLanguageCatalog.All;
 
@@ -261,7 +262,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DiagnosticsNativeLanguageText))]
-    private string selectedNativeLanguage;
+    private NativeLanguageDefinition selectedNativeLanguageOption = NativeLanguageCatalog.English;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DiagnosticsStudyLanguageText))]
@@ -364,7 +365,7 @@ public partial class SettingsViewModel : ViewModelBase
         selectedInterfaceLanguageOption = InterfaceLanguageOptions.GetById(currentInterfaceLanguageId);
         localizedText = SettingsLocalization.GetSettingsText(selectedInterfaceLanguageOption.Id);
         diagnosticsLocalizedText = DiagnosticsLocalization.GetText(selectedInterfaceLanguageOption.Id);
-        selectedNativeLanguage = currentNativeLanguage;
+        selectedNativeLanguageOption = NativeLanguageCatalog.GetByIdOrName(currentNativeLanguage);
         selectedStudyLanguage = StudyLanguageCatalog.GetById(currentStudyLanguageId);
         selectedTutorAvatarOption = TutorAvatarOptions.GetById(currentTutorAvatarId);
         userDisplayName = currentUserDisplayName;
@@ -1063,9 +1064,7 @@ public partial class SettingsViewModel : ViewModelBase
             var request = new UpdateBackendUserSettingsRequest
             {
                 StudyLanguage = GetSupportedBackendStudyLanguage(SelectedStudyLanguage),
-                ExplanationLanguage = string.IsNullOrWhiteSpace(SelectedNativeLanguage)
-                    ? AppConstants.NativeLanguageRussian
-                    : SelectedNativeLanguage.Trim(),
+                ExplanationLanguage = SelectedNativeLanguageOption.Id,
                 SpeechVoice = string.IsNullOrWhiteSpace(backendSettingsSpeechVoice)
                     ? BackendConstants.DefaultBackendSettingsSpeechVoice
                     : backendSettingsSpeechVoice.Trim(),
@@ -1197,7 +1196,7 @@ public partial class SettingsViewModel : ViewModelBase
     {
         var selectedAvatar = SelectedTutorAvatarOption ?? TutorAvatarOptions.Elena;
         var selectedAudioInputDeviceId = SelectedAudioInputDeviceOption?.Id ?? AudioConstants.DefaultAudioInputDeviceId;
-        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguage, SelectedStudyLanguage.Id, selectedAvatar.Id, UserDisplayName, LearningGoal, BackendBaseUrl, selectedAudioInputDeviceId);
+        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguageOption.Id, SelectedStudyLanguage.Id, selectedAvatar.Id, UserDisplayName, LearningGoal, BackendBaseUrl, selectedAudioInputDeviceId);
     }
 
     private void SetBackendSettingsSyncStatus(BackendSettingsSyncStatus status)
