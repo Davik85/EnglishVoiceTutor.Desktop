@@ -14,6 +14,7 @@ This roadmap starts from the current confirmed MVP state where:
 - Desktop Step 4D-1 through 4D-4 are implemented for backend-state mapping, paywall display, backend-only checkout launch, and manual refresh after checkout.
 - The manual sandbox payment loop has been validated: Upgrade -> Paddle Checkout -> transaction.completed webhook -> Premium active -> lesson allowed.
 - Production billing setup is not complete.
+- Step 5A desktop release readiness audit is tracked in `docs/desktop-release-readiness-audit.md`; desktop product readiness is the next focus before production billing rollout.
 
 ## Recommended next backend/product order
 
