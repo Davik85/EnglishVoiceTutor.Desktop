@@ -72,6 +72,20 @@ CORE_UI_TERM_NAMES = [
     "RefreshMicrophones",
 ]
 
+REQUIRED_RELEASE_READY_PHRASES = [
+    "SettingsSubtitle",
+    "NativeLanguageSubtitle",
+    "TutorAvatarSubtitle",
+    "SettingsSavedMessage",
+    "StudyLanguageSubtitle",
+    "HomeSubtitle",
+    "DailyLimitText",
+    "AutoSendVoiceLabel",
+    "AutoSendVoiceToolTip",
+    "AutoPlayBotVoiceLabel",
+    "AutoPlayBotVoiceToolTip",
+]
+
 
 def read(relative: str) -> str:
     return (ROOT / relative).read_text(encoding="utf-8")
@@ -122,6 +136,28 @@ def parse_ui_terms(source: str) -> tuple[list[str], dict[str, list[str]], dict[s
     return term_names, terms_by_variable, language_to_variable
 
 
+def parse_ui_phrases(source: str) -> tuple[list[str], dict[str, list[str]]]:
+    record_match = re.search(r"private sealed record UiPhrases\((.*?)\);", source, re.S)
+    require(record_match is not None, "UiPhrases record is missing")
+    phrase_names = [re.sub(r"\s*string\s+", "", item.strip()) for item in record_match.group(1).split(",")]
+
+    english_match = re.search(r"private static readonly UiPhrases EnglishPhrases = new\((.*?)\);", source, re.S)
+    require(english_match is not None, "EnglishPhrases is missing")
+    phrases_by_language = {
+        "en": re.findall(r'"((?:[^"\\]|\\.)*)"', english_match.group(1))
+    }
+
+    dictionary_match = re.search(r"PhrasesByLanguageId = new Dictionary<string, UiPhrases>\(StringComparer.OrdinalIgnoreCase\)\s*\{(.*?)\n\s*\};", source, re.S)
+    require(dictionary_match is not None, "PhrasesByLanguageId dictionary is missing")
+    for match in re.finditer(r'\["([^"]+)"\]\s*=\s*new\((.*?)\)(?=,?\s*\n|\Z)', dictionary_match.group(1), re.S):
+        language_id = match.group(1)
+        if language_id == "en":
+            continue
+        phrases_by_language[language_id] = re.findall(r'"((?:[^"\\]|\\.)*)"', match.group(2))
+
+    return phrase_names, phrases_by_language
+
+
 def main() -> None:
     config = json.loads(read("Content/StudyLanguages/study_languages.json"))
     ids = [item["id"] for item in config]
@@ -162,6 +198,32 @@ def main() -> None:
         require(
             len(untranslated) <= 4,
             f"{language_id} has too many English core UI terms: {untranslated}",
+        )
+
+    phrase_names, phrases_by_language = parse_ui_phrases(app_localization)
+    phrase_index = {name: index for index, name in enumerate(phrase_names)}
+    english_phrases = phrases_by_language["en"]
+    require(len(english_phrases) == len(phrase_names), "EnglishPhrases has an incomplete UiPhrases value list")
+    for required_phrase in REQUIRED_RELEASE_READY_PHRASES:
+        require(required_phrase in phrase_index, f"Required phrase {required_phrase} is missing from UiPhrases")
+
+    for language_id in release_ready_ids:
+        require(language_id in phrases_by_language, f"{language_id} is missing from PhrasesByLanguageId")
+        phrases = phrases_by_language[language_id]
+        require(len(phrases) == len(english_phrases), f"{language_id} has an incomplete UiPhrases value list")
+        missing = [name for name in REQUIRED_RELEASE_READY_PHRASES if not phrases[phrase_index[name]].strip()]
+        require(not missing, f"{language_id} has blank required UI phrases: {missing}")
+        if language_id == "en":
+            continue
+
+        untranslated_phrases = [
+            name
+            for name in REQUIRED_RELEASE_READY_PHRASES
+            if phrases[phrase_index[name]] == english_phrases[phrase_index[name]]
+        ]
+        require(
+            not untranslated_phrases,
+            f"{language_id} has English fallback text in release-ready UI phrases: {untranslated_phrases}",
         )
 
     settings_vm = read("ViewModels/SettingsViewModel.cs")
