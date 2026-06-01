@@ -45,6 +45,8 @@ public static class ApiConstants
     public const string AuthRegisterRoute = "/api/auth/register";
     public const string AuthLoginRoute = "/api/auth/login";
     public const string AuthMeRoute = "/api/auth/me";
+    public const string AuthPasswordResetRequestRoute = "/api/auth/password-reset/request";
+    public const string AuthPasswordResetConfirmRoute = "/api/auth/password-reset/confirm";
     public const string MeUserSettingsRoute = "/api/me/settings";
     public const string MeLessonSessionsRoute = "/api/me/lesson-sessions";
     public const string MeLessonSessionByIdRoute = "/api/me/lesson-sessions/{sessionId:guid}";

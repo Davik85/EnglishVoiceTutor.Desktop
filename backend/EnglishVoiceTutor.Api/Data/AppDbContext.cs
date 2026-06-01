@@ -25,6 +25,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<BillingEventEntity> BillingEvents => Set<BillingEventEntity>();
     public DbSet<PaddleWebhookEventEntity> PaddleWebhookEvents => Set<PaddleWebhookEventEntity>();
     public DbSet<AdminActionEntity> AdminActions => Set<AdminActionEntity>();
+    public DbSet<PasswordResetTokenEntity> PasswordResetTokens => Set<PasswordResetTokenEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -51,6 +52,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureBillingEvents(modelBuilder);
         ConfigurePaddleWebhookEvents(modelBuilder);
         ConfigureAdminActions(modelBuilder);
+        ConfigurePasswordResetTokens(modelBuilder);
     }
 
     private static void ConfigureUsers(ModelBuilder modelBuilder)
@@ -449,6 +451,23 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.HasIndex(action => new { action.TargetUserId, action.CreatedAtUtc });
         entity.HasOne(action => action.AdminUser).WithMany(user => user.AdminActionsCreated).HasForeignKey(action => action.AdminUserId).OnDelete(DeleteBehavior.Restrict);
         entity.HasOne(action => action.TargetUser).WithMany(user => user.AdminActionsReceived).HasForeignKey(action => action.TargetUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigurePasswordResetTokens(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<PasswordResetTokenEntity>();
+        entity.ToTable(EntityConstants.TableNames.PasswordResetTokens);
+        entity.HasKey(token => token.Id);
+        entity.Property(token => token.TokenHash).IsRequired().HasMaxLength(EntityConstants.Lengths.TokenHashMaxLength);
+        entity.Property(token => token.CreatedAtUtc).IsRequired();
+        entity.Property(token => token.ExpiresAtUtc).IsRequired();
+        entity.HasIndex(token => token.UserId);
+        entity.HasIndex(token => token.TokenHash).IsUnique();
+        entity.HasIndex(token => token.ExpiresAtUtc);
+        entity.HasOne(token => token.User)
+            .WithMany(user => user.PasswordResetTokens)
+            .HasForeignKey(token => token.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
 }

@@ -38,7 +38,15 @@ $requiredTexts = @(
     "System default",
     "Microphone test completed.",
     "Subscription status: unavailable",
-    "Backend is unavailable. Please start the local backend and try again."
+    "Backend is unavailable. Please start the local backend and try again.",
+    "Based on completed lessons on this device.",
+    "Total completed lessons",
+    "Lessons completed today",
+    "Current streak",
+    "Last completed lesson",
+    "No completed lessons yet.",
+    "Sign in to view your account status.",
+    "Not signed in"
 )
 $dailyLifeSubtopics = @(
     "Introductions",
@@ -72,6 +80,13 @@ $subtopicsViewModel = Get-Content -Raw -Encoding UTF8 $subtopicsViewModelPath
 $interfaceOptions = Get-Content -Raw -Encoding UTF8 $interfaceOptionsPath
 $studyLanguages = Get-Content -Raw -Encoding UTF8 $studyLanguagePath | ConvertFrom-Json
 
+$settingsLocalizationPath = Join-Path $RepoRoot "Localization/SettingsLocalizedText.cs"
+$settingsViewModelPath = Join-Path $RepoRoot "ViewModels/SettingsViewModel.cs"
+$settingsViewPath = Join-Path $RepoRoot "Views/SettingsView.xaml"
+$settingsLocalization = Get-Content -Raw -Encoding UTF8 $settingsLocalizationPath
+$settingsViewModel = Get-Content -Raw -Encoding UTF8 $settingsViewModelPath
+$settingsView = Get-Content -Raw -Encoding UTF8 $settingsViewPath
+
 $releaseReadyMatch = [regex]::Match($interfaceOptions, 'ReleaseReadyInterfaceLanguageIds\s*=\s*\[(.*?)\];', [System.Text.RegularExpressions.RegexOptions]::Singleline)
 if (-not $releaseReadyMatch.Success) { throw "ReleaseReadyInterfaceLanguageIds list is missing." }
 $constants = @{}
@@ -101,6 +116,39 @@ foreach ($languageId in $expectedLanguages) {
         if ([string]::IsNullOrWhiteSpace($value)) { throw "$languageId has blank UI text for: $englishText" }
         if ($value -eq $englishText) { throw "$languageId still uses English text for: $englishText" }
     }
+}
+
+
+foreach ($requiredSettingsMember in @(
+    "LearningStatisticsTitle",
+    "LearningStatisticsSubtitle",
+    "TotalCompletedLessonsLabel",
+    "LessonsTodayLabel",
+    "CurrentStreakLabel",
+    "LastCompletedLessonLabel",
+    "NoCompletedLessonsText",
+    "SaveButtonText",
+    "BackButtonText",
+    "AccountTitle",
+    "AccountSubtitle",
+    "CurrentAccountLabel",
+    "SubscriptionStatusTitle")) {
+    if ($settingsLocalization -notmatch [regex]::Escape($requiredSettingsMember)) { throw "SettingsLocalizedText is missing $requiredSettingsMember." }
+    if ($settingsViewModel -notmatch [regex]::Escape($requiredSettingsMember)) { throw "SettingsViewModel is missing $requiredSettingsMember." }
+}
+if ($settingsViewModel -notmatch 'LocalizeUiText\(SignedOutSubscriptionPromptText\)') { throw "Signed-out account status must use interface localization." }
+if ($settingsView -notmatch 'MinWidth="132"[\s\S]*Content="\{Binding SaveButtonText\}"') { throw "Settings Save button must have enough width for long localized text." }
+$ruBlockMatch = [regex]::Match($appLocalization, '\["ru"\]\s*=\s*new Dictionary<string, string>\(StringComparer\.OrdinalIgnoreCase\)\s*\{(.*?)
+\s*\}', [System.Text.RegularExpressions.RegexOptions]::Singleline)
+if (-not $ruBlockMatch.Success) { throw "ru is missing learner UI localization coverage." }
+$ruBlock = $ruBlockMatch.Groups[1].Value
+if ($ruBlock -match 'Basado en lecciones completadas en este dispositivo') { throw "Russian Progress helper contains Spanish fallback." }
+if ($ruBlock -match 'Sign in to view your account status') { throw "Russian Account status contains English fallback." }
+foreach ($progressText in @("Based on completed lessons on this device.", "Total completed lessons", "Lessons completed today", "Current streak", "Last completed lesson", "No completed lessons yet.")) {
+    $entryPattern = ('\["{0}"\]\s*=\s*"([^"]*)"' -f [regex]::Escape($progressText))
+    $entryMatch = [regex]::Match($ruBlock, $entryPattern)
+    if (-not $entryMatch.Success) { throw "Russian Progress text is missing: $progressText" }
+    if ($entryMatch.Groups[1].Value -eq $progressText) { throw "Russian Progress text uses English fallback: $progressText" }
 }
 
 if ($appLocalization -notmatch 'return InterfaceLanguageOptions\.GetById\(languageId\)\.Id;') { throw "Interface normalization must use InterfaceLanguageOptions." }

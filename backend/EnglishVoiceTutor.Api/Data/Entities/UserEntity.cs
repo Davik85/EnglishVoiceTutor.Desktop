@@ -22,4 +22,5 @@ public sealed class UserEntity
     public ICollection<DailyFreeLessonUsageEntity> DailyFreeLessonUsages { get; set; } = [];
     public ICollection<AdminActionEntity> AdminActionsCreated { get; set; } = [];
     public ICollection<AdminActionEntity> AdminActionsReceived { get; set; } = [];
+    public ICollection<PasswordResetTokenEntity> PasswordResetTokens { get; set; } = [];
 }

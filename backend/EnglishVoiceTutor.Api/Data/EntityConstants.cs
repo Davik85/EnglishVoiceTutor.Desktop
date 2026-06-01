@@ -24,12 +24,14 @@ public static class EntityConstants
         public const string BillingEvents = "billing_events";
         public const string PaddleWebhookEvents = "paddle_webhook_events";
         public const string AdminActions = "admin_actions";
+        public const string PasswordResetTokens = "password_reset_tokens";
     }
 
     public static class Lengths
     {
         public const int EmailMaxLength = 320;
         public const int PasswordHashMaxLength = 512;
+        public const int TokenHashMaxLength = 128;
         public const int StatusMaxLength = 64;
         public const int LanguageCodeMaxLength = 64;
         public const int DisplayNameMaxLength = 160;

@@ -375,3 +375,10 @@ After this smoke gate passes, continue to the next approved desktop hardening it
 Step 5B-5 adds focused desktop hardening for backend-unavailable, slow, or failed backend requests. Backend-unavailable testing is resilience-only: the app should not crash, Settings/Account should not break, and backend-required lesson or AI actions should be blocked, unavailable, or fail gracefully with short localized messages. Full lesson functionality must be tested only with the backend running.
 
 This step does not change billing, Paddle, subscription, entitlement, Admin UI, lesson JSON, database schema, EF migrations, or backend AI behavior. Desktop AI-related actions continue to call backend APIs only.
+
+## Step 5B-9 account and localization gate
+
+- Packaged app session restore: login → close app → reopen app → confirm the same Windows user remains signed in and backend history is still visible.
+- Logout clears the protected stored session and the next app launch remains signed out.
+- Russian Settings check: Progress text must not contain Spanish, Account signed-out/status text must not contain English fallback, and the Save button must show `Сохранить` without clipping.
+- Password reset is backend-foundation-only and disabled/not exposed as a working tester flow until email delivery is configured.

@@ -231,3 +231,10 @@ Local automated validation expected before the next release handoff:
 - Installer/signing and Microsoft Store packaging are not complete.
 - Mobile app implementation and mobile app-store entitlement bridge are not complete.
 - Refund handling, chargeback handling, manual revocation automation, and background subscription reconciliation are not complete.
+
+## Step 5B-9 account UX hardening
+
+- Packaged Release continues to hide Diagnostics by default and the tester package keeps the existing backend/ngrok URL behavior.
+- Account sessions are stored outside the extracted app folder in the current Windows user's roaming app data and protected with Windows DPAPI. Login/register writes the protected `auth-session.json`; logout deletes it; a temporarily unavailable backend does not delete the stored session unless the backend clearly rejects the token.
+- Settings localization was tightened for Account and Progress. Russian Progress text is Russian, Russian Account signed-out status is localized, and the Russian Save button has enough width for `Сохранить`.
+- Password reset backend foundation exists, but real email delivery is not configured because there is no domain email/provider yet. Password reset is disabled by default, reset tokens are generated securely, only token hashes are stored, and no secrets are committed.

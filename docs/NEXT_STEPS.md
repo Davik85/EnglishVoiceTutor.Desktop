@@ -85,3 +85,10 @@ This roadmap starts from the current confirmed state: the desktop MVP core lesso
 - No narrowing of the Native/Explanation language catalog.
 - No lesson JSON rewrite.
 - No public release declaration yet.
+
+## After Step 5B-9
+
+- Continue with controlled tester handoff and the final clean-machine checklist.
+- Keep production billing/Paddle rollout work deferred until tester validation is complete.
+- Keep CMS/Admin expansion deferred.
+- Set up a domain email/provider later before enabling password reset delivery. Password reset remains disabled/not exposed as a working tester flow until that setup exists.

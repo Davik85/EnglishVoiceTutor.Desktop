@@ -339,3 +339,11 @@ Known issues:
 ## Package output cleanup
 
 Generated package output lives under `artifacts/` and should not be committed. The package script removes previous output for the selected package type before publishing so the zip does not include artifacts from previous runs.
+
+## Step 5B-9 additional tester checks
+
+- Account session restore: sign in, close the packaged app, reopen it on the same Windows user, and confirm the Account tab still shows the user as signed in while backend lesson history remains visible.
+- Logout: sign out, close and reopen the app, and confirm the stored account session is cleared.
+- Settings localization: switch Interface language to Russian and confirm Progress helper text is Russian, Account signed-out/status text is localized, and the Save button shows the full `Сохранить` label without clipping.
+- Password reset is not available to testers unless it is explicitly enabled later after domain email/provider setup.
+- The tester ZIP must not contain `auth-session.json`, local account tokens, OpenAI API keys, or provider secrets.
