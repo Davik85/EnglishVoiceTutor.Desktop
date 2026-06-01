@@ -44,7 +44,7 @@
                     </Rectangle.Fill>
                 </Rectangle>
 
-                <Grid Margin="24,18,24,24">
+                <Grid Margin="24,14,24,20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
@@ -52,9 +52,9 @@
                     </Grid.RowDefinitions>
 
                     <Border Grid.Row="0"
-                            MaxWidth="390"
-                            Padding="20,15,20,14"
-                            HorizontalAlignment="Left"
+                            Width="452"
+                            Padding="18,11,18,12"
+                            HorizontalAlignment="Center"
                             VerticalAlignment="Top"
                             Background="#B8F8FBFF"
                             BorderBrush="#9EFFFFFF"
@@ -70,24 +70,29 @@
 
                         <StackPanel>
                             <TextBlock Text="{Binding AppTitle}"
-                                       FontSize="30"
+                                       HorizontalAlignment="Center"
+                                       FontSize="24"
                                        FontWeight="SemiBold"
                                        Foreground="{StaticResource TextPrimaryBrush}"
-                                       LineHeight="34"
-                                       TextWrapping="Wrap" />
+                                       LineHeight="28"
+                                       TextAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="NoWrap" />
 
-                            <TextBlock Margin="0,6,0,0"
+                            <TextBlock Margin="0,4,0,0"
                                        Text="{Binding Subtitle}"
-                                       FontSize="15"
+                                       FontSize="13"
                                        Foreground="{StaticResource TextSecondaryBrush}"
-                                       LineHeight="21"
+                                       LineHeight="18"
+                                       TextAlignment="Center"
                                        TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
 
                     <Border Grid.Row="2"
-                            Padding="20,16"
-                            HorizontalAlignment="Stretch"
+                            Width="452"
+                            Padding="18,12"
+                            HorizontalAlignment="Center"
                             VerticalAlignment="Bottom"
                             Background="#9AF8FBFF"
                             BorderBrush="#8CFFFFFF"
@@ -108,14 +113,25 @@
                             </Grid.RowDefinitions>
 
                             <TextBlock Grid.Row="0"
-                                       Margin="0,0,0,12"
+                                       Margin="0,0,0,10"
                                        HorizontalAlignment="Stretch"
                                        Text="{Binding StatusMessage}"
                                        TextAlignment="Center"
                                        FontSize="13"
                                        Foreground="{StaticResource TextSecondaryBrush}"
                                        TextTrimming="CharacterEllipsis"
-                                       TextWrapping="NoWrap" />
+                                       TextWrapping="NoWrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding StatusMessage}" Value="">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
 
                             <Grid Grid.Row="1"
                                   HorizontalAlignment="Stretch">
