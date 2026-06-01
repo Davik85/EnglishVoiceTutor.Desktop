@@ -426,7 +426,7 @@
                                                     <Border Style="{StaticResource ChatMessageBubbleStyle}">
                                                         <StackPanel>
                                                             <TextBlock Text="{Binding Sender}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
-                                                            <TextBox Margin="0,4,0,0" Text="{Binding Text}" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
+                                                            <TextBox Margin="0,4,0,0" Text="{Binding Text, Mode=OneWay}" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
 
                                                         <WrapPanel Margin="0,8,0,0" Orientation="Horizontal">
                                                             <Button Padding="8,2"
@@ -499,7 +499,7 @@
                                                             </Border.Style>
                                                             <StackPanel>
                                                                 <TextBlock Text="{Binding DataContext.TranslationLabel, RelativeSource={RelativeSource AncestorType=ItemsControl}}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}" />
-                                                                <TextBox Margin="0,4,0,0" Text="{Binding TranslationText}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
+                                                                <TextBox Margin="0,4,0,0" Text="{Binding TranslationText, Mode=OneWay}" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}" Style="{StaticResource SelectableChatTextBoxStyle}" />
                                                             </StackPanel>
                                                         </Border>
 

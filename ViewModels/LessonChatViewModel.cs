@@ -25,7 +25,7 @@ using NAudio.Wave;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
 
-public partial class LessonChatViewModel : ViewModelBase
+public partial class LessonChatViewModel : ViewModelBase, IDisposable
 {
     private readonly Action navigateBack;
     private readonly Action<LessonSummaryInput, Guid?> finishLesson;
@@ -71,6 +71,8 @@ public partial class LessonChatViewModel : ViewModelBase
     private string currentBotVoiceCancellationReason = BotVoiceCancellationReasons.AppDisposalCancel;
     private bool isRealtimeSessionStarted;
     private bool isStartingRealtimeSession;
+    private bool shutdownCleanupStarted;
+    private bool disposed;
     private readonly SemaphoreSlim realtimeLifecycleSemaphore = new(1, 1);
     private readonly SemaphoreSlim realtimeRecordingSemaphore = new(1, 1);
     private const string RealtimeVoicePendingText = LessonTranscriptValidator.VoiceMessagePlaceholder;
@@ -96,6 +98,7 @@ public partial class LessonChatViewModel : ViewModelBase
     private const int RealtimeStartupWarningThresholdMilliseconds = 8000;
     private const int TtsPlaybackPreparationWarningThresholdMilliseconds = 5000;
     private const int RecordingStopCommitWarningThresholdMilliseconds = 5000;
+    private const int ShutdownActiveLessonReleaseTimeoutSeconds = 2;
     private const int FeedbackBlockedTextPreviewMaxLength = 120;
     private static readonly ConversationModeVoiceProvider CurrentConversationModeVoiceProvider = ResolveConversationModeVoiceProvider(BackendConstants.DefaultConversationModeVoiceProvider);
     private const double ConversationModeTtsSpeechSpeed = BackendConstants.ConversationModeTtsSpeechSpeed;
@@ -2316,11 +2319,130 @@ public partial class LessonChatViewModel : ViewModelBase
         _ = StopBackendLessonHeartbeatAsync(abandonActiveLesson: true, reason: "app_shutdown");
     }
 
-    public async Task CleanupActiveLessonOnShutdownAsync()
+    public async Task StopLessonActivityForShutdownAsync(CancellationToken cancellationToken = default)
     {
+        if (shutdownCleanupStarted)
+        {
+            return;
+        }
+
+        shutdownCleanupStarted = true;
+        Debug.WriteLine($"Lesson shutdown cleanup started. SessionId={backendLessonSessionId?.ToString() ?? "none"}; ConversationModeState={CurrentConversationModeState}; IsRecording={IsRecording}; IsBotVoicePlaying={IsBotVoicePlaying}.");
+
         CancelCurrentBotVoice(BotVoiceCancellationReasons.AppDisposalCancel);
         audioPlaybackService.StopPlayback();
-        await StopBackendLessonHeartbeatAsync(abandonActiveLesson: true, reason: "app_shutdown");
+
+        StopNormalRecordingForShutdown();
+        await StopConversationModeForShutdownAsync(cancellationToken);
+        await StopBackendLessonHeartbeatAsync(abandonActiveLesson: false, reason: "app_shutdown");
+        Debug.WriteLine("Backend lesson heartbeat stopped for desktop shutdown.");
+        await TryReleaseActiveLessonForShutdownAsync(cancellationToken);
+        CleanupTrackedBotVoiceFiles();
+
+        IsRecording = false;
+        IsSending = false;
+        IsBotVoicePlaying = false;
+        SetIsTranscribingAudio(false);
+        RefreshAllCommandStates();
+        Debug.WriteLine("Lesson shutdown cleanup completed.");
+    }
+
+    public Task CleanupActiveLessonOnShutdownAsync()
+    {
+        return StopLessonActivityForShutdownAsync();
+    }
+
+    private void StopNormalRecordingForShutdown()
+    {
+        if (!audioRecordingService.IsRecording)
+        {
+            return;
+        }
+
+        try
+        {
+            var recordingPath = audioRecordingService.StopRecording();
+            audioRecordingService.SafeDeleteRecording(recordingPath);
+            Debug.WriteLine("Normal voice recording stopped for desktop shutdown.");
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Normal voice recording shutdown stop failed without blocking exit: {exception.Message}");
+        }
+    }
+
+    private async Task StopConversationModeForShutdownAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            HideConversationHint();
+            CancelCurrentBotVoice(BotVoiceCancellationReasons.AppDisposalCancel);
+            audioPlaybackService.StopPlayback();
+            realtimeAudioPlaybackService.Stop("window_closing");
+            SafeStopRealtimeMicrophone("window_closing");
+
+            if (IsConversationModeEnabled || isRealtimeSessionStarted || isStartingRealtimeSession)
+            {
+                IsConversationModeEnabled = false;
+                SetConversationModeState(ConversationModeState.Stopping, "window_closing");
+                using var stopCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                stopCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(ShutdownActiveLessonReleaseTimeoutSeconds));
+                await realtimeVoiceEngine.StopSessionAsync(stopCancellationTokenSource.Token, "window_closing");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            Debug.WriteLine($"Conversation Mode shutdown cleanup timed out after {ShutdownActiveLessonReleaseTimeoutSeconds} seconds; shutdown will continue.");
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Conversation Mode shutdown cleanup failed without blocking exit: {exception.Message}");
+        }
+        finally
+        {
+            IsConversationModeEnabled = false;
+            IsRecording = false;
+            IsSending = false;
+            IsBotVoicePlaying = false;
+            isRealtimeSessionStarted = false;
+            isStartingRealtimeSession = false;
+            ClearConversationOverlayState(clearPhrases: true);
+            SetConversationModeState(ConversationModeState.NotStarted, "window_closing");
+        }
+    }
+
+    private async Task TryReleaseActiveLessonForShutdownAsync(CancellationToken cancellationToken)
+    {
+        if (backendLessonSessionFinished || backendLessonSessionId is null)
+        {
+            return;
+        }
+
+        Debug.WriteLine($"Backend active lesson release attempted for desktop shutdown. SessionId={backendLessonSessionId}; TimeoutSeconds={ShutdownActiveLessonReleaseTimeoutSeconds}.");
+
+        try
+        {
+            using var releaseCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            releaseCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(ShutdownActiveLessonReleaseTimeoutSeconds));
+            var result = await backendLessonSessionClient.AbandonActiveAsync(backendBaseUrl, releaseCancellationTokenSource.Token);
+            if (result.IsSuccess)
+            {
+                backendLessonSessionFinished = true;
+                HistorySyncStatusText = BackendConstants.HistorySyncStatusFinished;
+                Debug.WriteLine($"Backend active lesson release succeeded for desktop shutdown. SessionId={result.SessionId}; Released={result.Released}; Status={result.Status}.");
+                return;
+            }
+
+            Debug.WriteLine($"Backend active lesson release failed for desktop shutdown. BackendWasReached={result.BackendWasReached}; IsBackendReachabilityFailure={result.IsBackendReachabilityFailure}; Error={result.ErrorMessage ?? "unknown"}.");
+        }
+        catch (OperationCanceledException)
+        {
+            Debug.WriteLine($"Backend active lesson release timed out after {ShutdownActiveLessonReleaseTimeoutSeconds} seconds; shutdown will continue.");
+        }
+        catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
+        {
+            Debug.WriteLine($"Backend active lesson release failed during desktop shutdown; shutdown will continue. Error={exception.Message}");
+        }
     }
 
     private async Task CleanupCurrentSessionBotVoiceFilesAsync()
@@ -5177,6 +5299,36 @@ public partial class LessonChatViewModel : ViewModelBase
         backendLessonSessionFinished = true;
         HistorySyncStatusText = BackendConstants.HistorySyncStatusFinished;
         Debug.WriteLine($"Backend lesson session finished. SessionId={backendLessonSessionId}; Reason={reason}; ValidTurnCount={request.ValidTurnCount}.");
+    }
+
+    public void Dispose()
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        disposed = true;
+        CancelCurrentBotVoice(BotVoiceCancellationReasons.AppDisposalCancel);
+        audioPlaybackService.StopPlayback();
+        realtimeAudioPlaybackService.Stop("window_closing");
+        SafeStopRealtimeMicrophone("window_closing");
+        realtimeVoiceEngine.SessionReady -= OnRealtimeSessionReady;
+        realtimeVoiceEngine.AssistantAudioChunkReceived -= OnRealtimeAssistantAudioChunkReceived;
+        realtimeVoiceEngine.AssistantTranscriptDeltaReceived -= OnRealtimeAssistantTranscriptDeltaReceived;
+        realtimeVoiceEngine.AssistantTurnCompleted -= OnRealtimeAssistantTurnCompleted;
+        realtimeVoiceEngine.UserAudioCommitted -= OnRealtimeUserAudioCommitted;
+        realtimeVoiceEngine.UserTranscriptDeltaReceived -= OnRealtimeUserTranscriptDeltaReceived;
+        realtimeVoiceEngine.UserTranscriptCompleted -= OnRealtimeUserTranscriptCompleted;
+        realtimeVoiceEngine.UserTranscriptFailed -= OnRealtimeUserTranscriptFailed;
+        realtimeVoiceEngine.ErrorReceived -= OnRealtimeErrorReceived;
+        realtimeVoiceEngine.Disconnected -= OnRealtimeDisconnected;
+        realtimeAudioPlaybackService.PlaybackStarted -= OnRealtimePlaybackStarted;
+        realtimeAudioPlaybackService.PlaybackCompleted -= OnRealtimePlaybackCompleted;
+        realtimeMicrophoneCaptureService.AudioChunkCaptured -= OnRealtimeMicrophoneAudioChunkCaptured;
+        realtimeAudioPlaybackService.Dispose();
+        realtimeMicrophoneCaptureService.Dispose();
+        realtimeVoiceEngine.Dispose();
     }
 
     private string BuildStableLessonContentId()
