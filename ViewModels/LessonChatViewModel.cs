@@ -5328,7 +5328,10 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         realtimeMicrophoneCaptureService.AudioChunkCaptured -= OnRealtimeMicrophoneAudioChunkCaptured;
         realtimeAudioPlaybackService.Dispose();
         realtimeMicrophoneCaptureService.Dispose();
-        realtimeVoiceEngine.Dispose();
+        if (realtimeVoiceEngine is IDisposable disposableRealtimeVoiceEngine)
+        {
+            disposableRealtimeVoiceEngine.Dispose();
+        }
     }
 
     private string BuildStableLessonContentId()
