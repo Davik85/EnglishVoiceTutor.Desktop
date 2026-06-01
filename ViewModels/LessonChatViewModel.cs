@@ -5248,7 +5248,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         SafeStopRealtimeMicrophone("lesson_ended_elsewhere");
         await StopConversationModeAsync("lesson_ended_elsewhere");
         await StopBackendLessonHeartbeatAsync(abandonActiveLesson: false, reason: "lesson_ended_elsewhere");
-        HideConversationHint(clearPhrases: false);
+        ClearConversationOverlayState(clearPhrases: false);
         CurrentHintText = string.Empty;
         BotStatus = BackendConstants.BotStatusReady;
         BackendStatusText = BackendConstants.BackendStatusConnected;
