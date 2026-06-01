@@ -1,0 +1,3 @@
+# Local welcome cover image used for tester/package builds.
+# Keep this binary out of git so release-gate cleanliness checks can pass.
+/welcome-cover.png
