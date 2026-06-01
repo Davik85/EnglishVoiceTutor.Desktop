@@ -136,11 +136,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.Property(session => session.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
         entity.Property(session => session.EstimatedCost).HasPrecision(EntityConstants.Precision.CostPrecision, EntityConstants.Precision.CostScale);
         entity.Property(session => session.StartedAt).IsRequired();
+        entity.Property(session => session.LastHeartbeatAtUtc);
         entity.Property(session => session.CreatedAt).IsRequired();
         entity.Property(session => session.UpdatedAt).IsRequired();
         entity.HasIndex(session => session.UserId);
         entity.HasIndex(session => session.StartedAt);
         entity.HasIndex(session => session.Status);
+        entity.HasIndex(session => session.LastHeartbeatAtUtc);
         entity.HasOne(session => session.User)
             .WithMany(user => user.LessonSessions)
             .HasForeignKey(session => session.UserId)

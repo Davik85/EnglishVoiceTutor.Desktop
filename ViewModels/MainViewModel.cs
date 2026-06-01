@@ -716,7 +716,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (CurrentViewModel is LessonChatViewModel lessonChatViewModel)
         {
-            lessonChatViewModel.CleanupCurrentSessionBotVoiceFiles();
+            lessonChatViewModel.CleanupActiveLessonOnShutdownAsync().GetAwaiter().GetResult();
         }
     }
 

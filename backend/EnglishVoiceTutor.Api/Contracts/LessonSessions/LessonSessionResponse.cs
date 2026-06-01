@@ -16,6 +16,7 @@ public sealed record LessonSessionResponse(
     string Status,
     DateTimeOffset StartedAt,
     DateTimeOffset? FinishedAt,
+    DateTimeOffset? LastHeartbeatAtUtc,
     int ValidTurnCount,
     decimal EstimatedCost,
     DateTimeOffset CreatedAt,

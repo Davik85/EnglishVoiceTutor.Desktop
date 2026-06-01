@@ -119,6 +119,75 @@ public sealed class BackendLessonSessionClient
     }
 
 
+
+    public Task<BackendLessonSessionClientResult> HeartbeatAsync(
+        string? backendBaseUrl,
+        Guid sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        return SendSessionLifecyclePostAsync(
+            backendBaseUrl,
+            sessionId,
+            BackendConstants.DevLessonSessionHeartbeatEndpointTemplate,
+            BackendConstants.LessonSessionHeartbeatEndpointTemplate,
+            "heartbeat",
+            cancellationToken);
+    }
+
+    public Task<BackendLessonSessionClientResult> AbandonAsync(
+        string? backendBaseUrl,
+        Guid sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        return SendSessionLifecyclePostAsync(
+            backendBaseUrl,
+            sessionId,
+            BackendConstants.DevLessonSessionAbandonEndpointTemplate,
+            BackendConstants.LessonSessionAbandonEndpointTemplate,
+            "abandon",
+            cancellationToken);
+    }
+
+    private async Task<BackendLessonSessionClientResult> SendSessionLifecyclePostAsync(
+        string? backendBaseUrl,
+        Guid sessionId,
+        string devEndpointTemplate,
+        string authenticatedEndpointTemplate,
+        string operationName,
+        CancellationToken cancellationToken)
+    {
+        using var httpClient = CreateHttpClient();
+
+        try
+        {
+            var authSession = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+            var endpointTemplate = string.IsNullOrWhiteSpace(authSession?.AccessToken)
+                ? devEndpointTemplate
+                : authenticatedEndpointTemplate;
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, string.Format(endpointTemplate, sessionId)));
+            AuthenticatedRequestHelper.AddBearerTokenIfPresent(httpRequest, authSession?.AccessToken);
+            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST failed with HTTP {(int)response.StatusCode}.");
+            }
+
+            var lessonSession = await response.Content.ReadFromJsonAsync<BackendLessonSessionResponse>(JsonOptions, cancellationToken);
+            return lessonSession is null
+                ? BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST returned an empty response.")
+                : BackendLessonSessionClientResult.Success(lessonSession);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST timed out.");
+        }
+        catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
+        {
+            return BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST is unavailable.");
+        }
+    }
+
     private static async Task<BackendActiveLessonExistsResponse?> TryReadActiveLessonExistsResponseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         try

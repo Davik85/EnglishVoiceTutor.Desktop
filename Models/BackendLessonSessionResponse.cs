@@ -17,6 +17,7 @@ public sealed class BackendLessonSessionResponse
     public string Status { get; set; } = string.Empty;
     public DateTimeOffset StartedAt { get; set; }
     public DateTimeOffset? FinishedAt { get; set; }
+    public DateTimeOffset? LastHeartbeatAtUtc { get; set; }
     public int ValidTurnCount { get; set; }
     public decimal EstimatedCost { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

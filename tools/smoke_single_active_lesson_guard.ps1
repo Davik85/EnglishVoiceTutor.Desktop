@@ -9,8 +9,11 @@ $ErrorActionPreference = "Stop"
 
 $JsonContentType = "application/json"
 $AuthRegisterPath = "/api/auth/register"
+$HealthPath = "/api/health"
 $LessonSessionsPath = "/api/me/lesson-sessions"
+$LessonHeartbeatPathTemplate = "/api/lesson-sessions/{0}/heartbeat"
 $ActiveLessonExistsCode = "active_lesson_exists"
+$HeartbeatFreshnessWaitSeconds = 130
 
 function Write-Step {
     param([string]$Message)
@@ -152,6 +155,10 @@ try {
     $userOneEmail = "$EmailPrefix-user1-$runId@example.com"
     $userTwoEmail = "$EmailPrefix-user2-$runId@example.com"
 
+    Write-Step "Verify backend is reachable"
+    Invoke-JsonExpectedStatus -Method "GET" -Url "$BaseUrl$HealthPath" -Headers $null -Body $null -ExpectedStatus 200 | Out-Null
+    Write-Pass "Backend health endpoint is reachable"
+
     Write-Step "Register two independent users"
     $userOneAuth = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$AuthRegisterPath" -Headers $null -Body @{ email = $userOneEmail; password = $Password } -ExpectedStatus 201
     $userTwoAuth = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$AuthRegisterPath" -Headers $null -Body @{ email = $userTwoEmail; password = $Password } -ExpectedStatus 201
@@ -166,7 +173,12 @@ try {
     Assert-NotEmpty -Value $firstLesson.Body.id -Message "First lesson session id must not be empty."
     Write-Pass "First lesson started"
 
-    Write-Step "Verify second active lesson for same user is blocked"
+    Write-Step "Send heartbeat for user one first lesson"
+    $heartbeatResult = Invoke-JsonExpectedStatus -Method "POST" -Url ("$BaseUrl$LessonHeartbeatPathTemplate" -f $firstLesson.Body.id) -Headers $userOneHeaders -Body $null -ExpectedStatus 200
+    Assert-NotEmpty -Value $heartbeatResult.Body.lastHeartbeatAtUtc -Message "Heartbeat timestamp must not be empty."
+    Write-Pass "Heartbeat endpoint updated the active lesson"
+
+    Write-Step "Verify second active lesson for same user is blocked while heartbeat is fresh"
     $blockedLesson = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$LessonSessionsPath" -Headers $userOneHeaders -Body (New-LessonStartBody -Suffix "second") -ExpectedStatus 409
     Assert-Equal -Expected $ActiveLessonExistsCode -Actual $blockedLesson.Body.error -Message "Blocked lesson error code"
     Assert-Equal -Expected $ActiveLessonExistsCode -Actual $blockedLesson.Body.code -Message "Blocked lesson machine-readable code"
@@ -188,7 +200,16 @@ try {
     Assert-NotEmpty -Value $afterFinishLesson.Body.id -Message "After-finish lesson session id must not be empty."
     Write-Pass "Starting after finish succeeds"
 
-    Write-Pass "Single active lesson guard smoke test passed. Stale active lessons are covered by the backend 12-hour stale policy constant and should be validated with database time travel in integration environments."
+    Write-Step "Wait for heartbeat freshness window to expire"
+    Start-Sleep -Seconds $HeartbeatFreshnessWaitSeconds
+    Write-Pass "Waited $HeartbeatFreshnessWaitSeconds seconds for stale heartbeat"
+
+    Write-Step "Verify stale heartbeat no longer blocks user one"
+    $afterStaleLesson = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$LessonSessionsPath" -Headers $userOneHeaders -Body (New-LessonStartBody -Suffix "after-stale-heartbeat") -ExpectedStatus 201
+    Assert-NotEmpty -Value $afterStaleLesson.Body.id -Message "After-stale lesson session id must not be empty."
+    Write-Pass "Stale heartbeat no longer blocks a new lesson"
+
+    Write-Pass "Single active lesson guard smoke test passed."
 }
 catch {
     Fail $_.Exception.Message

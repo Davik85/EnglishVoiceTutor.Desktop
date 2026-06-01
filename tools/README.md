@@ -32,3 +32,14 @@ powershell -ExecutionPolicy Bypass -File tools\audit_lesson_content.ps1
 ```
 
 The PowerShell audit uses only built-in PowerShell/.NET functionality. It validates lesson JSON, expected lesson folders and files, taxonomy metadata, level profile fields, level-specific turn limits, Cyrillic-free content, obsolete per-level folders, generic copied phrases, lesson-type safety/content expectations, and lightweight C# routing coverage.
+
+## Desktop release gate: active lesson heartbeat guard
+
+The desktop release gate includes the backend-enforced single active lesson guard. The guard is heartbeat-based: Lesson Chat sends a heartbeat for the current backend lesson session about every 30 seconds, and the backend treats an active lesson as blocking only while its heartbeat is fresh (2 minutes). A closed or crashed desktop app therefore should not lock the user out for 12 hours; after the short heartbeat freshness window expires, the backend allows a new lesson and preserves the old session as abandoned history.
+
+Expected release behavior:
+
+- An active parallel lesson on another signed-in device is still blocked with `active_lesson_exists` while that lesson's heartbeat is fresh.
+- Pressing Finish lesson marks the session `Finished` and releases the guard immediately.
+- Leaving Lesson Chat or closing the app stops heartbeat; app shutdown also attempts to abandon the active lesson through the backend release endpoint.
+- If the app crashes or is force-closed before release completes, heartbeat timeout releases the guard after the configured short freshness window.

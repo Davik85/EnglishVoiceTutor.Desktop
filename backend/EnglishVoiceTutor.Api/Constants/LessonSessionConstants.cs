@@ -4,6 +4,7 @@ public static class LessonSessionConstants
 {
     public const string ActiveStatus = "Active";
     public const string FinishedStatus = "Finished";
+    public const string AbandonedStatus = "Abandoned";
 
     public const string TextMode = "text";
     public const string NormalVoiceMode = "normal_voice";
@@ -12,9 +13,11 @@ public static class LessonSessionConstants
 
     public const decimal DefaultEstimatedCost = 0m;
     public const int MaxRecentSessions = 50;
-    public const int ActiveLessonStaleAfterHours = 12;
+    public const int LessonSessionHeartbeatIntervalSeconds = 30;
+    public const int ActiveLessonHeartbeatFreshnessMinutes = 2;
 
-    public static readonly TimeSpan ActiveLessonStaleAfter = TimeSpan.FromHours(ActiveLessonStaleAfterHours);
+    public static readonly TimeSpan LessonSessionHeartbeatInterval = TimeSpan.FromSeconds(LessonSessionHeartbeatIntervalSeconds);
+    public static readonly TimeSpan ActiveLessonHeartbeatFreshness = TimeSpan.FromMinutes(ActiveLessonHeartbeatFreshnessMinutes);
 
     public static readonly string[] ActiveStatuses =
     [

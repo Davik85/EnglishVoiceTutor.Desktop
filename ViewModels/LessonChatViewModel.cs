@@ -56,6 +56,8 @@ public partial class LessonChatViewModel : ViewModelBase
     private bool hasFinishedLesson;
     private Guid? backendLessonSessionId;
     private bool backendLessonSessionFinished;
+    private CancellationTokenSource? backendLessonHeartbeatCancellationTokenSource;
+    private Task? backendLessonHeartbeatTask;
     private bool usedManualPlayVoice;
     private bool usedAutoPlayVoice;
     private readonly SemaphoreSlim botVoiceSemaphore = new(1, 1);
@@ -2310,6 +2312,14 @@ public partial class LessonChatViewModel : ViewModelBase
         CancelCurrentBotVoice(BotVoiceCancellationReasons.AppDisposalCancel);
         audioPlaybackService.StopPlayback();
         CleanupTrackedBotVoiceFiles();
+        _ = StopBackendLessonHeartbeatAsync(abandonActiveLesson: true, reason: "app_shutdown");
+    }
+
+    public async Task CleanupActiveLessonOnShutdownAsync()
+    {
+        CancelCurrentBotVoice(BotVoiceCancellationReasons.AppDisposalCancel);
+        audioPlaybackService.StopPlayback();
+        await StopBackendLessonHeartbeatAsync(abandonActiveLesson: true, reason: "app_shutdown");
     }
 
     private async Task CleanupCurrentSessionBotVoiceFilesAsync()
@@ -4612,6 +4622,7 @@ public partial class LessonChatViewModel : ViewModelBase
             CancelCurrentBotVoice(BotVoiceCancellationReasons.BackOrFinishCancel);
             await CleanupCurrentSessionBotVoiceFilesAsync();
             await StopConversationModeAsync("user_back");
+            await StopBackendLessonHeartbeatAsync(abandonActiveLesson: false, reason: "back_navigation");
             await TryFinishBackendLessonSessionAsync("back_navigation");
             navigateBack();
         }
@@ -4911,9 +4922,94 @@ public partial class LessonChatViewModel : ViewModelBase
         }
 
         backendLessonSessionId = result.Value.Id;
+        StartBackendLessonHeartbeat(result.Value.Id);
         MarkBackendAvailable();
         HistorySyncStatusText = BackendConstants.HistorySyncStatusActive;
         Debug.WriteLine($"Backend lesson session started. SessionId={backendLessonSessionId}; StudyLanguage={request.StudyLanguage}; TopicId={request.TopicId}; SubtopicId={request.SubtopicId}; Level={request.Level}; SelectedContextId={request.SelectedContextId ?? "null"}.");
+    }
+
+
+    private void StartBackendLessonHeartbeat(Guid sessionId)
+    {
+        _ = StopBackendLessonHeartbeatAsync(abandonActiveLesson: false, reason: "restart_heartbeat");
+
+        var cancellationTokenSource = new CancellationTokenSource();
+        backendLessonHeartbeatCancellationTokenSource = cancellationTokenSource;
+        backendLessonHeartbeatTask = RunBackendLessonHeartbeatAsync(sessionId, cancellationTokenSource.Token);
+    }
+
+    private async Task RunBackendLessonHeartbeatAsync(Guid sessionId, CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(BackendConstants.LessonSessionHeartbeatIntervalSeconds));
+
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                var result = await backendLessonSessionClient.HeartbeatAsync(backendBaseUrl, sessionId, cancellationToken);
+                if (!result.IsSuccess)
+                {
+                    Debug.WriteLine($"Backend lesson session heartbeat failed. SessionId={sessionId}; Error={result.ErrorMessage ?? "unknown"}.");
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
+        {
+            Debug.WriteLine($"Backend lesson session heartbeat stopped after non-fatal error. SessionId={sessionId}; Error={exception.Message}.");
+        }
+    }
+
+    private async Task StopBackendLessonHeartbeatAsync(bool abandonActiveLesson, string reason)
+    {
+        var cancellationTokenSource = backendLessonHeartbeatCancellationTokenSource;
+        var heartbeatTask = backendLessonHeartbeatTask;
+        backendLessonHeartbeatCancellationTokenSource = null;
+        backendLessonHeartbeatTask = null;
+
+        if (cancellationTokenSource is not null)
+        {
+            await cancellationTokenSource.CancelAsync();
+        }
+
+        if (heartbeatTask is not null)
+        {
+            try
+            {
+                await heartbeatTask;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        cancellationTokenSource?.Dispose();
+
+        if (!abandonActiveLesson || backendLessonSessionFinished || backendLessonSessionId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var result = await backendLessonSessionClient.AbandonAsync(backendBaseUrl, backendLessonSessionId.Value);
+            if (result.IsSuccess)
+            {
+                backendLessonSessionFinished = true;
+                HistorySyncStatusText = BackendConstants.HistorySyncStatusFinished;
+                Debug.WriteLine($"Backend lesson session abandoned. SessionId={backendLessonSessionId}; Reason={reason}.");
+            }
+            else
+            {
+                Debug.WriteLine($"Backend lesson session abandon skipped. SessionId={backendLessonSessionId}; Reason={reason}; Error={result.ErrorMessage ?? "unknown"}.");
+            }
+        }
+        catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
+        {
+            Debug.WriteLine($"Backend lesson session abandon failed without crashing UI. SessionId={backendLessonSessionId}; Reason={reason}; Error={exception.Message}.");
+        }
     }
 
     private async Task TryFinishBackendLessonSessionAsync(string reason)
@@ -4926,6 +5022,8 @@ public partial class LessonChatViewModel : ViewModelBase
             }
             return;
         }
+
+        await StopBackendLessonHeartbeatAsync(abandonActiveLesson: false, reason: reason);
 
         var request = new FinishBackendLessonSessionRequest
         {
