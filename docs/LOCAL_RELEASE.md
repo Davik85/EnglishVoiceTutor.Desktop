@@ -140,9 +140,9 @@ Security rules:
 
 - Do not commit `OPENAI_API_KEY`.
 - Do not store `OPENAI_API_KEY` in the desktop app.
-- Do not put a real API key in source files, documentation examples, publish output, or settings files.
+- Do not put a real API key in source files, documentation examples, publish output, tester packages, or settings files.
 - Keep the key only in backend environment variables or another secure backend-only secret store.
-- The desktop app does not contain the key, must not call OpenAI directly, and must call backend APIs only for AI/TTS/STT.
+- The desktop app does not contain the key, must not call OpenAI directly, must never receive the key from testers, and must call backend APIs only for AI/TTS/STT.
 
 If `OPENAI_API_KEY` is not configured, the backend may still run, but OpenAI-backed features should be treated as not configured.
 
@@ -167,7 +167,7 @@ The packaged desktop app requires a reachable backend for login, account/session
 
 ## Release Diagnostics behavior
 
-The packaged Release app does not show Diagnostics by default. Diagnostics can appear in Release only when `EVT_DESKTOP_DIAGNOSTICS=1` is set locally before launching the app. Do not commit this variable in scripts, settings, docs with machine-specific values, or shortcuts. Diagnostics and copied diagnostics output must continue masking secrets and tokens.
+The packaged Release app does not show Diagnostics by default. Diagnostics can appear in Release only when `EVT_DESKTOP_DIAGNOSTICS=1` is set locally before launching the app. Do not commit this variable in scripts, settings, docs with machine-specific values, or shortcuts. Diagnostics and copied diagnostics output must continue masking secrets, tokens, API keys, environment variables, lesson messages, raw audio file paths, and lesson history content.
 
 ## Publish Mode A: framework-dependent folder
 

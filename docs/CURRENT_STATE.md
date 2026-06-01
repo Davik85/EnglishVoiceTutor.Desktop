@@ -4,44 +4,133 @@ Review date: 2026-06-01.
 
 ## Short summary
 
-EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. Lesson Chat, account login, trial entitlement, free lesson access checks, local Development admin support, and the provider-agnostic billing lifecycle foundation through Step 4B is implemented and validated where local tooling is available. Desktop upgrade/paywall flow exists for sandbox use, manual Refresh status exists after checkout launch, and Paddle sandbox `transaction.completed` activation has been validated end-to-end. The current localization phase is closed for release hardening, Step 5B-4 adds a repeatable desktop release smoke gate, and Step 5B-8b records the tester zip package as the current accepted desktop tester distribution path. Paddle is the current desktop/web provider adapter, but backend account, subscription, entitlement, usage, limits, lesson history, payment, and Premium/free status remain the source of truth.
+EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. The recent desktop release-hardening block accepted the core lesson/voice/TTS flow, the backend-enforced single-active-lesson guard, and the tester ZIP package flow. Public release is not declared ready. Production billing and CMS/Admin remain deferred until desktop hardening is complete.
 
 ## Product architecture principle
 
 - Product context remains global, cross-platform, and provider-agnostic.
-- The backend is the source of truth for account, trial, subscription, Premium/free status, daily free allowance, usage, limits, lesson history, payments, and entitlements.
-- Desktop and future mobile clients must rely on backend account/subscription/entitlement state, not local payment assumptions.
-- Backend-unavailable desktop checks are resilience-only: the app should not crash, Settings/Account should remain usable, and backend-required lesson/AI actions should fail gracefully with localized messages. Full lesson functionality requires the backend running.
-- Paddle is the current desktop/web billing provider adapter.
-- Core backend subscription, entitlement, and access logic must remain provider-agnostic.
-- `EntitlementEntity` remains the source of Premium access.
-- `SubscriptionEntity` is a provider-agnostic subscription snapshot and does not grant Premium access by itself.
-- `PaymentEntity` is diagnostic payment history only and is not an access source.
-- Realtime code remains in the repository as future capability, but it is not the default MVP Conversation Mode path.
+- This is not a Russia-only product; do not introduce YooKassa, Russian payment flows, or Russia-only billing assumptions.
+- The backend is the source of truth for account, trial, subscription, Premium/free status, daily free allowance, usage, limits, lesson history, active lesson state, payments, entitlements, and AI/TTS/STT calls.
+- Desktop and future mobile clients must rely on backend account/subscription/entitlement/active-lesson state, not local payment or local session assumptions.
+- Desktop must call backend APIs only, must not store an OpenAI API key, and must not call OpenAI directly.
+- `OPENAI_API_KEY` is backend-only, needed only for real AI/TTS/STT testing, must never be committed, and must never be sent to testers.
+- Paddle is the current desktop/web billing provider adapter, but core backend subscription, entitlement, and access logic must remain provider-agnostic.
+- Do not change Paddle, billing, subscription, entitlement, Admin UI, lesson JSON, Study languages, Interface languages, or Native/Explanation language catalog without an explicit later task.
 
-## Desktop/backend MVP status
+## Accepted desktop MVP state
 
-**Implemented and validated**
+Implemented and accepted for the current controlled desktop MVP:
 
 - Windows desktop app builds.
 - Backend builds.
 - PostgreSQL + EF Core persistence foundation works.
 - Lesson content audit passes.
-- Lesson Chat works.
-- Text input works.
-- Send by Enter works.
-- Voice recording works.
-- Transcription works.
-- Bot replies work.
-- Hint works.
+- Account register/login/logout and session restore validation work through backend APIs.
+- Backend lesson history is visible and preserved for signed-in accounts.
+- Normal Lesson Chat works.
+- Conversation Mode works.
+- TTS works.
+- Voice recognition/transcription works and writes text correctly.
+- Translation works.
+- Hints work.
+- Feedback works.
+- Final lesson summary appears.
+- Desktop upgrade/paywall UI exists for sandbox validation with manual Refresh status.
+- Packaged Release hides Diagnostics by default.
+
+Prompt, scenario, dialogue, and bot-behavior quality polishing is intentionally deferred to CMS/Admin, where edits can later be validated, previewed, versioned, and rolled back safely.
+
+## Tester ZIP package state
+
+The canonical current tester distribution flow is `scripts/package-tester-release.ps1` from the repository root:
+
+```powershell
+cd C:\dev\EnglishVoiceTutor.Desktop
+powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
+```
+
+Expected default tester ZIP:
+
+```text
+artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+```
+
+Advanced/developer-only framework-dependent ZIP, when a target machine already has the required .NET Desktop Runtime:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1 -FrameworkDependent
+```
+
+The current tester ZIP has been verified on another Windows device after extraction:
+
+- `EnglishVoiceTutor.Desktop.exe` starts.
+- Diagnostics is hidden by default in the packaged Release app.
+- Backend connection works.
+- Account login works.
+- Backend lesson history is visible/preserved.
+- Normal Lesson Chat works.
+- Conversation Mode works.
+- TTS works.
+- Voice transcription works.
+- Translation works.
+- Hints work.
 - Feedback works.
 - Summary works.
-- Translate works.
-- Conversation Mode works through the stable TTS pipeline.
+- Active lesson guard works.
+- Remote active lesson release stops the old device/session.
+
+`dotnet publish` is only a lower-level implementation detail or troubleshooting path. It is not the main tester handoff flow.
+
+## Backend-required packaged desktop scope
+
+The packaged desktop app requires a reachable backend for:
+
+- login/register/logout/session restore validation;
+- backend lesson history;
+- lesson start;
+- AI bot replies;
+- voice transcription/STT;
+- TTS;
+- translation;
+- hints;
+- feedback;
+- summary;
+- subscription/access checks;
+- active lesson guard;
+- remote active lesson release.
+
+Backend-unavailable checks are resilience-only and must not be treated as full functional acceptance.
+
+## Release Diagnostics state
+
+- Packaged Release hides Diagnostics by default.
+- Diagnostics is visible in Release only if `EVT_DESKTOP_DIAGNOSTICS=1` is set locally before app launch.
+- Do not commit `EVT_DESKTOP_DIAGNOSTICS` in scripts, settings, shortcuts, or machine-specific docs.
+- Diagnostics and copied diagnostics output must mask secrets, tokens, API keys, environment variables, lesson messages, audio paths, and lesson history content.
+
+## Auth/session storage state
+
+The desktop still uses a local file named `auth-session.json` under the app data folder, but the current implementation writes a Windows DPAPI-protected Base64 payload using `ProtectedData.Protect(..., DataProtectionScope.CurrentUser)`. The protected payload contains the serialized session fields after decryption by the same Windows user: access token, token type, expiry, and user DTO. Loading can migrate an old plaintext JSON payload by reading it once and saving it back protected. Documentation must not describe the current token as raw plaintext storage.
+
+## Active lesson state
+
+Single active lesson protection is implemented and accepted:
+
+- Backend enforces one active lesson per account.
+- Desktop and future mobile clients must follow the same backend rule.
+- Lesson Chat sends a backend heartbeat for the active lesson session about every 30 seconds.
+- The backend treats an active lesson as blocking only while its heartbeat is fresh; current freshness window is 2 minutes.
+- A stale heartbeat no longer blocks the account forever; stale active sessions are marked `Abandoned` when a new lesson starts after the freshness window.
+- The user can choose to end an active lesson on another device and continue.
+- Remote release uses the backend active lesson release endpoint and the old session becomes `Abandoned`.
+- The old device/session cannot continue.
+- Old heartbeat and old lesson-bound message creation are rejected with `lesson_session_ended_elsewhere`.
+- UI wording must stay neutral and must not frame this as fraud language.
+- `tools/smoke_single_active_lesson_guard.ps1` passes in the accepted Windows/backend test environment.
 
 ## Study language status
 
-Supported study languages:
+Study languages remain exactly:
 
 - English
 - French
@@ -50,171 +139,32 @@ Supported study languages:
 - Spanish
 - Italian
 
-Study language is the language the user practices or learns in lessons. It is separate from native/interface/explanation language.
+Study language is the language the user practices or learns in lessons. It is separate from Native/Explanation/Interface language.
 
-Native language / interface language / explanation language is the language used for app UI localization, translation target, hints/explanations, feedback/explanation where applicable, and lesson summaries. The current localization phase is closed for release hardening: release-ready Interface languages are limited to the audited current list, Native/Explanation languages remain broad, and Study languages stay unchanged unless a later approved task explicitly expands Study languages.
+## Interface and Native/Explanation language status
 
-## Auth/account/trial status
+Release-ready Interface languages remain exactly:
 
-**Implemented and validated**
+- `en`
+- `es`
+- `fr`
+- `de`
+- `it`
+- `pt`
+- `ru`
+- `pl`
+- `ar`
+- `ja`
+- `ko`
+- `sr`
+- `hr`
+- `bg`
 
-- Auth/JWT backend foundation is implemented and validated.
-- Optional desktop Account UI exists in Settings.
-- Register/Login/Logout work.
-- `auth-session.json` is created after login/register and removed after logout.
-- Settings is auth-aware:
-  - signed in -> `/api/me/settings`
-  - signed out -> dev settings fallback.
-- Normal lesson start requires sign-in.
-- Signed-out users cannot start normal lessons from the desktop UI.
-- Registration grants a 7-day Premium trial automatically.
-- Login does not create or extend trial.
-- Trial is account-level and shared across desktop and future mobile.
-- `/api/me/trial/claim` remains as a fallback/manual one-trial-per-account endpoint.
+Native/Explanation languages remain the broad catalog from the localization foundation. The current interface localization phase is closed for release hardening; future Interface languages should be added only 1-2 at a time after full localization QA.
 
-## Lesson persistence and access status
+## EF migration status
 
-**Implemented and validated**
-
-- Desktop signed-in lesson persistence uses `/api/me` lesson routes.
-- Backend free lesson consumption works after:
-  1. a lesson session has started;
-  2. the learner sends at least 3 valid user messages in that session.
-- Free plan allows 1 free lesson per day.
-- Current lesson continuation is not blocked.
-- Starting another new lesson can be blocked only when `SubscriptionEnforcement:Enabled=true`.
-- Committed `SubscriptionEnforcement` default remains `false`.
-- Backend lesson access endpoints exist:
-  - `GET /api/me/lesson-access`
-  - `GET /api/dev/lesson-access`
-- Backend can enforce lesson start denial behind the config flag.
-- Desktop preflight guard checks lesson access before navigation.
-- Desktop handles backend `403 lesson_access_denied` fallback calmly.
-
-## Subscription/free/Premium entitlement status
-
-**Implemented and validated**
-
-- Premium entitlement bypass works.
-- Trial bypass works.
-- Development-only unlimited Premium test accounts work via environment variable:
-  - `DevelopmentTestAccounts__UnlimitedPremiumEmails__0="test@example.com"`
-- Provider-event Premium entitlements are visible through existing backend access/status endpoints.
-- Valid Paddle `transaction.completed` events can create or extend `provider_event` Premium entitlement.
-- Older Paddle `transaction.completed` events do not shorten entitlement.
-- Duplicate Paddle `transaction.completed` events do not duplicate entitlement.
-- Actual Paddle `subscription.canceled` and `subscription.paused` events expire only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context.
-- Manual/admin/trial/development/future-mobile entitlement sources are not touched by the provider-event canceled/paused expiry path.
-- Desktop and future mobile clients must use backend status/access state instead of local payment assumptions.
-
-## Paddle billing lifecycle foundation status
-
-**Implemented through Step 4B**
-
-1. Provider-agnostic checkout foundation:
-   - `POST /api/me/billing/checkout-session` exists.
-   - Default `provider=none` path returns a safe disabled response.
-   - Paddle checkout transaction creation v1 works behind explicit config.
-   - Checkout itself does not activate Premium.
-2. Paddle webhook foundation:
-   - `POST /api/billing/webhooks/paddle` exists.
-   - The endpoint is protected by `Paddle-Signature`, not JWT.
-   - Raw body is verified before JSON parsing.
-   - Raw Paddle events are stored in `paddle_webhook_events`.
-   - Duplicate Paddle event ids are accepted idempotently.
-   - Accepted Paddle webhooks normalize into provider-agnostic `billing_events`.
-   - Raw payload remains in `paddle_webhook_events`.
-   - `billing_events` stores safe metadata only.
-   - Webhook request processing is event-scoped and processes only the current provider event id.
-3. Subscription snapshot persistence:
-   - `subscription.created` and `subscription.updated` upsert `SubscriptionEntity` snapshot.
-   - Duplicate `subscription.created` is idempotent.
-   - `subscription.updated` updates provider snapshot/current period.
-   - Older out-of-order `subscription.updated` does not regress `SubscriptionEntity` state.
-   - `subscription.created` and `subscription.updated` do not activate Premium by themselves.
-4. Payment snapshot persistence:
-   - `transaction.completed` and `transaction.payment_failed` upsert `PaymentEntity` diagnostic snapshots.
-   - `PaymentEntity` stores provider-agnostic payment/transaction trail.
-   - `PaymentEntity` is not used as an access source.
-   - Duplicate `transaction.completed` and `transaction.payment_failed` are idempotent and do not duplicate `PaymentEntity`.
-   - `transaction.payment_failed` does not activate Premium.
-5. Entitlement activation and extension:
-   - Valid `transaction.completed` can create `provider_event` Premium entitlement.
-   - Valid later `transaction.completed` can extend an existing `provider_event` Premium entitlement.
-   - Duplicate `transaction.completed` does not duplicate entitlement.
-   - Older `transaction.completed` does not shorten entitlement.
-   - `EntitlementEntity` remains the source of Premium access.
-6. Scheduled cancellation policy:
-   - `subscription.updated` with scheduled cancellation records cancellation metadata in `SubscriptionEntity`.
-   - `cancelAtPeriodEnd`, `scheduledChangeAction`, and `scheduledChangeEffectiveAtUtc` are exposed safely where needed for diagnostics/status.
-   - Scheduled cancellation does not revoke Premium early.
-   - Scheduled cancellation does not shorten existing `provider_event` entitlement.
-7. Past due policy:
-   - `subscription.past_due` is recorded as `SubscriptionEntity` snapshot/status.
-   - `subscription.past_due` does not create entitlement.
-   - `subscription.past_due` does not extend entitlement.
-   - `subscription.past_due` does not revoke already active entitlement.
-   - A user without active entitlement does not become Premium from `subscription.past_due`.
-8. Actual canceled / paused policy:
-   - Actual `subscription.canceled` updates `SubscriptionEntity.Status = Canceled`.
-   - Actual `subscription.canceled` expires only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context.
-   - Actual `subscription.paused` updates `SubscriptionEntity.Status = Paused`.
-   - Actual `subscription.paused` expires only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context.
-   - Manual/admin/trial/development/future-mobile entitlements are not touched by this provider-event expiry path.
-9. Resumed / activated snapshot-only policy:
-   - `subscription.resumed` updates `SubscriptionEntity` snapshot/status to active.
-   - `subscription.activated` updates `SubscriptionEntity` snapshot/status to active.
-   - `subscription.resumed` and `subscription.activated` do not create, extend, or restore Premium by themselves.
-   - Premium restoration still requires a valid `transaction.completed` through the existing entitlement activation/extension path.
-
-## Desktop upgrade/paywall sandbox status
-
-**Implemented and validated for sandbox**
-
-- Desktop upgrade/paywall flow exists for sandbox validation and remains backend-driven.
-- Signed-out users cannot start normal lessons.
-- Users cannot start normal lessons when backend access cannot be checked.
-- Free lesson used with `SubscriptionEnforcement__Enabled=true` shows the Upgrade panel.
-- The Upgrade button calls backend only; desktop does not call Paddle directly.
-- Backend returns a backend-hosted checkout launch page such as `/checkout/paddle?transactionId=...`.
-- Desktop does not activate Premium locally.
-- Manual **Refresh status** exists after checkout is opened.
-- Refresh status asks backend for current account/access status, does not call checkout-session, does not open a browser, and does not start a lesson automatically.
-- Paddle sandbox `transaction.completed` webhook activation was validated: Premium becomes active after backend sees the webhook, and the user can start a lesson after backend reports Premium active.
-- Production payment setup is not yet complete; production webhook setup verification and production checkout configuration remain separate next work.
-
-## Admin/support foundation status
-
-**Implemented for local Development support**
-
-- Local Development admin foundation exists.
-- Backend-hosted local admin shell exists at `/admin/`.
-- Admin access uses Development/config bootstrap admin access.
-- This is not production RBAC yet.
-- Admin shell tabs:
-  - Overview
-  - User Lookup
-  - Premium
-  - Free Lesson
-  - Audit Log
-  - System
-- Admin shell JWT remains memory-only.
-- Admin supports:
-  - exact user lookup by email;
-  - read-only user diagnostics;
-  - Premium entitlement schedule inspection;
-  - manual Premium grant;
-  - manual Premium revoke;
-  - free lesson allowance reset;
-  - read-only audit log;
-  - capabilities view.
-- Admin mutations require a reason and write audit actions.
-- Static admin shell audit exists: `tools/audit_admin_shell.ps1`.
-- Admin smoke exists: `tools/smoke_admin_foundation.ps1`.
-
-## EF migrations
-
-Current confirmed EF migrations:
+Current confirmed migrations:
 
 - `20260518000000_InitialProductStorageSchema`
 - `20260520120000_AddLessonSummaryContentFields`
@@ -224,185 +174,60 @@ Current confirmed EF migrations:
 - `20260528000000_AddPaddleWebhookEvents`
 - `20260528010000_AddPaddleSubscriptionLifecycleSnapshotV1`
 - `20260529000000_AddPaddlePaymentPersistenceV1`
+- `20260601090000_AddLessonSessionHeartbeat`
 
-Latest confirmed EF migration:
+Latest confirmed EF migration: `20260601090000_AddLessonSessionHeartbeat`.
 
-- `20260529000000_AddPaddlePaymentPersistenceV1`
+## Current smoke/audit scripts
 
-## Smoke scripts and latest confirmed validation
+Current documented smoke/audit scripts:
 
-Current smoke scripts:
-
+- `tools/run_desktop_release_gate.ps1`
+- `tools/audit_lesson_content.ps1`
+- `tools/audit_interface_localization.ps1`
+- `tools/audit_desktop_backend_boundary.ps1`
+- `tools/smoke_single_active_lesson_guard.ps1`
+- `tools/smoke_admin_foundation.ps1`
+- `tools/audit_admin_shell.ps1`
 - `tools/smoke_billing_checkout.ps1`
 - `tools/smoke_paddle_checkout_adapter.ps1`
+- `tools/smoke_paddle_checkout_client_token_guard.ps1`
 - `tools/smoke_paddle_checkout_live_sandbox.ps1`
 - `tools/smoke_paddle_webhook_ingestion.ps1`
-- `tools/smoke_admin_foundation.ps1`
 - `tools/smoke_paddle_subscription_lifecycle.ps1`
-- `tools/smoke_paddle_payment_persistence.ps1`
 - `tools/smoke_paddle_entitlement_extension.ps1`
+- `tools/smoke_paddle_payment_persistence.ps1`
 - `tools/smoke_paddle_cancellation_past_due_policy.ps1`
 - `tools/smoke_paddle_canceled_paused_expiry_policy.ps1`
 - `tools/smoke_paddle_resumed_activated_snapshot_policy.ps1`
+- `tools/smoke_paddle_production_config_guard.ps1`
 
-Latest confirmed validation:
+The desktop release gate (`tools/run_desktop_release_gate.ps1`) runs restore/build/release build/backend build plus lesson-content, interface-localization, and desktop-backend-boundary audits. Run EF checks with the gate only when backend schema validation is required. The single active lesson guard smoke is documented separately because it requires a running backend and accounts/test setup.
 
-- `tools/audit_lesson_content.ps1` passed.
-- Desktop Debug build passed.
-- Desktop Release build passed.
-- Backend build passed.
-- `dotnet ef migrations list` shows latest migration `20260529000000_AddPaddlePaymentPersistenceV1`.
-- `dotnet ef database update` reports the database is already up to date.
-- `dotnet ef migrations has-pending-model-changes` reports no model changes.
-- `tools/smoke_paddle_canceled_paused_expiry_policy.ps1` passed.
-- `tools/smoke_paddle_cancellation_past_due_policy.ps1` passed.
-- `tools/smoke_paddle_entitlement_extension.ps1` passed.
-- `tools/smoke_paddle_payment_persistence.ps1` passed.
-- `tools/smoke_paddle_subscription_lifecycle.ps1` passed.
-- `tools/smoke_paddle_webhook_ingestion.ps1` passed.
+## Validation status
 
-## Desktop Settings tabs
+Accepted manual validation:
 
-- The desktop Settings screen is reorganized into Learning, Account, Audio, Progress, and Diagnostics tabs.
-- Diagnostics are separated from normal settings and controlled by a simple desktop visibility flag so the tab can be hidden before release.
+- Tester ZIP was copied to and verified on another Windows device.
+- Extracted package launched successfully.
+- Diagnostics was hidden by default in packaged Release.
+- Backend connection, account login, and backend history were verified from the extracted package.
+- Core Lesson Chat / Conversation Mode / TTS / transcription / translation / hints / feedback / summary flow was accepted.
+- Single active lesson guard, heartbeat stale protection, remote active lesson release, and old-session invalidation were accepted.
 
-## Current mutation boundaries
+Local automated validation expected before the next release handoff:
 
-- This current-state update is documentation-only.
-- No backend code should be changed for this update.
-- No desktop code should be changed for this update.
-- No admin UI should be changed for this update.
-- No database entities or migrations should be changed for this update.
-- No smoke scripts should be changed for this update.
-- No new EF migration should be created for this update.
-- Checkout transaction creation returns `checkoutUrl` only and does not activate Premium.
-- Raw webhook ingestion writes `paddle_webhook_events`.
-- Normalization writes provider-agnostic `billing_events` with safe metadata only.
-- Reconciliation decision updates only the current normalized provider event decision state.
-- Entitlement activation can create or extend Premium `EntitlementEntity` rows from validated `reconciliation_pending` billing events.
-- `SubscriptionEntity` is mutated only by subscription lifecycle snapshot processing and does not grant Premium access by itself.
-- Actual `subscription.canceled` and `subscription.paused` events can shorten only active `provider_event` Premium `EntitlementEntity` rows for the resolved internal user/provider subscription context.
-- `subscription.resumed` and `subscription.activated` update only `SubscriptionEntity` snapshot/status and do not restore Premium by themselves.
-- `PaymentEntity` is mutated only by payment persistence snapshot processing and is not used for access decisions.
+1. `powershell -ExecutionPolicy Bypass -File .\tools\run_desktop_release_gate.ps1`
+2. `powershell -ExecutionPolicy Bypass -File .\tools\smoke_single_active_lesson_guard.ps1` with the required backend/test setup.
+3. `powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1`
 
-## Step 5B-6 auth/session and active lesson guard
+## Deferred scope / not ready yet
 
-- Desktop auth sessions are persisted in Windows protected storage using per-user DPAPI-protected payloads instead of raw token JSON. Startup restore validates saved sessions with `/api/auth/me`; invalid or expired sessions are cleared, while temporary backend unavailability leaves the protected session in place. Logout clears the protected session file.
-- The backend now enforces a single active lesson session per user account before creating a new lesson session. This guard is backend account state, not desktop-only UI state, so it also applies to future mobile clients using the same account APIs.
-- If another non-stale active lesson exists, the backend returns machine-readable `active_lesson_exists` with the friendly message: "You have not finished a lesson on another device yet. Finish that lesson and try again." Desktop shows the localized version and does not create a local fake session.
-- Finishing a lesson sets the session to `Finished`, which releases the active lesson guard immediately.
-
-## Step 5B-6b heartbeat-based active lesson guard
-
-- Step 5B-6b fixed stale active lesson locks by storing `LastHeartbeatAtUtc` on lesson sessions and making the backend active lesson guard depend on heartbeat freshness instead of a long status/timestamp lock.
-- Lesson Chat sends a heartbeat while a backend lesson session is active. A closed or crashed desktop app stops sending heartbeats, so the old active session becomes stale after the configured short freshness window (2 minutes) and no longer blocks a new lesson.
-- Future mobile clients must use the same backend heartbeat contract (`POST /api/lesson-sessions/{sessionId}/heartbeat`) while their lesson UI is active.
-
-## Step 5B-8b tester zip packaging current state
-
-The current canonical command for creating a desktop tester package from the repository root is:
-
-```powershell
-cd C:\dev\EnglishVoiceTutor.Desktop
-powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
-```
-
-The script creates the self-contained tester handoff zip at:
-
-```text
-artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
-```
-
-Current confirmed cross-device tester result:
-
-- the tester zip was copied to another Windows device;
-- the app launched after extraction by running `EnglishVoiceTutor.Desktop.exe`;
-- the packaged Release app did not show Diagnostics by default;
-- backend connection worked;
-- account login worked;
-- backend lesson history was available/preserved;
-- Settings opened;
-- account login/session restore worked;
-- Home opened;
-- Subtopics opened;
-- Lesson Chat opened;
-- Send worked;
-- normal chat mode worked;
-- voice recording/transcription worked;
-- TTS / Play voice worked;
-- Translation worked;
-- Hint worked;
-- Feedback worked;
-- Finish lesson worked;
-- Summary appeared;
-- Conversation Mode worked;
-- single active lesson guard worked;
-- remote active lesson release stopped the old device/session;
-- closing the app with X during an active lesson did not leave the process hanging.
-
-Backend requirement remains unchanged: the packaged desktop app requires a reachable backend for login, lesson history, AI, voice/TTS/STT, translation, hints, feedback, summary, subscription/access checks, and active lesson guard. The desktop app does not contain an OpenAI API key, does not call OpenAI directly, and calls backend APIs only.
-
-Diagnostics behavior remains unchanged for Release packages: Diagnostics is hidden by default and can appear only when `EVT_DESKTOP_DIAGNOSTICS=1` is set locally. That variable must not be committed, and Diagnostics must continue masking secrets and tokens.
-
-Dialogue and prompt quality polishing is intentionally deferred to CMS/Admin. Do not continue polishing dialogue or prompt behavior in code now; CMS/Admin should later allow safe editing of prompts, scenarios, tutor behavior, validation, preview, versioning, and rollback.
-
-## Known limitations / deferred scope
-
-- Production Paddle readiness checklist exists at `docs/paddle-production-readiness-checklist.md`; it is planning/checklist documentation only and does not mean production billing is complete.
-- Production Paddle webhook setup verification is not completed yet.
-- Production checkout configuration is not completed yet.
-- Production payment setup is not yet complete; desktop upgrade/paywall flow currently exists for sandbox validation with manual Refresh status.
-- Refund handling is not implemented yet.
-- Chargeback handling is not implemented yet.
-- Manual revocation automation is not implemented yet.
-- Full subscription reconciliation / background reconciliation job is not implemented yet.
-- Future Apple App Store / Google Play mobile entitlement bridge is not implemented yet.
-- Production RBAC/admin system is not implemented yet.
-- Contabo deployment is not part of this task.
-
-## Next recommended phase
-
-The next recommended phase is desktop release hardening from `docs/desktop-release-work-plan.md`, based on the Step 5A audit in `docs/desktop-release-readiness-audit.md`. Run and pass the Step 5B-4 smoke gate in `docs/desktop-release-smoke-gate.md` before creating the Step 5B-8b tester zip package or moving to the next hardening item.
-
-Priority order:
-
-1. Phase 5B desktop release hardening.
-   - Start with Settings final acceptance and Diagnostics Release gate.
-   - Include Step 5B-2 native languages and localization foundation.
-   - Keep Study language options separate from native/interface/explanation language options.
-   - Continue through backend/account UX, auth-session storage decision, lesson selection QA, Lesson Chat polish, voice/TTS/Conversation Mode acceptance, release diagnostics/config cleanup, packaging, security/privacy, manual checklist execution, and final P0/P1 triage.
-2. Phase 5C production billing readiness after desktop hardening.
-   - Production Paddle readiness checklist: `docs/paddle-production-readiness-checklist.md`.
-   - Production Paddle webhook setup checklist.
-   - Production checkout configuration.
-   - Refunds / chargebacks policy.
-   - Manual revocation automation policy.
-   - Optional bounded refresh/polling decision later.
-   - Mobile entitlement bridge later.
-   - Optional background reconciliation job.
-3. Phase 5D CMS/Admin operational readiness after desktop hardening.
-   - Start with read-only support/admin needs before full CMS.
-   - Keep broad production RBAC/content-management work deferred until desktop readiness and minimum operational support requirements are clear.
-
-Do not implement remaining production billing lifecycle behavior before a plan is approved. Production billing remains deferred, and the existing billing boundaries remain unchanged.
-
-## Step 5B-6d active lesson release
-
-- The backend-enforced single active lesson guard now supports a user-controlled release flow for another fresh active lesson on the same account.
-- Desktop clients can call `POST /api/lesson-sessions/active/abandon` after user confirmation, so future mobile clients can use the same backend-enforced behavior without trusting a client-provided session id.
-- The stale heartbeat timeout still prevents users from being locked out after a crash or closed app.
-- A remotely released incomplete lesson is preserved as `Abandoned`; it is not marked as a normally completed lesson and does not create a lesson summary.
-
-## Step 5B-6e desktop shutdown cleanup
-
-- Closing the desktop app while Lesson Chat has an active backend session now runs shutdown cleanup instead of treating the close as a normal lesson finish.
-- Shutdown cleanup stops the lesson heartbeat, cancels voice playback and recording resources, stops Conversation Mode resources, and attempts one best-effort active lesson release through `POST /api/lesson-sessions/active/abandon` with a 2-second timeout.
-- If the backend is unavailable or the release times out during close, desktop shutdown continues and the heartbeat freshness timeout remains the fallback that clears the active lesson guard.
-
-## Step 5B-6f remote-ended lesson session enforcement
-
-- Remote active lesson release now invalidates the old backend session instead of only allowing the new device to start.
-- Old devices detect `lesson_session_ended_elsewhere` on the next heartbeat or next lesson-bound backend action, stop lesson activity, and show: "This lesson was ended on another device. Start a new lesson to continue."
-- The backend rejects remotely ended sessions for heartbeat, finish, lesson message persistence, lesson chat reply, hint, feedback, translation, transcription, TTS, and summary upsert paths when a backend lesson session id is supplied.
-- Heartbeat never revives an `Abandoned`, `Released`, `Canceled`, or `Finished` session.
-- Future mobile clients must implement the same `lesson_session_ended_elsewhere` handling before enabling active lesson release in mobile UI.
+- Public release is not declared ready.
+- Production billing is not ready and remains deferred until desktop hardening is complete.
+- Paddle production webhook delivery, production checkout configuration, provider credentials, product/price mapping, environment separation, and manual production smoke verification are not complete.
+- CMS/Admin operational readiness remains deferred until desktop hardening is complete.
+- Prompt/scenario/bot-behavior quality polishing is deferred to CMS/Admin.
+- Installer/signing and Microsoft Store packaging are not complete.
+- Mobile app implementation and mobile app-store entitlement bridge are not complete.
+- Refund handling, chargeback handling, manual revocation automation, and background subscription reconciliation are not complete.

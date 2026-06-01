@@ -43,3 +43,5 @@ Expected release behavior:
 - Pressing Finish lesson marks the session `Finished` and releases the guard immediately.
 - Leaving Lesson Chat or closing the app stops heartbeat; app shutdown also attempts to abandon the active lesson through the backend release endpoint.
 - If the app crashes or is force-closed before release completes, heartbeat timeout releases the guard after the configured short freshness window.
+- If the user chooses to end the active lesson on another device and continue, the backend marks the old session `Abandoned`; the old device/session cannot continue, and old heartbeat or lesson-bound message actions are rejected with `lesson_session_ended_elsewhere`.
+- Run `tools\smoke_single_active_lesson_guard.ps1` with the required backend/test setup to validate fresh blocking, stale heartbeat release, remote release, old-session invalidation, and old heartbeat/message rejection.

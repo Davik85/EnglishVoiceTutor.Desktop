@@ -1,6 +1,6 @@
 # Desktop Release Smoke Gate
 
-Step: 5B-4, updated by Step 5B-5b wording correction and Step 5B-8b tester package documentation.
+Step: 5B desktop release gate, updated 2026-06-01 for tester ZIP acceptance and active lesson heartbeat guard documentation.
 
 ## Purpose
 
@@ -44,7 +44,7 @@ artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
 5. Copy/send the zip to another Windows device.
 6. Extract the zip.
 7. Run `EnglishVoiceTutor.Desktop.exe` from the extracted folder.
-8. Verify backend connection, login/account, backend history, and the accepted core lesson flow.
+8. Verify backend connection, login/account, backend history, accepted core lesson flow, active lesson guard, and remote active lesson release.
 
 Manual `dotnet publish` commands are lower-level implementation detail only. They are not the main tester handoff flow.
 
@@ -98,6 +98,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_desktop_release_gate.ps1 -Inc
 Expected result:
 
 - migrations can be listed;
+- latest confirmed EF migration is `20260601090000_AddLessonSessionHeartbeat`;
 - database update applies no unexpected migrations for the current local database;
 - `has-pending-model-changes` reports no pending model changes.
 
@@ -160,7 +161,7 @@ Start the local backend in Development before these checks. Full functional less
   - Diagnostics visible in Debug if expected.
   - Diagnostics hidden in packaged Release by default unless `EVT_DESKTOP_DIAGNOSTICS=1` is set locally before launch.
   - `EVT_DESKTOP_DIAGNOSTICS=1` is not committed.
-  - Diagnostics and copied output continue masking secrets/tokens.
+  - Diagnostics and copied output continue masking secrets, tokens, API keys, environment variables, lesson messages, audio paths, and lesson history content.
 - Check Study language list remains exactly:
   - English
   - French
@@ -200,7 +201,9 @@ Start the local backend in Development before these checks. Full functional less
 - Check Account Login/Logout and session restore flows as applicable.
 - Check backend lesson history is visible/preserved.
 - Check single active lesson guard.
+- Check heartbeat stale protection.
 - Check remote active lesson release stops the old device/session.
+- Check old heartbeat and old lesson-bound messages are rejected after remote release, or run `tools/smoke_single_active_lesson_guard.ps1` with the required backend/test setup.
 - Check closing the app with X during an active lesson does not leave the process hanging.
 - Check Back navigation.
 
@@ -267,6 +270,7 @@ Automated checks:
 - lesson content audit:
 - interface localization audit:
 - desktop backend boundary audit:
+- single active lesson guard smoke, if run (`tools/smoke_single_active_lesson_guard.ps1`):
 
 Backend/EF checks, if run:
 - dotnet ef migrations list:
@@ -294,6 +298,11 @@ Backend running functional flow:
 - Play voice:
 - Finish/Summary:
 - Account Login/Logout:
+- Backend lesson history visible/preserved:
+- Active lesson guard:
+- Heartbeat stale protection:
+- Remote active lesson release stops old device/session:
+- Old heartbeat/message rejected after remote release:
 - Back navigation:
 
 Localization checks:

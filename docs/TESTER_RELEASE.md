@@ -122,6 +122,8 @@ The packaged desktop app is still backend-driven. A reachable backend is require
 
 The desktop app does not contain an OpenAI API key, must not call OpenAI directly, and must call backend APIs only. All AI/TTS/STT requests go through the backend.
 
+Active lesson guard behavior is backend-enforced: one active lesson per account, heartbeat keeps the active session fresh, stale heartbeat stops blocking after the current 2-minute freshness window, remote release marks the old session `Abandoned`, and old heartbeat or lesson-bound message actions are rejected after release. UI wording must stay neutral and must not use fraud language.
+
 ## Backend run for local tester validation
 
 Start the backend locally in Development before local package validation that requires backend APIs:
@@ -253,8 +255,10 @@ Ask the tester to follow these steps:
 22. Check Summary.
 23. Use Conversation Mode.
 24. Verify single active lesson guard.
-25. Verify remote active lesson release stops the old device/session.
-26. Close the app with X during an active lesson and confirm the process does not hang.
+25. Verify heartbeat stale protection or run `tools\smoke_single_active_lesson_guard.ps1` with the required backend/test setup.
+26. Verify remote active lesson release stops the old device/session.
+27. Verify old heartbeat/message actions are rejected after remote release, or record that the smoke script covered it.
+28. Close the app with X during an active lesson and confirm the process does not hang.
 
 ## Accepted current tester package result
 
@@ -281,7 +285,9 @@ The current tester zip flow has been manually verified on another Windows device
 - Summary appeared;
 - Conversation Mode worked;
 - single active lesson guard worked;
+- heartbeat stale protection worked;
 - remote active lesson release stopped the old device/session;
+- old heartbeat/message actions were rejected after remote release;
 - closing the app with X during an active lesson did not leave the process hanging.
 
 ## Deferred quality polishing
@@ -313,6 +319,7 @@ Feedback:
 Summary:
 Active lesson guard:
 Remote release:
+Old heartbeat/message rejected after remote release:
 Close with X:
 Known issues:
 ```
