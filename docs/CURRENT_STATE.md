@@ -285,6 +285,13 @@ Latest confirmed validation:
 - `subscription.resumed` and `subscription.activated` update only `SubscriptionEntity` snapshot/status and do not restore Premium by themselves.
 - `PaymentEntity` is mutated only by payment persistence snapshot processing and is not used for access decisions.
 
+## Step 5B-6 auth/session and active lesson guard
+
+- Desktop auth sessions are persisted in Windows protected storage using per-user DPAPI-protected payloads instead of raw token JSON. Startup restore validates saved sessions with `/api/auth/me`; invalid or expired sessions are cleared, while temporary backend unavailability leaves the protected session in place. Logout clears the protected session file.
+- The backend now enforces a single active lesson session per user account before creating a new lesson session. This guard is backend account state, not desktop-only UI state, so it also applies to future mobile clients using the same account APIs.
+- If another non-stale active lesson exists, the backend returns machine-readable `active_lesson_exists` with the friendly message: "You have not finished a lesson on another device yet. Finish that lesson and try again." Desktop shows the localized version and does not create a local fake session.
+- Finishing a lesson sets the session to `Finished`, which releases the active lesson guard. Active lesson locks older than 12 hours are treated as stale and do not block new lessons, preventing permanent lockout after crashes or lost devices.
+
 ## Known limitations / deferred scope
 
 - Production Paddle readiness checklist exists at `docs/paddle-production-readiness-checklist.md`; it is planning/checklist documentation only and does not mean production billing is complete.
