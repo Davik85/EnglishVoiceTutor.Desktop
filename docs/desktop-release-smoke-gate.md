@@ -1,10 +1,10 @@
 # Desktop Release Smoke Gate
 
-Step: 5B-4.
+Step: 5B-4, updated by Step 5B-5b wording correction.
 
 ## Purpose
 
-This smoke gate is the repeatable safety check for the current desktop release-hardening phase. It confirms that the desktop app, backend build, lesson content, interface localization coverage, and local backend readiness are still safe after changes.
+This smoke gate is the repeatable safety check for the current desktop release-hardening phase. It confirms that the desktop app, backend build, lesson content, interface localization coverage, local backend readiness, and backend-unavailable resilience wording are still safe after changes.
 
 This gate does not add product features. It does not change runtime localization behavior, billing, subscriptions, entitlements, Admin UI, database schema, lesson JSON, Study languages, Interface languages, or Native/Explanation language support.
 
@@ -40,6 +40,7 @@ dotnet build -c Release
 dotnet build backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj
 powershell -ExecutionPolicy Bypass -File tools/audit_lesson_content.ps1
 powershell -ExecutionPolicy Bypass -File tools/audit_interface_localization.ps1
+powershell -ExecutionPolicy Bypass -File tools/audit_desktop_backend_boundary.ps1
 ```
 
 Expected result:
@@ -49,6 +50,8 @@ Expected result:
 - Backend build passes.
 - Lesson content audit passes.
 - Interface localization audit passes.
+- Desktop backend-boundary audit passes.
+- The automated helper does not require the backend to be running, does not require Python, does not require `OPENAI_API_KEY`, does not require secrets, and does not test live lesson actions.
 
 ## Backend checks
 
@@ -94,14 +97,33 @@ No new environment variables are required for Step 5B-4. `OPENAI_API_KEY` is not
 
 ## Manual desktop checks
 
-With the local backend running when needed:
+Manual desktop checks are split into two different scopes. Do not mix the expectations.
 
-- Start desktop app.
+### Section A — Backend unavailable resilience checks
+
+These checks are resilience-only. The desktop app is backend-driven, so a stopped or unreachable backend is not a functional lesson-test environment.
+
+- Stop the backend or set Backend URL to a known invalid local URL.
+- Start the desktop app while the backend is not running or not reachable.
+- Confirm the app does not crash.
 - Open Settings.
 - Check Learning tab.
 - Check Account tab.
 - Check Audio tab.
 - Check Progress tab.
+- Confirm the Account tab shows a friendly localized backend-unavailable or connection message when an account action requires backend.
+- Do not expect login, register, lesson start, lesson message Send, Hint, Translate, Play voice/TTS, transcription, Conversation Mode, Finish lesson, or Summary generation to succeed while backend is unavailable.
+- If the user tries a backend-required action, confirm the app shows a friendly localized backend-required, backend-unavailable, or connection message and returns to a usable state.
+- Confirm normal learner-facing UI does not show a raw stack trace or unhandled exception text.
+
+With backend off, lesson/AI actions should not crash and should show a friendly backend-required or backend-unavailable message. With backend running, these actions should work as described in Section B.
+
+### Section B — Backend running functional checks
+
+Start the local backend in Development before these checks. Full functional lesson flow requires backend APIs.
+
+- Start desktop app.
+- Open Settings and save the Backend URL for the running backend.
 - Check Diagnostics visibility behavior:
   - Diagnostics visible in Debug if expected.
   - Diagnostics hidden in Release by default unless `EVT_DESKTOP_DIAGNOSTICS=1` is set.
@@ -132,12 +154,13 @@ With the local backend running when needed:
 - Check Topic cards.
 - Check Subtopics/Situations screen.
 - Check Lesson Chat opens.
-- Check text message flow.
+- Check Send with a text message.
 - Check Hint button.
 - Check Translation show/hide.
-- Check Play voice button if backend/audio is available.
+- Check Play voice/TTS if audio and backend AI/audio configuration are available.
 - Check Finish lesson.
 - Check Lesson Summary.
+- Check Account Login/Logout flows as applicable.
 - Check Back navigation.
 
 ## Localization checks
@@ -202,25 +225,35 @@ Automated checks:
 - backend dotnet build:
 - lesson content audit:
 - interface localization audit:
+- desktop backend boundary audit:
 
 Backend/EF checks, if run:
 - dotnet ef migrations list:
 - dotnet ef database update:
 - dotnet ef migrations has-pending-model-changes:
 
-Backend run:
-- Development backend started:
-- SubscriptionEnforcement__Enabled=true:
+Backend unavailable resilience:
+- app starts:
+- Settings opens:
+- Account backend-required message:
+- lesson/AI actions blocked or fail gracefully:
+- no raw exception:
 
-Manual desktop checks:
-- Settings tabs:
-- Diagnostics visibility:
+Backend running functional flow:
+- backend started:
+- SubscriptionEnforcement__Enabled=true:
+- Settings/Diagnostics:
 - Study language list:
 - Native language list:
 - Interface language list:
-- Home/topic/subtopics flow:
-- Lesson Chat/text/hint/translation/play voice:
-- Finish lesson/summary/back navigation:
+- Home/Subtopics/Lesson Chat:
+- Send:
+- Hint:
+- Translate:
+- Play voice:
+- Finish/Summary:
+- Account Login/Logout:
+- Back navigation:
 
 Localization checks:
 - English:
@@ -259,6 +292,6 @@ After this smoke gate passes, continue to the next approved desktop hardening it
 
 ## Step 5B-5 backend-unavailable and account UX hardening
 
-Step 5B-5 adds focused desktop hardening for backend-unavailable, slow, or failed backend requests. Normal learner-facing account, settings, lesson chat, hint, translation, and voice/TTS failures should surface short localized messages and should not expose raw stack traces or leave buttons stuck in loading states.
+Step 5B-5 adds focused desktop hardening for backend-unavailable, slow, or failed backend requests. Backend-unavailable testing is resilience-only: the app should not crash, Settings/Account should not break, and backend-required lesson or AI actions should be blocked, unavailable, or fail gracefully with short localized messages. Full lesson functionality must be tested only with the backend running.
 
 This step does not change billing, Paddle, subscription, entitlement, Admin UI, lesson JSON, database schema, EF migrations, or backend AI behavior. Desktop AI-related actions continue to call backend APIs only.

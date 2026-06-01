@@ -220,14 +220,17 @@ Local backend verification:
 8. Verify AI-backed features that require backend access work.
 9. Restart the desktop app and confirm the Backend URL persisted.
 
-Invalid backend verification:
+Invalid backend resilience verification:
+
+This is a resilience-only check. Do not expect login, lesson start, Send, Hint, Translate, Play voice/TTS, transcription, Conversation Mode, Finish lesson, or Summary generation to work while the backend is unavailable.
 
 1. Open Settings.
 2. Temporarily enter an invalid Backend URL, such as `http://localhost:5999`.
 3. Save settings.
-4. Start a lesson.
-5. Confirm the app reports backend unavailable or failed health checks without crashing.
-6. Restore the valid Backend URL.
+4. Open Account or try a backend-required action.
+5. Confirm the app reports a friendly localized backend-unavailable, backend-required, or failed-health-check message without crashing.
+6. Confirm normal learner-facing UI does not show a raw stack trace.
+7. Restore the valid Backend URL before running functional lesson checks.
 
 ## Optional ngrok testing
 
@@ -296,7 +299,9 @@ ngrok URLs are temporary and meant for testing. A proper domain and deployed bac
 - [ ] Invalid backend URL does not crash the app.
 - [ ] ngrok URL works if tested with `curl.exe -H "ngrok-skip-browser-warning: 1" https://YOUR-NGROK-URL/health`.
 
-### Lesson flow
+### Lesson flow with backend running
+
+Full lesson functionality requires a running backend. Run this section only after backend health succeeds.
 
 - [ ] Choose level.
 - [ ] Choose topic.
