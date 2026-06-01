@@ -13,6 +13,7 @@ $HealthPath = "/api/health"
 $DatabaseHealthPath = "/api/health/database"
 $LessonSessionsPath = "/api/me/lesson-sessions"
 $LessonHeartbeatPathTemplate = "/api/lesson-sessions/{0}/heartbeat"
+$ActiveLessonAbandonPath = "/api/lesson-sessions/active/abandon"
 $ActiveLessonExistsCode = "active_lesson_exists"
 $HeartbeatFreshnessWaitSeconds = 130
 
@@ -214,18 +215,40 @@ try {
     $blockedLesson = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$LessonSessionsPath" -Headers $userOneHeaders -Body (New-LessonStartBody -Suffix "second") -ExpectedStatus 409
     Assert-Equal -Expected $ActiveLessonExistsCode -Actual $blockedLesson.Body.error -Message "Blocked lesson error code"
     Assert-Equal -Expected $ActiveLessonExistsCode -Actual $blockedLesson.Body.code -Message "Blocked lesson machine-readable code"
+    Assert-Equal -Expected $true -Actual $blockedLesson.Body.canEndOtherLesson -Message "Blocked lesson can be released by user"
     Write-Pass "Second active lesson was blocked with active_lesson_exists"
+
+    Write-Step "Release user one's active lesson from the current authenticated account"
+    $releaseResult = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$ActiveLessonAbandonPath" -Headers $userOneHeaders -Body $null -ExpectedStatus 200
+    Assert-Equal -Expected $true -Actual $releaseResult.Body.released -Message "Active lesson release result"
+    Assert-Equal -Expected "Abandoned" -Actual $releaseResult.Body.status -Message "Released lesson status"
+    Write-Pass "Active lesson release endpoint abandoned user one's active lesson"
+
+    Write-Step "Verify user one can start after releasing the active lesson"
+    $afterReleaseLesson = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$LessonSessionsPath" -Headers $userOneHeaders -Body (New-LessonStartBody -Suffix "after-release") -ExpectedStatus 201
+    Assert-NotEmpty -Value $afterReleaseLesson.Body.id -Message "After-release lesson session id must not be empty."
+    Write-Pass "Starting after active lesson release succeeds"
 
     Write-Step "Verify another user can start their own lesson"
     $otherUserLesson = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$LessonSessionsPath" -Headers $userTwoHeaders -Body (New-LessonStartBody -Suffix "other-user") -ExpectedStatus 201
     Assert-NotEmpty -Value $otherUserLesson.Body.id -Message "Other user lesson session id must not be empty."
     Write-Pass "Another user can start a lesson independently"
 
-    Write-Step "Finish user one's first lesson"
+    Write-Step "Verify user two remains blocked by their own active lesson until they release it"
+    $userTwoBlocked = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$LessonSessionsPath" -Headers $userTwoHeaders -Body (New-LessonStartBody -Suffix "other-user-blocked") -ExpectedStatus 409
+    Assert-Equal -Expected $ActiveLessonExistsCode -Actual $userTwoBlocked.Body.error -Message "Other user own active lesson error code"
+    Write-Pass "Release by user one did not affect user two's active lesson"
+
+    Write-Step "Release user two's active lesson for cleanup"
+    $userTwoRelease = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$ActiveLessonAbandonPath" -Headers $userTwoHeaders -Body $null -ExpectedStatus 200
+    Assert-Equal -Expected $true -Actual $userTwoRelease.Body.released -Message "User two active lesson release result"
+    Write-Pass "User two active lesson cleanup release succeeded"
+
+    Write-Step "Finish user one's after-release lesson"
     $finishBody = @{ validTurnCount = 0 }
-    $finishResult = Invoke-JsonExpectedStatus -Method "PUT" -Url "$BaseUrl$LessonSessionsPath/$($firstLesson.Body.id)/finish" -Headers $userOneHeaders -Body $finishBody -ExpectedStatus 200
+    $finishResult = Invoke-JsonExpectedStatus -Method "PUT" -Url "$BaseUrl$LessonSessionsPath/$($afterReleaseLesson.Body.id)/finish" -Headers $userOneHeaders -Body $finishBody -ExpectedStatus 200
     Assert-Equal -Expected "Finished" -Actual $finishResult.Body.status -Message "Finished lesson status"
-    Write-Pass "First lesson finished"
+    Write-Pass "After-release lesson finished"
 
     Write-Step "Verify user one can start another lesson after finishing"
     $afterFinishLesson = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$LessonSessionsPath" -Headers $userOneHeaders -Body (New-LessonStartBody -Suffix "after-finish") -ExpectedStatus 201

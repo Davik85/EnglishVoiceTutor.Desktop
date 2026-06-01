@@ -196,6 +196,7 @@ app.MapPost(ApiConstants.DevLessonSessionsRoute, HandleCreateDevLessonSessionAsy
 app.MapPut(ApiConstants.DevLessonSessionFinishRoute, HandleFinishLessonSessionAsync);
 app.MapPost(ApiConstants.DevLessonSessionHeartbeatRoute, HandleLessonSessionHeartbeatAsync);
 app.MapPost(ApiConstants.DevLessonSessionAbandonRoute, HandleAbandonLessonSessionAsync);
+app.MapPost(ApiConstants.DevActiveLessonSessionAbandonRoute, HandleAbandonActiveLessonSessionAsync);
 app.MapGet(ApiConstants.DevLessonSessionsRoute, HandleGetDevLessonSessionsAsync);
 app.MapGet(ApiConstants.DevLessonSessionByIdRoute, HandleGetLessonSessionByIdAsync);
 app.MapPost(ApiConstants.DevLessonSessionMessagesRoute, HandleCreateLessonMessageAsync);
@@ -204,6 +205,7 @@ app.MapPost(ApiConstants.MeLessonSessionsRoute, HandleCreateDevLessonSessionAsyn
 app.MapPut(ApiConstants.MeLessonSessionFinishRoute, HandleFinishLessonSessionAsync).RequireAuthorization();
 app.MapPost(ApiConstants.LessonSessionHeartbeatRoute, HandleLessonSessionHeartbeatAsync).RequireAuthorization();
 app.MapPost(ApiConstants.LessonSessionAbandonRoute, HandleAbandonLessonSessionAsync).RequireAuthorization();
+app.MapPost(ApiConstants.ActiveLessonSessionAbandonRoute, HandleAbandonActiveLessonSessionAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonSessionsRoute, HandleGetDevLessonSessionsAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonSessionByIdRoute, HandleGetLessonSessionByIdAsync).RequireAuthorization();
 app.MapPost(ApiConstants.MeLessonSessionMessagesRoute, HandleCreateLessonMessageAsync).RequireAuthorization();
@@ -398,6 +400,30 @@ static async Task<IResult> HandleAbandonLessonSessionAsync(
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
         logger.LogWarning(exception, "Lesson session abandon POST failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleAbandonActiveLessonSessionAsync(
+    ILessonSessionService lessonSessionService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("LessonSessionsEndpoint");
+
+    try
+    {
+        var updatedSession = await lessonSessionService.AbandonActiveLessonSessionAsync(cancellationToken);
+        return Results.Ok(new
+        {
+            released = updatedSession is not null,
+            sessionId = updatedSession?.Id,
+            status = updatedSession?.Status
+        });
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Active lesson session abandon POST failed because storage is unavailable.");
         return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }
@@ -763,8 +789,10 @@ static object CreateActiveLessonExistsResponse(ActiveLessonExistsException excep
     return new
     {
         error = ActiveLessonExistsException.ErrorCode,
+        errorCode = ActiveLessonExistsException.ErrorCode,
         code = ActiveLessonExistsException.ErrorCode,
         message = ActiveLessonExistsException.UserMessage,
+        canEndOtherLesson = true,
         activeSessionId = exception.ActiveSessionId,
         activeSessionStartedAt = exception.ActiveSessionStartedAt,
         staleAfterUtc = exception.StaleAfterUtc
