@@ -80,7 +80,7 @@ Review date: 2026-05-13.
 - Expected behavior: failure should not break chat; status should recover; fallback should remain available.
 - Likely cause: inherent multi-step flow plus timeouts and temp-file playback.
 - Recommended fix: keep diagnostics and avoid further behavior changes until exactness/control state are stable.
-- Test needed: record/transcribe/send/TTS playback with backend configured and with backend unavailable.
+- Test needed: record/transcribe/send/TTS playback with backend configured; with backend unavailable, verify these actions do not crash and show friendly backend-required or backend-unavailable messages.
 
 ## ISSUE-009: Old backend process / stale runtime testing risk
 

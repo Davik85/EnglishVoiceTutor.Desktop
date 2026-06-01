@@ -43,6 +43,10 @@ dotnet run
 - If an OpenAI call fails or returns invalid output, the real lesson chat endpoint returns an error instead of mock lesson text.
 - Desktop app still calls only the real backend lesson chat endpoint during normal lesson flow.
 
+## Backend availability testing note
+
+The desktop app is backend-driven. Backend-unavailable checks are resilience-only: the app should not crash, Settings/Account should remain usable, and backend-required lesson or AI actions should show a friendly localized message instead of a raw exception. Full lesson functionality, including Send, Hint, Translate, Play voice/TTS, Finish, Summary, and Account Login/Logout, must be tested with the backend running.
+
 ## Security rule
 
 OpenAI API keys must never be stored in the desktop app and must never be committed to source control.

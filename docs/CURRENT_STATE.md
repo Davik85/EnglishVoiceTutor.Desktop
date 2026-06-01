@@ -11,6 +11,7 @@ EnglishVoiceTutor currently has a working Windows desktop MVP backed by a workin
 - Product context remains global, cross-platform, and provider-agnostic.
 - The backend is the source of truth for account, trial, subscription, Premium/free status, daily free allowance, usage, limits, lesson history, payments, and entitlements.
 - Desktop and future mobile clients must rely on backend account/subscription/entitlement state, not local payment assumptions.
+- Backend-unavailable desktop checks are resilience-only: the app should not crash, Settings/Account should remain usable, and backend-required lesson/AI actions should fail gracefully with localized messages. Full lesson functionality requires the backend running.
 - Paddle is the current desktop/web billing provider adapter.
 - Core backend subscription, entitlement, and access logic must remain provider-agnostic.
 - `EntitlementEntity` remains the source of Premium access.
