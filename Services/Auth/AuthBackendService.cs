@@ -76,6 +76,11 @@ public sealed class AuthBackendService
         return sessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
     }
 
+    public Task<bool> HasStoredSessionAsync(CancellationToken cancellationToken = default)
+    {
+        return sessionStorageService.HasStoredSessionAsync(cancellationToken);
+    }
+
     public Task LogoutAsync(CancellationToken cancellationToken = default)
     {
         return sessionStorageService.ClearAsync(cancellationToken);

@@ -24,7 +24,8 @@ public static class BackendUxLocalization
         nameof(BackendUxLocalizedText.CredentialsRequired),
         nameof(BackendUxLocalizedText.DisplayNameRequired),
         nameof(BackendUxLocalizedText.VoiceTakingTooLong),
-        nameof(BackendUxLocalizedText.VoicePlaybackUnavailable)
+        nameof(BackendUxLocalizedText.VoicePlaybackUnavailable),
+        nameof(BackendUxLocalizedText.ActiveLessonExists)
     ];
 
     private static readonly IReadOnlyDictionary<string, BackendUxLocalizedText> TextByLanguageId = new Dictionary<string, BackendUxLocalizedText>(StringComparer.OrdinalIgnoreCase)
@@ -48,7 +49,8 @@ public static class BackendUxLocalization
             "Email and password are required.",
             "Display name is required for registration.",
             "Voice is taking too long. Please try again.",
-            "Voice playback is unavailable. You can continue by reading the message."),
+            "Voice playback is unavailable. You can continue by reading the message.",
+            "You have not finished a lesson on another device yet. Finish that lesson and try again."),
         ["es"] = new(
             "El backend no está disponible. Inicia el backend local e inténtalo de nuevo.",
             "No se pudo conectar con el servidor. Comprueba que el backend esté en ejecución.",
@@ -68,7 +70,8 @@ public static class BackendUxLocalization
             "El correo y la contraseña son obligatorios.",
             "El nombre visible es obligatorio para registrarse.",
             "La voz está tardando demasiado. Inténtalo de nuevo.",
-            "La reproducción de voz no está disponible. Puedes continuar leyendo el mensaje."),
+            "La reproducción de voz no está disponible. Puedes continuar leyendo el mensaje.",
+            "Aún no has terminado una lección en otro dispositivo. Termina esa lección e inténtalo de nuevo."),
         ["fr"] = new(
             "Le backend est indisponible. Démarrez le backend local puis réessayez.",
             "Impossible de se connecter au serveur. Vérifiez que le backend fonctionne.",
@@ -88,7 +91,8 @@ public static class BackendUxLocalization
             "L’e-mail et le mot de passe sont obligatoires.",
             "Le nom d’affichage est obligatoire pour l’inscription.",
             "La voix prend trop de temps. Réessayez.",
-            "La lecture vocale est indisponible. Vous pouvez continuer en lisant le message."),
+            "La lecture vocale est indisponible. Vous pouvez continuer en lisant le message.",
+            "Vous n’avez pas encore terminé une leçon sur un autre appareil. Terminez cette leçon et réessayez."),
         ["de"] = new(
             "Das Backend ist nicht verfügbar. Starte das lokale Backend und versuche es erneut.",
             "Keine Verbindung zum Server möglich. Prüfe, ob das Backend läuft.",
@@ -108,7 +112,8 @@ public static class BackendUxLocalization
             "E-Mail und Passwort sind erforderlich.",
             "Für die Registrierung ist ein Anzeigename erforderlich.",
             "Die Sprachausgabe dauert zu lange. Versuche es erneut.",
-            "Sprachwiedergabe ist nicht verfügbar. Du kannst mit dem Lesen der Nachricht fortfahren."),
+            "Sprachwiedergabe ist nicht verfügbar. Du kannst mit dem Lesen der Nachricht fortfahren.",
+            "Du hast eine Lektion auf einem anderen Gerät noch nicht beendet. Beende diese Lektion und versuche es erneut."),
         ["it"] = new(
             "Il backend non è disponibile. Avvia il backend locale e riprova.",
             "Impossibile connettersi al server. Verifica che il backend sia in esecuzione.",
@@ -128,7 +133,8 @@ public static class BackendUxLocalization
             "Email e password sono obbligatorie.",
             "Il nome visualizzato è obbligatorio per la registrazione.",
             "La voce sta impiegando troppo tempo. Riprova.",
-            "La riproduzione vocale non è disponibile. Puoi continuare leggendo il messaggio."),
+            "La riproduzione vocale non è disponibile. Puoi continuare leggendo il messaggio.",
+            "Non hai ancora terminato una lezione su un altro dispositivo. Termina quella lezione e riprova."),
         ["pt"] = new(
             "O backend está indisponível. Inicie o backend local e tente novamente.",
             "Não foi possível conectar ao servidor. Verifique se o backend está em execução.",
@@ -148,7 +154,8 @@ public static class BackendUxLocalization
             "E-mail e senha são obrigatórios.",
             "O nome de exibição é obrigatório para o registro.",
             "A voz está demorando demais. Tente novamente.",
-            "A reprodução de voz está indisponível. Você pode continuar lendo a mensagem."),
+            "A reprodução de voz está indisponível. Você pode continuar lendo a mensagem.",
+            "Você ainda não terminou uma lição em outro dispositivo. Termine essa lição e tente novamente."),
         ["ru"] = new(
             "Бэкенд недоступен. Запустите локальный бэкенд и попробуйте снова.",
             "Не удалось подключиться к серверу. Проверьте, что бэкенд запущен.",
@@ -168,7 +175,8 @@ public static class BackendUxLocalization
             "Email и пароль обязательны.",
             "Отображаемое имя обязательно для регистрации.",
             "Голос загружается слишком долго. Попробуйте снова.",
-            "Воспроизведение голоса недоступно. Вы можете продолжить, прочитав сообщение."),
+            "Воспроизведение голоса недоступно. Вы можете продолжить, прочитав сообщение.",
+            "Вы ещё не закончили урок на другом устройстве. Завершите урок на том устройстве и попробуйте снова."),
         ["pl"] = new(
             "Backend jest niedostępny. Uruchom lokalny backend i spróbuj ponownie.",
             "Nie można połączyć się z serwerem. Sprawdź, czy backend działa.",
@@ -188,7 +196,8 @@ public static class BackendUxLocalization
             "Email i hasło są wymagane.",
             "Nazwa wyświetlana jest wymagana do rejestracji.",
             "Odtwarzanie głosu trwa zbyt długo. Spróbuj ponownie.",
-            "Odtwarzanie głosu jest niedostępne. Możesz kontynuować, czytając wiadomość."),
+            "Odtwarzanie głosu jest niedostępne. Możesz kontynuować, czytając wiadomość.",
+            "Nie ukończono jeszcze lekcji na innym urządzeniu. Ukończ tę lekcję i spróbuj ponownie."),
         ["ar"] = new(
             "الخادم الخلفي غير متاح. شغّل الخادم الخلفي المحلي وحاول مرة أخرى.",
             "تعذر الاتصال بالخادم. تأكد من أن الخادم الخلفي يعمل.",
@@ -208,7 +217,8 @@ public static class BackendUxLocalization
             "البريد الإلكتروني وكلمة المرور مطلوبان.",
             "اسم العرض مطلوب للتسجيل.",
             "يستغرق الصوت وقتًا طويلاً. حاول مرة أخرى.",
-            "تشغيل الصوت غير متاح. يمكنك المتابعة بقراءة الرسالة."),
+            "تشغيل الصوت غير متاح. يمكنك المتابعة بقراءة الرسالة.",
+            "لم تنه درسًا على جهاز آخر بعد. أنهِ ذلك الدرس ثم حاول مرة أخرى."),
         ["ja"] = new(
             "バックエンドを利用できません。ローカルバックエンドを起動して、もう一度お試しください。",
             "サーバーに接続できませんでした。バックエンドが実行中か確認してください。",
@@ -228,7 +238,8 @@ public static class BackendUxLocalization
             "メールアドレスとパスワードが必要です。",
             "登録には表示名が必要です。",
             "音声の準備に時間がかかりすぎています。もう一度お試しください。",
-            "音声再生を利用できません。メッセージを読んで続けられます。"),
+            "音声再生を利用できません。メッセージを読んで続けられます。",
+            "別のデバイスでまだ完了していないレッスンがあります。そのレッスンを終了してから、もう一度お試しください。"),
         ["ko"] = new(
             "백엔드를 사용할 수 없습니다. 로컬 백엔드를 시작한 뒤 다시 시도하세요.",
             "서버에 연결할 수 없습니다. 백엔드가 실행 중인지 확인하세요.",
@@ -248,7 +259,8 @@ public static class BackendUxLocalization
             "이메일과 비밀번호가 필요합니다.",
             "등록하려면 표시 이름이 필요합니다.",
             "음성 준비 시간이 너무 오래 걸립니다. 다시 시도하세요.",
-            "음성 재생을 사용할 수 없습니다. 메시지를 읽고 계속할 수 있습니다."),
+            "음성 재생을 사용할 수 없습니다. 메시지를 읽고 계속할 수 있습니다.",
+            "다른 기기에서 아직 끝내지 않은 레슨이 있습니다. 그 레슨을 마치고 다시 시도하세요."),
         ["sr"] = new(
             "Backend nije dostupan. Pokrenite lokalni backend i pokušajte ponovo.",
             "Nije moguće povezati se sa serverom. Proverite da li backend radi.",
@@ -268,7 +280,8 @@ public static class BackendUxLocalization
             "E-pošta i lozinka su obavezni.",
             "Ime za prikaz je obavezno za registraciju.",
             "Glasu treba previše vremena. Pokušajte ponovo.",
-            "Reprodukcija glasa nije dostupna. Možete nastaviti čitanjem poruke."),
+            "Reprodukcija glasa nije dostupna. Možete nastaviti čitanjem poruke.",
+            "Još niste završili lekciju na drugom uređaju. Završite tu lekciju i pokušajte ponovo."),
         ["hr"] = new(
             "Backend nije dostupan. Pokrenite lokalni backend i pokušajte ponovno.",
             "Nije se moguće povezati s poslužiteljem. Provjerite radi li backend.",
@@ -288,7 +301,8 @@ public static class BackendUxLocalization
             "E-pošta i lozinka su obavezni.",
             "Ime za prikaz obavezno je za registraciju.",
             "Glas traje predugo. Pokušajte ponovno.",
-            "Reprodukcija glasa nije dostupna. Možete nastaviti čitanjem poruke."),
+            "Reprodukcija glasa nije dostupna. Možete nastaviti čitanjem poruke.",
+            "Još niste završili lekciju na drugom uređaju. Završite tu lekciju i pokušajte ponovno."),
         ["bg"] = new(
             "Бекендът не е наличен. Стартирайте локалния бекенд и опитайте отново.",
             "Неуспешна връзка със сървъра. Проверете дали бекендът работи.",
@@ -308,7 +322,8 @@ public static class BackendUxLocalization
             "Имейлът и паролата са задължителни.",
             "Името за показване е задължително за регистрация.",
             "Гласът се подготвя твърде дълго. Опитайте отново.",
-            "Възпроизвеждането на глас не е налично. Можете да продължите, като прочетете съобщението.")
+            "Възпроизвеждането на глас не е налично. Можете да продължите, като прочетете съобщението.",
+            "Все още не сте завършили урок на друго устройство. Завършете този урок и опитайте отново.")
     };
 
     public static BackendUxLocalizedText GetText(string? languageId)

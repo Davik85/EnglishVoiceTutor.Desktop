@@ -24,6 +24,9 @@ public partial class SettingsViewModel : ViewModelBase
     private const string OpenAiNotConfiguredStatus = "not_configured";
     private const string DiagnosticsReportTitle = "English Voice Tutor Desktop diagnostics";
     private const string DiagnosticsCurrentDateTimeLabel = "Current date/time";
+    private const string DiagnosticsAuthTokenPresentLabel = "Auth token present";
+    private const string DiagnosticsAuthenticatedLabel = "Authenticated";
+    private const string DiagnosticsSessionRestoreAttemptedLabel = "Session restore attempted";
     private const string UnavailableAudioInputDeviceId = "unavailable_audio_input_device";
     private const string StudyLanguageTitleText = "Study language";
     private const string StudyLanguageSubtitleText = "Choose the language you want to practice. This does not change the app UI language.";
@@ -68,6 +71,7 @@ public partial class SettingsViewModel : ViewModelBase
     private bool isApplyingBackendSettings;
     private string databaseProviderText = string.Empty;
     private string databaseErrorText = string.Empty;
+    private bool sessionRestoreAttempted;
     private bool isRefreshingAudioInputDevices;
     private bool isSelectedAudioInputDeviceUnavailable;
 
@@ -457,6 +461,7 @@ public partial class SettingsViewModel : ViewModelBase
         ErrorMessage = string.Empty;
         try
         {
+            sessionRestoreAttempted = true;
             var session = await authBackendService.TryRestoreSessionAsync();
             if (session is null)
             {
@@ -862,6 +867,18 @@ public partial class SettingsViewModel : ViewModelBase
 
     private string BuildDiagnosticsReport()
     {
+        static string awaitSafe(Task<bool> task)
+        {
+            try
+            {
+                return FormatDiagnosticBoolean(task.GetAwaiter().GetResult());
+            }
+            catch
+            {
+                return FormatDiagnosticBoolean(false);
+            }
+        }
+
         var report = new StringBuilder();
         report.AppendLine(DiagnosticsReportTitle);
         AppendDiagnosticsLine(report, DiagnosticsAppVersionLabel, AppVersionText);
@@ -884,6 +901,9 @@ public partial class SettingsViewModel : ViewModelBase
         AppendDiagnosticsLine(report, DiagnosticsInterfaceLanguageLabel, DiagnosticsInterfaceLanguageText);
         AppendDiagnosticsLine(report, DiagnosticsNativeLanguageLabel, DiagnosticsNativeLanguageText);
         AppendDiagnosticsLine(report, DiagnosticsStudyLanguageLabel, DiagnosticsStudyLanguageText);
+        AppendDiagnosticsLine(report, DiagnosticsAuthTokenPresentLabel, awaitSafe(authBackendService.HasStoredSessionAsync()));
+        AppendDiagnosticsLine(report, DiagnosticsAuthenticatedLabel, FormatDiagnosticBoolean(IsAuthenticated));
+        AppendDiagnosticsLine(report, DiagnosticsSessionRestoreAttemptedLabel, FormatDiagnosticBoolean(sessionRestoreAttempted));
         AppendDiagnosticsLine(report, "Backend settings sync", GetBackendSettingsSyncStatusText());
         AppendDiagnosticsLine(report, "Last backend settings sync time", GetLastBackendSettingsSyncTimeText());
         AppendDiagnosticsLine(report, DiagnosticsTutorAvatarLabel, DiagnosticsTutorAvatarText);
@@ -892,6 +912,8 @@ public partial class SettingsViewModel : ViewModelBase
 
         return report.ToString().TrimEnd();
     }
+
+    private static string FormatDiagnosticBoolean(bool value) => value ? "yes" : "no";
 
     private static void AppendDiagnosticsLine(StringBuilder report, string label, string value)
     {

@@ -5,6 +5,8 @@ public sealed record BackendLessonSessionClientResult(
     BackendLessonSessionResponse? Value,
     string? ErrorMessage,
     bool IsLessonAccessDenied = false,
+    bool IsActiveLessonBlocked = false,
+    string ActiveLessonMessage = "",
     string AccessDeniedReason = "",
     string AccessDeniedDecision = "",
     bool EnforcementEnabled = false,
@@ -30,10 +32,25 @@ public sealed record BackendLessonSessionClientResult(
             Value: null,
             ErrorMessage: null,
             IsLessonAccessDenied: true,
+            IsActiveLessonBlocked: false,
+            ActiveLessonMessage: string.Empty,
             AccessDeniedReason: deniedResponse.Reason,
             AccessDeniedDecision: deniedResponse.Decision,
             EnforcementEnabled: deniedResponse.EnforcementEnabled,
             FreeLessonUsedToday: deniedResponse.FreeLessonUsedToday,
             FreeLessonRemainingToday: deniedResponse.FreeLessonRemainingToday);
+    }
+
+    public static BackendLessonSessionClientResult ActiveLessonBlocked(BackendActiveLessonExistsResponse response)
+    {
+        ArgumentNullException.ThrowIfNull(response);
+
+        return new BackendLessonSessionClientResult(
+            IsSuccess: false,
+            Value: null,
+            ErrorMessage: response.Message,
+            IsLessonAccessDenied: false,
+            IsActiveLessonBlocked: true,
+            ActiveLessonMessage: response.Message);
     }
 }

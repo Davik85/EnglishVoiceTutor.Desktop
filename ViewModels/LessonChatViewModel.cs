@@ -4876,6 +4876,20 @@ public partial class LessonChatViewModel : ViewModelBase
         };
 
         var result = await backendLessonSessionClient.StartAsync(backendBaseUrl, request);
+        if (result.IsActiveLessonBlocked)
+        {
+            HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
+            StatusMessage = BackendUxText.ActiveLessonExists;
+            Debug.WriteLine("Backend lesson session blocked. Reason=active_lesson_exists.");
+            MessageBox.Show(
+                BackendUxText.ActiveLessonExists,
+                BackendConstants.LessonStartUnavailableTitle,
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            navigateBack();
+            return;
+        }
+
         if (result.IsLessonAccessDenied)
         {
             HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;

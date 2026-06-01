@@ -12,6 +12,14 @@ public static class LessonSessionConstants
 
     public const decimal DefaultEstimatedCost = 0m;
     public const int MaxRecentSessions = 50;
+    public const int ActiveLessonStaleAfterHours = 12;
+
+    public static readonly TimeSpan ActiveLessonStaleAfter = TimeSpan.FromHours(ActiveLessonStaleAfterHours);
+
+    public static readonly string[] ActiveStatuses =
+    [
+        ActiveStatus
+    ];
 
     public static readonly string[] SupportedModes =
     [

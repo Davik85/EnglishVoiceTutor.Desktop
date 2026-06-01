@@ -2,6 +2,7 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.LessonSessions;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
+using System.Data;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 
@@ -64,7 +65,10 @@ public sealed class LessonSessionService(
                 lessonAccessDecision.TrialActive);
         }
 
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+
         var now = DateTimeOffset.UtcNow;
+        await EnsureNoActiveLessonExistsAsync(user.Id, now, cancellationToken);
 
         var session = new LessonSessionEntity
         {
@@ -91,6 +95,7 @@ public sealed class LessonSessionService(
 
         dbContext.LessonSessions.Add(session);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return ToResponse(session);
     }
@@ -142,6 +147,36 @@ public sealed class LessonSessionService(
             .Where(session => session.Id == sessionId && session.UserId == userId)
             .Select(session => ToResponse(session))
             .SingleOrDefaultAsync(cancellationToken);
+    }
+
+
+    private async Task EnsureNoActiveLessonExistsAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var staleCutoffUtc = now.Subtract(LessonSessionConstants.ActiveLessonStaleAfter);
+        var activeSession = await dbContext.LessonSessions
+            .AsNoTracking()
+            .Where(session => session.UserId == userId)
+            .Where(session => LessonSessionConstants.ActiveStatuses.Contains(session.Status))
+            .Where(session => session.UpdatedAt >= staleCutoffUtc)
+            .OrderByDescending(session => session.UpdatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (activeSession is null)
+        {
+            return;
+        }
+
+        logger.LogInformation(
+            "Lesson session start blocked because another active lesson exists. UserId={UserId}; ActiveSessionId={ActiveSessionId}; ActiveSessionStartedAt={ActiveSessionStartedAt:o}; StaleAfterUtc={StaleAfterUtc:o}.",
+            userId,
+            activeSession.Id,
+            activeSession.StartedAt,
+            activeSession.UpdatedAt.Add(LessonSessionConstants.ActiveLessonStaleAfter));
+
+        throw new ActiveLessonExistsException(
+            activeSession.Id,
+            activeSession.StartedAt,
+            activeSession.UpdatedAt.Add(LessonSessionConstants.ActiveLessonStaleAfter));
     }
 
     private static string ResolveLessonAccessSource(string source)

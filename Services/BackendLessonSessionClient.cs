@@ -11,6 +11,7 @@ namespace EnglishVoiceTutor.Desktop.Services;
 public sealed class BackendLessonSessionClient
 {
     private const string LessonAccessDeniedErrorCode = "lesson_access_denied";
+    private const string ActiveLessonExistsErrorCode = "active_lesson_exists";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly AuthSessionStorageService authSessionStorageService = new();
 
@@ -44,6 +45,15 @@ public sealed class BackendLessonSessionClient
                     if (lessonAccessDenied is not null)
                     {
                         return BackendLessonSessionClientResult.LessonAccessDenied(lessonAccessDenied);
+                    }
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    var activeLessonBlocked = await TryReadActiveLessonExistsResponseAsync(response, cancellationToken);
+                    if (activeLessonBlocked is not null)
+                    {
+                        return BackendLessonSessionClientResult.ActiveLessonBlocked(activeLessonBlocked);
                     }
                 }
 
@@ -108,6 +118,27 @@ public sealed class BackendLessonSessionClient
         }
     }
 
+
+    private static async Task<BackendActiveLessonExistsResponse?> TryReadActiveLessonExistsResponseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var activeLessonResponse = await response.Content.ReadFromJsonAsync<BackendActiveLessonExistsResponse>(JsonOptions, cancellationToken);
+            if (activeLessonResponse is null)
+            {
+                return null;
+            }
+
+            return string.Equals(activeLessonResponse.Error, ActiveLessonExistsErrorCode, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(activeLessonResponse.Code, ActiveLessonExistsErrorCode, StringComparison.OrdinalIgnoreCase)
+                ? activeLessonResponse
+                : null;
+        }
+        catch (Exception exception) when (exception is JsonException or NotSupportedException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
 
     private static async Task<BackendLessonAccessDeniedResponse?> TryReadLessonAccessDeniedResponseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
