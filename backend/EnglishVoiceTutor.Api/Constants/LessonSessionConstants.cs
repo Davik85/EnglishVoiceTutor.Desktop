@@ -5,6 +5,8 @@ public static class LessonSessionConstants
     public const string ActiveStatus = "Active";
     public const string FinishedStatus = "Finished";
     public const string AbandonedStatus = "Abandoned";
+    public const string ReleasedStatus = "Released";
+    public const string CanceledStatus = "Canceled";
 
     public const string TextMode = "text";
     public const string NormalVoiceMode = "normal_voice";
@@ -23,6 +25,20 @@ public static class LessonSessionConstants
     [
         ActiveStatus
     ];
+
+    public static readonly string[] TerminalStatuses =
+    [
+        AbandonedStatus,
+        FinishedStatus,
+        ReleasedStatus,
+        CanceledStatus
+    ];
+
+    public static bool IsActiveStatus(string? status)
+    {
+        return !string.IsNullOrWhiteSpace(status)
+            && ActiveStatuses.Contains(status.Trim(), StringComparer.OrdinalIgnoreCase);
+    }
 
     public static readonly string[] SupportedModes =
     [

@@ -76,7 +76,13 @@ foreach ($messageKey in @(
     "DisplayNameRequired",
     "VoiceTakingTooLong",
     "VoicePlaybackUnavailable",
-    "ActiveLessonExists"
+    "ActiveLessonExists",
+    "ActiveLessonExistsTitle",
+    "ActiveLessonExistsMessage",
+    "EndOtherLessonAndContinue",
+    "Cancel",
+    "EndOtherLessonFailed",
+    "LessonSessionEndedElsewhere"
 )) {
     if ($backendUxLocalization -notmatch [regex]::Escape("nameof(BackendUxLocalizedText.$messageKey)")) {
         throw "Backend UX localization required key is not audited: $messageKey"

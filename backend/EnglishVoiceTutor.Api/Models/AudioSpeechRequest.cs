@@ -19,4 +19,6 @@ public sealed class AudioSpeechRequest
     public string TargetLanguageNativeName { get; init; } = string.Empty;
 
     public string TargetLanguageCode { get; init; } = string.Empty;
+
+    public Guid? BackendSessionId { get; init; }
 }

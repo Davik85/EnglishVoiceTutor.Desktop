@@ -30,7 +30,8 @@ public static class BackendUxLocalization
         nameof(BackendUxLocalizedText.ActiveLessonExistsMessage),
         nameof(BackendUxLocalizedText.EndOtherLessonAndContinue),
         nameof(BackendUxLocalizedText.Cancel),
-        nameof(BackendUxLocalizedText.EndOtherLessonFailed)
+        nameof(BackendUxLocalizedText.EndOtherLessonFailed),
+        nameof(BackendUxLocalizedText.LessonSessionEndedElsewhere)
     ];
 
     private static readonly IReadOnlyDictionary<string, BackendUxLocalizedText> TextByLanguageId = new Dictionary<string, BackendUxLocalizedText>(StringComparer.OrdinalIgnoreCase)
@@ -60,7 +61,8 @@ public static class BackendUxLocalization
             "You already have an active lesson on another device. To continue here, end the lesson on that device first.",
             "End lesson on another device and continue",
             "Cancel",
-            "Could not end the lesson on another device. Please try again."),
+            "Could not end the lesson on another device. Please try again.",
+            "This lesson was ended on another device. Start a new lesson to continue."),
         ["es"] = new(
             "El backend no está disponible. Inicia el backend local e inténtalo de nuevo.",
             "No se pudo conectar con el servidor. Comprueba que el backend esté en ejecución.",
@@ -86,7 +88,8 @@ public static class BackendUxLocalization
             "Ya tienes una lección activa en otro dispositivo. Para continuar aquí, termina la lección en ese dispositivo primero.",
             "Terminar la lección en otro dispositivo y continuar",
             "Cancelar",
-            "No se pudo terminar la lección en otro dispositivo. Inténtalo de nuevo."),
+            "No se pudo terminar la lección en otro dispositivo. Inténtalo de nuevo.",
+            "Esta lección se terminó en otro dispositivo. Inicia una nueva lección para continuar."),
         ["fr"] = new(
             "Le backend est indisponible. Démarrez le backend local puis réessayez.",
             "Impossible de se connecter au serveur. Vérifiez que le backend fonctionne.",
@@ -112,7 +115,8 @@ public static class BackendUxLocalization
             "Vous avez déjà une leçon active sur un autre appareil. Pour continuer ici, terminez d’abord la leçon sur cet appareil.",
             "Terminer la leçon sur un autre appareil et continuer",
             "Annuler",
-            "Impossible de terminer la leçon sur un autre appareil. Réessayez."),
+            "Impossible de terminer la leçon sur un autre appareil. Réessayez.",
+            "Cette leçon a été terminée sur un autre appareil. Commencez une nouvelle leçon pour continuer."),
         ["de"] = new(
             "Das Backend ist nicht verfügbar. Starte das lokale Backend und versuche es erneut.",
             "Keine Verbindung zum Server möglich. Prüfe, ob das Backend läuft.",
@@ -138,7 +142,8 @@ public static class BackendUxLocalization
             "Du hast bereits eine aktive Lektion auf einem anderen Gerät. Um hier fortzufahren, beende zuerst die Lektion auf diesem Gerät.",
             "Lektion auf anderem Gerät beenden und fortfahren",
             "Abbrechen",
-            "Die Lektion auf dem anderen Gerät konnte nicht beendet werden. Bitte versuche es erneut."),
+            "Die Lektion auf dem anderen Gerät konnte nicht beendet werden. Bitte versuche es erneut.",
+            "Diese Lektion wurde auf einem anderen Gerät beendet. Starte eine neue Lektion, um fortzufahren."),
         ["it"] = new(
             "Il backend non è disponibile. Avvia il backend locale e riprova.",
             "Impossibile connettersi al server. Verifica che il backend sia in esecuzione.",
@@ -164,7 +169,8 @@ public static class BackendUxLocalization
             "Hai già una lezione attiva su un altro dispositivo. Per continuare qui, termina prima la lezione su quel dispositivo.",
             "Termina la lezione su un altro dispositivo e continua",
             "Annulla",
-            "Impossibile terminare la lezione sull’altro dispositivo. Riprova."),
+            "Impossibile terminare la lezione sull’altro dispositivo. Riprova.",
+            "Questa lezione è stata terminata su un altro dispositivo. Inizia una nuova lezione per continuare."),
         ["pt"] = new(
             "O backend está indisponível. Inicie o backend local e tente novamente.",
             "Não foi possível conectar ao servidor. Verifique se o backend está em execução.",
@@ -190,7 +196,8 @@ public static class BackendUxLocalization
             "Você já tem uma lição ativa em outro dispositivo. Para continuar aqui, encerre primeiro a lição nesse dispositivo.",
             "Encerrar a lição em outro dispositivo e continuar",
             "Cancelar",
-            "Não foi possível encerrar a lição no outro dispositivo. Tente novamente."),
+            "Não foi possível encerrar a lição no outro dispositivo. Tente novamente.",
+            "Esta lição foi encerrada em outro dispositivo. Inicie uma nova lição para continuar."),
         ["ru"] = new(
             "Бэкенд недоступен. Запустите локальный бэкенд и попробуйте снова.",
             "Не удалось подключиться к серверу. Проверьте, что бэкенд запущен.",
@@ -216,7 +223,8 @@ public static class BackendUxLocalization
             "У вас уже открыт урок на другом устройстве. Чтобы продолжить здесь, завершите урок на другом устройстве.",
             "Завершить урок на другом устройстве и продолжить",
             "Отмена",
-            "Не удалось завершить урок на другом устройстве. Попробуйте ещё раз."),
+            "Не удалось завершить урок на другом устройстве. Попробуйте ещё раз.",
+            "Этот урок был завершён на другом устройстве. Начните новый урок, чтобы продолжить."),
         ["pl"] = new(
             "Backend jest niedostępny. Uruchom lokalny backend i spróbuj ponownie.",
             "Nie można połączyć się z serwerem. Sprawdź, czy backend działa.",
@@ -242,7 +250,8 @@ public static class BackendUxLocalization
             "Masz już aktywną lekcję na innym urządzeniu. Aby kontynuować tutaj, najpierw zakończ lekcję na tamtym urządzeniu.",
             "Zakończ lekcję na innym urządzeniu i kontynuuj",
             "Anuluj",
-            "Nie udało się zakończyć lekcji na innym urządzeniu. Spróbuj ponownie."),
+            "Nie udało się zakończyć lekcji na innym urządzeniu. Spróbuj ponownie.",
+            "Ta lekcja została zakończona na innym urządzeniu. Rozpocznij nową lekcję, aby kontynuować."),
         ["ar"] = new(
             "الخادم الخلفي غير متاح. شغّل الخادم الخلفي المحلي وحاول مرة أخرى.",
             "تعذر الاتصال بالخادم. تأكد من أن الخادم الخلفي يعمل.",
@@ -268,7 +277,8 @@ public static class BackendUxLocalization
             "لديك درس نشط بالفعل على جهاز آخر. للمتابعة هنا، أنهِ الدرس على ذلك الجهاز أولاً.",
             "إنهاء الدرس على جهاز آخر والمتابعة",
             "إلغاء",
-            "تعذر إنهاء الدرس على الجهاز الآخر. حاول مرة أخرى."),
+            "تعذر إنهاء الدرس على الجهاز الآخر. حاول مرة أخرى.",
+            "تم إنهاء هذا الدرس على جهاز آخر. ابدأ درسًا جديدًا للمتابعة."),
         ["ja"] = new(
             "バックエンドを利用できません。ローカルバックエンドを起動して、もう一度お試しください。",
             "サーバーに接続できませんでした。バックエンドが実行中か確認してください。",
@@ -294,7 +304,8 @@ public static class BackendUxLocalization
             "別のデバイスでアクティブなレッスンがあります。ここで続けるには、先にそのデバイスのレッスンを終了してください。",
             "別のデバイスのレッスンを終了して続ける",
             "キャンセル",
-            "別のデバイスのレッスンを終了できませんでした。もう一度お試しください。"),
+            "別のデバイスのレッスンを終了できませんでした。もう一度お試しください。",
+            "このレッスンは別のデバイスで終了しました。続けるには新しいレッスンを開始してください。"),
         ["ko"] = new(
             "백엔드를 사용할 수 없습니다. 로컬 백엔드를 시작한 뒤 다시 시도하세요.",
             "서버에 연결할 수 없습니다. 백엔드가 실행 중인지 확인하세요.",
@@ -320,7 +331,8 @@ public static class BackendUxLocalization
             "다른 기기에서 이미 활성 레슨이 있습니다. 여기서 계속하려면 먼저 그 기기의 레슨을 종료하세요.",
             "다른 기기의 레슨을 종료하고 계속",
             "취소",
-            "다른 기기의 레슨을 종료할 수 없습니다. 다시 시도하세요."),
+            "다른 기기의 레슨을 종료할 수 없습니다. 다시 시도하세요.",
+            "이 레슨은 다른 기기에서 종료되었습니다. 계속하려면 새 레슨을 시작하세요."),
         ["sr"] = new(
             "Backend nije dostupan. Pokrenite lokalni backend i pokušajte ponovo.",
             "Nije moguće povezati se sa serverom. Proverite da li backend radi.",
@@ -346,7 +358,8 @@ public static class BackendUxLocalization
             "Već imate aktivnu lekciju na drugom uređaju. Da nastavite ovde, prvo završite lekciju na tom uređaju.",
             "Završi lekciju na drugom uređaju i nastavi",
             "Otkaži",
-            "Nije moguće završiti lekciju na drugom uređaju. Pokušajte ponovo."),
+            "Nije moguće završiti lekciju na drugom uređaju. Pokušajte ponovo.",
+            "Ova lekcija je završena na drugom uređaju. Započnite novu lekciju da nastavite."),
         ["hr"] = new(
             "Backend nije dostupan. Pokrenite lokalni backend i pokušajte ponovno.",
             "Nije se moguće povezati s poslužiteljem. Provjerite radi li backend.",
@@ -372,7 +385,8 @@ public static class BackendUxLocalization
             "Već imate aktivnu lekciju na drugom uređaju. Za nastavak ovdje najprije završite lekciju na tom uređaju.",
             "Završi lekciju na drugom uređaju i nastavi",
             "Odustani",
-            "Nije moguće završiti lekciju na drugom uređaju. Pokušajte ponovno."),
+            "Nije moguće završiti lekciju na drugom uređaju. Pokušajte ponovno.",
+            "Ova je lekcija završena na drugom uređaju. Započnite novu lekciju za nastavak."),
         ["bg"] = new(
             "Бекендът не е наличен. Стартирайте локалния бекенд и опитайте отново.",
             "Неуспешна връзка със сървъра. Проверете дали бекендът работи.",
@@ -398,7 +412,8 @@ public static class BackendUxLocalization
             "Вече имате активен урок на друго устройство. За да продължите тук, първо завършете урока на това устройство.",
             "Завършете урока на друго устройство и продължете",
             "Отказ",
-            "Неуспешно завършване на урока на другото устройство. Опитайте отново.")
+            "Неуспешно завършване на урока на другото устройство. Опитайте отново.",
+            "Този урок беше завършен на друго устройство. Започнете нов урок, за да продължите.")
     };
 
     public static BackendUxLocalizedText GetText(string? languageId)
