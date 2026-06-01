@@ -1,25 +1,34 @@
 # Local Windows release workflow
 
-This document describes the first simple local release workflow for `EnglishVoiceTutor.Desktop` without Visual Studio. It publishes the WPF desktop app to a local folder, runs it as a normal `.exe`, and verifies that the app, backend connection, local persistence, and avatar GIF resources work.
+This document describes local Windows release checks for `EnglishVoiceTutor.Desktop` without Visual Studio. The canonical current desktop tester distribution flow is the tester zip package created by `scripts/package-tester-release.ps1`; manual `dotnet publish` commands in this file are lower-level developer troubleshooting details only.
 
-For a shareable tester zip package, see [`docs/TESTER_RELEASE.md`](TESTER_RELEASE.md).
+For the full shareable tester zip workflow, see [`docs/TESTER_RELEASE.md`](TESTER_RELEASE.md).
 
-Tester releases should use the self-contained tester zip by default so testers can unzip and run the app without installing the .NET Desktop Runtime:
+Canonical tester package command from the repository root:
 
-```text
-artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+```powershell
+cd C:\dev\EnglishVoiceTutor.Desktop
+powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
 ```
 
-Use the framework-dependent publish documented below only for developer checks or controlled machines that already have the matching .NET Desktop Runtime installed.
+Expected default tester zip output:
+
+```text
+artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+```
+
+Tester releases should use this self-contained tester zip by default so testers can copy it to another Windows device, extract it, and run `EnglishVoiceTutor.Desktop.exe` without installing the .NET Desktop Runtime. Use the framework-dependent publish documented below only for developer checks or controlled machines that already have the matching .NET Desktop Runtime installed.
 
 ## Scope
 
 This workflow is for a local MVP desktop release check:
 
-- publish the WPF app into a folder;
-- launch `EnglishVoiceTutor.Desktop.exe` directly from that folder;
-- verify the app with a local backend or an optional ngrok URL;
-- verify that local settings and lesson history are persisted in AppData;
+- run the automated release gate before packaging;
+- create the canonical self-contained tester zip;
+- copy/send the zip to another Windows device;
+- extract the zip and launch `EnglishVoiceTutor.Desktop.exe` from the extracted folder;
+- verify the app with a local backend, optional ngrok URL, or hosted backend;
+- verify backend account login/session restore and backend lesson history;
 - verify that no OpenAI API key is stored in the desktop app or publish output.
 
 This workflow does **not** add or configure:
@@ -79,6 +88,26 @@ These files are included by the project as WPF `Resource` items, so they are emb
 
 After publishing, verify the avatar by launching the published app, opening a lesson, and checking that the avatar GIF appears and changes state while recording, transcribing, waiting for a reply, and playing speech.
 
+## Required order for tester package validation
+
+1. Run the automated release gate from the repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\run_desktop_release_gate.ps1
+```
+
+2. Run EF checks when backend schema changed or database validation is required.
+3. Run the canonical tester package command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
+```
+
+4. Copy `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip` to another Windows device.
+5. Extract the zip.
+6. Run `EnglishVoiceTutor.Desktop.exe` from the extracted folder.
+7. Verify backend connection, login/account, backend history, and the core lesson flow.
+
 ## Clean previous publish output
 
 Before rebuilding a local release, remove previous publish output:
@@ -95,8 +124,16 @@ Open a PowerShell window for the backend:
 
 ```powershell
 cd C:\dev\EnglishVoiceTutor.Desktop\backend\EnglishVoiceTutor.Api
-Set-Item -Path Env:OPENAI_API_KEY -Value (Read-Host "Enter your local OpenAI API key")
+$env:ASPNETCORE_ENVIRONMENT="Development"
+$env:DOTNET_ENVIRONMENT="Development"
+$env:SubscriptionEnforcement__Enabled="true"
 dotnet run
+```
+
+For real AI/TTS/STT testing, set the OpenAI key only in the local backend environment before `dotnet run`:
+
+```powershell
+$env:OPENAI_API_KEY="PASTE_YOUR_LOCAL_OPENAI_KEY_HERE"
 ```
 
 Security rules:
@@ -105,6 +142,7 @@ Security rules:
 - Do not store `OPENAI_API_KEY` in the desktop app.
 - Do not put a real API key in source files, documentation examples, publish output, or settings files.
 - Keep the key only in backend environment variables or another secure backend-only secret store.
+- The desktop app does not contain the key, must not call OpenAI directly, and must call backend APIs only for AI/TTS/STT.
 
 If `OPENAI_API_KEY` is not configured, the backend may still run, but OpenAI-backed features should be treated as not configured.
 
@@ -122,6 +160,14 @@ Expected results:
 - `/health` returns a status of `ok`.
 - `/api/backend/config-status` reports whether OpenAI is configured.
 - `/api/backend/config-status` must never return the OpenAI API key.
+
+## Backend-required functional scope
+
+The packaged desktop app requires a reachable backend for login, account/session restore validation, backend lesson history, AI replies, voice transcription/STT, TTS, translation, hints, feedback, summary, subscription/access checks, active lesson guard, and remote active lesson release. Backend-unavailable checks are resilience-only and must not be treated as functional lesson acceptance.
+
+## Release Diagnostics behavior
+
+The packaged Release app does not show Diagnostics by default. Diagnostics can appear in Release only when `EVT_DESKTOP_DIAGNOSTICS=1` is set locally before launching the app. Do not commit this variable in scripts, settings, docs with machine-specific values, or shortcuts. Diagnostics and copied diagnostics output must continue masking secrets and tokens.
 
 ## Publish Mode A: framework-dependent folder
 
@@ -277,11 +323,39 @@ Then:
 
 ngrok URLs are temporary and meant for testing. A proper domain and deployed backend can be added later.
 
+## Required tester package report format
+
+```text
+Date:
+Branch/commit:
+Package command:
+ZIP path:
+Tested device:
+App starts after extraction:
+Diagnostics hidden:
+Backend connected:
+Login/account:
+History visible/preserved:
+Chat mode:
+Conversation Mode:
+Voice transcription:
+TTS:
+Translation:
+Hint:
+Feedback:
+Summary:
+Active lesson guard:
+Remote release:
+Close with X:
+Known issues:
+```
+
 ## Release verification checklist
 
 ### Desktop launch
 
-- [ ] Run the published `EnglishVoiceTutor.Desktop.exe`.
+- [ ] Extract `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip` on another Windows device when validating tester handoff.
+- [ ] Run `EnglishVoiceTutor.Desktop.exe` from the extracted folder.
 - [ ] App opens without Visual Studio.
 - [ ] Welcome screen opens.
 - [ ] Settings opens.
@@ -293,7 +367,9 @@ ngrok URLs are temporary and meant for testing. A proper domain and deployed bac
 
 ### Backend
 
-- [ ] Local backend is running.
+- [ ] Local, ngrok, or hosted backend is reachable.
+- [ ] Login/account works.
+- [ ] Backend lesson history is visible/preserved.
 - [ ] `curl http://localhost:5000/health` works and returns status `ok`.
 - [ ] `curl http://localhost:5000/api/backend/config-status` works and does not return an API key.
 - [ ] Invalid backend URL does not crash the app.
@@ -307,6 +383,7 @@ Full lesson functionality requires a running backend. Run this section only afte
 - [ ] Choose topic.
 - [ ] Choose situation.
 - [ ] Send text message.
+- [ ] Account login/session restore works.
 - [ ] Hint works.
 - [ ] Translate works.
 - [ ] Record voice.
@@ -316,6 +393,10 @@ Full lesson functionality requires a running backend. Run this section only afte
 - [ ] Finish lesson works.
 - [ ] Summary opens.
 - [ ] History stores completed lesson.
+- [ ] Feedback works.
+- [ ] Single active lesson guard works.
+- [ ] Remote active lesson release stops the old device/session.
+- [ ] Closing the app with X during an active lesson does not leave the process hanging.
 
 ### Files and secrets
 
@@ -326,7 +407,7 @@ Full lesson functionality requires a running backend. Run this section only afte
 
 ## Known limitations
 
-- This is not an installer; users run the `.exe` from the published folder.
+- This is not an installer; testers extract the zip and run the `.exe` from the extracted folder.
 - This is not an MSIX or Microsoft Store package.
 - The app is not code-signed by this workflow.
 - The backend must be started separately or hosted elsewhere.
