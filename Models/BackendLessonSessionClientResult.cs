@@ -14,7 +14,8 @@ public sealed record BackendLessonSessionClientResult(
     int FreeLessonRemainingToday = 0,
     bool BackendWasReached = false,
     bool IsBackendReachabilityFailure = false,
-    bool CanEndOtherLesson = false)
+    bool CanEndOtherLesson = false,
+    bool IsLessonSessionEndedElsewhere = false)
 {
     public static BackendLessonSessionClientResult Success(BackendLessonSessionResponse value)
     {
@@ -51,6 +52,16 @@ public sealed record BackendLessonSessionClientResult(
             FreeLessonUsedToday: deniedResponse.FreeLessonUsedToday,
             FreeLessonRemainingToday: deniedResponse.FreeLessonRemainingToday,
             BackendWasReached: true);
+    }
+
+    public static BackendLessonSessionClientResult LessonSessionEndedElsewhere(string? errorMessage = null)
+    {
+        return new BackendLessonSessionClientResult(
+            IsSuccess: false,
+            Value: null,
+            ErrorMessage: errorMessage,
+            BackendWasReached: true,
+            IsLessonSessionEndedElsewhere: true);
     }
 
     public static BackendLessonSessionClientResult ActiveLessonBlocked(BackendActiveLessonExistsResponse response)

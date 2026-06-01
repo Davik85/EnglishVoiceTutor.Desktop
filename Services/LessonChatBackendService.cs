@@ -32,6 +32,7 @@ public sealed class AudioTranscriptionBackendException : Exception
 public sealed class LessonChatBackendService
 {
     private const string HealthyStatus = "ok";
+    private const string LessonSessionEndedElsewhereErrorCode = "lesson_session_ended_elsewhere";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private string backendBaseUrl = BackendConstants.DefaultBackendBaseUrl;
     private readonly AuthSessionStorageService authSessionStorageService = new();
@@ -108,6 +109,7 @@ public sealed class LessonChatBackendService
             using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
             await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.ChatReplyFreeLimitMessage, cancellationToken);
+            await ThrowLessonSessionEndedElsewhereExceptionIfNeededAsync(response, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var backendResponse = await response.Content.ReadFromJsonAsync<LessonChatBackendResponse>(JsonOptions, cancellationToken);
@@ -145,6 +147,7 @@ public sealed class LessonChatBackendService
         using var httpRequest = await CreateAuthenticatedJsonRequestAsync(HttpMethod.Post, BackendConstants.LessonChatFeedbackEndpoint, request, cancellationToken);
         using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
+        await ThrowLessonSessionEndedElsewhereExceptionIfNeededAsync(response, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var backendResponse = await response.Content.ReadFromJsonAsync<BackendFeedbackDto>(JsonOptions, cancellationToken);
@@ -168,6 +171,7 @@ public sealed class LessonChatBackendService
         using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
         await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.HintFreeLimitMessage, cancellationToken);
+        await ThrowLessonSessionEndedElsewhereExceptionIfNeededAsync(response, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var backendResponse = await response.Content.ReadFromJsonAsync<LessonHintBackendResponse>(JsonOptions, cancellationToken);
@@ -186,6 +190,7 @@ public sealed class LessonChatBackendService
         StudyLanguageDefinition? targetLanguage = null,
         string? transcriptionContext = null,
         string? lessonPhase = null,
+        Guid? backendSessionId = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(audioFilePath) || !File.Exists(audioFilePath))
@@ -219,11 +224,17 @@ public sealed class LessonChatBackendService
             formContent.Add(new StringContent(transcriptionContext.Trim()), "transcriptionContext");
         }
 
+        if (backendSessionId.HasValue)
+        {
+            formContent.Add(new StringContent(backendSessionId.Value.ToString()), "backendSessionId");
+        }
+
         using var transcriptionRequest = await CreateAuthenticatedRequestAsync(HttpMethod.Post, BackendConstants.AudioTranscriptionEndpoint, cancellationToken);
         transcriptionRequest.Content = formContent;
         using var response = await httpClient.SendAsync(transcriptionRequest, cancellationToken);
 
         await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.TranscriptionFreeLimitMessage, cancellationToken);
+        await ThrowLessonSessionEndedElsewhereExceptionIfNeededAsync(response, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
             throw new AudioTranscriptionBackendException(response.StatusCode);
@@ -247,7 +258,8 @@ public sealed class LessonChatBackendService
         double? speechSpeed = null,
         string? model = null,
         string? instructions = null,
-        StudyLanguageDefinition? targetLanguage = null)
+        StudyLanguageDefinition? targetLanguage = null,
+        Guid? backendSessionId = null)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -276,11 +288,13 @@ public sealed class LessonChatBackendService
                     TargetLanguageId = resolvedTargetLanguage.Id,
                     TargetLanguageName = resolvedTargetLanguage.EnglishName,
                     TargetLanguageNativeName = resolvedTargetLanguage.NativeName,
-                    TargetLanguageCode = resolvedTargetLanguage.Bcp47Code
+                    TargetLanguageCode = resolvedTargetLanguage.Bcp47Code,
+                    BackendSessionId = backendSessionId
                 }, cancellationToken);
             using var response = await httpClient.SendAsync(speechRequest, cancellationToken);
 
             await ThrowFreeLimitExceededExceptionIfNeededAsync(response, AppConstants.BotVoiceFreeLimitMessage, cancellationToken);
+            await ThrowLessonSessionEndedElsewhereExceptionIfNeededAsync(response, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var audioBytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
@@ -307,7 +321,8 @@ public sealed class LessonChatBackendService
     public async Task<BotSpeechStreamMetrics> StreamBotSpeechAsync(
         string text,
         Func<Stream, string, CancellationToken, Task> consumeStreamAsync,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Guid? backendSessionId = null)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -325,7 +340,8 @@ public sealed class LessonChatBackendService
             new AudioSpeechBackendRequest
             {
                 Text = text,
-                Purpose = BackendConstants.LessonChatTtsPurpose
+                Purpose = BackendConstants.LessonChatTtsPurpose,
+                BackendSessionId = backendSessionId
             },
             JsonOptions);
         using var request = await CreateAuthenticatedRequestAsync(HttpMethod.Post, BackendConstants.AudioSpeechStreamEndpoint, cancellationToken);
@@ -340,6 +356,7 @@ public sealed class LessonChatBackendService
         var contentType = response.Content.Headers.ContentType?.MediaType ?? BackendConstants.PcmContentType;
         Debug.WriteLine($"Bot voice stream backend response headers received: Endpoint={BackendConstants.AudioSpeechStreamEndpoint}; InputLength={inputLength}; ElapsedMilliseconds={backendHeaderMs}; StatusCode={response.StatusCode}; ContentType={contentType}.");
 
+        await ThrowLessonSessionEndedElsewhereExceptionIfNeededAsync(response, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -354,7 +371,8 @@ public sealed class LessonChatBackendService
         string text,
         string targetLanguage,
         StudyLanguageDefinition? sourceLanguage = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Guid? backendSessionId = null)
     {
         if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(targetLanguage))
         {
@@ -364,8 +382,9 @@ public sealed class LessonChatBackendService
         using var httpClient = CreateHttpClient();
         var resolvedSourceLanguage = sourceLanguage ?? StudyLanguageCatalog.English;
 
-        using var response = await httpClient.PostAsJsonAsync(
-            CreateEndpointUri(BackendConstants.TranslationEndpoint),
+        using var request = await CreateAuthenticatedJsonRequestAsync(
+            HttpMethod.Post,
+            BackendConstants.TranslationEndpoint,
             new TranslationBackendRequest
             {
                 Text = text,
@@ -373,11 +392,13 @@ public sealed class LessonChatBackendService
                 SourceLanguageId = resolvedSourceLanguage.Id,
                 SourceLanguageName = resolvedSourceLanguage.EnglishName,
                 SourceLanguageNativeName = resolvedSourceLanguage.NativeName,
-                SourceLanguageCode = resolvedSourceLanguage.Bcp47Code
+                SourceLanguageCode = resolvedSourceLanguage.Bcp47Code,
+                BackendSessionId = backendSessionId
             },
-            JsonOptions,
             cancellationToken);
+        using var response = await httpClient.SendAsync(request, cancellationToken);
 
+        await ThrowLessonSessionEndedElsewhereExceptionIfNeededAsync(response, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var backendResponse = await response.Content.ReadFromJsonAsync<TranslationBackendResponse>(JsonOptions, cancellationToken);
@@ -466,6 +487,33 @@ public sealed class LessonChatBackendService
     private static Uri CreateEndpointUri(string? backendBaseUrl, string endpointPath)
     {
         return BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath);
+    }
+
+    private static async Task ThrowLessonSessionEndedElsewhereExceptionIfNeededAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (response.StatusCode != HttpStatusCode.Conflict && response.StatusCode != HttpStatusCode.Forbidden)
+        {
+            return;
+        }
+
+        try
+        {
+            var payload = await response.Content.ReadFromJsonAsync<BackendErrorResponse>(JsonOptions, cancellationToken);
+            if (payload is not null
+                && (string.Equals(payload.Error, LessonSessionEndedElsewhereErrorCode, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(payload.Code, LessonSessionEndedElsewhereErrorCode, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(payload.ErrorCode, LessonSessionEndedElsewhereErrorCode, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new LessonSessionEndedElsewhereException();
+            }
+        }
+        catch (LessonSessionEndedElsewhereException)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is JsonException or NotSupportedException or InvalidOperationException)
+        {
+        }
     }
 
     private static async Task ThrowFreeLimitExceededExceptionIfNeededAsync(

@@ -15,6 +15,13 @@ public sealed class LessonSummaryService(AppDbContext dbContext, IRequestUserRes
         ValidateUpsertRequest(request);
 
         var session = await GetDevUserSessionAsync(sessionId, cancellationToken);
+        if (string.Equals(session.Status, LessonSessionConstants.AbandonedStatus, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(session.Status, LessonSessionConstants.ReleasedStatus, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(session.Status, LessonSessionConstants.CanceledStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new LessonSessionEndedElsewhereException(session.Id, session.Status);
+        }
+
         var now = DateTimeOffset.UtcNow;
 
         var summary = await dbContext.LessonSummaries

@@ -114,6 +114,8 @@ public sealed class LessonSessionService(
             throw new KeyNotFoundException($"Lesson session '{sessionId}' was not found for the dev user.");
         }
 
+        EnsureSessionIsActive(session);
+
         var now = DateTimeOffset.UtcNow;
         session.Status = LessonSessionConstants.FinishedStatus;
         session.FinishedAt = now;
@@ -138,6 +140,8 @@ public sealed class LessonSessionService(
             throw new KeyNotFoundException($"Lesson session '{sessionId}' was not found for the current user.");
         }
 
+        EnsureSessionIsActive(session);
+
         var now = DateTimeOffset.UtcNow;
         session.LastHeartbeatAtUtc = now;
         session.UpdatedAt = now;
@@ -158,7 +162,7 @@ public sealed class LessonSessionService(
             throw new KeyNotFoundException($"Lesson session '{sessionId}' was not found for the current user.");
         }
 
-        if (!LessonSessionConstants.ActiveStatuses.Contains(session.Status))
+        if (!LessonSessionConstants.IsActiveStatus(session.Status))
         {
             return ToResponse(session);
         }
@@ -171,6 +175,22 @@ public sealed class LessonSessionService(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ToResponse(session);
+    }
+
+
+    public async Task EnsureActiveLessonSessionAsync(Guid sessionId, CancellationToken cancellationToken)
+    {
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
+        var session = await dbContext.LessonSessions
+            .AsNoTracking()
+            .SingleOrDefaultAsync(existing => existing.Id == sessionId && existing.UserId == userId, cancellationToken);
+
+        if (session is null)
+        {
+            throw new KeyNotFoundException($"Lesson session '{sessionId}' was not found for the current user.");
+        }
+
+        EnsureSessionIsActive(session);
     }
 
     public async Task<LessonSessionResponse?> AbandonActiveLessonSessionAsync(CancellationToken cancellationToken)
@@ -268,6 +288,14 @@ public sealed class LessonSessionService(
                 activeSession.Id,
                 activeSession.StartedAt,
                 lastHeartbeatAtUtc.Add(LessonSessionConstants.ActiveLessonHeartbeatFreshness));
+        }
+    }
+
+    private static void EnsureSessionIsActive(LessonSessionEntity session)
+    {
+        if (!LessonSessionConstants.IsActiveStatus(session.Status))
+        {
+            throw new LessonSessionEndedElsewhereException(session.Id, session.Status);
         }
     }
 

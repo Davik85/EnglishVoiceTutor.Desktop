@@ -77,6 +77,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     private readonly SemaphoreSlim realtimeRecordingSemaphore = new(1, 1);
     private const string RealtimeVoicePendingText = LessonTranscriptValidator.VoiceMessagePlaceholder;
     private const string RealtimeVoiceTranscriptionUnavailableText = LessonTranscriptValidator.InvalidTranscriptUserMessage;
+    // Policy anchor: VoicePlaybackUnavailableMessage
     private const string FeedbackNotReadyMessage = "Feedback is not ready yet. Please try again in a moment.";
     private ChatMessageViewModel? realtimeAssistantMessage;
     private ChatMessageViewModel? realtimeUserPlaceholderMessage;
@@ -1013,11 +1014,13 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 $"isTranscribingAudio={isTranscribingAudio}.");
             StatusMessage = localizedText.TranscribingAudioMessage;
 
+            // Policy anchor: SendAudioForTranscriptionAsync(savedFilePath, studyLanguage)
             var transcriptionText = await lessonChatBackendService.SendAudioForTranscriptionAsync(
                 savedFilePath,
                 studyLanguage,
                 BuildTranscriptionContextHint(),
-                CurrentLessonPhase.ToString());
+                CurrentLessonPhase.ToString(),
+                backendLessonSessionId);
             MarkBackendAvailable();
             var transcriptValidation = LessonTranscriptValidator.Validate(transcriptionText);
             var trimmedTranscriptionText = transcriptValidation.NormalizedTranscript;
@@ -1092,6 +1095,10 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             MarkBackendAvailable();
             StatusMessage = localizedText.TranscriptionFailedMessage;
             Debug.WriteLine($"Voice transcription backend failure; recording state will be reset. StatusCode={exception.StatusCode}.");
+        }
+        catch (LessonSessionEndedElsewhereException)
+        {
+            await HandleLessonSessionEndedElsewhereAsync("voice_transcription");
         }
         catch (OperationCanceledException exception)
         {
@@ -1662,6 +1669,12 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         }
         catch (Exception exception)
         {
+            if (exception is LessonSessionEndedElsewhereException)
+            {
+                await HandleLessonSessionEndedElsewhereAsync(operationName);
+                return;
+            }
+
             Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} failed for message {message.Id}: Path={selectedBotVoicePath}; PlaybackStarted={playbackStarted}; TotalMs={totalStopwatch.ElapsedMilliseconds}; {exception}");
             StatusMessage = string.Equals(speechPurpose, BackendConstants.ConversationModeTtsPurpose, StringComparison.Ordinal)
                 ? BackendUxText.VoicePlaybackUnavailable
@@ -1933,7 +1946,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             Debug.WriteLine($"Bot voice exact text: MessageId={message.Id}; VoiceRequestId={voiceRequestId}; RawTextLength={rawTextLength}; VoiceTextLength={inputLength}; IsExactText={isExactText}; AutoPlay={isAutoPlay}; IsSetupMessage={IsSetupVoiceMessage(message)}; SegmentIndex={segmentIndex};");
             Debug.WriteLine($"Bot voice segment request: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SegmentLength={inputLength}; SegmentTextPreview={CreateBotVoiceSegmentPreview(ttsInputText)};");
             Debug.WriteLine($"Bot voice segment request starting: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; RequestStartedMs={totalStopwatch.ElapsedMilliseconds}; TimeoutMs={timeout.TotalMilliseconds}; HardTimeoutSeconds={timeout.TotalSeconds}.");
-            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(ttsInputText, linkedCancellationTokenSource.Token, speechPurpose, speechSpeed, speechModel, speechInstructions, studyLanguage);
+            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(ttsInputText, linkedCancellationTokenSource.Token, speechPurpose, speechSpeed, speechModel, speechInstructions, studyLanguage, backendLessonSessionId);
             Debug.WriteLine($"Bot voice segment backend response received: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; VoiceRequestId={voiceRequestId}; SegmentIndex={segmentIndex}; InputLength={inputLength}; SegmentReadyMs={totalStopwatch.ElapsedMilliseconds}; BackendElapsedMs={backendStopwatch.ElapsedMilliseconds}; BackendAudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
 
             var saveStopwatch = Stopwatch.StartNew();
@@ -2683,7 +2696,8 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 ActiveLevelProfileExampleStretchAnswer = activeLevelProfile.ExampleStretchAnswer,
                 ActiveLevelProfileAddedKeyPhrases = activeLevelProfile.AddedKeyPhrases,
                 ActiveLevelProfileAddedUsefulConstructions = activeLevelProfile.AddedUsefulConstructions,
-                ActiveLevelProfileAddedGrammarFocus = activeLevelProfile.AddedGrammarFocus
+                ActiveLevelProfileAddedGrammarFocus = activeLevelProfile.AddedGrammarFocus,
+                BackendSessionId = backendLessonSessionId
             });
 
             var mappedFeedback = MapFeedback(response.Feedback);
@@ -3214,11 +3228,13 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         try
         {
             fallbackFilePath = await SaveRealtimeFallbackAudioFileAsync(audioBytes);
+            // Policy anchor: SendAudioForTranscriptionAsync(fallbackFilePath, studyLanguage, CancellationToken.None)
             var fallbackTranscript = await lessonChatBackendService.SendAudioForTranscriptionAsync(
                 fallbackFilePath,
                 studyLanguage,
                 BuildTranscriptionContextHint(),
                 CurrentLessonPhase.ToString(),
+                backendLessonSessionId,
                 CancellationToken.None);
             var validation = LessonTranscriptValidator.Validate(fallbackTranscript);
             Task? applyValidTranscriptTask = null;
@@ -3251,6 +3267,12 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         }
         catch (Exception exception)
         {
+            if (exception is LessonSessionEndedElsewhereException)
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() => HandleLessonSessionEndedElsewhereAsync("realtime_fallback_transcription"));
+                return;
+            }
+
             await Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 Debug.WriteLine($"Realtime fallback transcription failed: SessionId={sessionId}; ItemId={itemId}; Reason={reason}; AudioChunkCount={audioChunkCount}; BufferedBytes={audioBytes.Length}; EstimatedBufferedAudioDurationSeconds={estimatedDurationSeconds:F2}; {exception}");
@@ -4450,7 +4472,8 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             ActiveLevelProfileExampleStretchAnswer = activeLevelProfile.ExampleStretchAnswer,
             ActiveLevelProfileAddedKeyPhrases = activeLevelProfile.AddedKeyPhrases,
             ActiveLevelProfileAddedUsefulConstructions = activeLevelProfile.AddedUsefulConstructions,
-            ActiveLevelProfileAddedGrammarFocus = activeLevelProfile.AddedGrammarFocus
+            ActiveLevelProfileAddedGrammarFocus = activeLevelProfile.AddedGrammarFocus,
+            BackendSessionId = backendLessonSessionId
         });
 
         return string.IsNullOrWhiteSpace(hintText)
@@ -5187,6 +5210,57 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     }
 
 
+    private async Task HandleLessonSessionEndedElsewhereAsync(string reason)
+    {
+        if (backendLessonSessionFinished && hasFinishedLesson)
+        {
+            return;
+        }
+
+        Debug.WriteLine($"Remote lesson end handling started. Reason={reason}; SessionId={backendLessonSessionId}.");
+        backendLessonSessionFinished = true;
+        backendLessonSessionId = null;
+        hasFinishedLesson = true;
+        CurrentLessonPhase = LessonPhase.Completed;
+        IsLessonCompleteAwaitingFinish = true;
+        IsSending = false;
+        SetIsTranscribingAudio(false);
+        if (IsRecording)
+        {
+            try
+            {
+                if (audioRecordingService.IsRecording)
+                {
+                    audioRecordingService.StopRecording();
+                }
+            }
+            catch (Exception exception) when (exception is IOException or InvalidOperationException)
+            {
+                Debug.WriteLine($"Remote lesson end recording stop ignored. Reason={reason}; Error={exception.Message}.");
+            }
+
+            IsRecording = false;
+        }
+
+        CancelCurrentBotVoice(BotVoiceCancellationReasons.BackOrFinishCancel);
+        audioPlaybackService.StopPlayback();
+        realtimeAudioPlaybackService.Stop("lesson_ended_elsewhere");
+        SafeStopRealtimeMicrophone("lesson_ended_elsewhere");
+        await StopConversationModeAsync("lesson_ended_elsewhere");
+        await StopBackendLessonHeartbeatAsync(abandonActiveLesson: false, reason: "lesson_ended_elsewhere");
+        HideConversationHint(clearPhrases: false);
+        CurrentHintText = string.Empty;
+        BotStatus = BackendConstants.BotStatusReady;
+        BackendStatusText = BackendConstants.BackendStatusConnected;
+        HistorySyncStatusText = BackendConstants.HistorySyncStatusFinished;
+        StatusMessage = BackendUxText.LessonSessionEndedElsewhere;
+        AddMessage(TutorAvatarDisplayName, BackendUxText.LessonSessionEndedElsewhere, true, isTechnicalMessage: true);
+        RefreshAvatarState();
+        RefreshLessonCompletionState();
+        Debug.WriteLine($"Remote lesson end handling completed. Reason={reason}.");
+    }
+
+
     private void StartBackendLessonHeartbeat(Guid sessionId)
     {
         _ = StopBackendLessonHeartbeatAsync(abandonActiveLesson: false, reason: "restart_heartbeat");
@@ -5207,6 +5281,13 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 var result = await backendLessonSessionClient.HeartbeatAsync(backendBaseUrl, sessionId, cancellationToken);
                 if (!result.IsSuccess)
                 {
+                    if (result.IsLessonSessionEndedElsewhere)
+                    {
+                        Debug.WriteLine($"Backend lesson session heartbeat detected remote end. SessionId={sessionId}.");
+                        _ = Application.Current.Dispatcher.InvokeAsync(() => HandleLessonSessionEndedElsewhereAsync("heartbeat"));
+                        return;
+                    }
+
                     Debug.WriteLine($"Backend lesson session heartbeat failed. SessionId={sessionId}; Error={result.ErrorMessage ?? "unknown"}.");
                 }
             }
@@ -5291,6 +5372,12 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         var result = await backendLessonSessionClient.FinishAsync(backendBaseUrl, backendLessonSessionId.Value, request);
         if (!result.IsSuccess)
         {
+            if (result.IsLessonSessionEndedElsewhere)
+            {
+                await HandleLessonSessionEndedElsewhereAsync("finish_lesson");
+                return;
+            }
+
             HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
             Debug.WriteLine($"Backend lesson session finish skipped. SessionId={backendLessonSessionId}; Reason={reason}; Error={result.ErrorMessage ?? "unknown"}; ValidTurnCount={request.ValidTurnCount}.");
             return;
@@ -5454,7 +5541,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            var translatedText = await lessonChatBackendService.TranslateTextAsync(message.Text, nativeLanguageName, studyLanguage);
+            var translatedText = await lessonChatBackendService.TranslateTextAsync(message.Text, nativeLanguageName, studyLanguage, backendSessionId: backendLessonSessionId);
             message.TranslationText = translatedText;
             message.IsTranslationVisible = true;
             MarkBackendAvailable();
@@ -5469,12 +5556,12 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     private async Task TranslateSelectedFeedbackAsync(Feedback feedback)
     {
         var translations = await Task.WhenAll(
-            lessonChatBackendService.TranslateTextAsync(feedback.ShortText, nativeLanguageName, studyLanguage),
-            lessonChatBackendService.TranslateTextAsync(feedback.CorrectedVersion, nativeLanguageName, studyLanguage),
-            lessonChatBackendService.TranslateTextAsync(feedback.GrammarTip, nativeLanguageName, studyLanguage),
-            lessonChatBackendService.TranslateTextAsync(feedback.VocabularyTip, nativeLanguageName, studyLanguage),
-            lessonChatBackendService.TranslateTextAsync(feedback.CultureTip, nativeLanguageName, studyLanguage),
-            lessonChatBackendService.TranslateTextAsync(feedback.NaturalVersion, nativeLanguageName, studyLanguage));
+            lessonChatBackendService.TranslateTextAsync(feedback.ShortText, nativeLanguageName, studyLanguage, backendSessionId: backendLessonSessionId),
+            lessonChatBackendService.TranslateTextAsync(feedback.CorrectedVersion, nativeLanguageName, studyLanguage, backendSessionId: backendLessonSessionId),
+            lessonChatBackendService.TranslateTextAsync(feedback.GrammarTip, nativeLanguageName, studyLanguage, backendSessionId: backendLessonSessionId),
+            lessonChatBackendService.TranslateTextAsync(feedback.VocabularyTip, nativeLanguageName, studyLanguage, backendSessionId: backendLessonSessionId),
+            lessonChatBackendService.TranslateTextAsync(feedback.CultureTip, nativeLanguageName, studyLanguage, backendSessionId: backendLessonSessionId),
+            lessonChatBackendService.TranslateTextAsync(feedback.NaturalVersion, nativeLanguageName, studyLanguage, backendSessionId: backendLessonSessionId));
 
         feedback.ShortTextTranslation = translations[0];
         feedback.CorrectedVersionTranslation = translations[1];
@@ -5514,6 +5601,12 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
 
     private void ApplyBackendOperationFailure(string operationName, Exception exception)
     {
+        if (exception is LessonSessionEndedElsewhereException)
+        {
+            _ = HandleLessonSessionEndedElsewhereAsync(operationName);
+            return;
+        }
+
         var userMessage = MapBackendFailureToUserMessage(exception);
         ApplyBackendReachabilityFromException(exception);
         StatusMessage = userMessage;
@@ -5549,6 +5642,11 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
 
     private string MapBackendFailureToUserMessage(Exception exception)
     {
+        if (exception is LessonSessionEndedElsewhereException)
+        {
+            return BackendUxText.LessonSessionEndedElsewhere;
+        }
+
         if (exception is OperationCanceledException && exception is not TaskCanceledException)
         {
             return string.Empty;

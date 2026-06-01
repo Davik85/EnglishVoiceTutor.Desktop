@@ -350,3 +350,11 @@ Do not implement remaining production billing lifecycle behavior before a plan i
 - Closing the desktop app while Lesson Chat has an active backend session now runs shutdown cleanup instead of treating the close as a normal lesson finish.
 - Shutdown cleanup stops the lesson heartbeat, cancels voice playback and recording resources, stops Conversation Mode resources, and attempts one best-effort active lesson release through `POST /api/lesson-sessions/active/abandon` with a 2-second timeout.
 - If the backend is unavailable or the release times out during close, desktop shutdown continues and the heartbeat freshness timeout remains the fallback that clears the active lesson guard.
+
+## Step 5B-6f remote-ended lesson session enforcement
+
+- Remote active lesson release now invalidates the old backend session instead of only allowing the new device to start.
+- Old devices detect `lesson_session_ended_elsewhere` on the next heartbeat or next lesson-bound backend action, stop lesson activity, and show: "This lesson was ended on another device. Start a new lesson to continue."
+- The backend rejects remotely ended sessions for heartbeat, finish, lesson message persistence, lesson chat reply, hint, feedback, translation, transcription, TTS, and summary upsert paths when a backend lesson session id is supplied.
+- Heartbeat never revives an `Abandoned`, `Released`, `Canceled`, or `Finished` session.
+- Future mobile clients must implement the same `lesson_session_ended_elsewhere` handling before enabling active lesson release in mobile UI.

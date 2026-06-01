@@ -25,4 +25,5 @@ public sealed record BackendUxLocalizedText(
     string ActiveLessonExistsMessage,
     string EndOtherLessonAndContinue,
     string Cancel,
-    string EndOtherLessonFailed);
+    string EndOtherLessonFailed,
+    string LessonSessionEndedElsewhere);

@@ -13,6 +13,7 @@ public sealed class BackendLessonSessionClient
 {
     private const string LessonAccessDeniedErrorCode = "lesson_access_denied";
     private const string ActiveLessonExistsErrorCode = "active_lesson_exists";
+    private const string LessonSessionEndedElsewhereErrorCode = "lesson_session_ended_elsewhere";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly AuthSessionStorageService authSessionStorageService = new();
 
@@ -101,6 +102,11 @@ public sealed class BackendLessonSessionClient
 
             if (!response.IsSuccessStatusCode)
             {
+                if (await IsLessonSessionEndedElsewhereResponseAsync(response, cancellationToken))
+                {
+                    return BackendLessonSessionClientResult.LessonSessionEndedElsewhere("Backend lesson session ended elsewhere.");
+                }
+
                 return BackendLessonSessionClientResult.Failure($"Backend lesson session PUT failed with HTTP {(int)response.StatusCode}.", backendWasReached: true);
             }
 
@@ -207,6 +213,11 @@ public sealed class BackendLessonSessionClient
 
             if (!response.IsSuccessStatusCode)
             {
+                if (await IsLessonSessionEndedElsewhereResponseAsync(response, cancellationToken))
+                {
+                    return BackendLessonSessionClientResult.LessonSessionEndedElsewhere($"Backend lesson session {operationName} ended elsewhere.");
+                }
+
                 return BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST failed with HTTP {(int)response.StatusCode}.", backendWasReached: true);
             }
 
@@ -237,6 +248,26 @@ public sealed class BackendLessonSessionClient
         }
 
         return exception is TaskCanceledException or InvalidOperationException;
+    }
+
+    private static async Task<bool> IsLessonSessionEndedElsewhereResponseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var errorResponse = await response.Content.ReadFromJsonAsync<BackendErrorResponse>(JsonOptions, cancellationToken);
+            if (errorResponse is null)
+            {
+                return false;
+            }
+
+            return string.Equals(errorResponse.Error, LessonSessionEndedElsewhereErrorCode, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(errorResponse.Code, LessonSessionEndedElsewhereErrorCode, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(errorResponse.ErrorCode, LessonSessionEndedElsewhereErrorCode, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception exception) when (exception is JsonException or NotSupportedException or InvalidOperationException)
+        {
+            return false;
+        }
     }
 
     private static async Task<BackendActiveLessonExistsResponse?> TryReadActiveLessonExistsResponseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
