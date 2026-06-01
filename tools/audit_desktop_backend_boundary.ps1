@@ -26,6 +26,16 @@ foreach ($file in $desktopFiles) {
     }
 }
 
+$trackedProjectFiles = git -C $RepoRoot ls-files "*.csproj" "*.props" "*.targets"
+foreach ($relativePath in $trackedProjectFiles) {
+    $projectFilePath = Join-Path $RepoRoot $relativePath
+    $projectFileContent = Get-Content -Raw -Encoding UTF8 $projectFilePath
+    if ($projectFileContent -match '<PackageReference\s+Include="System\.Security\.Cryptography\.ProtectedData"' -or
+        $projectFileContent -match '<PackageVersion\s+Include="System\.Security\.Cryptography\.ProtectedData"') {
+        throw "Redundant System.Security.Cryptography.ProtectedData package reference found in tracked project file: $relativePath"
+    }
+}
+
 $desktopProject = Get-Content -Raw -Encoding UTF8 $desktopProjectPath
 if ($desktopProject -notmatch '<Compile Remove="backend/\*\*/\*\.cs" />') {
     throw "Desktop project must continue excluding backend source files."
