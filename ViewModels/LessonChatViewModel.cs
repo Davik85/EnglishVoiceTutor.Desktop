@@ -1651,15 +1651,19 @@ public partial class LessonChatViewModel : ViewModelBase
             {
                 StatusMessage = isAutoPlay || playbackStarted
                     ? string.Empty
-                    : "Voice is taking too long. Please try again.";
+                    : BackendUxText.VoiceTakingTooLong;
             }
         }
         catch (Exception exception)
         {
             Debug.WriteLine($"Bot voice {(isAutoPlay ? "auto-play" : "manual play")} failed for message {message.Id}: Path={selectedBotVoicePath}; PlaybackStarted={playbackStarted}; TotalMs={totalStopwatch.ElapsedMilliseconds}; {exception}");
             StatusMessage = string.Equals(speechPurpose, BackendConstants.ConversationModeTtsPurpose, StringComparison.Ordinal)
-                ? BackendConstants.VoicePlaybackUnavailableMessage
-                : playbackStarted || isAutoPlay ? string.Empty : localizedText.BotVoiceFailedMessage;
+                ? BackendUxText.VoicePlaybackUnavailable
+                : playbackStarted || isAutoPlay ? string.Empty : BackendUxText.ActionNeedsBackend;
+            if (!playbackStarted && !isAutoPlay)
+            {
+                BackendStatusText = BackendConstants.BackendStatusUnavailable;
+            }
         }
         finally
         {
@@ -1730,7 +1734,7 @@ public partial class LessonChatViewModel : ViewModelBase
         {
             playbackFailed = true;
             Debug.WriteLine($"Conversation Mode TTS playback failed: MessageId={message.Id}; IsOpeningPlayback={isOpeningPlayback}; Purpose={BackendConstants.ConversationModeTtsPurpose}; SpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; {exception}");
-            StatusMessage = BackendConstants.VoicePlaybackUnavailableMessage;
+            StatusMessage = BackendUxText.VoicePlaybackUnavailable;
         }
         finally
         {
@@ -4348,7 +4352,7 @@ public partial class LessonChatViewModel : ViewModelBase
         catch (Exception exception)
         {
             ApplyBackendOperationFailure("lesson_hint", exception);
-            CurrentHintText = localizedText.MockHintText;
+            CurrentHintText = string.Empty;
         }
         finally
         {
@@ -4391,8 +4395,8 @@ public partial class LessonChatViewModel : ViewModelBase
         catch (Exception exception)
         {
             ApplyBackendOperationFailure("conversation_hint", exception);
-            ConversationHintText = localizedText.MockHintText;
-            IsConversationHintVisible = true;
+            ConversationHintText = string.Empty;
+            IsConversationHintVisible = false;
         }
         finally
         {
@@ -5053,10 +5057,9 @@ public partial class LessonChatViewModel : ViewModelBase
             MarkBackendAvailable();
             StatusMessage = string.Empty;
         }
-        catch
+        catch (Exception exception)
         {
-            BackendStatusText = BackendConstants.BackendStatusUnavailable;
-            StatusMessage = localizedText.TranslationFailedText;
+            ApplyBackendOperationFailure("translate_message", exception);
         }
     }
 
@@ -5104,10 +5107,12 @@ public partial class LessonChatViewModel : ViewModelBase
             string.Empty);
     }
 
+    private BackendUxLocalizedText BackendUxText => BackendUxLocalization.GetText(localizedText.LanguageId);
+
     private void ApplyBackendOperationFailure(string operationName, Exception exception)
     {
         var userMessage = MapBackendFailureToUserMessage(exception);
-        var isUnavailable = string.Equals(userMessage, localizedText.BackendUnavailableMessage, StringComparison.Ordinal);
+        var isUnavailable = string.Equals(userMessage, BackendUxText.BackendUnavailable, StringComparison.Ordinal);
         BackendStatusText = isUnavailable
             ? BackendConstants.BackendStatusUnavailable
             : BackendConstants.BackendStatusConnected;
@@ -5125,44 +5130,44 @@ public partial class LessonChatViewModel : ViewModelBase
 
         if (exception is TaskCanceledException || exception is TimeoutException || exception.InnerException is TimeoutException)
         {
-            return BackendConstants.BackendRequestTimedOutMessage;
+            return BackendUxText.BackendRequestTimedOut;
         }
 
         if (exception is JsonException || exception is FormatException || exception is InvalidOperationException)
         {
-            return BackendConstants.BackendUnexpectedResponseMessage;
+            return BackendUxText.BackendUnexpectedResponse;
         }
 
         if (exception is HttpRequestException httpRequestException)
         {
             if (httpRequestException.StatusCode is HttpStatusCode.BadRequest)
             {
-                return BackendConstants.BackendValidationErrorMessage;
+                return BackendUxText.BackendValidationError;
             }
 
             if (httpRequestException.StatusCode is HttpStatusCode.InternalServerError
                 or HttpStatusCode.BadGateway
                 or HttpStatusCode.ServiceUnavailable)
             {
-                return BackendConstants.BackendReturnedErrorMessage;
+                return BackendUxText.BackendReturnedError;
             }
 
             if (httpRequestException.StatusCode.HasValue)
             {
-                return BackendConstants.BackendReturnedErrorMessage;
+                return BackendUxText.BackendReturnedError;
             }
 
             if (httpRequestException.HttpRequestError is HttpRequestError.ConnectionError
                 or HttpRequestError.NameResolutionError
                 or HttpRequestError.Unknown)
             {
-                return localizedText.BackendUnavailableMessage;
+                return BackendUxText.BackendUnavailable;
             }
 
-            return BackendConstants.BackendUnexpectedResponseMessage;
+            return BackendUxText.BackendUnexpectedResponse;
         }
 
-        return BackendConstants.BackendUnexpectedResponseMessage;
+        return BackendUxText.BackendUnexpectedResponse;
     }
 
     private static class BotVoiceCancellationReasons

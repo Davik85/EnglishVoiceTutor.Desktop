@@ -31,10 +31,6 @@ public partial class SettingsViewModel : ViewModelBase
     private const string DefaultAccountSignedOutText = "Not signed in";
     private const string SettingsSourceAuthenticatedText = "Authenticated account";
     private const string SettingsSourceDevelopmentText = "Local development user";
-    private const string SessionExpiredFallbackMessageText = "Session expired. Using local development settings.";
-    private const string LoginFailedMessageText = "Login failed. Check your email and password.";
-    private const string RegisterFailedMessageText = "Registration failed. Please review your details and try again.";
-    private const string BackendUnavailableMessageText = "Backend is unavailable. Check the backend URL and try again.";
     private const string SubscriptionStatusUnavailableText = "Subscription status: unavailable";
     private const string SignedOutSubscriptionPromptText = "Sign in to view your account status.";
     private const string SignedOutSubscriptionPlaceholderText = "—";
@@ -146,6 +142,8 @@ public partial class SettingsViewModel : ViewModelBase
     public string DiagnosticsTitle => diagnosticsLocalizedText.Title;
 
     private string LocalizeUiText(string englishText) => AppLocalization.GetLearnerUiText(SelectedInterfaceLanguageOption.Id, englishText);
+
+    private BackendUxLocalizedText BackendUxText => BackendUxLocalization.GetText(SelectedInterfaceLanguageOption.Id);
 
     public string DiagnosticsSubtitle => diagnosticsLocalizedText.Subtitle;
 
@@ -413,7 +411,7 @@ public partial class SettingsViewModel : ViewModelBase
                 Password = Password,
                 DisplayName = string.IsNullOrWhiteSpace(DisplayName) ? null : DisplayName.Trim()
             }),
-            LocalizeUiText(RegisterFailedMessageText));
+            BackendUxText.RegisterFailed);
     }
 
     [RelayCommand]
@@ -430,7 +428,7 @@ public partial class SettingsViewModel : ViewModelBase
                 Email = Email.Trim(),
                 Password = Password
             }),
-            LocalizeUiText(LoginFailedMessageText));
+            BackendUxText.LoginFailed);
     }
 
     [RelayCommand]
@@ -444,7 +442,7 @@ public partial class SettingsViewModel : ViewModelBase
             ClearAccountState();
             await LoadSettingsForCurrentSessionAsync();
             await RefreshSubscriptionStatusAsync();
-            StatusMessage = LocalizeUiText("Signed out.");
+            StatusMessage = BackendUxText.SignedOut;
         }
         finally
         {
@@ -475,20 +473,20 @@ public partial class SettingsViewModel : ViewModelBase
                 ClearAccountState();
                 await LoadDevelopmentSettingsAsync();
                 await RefreshSubscriptionStatusAsync();
-                StatusMessage = LocalizeUiText(SessionExpiredFallbackMessageText);
+                StatusMessage = BackendUxText.SessionExpired;
                 return;
             }
 
             if (meResult.Status == AuthMeResultStatus.BackendUnavailable || meResult.User is null)
             {
-                StatusMessage = BackendUnavailableMessageText;
+                StatusMessage = BackendUxText.CouldNotConnect;
                 return;
             }
 
             ApplyAuthenticatedUser(meResult.User);
             await LoadAuthenticatedSettingsAsync(session.AccessToken);
             await RefreshSubscriptionStatusAsync();
-            StatusMessage = "Session restored.";
+            StatusMessage = BackendUxText.SessionRestored;
         }
         finally
         {
@@ -964,17 +962,19 @@ public partial class SettingsViewModel : ViewModelBase
                     await authBackendService.LogoutAsync();
                     ClearAccountState();
                     await LoadDevelopmentSettingsAsync();
-                    StatusMessage = LocalizeUiText(SessionExpiredFallbackMessageText);
+                    StatusMessage = BackendUxText.SessionExpired;
                     return;
                 }
 
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+                StatusMessage = BackendUxText.SettingsLoadUnavailable;
                 return;
             }
 
             if (result.Value is null)
             {
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+                StatusMessage = BackendUxText.SettingsLoadUnavailable;
                 return;
             }
 
@@ -986,6 +986,7 @@ public partial class SettingsViewModel : ViewModelBase
         catch
         {
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+            StatusMessage = BackendUxText.SettingsLoadUnavailable;
         }
     }
 
@@ -998,6 +999,7 @@ public partial class SettingsViewModel : ViewModelBase
             {
                 SettingsSource = LocalizeUiText(SettingsSourceDevelopmentText);
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+                StatusMessage = BackendUxText.SettingsLoadUnavailable;
                 return;
             }
 
@@ -1010,6 +1012,7 @@ public partial class SettingsViewModel : ViewModelBase
         {
             SettingsSource = LocalizeUiText(SettingsSourceDevelopmentText);
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+            StatusMessage = BackendUxText.SettingsLoadUnavailable;
         }
     }
 
@@ -1018,13 +1021,13 @@ public partial class SettingsViewModel : ViewModelBase
         ErrorMessage = string.Empty;
         if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
         {
-            ErrorMessage = "Email and password are required.";
+            ErrorMessage = BackendUxText.CredentialsRequired;
             return false;
         }
 
         if (requireDisplayName && string.IsNullOrWhiteSpace(DisplayName))
         {
-            ErrorMessage = "Display name is required for registration.";
+            ErrorMessage = BackendUxText.DisplayNameRequired;
             return false;
         }
 
@@ -1040,7 +1043,9 @@ public partial class SettingsViewModel : ViewModelBase
             var response = await authenticateAsync();
             if (response is null || response.User is null)
             {
-                ErrorMessage = failureMessage;
+                ErrorMessage = await lessonChatBackendService.CheckHealthAsync(BackendBaseUrl)
+                    ? failureMessage
+                    : BackendUxText.CouldNotConnect;
                 return;
             }
 
@@ -1048,11 +1053,11 @@ public partial class SettingsViewModel : ViewModelBase
             RequestPasswordClear();
             await LoadSettingsForCurrentSessionAsync();
             await RefreshSubscriptionStatusAsync();
-            StatusMessage = "Signed in.";
+            StatusMessage = BackendUxText.SignedIn;
         }
         catch
         {
-            ErrorMessage = BackendUnavailableMessageText;
+            ErrorMessage = BackendUxText.CouldNotConnect;
         }
         finally
         {
@@ -1110,17 +1115,19 @@ public partial class SettingsViewModel : ViewModelBase
                     await authBackendService.LogoutAsync();
                     ClearAccountState();
                     await LoadDevelopmentSettingsAsync();
-                    StatusMessage = LocalizeUiText(SessionExpiredFallbackMessageText);
+                    StatusMessage = BackendUxText.SessionExpired;
                     return;
                 }
 
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+                StatusMessage = BackendUxText.SettingsSaveUnavailable;
                 return;
             }
 
             if (result.Value is null)
             {
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+                StatusMessage = BackendUxText.SettingsSaveUnavailable;
                 return;
             }
 
@@ -1132,6 +1139,7 @@ public partial class SettingsViewModel : ViewModelBase
         catch
         {
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+            StatusMessage = BackendUxText.SettingsSaveUnavailable;
         }
     }
 

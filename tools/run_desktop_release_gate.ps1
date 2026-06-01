@@ -27,7 +27,8 @@ $requiredPaths = @(
     "EnglishVoiceTutor.Desktop.csproj",
     "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj",
     "tools/audit_lesson_content.ps1",
-    "tools/audit_interface_localization.ps1"
+    "tools/audit_interface_localization.ps1",
+    "tools/audit_desktop_backend_boundary.ps1"
 )
 
 foreach ($relativePath in $requiredPaths) {
@@ -69,6 +70,10 @@ Invoke-GateCommand "Lesson content audit" {
 
 Invoke-GateCommand "Interface localization audit" {
     & "tools/audit_interface_localization.ps1"
+}
+
+Invoke-GateCommand "Desktop backend boundary audit" {
+    & "tools/audit_desktop_backend_boundary.ps1"
 }
 
 if ($IncludeEfChecks) {

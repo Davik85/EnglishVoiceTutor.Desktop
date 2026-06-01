@@ -37,7 +37,8 @@ $requiredTexts = @(
     "Keep practicing full sentences and apply the feedback tips to improve grammar and vocabulary.",
     "System default",
     "Microphone test completed.",
-    "Subscription status: unavailable"
+    "Subscription status: unavailable",
+    "Backend is unavailable. Please start the local backend and try again."
 )
 $dailyLifeSubtopics = @(
     "Introductions",
