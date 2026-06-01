@@ -19,4 +19,5 @@ public sealed record BackendUxLocalizedText(
     string CredentialsRequired,
     string DisplayNameRequired,
     string VoiceTakingTooLong,
-    string VoicePlaybackUnavailable);
+    string VoicePlaybackUnavailable,
+    string ActiveLessonExists);

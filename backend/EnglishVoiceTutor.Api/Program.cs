@@ -304,6 +304,16 @@ static async Task<IResult> HandleCreateDevLessonSessionAsync(
             exception.TrialActive);
         return Results.Json(CreateLessonAccessDeniedResponse(exception), statusCode: StatusCodes.Status403Forbidden);
     }
+    catch (ActiveLessonExistsException exception)
+    {
+        logger.LogInformation(
+            "Lesson session creation forbidden: Error={Error}; ActiveSessionId={ActiveSessionId}; ActiveSessionStartedAt={ActiveSessionStartedAt:o}; StaleAfterUtc={StaleAfterUtc:o}.",
+            ActiveLessonExistsException.ErrorCode,
+            exception.ActiveSessionId,
+            exception.ActiveSessionStartedAt,
+            exception.StaleAfterUtc);
+        return Results.Json(CreateActiveLessonExistsResponse(exception), statusCode: StatusCodes.Status409Conflict);
+    }
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
         logger.LogWarning(exception, "Dev lesson session POST failed because storage is unavailable.");
@@ -693,6 +703,19 @@ static ErrorResponse CreateLessonSessionStorageUnavailableResponse()
         Status = "ServiceUnavailable",
         Message = "Lesson session storage is unavailable.",
         CheckedAtUtc = DateTimeOffset.UtcNow
+    };
+}
+
+static object CreateActiveLessonExistsResponse(ActiveLessonExistsException exception)
+{
+    return new
+    {
+        error = ActiveLessonExistsException.ErrorCode,
+        code = ActiveLessonExistsException.ErrorCode,
+        message = ActiveLessonExistsException.UserMessage,
+        activeSessionId = exception.ActiveSessionId,
+        activeSessionStartedAt = exception.ActiveSessionStartedAt,
+        staleAfterUtc = exception.StaleAfterUtc
     };
 }
 

@@ -1,4 +1,6 @@
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models.Auth;
@@ -7,6 +9,8 @@ namespace EnglishVoiceTutor.Desktop.Services.Auth;
 
 public sealed class AuthSessionStorageService
 {
+    private const string ProtectedPayloadPurpose = "EnglishVoiceTutor.Desktop.AuthSession.v1";
+
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true
@@ -33,9 +37,9 @@ public sealed class AuthSessionStorageService
             Directory.CreateDirectory(directoryPath);
         }
 
-        // MVP local session storage for development. Replace with secure OS-backed storage before production use.
         var json = JsonSerializer.Serialize(session, SerializerOptions);
-        await File.WriteAllTextAsync(authSessionFilePath, json, cancellationToken);
+        var protectedPayload = Protect(json);
+        await File.WriteAllTextAsync(authSessionFilePath, protectedPayload, cancellationToken);
     }
 
     public async Task<StoredAuthSession?> LoadAsync(CancellationToken cancellationToken = default)
@@ -47,12 +51,24 @@ public sealed class AuthSessionStorageService
                 return null;
             }
 
-            var json = await File.ReadAllTextAsync(authSessionFilePath, cancellationToken);
-            var session = JsonSerializer.Deserialize<StoredAuthSession>(json, SerializerOptions);
-            if (session is null)
+            var protectedPayload = await File.ReadAllTextAsync(authSessionFilePath, cancellationToken);
+            if (string.IsNullOrWhiteSpace(protectedPayload))
             {
                 await ClearAsync(cancellationToken);
                 return null;
+            }
+
+            var (json, migratedFromPlainText) = TryReadProtectedPayload(protectedPayload);
+            var session = JsonSerializer.Deserialize<StoredAuthSession>(json, SerializerOptions);
+            if (session is null || string.IsNullOrWhiteSpace(session.AccessToken))
+            {
+                await ClearAsync(cancellationToken);
+                return null;
+            }
+
+            if (migratedFromPlainText)
+            {
+                await SaveAsync(session, cancellationToken);
             }
 
             return session;
@@ -81,6 +97,11 @@ public sealed class AuthSessionStorageService
         return session;
     }
 
+    public Task<bool> HasStoredSessionAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(File.Exists(authSessionFilePath));
+    }
+
     public Task ClearAsync(CancellationToken cancellationToken = default)
     {
         if (File.Exists(authSessionFilePath))
@@ -95,5 +116,48 @@ public sealed class AuthSessionStorageService
     {
         ArgumentNullException.ThrowIfNull(session);
         return session.ExpiresAtUtc <= DateTimeOffset.UtcNow;
+    }
+
+    private static string Protect(string json)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            throw new PlatformNotSupportedException("Protected auth session storage is only supported on Windows.");
+        }
+
+        var bytes = Encoding.UTF8.GetBytes(json);
+        var entropy = Encoding.UTF8.GetBytes(ProtectedPayloadPurpose);
+        var protectedBytes = ProtectedData.Protect(bytes, entropy, DataProtectionScope.CurrentUser);
+        return Convert.ToBase64String(protectedBytes);
+    }
+
+    private static (string Json, bool MigratedFromPlainText) TryReadProtectedPayload(string protectedPayload)
+    {
+        try
+        {
+            return (Unprotect(protectedPayload), false);
+        }
+        catch (Exception exception) when (exception is CryptographicException or FormatException)
+        {
+            if (protectedPayload.TrimStart().StartsWith('{'))
+            {
+                return (protectedPayload, true);
+            }
+
+            throw;
+        }
+    }
+
+    private static string Unprotect(string protectedPayload)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            throw new PlatformNotSupportedException("Protected auth session storage is only supported on Windows.");
+        }
+
+        var protectedBytes = Convert.FromBase64String(protectedPayload.Trim());
+        var entropy = Encoding.UTF8.GetBytes(ProtectedPayloadPurpose);
+        var bytes = ProtectedData.Unprotect(protectedBytes, entropy, DataProtectionScope.CurrentUser);
+        return Encoding.UTF8.GetString(bytes);
     }
 }

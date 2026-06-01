@@ -101,6 +101,39 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
         authBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
         currentViewModel = CreateWelcomeViewModel();
+        _ = TryRestoreSavedAuthSessionOnStartupAsync();
+    }
+
+    private async Task TryRestoreSavedAuthSessionOnStartupAsync()
+    {
+        try
+        {
+            var session = await authBackendService.TryRestoreSessionAsync();
+            if (session is null)
+            {
+                return;
+            }
+
+            var meResult = await authBackendService.GetMeAsync(session.AccessToken);
+            if (meResult.Status == AuthMeResultStatus.InvalidSession)
+            {
+                await authBackendService.LogoutAsync();
+                Debug.WriteLine("Saved auth session restore failed. Reason=invalid_session; StoredSessionCleared=True.");
+                return;
+            }
+
+            if (meResult.Status == AuthMeResultStatus.BackendUnavailable || meResult.User is null)
+            {
+                Debug.WriteLine("Saved auth session restore deferred. Reason=backend_unavailable; StoredSessionCleared=False.");
+                return;
+            }
+
+            Debug.WriteLine("Saved auth session restored on startup.");
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Saved auth session restore failed unexpectedly. Error={exception.Message}.");
+        }
     }
 
     public void NavigateToWelcome()
