@@ -1,10 +1,10 @@
 # Current State
 
-Review date: 2026-05-31.
+Review date: 2026-06-01.
 
 ## Short summary
 
-EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. Lesson Chat, account login, trial entitlement, free lesson access checks, local Development admin support, and the provider-agnostic billing lifecycle foundation through Step 4B is implemented and validated where local tooling is available. Desktop upgrade/paywall flow exists for sandbox use, manual Refresh status exists after checkout launch, and Paddle sandbox `transaction.completed` activation has been validated end-to-end. The current localization phase is closed for release hardening, and Step 5B-4 adds a repeatable desktop release smoke gate. Paddle is the current desktop/web provider adapter, but backend account, subscription, entitlement, usage, limits, lesson history, payment, and Premium/free status remain the source of truth.
+EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. Lesson Chat, account login, trial entitlement, free lesson access checks, local Development admin support, and the provider-agnostic billing lifecycle foundation through Step 4B is implemented and validated where local tooling is available. Desktop upgrade/paywall flow exists for sandbox use, manual Refresh status exists after checkout launch, and Paddle sandbox `transaction.completed` activation has been validated end-to-end. The current localization phase is closed for release hardening, Step 5B-4 adds a repeatable desktop release smoke gate, and Step 5B-8b records the tester zip package as the current accepted desktop tester distribution path. Paddle is the current desktop/web provider adapter, but backend account, subscription, entitlement, usage, limits, lesson history, payment, and Premium/free status remain the source of truth.
 
 ## Product architecture principle
 
@@ -298,6 +298,54 @@ Latest confirmed validation:
 - Lesson Chat sends a heartbeat while a backend lesson session is active. A closed or crashed desktop app stops sending heartbeats, so the old active session becomes stale after the configured short freshness window (2 minutes) and no longer blocks a new lesson.
 - Future mobile clients must use the same backend heartbeat contract (`POST /api/lesson-sessions/{sessionId}/heartbeat`) while their lesson UI is active.
 
+## Step 5B-8b tester zip packaging current state
+
+The current canonical command for creating a desktop tester package from the repository root is:
+
+```powershell
+cd C:\dev\EnglishVoiceTutor.Desktop
+powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
+```
+
+The script creates the self-contained tester handoff zip at:
+
+```text
+artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+```
+
+Current confirmed cross-device tester result:
+
+- the tester zip was copied to another Windows device;
+- the app launched after extraction by running `EnglishVoiceTutor.Desktop.exe`;
+- the packaged Release app did not show Diagnostics by default;
+- backend connection worked;
+- account login worked;
+- backend lesson history was available/preserved;
+- Settings opened;
+- account login/session restore worked;
+- Home opened;
+- Subtopics opened;
+- Lesson Chat opened;
+- Send worked;
+- normal chat mode worked;
+- voice recording/transcription worked;
+- TTS / Play voice worked;
+- Translation worked;
+- Hint worked;
+- Feedback worked;
+- Finish lesson worked;
+- Summary appeared;
+- Conversation Mode worked;
+- single active lesson guard worked;
+- remote active lesson release stopped the old device/session;
+- closing the app with X during an active lesson did not leave the process hanging.
+
+Backend requirement remains unchanged: the packaged desktop app requires a reachable backend for login, lesson history, AI, voice/TTS/STT, translation, hints, feedback, summary, subscription/access checks, and active lesson guard. The desktop app does not contain an OpenAI API key, does not call OpenAI directly, and calls backend APIs only.
+
+Diagnostics behavior remains unchanged for Release packages: Diagnostics is hidden by default and can appear only when `EVT_DESKTOP_DIAGNOSTICS=1` is set locally. That variable must not be committed, and Diagnostics must continue masking secrets and tokens.
+
+Dialogue and prompt quality polishing is intentionally deferred to CMS/Admin. Do not continue polishing dialogue or prompt behavior in code now; CMS/Admin should later allow safe editing of prompts, scenarios, tutor behavior, validation, preview, versioning, and rollback.
+
 ## Known limitations / deferred scope
 
 - Production Paddle readiness checklist exists at `docs/paddle-production-readiness-checklist.md`; it is planning/checklist documentation only and does not mean production billing is complete.
@@ -314,7 +362,7 @@ Latest confirmed validation:
 
 ## Next recommended phase
 
-The next recommended phase is desktop release hardening from `docs/desktop-release-work-plan.md`, based on the Step 5A audit in `docs/desktop-release-readiness-audit.md`. Run and pass the Step 5B-4 smoke gate in `docs/desktop-release-smoke-gate.md` before moving to the next hardening item.
+The next recommended phase is desktop release hardening from `docs/desktop-release-work-plan.md`, based on the Step 5A audit in `docs/desktop-release-readiness-audit.md`. Run and pass the Step 5B-4 smoke gate in `docs/desktop-release-smoke-gate.md` before creating the Step 5B-8b tester zip package or moving to the next hardening item.
 
 Priority order:
 

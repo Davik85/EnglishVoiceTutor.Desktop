@@ -1,16 +1,16 @@
 # Tester release package workflow
 
-This document describes a simple local workflow for creating and sharing a tester zip package for the first external/manual MVP tests of `EnglishVoiceTutor.Desktop`.
+This document is the canonical current desktop tester distribution workflow for `EnglishVoiceTutor.Desktop`. The accepted tester handoff artifact is the zip created by `scripts/package-tester-release.ps1`, not a loose manual `dotnet publish` folder.
 
 ## What this tester release is
 
 This tester release is:
 
 - a zip package created from a published Windows desktop app folder;
-- a repeatable local workflow for manual MVP testing;
-- intended for testers who will run `EnglishVoiceTutor.Desktop.exe` directly;
-- intended to work with a separately running backend, either local, ngrok, or hosted;
-- focused on checking launch, Settings, Diagnostics, Lesson Chat, voice recording, bot voice, Conversation Mode, Summary, and History.
+- the current accepted way to create and share a desktop tester build;
+- intended for testers who extract the zip and run `EnglishVoiceTutor.Desktop.exe` directly;
+- intended to work with a separately running reachable backend, either local, ngrok, or hosted;
+- focused on checking launch, Settings, account login/session restore, backend history, Lesson Chat, voice recording/transcription, TTS, Conversation Mode, translation, hints, feedback, Summary, active lesson guard, and clean close behavior.
 
 ## What this tester release is not
 
@@ -22,27 +22,35 @@ This tester release is **not**:
 - a code-signed release;
 - an auto-update system;
 - a backend deployment;
+- proof that public release is ready;
+- proof that production billing is ready;
 - a place to store or distribute any OpenAI API key.
 
-Keep the MVP tester release simple until installer, signing, and hosting requirements are decided.
+Keep the MVP tester release simple until installer, signing, hosting, and public release requirements are decided.
 
-## Package types
+## Required order before sharing a tester package
 
-The default tester package is self-contained so early testers can unzip the package and run the app without manually installing `windowsdesktop-runtime-10` or any other .NET Desktop Runtime:
+1. Run the automated desktop release gate from the repository root:
 
-```text
-artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\run_desktop_release_gate.ps1
 ```
 
-The self-contained package is larger because it includes the required runtime components. This is the recommended package for tester releases.
+2. Run EF checks only when backend schema changed or database validation is required:
 
-A framework-dependent package is still available as an advanced smaller option for developer checks or controlled machines that already have the matching .NET Desktop Runtime installed:
-
-```text
-artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-framework-dependent.zip
+```powershell
+dotnet ef migrations list --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj
+dotnet ef database update --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj
+dotnet ef migrations has-pending-model-changes --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj
 ```
 
-## Prepare the app package
+3. Create the tester zip with the canonical package command.
+4. Copy or send the zip to another Windows device.
+5. Extract the zip on that device.
+6. Run `EnglishVoiceTutor.Desktop.exe` from the extracted folder.
+7. Verify backend connection, account login/session restore, backend lesson history, and the accepted core lesson flow.
+
+## Canonical tester package command
 
 Run these commands from the repository root on the Windows development machine:
 
@@ -54,38 +62,108 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
 The script publishes the desktop app to:
 
 ```text
-artifacts/publish/win-x64-self-contained
+artifacts\publish\win-x64-self-contained
 ```
 
-Then it creates this tester zip:
+Then it creates the current tester handoff zip:
 
 ```text
-artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
 ```
 
-To create the advanced framework-dependent package instead:
+Send this zip to testers. Do not send a loose `dotnet publish` command as the main tester flow. Manual `dotnet publish` remains only a lower-level implementation detail and developer troubleshooting tool.
+
+## Package types
+
+The default tester package is self-contained so early testers can unzip the package and run the app without manually installing `windowsdesktop-runtime-10` or any other .NET Desktop Runtime:
+
+```text
+artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+```
+
+The self-contained package is larger because it includes the required runtime components. This is the recommended package for tester releases.
+
+A framework-dependent package is still available as an advanced smaller option for developer checks or controlled machines that already have the matching .NET Desktop Runtime installed:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1 -FrameworkDependent
 ```
 
-That command publishes to:
+That advanced command publishes to:
 
 ```text
-artifacts/publish/win-x64-framework-dependent
+artifacts\publish\win-x64-framework-dependent
 ```
 
 And creates:
 
 ```text
-artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-framework-dependent.zip
+artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-framework-dependent.zip
 ```
 
-The package script does not require administrator privileges, does not publish or modify the backend, does not create or modify `%APPDATA%` settings, and does not include local lesson history.
+The package script does not require administrator privileges, does not publish or modify the backend, does not create or modify `%APPDATA%` settings, does not include local lesson history, and rejects obvious API-key-like files in the publish output.
+
+## Backend requirement
+
+The packaged desktop app is still backend-driven. A reachable backend is required for:
+
+- account registration, login, logout, and session restore validation;
+- backend lesson history;
+- lesson start and continuation;
+- AI bot replies;
+- voice recording transcription/STT;
+- TTS / Play voice;
+- translation;
+- hints;
+- feedback;
+- final summary;
+- subscription/access checks;
+- single active lesson guard and remote active lesson release.
+
+The desktop app does not contain an OpenAI API key, must not call OpenAI directly, and must call backend APIs only. All AI/TTS/STT requests go through the backend.
+
+## Backend run for local tester validation
+
+Start the backend locally in Development before local package validation that requires backend APIs:
+
+```powershell
+cd C:\dev\EnglishVoiceTutor.Desktop\backend\EnglishVoiceTutor.Api
+$env:ASPNETCORE_ENVIRONMENT="Development"
+$env:DOTNET_ENVIRONMENT="Development"
+$env:SubscriptionEnforcement__Enabled="true"
+dotnet run
+```
+
+For real AI/TTS/STT testing, set the OpenAI key only in the local backend environment before `dotnet run`:
+
+```powershell
+$env:OPENAI_API_KEY="PASTE_YOUR_LOCAL_OPENAI_KEY_HERE"
+```
+
+Rules for this variable:
+
+- it is needed only on the backend for real AI/TTS/STT testing;
+- never put it in the desktop app;
+- never paste a real key into docs;
+- never commit it;
+- never send it to testers.
+
+## Release Diagnostics behavior
+
+The packaged Release app does not show the Diagnostics tab by default. Diagnostics can appear in Release only when this local environment variable is set on that machine before launching the app:
+
+```powershell
+$env:EVT_DESKTOP_DIAGNOSTICS="1"
+```
+
+Do not commit this variable in scripts, docs with machine-specific values, settings files, or launch shortcuts. Diagnostics and copied diagnostics output must continue masking secrets, tokens, API keys, environment variables, lesson messages, raw audio file paths, and lesson history content.
 
 ## Before sending to a tester
 
-- Start the backend locally or prepare a temporary ngrok URL to the backend.
+- Run the automated release gate.
+- Confirm EF checks if backend schema changed.
+- Create `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip`.
+- Start the backend locally, prepare a temporary ngrok URL, or confirm a hosted backend URL.
 - Verify backend health before sending instructions.
 - Do not send `OPENAI_API_KEY` to testers.
 - Do not send `%APPDATA%\EnglishVoiceTutor.Desktop\settings.json`.
@@ -147,118 +225,96 @@ ngrok URLs are temporary. If the ngrok session changes, send the tester the new 
 
 Use this option only if a hosted backend is available. Send the hosted Backend URL to the tester and keep all backend secrets on the hosted backend environment.
 
-## Tester run instructions
+## Tester run instructions for another Windows device
 
 Ask the tester to follow these steps:
 
-1. Unzip the package.
-2. Run `EnglishVoiceTutor.Desktop.exe`.
-3. Open Settings.
-4. Set Backend URL.
-5. In Audio input, select the microphone to test, or keep System default.
-6. Click Test microphone and confirm the app does not crash.
-7. Click Save.
-8. Restart the app and confirm the selected microphone persists, or safely falls back to System default if unavailable.
-9. Open Diagnostics.
-10. Click Refresh diagnostics.
-11. Confirm backend is connected.
-12. Confirm AI is configured or not configured.
-13. Click Copy diagnostics and paste the copied report into feedback. A Diagnostics screenshot is optional if the copied report is included.
-14. Start lesson.
-15. Send text answer.
-16. Use Hint.
-17. Use Translate.
-18. Use Start/Stop recording.
-19. Use Play voice.
-20. Use Conversation Mode.
-21. Finish lesson.
+1. Copy or download `EnglishVoiceTutor.Desktop-win-x64-self-contained.zip` on the target Windows device.
+2. Extract the zip to a normal writable folder.
+3. Open the extracted folder.
+4. Run `EnglishVoiceTutor.Desktop.exe`.
+5. Open Settings.
+6. Set Backend URL.
+7. In Audio input, select the microphone to test, or keep System default.
+8. Click Test microphone and confirm the app does not crash.
+9. Click Save.
+10. Restart the app and confirm the selected microphone persists, or safely falls back to System default if unavailable.
+11. Confirm Diagnostics is hidden by default in the Release package.
+12. Log in to an account and verify session restore after restart.
+13. Confirm backend lesson history is visible/preserved for the account.
+14. Start a lesson.
+15. Send a text answer.
+16. Use Start/Stop recording and verify transcription.
+17. Use Play voice / TTS.
+18. Use Translate.
+19. Use Hint.
+20. Use Feedback.
+21. Finish the lesson.
 22. Check Summary.
-23. Check History.
-24. Restart app and confirm settings/history remain.
+23. Use Conversation Mode.
+24. Verify single active lesson guard.
+25. Verify remote active lesson release stops the old device/session.
+26. Close the app with X during an active lesson and confirm the process does not hang.
 
-## What to verify
+## Accepted current tester package result
 
-During the tester run, verify:
+The current tester zip flow has been manually verified on another Windows device:
 
-- the app opens from the unzipped folder;
-- Settings can save the Backend URL;
-- Settings shows Audio input and System default in the microphone list;
-- the selected microphone is shown in Diagnostics and included in the copied diagnostic report;
-- the copied diagnostic report does not contain API keys, environment variables, lesson messages, raw audio file paths, or lesson history content;
-- if recognition is poor, selecting a different microphone in Settings improves or changes the result;
-- Diagnostics refresh works;
-- Diagnostics backend status matches the configured Backend URL;
-- Diagnostics AI status is shown as configured or not configured;
-- Diagnostics does not show any OpenAI API key;
-- Lesson Chat works with text answers;
-- Hint works;
-- Translate works;
-- Start/Stop recording works;
-- for microphone testing, report which microphone was selected and whether recording started;
-- for transcription testing, report whether the transcript matched the spoken phrase;
-- for voice testing, say 10 short English phrases in a row and report after which voice message recognition quality degrades;
-- use headphones if possible so the microphone does not capture bot voice;
-- send a screenshot of the chat if transcription switches language;
-- Play voice works;
-- Conversation Mode works;
-- Finish lesson opens Summary;
-- completed lessons appear in History;
-- settings and lesson history remain after app restart.
+- the tester zip was copied to another Windows device;
+- the app launched after extraction;
+- the packaged Release app hid Diagnostics by default;
+- backend connection worked;
+- account login worked;
+- backend lesson history was available/preserved;
+- Settings opened;
+- account login/session restore worked;
+- Home opened;
+- Subtopics opened;
+- Lesson Chat opened;
+- Send worked;
+- voice recording/transcription worked;
+- TTS / Play voice worked;
+- Translation worked;
+- Hint worked;
+- Feedback worked;
+- Finish lesson worked;
+- Summary appeared;
+- Conversation Mode worked;
+- single active lesson guard worked;
+- remote active lesson release stopped the old device/session;
+- closing the app with X during an active lesson did not leave the process hanging.
 
-## Feedback and logs to request
+## Deferred quality polishing
 
-Ask the tester to send back:
+Do not continue polishing dialogue or prompt quality in code during this release packaging step. Prompt, scenario, and bot-behavior quality work is deferred to CMS/Admin so it can later be edited safely with validation, preview, versioning, and rollback.
 
-- the completed feedback template below;
-- the copied Diagnostics report pasted into the feedback template;
-- a screenshot of Diagnostics, if the copied report is unavailable or a screenshot would help explain the issue;
-- screenshots or exact text for any error messages;
-- what they clicked immediately before a crash or failure;
-- whether the Backend URL was local, ngrok, or hosted;
-- whether the issue still happens after restarting the app.
+## Required tester package report format
 
-Do not ask testers to send API keys. If you need settings or history files for debugging, check them first and remove any private personal data before sharing further.
-
-## Feedback template
+Use this report for every shared tester zip:
 
 ```text
-- Windows version:
-- App package type:
-- Backend URL type:
-  - local / ngrok / hosted
-- App opened:
-  yes / no
-- Diagnostics backend status:
-- Diagnostics AI status:
-- Lesson Chat worked:
-  yes / no
-- Selected microphone:
-- Voice recording started:
-  yes / no
-- Voice recording worked:
-  yes / no
-- Transcription matched speech:
-  yes / no
-- Voice stress test completed with 10 short English phrases in a row:
-  yes / no
-- Recognition quality degraded after voice message number:
-- Used headphones during voice testing:
-  yes / no
-- Transcription switched language:
-  yes / no
-- Screenshot of chat if transcription switched language:
-- Bot voice worked:
-  yes / no
-- Conversation Mode worked:
-  yes / no
-- Summary worked:
-  yes / no
-- History worked:
-  yes / no
-- Any crashes/errors:
-- Copied Diagnostics report:
-- Screenshot of Diagnostics (optional):
-- Notes:
+Date:
+Branch/commit:
+Package command:
+ZIP path:
+Tested device:
+App starts after extraction:
+Diagnostics hidden:
+Backend connected:
+Login/account:
+History visible/preserved:
+Chat mode:
+Conversation Mode:
+Voice transcription:
+TTS:
+Translation:
+Hint:
+Feedback:
+Summary:
+Active lesson guard:
+Remote release:
+Close with X:
+Known issues:
 ```
 
 ## Security notes
@@ -267,6 +323,7 @@ Do not ask testers to send API keys. If you need settings or history files for d
 - Do not paste `OPENAI_API_KEY` into the desktop app.
 - The desktop app only needs Backend URL.
 - OpenAI key stays only on the backend environment variable.
+- The desktop app must call backend APIs only and must not call OpenAI directly.
 - Diagnostics must not show or copy the key.
 - `settings.json` must not contain the key.
 - The tester package must not include `%APPDATA%\EnglishVoiceTutor.Desktop\settings.json`.

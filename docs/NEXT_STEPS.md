@@ -1,6 +1,6 @@
 # Next Steps
 
-Review date: 2026-05-31.
+Review date: 2026-06-01.
 
 This roadmap starts from the current confirmed MVP state where:
 - desktop/backend builds pass,
@@ -17,7 +17,8 @@ This roadmap starts from the current confirmed MVP state where:
 - Step 5A desktop release readiness audit is tracked in `docs/desktop-release-readiness-audit.md`.
 - The consolidated desktop release work plan is tracked in `docs/desktop-release-work-plan.md`.
 - Desktop release readiness is the first active priority before production billing rollout or broader CMS/Admin work.
-- Step 5B-4 desktop release smoke gate is tracked in `docs/desktop-release-smoke-gate.md`; run and pass it before moving to the next hardening item.
+- Step 5B-4 desktop release smoke gate is tracked in `docs/desktop-release-smoke-gate.md`; run and pass it before packaging or moving to the next hardening item.
+- Step 5B-8b documents `powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1` as the current accepted desktop tester zip distribution path.
 - Localization is closed for the current release-hardening phase; future Interface languages should be added only 1-2 at a time after full localization QA.
 
 ## Recommended next product order
@@ -25,7 +26,7 @@ This roadmap starts from the current confirmed MVP state where:
 1. Desktop release readiness and hardening: Phase 5B
    - primary plan: `docs/desktop-release-work-plan.md`
    - audit baseline: `docs/desktop-release-readiness-audit.md`
-   - start with Settings final acceptance and Diagnostics Release gate
+   - tester zip packaging is the current accepted desktop tester distribution path: run `tools/run_desktop_release_gate.ps1` first, then run `scripts/package-tester-release.ps1`, then copy/extract/run the zip on another Windows device
    - include Step 5B-2 native languages and localization foundation:
      - expand native/interface/explanation language options;
      - keep Study language options separate;
@@ -33,7 +34,8 @@ This roadmap starts from the current confirmed MVP state where:
      - keep desktop AI features routed through backend APIs only;
      - do not store OpenAI keys in desktop;
      - do not change lesson JSON content as part of language-list planning
-   - continue through backend-unavailable/account UX, auth-session storage decision, lesson selection QA, Lesson Chat polish, voice/TTS/Conversation Mode acceptance, release diagnostics/config cleanup, release packaging, security/privacy, manual release checklist, and final P0/P1 triage
+   - continue through backend-unavailable/account UX, auth-session storage decision, lesson selection QA, release diagnostics/config cleanup, release packaging, security/privacy, manual release checklist, and final P0/P1 triage
+   - do not continue dialogue/prompt quality polishing in code now; prompt/scenario/bot-behavior quality work is deferred to CMS/Admin
 2. Production billing readiness: Phase 5C, after desktop hardening
    - production-readiness checklist: `docs/paddle-production-readiness-checklist.md`
    - production webhook setup checklist: `docs/paddle-production-webhook-setup.md`
@@ -51,7 +53,7 @@ This roadmap starts from the current confirmed MVP state where:
    - planning baseline: `docs/CMS_ADMIN_PLANNING.md`
    - start with read-only support/admin needs before full CMS
    - defer broad production RBAC/content-management work until desktop readiness and minimum operational support requirements are clear
-   - later work may include roles, content versioning, draft/published workflow, audit trail, rollback, and safe prompt/scenario editing
+   - later work may include roles, content versioning, draft/published workflow, audit trail, rollback, and safe prompt/scenario/bot-behavior editing with validation and preview
 
 ## Already completed (do not relist as future work)
 
@@ -76,6 +78,7 @@ This roadmap starts from the current confirmed MVP state where:
 - local Development CMS/admin support foundation v1
 - Manual Paddle sandbox payment loop validation: Upgrade -> Paddle Checkout -> transaction.completed webhook -> Premium active -> lesson allowed
 - Step 5A desktop release readiness audit
+- Step 5B-8b tester zip packaging documented as the current accepted desktop tester distribution path
 
 ## Billing boundaries to preserve
 
@@ -93,6 +96,7 @@ This roadmap starts from the current confirmed MVP state where:
 - No production Paddle rollout before Phase 5B desktop release hardening is complete.
 - No production billing enablement from documentation alone.
 - No full CMS/Admin implementation before desktop readiness and minimum support requirements are clear.
+- No code-side dialogue/prompt quality polishing before CMS/Admin prompt/scenario/bot-behavior editing is ready.
 - No mobile app-store bridge work before the desktop and billing gates are ready.
 - No expansion of Study languages as part of Step 5B-2 unless a later approved task explicitly requests it.
 - No lesson JSON rewrite as part of native/interface/explanation language planning.
