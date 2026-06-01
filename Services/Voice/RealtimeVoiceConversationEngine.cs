@@ -109,7 +109,7 @@ public sealed class RealtimeVoiceConversationEngine : IVoiceConversationEngine, 
                 if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
                 {
                     Debug.WriteLine($"Realtime voice session.stop sending: SessionId={sessionId}; Reason={stopReason}; SocketState={socket.State}.");
-                    await SendBackendEventAsync("session.stop", new { reason = stopReason }, CancellationToken.None);
+                    await SendBackendEventAsync("session.stop", new { reason = stopReason }, cancellationToken);
                     Debug.WriteLine($"Realtime voice CloseAsync requested: SessionId={sessionId}; Reason={stopReason}; SocketState={socket.State}.");
                     await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, stopReason, cancellationToken);
                 }

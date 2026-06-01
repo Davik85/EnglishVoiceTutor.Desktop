@@ -56,6 +56,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly UserSettings userSettings;
     private AccessDisplayState currentAccessPanelState = AccessDisplayState.UnknownOrError;
     private bool isCheckoutOpenedForCurrentPanel;
+    private bool shutdownCleanupCompleted;
+
 
     public FlowDirection AppFlowDirection => InterfaceLanguageOptions.GetById(userSettings.InterfaceLanguageId).IsRightToLeft
         ? FlowDirection.RightToLeft
@@ -712,17 +714,47 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             () => NavigateToHome(selectedLevel));
     }
 
-    public void CleanupOnShutdown()
+    public async Task ShutdownAsync(CancellationToken cancellationToken = default)
     {
+        if (shutdownCleanupCompleted)
+        {
+            return;
+        }
+
+        shutdownCleanupCompleted = true;
+        Debug.WriteLine("Desktop shutdown cleanup started.");
+
         if (CurrentViewModel is LessonChatViewModel lessonChatViewModel)
         {
-            lessonChatViewModel.CleanupActiveLessonOnShutdownAsync().GetAwaiter().GetResult();
+            await lessonChatViewModel.StopLessonActivityForShutdownAsync(cancellationToken);
         }
+
+        if (audioRecordingService.IsRecording)
+        {
+            try
+            {
+                var recordingPath = audioRecordingService.StopRecording();
+                audioRecordingService.SafeDeleteRecording(recordingPath);
+                Debug.WriteLine("Desktop shutdown cleanup stopped active audio recording.");
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine($"Desktop shutdown cleanup could not stop audio recording: {exception.Message}");
+            }
+        }
+
+        audioPlaybackService.StopPlayback();
+        Debug.WriteLine("Desktop shutdown cleanup completed.");
     }
 
     public void Dispose()
     {
-        CleanupOnShutdown();
+        audioPlaybackService.StopPlayback();
+        if (CurrentViewModel is IDisposable disposableCurrentViewModel)
+        {
+            disposableCurrentViewModel.Dispose();
+        }
+
         audioRecordingService.Dispose();
     }
 }
