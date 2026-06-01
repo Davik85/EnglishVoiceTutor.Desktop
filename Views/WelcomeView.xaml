@@ -4,11 +4,12 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="600"
-             d:DesignWidth="900">
+             d:DesignHeight="720"
+             d:DesignWidth="760">
     <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
-        <Border MaxWidth="1040"
-                Height="540"
+        <Border Width="540"
+                Height="640"
+                MaxWidth="540"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Background="{StaticResource SurfaceBrush}"
@@ -18,10 +19,10 @@
                 ClipToBounds="True"
                 SnapsToDevicePixels="True">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="28"
+                <DropShadowEffect BlurRadius="30"
                                   Direction="270"
-                                  Opacity="0.16"
-                                  ShadowDepth="10"
+                                  Opacity="0.18"
+                                  ShadowDepth="12"
                                   Color="#FF173B57" />
             </Border.Effect>
 
@@ -34,72 +35,109 @@
 
                 <Rectangle IsHitTestVisible="False">
                     <Rectangle.Fill>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#660B2236" Offset="0" />
-                            <GradientStop Color="#260B2236" Offset="0.45" />
-                            <GradientStop Color="#110B2236" Offset="1" />
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#3F061726" Offset="0" />
+                            <GradientStop Color="#10061726" Offset="0.42" />
+                            <GradientStop Color="#05061726" Offset="0.62" />
+                            <GradientStop Color="#52061726" Offset="1" />
                         </LinearGradientBrush>
                     </Rectangle.Fill>
                 </Rectangle>
 
-                <Border MaxWidth="560"
-                        Margin="34"
-                        Padding="30"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Bottom"
-                        Background="#DDF8FBFF"
-                        BorderBrush="#AFFFFFFF"
-                        BorderThickness="1"
-                        CornerRadius="{StaticResource CornerPanel}">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="22"
-                                          Direction="270"
-                                          Opacity="0.12"
-                                          ShadowDepth="6"
-                                          Color="#FF102A43" />
-                    </Border.Effect>
+                <Grid Margin="30">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                    <StackPanel>
-                        <TextBlock Text="{Binding AppTitle}"
-                                   FontSize="38"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
-                                   LineHeight="44"
-                                   TextWrapping="Wrap" />
+                    <Border Grid.Row="0"
+                            MaxWidth="420"
+                            Padding="24,22,24,20"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            Background="#B8F8FBFF"
+                            BorderBrush="#9EFFFFFF"
+                            BorderThickness="1"
+                            CornerRadius="26">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="20"
+                                              Direction="270"
+                                              Opacity="0.10"
+                                              ShadowDepth="5"
+                                              Color="#FF102A43" />
+                        </Border.Effect>
 
-                        <TextBlock Margin="0,12,0,0"
-                                   Text="{Binding Subtitle}"
-                                   FontSize="18"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   LineHeight="26"
-                                   TextWrapping="Wrap" />
+                        <StackPanel>
+                            <TextBlock Text="{Binding AppTitle}"
+                                       FontSize="34"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       LineHeight="39"
+                                       TextWrapping="Wrap" />
 
-                        <StackPanel Margin="0,26,0,0"
-                                    Orientation="Horizontal">
-                            <Button Content="{Binding StartLessonButtonText}"
-                                    Command="{Binding StartLessonCommand}"
-                                    Width="170"
-                                    Height="44"
-                                    Margin="0,0,12,0"
-                                    FontSize="15"
-                                    FontWeight="SemiBold"
-                                    Style="{StaticResource PrimaryButtonStyle}" />
-                            <Button Content="{Binding SettingsButtonText}"
-                                    Command="{Binding OpenSettingsCommand}"
-                                    Width="140"
-                                    Height="44"
-                                    FontSize="15"
-                                    FontWeight="SemiBold"
-                                    Style="{StaticResource SecondaryButtonStyle}" />
+                            <TextBlock Margin="0,10,0,0"
+                                       Text="{Binding Subtitle}"
+                                       FontSize="16"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       LineHeight="23"
+                                       TextWrapping="Wrap" />
                         </StackPanel>
+                    </Border>
 
-                        <TextBlock Margin="0,16,0,0"
-                                   Text="{Binding StatusMessage}"
-                                   FontSize="13"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   TextWrapping="Wrap" />
-                    </StackPanel>
-                </Border>
+                    <Border Grid.Row="2"
+                            Padding="22,18"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Bottom"
+                            Background="#9AF8FBFF"
+                            BorderBrush="#8CFFFFFF"
+                            BorderThickness="1"
+                            CornerRadius="24">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="20"
+                                              Direction="270"
+                                              Opacity="0.10"
+                                              ShadowDepth="5"
+                                              Color="#FF102A43" />
+                        </Border.Effect>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Margin="0,0,18,0"
+                                       VerticalAlignment="Center"
+                                       Text="{Binding StatusMessage}"
+                                       FontSize="13"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="NoWrap" />
+
+                            <StackPanel Grid.Column="1"
+                                        HorizontalAlignment="Right"
+                                        Orientation="Horizontal">
+                                <Button Content="{Binding StartLessonButtonText}"
+                                        Command="{Binding StartLessonCommand}"
+                                        Width="170"
+                                        Height="44"
+                                        Margin="0,0,12,0"
+                                        FontSize="15"
+                                        FontWeight="SemiBold"
+                                        Style="{StaticResource PrimaryButtonStyle}" />
+                                <Button Content="{Binding SettingsButtonText}"
+                                        Command="{Binding OpenSettingsCommand}"
+                                        Width="140"
+                                        Height="44"
+                                        FontSize="15"
+                                        FontWeight="SemiBold"
+                                        Style="{StaticResource SecondaryButtonStyle}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
             </Grid>
         </Border>
     </Grid>
