@@ -1664,7 +1664,7 @@ public partial class LessonChatViewModel : ViewModelBase
                 : playbackStarted || isAutoPlay ? string.Empty : BackendUxText.ActionNeedsBackend;
             if (!playbackStarted && !isAutoPlay)
             {
-                BackendStatusText = BackendConstants.BackendStatusUnavailable;
+                ApplyBackendReachabilityFromException(exception);
             }
         }
         finally
@@ -4889,6 +4889,7 @@ public partial class LessonChatViewModel : ViewModelBase
         var result = await backendLessonSessionClient.StartAsync(backendBaseUrl, request);
         if (result.IsActiveLessonBlocked)
         {
+            MarkBackendAvailable();
             HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
             StatusMessage = BackendUxText.ActiveLessonExists;
             Debug.WriteLine("Backend lesson session blocked. Reason=active_lesson_exists.");
@@ -4903,6 +4904,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
         if (result.IsLessonAccessDenied)
         {
+            MarkBackendAvailable();
             HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
             Debug.WriteLine($"Backend lesson session denied. Decision={result.AccessDeniedDecision}; Reason={result.AccessDeniedReason}; EnforcementEnabled={result.EnforcementEnabled}; FreeLessonUsedToday={result.FreeLessonUsedToday}; FreeLessonRemainingToday={result.FreeLessonRemainingToday}.");
             MessageBox.Show(
@@ -4917,7 +4919,18 @@ public partial class LessonChatViewModel : ViewModelBase
         if (!result.IsSuccess || result.Value is null)
         {
             HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
-            Debug.WriteLine($"Backend lesson session start skipped. Reason={result.ErrorMessage ?? "unknown"}.");
+            if (result.IsBackendReachabilityFailure)
+            {
+                BackendStatusText = BackendConstants.BackendStatusUnavailable;
+                StatusMessage = BackendUxText.CouldNotConnect;
+            }
+            else
+            {
+                MarkBackendAvailable();
+                StatusMessage = BackendConstants.BackendReturnedErrorMessage;
+            }
+
+            Debug.WriteLine($"Backend lesson session start skipped. BackendWasReached={result.BackendWasReached}; IsBackendReachabilityFailure={result.IsBackendReachabilityFailure}; Reason={result.ErrorMessage ?? "unknown"}.");
             return;
         }
 
@@ -5224,13 +5237,36 @@ public partial class LessonChatViewModel : ViewModelBase
     private void ApplyBackendOperationFailure(string operationName, Exception exception)
     {
         var userMessage = MapBackendFailureToUserMessage(exception);
-        var isUnavailable = string.Equals(userMessage, BackendUxText.BackendUnavailable, StringComparison.Ordinal);
-        BackendStatusText = isUnavailable
-            ? BackendConstants.BackendStatusUnavailable
-            : BackendConstants.BackendStatusConnected;
+        ApplyBackendReachabilityFromException(exception);
         StatusMessage = userMessage;
         var statusCode = (exception as HttpRequestException)?.StatusCode;
         Debug.WriteLine($"Backend operation failed: Operation={operationName}; ExceptionType={exception.GetType().Name}; StatusCode={(int?)statusCode};");
+    }
+
+    private void ApplyBackendReachabilityFromException(Exception exception)
+    {
+        BackendStatusText = IsBackendReachabilityFailure(exception)
+            ? BackendConstants.BackendStatusUnavailable
+            : BackendConstants.BackendStatusConnected;
+    }
+
+    private static bool IsBackendReachabilityFailure(Exception exception)
+    {
+        if (exception is TaskCanceledException || exception is TimeoutException || exception.InnerException is TimeoutException)
+        {
+            return true;
+        }
+
+        if (exception is HttpRequestException httpRequestException)
+        {
+            return !httpRequestException.StatusCode.HasValue
+                && httpRequestException.HttpRequestError is HttpRequestError.ConnectionError
+                    or HttpRequestError.NameResolutionError
+                    or HttpRequestError.SecureConnectionError
+                    or HttpRequestError.Unknown;
+        }
+
+        return false;
     }
 
     private string MapBackendFailureToUserMessage(Exception exception)
@@ -5271,6 +5307,7 @@ public partial class LessonChatViewModel : ViewModelBase
 
             if (httpRequestException.HttpRequestError is HttpRequestError.ConnectionError
                 or HttpRequestError.NameResolutionError
+                or HttpRequestError.SecureConnectionError
                 or HttpRequestError.Unknown)
             {
                 return BackendUxText.BackendUnavailable;

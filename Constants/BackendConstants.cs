@@ -86,8 +86,8 @@ public static class BackendConstants
     public const string LessonStartRequiresSignInTitle = "Sign in required";
     public const string LessonStartRequiresSignInMessage = "Please sign in or create an account to start lessons.";
 
-    public const string BackendUnavailableMessage = "Backend is unavailable. Please start the local backend and try again.";
-    public const string BackendReturnedErrorMessage = "The backend returned an error. Please check the backend console log.";
+    public const string BackendUnavailableMessage = "Could not connect to the server. Please check that the backend is running.";
+    public const string BackendReturnedErrorMessage = "Something went wrong while starting the lesson. Please try again.";
     public const string BackendValidationErrorMessage = "The backend request was invalid. Please review your input and try again.";
     public const string BackendRequestTimedOutMessage = "The request timed out. Please try again.";
     public const string BackendUnexpectedResponseMessage = "The app received an unexpected backend response. Please check logs.";
@@ -109,7 +109,7 @@ public static class BackendConstants
     public const string HistorySyncStatusActive = "History sync: active";
     public const string HistorySyncStatusUnavailable = "History sync: unavailable";
     public const string HistorySyncStatusFinished = "History sync: finished";
-    public const string BackendHealthCheckFailedMessage = "Backend health check failed. Please start the local backend.";
+    public const string BackendHealthCheckFailedMessage = "Could not connect to the server. Please check that the backend is running.";
 
     public const string AiStatusChecking = "AI: checking...";
     public const string AiStatusConfiguredPrefix = "AI: configured";

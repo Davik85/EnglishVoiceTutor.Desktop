@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -57,21 +58,21 @@ public sealed class BackendLessonSessionClient
                     }
                 }
 
-                return BackendLessonSessionClientResult.Failure($"Backend lesson session POST failed with HTTP {(int)response.StatusCode}.");
+                return BackendLessonSessionClientResult.Failure($"Backend lesson session POST failed with HTTP {(int)response.StatusCode}.", backendWasReached: true);
             }
 
             var lessonSession = await response.Content.ReadFromJsonAsync<BackendLessonSessionResponse>(JsonOptions, cancellationToken);
             return lessonSession is null
-                ? BackendLessonSessionClientResult.Failure("Backend lesson session POST returned an empty response.")
+                ? BackendLessonSessionClientResult.Failure("Backend lesson session POST returned an empty response.", backendWasReached: true)
                 : BackendLessonSessionClientResult.Success(lessonSession);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return BackendLessonSessionClientResult.Failure("Backend lesson session POST timed out.");
+            return BackendLessonSessionClientResult.Failure("Backend lesson session POST timed out.", isBackendReachabilityFailure: true);
         }
         catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
         {
-            return BackendLessonSessionClientResult.Failure("Backend lesson session POST is unavailable.");
+            return BackendLessonSessionClientResult.Failure("Backend lesson session POST is unavailable.", isBackendReachabilityFailure: IsBackendReachabilityFailure(exception));
         }
     }
 
@@ -100,21 +101,21 @@ public sealed class BackendLessonSessionClient
 
             if (!response.IsSuccessStatusCode)
             {
-                return BackendLessonSessionClientResult.Failure($"Backend lesson session PUT failed with HTTP {(int)response.StatusCode}.");
+                return BackendLessonSessionClientResult.Failure($"Backend lesson session PUT failed with HTTP {(int)response.StatusCode}.", backendWasReached: true);
             }
 
             var lessonSession = await response.Content.ReadFromJsonAsync<BackendLessonSessionResponse>(JsonOptions, cancellationToken);
             return lessonSession is null
-                ? BackendLessonSessionClientResult.Failure("Backend lesson session PUT returned an empty response.")
+                ? BackendLessonSessionClientResult.Failure("Backend lesson session PUT returned an empty response.", backendWasReached: true)
                 : BackendLessonSessionClientResult.Success(lessonSession);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return BackendLessonSessionClientResult.Failure("Backend lesson session PUT timed out.");
+            return BackendLessonSessionClientResult.Failure("Backend lesson session PUT timed out.", isBackendReachabilityFailure: true);
         }
         catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
         {
-            return BackendLessonSessionClientResult.Failure("Backend lesson session PUT is unavailable.");
+            return BackendLessonSessionClientResult.Failure("Backend lesson session PUT is unavailable.", isBackendReachabilityFailure: IsBackendReachabilityFailure(exception));
         }
     }
 
@@ -170,22 +171,36 @@ public sealed class BackendLessonSessionClient
 
             if (!response.IsSuccessStatusCode)
             {
-                return BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST failed with HTTP {(int)response.StatusCode}.");
+                return BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST failed with HTTP {(int)response.StatusCode}.", backendWasReached: true);
             }
 
             var lessonSession = await response.Content.ReadFromJsonAsync<BackendLessonSessionResponse>(JsonOptions, cancellationToken);
             return lessonSession is null
-                ? BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST returned an empty response.")
+                ? BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST returned an empty response.", backendWasReached: true)
                 : BackendLessonSessionClientResult.Success(lessonSession);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST timed out.");
+            return BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST timed out.", isBackendReachabilityFailure: true);
         }
         catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
         {
-            return BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST is unavailable.");
+            return BackendLessonSessionClientResult.Failure($"Backend lesson session {operationName} POST is unavailable.", isBackendReachabilityFailure: IsBackendReachabilityFailure(exception));
         }
+    }
+
+    private static bool IsBackendReachabilityFailure(Exception exception)
+    {
+        if (exception is HttpRequestException httpRequestException)
+        {
+            return !httpRequestException.StatusCode.HasValue
+                && httpRequestException.HttpRequestError is HttpRequestError.ConnectionError
+                    or HttpRequestError.NameResolutionError
+                    or HttpRequestError.SecureConnectionError
+                    or HttpRequestError.Unknown;
+        }
+
+        return exception is TaskCanceledException or InvalidOperationException;
     }
 
     private static async Task<BackendActiveLessonExistsResponse?> TryReadActiveLessonExistsResponseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
