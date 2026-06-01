@@ -256,3 +256,9 @@ Release decision:
 ## Next recommended phase after this gate
 
 After this smoke gate passes, continue to the next approved desktop hardening item in `docs/desktop-release-work-plan.md`. Keep production billing deferred until the desktop hardening gate and final release triage are complete.
+
+## Step 5B-5 backend-unavailable and account UX hardening
+
+Step 5B-5 adds focused desktop hardening for backend-unavailable, slow, or failed backend requests. Normal learner-facing account, settings, lesson chat, hint, translation, and voice/TTS failures should surface short localized messages and should not expose raw stack traces or leave buttons stuck in loading states.
+
+This step does not change billing, Paddle, subscription, entitlement, Admin UI, lesson JSON, database schema, EF migrations, or backend AI behavior. Desktop AI-related actions continue to call backend APIs only.
