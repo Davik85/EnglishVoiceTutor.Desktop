@@ -7,52 +7,53 @@
              d:DesignHeight="600"
              d:DesignWidth="900">
     <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
-        <Border MaxWidth="720"
-                Padding="40"
+        <Border MaxWidth="760"
+                Padding="38"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Style="{StaticResource MainContentCardStyle}">
-            <StackPanel>
-                <TextBlock Text="{Binding AppTitle}"
-                           FontSize="42"
-                           FontWeight="SemiBold"
-                           Foreground="{StaticResource TextPrimaryBrush}"
-                           TextAlignment="Center" />
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                <TextBlock Margin="0,12,0,0"
-                           Text="{Binding Subtitle}"
-                           FontSize="18"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           TextAlignment="Center"
-                           TextWrapping="Wrap" />
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="{Binding AppTitle}"
+                               FontSize="38"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap" />
 
-                <Border Margin="0,28,0,0"
-                        Padding="20"
-                        Background="{StaticResource SurfaceSoftBrush}"
+                    <TextBlock Margin="0,12,0,0"
+                               Text="{Binding Subtitle}"
+                               FontSize="18"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+
+                <Border Grid.Row="1"
+                        Margin="0,30,0,0"
+                        Height="250"
+                        HorizontalAlignment="Stretch"
                         BorderBrush="{StaticResource BorderAccentSoftBrush}"
                         BorderThickness="1"
-                        CornerRadius="{StaticResource CornerTile}">
-                    <StackPanel>
-                        <TextBlock Text="{Binding HowItWorksTitle}"
-                                   FontSize="18"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextPrimaryBrush}" />
-                        <TextBlock Margin="0,14,0,0"
-                                   Text="{Binding ChooseTopicStep}"
-                                   FontSize="16"
-                                   Foreground="{StaticResource TextPrimaryBrush}" />
-                        <TextBlock Margin="0,8,0,0"
-                                   Text="{Binding PracticeStep}"
-                                   FontSize="16"
-                                   Foreground="{StaticResource TextPrimaryBrush}" />
-                        <TextBlock Margin="0,8,0,0"
-                                   Text="{Binding CorrectionsStep}"
-                                   FontSize="16"
-                                   Foreground="{StaticResource TextPrimaryBrush}" />
-                    </StackPanel>
+                        CornerRadius="{StaticResource CornerTile}"
+                        SnapsToDevicePixels="True">
+                    <Border.Background>
+                        <ImageBrush ImageSource="/Assets/Welcome/welcome-cover.png"
+                                    Stretch="UniformToFill"
+                                    AlignmentX="Center"
+                                    AlignmentY="Center" />
+                    </Border.Background>
                 </Border>
 
-                <StackPanel Margin="0,30,0,0"
+                <StackPanel Grid.Row="2"
+                            Margin="0,30,0,0"
                             Orientation="Horizontal"
                             HorizontalAlignment="Center">
                     <Button Content="{Binding StartLessonButtonText}"
@@ -72,20 +73,14 @@
                             Style="{StaticResource SecondaryButtonStyle}" />
                 </StackPanel>
 
-                <TextBlock Margin="0,16,0,0"
+                <TextBlock Grid.Row="3"
+                           Margin="0,16,0,0"
                            Text="{Binding StatusMessage}"
                            FontSize="13"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            TextAlignment="Center"
                            TextWrapping="Wrap" />
-
-                <TextBlock Margin="0,24,0,0"
-                           Text="{Binding FooterNote}"
-                           FontSize="13"
-                           Foreground="{StaticResource TextMutedBrush}"
-                           TextAlignment="Center"
-                           TextWrapping="Wrap" />
-            </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>
