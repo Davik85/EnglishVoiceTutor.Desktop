@@ -349,6 +349,11 @@ static async Task<IResult> HandleFinishLessonSessionAsync(
     {
         return Results.NotFound(new { error = "Lesson session was not found." });
     }
+    catch (LessonSessionEndedElsewhereException exception)
+    {
+        logger.LogInformation("Rejected lesson session finish because session is no longer active. SessionId={SessionId}; Status={Status}.", exception.SessionId, exception.Status);
+        return CreateLessonSessionEndedElsewhereResult(exception);
+    }
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
         logger.LogWarning(exception, "Dev lesson session finish PUT failed because storage is unavailable.");
@@ -372,6 +377,11 @@ static async Task<IResult> HandleLessonSessionHeartbeatAsync(
     catch (KeyNotFoundException)
     {
         return Results.NotFound(new { error = "Lesson session was not found." });
+    }
+    catch (LessonSessionEndedElsewhereException exception)
+    {
+        logger.LogInformation("Rejected lesson session heartbeat because session is no longer active. SessionId={SessionId}; Status={Status}.", exception.SessionId, exception.Status);
+        return CreateLessonSessionEndedElsewhereResult(exception);
     }
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
@@ -533,6 +543,11 @@ static async Task<IResult> HandleUpsertDevLessonSummaryAsync(
     {
         return Results.NotFound(new { error = "Lesson session was not found." });
     }
+    catch (LessonSessionEndedElsewhereException exception)
+    {
+        logger.LogInformation("Rejected lesson summary upsert because session is no longer active. SessionId={SessionId}; Status={Status}.", exception.SessionId, exception.Status);
+        return CreateLessonSessionEndedElsewhereResult(exception);
+    }
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
         logger.LogWarning(exception, "Dev lesson summary PUT failed because storage is unavailable.");
@@ -603,6 +618,11 @@ static async Task<IResult> HandleCreateLessonMessageAsync(
     catch (KeyNotFoundException)
     {
         return Results.NotFound(new { error = "Lesson session was not found." });
+    }
+    catch (LessonSessionEndedElsewhereException exception)
+    {
+        logger.LogInformation("Rejected lesson message creation because session is no longer active. SessionId={SessionId}; Status={Status}.", exception.SessionId, exception.Status);
+        return CreateLessonSessionEndedElsewhereResult(exception);
     }
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
@@ -784,6 +804,24 @@ static ErrorResponse CreateLessonSessionStorageUnavailableResponse()
     };
 }
 
+static IResult CreateLessonSessionEndedElsewhereResult(LessonSessionEndedElsewhereException exception)
+{
+    return Results.Json(CreateLessonSessionEndedElsewhereResponse(exception), statusCode: StatusCodes.Status409Conflict);
+}
+
+static object CreateLessonSessionEndedElsewhereResponse(LessonSessionEndedElsewhereException exception)
+{
+    return new
+    {
+        error = LessonSessionEndedElsewhereException.ErrorCode,
+        errorCode = LessonSessionEndedElsewhereException.ErrorCode,
+        code = LessonSessionEndedElsewhereException.ErrorCode,
+        message = LessonSessionEndedElsewhereException.UserMessage,
+        sessionId = exception.SessionId,
+        status = exception.Status
+    };
+}
+
 static object CreateActiveLessonExistsResponse(ActiveLessonExistsException exception)
 {
     return new
@@ -946,6 +984,7 @@ static ErrorResponse CreateUserSettingsStorageUnavailableResponse()
 static async Task<IResult> HandleLessonChatReplyAsync(
     LessonChatRequest request,
     ILessonChatService lessonChatService,
+    ILessonSessionService lessonSessionService,
     IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
@@ -974,6 +1013,8 @@ static async Task<IResult> HandleLessonChatReplyAsync(
 
     try
     {
+        await EnsureRequestBackendSessionIsActiveAsync(request.BackendSessionId, lessonSessionService, cancellationToken);
+
         var limitExceeded = await freeLimitGuardService.CheckChatReplyLimitAsync(targetLanguageName, cancellationToken);
         if (limitExceeded is not null)
         {
@@ -984,6 +1025,11 @@ static async Task<IResult> HandleLessonChatReplyAsync(
         var response = await lessonChatService.CreateReplyAsync(request, cancellationToken);
 
         return Results.Ok(response);
+    }
+    catch (LessonSessionEndedElsewhereException exception)
+    {
+        logger.LogInformation("Rejected lesson chat reply because session is no longer active. SessionId={SessionId}; Status={Status}.", exception.SessionId, exception.Status);
+        return CreateLessonSessionEndedElsewhereResult(exception);
     }
     catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
     {
@@ -1046,6 +1092,7 @@ static async Task<IResult> HandleMockLessonChatReplyAsync(
 static async Task<IResult> HandleLessonChatHintAsync(
     LessonChatRequest request,
     ILessonHintService lessonHintService,
+    ILessonSessionService lessonSessionService,
     IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
@@ -1072,20 +1119,31 @@ static async Task<IResult> HandleLessonChatHintAsync(
         ? StudyLanguageCatalog.English.EnglishName
         : request.TargetLanguageName;
 
-    var limitExceeded = await freeLimitGuardService.CheckHintLimitAsync(targetLanguageName, cancellationToken);
-    if (limitExceeded is not null)
+    try
     {
-        return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
+        await EnsureRequestBackendSessionIsActiveAsync(request.BackendSessionId, lessonSessionService, cancellationToken);
+
+        var limitExceeded = await freeLimitGuardService.CheckHintLimitAsync(targetLanguageName, cancellationToken);
+        if (limitExceeded is not null)
+        {
+            return Results.Json(limitExceeded, statusCode: StatusCodes.Status429TooManyRequests);
+        }
+
+        var response = await lessonHintService.CreateHintAsync(request, cancellationToken);
+
+        return Results.Ok(response);
     }
-
-    var response = await lessonHintService.CreateHintAsync(request, cancellationToken);
-
-    return Results.Ok(response);
+    catch (LessonSessionEndedElsewhereException exception)
+    {
+        logger.LogInformation("Rejected lesson chat hint because session is no longer active. SessionId={SessionId}; Status={Status}.", exception.SessionId, exception.Status);
+        return CreateLessonSessionEndedElsewhereResult(exception);
+    }
 }
 
 static async Task<IResult> HandleLessonChatFeedbackAsync(
     LessonChatRequest request,
     ILessonChatService lessonChatService,
+    ILessonSessionService lessonSessionService,
     IFreeLimitGuardService freeLimitGuardService,
     AppDbContext dbContext,
     IRequestUserResolver requestUserResolver,
@@ -1115,10 +1173,17 @@ static async Task<IResult> HandleLessonChatFeedbackAsync(
 
     try
     {
+        await EnsureRequestBackendSessionIsActiveAsync(request.BackendSessionId, lessonSessionService, cancellationToken);
+
         request.RequestPurpose = "feedback";
         var feedback = await lessonChatService.CreateFeedbackAsync(request, cancellationToken);
         await TryPersistFeedbackResultAsync(request, feedback, dbContext, requestUserResolver, logger, cancellationToken);
         return Results.Ok(feedback);
+    }
+    catch (LessonSessionEndedElsewhereException exception)
+    {
+        logger.LogInformation("Rejected lesson chat feedback because session is no longer active. SessionId={SessionId}; Status={Status}.", exception.SessionId, exception.Status);
+        return CreateLessonSessionEndedElsewhereResult(exception);
     }
     catch (Exception exception)
     {
@@ -1134,6 +1199,7 @@ static async Task<IResult> HandleLessonChatFeedbackAsync(
 static async Task<IResult> HandleAudioTranscriptionAsync(
     HttpRequest request,
     AudioTranscriptionService audioTranscriptionService,
+    ILessonSessionService lessonSessionService,
     IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
@@ -1158,6 +1224,7 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
         var targetLanguageCode = form["targetLanguageCode"].ToString();
         var lessonPhase = form["lessonPhase"].ToString();
         var transcriptionContext = form["transcriptionContext"].ToString();
+        var backendSessionId = ParseNullableGuid(form["backendSessionId"].ToString());
         var targetLanguage = StudyLanguageCatalog.GetById(targetLanguageId);
 
         if (!string.IsNullOrWhiteSpace(targetLanguageCode))
@@ -1182,6 +1249,8 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
             });
         }
 
+        await EnsureRequestBackendSessionIsActiveAsync(backendSessionId, lessonSessionService, cancellationToken);
+
         var limitExceeded = await freeLimitGuardService.CheckTranscriptionLimitAsync(targetLanguage.EnglishName, cancellationToken);
         if (limitExceeded is not null)
         {
@@ -1194,6 +1263,11 @@ static async Task<IResult> HandleAudioTranscriptionAsync(
         logger.LogInformation("Audio transcription completed successfully. TranscriptionLength={TranscriptionLength}; TargetLanguageId={TargetLanguageId}; TranscriptionLanguageCode={TranscriptionLanguageCode}.", transcriptionLength, targetLanguage.Id, targetLanguage.TranscriptionLanguageCode);
 
         return Results.Ok(response);
+    }
+    catch (LessonSessionEndedElsewhereException exception)
+    {
+        logger.LogInformation("Rejected audio transcription because session is no longer active. SessionId={SessionId}; Status={Status}.", exception.SessionId, exception.Status);
+        return CreateLessonSessionEndedElsewhereResult(exception);
     }
     catch (HttpBadHttpRequestException exception)
     {
@@ -1356,6 +1430,19 @@ static async Task TryPersistFeedbackResultAsync(
     }
 }
 
+static async Task EnsureRequestBackendSessionIsActiveAsync(Guid? backendSessionId, ILessonSessionService lessonSessionService, CancellationToken cancellationToken)
+{
+    if (backendSessionId.HasValue)
+    {
+        await lessonSessionService.EnsureActiveLessonSessionAsync(backendSessionId.Value, cancellationToken);
+    }
+}
+
+static Guid? ParseNullableGuid(string? value)
+{
+    return Guid.TryParse(value, out var parsed) ? parsed : null;
+}
+
 static bool IsRequestBodyReadTimeout(HttpBadHttpRequestException exception)
 {
     return exception.Message.Contains("MinRequestBodyDataRate", StringComparison.OrdinalIgnoreCase)
@@ -1366,8 +1453,12 @@ static bool IsRequestBodyReadTimeout(HttpBadHttpRequestException exception)
 static async Task<IResult> HandleTranslationAsync(
     TranslationRequest request,
     TranslationService translationService,
+    ILessonSessionService lessonSessionService,
+    ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
 {
+    var logger = loggerFactory.CreateLogger("TranslationEndpoint");
+
     if (string.IsNullOrWhiteSpace(request.Text))
     {
         return Results.BadRequest(new
@@ -1386,9 +1477,16 @@ static async Task<IResult> HandleTranslationAsync(
 
     try
     {
+        await EnsureRequestBackendSessionIsActiveAsync(request.BackendSessionId, lessonSessionService, cancellationToken);
+
         var response = await translationService.TranslateAsync(request, cancellationToken);
 
         return Results.Ok(response);
+    }
+    catch (LessonSessionEndedElsewhereException exception)
+    {
+        logger.LogInformation("Rejected translation because session is no longer active. SessionId={SessionId}; Status={Status}.", exception.SessionId, exception.Status);
+        return CreateLessonSessionEndedElsewhereResult(exception);
     }
     catch (Exception)
     {
@@ -1399,6 +1497,7 @@ static async Task<IResult> HandleTranslationAsync(
 static async Task<IResult> HandleAudioSpeechStreamAsync(
     AudioSpeechRequest request,
     AudioSpeechService audioSpeechService,
+    ILessonSessionService lessonSessionService,
     IFreeLimitGuardService freeLimitGuardService,
     HttpContext httpContext,
     ILoggerFactory loggerFactory,
@@ -1424,6 +1523,8 @@ static async Task<IResult> HandleAudioSpeechStreamAsync(
 
     try
     {
+        await EnsureRequestBackendSessionIsActiveAsync(request.BackendSessionId, lessonSessionService, cancellationToken);
+
         var limitExceeded = await freeLimitGuardService.CheckTtsLimitAsync(targetLanguageName, cancellationToken);
         if (limitExceeded is not null)
         {
@@ -1440,6 +1541,11 @@ static async Task<IResult> HandleAudioSpeechStreamAsync(
             metrics.TotalMs,
             metrics.TotalBytes);
         return Results.Empty;
+    }
+    catch (LessonSessionEndedElsewhereException exception) when (!response.HasStarted)
+    {
+        logger.LogInformation("Rejected audio speech stream because session is no longer active. SessionId={SessionId}; Status={Status}.", exception.SessionId, exception.Status);
+        return CreateLessonSessionEndedElsewhereResult(exception);
     }
     catch (AudioSpeechRequestCanceledException exception) when (exception.InternalTimeoutReached && !response.HasStarted)
     {
@@ -1497,6 +1603,7 @@ static async Task<IResult> HandleAudioSpeechStreamAsync(
 static async Task<IResult> HandleAudioSpeechAsync(
     AudioSpeechRequest request,
     AudioSpeechService audioSpeechService,
+    ILessonSessionService lessonSessionService,
     IFreeLimitGuardService freeLimitGuardService,
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken)
@@ -1516,6 +1623,8 @@ static async Task<IResult> HandleAudioSpeechAsync(
 
     try
     {
+        await EnsureRequestBackendSessionIsActiveAsync(request.BackendSessionId, lessonSessionService, cancellationToken);
+
         var limitExceeded = await freeLimitGuardService.CheckTtsLimitAsync(targetLanguageName, cancellationToken);
         if (limitExceeded is not null)
         {
@@ -1537,6 +1646,11 @@ static async Task<IResult> HandleAudioSpeechAsync(
         var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, request.Purpose, request.SpeechSpeed, request.Model, request.Instructions, request.TargetLanguageName, request.TargetLanguageId, cancellationToken);
 
         return Results.File(audioBytes, OpenAiConstants.SpeechResponseContentType);
+    }
+    catch (LessonSessionEndedElsewhereException exception)
+    {
+        logger.LogInformation("Rejected audio speech because session is no longer active. SessionId={SessionId}; Status={Status}.", exception.SessionId, exception.Status);
+        return CreateLessonSessionEndedElsewhereResult(exception);
     }
     catch (AudioSpeechRequestCanceledException exception) when (exception.ClientCancellationRequested || cancellationToken.IsCancellationRequested)
     {

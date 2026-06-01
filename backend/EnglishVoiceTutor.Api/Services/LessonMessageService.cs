@@ -21,12 +21,17 @@ public sealed class LessonMessageService(AppDbContext dbContext, IRequestUserRes
         ValidateCreateRequest(request);
 
         var userId = requestUserResolver.ResolveCurrentUser().UserId;
-        var sessionExists = await dbContext.LessonSessions
-            .AnyAsync(session => session.Id == sessionId && session.UserId == userId, cancellationToken);
+        var session = await dbContext.LessonSessions
+            .SingleOrDefaultAsync(existing => existing.Id == sessionId && existing.UserId == userId, cancellationToken);
 
-        if (!sessionExists)
+        if (session is null)
         {
-            throw new KeyNotFoundException($"Lesson session '{sessionId}' was not found for the dev user.");
+            throw new KeyNotFoundException($"Lesson session '{sessionId}' was not found for the current user.");
+        }
+
+        if (!LessonSessionConstants.IsActiveStatus(session.Status))
+        {
+            throw new LessonSessionEndedElsewhereException(session.Id, session.Status);
         }
 
         var now = DateTimeOffset.UtcNow;

@@ -13,4 +13,6 @@ public sealed class TranslationBackendRequest
     public string SourceLanguageNativeName { get; init; } = string.Empty;
 
     public string SourceLanguageCode { get; init; } = string.Empty;
+
+    public Guid? BackendSessionId { get; init; }
 }

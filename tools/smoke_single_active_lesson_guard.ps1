@@ -13,8 +13,10 @@ $HealthPath = "/api/health"
 $DatabaseHealthPath = "/api/health/database"
 $LessonSessionsPath = "/api/me/lesson-sessions"
 $LessonHeartbeatPathTemplate = "/api/lesson-sessions/{0}/heartbeat"
+$LessonMessagesPathTemplate = "/api/me/lesson-sessions/{0}/messages"
 $ActiveLessonAbandonPath = "/api/lesson-sessions/active/abandon"
 $ActiveLessonExistsCode = "active_lesson_exists"
+$LessonSessionEndedElsewhereCode = "lesson_session_ended_elsewhere"
 $HeartbeatFreshnessWaitSeconds = 130
 
 function Write-Step {
@@ -223,6 +225,20 @@ try {
     Assert-Equal -Expected $true -Actual $releaseResult.Body.released -Message "Active lesson release result"
     Assert-Equal -Expected "Abandoned" -Actual $releaseResult.Body.status -Message "Released lesson status"
     Write-Pass "Active lesson release endpoint abandoned user one's active lesson"
+
+    Write-Step "Verify old released lesson heartbeat is rejected and cannot revive the session"
+    $oldHeartbeat = Invoke-JsonExpectedStatus -Method "POST" -Url ("$BaseUrl$LessonHeartbeatPathTemplate" -f $firstLesson.Body.id) -Headers $userOneHeaders -Body $null -ExpectedStatus 409
+    Assert-Equal -Expected $LessonSessionEndedElsewhereCode -Actual $oldHeartbeat.Body.error -Message "Old released heartbeat error code"
+    Assert-Equal -Expected $LessonSessionEndedElsewhereCode -Actual $oldHeartbeat.Body.code -Message "Old released heartbeat machine-readable code"
+    $oldHeartbeatRetry = Invoke-JsonExpectedStatus -Method "POST" -Url ("$BaseUrl$LessonHeartbeatPathTemplate" -f $firstLesson.Body.id) -Headers $userOneHeaders -Body $null -ExpectedStatus 409
+    Assert-Equal -Expected $LessonSessionEndedElsewhereCode -Actual $oldHeartbeatRetry.Body.error -Message "Old released heartbeat retry error code"
+    Write-Pass "Old released heartbeat is rejected and does not revive the abandoned session"
+
+    Write-Step "Verify old released lesson-bound message creation is rejected"
+    $oldMessageBody = @{ role = "user"; text = "Hello after release"; source = "typed"; turnNumber = 1; isValidLessonTurn = $true; studyLanguage = "English"; transcriptConfidence = $null; audioDurationMs = $null }
+    $oldMessage = Invoke-JsonExpectedStatus -Method "POST" -Url ("$BaseUrl$LessonMessagesPathTemplate" -f $firstLesson.Body.id) -Headers $userOneHeaders -Body $oldMessageBody -ExpectedStatus 409
+    Assert-Equal -Expected $LessonSessionEndedElsewhereCode -Actual $oldMessage.Body.error -Message "Old released lesson message error code"
+    Write-Pass "Old released lesson-bound message creation is rejected"
 
     Write-Step "Verify user one can start after releasing the active lesson"
     $afterReleaseLesson = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$LessonSessionsPath" -Headers $userOneHeaders -Body (New-LessonStartBody -Suffix "after-release") -ExpectedStatus 201
