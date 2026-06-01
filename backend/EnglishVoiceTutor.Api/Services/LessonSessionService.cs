@@ -173,6 +173,45 @@ public sealed class LessonSessionService(
         return ToResponse(session);
     }
 
+    public async Task<LessonSessionResponse?> AbandonActiveLessonSessionAsync(CancellationToken cancellationToken)
+    {
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+
+        var activeSessions = await dbContext.LessonSessions
+            .Where(session => session.UserId == userId)
+            .Where(session => LessonSessionConstants.ActiveStatuses.Contains(session.Status))
+            .OrderByDescending(session => session.LastHeartbeatAtUtc ?? session.StartedAt)
+            .ToListAsync(cancellationToken);
+
+        if (activeSessions.Count == 0)
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return null;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        foreach (var activeSession in activeSessions)
+        {
+            activeSession.Status = LessonSessionConstants.AbandonedStatus;
+            activeSession.LastHeartbeatAtUtc = now;
+            activeSession.UpdatedAt = now;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        var releasedSession = activeSessions[0];
+        logger.LogInformation(
+            "User released active lesson session from another device. UserId={UserId}; SessionId={SessionId}; ReleasedStatus={ReleasedStatus}.",
+            userId,
+            releasedSession.Id,
+            releasedSession.Status);
+
+        return ToResponse(releasedSession);
+    }
+
     public async Task<LessonSessionListResponse> GetRecentLessonSessionsAsync(CancellationToken cancellationToken)
     {
         var userId = requestUserResolver.ResolveCurrentUser().UserId;

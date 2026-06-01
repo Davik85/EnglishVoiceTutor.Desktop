@@ -13,7 +13,8 @@ public sealed record BackendLessonSessionClientResult(
     bool FreeLessonUsedToday = false,
     int FreeLessonRemainingToday = 0,
     bool BackendWasReached = false,
-    bool IsBackendReachabilityFailure = false)
+    bool IsBackendReachabilityFailure = false,
+    bool CanEndOtherLesson = false)
 {
     public static BackendLessonSessionClientResult Success(BackendLessonSessionResponse value)
     {
@@ -63,6 +64,7 @@ public sealed record BackendLessonSessionClientResult(
             IsLessonAccessDenied: false,
             IsActiveLessonBlocked: true,
             ActiveLessonMessage: response.Message,
-            BackendWasReached: true);
+            BackendWasReached: true,
+            CanEndOtherLesson: response.CanEndOtherLesson);
     }
 }

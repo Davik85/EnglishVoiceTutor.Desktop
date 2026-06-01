@@ -149,6 +149,42 @@ public sealed class BackendLessonSessionClient
             cancellationToken);
     }
 
+    public async Task<BackendActiveLessonAbandonClientResult> AbandonActiveAsync(
+        string? backendBaseUrl,
+        CancellationToken cancellationToken = default)
+    {
+        using var httpClient = CreateHttpClient();
+
+        try
+        {
+            var authSession = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+            var endpoint = string.IsNullOrWhiteSpace(authSession?.AccessToken)
+                ? BackendConstants.DevActiveLessonSessionAbandonEndpoint
+                : BackendConstants.ActiveLessonSessionAbandonEndpoint;
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpoint));
+            AuthenticatedRequestHelper.AddBearerTokenIfPresent(httpRequest, authSession?.AccessToken);
+            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return BackendActiveLessonAbandonClientResult.Failure($"Backend active lesson session abandon POST failed with HTTP {(int)response.StatusCode}.", backendWasReached: true);
+            }
+
+            var abandonResponse = await response.Content.ReadFromJsonAsync<BackendActiveLessonAbandonResponse>(JsonOptions, cancellationToken);
+            return abandonResponse is null
+                ? BackendActiveLessonAbandonClientResult.Failure("Backend active lesson session abandon POST returned an empty response.", backendWasReached: true)
+                : BackendActiveLessonAbandonClientResult.Success(abandonResponse);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return BackendActiveLessonAbandonClientResult.Failure("Backend active lesson session abandon POST timed out.", isBackendReachabilityFailure: true);
+        }
+        catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
+        {
+            return BackendActiveLessonAbandonClientResult.Failure("Backend active lesson session abandon POST is unavailable.", isBackendReachabilityFailure: IsBackendReachabilityFailure(exception));
+        }
+    }
+
     private async Task<BackendLessonSessionClientResult> SendSessionLifecyclePostAsync(
         string? backendBaseUrl,
         Guid sessionId,
@@ -215,6 +251,7 @@ public sealed class BackendLessonSessionClient
 
             return string.Equals(activeLessonResponse.Error, ActiveLessonExistsErrorCode, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(activeLessonResponse.Code, ActiveLessonExistsErrorCode, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(activeLessonResponse.ErrorCode, ActiveLessonExistsErrorCode, StringComparison.OrdinalIgnoreCase)
                 ? activeLessonResponse
                 : null;
         }

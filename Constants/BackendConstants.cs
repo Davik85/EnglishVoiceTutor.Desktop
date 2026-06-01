@@ -29,8 +29,10 @@ public static class BackendConstants
     public const string MeLessonSessionFinishEndpointTemplate = "/api/me/lesson-sessions/{0}/finish";
     public const string LessonSessionHeartbeatEndpointTemplate = "/api/lesson-sessions/{0}/heartbeat";
     public const string LessonSessionAbandonEndpointTemplate = "/api/lesson-sessions/{0}/abandon";
+    public const string ActiveLessonSessionAbandonEndpoint = "/api/lesson-sessions/active/abandon";
     public const string DevLessonSessionHeartbeatEndpointTemplate = "/api/dev/lesson-sessions/{0}/heartbeat";
     public const string DevLessonSessionAbandonEndpointTemplate = "/api/dev/lesson-sessions/{0}/abandon";
+    public const string DevActiveLessonSessionAbandonEndpoint = "/api/dev/lesson-sessions/active/abandon";
     public const string DevLessonSessionMessagesEndpointTemplate = "/api/dev/lesson-sessions/{0}/messages";
     public const string MeLessonSessionMessagesEndpointTemplate = "/api/me/lesson-sessions/{0}/messages";
     public const string DevLessonSessionSummaryEndpointTemplate = "/api/dev/lesson-sessions/{0}/summary";

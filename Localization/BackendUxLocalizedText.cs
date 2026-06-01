@@ -20,4 +20,9 @@ public sealed record BackendUxLocalizedText(
     string DisplayNameRequired,
     string VoiceTakingTooLong,
     string VoicePlaybackUnavailable,
-    string ActiveLessonExists);
+    string ActiveLessonExists,
+    string ActiveLessonExistsTitle,
+    string ActiveLessonExistsMessage,
+    string EndOtherLessonAndContinue,
+    string Cancel,
+    string EndOtherLessonFailed);

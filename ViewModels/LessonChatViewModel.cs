@@ -20,6 +20,7 @@ using EnglishVoiceTutor.Shared.LessonPolicies;
 using EnglishVoiceTutor.Shared.NativeLanguages;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 using System.Windows;
+using System.Windows.Controls;
 using NAudio.Wave;
 
 namespace EnglishVoiceTutor.Desktop.ViewModels;
@@ -4886,19 +4887,71 @@ public partial class LessonChatViewModel : ViewModelBase
             ModeUsed = "text"
         };
 
+        await TryStartBackendLessonSessionAsync(request, allowEndOtherLessonPrompt: true);
+    }
+
+    private async Task TryStartBackendLessonSessionAsync(StartBackendLessonSessionRequest request, bool allowEndOtherLessonPrompt)
+    {
         var result = await backendLessonSessionClient.StartAsync(backendBaseUrl, request);
         if (result.IsActiveLessonBlocked)
         {
             MarkBackendAvailable();
             HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
-            StatusMessage = BackendUxText.ActiveLessonExists;
-            Debug.WriteLine("Backend lesson session blocked. Reason=active_lesson_exists.");
-            MessageBox.Show(
-                BackendUxText.ActiveLessonExists,
-                BackendConstants.LessonStartUnavailableTitle,
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-            navigateBack();
+            StatusMessage = BackendUxText.ActiveLessonExistsMessage;
+            Debug.WriteLine($"Backend lesson session blocked. Reason=active_lesson_exists; CanEndOtherLesson={result.CanEndOtherLesson}; AllowPrompt={allowEndOtherLessonPrompt}.");
+
+            if (!allowEndOtherLessonPrompt || !result.CanEndOtherLesson)
+            {
+                MessageBox.Show(
+                    BackendUxText.ActiveLessonExistsMessage,
+                    BackendUxText.ActiveLessonExistsTitle,
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                navigateBack();
+                return;
+            }
+
+            var shouldEndOtherLesson = ShowEndOtherLessonConfirmation();
+            if (!shouldEndOtherLesson)
+            {
+                Debug.WriteLine("User canceled active lesson release from another device.");
+                navigateBack();
+                return;
+            }
+
+            var abandonResult = await backendLessonSessionClient.AbandonActiveAsync(backendBaseUrl);
+            if (!abandonResult.IsSuccess)
+            {
+                HistorySyncStatusText = BackendConstants.HistorySyncStatusUnavailable;
+                if (abandonResult.IsBackendReachabilityFailure)
+                {
+                    BackendStatusText = BackendConstants.BackendStatusUnavailable;
+                    StatusMessage = BackendUxText.CouldNotConnect;
+                    MessageBox.Show(
+                        BackendUxText.CouldNotConnect,
+                        BackendUxText.ActiveLessonExistsTitle,
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
+                else
+                {
+                    MarkBackendAvailable();
+                    StatusMessage = BackendUxText.EndOtherLessonFailed;
+                    MessageBox.Show(
+                        BackendUxText.EndOtherLessonFailed,
+                        BackendUxText.ActiveLessonExistsTitle,
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
+
+                Debug.WriteLine($"Backend active lesson release failed. BackendWasReached={abandonResult.BackendWasReached}; IsBackendReachabilityFailure={abandonResult.IsBackendReachabilityFailure}; Error={abandonResult.ErrorMessage ?? "unknown"}.");
+                navigateBack();
+                return;
+            }
+
+            MarkBackendAvailable();
+            Debug.WriteLine($"Backend active lesson released. Released={abandonResult.Released}; SessionId={abandonResult.SessionId}; Status={abandonResult.Status}.");
+            await TryStartBackendLessonSessionAsync(request, allowEndOtherLessonPrompt: false);
             return;
         }
 
@@ -4939,6 +4992,76 @@ public partial class LessonChatViewModel : ViewModelBase
         MarkBackendAvailable();
         HistorySyncStatusText = BackendConstants.HistorySyncStatusActive;
         Debug.WriteLine($"Backend lesson session started. SessionId={backendLessonSessionId}; StudyLanguage={request.StudyLanguage}; TopicId={request.TopicId}; SubtopicId={request.SubtopicId}; Level={request.Level}; SelectedContextId={request.SelectedContextId ?? "null"}.");
+    }
+
+    private bool ShowEndOtherLessonConfirmation()
+    {
+        var owner = Application.Current?.MainWindow;
+        var dialog = new Window
+        {
+            Title = BackendUxText.ActiveLessonExistsTitle,
+            Owner = owner,
+            WindowStartupLocation = owner is null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
+            SizeToContent = SizeToContent.WidthAndHeight,
+            ResizeMode = ResizeMode.NoResize,
+            ShowInTaskbar = false,
+            MinWidth = 420,
+            MaxWidth = 560
+        };
+
+        var message = new TextBlock
+        {
+            Text = BackendUxText.ActiveLessonExistsMessage,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 20)
+        };
+
+        var primaryButton = new Button
+        {
+            Content = BackendUxText.EndOtherLessonAndContinue,
+            MinWidth = 220,
+            Padding = new Thickness(12, 6, 12, 6),
+            Margin = new Thickness(8, 0, 0, 0),
+            IsDefault = true
+        };
+        var cancelButton = new Button
+        {
+            Content = BackendUxText.Cancel,
+            MinWidth = 90,
+            Padding = new Thickness(12, 6, 12, 6),
+            IsCancel = true
+        };
+
+        primaryButton.Click += (_, _) =>
+        {
+            dialog.DialogResult = true;
+            dialog.Close();
+        };
+        cancelButton.Click += (_, _) =>
+        {
+            dialog.DialogResult = false;
+            dialog.Close();
+        };
+
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        buttons.Children.Add(cancelButton);
+        buttons.Children.Add(primaryButton);
+
+        dialog.Content = new StackPanel
+        {
+            Margin = new Thickness(24),
+            Children =
+            {
+                message,
+                buttons
+            }
+        };
+
+        return dialog.ShowDialog() == true;
     }
 
 

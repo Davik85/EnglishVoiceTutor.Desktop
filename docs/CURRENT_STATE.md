@@ -337,3 +337,10 @@ Priority order:
    - Keep broad production RBAC/content-management work deferred until desktop readiness and minimum operational support requirements are clear.
 
 Do not implement remaining production billing lifecycle behavior before a plan is approved. Production billing remains deferred, and the existing billing boundaries remain unchanged.
+
+## Step 5B-6d active lesson release
+
+- The backend-enforced single active lesson guard now supports a user-controlled release flow for another fresh active lesson on the same account.
+- Desktop clients can call `POST /api/lesson-sessions/active/abandon` after user confirmation, so future mobile clients can use the same backend-enforced behavior without trusting a client-provided session id.
+- The stale heartbeat timeout still prevents users from being locked out after a crash or closed app.
+- A remotely released incomplete lesson is preserved as `Abandoned`; it is not marked as a normally completed lesson and does not create a lesson summary.
