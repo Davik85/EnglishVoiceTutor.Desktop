@@ -49,7 +49,7 @@ The desktop app is backend-driven. Backend-unavailable checks are resilience-onl
 
 ## Security rule
 
-OpenAI API keys must never be stored in the desktop app and must never be committed to source control.
+OpenAI API keys are backend-only. `OPENAI_API_KEY` is needed only for real AI/TTS/STT testing, must never be stored in the desktop app, must never be committed to source control, and must never be sent to testers. The desktop app only needs a Backend URL and must call backend APIs only.
 
 ## Current MVP voice decision
 
@@ -137,6 +137,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_payment_p
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_entitlement_extension.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_cancellation_past_due_policy.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_canceled_paused_expiry_policy.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\smoke_paddle_resumed_activated_snapshot_policy.ps1
 ```
 
 Detailed billing architecture, provider-agnostic access boundaries, and deferred scope are documented in `docs/subscription-billing-foundation.md`.
@@ -153,7 +154,7 @@ dotnet restore
 dotnet build
 ```
 
-Recommended next work: plan remaining billing operations only: `subscription.resumed` / `subscription.activated` restore policy, refund/chargeback policy, manual revocation automation, production Paddle webhook setup, desktop upgrade/paywall UI, future Apple/Google mobile entitlement bridge, and optional background reconciliation.
+Recommended next work: continue remaining desktop release hardening first. Production billing readiness, remaining billing operations, and CMS/Admin operational readiness stay deferred until desktop hardening is complete; prompt/scenario/bot-behavior polishing is deferred to CMS/Admin.
 
 
 ## Local admin shell
@@ -167,7 +168,7 @@ Recommended next work: plan remaining billing operations only: `subscription.res
 - JWT remains in memory only for this phase.
 - Static admin shell audit script: `powershell -ExecutionPolicy Bypass -File tools\audit_admin_shell.ps1`.
 - The existing smoke script (`tools/smoke_admin_foundation.ps1`) now runs this admin shell audit before backend HTTP smoke checks.
-- Latest confirmed EF migration is `20260529000000_AddPaddlePaymentPersistenceV1`.
+- Latest confirmed EF migration is `20260601090000_AddLessonSessionHeartbeat`.
 
 ## Interface localization
 
@@ -175,4 +176,4 @@ Step 5B-3d completed a full learner-facing desktop UI localization pass for the 
 
 Step 5B-3e completed Subtopics/Situations display localization for those release-ready Interface languages. Lesson JSON remains unchanged; runtime English fallback remains a safety mechanism only, Native/Explanation languages remain broad, and Study languages were not expanded.
 
-Step 5B-4 added a desktop release smoke gate in `docs/desktop-release-smoke-gate.md` and the safe local helper `tools/run_desktop_release_gate.ps1`. Step 5B-8b documents the current accepted desktop tester distribution flow: run the smoke gate, then create the tester zip with `powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1`; the default handoff artifact is `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip`. Localization is considered closed for the current phase. Future Interface languages should be added only 1-2 at a time after full localization QA, and production billing remains deferred until desktop hardening is complete.
+Step 5B-4 added a desktop release smoke gate in `docs/desktop-release-smoke-gate.md` and the safe local helper `tools/run_desktop_release_gate.ps1`. Step 5B-8b documents the canonical current desktop tester distribution flow: run the smoke gate, then create the tester zip with `powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1`; the default handoff artifact is `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip`. The tester ZIP has been verified on another Windows device after extraction: the app starts, Diagnostics is hidden by default, backend connection/account login/backend history work, core Lesson Chat / Conversation Mode / TTS / transcription / translation / hints / feedback / summary are accepted, and the single active lesson guard plus remote active lesson release stop the old device/session. `tools/smoke_single_active_lesson_guard.ps1` covers heartbeat stale protection, remote release, old-session invalidation, and old heartbeat/message rejection. Localization is considered closed for the current phase. Future Interface languages should be added only 1-2 at a time after full localization QA, production billing remains deferred until desktop hardening is complete, CMS/Admin remains deferred, and public release is not declared ready.

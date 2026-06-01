@@ -8,6 +8,19 @@ Audit only. No implementation in this step.
 Consolidated follow-up plan:
 See `docs/desktop-release-work-plan.md` for the Phase 5B desktop release work plan that aligns this audit with `docs/NEXT_STEPS.md` and `docs/CURRENT_STATE.md`.
 
+## Documentation synchronization update (2026-06-01)
+
+This audit remains useful as the Step 5A baseline, but the following release-hardening items are now accepted and supersede older risk wording in this file:
+
+- Settings/Diagnostics Release gate: packaged Release hides Diagnostics by default; Release Diagnostics appears only when `EVT_DESKTOP_DIAGNOSTICS=1` is set locally.
+- Protected auth session storage: desktop still uses `auth-session.json`, but current Windows storage writes a DPAPI-protected Base64 payload rather than raw plaintext token JSON.
+- Core Lesson Chat / Conversation Mode / TTS / transcription / translation / hints / feedback / summary flow is manually accepted.
+- Canonical tester handoff is `scripts/package-tester-release.ps1`, producing `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip`; `dotnet publish` is only a lower-level troubleshooting path.
+- The tester ZIP was verified on another Windows device after extraction, including app start, Diagnostics hidden by default, backend connection, account login, backend history, accepted lesson flow, active lesson guard, and remote active lesson release.
+- Backend-enforced single active lesson protection is heartbeat-based, uses a 2-minute freshness window, supports remote release, marks the old session `Abandoned`, and rejects old heartbeat/message actions with `lesson_session_ended_elsewhere`.
+- Prompt/dialogue/scenario/bot-behavior quality polishing is intentionally deferred to CMS/Admin.
+- Public release is still not declared ready; production billing and CMS/Admin remain deferred until desktop hardening is complete.
+
 ## Executive summary
 
 English Voice Tutor Desktop is close enough for focused internal validation, but it is not ready for external MVP users without a short release-hardening pass.
@@ -24,13 +37,13 @@ What is not ready:
 - Diagnostics and development-oriented status details must be explicitly verified as hidden or acceptable in Release builds before any public release.
 - Backend unavailable, wrong backend URL, expired/invalid token, and 401/403/500 flows need manual acceptance testing and likely message polish.
 - Voice and Conversation Mode need device-level testing on clean Windows machines, especially microphone missing/denied cases, transcription failures, audio playback failures, and avatar layout at common window sizes.
-- Auth token storage is MVP/development-grade local JSON and should be treated as a pre-public security blocker unless the first release is tightly controlled.
+- Auth session storage now uses Windows DPAPI-protected local `auth-session.json` payloads; final security/privacy review remains required before broad public release.
 
 Biggest blockers:
 - No public-release installer/signing/update plan.
 - No production backend URL/configuration plan in the desktop release package.
 - Diagnostics/dev UI and copied diagnostics output require final Release-mode acceptance.
-- Auth session storage is explicitly marked MVP local storage and should be hardened before public release.
+- Auth session storage now uses Windows DPAPI-protected local `auth-session.json` payloads; final security/privacy review remains required before broad public release.
 - Voice/Conversation Mode reliability is not yet proven across clean tester machines.
 
 Recommended next step:
@@ -58,15 +71,15 @@ The current confirmed baseline, based on repository docs and release-relevant co
 
 **Needs focused fixes**
 
-Rationale: the main desktop learning experience is implemented, but release readiness depends on a small number of high-impact hardening tasks: Release diagnostics/config cleanup, clean-machine packaging, backend/account error UX, secure token storage decision, and voice/Conversation Mode acceptance. If the target is only a tightly controlled internal tester release, this is closer to **Almost ready** after manual acceptance. For external MVP users, it remains **Needs focused fixes**.
+Rationale: the main desktop learning experience and tester ZIP path are accepted for controlled validation, but release readiness still depends on hosted backend configuration, final security/privacy review, clean-machine packaging discipline, installer/signing/update planning, and final P0/P1 triage. If the target is only a tightly controlled internal tester release, this is closer to **Almost ready** after manual acceptance. For external MVP users, it remains **Needs focused fixes**.
 
 ## P0 blockers
 
 P0 means the issue blocks app launch, lesson start, account access, data safety, payment access safety, or causes crashes.
 
 - **No confirmed production/hosted backend configuration for desktop release.** The desktop default backend URL is localhost. External users cannot reliably register, log in, check access, start lessons, transcribe audio, or get bot responses without a hosted backend URL and release configuration plan.
-- **Auth session token storage is not production-grade.** The desktop stores the auth session in local JSON and the code comment explicitly calls it MVP local session storage for development. This is a data-safety/security blocker for broad public release.
-- **Release diagnostics visibility/output is not fully accepted.** Diagnostics exposes paths, backend/config status, and other technical details. It is hideable, but Release behavior and copied output must be verified before release.
+- **Production/hosted backend configuration remains unresolved for broader release.** The tester ZIP can work with a reachable backend, but public distribution still needs a production backend URL/configuration plan.
+- **Security/privacy final review remains required for broad public release.** Auth session storage is now DPAPI-protected on Windows and Release Diagnostics is hidden by default, but copied diagnostics safety and support procedures still require final release review.
 
 ## P1 blockers
 
@@ -157,13 +170,13 @@ These should not block the first controlled test release:
 
 **Risks**
 - Backend unavailable and wrong backend URL cases are mapped to friendly messages in some paths, but all auth paths need manual testing.
-- Token/session storage is local JSON and explicitly not production-hardened.
+- Token/session storage uses a local `auth-session.json` file whose current Windows payload is DPAPI-protected for the current user.
 - Expired token/session behavior appears to fall back to signed-out/development settings in some flows; this could confuse users unless messaging is clear.
 - Login/register errors may be too generic for common cases such as duplicate email, weak password, invalid email, wrong password, backend down, or server error.
 
 **Release recommendation**
 - Account/auth is acceptable for internal controlled testing.
-- Public release should not proceed until token storage and expired/invalid token UX are deliberately accepted or hardened.
+- Public release should not proceed until protected token storage, expired/invalid token UX, and support diagnostics procedures are deliberately accepted in final security/privacy review.
 
 **Suggested next task**
 - Step 5B-3: Account/auth UX hardening audit and token-storage decision.
@@ -466,14 +479,14 @@ These should not block the first controlled test release:
 - Diagnostics docs emphasize not sending API keys or private local files.
 
 **Risks**
-- Auth session token storage in local JSON is not production-grade.
+- Auth session storage uses Windows DPAPI-protected local `auth-session.json` payloads; final broad-release security/privacy review is still required.
 - Diagnostics shows local paths and backend/config status; copied output must be reviewed for privacy.
 - Debug logs may contain lesson metadata and usage summaries. Confirm no raw secrets, tokens, raw audio, payment secrets, or sensitive lesson content are persisted in normal Release scenarios.
 - Microphone/audio privacy needs clear user-facing expectations: recording happens only when the user starts it; audio/transcription is sent to backend for processing.
 - Backend and Admin logs may contain operational data; desktop release should align with the data retention policy.
 
 **Release recommendation**
-- P0 for public release: resolve token storage and diagnostics output safety.
+- P0 for public release: finish security/privacy review for protected auth session storage, Release Diagnostics support procedures, and copied diagnostics output safety.
 - Add clear privacy copy/manual release notes for microphone, transcription, AI processing, and account data.
 
 **Suggested next task**
@@ -518,7 +531,7 @@ These should not block the first controlled test release:
 1. **Settings final visual/manual acceptance and Diagnostics Release gate**
    - Confirm Settings opens reliably.
    - Confirm Learning, Account, Audio, Progress, and Diagnostics separation.
-   - Decide Diagnostics visibility for Release.
+   - Diagnostics visibility is decided: packaged Release hides it by default and local `EVT_DESKTOP_DIAGNOSTICS=1` enables it for support/testing.
 2. **Native languages and localization foundation**
    - Expand native/interface/explanation language options as planned in `docs/desktop-release-work-plan.md`.
    - Keep Study language options separate and unchanged unless a later approved task explicitly expands them.
@@ -596,8 +609,8 @@ Use this checklist before sharing a controlled desktop build:
 - [ ] Confirm bot voice auto-play behavior.
 - [ ] Return from Conversation Mode to Chat.
 - [ ] Finish a lesson after using Conversation Mode.
-- [ ] Confirm Release build launches on a clean Windows machine.
-- [ ] Confirm Release build does not show Diagnostics unless deliberately enabled.
+- [x] Confirm tester ZIP launches after extraction on another Windows device.
+- [x] Confirm packaged Release does not show Diagnostics unless deliberately enabled.
 - [ ] Confirm copied diagnostics output contains no secrets, tokens, raw audio paths, payment secrets, OpenAI API keys, environment variables, or lesson-history content.
 
 ## Recommended next Codex tasks
@@ -614,7 +627,7 @@ Use `docs/desktop-release-work-plan.md` as the controlling consolidated plan for
 3. **Step 5B-3: Backend unavailable and Account UX hardening**
    - Test stopped backend, wrong URL, expired session, invalid credentials, 401/403/500.
 4. **Step 5B-4: Auth session storage production decision**
-   - Document or implement secure OS-backed token storage for Windows in a later implementation step.
+   - Implemented for Windows with DPAPI-protected `auth-session.json` payloads; keep final security/privacy review before broad public release.
 5. **Step 5B-5: Lesson selection and access-state QA**
    - Validate signed-out, free available, free used, trial, Premium, past due, canceled/paused, checkout unavailable, and unknown/error states.
 6. **Step 5B-6: Lesson Chat MVP polish**
@@ -626,7 +639,7 @@ Use `docs/desktop-release-work-plan.md` as the controlling consolidated plan for
 9. **Step 5B-9: Conversation Mode MVP acceptance or beta/hide decision**
    - Validate avatar layout, record UX, auto-send, auto-play, return/back, and layout on common window sizes.
 10. **Step 5B-10: Avatar framing/profile/prompt acceptance pass**
-    - Review avatar framing, profiles, and tutor prompt behavior.
+    - Defer prompt/dialogue/scenario/bot-behavior quality polishing to CMS/Admin; keep only blocking avatar/framing defects in desktop hardening.
 11. **Step 5B-11: Lesson completion, early exit, summary, and progress manual test**
     - Validate Finish, Back, summary, History, statistics, and progress behavior.
 12. **Step 5B-12: Free-limit/paywall desktop UX acceptance without billing logic changes**

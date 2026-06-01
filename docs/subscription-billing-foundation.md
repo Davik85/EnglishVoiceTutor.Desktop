@@ -312,7 +312,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - Desktop Debug build passed.
 - Desktop Release build passed.
 - Backend build passed.
-- `dotnet ef migrations list` shows latest migration `20260529000000_AddPaddlePaymentPersistenceV1`.
+- `dotnet ef migrations list` shows latest confirmed migration `20260601090000_AddLessonSessionHeartbeat`; latest billing-specific payment persistence migration remains `20260529000000_AddPaddlePaymentPersistenceV1`.
 - `dotnet ef database update` reports the database is already up to date.
 - `dotnet ef migrations has-pending-model-changes` reports no model changes.
 - `tools/smoke_paddle_canceled_paused_expiry_policy.ps1` passed.
@@ -351,7 +351,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 
 ## Current latest EF migration
 
-- Latest confirmed EF migration is `20260529000000_AddPaddlePaymentPersistenceV1`.
+- Latest confirmed EF migration is `20260601090000_AddLessonSessionHeartbeat`.
 - `dotnet ef database update` reports the database is already up to date.
 - `dotnet ef migrations has-pending-model-changes` reports no model changes.
 
@@ -384,4 +384,4 @@ Deferred scope / next roadmap:
 - Trial/manual/admin/development/future-mobile entitlements are not touched by the provider-event canceled/paused expiry path.
 - Admin UI was not changed.
 - Desktop UI is outside this documentation update; the current desktop upgrade/paywall flow exists for sandbox validation and remains backend-driven.
-- Latest payment persistence schema migration is `20260529000000_AddPaddlePaymentPersistenceV1`.
+- Latest payment persistence schema migration is `20260529000000_AddPaddlePaymentPersistenceV1`; latest overall confirmed EF migration is `20260601090000_AddLessonSessionHeartbeat`.

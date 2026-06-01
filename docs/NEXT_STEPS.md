@@ -2,90 +2,72 @@
 
 Review date: 2026-06-01.
 
-This roadmap starts from the current confirmed MVP state where:
-- desktop/backend builds pass,
-- lesson content audit passes,
-- auth/JWT foundation is implemented,
-- optional desktop Account UI is implemented,
-- Settings and Lesson Chat runtime persistence are auth-aware,
-- Development free-limit mode is diagnostics-only,
-- Paddle checkout, webhook ingestion, subscription snapshots, payment snapshots, entitlement activation/extension, scheduled-cancellation policy, past-due policy, actual canceled/paused expiry policy, and resumed/activated snapshot-only policy are implemented through Step 4B.
-- Step 4C production Paddle webhook setup checklist/config guard is documentation/tooling only.
-- Desktop Step 4D-1 through 4D-4 are implemented for backend-state mapping, paywall display, backend-only checkout launch, and manual refresh after checkout.
-- The manual sandbox payment loop has been validated: Upgrade -> Paddle Checkout -> transaction.completed webhook -> Premium active -> lesson allowed.
-- Production billing setup is not complete.
-- Step 5A desktop release readiness audit is tracked in `docs/desktop-release-readiness-audit.md`.
-- The consolidated desktop release work plan is tracked in `docs/desktop-release-work-plan.md`.
-- Desktop release readiness is the first active priority before production billing rollout or broader CMS/Admin work.
-- Step 5B-4 desktop release smoke gate is tracked in `docs/desktop-release-smoke-gate.md`; run and pass it before packaging or moving to the next hardening item.
-- Step 5B-8b documents `powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1` as the current accepted desktop tester zip distribution path.
-- Localization is closed for the current release-hardening phase; future Interface languages should be added only 1-2 at a time after full localization QA.
+This roadmap starts from the current confirmed state: the desktop MVP core lesson/voice/TTS flow is accepted, the tester ZIP flow is accepted, backend-enforced single active lesson protection is accepted, localization for the current Interface language set is closed for this phase, and production billing / CMS/Admin remain deferred.
 
 ## Recommended next product order
 
-1. Desktop release readiness and hardening: Phase 5B
-   - primary plan: `docs/desktop-release-work-plan.md`
-   - audit baseline: `docs/desktop-release-readiness-audit.md`
-   - tester zip packaging is the current accepted desktop tester distribution path: run `tools/run_desktop_release_gate.ps1` first, then run `scripts/package-tester-release.ps1`, then copy/extract/run the zip on another Windows device
-   - include Step 5B-2 native languages and localization foundation:
-     - expand native/interface/explanation language options;
-     - keep Study language options separate;
-     - keep backend-backed user settings as the source of truth;
-     - keep desktop AI features routed through backend APIs only;
-     - do not store OpenAI keys in desktop;
-     - do not change lesson JSON content as part of language-list planning
-   - continue through backend-unavailable/account UX, auth-session storage decision, lesson selection QA, release diagnostics/config cleanup, release packaging, security/privacy, manual release checklist, and final P0/P1 triage
-   - do not continue dialogue/prompt quality polishing in code now; prompt/scenario/bot-behavior quality work is deferred to CMS/Admin
-2. Production billing readiness: Phase 5C, after desktop hardening
-   - production-readiness checklist: `docs/paddle-production-readiness-checklist.md`
-   - production webhook setup checklist: `docs/paddle-production-webhook-setup.md`
-   - safe local config guard: `tools/smoke_paddle_production_config_guard.ps1`
-   - configure production checkout settings outside tracked files and client code
-   - keep production billing marked incomplete until production webhook delivery, checkout configuration, provider credentials, product/price mapping, environment separation, and manual smoke verification are completed safely
-3. Remaining billing operations planning/implementation after the desktop release gate and production-billing readiness decision
-   - planning document: `docs/billing-remaining-operations-plan.md`
-   - refund and chargeback handling policy
-   - manual revocation automation policy
-   - optional bounded refresh/polling decision later; manual Refresh status exists now and automatic polling is not implemented
-   - future Apple App Store / Google Play mobile entitlement bridge plan
-   - optional background subscription reconciliation job
-4. CMS/Admin operational readiness: Phase 5D, after desktop hardening
-   - planning baseline: `docs/CMS_ADMIN_PLANNING.md`
-   - start with read-only support/admin needs before full CMS
-   - defer broad production RBAC/content-management work until desktop readiness and minimum operational support requirements are clear
-   - later work may include roles, content versioning, draft/published workflow, audit trail, rollback, and safe prompt/scenario/bot-behavior editing with validation and preview
+1. Continue remaining desktop release hardening first (Phase 5B).
+   - Primary plan: `docs/desktop-release-work-plan.md`.
+   - Audit baseline: `docs/desktop-release-readiness-audit.md`.
+   - Release smoke gate: `docs/desktop-release-smoke-gate.md` and `tools/run_desktop_release_gate.ps1`.
+   - Keep the canonical tester handoff flow as:
 
-## Already completed (do not relist as future work)
+     ```powershell
+     cd C:\dev\EnglishVoiceTutor.Desktop
+     powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
+     ```
 
-- backend Auth/JWT foundation
-- optional desktop Account UI
-- authenticated user settings endpoints
-- auth-aware Settings source switching (`/api/dev/user-settings` <-> `/api/me/settings`)
-- auth-aware Lesson Chat runtime persistence
-- read-only free-limit diagnostics
-- Development diagnostics-only mode
-- Paddle checkout transaction creation v1 behind explicit configuration
-- Paddle production webhook setup checklist and safe local config guard as documentation/tooling only
-- Desktop Step 4D-1 through Step 4D-4 backend-driven upgrade/paywall flow (`docs/desktop-upgrade-paywall-ui-plan.md`): backend-state mapping, simple access/paywall panel, backend-only checkout launch, and manual Refresh status after checkout
-- Paddle webhook ingestion, normalization, reconciliation decision, and event-scoped processing foundation v1
-- Paddle subscription lifecycle snapshot foundation v1 for `subscription.created`, `subscription.updated`, and `subscription.past_due`
-- Paddle transaction payment persistence snapshot foundation v1 for `transaction.completed` and `transaction.payment_failed`
-- Paddle entitlement activation and extension from valid `transaction.completed` provider events
-- Scheduled cancellation metadata recording without early Premium revocation
-- Past-due snapshot recording without entitlement creation, extension, or revocation
-- Actual `subscription.canceled` / `subscription.paused` policy that expires only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context
-- Backend access/status recognition of `provider_event` Premium entitlement
-- local Development CMS/admin support foundation v1
-- Manual Paddle sandbox payment loop validation: Upgrade -> Paddle Checkout -> transaction.completed webhook -> Premium active -> lesson allowed
-- Step 5A desktop release readiness audit
-- Step 5B-8b tester zip packaging documented as the current accepted desktop tester distribution path
+   - Default tester artifact: `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip`.
+   - `dotnet publish` may remain documented only as a lower-level troubleshooting/developer path, not the main tester flow.
+   - Do not expand Study languages, Interface languages, or lesson JSON during this documentation/hardening track.
+   - Do not continue prompt/dialogue/scenario/bot-behavior quality polishing in code now; defer it to CMS/Admin.
+2. Production billing readiness (Phase 5C), only after desktop hardening.
+   - Production-readiness checklist: `docs/paddle-production-readiness-checklist.md`.
+   - Production webhook setup checklist: `docs/paddle-production-webhook-setup.md`.
+   - Safe local config guard: `tools/smoke_paddle_production_config_guard.ps1`.
+   - Keep production billing marked incomplete until production webhook delivery, checkout configuration, provider credentials, product/price mapping, environment separation, and manual smoke verification are completed safely.
+3. Remaining billing operations planning/implementation after the desktop release gate and production-billing readiness decision.
+   - Planning document: `docs/billing-remaining-operations-plan.md`.
+   - Refund and chargeback handling policy.
+   - Manual revocation automation policy.
+   - Optional bounded refresh/polling decision later; manual Refresh status exists now and automatic polling is not implemented.
+   - Future Apple App Store / Google Play mobile entitlement bridge plan.
+   - Optional background subscription reconciliation job.
+4. CMS/Admin operational readiness (Phase 5D), after desktop hardening.
+   - Planning baseline: `docs/CMS_ADMIN_PLANNING.md`.
+   - Start with support/admin operational needs before full content management.
+   - Later CMS/Admin work may include safe prompt/scenario/bot-behavior editing, validation, preview, versioning, rollback, roles, audit trail, and draft/published workflow.
 
-## Billing boundaries to preserve
+## Already completed or accepted (do not relist as future work)
+
+- Backend Auth/JWT foundation.
+- Optional desktop Account UI.
+- Authenticated user settings endpoints and auth-aware Settings source switching.
+- Auth-aware Lesson Chat runtime persistence and backend lesson history.
+- Protected desktop auth session storage using Windows DPAPI-protected `auth-session.json` payloads.
+- Desktop Step 4D backend-driven upgrade/paywall flow for sandbox validation: backend-state mapping, simple access/paywall panel, backend-only checkout launch, and manual Refresh status after checkout.
+- Paddle webhook ingestion, normalization, subscription lifecycle snapshots, payment snapshots, entitlement activation/extension, scheduled cancellation policy, past-due policy, canceled/paused expiry policy, and resumed/activated snapshot-only policy.
+- Local Development CMS/admin support foundation v1.
+- Step 5A desktop release readiness audit.
+- Step 5B Settings/Diagnostics release gate: packaged Release hides Diagnostics by default and enables it only with local `EVT_DESKTOP_DIAGNOSTICS=1`.
+- Step 5B native/interface/explanation language foundation.
+- Step 5B interface localization current phase closed for the release-ready list.
+- Backend-unavailable/account UX hardening for non-crash resilience and localized errors.
+- Single active lesson guard.
+- Heartbeat stale protection.
+- Remote active lesson release.
+- Old-session invalidation after remote release, including old heartbeat and old lesson-bound message rejection.
+- Lesson Chat / Voice / TTS acceptance gate.
+- Tester ZIP package acceptance on another Windows device.
+
+## Billing and platform boundaries to preserve
 
 - English Voice Tutor remains global, cross-platform, and provider-agnostic.
+- Do not introduce YooKassa, Russian payment flows, or Russia-only billing assumptions.
+- Do not change Paddle, billing, subscription, entitlement, or Admin UI logic during desktop documentation/hardening work.
 - Paddle is the current desktop/web billing provider adapter only.
-- Backend remains the only source of truth for account, trial, subscription, Premium/free status, daily free allowance, usage, lesson history, limits, payments, entitlements, and user settings.
-- Desktop and future mobile clients must continue relying on backend access/status decisions.
+- Backend remains the only source of truth for account, trial, subscription, Premium/free status, daily free allowance, usage, lesson history, active lesson state, limits, payments, entitlements, and user settings.
+- Desktop and future mobile clients must continue relying on backend access/status/active-lesson decisions.
 - `EntitlementEntity` remains the source of Premium access.
 - `SubscriptionEntity` is a provider-agnostic subscription snapshot and must not grant Premium access by itself.
 - `PaymentEntity` is diagnostic payment history only and must not be used as an access source.
@@ -98,5 +80,8 @@ This roadmap starts from the current confirmed MVP state where:
 - No full CMS/Admin implementation before desktop readiness and minimum support requirements are clear.
 - No code-side dialogue/prompt quality polishing before CMS/Admin prompt/scenario/bot-behavior editing is ready.
 - No mobile app-store bridge work before the desktop and billing gates are ready.
-- No expansion of Study languages as part of Step 5B-2 unless a later approved task explicitly requests it.
-- No lesson JSON rewrite as part of native/interface/explanation language planning.
+- No expansion of Study languages.
+- No expansion of the release-ready Interface language list.
+- No narrowing of the Native/Explanation language catalog.
+- No lesson JSON rewrite.
+- No public release declaration yet.
