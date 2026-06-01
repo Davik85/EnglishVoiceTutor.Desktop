@@ -44,7 +44,7 @@
                     </Rectangle.Fill>
                 </Rectangle>
 
-                <Grid Margin="30">
+                <Grid Margin="24,18,24,24">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
@@ -52,14 +52,14 @@
                     </Grid.RowDefinitions>
 
                     <Border Grid.Row="0"
-                            MaxWidth="420"
-                            Padding="24,22,24,20"
+                            MaxWidth="390"
+                            Padding="20,15,20,14"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Top"
                             Background="#B8F8FBFF"
                             BorderBrush="#9EFFFFFF"
                             BorderThickness="1"
-                            CornerRadius="26">
+                            CornerRadius="22">
                         <Border.Effect>
                             <DropShadowEffect BlurRadius="20"
                                               Direction="270"
@@ -70,23 +70,23 @@
 
                         <StackPanel>
                             <TextBlock Text="{Binding AppTitle}"
-                                       FontSize="34"
+                                       FontSize="30"
                                        FontWeight="SemiBold"
                                        Foreground="{StaticResource TextPrimaryBrush}"
-                                       LineHeight="39"
+                                       LineHeight="34"
                                        TextWrapping="Wrap" />
 
-                            <TextBlock Margin="0,10,0,0"
+                            <TextBlock Margin="0,6,0,0"
                                        Text="{Binding Subtitle}"
-                                       FontSize="16"
+                                       FontSize="15"
                                        Foreground="{StaticResource TextSecondaryBrush}"
-                                       LineHeight="23"
+                                       LineHeight="21"
                                        TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
 
                     <Border Grid.Row="2"
-                            Padding="22,18"
+                            Padding="20,16"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Bottom"
                             Background="#9AF8FBFF"
@@ -102,39 +102,46 @@
                         </Border.Effect>
 
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Column="0"
-                                       Margin="0,0,18,0"
-                                       VerticalAlignment="Center"
+                            <TextBlock Grid.Row="0"
+                                       Margin="0,0,0,12"
+                                       HorizontalAlignment="Stretch"
                                        Text="{Binding StatusMessage}"
+                                       TextAlignment="Center"
                                        FontSize="13"
                                        Foreground="{StaticResource TextSecondaryBrush}"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap" />
 
-                            <StackPanel Grid.Column="1"
-                                        HorizontalAlignment="Right"
-                                        Orientation="Horizontal">
-                                <Button Content="{Binding StartLessonButtonText}"
+                            <Grid Grid.Row="1"
+                                  HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="140" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Button Grid.Column="1"
+                                        Content="{Binding StartLessonButtonText}"
                                         Command="{Binding StartLessonCommand}"
-                                        Width="170"
                                         Height="44"
-                                        Margin="0,0,12,0"
                                         FontSize="15"
                                         FontWeight="SemiBold"
                                         Style="{StaticResource PrimaryButtonStyle}" />
-                                <Button Content="{Binding SettingsButtonText}"
+                                <Button Grid.Column="3"
+                                        Content="{Binding SettingsButtonText}"
                                         Command="{Binding OpenSettingsCommand}"
-                                        Width="140"
                                         Height="44"
                                         FontSize="15"
                                         FontWeight="SemiBold"
                                         Style="{StaticResource SecondaryButtonStyle}" />
-                            </StackPanel>
+                            </Grid>
                         </Grid>
                     </Border>
                 </Grid>
