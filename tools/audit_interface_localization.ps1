@@ -143,7 +143,11 @@ $ruBlockMatch = [regex]::Match($appLocalization, '\["ru"\]\s*=\s*new Dictionary<
 if (-not $ruBlockMatch.Success) { throw "ru is missing learner UI localization coverage." }
 $ruBlock = $ruBlockMatch.Groups[1].Value
 if ($ruBlock -match 'Basado en lecciones completadas en este dispositivo') { throw "Russian Progress helper contains Spanish fallback." }
-if ($ruBlock -match 'Sign in to view your account status') { throw "Russian Account status contains English fallback." }
+$ruAccountStatusText = "Sign in to view your account status."
+$ruAccountStatusEntryPattern = ('\["{0}"\]\s*=\s*"([^"]*)"' -f [regex]::Escape($ruAccountStatusText))
+$ruAccountStatusEntryMatch = [regex]::Match($ruBlock, $ruAccountStatusEntryPattern)
+if (-not $ruAccountStatusEntryMatch.Success) { throw "Russian Account status is missing." }
+if ($ruAccountStatusEntryMatch.Groups[1].Value -eq $ruAccountStatusText) { throw "Russian Account status contains English fallback." }
 foreach ($progressText in @("Based on completed lessons on this device.", "Total completed lessons", "Lessons completed today", "Current streak", "Last completed lesson", "No completed lessons yet.")) {
     $entryPattern = ('\["{0}"\]\s*=\s*"([^"]*)"' -f [regex]::Escape($progressText))
     $entryMatch = [regex]::Match($ruBlock, $entryPattern)
