@@ -563,6 +563,9 @@ namespace EnglishVoiceTutor.Api.Migrations
                     b.Property<DateTimeOffset?>("FinishedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("LastHeartbeatAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("LessonContentId")
                         .IsRequired()
                         .HasMaxLength(128)
@@ -633,6 +636,8 @@ namespace EnglishVoiceTutor.Api.Migrations
                     b.HasIndex("StartedAt");
 
                     b.HasIndex("Status");
+
+                    b.HasIndex("LastHeartbeatAtUtc");
 
                     b.HasIndex("UserId");
 

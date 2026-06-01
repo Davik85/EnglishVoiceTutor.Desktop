@@ -194,12 +194,16 @@ app.MapGet(ApiConstants.MeUserSettingsRoute, HandleGetAuthenticatedUserSettingsA
 app.MapPut(ApiConstants.MeUserSettingsRoute, HandleUpdateAuthenticatedUserSettingsAsync).RequireAuthorization();
 app.MapPost(ApiConstants.DevLessonSessionsRoute, HandleCreateDevLessonSessionAsync);
 app.MapPut(ApiConstants.DevLessonSessionFinishRoute, HandleFinishLessonSessionAsync);
+app.MapPost(ApiConstants.DevLessonSessionHeartbeatRoute, HandleLessonSessionHeartbeatAsync);
+app.MapPost(ApiConstants.DevLessonSessionAbandonRoute, HandleAbandonLessonSessionAsync);
 app.MapGet(ApiConstants.DevLessonSessionsRoute, HandleGetDevLessonSessionsAsync);
 app.MapGet(ApiConstants.DevLessonSessionByIdRoute, HandleGetLessonSessionByIdAsync);
 app.MapPost(ApiConstants.DevLessonSessionMessagesRoute, HandleCreateLessonMessageAsync);
 app.MapGet(ApiConstants.DevLessonSessionMessagesRoute, HandleGetLessonMessagesAsync);
 app.MapPost(ApiConstants.MeLessonSessionsRoute, HandleCreateDevLessonSessionAsync).RequireAuthorization();
 app.MapPut(ApiConstants.MeLessonSessionFinishRoute, HandleFinishLessonSessionAsync).RequireAuthorization();
+app.MapPost(ApiConstants.LessonSessionHeartbeatRoute, HandleLessonSessionHeartbeatAsync).RequireAuthorization();
+app.MapPost(ApiConstants.LessonSessionAbandonRoute, HandleAbandonLessonSessionAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonSessionsRoute, HandleGetDevLessonSessionsAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonSessionByIdRoute, HandleGetLessonSessionByIdAsync).RequireAuthorization();
 app.MapPost(ApiConstants.MeLessonSessionMessagesRoute, HandleCreateLessonMessageAsync).RequireAuthorization();
@@ -346,6 +350,54 @@ static async Task<IResult> HandleFinishLessonSessionAsync(
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
         logger.LogWarning(exception, "Dev lesson session finish PUT failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleLessonSessionHeartbeatAsync(
+    Guid sessionId,
+    ILessonSessionService lessonSessionService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("LessonSessionsEndpoint");
+
+    try
+    {
+        var updatedSession = await lessonSessionService.RecordLessonSessionHeartbeatAsync(sessionId, cancellationToken);
+        return Results.Ok(updatedSession);
+    }
+    catch (KeyNotFoundException)
+    {
+        return Results.NotFound(new { error = "Lesson session was not found." });
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Lesson session heartbeat POST failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleAbandonLessonSessionAsync(
+    Guid sessionId,
+    ILessonSessionService lessonSessionService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("LessonSessionsEndpoint");
+
+    try
+    {
+        var updatedSession = await lessonSessionService.AbandonLessonSessionAsync(sessionId, cancellationToken);
+        return Results.Ok(updatedSession);
+    }
+    catch (KeyNotFoundException)
+    {
+        return Results.NotFound(new { error = "Lesson session was not found." });
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Lesson session abandon POST failed because storage is unavailable.");
         return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }

@@ -49,11 +49,15 @@ public static class ApiConstants
     public const string MeLessonSessionsRoute = "/api/me/lesson-sessions";
     public const string MeLessonSessionByIdRoute = "/api/me/lesson-sessions/{sessionId:guid}";
     public const string MeLessonSessionFinishRoute = "/api/me/lesson-sessions/{sessionId:guid}/finish";
+    public const string LessonSessionHeartbeatRoute = "/api/lesson-sessions/{sessionId:guid}/heartbeat";
+    public const string LessonSessionAbandonRoute = "/api/lesson-sessions/{sessionId:guid}/abandon";
     public const string MeLessonSessionMessagesRoute = "/api/me/lesson-sessions/{sessionId:guid}/messages";
     public const string DevUserSettingsRoute = "/api/dev/user-settings";
     public const string DevLessonSessionsRoute = "/api/dev/lesson-sessions";
     public const string DevLessonSessionByIdRoute = "/api/dev/lesson-sessions/{sessionId:guid}";
     public const string DevLessonSessionFinishRoute = "/api/dev/lesson-sessions/{sessionId:guid}/finish";
+    public const string DevLessonSessionHeartbeatRoute = "/api/dev/lesson-sessions/{sessionId:guid}/heartbeat";
+    public const string DevLessonSessionAbandonRoute = "/api/dev/lesson-sessions/{sessionId:guid}/abandon";
     public const string DevLessonSessionMessagesRoute = "/api/dev/lesson-sessions/{sessionId:guid}/messages";
     public const string DevLessonSessionSummaryRoute = "/api/dev/lesson-sessions/{sessionId:guid}/summary";
     public const string DevLessonSummariesRoute = "/api/dev/lesson-summaries";

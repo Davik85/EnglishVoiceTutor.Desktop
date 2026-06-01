@@ -87,6 +87,7 @@ public sealed class LessonSessionService(
             Status = LessonSessionConstants.ActiveStatus,
             StartedAt = now,
             FinishedAt = null,
+            LastHeartbeatAtUtc = now,
             ValidTurnCount = MinValidTurnCount,
             EstimatedCost = LessonSessionConstants.DefaultEstimatedCost,
             CreatedAt = now,
@@ -117,6 +118,54 @@ public sealed class LessonSessionService(
         session.Status = LessonSessionConstants.FinishedStatus;
         session.FinishedAt = now;
         session.ValidTurnCount = request.ValidTurnCount;
+        session.LastHeartbeatAtUtc = now;
+        session.UpdatedAt = now;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return ToResponse(session);
+    }
+
+
+    public async Task<LessonSessionResponse> RecordLessonSessionHeartbeatAsync(Guid sessionId, CancellationToken cancellationToken)
+    {
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
+        var session = await dbContext.LessonSessions
+            .SingleOrDefaultAsync(existing => existing.Id == sessionId && existing.UserId == userId, cancellationToken);
+
+        if (session is null)
+        {
+            throw new KeyNotFoundException($"Lesson session '{sessionId}' was not found for the current user.");
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        session.LastHeartbeatAtUtc = now;
+        session.UpdatedAt = now;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return ToResponse(session);
+    }
+
+    public async Task<LessonSessionResponse> AbandonLessonSessionAsync(Guid sessionId, CancellationToken cancellationToken)
+    {
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
+        var session = await dbContext.LessonSessions
+            .SingleOrDefaultAsync(existing => existing.Id == sessionId && existing.UserId == userId, cancellationToken);
+
+        if (session is null)
+        {
+            throw new KeyNotFoundException($"Lesson session '{sessionId}' was not found for the current user.");
+        }
+
+        if (!LessonSessionConstants.ActiveStatuses.Contains(session.Status))
+        {
+            return ToResponse(session);
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        session.Status = LessonSessionConstants.AbandonedStatus;
+        session.LastHeartbeatAtUtc = now;
         session.UpdatedAt = now;
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -152,31 +201,35 @@ public sealed class LessonSessionService(
 
     private async Task EnsureNoActiveLessonExistsAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken)
     {
-        var staleCutoffUtc = now.Subtract(LessonSessionConstants.ActiveLessonStaleAfter);
-        var activeSession = await dbContext.LessonSessions
-            .AsNoTracking()
+        var heartbeatFreshAfterUtc = now.Subtract(LessonSessionConstants.ActiveLessonHeartbeatFreshness);
+        var activeSessions = await dbContext.LessonSessions
             .Where(session => session.UserId == userId)
             .Where(session => LessonSessionConstants.ActiveStatuses.Contains(session.Status))
-            .Where(session => session.UpdatedAt >= staleCutoffUtc)
-            .OrderByDescending(session => session.UpdatedAt)
-            .FirstOrDefaultAsync(cancellationToken);
+            .OrderByDescending(session => session.LastHeartbeatAtUtc ?? session.StartedAt)
+            .ToListAsync(cancellationToken);
 
-        if (activeSession is null)
+        foreach (var activeSession in activeSessions)
         {
-            return;
+            if (activeSession.LastHeartbeatAtUtc is not { } lastHeartbeatAtUtc || lastHeartbeatAtUtc < heartbeatFreshAfterUtc)
+            {
+                activeSession.Status = LessonSessionConstants.AbandonedStatus;
+                activeSession.UpdatedAt = now;
+                continue;
+            }
+
+            logger.LogInformation(
+                "Lesson session start blocked because another active lesson has a fresh heartbeat. UserId={UserId}; ActiveSessionId={ActiveSessionId}; ActiveSessionStartedAt={ActiveSessionStartedAt:o}; LastHeartbeatAtUtc={LastHeartbeatAtUtc:o}; StaleAfterUtc={StaleAfterUtc:o}.",
+                userId,
+                activeSession.Id,
+                activeSession.StartedAt,
+                lastHeartbeatAtUtc,
+                lastHeartbeatAtUtc.Add(LessonSessionConstants.ActiveLessonHeartbeatFreshness));
+
+            throw new ActiveLessonExistsException(
+                activeSession.Id,
+                activeSession.StartedAt,
+                lastHeartbeatAtUtc.Add(LessonSessionConstants.ActiveLessonHeartbeatFreshness));
         }
-
-        logger.LogInformation(
-            "Lesson session start blocked because another active lesson exists. UserId={UserId}; ActiveSessionId={ActiveSessionId}; ActiveSessionStartedAt={ActiveSessionStartedAt:o}; StaleAfterUtc={StaleAfterUtc:o}.",
-            userId,
-            activeSession.Id,
-            activeSession.StartedAt,
-            activeSession.UpdatedAt.Add(LessonSessionConstants.ActiveLessonStaleAfter));
-
-        throw new ActiveLessonExistsException(
-            activeSession.Id,
-            activeSession.StartedAt,
-            activeSession.UpdatedAt.Add(LessonSessionConstants.ActiveLessonStaleAfter));
     }
 
     private static string ResolveLessonAccessSource(string source)
@@ -231,6 +284,7 @@ public sealed class LessonSessionService(
             session.Status,
             session.StartedAt,
             session.FinishedAt,
+            session.LastHeartbeatAtUtc,
             session.ValidTurnCount,
             session.EstimatedCost,
             session.CreatedAt,

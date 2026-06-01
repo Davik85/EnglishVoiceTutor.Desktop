@@ -290,7 +290,13 @@ Latest confirmed validation:
 - Desktop auth sessions are persisted in Windows protected storage using per-user DPAPI-protected payloads instead of raw token JSON. Startup restore validates saved sessions with `/api/auth/me`; invalid or expired sessions are cleared, while temporary backend unavailability leaves the protected session in place. Logout clears the protected session file.
 - The backend now enforces a single active lesson session per user account before creating a new lesson session. This guard is backend account state, not desktop-only UI state, so it also applies to future mobile clients using the same account APIs.
 - If another non-stale active lesson exists, the backend returns machine-readable `active_lesson_exists` with the friendly message: "You have not finished a lesson on another device yet. Finish that lesson and try again." Desktop shows the localized version and does not create a local fake session.
-- Finishing a lesson sets the session to `Finished`, which releases the active lesson guard. Active lesson locks older than 12 hours are treated as stale and do not block new lessons, preventing permanent lockout after crashes or lost devices.
+- Finishing a lesson sets the session to `Finished`, which releases the active lesson guard immediately.
+
+## Step 5B-6b heartbeat-based active lesson guard
+
+- Step 5B-6b fixed stale active lesson locks by storing `LastHeartbeatAtUtc` on lesson sessions and making the backend active lesson guard depend on heartbeat freshness instead of a long status/timestamp lock.
+- Lesson Chat sends a heartbeat while a backend lesson session is active. A closed or crashed desktop app stops sending heartbeats, so the old active session becomes stale after the configured short freshness window (2 minutes) and no longer blocks a new lesson.
+- Future mobile clients must use the same backend heartbeat contract (`POST /api/lesson-sessions/{sessionId}/heartbeat`) while their lesson UI is active.
 
 ## Known limitations / deferred scope
 

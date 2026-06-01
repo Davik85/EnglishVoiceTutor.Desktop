@@ -27,6 +27,10 @@ public static class BackendConstants
     public const string MeLessonSessionsEndpoint = "/api/me/lesson-sessions";
     public const string DevLessonSessionFinishEndpointTemplate = "/api/dev/lesson-sessions/{0}/finish";
     public const string MeLessonSessionFinishEndpointTemplate = "/api/me/lesson-sessions/{0}/finish";
+    public const string LessonSessionHeartbeatEndpointTemplate = "/api/lesson-sessions/{0}/heartbeat";
+    public const string LessonSessionAbandonEndpointTemplate = "/api/lesson-sessions/{0}/abandon";
+    public const string DevLessonSessionHeartbeatEndpointTemplate = "/api/dev/lesson-sessions/{0}/heartbeat";
+    public const string DevLessonSessionAbandonEndpointTemplate = "/api/dev/lesson-sessions/{0}/abandon";
     public const string DevLessonSessionMessagesEndpointTemplate = "/api/dev/lesson-sessions/{0}/messages";
     public const string MeLessonSessionMessagesEndpointTemplate = "/api/me/lesson-sessions/{0}/messages";
     public const string DevLessonSessionSummaryEndpointTemplate = "/api/dev/lesson-sessions/{0}/summary";
@@ -44,6 +48,7 @@ public static class BackendConstants
     public const int BackendCheckoutSessionTimeoutSeconds = 10;
     public const int BackendLessonAccessTimeoutSeconds = 5;
     public const int LessonSessionRequestTimeoutSeconds = 5;
+    public const int LessonSessionHeartbeatIntervalSeconds = 30;
     public const int LessonMessageRequestTimeoutSeconds = 5;
     public const int LessonSummaryRequestTimeoutSeconds = 5;
     public const int LessonHistoryRequestTimeoutSeconds = 5;
