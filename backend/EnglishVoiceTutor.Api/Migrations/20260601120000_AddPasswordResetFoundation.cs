@@ -1,10 +1,14 @@
 using System;
+using EnglishVoiceTutor.Api.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace EnglishVoiceTutor.Api.Migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260601120000_AddPasswordResetFoundation")]
     public partial class AddPasswordResetFoundation : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
