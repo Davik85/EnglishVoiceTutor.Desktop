@@ -344,3 +344,9 @@ Do not implement remaining production billing lifecycle behavior before a plan i
 - Desktop clients can call `POST /api/lesson-sessions/active/abandon` after user confirmation, so future mobile clients can use the same backend-enforced behavior without trusting a client-provided session id.
 - The stale heartbeat timeout still prevents users from being locked out after a crash or closed app.
 - A remotely released incomplete lesson is preserved as `Abandoned`; it is not marked as a normally completed lesson and does not create a lesson summary.
+
+## Step 5B-6e desktop shutdown cleanup
+
+- Closing the desktop app while Lesson Chat has an active backend session now runs shutdown cleanup instead of treating the close as a normal lesson finish.
+- Shutdown cleanup stops the lesson heartbeat, cancels voice playback and recording resources, stops Conversation Mode resources, and attempts one best-effort active lesson release through `POST /api/lesson-sessions/active/abandon` with a 2-second timeout.
+- If the backend is unavailable or the release times out during close, desktop shutdown continues and the heartbeat freshness timeout remains the fallback that clears the active lesson guard.
