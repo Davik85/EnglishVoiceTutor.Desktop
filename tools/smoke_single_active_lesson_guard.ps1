@@ -10,6 +10,7 @@ $ErrorActionPreference = "Stop"
 $JsonContentType = "application/json"
 $AuthRegisterPath = "/api/auth/register"
 $HealthPath = "/api/health"
+$DatabaseHealthPath = "/api/health/database"
 $LessonSessionsPath = "/api/me/lesson-sessions"
 $LessonHeartbeatPathTemplate = "/api/lesson-sessions/{0}/heartbeat"
 $ActiveLessonExistsCode = "active_lesson_exists"
@@ -66,6 +67,23 @@ function Invoke-Json {
     }
 }
 
+function Test-HeartbeatSchemaError {
+    param([string]$Content)
+
+    return -not [string]::IsNullOrWhiteSpace($Content) -and (
+        $Content -match "LastHeartbeatAtUtc" -or
+        $Content -match "42703" -or
+        $Content -match "column .*LastHeartbeatAtUtc.* does not exist")
+}
+
+function Fail-HeartbeatSchemaMissing {
+    param([string]$Context, [string]$Content)
+
+    if (Test-HeartbeatSchemaError -Content $Content) {
+        Fail "$Context failed because lesson_sessions.LastHeartbeatAtUtc is missing. Apply the heartbeat EF migration first: dotnet ef database update --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj --startup-project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj"
+    }
+}
+
 function Invoke-JsonExpectedStatus {
     param(
         [string]$Method,
@@ -78,6 +96,12 @@ function Invoke-JsonExpectedStatus {
     try {
         $result = Invoke-Json -Method $Method -Url $Url -Headers $Headers -Body $Body
         if ($result.StatusCode -ne $ExpectedStatus) {
+            $content = $null
+            if ($null -ne $result.Body) {
+                $content = $result.Body | ConvertTo-Json -Depth 10 -Compress
+            }
+
+            Fail-HeartbeatSchemaMissing -Context "$Method $Url" -Content $content
             Fail "Expected HTTP $ExpectedStatus but got $($result.StatusCode) for $Method $Url"
         }
 
@@ -102,6 +126,7 @@ function Invoke-JsonExpectedStatus {
         }
 
         if ($httpStatus -ne $ExpectedStatus) {
+            Fail-HeartbeatSchemaMissing -Context "$Method $Url" -Content $content
             throw
         }
 
@@ -155,9 +180,16 @@ try {
     $userOneEmail = "$EmailPrefix-user1-$runId@example.com"
     $userTwoEmail = "$EmailPrefix-user2-$runId@example.com"
 
-    Write-Step "Verify backend is reachable"
+    Write-Step "Verify backend process is reachable"
     Invoke-JsonExpectedStatus -Method "GET" -Url "$BaseUrl$HealthPath" -Headers $null -Body $null -ExpectedStatus 200 | Out-Null
     Write-Pass "Backend health endpoint is reachable"
+
+    Write-Step "Verify database health before active lesson guard checks"
+    $databaseHealth = Invoke-JsonExpectedStatus -Method "GET" -Url "$BaseUrl$DatabaseHealthPath" -Headers $null -Body $null -ExpectedStatus 200
+    if ($databaseHealth.Body.status -ne "Healthy" -or $databaseHealth.Body.canConnect -ne $true) {
+        Fail "Backend is reachable, but database health is not Healthy. Apply EF migrations and verify database connectivity before running this smoke test."
+    }
+    Write-Pass "Database health endpoint is healthy"
 
     Write-Step "Register two independent users"
     $userOneAuth = Invoke-JsonExpectedStatus -Method "POST" -Url "$BaseUrl$AuthRegisterPath" -Headers $null -Body @{ email = $userOneEmail; password = $Password } -ExpectedStatus 201
@@ -212,5 +244,6 @@ try {
     Write-Pass "Single active lesson guard smoke test passed."
 }
 catch {
+    Fail-HeartbeatSchemaMissing -Context "single active lesson guard smoke test" -Content $_.Exception.Message
     Fail $_.Exception.Message
 }

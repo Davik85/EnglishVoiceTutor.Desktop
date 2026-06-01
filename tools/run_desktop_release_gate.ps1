@@ -78,20 +78,20 @@ Invoke-GateCommand "Desktop backend boundary audit" {
 
 if ($IncludeEfChecks) {
     Invoke-GateCommand "EF migrations list" {
-        dotnet ef migrations list --project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj"
+        dotnet ef migrations list --project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj" --startup-project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj"
     }
 
     Invoke-GateCommand "EF database update" {
-        dotnet ef database update --project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj"
+        dotnet ef database update --project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj" --startup-project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj"
     }
 
     Invoke-GateCommand "EF pending model changes" {
-        dotnet ef migrations has-pending-model-changes --project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj"
+        dotnet ef migrations has-pending-model-changes --project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj" --startup-project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj"
     }
 }
 else {
     Write-Section "EF checks"
-    Write-Host "Skipped. Run with -IncludeEfChecks to include EF migrations list, database update, and pending model checks."
+    Write-Host "Skipped. Run with -IncludeEfChecks after schema-affecting backend changes to include: dotnet ef migrations list; dotnet ef database update; dotnet ef migrations has-pending-model-changes."
 }
 
 Write-Section "Desktop release gate"

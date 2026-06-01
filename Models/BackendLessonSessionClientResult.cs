@@ -11,16 +11,26 @@ public sealed record BackendLessonSessionClientResult(
     string AccessDeniedDecision = "",
     bool EnforcementEnabled = false,
     bool FreeLessonUsedToday = false,
-    int FreeLessonRemainingToday = 0)
+    int FreeLessonRemainingToday = 0,
+    bool BackendWasReached = false,
+    bool IsBackendReachabilityFailure = false)
 {
     public static BackendLessonSessionClientResult Success(BackendLessonSessionResponse value)
     {
-        return new BackendLessonSessionClientResult(true, value, null);
+        return new BackendLessonSessionClientResult(true, value, null, BackendWasReached: true);
     }
 
-    public static BackendLessonSessionClientResult Failure(string? errorMessage = null)
+    public static BackendLessonSessionClientResult Failure(
+        string? errorMessage = null,
+        bool backendWasReached = false,
+        bool isBackendReachabilityFailure = false)
     {
-        return new BackendLessonSessionClientResult(false, null, errorMessage);
+        return new BackendLessonSessionClientResult(
+            IsSuccess: false,
+            Value: null,
+            ErrorMessage: errorMessage,
+            BackendWasReached: backendWasReached,
+            IsBackendReachabilityFailure: isBackendReachabilityFailure);
     }
 
     public static BackendLessonSessionClientResult LessonAccessDenied(BackendLessonAccessDeniedResponse deniedResponse)
@@ -38,7 +48,8 @@ public sealed record BackendLessonSessionClientResult(
             AccessDeniedDecision: deniedResponse.Decision,
             EnforcementEnabled: deniedResponse.EnforcementEnabled,
             FreeLessonUsedToday: deniedResponse.FreeLessonUsedToday,
-            FreeLessonRemainingToday: deniedResponse.FreeLessonRemainingToday);
+            FreeLessonRemainingToday: deniedResponse.FreeLessonRemainingToday,
+            BackendWasReached: true);
     }
 
     public static BackendLessonSessionClientResult ActiveLessonBlocked(BackendActiveLessonExistsResponse response)
@@ -51,6 +62,7 @@ public sealed record BackendLessonSessionClientResult(
             ErrorMessage: response.Message,
             IsLessonAccessDenied: false,
             IsActiveLessonBlocked: true,
-            ActiveLessonMessage: response.Message);
+            ActiveLessonMessage: response.Message,
+            BackendWasReached: true);
     }
 }
