@@ -45,8 +45,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly BackendCheckoutSessionClient backendCheckoutSessionClient = new();
     private readonly BackendLessonAccessDecisionClient backendLessonAccessDecisionClient = new();
     private readonly LessonStartGuardService lessonStartGuardService = new();
-    private readonly AuthBackendService authBackendService = new();
     private readonly AuthSessionStorageService authSessionStorageService = new();
+    private readonly AuthBackendService authBackendService;
     private readonly AudioRecordingService audioRecordingService = new();
     private readonly AudioInputDeviceService audioInputDeviceService = new();
     private readonly AudioPlaybackService audioPlaybackService = new();
@@ -99,6 +99,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         audioRecordingService.CleanupOldRecordings();
         botVoiceTempFileCleanupService.CleanupOldBotVoiceFiles();
+        authBackendService = new AuthBackendService(authSessionStorageService);
         userSettings = userSettingsService.Load();
         lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
         authBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);

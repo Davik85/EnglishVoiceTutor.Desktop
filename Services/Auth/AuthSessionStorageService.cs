@@ -60,7 +60,7 @@ public sealed class AuthSessionStorageService
 
             var (json, migratedFromPlainText) = TryReadProtectedPayload(protectedPayload);
             var session = JsonSerializer.Deserialize<StoredAuthSession>(json, SerializerOptions);
-            if (session is null || string.IsNullOrWhiteSpace(session.AccessToken))
+            if (session is null || string.IsNullOrWhiteSpace(session.AccessToken) || session.User is null || string.IsNullOrWhiteSpace(session.User.Email))
             {
                 await ClearAsync(cancellationToken);
                 return null;

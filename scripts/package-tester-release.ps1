@@ -54,6 +54,9 @@ $forbiddenFiles = Get-ChildItem -Path $publishDirectory -Recurse -File |
     Where-Object {
         $_.Name -ieq "settings.json" -or
         $_.Name -ieq "lesson-history.json" -or
+        $_.Name -ieq "auth-session.json" -or
+        $_.Name -imatch "token" -or
+        $_.Name -imatch "secret" -or
         $_.Name -imatch "openai.*api.*key" -or
         $_.Name -imatch "api.*key"
     }

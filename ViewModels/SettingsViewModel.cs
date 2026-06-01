@@ -471,6 +471,7 @@ public partial class SettingsViewModel : ViewModelBase
                 return;
             }
 
+            ApplyAuthenticatedUser(session.User);
             var meResult = await authBackendService.GetMeAsync(session.AccessToken);
             if (meResult.Status == AuthMeResultStatus.InvalidSession)
             {
@@ -484,6 +485,8 @@ public partial class SettingsViewModel : ViewModelBase
 
             if (meResult.Status == AuthMeResultStatus.BackendUnavailable || meResult.User is null)
             {
+                SettingsSource = LocalizeUiText(SettingsSourceAuthenticatedText);
+                ResetSubscriptionStatus();
                 StatusMessage = BackendUxText.CouldNotConnect;
                 return;
             }
@@ -725,6 +728,10 @@ public partial class SettingsViewModel : ViewModelBase
     private void RefreshLocalizedText()
     {
         RefreshSelectedTutorAvatarProfileText();
+        if (!IsAuthenticated)
+        {
+            CurrentUserEmail = LocalizeUiText(DefaultAccountSignedOutText);
+        }
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(Subtitle));
         OnPropertyChanged(nameof(InterfaceLanguageTitle));
@@ -787,6 +794,7 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(ProgressTabHeader));
         OnPropertyChanged(nameof(AccountTitle));
         OnPropertyChanged(nameof(AccountSubtitle));
+        OnPropertyChanged(nameof(CurrentUserEmail));
         OnPropertyChanged(nameof(AccountEmailLabel));
         OnPropertyChanged(nameof(AccountPasswordLabel));
         OnPropertyChanged(nameof(AccountDisplayNameLabel));
@@ -803,6 +811,7 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(SubscriptionEnforcementLabel));
         OnPropertyChanged(nameof(SubscriptionSourceLabel));
         OnPropertyChanged(nameof(SubscriptionCheckedAtLabel));
+        _ = RefreshSubscriptionStatusAsync();
     }
 
     private void RefreshAudioInputDevices(string? preferredAudioInputDeviceId, bool showUnavailableStatus)
@@ -1096,7 +1105,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     private void ClearAccountState()
     {
-        CurrentUserEmail = string.Empty;
+        CurrentUserEmail = LocalizeUiText(DefaultAccountSignedOutText);
         CurrentUserDisplayName = string.Empty;
         IsAuthenticated = false;
         RequestPasswordClear();
@@ -1204,7 +1213,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     private void ApplySignedOutSubscriptionStatus()
     {
-        SubscriptionPlanText = SignedOutSubscriptionPromptText;
+        SubscriptionPlanText = LocalizeUiText(SignedOutSubscriptionPromptText);
         SubscriptionPremiumText = SignedOutSubscriptionPlaceholderText;
         SubscriptionTrialText = SignedOutSubscriptionPlaceholderText;
         SubscriptionFreeLessonText = SignedOutSubscriptionPlaceholderText;

@@ -704,13 +704,13 @@
                                TextWrapping="Wrap" />
 
                     <WrapPanel Grid.Column="1" HorizontalAlignment="Right" ItemHeight="38">
-                        <Button Width="100"
+                        <Button MinWidth="132"
                                 Height="38"
                                 Margin="0,0,8,0"
                                 Content="{Binding SaveButtonText}"
                                 Command="{Binding SaveCommand}"
                                 Style="{StaticResource PrimaryButtonStyle}" />
-                        <Button Width="100"
+                        <Button MinWidth="110"
                                 Height="38"
                                 Content="{Binding BackButtonText}"
                                 Command="{Binding BackCommand}"

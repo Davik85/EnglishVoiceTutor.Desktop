@@ -12,6 +12,8 @@ public static class AuthEndpoints
         app.MapPost(ApiConstants.AuthRegisterRoute, RegisterAsync);
         app.MapPost(ApiConstants.AuthLoginRoute, LoginAsync);
         app.MapGet(ApiConstants.AuthMeRoute, GetMeAsync).RequireAuthorization();
+        app.MapPost(ApiConstants.AuthPasswordResetRequestRoute, RequestPasswordResetAsync);
+        app.MapPost(ApiConstants.AuthPasswordResetConfirmRoute, ConfirmPasswordResetAsync);
     }
 
     private static async Task<IResult> RegisterAsync(
@@ -65,6 +67,34 @@ public static class AuthEndpoints
 
         loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Auth login completed. Result=Ok");
         return Results.Ok(response);
+    }
+
+    private static async Task<IResult> RequestPasswordResetAsync(
+        PasswordResetRequest request,
+        IPasswordResetService passwordResetService,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
+    {
+        await passwordResetService.RequestPasswordResetAsync(request, cancellationToken);
+        loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Password reset request completed. Result=Accepted");
+        return Results.Ok(new PasswordResetResponse { Message = AuthConstants.PasswordResetAcceptedMessage });
+    }
+
+    private static async Task<IResult> ConfirmPasswordResetAsync(
+        PasswordResetConfirmRequest request,
+        IPasswordResetService passwordResetService,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
+    {
+        var confirmed = await passwordResetService.ConfirmPasswordResetAsync(request, cancellationToken);
+        loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Password reset confirm completed. Result={Result}", confirmed ? "Ok" : "Rejected");
+
+        if (!confirmed)
+        {
+            return Results.BadRequest(new PasswordResetResponse { Message = AuthConstants.PasswordResetInvalidMessage });
+        }
+
+        return Results.Ok(new PasswordResetResponse { Message = AuthConstants.PasswordResetConfirmedMessage });
     }
 
     private static async Task<IResult> GetMeAsync(

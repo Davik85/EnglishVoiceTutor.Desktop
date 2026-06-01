@@ -15,6 +15,7 @@ using EnglishVoiceTutor.Api.Services.Usage;
 using EnglishVoiceTutor.Api.Contracts.Usage;
 using EnglishVoiceTutor.Api.Endpoints;
 using EnglishVoiceTutor.Api.Services.Auth;
+using EnglishVoiceTutor.Api.Services.Email;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
 using EnglishVoiceTutor.Api.Services.Billing;
 using EnglishVoiceTutor.Api.Services.Admin;
@@ -55,6 +56,8 @@ builder.Services.Configure<PaddleWebhookOptions>(
     builder.Configuration.GetSection(PaddleWebhookOptions.SectionName));
 builder.Services.Configure<AdminBootstrapOptions>(
     builder.Configuration.GetSection(AdminBootstrapOptions.SectionName));
+builder.Services.Configure<PasswordResetOptions>(
+    builder.Configuration.GetSection(PasswordResetOptions.SectionName));
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt configuration section is required.");
@@ -126,6 +129,8 @@ builder.Services.AddScoped<IFreeLimitGuardService, FreeLimitGuardService>();
 builder.Services.AddScoped<IPasswordHasher<EnglishVoiceTutor.Api.Data.Entities.UserEntity>, PasswordHasher<EnglishVoiceTutor.Api.Data.Entities.UserEntity>>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+builder.Services.AddSingleton<IPasswordResetEmailSender, NoOpPasswordResetEmailSender>();
 builder.Services.AddScoped<IRequestUserResolver, RequestUserResolver>();
 builder.Services.AddScoped<ISubscriptionStatusService, SubscriptionStatusService>();
 builder.Services.AddScoped<ILessonAccessDecisionService, LessonAccessDecisionService>();
