@@ -7,79 +7,99 @@
              d:DesignHeight="600"
              d:DesignWidth="900">
     <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
-        <Border MaxWidth="760"
-                Padding="38"
+        <Border MaxWidth="1040"
+                Height="540"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Style="{StaticResource MainContentCardStyle}">
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderAccentSoftBrush}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource CornerContainer}"
+                ClipToBounds="True"
+                SnapsToDevicePixels="True">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="28"
+                                  Direction="270"
+                                  Opacity="0.16"
+                                  ShadowDepth="10"
+                                  Color="#FF173B57" />
+            </Border.Effect>
+
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+                <Image Source="/Assets/Welcome/welcome-cover.png"
+                       Stretch="UniformToFill"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Stretch"
+                       SnapsToDevicePixels="True" />
 
-                <StackPanel Grid.Row="0">
-                    <TextBlock Text="{Binding AppTitle}"
-                               FontSize="38"
-                               FontWeight="SemiBold"
-                               Foreground="{StaticResource TextPrimaryBrush}"
-                               TextAlignment="Center"
-                               TextWrapping="Wrap" />
+                <Rectangle IsHitTestVisible="False">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#660B2236" Offset="0" />
+                            <GradientStop Color="#260B2236" Offset="0.45" />
+                            <GradientStop Color="#110B2236" Offset="1" />
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
 
-                    <TextBlock Margin="0,12,0,0"
-                               Text="{Binding Subtitle}"
-                               FontSize="18"
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               TextAlignment="Center"
-                               TextWrapping="Wrap" />
-                </StackPanel>
-
-                <Border Grid.Row="1"
-                        Margin="0,30,0,0"
-                        Height="250"
-                        HorizontalAlignment="Stretch"
-                        BorderBrush="{StaticResource BorderAccentSoftBrush}"
+                <Border MaxWidth="560"
+                        Margin="34"
+                        Padding="30"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        Background="#DDF8FBFF"
+                        BorderBrush="#AFFFFFFF"
                         BorderThickness="1"
-                        CornerRadius="{StaticResource CornerTile}"
-                        SnapsToDevicePixels="True">
-                    <Border.Background>
-                        <ImageBrush ImageSource="/Assets/Welcome/welcome-cover.png"
-                                    Stretch="UniformToFill"
-                                    AlignmentX="Center"
-                                    AlignmentY="Center" />
-                    </Border.Background>
+                        CornerRadius="{StaticResource CornerPanel}">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="22"
+                                          Direction="270"
+                                          Opacity="0.12"
+                                          ShadowDepth="6"
+                                          Color="#FF102A43" />
+                    </Border.Effect>
+
+                    <StackPanel>
+                        <TextBlock Text="{Binding AppTitle}"
+                                   FontSize="38"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   LineHeight="44"
+                                   TextWrapping="Wrap" />
+
+                        <TextBlock Margin="0,12,0,0"
+                                   Text="{Binding Subtitle}"
+                                   FontSize="18"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   LineHeight="26"
+                                   TextWrapping="Wrap" />
+
+                        <StackPanel Margin="0,26,0,0"
+                                    Orientation="Horizontal">
+                            <Button Content="{Binding StartLessonButtonText}"
+                                    Command="{Binding StartLessonCommand}"
+                                    Width="170"
+                                    Height="44"
+                                    Margin="0,0,12,0"
+                                    FontSize="15"
+                                    FontWeight="SemiBold"
+                                    Style="{StaticResource PrimaryButtonStyle}" />
+                            <Button Content="{Binding SettingsButtonText}"
+                                    Command="{Binding OpenSettingsCommand}"
+                                    Width="140"
+                                    Height="44"
+                                    FontSize="15"
+                                    FontWeight="SemiBold"
+                                    Style="{StaticResource SecondaryButtonStyle}" />
+                        </StackPanel>
+
+                        <TextBlock Margin="0,16,0,0"
+                                   Text="{Binding StatusMessage}"
+                                   FontSize="13"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
                 </Border>
-
-                <StackPanel Grid.Row="2"
-                            Margin="0,30,0,0"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Center">
-                    <Button Content="{Binding StartLessonButtonText}"
-                            Command="{Binding StartLessonCommand}"
-                            Width="170"
-                            Height="44"
-                            Margin="0,0,12,0"
-                            FontSize="15"
-                            FontWeight="SemiBold"
-                            Style="{StaticResource PrimaryButtonStyle}" />
-                    <Button Content="{Binding SettingsButtonText}"
-                            Command="{Binding OpenSettingsCommand}"
-                            Width="140"
-                            Height="44"
-                            FontSize="15"
-                            FontWeight="SemiBold"
-                            Style="{StaticResource SecondaryButtonStyle}" />
-                </StackPanel>
-
-                <TextBlock Grid.Row="3"
-                           Margin="0,16,0,0"
-                           Text="{Binding StatusMessage}"
-                           FontSize="13"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           TextAlignment="Center"
-                           TextWrapping="Wrap" />
             </Grid>
         </Border>
     </Grid>
