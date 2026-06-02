@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-06-01.
+Review date: 2026-06-02.
 
 ## Short summary
 
@@ -37,6 +37,8 @@ Implemented and accepted for the current controlled desktop MVP:
 - Final lesson summary appears.
 - Desktop upgrade/paywall UI exists for sandbox validation with manual Refresh status.
 - Packaged Release hides Diagnostics by default.
+- Welcome screen UI is accepted for the current desktop hardening phase: the hero message is neutral for a multi-language learning product, no longer positions the product as English-only, uses a large cover image, keeps text in a compact translucent top overlay, and keeps Start lesson / Settings actions in a translucent bottom overlay.
+- Lesson Chat window sizing is accepted: entering Lesson Chat auto-expands the main window if it is too small, targets a preferred 1320 × 940 layout with a 1180 × 820 readability floor, does not force fullscreen or maximize, does not shrink a larger user-sized window, and keeps the expanded window within the visible monitor working area where possible.
 
 Prompt, scenario, dialogue, and bot-behavior quality polishing is intentionally deferred to CMS/Admin, where edits can later be validated, previewed, versioned, and rolled back safely.
 

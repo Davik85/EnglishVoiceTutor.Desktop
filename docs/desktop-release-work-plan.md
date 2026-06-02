@@ -1,10 +1,10 @@
 # Desktop Release Work Plan
 
-Review date: 2026-06-01.
+Review date: 2026-06-02.
 
 ## Current conclusion
 
-The desktop product has completed a large release-hardening block and is suitable for continued controlled tester validation, but public release is not declared ready. The tester ZIP package flow, core Lesson Chat/voice/TTS flow, Release Diagnostics gate, protected auth session storage, and backend-enforced single active lesson guard are accepted. Production billing and CMS/Admin remain deferred until desktop hardening is complete.
+The desktop product has completed a large release-hardening block and is suitable for continued controlled tester validation, but public release is not declared ready. The tester ZIP package flow, accepted Welcome screen polish, Lesson Chat window auto-sizing, core Lesson Chat/voice/TTS flow, Release Diagnostics gate, protected auth session storage, and backend-enforced single active lesson guard are accepted. Production billing and CMS/Admin remain deferred until desktop hardening is complete.
 
 ## Source documents reviewed
 
@@ -129,6 +129,18 @@ Accepted manually:
 - Backend lesson history is visible/preserved.
 - Core lesson/voice/TTS flow works.
 - Active lesson guard and remote active lesson release work.
+
+### Step 5B-9: Welcome screen polish — completed/accepted
+
+- Welcome screen visual polish is accepted for the current desktop hardening phase.
+- Hero copy is neutral for a multi-language learning product and does not present the product as English-only.
+- The accepted layout uses a large cover image, compact translucent top text overlay, and translucent bottom action overlay for Start lesson and Settings.
+
+### Step 5B-10: Lesson Chat window auto-sizing — completed/accepted
+
+- Entering Lesson Chat auto-expands the main desktop window when it is too small.
+- The accepted behavior keeps the app windowed, does not force fullscreen or maximize, does not shrink a larger user-sized window, and keeps the expanded window within the visible working area where possible.
+- The accepted result is a comfortable wide layout with visible, balanced avatar and chat columns and uncramped message text.
 
 ## Remaining desktop hardening work
 

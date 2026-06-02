@@ -1,6 +1,6 @@
 # Desktop Release Smoke Gate
 
-Step: 5B desktop release gate, updated 2026-06-01 for tester ZIP acceptance and active lesson heartbeat guard documentation.
+Step: 5B desktop release gate, updated 2026-06-02 for accepted Welcome screen polish and Lesson Chat window auto-sizing checks.
 
 ## Purpose
 
@@ -186,9 +186,11 @@ Start the local backend in Development before these checks. Full functional less
   - Hrvatski
   - Български
 - Check Home screen.
+- Check Welcome screen visual acceptance: large hero cover, neutral non-English-only text, compact translucent top text overlay, and visible Start lesson / Settings actions on the bottom overlay.
 - Check Topic cards.
 - Check Subtopics/Situations screen.
 - Check Lesson Chat opens.
+- Check Lesson Chat auto-size acceptance: entering Lesson Chat expands a too-small app window into a comfortable wide layout without fullscreen/maximize, keeps larger user-sized windows larger, and leaves avatar/chat columns visible and balanced.
 - Check Send with a text message.
 - Check voice recording/transcription.
 - Check Play voice/TTS if audio and backend AI/audio configuration are available.
@@ -204,7 +206,7 @@ Start the local backend in Development before these checks. Full functional less
 - Check heartbeat stale protection.
 - Check remote active lesson release stops the old device/session.
 - Check old heartbeat and old lesson-bound messages are rejected after remote release, or run `tools/smoke_single_active_lesson_guard.ps1` with the required backend/test setup.
-- Check closing the app with X during an active lesson does not leave the process hanging.
+- Check closing the app with X after entering Lesson Chat still works and does not show the previous close exception or leave the process hanging.
 - Check Back navigation.
 
 ## Localization checks
@@ -292,6 +294,9 @@ Backend running functional flow:
 - Native language list:
 - Interface language list:
 - Home/Subtopics/Lesson Chat:
+- Welcome screen accepted hero layout:
+- Lesson Chat auto-size accepted wide layout:
+- Close after entering Lesson Chat has no previous close exception:
 - Send:
 - Hint:
 - Translate:

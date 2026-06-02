@@ -235,30 +235,36 @@ Ask the tester to follow these steps:
 2. Extract the zip to a normal writable folder.
 3. Open the extracted folder.
 4. Run `EnglishVoiceTutor.Desktop.exe`.
-5. Open Settings.
-6. Set Backend URL.
-7. In Audio input, select the microphone to test, or keep System default.
-8. Click Test microphone and confirm the app does not crash.
-9. Click Save.
-10. Restart the app and confirm the selected microphone persists, or safely falls back to System default if unavailable.
-11. Confirm Diagnostics is hidden by default in the Release package.
-12. Log in to an account and verify session restore after restart.
-13. Confirm backend lesson history is visible/preserved for the account.
-14. Start a lesson.
-15. Send a text answer.
-16. Use Start/Stop recording and verify transcription.
-17. Use Play voice / TTS.
-18. Use Translate.
-19. Use Hint.
-20. Use Feedback.
-21. Finish the lesson.
-22. Check Summary.
-23. Use Conversation Mode.
-24. Verify single active lesson guard.
-25. Verify heartbeat stale protection or run `tools\smoke_single_active_lesson_guard.ps1` with the required backend/test setup.
-26. Verify remote active lesson release stops the old device/session.
-27. Verify old heartbeat/message actions are rejected after remote release, or record that the smoke script covered it.
-28. Close the app with X during an active lesson and confirm the process does not hang.
+5. Verify the Welcome screen shows the accepted hero cover layout.
+6. Verify the Welcome screen text is neutral for a multi-language product and is not English-only positioning.
+7. Verify Start lesson and Settings buttons are visible on the welcome hero.
+8. Open Settings.
+9. Set Backend URL.
+10. In Audio input, select the microphone to test, or keep System default.
+11. Click Test microphone and confirm the app does not crash.
+12. Click Save.
+13. Restart the app and confirm the selected microphone persists, or safely falls back to System default if unavailable.
+14. Confirm Diagnostics is hidden by default in the Release package.
+15. Log in to an account and verify session restore after restart.
+16. Confirm backend lesson history is visible/preserved for the account.
+17. Start a lesson.
+18. Verify entering Lesson Chat expands the app window to a comfortable wide layout when needed.
+19. Verify Lesson Chat text is not cramped and controls remain visible.
+20. Verify avatar and chat columns are both visible and balanced.
+21. Send a text answer.
+22. Use Start/Stop recording and verify transcription.
+23. Use Play voice / TTS.
+24. Use Translate.
+25. Use Hint.
+26. Use Feedback.
+27. Finish the lesson.
+28. Check Summary.
+29. Use Conversation Mode.
+30. Verify single active lesson guard.
+31. Verify heartbeat stale protection or run `tools\smoke_single_active_lesson_guard.ps1` with the required backend/test setup.
+32. Verify remote active lesson release stops the old device/session.
+33. Verify old heartbeat/message actions are rejected after remote release, or record that the smoke script covered it.
+34. Close the app with X during an active lesson and confirm the process does not hang.
 
 ## Accepted current tester package result
 
@@ -273,8 +279,10 @@ The current tester zip flow has been manually verified on another Windows device
 - Settings opened;
 - account login/session restore worked;
 - Home opened;
+- Welcome screen showed the accepted hero cover layout with neutral non-English-only text and visible Start lesson / Settings buttons;
 - Subtopics opened;
 - Lesson Chat opened;
+- Lesson Chat expanded to a comfortable wide layout when needed, with uncramped text and balanced avatar/chat columns;
 - Send worked;
 - voice recording/transcription worked;
 - TTS / Play voice worked;

@@ -1,8 +1,8 @@
 # Next Steps
 
-Review date: 2026-06-01.
+Review date: 2026-06-02.
 
-This roadmap starts from the current confirmed state: the desktop MVP core lesson/voice/TTS flow is accepted, the tester ZIP flow is accepted, backend-enforced single active lesson protection is accepted, localization for the current Interface language set is closed for this phase, and production billing / CMS/Admin remain deferred.
+This roadmap starts from the current confirmed state: the desktop MVP core lesson/voice/TTS flow is accepted, the tester ZIP flow is accepted, Welcome screen polish and Lesson Chat window auto-sizing are accepted, backend-enforced single active lesson protection is accepted, localization for the current Interface language set is closed for this phase, and production billing / CMS/Admin remain deferred.
 
 ## Recommended next product order
 
@@ -58,6 +58,8 @@ This roadmap starts from the current confirmed state: the desktop MVP core lesso
 - Remote active lesson release.
 - Old-session invalidation after remote release, including old heartbeat and old lesson-bound message rejection.
 - Lesson Chat / Voice / TTS acceptance gate.
+- Welcome screen polish accepted for the current desktop hardening phase.
+- Lesson Chat window auto-sizing accepted for the current desktop hardening phase.
 - Tester ZIP package acceptance on another Windows device.
 
 ## Billing and platform boundaries to preserve
@@ -86,8 +88,9 @@ This roadmap starts from the current confirmed state: the desktop MVP core lesso
 - No lesson JSON rewrite.
 - No public release declaration yet.
 
-## After Step 5B-9
+## After accepted Welcome screen and Lesson Chat sizing hardening
 
+- Treat Welcome screen polish and Lesson Chat window auto-sizing as done for the current desktop hardening phase.
 - Continue with controlled tester handoff and the final clean-machine checklist.
 - Keep production billing/Paddle rollout work deferred until tester validation is complete.
 - Keep CMS/Admin expansion deferred.
