@@ -1,15 +1,26 @@
 # Next Steps
 
-Review date: 2026-06-02.
+Review date: 2026-06-03.
 
-This roadmap starts from the current confirmed state: the desktop MVP core lesson/voice/TTS flow is accepted, the tester ZIP flow is accepted, Welcome screen polish and Lesson Chat window auto-sizing are accepted, backend-enforced single active lesson protection is accepted, localization for the current Interface language set is closed for this phase, and production billing / CMS/Admin remain deferred.
+This roadmap starts from the current confirmed state: the desktop MVP core lesson/voice/TTS flow is accepted, the tester ZIP flow is accepted, Welcome screen polish and Lesson Chat window auto-sizing are accepted, backend-enforced single active lesson protection is accepted, localization for the current Interface language set is closed for this phase, and the desktop hardening block is stable enough to pause external tester handoff. The product priority is now CMS/Admin content MVP before external testers. Production billing and public release remain deferred/not ready.
 
 ## Recommended next product order
 
-1. Continue remaining desktop release hardening first (Phase 5B).
-   - Primary plan: `docs/desktop-release-work-plan.md`.
-   - Audit baseline: `docs/desktop-release-readiness-audit.md`.
-   - Release smoke gate: `docs/desktop-release-smoke-gate.md` and `tools/run_desktop_release_gate.ps1`.
+1. CMS/Admin content MVP planning and foundation (Phase 5D-0/5D-1).
+   - Planning baseline: `docs/CMS_ADMIN_PLANNING.md`.
+   - Detailed content MVP plan: `docs/cms-content-mvp-plan.md`.
+   - Existing local Admin foundation scripts: `tools/audit_admin_shell.ps1` and `tools/smoke_admin_foundation.ps1`.
+   - Goal: define and prepare backend-owned content editing for lessons, scenarios, starter messages, prompt templates, tutor behavior rules, validation, preview, draft/published workflow, versioning, rollback, and audit trail.
+   - Keep this content-focused. Do not include production billing controls, Paddle management, payment editing, entitlement editing, broad user management, mobile-specific CMS, public production Admin, secrets, direct OpenAI key handling, or study-language editing.
+2. CMS content editing implementation.
+   - Add backend CMS content models and EF migration only after the plan is approved.
+   - Import current JSON content into a CMS draft/published seed or migration path without rewriting current lesson JSON.
+   - Add backend published-content read path with fallback to static JSON.
+   - Add Admin content API, simple Admin UI, validation, preview, publish/version/rollback, and content audit trail.
+   - Desktop must continue to call backend APIs only; backend remains the source of truth.
+3. Controlled external tester handoff.
+   - Tester handoff is paused until CMS/Admin content MVP foundation is ready enough that content/prompt/scenario fixes can be handled through CMS.
+   - Before actual delivery, re-run the release gate and clean-machine checklist from `docs/desktop-release-work-plan.md`.
    - Keep the canonical tester handoff flow as:
 
      ```powershell
@@ -18,25 +29,19 @@ This roadmap starts from the current confirmed state: the desktop MVP core lesso
      ```
 
    - Default tester artifact: `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip`.
-   - `dotnet publish` may remain documented only as a lower-level troubleshooting/developer path, not the main tester flow.
-   - Do not expand Study languages, Interface languages, or lesson JSON during this documentation/hardening track.
-   - Do not continue prompt/dialogue/scenario/bot-behavior quality polishing in code now; defer it to CMS/Admin.
-2. Production billing readiness (Phase 5C), only after desktop hardening.
+   - `dotnet publish` remains a lower-level troubleshooting/developer path, not the main tester flow.
+4. Production billing readiness later.
    - Production-readiness checklist: `docs/paddle-production-readiness-checklist.md`.
    - Production webhook setup checklist: `docs/paddle-production-webhook-setup.md`.
    - Safe local config guard: `tools/smoke_paddle_production_config_guard.ps1`.
-   - Keep production billing marked incomplete until production webhook delivery, checkout configuration, provider credentials, product/price mapping, environment separation, and manual smoke verification are completed safely.
-3. Remaining billing operations planning/implementation after the desktop release gate and production-billing readiness decision.
+   - Keep production billing marked incomplete until production webhook delivery, checkout configuration, provider credentials, product/price mapping, environment separation, and manual smoke verification are completed safely outside tracked files and without committing secrets.
+5. Remaining billing operations planning/implementation after CMS content MVP, controlled tester handoff, and production-billing readiness decisions.
    - Planning document: `docs/billing-remaining-operations-plan.md`.
    - Refund and chargeback handling policy.
    - Manual revocation automation policy.
    - Optional bounded refresh/polling decision later; manual Refresh status exists now and automatic polling is not implemented.
    - Future Apple App Store / Google Play mobile entitlement bridge plan.
    - Optional background subscription reconciliation job.
-4. CMS/Admin operational readiness (Phase 5D), after desktop hardening.
-   - Planning baseline: `docs/CMS_ADMIN_PLANNING.md`.
-   - Start with support/admin operational needs before full content management.
-   - Later CMS/Admin work may include safe prompt/scenario/bot-behavior editing, validation, preview, versioning, rollback, roles, audit trail, and draft/published workflow.
 
 ## Already completed or accepted (do not relist as future work)
 

@@ -1,10 +1,10 @@
 # Current State
 
-Review date: 2026-06-02.
+Review date: 2026-06-03.
 
 ## Short summary
 
-EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. The recent desktop release-hardening block accepted the core lesson/voice/TTS flow, the backend-enforced single-active-lesson guard, and the tester ZIP package flow. Public release is not declared ready. Production billing and CMS/Admin remain deferred until desktop hardening is complete.
+EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. The recent desktop release-hardening block accepted the core lesson/voice/TTS flow, the backend-enforced single-active-lesson guard, and the tester ZIP package flow. Public release is not declared ready. The product owner has paused external tester handoff and moved CMS/Admin content MVP ahead of tester delivery. Production billing remains deferred.
 
 ## Product architecture principle
 
@@ -15,7 +15,7 @@ EnglishVoiceTutor currently has a working Windows desktop MVP backed by a workin
 - Desktop must call backend APIs only, must not store an OpenAI API key, and must not call OpenAI directly.
 - `OPENAI_API_KEY` is backend-only, needed only for real AI/TTS/STT testing, must never be committed, and must never be sent to testers.
 - Paddle is the current desktop/web billing provider adapter, but core backend subscription, entitlement, and access logic must remain provider-agnostic.
-- Do not change Paddle, billing, subscription, entitlement, Admin UI, lesson JSON, Study languages, Interface languages, or Native/Explanation language catalog without an explicit later task.
+- Do not change Paddle, billing, subscription, entitlement, lesson JSON, Study languages, Interface languages, or Native/Explanation language catalog without an explicit later task. CMS/Admin content MVP planning may update documentation only in Step 5D-0; implementation requires explicit approval after the plan is reviewed.
 
 ## Accepted desktop MVP state
 
@@ -40,7 +40,15 @@ Implemented and accepted for the current controlled desktop MVP:
 - Welcome screen UI is accepted for the current desktop hardening phase: the hero message is neutral for a multi-language learning product, no longer positions the product as English-only, uses a large cover image, keeps text in a compact translucent top overlay, and keeps Start lesson / Settings actions in a translucent bottom overlay.
 - Lesson Chat window sizing is accepted: entering Lesson Chat auto-expands the main window if it is too small, targets a preferred 1320 × 940 layout with a 1180 × 820 readability floor, does not force fullscreen or maximize, does not shrink a larger user-sized window, and keeps the expanded window within the visible monitor working area where possible.
 
-Prompt, scenario, dialogue, and bot-behavior quality polishing is intentionally deferred to CMS/Admin, where edits can later be validated, previewed, versioned, and rolled back safely.
+Prompt, scenario, dialogue, and bot-behavior quality polishing is intentionally deferred to the CMS/Admin content MVP, which now starts before external tester handoff so edits can later be validated, previewed, versioned, and rolled back safely.
+
+## Current CMS/Admin content MVP decision
+
+External tester handoff is paused until CMS/Admin content MVP foundation is ready. The current local Admin foundation is development/support-oriented only; it is not a full CMS and does not yet provide content editing, validation, preview, draft/published workflow, versioning, rollback, or CMS content audit trail.
+
+The CMS/Admin content MVP is content-focused and should cover lesson topics, subtopics/situations, starter/setup messages, prompt templates, tutor behavior instructions, hint/feedback/summary prompt configuration where applicable, validation, preview, versioning, rollback, and draft/published workflow. Production billing, Paddle management, payment editing, entitlement editing, broad user management, mobile-specific CMS, full production Admin, secrets, direct OpenAI key handling, study-language changes, Interface-language changes, and Native/Explanation-language changes remain out of scope.
+
+Planning baseline: `docs/CMS_ADMIN_PLANNING.md`. Detailed plan: `docs/cms-content-mvp-plan.md`.
 
 ## Tester ZIP package state
 
@@ -63,7 +71,7 @@ Advanced/developer-only framework-dependent ZIP, when a target machine already h
 powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1 -FrameworkDependent
 ```
 
-The current tester ZIP has been verified on another Windows device after extraction:
+The current tester ZIP has been verified on another Windows device after extraction, but new external tester handoff is paused until CMS/Admin content MVP foundation is ready:
 
 - `EnglishVoiceTutor.Desktop.exe` starts.
 - Diagnostics is hidden by default in the packaged Release app.
@@ -218,7 +226,7 @@ Accepted manual validation:
 - Core Lesson Chat / Conversation Mode / TTS / transcription / translation / hints / feedback / summary flow was accepted.
 - Single active lesson guard, heartbeat stale protection, remote active lesson release, and old-session invalidation were accepted.
 
-Local automated validation expected before the next release handoff:
+Local automated validation expected before the next release handoff, after CMS/Admin content MVP is ready:
 
 1. `powershell -ExecutionPolicy Bypass -File .\tools\run_desktop_release_gate.ps1`
 2. `powershell -ExecutionPolicy Bypass -File .\tools\smoke_single_active_lesson_guard.ps1` with the required backend/test setup.
@@ -227,10 +235,10 @@ Local automated validation expected before the next release handoff:
 ## Deferred scope / not ready yet
 
 - Public release is not declared ready.
-- Production billing is not ready and remains deferred until desktop hardening is complete.
+- Production billing is not ready and remains deferred while CMS/Admin content MVP is prioritized before tester handoff.
 - Paddle production webhook delivery, production checkout configuration, provider credentials, product/price mapping, environment separation, and manual production smoke verification are not complete.
-- CMS/Admin operational readiness remains deferred until desktop hardening is complete.
-- Prompt/scenario/bot-behavior quality polishing is deferred to CMS/Admin.
+- Full production CMS/Admin operational readiness remains deferred, but CMS/Admin content MVP now starts before external tester handoff.
+- Prompt/scenario/bot-behavior quality polishing is deferred to the content-focused CMS/Admin MVP.
 - Installer/signing and Microsoft Store packaging are not complete.
 - Mobile app implementation and mobile app-store entitlement bridge are not complete.
 - Refund handling, chargeback handling, manual revocation automation, and background subscription reconciliation are not complete.
