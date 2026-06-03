@@ -6,7 +6,7 @@ Review date: 2026-06-03.
 
 Build a safe CMS/Admin content editing foundation before external tester handoff, so tester feedback about lesson topics, situations, starter messages, prompts, and tutor behavior can be fixed through a controlled backend CMS workflow instead of code or lesson JSON edits.
 
-This is an audit and implementation plan. Step 5D-1 has now added the backend CMS content schema foundation only. No lesson JSON migration, desktop UI change, prompt rewrite, billing change, or runtime lesson loading change is part of this step.
+This is an audit and implementation plan. Step 5D-1 added the backend CMS content schema foundation. Step 5D-2 has now added a development/admin-only static JSON import and seed foundation that imports current packaged lessons, prompt files, and tutor profiles into CMS tables and publishes an immutable baseline snapshot when validation passes. No lesson JSON migration, desktop UI change, prompt rewrite, billing change, or runtime lesson loading change is part of these steps.
 
 ## Product decision
 
@@ -440,8 +440,16 @@ Minimum UI:
 
 1. Document CMS MVP scope and data model. **Implemented in Step 5D-0.**
 2. Add backend CMS content models and EF migration after approval. **Implemented in Step 5D-1 as schema foundation only.**
-3. Import current JSON content into CMS draft/published seed or migration path without changing current JSON. **Future phase.**
-4. Add backend published-content read path with static JSON fallback. **Future phase.**
+3. Import current JSON content into CMS draft/published seed or migration path without changing current JSON. **Implemented in Step 5D-2 as a development/admin-only static import foundation.**
+   - The importer reads `Content/Lessons`, `Content/Prompts`, `Content/Tutors`, and the static study-language reference file.
+   - It creates or updates the stable content pack `static-json-v1` / `Static JSON Baseline`.
+   - It imports topics inferred from lesson JSON metadata, scenarios, the three file-backed lesson prompt templates, and current tutor behavior profiles.
+   - It validates required fields, supported static study-language IDs, scenario turn bounds, prompt/tutor emptiness, deterministic serialization, and obvious secret-like content before publishing.
+   - If validation succeeds, it creates a published content version and `PublishedContentSnapshot` for the current static baseline; repeat imports skip version creation when the snapshot hash is unchanged.
+   - Topic descriptions are currently empty because the existing lesson JSON does not carry dedicated topic descriptions; desktop topic display remains unchanged.
+   - Hint, feedback, summary, translation, and immutable safety/runtime behavior remain code-owned unless they are already backed by imported prompt files.
+   - Runtime lesson loading still uses static JSON/content and does not read CMS content yet.
+4. Add backend published-content read path with static JSON fallback. **Future phase / recommended next implementation step.**
 5. Add Admin content API for draft read/update operations. **Future phase.**
 6. Add simple Admin UI for content editing. **Future phase.**
 7. Add server-side validation and preview endpoints/UI. **Future phase.**

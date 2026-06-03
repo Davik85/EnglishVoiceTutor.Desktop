@@ -15,7 +15,7 @@ EnglishVoiceTutor currently has a working Windows desktop MVP backed by a workin
 - Desktop must call backend APIs only, must not store an OpenAI API key, and must not call OpenAI directly.
 - `OPENAI_API_KEY` is backend-only, needed only for real AI/TTS/STT testing, must never be committed, and must never be sent to testers.
 - Paddle is the current desktop/web billing provider adapter, but core backend subscription, entitlement, and access logic must remain provider-agnostic.
-- Do not change Paddle, billing, subscription, entitlement, lesson JSON, Study languages, Interface languages, or Native/Explanation language catalog without an explicit later task. Step 5D-1 may add backend CMS schema foundation only; later import, runtime read path, Admin API, Admin UI, validation, preview, publish, versioning, and rollback require explicit future tasks.
+- Do not change Paddle, billing, subscription, entitlement, lesson JSON, Study languages, Interface languages, or Native/Explanation language catalog without an explicit later task. Step 5D-1 added backend CMS schema foundation and Step 5D-2 added a development/admin-only CMS static JSON import foundation. Runtime read path, Admin UI editing, preview, rollback, and production CMS operations still require explicit future tasks.
 
 ## Accepted desktop MVP state
 
@@ -44,11 +44,11 @@ Prompt, scenario, dialogue, and bot-behavior quality polishing is intentionally 
 
 ## Current CMS/Admin content MVP decision
 
-External tester handoff is paused until CMS/Admin content MVP foundation is ready. Step 5D-1 has added the backend CMS schema foundation, but it is not a full CMS and does not yet provide runtime CMS reads, content import, content editing endpoints, validation, preview, draft/published operations, version rollback workflows, or an Admin UI content editor.
+External tester handoff is paused until CMS/Admin content MVP foundation is ready. Step 5D-1 added the backend CMS schema foundation, and Step 5D-2 added a safe development/admin-only CMS static content import foundation. It imports packaged lessons, file-backed prompt templates, and tutor behavior profiles into the stable `static-json-v1` / `Static JSON Baseline` content pack, validates the import, records audit logs, and creates a published baseline snapshot when validation passes. It is not a full CMS and does not yet provide runtime CMS reads, content editing endpoints, preview UI, version rollback workflows, or an Admin UI content editor.
 
 The CMS/Admin content MVP is content-focused and should cover lesson topics, subtopics/situations, starter/setup messages, prompt templates, tutor behavior instructions, hint/feedback/summary prompt configuration where applicable, validation, preview, versioning, rollback, and draft/published workflow. Production billing, Paddle management, payment editing, entitlement editing, broad user management, mobile-specific CMS, full production Admin, secrets, direct OpenAI key handling, study-language changes, Interface-language changes, and Native/Explanation-language changes remain out of scope.
 
-Planning baseline: `docs/CMS_ADMIN_PLANNING.md`. Detailed plan: `docs/cms-content-mvp-plan.md`. Current runtime lesson loading remains unchanged and continues to use the static JSON/content behavior; the new CMS tables do not affect learners yet.
+Planning baseline: `docs/CMS_ADMIN_PLANNING.md`. Detailed plan: `docs/cms-content-mvp-plan.md`. Current runtime lesson loading remains unchanged and continues to use the static JSON/content behavior; imported CMS rows and snapshots do not affect learners yet.
 
 ## Tester ZIP package state
 
@@ -201,6 +201,8 @@ Current documented smoke/audit scripts:
 - `tools/smoke_single_active_lesson_guard.ps1`
 - `tools/smoke_admin_foundation.ps1`
 - `tools/audit_admin_shell.ps1`
+- `tools/audit_cms_content_foundation.ps1`
+- `tools/smoke_cms_content_import.ps1`
 - `tools/smoke_billing_checkout.ps1`
 - `tools/smoke_paddle_checkout_adapter.ps1`
 - `tools/smoke_paddle_checkout_client_token_guard.ps1`

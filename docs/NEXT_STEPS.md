@@ -6,16 +6,16 @@ This roadmap starts from the current confirmed state: the desktop MVP core lesso
 
 ## Recommended next product order
 
-1. CMS/Admin content MVP schema foundation (Phase 5D-0/5D-1).
+1. CMS/Admin content MVP foundation (Phase 5D-0 through Step 5D-2).
    - Planning baseline: `docs/CMS_ADMIN_PLANNING.md`.
    - Detailed content MVP plan: `docs/cms-content-mvp-plan.md`.
-   - Step 5D-0 planning and Step 5D-1 backend schema foundation are complete.
-   - The new CMS tables are not used by runtime lesson loading yet; static JSON/content behavior remains unchanged.
+   - Step 5D-0 planning, Step 5D-1 backend schema foundation, and Step 5D-2 static JSON import/seed foundation are complete.
+   - The new CMS tables and imported `static-json-v1` / `Static JSON Baseline` snapshot are not used by runtime lesson loading yet; static JSON/content behavior remains unchanged.
    - Keep this content-focused. Do not include production billing controls, Paddle management, payment editing, entitlement editing, broad user management, mobile-specific CMS, public production Admin, secrets, direct OpenAI key handling, or study-language editing.
-2. CMS JSON import/seed planning and importer implementation.
-   - Next implementation should design and add the current JSON content import/seed path into CMS draft/published data without rewriting current lesson JSON.
-   - Do this before Admin UI work so the schema has real imported content to validate and compare.
-   - Keep runtime lesson loading on static JSON until a later explicit published-content read-path step adds fallback-safe CMS reads.
+2. Backend published-content read path with static fallback.
+   - Next implementation should add a backend read path that can serve the published CMS baseline snapshot with deterministic static JSON fallback.
+   - Do this before Admin UI editor work so imported/published CMS content can be compared safely against the current static runtime mapping.
+   - Do not make CMS primary for learners until the fallback-safe read path is explicitly validated.
    - Desktop must continue to call backend APIs only; backend remains the source of truth.
 3. Controlled external tester handoff.
    - Tester handoff is paused until CMS/Admin content MVP foundation is ready enough that content/prompt/scenario fixes can be handled through CMS.

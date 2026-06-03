@@ -19,6 +19,7 @@ using EnglishVoiceTutor.Api.Services.Email;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
 using EnglishVoiceTutor.Api.Services.Billing;
 using EnglishVoiceTutor.Api.Services.Admin;
+using EnglishVoiceTutor.Api.Services.Cms;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -157,6 +158,8 @@ builder.Services.AddScoped<IAdminPremiumGrantService, AdminPremiumGrantService>(
 builder.Services.AddScoped<IAdminPremiumRevokeService, AdminPremiumRevokeService>();
 builder.Services.AddScoped<IAdminFreeLessonAllowanceResetService, AdminFreeLessonAllowanceResetService>();
 builder.Services.AddScoped<IAdminAuditLogService, AdminAuditLogService>();
+builder.Services.AddScoped<ICmsContentValidationService, CmsContentValidationService>();
+builder.Services.AddScoped<ICmsContentImportService, CmsContentImportService>();
 
 var app = builder.Build();
 
