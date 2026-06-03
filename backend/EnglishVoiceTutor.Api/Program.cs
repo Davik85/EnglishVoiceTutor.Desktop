@@ -163,6 +163,7 @@ builder.Services.AddScoped<IAdminAuditLogService, AdminAuditLogService>();
 builder.Services.AddScoped<ICmsContentValidationService, CmsContentValidationService>();
 builder.Services.AddScoped<ICmsContentImportService, CmsContentImportService>();
 builder.Services.AddScoped<ICmsPublishedContentService, CmsPublishedContentService>();
+builder.Services.AddScoped<ICmsContentAdminService, CmsContentAdminService>();
 
 var app = builder.Build();
 

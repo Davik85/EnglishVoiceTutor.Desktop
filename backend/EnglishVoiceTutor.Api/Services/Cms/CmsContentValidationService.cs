@@ -1,10 +1,13 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using EnglishVoiceTutor.Api.Data;
+using EnglishVoiceTutor.Api.Data.Entities.Cms;
 using EnglishVoiceTutor.Shared.StudyLanguages;
+using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services.Cms;
 
-public sealed partial class CmsContentValidationService : ICmsContentValidationService
+public sealed partial class CmsContentValidationService(AppDbContext dbContext) : ICmsContentValidationService
 {
     private static readonly HashSet<string> SupportedStudyLanguageIds = StudyLanguageCatalog.All
         .Select(language => language.Id)
@@ -34,6 +37,55 @@ public sealed partial class CmsContentValidationService : ICmsContentValidationS
         ValidateDeterministicSerialization(draft, result);
 
         result.Warnings.AddRange(draft.Warnings);
+        return result;
+    }
+
+
+    public async Task<CmsContentValidationResult> ValidateDraftRowsAsync(Guid contentPackId, CancellationToken cancellationToken)
+    {
+        var topics = await dbContext.CmsLessonTopics
+            .AsNoTracking()
+            .Where(topic => topic.ContentPackId == contentPackId)
+            .OrderBy(topic => topic.SortOrder)
+            .ThenBy(topic => topic.StableTopicKey)
+            .ToListAsync(cancellationToken);
+
+        var scenarios = await dbContext.CmsLessonScenarios
+            .AsNoTracking()
+            .Include(scenario => scenario.Topic)
+            .Where(scenario => scenario.ContentPackId == contentPackId)
+            .OrderBy(scenario => scenario.StableScenarioKey)
+            .ToListAsync(cancellationToken);
+
+        var promptTemplates = await dbContext.PromptTemplates
+            .AsNoTracking()
+            .Where(template => template.ContentPackId == contentPackId)
+            .OrderBy(template => template.TemplateKey)
+            .ToListAsync(cancellationToken);
+
+        var tutorProfiles = await dbContext.TutorBehaviorProfiles
+            .AsNoTracking()
+            .Where(profile => profile.ContentPackId == contentPackId)
+            .OrderBy(profile => profile.TutorId)
+            .ToListAsync(cancellationToken);
+
+        var result = new CmsContentValidationResult
+        {
+            Counts = new CmsContentValidationCounts
+            {
+                Topics = topics.Count,
+                Scenarios = scenarios.Count,
+                PromptTemplates = promptTemplates.Count,
+                TutorBehaviorProfiles = tutorProfiles.Count
+            }
+        };
+
+        ValidateDraftTopics(topics, scenarios, result);
+        ValidateDraftScenarios(topics, scenarios, result);
+        ValidateDraftPromptTemplates(promptTemplates, result);
+        ValidateDraftTutorProfiles(tutorProfiles, result);
+        ValidateDraftJsonPayloads(scenarios, promptTemplates, tutorProfiles, result);
+
         return result;
     }
 
@@ -183,6 +235,149 @@ public sealed partial class CmsContentValidationService : ICmsContentValidationS
         foreach (var tutor in draft.TutorBehaviorProfiles)
         {
             yield return ($"tutor behavior profile '{tutor.TutorId}'", CmsContentJson.SerializeDeterministic(tutor.TutorProfile));
+        }
+    }
+
+
+    private static void ValidateDraftTopics(
+        IReadOnlyList<CmsLessonTopicEntity> topics,
+        IReadOnlyList<CmsLessonScenarioEntity> scenarios,
+        CmsContentValidationResult result)
+    {
+        if (topics.Count == 0)
+        {
+            result.Errors.Add("No draft lesson topics exist for this content pack.");
+            return;
+        }
+
+        foreach (var topic in topics)
+        {
+            Require(topic.StableTopicKey, $"Draft topic '{topic.Id}' is missing a stable topic key.", result);
+            Require(topic.Title, $"Draft topic '{topic.StableTopicKey}' is missing a title.", result);
+            if (scenarios.All(scenario => scenario.TopicId != topic.Id))
+            {
+                result.Errors.Add($"Draft topic '{topic.StableTopicKey}' has no scenarios.");
+            }
+        }
+    }
+
+    private static void ValidateDraftScenarios(
+        IReadOnlyList<CmsLessonTopicEntity> topics,
+        IReadOnlyList<CmsLessonScenarioEntity> scenarios,
+        CmsContentValidationResult result)
+    {
+        if (scenarios.Count == 0)
+        {
+            result.Errors.Add("No draft lesson scenarios exist for this content pack.");
+            return;
+        }
+
+        var topicIds = topics.Select(topic => topic.Id).ToHashSet();
+        foreach (var scenario in scenarios)
+        {
+            Require(scenario.StableScenarioKey, $"Draft scenario '{scenario.Id}' is missing a stable scenario key.", result);
+            Require(scenario.Title, $"Draft scenario '{scenario.StableScenarioKey}' is missing a title.", result);
+            Require(scenario.LessonType, $"Draft scenario '{scenario.StableScenarioKey}' is missing lesson type.", result);
+            Require(scenario.SetupMessage, $"Draft scenario '{scenario.StableScenarioKey}' is missing setup message.", result);
+
+            if (!topicIds.Contains(scenario.TopicId))
+            {
+                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' references missing topic '{scenario.TopicId}'.");
+            }
+
+            if (scenario.SoftWrapUpAfterUserTurn is <= 0)
+            {
+                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' has an invalid soft wrap-up turn value.");
+            }
+
+            if (scenario.FinalMessageAtUserTurn is <= 0)
+            {
+                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' has an invalid final-message turn value.");
+            }
+
+            if (scenario.SoftWrapUpAfterUserTurn.HasValue &&
+                scenario.FinalMessageAtUserTurn.HasValue &&
+                scenario.FinalMessageAtUserTurn.Value < scenario.SoftWrapUpAfterUserTurn.Value)
+            {
+                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' final-message turn must be greater than or equal to the soft wrap-up turn.");
+            }
+        }
+    }
+
+    private static void ValidateDraftPromptTemplates(IReadOnlyList<PromptTemplateEntity> promptTemplates, CmsContentValidationResult result)
+    {
+        foreach (var template in promptTemplates)
+        {
+            Require(template.TemplateKey, $"Draft prompt template '{template.Id}' is missing its template key.", result);
+            Require(template.Body, $"Draft prompt template '{template.TemplateKey}' is empty.", result);
+        }
+    }
+
+    private static void ValidateDraftTutorProfiles(IReadOnlyList<TutorBehaviorProfileEntity> tutorProfiles, CmsContentValidationResult result)
+    {
+        foreach (var profile in tutorProfiles)
+        {
+            Require(profile.TutorId, $"Draft tutor behavior profile '{profile.Id}' is missing tutor id.", result);
+            Require(profile.DisplayName, $"Draft tutor behavior profile '{profile.TutorId}' is missing display name.", result);
+            Require(profile.CommunicationStyleJson, $"Draft tutor behavior profile '{profile.TutorId}' is missing communication style JSON.", result);
+        }
+    }
+
+    private static void ValidateDraftJsonPayloads(
+        IReadOnlyList<CmsLessonScenarioEntity> scenarios,
+        IReadOnlyList<PromptTemplateEntity> promptTemplates,
+        IReadOnlyList<TutorBehaviorProfileEntity> tutorProfiles,
+        CmsContentValidationResult result)
+    {
+        foreach (var scenario in scenarios)
+        {
+            ValidateJson(scenario.SupportedLevelIdsJson, nameof(scenario.SupportedLevelIdsJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.ContextSelectionJson, nameof(scenario.ContextSelectionJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.LearningGoalJson, nameof(scenario.LearningGoalJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.SituationJson, nameof(scenario.SituationJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.RolesJson, nameof(scenario.RolesJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.TargetLanguageJson, nameof(scenario.TargetLanguageJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.LevelProfilesJson, nameof(scenario.LevelProfilesJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.ConversationFlowJson, nameof(scenario.ConversationFlowJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.RoleplayBeatsJson, nameof(scenario.RoleplayBeatsJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.ReciprocalQuestionHandlingJson, nameof(scenario.ReciprocalQuestionHandlingJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.ExpectedScenarioProgressionJson, nameof(scenario.ExpectedScenarioProgressionJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.ControlledVariationJson, nameof(scenario.ControlledVariationJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.OffTopicHandlingJson, nameof(scenario.OffTopicHandlingJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.FeedbackRulesJson, nameof(scenario.FeedbackRulesJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.HintRulesJson, nameof(scenario.HintRulesJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.RepetitionLogicJson, nameof(scenario.RepetitionLogicJson), scenario.StableScenarioKey, result);
+            ValidateJson(scenario.AiTutorPromptInstructionsJson, nameof(scenario.AiTutorPromptInstructionsJson), scenario.StableScenarioKey, result);
+        }
+
+        foreach (var template in promptTemplates)
+        {
+            ValidateJson(template.AllowedPlaceholdersJson, nameof(template.AllowedPlaceholdersJson), template.TemplateKey, result);
+            ValidateJson(template.RequiredPlaceholdersJson, nameof(template.RequiredPlaceholdersJson), template.TemplateKey, result);
+        }
+
+        foreach (var profile in tutorProfiles)
+        {
+            ValidateJson(profile.CommunicationStyleJson, nameof(profile.CommunicationStyleJson), profile.TutorId, result);
+            ValidateJson(profile.SafetyNotesJson, nameof(profile.SafetyNotesJson), profile.TutorId, result);
+        }
+    }
+
+    private static void ValidateJson(string value, string fieldName, string entityKey, CmsContentValidationResult result)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            result.Errors.Add($"Draft entity '{entityKey}' has empty JSON field '{fieldName}'.");
+            return;
+        }
+
+        try
+        {
+            using var _ = JsonDocument.Parse(value);
+        }
+        catch (JsonException ex)
+        {
+            result.Errors.Add($"Draft entity '{entityKey}' has invalid JSON in '{fieldName}': {ex.Message}");
         }
     }
 
