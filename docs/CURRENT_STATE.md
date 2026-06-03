@@ -48,7 +48,7 @@ External tester handoff is paused until CMS/Admin content MVP foundation is read
 
 The CMS/Admin content MVP is content-focused and should cover lesson topics, subtopics/situations, starter/setup messages, prompt templates, tutor behavior instructions, hint/feedback/summary prompt configuration where applicable, validation, preview, versioning, rollback, and draft/published workflow. Production billing, Paddle management, payment editing, entitlement editing, broad user management, mobile-specific CMS, full production Admin, secrets, direct OpenAI key handling, study-language changes, Interface-language changes, and Native/Explanation-language changes remain out of scope.
 
-Planning baseline: `docs/CMS_ADMIN_PLANNING.md`. Detailed plan: `docs/cms-content-mvp-plan.md`. Current runtime lesson loading remains unchanged by default and continues to use the static JSON/content behavior. The new `CmsContent` configuration defaults keep `ReadPublishedSnapshotEnabled=false`, `ContentPackSlug=static-json-v1`, and `FallbackToStaticJson=true`; imported CMS rows and snapshots do not affect learners unless a later explicitly approved runtime integration enables CMS reads behind that disabled-by-default flag. Static JSON remains the fallback when CMS reads are disabled, missing, invalid, corrupt, or fail.
+Planning baseline: `docs/CMS_ADMIN_PLANNING.md`. Detailed plan: `docs/cms-content-mvp-plan.md`. Current runtime lesson loading remains unchanged by default and continues to use the static JSON/content behavior. The new `CmsContent` configuration defaults keep `ReadPublishedSnapshotEnabled=false`, `ContentPackSlug=static-json-v1`, and `FallbackToStaticJson=true`; imported CMS rows and snapshots do not affect learners unless a later explicitly approved runtime integration enables CMS reads behind that disabled-by-default flag. Static JSON remains the fallback when CMS reads are disabled, missing, invalid, corrupt, or fail. Step 5D-4 adds a backend-only development/admin CMS content API skeleton for content pack reads, draft topic/scenario/prompt/tutor reads, bounded draft updates with audit logs, validation, and preview summaries; it does not add an Admin UI editor, publish/rollback workflow, learner runtime switch, lesson JSON edits, or prompt/tutor file edits.
 
 ## Tester ZIP package state
 
@@ -71,7 +71,7 @@ Advanced/developer-only framework-dependent ZIP, when a target machine already h
 powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1 -FrameworkDependent
 ```
 
-The current tester ZIP has been verified on another Windows device after extraction, but new external tester handoff is paused until CMS/Admin content MVP foundation is ready:
+The current tester ZIP has been verified on another Windows device after extraction, but new external tester handoff remains paused while the CMS/Admin content MVP foundation continues:
 
 - `EnglishVoiceTutor.Desktop.exe` starts.
 - Diagnostics is hidden by default in the packaged Release app.
