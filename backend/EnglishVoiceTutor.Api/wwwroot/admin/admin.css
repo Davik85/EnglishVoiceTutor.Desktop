@@ -79,3 +79,39 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
   .cms-toolbar, .cms-lifecycle-actions, .cms-button-row { align-items: stretch; flex-direction: column; }
   .cms-pack-select-field, .cms-version-select-field, .cms-change-summary-field { min-width: 0; width: 100%; }
 }
+
+.cms-sub-tabs { background: #fff; border: 1px solid #d8dee7; border-radius: 12px; display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; padding: 10px; position: sticky; top: 0; z-index: 2; }
+.cms-sub-tab-button { background: #eef2ff; border: 1px solid #c7d2fe; color: #1e3a8a; flex: 0 1 auto; font-size: 14px; padding: 8px 12px; text-align: center; }
+.cms-sub-tab-button:hover { background: #dbeafe; }
+.cms-sub-tab-button.active, .cms-sub-tab-button[aria-selected="true"] { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.cms-sub-panel.hidden { display: none; }
+.cms-warning-card { border-left: 5px solid #f59e0b; }
+.cms-warning-card h3, .cms-compact-card h3 { margin-top: 0; }
+.cms-compact-card { padding-top: 16px; }
+.cms-workspace-grid { align-items: start; display: grid; gap: 16px; grid-template-columns: minmax(360px, 1.15fr) minmax(320px, .85fr); }
+.cms-scenario-workspace { grid-template-columns: minmax(480px, 1.2fr) minmax(340px, .8fr); }
+.cms-editor-card, .cms-list-card { min-width: 0; }
+.cms-editor-form-top { border-top: 0; margin-top: 0; padding-top: 0; }
+.cms-filter-row { align-items: end; display: flex; flex-wrap: wrap; gap: 12px; }
+.cms-filter-field { flex: 1 1 260px; }
+.cms-topic-select-filter { flex: 0 1 240px; }
+.cms-wide-table-wrap { min-width: 0; }
+.cms-table { min-width: 640px; table-layout: auto; }
+.cms-table th, .cms-table td { overflow-wrap: anywhere; word-break: normal; }
+.cms-table td:last-child { white-space: nowrap; width: 1%; }
+.cms-scenario-workspace .cms-table { min-width: 760px; }
+.cms-json-output { overflow-wrap: anywhere; }
+#cms-prompt-template-body { min-height: 420px; }
+#cms-tutor-profile-communication-style-json, #cms-tutor-profile-safety-notes-json { min-height: 260px; }
+#cms-scenario-setup-message { min-height: 180px; }
+
+@media (max-width: 1180px) {
+  .cms-workspace-grid, .cms-scenario-workspace { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .cms-sub-tabs { position: static; }
+  .cms-sub-tab-button { flex: 1 1 180px; }
+  .cms-filter-row { align-items: stretch; flex-direction: column; }
+  .cms-topic-select-filter { flex-basis: auto; width: 100%; }
+}

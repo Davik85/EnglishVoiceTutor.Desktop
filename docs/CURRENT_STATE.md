@@ -2,6 +2,13 @@
 
 Review date: 2026-06-03.
 
+
+## Step 5D-6a current state — Admin CMS navigation
+
+Step 5D-6a is complete: the backend Admin shell still exposes a single main `CMS Content` sidebar tab, and that tab now contains internal CMS sub-tabs for Overview, Topics, Scenarios, Prompts, Tutors, Validation & Preview, and Versions & Publish. The reorganization keeps the development-only warning, content pack selector, summary, bounded draft editors, validation output, preview summary, versions table, publish controls, and restore controls available without turning Topics/Prompts/Tutors into main Admin sidebar items.
+
+Runtime learner behavior is unchanged by default. The CMS read path remains disabled by default, static JSON fallback remains available, and the Admin CMS UI remains development-only/admin-only. External tester handoff remains paused, production billing remains deferred, and public release remains not ready. No EF migration was created and no lesson JSON, prompt text, tutor JSON, desktop UI, billing/Paddle/subscription/entitlement/payment, or password reset behavior was changed for this step.
+
 ## Short summary
 
 EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. The recent desktop release-hardening block accepted the core lesson/voice/TTS flow, the backend-enforced single-active-lesson guard, and the tester ZIP package flow. Public release is not declared ready. The product owner has paused external tester handoff and moved CMS/Admin content MVP ahead of tester delivery. Production billing remains deferred.

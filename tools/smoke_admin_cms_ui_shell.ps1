@@ -24,16 +24,50 @@ if ($errors.Count -eq 0) {
         'tab-button-cms-content',
         'tab-panel-cms-content',
         'CMS Content',
-        'Development-only content editing shell. Runtime still uses static JSON by default.',
+        'Development-only/admin-only content editing shell. Runtime still uses static JSON by default.',
         'cms-content-pack-select',
+        'cms-sub-tab-button-overview',
+        'cms-sub-tab-button-topics',
+        'cms-sub-tab-button-scenarios',
+        'cms-sub-tab-button-prompts',
+        'cms-sub-tab-button-tutors',
+        'cms-sub-tab-button-validation-preview',
+        'cms-sub-tab-button-versions-publish',
+        'cms-sub-panel-overview',
+        'cms-sub-panel-topics',
+        'cms-sub-panel-scenarios',
+        'cms-sub-panel-prompts',
+        'cms-sub-panel-tutors',
+        'cms-sub-panel-validation-preview',
+        'cms-sub-panel-versions-publish',
+        'Overview',
+        'Topics',
+        'Scenarios',
+        'Prompts',
+        'Tutors',
+        'Validation &amp; Preview',
+        'Versions &amp; Publish',
         'cms-topics-list',
+        'cms-topic-filter',
         'cms-scenarios-list',
+        'cms-scenario-filter',
+        'cms-scenario-topic-filter',
         'cms-prompt-templates-list',
         'cms-tutor-profiles-list',
         'cms-run-validation-button',
         'cms-load-preview-button',
         'cms-publish-button',
-        'cms-restore-button'
+        'cms-restore-button',
+        'cms-topic-title',
+        'cms-topic-description',
+        'cms-topic-sort-order',
+        'cms-scenario-title',
+        'cms-scenario-description',
+        'cms-scenario-setup-message',
+        'cms-prompt-template-body',
+        'cms-tutor-profile-display-name',
+        'cms-tutor-profile-communication-style-json',
+        'cms-tutor-profile-safety-notes-json'
     )) { Assert-FileContains -path $indexPath -needle $needle }
 
     foreach ($needle in @(
@@ -47,10 +81,13 @@ if ($errors.Count -eq 0) {
         '/api/admin/dev/cms/content-packs/{slug}/versions',
         '/api/admin/dev/cms/content-packs/{slug}/publish',
         '/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore',
-        'confirm('
+        'confirm(',
+        'selectCmsSubTab',
+        'renderCmsTopicsTable',
+        'renderCmsScenariosTable'
     )) { Assert-FileContains -path $jsPath -needle $needle }
 
-    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions')) {
+    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid')) {
         Assert-FileContains -path $cssPath -needle $needle
     }
 

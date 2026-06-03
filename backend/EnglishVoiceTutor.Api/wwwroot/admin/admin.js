@@ -66,6 +66,10 @@
     let cmsSelectedScenario = null;
     let cmsSelectedPromptTemplate = null;
     let cmsSelectedTutorProfile = null;
+    let cmsTopics = [];
+    let cmsScenarios = [];
+    let cmsPromptTemplates = [];
+    let cmsTutorProfiles = [];
 
     const loginCard = document.getElementById("login-card");
     const dashboard = document.getElementById("dashboard");
@@ -151,6 +155,8 @@
     const freeLessonResetSuccessElement = document.getElementById("free-lesson-reset-success");
 
 
+    const cmsSubTabButtons = Array.from(document.querySelectorAll(".cms-sub-tab-button"));
+    const cmsSubPanels = Array.from(document.querySelectorAll(".cms-sub-panel"));
     const cmsLoadContentPacksButton = document.getElementById("cms-load-content-packs-button");
     const cmsContentPackSelect = document.getElementById("cms-content-pack-select");
     const cmsRefreshButton = document.getElementById("cms-refresh-button");
@@ -166,7 +172,10 @@
     const cmsSummaryTutorProfileCountElement = document.getElementById("cms-summary-tutor-profile-count");
     const cmsSummaryPublishedVersionElement = document.getElementById("cms-summary-published-version");
     const cmsTopicsListElement = document.getElementById("cms-topics-list");
+    const cmsTopicFilterInput = document.getElementById("cms-topic-filter");
     const cmsScenariosListElement = document.getElementById("cms-scenarios-list");
+    const cmsScenarioFilterInput = document.getElementById("cms-scenario-filter");
+    const cmsScenarioTopicFilterSelect = document.getElementById("cms-scenario-topic-filter");
     const cmsPromptTemplatesListElement = document.getElementById("cms-prompt-templates-list");
     const cmsTutorProfilesListElement = document.getElementById("cms-tutor-profiles-list");
     const cmsTopicForm = document.getElementById("cms-topic-form");
@@ -752,6 +761,57 @@
         cmsSummaryPublishedVersionElement.textContent = formatValue(summary?.currentPublishedVersionNumber);
     }
 
+    function selectCmsSubTab(tabId) {
+        const selectedTabId = tabId || "overview";
+        cmsSubTabButtons.forEach((button) => {
+            const isActive = button.dataset.cmsSubTabId === selectedTabId;
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-selected", isActive ? "true" : "false");
+        });
+        cmsSubPanels.forEach((panel) => {
+            panel.classList.toggle("hidden", panel.dataset.cmsSubPanel !== selectedTabId);
+        });
+    }
+
+    function getNormalizedFilter(value) { return String(value || "").trim().toLowerCase(); }
+    function valueContains(value, filter) { return String(value || "").toLowerCase().includes(filter); }
+
+    function updateCmsScenarioTopicFilterOptions() {
+        const selected = cmsScenarioTopicFilterSelect.value;
+        const topicKeys = Array.from(new Set(cmsScenarios.map((scenario) => scenario.topicKey).filter(Boolean))).sort((left, right) => String(left).localeCompare(String(right)));
+        cmsScenarioTopicFilterSelect.textContent = "";
+        const allOption = document.createElement("option");
+        allOption.value = "";
+        allOption.textContent = "All topics";
+        cmsScenarioTopicFilterSelect.appendChild(allOption);
+        topicKeys.forEach((topicKey) => { const option = document.createElement("option"); option.value = topicKey; option.textContent = topicKey; cmsScenarioTopicFilterSelect.appendChild(option); });
+        cmsScenarioTopicFilterSelect.value = topicKeys.includes(selected) ? selected : "";
+    }
+
+    function getFilteredCmsTopics() {
+        const filter = getNormalizedFilter(cmsTopicFilterInput.value);
+        if (!filter) { return cmsTopics; }
+        return cmsTopics.filter((topic) => valueContains(topic.stableTopicKey, filter) || valueContains(topic.title, filter));
+    }
+
+    function getFilteredCmsScenarios() {
+        const filter = getNormalizedFilter(cmsScenarioFilterInput.value);
+        const topicFilter = cmsScenarioTopicFilterSelect.value;
+        return cmsScenarios.filter((scenario) => {
+            const matchesText = !filter || valueContains(scenario.stableScenarioKey, filter) || valueContains(scenario.topicKey, filter) || valueContains(scenario.title, filter);
+            const matchesTopic = !topicFilter || scenario.topicKey === topicFilter;
+            return matchesText && matchesTopic;
+        });
+    }
+
+    function renderCmsTopicsTable() {
+        renderCmsTable(cmsTopicsListElement, [{ key: "stableTopicKey", label: "stableTopicKey" }, { key: "title", label: "Title" }, { key: "sortOrder", label: "Sort" }, { key: "isActive", label: "Active" }], getFilteredCmsTopics(), selectCmsTopic);
+    }
+
+    function renderCmsScenariosTable() {
+        renderCmsTable(cmsScenariosListElement, [{ key: "stableScenarioKey", label: "stableScenarioKey" }, { key: "topicKey", label: "Topic key" }, { key: "title", label: "Title" }, { key: "isActive", label: "Active" }], getFilteredCmsScenarios(), selectCmsScenario);
+    }
+
     function renderCmsTable(container, columns, rows, onSelect) {
         container.textContent = "";
         if (!Array.isArray(rows) || rows.length === 0) { const empty = document.createElement("p"); empty.className = "empty-state"; empty.textContent = "No items loaded."; container.appendChild(empty); return; }
@@ -794,23 +854,28 @@
 
     async function loadCmsTopics() {
         const slug = getSelectedCmsSlug();
-        const topics = await adminFetch(cmsPath(ApiPaths.cmsTopicsTemplate, { slug }));
-        renderCmsTable(cmsTopicsListElement, [{ key: "stableTopicKey", label: "stableTopicKey" }, { key: "title", label: "Title" }, { key: "sortOrder", label: "Sort" }, { key: "isActive", label: "Active" }], topics, selectCmsTopic);
+        cmsTopics = await adminFetch(cmsPath(ApiPaths.cmsTopicsTemplate, { slug }));
+        cmsTopics = Array.isArray(cmsTopics) ? cmsTopics : [];
+        renderCmsTopicsTable();
     }
     async function loadCmsScenarios() {
         const slug = getSelectedCmsSlug();
-        const scenarios = await adminFetch(cmsPath(ApiPaths.cmsScenariosTemplate, { slug }));
-        renderCmsTable(cmsScenariosListElement, [{ key: "stableScenarioKey", label: "stableScenarioKey" }, { key: "topicKey", label: "Topic" }, { key: "title", label: "Title" }, { key: "isActive", label: "Active" }], scenarios, selectCmsScenario);
+        cmsScenarios = await adminFetch(cmsPath(ApiPaths.cmsScenariosTemplate, { slug }));
+        cmsScenarios = Array.isArray(cmsScenarios) ? cmsScenarios : [];
+        updateCmsScenarioTopicFilterOptions();
+        renderCmsScenariosTable();
     }
     async function loadCmsPromptTemplates() {
         const slug = getSelectedCmsSlug();
-        const templates = await adminFetch(cmsPath(ApiPaths.cmsPromptTemplatesTemplate, { slug }));
-        renderCmsTable(cmsPromptTemplatesListElement, [{ key: "templateKey", label: "templateKey" }, { key: "targetStudyLanguageId", label: "Study language" }, { key: "isActive", label: "Active" }], templates, selectCmsPromptTemplate);
+        cmsPromptTemplates = await adminFetch(cmsPath(ApiPaths.cmsPromptTemplatesTemplate, { slug }));
+        cmsPromptTemplates = Array.isArray(cmsPromptTemplates) ? cmsPromptTemplates : [];
+        renderCmsTable(cmsPromptTemplatesListElement, [{ key: "templateKey", label: "templateKey" }, { key: "targetStudyLanguageId", label: "Study language" }, { key: "isActive", label: "Active" }], cmsPromptTemplates, selectCmsPromptTemplate);
     }
     async function loadCmsTutorProfiles() {
         const slug = getSelectedCmsSlug();
-        const profiles = await adminFetch(cmsPath(ApiPaths.cmsTutorProfilesTemplate, { slug }));
-        renderCmsTable(cmsTutorProfilesListElement, [{ key: "tutorId", label: "tutorId" }, { key: "displayName", label: "Display name" }, { key: "isActive", label: "Active" }], profiles, selectCmsTutorProfile);
+        cmsTutorProfiles = await adminFetch(cmsPath(ApiPaths.cmsTutorProfilesTemplate, { slug }));
+        cmsTutorProfiles = Array.isArray(cmsTutorProfiles) ? cmsTutorProfiles : [];
+        renderCmsTable(cmsTutorProfilesListElement, [{ key: "tutorId", label: "tutorId" }, { key: "displayName", label: "Display name" }, { key: "isActive", label: "Active" }], cmsTutorProfiles, selectCmsTutorProfile);
     }
 
     async function selectCmsTopic(row) { cmsSelectedTopic = await adminFetch(cmsPath(ApiPaths.cmsTopicTemplate, { slug: getSelectedCmsSlug(), topicId: row.id })); fillCmsTopicForm(); }
@@ -903,9 +968,14 @@
     }
 
 
+    cmsSubTabButtons.forEach((button) => { button.addEventListener("click", () => { selectCmsSubTab(button.dataset.cmsSubTabId); }); });
+    selectCmsSubTab("overview");
     cmsLoadContentPacksButton.addEventListener("click", async () => { await loadCmsContentPacks(); });
     cmsContentPackSelect.addEventListener("change", async () => { setCmsLoading(true); try { await refreshCmsContentPack(); setCmsSuccess("CMS content pack refreshed."); } catch (error) { handleCmsError(error); } finally { setCmsLoading(false); } });
     cmsRefreshButton.addEventListener("click", async () => { setCmsLoading(true); try { await refreshCmsContentPack(); setCmsSuccess("CMS content pack refreshed."); } catch (error) { handleCmsError(error); } finally { setCmsLoading(false); } });
+    cmsTopicFilterInput.addEventListener("input", () => { renderCmsTopicsTable(); });
+    cmsScenarioFilterInput.addEventListener("input", () => { renderCmsScenariosTable(); });
+    cmsScenarioTopicFilterSelect.addEventListener("change", () => { renderCmsScenariosTable(); });
     cmsTopicForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsTopicDraft(); });
     cmsTopicResetButton.addEventListener("click", async () => { if (cmsSelectedTopic) { await selectCmsTopic(cmsSelectedTopic); } });
     cmsScenarioForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsScenarioDraft(); });

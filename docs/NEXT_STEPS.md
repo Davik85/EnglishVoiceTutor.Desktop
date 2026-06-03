@@ -2,19 +2,26 @@
 
 Review date: 2026-06-03.
 
+
+## After Step 5D-6a
+
+The next implementation step should be controlled Admin CMS end-to-end UI/API regression testing against a local backend: load `static-json-v1`, select and save one bounded draft field per content type, run validation, load preview summary, list versions, and verify publish/restore confirmation flows in a development-only environment. Keep runtime CMS reads disabled by default and keep static JSON fallback available while this regression work is performed.
+
+External tester handoff remains paused, production billing remains deferred, and public release remains not ready. Do not change lesson JSON files, prompt text files, tutor JSON files, desktop UI, billing/Paddle/subscription/entitlement/payment logic, or password reset behavior as part of that next verification step.
+
 This roadmap starts from the current confirmed state: the desktop MVP core lesson/voice/TTS flow is accepted, the tester ZIP flow is accepted, Welcome screen polish and Lesson Chat window auto-sizing are accepted, backend-enforced single active lesson protection is accepted, localization for the current Interface language set is closed for this phase, and the desktop hardening block is stable enough to pause external tester handoff. The product priority is now CMS/Admin content MVP before external testers. Production billing and public release remain deferred/not ready.
 
 ## Recommended next product order
 
-1. CMS/Admin content MVP foundation (Phase 5D-0 through Step 5D-5).
+1. CMS/Admin content MVP foundation (Phase 5D-0 through Step 5D-6a).
    - Planning baseline: `docs/CMS_ADMIN_PLANNING.md`.
    - Detailed content MVP plan: `docs/cms-content-mvp-plan.md`.
-   - Step 5D-0 planning, Step 5D-1 backend schema foundation, Step 5D-2 static JSON import/seed foundation, Step 5D-3 backend published-snapshot read/status path, Step 5D-4 backend Admin CMS content API draft read/update plus validation/preview skeleton, and Step 5D-5 backend publish/version/rollback endpoints are complete.
+   - Step 5D-0 planning, Step 5D-1 backend schema foundation, Step 5D-2 static JSON import/seed foundation, Step 5D-3 backend published-snapshot read/status path, Step 5D-4 backend Admin CMS content API draft read/update plus validation/preview skeleton, Step 5D-5 backend publish/version/rollback endpoints, Step 5D-6 Admin CMS Content UI shell, and Step 5D-6a internal Admin CMS sub-tabs are complete.
    - The new CMS tables and imported `static-json-v1` / `Static JSON Baseline` snapshot are still not used by runtime lesson loading by default; static JSON/content behavior remains unchanged.
    - `CmsContent:ReadPublishedSnapshotEnabled` defaults to `false`, `CmsContent:ContentPackSlug` defaults to `static-json-v1`, and `CmsContent:FallbackToStaticJson` defaults to `true`.
    - Keep this content-focused. Do not include production billing controls, Paddle management, payment editing, entitlement editing, broad user management, mobile-specific CMS, public production Admin, secrets, direct OpenAI key handling, or study-language editing.
 2. Controlled next CMS implementation step.
-   - Recommended next implementation: build the Admin UI editor shell or CMS content editor UI now that the backend lifecycle is safer, while keeping all CMS learner-runtime integration behind the disabled-by-default read flag.
+   - Recommended next implementation: run controlled Admin CMS end-to-end UI/API regression against a local backend now that the editor shell has internal sub-tabs, while keeping all CMS learner-runtime integration behind the disabled-by-default read flag.
    - If learner runtime CMS integration is attempted next, keep it behind the disabled-by-default feature flag and retain static JSON fallback on every CMS failure.
    - Desktop must continue to call backend APIs only; backend remains the source of truth.
 3. Controlled external tester handoff.

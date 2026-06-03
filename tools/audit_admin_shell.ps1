@@ -23,10 +23,16 @@ $requiredPremiumControlIds = @(
 $requiredFreeLessonLookupIds = @("free-lesson-lookup-form", "free-lesson-lookup-email", "free-lesson-search-user-button", "free-lesson-lookup-loading", "free-lesson-lookup-error")
 $requiredFreeLessonResetIds = @("free-lesson-empty-state", "free-lesson-reset-card", "free-lesson-reset-form", "free-lesson-reset-usage-date", "free-lesson-reset-reason", "free-lesson-reset-button")
 $requiredAuditIds = @("audit-empty-state", "audit-card", "audit-limit", "load-audit-button", "audit-result")
+$requiredCmsSubTabIds = @(
+    "cms-sub-tab-button-overview", "cms-sub-tab-button-topics", "cms-sub-tab-button-scenarios", "cms-sub-tab-button-prompts", "cms-sub-tab-button-tutors", "cms-sub-tab-button-validation-preview", "cms-sub-tab-button-versions-publish"
+)
+$requiredCmsSubPanelIds = @(
+    "cms-sub-panel-overview", "cms-sub-panel-topics", "cms-sub-panel-scenarios", "cms-sub-panel-prompts", "cms-sub-panel-tutors", "cms-sub-panel-validation-preview", "cms-sub-panel-versions-publish"
+)
 $requiredCmsIds = @(
     "cms-load-content-packs-button", "cms-content-pack-select", "cms-refresh-button", "cms-loading", "cms-error", "cms-success",
     "cms-content-pack-summary", "cms-summary-slug", "cms-summary-name", "cms-summary-status", "cms-summary-topic-count", "cms-summary-scenario-count", "cms-summary-prompt-template-count", "cms-summary-tutor-profile-count", "cms-summary-published-version",
-    "cms-topics-list", "cms-scenarios-list", "cms-prompt-templates-list", "cms-tutor-profiles-list",
+    "cms-topics-list", "cms-topic-filter", "cms-scenarios-list", "cms-scenario-filter", "cms-scenario-topic-filter", "cms-prompt-templates-list", "cms-tutor-profiles-list",
     "cms-topic-form", "cms-selected-topic-identity", "cms-topic-title", "cms-topic-description", "cms-topic-sort-order", "cms-topic-is-active", "cms-topic-save-button", "cms-topic-reset-button", "cms-topic-message",
     "cms-scenario-form", "cms-selected-scenario-identity", "cms-scenario-title", "cms-scenario-description", "cms-scenario-setup-message", "cms-scenario-is-active", "cms-scenario-save-button", "cms-scenario-reset-button", "cms-scenario-message",
     "cms-prompt-template-form", "cms-selected-prompt-template-identity", "cms-prompt-template-body", "cms-prompt-template-is-active", "cms-prompt-template-save-button", "cms-prompt-template-reset-button", "cms-prompt-template-message",
@@ -45,10 +51,10 @@ $requiredJsEndpoints = @(
     "/api/admin/dev/cms/content-packs/{slug}/validate", "/api/admin/dev/cms/content-packs/{slug}/preview-summary", "/api/admin/dev/cms/content-packs/{slug}/versions", "/api/admin/dev/cms/content-packs/{slug}/publish", "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore"
 )
 $requiredJsLookupRefs = @("user-lookup", "premium", "free-lesson", "cms-content")
-$requiredJsFunctionRefs = @("updateSelectedUserHeader", "updateUserRequiredEmptyStates", "applySelectedUserPayload", "clearSelectedUserState", "loadCmsContentPacks", "renderCmsContentPackSummary", "runCmsValidation", "loadCmsPreviewSummary", "loadCmsVersions", "publishCmsDraft", "restoreCmsVersion")
+$requiredJsFunctionRefs = @("updateSelectedUserHeader", "updateUserRequiredEmptyStates", "applySelectedUserPayload", "clearSelectedUserState", "selectCmsSubTab", "loadCmsContentPacks", "renderCmsContentPackSummary", "renderCmsTopicsTable", "renderCmsScenariosTable", "runCmsValidation", "loadCmsPreviewSummary", "loadCmsVersions", "publishCmsDraft", "restoreCmsVersion")
 $forbiddenJsStorageTokens = @("localStorage", "sessionStorage")
 
-$requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "tab-panel", "selected-user-summary", "empty-state-card", "compact-table", "cms-grid-two", "cms-toolbar", "cms-json-output")
+$requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "tab-panel", "selected-user-summary", "empty-state-card", "compact-table", "cms-grid-two", "cms-toolbar", "cms-sub-tabs", "cms-sub-tab-button", "cms-sub-panel", "cms-workspace-grid", "cms-json-output")
 
 function Add-Error([string]$message) { $errors.Add($message) }
 
@@ -67,7 +73,7 @@ if (-not (Test-Path -LiteralPath $indexPath)) {
     Add-Error "Missing file: $indexPath"
 } else {
     $indexContent = Get-Content -LiteralPath $indexPath -Raw
-    $idAttributeRegex = [regex]'id\s*=\s*(["''])(?<id>[^"'']+)\1'
+    $idAttributeRegex = [regex]'\sid\s*=\s*(["''])(?<id>[^"'']+)\1'
     $allIdMatches = $idAttributeRegex.Matches($indexContent)
     $idCounts = @{}
     foreach ($match in $allIdMatches) {
@@ -86,12 +92,19 @@ if (-not (Test-Path -LiteralPath $indexPath)) {
 
     $requiredIndexIds = @(
         $requiredTabButtonIds + $requiredTabPanelIds + $requiredLookupIds + $requiredPremiumLookupIds +
-        $requiredPremiumControlIds + $requiredFreeLessonLookupIds + $requiredFreeLessonResetIds + $requiredAuditIds + $requiredCmsIds + $requiredSystemIds
+        $requiredPremiumControlIds + $requiredFreeLessonLookupIds + $requiredFreeLessonResetIds + $requiredAuditIds + $requiredCmsSubTabIds + $requiredCmsSubPanelIds + $requiredCmsIds + $requiredSystemIds
     )
     foreach ($id in $requiredIndexIds) {
         Assert-ContainsOnceById -idCounts $idCounts -id $id
     }
+
+    foreach ($cmsMarker in @('data-cms-sub-tabs="true"', 'data-cms-sub-panel="overview"', 'data-cms-sub-panel="topics"', 'data-cms-sub-panel="scenarios"', 'data-cms-sub-panel="prompts"', 'data-cms-sub-panel="tutors"', 'data-cms-sub-panel="validation-preview"', 'data-cms-sub-panel="versions-publish"')) {
+        if ($indexContent.IndexOf($cmsMarker, [System.StringComparison]::Ordinal) -lt 0) {
+            Add-Error "index.html: missing CMS sub-tab marker '$cmsMarker'."
+        }
+    }
 }
+
 
 if (-not (Test-Path -LiteralPath $jsPath)) {
     Add-Error "Missing file: $jsPath"
@@ -121,6 +134,18 @@ if (-not (Test-Path -LiteralPath $jsPath)) {
         }
     }
 }
+
+foreach ($file in $checkedFiles) {
+    if (Test-Path -LiteralPath $file) {
+        $content = Get-Content -LiteralPath $file -Raw
+        foreach ($secretMarker in @('sk-', 'api_key', 'apikey', 'client_secret', 'webhook_secret', 'smtp_password')) {
+            if ($content.IndexOf($secretMarker, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                Add-Error "$(Split-Path -Leaf $file): possible secret marker '$secretMarker' found."
+            }
+        }
+    }
+}
+
 
 if (-not (Test-Path -LiteralPath $cssPath)) {
     Add-Error "Missing file: $cssPath"
