@@ -56,3 +56,26 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
   .audit-limit-field { max-width: none; }
   .grid { grid-template-columns: 1fr; }
 }
+
+.cms-hero h2 { margin-bottom: 8px; }
+.cms-toolbar, .cms-lifecycle-actions, .cms-button-row { align-items: end; display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.cms-pack-select-field, .cms-version-select-field { margin-bottom: 0; min-width: 220px; }
+.cms-change-summary-field { flex: 1 1 260px; margin-bottom: 0; }
+.cms-summary-meta { grid-template-columns: minmax(180px, 260px) 1fr; }
+.cms-grid-two { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.cms-list-card { min-width: 0; }
+.cms-editor-form { border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 14px; }
+.cms-editor-form h4 { margin: 0 0 10px; }
+.checkbox-field { align-items: center; display: inline-flex; gap: 8px; margin: 0 0 14px; }
+.checkbox-field input { height: 18px; width: 18px; }
+.cms-table td { max-width: 320px; overflow-wrap: anywhere; }
+.cms-json-output { background: #0f172a; border-radius: 8px; color: #e5e7eb; font-family: Consolas, Monaco, monospace; font-size: 13px; line-height: 1.45; margin-top: 12px; max-height: 360px; overflow: auto; padding: 12px; white-space: pre-wrap; word-break: break-word; }
+.small-button { font-size: 13px; padding: 6px 10px; }
+#cms-topic-message, #cms-scenario-message, #cms-prompt-template-message, #cms-tutor-profile-message { min-height: 24px; }
+#cms-prompt-template-body, #cms-tutor-profile-communication-style-json, #cms-tutor-profile-safety-notes-json { font-family: Consolas, Monaco, monospace; font-size: 14px; }
+
+@media (max-width: 1024px) {
+  .cms-grid-two { grid-template-columns: 1fr; }
+  .cms-toolbar, .cms-lifecycle-actions, .cms-button-row { align-items: stretch; flex-direction: column; }
+  .cms-pack-select-field, .cms-version-select-field, .cms-change-summary-field { min-width: 0; width: 100%; }
+}

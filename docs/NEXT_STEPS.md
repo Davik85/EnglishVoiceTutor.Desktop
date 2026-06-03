@@ -96,6 +96,6 @@ This roadmap starts from the current confirmed state: the desktop MVP core lesso
 
 - Treat Welcome screen polish and Lesson Chat window auto-sizing as done for the current desktop hardening phase.
 - Keep controlled tester handoff paused until the CMS/Admin content MVP foundation is ready enough for controlled content fixes.
-- Continue next with an Admin UI editor shell or CMS content editor UI; keep production billing deferred and public release not ready.
+- Continue next with Admin CMS UI/API hardening and controlled end-to-end CMS editor smoke/regression work; keep production billing deferred and public release not ready.
 - Keep production billing/Paddle rollout work deferred while CMS/Admin content MVP remains the priority.
 - Set up a domain email/provider later before enabling password reset delivery. Password reset remains disabled/not exposed as a working tester flow until that setup exists.

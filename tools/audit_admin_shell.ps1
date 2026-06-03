@@ -10,10 +10,10 @@ $cssPath = Join-Path $repoRoot "backend/EnglishVoiceTutor.Api/wwwroot/admin/admi
 $checkedFiles = @($indexPath, $jsPath, $cssPath)
 
 $requiredTabButtonIds = @(
-    "tab-button-overview", "tab-button-user-lookup", "tab-button-premium", "tab-button-free-lesson", "tab-button-audit-log", "tab-button-system"
+    "tab-button-overview", "tab-button-user-lookup", "tab-button-premium", "tab-button-free-lesson", "tab-button-audit-log", "tab-button-cms-content", "tab-button-system"
 )
 $requiredTabPanelIds = @(
-    "tab-panel-overview", "tab-panel-user-lookup", "tab-panel-premium", "tab-panel-free-lesson", "tab-panel-audit-log", "tab-panel-system"
+    "tab-panel-overview", "tab-panel-user-lookup", "tab-panel-premium", "tab-panel-free-lesson", "tab-panel-audit-log", "tab-panel-cms-content", "tab-panel-system"
 )
 $requiredLookupIds = @("lookup-form", "lookup-email", "search-user-button", "lookup-loading", "lookup-error", "lookup-result")
 $requiredPremiumLookupIds = @("premium-lookup-form", "premium-lookup-email", "premium-search-user-button", "premium-lookup-loading", "premium-lookup-error")
@@ -23,16 +23,32 @@ $requiredPremiumControlIds = @(
 $requiredFreeLessonLookupIds = @("free-lesson-lookup-form", "free-lesson-lookup-email", "free-lesson-search-user-button", "free-lesson-lookup-loading", "free-lesson-lookup-error")
 $requiredFreeLessonResetIds = @("free-lesson-empty-state", "free-lesson-reset-card", "free-lesson-reset-form", "free-lesson-reset-usage-date", "free-lesson-reset-reason", "free-lesson-reset-button")
 $requiredAuditIds = @("audit-empty-state", "audit-card", "audit-limit", "load-audit-button", "audit-result")
+$requiredCmsIds = @(
+    "cms-load-content-packs-button", "cms-content-pack-select", "cms-refresh-button", "cms-loading", "cms-error", "cms-success",
+    "cms-content-pack-summary", "cms-summary-slug", "cms-summary-name", "cms-summary-status", "cms-summary-topic-count", "cms-summary-scenario-count", "cms-summary-prompt-template-count", "cms-summary-tutor-profile-count", "cms-summary-published-version",
+    "cms-topics-list", "cms-scenarios-list", "cms-prompt-templates-list", "cms-tutor-profiles-list",
+    "cms-topic-form", "cms-selected-topic-identity", "cms-topic-title", "cms-topic-description", "cms-topic-sort-order", "cms-topic-is-active", "cms-topic-save-button", "cms-topic-reset-button", "cms-topic-message",
+    "cms-scenario-form", "cms-selected-scenario-identity", "cms-scenario-title", "cms-scenario-description", "cms-scenario-setup-message", "cms-scenario-is-active", "cms-scenario-save-button", "cms-scenario-reset-button", "cms-scenario-message",
+    "cms-prompt-template-form", "cms-selected-prompt-template-identity", "cms-prompt-template-body", "cms-prompt-template-is-active", "cms-prompt-template-save-button", "cms-prompt-template-reset-button", "cms-prompt-template-message",
+    "cms-tutor-profile-form", "cms-selected-tutor-profile-identity", "cms-tutor-profile-display-name", "cms-tutor-profile-communication-style-json", "cms-tutor-profile-safety-notes-json", "cms-tutor-profile-is-active", "cms-tutor-profile-save-button", "cms-tutor-profile-reset-button", "cms-tutor-profile-message",
+    "cms-run-validation-button", "cms-validation-result", "cms-load-preview-button", "cms-preview-summary",
+    "cms-load-versions-button", "cms-publish-change-summary", "cms-publish-button", "cms-restore-version-select", "cms-restore-reason", "cms-restore-button", "cms-versions-list"
+)
 $requiredSystemIds = @("capabilities-list")
 
 $requiredJsEndpoints = @(
-    "/api/auth/login", "/api/admin/capabilities", "/api/admin/users/by-email", "/api/admin/users/{userId}/audit-actions", "/api/admin/users/{userId}/premium-grants", "/api/admin/users/{userId}/premium-grants/{entitlementId}/revoke", "/api/admin/users/{userId}/free-lesson-allowance/reset"
+    "/api/auth/login", "/api/admin/capabilities", "/api/admin/users/by-email", "/api/admin/users/{userId}/audit-actions", "/api/admin/users/{userId}/premium-grants", "/api/admin/users/{userId}/premium-grants/{entitlementId}/revoke", "/api/admin/users/{userId}/free-lesson-allowance/reset",
+    "/api/admin/dev/cms/content-packs", "/api/admin/dev/cms/content-packs/{slug}", "/api/admin/dev/cms/content-packs/{slug}/topics", "/api/admin/dev/cms/content-packs/{slug}/topics/{topicId}",
+    "/api/admin/dev/cms/content-packs/{slug}/scenarios", "/api/admin/dev/cms/content-packs/{slug}/scenarios/{scenarioId}",
+    "/api/admin/dev/cms/content-packs/{slug}/prompt-templates", "/api/admin/dev/cms/content-packs/{slug}/prompt-templates/{templateId}",
+    "/api/admin/dev/cms/content-packs/{slug}/tutor-behavior-profiles", "/api/admin/dev/cms/content-packs/{slug}/tutor-behavior-profiles/{profileId}",
+    "/api/admin/dev/cms/content-packs/{slug}/validate", "/api/admin/dev/cms/content-packs/{slug}/preview-summary", "/api/admin/dev/cms/content-packs/{slug}/versions", "/api/admin/dev/cms/content-packs/{slug}/publish", "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore"
 )
-$requiredJsLookupRefs = @("user-lookup", "premium", "free-lesson")
-$requiredJsFunctionRefs = @("updateSelectedUserHeader", "updateUserRequiredEmptyStates", "applySelectedUserPayload", "clearSelectedUserState")
+$requiredJsLookupRefs = @("user-lookup", "premium", "free-lesson", "cms-content")
+$requiredJsFunctionRefs = @("updateSelectedUserHeader", "updateUserRequiredEmptyStates", "applySelectedUserPayload", "clearSelectedUserState", "loadCmsContentPacks", "renderCmsContentPackSummary", "runCmsValidation", "loadCmsPreviewSummary", "loadCmsVersions", "publishCmsDraft", "restoreCmsVersion")
 $forbiddenJsStorageTokens = @("localStorage", "sessionStorage")
 
-$requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "tab-panel", "selected-user-summary", "empty-state-card", "compact-table")
+$requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "tab-panel", "selected-user-summary", "empty-state-card", "compact-table", "cms-grid-two", "cms-toolbar", "cms-json-output")
 
 function Add-Error([string]$message) { $errors.Add($message) }
 
@@ -70,7 +86,7 @@ if (-not (Test-Path -LiteralPath $indexPath)) {
 
     $requiredIndexIds = @(
         $requiredTabButtonIds + $requiredTabPanelIds + $requiredLookupIds + $requiredPremiumLookupIds +
-        $requiredPremiumControlIds + $requiredFreeLessonLookupIds + $requiredFreeLessonResetIds + $requiredAuditIds + $requiredSystemIds
+        $requiredPremiumControlIds + $requiredFreeLessonLookupIds + $requiredFreeLessonResetIds + $requiredAuditIds + $requiredCmsIds + $requiredSystemIds
     )
     foreach ($id in $requiredIndexIds) {
         Assert-ContainsOnceById -idCounts $idCounts -id $id
@@ -95,6 +111,9 @@ if (-not (Test-Path -LiteralPath $jsPath)) {
         if ($jsContent.IndexOf($fnRef, [System.StringComparison]::Ordinal) -lt 0) {
             Add-Error "admin.js: missing function reference '$fnRef'."
         }
+    }
+    if ($jsContent.IndexOf("confirm(", [System.StringComparison]::Ordinal) -lt 0) {
+        Add-Error "admin.js: missing publish/restore confirm() safety guard."
     }
     foreach ($forbiddenToken in $forbiddenJsStorageTokens) {
         if ($jsContent.IndexOf($forbiddenToken, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
