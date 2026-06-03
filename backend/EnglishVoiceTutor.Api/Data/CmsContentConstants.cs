@@ -85,6 +85,7 @@ public static class CmsContentConstants
         public const string ValidationRun = "ValidationRun";
         public const string Published = "Published";
         public const string RollbackPublished = "RollbackPublished";
+        public const string RestoreDraft = "RestoreDraft";
         public const string DraftDiscarded = "DraftDiscarded";
     }
 }

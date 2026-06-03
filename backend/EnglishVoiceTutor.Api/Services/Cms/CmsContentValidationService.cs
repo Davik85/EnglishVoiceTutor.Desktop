@@ -85,6 +85,7 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
         ValidateDraftPromptTemplates(promptTemplates, result);
         ValidateDraftTutorProfiles(tutorProfiles, result);
         ValidateDraftJsonPayloads(scenarios, promptTemplates, tutorProfiles, result);
+        ValidateDraftSecrets(scenarios, promptTemplates, tutorProfiles, result);
 
         return result;
     }
@@ -360,6 +361,66 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
         {
             ValidateJson(profile.CommunicationStyleJson, nameof(profile.CommunicationStyleJson), profile.TutorId, result);
             ValidateJson(profile.SafetyNotesJson, nameof(profile.SafetyNotesJson), profile.TutorId, result);
+        }
+    }
+
+
+    private static void ValidateDraftSecrets(
+        IReadOnlyList<CmsLessonScenarioEntity> scenarios,
+        IReadOnlyList<PromptTemplateEntity> promptTemplates,
+        IReadOnlyList<TutorBehaviorProfileEntity> tutorProfiles,
+        CmsContentValidationResult result)
+    {
+        foreach (var (label, value) in EnumerateDraftTextFields(scenarios, promptTemplates, tutorProfiles))
+        {
+            if (SecretPattern().IsMatch(value))
+            {
+                result.Errors.Add($"Potential secret-like value found in draft {label}.");
+            }
+        }
+    }
+
+    private static IEnumerable<(string Label, string Value)> EnumerateDraftTextFields(
+        IReadOnlyList<CmsLessonScenarioEntity> scenarios,
+        IReadOnlyList<PromptTemplateEntity> promptTemplates,
+        IReadOnlyList<TutorBehaviorProfileEntity> tutorProfiles)
+    {
+        foreach (var scenario in scenarios)
+        {
+            yield return ($"scenario '{scenario.StableScenarioKey}' setup message", scenario.SetupMessage);
+            yield return ($"scenario '{scenario.StableScenarioKey}' JSON payloads", CmsContentJson.SerializeDeterministic(new
+            {
+                scenario.ContextSelectionJson,
+                scenario.LearningGoalJson,
+                scenario.SituationJson,
+                scenario.RolesJson,
+                scenario.TargetLanguageJson,
+                scenario.LevelProfilesJson,
+                scenario.ConversationFlowJson,
+                scenario.RoleplayBeatsJson,
+                scenario.ReciprocalQuestionHandlingJson,
+                scenario.ExpectedScenarioProgressionJson,
+                scenario.ControlledVariationJson,
+                scenario.OffTopicHandlingJson,
+                scenario.FeedbackRulesJson,
+                scenario.HintRulesJson,
+                scenario.RepetitionLogicJson,
+                scenario.AiTutorPromptInstructionsJson
+            }));
+        }
+
+        foreach (var template in promptTemplates)
+        {
+            yield return ($"prompt template '{template.TemplateKey}'", template.Body);
+        }
+
+        foreach (var profile in tutorProfiles)
+        {
+            yield return ($"tutor behavior profile '{profile.TutorId}'", CmsContentJson.SerializeDeterministic(new
+            {
+                profile.CommunicationStyleJson,
+                profile.SafetyNotesJson
+            }));
         }
     }
 

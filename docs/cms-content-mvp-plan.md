@@ -6,7 +6,7 @@ Review date: 2026-06-03.
 
 Build a safe CMS/Admin content editing foundation before external tester handoff, so tester feedback about lesson topics, situations, starter messages, prompts, and tutor behavior can be fixed through a controlled backend CMS workflow instead of code or lesson JSON edits.
 
-This is an audit and implementation plan. Step 5D-1 added the backend CMS content schema foundation. Step 5D-2 added a development/admin-only static JSON import and seed foundation that imports current packaged lessons, prompt files, and tutor profiles into CMS tables and publishes an immutable baseline snapshot when validation passes. Step 5D-3 added a backend published-snapshot read/status path with hash verification, safe deserialization, required-content validation, and static JSON fallback status. Step 5D-4 added development/admin-only CMS content API endpoints for draft reads, bounded draft updates with audit logs, draft validation, and safe preview summaries. No lesson JSON migration, desktop UI change, prompt rewrite, billing change, publish/rollback workflow, Admin UI editor, or default runtime lesson loading change is part of these steps.
+This is an audit and implementation plan. Step 5D-1 added the backend CMS content schema foundation. Step 5D-2 added a development/admin-only static JSON import and seed foundation that imports current packaged lessons, prompt files, and tutor profiles into CMS tables and publishes an immutable baseline snapshot when validation passes. Step 5D-3 added a backend published-snapshot read/status path with hash verification, safe deserialization, required-content validation, and static JSON fallback status. Step 5D-4 added development/admin-only CMS content API endpoints for draft reads, bounded draft updates with audit logs, draft validation, and safe preview summaries. Step 5D-5 added development/admin-only CMS version list/detail, publish, and restore endpoints so valid drafts can be promoted to immutable snapshots and previous snapshots can be restored through audited backend operations. No lesson JSON migration, desktop UI change, prompt rewrite, billing change, Admin UI editor, or default runtime lesson loading change is part of these steps.
 
 ## Product decision
 
@@ -455,12 +455,19 @@ Minimum UI:
    - Safe config defaults are `CmsContent:ReadPublishedSnapshotEnabled=false`, `CmsContent:ContentPackSlug=static-json-v1`, and `CmsContent:FallbackToStaticJson=true`.
    - `GET /api/admin/dev/cms/published-content/status` is Development-only and requires the existing bootstrap admin policy; it returns counts, hash/version status, validation status, and fallback status without returning prompt bodies.
    - Runtime lesson loading remains static JSON by default; this step prepared the read/status path and did not add an Admin UI editor or public learner-facing CMS endpoints.
-5. Add Admin content API for draft read/update operations. **Future phase.**
-6. Add simple Admin UI for content editing. **Future phase.**
-7. Add server-side validation and preview endpoints/UI. **Future phase.**
-8. Add publish/version/rollback workflow and audit log. **Future phase.**
-9. Run desktop regression, release gate, content audits, and active lesson guard smoke where relevant. **Future phase.**
-10. Then prepare controlled external tester handoff. **Future phase.**
+5. Add Admin content API for draft read/update operations plus server-side validation and preview summaries. **Implemented in Step 5D-4 as development/admin-only backend endpoints.**
+   - Content packs, topics, scenarios, prompt templates, and tutor behavior profiles can be listed/read.
+   - Bounded draft updates are audited and validation/preview summary endpoints are available.
+6. Add publish/version/rollback workflow and audit log. **Implemented in Step 5D-5 as development/admin-only backend endpoints.**
+   - `GET /api/admin/dev/cms/content-packs/{slug}/versions` lists immutable published versions.
+   - `GET /api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}` returns safe version detail, validation summary, counts, and hash validity.
+   - `POST /api/admin/dev/cms/content-packs/{slug}/publish` validates draft rows, generates a deterministic snapshot, skips unchanged publishes, and creates a new `ContentVersion` plus `PublishedContentSnapshot` when changed.
+   - `POST /api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore` verifies the selected snapshot hash, restores it into draft rows, validates, and can publish a new rollback version without mutating history.
+   - Runtime lesson loading remains static JSON by default; CMS read remains disabled by default and static JSON fallback remains available.
+   - Admin UI editor remains a future phase.
+7. Add simple Admin UI/editor shell for content editing. **Future phase.**
+8. Run desktop regression, release gate, content audits, and active lesson guard smoke where relevant. **Future phase.**
+9. Then prepare controlled external tester handoff after CMS/Admin content MVP is ready enough for controlled content fixes. **Future phase.**
 
 ## Risks and mitigations
 
