@@ -35,6 +35,7 @@
                     <button id="tab-button-premium" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-premium" aria-selected="false" data-tab-id="premium">Premium</button>
                     <button id="tab-button-free-lesson" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-free-lesson" aria-selected="false" data-tab-id="free-lesson">Free Lesson</button>
                     <button id="tab-button-audit-log" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-audit-log" aria-selected="false" data-tab-id="audit-log">Audit Log</button>
+                    <button id="tab-button-cms-content" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-cms-content" aria-selected="false" data-tab-id="cms-content">CMS Content</button>
                     <button id="tab-button-system" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-system" aria-selected="false" data-tab-id="system">System</button>
                 </nav>
 
@@ -131,6 +132,127 @@
                         <article id="audit-card" class="card audit-card hidden" aria-labelledby="audit-log-heading">
 <h2 id="audit-log-heading">Audit Log</h2><p class="selected-user-line">Selected user ID: <span id="audit-selected-user-id">-</span></p><div class="audit-controls"><div class="field audit-limit-field"><label for="audit-limit">Audit limit</label><select id="audit-limit" name="audit-limit"><option value="10" selected>10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></div><button id="load-audit-button" type="button">Load audit log</button></div><p id="audit-loading" class="audit-loading hidden" role="status">Loading audit log...</p><p id="audit-error" class="error" role="alert"></p><div id="audit-result" class="audit-result"></div>
 </article>
+                    </div>
+
+
+                    <div id="tab-panel-cms-content" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-cms-content">
+                        <article class="card cms-hero" aria-labelledby="cms-content-heading">
+                            <h2 id="cms-content-heading">CMS Content</h2>
+                            <p class="muted">Development-only content editing shell. Runtime still uses static JSON by default.</p>
+                            <p class="muted">Bounded draft edits use existing backend CMS Admin APIs. Publishing and restore actions require confirmation and do not change learner runtime defaults.</p>
+                            <div class="cms-toolbar">
+                                <button id="cms-load-content-packs-button" type="button">Load content packs</button>
+                                <div class="field cms-pack-select-field">
+                                    <label for="cms-content-pack-select">Content pack</label>
+                                    <select id="cms-content-pack-select" name="cms-content-pack-select"><option value="static-json-v1" selected>static-json-v1</option></select>
+                                </div>
+                                <button id="cms-refresh-button" type="button">Refresh selected pack</button>
+                            </div>
+                            <p id="cms-loading" class="lookup-loading hidden" role="status">Loading CMS content...</p>
+                            <p id="cms-error" class="error" role="alert"></p>
+                            <p id="cms-success" class="success" role="status"></p>
+                        </article>
+
+                        <article class="card" aria-labelledby="cms-summary-heading">
+                            <h3 id="cms-summary-heading">Content pack summary</h3>
+                            <dl id="cms-content-pack-summary" class="meta cms-summary-meta">
+                                <dt>Slug</dt><dd id="cms-summary-slug">-</dd>
+                                <dt>Name</dt><dd id="cms-summary-name">-</dd>
+                                <dt>Status</dt><dd id="cms-summary-status">-</dd>
+                                <dt>Topics</dt><dd id="cms-summary-topic-count">-</dd>
+                                <dt>Scenarios</dt><dd id="cms-summary-scenario-count">-</dd>
+                                <dt>Prompt templates</dt><dd id="cms-summary-prompt-template-count">-</dd>
+                                <dt>Tutor profiles</dt><dd id="cms-summary-tutor-profile-count">-</dd>
+                                <dt>Published version</dt><dd id="cms-summary-published-version">-</dd>
+                            </dl>
+                        </article>
+
+                        <div class="cms-grid-two">
+                            <article class="card cms-list-card" aria-labelledby="cms-topics-heading">
+                                <h3 id="cms-topics-heading">Topics</h3>
+                                <div id="cms-topics-list" class="table-wrap"></div>
+                                <form id="cms-topic-form" class="cms-editor-form" novalidate>
+                                    <h4>Selected topic draft fields</h4>
+                                    <p class="muted">Identity: <span id="cms-selected-topic-identity">None selected</span></p>
+                                    <div class="field"><label for="cms-topic-title">Title</label><input id="cms-topic-title" name="cms-topic-title" type="text" /></div>
+                                    <div class="field"><label for="cms-topic-description">Description</label><textarea id="cms-topic-description" name="cms-topic-description" rows="4"></textarea></div>
+                                    <div class="field"><label for="cms-topic-sort-order">Sort order</label><input id="cms-topic-sort-order" name="cms-topic-sort-order" type="number" step="1" /></div>
+                                    <label class="checkbox-field"><input id="cms-topic-is-active" name="cms-topic-is-active" type="checkbox" /> Active</label>
+                                    <div class="cms-button-row"><button id="cms-topic-save-button" type="submit">Save draft</button><button id="cms-topic-reset-button" type="button">Reload selected</button></div>
+                                    <p id="cms-topic-message" class="success" role="status"></p>
+                                </form>
+                            </article>
+
+                            <article class="card cms-list-card" aria-labelledby="cms-scenarios-heading">
+                                <h3 id="cms-scenarios-heading">Scenarios</h3>
+                                <div id="cms-scenarios-list" class="table-wrap"></div>
+                                <form id="cms-scenario-form" class="cms-editor-form" novalidate>
+                                    <h4>Selected scenario draft fields</h4>
+                                    <p class="muted">Identity: <span id="cms-selected-scenario-identity">None selected</span></p>
+                                    <div class="field"><label for="cms-scenario-title">Title</label><input id="cms-scenario-title" name="cms-scenario-title" type="text" /></div>
+                                    <div class="field"><label for="cms-scenario-description">Description</label><textarea id="cms-scenario-description" name="cms-scenario-description" rows="4"></textarea></div>
+                                    <div class="field"><label for="cms-scenario-setup-message">Setup message</label><textarea id="cms-scenario-setup-message" name="cms-scenario-setup-message" rows="5"></textarea></div>
+                                    <label class="checkbox-field"><input id="cms-scenario-is-active" name="cms-scenario-is-active" type="checkbox" /> Active</label>
+                                    <div class="cms-button-row"><button id="cms-scenario-save-button" type="submit">Save draft</button><button id="cms-scenario-reset-button" type="button">Reload selected</button></div>
+                                    <p id="cms-scenario-message" class="success" role="status"></p>
+                                </form>
+                            </article>
+
+                            <article class="card cms-list-card" aria-labelledby="cms-prompt-templates-heading">
+                                <h3 id="cms-prompt-templates-heading">Prompt templates</h3>
+                                <div id="cms-prompt-templates-list" class="table-wrap"></div>
+                                <form id="cms-prompt-template-form" class="cms-editor-form" novalidate>
+                                    <h4>Selected prompt template draft fields</h4>
+                                    <p class="muted">Identity: <span id="cms-selected-prompt-template-identity">None selected</span></p>
+                                    <div class="field"><label for="cms-prompt-template-body">Body</label><textarea id="cms-prompt-template-body" name="cms-prompt-template-body" rows="10"></textarea></div>
+                                    <label class="checkbox-field"><input id="cms-prompt-template-is-active" name="cms-prompt-template-is-active" type="checkbox" /> Active</label>
+                                    <div class="cms-button-row"><button id="cms-prompt-template-save-button" type="submit">Save draft</button><button id="cms-prompt-template-reset-button" type="button">Reload selected</button></div>
+                                    <p id="cms-prompt-template-message" class="success" role="status"></p>
+                                </form>
+                            </article>
+
+                            <article class="card cms-list-card" aria-labelledby="cms-tutor-profiles-heading">
+                                <h3 id="cms-tutor-profiles-heading">Tutor behavior profiles</h3>
+                                <div id="cms-tutor-profiles-list" class="table-wrap"></div>
+                                <form id="cms-tutor-profile-form" class="cms-editor-form" novalidate>
+                                    <h4>Selected tutor profile draft fields</h4>
+                                    <p class="muted">Identity: <span id="cms-selected-tutor-profile-identity">None selected</span></p>
+                                    <div class="field"><label for="cms-tutor-profile-display-name">Display name</label><input id="cms-tutor-profile-display-name" name="cms-tutor-profile-display-name" type="text" /></div>
+                                    <div class="field"><label for="cms-tutor-profile-communication-style-json">Communication style JSON</label><textarea id="cms-tutor-profile-communication-style-json" name="cms-tutor-profile-communication-style-json" rows="7"></textarea></div>
+                                    <div class="field"><label for="cms-tutor-profile-safety-notes-json">Safety notes JSON</label><textarea id="cms-tutor-profile-safety-notes-json" name="cms-tutor-profile-safety-notes-json" rows="7"></textarea></div>
+                                    <label class="checkbox-field"><input id="cms-tutor-profile-is-active" name="cms-tutor-profile-is-active" type="checkbox" /> Active</label>
+                                    <div class="cms-button-row"><button id="cms-tutor-profile-save-button" type="submit">Save draft</button><button id="cms-tutor-profile-reset-button" type="button">Reload selected</button></div>
+                                    <p id="cms-tutor-profile-message" class="success" role="status"></p>
+                                </form>
+                            </article>
+                        </div>
+
+                        <div class="cms-grid-two">
+                            <article class="card" aria-labelledby="cms-validation-heading">
+                                <h3 id="cms-validation-heading">Validation</h3>
+                                <button id="cms-run-validation-button" type="button">Run validation</button>
+                                <div id="cms-validation-result" class="cms-json-output" aria-live="polite">No validation loaded.</div>
+                            </article>
+                            <article class="card" aria-labelledby="cms-preview-heading">
+                                <h3 id="cms-preview-heading">Preview summary</h3>
+                                <button id="cms-load-preview-button" type="button">Load preview summary</button>
+                                <div id="cms-preview-summary" class="cms-json-output" aria-live="polite">No preview loaded.</div>
+                            </article>
+                        </div>
+
+                        <article class="card" aria-labelledby="cms-lifecycle-heading">
+                            <h3 id="cms-lifecycle-heading">Publish and restore lifecycle</h3>
+                            <p class="muted">Development-only controls. Restore copies a previous version into the current draft and can publish a new version; old versions are not mutated.</p>
+                            <div class="cms-lifecycle-actions">
+                                <button id="cms-load-versions-button" type="button">Load versions</button>
+                                <div class="field cms-change-summary-field"><label for="cms-publish-change-summary">Publish change summary</label><input id="cms-publish-change-summary" name="cms-publish-change-summary" type="text" placeholder="Optional summary" /></div>
+                                <button id="cms-publish-button" type="button">Publish current draft</button>
+                                <div class="field cms-version-select-field"><label for="cms-restore-version-select">Restore version</label><select id="cms-restore-version-select" name="cms-restore-version-select"></select></div>
+                                <div class="field cms-change-summary-field"><label for="cms-restore-reason">Restore reason</label><input id="cms-restore-reason" name="cms-restore-reason" type="text" placeholder="Required for audit clarity" /></div>
+                                <button id="cms-restore-button" type="button">Restore selected version</button>
+                            </div>
+                            <div id="cms-versions-list" class="table-wrap"></div>
+                        </article>
                     </div>
 
                     <div id="tab-panel-system" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-system">
