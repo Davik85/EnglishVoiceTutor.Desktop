@@ -71,7 +71,7 @@ Advanced/developer-only framework-dependent ZIP, when a target machine already h
 powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1 -FrameworkDependent
 ```
 
-The current tester ZIP has been verified on another Windows device after extraction, but new external tester handoff remains paused while the CMS/Admin content MVP foundation continues:
+The current tester ZIP has been verified on another Windows device after extraction, but new external tester handoff remains paused while the CMS/Admin content MVP foundation continues. CMS publish/version/rollback backend endpoints now exist for Development/admin use, while learner runtime remains static JSON by default and CMS published-snapshot reading remains disabled by default:
 
 - `EnglishVoiceTutor.Desktop.exe` starts.
 - Diagnostics is hidden by default in the packaged Release app.
@@ -240,7 +240,7 @@ Local automated validation expected before the next release handoff, after CMS/A
 - Public release is not declared ready.
 - Production billing is not ready and remains deferred while CMS/Admin content MVP is prioritized before tester handoff.
 - Paddle production webhook delivery, production checkout configuration, provider credentials, product/price mapping, environment separation, and manual production smoke verification are not complete.
-- Full production CMS/Admin operational readiness remains deferred, but CMS/Admin content MVP now starts before external tester handoff.
+- Full production CMS/Admin operational readiness remains deferred. Development/admin CMS content APIs now include draft read/update, validation/preview, version list/detail, publish, and restore/rollback endpoints, but Admin UI editor work remains future and external tester handoff remains paused.
 - Prompt/scenario/bot-behavior quality polishing is deferred to the content-focused CMS/Admin MVP.
 - Installer/signing and Microsoft Store packaging are not complete.
 - Mobile app implementation and mobile app-store entitlement bridge are not complete.

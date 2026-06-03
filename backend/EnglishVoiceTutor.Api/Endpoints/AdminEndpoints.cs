@@ -94,6 +94,18 @@ public static class AdminEndpoints
 
             app.MapGet(ApiConstants.AdminDevCmsContentPackPreviewSummaryRoute, GetCmsPreviewSummaryAsync)
                 .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
+            app.MapGet(ApiConstants.AdminDevCmsContentPackVersionsRoute, ListCmsContentVersionsAsync)
+                .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
+            app.MapGet(ApiConstants.AdminDevCmsContentPackVersionRoute, GetCmsContentVersionAsync)
+                .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
+            app.MapPost(ApiConstants.AdminDevCmsContentPackPublishRoute, PublishCmsContentPackAsync)
+                .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
+            app.MapPost(ApiConstants.AdminDevCmsContentPackVersionRestoreRoute, RestoreCmsContentVersionAsync)
+                .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
         }
     }
 
@@ -354,6 +366,71 @@ public static class AdminEndpoints
     {
         var result = await cmsContentAdminService.GetPreviewSummaryAsync(slug, cancellationToken);
         return result is null ? Results.NotFound() : Results.Ok(result);
+    }
+
+
+    private static async Task<IResult> ListCmsContentVersionsAsync(
+        string slug,
+        ICmsContentPublishingService cmsContentPublishingService,
+        CancellationToken cancellationToken)
+    {
+        var result = await cmsContentPublishingService.ListVersionsAsync(slug, cancellationToken);
+        return result is null ? Results.NotFound() : Results.Ok(result);
+    }
+
+    private static async Task<IResult> GetCmsContentVersionAsync(
+        string slug,
+        int versionNumber,
+        ICmsContentPublishingService cmsContentPublishingService,
+        CancellationToken cancellationToken)
+    {
+        var result = await cmsContentPublishingService.GetVersionAsync(slug, versionNumber, cancellationToken);
+        return result is null ? Results.NotFound() : Results.Ok(result);
+    }
+
+    private static async Task<IResult> PublishCmsContentPackAsync(
+        ClaimsPrincipal principal,
+        string slug,
+        PublishCmsContentRequest request,
+        ICmsContentPublishingService cmsContentPublishingService,
+        CancellationToken cancellationToken)
+    {
+        var actorUserId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!actorUserId.HasValue)
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await cmsContentPublishingService.PublishDraftAsync(slug, request, actorUserId.Value, cancellationToken);
+        if (result is null)
+        {
+            return Results.NotFound();
+        }
+
+        return result.Success ? Results.Ok(result) : Results.BadRequest(result);
+    }
+
+    private static async Task<IResult> RestoreCmsContentVersionAsync(
+        ClaimsPrincipal principal,
+        string slug,
+        int versionNumber,
+        RestoreCmsContentVersionRequest request,
+        ICmsContentPublishingService cmsContentPublishingService,
+        CancellationToken cancellationToken)
+    {
+        var actorUserId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!actorUserId.HasValue)
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await cmsContentPublishingService.RestoreVersionAsync(slug, versionNumber, request, actorUserId.Value, cancellationToken);
+        if (result is null)
+        {
+            return Results.NotFound();
+        }
+
+        return result.Success ? Results.Ok(result) : Results.BadRequest(result);
     }
 
     private static async Task<IResult> GetPublishedCmsContentStatusAsync(

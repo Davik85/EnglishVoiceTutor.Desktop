@@ -98,6 +98,10 @@ public static class ApiConstants
     public const string AdminDevCmsContentPackTutorBehaviorProfileRoute = "/api/admin/dev/cms/content-packs/{slug}/tutor-behavior-profiles/{profileId}";
     public const string AdminDevCmsContentPackValidateRoute = "/api/admin/dev/cms/content-packs/{slug}/validate";
     public const string AdminDevCmsContentPackPreviewSummaryRoute = "/api/admin/dev/cms/content-packs/{slug}/preview-summary";
+    public const string AdminDevCmsContentPackVersionsRoute = "/api/admin/dev/cms/content-packs/{slug}/versions";
+    public const string AdminDevCmsContentPackVersionRoute = "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber:int}";
+    public const string AdminDevCmsContentPackPublishRoute = "/api/admin/dev/cms/content-packs/{slug}/publish";
+    public const string AdminDevCmsContentPackVersionRestoreRoute = "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber:int}/restore";
     public const string DevSubscriptionStatusRoute = "/api/dev/subscription-status";
     public const string DevLessonAccessRoute = "/api/dev/lesson-access";
     public const string DevSubscriptionDiagnosticsScenarioRoute = "/api/dev/subscription-diagnostics/scenarios/{scenario}";
