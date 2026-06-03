@@ -85,6 +85,7 @@ public static class ApiConstants
     public const string AdminUserAuditActionsRoute = "/api/admin/users/{userId:guid}/audit-actions";
     public const string AdminUserFreeLessonAllowanceResetRoute = "/api/admin/users/{userId:guid}/free-lesson-allowance/reset";
     public const string AdminDevCmsStaticContentImportRoute = "/api/admin/dev/cms/static-content/import";
+    public const string AdminDevCmsPublishedContentStatusRoute = "/api/admin/dev/cms/published-content/status";
     public const string DevSubscriptionStatusRoute = "/api/dev/subscription-status";
     public const string DevLessonAccessRoute = "/api/dev/lesson-access";
     public const string DevSubscriptionDiagnosticsScenarioRoute = "/api/dev/subscription-diagnostics/scenarios/{scenario}";

@@ -5,6 +5,11 @@ $migrationPath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Migrations/2
 $importServicePath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Services/Cms/CmsContentImportService.cs'
 $validationServicePath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Services/Cms/CmsContentValidationService.cs'
 $smokeImportPath = Join-Path $repoRoot 'tools/smoke_cms_content_import.ps1'
+$publishedReadServicePath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Services/Cms/CmsPublishedContentService.cs'
+$publishedReadInterfacePath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Services/Cms/ICmsPublishedContentService.cs'
+$publishedReadModelsPath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Services/Cms/CmsPublishedContentModels.cs'
+$cmsContentOptionsPath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Options/CmsContentOptions.cs'
+$smokePublishedReadPath = Join-Path $repoRoot 'tools/smoke_cms_published_content_read.ps1'
 $entityRoot = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Data/Entities/Cms'
 $desktopCmsReferences = Get-ChildItem -Path $repoRoot -Recurse -File |
     Where-Object {
@@ -32,9 +37,18 @@ if (-not (Test-Path $migrationPath)) {
     throw "CMS foundation migration is missing: $migrationPath"
 }
 
-foreach ($requiredPath in @($importServicePath, $validationServicePath, $smokeImportPath)) {
+foreach ($requiredPath in @(
+    $importServicePath,
+    $validationServicePath,
+    $smokeImportPath,
+    $publishedReadServicePath,
+    $publishedReadInterfacePath,
+    $publishedReadModelsPath,
+    $cmsContentOptionsPath,
+    $smokePublishedReadPath
+)) {
     if (-not (Test-Path $requiredPath)) {
-        throw "CMS import foundation file is missing: $requiredPath"
+        throw "CMS content foundation/read-path file is missing: $requiredPath"
     }
 }
 
@@ -58,7 +72,17 @@ if ($lessonJsonChanges) {
 
 $constantsPath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Data/CmsContentConstants.cs'
 $constantsText = Get-Content $constantsPath -Raw
-foreach ($expectedConstant in @('static-json-v1', 'Static JSON Baseline', 'ImportPublished')) {
+foreach ($expectedConstant in @(
+    'static-json-v1',
+    'Static JSON Baseline',
+    'ImportPublished',
+    'CmsContent:ReadPublishedSnapshotEnabled',
+    'CmsContent:ContentPackSlug',
+    'CmsContent:FallbackToStaticJson',
+    'CmsPublishedSnapshot',
+    'StaticJsonFallback',
+    'CmsSnapshotHashMismatch'
+)) {
     if ($constantsText -notmatch [regex]::Escape($expectedConstant)) {
         throw "CMS import constant is missing: $expectedConstant"
     }

@@ -46,6 +46,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.Configure<FreeLimitOptions>(builder.Configuration.GetSection(FreeLimitOptions.SectionName));
 builder.Services.Configure<SubscriptionEnforcementOptions>(
     builder.Configuration.GetSection(SubscriptionEnforcementOptions.SectionName));
+builder.Services.Configure<CmsContentOptions>(
+    builder.Configuration.GetSection(CmsContentOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<DevelopmentTestAccountOptions>(
     builder.Configuration.GetSection(DevelopmentTestAccountOptions.SectionName));
@@ -160,6 +162,7 @@ builder.Services.AddScoped<IAdminFreeLessonAllowanceResetService, AdminFreeLesso
 builder.Services.AddScoped<IAdminAuditLogService, AdminAuditLogService>();
 builder.Services.AddScoped<ICmsContentValidationService, CmsContentValidationService>();
 builder.Services.AddScoped<ICmsContentImportService, CmsContentImportService>();
+builder.Services.AddScoped<ICmsPublishedContentService, CmsPublishedContentService>();
 
 var app = builder.Build();
 

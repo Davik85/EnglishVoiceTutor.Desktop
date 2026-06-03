@@ -6,7 +6,7 @@ Review date: 2026-06-03.
 
 Build a safe CMS/Admin content editing foundation before external tester handoff, so tester feedback about lesson topics, situations, starter messages, prompts, and tutor behavior can be fixed through a controlled backend CMS workflow instead of code or lesson JSON edits.
 
-This is an audit and implementation plan. Step 5D-1 added the backend CMS content schema foundation. Step 5D-2 has now added a development/admin-only static JSON import and seed foundation that imports current packaged lessons, prompt files, and tutor profiles into CMS tables and publishes an immutable baseline snapshot when validation passes. No lesson JSON migration, desktop UI change, prompt rewrite, billing change, or runtime lesson loading change is part of these steps.
+This is an audit and implementation plan. Step 5D-1 added the backend CMS content schema foundation. Step 5D-2 added a development/admin-only static JSON import and seed foundation that imports current packaged lessons, prompt files, and tutor profiles into CMS tables and publishes an immutable baseline snapshot when validation passes. Step 5D-3 added a backend published-snapshot read/status path with hash verification, safe deserialization, required-content validation, and static JSON fallback status. No lesson JSON migration, desktop UI change, prompt rewrite, billing change, or default runtime lesson loading change is part of these steps.
 
 ## Product decision
 
@@ -378,8 +378,8 @@ Preview should not require sending content to OpenAI in the first MVP. A later o
 
 The accepted lesson flow must keep working during migration:
 
-- Backend read path should first try the latest valid published CMS snapshot after it exists.
-- If CMS content is unavailable, unpublished, invalid, or disabled by configuration, backend should use the current static JSON/content behavior.
+- Backend read path can try the latest valid published CMS snapshot only when `CmsContent:ReadPublishedSnapshotEnabled=true`.
+- If CMS content is unavailable, unpublished, invalid, disabled by configuration, corrupt, missing required sections, or any CMS read error occurs, backend should use the current static JSON/content behavior when `CmsContent:FallbackToStaticJson=true` (the default).
 - Existing desktop package flow must not be blocked by half-migrated CMS content.
 - Current lesson JSON remains the baseline fallback until the CMS read path is proven and explicitly made primary.
 - No tester should be blocked by a broken draft.
@@ -449,7 +449,12 @@ Minimum UI:
    - Topic descriptions are currently empty because the existing lesson JSON does not carry dedicated topic descriptions; desktop topic display remains unchanged.
    - Hint, feedback, summary, translation, and immutable safety/runtime behavior remain code-owned unless they are already backed by imported prompt files.
    - Runtime lesson loading still uses static JSON/content and does not read CMS content yet.
-4. Add backend published-content read path with static JSON fallback. **Future phase / recommended next implementation step.**
+4. Add backend published-content read path with static JSON fallback. **Implemented in Step 5D-3 as a development/admin status and service read path.**
+   - `ICmsPublishedContentService` / `CmsPublishedContentService` read the latest published `ContentVersion` and `PublishedContentSnapshot` for the configured content pack slug.
+   - The read path verifies the snapshot hash, deserializes into a mapped published content model containing topics, scenarios, prompt templates, and tutor behavior profiles, and validates required runtime-facing fields before reporting the CMS snapshot as usable.
+   - Safe config defaults are `CmsContent:ReadPublishedSnapshotEnabled=false`, `CmsContent:ContentPackSlug=static-json-v1`, and `CmsContent:FallbackToStaticJson=true`.
+   - `GET /api/admin/dev/cms/published-content/status` is Development-only and requires the existing bootstrap admin policy; it returns counts, hash/version status, validation status, and fallback status without returning prompt bodies.
+   - Runtime lesson loading remains static JSON by default; this step prepared the read/status path and did not add an Admin UI editor or public learner-facing CMS endpoints.
 5. Add Admin content API for draft read/update operations. **Future phase.**
 6. Add simple Admin UI for content editing. **Future phase.**
 7. Add server-side validation and preview endpoints/UI. **Future phase.**
