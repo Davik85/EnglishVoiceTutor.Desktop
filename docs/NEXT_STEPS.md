@@ -6,17 +6,16 @@ This roadmap starts from the current confirmed state: the desktop MVP core lesso
 
 ## Recommended next product order
 
-1. CMS/Admin content MVP planning and foundation (Phase 5D-0/5D-1).
+1. CMS/Admin content MVP schema foundation (Phase 5D-0/5D-1).
    - Planning baseline: `docs/CMS_ADMIN_PLANNING.md`.
    - Detailed content MVP plan: `docs/cms-content-mvp-plan.md`.
-   - Existing local Admin foundation scripts: `tools/audit_admin_shell.ps1` and `tools/smoke_admin_foundation.ps1`.
-   - Goal: define and prepare backend-owned content editing for lessons, scenarios, starter messages, prompt templates, tutor behavior rules, validation, preview, draft/published workflow, versioning, rollback, and audit trail.
+   - Step 5D-0 planning and Step 5D-1 backend schema foundation are complete.
+   - The new CMS tables are not used by runtime lesson loading yet; static JSON/content behavior remains unchanged.
    - Keep this content-focused. Do not include production billing controls, Paddle management, payment editing, entitlement editing, broad user management, mobile-specific CMS, public production Admin, secrets, direct OpenAI key handling, or study-language editing.
-2. CMS content editing implementation.
-   - Add backend CMS content models and EF migration only after the plan is approved.
-   - Import current JSON content into a CMS draft/published seed or migration path without rewriting current lesson JSON.
-   - Add backend published-content read path with fallback to static JSON.
-   - Add Admin content API, simple Admin UI, validation, preview, publish/version/rollback, and content audit trail.
+2. CMS JSON import/seed planning and importer implementation.
+   - Next implementation should design and add the current JSON content import/seed path into CMS draft/published data without rewriting current lesson JSON.
+   - Do this before Admin UI work so the schema has real imported content to validate and compare.
+   - Keep runtime lesson loading on static JSON until a later explicit published-content read-path step adds fallback-safe CMS reads.
    - Desktop must continue to call backend APIs only; backend remains the source of truth.
 3. Controlled external tester handoff.
    - Tester handoff is paused until CMS/Admin content MVP foundation is ready enough that content/prompt/scenario fixes can be handled through CMS.
@@ -96,7 +95,7 @@ This roadmap starts from the current confirmed state: the desktop MVP core lesso
 ## After accepted Welcome screen and Lesson Chat sizing hardening
 
 - Treat Welcome screen polish and Lesson Chat window auto-sizing as done for the current desktop hardening phase.
-- Continue with controlled tester handoff and the final clean-machine checklist.
-- Keep production billing/Paddle rollout work deferred until tester validation is complete.
-- Keep CMS/Admin expansion deferred.
+- Keep controlled tester handoff paused until the CMS/Admin content MVP foundation is ready enough for controlled content fixes.
+- Continue next with CMS JSON import/seed planning and importer work before Admin UI.
+- Keep production billing/Paddle rollout work deferred while CMS/Admin content MVP remains the priority.
 - Set up a domain email/provider later before enabling password reset delivery. Password reset remains disabled/not exposed as a working tester flow until that setup exists.
