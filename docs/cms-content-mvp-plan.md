@@ -2,6 +2,13 @@
 
 Review date: 2026-06-03.
 
+
+## Step 5D-6a update — Admin CMS internal sub-tabs
+
+Step 5D-6a reorganized the existing static backend Admin `CMS Content` section into internal sub-tabs: Overview, Topics, Scenarios, Prompts, Tutors, Validation & Preview, and Versions & Publish. This is a UI organization step only: existing CMS Admin API calls, bounded draft save operations, validation, preview, version listing, publish, and restore behavior remain in place.
+
+The Admin CMS UI remains development-only/admin-only. Runtime learner behavior is unchanged by default, the CMS read path remains disabled by default, and static JSON fallback remains available. External tester handoff remains paused, production billing remains deferred, and public release remains not ready. No EF migration, lesson JSON edit, prompt/tutor content edit, desktop UI change, billing/Paddle/subscription/entitlement/payment change, or password reset behavior change is part of this step.
+
 ## Goal
 
 Build a safe CMS/Admin content editing foundation before external tester handoff, so tester feedback about lesson topics, situations, starter messages, prompts, and tutor behavior can be fixed through a controlled backend CMS workflow instead of code or lesson JSON edits.
