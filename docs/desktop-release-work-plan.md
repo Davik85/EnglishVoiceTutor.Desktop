@@ -1,10 +1,10 @@
 # Desktop Release Work Plan
 
-Review date: 2026-06-02.
+Review date: 2026-06-03.
 
 ## Current conclusion
 
-The desktop product has completed a large release-hardening block and is suitable for continued controlled tester validation, but public release is not declared ready. The tester ZIP package flow, accepted Welcome screen polish, Lesson Chat window auto-sizing, core Lesson Chat/voice/TTS flow, Release Diagnostics gate, protected auth session storage, and backend-enforced single active lesson guard are accepted. Production billing and CMS/Admin remain deferred until desktop hardening is complete.
+The desktop product has completed a large release-hardening block and is suitable for continued controlled tester validation, but public release is not declared ready. The tester ZIP package flow, accepted Welcome screen polish, Lesson Chat window auto-sizing, core Lesson Chat/voice/TTS flow, Release Diagnostics gate, protected auth session storage, and backend-enforced single active lesson guard are accepted. External tester handoff is now paused so CMS/Admin content MVP can start before testers review content. Production billing remains deferred.
 
 ## Source documents reviewed
 
@@ -32,9 +32,9 @@ The desktop product has completed a large release-hardening block and is suitabl
 
 ## Updated priority order
 
-### Phase 5B — Desktop release hardening (current focus)
+### Phase 5B — Desktop release hardening (stable enough to pause tester handoff)
 
-Continue remaining desktop release hardening first. The canonical tester package flow is:
+Desktop hardening is accepted enough to pause tester handoff and start CMS/Admin content MVP first. The canonical tester package flow remains the later handoff path after CMS content foundation is ready:
 
 ```powershell
 cd C:\dev\EnglishVoiceTutor.Desktop
@@ -49,13 +49,21 @@ artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
 
 Manual `dotnet publish` is only a lower-level developer/troubleshooting path.
 
+### Phase 5D — CMS/Admin content MVP (current focus before tester handoff)
+
+CMS/Admin content MVP now starts before external tester handoff because desktop hardening is stable enough to pause delivery. Start with content editing for lessons, scenarios, starter messages, prompt templates, tutor behavior rules, validation, preview, draft/published workflow, versioning, rollback, and audit trail. Full production Admin and operational support scope remain deferred.
+
 ### Phase 5C — Production billing readiness (deferred)
 
-Keep production Paddle rollout after desktop release hardening. Production billing must not be treated as enabled until production webhook delivery, checkout configuration, provider credentials, product/price mapping, environment separation, and manual smoke verification are completed safely outside tracked files and without committing secrets.
+Keep production Paddle rollout after CMS/Admin content MVP and controlled tester-handoff decisions. Production billing must not be treated as enabled until production webhook delivery, checkout configuration, provider credentials, product/price mapping, environment separation, and manual smoke verification are completed safely outside tracked files and without committing secrets.
 
-### Phase 5D — CMS/Admin operational readiness (deferred)
+## Current priority change: CMS before tester handoff
 
-Keep CMS/Admin after desktop hardening. Start with minimum operational support needs before broad CMS content authoring. Prompt/scenario/bot-behavior polishing is deferred to CMS/Admin so edits can later be validated, previewed, versioned, and rolled back safely.
+The desktop hardening block is stable enough to pause external tester handoff and start CMS/Admin content MVP first. The accepted desktop state remains valid, but the next external tester package should wait until the CMS/Admin content editing foundation is ready enough to handle tester-driven content, prompt, scenario, and tutor-behavior fixes without code or lesson JSON changes.
+
+This priority change does not make public release ready. It does not move production billing forward. Production billing, Paddle production operations, payment editing, entitlement editing, broad user management, mobile-specific CMS, and full production Admin remain deferred.
+
+CMS content MVP planning lives in `docs/CMS_ADMIN_PLANNING.md` and `docs/cms-content-mvp-plan.md`. The clean-machine checklist and package flow below remain required later before actual external tester delivery.
 
 ## Completed or accepted Phase 5B items
 
@@ -153,7 +161,7 @@ Keep this list separate from completed/accepted work:
 5. Installer/signing/update/download plan for public release.
 6. Security/privacy release checklist review.
 7. Final P0/P1 triage.
-8. CMS/Admin operational readiness audit after desktop hardening.
+8. CMS/Admin content MVP foundation before external tester handoff; full production Admin readiness remains later.
 
 ## Current validation commands
 
@@ -165,4 +173,4 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
 
 ## Public release status
 
-Public release is not declared ready. This work plan supports continued controlled desktop hardening and tester packaging only.
+Public release is not declared ready. This work plan supports continued controlled desktop hardening and tester packaging only. External tester handoff is paused until CMS/Admin content MVP foundation is ready; the clean-machine checklist remains later before actual external tester delivery.
