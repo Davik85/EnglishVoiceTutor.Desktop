@@ -15,7 +15,7 @@ EnglishVoiceTutor currently has a working Windows desktop MVP backed by a workin
 - Desktop must call backend APIs only, must not store an OpenAI API key, and must not call OpenAI directly.
 - `OPENAI_API_KEY` is backend-only, needed only for real AI/TTS/STT testing, must never be committed, and must never be sent to testers.
 - Paddle is the current desktop/web billing provider adapter, but core backend subscription, entitlement, and access logic must remain provider-agnostic.
-- Do not change Paddle, billing, subscription, entitlement, lesson JSON, Study languages, Interface languages, or Native/Explanation language catalog without an explicit later task. CMS/Admin content MVP planning may update documentation only in Step 5D-0; implementation requires explicit approval after the plan is reviewed.
+- Do not change Paddle, billing, subscription, entitlement, lesson JSON, Study languages, Interface languages, or Native/Explanation language catalog without an explicit later task. Step 5D-1 may add backend CMS schema foundation only; later import, runtime read path, Admin API, Admin UI, validation, preview, publish, versioning, and rollback require explicit future tasks.
 
 ## Accepted desktop MVP state
 
@@ -44,11 +44,11 @@ Prompt, scenario, dialogue, and bot-behavior quality polishing is intentionally 
 
 ## Current CMS/Admin content MVP decision
 
-External tester handoff is paused until CMS/Admin content MVP foundation is ready. The current local Admin foundation is development/support-oriented only; it is not a full CMS and does not yet provide content editing, validation, preview, draft/published workflow, versioning, rollback, or CMS content audit trail.
+External tester handoff is paused until CMS/Admin content MVP foundation is ready. Step 5D-1 has added the backend CMS schema foundation, but it is not a full CMS and does not yet provide runtime CMS reads, content import, content editing endpoints, validation, preview, draft/published operations, version rollback workflows, or an Admin UI content editor.
 
 The CMS/Admin content MVP is content-focused and should cover lesson topics, subtopics/situations, starter/setup messages, prompt templates, tutor behavior instructions, hint/feedback/summary prompt configuration where applicable, validation, preview, versioning, rollback, and draft/published workflow. Production billing, Paddle management, payment editing, entitlement editing, broad user management, mobile-specific CMS, full production Admin, secrets, direct OpenAI key handling, study-language changes, Interface-language changes, and Native/Explanation-language changes remain out of scope.
 
-Planning baseline: `docs/CMS_ADMIN_PLANNING.md`. Detailed plan: `docs/cms-content-mvp-plan.md`.
+Planning baseline: `docs/CMS_ADMIN_PLANNING.md`. Detailed plan: `docs/cms-content-mvp-plan.md`. Current runtime lesson loading remains unchanged and continues to use the static JSON/content behavior; the new CMS tables do not affect learners yet.
 
 ## Tester ZIP package state
 
@@ -186,8 +186,9 @@ Current confirmed migrations:
 - `20260529000000_AddPaddlePaymentPersistenceV1`
 - `20260601090000_AddLessonSessionHeartbeat`
 - `20260601120000_AddPasswordResetFoundation`
+- `20260603120000_AddCmsContentFoundation`
 
-Latest confirmed EF migration: `20260601120000_AddPasswordResetFoundation`.
+Latest confirmed EF migration: `20260603120000_AddCmsContentFoundation`.
 
 ## Current smoke/audit scripts
 

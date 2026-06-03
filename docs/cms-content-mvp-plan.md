@@ -6,7 +6,7 @@ Review date: 2026-06-03.
 
 Build a safe CMS/Admin content editing foundation before external tester handoff, so tester feedback about lesson topics, situations, starter messages, prompts, and tutor behavior can be fixed through a controlled backend CMS workflow instead of code or lesson JSON edits.
 
-This is an audit and implementation plan. The CMS is **not implemented yet**. No lesson JSON migration, backend schema change, desktop UI change, prompt rewrite, billing change, or runtime lesson loading change is part of this step.
+This is an audit and implementation plan. Step 5D-1 has now added the backend CMS content schema foundation only. No lesson JSON migration, desktop UI change, prompt rewrite, billing change, or runtime lesson loading change is part of this step.
 
 ## Product decision
 
@@ -161,7 +161,7 @@ Do **not** include the following in CMS MVP:
 
 ## Proposed backend data model
 
-The first implementation should add backend-owned CMS entities with EF migration only after this plan is approved. Suggested concepts:
+Step 5D-1 adds backend-owned CMS entities with EF migration `20260603120000_AddCmsContentFoundation`. These tables are schema foundation only and are not used by runtime lesson loading yet. Suggested concepts:
 
 ### `ContentPack`
 
@@ -438,16 +438,16 @@ Minimum UI:
 
 ## Implementation phases
 
-1. Document CMS MVP scope and data model. **This planning task.**
-2. Add backend CMS content models and EF migration after approval.
-3. Import current JSON content into CMS draft/published seed or migration path without changing current JSON.
-4. Add backend published-content read path with static JSON fallback.
-5. Add Admin content API for draft read/update operations.
-6. Add simple Admin UI for content editing.
-7. Add server-side validation and preview endpoints/UI.
-8. Add publish/version/rollback workflow and audit log.
-9. Run desktop regression, release gate, content audits, and active lesson guard smoke where relevant.
-10. Then prepare controlled external tester handoff.
+1. Document CMS MVP scope and data model. **Implemented in Step 5D-0.**
+2. Add backend CMS content models and EF migration after approval. **Implemented in Step 5D-1 as schema foundation only.**
+3. Import current JSON content into CMS draft/published seed or migration path without changing current JSON. **Future phase.**
+4. Add backend published-content read path with static JSON fallback. **Future phase.**
+5. Add Admin content API for draft read/update operations. **Future phase.**
+6. Add simple Admin UI for content editing. **Future phase.**
+7. Add server-side validation and preview endpoints/UI. **Future phase.**
+8. Add publish/version/rollback workflow and audit log. **Future phase.**
+9. Run desktop regression, release gate, content audits, and active lesson guard smoke where relevant. **Future phase.**
+10. Then prepare controlled external tester handoff. **Future phase.**
 
 ## Risks and mitigations
 

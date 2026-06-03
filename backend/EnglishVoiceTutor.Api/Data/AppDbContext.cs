@@ -1,4 +1,5 @@
 using EnglishVoiceTutor.Api.Data.Entities;
+using EnglishVoiceTutor.Api.Data.Entities.Cms;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Data;
@@ -26,6 +27,14 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<PaddleWebhookEventEntity> PaddleWebhookEvents => Set<PaddleWebhookEventEntity>();
     public DbSet<AdminActionEntity> AdminActions => Set<AdminActionEntity>();
     public DbSet<PasswordResetTokenEntity> PasswordResetTokens => Set<PasswordResetTokenEntity>();
+    public DbSet<ContentPackEntity> ContentPacks => Set<ContentPackEntity>();
+    public DbSet<CmsLessonTopicEntity> CmsLessonTopics => Set<CmsLessonTopicEntity>();
+    public DbSet<CmsLessonScenarioEntity> CmsLessonScenarios => Set<CmsLessonScenarioEntity>();
+    public DbSet<PromptTemplateEntity> PromptTemplates => Set<PromptTemplateEntity>();
+    public DbSet<TutorBehaviorProfileEntity> TutorBehaviorProfiles => Set<TutorBehaviorProfileEntity>();
+    public DbSet<ContentVersionEntity> ContentVersions => Set<ContentVersionEntity>();
+    public DbSet<PublishedContentSnapshotEntity> PublishedContentSnapshots => Set<PublishedContentSnapshotEntity>();
+    public DbSet<ContentAuditLogEntity> ContentAuditLogs => Set<ContentAuditLogEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,6 +62,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigurePaddleWebhookEvents(modelBuilder);
         ConfigureAdminActions(modelBuilder);
         ConfigurePasswordResetTokens(modelBuilder);
+        ConfigureCmsContent(modelBuilder);
     }
 
     private static void ConfigureUsers(ModelBuilder modelBuilder)
@@ -468,6 +478,166 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .WithMany(user => user.PasswordResetTokens)
             .HasForeignKey(token => token.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+    }
+
+
+    private static void ConfigureCmsContent(ModelBuilder modelBuilder)
+    {
+        ConfigureContentPacks(modelBuilder);
+        ConfigureCmsLessonTopics(modelBuilder);
+        ConfigureCmsLessonScenarios(modelBuilder);
+        ConfigurePromptTemplates(modelBuilder);
+        ConfigureTutorBehaviorProfiles(modelBuilder);
+        ConfigureContentVersions(modelBuilder);
+        ConfigurePublishedContentSnapshots(modelBuilder);
+        ConfigureContentAuditLogs(modelBuilder);
+    }
+
+    private static void ConfigureContentPacks(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<ContentPackEntity>();
+        entity.ToTable(EntityConstants.TableNames.ContentPacks);
+        entity.HasKey(pack => pack.Id);
+        entity.Property(pack => pack.Slug).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsSlugKeyMaxLength);
+        entity.Property(pack => pack.Name).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsShortNameMaxLength);
+        entity.Property(pack => pack.Description).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsDescriptionMaxLength);
+        entity.Property(pack => pack.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsStatusMaxLength);
+        entity.Property(pack => pack.BaseStaticContentVersion).HasMaxLength(EntityConstants.Lengths.CmsSlugKeyMaxLength);
+        entity.Property(pack => pack.CreatedAtUtc).IsRequired();
+        entity.Property(pack => pack.UpdatedAtUtc).IsRequired();
+        entity.HasIndex(pack => pack.Slug).IsUnique();
+        entity.HasIndex(pack => pack.Status);
+        entity.HasOne<UserEntity>().WithMany().HasForeignKey(pack => pack.CreatedByUserId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<UserEntity>().WithMany().HasForeignKey(pack => pack.UpdatedByUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureCmsLessonTopics(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<CmsLessonTopicEntity>();
+        entity.ToTable(EntityConstants.TableNames.CmsLessonTopics);
+        entity.HasKey(topic => topic.Id);
+        entity.Property(topic => topic.StableTopicKey).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsSlugKeyMaxLength);
+        entity.Property(topic => topic.Title).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsShortNameMaxLength);
+        entity.Property(topic => topic.Description).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsDescriptionMaxLength);
+        entity.Property(topic => topic.CreatedAtUtc).IsRequired();
+        entity.Property(topic => topic.UpdatedAtUtc).IsRequired();
+        entity.HasIndex(topic => new { topic.ContentPackId, topic.StableTopicKey }).IsUnique();
+        entity.HasIndex(topic => new { topic.ContentPackId, topic.SortOrder });
+        entity.HasOne(topic => topic.ContentPack).WithMany(pack => pack.LessonTopics).HasForeignKey(topic => topic.ContentPackId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureCmsLessonScenarios(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<CmsLessonScenarioEntity>();
+        entity.ToTable(EntityConstants.TableNames.CmsLessonScenarios);
+        entity.HasKey(scenario => scenario.Id);
+        entity.Property(scenario => scenario.StableScenarioKey).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsSlugKeyMaxLength);
+        entity.Property(scenario => scenario.Title).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsShortNameMaxLength);
+        entity.Property(scenario => scenario.Description).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsDescriptionMaxLength);
+        entity.Property(scenario => scenario.LessonType).IsRequired().HasMaxLength(EntityConstants.Lengths.ModeMaxLength);
+        entity.Property(scenario => scenario.SupportedLevelIdsJson).IsRequired();
+        entity.Property(scenario => scenario.SetupMessage).IsRequired();
+        entity.Property(scenario => scenario.ContextSelectionJson).IsRequired();
+        entity.Property(scenario => scenario.LearningGoalJson).IsRequired();
+        entity.Property(scenario => scenario.SituationJson).IsRequired();
+        entity.Property(scenario => scenario.RolesJson).IsRequired();
+        entity.Property(scenario => scenario.TargetLanguageJson).IsRequired();
+        entity.Property(scenario => scenario.LevelProfilesJson).IsRequired();
+        entity.Property(scenario => scenario.ConversationFlowJson).IsRequired();
+        entity.Property(scenario => scenario.RoleplayBeatsJson).IsRequired();
+        entity.Property(scenario => scenario.ReciprocalQuestionHandlingJson).IsRequired();
+        entity.Property(scenario => scenario.ExpectedScenarioProgressionJson).IsRequired();
+        entity.Property(scenario => scenario.ControlledVariationJson).IsRequired();
+        entity.Property(scenario => scenario.OffTopicHandlingJson).IsRequired();
+        entity.Property(scenario => scenario.FeedbackRulesJson).IsRequired();
+        entity.Property(scenario => scenario.HintRulesJson).IsRequired();
+        entity.Property(scenario => scenario.RepetitionLogicJson).IsRequired();
+        entity.Property(scenario => scenario.AiTutorPromptInstructionsJson).IsRequired();
+        entity.Property(scenario => scenario.CreatedAtUtc).IsRequired();
+        entity.Property(scenario => scenario.UpdatedAtUtc).IsRequired();
+        entity.HasIndex(scenario => new { scenario.ContentPackId, scenario.StableScenarioKey }).IsUnique();
+        entity.HasIndex(scenario => scenario.TopicId);
+        entity.HasOne(scenario => scenario.ContentPack).WithMany(pack => pack.LessonScenarios).HasForeignKey(scenario => scenario.ContentPackId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne(scenario => scenario.Topic).WithMany(topic => topic.LessonScenarios).HasForeignKey(scenario => scenario.TopicId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigurePromptTemplates(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<PromptTemplateEntity>();
+        entity.ToTable(EntityConstants.TableNames.PromptTemplates);
+        entity.HasKey(template => template.Id);
+        entity.Property(template => template.TemplateKey).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsTemplateKeyMaxLength);
+        entity.Property(template => template.TargetStudyLanguageId).HasMaxLength(EntityConstants.Lengths.LanguageCodeMaxLength);
+        entity.Property(template => template.Body).IsRequired();
+        entity.Property(template => template.AllowedPlaceholdersJson).IsRequired();
+        entity.Property(template => template.RequiredPlaceholdersJson).IsRequired();
+        entity.Property(template => template.CreatedAtUtc).IsRequired();
+        entity.Property(template => template.UpdatedAtUtc).IsRequired();
+        entity.HasIndex(template => new { template.ContentPackId, template.TemplateKey, template.TargetStudyLanguageId }).IsUnique();
+        entity.HasOne(template => template.ContentPack).WithMany(pack => pack.PromptTemplates).HasForeignKey(template => template.ContentPackId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<UserEntity>().WithMany().HasForeignKey(template => template.UpdatedByUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureTutorBehaviorProfiles(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<TutorBehaviorProfileEntity>();
+        entity.ToTable(EntityConstants.TableNames.TutorBehaviorProfiles);
+        entity.HasKey(profile => profile.Id);
+        entity.Property(profile => profile.TutorId).IsRequired().HasMaxLength(EntityConstants.Lengths.TutorIdMaxLength);
+        entity.Property(profile => profile.DisplayName).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsShortNameMaxLength);
+        entity.Property(profile => profile.CommunicationStyleJson).IsRequired();
+        entity.Property(profile => profile.SafetyNotesJson).IsRequired();
+        entity.Property(profile => profile.CreatedAtUtc).IsRequired();
+        entity.Property(profile => profile.UpdatedAtUtc).IsRequired();
+        entity.HasIndex(profile => new { profile.ContentPackId, profile.TutorId }).IsUnique();
+        entity.HasOne(profile => profile.ContentPack).WithMany(pack => pack.TutorBehaviorProfiles).HasForeignKey(profile => profile.ContentPackId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureContentVersions(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<ContentVersionEntity>();
+        entity.ToTable(EntityConstants.TableNames.ContentVersions);
+        entity.HasKey(version => version.Id);
+        entity.Property(version => version.SnapshotHash).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsHashMaxLength);
+        entity.Property(version => version.PublishStatus).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsStatusMaxLength);
+        entity.Property(version => version.ValidationSummaryJson).IsRequired();
+        entity.Property(version => version.ChangeSummary).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsDescriptionMaxLength);
+        entity.Property(version => version.CreatedAtUtc).IsRequired();
+        entity.HasIndex(version => new { version.ContentPackId, version.VersionNumber }).IsUnique();
+        entity.HasOne(version => version.ContentPack).WithMany(pack => pack.ContentVersions).HasForeignKey(version => version.ContentPackId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne(version => version.RestoredFromVersion).WithMany().HasForeignKey(version => version.RestoredFromVersionId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<UserEntity>().WithMany().HasForeignKey(version => version.PublishedByUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigurePublishedContentSnapshots(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<PublishedContentSnapshotEntity>();
+        entity.ToTable(EntityConstants.TableNames.PublishedContentSnapshots);
+        entity.HasKey(snapshot => snapshot.Id);
+        entity.Property(snapshot => snapshot.SnapshotJson).IsRequired();
+        entity.Property(snapshot => snapshot.SnapshotHash).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsHashMaxLength);
+        entity.Property(snapshot => snapshot.CreatedAtUtc).IsRequired();
+        entity.HasIndex(snapshot => snapshot.ContentVersionId).IsUnique();
+        entity.HasOne(snapshot => snapshot.ContentVersion).WithOne(version => version.PublishedSnapshot).HasForeignKey<PublishedContentSnapshotEntity>(snapshot => snapshot.ContentVersionId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureContentAuditLogs(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<ContentAuditLogEntity>();
+        entity.ToTable(EntityConstants.TableNames.ContentAuditLogs);
+        entity.HasKey(log => log.Id);
+        entity.Property(log => log.Action).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsAuditActionMaxLength);
+        entity.Property(log => log.EntityType).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsEntityTypeMaxLength);
+        entity.Property(log => log.BeforeHash).HasMaxLength(EntityConstants.Lengths.CmsHashMaxLength);
+        entity.Property(log => log.AfterHash).HasMaxLength(EntityConstants.Lengths.CmsHashMaxLength);
+        entity.Property(log => log.ChangedFieldsJson).IsRequired();
+        entity.Property(log => log.Reason).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsReasonMaxLength);
+        entity.Property(log => log.CreatedAtUtc).IsRequired();
+        entity.Property(log => log.RequestMetadataJson).HasMaxLength(EntityConstants.Lengths.MetadataJsonMaxLength);
+        entity.HasIndex(log => new { log.ContentPackId, log.CreatedAtUtc });
+        entity.HasIndex(log => new { log.ActorUserId, log.CreatedAtUtc });
+        entity.HasOne(log => log.ContentPack).WithMany(pack => pack.AuditLogs).HasForeignKey(log => log.ContentPackId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<UserEntity>().WithMany().HasForeignKey(log => log.ActorUserId).OnDelete(DeleteBehavior.Restrict);
     }
 
 }

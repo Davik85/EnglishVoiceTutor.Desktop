@@ -25,6 +25,14 @@ public static class EntityConstants
         public const string PaddleWebhookEvents = "paddle_webhook_events";
         public const string AdminActions = "admin_actions";
         public const string PasswordResetTokens = "password_reset_tokens";
+        public const string ContentPacks = "cms_content_packs";
+        public const string CmsLessonTopics = "cms_lesson_topics";
+        public const string CmsLessonScenarios = "cms_lesson_scenarios";
+        public const string PromptTemplates = "cms_prompt_templates";
+        public const string TutorBehaviorProfiles = "cms_tutor_behavior_profiles";
+        public const string ContentVersions = "cms_content_versions";
+        public const string PublishedContentSnapshots = "cms_published_content_snapshots";
+        public const string ContentAuditLogs = "cms_content_audit_logs";
     }
 
     public static class Lengths
@@ -73,6 +81,15 @@ public static class EntityConstants
         public const int MetadataJsonMaxLength = 4096;
         public const int ErrorMessageMaxLength = 1024;
         public const int ActionTypeMaxLength = 128;
+        public const int CmsSlugKeyMaxLength = 120;
+        public const int CmsShortNameMaxLength = 200;
+        public const int CmsDescriptionMaxLength = 2000;
+        public const int CmsStatusMaxLength = 80;
+        public const int CmsHashMaxLength = 128;
+        public const int CmsEntityTypeMaxLength = 80;
+        public const int CmsAuditActionMaxLength = 80;
+        public const int CmsTemplateKeyMaxLength = 80;
+        public const int CmsReasonMaxLength = 2000;
     }
 
     public static class Precision

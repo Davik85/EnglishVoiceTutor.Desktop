@@ -60,6 +60,479 @@ namespace EnglishVoiceTutor.Api.Migrations
                     b.ToTable("admin_actions", (string)null);
                 });
 
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentAuditLogEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AfterHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("BeforeHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ChangedFieldsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ContentPackId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("RequestMetadataJson")
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId", "CreatedAtUtc");
+
+                    b.HasIndex("ContentPackId", "CreatedAtUtc");
+
+                    b.ToTable("cms_content_audit_logs", (string)null);
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.CmsLessonScenarioEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AiTutorPromptInstructionsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContextSelectionJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ContentPackId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ControlledVariationJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConversationFlowJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("ExpectedScenarioProgressionJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FeedbackRulesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("FinalMessageAtUserTurn")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("HintRulesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LearningGoalJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LessonType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("LevelProfilesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OffTopicHandlingJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReciprocalQuestionHandlingJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RepetitionLogicJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RoleplayBeatsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RolesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SetupMessage")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SituationJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("SoftWrapUpAfterUserTurn")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StableScenarioKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("SupportedLevelIdsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TargetLanguageJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("TopicId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentPackId", "StableScenarioKey")
+                        .IsUnique();
+
+                    b.HasIndex("TopicId");
+
+                    b.ToTable("cms_lesson_scenarios", (string)null);
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.CmsLessonTopicEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ContentPackId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StableTopicKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentPackId", "SortOrder");
+
+                    b.HasIndex("ContentPackId", "StableTopicKey")
+                        .IsUnique();
+
+                    b.ToTable("cms_lesson_topics", (string)null);
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BaseStaticContentVersion")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("cms_content_packs", (string)null);
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentVersionEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ChangeSummary")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("ContentPackId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("PublishedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PublishedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PublishStatus")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<Guid?>("RestoredFromVersionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ValidationSummaryJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentPackId", "VersionNumber")
+                        .IsUnique();
+
+                    b.HasIndex("PublishedByUserId");
+
+                    b.HasIndex("RestoredFromVersionId");
+
+                    b.ToTable("cms_content_versions", (string)null);
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.PromptTemplateEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AllowedPlaceholdersJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ContentPackId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("MaxLength")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RequiredPlaceholdersJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TargetStudyLanguageId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("TemplateKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentPackId", "TemplateKey", "TargetStudyLanguageId")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("cms_prompt_templates", (string)null);
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.PublishedContentSnapshotEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ContentVersionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("SnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentVersionId")
+                        .IsUnique();
+
+                    b.ToTable("cms_published_content_snapshots", (string)null);
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.TutorBehaviorProfileEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CommunicationStyleJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ContentPackId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SafetyNotesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TutorId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentPackId", "TutorId")
+                        .IsUnique();
+
+                    b.ToTable("cms_tutor_behavior_profiles", (string)null);
+                });
+
             modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.BillingEventEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -194,6 +667,126 @@ namespace EnglishVoiceTutor.Api.Migrations
                     b.HasIndex("ReceivedAtUtc");
 
                     b.ToTable("paddle_webhook_events", (string)null);
+                });
+
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentAuditLogEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", "ContentPack")
+                        .WithMany("AuditLogs")
+                        .HasForeignKey("ContentPackId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ContentPack");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.CmsLessonScenarioEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", "ContentPack")
+                        .WithMany("LessonScenarios")
+                        .HasForeignKey("ContentPackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.CmsLessonTopicEntity", "Topic")
+                        .WithMany("LessonScenarios")
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContentPack");
+
+                    b.Navigation("Topic");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.CmsLessonTopicEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", "ContentPack")
+                        .WithMany("LessonTopics")
+                        .HasForeignKey("ContentPackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContentPack");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentVersionEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", "ContentPack")
+                        .WithMany("ContentVersions")
+                        .HasForeignKey("ContentPackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("PublishedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentVersionEntity", "RestoredFromVersion")
+                        .WithMany()
+                        .HasForeignKey("RestoredFromVersionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ContentPack");
+
+                    b.Navigation("RestoredFromVersion");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.PromptTemplateEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", "ContentPack")
+                        .WithMany("PromptTemplates")
+                        .HasForeignKey("ContentPackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ContentPack");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.PublishedContentSnapshotEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentVersionEntity", "ContentVersion")
+                        .WithOne("PublishedSnapshot")
+                        .HasForeignKey("EnglishVoiceTutor.Api.Data.Entities.Cms.PublishedContentSnapshotEntity", "ContentVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContentVersion");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.TutorBehaviorProfileEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", "ContentPack")
+                        .WithMany("TutorBehaviorProfiles")
+                        .HasForeignKey("ContentPackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContentPack");
                 });
 
             modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.DailyFreeLessonUsageEntity", b =>
@@ -493,6 +1086,32 @@ namespace EnglishVoiceTutor.Api.Migrations
                     b.HasIndex("LessonContentId");
 
                     b.ToTable("lessons", (string)null);
+                });
+
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.CmsLessonTopicEntity", b =>
+                {
+                    b.Navigation("LessonScenarios");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", b =>
+                {
+                    b.Navigation("AuditLogs");
+
+                    b.Navigation("ContentVersions");
+
+                    b.Navigation("LessonScenarios");
+
+                    b.Navigation("LessonTopics");
+
+                    b.Navigation("PromptTemplates");
+
+                    b.Navigation("TutorBehaviorProfiles");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentVersionEntity", b =>
+                {
+                    b.Navigation("PublishedSnapshot");
                 });
 
             modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.LessonMessageEntity", b =>
@@ -1243,7 +1862,127 @@ namespace EnglishVoiceTutor.Api.Migrations
                 });
 
 
-                        modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.DailyFreeLessonUsageEntity", b =>
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentAuditLogEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", "ContentPack")
+                        .WithMany("AuditLogs")
+                        .HasForeignKey("ContentPackId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ContentPack");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.CmsLessonScenarioEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", "ContentPack")
+                        .WithMany("LessonScenarios")
+                        .HasForeignKey("ContentPackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.CmsLessonTopicEntity", "Topic")
+                        .WithMany("LessonScenarios")
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContentPack");
+
+                    b.Navigation("Topic");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.CmsLessonTopicEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", "ContentPack")
+                        .WithMany("LessonTopics")
+                        .HasForeignKey("ContentPackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContentPack");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentVersionEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", "ContentPack")
+                        .WithMany("ContentVersions")
+                        .HasForeignKey("ContentPackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("PublishedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentVersionEntity", "RestoredFromVersion")
+                        .WithMany()
+                        .HasForeignKey("RestoredFromVersionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ContentPack");
+
+                    b.Navigation("RestoredFromVersion");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.PromptTemplateEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", "ContentPack")
+                        .WithMany("PromptTemplates")
+                        .HasForeignKey("ContentPackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ContentPack");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.PublishedContentSnapshotEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentVersionEntity", "ContentVersion")
+                        .WithOne("PublishedSnapshot")
+                        .HasForeignKey("EnglishVoiceTutor.Api.Data.Entities.Cms.PublishedContentSnapshotEntity", "ContentVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContentVersion");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.Cms.TutorBehaviorProfileEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.Cms.ContentPackEntity", "ContentPack")
+                        .WithMany("TutorBehaviorProfiles")
+                        .HasForeignKey("ContentPackId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContentPack");
+                });
+
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.DailyFreeLessonUsageEntity", b =>
                 {
                     b.HasOne("EnglishVoiceTutor.Api.Data.Entities.LessonSessionEntity", "LessonSession")
                         .WithMany()
