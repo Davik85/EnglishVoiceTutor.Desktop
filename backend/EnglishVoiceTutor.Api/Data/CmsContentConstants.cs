@@ -45,6 +45,35 @@ public static class CmsContentConstants
         public const string Summary = "summary";
     }
 
+    public static class PublishedRead
+    {
+        public const string ReadPublishedSnapshotEnabledKey = "CmsContent:ReadPublishedSnapshotEnabled";
+        public const string ContentPackSlugKey = "CmsContent:ContentPackSlug";
+        public const string FallbackToStaticJsonKey = "CmsContent:FallbackToStaticJson";
+    }
+
+    public static class Sources
+    {
+        public const string CmsPublishedSnapshot = "CmsPublishedSnapshot";
+        public const string StaticJsonFallback = "StaticJsonFallback";
+    }
+
+    public static class ErrorCodes
+    {
+        public const string ReadPathDisabled = "CmsReadPathDisabled";
+        public const string NoPublishedSnapshot = "CmsNoPublishedSnapshot";
+        public const string HashMismatch = "CmsSnapshotHashMismatch";
+        public const string DeserializationFailed = "CmsSnapshotDeserializationFailed";
+        public const string RequiredContentMissing = "CmsRequiredContentMissing";
+        public const string ValidationFailed = "CmsSnapshotValidationFailed";
+        public const string ReadError = "CmsSnapshotReadError";
+    }
+
+    public static class WarningCodes
+    {
+        public const string StaticJsonFallbackUsed = "CmsStaticJsonFallbackUsed";
+    }
+
     public static class ContentAuditActions
     {
         public const string DraftCreated = "DraftCreated";

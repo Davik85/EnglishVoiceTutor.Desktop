@@ -42,6 +42,9 @@ public static class AdminEndpoints
         {
             app.MapPost(ApiConstants.AdminDevCmsStaticContentImportRoute, ImportStaticCmsContentAsync)
                 .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
+            app.MapGet(ApiConstants.AdminDevCmsPublishedContentStatusRoute, GetPublishedCmsContentStatusAsync)
+                .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
         }
     }
 
@@ -96,6 +99,14 @@ public static class AdminEndpoints
         return Results.Ok(lookupResult.Response);
     }
 
+
+    private static async Task<IResult> GetPublishedCmsContentStatusAsync(
+        ICmsPublishedContentService cmsPublishedContentService,
+        CancellationToken cancellationToken)
+    {
+        var result = await cmsPublishedContentService.ReadLatestPublishedContentAsync(cancellationToken);
+        return Results.Ok(CmsPublishedContentStatusResponse.FromResult(result));
+    }
 
     private static async Task<IResult> ImportStaticCmsContentAsync(
         ClaimsPrincipal principal,

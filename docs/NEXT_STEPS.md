@@ -6,16 +6,16 @@ This roadmap starts from the current confirmed state: the desktop MVP core lesso
 
 ## Recommended next product order
 
-1. CMS/Admin content MVP foundation (Phase 5D-0 through Step 5D-2).
+1. CMS/Admin content MVP foundation (Phase 5D-0 through Step 5D-3).
    - Planning baseline: `docs/CMS_ADMIN_PLANNING.md`.
    - Detailed content MVP plan: `docs/cms-content-mvp-plan.md`.
-   - Step 5D-0 planning, Step 5D-1 backend schema foundation, and Step 5D-2 static JSON import/seed foundation are complete.
-   - The new CMS tables and imported `static-json-v1` / `Static JSON Baseline` snapshot are not used by runtime lesson loading yet; static JSON/content behavior remains unchanged.
+   - Step 5D-0 planning, Step 5D-1 backend schema foundation, Step 5D-2 static JSON import/seed foundation, and Step 5D-3 backend published-snapshot read/status path are complete.
+   - The new CMS tables and imported `static-json-v1` / `Static JSON Baseline` snapshot are still not used by runtime lesson loading by default; static JSON/content behavior remains unchanged.
+   - `CmsContent:ReadPublishedSnapshotEnabled` defaults to `false`, `CmsContent:ContentPackSlug` defaults to `static-json-v1`, and `CmsContent:FallbackToStaticJson` defaults to `true`.
    - Keep this content-focused. Do not include production billing controls, Paddle management, payment editing, entitlement editing, broad user management, mobile-specific CMS, public production Admin, secrets, direct OpenAI key handling, or study-language editing.
-2. Backend published-content read path with static fallback.
-   - Next implementation should add a backend read path that can serve the published CMS baseline snapshot with deterministic static JSON fallback.
-   - Do this before Admin UI editor work so imported/published CMS content can be compared safely against the current static runtime mapping.
-   - Do not make CMS primary for learners until the fallback-safe read path is explicitly validated.
+2. Controlled next CMS implementation step.
+   - Recommended next implementation: add controlled Admin content API draft read/update operations and/or validation/preview endpoint work, using the Step 5D-3 published snapshot read/status path as the safety baseline.
+   - If learner runtime CMS integration is attempted next, keep it behind the disabled-by-default feature flag and retain static JSON fallback on every CMS failure.
    - Desktop must continue to call backend APIs only; backend remains the source of truth.
 3. Controlled external tester handoff.
    - Tester handoff is paused until CMS/Admin content MVP foundation is ready enough that content/prompt/scenario fixes can be handled through CMS.
