@@ -73,7 +73,7 @@ if (-not (Test-Path -LiteralPath $indexPath)) {
     Add-Error "Missing file: $indexPath"
 } else {
     $indexContent = Get-Content -LiteralPath $indexPath -Raw
-    $idAttributeRegex = [regex]'id\s*=\s*(["''])(?<id>[^"'']+)\1'
+    $idAttributeRegex = [regex]'\sid\s*=\s*(["''])(?<id>[^"'']+)\1'
     $allIdMatches = $idAttributeRegex.Matches($indexContent)
     $idCounts = @{}
     foreach ($match in $allIdMatches) {
