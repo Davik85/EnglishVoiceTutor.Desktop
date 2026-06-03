@@ -2,6 +2,7 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Admin;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Auth;
+using EnglishVoiceTutor.Api.Services.Cms;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -36,6 +37,12 @@ public static class AdminEndpoints
 
         app.MapPost(ApiConstants.AdminUserFreeLessonAllowanceResetRoute, ResetFreeLessonAllowanceAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
+        if (app.Environment.IsDevelopment())
+        {
+            app.MapPost(ApiConstants.AdminDevCmsStaticContentImportRoute, ImportStaticCmsContentAsync)
+                .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+        }
     }
 
     private static IResult GetAdminMe(ClaimsPrincipal principal)
@@ -87,6 +94,22 @@ public static class AdminEndpoints
         }
 
         return Results.Ok(lookupResult.Response);
+    }
+
+
+    private static async Task<IResult> ImportStaticCmsContentAsync(
+        ClaimsPrincipal principal,
+        ICmsContentImportService cmsContentImportService,
+        CancellationToken cancellationToken)
+    {
+        var adminUserId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!adminUserId.HasValue)
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await cmsContentImportService.ImportStaticContentAsync(adminUserId.Value, cancellationToken);
+        return result.Success ? Results.Ok(result) : Results.BadRequest(result);
     }
 
     private static async Task<IResult> GrantManualPremiumAsync(
