@@ -177,8 +177,9 @@ Current confirmed migrations:
 - `20260528010000_AddPaddleSubscriptionLifecycleSnapshotV1`
 - `20260529000000_AddPaddlePaymentPersistenceV1`
 - `20260601090000_AddLessonSessionHeartbeat`
+- `20260601120000_AddPasswordResetFoundation`
 
-Latest confirmed EF migration: `20260601090000_AddLessonSessionHeartbeat`.
+Latest confirmed EF migration: `20260601120000_AddPasswordResetFoundation`.
 
 ## Current smoke/audit scripts
 
