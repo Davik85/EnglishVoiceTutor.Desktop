@@ -722,7 +722,7 @@ public sealed partial class CmsContentAdminService(
         }
     }
 
-    private static void SetIfChanged(string? currentValue, string? requestedValue, List<string> changedFields, Action<string?> assign, string fieldName)
+    private static void SetIfChanged(string? currentValue, string? requestedValue, List<string> changedFields, Action<string> assign, string fieldName)
     {
         if (requestedValue is null || string.Equals(currentValue, requestedValue, StringComparison.Ordinal))
         {
