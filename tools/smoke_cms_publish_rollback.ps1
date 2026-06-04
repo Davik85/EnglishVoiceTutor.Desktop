@@ -17,16 +17,36 @@ $contentPacksUrl = "$BaseUrl/api/admin/dev/cms/content-packs"
 $contentPackUrl = "$contentPacksUrl/static-json-v1"
 $versionsUrl = "$contentPackUrl/versions"
 $publishUrl = "$contentPackUrl/publish"
-$markerPrefix = '[Step 5D-5 smoke publish rollback]'
+$markerPrefix = '[Step 5D-6c smoke publish rollback]'
+
+function Invoke-CmsGet([string]$Uri) {
+    try {
+        return Invoke-RestMethod -Method Get -Uri $Uri -Headers $headers -TimeoutSec 60
+    } catch {
+        throw "CMS GET failed for $Uri. $_"
+    }
+}
 
 function Invoke-JsonPost([string]$Uri, [object]$Body) {
     $json = $Body | ConvertTo-Json -Depth 12
-    return Invoke-RestMethod -Method Post -Uri $Uri -Headers $jsonHeaders -Body $json -TimeoutSec 120
+    try {
+        return Invoke-RestMethod -Method Post -Uri $Uri -Headers $jsonHeaders -Body $json -TimeoutSec 120
+    } catch {
+        throw "CMS POST failed for $Uri. $_"
+    }
 }
 
 function Invoke-JsonPut([string]$Uri, [object]$Body) {
     $json = $Body | ConvertTo-Json -Depth 12
-    return Invoke-RestMethod -Method Put -Uri $Uri -Headers $jsonHeaders -Body $json -TimeoutSec 120
+    try {
+        return Invoke-RestMethod -Method Put -Uri $Uri -Headers $jsonHeaders -Body $json -TimeoutSec 120
+    } catch {
+        throw "CMS PUT failed for $Uri. $_"
+    }
+}
+
+function Get-RouteSegment([string]$Value) {
+    return [uri]::EscapeDataString($Value)
 }
 
 try {
@@ -41,14 +61,14 @@ if ($beforeStaticStatus) {
     throw 'Static lesson, prompt, or tutor files have local changes before CMS publish/rollback smoke test.'
 }
 
-$contentPacks = Invoke-RestMethod -Method Get -Uri $contentPacksUrl -Headers $headers -TimeoutSec 60
+$contentPacks = Invoke-CmsGet -Uri $contentPacksUrl
 $staticPack = @($contentPacks | Where-Object { $_.slug -eq 'static-json-v1' }) | Select-Object -First 1
 if (-not $staticPack) {
     $contentPacks | ConvertTo-Json -Depth 12 | Write-Host
     throw 'static-json-v1 content pack was not returned by the CMS admin content pack list endpoint.'
 }
 
-$versionsBefore = Invoke-RestMethod -Method Get -Uri $versionsUrl -Headers $headers -TimeoutSec 60
+$versionsBefore = Invoke-CmsGet -Uri $versionsUrl
 if (-not $versionsBefore.success -or @($versionsBefore.versions).Count -lt 1) {
     $versionsBefore | ConvertTo-Json -Depth 12 | Write-Host
     throw 'CMS content version list did not return at least one version.'
@@ -62,13 +82,13 @@ if ($previousVersionNumber -lt 1 -or [string]::IsNullOrWhiteSpace($previousSnaps
     throw 'Latest CMS content version was missing version number or snapshot hash.'
 }
 
-$versionDetail = Invoke-RestMethod -Method Get -Uri "$versionsUrl/$previousVersionNumber" -Headers $headers -TimeoutSec 60
+$versionDetail = Invoke-CmsGet -Uri "$versionsUrl/$previousVersionNumber"
 if ($versionDetail.versionNumber -ne $previousVersionNumber -or -not $versionDetail.snapshotHashValid) {
     $versionDetail | ConvertTo-Json -Depth 12 | Write-Host
     throw 'CMS content version detail endpoint returned an invalid latest version.'
 }
 
-$topics = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/topics" -Headers $headers -TimeoutSec 60
+$topics = Invoke-CmsGet -Uri "$contentPackUrl/topics"
 $topic = @($topics | Sort-Object -Property sortOrder, stableTopicKey)[0]
 if (-not $topic) {
     $topics | ConvertTo-Json -Depth 12 | Write-Host
@@ -83,7 +103,7 @@ if ($smokeDescription -eq $originalDescription) {
 
 $updateBody = @{
     description = $smokeDescription
-    reason = 'Step 5D-5 smoke: bounded topic description update before publish.'
+    reason = 'Step 5D-6c smoke: bounded topic description update before publish.'
 }
 $update = Invoke-JsonPut -Uri "$contentPackUrl/topics/$($topic.id)" -Body $updateBody
 if (-not $update.success -or $update.noChanges) {
@@ -91,9 +111,16 @@ if (-not $update.success -or $update.noChanges) {
     throw 'CMS bounded draft topic update did not change the draft content.'
 }
 
-$scenarios = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/scenarios" -Headers $headers -TimeoutSec 60
+$scenarios = Invoke-CmsGet -Uri "$contentPackUrl/scenarios"
 $scenario = @($scenarios | Sort-Object -Property stableScenarioKey)[0]
-$scenarioDetail = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $headers -TimeoutSec 60
+if (-not $scenario -or [string]::IsNullOrWhiteSpace([string]$scenario.stableScenarioKey)) {
+    $scenarios | ConvertTo-Json -Depth 12 | Write-Host
+    throw 'CMS scenarios endpoint returned no scenario with a stable scenario key to update.'
+}
+
+$scenarioKeySegment = Get-RouteSegment -Value ([string]$scenario.stableScenarioKey)
+$scenarioDetailUrl = "$contentPackUrl/scenarios/$scenarioKeySegment"
+$scenarioDetail = Invoke-CmsGet -Uri $scenarioDetailUrl
 if ([string]::IsNullOrWhiteSpace([string]$scenarioDetail.definitionJson) -or $scenarioDetail.isDefinitionJsonFallback) {
     $scenarioDetail | ConvertTo-Json -Depth 12 | Write-Host
     throw 'CMS scenario detail did not return persisted full scenario JSON before publish/rollback smoke.'
@@ -103,7 +130,7 @@ $originalScenarioDefinitionJson = [string]$scenarioDetail.definitionJson
 $scenarioDefinition = $scenarioDetail.definitionJson | ConvertFrom-Json
 $scenarioDefinition | Add-Member -NotePropertyName smokePublishRollbackMarker -NotePropertyValue "$markerPrefix version-$previousVersionNumber" -Force
 $scenarioDefinitionJson = $scenarioDefinition | ConvertTo-Json -Depth 100
-$scenarioUpdate = Invoke-JsonPut -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Body @{
+$scenarioUpdate = Invoke-JsonPut -Uri $scenarioDetailUrl -Body @{
     title = $scenarioDetail.title
     description = $scenarioDetail.description
     setupMessage = $scenarioDetail.setupMessage
@@ -122,7 +149,7 @@ if (-not $validation.success) {
     throw 'CMS draft validation failed after bounded smoke update.'
 }
 
-$publish = Invoke-JsonPost -Uri $publishUrl -Body @{ changeSummary = 'Step 5D-5 smoke: publish bounded topic description update.' }
+$publish = Invoke-JsonPost -Uri $publishUrl -Body @{ changeSummary = 'Step 5D-6c smoke: publish bounded topic and full scenario JSON update.' }
 if (-not $publish.success -or -not $publish.created -or $publish.noChanges) {
     $publish | ConvertTo-Json -Depth 12 | Write-Host
     throw 'CMS publish endpoint did not create a changed published version.'
@@ -138,7 +165,19 @@ if ([string]$publish.snapshotHash -eq $previousSnapshotHash) {
     throw 'CMS publish endpoint did not change the snapshot hash after the draft update.'
 }
 
-$versionsAfterPublish = Invoke-RestMethod -Method Get -Uri $versionsUrl -Headers $headers -TimeoutSec 60
+$publishedVersionDetail = Invoke-CmsGet -Uri "$versionsUrl/$($publish.versionNumber)"
+if ($publishedVersionDetail.versionNumber -ne $publish.versionNumber -or -not $publishedVersionDetail.snapshotHashValid -or $publishedVersionDetail.snapshotSummary.scenarios -lt 1) {
+    $publishedVersionDetail | ConvertTo-Json -Depth 12 | Write-Host
+    throw 'CMS published version detail endpoint did not report a valid scenario snapshot after publishing full scenario JSON.'
+}
+
+$publishedDraftScenarioDetail = Invoke-CmsGet -Uri $scenarioDetailUrl
+if ([string]::IsNullOrWhiteSpace([string]$publishedDraftScenarioDetail.definitionJson) -or $publishedDraftScenarioDetail.definitionJson -notlike '*smokePublishRollbackMarker*') {
+    $publishedDraftScenarioDetail | ConvertTo-Json -Depth 12 | Write-Host
+    throw 'CMS draft scenario detail did not keep the saved full scenario JSON after publish.'
+}
+
+$versionsAfterPublish = Invoke-CmsGet -Uri $versionsUrl
 $publishedVersion = @($versionsAfterPublish.versions | Where-Object { $_.versionNumber -eq $publish.versionNumber }) | Select-Object -First 1
 if (-not $publishedVersion -or $publishedVersion.snapshotHash -ne $publish.snapshotHash) {
     $versionsAfterPublish | ConvertTo-Json -Depth 12 | Write-Host
@@ -146,7 +185,7 @@ if (-not $publishedVersion -or $publishedVersion.snapshotHash -ne $publish.snaps
 }
 
 $restore = Invoke-JsonPost -Uri "$versionsUrl/$previousVersionNumber/restore" -Body @{
-    reason = 'Step 5D-5 smoke: restore previous published version after bounded update.'
+    reason = 'Step 5D-6c smoke: restore previous published version after full scenario JSON update.'
     publishRestoredVersion = $true
 }
 if (-not $restore.success -or -not $restore.draftRestored) {
@@ -159,7 +198,7 @@ if (-not $restore.publishedNewVersion -and -not $restore.noChanges) {
     throw 'CMS restore endpoint neither published a rollback version nor reported no changes.'
 }
 
-$restoredScenarioDetail = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $headers -TimeoutSec 60
+$restoredScenarioDetail = Invoke-CmsGet -Uri $scenarioDetailUrl
 if ([string]::IsNullOrWhiteSpace([string]$restoredScenarioDetail.definitionJson) -or $restoredScenarioDetail.definitionJson -ne $originalScenarioDefinitionJson) {
     $restoredScenarioDetail | ConvertTo-Json -Depth 12 | Write-Host
     throw 'CMS restore did not restore the original full scenario JSON into the draft.'
@@ -171,7 +210,7 @@ if (-not $validationAfterRestore.success) {
     throw 'CMS draft validation failed after restore.'
 }
 
-$versionsAfterRestore = Invoke-RestMethod -Method Get -Uri $versionsUrl -Headers $headers -TimeoutSec 60
+$versionsAfterRestore = Invoke-CmsGet -Uri $versionsUrl
 $latestAfterRestore = @($versionsAfterRestore.versions | Sort-Object -Property versionNumber -Descending)[0]
 if ($restore.publishedNewVersion) {
     if ([int]$latestAfterRestore.versionNumber -ne [int]$restore.newVersionNumber -or [string]$latestAfterRestore.snapshotHash -ne $previousSnapshotHash) {
