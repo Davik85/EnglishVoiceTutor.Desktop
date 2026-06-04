@@ -165,7 +165,9 @@ Recommended next work: continue remaining desktop release hardening first. Produ
 - The local admin shell is organized into tabs: Overview, User Lookup, Premium, Free Lesson, Audit Log, and System.
 - User lookup also shows a Premium entitlement schedule (current + future active Premium grants) in addition to currently active entitlements.
 - It does not require a database migration.
-- JWT remains in memory only for this phase.
+- JWT remains in memory only for this phase. Refresh auth uses the existing admin-only HTTP-only cookie; JavaScript does not persist the JWT in browser storage.
+- The admin workspace restores safe selection state from the URL hash after a valid admin session is verified: active admin tab, CMS sub-tab, content pack slug, selected CMS topic/scenario/prompt/tutor stable keys, and selected admin user ID. Passwords, tokens, prompts, full scenario JSON, tutor profile JSON, and unsaved draft field values are not stored in the hash or browser storage.
+- CMS editor forms warn before refresh, tab close, tab switches, CMS sub-tab switches, entity selection changes, or logout when draft fields differ from the last loaded/saved baseline. Admins must click Save draft to persist content changes; autosave/audit workflow can be considered later. This remains development/admin-only and is not production RBAC.
 - Static admin shell audit script: `powershell -ExecutionPolicy Bypass -File tools\audit_admin_shell.ps1`.
 - The existing smoke script (`tools/smoke_admin_foundation.ps1`) now runs this admin shell audit before backend HTTP smoke checks.
 - Latest confirmed EF migration is `20260601090000_AddLessonSessionHeartbeat`.

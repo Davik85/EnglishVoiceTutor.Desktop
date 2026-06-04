@@ -5,6 +5,8 @@ Review date: 2026-06-04.
 
 ## Step 5D-6b current state — Admin CMS table selection UX
 
+Step 5D-6d is complete: the development-only Admin shell now restores safe workspace selection state across refresh without browser Web Storage. Admin authentication still survives refresh through the existing admin-only HTTP-only cookie while the JWT remains memory-only in JavaScript. After a valid admin session is verified, the Admin shell parses the URL hash for the active admin tab, CMS sub-tab, content pack slug, selected CMS stable keys, and selected admin user ID; it then reloads selected CMS entities and selected user details through admin-only APIs. Unsaved CMS editor content is intentionally not persisted in the URL or browser storage. Dirty CMS topic, scenario (including full JSON), prompt template, and tutor profile forms show an Unsaved changes indicator and warn before refresh/tab close, top-level tab switches, CMS sub-tab switches, entity selection changes, and logout. Save draft is still required to persist content; no autosave or background save was added. This remains development/admin-only and not production RBAC.
+
 Step 5D-6b is complete: Admin CMS Topics, Scenarios, Prompts, and Tutors tables now support row-click selection, keep compact visible Select buttons as a fallback, and visually highlight the currently selected row. This step only improves the development-only Admin CMS UI selection experience and documents future governance requirements. It does not add production roles, does not add an approval workflow, does not add database schema, and does not change runtime learner behavior.
 
 ## Step 5D-6a current state — Admin CMS navigation
