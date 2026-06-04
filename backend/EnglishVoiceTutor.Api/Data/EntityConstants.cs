@@ -90,6 +90,7 @@ public static class EntityConstants
         public const int CmsAuditActionMaxLength = 80;
         public const int CmsTemplateKeyMaxLength = 80;
         public const int CmsReasonMaxLength = 2000;
+        public const int CmsStableKeyMaxLength = 160;
     }
 
     public static class Precision

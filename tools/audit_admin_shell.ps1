@@ -24,10 +24,10 @@ $requiredFreeLessonLookupIds = @("free-lesson-lookup-form", "free-lesson-lookup-
 $requiredFreeLessonResetIds = @("free-lesson-empty-state", "free-lesson-reset-card", "free-lesson-reset-form", "free-lesson-reset-usage-date", "free-lesson-reset-reason", "free-lesson-reset-button")
 $requiredAuditIds = @("audit-empty-state", "audit-card", "audit-limit", "load-audit-button", "audit-result")
 $requiredCmsSubTabIds = @(
-    "cms-sub-tab-button-overview", "cms-sub-tab-button-topics", "cms-sub-tab-button-scenarios", "cms-sub-tab-button-prompts", "cms-sub-tab-button-tutors", "cms-sub-tab-button-validation-preview", "cms-sub-tab-button-versions-publish"
+    "cms-sub-tab-button-overview", "cms-sub-tab-button-topics", "cms-sub-tab-button-scenarios", "cms-sub-tab-button-prompts", "cms-sub-tab-button-tutors", "cms-sub-tab-button-validation-preview", "cms-sub-tab-button-versions-publish", "cms-sub-tab-button-audit"
 )
 $requiredCmsSubPanelIds = @(
-    "cms-sub-panel-overview", "cms-sub-panel-topics", "cms-sub-panel-scenarios", "cms-sub-panel-prompts", "cms-sub-panel-tutors", "cms-sub-panel-validation-preview", "cms-sub-panel-versions-publish"
+    "cms-sub-panel-overview", "cms-sub-panel-topics", "cms-sub-panel-scenarios", "cms-sub-panel-prompts", "cms-sub-panel-tutors", "cms-sub-panel-validation-preview", "cms-sub-panel-versions-publish", "cms-sub-panel-audit"
 )
 $requiredCmsIds = @(
     "cms-load-content-packs-button", "cms-content-pack-select", "cms-refresh-button", "cms-loading", "cms-error", "cms-success",
@@ -38,7 +38,7 @@ $requiredCmsIds = @(
     "cms-prompt-template-form", "cms-selected-prompt-template-identity", "cms-prompt-template-body", "cms-prompt-template-is-active", "cms-prompt-template-save-button", "cms-prompt-template-reset-button", "cms-prompt-template-message",
     "cms-tutor-profile-form", "cms-selected-tutor-profile-identity", "cms-tutor-profile-display-name", "cms-tutor-profile-communication-style-json", "cms-tutor-profile-safety-notes-json", "cms-tutor-profile-is-active", "cms-tutor-profile-save-button", "cms-tutor-profile-reset-button", "cms-tutor-profile-message",
     "cms-run-validation-button", "cms-validation-result", "cms-load-preview-button", "cms-preview-summary",
-    "cms-load-versions-button", "cms-publish-change-summary", "cms-publish-button", "cms-restore-version-select", "cms-restore-reason", "cms-restore-button", "cms-versions-list"
+    "cms-load-versions-button", "cms-publish-change-summary", "cms-publish-button", "cms-restore-version-select", "cms-restore-reason", "cms-restore-button", "cms-versions-list", "cms-load-audit-button", "cms-audit-limit", "cms-audit-list"
 )
 $requiredSystemIds = @("capabilities-list")
 
@@ -48,10 +48,10 @@ $requiredJsEndpoints = @(
     "/api/admin/dev/cms/content-packs/{slug}/scenarios", "/api/admin/dev/cms/content-packs/{slug}/scenarios/{scenarioId}",
     "/api/admin/dev/cms/content-packs/{slug}/prompt-templates", "/api/admin/dev/cms/content-packs/{slug}/prompt-templates/{templateId}",
     "/api/admin/dev/cms/content-packs/{slug}/tutor-behavior-profiles", "/api/admin/dev/cms/content-packs/{slug}/tutor-behavior-profiles/{profileId}",
-    "/api/admin/dev/cms/content-packs/{slug}/validate", "/api/admin/dev/cms/content-packs/{slug}/preview-summary", "/api/admin/dev/cms/content-packs/{slug}/versions", "/api/admin/dev/cms/content-packs/{slug}/publish", "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore"
+    "/api/admin/dev/cms/content-packs/{slug}/validate", "/api/admin/dev/cms/content-packs/{slug}/preview-summary", "/api/admin/dev/cms/content-packs/{slug}/versions", "/api/admin/dev/cms/content-packs/{slug}/publish", "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore", "/api/admin/dev/cms/content-packs/{slug}/audit-entries"
 )
 $requiredJsLookupRefs = @("user-lookup", "premium", "free-lesson", "cms-content")
-$requiredJsFunctionRefs = @("updateSelectedUserHeader", "updateUserRequiredEmptyStates", "applySelectedUserPayload", "clearSelectedUserState", "selectCmsSubTab", "loadCmsContentPacks", "renderCmsContentPackSummary", "renderCmsTopicsTable", "renderCmsScenariosTable", "renderCmsPromptTemplatesTable", "renderCmsTutorProfilesTable", "runCmsValidation", "loadCmsPreviewSummary", "loadCmsVersions", "publishCmsDraft", "restoreCmsVersion")
+$requiredJsFunctionRefs = @("updateSelectedUserHeader", "updateUserRequiredEmptyStates", "applySelectedUserPayload", "clearSelectedUserState", "selectCmsSubTab", "loadCmsContentPacks", "renderCmsContentPackSummary", "renderCmsTopicsTable", "renderCmsScenariosTable", "renderCmsPromptTemplatesTable", "renderCmsTutorProfilesTable", "runCmsValidation", "loadCmsPreviewSummary", "loadCmsVersions", "publishCmsDraft", "restoreCmsVersion", "loadCmsAuditEntries", "renderCmsAuditEntries")
 $forbiddenJsStorageTokens = @("localStorage", "sessionStorage")
 
 $requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "tab-panel", "selected-user-summary", "empty-state-card", "compact-table", "cms-grid-two", "cms-toolbar", "cms-sub-tabs", "cms-sub-tab-button", "cms-sub-panel", "cms-workspace-grid", "cms-json-output", "cms-selectable-row", "cms-selected-row", "cms-action-column", "cms-select-button")
@@ -98,7 +98,7 @@ if (-not (Test-Path -LiteralPath $indexPath)) {
         Assert-ContainsOnceById -idCounts $idCounts -id $id
     }
 
-    foreach ($cmsMarker in @('data-cms-sub-tabs="true"', 'data-cms-sub-panel="overview"', 'data-cms-sub-panel="topics"', 'data-cms-sub-panel="scenarios"', 'data-cms-sub-panel="prompts"', 'data-cms-sub-panel="tutors"', 'data-cms-sub-panel="validation-preview"', 'data-cms-sub-panel="versions-publish"')) {
+    foreach ($cmsMarker in @('data-cms-sub-tabs="true"', 'data-cms-sub-panel="overview"', 'data-cms-sub-panel="topics"', 'data-cms-sub-panel="scenarios"', 'data-cms-sub-panel="prompts"', 'data-cms-sub-panel="tutors"', 'data-cms-sub-panel="validation-preview"', 'data-cms-sub-panel="versions-publish"', 'data-cms-sub-panel="audit"')) {
         if ($indexContent.IndexOf($cmsMarker, [System.StringComparison]::Ordinal) -lt 0) {
             Add-Error "index.html: missing CMS sub-tab marker '$cmsMarker'."
         }

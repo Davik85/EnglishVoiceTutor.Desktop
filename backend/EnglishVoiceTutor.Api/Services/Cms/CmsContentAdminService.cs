@@ -208,7 +208,7 @@ public sealed partial class CmsContentAdminService(
         return profile is null ? null : MapTutorBehaviorProfile(profile);
     }
 
-    public async Task<CmsContentUpdateResponse?> UpdateTopicAsync(string slug, string topicIdOrKey, UpdateCmsTopicRequest request, Guid actorUserId, CancellationToken cancellationToken)
+    public async Task<CmsContentUpdateResponse?> UpdateTopicAsync(string slug, string topicIdOrKey, UpdateCmsTopicRequest request, Guid actorUserId, string? actorEmail, string? requestId, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -228,17 +228,21 @@ public sealed partial class CmsContentAdminService(
         return await SaveDraftUpdateAsync(
             changedFields,
             topic.ContentPackId,
-            nameof(CmsLessonTopicEntity),
+            NormalizeRouteValue(slug),
+            CmsContentConstants.ContentAuditEntityTypes.Topic,
             topic.Id,
+            topic.StableTopicKey,
             beforeHash,
             HashTopic(topic),
             request.Reason,
             actorUserId,
+            actorEmail,
+            requestId,
             now => topic.UpdatedAtUtc = now,
             cancellationToken);
     }
 
-    public async Task<CmsContentUpdateResponse?> UpdateScenarioAsync(string slug, string scenarioIdOrKey, UpdateCmsScenarioRequest request, Guid actorUserId, CancellationToken cancellationToken)
+    public async Task<CmsContentUpdateResponse?> UpdateScenarioAsync(string slug, string scenarioIdOrKey, UpdateCmsScenarioRequest request, Guid actorUserId, string? actorEmail, string? requestId, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -280,17 +284,21 @@ public sealed partial class CmsContentAdminService(
         return await SaveDraftUpdateAsync(
             changedFields,
             scenario.ContentPackId,
-            nameof(CmsLessonScenarioEntity),
+            NormalizeRouteValue(slug),
+            CmsContentConstants.ContentAuditEntityTypes.Scenario,
             scenario.Id,
+            scenario.StableScenarioKey,
             beforeHash,
             HashScenario(scenario),
             request.Reason,
             actorUserId,
+            actorEmail,
+            requestId,
             now => scenario.UpdatedAtUtc = now,
             cancellationToken);
     }
 
-    public async Task<CmsContentUpdateResponse?> UpdatePromptTemplateAsync(string slug, string templateIdOrKey, UpdateCmsPromptTemplateRequest request, Guid actorUserId, CancellationToken cancellationToken)
+    public async Task<CmsContentUpdateResponse?> UpdatePromptTemplateAsync(string slug, string templateIdOrKey, UpdateCmsPromptTemplateRequest request, Guid actorUserId, string? actorEmail, string? requestId, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -308,12 +316,16 @@ public sealed partial class CmsContentAdminService(
         return await SaveDraftUpdateAsync(
             changedFields,
             template.ContentPackId,
-            nameof(PromptTemplateEntity),
+            NormalizeRouteValue(slug),
+            CmsContentConstants.ContentAuditEntityTypes.PromptTemplate,
             template.Id,
+            template.TemplateKey,
             beforeHash,
             HashPromptTemplate(template),
             request.Reason,
             actorUserId,
+            actorEmail,
+            requestId,
             now =>
             {
                 template.UpdatedAtUtc = now;
@@ -322,7 +334,7 @@ public sealed partial class CmsContentAdminService(
             cancellationToken);
     }
 
-    public async Task<CmsContentUpdateResponse?> UpdateTutorBehaviorProfileAsync(string slug, string profileIdOrTutorId, UpdateCmsTutorBehaviorProfileRequest request, Guid actorUserId, CancellationToken cancellationToken)
+    public async Task<CmsContentUpdateResponse?> UpdateTutorBehaviorProfileAsync(string slug, string profileIdOrTutorId, UpdateCmsTutorBehaviorProfileRequest request, Guid actorUserId, string? actorEmail, string? requestId, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -345,12 +357,16 @@ public sealed partial class CmsContentAdminService(
         return await SaveDraftUpdateAsync(
             changedFields,
             profile.ContentPackId,
-            nameof(TutorBehaviorProfileEntity),
+            NormalizeRouteValue(slug),
+            CmsContentConstants.ContentAuditEntityTypes.TutorBehaviorProfile,
             profile.Id,
+            profile.TutorId,
             beforeHash,
             HashTutorBehaviorProfile(profile),
             request.Reason,
             actorUserId,
+            actorEmail,
+            requestId,
             now => profile.UpdatedAtUtc = now,
             cancellationToken);
     }
@@ -449,15 +465,55 @@ public sealed partial class CmsContentAdminService(
         };
     }
 
+    public async Task<CmsContentAuditEntriesResponse> ListAuditEntriesAsync(string? contentPackSlug, string? entityType, string? stableKey, int? limit, CancellationToken cancellationToken)
+    {
+        var boundedLimit = Math.Clamp(limit ?? 25, 1, 100);
+        var query = dbContext.ContentAuditLogs.AsNoTracking()
+            .Where(log => log.Action == CmsContentConstants.ContentAuditActions.DraftSaved);
+
+        if (!string.IsNullOrWhiteSpace(contentPackSlug))
+        {
+            var normalizedSlug = NormalizeRouteValue(contentPackSlug);
+            query = query.Where(log => log.ContentPackSlug == normalizedSlug);
+        }
+
+        if (!string.IsNullOrWhiteSpace(entityType))
+        {
+            var normalizedEntityType = NormalizeRouteValue(entityType);
+            query = query.Where(log => log.EntityType == normalizedEntityType);
+        }
+
+        if (!string.IsNullOrWhiteSpace(stableKey))
+        {
+            var normalizedStableKey = NormalizeRouteValue(stableKey);
+            query = query.Where(log => log.StableKey == normalizedStableKey);
+        }
+
+        var entries = await query
+            .OrderByDescending(log => log.CreatedAtUtc)
+            .ThenByDescending(log => log.Id)
+            .Take(boundedLimit)
+            .ToListAsync(cancellationToken);
+
+        return new CmsContentAuditEntriesResponse
+        {
+            Entries = entries.Select(MapAuditEntry).ToList()
+        };
+    }
+
     private async Task<CmsContentUpdateResponse> SaveDraftUpdateAsync(
         List<string> changedFields,
         Guid contentPackId,
+        string contentPackSlug,
         string entityType,
         Guid entityId,
+        string stableKey,
         string beforeHash,
         string afterHash,
         string? reason,
         Guid actorUserId,
+        string? actorEmail,
+        string? requestId,
         Action<DateTimeOffset> touchEntity,
         CancellationToken cancellationToken)
     {
@@ -481,15 +537,21 @@ public sealed partial class CmsContentAdminService(
         {
             Id = Guid.NewGuid(),
             ActorUserId = actorUserId,
-            Action = CmsContentConstants.ContentAuditActions.DraftUpdated,
+            ActorEmail = NormalizeOptional(actorEmail),
+            Action = CmsContentConstants.ContentAuditActions.DraftSaved,
             EntityType = entityType,
             EntityId = entityId,
             ContentPackId = contentPackId,
+            ContentPackSlug = contentPackSlug,
+            StableKey = stableKey,
             BeforeHash = beforeHash,
             AfterHash = afterHash,
             ChangedFieldsJson = CmsContentJson.SerializeDeterministic(changedFields.OrderBy(field => field, StringComparer.Ordinal).ToArray()),
             Reason = SanitizeReason(reason),
-            CreatedAtUtc = now
+            Source = CmsContentConstants.Sources.AdminCms,
+            Status = CmsContentConstants.ContentAuditStatuses.Success,
+            CreatedAtUtc = now,
+            RequestMetadataJson = BuildRequestMetadataJson(requestId)
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -770,6 +832,78 @@ public sealed partial class CmsContentAdminService(
         {
             throw new InvalidOperationException($"{fieldName} must contain valid JSON.", ex);
         }
+    }
+
+    private static CmsContentAuditEntryResponse MapAuditEntry(ContentAuditLogEntity log)
+    {
+        return new CmsContentAuditEntryResponse
+        {
+            Id = log.Id,
+            CreatedAtUtc = log.CreatedAtUtc,
+            ActorUserId = log.ActorUserId,
+            ActorEmail = log.ActorEmail,
+            ContentPackId = log.ContentPackId,
+            ContentPackSlug = log.ContentPackSlug,
+            EntityType = log.EntityType,
+            EntityId = log.EntityId,
+            StableKey = log.StableKey,
+            Operation = log.Action,
+            ChangedFields = DeserializeChangedFields(log.ChangedFieldsJson),
+            BeforeHash = log.BeforeHash,
+            AfterHash = log.AfterHash,
+            RequestId = TryReadRequestId(log.RequestMetadataJson),
+            Source = log.Source,
+            Status = log.Status
+        };
+    }
+
+    private static List<string> DeserializeChangedFields(string changedFieldsJson)
+    {
+        if (string.IsNullOrWhiteSpace(changedFieldsJson))
+        {
+            return [];
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(changedFieldsJson) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    private static string? TryReadRequestId(string? requestMetadataJson)
+    {
+        if (string.IsNullOrWhiteSpace(requestMetadataJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(requestMetadataJson);
+            return document.RootElement.TryGetProperty("requestId", out var requestIdElement) ? requestIdElement.GetString() : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static string? BuildRequestMetadataJson(string? requestId)
+    {
+        var normalizedRequestId = NormalizeOptional(requestId);
+        return normalizedRequestId is null
+            ? null
+            : CmsContentJson.SerializeDeterministic(new { requestId = normalizedRequestId });
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        var trimmed = value?.Trim();
+        return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
     }
 
     private static string NormalizeRouteValue(string value) => value.Trim();

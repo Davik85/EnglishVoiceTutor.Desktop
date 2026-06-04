@@ -95,6 +95,12 @@ public static class AdminEndpoints
             app.MapPut(ApiConstants.AdminDevCmsContentPackTutorBehaviorProfileRoute, UpdateCmsTutorBehaviorProfileAsync)
                 .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
+            app.MapGet(ApiConstants.AdminDevCmsAuditEntriesRoute, ListCmsAuditEntriesAsync)
+                .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
+            app.MapGet(ApiConstants.AdminDevCmsContentPackAuditEntriesRoute, ListCmsContentPackAuditEntriesAsync)
+                .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
             app.MapPost(ApiConstants.AdminDevCmsContentPackValidateRoute, ValidateCmsContentPackAsync)
                 .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
@@ -229,6 +235,7 @@ public static class AdminEndpoints
 
     private static async Task<IResult> UpdateCmsTopicAsync(
         ClaimsPrincipal principal,
+        HttpContext httpContext,
         string slug,
         string topicId,
         UpdateCmsTopicRequest request,
@@ -241,7 +248,7 @@ public static class AdminEndpoints
             return Results.Unauthorized();
         }
 
-        var result = await cmsContentAdminService.UpdateTopicAsync(slug, topicId, request, actorUserId.Value, cancellationToken);
+        var result = await cmsContentAdminService.UpdateTopicAsync(slug, topicId, request, actorUserId.Value, ClaimsUserAccessor.TryGetUserEmail(principal), httpContext.TraceIdentifier, cancellationToken);
         return result is null ? Results.NotFound() : Results.Ok(result);
     }
 
@@ -271,6 +278,7 @@ public static class AdminEndpoints
 
     private static async Task<IResult> UpdateCmsScenarioAsync(
         ClaimsPrincipal principal,
+        HttpContext httpContext,
         string slug,
         string scenarioId,
         UpdateCmsScenarioRequest request,
@@ -285,7 +293,7 @@ public static class AdminEndpoints
 
         try
         {
-            var result = await cmsContentAdminService.UpdateScenarioAsync(slug, scenarioId, request, actorUserId.Value, cancellationToken);
+            var result = await cmsContentAdminService.UpdateScenarioAsync(slug, scenarioId, request, actorUserId.Value, ClaimsUserAccessor.TryGetUserEmail(principal), httpContext.TraceIdentifier, cancellationToken);
             return result is null ? Results.NotFound() : Results.Ok(result);
         }
         catch (InvalidOperationException ex)
@@ -319,6 +327,7 @@ public static class AdminEndpoints
 
     private static async Task<IResult> UpdateCmsPromptTemplateAsync(
         ClaimsPrincipal principal,
+        HttpContext httpContext,
         string slug,
         string templateId,
         UpdateCmsPromptTemplateRequest request,
@@ -331,7 +340,7 @@ public static class AdminEndpoints
             return Results.Unauthorized();
         }
 
-        var result = await cmsContentAdminService.UpdatePromptTemplateAsync(slug, templateId, request, actorUserId.Value, cancellationToken);
+        var result = await cmsContentAdminService.UpdatePromptTemplateAsync(slug, templateId, request, actorUserId.Value, ClaimsUserAccessor.TryGetUserEmail(principal), httpContext.TraceIdentifier, cancellationToken);
         return result is null ? Results.NotFound() : Results.Ok(result);
     }
 
@@ -360,6 +369,7 @@ public static class AdminEndpoints
 
     private static async Task<IResult> UpdateCmsTutorBehaviorProfileAsync(
         ClaimsPrincipal principal,
+        HttpContext httpContext,
         string slug,
         string profileId,
         UpdateCmsTutorBehaviorProfileRequest request,
@@ -374,13 +384,40 @@ public static class AdminEndpoints
 
         try
         {
-            var result = await cmsContentAdminService.UpdateTutorBehaviorProfileAsync(slug, profileId, request, actorUserId.Value, cancellationToken);
+            var result = await cmsContentAdminService.UpdateTutorBehaviorProfileAsync(slug, profileId, request, actorUserId.Value, ClaimsUserAccessor.TryGetUserEmail(principal), httpContext.TraceIdentifier, cancellationToken);
             return result is null ? Results.NotFound() : Results.Ok(result);
         }
         catch (InvalidOperationException ex)
         {
             return Results.BadRequest(new { error = ex.Message });
         }
+    }
+
+    private static async Task<IResult> ListCmsAuditEntriesAsync(
+        [FromQuery] string? contentPackSlug,
+        [FromQuery] string? entityType,
+        [FromQuery] string? stableKey,
+        [FromQuery] int? limit,
+        ICmsContentAdminService cmsContentAdminService,
+        CancellationToken cancellationToken)
+    {
+        return Results.Ok(await cmsContentAdminService.ListAuditEntriesAsync(contentPackSlug, entityType, stableKey, limit, cancellationToken));
+    }
+
+    private static async Task<IResult> ListCmsContentPackAuditEntriesAsync(
+        string slug,
+        [FromQuery] string? entityType,
+        [FromQuery] string? stableKey,
+        [FromQuery] int? limit,
+        ICmsContentAdminService cmsContentAdminService,
+        CancellationToken cancellationToken)
+    {
+        if (await cmsContentAdminService.GetContentPackSummaryAsync(slug, cancellationToken) is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(await cmsContentAdminService.ListAuditEntriesAsync(slug, entityType, stableKey, limit, cancellationToken));
     }
 
     private static async Task<IResult> ValidateCmsContentPackAsync(

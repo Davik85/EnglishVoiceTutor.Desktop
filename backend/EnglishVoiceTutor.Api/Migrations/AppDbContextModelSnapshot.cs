@@ -72,6 +72,10 @@ namespace EnglishVoiceTutor.Api.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("character varying(80)");
 
+                    b.Property<string>("ActorEmail")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
                     b.Property<Guid?>("ActorUserId")
                         .HasColumnType("uuid");
 
@@ -89,6 +93,10 @@ namespace EnglishVoiceTutor.Api.Migrations
 
                     b.Property<Guid?>("ContentPackId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("ContentPackSlug")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -110,11 +118,31 @@ namespace EnglishVoiceTutor.Api.Migrations
                         .HasMaxLength(4096)
                         .HasColumnType("character varying(4096)");
 
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("StableKey")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ActorUserId", "CreatedAtUtc");
 
                     b.HasIndex("ContentPackId", "CreatedAtUtc");
+
+                    b.HasIndex("ContentPackSlug", "CreatedAtUtc");
+
+                    b.HasIndex("EntityType", "CreatedAtUtc");
+
+                    b.HasIndex("StableKey", "CreatedAtUtc");
 
                     b.ToTable("cms_content_audit_logs", (string)null);
                 });

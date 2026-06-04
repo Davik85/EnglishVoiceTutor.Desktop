@@ -14,10 +14,11 @@ public interface ICmsContentAdminService
     Task<CmsPromptTemplateResponse?> GetPromptTemplateAsync(string slug, string templateIdOrKey, CancellationToken cancellationToken);
     Task<IReadOnlyList<CmsTutorBehaviorProfileResponse>> ListTutorBehaviorProfilesAsync(string slug, CancellationToken cancellationToken);
     Task<CmsTutorBehaviorProfileResponse?> GetTutorBehaviorProfileAsync(string slug, string profileIdOrTutorId, CancellationToken cancellationToken);
-    Task<CmsContentUpdateResponse?> UpdateTopicAsync(string slug, string topicIdOrKey, UpdateCmsTopicRequest request, Guid actorUserId, CancellationToken cancellationToken);
-    Task<CmsContentUpdateResponse?> UpdateScenarioAsync(string slug, string scenarioIdOrKey, UpdateCmsScenarioRequest request, Guid actorUserId, CancellationToken cancellationToken);
-    Task<CmsContentUpdateResponse?> UpdatePromptTemplateAsync(string slug, string templateIdOrKey, UpdateCmsPromptTemplateRequest request, Guid actorUserId, CancellationToken cancellationToken);
-    Task<CmsContentUpdateResponse?> UpdateTutorBehaviorProfileAsync(string slug, string profileIdOrTutorId, UpdateCmsTutorBehaviorProfileRequest request, Guid actorUserId, CancellationToken cancellationToken);
+    Task<CmsContentUpdateResponse?> UpdateTopicAsync(string slug, string topicIdOrKey, UpdateCmsTopicRequest request, Guid actorUserId, string? actorEmail, string? requestId, CancellationToken cancellationToken);
+    Task<CmsContentUpdateResponse?> UpdateScenarioAsync(string slug, string scenarioIdOrKey, UpdateCmsScenarioRequest request, Guid actorUserId, string? actorEmail, string? requestId, CancellationToken cancellationToken);
+    Task<CmsContentUpdateResponse?> UpdatePromptTemplateAsync(string slug, string templateIdOrKey, UpdateCmsPromptTemplateRequest request, Guid actorUserId, string? actorEmail, string? requestId, CancellationToken cancellationToken);
+    Task<CmsContentUpdateResponse?> UpdateTutorBehaviorProfileAsync(string slug, string profileIdOrTutorId, UpdateCmsTutorBehaviorProfileRequest request, Guid actorUserId, string? actorEmail, string? requestId, CancellationToken cancellationToken);
     Task<CmsContentValidationResponse?> ValidateDraftAsync(string slug, CancellationToken cancellationToken);
     Task<CmsContentPreviewResponse?> GetPreviewSummaryAsync(string slug, CancellationToken cancellationToken);
+    Task<CmsContentAuditEntriesResponse> ListAuditEntriesAsync(string? contentPackSlug, string? entityType, string? stableKey, int? limit, CancellationToken cancellationToken);
 }
