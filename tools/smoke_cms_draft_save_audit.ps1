@@ -5,6 +5,48 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+function Get-SmokeErrorText {
+    param([object]$ErrorRecord)
+
+    $parts = New-Object System.Collections.Generic.List[string]
+    if ($ErrorRecord) {
+        $parts.Add([string]$ErrorRecord)
+        if ($ErrorRecord.Exception) {
+            $parts.Add($ErrorRecord.Exception.Message)
+            if ($ErrorRecord.Exception.Response) {
+                try {
+                    $stream = $ErrorRecord.Exception.Response.GetResponseStream()
+                    if ($stream) {
+                        $reader = [System.IO.StreamReader]::new($stream)
+                        $parts.Add($reader.ReadToEnd())
+                    }
+                } catch {
+                    # Best-effort diagnostic extraction only.
+                }
+            }
+        }
+    }
+
+    return ($parts -join "`n")
+}
+
+function Test-CmsAuditMigrationError {
+    param([object]$ErrorRecord)
+
+    $errorText = Get-SmokeErrorText -ErrorRecord $ErrorRecord
+    return $errorText -match 'cms_content_audit_logs' -and $errorText -match 'ActorEmail|ContentPackSlug|StableKey|Source|Status|42703|column .* does not exist'
+}
+
+trap {
+    if (Test-CmsAuditMigrationError -ErrorRecord $_) {
+        Write-Host 'CMS draft-save audit smoke failed because the database schema is missing CMS audit metadata columns.'
+        Write-Host 'Apply the EF migration 20260604121000_AddCmsDraftSaveAuditMetadata with dotnet ef database update before rerunning this smoke test.'
+        Write-Host 'Expected cms_content_audit_logs columns: ActorEmail, ContentPackSlug, Source, StableKey, Status.'
+    }
+
+    break
+}
+
 if ([string]::IsNullOrWhiteSpace($BearerToken)) {
     throw 'Admin bearer token is required. Pass -BearerToken or set EVT_ADMIN_BEARER_TOKEN after authenticating as the bootstrap admin.'
 }
