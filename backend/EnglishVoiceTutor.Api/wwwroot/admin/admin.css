@@ -129,3 +129,15 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
   .cms-filter-row { align-items: stretch; flex-direction: column; }
   .cms-topic-select-filter { flex-basis: auto; width: 100%; }
 }
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
