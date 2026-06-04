@@ -277,7 +277,9 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - It uses Development/config bootstrap admin access.
 - The local admin shell is backend-hosted at `/admin/`.
 - Tabs: Overview, User Lookup, Premium, Free Lesson, Audit Log, System.
-- Admin shell JWT remains memory-only.
+- Admin shell JWT remains memory-only. Refresh auth continues to use the existing admin-only HTTP-only cookie, and selected workspace state is restored only from non-secret URL hash fields after the admin session is valid.
+- URL hash workspace restore covers the active admin tab, CMS sub-tab, content pack slug, CMS selected entity keys, and selected admin user ID. Unsaved form content, prompt bodies, full scenario JSON, tutor profile JSON, passwords, and tokens are not browser-persisted.
+- CMS draft editors show an unsaved-change indicator and warn before refresh/close, tab switches, CMS sub-tab switches, selecting another entity, or logout. Save draft remains the explicit persistence action; future autosave/audit workflow remains deferred. The admin shell is still development/admin-only and not production RBAC.
 - It supports:
   - Exact user lookup by email.
   - Read-only user diagnostics.

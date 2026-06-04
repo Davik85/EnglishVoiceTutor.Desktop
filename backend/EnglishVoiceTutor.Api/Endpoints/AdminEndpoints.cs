@@ -30,6 +30,9 @@ public static class AdminEndpoints
         app.MapGet(ApiConstants.AdminUserByEmailRoute, GetAdminUserByEmailAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
+        app.MapGet(ApiConstants.AdminUserByIdRoute, GetAdminUserByIdAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
         app.MapPost(ApiConstants.AdminUserPremiumGrantsRoute, GrantManualPremiumAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
@@ -161,6 +164,20 @@ public static class AdminEndpoints
             });
         }
 
+        return ToUserLookupResult(lookupResult);
+    }
+
+    private static async Task<IResult> GetAdminUserByIdAsync(
+        Guid userId,
+        IAdminUserLookupService adminUserLookupService,
+        CancellationToken cancellationToken)
+    {
+        var lookupResult = await adminUserLookupService.GetByIdAsync(userId, cancellationToken);
+        return ToUserLookupResult(lookupResult);
+    }
+
+    private static IResult ToUserLookupResult(AdminUserLookupResult lookupResult)
+    {
         if (lookupResult.Response is null)
         {
             return Results.NotFound();

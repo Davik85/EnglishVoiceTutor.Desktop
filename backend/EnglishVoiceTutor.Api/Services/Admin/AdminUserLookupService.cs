@@ -1,6 +1,7 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Admin;
 using EnglishVoiceTutor.Api.Data;
+using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,6 +34,22 @@ public sealed class AdminUserLookupService(
             .Include(candidate => candidate.Settings)
             .SingleOrDefaultAsync(candidate => candidate.Email == normalizedEmail, cancellationToken);
 
+        return await BuildLookupResultAsync(user, cancellationToken);
+    }
+
+    public async Task<AdminUserLookupResult> GetByIdAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .Include(candidate => candidate.Profile)
+            .Include(candidate => candidate.Settings)
+            .SingleOrDefaultAsync(candidate => candidate.Id == userId, cancellationToken);
+
+        return await BuildLookupResultAsync(user, cancellationToken);
+    }
+
+    private async Task<AdminUserLookupResult> BuildLookupResultAsync(UserEntity? user, CancellationToken cancellationToken)
+    {
         if (user is null)
         {
             return new AdminUserLookupResult();
