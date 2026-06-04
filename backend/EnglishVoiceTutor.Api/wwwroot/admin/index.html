@@ -223,6 +223,13 @@
                                         <div class="field"><label for="cms-scenario-description">Description</label><textarea id="cms-scenario-description" name="cms-scenario-description" rows="5"></textarea></div>
                                         <div class="field"><label for="cms-scenario-setup-message">Setup message</label><textarea id="cms-scenario-setup-message" name="cms-scenario-setup-message" rows="7"></textarea></div>
                                         <label class="checkbox-field"><input id="cms-scenario-is-active" name="cms-scenario-is-active" type="checkbox" /> Active</label>
+                                        <section class="cms-scenario-json-section" aria-labelledby="cms-scenario-definition-json-heading">
+                                            <h5 id="cms-scenario-definition-json-heading">Full scenario JSON</h5>
+                                            <p class="muted">Advanced: edit the complete scenario definition JSON. Save draft before publishing.</p>
+                                            <div class="cms-button-row cms-json-button-row"><button id="cms-scenario-format-json-button" type="button">Format JSON</button><button id="cms-scenario-validate-json-button" type="button">Validate JSON</button></div>
+                                            <div class="field"><label for="cms-scenario-definition-json">Full scenario JSON</label><textarea id="cms-scenario-definition-json" name="cms-scenario-definition-json" rows="24" spellcheck="false"></textarea></div>
+                                            <p id="cms-scenario-json-status" class="muted" role="status"></p>
+                                        </section>
                                         <div class="cms-button-row"><button id="cms-scenario-save-button" type="submit">Save draft</button><button id="cms-scenario-reset-button" type="button">Reload selected</button></div>
                                         <p id="cms-scenario-message" class="success" role="status"></p>
                                     </form>

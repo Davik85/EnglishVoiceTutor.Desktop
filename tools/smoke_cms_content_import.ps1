@@ -52,6 +52,14 @@ if (-not $second.idempotentNoChanges) {
     throw 'Second CMS static content import was not idempotent.'
 }
 
+$scenarios = Invoke-RestMethod -Method Get -Uri "$BaseUrl/api/admin/dev/cms/content-packs/static-json-v1/scenarios" -Headers $headers -TimeoutSec 60
+$scenario = @($scenarios)[0]
+$scenarioDetail = Invoke-RestMethod -Method Get -Uri "$BaseUrl/api/admin/dev/cms/content-packs/static-json-v1/scenarios/$($scenario.id)" -Headers $headers -TimeoutSec 60
+if ([string]::IsNullOrWhiteSpace([string]$scenarioDetail.definitionJson) -or $scenarioDetail.isDefinitionJsonFallback) {
+    $scenarioDetail | ConvertTo-Json -Depth 12 | Write-Host
+    throw 'CMS static content import did not persist full scenario JSON for imported scenarios.'
+}
+
 $afterStaticStatus = git -C (Resolve-Path (Join-Path $PSScriptRoot '..')) status --short -- Content/Lessons Content/Prompts Content/Tutors
 if ($afterStaticStatus) {
     Write-Host $afterStaticStatus

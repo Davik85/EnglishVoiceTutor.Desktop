@@ -257,8 +257,15 @@ public static class AdminEndpoints
             return Results.Unauthorized();
         }
 
-        var result = await cmsContentAdminService.UpdateScenarioAsync(slug, scenarioId, request, actorUserId.Value, cancellationToken);
-        return result is null ? Results.NotFound() : Results.Ok(result);
+        try
+        {
+            var result = await cmsContentAdminService.UpdateScenarioAsync(slug, scenarioId, request, actorUserId.Value, cancellationToken);
+            return result is null ? Results.NotFound() : Results.Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
     }
 
     private static async Task<IResult> ListCmsPromptTemplatesAsync(

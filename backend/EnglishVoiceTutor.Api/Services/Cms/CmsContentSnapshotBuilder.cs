@@ -85,6 +85,7 @@ internal static class CmsContentSnapshotBuilder
                 scenario.Title,
                 scenario.Description,
                 scenario.LessonType,
+                DefinitionJson = CmsScenarioDefinitionJson.GetDefinitionJsonOrFallback(scenario),
                 Lesson = BuildLessonScenario(scenario, baseScenarios.TryGetValue(scenario.StableScenarioKey, out var baseScenario) ? baseScenario.Lesson : null)
             }),
             PromptTemplates = promptTemplates.OrderBy(template => template.TemplateKey, StringComparer.Ordinal).ThenBy(template => template.TargetStudyLanguageId, StringComparer.Ordinal).Select(template => new
@@ -114,6 +115,11 @@ internal static class CmsContentSnapshotBuilder
 
     private static LessonScenario BuildLessonScenario(CmsLessonScenarioEntity scenario, LessonScenario? baseScenario)
     {
+        if (!string.IsNullOrWhiteSpace(scenario.DefinitionJson))
+        {
+            return CmsScenarioDefinitionJson.DeserializeLessonScenario(scenario);
+        }
+
         var lesson = baseScenario ?? new LessonScenario { Id = scenario.StableScenarioKey };
         lesson.Id = string.IsNullOrWhiteSpace(lesson.Id) ? scenario.StableScenarioKey : lesson.Id;
         lesson.Metadata.Topic = string.IsNullOrWhiteSpace(lesson.Metadata.Topic) ? scenario.Topic.StableTopicKey : lesson.Metadata.Topic;

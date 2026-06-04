@@ -71,8 +71,8 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
 .cms-table td { max-width: 320px; overflow-wrap: anywhere; }
 .cms-json-output { background: #0f172a; border-radius: 8px; color: #e5e7eb; font-family: Consolas, Monaco, monospace; font-size: 13px; line-height: 1.45; margin-top: 12px; max-height: 360px; overflow: auto; padding: 12px; white-space: pre-wrap; word-break: break-word; }
 .small-button { font-size: 13px; padding: 6px 10px; }
-#cms-topic-message, #cms-scenario-message, #cms-prompt-template-message, #cms-tutor-profile-message { min-height: 24px; }
-#cms-prompt-template-body, #cms-tutor-profile-communication-style-json, #cms-tutor-profile-safety-notes-json { font-family: Consolas, Monaco, monospace; font-size: 14px; }
+#cms-topic-message, #cms-scenario-message, #cms-scenario-json-status, #cms-prompt-template-message, #cms-tutor-profile-message { min-height: 24px; }
+#cms-prompt-template-body, #cms-scenario-definition-json, #cms-tutor-profile-communication-style-json, #cms-tutor-profile-safety-notes-json { font-family: Consolas, Monaco, monospace; font-size: 14px; }
 
 @media (max-width: 1024px) {
   .cms-grid-two { grid-template-columns: 1fr; }
@@ -114,6 +114,10 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
 #cms-prompt-template-body { min-height: 420px; }
 #cms-tutor-profile-communication-style-json, #cms-tutor-profile-safety-notes-json { min-height: 260px; }
 #cms-scenario-setup-message { min-height: 180px; }
+.cms-scenario-json-section { border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 14px; }
+.cms-scenario-json-section h5 { font-size: 15px; margin: 0 0 6px; }
+.cms-json-button-row { margin-bottom: 10px; margin-top: 8px; }
+#cms-scenario-definition-json { min-height: 520px; white-space: pre; }
 
 @media (max-width: 1180px) {
   .cms-workspace-grid, .cms-scenario-workspace { grid-template-columns: 1fr; }

@@ -29,6 +29,7 @@ public sealed class CmsStaticScenarioDraft
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string LessonType { get; set; } = string.Empty;
+    public string DefinitionJson { get; set; } = string.Empty;
     public LessonScenario Scenario { get; set; } = new();
 }
 

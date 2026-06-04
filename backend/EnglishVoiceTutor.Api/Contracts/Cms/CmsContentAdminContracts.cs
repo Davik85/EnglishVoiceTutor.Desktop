@@ -44,6 +44,8 @@ public sealed class CmsContentScenarioResponse
     public string LessonType { get; set; } = string.Empty;
     public string SupportedLevelIdsJson { get; set; } = string.Empty;
     public string SetupMessage { get; set; } = string.Empty;
+    public string DefinitionJson { get; set; } = string.Empty;
+    public bool IsDefinitionJsonFallback { get; set; }
     public int? SoftWrapUpAfterUserTurn { get; set; }
     public int? FinalMessageAtUserTurn { get; set; }
     public bool IsActive { get; set; }
@@ -129,6 +131,8 @@ public sealed class CmsContentPreviewScenarioSummaryResponse
     public string TopicKey { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public bool IsActive { get; set; }
+    public bool DefinitionJsonPresent { get; set; }
+    public bool DefinitionJsonValid { get; set; }
 }
 
 public sealed class CmsContentUpdateResponse
@@ -156,6 +160,7 @@ public sealed class UpdateCmsScenarioRequest
     public string? Title { get; set; }
     public string? Description { get; set; }
     public string? SetupMessage { get; set; }
+    public string? DefinitionJson { get; set; }
     public bool? IsActive { get; set; }
     public string? Reason { get; set; }
 }

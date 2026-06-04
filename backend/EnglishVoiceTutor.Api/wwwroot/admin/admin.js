@@ -191,6 +191,10 @@
     const cmsScenarioDescriptionInput = document.getElementById("cms-scenario-description");
     const cmsScenarioSetupMessageInput = document.getElementById("cms-scenario-setup-message");
     const cmsScenarioIsActiveInput = document.getElementById("cms-scenario-is-active");
+    const cmsScenarioDefinitionJsonInput = document.getElementById("cms-scenario-definition-json");
+    const cmsScenarioFormatJsonButton = document.getElementById("cms-scenario-format-json-button");
+    const cmsScenarioValidateJsonButton = document.getElementById("cms-scenario-validate-json-button");
+    const cmsScenarioJsonStatusElement = document.getElementById("cms-scenario-json-status");
     const cmsSelectedScenarioIdentityElement = document.getElementById("cms-selected-scenario-identity");
     const cmsScenarioResetButton = document.getElementById("cms-scenario-reset-button");
     const cmsScenarioMessageElement = document.getElementById("cms-scenario-message");
@@ -734,6 +738,11 @@
     function setCmsSuccess(message) { cmsSuccessElement.textContent = message || ""; }
     function setCmsEntityMessage(element, message, isError) { element.className = isError ? "error" : "success"; element.textContent = message || ""; }
     function renderJsonOutput(element, payload) { element.textContent = JSON.stringify(payload, null, 2); }
+    function tryParseCmsJson(text) { try { return { isValid: true, value: JSON.parse(text) }; } catch (error) { return { isValid: false, message: error instanceof Error ? error.message : "Invalid JSON." }; } }
+    function prettyPrintCmsJson(text) { const parsed = tryParseCmsJson(text); return parsed.isValid ? { isValid: true, text: JSON.stringify(parsed.value, null, 2) } : parsed; }
+    function setCmsScenarioJsonStatus(message, isError) { cmsScenarioJsonStatusElement.className = isError ? "error" : "success"; cmsScenarioJsonStatusElement.textContent = message || ""; }
+    function validateCmsScenarioJsonInput() { const text = cmsScenarioDefinitionJsonInput.value.trim(); if (!text) { setCmsScenarioJsonStatus("Full scenario JSON is required before saving an active scenario.", true); return false; } const parsed = tryParseCmsJson(text); if (!parsed.isValid) { setCmsScenarioJsonStatus(`Invalid JSON: ${parsed.message}`, true); return false; } if (!parsed.value || typeof parsed.value !== "object" || Array.isArray(parsed.value)) { setCmsScenarioJsonStatus("Full scenario JSON root must be an object.", true); return false; } setCmsScenarioJsonStatus("Full scenario JSON is valid JSON.", false); return true; }
+    function formatCmsScenarioJsonInput() { const formatted = prettyPrintCmsJson(cmsScenarioDefinitionJsonInput.value); if (!formatted.isValid) { setCmsScenarioJsonStatus(`Cannot format invalid JSON: ${formatted.message}`, true); return false; } cmsScenarioDefinitionJsonInput.value = formatted.text; setCmsScenarioJsonStatus("Full scenario JSON formatted.", false); return true; }
     function formatShortHash(hash) { const value = String(hash || ""); return value.length > 16 ? `${value.slice(0, 12)}...${value.slice(-4)}` : formatValue(value); }
 
     async function adminFetch(path, options = {}) {
@@ -743,7 +752,11 @@
         if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
         if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
         if (response.status === HttpStatus.notFound) { throw new Error("CMS item was not found."); }
-        if (response.status === HttpStatus.badRequest) { throw new Error("CMS request is invalid. Check draft fields and validation messages."); }
+        if (response.status === HttpStatus.badRequest) {
+            let message = "CMS request is invalid. Check draft fields and validation messages.";
+            try { const payload = await response.json(); message = payload?.error || payload?.message || message; } catch (_) { }
+            throw new Error(message);
+        }
         if (response.status === HttpStatus.conflict) { throw new Error("CMS request conflicted with current state."); }
         if (!response.ok) { throw new Error("CMS request failed."); }
         if (response.status === 204) { return null; }
@@ -914,7 +927,7 @@
     async function selectCmsTopic(row) { cmsSelectedTopic = row; renderCmsTopicsTable(); cmsSelectedTopic = await adminFetch(cmsPath(ApiPaths.cmsTopicTemplate, { slug: getSelectedCmsSlug(), topicId: row.id })); fillCmsTopicForm(); renderCmsTopicsTable(); }
     function fillCmsTopicForm() { const item = cmsSelectedTopic; cmsSelectedTopicIdentityElement.textContent = item ? `${item.stableTopicKey} (${item.id})` : "None selected"; cmsTopicTitleInput.value = item?.title || ""; cmsTopicDescriptionInput.value = item?.description || ""; cmsTopicSortOrderInput.value = item?.sortOrder ?? ""; cmsTopicIsActiveInput.checked = Boolean(item?.isActive); setCmsEntityMessage(cmsTopicMessageElement, "", false); }
     async function selectCmsScenario(row) { cmsSelectedScenario = row; renderCmsScenariosTable(); cmsSelectedScenario = await adminFetch(cmsPath(ApiPaths.cmsScenarioTemplate, { slug: getSelectedCmsSlug(), scenarioId: row.id })); fillCmsScenarioForm(); renderCmsScenariosTable(); }
-    function fillCmsScenarioForm() { const item = cmsSelectedScenario; cmsSelectedScenarioIdentityElement.textContent = item ? `${item.stableScenarioKey} (${item.id})` : "None selected"; cmsScenarioTitleInput.value = item?.title || ""; cmsScenarioDescriptionInput.value = item?.description || ""; cmsScenarioSetupMessageInput.value = item?.setupMessage || ""; cmsScenarioIsActiveInput.checked = Boolean(item?.isActive); setCmsEntityMessage(cmsScenarioMessageElement, "", false); }
+    function fillCmsScenarioForm() { const item = cmsSelectedScenario; cmsSelectedScenarioIdentityElement.textContent = item ? `${item.stableScenarioKey} (${item.id})` : "None selected"; cmsScenarioTitleInput.value = item?.title || ""; cmsScenarioDescriptionInput.value = item?.description || ""; cmsScenarioSetupMessageInput.value = item?.setupMessage || ""; cmsScenarioIsActiveInput.checked = Boolean(item?.isActive); cmsScenarioDefinitionJsonInput.value = item?.definitionJson || ""; setCmsScenarioJsonStatus(item?.isDefinitionJsonFallback ? "Showing fallback JSON built from existing draft fields; save draft to persist it as full scenario JSON." : "", Boolean(item?.isDefinitionJsonFallback)); setCmsEntityMessage(cmsScenarioMessageElement, "", false); }
     async function selectCmsPromptTemplate(row) { cmsSelectedPromptTemplate = row; renderCmsPromptTemplatesTable(); cmsSelectedPromptTemplate = await adminFetch(cmsPath(ApiPaths.cmsPromptTemplateTemplate, { slug: getSelectedCmsSlug(), templateId: row.id })); fillCmsPromptTemplateForm(); renderCmsPromptTemplatesTable(); }
     function fillCmsPromptTemplateForm() { const item = cmsSelectedPromptTemplate; cmsSelectedPromptTemplateIdentityElement.textContent = item ? `${item.templateKey} (${item.id})` : "None selected"; cmsPromptTemplateBodyInput.value = item?.body || ""; cmsPromptTemplateIsActiveInput.checked = Boolean(item?.isActive); setCmsEntityMessage(cmsPromptTemplateMessageElement, "", false); }
     async function selectCmsTutorProfile(row) { cmsSelectedTutorProfile = row; renderCmsTutorProfilesTable(); cmsSelectedTutorProfile = await adminFetch(cmsPath(ApiPaths.cmsTutorProfileTemplate, { slug: getSelectedCmsSlug(), profileId: row.id })); fillCmsTutorProfileForm(); renderCmsTutorProfilesTable(); }
@@ -926,7 +939,8 @@
     }
     async function saveCmsScenarioDraft() {
         if (!cmsSelectedScenario) { setCmsEntityMessage(cmsScenarioMessageElement, "Select a scenario first.", true); return; }
-        await saveCmsDraft(ApiPaths.cmsScenarioTemplate, { scenarioId: cmsSelectedScenario.id }, { title: cmsScenarioTitleInput.value, description: cmsScenarioDescriptionInput.value, setupMessage: cmsScenarioSetupMessageInput.value, isActive: cmsScenarioIsActiveInput.checked, reason: "Admin CMS UI shell draft edit" }, cmsScenarioMessageElement, loadCmsScenarios, () => selectCmsScenario(cmsSelectedScenario));
+        if (!validateCmsScenarioJsonInput()) { setCmsEntityMessage(cmsScenarioMessageElement, "Save draft blocked: fix full scenario JSON first.", true); return; }
+        await saveCmsDraft(ApiPaths.cmsScenarioTemplate, { scenarioId: cmsSelectedScenario.id }, { title: cmsScenarioTitleInput.value, description: cmsScenarioDescriptionInput.value, setupMessage: cmsScenarioSetupMessageInput.value, definitionJson: cmsScenarioDefinitionJsonInput.value, isActive: cmsScenarioIsActiveInput.checked, reason: "Admin CMS UI shell draft edit" }, cmsScenarioMessageElement, loadCmsScenarios, () => selectCmsScenario(cmsSelectedScenario));
     }
     async function saveCmsPromptTemplateDraft() {
         if (!cmsSelectedPromptTemplate) { setCmsEntityMessage(cmsPromptTemplateMessageElement, "Select a prompt template first.", true); return; }
@@ -1013,6 +1027,8 @@
     cmsTopicResetButton.addEventListener("click", async () => { if (cmsSelectedTopic) { await selectCmsTopic(cmsSelectedTopic); } });
     cmsScenarioForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsScenarioDraft(); });
     cmsScenarioResetButton.addEventListener("click", async () => { if (cmsSelectedScenario) { await selectCmsScenario(cmsSelectedScenario); } });
+    cmsScenarioFormatJsonButton.addEventListener("click", () => { formatCmsScenarioJsonInput(); });
+    cmsScenarioValidateJsonButton.addEventListener("click", () => { validateCmsScenarioJsonInput(); });
     cmsPromptTemplateForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsPromptTemplateDraft(); });
     cmsPromptTemplateResetButton.addEventListener("click", async () => { if (cmsSelectedPromptTemplate) { await selectCmsPromptTemplate(cmsSelectedPromptTemplate); } });
     cmsTutorProfileForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsTutorProfileDraft(); });

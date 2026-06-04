@@ -91,6 +91,31 @@ if (-not $update.success -or $update.noChanges) {
     throw 'CMS bounded draft topic update did not change the draft content.'
 }
 
+$scenarios = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/scenarios" -Headers $headers -TimeoutSec 60
+$scenario = @($scenarios | Sort-Object -Property stableScenarioKey)[0]
+$scenarioDetail = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $headers -TimeoutSec 60
+if ([string]::IsNullOrWhiteSpace([string]$scenarioDetail.definitionJson) -or $scenarioDetail.isDefinitionJsonFallback) {
+    $scenarioDetail | ConvertTo-Json -Depth 12 | Write-Host
+    throw 'CMS scenario detail did not return persisted full scenario JSON before publish/rollback smoke.'
+}
+
+$originalScenarioDefinitionJson = [string]$scenarioDetail.definitionJson
+$scenarioDefinition = $scenarioDetail.definitionJson | ConvertFrom-Json
+$scenarioDefinition | Add-Member -NotePropertyName smokePublishRollbackMarker -NotePropertyValue "$markerPrefix version-$previousVersionNumber" -Force
+$scenarioDefinitionJson = $scenarioDefinition | ConvertTo-Json -Depth 100
+$scenarioUpdate = Invoke-JsonPut -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Body @{
+    title = $scenarioDetail.title
+    description = $scenarioDetail.description
+    setupMessage = $scenarioDetail.setupMessage
+    definitionJson = $scenarioDefinitionJson
+    isActive = $scenarioDetail.isActive
+    reason = 'Step 5D-6c smoke: full scenario JSON update before publish.'
+}
+if (-not $scenarioUpdate.success) {
+    $scenarioUpdate | ConvertTo-Json -Depth 12 | Write-Host
+    throw 'CMS scenario draft update did not save full scenario JSON before publish.'
+}
+
 $validation = Invoke-JsonPost -Uri "$contentPackUrl/validate" -Body @{}
 if (-not $validation.success) {
     $validation | ConvertTo-Json -Depth 12 | Write-Host
@@ -132,6 +157,12 @@ if (-not $restore.success -or -not $restore.draftRestored) {
 if (-not $restore.publishedNewVersion -and -not $restore.noChanges) {
     $restore | ConvertTo-Json -Depth 12 | Write-Host
     throw 'CMS restore endpoint neither published a rollback version nor reported no changes.'
+}
+
+$restoredScenarioDetail = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $headers -TimeoutSec 60
+if ([string]::IsNullOrWhiteSpace([string]$restoredScenarioDetail.definitionJson) -or $restoredScenarioDetail.definitionJson -ne $originalScenarioDefinitionJson) {
+    $restoredScenarioDetail | ConvertTo-Json -Depth 12 | Write-Host
+    throw 'CMS restore did not restore the original full scenario JSON into the draft.'
 }
 
 $validationAfterRestore = Invoke-JsonPost -Uri "$contentPackUrl/validate" -Body @{}
