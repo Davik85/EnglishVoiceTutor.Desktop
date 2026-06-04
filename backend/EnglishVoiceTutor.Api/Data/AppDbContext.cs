@@ -553,6 +553,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.Property(scenario => scenario.HintRulesJson).IsRequired();
         entity.Property(scenario => scenario.RepetitionLogicJson).IsRequired();
         entity.Property(scenario => scenario.AiTutorPromptInstructionsJson).IsRequired();
+        entity.Property(scenario => scenario.DefinitionJson);
         entity.Property(scenario => scenario.CreatedAtUtc).IsRequired();
         entity.Property(scenario => scenario.UpdatedAtUtc).IsRequired();
         entity.HasIndex(scenario => new { scenario.ContentPackId, scenario.StableScenarioKey }).IsUnique();

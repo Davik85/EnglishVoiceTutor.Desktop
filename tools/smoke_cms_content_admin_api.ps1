@@ -11,6 +11,7 @@ if ([string]::IsNullOrWhiteSpace($BearerToken)) {
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 $headers = @{ Authorization = "Bearer $BearerToken" }
+$jsonHeaders = @{ Authorization = "Bearer $BearerToken"; 'Content-Type' = 'application/json' }
 $healthUrl = "$BaseUrl/api/health"
 $contentPacksUrl = "$BaseUrl/api/admin/dev/cms/content-packs"
 $contentPackUrl = "$contentPacksUrl/static-json-v1"
@@ -66,6 +67,62 @@ if ($scenarioDetail.id -ne $scenario.id) {
     throw 'CMS admin scenario detail endpoint returned the wrong scenario.'
 }
 
+if ([string]::IsNullOrWhiteSpace([string]$scenarioDetail.definitionJson) -or $scenarioDetail.isDefinitionJsonFallback) {
+    $scenarioDetail | ConvertTo-Json -Depth 12 | Write-Host
+    throw 'CMS admin scenario detail endpoint did not return persisted full scenario JSON.'
+}
+
+$definition = $scenarioDetail.definitionJson | ConvertFrom-Json
+if ([string]::IsNullOrWhiteSpace([string]$definition.id) -or -not $definition.metadata -or -not $definition.lessonSetup -or [string]::IsNullOrWhiteSpace([string]$definition.lessonSetup.setupMessage)) {
+    $scenarioDetail | ConvertTo-Json -Depth 12 | Write-Host
+    throw 'CMS admin scenario detail full scenario JSON is missing required baseline fields.'
+}
+
+$validDefinition = $scenarioDetail.definitionJson | ConvertFrom-Json
+$validDefinition | Add-Member -NotePropertyName smokeScenarioJsonEdit -NotePropertyValue 'Step 5D-6c valid draft save smoke' -Force
+$validDefinitionJson = $validDefinition | ConvertTo-Json -Depth 100
+$saveBody = @{
+    title = $scenarioDetail.title
+    description = $scenarioDetail.description
+    setupMessage = $scenarioDetail.setupMessage
+    definitionJson = $validDefinitionJson
+    isActive = $scenarioDetail.isActive
+    reason = 'Step 5D-6c smoke: valid full scenario JSON draft save.'
+} | ConvertTo-Json -Depth 100
+$saveResponse = Invoke-RestMethod -Method Put -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $jsonHeaders -Body $saveBody -TimeoutSec 60
+if (-not $saveResponse.success) {
+    $saveResponse | ConvertTo-Json -Depth 12 | Write-Host
+    throw 'CMS admin scenario draft save did not accept valid full scenario JSON.'
+}
+
+$invalidRejected = $false
+try {
+    $invalidBody = @{
+        title = $scenarioDetail.title
+        description = $scenarioDetail.description
+        setupMessage = $scenarioDetail.setupMessage
+        definitionJson = '{ invalid scenario json'
+        isActive = $scenarioDetail.isActive
+        reason = 'Step 5D-6c smoke: invalid full scenario JSON rejection.'
+    } | ConvertTo-Json -Depth 12
+    Invoke-RestMethod -Method Put -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $jsonHeaders -Body $invalidBody -TimeoutSec 60 | Out-Null
+} catch {
+    if ($_.Exception.Response.StatusCode.value__ -eq 400) { $invalidRejected = $true }
+}
+if (-not $invalidRejected) {
+    throw 'CMS admin scenario draft save did not reject invalid full scenario JSON with HTTP 400.'
+}
+
+$restoreBody = @{
+    title = $scenarioDetail.title
+    description = $scenarioDetail.description
+    setupMessage = $scenarioDetail.setupMessage
+    definitionJson = $scenarioDetail.definitionJson
+    isActive = $scenarioDetail.isActive
+    reason = 'Step 5D-6c smoke: restore original full scenario JSON after draft save smoke.'
+} | ConvertTo-Json -Depth 100
+Invoke-RestMethod -Method Put -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $jsonHeaders -Body $restoreBody -TimeoutSec 60 | Out-Null
+
 $promptTemplates = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/prompt-templates" -Headers $headers -TimeoutSec 60
 if (@($promptTemplates).Count -ne 3) {
     $promptTemplates | ConvertTo-Json -Depth 12 | Write-Host
@@ -99,7 +156,7 @@ if (-not $validation.success -or $validation.counts.topics -lt 1 -or $validation
 }
 
 $preview = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/preview-summary" -Headers $headers -TimeoutSec 60
-if ($preview.contentPackSlug -ne 'static-json-v1' -or $preview.topicCount -lt 1 -or $preview.scenarioCount -lt 1 -or $preview.promptTemplateCount -ne 3 -or $preview.tutorBehaviorProfileCount -lt 1 -or -not $preview.validation.success) {
+if ($preview.contentPackSlug -ne 'static-json-v1' -or $preview.topicCount -lt 1 -or $preview.scenarioCount -lt 1 -or $preview.promptTemplateCount -ne 3 -or $preview.tutorBehaviorProfileCount -lt 1 -or -not $preview.validation.success -or @($preview.sampleScenarios | Where-Object { -not $_.definitionJsonPresent -or -not $_.definitionJsonValid }).Count -gt 0) {
     $preview | ConvertTo-Json -Depth 12 | Write-Host
     throw 'CMS admin preview summary endpoint returned unexpected values.'
 }

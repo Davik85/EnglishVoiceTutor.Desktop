@@ -146,6 +146,10 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
             Require(scenarioDraft.Title, $"Scenario '{scenarioDraft.StableScenarioKey}' is missing a title/subtopic.", result);
             Require(scenario.Metadata.LessonType, $"Scenario '{scenarioDraft.StableScenarioKey}' is missing lesson type.", result);
             Require(scenario.LessonSetup.SetupMessage, $"Scenario '{scenarioDraft.StableScenarioKey}' is missing setup message.", result);
+            foreach (var error in CmsScenarioDefinitionJson.ValidateDefinitionJson(scenarioDraft.DefinitionJson, scenarioDraft.StableScenarioKey, requireNonEmpty: true))
+            {
+                result.Errors.Add(error);
+            }
 
             if (!topicKeys.Contains(scenarioDraft.TopicKey))
             {
@@ -349,6 +353,10 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
             ValidateJson(scenario.HintRulesJson, nameof(scenario.HintRulesJson), scenario.StableScenarioKey, result);
             ValidateJson(scenario.RepetitionLogicJson, nameof(scenario.RepetitionLogicJson), scenario.StableScenarioKey, result);
             ValidateJson(scenario.AiTutorPromptInstructionsJson, nameof(scenario.AiTutorPromptInstructionsJson), scenario.StableScenarioKey, result);
+            foreach (var error in CmsScenarioDefinitionJson.ValidateDefinitionJson(scenario.DefinitionJson, scenario.StableScenarioKey, scenario.IsActive))
+            {
+                result.Errors.Add(error);
+            }
         }
 
         foreach (var template in promptTemplates)
@@ -405,7 +413,8 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
                 scenario.FeedbackRulesJson,
                 scenario.HintRulesJson,
                 scenario.RepetitionLogicJson,
-                scenario.AiTutorPromptInstructionsJson
+                scenario.AiTutorPromptInstructionsJson,
+                scenario.DefinitionJson
             }));
         }
 

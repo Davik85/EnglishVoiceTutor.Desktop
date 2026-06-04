@@ -27,6 +27,7 @@ public sealed class CmsLessonScenarioEntity
     public string HintRulesJson { get; set; } = string.Empty;
     public string RepetitionLogicJson { get; set; } = string.Empty;
     public string AiTutorPromptInstructionsJson { get; set; } = string.Empty;
+    public string? DefinitionJson { get; set; }
     public int? SoftWrapUpAfterUserTurn { get; set; }
     public int? FinalMessageAtUserTurn { get; set; }
     public bool IsActive { get; set; }

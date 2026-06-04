@@ -152,6 +152,9 @@ namespace EnglishVoiceTutor.Api.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<string>("DefinitionJson")
+                        .HasColumnType("text");
+
                     b.Property<string>("ExpectedScenarioProgressionJson")
                         .IsRequired()
                         .HasColumnType("text");

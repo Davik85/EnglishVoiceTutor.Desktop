@@ -64,6 +64,10 @@ if ($errors.Count -eq 0) {
         'cms-scenario-title',
         'cms-scenario-description',
         'cms-scenario-setup-message',
+        'cms-scenario-definition-json',
+        'cms-scenario-format-json-button',
+        'cms-scenario-validate-json-button',
+        'Advanced: edit the complete scenario definition JSON. Save draft before publishing.',
         'cms-prompt-template-body',
         'cms-tutor-profile-display-name',
         'cms-tutor-profile-communication-style-json',
@@ -91,10 +95,13 @@ if ($errors.Count -eq 0) {
         'cms-selected-row',
         'aria-current',
         'event.stopPropagation()',
-        'button.type = "button"'
+        'button.type = "button"',
+        'validateCmsScenarioJsonInput',
+        'formatCmsScenarioJsonInput',
+        'definitionJson'
     )) { Assert-FileContains -path $jsPath -needle $needle }
 
-    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button')) {
+    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section')) {
         Assert-FileContains -path $cssPath -needle $needle
     }
 

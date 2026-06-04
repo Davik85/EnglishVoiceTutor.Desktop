@@ -98,6 +98,7 @@ public sealed class CmsPublishedLessonScenario
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string LessonType { get; set; } = string.Empty;
+    public string? DefinitionJson { get; set; }
     public LessonScenario Lesson { get; set; } = new();
 }
 

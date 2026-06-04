@@ -437,6 +437,9 @@ public sealed partial class CmsContentPublishingService(
             HintRulesJson = CmsContentJson.SerializeDeterministic(scenario.HintRules),
             RepetitionLogicJson = CmsContentJson.SerializeDeterministic(scenario.RepetitionLogic),
             AiTutorPromptInstructionsJson = CmsContentJson.SerializeDeterministic(scenario.AiTutorPromptInstructions),
+            DefinitionJson = string.IsNullOrWhiteSpace(publishedScenario.DefinitionJson)
+                ? CmsScenarioDefinitionJson.SerializeDefinition(scenario)
+                : publishedScenario.DefinitionJson.Trim(),
             SoftWrapUpAfterUserTurn = scenario.Metadata.SoftWrapUpAfterUserTurn,
             FinalMessageAtUserTurn = scenario.Metadata.FinalMessageAtUserTurn,
             IsActive = true,

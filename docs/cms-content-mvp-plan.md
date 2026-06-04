@@ -9,6 +9,16 @@ Step 5D-6a reorganized the existing static backend Admin `CMS Content` section i
 
 The Admin CMS UI remains development-only/admin-only. Runtime learner behavior is unchanged by default, the CMS read path remains disabled by default, and static JSON fallback remains available. External tester handoff remains paused, production billing remains deferred, and public release remains not ready. No EF migration, lesson JSON edit, prompt/tutor content edit, desktop UI change, billing/Paddle/subscription/entitlement/payment change, or password reset behavior change is part of this step.
 
+## Step 5D-6c update — Full scenario JSON editing foundation
+
+Step 5D-6c adds the foundation for editing complete lesson scenario definitions in the Admin CMS instead of only the simplified title, description, setup message, and active fields. CMS scenario drafts now persist a `DefinitionJson` text payload that stores the full scenario JSON definition imported from static lesson content. Scenario detail APIs return this payload, the Scenarios tab displays it in a large advanced textarea, and Save draft validates and persists it alongside the existing simple fields.
+
+Validation now checks full scenario JSON cautiously: it must be valid JSON with an object root and include the required baseline blocks (`id`, `metadata`, `lessonSetup.setupMessage`, `learningGoal`, `targetLanguage`, `levelProfiles`, `conversationFlow`, `controlledVariation`, `offTopicHandling`, `feedbackRules`, `hintRules`, and `aiTutorPromptInstructions`). Preview summaries expose whether sampled scenarios have full JSON present and valid without dumping large scenario bodies. Published snapshots include the full JSON payload, and restore repopulates draft `DefinitionJson` from the selected version so full scenario JSON survives import, draft save, publish, and rollback.
+
+Compatibility remains intentionally safe: existing CMS scenario rows without `DefinitionJson` can still be viewed through an internally marked fallback JSON built from the previously stored scenario fields, while the static import smoke path populates real `DefinitionJson` for the baseline. Runtime learner behavior is unchanged by default, the CMS read path remains disabled unless explicitly enabled by configuration, and static JSON fallback remains available. Lesson JSON files, prompt source files, tutor source files, desktop UI, billing, Paddle, subscriptions, entitlements, payments, password reset, and support-user workflows are outside this step.
+
+Future audit/governance work must track full scenario JSON changes by field-level path and/or stable content hashes so large JSON edits are reviewable without storing unsafe verbatim secrets in logs. Approval workflows and production content-manager roles remain future work until production roles and operational policies exist.
+
 ## Goal
 
 Build a safe CMS/Admin content editing foundation before external tester handoff, so tester feedback about lesson topics, situations, starter messages, prompts, and tutor behavior can be fixed through a controlled backend CMS workflow instead of code or lesson JSON edits.

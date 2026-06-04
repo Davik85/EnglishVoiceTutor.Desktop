@@ -152,13 +152,13 @@ public sealed partial class CmsContentAdminService(
             .ThenBy(scenario => scenario.StableScenarioKey)
             .ToListAsync(cancellationToken);
 
-        return scenarios.Select(MapScenario).ToList();
+        return scenarios.Select(scenario => MapScenario(scenario, includeDefinitionJson: false)).ToList();
     }
 
     public async Task<CmsContentScenarioResponse?> GetScenarioAsync(string slug, string scenarioIdOrKey, CancellationToken cancellationToken)
     {
         var scenario = await FindScenarioAsync(slug, scenarioIdOrKey, cancellationToken, asNoTracking: true);
-        return scenario is null ? null : MapScenario(scenario);
+        return scenario is null ? null : MapScenario(scenario, includeDefinitionJson: true);
     }
 
     public async Task<IReadOnlyList<CmsPromptTemplateResponse>> ListPromptTemplatesAsync(string slug, CancellationToken cancellationToken)
@@ -248,11 +248,33 @@ public sealed partial class CmsContentAdminService(
             return null;
         }
 
+        var requestedIsActive = request.IsActive ?? scenario.IsActive;
+        var requestedDefinitionJson = request.DefinitionJson is null ? scenario.DefinitionJson : request.DefinitionJson.Trim();
+        var definitionErrors = CmsScenarioDefinitionJson.ValidateDefinitionJson(requestedDefinitionJson, scenario.StableScenarioKey, requestedIsActive);
+        if (definitionErrors.Count > 0)
+        {
+            throw new InvalidOperationException(string.Join(" ", definitionErrors));
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestedDefinitionJson))
+        {
+            var consistencyErrors = CmsScenarioDefinitionJson.ValidateSimpleFieldConsistency(
+                requestedDefinitionJson,
+                scenario.StableScenarioKey,
+                request.Title ?? scenario.Title,
+                request.SetupMessage ?? scenario.SetupMessage);
+            if (consistencyErrors.Count > 0)
+            {
+                throw new InvalidOperationException(string.Join(" ", consistencyErrors));
+            }
+        }
+
         var beforeHash = HashScenario(scenario);
         var changedFields = new List<string>();
         SetIfChanged(scenario.Title, request.Title, changedFields, value => scenario.Title = value, nameof(scenario.Title));
         SetIfChanged(scenario.Description, request.Description, changedFields, value => scenario.Description = value, nameof(scenario.Description));
         SetIfChanged(scenario.SetupMessage, request.SetupMessage, changedFields, value => scenario.SetupMessage = value, nameof(scenario.SetupMessage));
+        SetIfChanged(scenario.DefinitionJson, request.DefinitionJson?.Trim(), changedFields, value => scenario.DefinitionJson = value, nameof(scenario.DefinitionJson));
         SetIfChanged(scenario.IsActive, request.IsActive, changedFields, value => scenario.IsActive = value, nameof(scenario.IsActive));
 
         return await SaveDraftUpdateAsync(
@@ -389,22 +411,26 @@ public sealed partial class CmsContentAdminService(
             })
             .ToListAsync(cancellationToken);
 
-        var sampleScenarios = await dbContext.CmsLessonScenarios
+        var sampleScenarioRows = await dbContext.CmsLessonScenarios
             .AsNoTracking()
             .Include(scenario => scenario.Topic)
             .Where(scenario => scenario.ContentPackId == summary.Id)
             .OrderBy(scenario => scenario.Topic.SortOrder)
             .ThenBy(scenario => scenario.StableScenarioKey)
             .Take(PreviewSampleSize)
-            .Select(scenario => new CmsContentPreviewScenarioSummaryResponse
+            .ToListAsync(cancellationToken);
+
+        var sampleScenarios = sampleScenarioRows.Select(scenario => new CmsContentPreviewScenarioSummaryResponse
             {
                 Id = scenario.Id,
                 StableScenarioKey = scenario.StableScenarioKey,
                 TopicKey = scenario.Topic.StableTopicKey,
                 Title = scenario.Title,
-                IsActive = scenario.IsActive
+                IsActive = scenario.IsActive,
+                DefinitionJsonPresent = !string.IsNullOrWhiteSpace(scenario.DefinitionJson),
+                DefinitionJsonValid = CmsScenarioDefinitionJson.ValidateDefinitionJson(scenario.DefinitionJson, scenario.StableScenarioKey, scenario.IsActive).Count == 0
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return new CmsContentPreviewResponse
         {
@@ -625,7 +651,7 @@ public sealed partial class CmsContentAdminService(
         };
     }
 
-    private static CmsContentScenarioResponse MapScenario(CmsLessonScenarioEntity scenario)
+    private static CmsContentScenarioResponse MapScenario(CmsLessonScenarioEntity scenario, bool includeDefinitionJson)
     {
         return new CmsContentScenarioResponse
         {
@@ -639,6 +665,8 @@ public sealed partial class CmsContentAdminService(
             LessonType = scenario.LessonType,
             SupportedLevelIdsJson = scenario.SupportedLevelIdsJson,
             SetupMessage = scenario.SetupMessage,
+            DefinitionJson = includeDefinitionJson ? FormatScenarioDefinitionJsonForResponse(scenario) : string.Empty,
+            IsDefinitionJsonFallback = includeDefinitionJson && CmsScenarioDefinitionJson.IsFallback(scenario),
             SoftWrapUpAfterUserTurn = scenario.SoftWrapUpAfterUserTurn,
             FinalMessageAtUserTurn = scenario.FinalMessageAtUserTurn,
             IsActive = scenario.IsActive,
@@ -681,7 +709,20 @@ public sealed partial class CmsContentAdminService(
         };
     }
 
-    private static void SetIfChanged(string currentValue, string? requestedValue, List<string> changedFields, Action<string> assign, string fieldName)
+    private static string FormatScenarioDefinitionJsonForResponse(CmsLessonScenarioEntity scenario)
+    {
+        var definitionJson = CmsScenarioDefinitionJson.GetDefinitionJsonOrFallback(scenario);
+        try
+        {
+            return CmsScenarioDefinitionJson.PrettyPrint(definitionJson);
+        }
+        catch (JsonException)
+        {
+            return definitionJson;
+        }
+    }
+
+    private static void SetIfChanged(string? currentValue, string? requestedValue, List<string> changedFields, Action<string?> assign, string fieldName)
     {
         if (requestedValue is null || string.Equals(currentValue, requestedValue, StringComparison.Ordinal))
         {
@@ -745,7 +786,7 @@ public sealed partial class CmsContentAdminService(
 
     private static string HashTopic(CmsLessonTopicEntity topic) => CmsContentJson.Sha256Hex(CmsContentJson.SerializeDeterministic(new { topic.StableTopicKey, topic.Title, topic.Description, topic.SortOrder, topic.IsActive }));
 
-    private static string HashScenario(CmsLessonScenarioEntity scenario) => CmsContentJson.Sha256Hex(CmsContentJson.SerializeDeterministic(new { scenario.StableScenarioKey, scenario.TopicId, scenario.Title, scenario.Description, scenario.LessonType, scenario.SupportedLevelIdsJson, scenario.SetupMessage, scenario.ContextSelectionJson, scenario.LearningGoalJson, scenario.SituationJson, scenario.RolesJson, scenario.TargetLanguageJson, scenario.LevelProfilesJson, scenario.ConversationFlowJson, scenario.RoleplayBeatsJson, scenario.ReciprocalQuestionHandlingJson, scenario.ExpectedScenarioProgressionJson, scenario.ControlledVariationJson, scenario.OffTopicHandlingJson, scenario.FeedbackRulesJson, scenario.HintRulesJson, scenario.RepetitionLogicJson, scenario.AiTutorPromptInstructionsJson, scenario.SoftWrapUpAfterUserTurn, scenario.FinalMessageAtUserTurn, scenario.IsActive }));
+    private static string HashScenario(CmsLessonScenarioEntity scenario) => CmsContentJson.Sha256Hex(CmsContentJson.SerializeDeterministic(new { scenario.StableScenarioKey, scenario.TopicId, scenario.Title, scenario.Description, scenario.LessonType, scenario.SupportedLevelIdsJson, scenario.SetupMessage, scenario.ContextSelectionJson, scenario.LearningGoalJson, scenario.SituationJson, scenario.RolesJson, scenario.TargetLanguageJson, scenario.LevelProfilesJson, scenario.ConversationFlowJson, scenario.RoleplayBeatsJson, scenario.ReciprocalQuestionHandlingJson, scenario.ExpectedScenarioProgressionJson, scenario.ControlledVariationJson, scenario.OffTopicHandlingJson, scenario.FeedbackRulesJson, scenario.HintRulesJson, scenario.RepetitionLogicJson, scenario.AiTutorPromptInstructionsJson, scenario.DefinitionJson, scenario.SoftWrapUpAfterUserTurn, scenario.FinalMessageAtUserTurn, scenario.IsActive }));
 
     private static string HashPromptTemplate(PromptTemplateEntity template) => CmsContentJson.Sha256Hex(CmsContentJson.SerializeDeterministic(new { template.TemplateKey, template.TargetStudyLanguageId, template.Body, template.AllowedPlaceholdersJson, template.RequiredPlaceholdersJson, template.MaxLength, template.IsActive }));
 

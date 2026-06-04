@@ -181,7 +181,8 @@ public sealed class CmsContentImportService(
                 Title = scenario.Metadata.Subtopic.Trim(),
                 Description = scenario.Situation.Description.Trim(),
                 LessonType = scenario.Metadata.LessonType.Trim(),
-                Scenario = scenario
+                Scenario = scenario,
+                DefinitionJson = CmsScenarioDefinitionJson.SerializeDefinition(scenario)
             });
         }
 
@@ -499,6 +500,7 @@ public sealed class CmsContentImportService(
             HintRulesJson = CmsContentJson.SerializeDeterministic(scenario.HintRules),
             RepetitionLogicJson = CmsContentJson.SerializeDeterministic(scenario.RepetitionLogic),
             AiTutorPromptInstructionsJson = CmsContentJson.SerializeDeterministic(scenario.AiTutorPromptInstructions),
+            DefinitionJson = draft.DefinitionJson,
             SoftWrapUpAfterUserTurn = scenario.Metadata.SoftWrapUpAfterUserTurn,
             FinalMessageAtUserTurn = scenario.Metadata.FinalMessageAtUserTurn,
             IsActive = true,
@@ -532,6 +534,7 @@ public sealed class CmsContentImportService(
         SetIfChanged(target.HintRulesJson, source.HintRulesJson, changedFields, value => target.HintRulesJson = value, nameof(target.HintRulesJson));
         SetIfChanged(target.RepetitionLogicJson, source.RepetitionLogicJson, changedFields, value => target.RepetitionLogicJson = value, nameof(target.RepetitionLogicJson));
         SetIfChanged(target.AiTutorPromptInstructionsJson, source.AiTutorPromptInstructionsJson, changedFields, value => target.AiTutorPromptInstructionsJson = value, nameof(target.AiTutorPromptInstructionsJson));
+        SetIfChanged(target.DefinitionJson, source.DefinitionJson, changedFields, value => target.DefinitionJson = value, nameof(target.DefinitionJson));
         SetIfChanged(target.SoftWrapUpAfterUserTurn, source.SoftWrapUpAfterUserTurn, changedFields, value => target.SoftWrapUpAfterUserTurn = value, nameof(target.SoftWrapUpAfterUserTurn));
         SetIfChanged(target.FinalMessageAtUserTurn, source.FinalMessageAtUserTurn, changedFields, value => target.FinalMessageAtUserTurn = value, nameof(target.FinalMessageAtUserTurn));
         SetIfChanged(target.IsActive, source.IsActive, changedFields, value => target.IsActive = value, nameof(target.IsActive));
@@ -563,6 +566,7 @@ public sealed class CmsContentImportService(
                 scenario.Title,
                 scenario.Description,
                 scenario.LessonType,
+                scenario.DefinitionJson,
                 Lesson = scenario.Scenario
             }),
             PromptTemplates = draft.PromptTemplates.OrderBy(template => template.TemplateKey, StringComparer.Ordinal).Select(template => new
@@ -635,7 +639,7 @@ public sealed class CmsContentImportService(
 
     private static string HashPack(ContentPackEntity pack) => CmsContentJson.Sha256Hex(CmsContentJson.SerializeDeterministic(new { pack.Slug, pack.Name, pack.Description, pack.Status, pack.BaseStaticContentVersion }));
     private static string HashTopic(CmsLessonTopicEntity topic) => CmsContentJson.Sha256Hex(CmsContentJson.SerializeDeterministic(new { topic.StableTopicKey, topic.Title, topic.Description, topic.SortOrder, topic.IsActive }));
-    private static string HashScenario(CmsLessonScenarioEntity scenario) => CmsContentJson.Sha256Hex(CmsContentJson.SerializeDeterministic(new { scenario.StableScenarioKey, scenario.TopicId, scenario.Title, scenario.Description, scenario.LessonType, scenario.SupportedLevelIdsJson, scenario.SetupMessage, scenario.ContextSelectionJson, scenario.LearningGoalJson, scenario.SituationJson, scenario.RolesJson, scenario.TargetLanguageJson, scenario.LevelProfilesJson, scenario.ConversationFlowJson, scenario.RoleplayBeatsJson, scenario.ReciprocalQuestionHandlingJson, scenario.ExpectedScenarioProgressionJson, scenario.ControlledVariationJson, scenario.OffTopicHandlingJson, scenario.FeedbackRulesJson, scenario.HintRulesJson, scenario.RepetitionLogicJson, scenario.AiTutorPromptInstructionsJson, scenario.SoftWrapUpAfterUserTurn, scenario.FinalMessageAtUserTurn, scenario.IsActive }));
+    private static string HashScenario(CmsLessonScenarioEntity scenario) => CmsContentJson.Sha256Hex(CmsContentJson.SerializeDeterministic(new { scenario.StableScenarioKey, scenario.TopicId, scenario.Title, scenario.Description, scenario.LessonType, scenario.SupportedLevelIdsJson, scenario.SetupMessage, scenario.ContextSelectionJson, scenario.LearningGoalJson, scenario.SituationJson, scenario.RolesJson, scenario.TargetLanguageJson, scenario.LevelProfilesJson, scenario.ConversationFlowJson, scenario.RoleplayBeatsJson, scenario.ReciprocalQuestionHandlingJson, scenario.ExpectedScenarioProgressionJson, scenario.ControlledVariationJson, scenario.OffTopicHandlingJson, scenario.FeedbackRulesJson, scenario.HintRulesJson, scenario.RepetitionLogicJson, scenario.AiTutorPromptInstructionsJson, scenario.DefinitionJson, scenario.SoftWrapUpAfterUserTurn, scenario.FinalMessageAtUserTurn, scenario.IsActive }));
     private static string HashPromptTemplate(PromptTemplateEntity template) => CmsContentJson.Sha256Hex(CmsContentJson.SerializeDeterministic(new { template.TemplateKey, template.TargetStudyLanguageId, template.Body, template.AllowedPlaceholdersJson, template.RequiredPlaceholdersJson, template.MaxLength, template.IsActive }));
     private static string HashTutorProfile(TutorBehaviorProfileEntity tutor) => CmsContentJson.Sha256Hex(CmsContentJson.SerializeDeterministic(new { tutor.TutorId, tutor.DisplayName, tutor.CommunicationStyleJson, tutor.SafetyNotesJson, tutor.IsActive }));
 
