@@ -52,5 +52,4 @@ Review date: 2026-06-01.
 
 - Production billing is not ready.
 - Public release is not declared ready.
-- Full CMS/Admin production operations are not implemented.
-- Roles and production RBAC remain future work.
+- Full CMS/Admin production operations are not implemented. Development/admin Admin CMS Content exists, but production RBAC, CMS draft-save audit logging, and critical-change approval remain future work.

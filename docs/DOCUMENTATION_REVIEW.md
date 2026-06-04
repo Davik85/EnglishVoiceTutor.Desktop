@@ -1,6 +1,6 @@
 # Documentation Review
 
-Review date: 2026-06-01.
+Review date: 2026-06-04.
 
 ## What was reviewed
 
@@ -28,13 +28,15 @@ Docs were synchronized to record the current accepted state:
 - Core Lesson Chat, Conversation Mode, TTS, transcription, translation, hints, feedback, and summary are accepted for the current controlled desktop MVP.
 - Desktop auth session storage uses a Windows DPAPI-protected local `auth-session.json` payload, not raw plaintext token JSON.
 - Active lesson protection is backend-enforced, heartbeat-based, supports remote release, marks old sessions `Abandoned`, and rejects old heartbeat/message actions.
-- Latest confirmed EF migration is `20260601090000_AddLessonSessionHeartbeat`.
-- Current smoke/audit scripts include the desktop release gate, lesson/localization/backend-boundary audits, single active lesson guard smoke, Paddle smokes, and Admin smokes.
+- Latest confirmed EF migration is `20260603120000_AddCmsContentFoundation`.
+- Current smoke/audit scripts include the desktop release gate, lesson/localization/backend-boundary audits, single active lesson guard smoke, Paddle smokes, Admin smokes, and CMS content foundation smokes/audits.
+- Admin CMS Content under `/admin/` now documents refresh resilience, selected user/entity restore, memory-only JWT, existing admin-only HTTP-only cookie refresh auth, safe URL hash identifiers only, no Web Storage use, in-memory unsaved-change tracking, explicit `Save draft`, and static JSON fallback.
+- Admin CMS Content now documents content pack overview, topic/scenario/full scenario JSON/prompt template/tutor behavior profile editing, validation/preview summary, versions/publish/restore flow, and the exact non-persisting meaning of `Format JSON` and `Validate JSON`.
 
 ## Intentionally deferred documentation topics
 
-- Production billing remains deferred until desktop hardening is complete.
-- CMS/Admin operational readiness remains deferred until desktop hardening is complete.
+- Production billing operations remain deferred and are not production-ready.
+- Full production CMS/Admin operational readiness remains deferred: production RBAC, role-based content approval, and CMS draft-save audit logging are not implemented yet.
 - Prompt/scenario/dialogue/bot-behavior quality polishing is deferred to CMS/Admin.
 - Public release is not declared ready.
 - Installer/signing/Microsoft Store packaging is not documented as complete.
@@ -47,6 +49,7 @@ Update documentation again after any of these future events:
 - production backend URL/configuration is approved for a broader release;
 - production Paddle billing is configured and manually smoke-tested;
 - refund/chargeback/revocation/reconciliation behavior is implemented;
-- CMS/Admin operational scope is approved or implemented;
+- CMS draft-save audit logging is implemented and documented;
+- production RBAC and later CMS critical-change approval workflow are approved or implemented;
 - installer/signing/update/distribution path is selected;
 - Study languages, Interface languages, or Native/Explanation catalog changes are explicitly approved.

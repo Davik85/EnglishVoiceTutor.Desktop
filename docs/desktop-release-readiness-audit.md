@@ -19,7 +19,7 @@ This audit remains useful as the Step 5A baseline, but the following release-har
 - The tester ZIP was verified on another Windows device after extraction, including app start, Diagnostics hidden by default, backend connection, account login, backend history, accepted lesson flow, active lesson guard, and remote active lesson release.
 - Backend-enforced single active lesson protection is heartbeat-based, uses a 2-minute freshness window, supports remote release, marks the old session `Abandoned`, and rejects old heartbeat/message actions with `lesson_session_ended_elsewhere`.
 - Prompt/dialogue/scenario/bot-behavior quality polishing is intentionally deferred to CMS/Admin.
-- Public release is still not declared ready; production billing and CMS/Admin remain deferred until desktop hardening is complete.
+- Public release is still not declared ready; production billing remains deferred, and CMS/Admin content MVP work is now underway before external tester handoff but is not production-ready.
 
 ## Executive summary
 
@@ -91,7 +91,7 @@ P1 means the issue blocks MVP user experience or causes major confusion.
 - Conversation Mode needs MVP acceptance for entry/exit, recording UX, auto-send behavior, bot voice auto-play behavior, avatar framing, and small/medium window layout.
 - Lesson Chat has many commands and state transitions; text input, send button, hint, translate, play voice, finish, back, and lesson-complete states need a focused UI pass to remove confusing disabled states or unclear status messages.
 - Release packaging is limited to a tester zip script. There is no signed installer, signing plan, update plan, or documented public download path.
-- CMS/Admin is not ready for public operations. Desktop can run from JSON content for controlled MVP, but public release needs a clear operational plan for content fixes and account/support operations.
+- CMS/Admin is not ready for public operations. Admin CMS Content now exists for development/admin content editing with refresh resilience and unsaved-change protection, but production RBAC, draft-save audit logging, and approval workflow remain future work. Desktop runtime still uses static JSON by default with CMS reads disabled unless configured and static JSON fallback available.
 
 ## P2 polish
 
@@ -443,7 +443,7 @@ These should not block the first controlled test release:
 **Risks**
 - Passing JSON validation does not guarantee teaching quality, scenario naturalness, level accuracy, or full multilingual quality.
 - Free Conversation needs careful safety and topic-boundary behavior review.
-- Lesson content is JSON/manual for now, so post-release fixes require developer workflow unless CMS/Admin matures.
+- Lesson runtime remains static JSON by default. Admin CMS Content can now edit draft topics, scenarios, full scenario JSON, prompt templates, and tutor behavior profiles for development/admin use, but tester handoff remains paused until the CMS/Admin content MVP is ready enough for practical content changes without code edits.
 
 **Release recommendation**
 - Content is good enough for controlled MVP if a human samples each topic/language combination most likely to be used.
@@ -455,7 +455,7 @@ These should not block the first controlled test release:
 ### 17. CMS/Admin dependency
 
 **Current status**
-- Local Development CMS/admin support foundation exists, but CMS/Admin is not mature enough for release.
+- Local Development CMS/admin support foundation and Admin CMS Content workspace exist, including content pack overview, topic/scenario/full scenario JSON/prompt/tutor editing, validation/preview summary, versions/publish/restore, refresh resilience, selected user/entity restore, and unsaved-change warnings. CMS/Admin is still not mature enough for release because production RBAC, draft-save audit logging, and critical-change approval are not implemented.
 - Desktop does not require a full CMS to run current JSON-based lesson content.
 - Backend remains the operational source of truth for accounts, usage, payments, entitlements, and lesson history.
 
@@ -465,10 +465,10 @@ These should not block the first controlled test release:
 
 **Release recommendation**
 - Desktop controlled MVP can proceed without CMS if support volume is intentionally limited.
-- Before public release, run a separate CMS/Admin v1 audit focused on support operations, not full content-management design.
+- Before public release, implement CMS draft-save audit logging, later add critical-change approval after production roles exist, and run a separate CMS/Admin v1 audit focused on support/content operations.
 
 **Suggested next task**
-- Step 5B-17: CMS/Admin operational readiness audit after desktop hardening.
+- Step 5B-17: CMS/Admin operational readiness audit after CMS draft-save audit logging and production-role decisions.
 
 ### 18. Security/privacy
 
@@ -639,7 +639,7 @@ Use `docs/desktop-release-work-plan.md` as the controlling consolidated plan for
 9. **Step 5B-9: Conversation Mode MVP acceptance or beta/hide decision**
    - Validate avatar layout, record UX, auto-send, auto-play, return/back, and layout on common window sizes.
 10. **Step 5B-10: Avatar framing/profile/prompt acceptance pass**
-    - Defer prompt/dialogue/scenario/bot-behavior quality polishing to CMS/Admin; keep only blocking avatar/framing defects in desktop hardening.
+    - Defer prompt/dialogue/scenario/bot-behavior quality polishing to CMS/Admin; keep only blocking avatar/framing defects in desktop hardening. Do not claim production CMS readiness until RBAC, draft-save audit logging, and approval workflow are addressed.
 11. **Step 5B-11: Lesson completion, early exit, summary, and progress manual test**
     - Validate Finish, Back, summary, History, statistics, and progress behavior.
 12. **Step 5B-12: Free-limit/paywall desktop UX acceptance without billing logic changes**
@@ -652,7 +652,7 @@ Use `docs/desktop-release-work-plan.md` as the controlling consolidated plan for
     - Decide zip vs installer, signing, clean-machine test, versioning, download, update, and rollback.
 16. **Step 5B-16: Human lesson methodology/content sample review**
     - Sample lesson quality without changing lesson JSON in this audit.
-17. **Step 5B-17: CMS/Admin operational readiness audit after desktop hardening**
+17. **Step 5B-17: CMS/Admin operational readiness audit after CMS draft-save audit logging and production-role decisions**
     - Audit minimum support/admin operations after desktop readiness.
 18. **Step 5B-18: Desktop security/privacy release checklist**
     - Validate privacy, token, diagnostics, microphone/audio, AI/backend processing, and no-secrets expectations.

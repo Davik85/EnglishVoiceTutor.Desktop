@@ -276,10 +276,10 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - It is not a production RBAC/admin system.
 - It uses Development/config bootstrap admin access.
 - The local admin shell is backend-hosted at `/admin/`.
-- Tabs: Overview, User Lookup, Premium, Free Lesson, Audit Log, System.
+- Tabs: Overview, User Lookup, Premium, Free Lesson, Audit Log, CMS Content, and System.
 - Admin shell JWT remains memory-only. Refresh auth continues to use the existing admin-only HTTP-only cookie, and selected workspace state is restored only from non-secret URL hash fields after the admin session is valid.
 - URL hash workspace restore covers the active admin tab, CMS sub-tab, content pack slug, CMS selected entity keys, and selected admin user ID. Unsaved form content, prompt bodies, full scenario JSON, tutor profile JSON, passwords, and tokens are not browser-persisted.
-- CMS draft editors show an unsaved-change indicator and warn before refresh/close, tab switches, CMS sub-tab switches, selecting another entity, or logout. Save draft remains the explicit persistence action; future autosave/audit workflow remains deferred. The admin shell is still development/admin-only and not production RBAC.
+- CMS draft editors show an unsaved-change indicator and warn before refresh/close, tab switches, CMS sub-tab switches, selecting another entity, publish/restore reload flows, or logout. Save draft remains the explicit persistence action; unsaved content is not stored in browser storage or the URL hash. CMS draft-save audit logging is the next recommended CMS implementation step, while production RBAC and approval workflow remain future work. The admin shell is still development/admin-only and not production RBAC.
 - It supports:
   - Exact user lookup by email.
   - Read-only user diagnostics.
@@ -314,7 +314,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - Desktop Debug build passed.
 - Desktop Release build passed.
 - Backend build passed.
-- `dotnet ef migrations list` shows latest confirmed migration `20260601090000_AddLessonSessionHeartbeat`; latest billing-specific payment persistence migration remains `20260529000000_AddPaddlePaymentPersistenceV1`.
+- `dotnet ef migrations list` shows latest confirmed migration `20260603120000_AddCmsContentFoundation`; latest billing-specific payment persistence migration remains `20260529000000_AddPaddlePaymentPersistenceV1`.
 - `dotnet ef database update` reports the database is already up to date.
 - `dotnet ef migrations has-pending-model-changes` reports no model changes.
 - `tools/smoke_paddle_canceled_paused_expiry_policy.ps1` passed.
@@ -353,7 +353,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 
 ## Current latest EF migration
 
-- Latest confirmed EF migration is `20260601090000_AddLessonSessionHeartbeat`.
+- Latest confirmed EF migration is `20260603120000_AddCmsContentFoundation`.
 - `dotnet ef database update` reports the database is already up to date.
 - `dotnet ef migrations has-pending-model-changes` reports no model changes.
 
@@ -386,4 +386,4 @@ Deferred scope / next roadmap:
 - Trial/manual/admin/development/future-mobile entitlements are not touched by the provider-event canceled/paused expiry path.
 - Admin UI was not changed.
 - Desktop UI is outside this documentation update; the current desktop upgrade/paywall flow exists for sandbox validation and remains backend-driven.
-- Latest payment persistence schema migration is `20260529000000_AddPaddlePaymentPersistenceV1`; latest overall confirmed EF migration is `20260601090000_AddLessonSessionHeartbeat`.
+- Latest payment persistence schema migration is `20260529000000_AddPaddlePaymentPersistenceV1`; latest overall confirmed EF migration is `20260603120000_AddCmsContentFoundation`.

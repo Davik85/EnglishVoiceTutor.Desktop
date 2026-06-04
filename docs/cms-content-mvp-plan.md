@@ -1,7 +1,20 @@
 # CMS/Admin Content MVP Plan
 
-Review date: 2026-06-03.
+Review date: 2026-06-04.
 
+
+
+## Step 5D-6d update — refresh resilience and unsaved-change protection
+
+Step 5D-6d completed Admin CMS refresh resilience and unsaved-change protection for the development/admin-only `/admin/` shell. Admin refresh no longer logs out the admin because refresh authentication uses the existing admin-only HTTP-only cookie, while the admin JWT remains memory-only in JavaScript. Browser Web Storage is not used: no `sessionStorage`, no `localStorage`, and no IndexedDB.
+
+The URL hash stores only safe workspace identifiers: `adminTab`, `cmsSubTab`, `selectedUserId`, `contentPackSlug`, `topicKey`, `scenarioKey`, `promptTemplateKey`, and `tutorId`. Selected user details are restored after refresh through an admin-only lookup by `selectedUserId`; selected CMS entities are restored by stable keys. Unsaved content, prompt bodies, full scenario JSON, tutor profile JSON, tokens, and passwords are not stored in the hash or browser storage.
+
+Unsaved CMS changes are tracked in memory by comparing current form values against the last loaded/saved baseline. Dirty topic, scenario, prompt template, and tutor behavior profile forms show a visible indicator and warn before browser refresh, tab close, top-level admin tab switching, CMS sub-tab switching, selecting another CMS entity, publish/restore reload flows, or logout would discard edits. `Save draft` remains explicit and required: successful saves clear the dirty indicator, and failed saves keep it.
+
+Current Admin CMS Content capabilities include content pack overview, topic editing, scenario editing, full scenario JSON editing, prompt template editing, tutor behavior profile editing, validation/preview summary, and versions/publish/restore flow. `Format JSON` only pretty-prints/re-indents JSON in the editor. `Validate JSON` checks syntax and required scenario fields. Neither action saves or publishes; `Save draft` is required to persist changes.
+
+Runtime learner behavior is unchanged. The CMS read path remains controlled by configuration, disabled by default, and backed by static JSON fallback. Production RBAC, role-based approval, CMS draft-save audit logging, production billing operations, and full external tester handoff remain future work. The next recommended CMS implementation step is draft-save audit logging; the later critical-change approval workflow should wait until production roles exist.
 
 ## Step 5D-6a update — Admin CMS internal sub-tabs
 
@@ -23,7 +36,7 @@ Future audit/governance work must track full scenario JSON changes by field-leve
 
 Build a safe CMS/Admin content editing foundation before external tester handoff, so tester feedback about lesson topics, situations, starter messages, prompts, and tutor behavior can be fixed through a controlled backend CMS workflow instead of code or lesson JSON edits.
 
-This is an audit and implementation plan. Step 5D-1 added the backend CMS content schema foundation. Step 5D-2 added a development/admin-only static JSON import and seed foundation that imports current packaged lessons, prompt files, and tutor profiles into CMS tables and publishes an immutable baseline snapshot when validation passes. Step 5D-3 added a backend published-snapshot read/status path with hash verification, safe deserialization, required-content validation, and static JSON fallback status. Step 5D-4 added development/admin-only CMS content API endpoints for draft reads, bounded draft updates with audit logs, draft validation, and safe preview summaries. Step 5D-5 added development/admin-only CMS version list/detail, publish, and restore endpoints so valid drafts can be promoted to immutable snapshots and previous snapshots can be restored through audited backend operations. Step 5D-6 added a static backend Admin CMS Content UI editor shell over those existing endpoints for authenticated bootstrap admins. No lesson JSON migration, desktop UI change, prompt rewrite, billing change, or default runtime lesson loading change is part of these steps.
+This is an audit and implementation plan. Step 5D-1 added the backend CMS content schema foundation. Step 5D-2 added a development/admin-only static JSON import and seed foundation that imports current packaged lessons, prompt files, and tutor profiles into CMS tables and publishes an immutable baseline snapshot when validation passes. Step 5D-3 added a backend published-snapshot read/status path with hash verification, safe deserialization, required-content validation, and static JSON fallback status. Step 5D-4 added development/admin-only CMS content API endpoints for draft reads, bounded draft updates, draft validation, and safe preview summaries; full CMS draft-save audit logging remains future work. Step 5D-5 added development/admin-only CMS version list/detail, publish, and restore endpoints so valid drafts can be promoted to immutable snapshots and previous snapshots can be restored through audited backend operations. Step 5D-6 added a static backend Admin CMS Content UI editor shell over those existing endpoints for authenticated bootstrap admins. No lesson JSON migration, desktop UI change, prompt rewrite, billing change, or default runtime lesson loading change is part of these steps.
 
 ## Product decision
 
@@ -99,7 +112,7 @@ A local development Admin shell already exists under `backend/EnglishVoiceTutor.
 - `tools/audit_admin_shell.ps1`;
 - `tools/smoke_admin_foundation.ps1`.
 
-This foundation is **not** a CMS. It is not production Admin. It does not include content editing, draft/published workflow, content validation, preview, content versioning, or rollback.
+This foundation now includes a development/admin-only Admin CMS Content workspace for content editing, draft save, validation/preview summary, version listing, publish, and restore. It is still **not** production Admin/CMS, not production RBAC, and not public-release readiness. Draft-save audit logging and critical-change approval are still future governance work.
 
 ## MVP scope: editable content
 
@@ -481,14 +494,19 @@ Minimum UI:
    - `POST /api/admin/dev/cms/content-packs/{slug}/publish` validates draft rows, generates a deterministic snapshot, skips unchanged publishes, and creates a new `ContentVersion` plus `PublishedContentSnapshot` when changed.
    - `POST /api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore` verifies the selected snapshot hash, restores it into draft rows, validates, and can publish a new rollback version without mutating history.
    - Runtime lesson loading remains static JSON by default; CMS read remains disabled by default and static JSON fallback remains available.
-7. Add simple Admin UI/editor shell for content editing. **Implemented in Step 5D-6 as a development-only static Admin shell tab.**
-   - The existing backend Admin shell now includes a CMS Content tab after admin login.
-   - Authenticated bootstrap admins can load `static-json-v1`, view pack summary/counts, list topics/scenarios/prompt templates/tutor behavior profiles, select an item, and make bounded draft edits through the Step 5D-4 backend APIs.
-   - The shell can run validation, load preview summary, list versions, publish the current draft with `confirm()`, and restore a previous version with `confirm()`.
-   - The shell is intentionally basic and development-only; it is not production CMS/RBAC, does not call OpenAI, does not expose secrets, does not edit study/interface languages, and does not mutate old version history directly.
+7. Add simple Admin UI/editor shell for content editing. **Implemented in Step 5D-6 through Step 5D-6d as a development-only static Admin shell tab with refresh resilience and unsaved-change protection.**
+   - The existing backend Admin shell now includes a CMS Content tab after admin login, with internal sub-tabs for Overview, Topics, Scenarios, Prompts, Tutors, Validation & Preview, and Versions & Publish.
+   - Authenticated bootstrap admins can load `static-json-v1`, view pack summary/counts, list topics/scenarios/prompt templates/tutor behavior profiles, select an item by row click or Select button, and make draft edits through the Step 5D-4 backend APIs.
+   - Scenario editing supports bounded fields and Full scenario JSON editing. `Format JSON` only pretty-prints/re-indents JSON, and `Validate JSON` checks syntax plus required scenario fields; neither action saves or publishes, so `Save draft` is required to persist edits.
+   - The shell can run validation, load preview summary, list versions, publish the current draft with confirmation, and restore a previous version with confirmation.
+   - Admin refresh uses the existing admin-only HTTP-only cookie, the JWT remains memory-only, Web Storage is not used, the URL hash stores only safe identifiers, selected user/CMS entities restore after refresh, and unsaved dirty state is tracked in memory with discard warnings.
+   - The shell is intentionally basic and development-only; it is not production CMS/RBAC, does not call OpenAI, does not expose secrets, does not edit study/interface languages, does not mutate old version history directly, and does not persist unsaved content in browser storage.
    - Runtime lesson loading remains static JSON by default; CMS read remains disabled by default and static JSON fallback remains available.
-8. Run desktop regression, release gate, content audits, and active lesson guard smoke where relevant. **Future phase.**
-9. Then prepare controlled external tester handoff after CMS/Admin content MVP is ready enough for controlled content fixes. **Future phase.**
+8. Add CMS draft-save audit logging. **Next recommended CMS implementation step.**
+   - Each content edit should record actor identity, timestamp UTC, content pack, entity type, stable key/id, changed fields, old/new values or hashes for large values, source, and request/correlation id.
+9. Add critical-change approval workflow after production roles/RBAC exist. **Later governance step.**
+10. Run desktop regression, release gate, content audits, and active lesson guard smoke where relevant. **Future phase.**
+11. Then prepare controlled external tester handoff after CMS/Admin content MVP is ready enough for controlled content fixes. **Future phase.**
 
 ## Risks and mitigations
 
@@ -501,11 +519,11 @@ Minimum UI:
 
 ## Future CMS governance requirements
 
-Step 5D-6b only improves Admin CMS UI table selection UX and records future governance requirements. It does not add production roles, does not add an approval workflow, does not add database schema, and does not change runtime learner behavior. The development-only Admin CMS draft editing flow remains in place, and publish/restore actions continue to rely on explicit confirmation dialogs for this phase.
+Step 5D-6d adds refresh resilience and unsaved-change protection after the earlier Admin CMS table selection UX/governance documentation step. It does not add production roles, does not add an approval workflow, does not add database schema, and does not change runtime learner behavior. The development-only Admin CMS draft editing flow remains in place, and publish/restore actions continue to rely on explicit confirmation dialogs for this phase.
 
 ### Future draft save audit logging
 
-Every CMS draft save should eventually be audited before production CMS operations. The audit record should include:
+Every CMS draft save should be audited in the next recommended CMS implementation step before production CMS operations. The audit record should include:
 
 - actor user id;
 - actor email;
@@ -548,7 +566,7 @@ Draft editing and approval should be separated when roles exist. For now, keep t
 - Admin can publish only valid content.
 - Every publish creates a version and immutable snapshot.
 - Admin can view previous versions and restore one safely.
-- Audit log records edits, validation, publish, and rollback actions.
+- CMS draft-save audit logging records edits with actor, timestamp, entity type, stable key/id, changed fields, old/new values or hashes, and request/correlation id; publish and rollback audit coverage remains required before production operations.
 - Backend runtime uses published content only and falls back to static JSON if CMS content is unavailable.
 - Existing accepted desktop Lesson Chat, Conversation Mode, TTS, STT, translation, hints, feedback, summary, active lesson guard, and tester package flow remain working.
 - No billing, Paddle, subscription, entitlement, payment, study-language, Interface-language, Native/Explanation-language, desktop key handling, or public release scope is changed by CMS content MVP.

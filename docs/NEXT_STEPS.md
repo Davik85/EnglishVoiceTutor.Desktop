@@ -3,30 +3,32 @@
 Review date: 2026-06-04.
 
 
-## After Step 5D-6b
+## After Step 5D-6d
 
-Step 5D-6b improved Admin CMS table selection UX only: Topics, Scenarios, Prompts, and Tutors rows can be selected by clicking the row, Select buttons remain available as compact visible fallbacks, and the selected row is highlighted. It did not add production roles, approval workflow, database schema, or runtime learner behavior changes.
+Step 5D-6d completed Admin CMS refresh resilience and unsaved-change protection. Admin refresh no longer logs out the admin because refresh auth uses the existing admin-only HTTP-only cookie, while the admin JWT remains memory-only in JavaScript. Browser Web Storage is not used: no `sessionStorage`, no `localStorage`, and no IndexedDB. The URL hash stores only safe workspace identifiers (`adminTab`, `cmsSubTab`, `selectedUserId`, `contentPackSlug`, `topicKey`, `scenarioKey`, `promptTemplateKey`, and `tutorId`). Selected user details restore through an admin-only lookup by `selectedUserId`, and selected CMS entities restore by stable keys.
 
-The next implementation step should be controlled Admin CMS end-to-end UI/API regression testing against a local backend: load `static-json-v1`, select and save one bounded draft field per content type, run validation, load preview summary, list versions, and verify publish/restore confirmation flows in a development-only environment. Keep runtime CMS reads disabled by default and keep static JSON fallback available while this regression work is performed.
+Admin CMS Content now supports content pack overview, topic editing, scenario editing, full scenario JSON editing, prompt template editing, tutor behavior profile editing, validation/preview summary, and versions/publish/restore flows under the existing `/admin/` shell. `Format JSON` only pretty-prints JSON for easier editing. `Validate JSON` checks syntax and required scenario fields. Neither action saves or publishes; `Save draft` is required to persist CMS edits. Unsaved CMS dirty state is tracked in memory against the last loaded/saved baseline, unsaved content is not stored in browser storage or the URL hash, and refresh/navigation/entity switching/logout warns before discarding edits.
 
-External tester handoff remains paused, production billing remains deferred, and public release remains not ready. Do not change lesson JSON files, prompt text files, tutor JSON files, desktop UI, billing/Paddle/subscription/entitlement/payment logic, or password reset behavior as part of that next verification step.
+Runtime learner behavior remains unchanged. CMS reads remain controlled by configuration and disabled by default, with static JSON fallback still available. External tester handoff remains paused until the CMS/Admin content MVP is ready enough for practical content changes without code edits. Production RBAC, role-based content approval, CMS draft-save audit logging, production billing operations, and full external tester handoff are still not production-ready.
 
-This roadmap starts from the current confirmed state: the desktop MVP core lesson/voice/TTS flow is accepted, the tester ZIP flow is accepted, Welcome screen polish and Lesson Chat window auto-sizing are accepted, backend-enforced single active lesson protection is accepted, localization for the current Interface language set is closed for this phase, and the desktop hardening block is stable enough to pause external tester handoff. The product priority is now CMS/Admin content MVP before external testers. Production billing and public release remain deferred/not ready.
+The next recommended CMS implementation step is CMS draft-save audit logging. Each content edit should record who changed what, when, content pack, entity type, stable key/id, changed fields, old/new values or hashes for large values, source, and request/correlation id. The later CMS governance step is a critical-change approval workflow, but it should wait until production roles/RBAC exist.
 
 ## Recommended next product order
 
-1. CMS/Admin content MVP foundation (Phase 5D-0 through Step 5D-6b).
+1. CMS/Admin content MVP foundation (Phase 5D-0 through Step 5D-6d).
    - Planning baseline: `docs/CMS_ADMIN_PLANNING.md`.
    - Detailed content MVP plan: `docs/cms-content-mvp-plan.md`.
-   - Step 5D-0 planning, Step 5D-1 backend schema foundation, Step 5D-2 static JSON import/seed foundation, Step 5D-3 backend published-snapshot read/status path, Step 5D-4 backend Admin CMS content API draft read/update plus validation/preview skeleton, Step 5D-5 backend publish/version/rollback endpoints, Step 5D-6 Admin CMS Content UI shell, Step 5D-6a internal Admin CMS sub-tabs, and Step 5D-6b table selection UX/governance documentation are complete.
+   - Step 5D-0 planning, Step 5D-1 backend schema foundation, Step 5D-2 static JSON import/seed foundation, Step 5D-3 backend published-snapshot read/status path, Step 5D-4 backend Admin CMS content API draft read/update plus validation/preview skeleton, Step 5D-5 backend publish/version/rollback endpoints, Step 5D-6 Admin CMS Content UI shell, Step 5D-6a internal Admin CMS sub-tabs, Step 5D-6b table selection UX/governance documentation, Step 5D-6c full scenario JSON editing foundation, and Step 5D-6d refresh resilience/unsaved-change protection are complete.
    - The new CMS tables and imported `static-json-v1` / `Static JSON Baseline` snapshot are still not used by runtime lesson loading by default; static JSON/content behavior remains unchanged.
    - `CmsContent:ReadPublishedSnapshotEnabled` defaults to `false`, `CmsContent:ContentPackSlug` defaults to `static-json-v1`, and `CmsContent:FallbackToStaticJson` defaults to `true`.
    - Keep this content-focused. Do not include production billing controls, Paddle management, payment editing, entitlement editing, broad user management, mobile-specific CMS, public production Admin, secrets, direct OpenAI key handling, or study-language editing.
-   - Future CMS production governance must include draft-save audit logs containing actor identity, timestamp UTC, content pack, entity type/id, changed fields, before/after values or hashes, source, and request/correlation id when available.
+   - Future CMS production governance must include draft-save audit logs containing actor identity, timestamp UTC, content pack, entity type/id or stable key, changed fields, before/after values or hashes, source, and request/correlation id when available.
    - Future critical CMS changes should require approval after production roles exist; planned roles may include Content Editor, Content Reviewer, and Admin / Owner, with draft editing separated from approval.
 2. Controlled next CMS implementation step.
-   - Recommended next implementation: run controlled Admin CMS end-to-end UI/API regression against a local backend now that the editor shell has internal sub-tabs and row-click table selection, while keeping all CMS learner-runtime integration behind the disabled-by-default read flag.
-   - If learner runtime CMS integration is attempted next, keep it behind the disabled-by-default feature flag and retain static JSON fallback on every CMS failure.
+   - Recommended next implementation: add CMS draft-save audit logging so each content edit records who changed what, when, entity type, stable key/id, changed fields, old/new values or hashes, and request/correlation id.
+   - After draft-save audit logging, run controlled Admin CMS end-to-end UI/API regression against a local backend: load `static-json-v1`, select and save one bounded draft field per content type, exercise full scenario JSON format/validate/save, run validation, load preview summary, list versions, and verify publish/restore confirmation flows.
+   - Critical-change approval workflow is a later CMS governance step and should wait until production roles/RBAC exist.
+   - If learner runtime CMS integration is attempted later, keep it behind the disabled-by-default feature flag and retain static JSON fallback on every CMS failure.
    - Desktop must continue to call backend APIs only; backend remains the source of truth.
 3. Controlled external tester handoff.
    - Tester handoff is paused until CMS/Admin content MVP foundation is ready enough that content/prompt/scenario fixes can be handled through CMS.
@@ -94,7 +96,7 @@ This roadmap starts from the current confirmed state: the desktop MVP core lesso
 
 - No production Paddle rollout before Phase 5B desktop release hardening is complete.
 - No production billing enablement from documentation alone.
-- No full CMS/Admin implementation before desktop readiness and minimum support requirements are clear.
+- No production CMS/Admin readiness yet: production RBAC, approval workflow, and CMS draft-save audit logging are not implemented.
 - No code-side dialogue/prompt quality polishing before CMS/Admin prompt/scenario/bot-behavior editing is ready.
 - No mobile app-store bridge work before the desktop and billing gates are ready.
 - No expansion of Study languages.
