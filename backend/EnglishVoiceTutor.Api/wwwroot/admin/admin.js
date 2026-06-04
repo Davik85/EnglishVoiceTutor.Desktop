@@ -1,6 +1,7 @@
 (() => {
     const ApiPaths = {
         login: "/api/auth/login",
+        adminSession: "/api/admin/session",
         capabilities: "/api/admin/capabilities",
         userLookupByEmail: "/api/admin/users/by-email",
         auditActionsTemplate: "/api/admin/users/{userId}/audit-actions",
@@ -29,6 +30,7 @@
         emailRequired: "Email is required or invalid.",
         userNotFound: "User was not found.",
         signInAgain: "Please sign in again.",
+        sessionExpired: "Admin session expired or is no longer valid. Please sign in again.",
         accessDenied: "Access denied. This account is not an admin.",
         lookupFailed: "Unable to load user.",
         invalidAuditLimit: "Invalid audit log limit.",
@@ -55,8 +57,8 @@
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
     const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", system: "system" });
+    const CmsSubTabs = Object.freeze({ overview: "overview", topics: "topics", scenarios: "scenarios", prompts: "prompts", tutors: "tutors", validationPreview: "validation-preview", versionsPublish: "versions-publish" });
     const LookupSources = Object.freeze({ userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson" });
-
     let accessToken = null;
     let selectedUserId = null;
     let selectedUserEmail = null;
@@ -70,6 +72,7 @@
     let cmsScenarios = [];
     let cmsPromptTemplates = [];
     let cmsTutorProfiles = [];
+    let tabsInitialized = false;
 
     const loginCard = document.getElementById("login-card");
     const dashboard = document.getElementById("dashboard");
@@ -224,25 +227,73 @@
     const cmsRestoreButton = document.getElementById("cms-restore-button");
     const cmsVersionsListElement = document.getElementById("cms-versions-list");
 
+    function getHashParameters() {
+        return new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    }
+
+    function getHashActiveTab() {
+        const tabId = getHashParameters().get("adminTab");
+        return isKnownTab(tabId) ? tabId : Tabs.overview;
+    }
+
+    function getHashCmsSubTab() {
+        const tabId = getHashParameters().get("cmsSubTab");
+        return isKnownCmsSubTab(tabId) ? tabId : CmsSubTabs.overview;
+    }
+
+    function getCurrentActiveTab() {
+        return tabButtons.find((button) => button.getAttribute("aria-selected") === "true")?.dataset.tabId || Tabs.overview;
+    }
+
+    function updateAdminHash(tabId, cmsSubTabId) {
+        const selectedTabId = isKnownTab(tabId) ? tabId : Tabs.overview;
+        const selectedCmsSubTabId = isKnownCmsSubTab(cmsSubTabId) ? cmsSubTabId : getHashCmsSubTab();
+        const parameters = new URLSearchParams();
+        parameters.set("adminTab", selectedTabId);
+        if (selectedTabId === Tabs.cmsContent || selectedCmsSubTabId !== CmsSubTabs.overview) { parameters.set("cmsSubTab", selectedCmsSubTabId); }
+        const nextUrl = `${window.location.pathname}${window.location.search}#${parameters.toString()}`;
+        window.history.replaceState(null, "", nextUrl);
+    }
+
+    function clearAdminHash() {
+        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    }
+
+    function isKnownTab(tabId) { return Object.values(Tabs).includes(tabId); }
+    function isKnownCmsSubTab(tabId) { return Object.values(CmsSubTabs).includes(tabId); }
+
+    function getAdminHeaders(extraHeaders = {}) {
+        const headers = Object.assign({}, extraHeaders);
+        if (accessToken) { headers.Authorization = `Bearer ${accessToken}`; }
+        return headers;
+    }
+
     function activateTab(tabId) {
+        const selectedTabId = isKnownTab(tabId) ? tabId : Tabs.overview;
+        updateAdminHash(selectedTabId, getHashCmsSubTab());
         tabButtons.forEach((button) => {
-            const isActive = button.dataset.tabId === tabId;
+            const isActive = button.dataset.tabId === selectedTabId;
             button.classList.toggle("active", isActive);
             button.setAttribute("aria-selected", isActive ? "true" : "false");
         });
         tabPanels.forEach((panel) => {
             const panelTabId = panel.id.replace("tab-panel-", "");
-            const isActive = panelTabId === tabId;
+            const isActive = panelTabId === selectedTabId;
             panel.classList.toggle("hidden", !isActive);
             panel.setAttribute("aria-hidden", isActive ? "false" : "true");
         });
     }
 
     function initializeTabs() {
+        if (tabsInitialized) { return; }
+        tabsInitialized = true;
         tabButtons.forEach((button) => button.addEventListener("click", async () => {
             const tabId = button.dataset.tabId || Tabs.overview;
             activateTab(tabId);
-            if (tabId === Tabs.cmsContent && !cmsHasLoadedOnce) { await loadCmsContentPacks(); }
+            if (tabId === Tabs.cmsContent) {
+                selectCmsSubTab(getHashCmsSubTab());
+                if (!cmsHasLoadedOnce) { await loadCmsContentPacks(); }
+            }
         }));
     }
 
@@ -506,24 +557,45 @@
         setGrantVisible(false); setRevokeVisible(false); setFreeLessonResetVisible(false); clearGrantState(); clearRevokeState(); clearFreeLessonResetState(); grantForm.reset(); revokeForm.reset(); freeLessonResetForm.reset(); clearAuditLog();
     }
 
-    function resetSession() { accessToken = null; loginForm.reset(); setError(""); resetDashboard(); setDashboardVisible(false); }
+    function resetSession() {
+        accessToken = null;
+        loginForm.reset();
+        setError("");
+        resetDashboard();
+        setDashboardVisible(false);
+    }
+
+    function expireAdminSession(message = ErrorMessages.sessionExpired) {
+        const tokenAtExpiry = accessToken;
+        accessToken = null;
+        fetch(ApiPaths.adminSession, {
+            method: "DELETE",
+            headers: tokenAtExpiry ? { Authorization: `Bearer ${tokenAtExpiry}` } : {}
+        }).catch(() => { });
+        resetDashboard();
+        setDashboardVisible(false);
+        setError(message);
+    }
+
+    function handleAuthInvalidResponse() {
+        expireAdminSession();
+        throw new Error(ErrorMessages.sessionExpired);
+    }
 
     async function fetchUserByEmail(email) {
-        const response = await fetch(`${ApiPaths.userLookupByEmail}?email=${encodeURIComponent(email)}`, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
+        const response = await fetch(`${ApiPaths.userLookupByEmail}?email=${encodeURIComponent(email)}`, { method: "GET", headers: getAdminHeaders() });
         if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.emailRequired); }
         if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.userNotFound); }
-        if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
-        if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
+        if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
         if (!response.ok) { throw new Error(ErrorMessages.lookupFailed); }
         return response.json();
     }
 
     async function fetchAuditActions(userId, limit) {
-        const response = await fetch(`${ApiPaths.auditActionsTemplate.replace("{userId}", encodeURIComponent(userId))}?limit=${encodeURIComponent(limit)}`, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
+        const response = await fetch(`${ApiPaths.auditActionsTemplate.replace("{userId}", encodeURIComponent(userId))}?limit=${encodeURIComponent(limit)}`, { method: "GET", headers: getAdminHeaders() });
         if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.invalidAuditLimit); }
         if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.auditTargetNotFound); }
-        if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
-        if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
+        if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
         if (!response.ok) { throw new Error(ErrorMessages.auditLoadFailed); }
         return response.json();
     }
@@ -597,7 +669,7 @@
             clearSelectedUserState();
             const message = error instanceof Error ? error.message : ErrorMessages.lookupFailed;
             setLookupSourceError(source, message);
-            if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) { resetSession(); setError(message); }
+            if (isAuthErrorMessage(message)) { expireAdminSession(message); }
         } finally {
             setLookupSourceLoading(source, false);
         }
@@ -623,14 +695,13 @@
             const endpoint = ApiPaths.manualPremiumGrantTemplate.replace("{userId}", encodeURIComponent(selectedUserId));
             const response = await fetch(endpoint, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+                headers: getAdminHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ durationDays: validation.durationDays, reason: validation.reason })
             });
 
             if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.grantInvalid); }
             if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.grantUserNotFound); }
-            if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
-            if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
+            if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
             if (!(response.status === 200 || response.status === 201)) { throw new Error(ErrorMessages.grantFailed); }
 
             const payload = await response.json();
@@ -640,9 +711,8 @@
         } catch (error) {
             const message = error instanceof Error ? error.message : ErrorMessages.grantFailed;
             setGrantError(message);
-            if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) {
-                resetSession();
-                setError(message);
+            if (isAuthErrorMessage(message)) {
+                expireAdminSession(message);
             }
         } finally { setGrantLoading(false); }
     }
@@ -664,15 +734,14 @@
                 .replace("{entitlementId}", encodeURIComponent(validation.entitlementId));
             const response = await fetch(endpoint, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+                headers: getAdminHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ reason: validation.reason })
             });
 
             if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.revokeInvalid); }
             if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.revokeNotFound); }
             if (response.status === HttpStatus.conflict) { throw new Error(ErrorMessages.revokeConflict); }
-            if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
-            if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
+            if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
             if (!response.ok) { throw new Error(ErrorMessages.revokeFailed); }
 
             const payload = await response.json();
@@ -682,9 +751,8 @@
         } catch (error) {
             const message = error instanceof Error ? error.message : ErrorMessages.revokeFailed;
             setRevokeError(message);
-            if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) {
-                resetSession();
-                setError(message);
+            if (isAuthErrorMessage(message)) {
+                expireAdminSession(message);
             }
         } finally { setRevokeLoading(false); }
     }
@@ -704,14 +772,13 @@
             const endpoint = ApiPaths.freeLessonAllowanceResetTemplate.replace("{userId}", encodeURIComponent(selectedUserId));
             const response = await fetch(endpoint, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+                headers: getAdminHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ usageDate: validation.usageDate, reason: validation.reason })
             });
 
             if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.resetInvalid); }
             if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.resetNotFound); }
-            if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
-            if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
+            if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
             if (!response.ok) { throw new Error(ErrorMessages.resetFailed); }
 
             const payload = await response.json();
@@ -721,9 +788,8 @@
         } catch (error) {
             const message = error instanceof Error ? error.message : ErrorMessages.resetFailed;
             setFreeLessonResetError(message);
-            if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) {
-                resetSession();
-                setError(message);
+            if (isAuthErrorMessage(message)) {
+                expireAdminSession(message);
             }
         } finally { setFreeLessonResetLoading(false); }
     }
@@ -741,16 +807,15 @@
     function tryParseCmsJson(text) { try { return { isValid: true, value: JSON.parse(text) }; } catch (error) { return { isValid: false, message: error instanceof Error ? error.message : "Invalid JSON." }; } }
     function prettyPrintCmsJson(text) { const parsed = tryParseCmsJson(text); return parsed.isValid ? { isValid: true, text: JSON.stringify(parsed.value, null, 2) } : parsed; }
     function setCmsScenarioJsonStatus(message, isError) { cmsScenarioJsonStatusElement.className = isError ? "error" : "success"; cmsScenarioJsonStatusElement.textContent = message || ""; }
-    function validateCmsScenarioJsonInput() { const text = cmsScenarioDefinitionJsonInput.value.trim(); if (!text) { setCmsScenarioJsonStatus("Full scenario JSON is required before saving an active scenario.", true); return false; } const parsed = tryParseCmsJson(text); if (!parsed.isValid) { setCmsScenarioJsonStatus(`Invalid JSON: ${parsed.message}`, true); return false; } if (!parsed.value || typeof parsed.value !== "object" || Array.isArray(parsed.value)) { setCmsScenarioJsonStatus("Full scenario JSON root must be an object.", true); return false; } setCmsScenarioJsonStatus("Full scenario JSON is valid JSON.", false); return true; }
-    function formatCmsScenarioJsonInput() { const formatted = prettyPrintCmsJson(cmsScenarioDefinitionJsonInput.value); if (!formatted.isValid) { setCmsScenarioJsonStatus(`Cannot format invalid JSON: ${formatted.message}`, true); return false; } cmsScenarioDefinitionJsonInput.value = formatted.text; setCmsScenarioJsonStatus("Full scenario JSON formatted.", false); return true; }
+    function validateCmsScenarioJsonInput() { const text = cmsScenarioDefinitionJsonInput.value.trim(); if (!text) { setCmsScenarioJsonStatus("Validation failed: full scenario JSON is required before saving an active scenario. Nothing was saved or published.", true); return false; } const parsed = tryParseCmsJson(text); if (!parsed.isValid) { setCmsScenarioJsonStatus(`Validation failed: invalid JSON syntax (${parsed.message}). Nothing was saved or published.`, true); return false; } if (!parsed.value || typeof parsed.value !== "object" || Array.isArray(parsed.value)) { setCmsScenarioJsonStatus("Validation failed: full scenario JSON root must be an object. Nothing was saved or published.", true); return false; } setCmsScenarioJsonStatus("Validation passed: JSON syntax and required scenario fields are ready to save as a draft. Nothing was saved or published.", false); return true; }
+    function formatCmsScenarioJsonInput() { const formatted = prettyPrintCmsJson(cmsScenarioDefinitionJsonInput.value); if (!formatted.isValid) { setCmsScenarioJsonStatus(`Format failed: invalid JSON syntax (${formatted.message}). Nothing was saved or published.`, true); return false; } cmsScenarioDefinitionJsonInput.value = formatted.text; setCmsScenarioJsonStatus("Formatted JSON for easier editing. Nothing was saved or published; use Save draft to persist edits.", false); return true; }
     function formatShortHash(hash) { const value = String(hash || ""); return value.length > 16 ? `${value.slice(0, 12)}...${value.slice(-4)}` : formatValue(value); }
 
     async function adminFetch(path, options = {}) {
-        const headers = Object.assign({}, options.headers || {}, { Authorization: `Bearer ${accessToken}` });
+        const headers = getAdminHeaders(options.headers || {});
         if (options.body && !headers["Content-Type"]) { headers["Content-Type"] = "application/json"; }
         const response = await fetch(path, Object.assign({}, options, { headers }));
-        if (response.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
-        if (response.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
+        if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
         if (response.status === HttpStatus.notFound) { throw new Error("CMS item was not found."); }
         if (response.status === HttpStatus.badRequest) {
             let message = "CMS request is invalid. Check draft fields and validation messages.";
@@ -775,7 +840,8 @@
     }
 
     function selectCmsSubTab(tabId) {
-        const selectedTabId = tabId || "overview";
+        const selectedTabId = isKnownCmsSubTab(tabId) ? tabId : CmsSubTabs.overview;
+        updateAdminHash(getCurrentActiveTab(), selectedTabId);
         cmsSubTabButtons.forEach((button) => {
             const isActive = button.dataset.cmsSubTabId === selectedTabId;
             button.classList.toggle("active", isActive);
@@ -1003,20 +1069,20 @@
         } catch (error) { handleCmsError(error); }
     }
     function getCmsErrorMessage(error) { return error instanceof Error ? error.message : "CMS request failed."; }
-    function isAuthErrorMessage(message) { return message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied; }
+    function isAuthErrorMessage(message) { return message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied || message === ErrorMessages.sessionExpired; }
     function handleCmsError(error) { const message = getCmsErrorMessage(error); setCmsError(message); setCmsSuccess(""); if (isAuthErrorMessage(message)) { resetSession(); setError(message); } }
 
     async function loadAuditLogForSelectedUser() {
         if (!selectedUserId) { clearAuditLog(); return; }
         setAuditError(""); setAuditLoading(true);
         try { renderAuditLog(await fetchAuditActions(selectedUserId, getSelectedAuditLimit())); }
-        catch (error) { auditResultElement.textContent = ""; const message = error instanceof Error ? error.message : ErrorMessages.auditLoadFailed; setAuditError(message); if (message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied) { resetSession(); setError(message); } }
+        catch (error) { auditResultElement.textContent = ""; const message = error instanceof Error ? error.message : ErrorMessages.auditLoadFailed; setAuditError(message); if (isAuthErrorMessage(message)) { expireAdminSession(message); } }
         finally { setAuditLoading(false); }
     }
 
 
     cmsSubTabButtons.forEach((button) => { button.addEventListener("click", () => { selectCmsSubTab(button.dataset.cmsSubTabId); }); });
-    selectCmsSubTab("overview");
+    selectCmsSubTab(getHashCmsSubTab());
     cmsLoadContentPacksButton.addEventListener("click", async () => { await loadCmsContentPacks(); });
     cmsContentPackSelect.addEventListener("change", async () => { setCmsLoading(true); try { await refreshCmsContentPack(); setCmsSuccess("CMS content pack refreshed."); } catch (error) { handleCmsError(error); } finally { setCmsLoading(false); } });
     cmsRefreshButton.addEventListener("click", async () => { setCmsLoading(true); try { await refreshCmsContentPack(); setCmsSuccess("CMS content pack refreshed."); } catch (error) { handleCmsError(error); } finally { setCmsLoading(false); } });
@@ -1039,6 +1105,59 @@
     cmsPublishButton.addEventListener("click", async () => { await publishCmsDraft(); });
     cmsRestoreButton.addEventListener("click", async () => { await restoreCmsVersion(); });
 
+    async function logoutAdminSession() {
+        try {
+            await fetch(ApiPaths.adminSession, { method: "DELETE", headers: getAdminHeaders() });
+        } catch (_) { }
+        resetSession();
+        clearAdminHash();
+    }
+
+    async function loadAdminCapabilities() {
+        const capabilitiesResponse = await fetch(ApiPaths.capabilities, { method: "GET", headers: getAdminHeaders() });
+        if (capabilitiesResponse.status === HttpStatus.unauthorized || capabilitiesResponse.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+        if (!capabilitiesResponse.ok) { throw new Error("Unable to load admin capabilities."); }
+        const capabilitiesPayload = await capabilitiesResponse.json();
+        adminSourceElement.textContent = capabilitiesPayload.adminSource || "-";
+        environmentElement.textContent = capabilitiesPayload.environment || "-";
+        checkedAtElement.textContent = capabilitiesPayload.checkedAtUtc || "-";
+        capabilitiesListElement.textContent = "";
+        Object.keys(capabilitiesPayload.capabilities || {}).forEach((key) => {
+            const value = Boolean(capabilitiesPayload.capabilities[key]);
+            const item = document.createElement("li");
+            item.textContent = key;
+            const badge = document.createElement("span");
+            badge.className = `badge ${value ? "available" : "unavailable"}`;
+            badge.textContent = value ? "available" : "unavailable";
+            item.appendChild(badge);
+            capabilitiesListElement.appendChild(item);
+        });
+    }
+
+    async function showAdminShellAfterAuth(preferredTabId) {
+        await loadAdminCapabilities();
+        setDashboardVisible(true);
+        initializeTabs();
+        const selectedTabId = isKnownTab(preferredTabId) ? preferredTabId : Tabs.overview;
+        activateTab(selectedTabId);
+        selectCmsSubTab(getHashCmsSubTab());
+        updateSelectedUserHeader();
+        updateUserRequiredEmptyStates();
+        if (selectedTabId === Tabs.cmsContent && !cmsHasLoadedOnce) { await loadCmsContentPacks(); }
+    }
+
+    async function restoreAdminSessionFromCookie() {
+        signInButton.disabled = true;
+        try {
+            await showAdminShellAfterAuth(getHashActiveTab());
+        } catch (_) {
+            accessToken = null;
+            if (!window.location.hash) { setError(""); }
+        } finally {
+            signInButton.disabled = false;
+        }
+    }
+
     loginForm.addEventListener("submit", async (event) => {
         event.preventDefault(); setError(""); signInButton.disabled = true;
         try {
@@ -1047,14 +1166,7 @@
             if (!loginResponse.ok) { throw new Error("Login failed. Check your email and password."); }
             const loginBody = await loginResponse.json(); if (!loginBody?.accessToken) { throw new Error("Login failed. Access token is missing."); }
             accessToken = loginBody.accessToken;
-            const capabilitiesResponse = await fetch(ApiPaths.capabilities, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
-            if (capabilitiesResponse.status === HttpStatus.unauthorized) { throw new Error(ErrorMessages.signInAgain); }
-            if (capabilitiesResponse.status === HttpStatus.forbidden) { throw new Error(ErrorMessages.accessDenied); }
-            if (!capabilitiesResponse.ok) { throw new Error("Unable to load admin capabilities."); }
-            const capabilitiesPayload = await capabilitiesResponse.json();
-            adminSourceElement.textContent = capabilitiesPayload.adminSource || "-"; environmentElement.textContent = capabilitiesPayload.environment || "-"; checkedAtElement.textContent = capabilitiesPayload.checkedAtUtc || "-";
-            capabilitiesListElement.textContent = ""; Object.keys(capabilitiesPayload.capabilities || {}).forEach((key) => { const value = Boolean(capabilitiesPayload.capabilities[key]); const item = document.createElement("li"); item.textContent = key; const badge = document.createElement("span"); badge.className = `badge ${value ? "available" : "unavailable"}`; badge.textContent = value ? "available" : "unavailable"; item.appendChild(badge); capabilitiesListElement.appendChild(item); });
-            setDashboardVisible(true); initializeTabs(); activateTab(Tabs.overview); updateSelectedUserHeader(); updateUserRequiredEmptyStates();
+            await showAdminShellAfterAuth(Tabs.overview);
         } catch (error) { resetSession(); setError(error instanceof Error ? error.message : "Unexpected error."); }
         finally { signInButton.disabled = false; }
     });
@@ -1068,7 +1180,9 @@
     revokeForm.addEventListener("submit", async (event) => { event.preventDefault(); await revokePremiumForSelectedUser(); });
     freeLessonResetForm.addEventListener("submit", async (event) => { event.preventDefault(); await resetFreeLessonAllowanceForSelectedUser(); });
     loadAuditButton.addEventListener("click", async () => { await loadAuditLogForSelectedUser(); });
-    logoutButton.addEventListener("click", () => { resetSession(); });
+    logoutButton.addEventListener("click", () => { logoutAdminSession(); });
+    initializeTabs();
     updateSelectedUserHeader();
     updateUserRequiredEmptyStates();
+    restoreAdminSessionFromCookie();
 })();
