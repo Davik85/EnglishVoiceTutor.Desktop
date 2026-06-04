@@ -1,6 +1,7 @@
 (() => {
     const ApiPaths = {
         login: "/api/auth/login",
+        adminSession: "/api/admin/session",
         capabilities: "/api/admin/capabilities",
         userLookupByEmail: "/api/admin/users/by-email",
         auditActionsTemplate: "/api/admin/users/{userId}/audit-actions",
@@ -58,12 +59,6 @@
     const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", system: "system" });
     const CmsSubTabs = Object.freeze({ overview: "overview", topics: "topics", scenarios: "scenarios", prompts: "prompts", tutors: "tutors", validationPreview: "validation-preview", versionsPublish: "versions-publish" });
     const LookupSources = Object.freeze({ userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson" });
-    const StorageKeys = Object.freeze({
-        accessToken: "evt.admin.accessToken",
-        activeTab: "evt.admin.activeTab",
-        cmsSubTab: "evt.admin.cmsSubTab"
-    });
-
     let accessToken = null;
     let selectedUserId = null;
     let selectedUserEmail = null;
@@ -232,37 +227,50 @@
     const cmsRestoreButton = document.getElementById("cms-restore-button");
     const cmsVersionsListElement = document.getElementById("cms-versions-list");
 
-    function readSessionValue(key) {
-        try { return window.sessionStorage.getItem(key); } catch (_) { return null; }
+    function getHashParameters() {
+        return new URLSearchParams(window.location.hash.replace(/^#/, ""));
     }
 
-    function writeSessionValue(key, value) {
-        try {
-            if (value === null || value === undefined || value === "") { window.sessionStorage.removeItem(key); return; }
-            window.sessionStorage.setItem(key, value);
-        } catch (_) { }
+    function getHashActiveTab() {
+        const tabId = getHashParameters().get("adminTab");
+        return isKnownTab(tabId) ? tabId : Tabs.overview;
     }
 
-    function removeSessionValue(key) {
-        try { window.sessionStorage.removeItem(key); } catch (_) { }
+    function getHashCmsSubTab() {
+        const tabId = getHashParameters().get("cmsSubTab");
+        return isKnownCmsSubTab(tabId) ? tabId : CmsSubTabs.overview;
     }
 
-    function persistAdminAuthState(token) {
-        writeSessionValue(StorageKeys.accessToken, token);
+    function getCurrentActiveTab() {
+        return tabButtons.find((button) => button.getAttribute("aria-selected") === "true")?.dataset.tabId || Tabs.overview;
     }
 
-    function clearStoredAdminAuthState() {
-        removeSessionValue(StorageKeys.accessToken);
+    function updateAdminHash(tabId, cmsSubTabId) {
+        const selectedTabId = isKnownTab(tabId) ? tabId : Tabs.overview;
+        const selectedCmsSubTabId = isKnownCmsSubTab(cmsSubTabId) ? cmsSubTabId : getHashCmsSubTab();
+        const parameters = new URLSearchParams();
+        parameters.set("adminTab", selectedTabId);
+        if (selectedTabId === Tabs.cmsContent || selectedCmsSubTabId !== CmsSubTabs.overview) { parameters.set("cmsSubTab", selectedCmsSubTabId); }
+        const nextUrl = `${window.location.pathname}${window.location.search}#${parameters.toString()}`;
+        window.history.replaceState(null, "", nextUrl);
+    }
+
+    function clearAdminHash() {
+        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
     }
 
     function isKnownTab(tabId) { return Object.values(Tabs).includes(tabId); }
     function isKnownCmsSubTab(tabId) { return Object.values(CmsSubTabs).includes(tabId); }
-    function getStoredActiveTab() { const tabId = readSessionValue(StorageKeys.activeTab); return isKnownTab(tabId) ? tabId : Tabs.overview; }
-    function getStoredCmsSubTab() { const tabId = readSessionValue(StorageKeys.cmsSubTab); return isKnownCmsSubTab(tabId) ? tabId : CmsSubTabs.overview; }
+
+    function getAdminHeaders(extraHeaders = {}) {
+        const headers = Object.assign({}, extraHeaders);
+        if (accessToken) { headers.Authorization = `Bearer ${accessToken}`; }
+        return headers;
+    }
 
     function activateTab(tabId) {
         const selectedTabId = isKnownTab(tabId) ? tabId : Tabs.overview;
-        writeSessionValue(StorageKeys.activeTab, selectedTabId);
+        updateAdminHash(selectedTabId, getHashCmsSubTab());
         tabButtons.forEach((button) => {
             const isActive = button.dataset.tabId === selectedTabId;
             button.classList.toggle("active", isActive);
@@ -283,7 +291,7 @@
             const tabId = button.dataset.tabId || Tabs.overview;
             activateTab(tabId);
             if (tabId === Tabs.cmsContent) {
-                selectCmsSubTab(getStoredCmsSubTab());
+                selectCmsSubTab(getHashCmsSubTab());
                 if (!cmsHasLoadedOnce) { await loadCmsContentPacks(); }
             }
         }));
@@ -551,7 +559,6 @@
 
     function resetSession() {
         accessToken = null;
-        clearStoredAdminAuthState();
         loginForm.reset();
         setError("");
         resetDashboard();
@@ -559,8 +566,12 @@
     }
 
     function expireAdminSession(message = ErrorMessages.sessionExpired) {
+        const tokenAtExpiry = accessToken;
         accessToken = null;
-        clearStoredAdminAuthState();
+        fetch(ApiPaths.adminSession, {
+            method: "DELETE",
+            headers: tokenAtExpiry ? { Authorization: `Bearer ${tokenAtExpiry}` } : {}
+        }).catch(() => { });
         resetDashboard();
         setDashboardVisible(false);
         setError(message);
@@ -572,7 +583,7 @@
     }
 
     async function fetchUserByEmail(email) {
-        const response = await fetch(`${ApiPaths.userLookupByEmail}?email=${encodeURIComponent(email)}`, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
+        const response = await fetch(`${ApiPaths.userLookupByEmail}?email=${encodeURIComponent(email)}`, { method: "GET", headers: getAdminHeaders() });
         if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.emailRequired); }
         if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.userNotFound); }
         if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
@@ -581,7 +592,7 @@
     }
 
     async function fetchAuditActions(userId, limit) {
-        const response = await fetch(`${ApiPaths.auditActionsTemplate.replace("{userId}", encodeURIComponent(userId))}?limit=${encodeURIComponent(limit)}`, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
+        const response = await fetch(`${ApiPaths.auditActionsTemplate.replace("{userId}", encodeURIComponent(userId))}?limit=${encodeURIComponent(limit)}`, { method: "GET", headers: getAdminHeaders() });
         if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.invalidAuditLimit); }
         if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.auditTargetNotFound); }
         if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
@@ -684,7 +695,7 @@
             const endpoint = ApiPaths.manualPremiumGrantTemplate.replace("{userId}", encodeURIComponent(selectedUserId));
             const response = await fetch(endpoint, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+                headers: getAdminHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ durationDays: validation.durationDays, reason: validation.reason })
             });
 
@@ -723,7 +734,7 @@
                 .replace("{entitlementId}", encodeURIComponent(validation.entitlementId));
             const response = await fetch(endpoint, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+                headers: getAdminHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ reason: validation.reason })
             });
 
@@ -761,7 +772,7 @@
             const endpoint = ApiPaths.freeLessonAllowanceResetTemplate.replace("{userId}", encodeURIComponent(selectedUserId));
             const response = await fetch(endpoint, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+                headers: getAdminHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ usageDate: validation.usageDate, reason: validation.reason })
             });
 
@@ -801,7 +812,7 @@
     function formatShortHash(hash) { const value = String(hash || ""); return value.length > 16 ? `${value.slice(0, 12)}...${value.slice(-4)}` : formatValue(value); }
 
     async function adminFetch(path, options = {}) {
-        const headers = Object.assign({}, options.headers || {}, { Authorization: `Bearer ${accessToken}` });
+        const headers = getAdminHeaders(options.headers || {});
         if (options.body && !headers["Content-Type"]) { headers["Content-Type"] = "application/json"; }
         const response = await fetch(path, Object.assign({}, options, { headers }));
         if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
@@ -830,7 +841,7 @@
 
     function selectCmsSubTab(tabId) {
         const selectedTabId = isKnownCmsSubTab(tabId) ? tabId : CmsSubTabs.overview;
-        writeSessionValue(StorageKeys.cmsSubTab, selectedTabId);
+        updateAdminHash(getCurrentActiveTab(), selectedTabId);
         cmsSubTabButtons.forEach((button) => {
             const isActive = button.dataset.cmsSubTabId === selectedTabId;
             button.classList.toggle("active", isActive);
@@ -1071,7 +1082,7 @@
 
 
     cmsSubTabButtons.forEach((button) => { button.addEventListener("click", () => { selectCmsSubTab(button.dataset.cmsSubTabId); }); });
-    selectCmsSubTab(getStoredCmsSubTab());
+    selectCmsSubTab(getHashCmsSubTab());
     cmsLoadContentPacksButton.addEventListener("click", async () => { await loadCmsContentPacks(); });
     cmsContentPackSelect.addEventListener("change", async () => { setCmsLoading(true); try { await refreshCmsContentPack(); setCmsSuccess("CMS content pack refreshed."); } catch (error) { handleCmsError(error); } finally { setCmsLoading(false); } });
     cmsRefreshButton.addEventListener("click", async () => { setCmsLoading(true); try { await refreshCmsContentPack(); setCmsSuccess("CMS content pack refreshed."); } catch (error) { handleCmsError(error); } finally { setCmsLoading(false); } });
@@ -1094,8 +1105,16 @@
     cmsPublishButton.addEventListener("click", async () => { await publishCmsDraft(); });
     cmsRestoreButton.addEventListener("click", async () => { await restoreCmsVersion(); });
 
+    async function logoutAdminSession() {
+        try {
+            await fetch(ApiPaths.adminSession, { method: "DELETE", headers: getAdminHeaders() });
+        } catch (_) { }
+        resetSession();
+        clearAdminHash();
+    }
+
     async function loadAdminCapabilities() {
-        const capabilitiesResponse = await fetch(ApiPaths.capabilities, { method: "GET", headers: { Authorization: `Bearer ${accessToken}` } });
+        const capabilitiesResponse = await fetch(ApiPaths.capabilities, { method: "GET", headers: getAdminHeaders() });
         if (capabilitiesResponse.status === HttpStatus.unauthorized || capabilitiesResponse.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
         if (!capabilitiesResponse.ok) { throw new Error("Unable to load admin capabilities."); }
         const capabilitiesPayload = await capabilitiesResponse.json();
@@ -1121,22 +1140,19 @@
         initializeTabs();
         const selectedTabId = isKnownTab(preferredTabId) ? preferredTabId : Tabs.overview;
         activateTab(selectedTabId);
-        selectCmsSubTab(getStoredCmsSubTab());
+        selectCmsSubTab(getHashCmsSubTab());
         updateSelectedUserHeader();
         updateUserRequiredEmptyStates();
         if (selectedTabId === Tabs.cmsContent && !cmsHasLoadedOnce) { await loadCmsContentPacks(); }
     }
 
-    async function restoreStoredAdminSession() {
-        const storedToken = readSessionValue(StorageKeys.accessToken);
-        if (!storedToken) { return; }
-        accessToken = storedToken;
+    async function restoreAdminSessionFromCookie() {
         signInButton.disabled = true;
         try {
-            await showAdminShellAfterAuth(getStoredActiveTab());
-        } catch (error) {
-            if (error instanceof Error && error.message === ErrorMessages.sessionExpired) { return; }
-            expireAdminSession(ErrorMessages.sessionExpired);
+            await showAdminShellAfterAuth(getHashActiveTab());
+        } catch (_) {
+            accessToken = null;
+            if (!window.location.hash) { setError(""); }
         } finally {
             signInButton.disabled = false;
         }
@@ -1150,7 +1166,6 @@
             if (!loginResponse.ok) { throw new Error("Login failed. Check your email and password."); }
             const loginBody = await loginResponse.json(); if (!loginBody?.accessToken) { throw new Error("Login failed. Access token is missing."); }
             accessToken = loginBody.accessToken;
-            persistAdminAuthState(accessToken);
             await showAdminShellAfterAuth(Tabs.overview);
         } catch (error) { resetSession(); setError(error instanceof Error ? error.message : "Unexpected error."); }
         finally { signInButton.disabled = false; }
@@ -1165,9 +1180,9 @@
     revokeForm.addEventListener("submit", async (event) => { event.preventDefault(); await revokePremiumForSelectedUser(); });
     freeLessonResetForm.addEventListener("submit", async (event) => { event.preventDefault(); await resetFreeLessonAllowanceForSelectedUser(); });
     loadAuditButton.addEventListener("click", async () => { await loadAuditLogForSelectedUser(); });
-    logoutButton.addEventListener("click", () => { resetSession(); });
+    logoutButton.addEventListener("click", () => { logoutAdminSession(); });
     initializeTabs();
     updateSelectedUserHeader();
     updateUserRequiredEmptyStates();
-    restoreStoredAdminSession();
+    restoreAdminSessionFromCookie();
 })();
