@@ -489,6 +489,46 @@ Minimum UI:
 - **Risk:** Admin foundation is mistaken for production CMS. **Mitigation:** document that current Admin shell is development/support foundation only.
 - **Risk:** Billing/admin scope creep. **Mitigation:** keep billing/Paddle/subscription/entitlement operations deferred and outside this MVP.
 
+## Future CMS governance requirements
+
+Step 5D-6b only improves Admin CMS UI table selection UX and records future governance requirements. It does not add production roles, does not add an approval workflow, does not add database schema, and does not change runtime learner behavior. The development-only Admin CMS draft editing flow remains in place, and publish/restore actions continue to rely on explicit confirmation dialogs for this phase.
+
+### Future draft save audit logging
+
+Every CMS draft save should eventually be audited before production CMS operations. The audit record should include:
+
+- actor user id;
+- actor email;
+- timestamp UTC;
+- content pack slug;
+- entity type: topic, scenario, prompt template, tutor behavior profile;
+- entity id / stable key;
+- changed fields;
+- before value, or before hash when storing full values is too large;
+- after value, or after hash when storing full values is too large;
+- source: Admin UI / API;
+- request/correlation id if available.
+
+This requirement exists so future operators can understand who changed prompts, scenarios, tutor behavior, or lesson content.
+
+### Future approval workflow
+
+Critical CMS changes should later require approval after production roles are implemented. Examples of critical changes include:
+
+- prompt template changes;
+- tutor behavior/safety changes;
+- large scenario changes;
+- disabling important content;
+- publish actions.
+
+Future roles may include:
+
+- Content Editor;
+- Content Reviewer;
+- Admin / Owner.
+
+Draft editing and approval should be separated when roles exist. For now, keep the existing development-only admin flow and confirmation dialogs for publish/restore.
+
 ## Acceptance criteria for CMS content MVP implementation
 
 - Authenticated admin/content-manager can edit draft content for topics, scenarios, starter messages, prompt templates, tutor behavior rules, and hint/feedback/summary configuration where applicable.
