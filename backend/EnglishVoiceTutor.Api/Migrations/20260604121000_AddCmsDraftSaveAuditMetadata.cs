@@ -1,10 +1,13 @@
+using EnglishVoiceTutor.Api.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace EnglishVoiceTutor.Api.Migrations
 {
-    /// <inheritdoc />
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260604121000_AddCmsDraftSaveAuditMetadata")]
     public partial class AddCmsDraftSaveAuditMetadata : Migration
     {
         /// <inheritdoc />
