@@ -15,8 +15,18 @@ $publishedReadModelsPath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Se
 $cmsContentOptionsPath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Options/CmsContentOptions.cs'
 $smokePublishedReadPath = Join-Path $repoRoot 'tools/smoke_cms_published_content_read.ps1'
 $entityRoot = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Data/Entities/Cms'
+$desktopCodeExtensions = @(
+    '.cs',
+    '.xaml',
+    '.csproj',
+    '.sln',
+    '.slnx',
+    '.props',
+    '.targets'
+)
 $desktopCmsReferences = Get-ChildItem -Path $repoRoot -Recurse -File |
     Where-Object {
+        $desktopCodeExtensions -contains $_.Extension -and
         $_.FullName -notmatch '[\\/]backend[\\/]' -and
         $_.FullName -notmatch '[\\/]\.git[\\/]' -and
         $_.FullName -notmatch '[\\/]bin[\\/]' -and

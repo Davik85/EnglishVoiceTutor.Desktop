@@ -56,6 +56,17 @@ $jsonHeaders = @{ Authorization = "Bearer $BearerToken"; 'Content-Type' = 'appli
 $contentPackUrl = "$BaseUrl/api/admin/dev/cms/content-packs/static-json-v1"
 $auditUrl = "$contentPackUrl/audit-entries"
 
+function New-AuditLookupUrl {
+    param(
+        [string]$EntityType,
+        [string]$StableKey
+    )
+
+    $encodedEntityType = [uri]::EscapeDataString($EntityType)
+    $encodedStableKey = [uri]::EscapeDataString($StableKey)
+    return '{0}?entityType={1}&stableKey={2}&limit=10' -f $auditUrl, $encodedEntityType, $encodedStableKey
+}
+
 function Assert-AuditEntry {
     param(
         [string]$EntityType,
@@ -64,13 +75,13 @@ function Assert-AuditEntry {
         [datetimeoffset]$SinceUtc
     )
 
-    $encodedEntityType = [uri]::EscapeDataString($EntityType)
-    $encodedStableKey = [uri]::EscapeDataString($StableKey)
-    $payload = Invoke-RestMethod -Method Get -Uri "$auditUrl?entityType=$encodedEntityType&stableKey=$encodedStableKey&limit=10" -Headers $headers -TimeoutSec 60
+    $auditLookupUrl = New-AuditLookupUrl -EntityType $EntityType -StableKey $StableKey
+    Write-Verbose "CMS audit lookup URL: $auditLookupUrl"
+    $payload = Invoke-RestMethod -Method Get -Uri $auditLookupUrl -Headers $headers -TimeoutSec 60
     $entry = @($payload.entries | Where-Object { $_.operation -eq 'DraftSaved' -and $_.entityType -eq $EntityType -and $_.stableKey -eq $StableKey -and ([datetimeoffset]$_.createdAtUtc) -ge $SinceUtc }) | Select-Object -First 1
     if (-not $entry) {
         $payload | ConvertTo-Json -Depth 20 | Write-Host
-        throw "No recent DraftSaved CMS audit entry found for $EntityType '$StableKey'."
+        throw "No recent DraftSaved CMS audit entry found for $EntityType '$StableKey' at $auditLookupUrl."
     }
 
     foreach ($required in @('id', 'createdAtUtc', 'actorUserId', 'contentPackId', 'contentPackSlug', 'entityType', 'entityId', 'stableKey', 'operation', 'changedFields', 'beforeHash', 'afterHash', 'source', 'status')) {
