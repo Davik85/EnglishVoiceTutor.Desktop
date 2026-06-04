@@ -1,9 +1,11 @@
 # Next Steps
 
-Review date: 2026-06-03.
+Review date: 2026-06-04.
 
 
-## After Step 5D-6a
+## After Step 5D-6b
+
+Step 5D-6b improved Admin CMS table selection UX only: Topics, Scenarios, Prompts, and Tutors rows can be selected by clicking the row, Select buttons remain available as compact visible fallbacks, and the selected row is highlighted. It did not add production roles, approval workflow, database schema, or runtime learner behavior changes.
 
 The next implementation step should be controlled Admin CMS end-to-end UI/API regression testing against a local backend: load `static-json-v1`, select and save one bounded draft field per content type, run validation, load preview summary, list versions, and verify publish/restore confirmation flows in a development-only environment. Keep runtime CMS reads disabled by default and keep static JSON fallback available while this regression work is performed.
 
@@ -13,15 +15,17 @@ This roadmap starts from the current confirmed state: the desktop MVP core lesso
 
 ## Recommended next product order
 
-1. CMS/Admin content MVP foundation (Phase 5D-0 through Step 5D-6a).
+1. CMS/Admin content MVP foundation (Phase 5D-0 through Step 5D-6b).
    - Planning baseline: `docs/CMS_ADMIN_PLANNING.md`.
    - Detailed content MVP plan: `docs/cms-content-mvp-plan.md`.
-   - Step 5D-0 planning, Step 5D-1 backend schema foundation, Step 5D-2 static JSON import/seed foundation, Step 5D-3 backend published-snapshot read/status path, Step 5D-4 backend Admin CMS content API draft read/update plus validation/preview skeleton, Step 5D-5 backend publish/version/rollback endpoints, Step 5D-6 Admin CMS Content UI shell, and Step 5D-6a internal Admin CMS sub-tabs are complete.
+   - Step 5D-0 planning, Step 5D-1 backend schema foundation, Step 5D-2 static JSON import/seed foundation, Step 5D-3 backend published-snapshot read/status path, Step 5D-4 backend Admin CMS content API draft read/update plus validation/preview skeleton, Step 5D-5 backend publish/version/rollback endpoints, Step 5D-6 Admin CMS Content UI shell, Step 5D-6a internal Admin CMS sub-tabs, and Step 5D-6b table selection UX/governance documentation are complete.
    - The new CMS tables and imported `static-json-v1` / `Static JSON Baseline` snapshot are still not used by runtime lesson loading by default; static JSON/content behavior remains unchanged.
    - `CmsContent:ReadPublishedSnapshotEnabled` defaults to `false`, `CmsContent:ContentPackSlug` defaults to `static-json-v1`, and `CmsContent:FallbackToStaticJson` defaults to `true`.
    - Keep this content-focused. Do not include production billing controls, Paddle management, payment editing, entitlement editing, broad user management, mobile-specific CMS, public production Admin, secrets, direct OpenAI key handling, or study-language editing.
+   - Future CMS production governance must include draft-save audit logs containing actor identity, timestamp UTC, content pack, entity type/id, changed fields, before/after values or hashes, source, and request/correlation id when available.
+   - Future critical CMS changes should require approval after production roles exist; planned roles may include Content Editor, Content Reviewer, and Admin / Owner, with draft editing separated from approval.
 2. Controlled next CMS implementation step.
-   - Recommended next implementation: run controlled Admin CMS end-to-end UI/API regression against a local backend now that the editor shell has internal sub-tabs, while keeping all CMS learner-runtime integration behind the disabled-by-default read flag.
+   - Recommended next implementation: run controlled Admin CMS end-to-end UI/API regression against a local backend now that the editor shell has internal sub-tabs and row-click table selection, while keeping all CMS learner-runtime integration behind the disabled-by-default read flag.
    - If learner runtime CMS integration is attempted next, keep it behind the disabled-by-default feature flag and retain static JSON fallback on every CMS failure.
    - Desktop must continue to call backend APIs only; backend remains the source of truth.
 3. Controlled external tester handoff.

@@ -805,26 +805,59 @@
     }
 
     function renderCmsTopicsTable() {
-        renderCmsTable(cmsTopicsListElement, [{ key: "stableTopicKey", label: "stableTopicKey" }, { key: "title", label: "Title" }, { key: "sortOrder", label: "Sort" }, { key: "isActive", label: "Active" }], getFilteredCmsTopics(), selectCmsTopic);
+        renderCmsTable(cmsTopicsListElement, [{ key: "stableTopicKey", label: "stableTopicKey" }, { key: "title", label: "Title" }, { key: "sortOrder", label: "Sort" }, { key: "isActive", label: "Active" }], getFilteredCmsTopics(), { onSelect: selectCmsTopic, selectedId: cmsSelectedTopic?.id });
     }
 
     function renderCmsScenariosTable() {
-        renderCmsTable(cmsScenariosListElement, [{ key: "stableScenarioKey", label: "stableScenarioKey" }, { key: "topicKey", label: "Topic key" }, { key: "title", label: "Title" }, { key: "isActive", label: "Active" }], getFilteredCmsScenarios(), selectCmsScenario);
+        renderCmsTable(cmsScenariosListElement, [{ key: "stableScenarioKey", label: "stableScenarioKey" }, { key: "topicKey", label: "Topic key" }, { key: "title", label: "Title" }, { key: "isActive", label: "Active" }], getFilteredCmsScenarios(), { onSelect: selectCmsScenario, selectedId: cmsSelectedScenario?.id });
     }
 
-    function renderCmsTable(container, columns, rows, onSelect) {
+    function renderCmsPromptTemplatesTable() {
+        renderCmsTable(cmsPromptTemplatesListElement, [{ key: "templateKey", label: "templateKey" }, { key: "targetStudyLanguageId", label: "Study language" }, { key: "isActive", label: "Active" }], cmsPromptTemplates, { onSelect: selectCmsPromptTemplate, selectedId: cmsSelectedPromptTemplate?.id });
+    }
+
+    function renderCmsTutorProfilesTable() {
+        renderCmsTable(cmsTutorProfilesListElement, [{ key: "tutorId", label: "tutorId" }, { key: "displayName", label: "Display name" }, { key: "isActive", label: "Active" }], cmsTutorProfiles, { onSelect: selectCmsTutorProfile, selectedId: cmsSelectedTutorProfile?.id });
+    }
+
+    function renderCmsTable(container, columns, rows, options) {
         container.textContent = "";
         if (!Array.isArray(rows) || rows.length === 0) { const empty = document.createElement("p"); empty.className = "empty-state"; empty.textContent = "No items loaded."; container.appendChild(empty); return; }
+        const config = typeof options === "function" ? { onSelect: options } : (options || {});
+        const onSelect = config.onSelect;
+        const selectedId = config.selectedId;
         const hasAction = typeof onSelect === "function";
-        const table = document.createElement("table"); table.className = "compact-table cms-table";
+        const table = document.createElement("table"); table.className = "compact-table cms-table cms-selectable-table";
         const thead = document.createElement("thead"); const headRow = document.createElement("tr");
-        (hasAction ? columns.concat([{ key: "actions", label: "Action" }]) : columns).forEach((column) => { const th = document.createElement("th"); th.textContent = column.label; headRow.appendChild(th); });
+        if (hasAction) { const th = document.createElement("th"); th.className = "cms-action-column"; th.scope = "col"; th.textContent = "Select"; headRow.appendChild(th); }
+        columns.forEach((column) => { const th = document.createElement("th"); th.scope = "col"; th.textContent = column.label; headRow.appendChild(th); });
         thead.appendChild(headRow); table.appendChild(thead);
         const tbody = document.createElement("tbody");
         rows.forEach((row) => {
             const tr = document.createElement("tr");
+            const isSelected = selectedId !== undefined && selectedId !== null && row?.id === selectedId;
+            if (hasAction) {
+                tr.className = "cms-selectable-row";
+                tr.tabIndex = 0;
+                tr.setAttribute("aria-label", "Select CMS row");
+                tr.setAttribute("aria-current", isSelected ? "true" : "false");
+                tr.classList.toggle("cms-selected-row", isSelected);
+                tr.addEventListener("click", (event) => {
+                    if (event.target.closest("button, a, input, select, textarea, label")) { return; }
+                    onSelect(row);
+                });
+                tr.addEventListener("keydown", (event) => {
+                    if (event.key !== "Enter" && event.key !== " ") { return; }
+                    if (event.target.closest("button, a, input, select, textarea, label")) { return; }
+                    event.preventDefault();
+                    onSelect(row);
+                });
+                const actionTd = document.createElement("td"); actionTd.className = "cms-action-column";
+                const button = document.createElement("button"); button.type = "button"; button.className = "small-button cms-select-button"; button.textContent = isSelected ? "Selected" : "Select"; button.setAttribute("aria-pressed", isSelected ? "true" : "false");
+                button.addEventListener("click", (event) => { event.stopPropagation(); onSelect(row); });
+                actionTd.appendChild(button); tr.appendChild(actionTd);
+            }
             columns.forEach((column) => { const td = document.createElement("td"); td.textContent = formatValue(row[column.key]); tr.appendChild(td); });
-            if (hasAction) { const actionTd = document.createElement("td"); const button = document.createElement("button"); button.type = "button"; button.className = "small-button"; button.textContent = "Select"; button.addEventListener("click", () => onSelect(row)); actionTd.appendChild(button); tr.appendChild(actionTd); }
             tbody.appendChild(tr);
         });
         table.appendChild(tbody); container.appendChild(table);
@@ -869,22 +902,22 @@
         const slug = getSelectedCmsSlug();
         cmsPromptTemplates = await adminFetch(cmsPath(ApiPaths.cmsPromptTemplatesTemplate, { slug }));
         cmsPromptTemplates = Array.isArray(cmsPromptTemplates) ? cmsPromptTemplates : [];
-        renderCmsTable(cmsPromptTemplatesListElement, [{ key: "templateKey", label: "templateKey" }, { key: "targetStudyLanguageId", label: "Study language" }, { key: "isActive", label: "Active" }], cmsPromptTemplates, selectCmsPromptTemplate);
+        renderCmsPromptTemplatesTable();
     }
     async function loadCmsTutorProfiles() {
         const slug = getSelectedCmsSlug();
         cmsTutorProfiles = await adminFetch(cmsPath(ApiPaths.cmsTutorProfilesTemplate, { slug }));
         cmsTutorProfiles = Array.isArray(cmsTutorProfiles) ? cmsTutorProfiles : [];
-        renderCmsTable(cmsTutorProfilesListElement, [{ key: "tutorId", label: "tutorId" }, { key: "displayName", label: "Display name" }, { key: "isActive", label: "Active" }], cmsTutorProfiles, selectCmsTutorProfile);
+        renderCmsTutorProfilesTable();
     }
 
-    async function selectCmsTopic(row) { cmsSelectedTopic = await adminFetch(cmsPath(ApiPaths.cmsTopicTemplate, { slug: getSelectedCmsSlug(), topicId: row.id })); fillCmsTopicForm(); }
+    async function selectCmsTopic(row) { cmsSelectedTopic = row; renderCmsTopicsTable(); cmsSelectedTopic = await adminFetch(cmsPath(ApiPaths.cmsTopicTemplate, { slug: getSelectedCmsSlug(), topicId: row.id })); fillCmsTopicForm(); renderCmsTopicsTable(); }
     function fillCmsTopicForm() { const item = cmsSelectedTopic; cmsSelectedTopicIdentityElement.textContent = item ? `${item.stableTopicKey} (${item.id})` : "None selected"; cmsTopicTitleInput.value = item?.title || ""; cmsTopicDescriptionInput.value = item?.description || ""; cmsTopicSortOrderInput.value = item?.sortOrder ?? ""; cmsTopicIsActiveInput.checked = Boolean(item?.isActive); setCmsEntityMessage(cmsTopicMessageElement, "", false); }
-    async function selectCmsScenario(row) { cmsSelectedScenario = await adminFetch(cmsPath(ApiPaths.cmsScenarioTemplate, { slug: getSelectedCmsSlug(), scenarioId: row.id })); fillCmsScenarioForm(); }
+    async function selectCmsScenario(row) { cmsSelectedScenario = row; renderCmsScenariosTable(); cmsSelectedScenario = await adminFetch(cmsPath(ApiPaths.cmsScenarioTemplate, { slug: getSelectedCmsSlug(), scenarioId: row.id })); fillCmsScenarioForm(); renderCmsScenariosTable(); }
     function fillCmsScenarioForm() { const item = cmsSelectedScenario; cmsSelectedScenarioIdentityElement.textContent = item ? `${item.stableScenarioKey} (${item.id})` : "None selected"; cmsScenarioTitleInput.value = item?.title || ""; cmsScenarioDescriptionInput.value = item?.description || ""; cmsScenarioSetupMessageInput.value = item?.setupMessage || ""; cmsScenarioIsActiveInput.checked = Boolean(item?.isActive); setCmsEntityMessage(cmsScenarioMessageElement, "", false); }
-    async function selectCmsPromptTemplate(row) { cmsSelectedPromptTemplate = await adminFetch(cmsPath(ApiPaths.cmsPromptTemplateTemplate, { slug: getSelectedCmsSlug(), templateId: row.id })); fillCmsPromptTemplateForm(); }
+    async function selectCmsPromptTemplate(row) { cmsSelectedPromptTemplate = row; renderCmsPromptTemplatesTable(); cmsSelectedPromptTemplate = await adminFetch(cmsPath(ApiPaths.cmsPromptTemplateTemplate, { slug: getSelectedCmsSlug(), templateId: row.id })); fillCmsPromptTemplateForm(); renderCmsPromptTemplatesTable(); }
     function fillCmsPromptTemplateForm() { const item = cmsSelectedPromptTemplate; cmsSelectedPromptTemplateIdentityElement.textContent = item ? `${item.templateKey} (${item.id})` : "None selected"; cmsPromptTemplateBodyInput.value = item?.body || ""; cmsPromptTemplateIsActiveInput.checked = Boolean(item?.isActive); setCmsEntityMessage(cmsPromptTemplateMessageElement, "", false); }
-    async function selectCmsTutorProfile(row) { cmsSelectedTutorProfile = await adminFetch(cmsPath(ApiPaths.cmsTutorProfileTemplate, { slug: getSelectedCmsSlug(), profileId: row.id })); fillCmsTutorProfileForm(); }
+    async function selectCmsTutorProfile(row) { cmsSelectedTutorProfile = row; renderCmsTutorProfilesTable(); cmsSelectedTutorProfile = await adminFetch(cmsPath(ApiPaths.cmsTutorProfileTemplate, { slug: getSelectedCmsSlug(), profileId: row.id })); fillCmsTutorProfileForm(); renderCmsTutorProfilesTable(); }
     function fillCmsTutorProfileForm() { const item = cmsSelectedTutorProfile; cmsSelectedTutorProfileIdentityElement.textContent = item ? `${item.tutorId} (${item.id})` : "None selected"; cmsTutorProfileDisplayNameInput.value = item?.displayName || ""; cmsTutorProfileCommunicationStyleJsonInput.value = item?.communicationStyleJson || ""; cmsTutorProfileSafetyNotesJsonInput.value = item?.safetyNotesJson || ""; cmsTutorProfileIsActiveInput.checked = Boolean(item?.isActive); setCmsEntityMessage(cmsTutorProfileMessageElement, "", false); }
 
     async function saveCmsTopicDraft() {

@@ -84,10 +84,17 @@ if ($errors.Count -eq 0) {
         'confirm(',
         'selectCmsSubTab',
         'renderCmsTopicsTable',
-        'renderCmsScenariosTable'
+        'renderCmsScenariosTable',
+        'renderCmsPromptTemplatesTable',
+        'renderCmsTutorProfilesTable',
+        'cms-selectable-row',
+        'cms-selected-row',
+        'aria-current',
+        'event.stopPropagation()',
+        'button.type = "button"'
     )) { Assert-FileContains -path $jsPath -needle $needle }
 
-    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid')) {
+    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button')) {
         Assert-FileContains -path $cssPath -needle $needle
     }
 

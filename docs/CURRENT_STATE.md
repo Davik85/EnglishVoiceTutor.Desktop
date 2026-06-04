@@ -1,7 +1,11 @@
 # Current State
 
-Review date: 2026-06-03.
+Review date: 2026-06-04.
 
+
+## Step 5D-6b current state — Admin CMS table selection UX
+
+Step 5D-6b is complete: Admin CMS Topics, Scenarios, Prompts, and Tutors tables now support row-click selection, keep compact visible Select buttons as a fallback, and visually highlight the currently selected row. This step only improves the development-only Admin CMS UI selection experience and documents future governance requirements. It does not add production roles, does not add an approval workflow, does not add database schema, and does not change runtime learner behavior.
 
 ## Step 5D-6a current state — Admin CMS navigation
 
@@ -23,6 +27,13 @@ EnglishVoiceTutor currently has a working Windows desktop MVP backed by a workin
 - `OPENAI_API_KEY` is backend-only, needed only for real AI/TTS/STT testing, must never be committed, and must never be sent to testers.
 - Paddle is the current desktop/web billing provider adapter, but core backend subscription, entitlement, and access logic must remain provider-agnostic.
 - Do not change Paddle, billing, subscription, entitlement, lesson JSON, Study languages, Interface languages, or Native/Explanation language catalog without an explicit later task. Step 5D-1 added backend CMS schema foundation, Step 5D-2 added a development/admin-only CMS static JSON import foundation, Step 5D-3 added a safe backend published-snapshot read/status path, Step 5D-4 added backend draft read/update validation/preview APIs, Step 5D-5 added backend publish/version/restore APIs, and Step 5D-6 added a development-only Admin CMS Content UI shell. Learner-facing runtime CMS rollout and production CMS operations still require explicit future tasks.
+
+
+## Future CMS governance requirements
+
+Future CMS draft save audit logging is required before production CMS operations. Every CMS draft save should eventually be audited with the actor user id, actor email, timestamp UTC, content pack slug, entity type (`topic`, `scenario`, `prompt template`, or `tutor behavior profile`), entity id or stable key, changed fields, before value or before hash when full values are too large, after value or after hash when full values are too large, source (`Admin UI` or `API`), and request/correlation id when available. This is needed so later operations can determine who changed prompts, scenarios, tutor behavior, or lesson content.
+
+Future critical CMS changes should require approval after production roles are implemented. Critical changes include prompt template changes, tutor behavior/safety changes, large scenario changes, disabling important content, and publish actions. Future roles may include Content Editor, Content Reviewer, and Admin / Owner. Draft editing and approval should be separated once those roles exist. For now, keep the existing development-only admin flow and the current confirmation dialogs for publish and restore.
 
 ## Accepted desktop MVP state
 
