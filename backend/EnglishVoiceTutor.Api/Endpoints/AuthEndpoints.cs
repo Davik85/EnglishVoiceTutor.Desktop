@@ -1,6 +1,8 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Auth;
+using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Auth;
+using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
 
 namespace EnglishVoiceTutor.Api.Endpoints;
@@ -50,6 +52,8 @@ public static class AuthEndpoints
     private static async Task<IResult> LoginAsync(
         LoginRequest request,
         IAuthService authService,
+        IBootstrapAdminAccessService bootstrapAdminAccessService,
+        HttpContext httpContext,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
@@ -65,8 +69,42 @@ public static class AuthEndpoints
             return Results.Unauthorized();
         }
 
+        var principal = CreatePrincipal(response);
+        if (bootstrapAdminAccessService.IsBootstrapAdmin(principal))
+        {
+            await httpContext.SignInAsync(
+                AdminAuthorizationConstants.AdminCookieAuthenticationScheme,
+                principal,
+                new AuthenticationProperties
+                {
+                    AllowRefresh = false,
+                    ExpiresUtc = response.ExpiresAtUtc,
+                    IsPersistent = false
+                });
+        }
+        else
+        {
+            await httpContext.SignOutAsync(AdminAuthorizationConstants.AdminCookieAuthenticationScheme);
+        }
+
         loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Auth login completed. Result=Ok");
         return Results.Ok(response);
+    }
+
+    private static ClaimsPrincipal CreatePrincipal(AuthResponse response)
+    {
+        var claims = new List<Claim>
+        {
+            new(AuthClaimTypes.UserId, response.User.UserId.ToString()),
+            new(ClaimTypes.Email, response.User.Email)
+        };
+
+        if (!string.IsNullOrWhiteSpace(response.User.DisplayName))
+        {
+            claims.Add(new Claim(AuthClaimTypes.DisplayName, response.User.DisplayName));
+        }
+
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, AdminAuthorizationConstants.AdminCookieAuthenticationScheme));
     }
 
     private static async Task<IResult> RequestPasswordResetAsync(

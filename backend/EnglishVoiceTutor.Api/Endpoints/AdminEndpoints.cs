@@ -4,6 +4,7 @@ using EnglishVoiceTutor.Api.Contracts.Cms;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Cms;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -20,6 +21,8 @@ public static class AdminEndpoints
     {
         app.MapGet(ApiConstants.AdminMeRoute, GetAdminMe)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
+        app.MapDelete(ApiConstants.AdminSessionRoute, DeleteAdminSessionAsync);
 
         app.MapGet(ApiConstants.AdminCapabilitiesRoute, GetAdminCapabilities)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
@@ -107,6 +110,12 @@ public static class AdminEndpoints
             app.MapPost(ApiConstants.AdminDevCmsContentPackVersionRestoreRoute, RestoreCmsContentVersionAsync)
                 .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
         }
+    }
+
+    private static async Task DeleteAdminSessionAsync(HttpContext httpContext)
+    {
+        await httpContext.SignOutAsync(AdminAuthorizationConstants.AdminCookieAuthenticationScheme);
+        httpContext.Response.StatusCode = StatusCodes.Status204NoContent;
     }
 
     private static IResult GetAdminMe(ClaimsPrincipal principal)

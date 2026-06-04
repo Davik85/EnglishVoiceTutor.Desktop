@@ -21,6 +21,7 @@ using EnglishVoiceTutor.Api.Services.Billing;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Cms;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -85,6 +86,29 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
             ClockSkew = TimeSpan.Zero
         };
+    })
+    .AddCookie(AdminAuthorizationConstants.AdminCookieAuthenticationScheme, options =>
+    {
+        options.Cookie.Name = AdminAuthorizationConstants.AdminCookieName;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.Path = "/api/admin";
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(jwtOptions.AccessTokenLifetimeMinutes);
+        options.SlidingExpiration = false;
+        options.Events = new CookieAuthenticationEvents
+        {
+            OnRedirectToLogin = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return Task.CompletedTask;
+            },
+            OnRedirectToAccessDenied = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddSingleton<IBootstrapAdminAccessService, BootstrapAdminAccessService>();
@@ -94,6 +118,8 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(AdminAuthorizationConstants.BootstrapAdminPolicyName, policy =>
     {
+        policy.AuthenticationSchemes.Add(JwtBearerDefaults.AuthenticationScheme);
+        policy.AuthenticationSchemes.Add(AdminAuthorizationConstants.AdminCookieAuthenticationScheme);
         policy.RequireAuthenticatedUser();
         policy.AddRequirements(new BootstrapAdminRequirement());
     });

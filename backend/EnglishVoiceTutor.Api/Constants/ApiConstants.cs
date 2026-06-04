@@ -78,6 +78,7 @@ public static class ApiConstants
     public const string PaddleBillingWebhookRoute = "/api/billing/webhooks/paddle";
     public const string PaddleCheckoutLaunchRoute = "/checkout/paddle";
     public const string AdminMeRoute = "/api/admin/me";
+    public const string AdminSessionRoute = "/api/admin/session";
     public const string AdminCapabilitiesRoute = "/api/admin/capabilities";
     public const string AdminUserByEmailRoute = "/api/admin/users/by-email";
     public const string AdminUserPremiumGrantsRoute = "/api/admin/users/{userId:guid}/premium-grants";
