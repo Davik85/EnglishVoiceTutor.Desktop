@@ -112,10 +112,10 @@ public static class AdminEndpoints
         }
     }
 
-    private static async Task<IResult> DeleteAdminSessionAsync(HttpContext httpContext)
+    private static async Task DeleteAdminSessionAsync(HttpContext httpContext)
     {
         await httpContext.SignOutAsync(AdminAuthorizationConstants.AdminCookieAuthenticationScheme);
-        return Results.NoContent();
+        httpContext.Response.StatusCode = StatusCodes.Status204NoContent;
     }
 
     private static IResult GetAdminMe(ClaimsPrincipal principal)
