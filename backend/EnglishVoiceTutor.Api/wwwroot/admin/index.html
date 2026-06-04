@@ -153,6 +153,7 @@
                             <button id="cms-sub-tab-button-tutors" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-tutors" aria-selected="false" data-cms-sub-tab-id="tutors">Tutors</button>
                             <button id="cms-sub-tab-button-validation-preview" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-validation-preview" aria-selected="false" data-cms-sub-tab-id="validation-preview">Validation &amp; Preview</button>
                             <button id="cms-sub-tab-button-versions-publish" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-versions-publish" aria-selected="false" data-cms-sub-tab-id="versions-publish">Versions &amp; Publish</button>
+                            <button id="cms-sub-tab-button-audit" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-audit" aria-selected="false" data-cms-sub-tab-id="audit">Audit</button>
                         </nav>
 
                         <section id="cms-sub-panel-overview" class="cms-sub-panel" role="tabpanel" aria-labelledby="cms-sub-tab-button-overview" data-cms-sub-panel="overview">
@@ -307,6 +308,18 @@
                                     <button id="cms-restore-button" type="button">Restore selected version</button>
                                 </div>
                                 <div id="cms-versions-list" class="table-wrap cms-wide-table-wrap"></div>
+                            </article>
+                        </section>
+
+                        <section id="cms-sub-panel-audit" class="cms-sub-panel hidden" role="tabpanel" aria-labelledby="cms-sub-tab-button-audit" data-cms-sub-panel="audit">
+                            <article class="card" aria-labelledby="cms-audit-heading">
+                                <h3 id="cms-audit-heading">Recent CMS changes</h3>
+                                <p class="muted">Shows recent successful Admin CMS Save draft audit entries for the selected content pack. Large edited values are represented by before/after hashes; secrets, tokens, and passwords are not logged.</p>
+                                <div class="cms-lifecycle-actions">
+                                    <button id="cms-load-audit-button" type="button">Load recent CMS changes</button>
+                                    <div class="field cms-version-select-field"><label for="cms-audit-limit">Limit</label><select id="cms-audit-limit" name="cms-audit-limit"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select></div>
+                                </div>
+                                <div id="cms-audit-list" class="table-wrap cms-wide-table-wrap"></div>
                             </article>
                         </section>
                     </div>

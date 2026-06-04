@@ -9,9 +9,9 @@ Step 5D-6d completed Admin CMS refresh resilience and unsaved-change protection.
 
 Admin CMS Content now supports content pack overview, topic editing, scenario editing, full scenario JSON editing, prompt template editing, tutor behavior profile editing, validation/preview summary, and versions/publish/restore flows under the existing `/admin/` shell. `Format JSON` only pretty-prints JSON for easier editing. `Validate JSON` checks syntax and required scenario fields. Neither action saves or publishes; `Save draft` is required to persist CMS edits. Unsaved CMS dirty state is tracked in memory against the last loaded/saved baseline, unsaved content is not stored in browser storage or the URL hash, and refresh/navigation/entity switching/logout warns before discarding edits.
 
-Runtime learner behavior remains unchanged. CMS reads remain controlled by configuration and disabled by default, with static JSON fallback still available. External tester handoff remains paused until the CMS/Admin content MVP is ready enough for practical content changes without code edits. Production RBAC, role-based content approval, CMS draft-save audit logging, production billing operations, and full external tester handoff are still not production-ready.
+Runtime learner behavior remains unchanged. CMS reads remain controlled by configuration and disabled by default, with static JSON fallback still available. External tester handoff remains paused until the CMS/Admin content MVP is ready enough for practical content changes without code edits. Production RBAC, role-based content approval, production billing operations, and full external tester handoff are still not production-ready.
 
-The next recommended CMS implementation step is CMS draft-save audit logging. Each content edit should record who changed what, when, content pack, entity type, stable key/id, changed fields, old/new values or hashes for large values, source, and request/correlation id. The later CMS governance step is a critical-change approval workflow, but it should wait until production roles/RBAC exist.
+CMS draft-save audit logging is implemented for successful Admin CMS Save draft operations. The later CMS governance step is a critical-change approval workflow, but it should wait until production roles/RBAC exist.
 
 ## Recommended next product order
 
@@ -25,7 +25,7 @@ The next recommended CMS implementation step is CMS draft-save audit logging. Ea
    - Future CMS production governance must include draft-save audit logs containing actor identity, timestamp UTC, content pack, entity type/id or stable key, changed fields, before/after values or hashes, source, and request/correlation id when available.
    - Future critical CMS changes should require approval after production roles exist; planned roles may include Content Editor, Content Reviewer, and Admin / Owner, with draft editing separated from approval.
 2. Controlled next CMS implementation step.
-   - Recommended next implementation: add CMS draft-save audit logging so each content edit records who changed what, when, entity type, stable key/id, changed fields, old/new values or hashes, and request/correlation id.
+   - CMS draft-save audit logging is implemented; next work is controlled Admin CMS regression and later governance planning.
    - After draft-save audit logging, run controlled Admin CMS end-to-end UI/API regression against a local backend: load `static-json-v1`, select and save one bounded draft field per content type, exercise full scenario JSON format/validate/save, run validation, load preview summary, list versions, and verify publish/restore confirmation flows.
    - Critical-change approval workflow is a later CMS governance step and should wait until production roles/RBAC exist.
    - If learner runtime CMS integration is attempted later, keep it behind the disabled-by-default feature flag and retain static JSON fallback on every CMS failure.
@@ -96,7 +96,7 @@ The next recommended CMS implementation step is CMS draft-save audit logging. Ea
 
 - No production Paddle rollout before Phase 5B desktop release hardening is complete.
 - No production billing enablement from documentation alone.
-- No production CMS/Admin readiness yet: production RBAC, approval workflow, and CMS draft-save audit logging are not implemented.
+- No production CMS/Admin readiness yet: production RBAC and approval workflow are not implemented, although development/admin-only CMS draft-save audit logging now exists.
 - No code-side dialogue/prompt quality polishing before CMS/Admin prompt/scenario/bot-behavior editing is ready.
 - No mobile app-store bridge work before the desktop and billing gates are ready.
 - No expansion of Study languages.
@@ -112,3 +112,6 @@ The next recommended CMS implementation step is CMS draft-save audit logging. Ea
 - Continue next with Admin CMS UI/API hardening and controlled end-to-end CMS editor smoke/regression work; keep production billing deferred and public release not ready.
 - Keep production billing/Paddle rollout work deferred while CMS/Admin content MVP remains the priority.
 - Set up a domain email/provider later before enabling password reset delivery. Password reset remains disabled/not exposed as a working tester flow until that setup exists.
+
+
+Implemented CMS draft-save audit logging details: successful Topic, Scenario (bounded fields and full scenario JSON), Prompt Template, and Tutor Behavior Profile Save draft operations write `DraftSaved` rows to `cms_content_audit_logs`. Rows capture audit id, `createdAtUtc`, actor user id, actor email when available, content pack id and slug, entity type, entity id, stable key (`stableTopicKey`, `stableScenarioKey`, `templateKey`, or `tutorId`), changed field names, before/after SHA-256 hashes, source `AdminCms`, status, and request id when available. Audit rows intentionally do not store full before/after JSON snapshots, prompt/tutor source text snapshots, passwords, tokens, provider secrets, OpenAI API keys, Paddle API keys/webhook secrets, or admin bearer tokens. Large edited values are represented by hashes. No-op Save draft requests avoid noisy draft-save audit rows. Admins can read recent CMS audit entries through development/admin-only audit endpoints and the CMS Content Audit subtab. Runtime learner behavior is unchanged: CMS read path remains disabled by default and static JSON fallback remains available. Production RBAC and critical-change approval remain future work.

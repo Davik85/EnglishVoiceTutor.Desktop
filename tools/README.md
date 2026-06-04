@@ -45,3 +45,14 @@ Expected release behavior:
 - If the app crashes or is force-closed before release completes, heartbeat timeout releases the guard after the configured short freshness window.
 - If the user chooses to end the active lesson on another device and continue, the backend marks the old session `Abandoned`; the old device/session cannot continue, and old heartbeat or lesson-bound message actions are rejected with `lesson_session_ended_elsewhere`.
 - Run `tools\smoke_single_active_lesson_guard.ps1` with the required backend/test setup to validate fresh blocking, stale heartbeat release, remote release, old-session invalidation, and old heartbeat/message rejection.
+
+## CMS draft-save audit smoke
+
+After starting the backend in Development and authenticating as the bootstrap admin, run:
+
+```powershell
+$env:EVT_ADMIN_BEARER_TOKEN = '<admin bearer token from the existing admin auth flow>'
+powershell -ExecutionPolicy Bypass -File tools\smoke_cms_draft_save_audit.ps1
+```
+
+The smoke loads `static-json-v1`, performs safe draft edits and restores for one topic, one scenario bounded field, one full scenario JSON field, one prompt template, and one tutor behavior profile. It verifies recent `DraftSaved` CMS audit entries include actor, entity type, stable key, operation, changed fields, and before/after hashes. It does not edit lesson JSON files, prompt source files, or tutor source files.

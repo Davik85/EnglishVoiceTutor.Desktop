@@ -154,14 +154,14 @@ dotnet restore
 dotnet build
 ```
 
-Recommended next work: continue the CMS/Admin content MVP before external tester handoff, with CMS draft-save audit logging as the next recommended implementation step. Production billing readiness, remaining billing operations, production RBAC, critical-change approval workflow, and full production CMS/Admin operational readiness remain deferred; prompt/scenario/bot-behavior polishing stays in CMS/Admin rather than code edits.
+Recommended next work: continue the CMS/Admin content MVP before external tester handoff. CMS draft-save audit logging is implemented for Admin CMS Save draft operations; production billing readiness, remaining billing operations, production RBAC, critical-change approval workflow, and full production CMS/Admin operational readiness remain deferred. Prompt/scenario/bot-behavior polishing stays in CMS/Admin rather than code edits.
 
 
 ## Local admin shell and Admin CMS Content
 
 - Local admin shell: http://localhost:5000/admin/
 - Requires running backend and a configured Development bootstrap admin.
-- The local admin shell supports capabilities view, read-only user lookup, read-only per-user audit log, manual Premium grant/revoke, free lesson allowance reset for selected users, and the development/admin-only `CMS Content` workspace.
+- The local admin shell supports capabilities view, read-only user lookup, read-only per-user audit log, manual Premium grant/revoke, free lesson allowance reset for selected users, and the development/admin-only `CMS Content` workspace with a simple Recent CMS changes audit surface.
 - The local admin shell is organized into main tabs: Overview, User Lookup, Premium, Free Lesson, Audit Log, CMS Content, and System. User lookup also shows a Premium entitlement schedule (current + future active Premium grants) in addition to currently active entitlements.
 - The `CMS Content` workspace exists under `/admin/` and contains sub-tabs for Overview, Topics, Scenarios, Prompts, Tutors, Validation & Preview, and Versions & Publish. It supports content pack overview, topic editing, scenario editing, full scenario JSON editing, prompt template editing, tutor behavior profile editing, validation/preview summary, and versions/publish/restore flows. Topics, scenarios, prompt templates, and tutor behavior profiles can be selected by table row click or compact Select buttons.
 - Scenario editing includes both bounded fields and an advanced Full scenario JSON editor. `Format JSON` only pretty-prints/re-indents the JSON in the editor for readability. `Validate JSON` checks JSON syntax and required scenario fields before saving. Neither action saves, publishes, or persists changes; `Save draft` is still required to persist CMS edits.
@@ -169,10 +169,14 @@ Recommended next work: continue the CMS/Admin content MVP before external tester
 - The admin workspace restores only safe identifiers from the URL hash after a valid admin session is verified: `adminTab`, `cmsSubTab`, `selectedUserId`, `contentPackSlug`, `topicKey`, `scenarioKey`, `promptTemplateKey`, and `tutorId`. Selected user details are restored through an admin-only user lookup by `selectedUserId`; selected CMS entities are restored by stable keys. Passwords, tokens, prompts, full scenario JSON, tutor profile JSON, and unsaved draft field values are not stored in the hash or browser storage.
 - CMS dirty state is tracked in memory by comparing current form values against the last loaded/saved baseline. Unsaved CMS changes show a visible indicator and warn before browser refresh, tab close, top-level admin tab switching, CMS sub-tab switching, selecting another CMS entity, publish/restore reload flows, or logout would discard edits. `Save draft` clears the dirty indicator after a successful save; failed saves keep it. Unsaved content is never persisted in browser storage or the URL hash.
 - Runtime learner behavior remains unchanged. The CMS read path remains controlled by configuration, remains disabled by default for learners, and static JSON fallback remains available.
-- This remains development/admin-only and is not production CMS readiness. Production RBAC, role-based content approval, CMS draft-save audit logging, production billing operations, and full external tester handoff remain future work. The next recommended CMS implementation step is draft-save audit logging; critical-change approval should wait until production roles exist.
+- This remains development/admin-only and is not production CMS readiness. Production RBAC, role-based content approval, production billing operations, and full external tester handoff remain future work. CMS draft-save audit logging is implemented for topic, scenario (including full scenario JSON), prompt template, and tutor behavior profile Save draft operations; critical-change approval should wait until production roles exist.
+
+
+CMS draft-save audit logging records successful Admin CMS Save draft operations in `cms_content_audit_logs`. Entries capture audit id, UTC timestamp, actor user id, actor email when available, content pack id/slug, entity type (`Topic`, `Scenario`, `PromptTemplate`, `TutorBehaviorProfile`), entity id, stable key, operation `DraftSaved`, changed field names, before/after SHA-256 hashes, request id when available, source `AdminCms`, and status. Full before/after JSON snapshots and edited prompt/tutor/scenario bodies are intentionally not stored in audit rows; large values are represented by hashes. Secrets, passwords, tokens, provider secrets, OpenAI API keys, Paddle keys, webhook secrets, and admin bearer tokens are not logged. Runtime learner behavior remains unchanged: CMS reads are still disabled by default and static JSON fallback remains available.
+
 - Static admin shell audit script: `powershell -ExecutionPolicy Bypass -File tools\audit_admin_shell.ps1`.
 - The existing smoke script (`tools/smoke_admin_foundation.ps1`) runs this admin shell audit before backend HTTP smoke checks.
-- Latest confirmed EF migration is `20260603120000_AddCmsContentFoundation`.
+- Latest confirmed EF migration is `20260604120000_AddCmsDraftSaveAuditMetadata`.
 
 ## Interface localization
 

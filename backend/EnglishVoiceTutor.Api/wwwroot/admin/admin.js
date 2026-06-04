@@ -23,7 +23,8 @@
         cmsPreviewSummaryTemplate: "/api/admin/dev/cms/content-packs/{slug}/preview-summary",
         cmsVersionsTemplate: "/api/admin/dev/cms/content-packs/{slug}/versions",
         cmsPublishTemplate: "/api/admin/dev/cms/content-packs/{slug}/publish",
-        cmsRestoreTemplate: "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore"
+        cmsRestoreTemplate: "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore",
+        cmsAuditEntriesTemplate: "/api/admin/dev/cms/content-packs/{slug}/audit-entries"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
@@ -58,7 +59,7 @@
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
     const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", system: "system" });
-    const CmsSubTabs = Object.freeze({ overview: "overview", topics: "topics", scenarios: "scenarios", prompts: "prompts", tutors: "tutors", validationPreview: "validation-preview", versionsPublish: "versions-publish" });
+    const CmsSubTabs = Object.freeze({ overview: "overview", topics: "topics", scenarios: "scenarios", prompts: "prompts", tutors: "tutors", validationPreview: "validation-preview", versionsPublish: "versions-publish", audit: "audit" });
     const LookupSources = Object.freeze({ userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson" });
     let accessToken = null;
     let selectedUserId = null;
@@ -232,6 +233,9 @@
     const cmsRestoreReasonInput = document.getElementById("cms-restore-reason");
     const cmsRestoreButton = document.getElementById("cms-restore-button");
     const cmsVersionsListElement = document.getElementById("cms-versions-list");
+    const cmsLoadAuditButton = document.getElementById("cms-load-audit-button");
+    const cmsAuditLimitSelect = document.getElementById("cms-audit-limit");
+    const cmsAuditListElement = document.getElementById("cms-audit-list");
 
     function getHashParameters() {
         return new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -1046,7 +1050,7 @@
         updateHashField("contentPackSlug", slug);
         const summary = await adminFetch(cmsPath(ApiPaths.cmsContentPackTemplate, { slug }));
         renderCmsContentPackSummary(summary);
-        await Promise.all([loadCmsTopics(), loadCmsScenarios(), loadCmsPromptTemplates(), loadCmsTutorProfiles(), loadCmsVersions()]);
+        await Promise.all([loadCmsTopics(), loadCmsScenarios(), loadCmsPromptTemplates(), loadCmsTutorProfiles(), loadCmsVersions(), loadCmsAuditEntries()]);
         clearAllCmsDirtyState();
         await restoreCmsSelectionsFromHash();
         return true;
@@ -1127,7 +1131,7 @@
         try {
             const payload = await adminFetch(cmsPath(template, Object.assign({ slug: getSelectedCmsSlug() }, replacements)), { method: "PUT", body: JSON.stringify(body) });
             setCmsEntityMessage(messageElement, payload.noChanges ? "Saved: no changes detected." : `Saved draft. Changed fields: ${(payload.changedFields || []).join(", ") || "-"}.`, false);
-            await reloadList(); await reloadSelected(); await runCmsValidation(); await loadCmsPreviewSummary();
+            await reloadList(); await reloadSelected(); await runCmsValidation(); await loadCmsPreviewSummary(); await loadCmsAuditEntries();
         } catch (error) { const message = getCmsErrorMessage(error); setCmsEntityMessage(messageElement, message, true); if (isAuthErrorMessage(message)) { resetSession(); setError(message); } }
     }
 
@@ -1145,6 +1149,18 @@
         const versionsPayload = await adminFetch(cmsPath(ApiPaths.cmsVersionsTemplate, { slug: getSelectedCmsSlug() }));
         const versions = Array.isArray(versionsPayload?.versions) ? versionsPayload.versions : [];
         renderCmsVersions(versions); return versionsPayload;
+    }
+    async function loadCmsAuditEntries() {
+        const limit = Number(cmsAuditLimitSelect.value || 25);
+        const query = new URLSearchParams({ limit: String(Number.isFinite(limit) ? limit : 25) });
+        const payload = await adminFetch(`${cmsPath(ApiPaths.cmsAuditEntriesTemplate, { slug: getSelectedCmsSlug() })}?${query.toString()}`);
+        const entries = Array.isArray(payload?.entries) ? payload.entries : [];
+        renderCmsAuditEntries(entries);
+        return entries;
+    }
+    function renderCmsAuditEntries(entries) {
+        const rows = entries.map((entry) => Object.assign({}, entry, { actor: entry.actorEmail || entry.actorUserId || "-", changedFieldList: (entry.changedFields || []).join(", ") || "-", shortBeforeHash: formatShortHash(entry.beforeHash), shortAfterHash: formatShortHash(entry.afterHash) }));
+        renderCmsTable(cmsAuditListElement, [{ key: "createdAtUtc", label: "Timestamp UTC" }, { key: "actor", label: "Actor" }, { key: "entityType", label: "Entity type" }, { key: "stableKey", label: "Stable key" }, { key: "changedFieldList", label: "Changed fields" }, { key: "shortBeforeHash", label: "Before hash" }, { key: "shortAfterHash", label: "After hash" }], rows, null);
     }
     function renderCmsVersions(versions) {
         renderCmsTable(cmsVersionsListElement, [{ key: "versionNumber", label: "Version" }, { key: "shortSnapshotHash", label: "Snapshot hash" }, { key: "publishStatus", label: "Status" }, { key: "publishedAtUtc", label: "Published at" }, { key: "changeSummary", label: "Change summary" }, { key: "restoredFromVersionNumber", label: "Restored from" }], versions.map((version) => Object.assign({}, version, { shortSnapshotHash: formatShortHash(version.snapshotHash) })), null);
@@ -1210,6 +1226,7 @@
     cmsRunValidationButton.addEventListener("click", async () => { await runCmsValidation(); });
     cmsLoadPreviewButton.addEventListener("click", async () => { await loadCmsPreviewSummary(); });
     cmsLoadVersionsButton.addEventListener("click", async () => { try { await loadCmsVersions(); setCmsSuccess("CMS versions loaded."); } catch (error) { handleCmsError(error); } });
+    cmsLoadAuditButton.addEventListener("click", async () => { try { await loadCmsAuditEntries(); setCmsSuccess("CMS audit entries loaded."); } catch (error) { handleCmsError(error); } });
     cmsPublishButton.addEventListener("click", async () => { await publishCmsDraft(); });
     cmsRestoreButton.addEventListener("click", async () => { await restoreCmsVersion(); });
     [cmsTopicTitleInput, cmsTopicDescriptionInput, cmsTopicSortOrderInput, cmsTopicIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("topic")));

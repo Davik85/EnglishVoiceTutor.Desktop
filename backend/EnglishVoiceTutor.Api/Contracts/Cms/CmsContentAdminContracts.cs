@@ -180,3 +180,28 @@ public sealed class UpdateCmsTutorBehaviorProfileRequest
     public bool? IsActive { get; set; }
     public string? Reason { get; set; }
 }
+
+public sealed class CmsContentAuditEntriesResponse
+{
+    public List<CmsContentAuditEntryResponse> Entries { get; set; } = [];
+}
+
+public sealed class CmsContentAuditEntryResponse
+{
+    public Guid Id { get; set; }
+    public DateTimeOffset CreatedAtUtc { get; set; }
+    public Guid? ActorUserId { get; set; }
+    public string? ActorEmail { get; set; }
+    public Guid? ContentPackId { get; set; }
+    public string? ContentPackSlug { get; set; }
+    public string EntityType { get; set; } = string.Empty;
+    public Guid EntityId { get; set; }
+    public string? StableKey { get; set; }
+    public string Operation { get; set; } = string.Empty;
+    public List<string> ChangedFields { get; set; } = [];
+    public string? BeforeHash { get; set; }
+    public string? AfterHash { get; set; }
+    public string? RequestId { get; set; }
+    public string Source { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+}

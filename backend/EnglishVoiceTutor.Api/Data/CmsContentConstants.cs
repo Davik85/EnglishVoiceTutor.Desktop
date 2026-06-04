@@ -54,8 +54,22 @@ public static class CmsContentConstants
 
     public static class Sources
     {
+        public const string AdminCms = "AdminCms";
         public const string CmsPublishedSnapshot = "CmsPublishedSnapshot";
         public const string StaticJsonFallback = "StaticJsonFallback";
+    }
+
+    public static class ContentAuditStatuses
+    {
+        public const string Success = "Success";
+    }
+
+    public static class ContentAuditEntityTypes
+    {
+        public const string Topic = "Topic";
+        public const string Scenario = "Scenario";
+        public const string PromptTemplate = "PromptTemplate";
+        public const string TutorBehaviorProfile = "TutorBehaviorProfile";
     }
 
     public static class ErrorCodes
@@ -78,6 +92,7 @@ public static class CmsContentConstants
     {
         public const string DraftCreated = "DraftCreated";
         public const string DraftUpdated = "DraftUpdated";
+        public const string DraftSaved = "DraftSaved";
         public const string ImportCreated = "ImportCreated";
         public const string ImportUpdated = "ImportUpdated";
         public const string ImportSkipped = "ImportSkipped";
