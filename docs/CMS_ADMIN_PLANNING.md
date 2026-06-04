@@ -1,6 +1,6 @@
 # CMS / Admin Planning
 
-Review date: 2026-06-03.
+Review date: 2026-06-04.
 
 ## Current product decision
 
@@ -22,7 +22,9 @@ Relevant existing foundation:
 - `tools/smoke_admin_foundation.ps1`
 - `tools/audit_admin_shell.ps1`
 
-Current Admin foundation supports development bootstrap admin status/capabilities, user lookup, manual Premium grant/revoke, free lesson allowance reset, and audit-action visibility. It does **not** support content editing, draft/published workflow, preview, content validation, versioning, or rollback.
+Current Admin foundation supports development bootstrap admin status/capabilities, user lookup, manual Premium grant/revoke, free lesson allowance reset, audit-action visibility, and the development/admin-only `CMS Content` workspace. The Admin CMS workspace has sub-tabs for Overview, Topics, Scenarios, Prompts, Tutors, Validation & Preview, and Versions & Publish. It supports content pack overview, topic editing, scenario editing, full scenario JSON editing, prompt template editing, tutor behavior profile editing, validation/preview summary, and versions/publish/restore flows. It is still not production Admin/CMS, not production RBAC, and not public-release readiness.
+
+Admin CMS refresh resilience is in place: admin auth survives refresh via the existing admin-only HTTP-only cookie, the JWT remains memory-only in JavaScript, browser Web Storage is not used, the URL hash stores only safe workspace identifiers, and selected user/CMS entities are restored after session validation. Unsaved CMS changes are tracked in memory, show a visible dirty indicator, warn before refresh/navigation/entity switching/logout discards edits, and are not persisted in browser storage or the URL hash. `Save draft` remains explicit and required to persist CMS edits.
 
 ## CMS/Admin content MVP goal
 
@@ -140,10 +142,12 @@ Server-side validation must check at minimum:
 4. Add backend read path for latest published CMS content with fallback to current static JSON.
 5. Add Admin content API for draft read/update.
 6. Add simple Admin UI for content editing.
-7. Add validation and preview endpoints/UI.
-8. Add publish/version/rollback and audit trail.
-9. Run desktop regression and release gate.
-10. Then send controlled tester package to external testers.
+7. Add validation and preview endpoints/UI. **Backend/API and development Admin UI summary are in place.**
+8. Add publish/version/rollback. **Implemented for development/admin use.**
+9. Add CMS draft-save audit logging. **Next recommended CMS implementation step.** Audit each draft edit with actor, timestamp, content pack, entity type, stable key/id, changed fields, old/new values or hashes, source, and request/correlation id.
+10. Add critical-change approval workflow after production roles/RBAC exist. **Later governance step.**
+11. Run desktop regression and release gate.
+12. Then send controlled tester package to external testers after CMS/Admin content MVP is ready enough for practical content changes without code edits.
 
 ## Risks
 
@@ -152,6 +156,7 @@ Server-side validation must check at minimum:
 - CMS migration could block testers. Mitigation: keep current static JSON fallback until CMS is proven.
 - Scope creep could pull billing/Admin operations into CMS MVP. Mitigation: keep billing, Paddle, subscription, entitlement, and broad user management deferred.
 - Secrets could be entered into prompt fields. Mitigation: validate and audit content fields; never store provider secrets in CMS.
+- Admin refresh/session behavior could accidentally persist sensitive drafts. Mitigation: keep JWT memory-only, use only the existing admin-only HTTP-only cookie for refresh auth, store only safe URL hash identifiers, avoid Web Storage, and never persist unsaved CMS content in browser storage.
 
 ## Acceptance criteria for this planning step
 

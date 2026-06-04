@@ -366,8 +366,8 @@ Known issues:
 - Production billing readiness remains deferred until desktop hardening is complete.
 - Production Paddle configuration, webhook delivery, provider credentials, product/price mapping, and environment separation remain separate readiness work.
 - Refund, chargeback, manual revocation automation, optional subscription reconciliation, and future mobile entitlement bridge work remain deferred.
-- Full production CMS/Admin scope remains deferred until desktop readiness and minimum operational support requirements are clear.
-- Prompt/scenario/bot-behavior quality polishing is deferred to CMS/Admin so it can later support safe editing, validation, preview, versioning, and rollback.
+- Full production CMS/Admin readiness remains deferred: Admin CMS Content exists for development/admin editing with refresh resilience and unsaved-change warnings, but production RBAC, CMS draft-save audit logging, and critical-change approval are not implemented.
+- Prompt/scenario/bot-behavior quality polishing is deferred to CMS/Admin so it can support safe editing, validation, preview, versioning, rollback, and later audited draft saves.
 - Clean-machine installer/signing validation remains a later release packaging gate.
 - Public release is not implied by passing this smoke gate; final P0/P1 triage is still required.
 

@@ -60,5 +60,5 @@ Backend persistence foundation (PostgreSQL + EF Core) is implemented for:
 - Production-wide auth enforcement for all runtime endpoints.
 - Production billing operations completion.
 - Roles/authorization layers for production operations.
-- CMS/Admin workflow.
+- CMS/Admin workflow: development/admin Admin CMS Content exists, but production RBAC, CMS draft-save audit logging, and critical-change approval remain future work. Unsaved CMS content is not retained in browser storage or URL hash.
 - Contabo deployment.

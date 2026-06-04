@@ -51,7 +51,7 @@ Manual `dotnet publish` is only a lower-level developer/troubleshooting path.
 
 ### Phase 5D — CMS/Admin content MVP (current focus before tester handoff)
 
-CMS/Admin content MVP now starts before external tester handoff because desktop hardening is stable enough to pause delivery. Start with content editing for lessons, scenarios, starter messages, prompt templates, tutor behavior rules, validation, preview, draft/published workflow, versioning, rollback, and audit trail. Full production Admin and operational support scope remain deferred.
+CMS/Admin content MVP now starts before external tester handoff because desktop hardening is stable enough to pause delivery. Development/admin Admin CMS Content now covers content pack overview, topic/scenario/full scenario JSON/prompt template/tutor behavior profile editing, validation/preview summary, versions/publish/restore flow, refresh resilience, and unsaved-change warnings. The next recommended CMS implementation step is draft-save audit logging. Full production Admin, production RBAC, critical-change approval, and operational support scope remain deferred.
 
 ### Phase 5C — Production billing readiness (deferred)
 
@@ -161,7 +161,7 @@ Keep this list separate from completed/accepted work:
 5. Installer/signing/update/download plan for public release.
 6. Security/privacy release checklist review.
 7. Final P0/P1 triage.
-8. CMS/Admin content MVP foundation before external tester handoff; full production Admin readiness remains later.
+8. CMS/Admin content MVP foundation before external tester handoff; CMS draft-save audit logging is next, and full production Admin/RBAC/approval readiness remains later.
 
 ## Current validation commands
 
@@ -173,4 +173,4 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
 
 ## Public release status
 
-Public release is not declared ready. This work plan supports continued controlled desktop hardening and tester packaging only. External tester handoff is paused until CMS/Admin content MVP foundation is ready; the clean-machine checklist remains later before actual external tester delivery.
+Public release is not declared ready. This work plan supports continued controlled desktop hardening and tester packaging only. External tester handoff is paused until CMS/Admin content MVP foundation is ready enough for practical content changes without code edits; the clean-machine checklist remains later before actual external tester delivery.
