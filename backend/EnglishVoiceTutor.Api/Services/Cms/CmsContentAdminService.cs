@@ -486,7 +486,7 @@ public sealed partial class CmsContentAdminService(
         if (!string.IsNullOrWhiteSpace(stableKey))
         {
             var normalizedStableKey = NormalizeRouteValue(stableKey);
-            query = query.Where(log => log.StableKey == normalizedStableKey);
+            query = query.Where(log => log.StableKey != null && log.StableKey.Contains(normalizedStableKey));
         }
 
         var entries = await query
@@ -851,6 +851,7 @@ public sealed partial class CmsContentAdminService(
             ChangedFields = DeserializeChangedFields(log.ChangedFieldsJson),
             BeforeHash = log.BeforeHash,
             AfterHash = log.AfterHash,
+            Reason = log.Reason,
             RequestId = TryReadRequestId(log.RequestMetadataJson),
             Source = log.Source,
             Status = log.Status

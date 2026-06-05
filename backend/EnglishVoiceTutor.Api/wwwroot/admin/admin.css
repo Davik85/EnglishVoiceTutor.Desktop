@@ -143,3 +143,10 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
 }
 .cms-dirty-status { align-self: center; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 999px; color: #92400e; display: inline-flex; font-size: 13px; font-weight: 700; padding: 5px 10px; }
 .cms-dirty-status.hidden { display: none; }
+.cms-audit-controls { align-items: end; display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.cms-audit-stable-key-field { flex: 1 1 280px; margin-bottom: 0; }
+.cms-stable-key-cell { overflow-wrap: anywhere; word-break: break-word; }
+@media (max-width: 1024px) {
+  .cms-audit-controls { align-items: stretch; flex-direction: column; }
+  .cms-audit-stable-key-field { width: 100%; }
+}

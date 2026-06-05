@@ -315,11 +315,15 @@
                             <article class="card" aria-labelledby="cms-audit-heading">
                                 <h3 id="cms-audit-heading">Recent CMS changes</h3>
                                 <p class="muted">Shows recent successful Admin CMS Save draft audit entries for the selected content pack. Large edited values are represented by before/after hashes; secrets, tokens, and passwords are not logged.</p>
-                                <div class="cms-lifecycle-actions">
-                                    <button id="cms-load-audit-button" type="button">Load recent CMS changes</button>
+                                <div class="cms-audit-controls" data-cms-audit-controls="true">
+                                    <div class="field cms-version-select-field"><label for="cms-audit-entity-type">Entity type</label><select id="cms-audit-entity-type" name="cms-audit-entity-type"><option value="" selected>All</option><option value="Topic">Topic</option><option value="Scenario">Scenario</option><option value="PromptTemplate">PromptTemplate</option><option value="TutorBehaviorProfile">TutorBehaviorProfile</option></select></div>
+                                    <div class="field cms-audit-stable-key-field"><label for="cms-audit-stable-key">Stable key contains</label><input id="cms-audit-stable-key" name="cms-audit-stable-key" type="text" autocomplete="off" placeholder="Optional stable key" /></div>
                                     <div class="field cms-version-select-field"><label for="cms-audit-limit">Limit</label><select id="cms-audit-limit" name="cms-audit-limit"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select></div>
+                                    <button id="cms-load-audit-button" type="button">Refresh audit</button>
                                 </div>
-                                <div id="cms-audit-list" class="table-wrap cms-wide-table-wrap"></div>
+                                <p id="cms-audit-loading" class="audit-loading hidden" role="status">Loading CMS audit entries...</p>
+                                <p id="cms-audit-error" class="error" role="alert"></p>
+                                <div id="cms-audit-list" class="table-wrap cms-wide-table-wrap" data-cms-audit-list="true"></div>
                             </article>
                         </section>
                     </div>

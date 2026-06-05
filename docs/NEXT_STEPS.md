@@ -11,7 +11,7 @@ Admin CMS Content now supports content pack overview, topic editing, scenario ed
 
 Runtime learner behavior remains unchanged. CMS reads remain controlled by configuration and disabled by default, with static JSON fallback still available. External tester handoff remains paused until the CMS/Admin content MVP is ready enough for practical content changes without code edits. Production RBAC, role-based content approval, production billing operations, and full external tester handoff are still not production-ready.
 
-CMS draft-save audit logging is implemented for successful Admin CMS Save draft operations. The later CMS governance step is a critical-change approval workflow, but it should wait until production roles/RBAC exist.
+CMS draft-save audit logging is implemented for successful Admin CMS Save draft operations, and the Admin CMS Audit subtab now exposes recent CMS changes as read-only rows filtered by selected content pack, entity type, stable key text, and limit. Audit rows show metadata and shortened before/after hashes; full edited content bodies are not stored or displayed in audit rows. The later CMS governance step is a critical-change approval workflow, but it should wait until production roles/RBAC exist.
 
 ## Recommended next product order
 
@@ -22,11 +22,11 @@ CMS draft-save audit logging is implemented for successful Admin CMS Save draft 
    - The new CMS tables and imported `static-json-v1` / `Static JSON Baseline` snapshot are still not used by runtime lesson loading by default; static JSON/content behavior remains unchanged.
    - `CmsContent:ReadPublishedSnapshotEnabled` defaults to `false`, `CmsContent:ContentPackSlug` defaults to `static-json-v1`, and `CmsContent:FallbackToStaticJson` defaults to `true`.
    - Keep this content-focused. Do not include production billing controls, Paddle management, payment editing, entitlement editing, broad user management, mobile-specific CMS, public production Admin, secrets, direct OpenAI key handling, or study-language editing.
-   - Future CMS production governance must include draft-save audit logs containing actor identity, timestamp UTC, content pack, entity type/id or stable key, changed fields, before/after values or hashes, source, and request/correlation id when available.
+   - CMS draft-save audit logging now contains actor identity, timestamp UTC, content pack, entity type/id and stable key, changed fields, before/after hashes, reason, source, status, and request/correlation id when available; future CMS production governance still needs production RBAC and approval workflow.
    - Future critical CMS changes should require approval after production roles exist; planned roles may include Content Editor, Content Reviewer, and Admin / Owner, with draft editing separated from approval.
 2. Controlled next CMS implementation step.
-   - CMS draft-save audit logging is implemented; next work is controlled Admin CMS regression and later governance planning.
-   - After draft-save audit logging, run controlled Admin CMS end-to-end UI/API regression against a local backend: load `static-json-v1`, select and save one bounded draft field per content type, exercise full scenario JSON format/validate/save, run validation, load preview summary, list versions, and verify publish/restore confirmation flows.
+   - CMS draft-save audit logging and the read-only Recent CMS changes UI are implemented; next work is controlled Admin CMS regression and later governance planning.
+   - Run controlled Admin CMS end-to-end UI/API regression against a local backend: load `static-json-v1`, select and save one bounded draft field per content type, exercise full scenario JSON format/validate/save, run validation, load preview summary, list versions, and verify publish/restore confirmation flows.
    - Critical-change approval workflow is a later CMS governance step and should wait until production roles/RBAC exist.
    - If learner runtime CMS integration is attempted later, keep it behind the disabled-by-default feature flag and retain static JSON fallback on every CMS failure.
    - Desktop must continue to call backend APIs only; backend remains the source of truth.

@@ -234,7 +234,11 @@
     const cmsRestoreButton = document.getElementById("cms-restore-button");
     const cmsVersionsListElement = document.getElementById("cms-versions-list");
     const cmsLoadAuditButton = document.getElementById("cms-load-audit-button");
+    const cmsAuditEntityTypeSelect = document.getElementById("cms-audit-entity-type");
+    const cmsAuditStableKeyInput = document.getElementById("cms-audit-stable-key");
     const cmsAuditLimitSelect = document.getElementById("cms-audit-limit");
+    const cmsAuditLoadingElement = document.getElementById("cms-audit-loading");
+    const cmsAuditErrorElement = document.getElementById("cms-audit-error");
     const cmsAuditListElement = document.getElementById("cms-audit-list");
 
     function getHashParameters() {
@@ -886,6 +890,8 @@
     function setCmsLoading(isLoading) { cmsLoadingElement.classList.toggle("hidden", !isLoading); }
     function setCmsError(message) { cmsErrorElement.textContent = message || ""; }
     function setCmsSuccess(message) { cmsSuccessElement.textContent = message || ""; }
+    function setCmsAuditError(message) { cmsAuditErrorElement.textContent = message || ""; }
+    function setCmsAuditLoading(isLoading) { cmsAuditLoadingElement.classList.toggle("hidden", !isLoading); cmsLoadAuditButton.disabled = isLoading; }
     function setCmsEntityMessage(element, message, isError) { element.className = isError ? "error" : "success"; element.textContent = message || ""; }
     function renderJsonOutput(element, payload) { element.textContent = JSON.stringify(payload, null, 2); }
     function tryParseCmsJson(text) { try { return { isValid: true, value: JSON.parse(text) }; } catch (error) { return { isValid: false, message: error instanceof Error ? error.message : "Invalid JSON." }; } }
@@ -894,6 +900,7 @@
     function validateCmsScenarioJsonInput() { const text = cmsScenarioDefinitionJsonInput.value.trim(); if (!text) { setCmsScenarioJsonStatus("Validation failed: full scenario JSON is required before saving an active scenario. Nothing was saved or published.", true); return false; } const parsed = tryParseCmsJson(text); if (!parsed.isValid) { setCmsScenarioJsonStatus(`Validation failed: invalid JSON syntax (${parsed.message}). Nothing was saved or published.`, true); return false; } if (!parsed.value || typeof parsed.value !== "object" || Array.isArray(parsed.value)) { setCmsScenarioJsonStatus("Validation failed: full scenario JSON root must be an object. Nothing was saved or published.", true); return false; } setCmsScenarioJsonStatus("Validation passed: JSON syntax and required scenario fields are ready to save as a draft. Nothing was saved or published.", false); return true; }
     function formatCmsScenarioJsonInput() { const formatted = prettyPrintCmsJson(cmsScenarioDefinitionJsonInput.value); if (!formatted.isValid) { setCmsScenarioJsonStatus(`Format failed: invalid JSON syntax (${formatted.message}). Nothing was saved or published.`, true); return false; } cmsScenarioDefinitionJsonInput.value = formatted.text; updateCmsDirtyState("scenario"); setCmsScenarioJsonStatus("Formatted JSON for easier editing. Nothing was saved or published; use Save draft to persist edits.", false); return true; }
     function formatShortHash(hash) { const value = String(hash || ""); return value.length > 16 ? `${value.slice(0, 12)}...${value.slice(-4)}` : formatValue(value); }
+    function getSelectedCmsAuditLimit() { const limit = Number.parseInt(cmsAuditLimitSelect.value, 10); return [10, 25, 50, 100].includes(limit) ? limit : 25; }
 
     async function adminFetch(path, options = {}) {
         const headers = getAdminHeaders(options.headers || {});
@@ -922,6 +929,8 @@
         cmsSummaryTutorProfileCountElement.textContent = formatValue(summary?.tutorBehaviorProfileCount);
         cmsSummaryPublishedVersionElement.textContent = formatValue(summary?.currentPublishedVersionNumber);
     }
+
+    function isCmsSubTabActive(tabId) { return cmsSubTabButtons.some((button) => button.dataset.cmsSubTabId === tabId && button.getAttribute("aria-selected") === "true"); }
 
     function selectCmsSubTab(tabId, force = false) {
         const selectedTabId = isKnownCmsSubTab(tabId) ? tabId : CmsSubTabs.overview;
@@ -986,8 +995,8 @@
 
     function renderCmsTable(container, columns, rows, options) {
         container.textContent = "";
-        if (!Array.isArray(rows) || rows.length === 0) { const empty = document.createElement("p"); empty.className = "empty-state"; empty.textContent = "No items loaded."; container.appendChild(empty); return; }
         const config = typeof options === "function" ? { onSelect: options } : (options || {});
+        if (!Array.isArray(rows) || rows.length === 0) { const empty = document.createElement("p"); empty.className = "empty-state"; empty.textContent = config.emptyMessage || "No items loaded."; container.appendChild(empty); return; }
         const onSelect = config.onSelect;
         const selectedId = config.selectedId;
         const hasAction = typeof onSelect === "function";
@@ -1021,7 +1030,7 @@
                 button.addEventListener("click", (event) => { event.stopPropagation(); onSelect(row); });
                 actionTd.appendChild(button); tr.appendChild(actionTd);
             }
-            columns.forEach((column) => { const td = document.createElement("td"); td.textContent = formatValue(row[column.key]); tr.appendChild(td); });
+            columns.forEach((column) => { const td = document.createElement("td"); td.textContent = formatValue(row[column.key]); if (column.className) { td.className = column.className; } const titleKey = column.titleKey || (column.useFullValueTitle ? column.key : null); if (titleKey && row[titleKey]) { td.title = String(row[titleKey]); } tr.appendChild(td); });
             tbody.appendChild(tr);
         });
         table.appendChild(tbody); container.appendChild(table);
@@ -1131,7 +1140,9 @@
         try {
             const payload = await adminFetch(cmsPath(template, Object.assign({ slug: getSelectedCmsSlug() }, replacements)), { method: "PUT", body: JSON.stringify(body) });
             setCmsEntityMessage(messageElement, payload.noChanges ? "Saved: no changes detected." : `Saved draft. Changed fields: ${(payload.changedFields || []).join(", ") || "-"}.`, false);
-            await reloadList(); await reloadSelected(); await runCmsValidation(); await loadCmsPreviewSummary(); await loadCmsAuditEntries();
+            await reloadList(); await reloadSelected(); await runCmsValidation(); await loadCmsPreviewSummary();
+            if (isCmsSubTabActive(CmsSubTabs.audit)) { await loadCmsAuditEntries(); }
+            else { setCmsSuccess("Open Audit to view the saved audit entry."); }
         } catch (error) { const message = getCmsErrorMessage(error); setCmsEntityMessage(messageElement, message, true); if (isAuthErrorMessage(message)) { resetSession(); setError(message); } }
     }
 
@@ -1151,16 +1162,52 @@
         renderCmsVersions(versions); return versionsPayload;
     }
     async function loadCmsAuditEntries() {
-        const limit = Number(cmsAuditLimitSelect.value || 25);
-        const query = new URLSearchParams({ limit: String(Number.isFinite(limit) ? limit : 25) });
-        const payload = await adminFetch(`${cmsPath(ApiPaths.cmsAuditEntriesTemplate, { slug: getSelectedCmsSlug() })}?${query.toString()}`);
-        const entries = Array.isArray(payload?.entries) ? payload.entries : [];
-        renderCmsAuditEntries(entries);
-        return entries;
+        setCmsAuditError("");
+        setCmsAuditLoading(true);
+        try {
+            const query = new URLSearchParams({ limit: String(getSelectedCmsAuditLimit()) });
+            const entityType = cmsAuditEntityTypeSelect.value.trim();
+            const stableKey = cmsAuditStableKeyInput.value.trim();
+            if (entityType) { query.set("entityType", entityType); }
+            if (stableKey) { query.set("stableKey", stableKey); }
+            const payload = await adminFetch(`${cmsPath(ApiPaths.cmsAuditEntriesTemplate, { slug: getSelectedCmsSlug() })}?${query.toString()}`);
+            const entries = Array.isArray(payload?.entries) ? payload.entries : [];
+            renderCmsAuditEntries(entries);
+            return entries;
+        } catch (error) {
+            cmsAuditListElement.textContent = "";
+            const message = getCmsErrorMessage(error);
+            setCmsAuditError(`Unable to load CMS audit entries: ${message}`);
+            if (isAuthErrorMessage(message)) { resetSession(); setError(message); }
+            return [];
+        } finally {
+            setCmsAuditLoading(false);
+        }
     }
     function renderCmsAuditEntries(entries) {
-        const rows = entries.map((entry) => Object.assign({}, entry, { actor: entry.actorEmail || entry.actorUserId || "-", changedFieldList: (entry.changedFields || []).join(", ") || "-", shortBeforeHash: formatShortHash(entry.beforeHash), shortAfterHash: formatShortHash(entry.afterHash) }));
-        renderCmsTable(cmsAuditListElement, [{ key: "createdAtUtc", label: "Timestamp UTC" }, { key: "actor", label: "Actor" }, { key: "entityType", label: "Entity type" }, { key: "stableKey", label: "Stable key" }, { key: "changedFieldList", label: "Changed fields" }, { key: "shortBeforeHash", label: "Before hash" }, { key: "shortAfterHash", label: "After hash" }], rows, null);
+        const rows = entries.map((entry) => Object.assign({}, entry, {
+            actor: entry.actorEmail || entry.actorUserId || "-",
+            changedFieldList: (entry.changedFields || []).join(", ") || "-",
+            shortBeforeHash: formatShortHash(entry.beforeHash),
+            shortAfterHash: formatShortHash(entry.afterHash),
+            reasonDisplay: entry.reason || "-",
+            requestIdDisplay: entry.requestId || "-"
+        }));
+        renderCmsTable(cmsAuditListElement, [
+            { key: "createdAtUtc", label: "Timestamp UTC" },
+            { key: "actor", label: "Actor" },
+            { key: "contentPackSlug", label: "Content pack" },
+            { key: "entityType", label: "Entity type" },
+            { key: "stableKey", label: "Stable key", className: "cms-stable-key-cell", useFullValueTitle: true },
+            { key: "operation", label: "Operation" },
+            { key: "changedFieldList", label: "Changed fields" },
+            { key: "shortBeforeHash", label: "Before hash", titleKey: "beforeHash" },
+            { key: "shortAfterHash", label: "After hash", titleKey: "afterHash" },
+            { key: "source", label: "Source" },
+            { key: "status", label: "Status" },
+            { key: "reasonDisplay", label: "Reason", titleKey: "reason" },
+            { key: "requestIdDisplay", label: "Request/correlation id", titleKey: "requestId" }
+        ], rows, { emptyMessage: "No CMS audit entries match the selected filters." });
     }
     function renderCmsVersions(versions) {
         renderCmsTable(cmsVersionsListElement, [{ key: "versionNumber", label: "Version" }, { key: "shortSnapshotHash", label: "Snapshot hash" }, { key: "publishStatus", label: "Status" }, { key: "publishedAtUtc", label: "Published at" }, { key: "changeSummary", label: "Change summary" }, { key: "restoredFromVersionNumber", label: "Restored from" }], versions.map((version) => Object.assign({}, version, { shortSnapshotHash: formatShortHash(version.snapshotHash) })), null);
@@ -1226,7 +1273,10 @@
     cmsRunValidationButton.addEventListener("click", async () => { await runCmsValidation(); });
     cmsLoadPreviewButton.addEventListener("click", async () => { await loadCmsPreviewSummary(); });
     cmsLoadVersionsButton.addEventListener("click", async () => { try { await loadCmsVersions(); setCmsSuccess("CMS versions loaded."); } catch (error) { handleCmsError(error); } });
-    cmsLoadAuditButton.addEventListener("click", async () => { try { await loadCmsAuditEntries(); setCmsSuccess("CMS audit entries loaded."); } catch (error) { handleCmsError(error); } });
+    cmsLoadAuditButton.addEventListener("click", async () => { await loadCmsAuditEntries(); });
+    cmsAuditEntityTypeSelect.addEventListener("change", async () => { await loadCmsAuditEntries(); });
+    cmsAuditStableKeyInput.addEventListener("keydown", async (event) => { if (event.key === "Enter") { event.preventDefault(); await loadCmsAuditEntries(); } });
+    cmsAuditLimitSelect.addEventListener("change", async () => { await loadCmsAuditEntries(); });
     cmsPublishButton.addEventListener("click", async () => { await publishCmsDraft(); });
     cmsRestoreButton.addEventListener("click", async () => { await restoreCmsVersion(); });
     [cmsTopicTitleInput, cmsTopicDescriptionInput, cmsTopicSortOrderInput, cmsTopicIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("topic")));

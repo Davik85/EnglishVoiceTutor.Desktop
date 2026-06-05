@@ -201,6 +201,7 @@ public sealed class CmsContentAuditEntryResponse
     public List<string> ChangedFields { get; set; } = [];
     public string? BeforeHash { get; set; }
     public string? AfterHash { get; set; }
+    public string? Reason { get; set; }
     public string? RequestId { get; set; }
     public string Source { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
