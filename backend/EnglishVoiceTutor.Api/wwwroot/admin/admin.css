@@ -150,3 +150,11 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
   .cms-audit-controls { align-items: stretch; flex-direction: column; }
   .cms-audit-stable-key-field { width: 100%; }
 }
+.cms-scenario-structured-editor { border: 1px solid #d8dee7; border-radius: 12px; margin-top: 14px; padding: 14px; }
+.cms-section-heading-row { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+.cms-section-heading-row h5 { font-size: 15px; margin: 0; }
+.cms-fieldset { border: 1px solid #e5e7eb; border-radius: 10px; margin: 14px 0 0; padding: 12px; }
+.cms-fieldset legend { color: #1f2937; font-weight: 700; padding: 0 6px; }
+.cms-nested-grid { gap: 12px; }
+#cms-scenario-structured-status { min-height: 24px; }
+#cms-scenario-first-bot-message-lines, #cms-scenario-context-option-lines, #cms-scenario-valid-context-keywords-lines, #cms-scenario-custom-context-rules-lines, #cms-scenario-can-do-lines, #cms-scenario-guided-follow-up-lines, #cms-scenario-ai-instruction-lines { font-family: inherit; }

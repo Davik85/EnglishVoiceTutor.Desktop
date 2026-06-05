@@ -220,12 +220,52 @@
                                     <form id="cms-scenario-form" class="cms-editor-form cms-editor-form-top" novalidate>
                                         <h4>Selected scenario draft fields</h4>
                                         <p class="muted">Identity: <span id="cms-selected-scenario-identity">None selected</span></p>
-                                        <div class="field"><label for="cms-scenario-title">Title</label><input id="cms-scenario-title" name="cms-scenario-title" type="text" /></div>
-                                        <div class="field"><label for="cms-scenario-description">Description</label><textarea id="cms-scenario-description" name="cms-scenario-description" rows="5"></textarea></div>
-                                        <div class="field"><label for="cms-scenario-setup-message">Setup message</label><textarea id="cms-scenario-setup-message" name="cms-scenario-setup-message" rows="7"></textarea></div>
-                                        <label class="checkbox-field"><input id="cms-scenario-is-active" name="cms-scenario-is-active" type="checkbox" /> Active</label>
+                                        <section class="cms-scenario-structured-editor" data-cms-structured-scenario-editor="true" aria-labelledby="cms-scenario-structured-editor-heading">
+                                            <div class="cms-section-heading-row">
+                                                <h5 id="cms-scenario-structured-editor-heading">Structured scenario editor</h5>
+                                                <button id="cms-scenario-validate-structured-button" type="button">Validate structured scenario</button>
+                                            </div>
+                                            <p class="muted">Use structured fields for normal editing. Use Advanced JSON only for rare technical changes. Structured saves update the canonical DefinitionJson while preserving unknown JSON fields.</p>
+                                            <p id="cms-scenario-structured-status" class="muted" role="status"></p>
+
+                                            <fieldset class="cms-fieldset"><legend>Basic fields</legend>
+                                                <div class="field"><label for="cms-scenario-title">Title</label><input id="cms-scenario-title" name="cms-scenario-title" type="text" /></div>
+                                                <div class="field"><label for="cms-scenario-description">Description</label><textarea id="cms-scenario-description" name="cms-scenario-description" rows="4"></textarea></div>
+                                                <label class="checkbox-field"><input id="cms-scenario-is-active" name="cms-scenario-is-active" type="checkbox" /> Active</label>
+                                            </fieldset>
+
+                                            <fieldset class="cms-fieldset"><legend>Lesson setup</legend>
+                                                <div class="field"><label for="cms-scenario-setup-message">Setup message</label><textarea id="cms-scenario-setup-message" name="cms-scenario-setup-message" rows="6"></textarea></div>
+                                                <div class="field"><label for="cms-scenario-first-bot-message-lines">First bot message / lesson setup text</label><textarea id="cms-scenario-first-bot-message-lines" name="cms-scenario-first-bot-message-lines" rows="4" placeholder="One instruction per line"></textarea></div>
+                                                <div class="cms-grid-two cms-nested-grid"><div class="field"><label for="cms-scenario-soft-wrap-turn">Wrap-up after user turn</label><input id="cms-scenario-soft-wrap-turn" name="cms-scenario-soft-wrap-turn" type="number" step="1" min="0" /></div><div class="field"><label for="cms-scenario-final-message-turn">Final message at user turn</label><input id="cms-scenario-final-message-turn" name="cms-scenario-final-message-turn" type="number" step="1" min="0" /></div></div>
+                                            </fieldset>
+
+                                            <fieldset class="cms-fieldset"><legend>Context selection / choices</legend>
+                                                <p class="muted">Multiline array fields use one item per line. Context option titles are merged by position so existing technical option details stay intact.</p>
+                                                <div class="field"><label for="cms-scenario-context-option-lines">Suggested situations / context option titles</label><textarea id="cms-scenario-context-option-lines" name="cms-scenario-context-option-lines" rows="5" placeholder="One option title per line"></textarea></div>
+                                                <div class="field"><label for="cms-scenario-valid-context-keywords-lines">Valid custom context keywords</label><textarea id="cms-scenario-valid-context-keywords-lines" name="cms-scenario-valid-context-keywords-lines" rows="4" placeholder="One keyword per line"></textarea></div>
+                                                <div class="field"><label for="cms-scenario-custom-context-rules-lines">Custom context rules</label><textarea id="cms-scenario-custom-context-rules-lines" name="cms-scenario-custom-context-rules-lines" rows="4" placeholder="One rule per line"></textarea></div>
+                                                <div class="field"><label for="cms-scenario-invalid-context-redirect">Invalid context redirect</label><textarea id="cms-scenario-invalid-context-redirect" name="cms-scenario-invalid-context-redirect" rows="3"></textarea></div>
+                                            </fieldset>
+
+                                            <fieldset class="cms-fieldset"><legend>Conversation flow / response guidance</legend>
+                                                <div class="field"><label for="cms-scenario-goal-text">Goal text</label><textarea id="cms-scenario-goal-text" name="cms-scenario-goal-text" rows="3"></textarea></div>
+                                                <div class="field"><label for="cms-scenario-can-do-lines">Can-do statements</label><textarea id="cms-scenario-can-do-lines" name="cms-scenario-can-do-lines" rows="4" placeholder="One statement per line"></textarea></div>
+                                                <div class="field"><label for="cms-scenario-opening-text">Opening guidance</label><textarea id="cms-scenario-opening-text" name="cms-scenario-opening-text" rows="3"></textarea></div>
+                                                <div class="field"><label for="cms-scenario-first-user-task">First user task</label><textarea id="cms-scenario-first-user-task" name="cms-scenario-first-user-task" rows="3"></textarea></div>
+                                                <div class="field"><label for="cms-scenario-guided-follow-up-lines">Guided follow-up questions</label><textarea id="cms-scenario-guided-follow-up-lines" name="cms-scenario-guided-follow-up-lines" rows="4" placeholder="One question per line"></textarea></div>
+                                                <div class="field"><label for="cms-scenario-ai-instruction-lines">User-facing / AI tutor instructions</label><textarea id="cms-scenario-ai-instruction-lines" name="cms-scenario-ai-instruction-lines" rows="6" placeholder="One instruction per line"></textarea></div>
+                                            </fieldset>
+
+                                            <fieldset class="cms-fieldset"><legend>Wrap-up / summary guidance</legend>
+                                                <div class="field"><label for="cms-scenario-wrap-up-message">Wrap-up message guidance</label><textarea id="cms-scenario-wrap-up-message" name="cms-scenario-wrap-up-message" rows="3"></textarea></div>
+                                                <div class="field"><label for="cms-scenario-final-message">Final message guidance</label><textarea id="cms-scenario-final-message" name="cms-scenario-final-message" rows="3"></textarea></div>
+                                                <div class="field"><label for="cms-scenario-hint-example">Example hint</label><textarea id="cms-scenario-hint-example" name="cms-scenario-hint-example" rows="3"></textarea></div>
+                                            </fieldset>
+                                        </section>
+
                                         <section class="cms-scenario-json-section" aria-labelledby="cms-scenario-definition-json-heading">
-                                            <h5 id="cms-scenario-definition-json-heading">Full scenario JSON</h5>
+                                            <h5 id="cms-scenario-definition-json-heading">Advanced JSON</h5>
                                             <p class="muted">Advanced: edit the complete scenario definition JSON. Save draft before publishing.</p>
                                             <p class="muted cms-json-helper">Format JSON only re-indents/pretty-prints the JSON for easier editing. Validate JSON checks syntax and required scenario fields before saving. Neither button saves, publishes, or persists edits; use Save draft to persist changes.</p>
                                             <div class="cms-button-row cms-json-button-row"><button id="cms-scenario-format-json-button" type="button" title="Only re-indents / pretty-prints the JSON for easier editing. Does not save or publish; use Save draft to persist edits." aria-describedby="cms-scenario-json-helper-text">Format JSON</button><button id="cms-scenario-validate-json-button" type="button" title="Checks JSON syntax and required scenario fields before saving. Does not save or publish; use Save draft to persist edits." aria-describedby="cms-scenario-json-helper-text">Validate JSON</button></div>
