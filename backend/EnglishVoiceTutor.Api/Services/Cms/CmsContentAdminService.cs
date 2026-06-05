@@ -278,7 +278,12 @@ public sealed partial class CmsContentAdminService(
         SetIfChanged(scenario.Title, request.Title, changedFields, value => scenario.Title = value, nameof(scenario.Title));
         SetIfChanged(scenario.Description, request.Description, changedFields, value => scenario.Description = value, nameof(scenario.Description));
         SetIfChanged(scenario.SetupMessage, request.SetupMessage, changedFields, value => scenario.SetupMessage = value, nameof(scenario.SetupMessage));
+        var definitionChanged = request.DefinitionJson is not null && !string.Equals(scenario.DefinitionJson, request.DefinitionJson.Trim(), StringComparison.Ordinal);
         SetIfChanged(scenario.DefinitionJson, request.DefinitionJson?.Trim(), changedFields, value => scenario.DefinitionJson = value, nameof(scenario.DefinitionJson));
+        if (definitionChanged && request.StructuredScenarioFieldsEdited == true)
+        {
+            changedFields.Add("StructuredScenarioFields");
+        }
         SetIfChanged(scenario.IsActive, request.IsActive, changedFields, value => scenario.IsActive = value, nameof(scenario.IsActive));
 
         return await SaveDraftUpdateAsync(

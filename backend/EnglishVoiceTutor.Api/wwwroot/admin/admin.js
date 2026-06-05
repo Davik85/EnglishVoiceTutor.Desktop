@@ -199,6 +199,24 @@
     const cmsScenarioSetupMessageInput = document.getElementById("cms-scenario-setup-message");
     const cmsScenarioIsActiveInput = document.getElementById("cms-scenario-is-active");
     const cmsScenarioDefinitionJsonInput = document.getElementById("cms-scenario-definition-json");
+    const cmsScenarioFirstBotMessageLinesInput = document.getElementById("cms-scenario-first-bot-message-lines");
+    const cmsScenarioSoftWrapTurnInput = document.getElementById("cms-scenario-soft-wrap-turn");
+    const cmsScenarioFinalMessageTurnInput = document.getElementById("cms-scenario-final-message-turn");
+    const cmsScenarioContextOptionLinesInput = document.getElementById("cms-scenario-context-option-lines");
+    const cmsScenarioValidContextKeywordsLinesInput = document.getElementById("cms-scenario-valid-context-keywords-lines");
+    const cmsScenarioCustomContextRulesLinesInput = document.getElementById("cms-scenario-custom-context-rules-lines");
+    const cmsScenarioInvalidContextRedirectInput = document.getElementById("cms-scenario-invalid-context-redirect");
+    const cmsScenarioGoalTextInput = document.getElementById("cms-scenario-goal-text");
+    const cmsScenarioCanDoLinesInput = document.getElementById("cms-scenario-can-do-lines");
+    const cmsScenarioOpeningTextInput = document.getElementById("cms-scenario-opening-text");
+    const cmsScenarioFirstUserTaskInput = document.getElementById("cms-scenario-first-user-task");
+    const cmsScenarioGuidedFollowUpLinesInput = document.getElementById("cms-scenario-guided-follow-up-lines");
+    const cmsScenarioAiInstructionLinesInput = document.getElementById("cms-scenario-ai-instruction-lines");
+    const cmsScenarioWrapUpMessageInput = document.getElementById("cms-scenario-wrap-up-message");
+    const cmsScenarioFinalMessageInput = document.getElementById("cms-scenario-final-message");
+    const cmsScenarioHintExampleInput = document.getElementById("cms-scenario-hint-example");
+    const cmsScenarioValidateStructuredButton = document.getElementById("cms-scenario-validate-structured-button");
+    const cmsScenarioStructuredStatusElement = document.getElementById("cms-scenario-structured-status");
     const cmsScenarioFormatJsonButton = document.getElementById("cms-scenario-format-json-button");
     const cmsScenarioValidateJsonButton = document.getElementById("cms-scenario-validate-json-button");
     const cmsScenarioJsonStatusElement = document.getElementById("cms-scenario-json-status");
@@ -296,12 +314,20 @@
     }
 
     const UnsavedChangesMessage = "You have unsaved changes. Save draft before leaving, or discard changes.";
+    const cmsScenarioStructuredInputs = [
+        cmsScenarioTitleInput, cmsScenarioDescriptionInput, cmsScenarioSetupMessageInput, cmsScenarioIsActiveInput,
+        cmsScenarioFirstBotMessageLinesInput, cmsScenarioSoftWrapTurnInput, cmsScenarioFinalMessageTurnInput,
+        cmsScenarioContextOptionLinesInput, cmsScenarioValidContextKeywordsLinesInput, cmsScenarioCustomContextRulesLinesInput,
+        cmsScenarioInvalidContextRedirectInput, cmsScenarioGoalTextInput, cmsScenarioCanDoLinesInput, cmsScenarioOpeningTextInput,
+        cmsScenarioFirstUserTaskInput, cmsScenarioGuidedFollowUpLinesInput, cmsScenarioAiInstructionLinesInput,
+        cmsScenarioWrapUpMessageInput, cmsScenarioFinalMessageInput, cmsScenarioHintExampleInput
+    ].filter(Boolean);
     const cmsDirtyBaselines = { topic: null, scenario: null, promptTemplate: null, tutorProfile: null };
     const cmsDirtyState = { topic: false, scenario: false, promptTemplate: false, tutorProfile: false };
 
     function getCmsDraftSnapshot(editorKey) {
         if (editorKey === "topic") { return { title: cmsTopicTitleInput.value, description: cmsTopicDescriptionInput.value, sortOrder: cmsTopicSortOrderInput.value, isActive: cmsTopicIsActiveInput.checked }; }
-        if (editorKey === "scenario") { return { title: cmsScenarioTitleInput.value, description: cmsScenarioDescriptionInput.value, setupMessage: cmsScenarioSetupMessageInput.value, definitionJson: cmsScenarioDefinitionJsonInput.value, isActive: cmsScenarioIsActiveInput.checked }; }
+        if (editorKey === "scenario") { return { title: cmsScenarioTitleInput.value, description: cmsScenarioDescriptionInput.value, setupMessage: cmsScenarioSetupMessageInput.value, structuredScenarioFields: getCmsStructuredScenarioSnapshot(), definitionJson: cmsScenarioDefinitionJsonInput.value, isActive: cmsScenarioIsActiveInput.checked }; }
         if (editorKey === "promptTemplate") { return { body: cmsPromptTemplateBodyInput.value, isActive: cmsPromptTemplateIsActiveInput.checked }; }
         if (editorKey === "tutorProfile") { return { displayName: cmsTutorProfileDisplayNameInput.value, communicationStyleJson: cmsTutorProfileCommunicationStyleJsonInput.value, safetyNotesJson: cmsTutorProfileSafetyNotesJsonInput.value, isActive: cmsTutorProfileIsActiveInput.checked }; }
         return null;
@@ -897,7 +923,103 @@
     function tryParseCmsJson(text) { try { return { isValid: true, value: JSON.parse(text) }; } catch (error) { return { isValid: false, message: error instanceof Error ? error.message : "Invalid JSON." }; } }
     function prettyPrintCmsJson(text) { const parsed = tryParseCmsJson(text); return parsed.isValid ? { isValid: true, text: JSON.stringify(parsed.value, null, 2) } : parsed; }
     function setCmsScenarioJsonStatus(message, isError) { cmsScenarioJsonStatusElement.className = isError ? "error" : "success"; cmsScenarioJsonStatusElement.textContent = message || ""; }
-    function validateCmsScenarioJsonInput() { const text = cmsScenarioDefinitionJsonInput.value.trim(); if (!text) { setCmsScenarioJsonStatus("Validation failed: full scenario JSON is required before saving an active scenario. Nothing was saved or published.", true); return false; } const parsed = tryParseCmsJson(text); if (!parsed.isValid) { setCmsScenarioJsonStatus(`Validation failed: invalid JSON syntax (${parsed.message}). Nothing was saved or published.`, true); return false; } if (!parsed.value || typeof parsed.value !== "object" || Array.isArray(parsed.value)) { setCmsScenarioJsonStatus("Validation failed: full scenario JSON root must be an object. Nothing was saved or published.", true); return false; } setCmsScenarioJsonStatus("Validation passed: JSON syntax and required scenario fields are ready to save as a draft. Nothing was saved or published.", false); return true; }
+    function setCmsScenarioStructuredStatus(message, isError) { cmsScenarioStructuredStatusElement.textContent = message || ""; cmsScenarioStructuredStatusElement.className = isError ? "error" : "muted"; }
+    function splitCmsLines(value) { return String(value || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean); }
+    function joinCmsLines(value) { return Array.isArray(value) ? value.map((item) => typeof item === "string" ? item : "").filter(Boolean).join("\n") : ""; }
+    function getCmsObject(parent, key) { if (!parent[key] || typeof parent[key] !== "object" || Array.isArray(parent[key])) { parent[key] = {}; } return parent[key]; }
+    function getCmsNestedObject(root, keys) { return keys.reduce((current, key) => getCmsObject(current, key), root); }
+    function setCmsStringField(root, keys, value) { const parent = getCmsNestedObject(root, keys.slice(0, -1)); parent[keys[keys.length - 1]] = String(value || "").trim(); }
+    function setCmsArrayField(root, keys, value) { const parent = getCmsNestedObject(root, keys.slice(0, -1)); parent[keys[keys.length - 1]] = splitCmsLines(value); }
+    function getCmsStringField(root, keys) { let current = root; for (const key of keys) { if (!current || typeof current !== "object") { return ""; } current = current[key]; } return typeof current === "string" || typeof current === "number" ? String(current) : ""; }
+    function getCmsArrayField(root, keys) { let current = root; for (const key of keys) { if (!current || typeof current !== "object") { return ""; } current = current[key]; } return joinCmsLines(current); }
+    function parseCmsOptionalTurn(value, fieldName) { const text = String(value || "").trim(); if (!text) { return null; } const parsed = Number(text); if (!Number.isInteger(parsed) || parsed < 0) { throw new Error(`${fieldName} must be a blank or a whole number greater than or equal to 0.`); } return parsed; }
+    function getCmsStructuredScenarioSnapshot() {
+        return {
+            firstBotMessageShouldExplain: cmsScenarioFirstBotMessageLinesInput.value,
+            softWrapUpAfterUserTurn: cmsScenarioSoftWrapTurnInput.value,
+            finalMessageAtUserTurn: cmsScenarioFinalMessageTurnInput.value,
+            contextOptions: cmsScenarioContextOptionLinesInput.value,
+            validContextKeywords: cmsScenarioValidContextKeywordsLinesInput.value,
+            customContextRules: cmsScenarioCustomContextRulesLinesInput.value,
+            invalidContextRedirect: cmsScenarioInvalidContextRedirectInput.value,
+            goal: cmsScenarioGoalTextInput.value,
+            canDoStatements: cmsScenarioCanDoLinesInput.value,
+            opening: cmsScenarioOpeningTextInput.value,
+            firstUserTask: cmsScenarioFirstUserTaskInput.value,
+            guidedFollowUps: cmsScenarioGuidedFollowUpLinesInput.value,
+            aiTutorPromptInstructions: cmsScenarioAiInstructionLinesInput.value,
+            wrapUpMessage: cmsScenarioWrapUpMessageInput.value,
+            finalMessage: cmsScenarioFinalMessageInput.value,
+            exampleHint: cmsScenarioHintExampleInput.value
+        };
+    }
+    function getCmsScenarioDefinitionObject() {
+        const parsed = tryParseCmsJson(cmsScenarioDefinitionJsonInput.value.trim());
+        if (!parsed.isValid) { throw new Error(`Advanced JSON is invalid (${parsed.message}). Fix it before structured fields can be merged.`); }
+        if (!parsed.value || typeof parsed.value !== "object" || Array.isArray(parsed.value)) { throw new Error("Advanced JSON root must be an object before structured fields can be merged."); }
+        return parsed.value;
+    }
+    function fillCmsStructuredScenarioFieldsFromDefinition() {
+        const parsed = tryParseCmsJson(cmsScenarioDefinitionJsonInput.value.trim());
+        if (!parsed.isValid || !parsed.value || typeof parsed.value !== "object" || Array.isArray(parsed.value)) {
+            setCmsScenarioStructuredStatus(parsed.isValid ? "Structured editor could not read this scenario because Advanced JSON root is not an object." : `Structured editor could not read this scenario because Advanced JSON is invalid (${parsed.message}).`, true);
+            return;
+        }
+        const root = parsed.value;
+        cmsScenarioFirstBotMessageLinesInput.value = getCmsArrayField(root, ["lessonSetup", "firstBotMessageShouldExplain"]);
+        cmsScenarioSoftWrapTurnInput.value = getCmsStringField(root, ["metadata", "softWrapUpAfterUserTurn"]);
+        cmsScenarioFinalMessageTurnInput.value = getCmsStringField(root, ["metadata", "finalMessageAtUserTurn"]);
+        const variants = root.controlledVariation && Array.isArray(root.controlledVariation.contextVariants) ? root.controlledVariation.contextVariants : [];
+        cmsScenarioContextOptionLinesInput.value = variants.map((variant) => variant && typeof variant === "object" && typeof variant.title === "string" ? variant.title : "").filter(Boolean).join("\n");
+        cmsScenarioValidContextKeywordsLinesInput.value = getCmsArrayField(root, ["lessonSetup", "contextSelection", "validCustomContextKeywords"]);
+        cmsScenarioCustomContextRulesLinesInput.value = getCmsArrayField(root, ["controlledVariation", "customContextRules"]);
+        cmsScenarioInvalidContextRedirectInput.value = getCmsStringField(root, ["lessonSetup", "contextSelection", "invalidContextRedirect"]) || getCmsStringField(root, ["controlledVariation", "invalidContextRedirect"]);
+        cmsScenarioGoalTextInput.value = getCmsStringField(root, ["learningGoal", "goal"]);
+        cmsScenarioCanDoLinesInput.value = getCmsArrayField(root, ["learningGoal", "canDoStatements"]);
+        cmsScenarioOpeningTextInput.value = getCmsStringField(root, ["conversationFlow", "opening"]);
+        cmsScenarioFirstUserTaskInput.value = getCmsStringField(root, ["conversationFlow", "firstUserTask"]);
+        cmsScenarioGuidedFollowUpLinesInput.value = getCmsArrayField(root, ["conversationFlow", "guidedPracticeFollowUpQuestions"]);
+        cmsScenarioAiInstructionLinesInput.value = getCmsArrayField(root, ["aiTutorPromptInstructions"]);
+        cmsScenarioWrapUpMessageInput.value = getCmsStringField(root, ["conversationFlow", "wrapUpMessage"]);
+        cmsScenarioFinalMessageInput.value = getCmsStringField(root, ["conversationFlow", "finalMessage"]);
+        cmsScenarioHintExampleInput.value = getCmsStringField(root, ["hintRules", "exampleHint"]);
+        setCmsScenarioStructuredStatus("Structured scenario fields loaded from DefinitionJson.", false);
+    }
+    function mergeCmsStructuredScenarioFieldsToDefinition(options = {}) {
+        const root = getCmsScenarioDefinitionObject();
+        if (cmsSelectedScenario?.stableScenarioKey) { root.id = cmsSelectedScenario.stableScenarioKey; }
+        setCmsStringField(root, ["metadata", "subtopic"], cmsScenarioTitleInput.value);
+        setCmsStringField(root, ["lessonSetup", "setupMessage"], cmsScenarioSetupMessageInput.value);
+        setCmsArrayField(root, ["lessonSetup", "firstBotMessageShouldExplain"], cmsScenarioFirstBotMessageLinesInput.value);
+        const softWrapTurn = parseCmsOptionalTurn(cmsScenarioSoftWrapTurnInput.value, "Wrap-up after user turn");
+        const finalTurn = parseCmsOptionalTurn(cmsScenarioFinalMessageTurnInput.value, "Final message at user turn");
+        if (softWrapTurn !== null) { getCmsObject(root, "metadata").softWrapUpAfterUserTurn = softWrapTurn; getCmsObject(root, "conversationFlow").wrapUpAfterUserTurn = softWrapTurn; }
+        if (finalTurn !== null) { getCmsObject(root, "metadata").finalMessageAtUserTurn = finalTurn; getCmsObject(root, "conversationFlow").finalMessageAtUserTurn = finalTurn; }
+        const titles = splitCmsLines(cmsScenarioContextOptionLinesInput.value);
+        const controlledVariation = getCmsObject(root, "controlledVariation");
+        const existingVariants = Array.isArray(controlledVariation.contextVariants) ? controlledVariation.contextVariants : [];
+        controlledVariation.contextVariants = titles.map((title, index) => Object.assign({}, (existingVariants[index] && typeof existingVariants[index] === "object") ? existingVariants[index] : { id: title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `option-${index + 1}` }, { title }));
+        setCmsArrayField(root, ["lessonSetup", "contextSelection", "validCustomContextKeywords"], cmsScenarioValidContextKeywordsLinesInput.value);
+        setCmsArrayField(root, ["controlledVariation", "customContextRules"], cmsScenarioCustomContextRulesLinesInput.value);
+        setCmsStringField(root, ["lessonSetup", "contextSelection", "invalidContextRedirect"], cmsScenarioInvalidContextRedirectInput.value);
+        setCmsStringField(root, ["controlledVariation", "invalidContextRedirect"], cmsScenarioInvalidContextRedirectInput.value);
+        setCmsStringField(root, ["learningGoal", "goal"], cmsScenarioGoalTextInput.value);
+        setCmsArrayField(root, ["learningGoal", "canDoStatements"], cmsScenarioCanDoLinesInput.value);
+        setCmsStringField(root, ["conversationFlow", "opening"], cmsScenarioOpeningTextInput.value);
+        setCmsStringField(root, ["conversationFlow", "firstUserTask"], cmsScenarioFirstUserTaskInput.value);
+        setCmsArrayField(root, ["conversationFlow", "guidedPracticeFollowUpQuestions"], cmsScenarioGuidedFollowUpLinesInput.value);
+        setCmsArrayField(root, ["aiTutorPromptInstructions"], cmsScenarioAiInstructionLinesInput.value);
+        setCmsStringField(root, ["conversationFlow", "wrapUpMessage"], cmsScenarioWrapUpMessageInput.value);
+        setCmsStringField(root, ["conversationFlow", "finalMessage"], cmsScenarioFinalMessageInput.value);
+        setCmsStringField(root, ["hintRules", "exampleHint"], cmsScenarioHintExampleInput.value);
+        const required = [["id"], ["metadata"], ["lessonSetup", "setupMessage"], ["learningGoal", "goal"], ["conversationFlow"], ["aiTutorPromptInstructions"]];
+        for (const keys of required) { if (!getCmsStringField(root, keys) && keys.length !== 1) { throw new Error(`Required structured scenario field '${keys.join(".")}' is empty.`); } }
+        cmsScenarioDefinitionJsonInput.value = JSON.stringify(root, null, 2);
+        if (!options.silent) { setCmsScenarioStructuredStatus("Structured scenario is valid and merged into Advanced JSON. Nothing was saved or published; use Save draft to persist edits.", false); }
+        return root;
+    }
+    function validateCmsStructuredScenarioInput() { try { mergeCmsStructuredScenarioFieldsToDefinition(); updateCmsDirtyState("scenario"); return true; } catch (error) { setCmsScenarioStructuredStatus(`Structured validation failed: ${error instanceof Error ? error.message : "Unable to assemble scenario JSON."}`, true); return false; } }
+    function validateCmsScenarioJsonInput() { const text = cmsScenarioDefinitionJsonInput.value.trim(); if (!text) { setCmsScenarioJsonStatus("Validation failed: full scenario JSON is required before saving an active scenario. Nothing was saved or published.", true); return false; } const parsed = tryParseCmsJson(text); if (!parsed.isValid) { setCmsScenarioJsonStatus(`Validation failed: invalid JSON syntax (${parsed.message}). Nothing was saved or published.`, true); return false; } const root = parsed.value; if (!root || typeof root !== "object" || Array.isArray(root)) { setCmsScenarioJsonStatus("Validation failed: full scenario JSON root must be an object. Nothing was saved or published.", true); return false; } const requiredRootProperties = ["id", "metadata", "lessonSetup", "learningGoal", "targetLanguage", "levelProfiles", "conversationFlow", "controlledVariation", "offTopicHandling", "feedbackRules", "hintRules", "aiTutorPromptInstructions"]; const missing = requiredRootProperties.filter((key) => root[key] === undefined || root[key] === null || (Array.isArray(root[key]) && root[key].length === 0) || (typeof root[key] === "object" && !Array.isArray(root[key]) && Object.keys(root[key]).length === 0) || (typeof root[key] === "string" && !root[key].trim())); if (missing.length > 0) { setCmsScenarioJsonStatus(`Validation failed: missing required scenario JSON fields: ${missing.join(", ")}. Nothing was saved or published.`, true); return false; } if (typeof root.id !== "string" || !root.id.trim()) { setCmsScenarioJsonStatus("Validation failed: full scenario JSON id must be a non-empty string. Nothing was saved or published.", true); return false; } if (cmsSelectedScenario?.stableScenarioKey && root.id.trim() !== cmsSelectedScenario.stableScenarioKey) { setCmsScenarioJsonStatus(`Validation failed: full scenario JSON id must match stable scenario key '${cmsSelectedScenario.stableScenarioKey}'. Nothing was saved or published.`, true); return false; } if (!root.lessonSetup || typeof root.lessonSetup !== "object" || Array.isArray(root.lessonSetup) || typeof root.lessonSetup.setupMessage !== "string" || !root.lessonSetup.setupMessage.trim()) { setCmsScenarioJsonStatus("Validation failed: full scenario JSON is missing required lessonSetup.setupMessage. Nothing was saved or published.", true); return false; } setCmsScenarioJsonStatus("Validation passed: JSON syntax and required scenario fields are ready to save as a draft. Nothing was saved or published.", false); return true; }
     function formatCmsScenarioJsonInput() { const formatted = prettyPrintCmsJson(cmsScenarioDefinitionJsonInput.value); if (!formatted.isValid) { setCmsScenarioJsonStatus(`Format failed: invalid JSON syntax (${formatted.message}). Nothing was saved or published.`, true); return false; } cmsScenarioDefinitionJsonInput.value = formatted.text; updateCmsDirtyState("scenario"); setCmsScenarioJsonStatus("Formatted JSON for easier editing. Nothing was saved or published; use Save draft to persist edits.", false); return true; }
     function formatShortHash(hash) { const value = String(hash || ""); return value.length > 16 ? `${value.slice(0, 12)}...${value.slice(-4)}` : formatValue(value); }
     function getSelectedCmsAuditLimit() { const limit = Number.parseInt(cmsAuditLimitSelect.value, 10); return [10, 25, 50, 100].includes(limit) ? limit : 25; }
@@ -1112,7 +1234,7 @@
     async function selectCmsTopic(row, force = false) { if (!force && !restoringCmsSelection && cmsSelectedTopic?.id !== row.id && !confirmDiscardUnsavedChanges()) { return; } cmsSelectedTopic = row; updateHashField("topicKey", row.stableTopicKey || null); renderCmsTopicsTable(); cmsSelectedTopic = await adminFetch(cmsPath(ApiPaths.cmsTopicTemplate, { slug: getSelectedCmsSlug(), topicId: row.id })); fillCmsTopicForm(); renderCmsTopicsTable(); }
     function fillCmsTopicForm() { const item = cmsSelectedTopic; cmsSelectedTopicIdentityElement.textContent = item ? `${item.stableTopicKey} (${item.id})` : "None selected"; cmsTopicTitleInput.value = item?.title || ""; cmsTopicDescriptionInput.value = item?.description || ""; cmsTopicSortOrderInput.value = item?.sortOrder ?? ""; cmsTopicIsActiveInput.checked = Boolean(item?.isActive); setCmsEntityMessage(cmsTopicMessageElement, "", false); setCmsBaseline("topic"); }
     async function selectCmsScenario(row, force = false) { if (!force && !restoringCmsSelection && cmsSelectedScenario?.id !== row.id && !confirmDiscardUnsavedChanges()) { return; } cmsSelectedScenario = row; updateHashField("scenarioKey", row.stableScenarioKey || null); renderCmsScenariosTable(); cmsSelectedScenario = await adminFetch(cmsPath(ApiPaths.cmsScenarioTemplate, { slug: getSelectedCmsSlug(), scenarioId: row.id })); fillCmsScenarioForm(); renderCmsScenariosTable(); }
-    function fillCmsScenarioForm() { const item = cmsSelectedScenario; cmsSelectedScenarioIdentityElement.textContent = item ? `${item.stableScenarioKey} (${item.id})` : "None selected"; cmsScenarioTitleInput.value = item?.title || ""; cmsScenarioDescriptionInput.value = item?.description || ""; cmsScenarioSetupMessageInput.value = item?.setupMessage || ""; cmsScenarioIsActiveInput.checked = Boolean(item?.isActive); cmsScenarioDefinitionJsonInput.value = item?.definitionJson || ""; setCmsScenarioJsonStatus(item?.isDefinitionJsonFallback ? "Showing fallback JSON built from existing draft fields; save draft to persist it as full scenario JSON." : "", Boolean(item?.isDefinitionJsonFallback)); setCmsEntityMessage(cmsScenarioMessageElement, "", false); setCmsBaseline("scenario"); }
+    function fillCmsScenarioForm() { const item = cmsSelectedScenario; cmsSelectedScenarioIdentityElement.textContent = item ? `${item.stableScenarioKey} (${item.id})` : "None selected"; cmsScenarioTitleInput.value = item?.title || ""; cmsScenarioDescriptionInput.value = item?.description || ""; cmsScenarioSetupMessageInput.value = item?.setupMessage || ""; cmsScenarioIsActiveInput.checked = Boolean(item?.isActive); cmsScenarioDefinitionJsonInput.value = item?.definitionJson || ""; setCmsScenarioJsonStatus(item?.isDefinitionJsonFallback ? "Showing fallback JSON built from existing draft fields; save draft to persist it as full scenario JSON." : "", Boolean(item?.isDefinitionJsonFallback)); fillCmsStructuredScenarioFieldsFromDefinition(); setCmsEntityMessage(cmsScenarioMessageElement, "", false); setCmsBaseline("scenario"); }
     async function selectCmsPromptTemplate(row, force = false) { if (!force && !restoringCmsSelection && cmsSelectedPromptTemplate?.id !== row.id && !confirmDiscardUnsavedChanges()) { return; } cmsSelectedPromptTemplate = row; updateHashField("promptTemplateKey", row.templateKey || null); renderCmsPromptTemplatesTable(); cmsSelectedPromptTemplate = await adminFetch(cmsPath(ApiPaths.cmsPromptTemplateTemplate, { slug: getSelectedCmsSlug(), templateId: row.id })); fillCmsPromptTemplateForm(); renderCmsPromptTemplatesTable(); }
     function fillCmsPromptTemplateForm() { const item = cmsSelectedPromptTemplate; cmsSelectedPromptTemplateIdentityElement.textContent = item ? `${item.templateKey} (${item.id})` : "None selected"; cmsPromptTemplateBodyInput.value = item?.body || ""; cmsPromptTemplateIsActiveInput.checked = Boolean(item?.isActive); setCmsEntityMessage(cmsPromptTemplateMessageElement, "", false); setCmsBaseline("promptTemplate"); }
     async function selectCmsTutorProfile(row, force = false) { if (!force && !restoringCmsSelection && cmsSelectedTutorProfile?.id !== row.id && !confirmDiscardUnsavedChanges()) { return; } cmsSelectedTutorProfile = row; updateHashField("tutorId", row.tutorId || null); renderCmsTutorProfilesTable(); cmsSelectedTutorProfile = await adminFetch(cmsPath(ApiPaths.cmsTutorProfileTemplate, { slug: getSelectedCmsSlug(), profileId: row.id })); fillCmsTutorProfileForm(); renderCmsTutorProfilesTable(); }
@@ -1124,8 +1246,9 @@
     }
     async function saveCmsScenarioDraft() {
         if (!cmsSelectedScenario) { setCmsEntityMessage(cmsScenarioMessageElement, "Select a scenario first.", true); return; }
-        if (!validateCmsScenarioJsonInput()) { setCmsEntityMessage(cmsScenarioMessageElement, "Save draft blocked: fix full scenario JSON first.", true); return; }
-        await saveCmsDraft(ApiPaths.cmsScenarioTemplate, { scenarioId: cmsSelectedScenario.id }, { title: cmsScenarioTitleInput.value, description: cmsScenarioDescriptionInput.value, setupMessage: cmsScenarioSetupMessageInput.value, definitionJson: cmsScenarioDefinitionJsonInput.value, isActive: cmsScenarioIsActiveInput.checked, reason: "Admin CMS UI shell draft edit" }, cmsScenarioMessageElement, loadCmsScenarios, () => selectCmsScenario(cmsSelectedScenario));
+        if (!validateCmsStructuredScenarioInput()) { setCmsEntityMessage(cmsScenarioMessageElement, "Save draft blocked: fix structured scenario fields first.", true); return; }
+        if (!validateCmsScenarioJsonInput()) { setCmsEntityMessage(cmsScenarioMessageElement, "Save draft blocked: fix Advanced JSON first.", true); return; }
+        await saveCmsDraft(ApiPaths.cmsScenarioTemplate, { scenarioId: cmsSelectedScenario.id }, { title: cmsScenarioTitleInput.value, description: cmsScenarioDescriptionInput.value, setupMessage: cmsScenarioSetupMessageInput.value, definitionJson: cmsScenarioDefinitionJsonInput.value, structuredScenarioFieldsEdited: true, isActive: cmsScenarioIsActiveInput.checked, reason: "Admin CMS UI shell structured scenario draft edit" }, cmsScenarioMessageElement, loadCmsScenarios, () => selectCmsScenario(cmsSelectedScenario));
     }
     async function saveCmsPromptTemplateDraft() {
         if (!cmsSelectedPromptTemplate) { setCmsEntityMessage(cmsPromptTemplateMessageElement, "Select a prompt template first.", true); return; }
@@ -1280,7 +1403,9 @@
     cmsPublishButton.addEventListener("click", async () => { await publishCmsDraft(); });
     cmsRestoreButton.addEventListener("click", async () => { await restoreCmsVersion(); });
     [cmsTopicTitleInput, cmsTopicDescriptionInput, cmsTopicSortOrderInput, cmsTopicIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("topic")));
-    [cmsScenarioTitleInput, cmsScenarioDescriptionInput, cmsScenarioSetupMessageInput, cmsScenarioIsActiveInput, cmsScenarioDefinitionJsonInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("scenario")));
+    cmsScenarioStructuredInputs.forEach((element) => element.addEventListener("input", () => { if (element !== cmsScenarioIsActiveInput) { try { mergeCmsStructuredScenarioFieldsToDefinition({ silent: true }); setCmsScenarioStructuredStatus("Structured edits are reflected in Advanced JSON. Save draft is still required.", false); } catch (error) { setCmsScenarioStructuredStatus(`Structured merge pending: ${error instanceof Error ? error.message : "Unable to assemble scenario JSON."}`, true); } } updateCmsDirtyState("scenario"); }));
+    cmsScenarioDefinitionJsonInput.addEventListener("input", () => { fillCmsStructuredScenarioFieldsFromDefinition(); updateCmsDirtyState("scenario"); });
+    cmsScenarioValidateStructuredButton.addEventListener("click", validateCmsStructuredScenarioInput);
     [cmsPromptTemplateBodyInput, cmsPromptTemplateIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("promptTemplate")));
     [cmsTutorProfileDisplayNameInput, cmsTutorProfileCommunicationStyleJsonInput, cmsTutorProfileSafetyNotesJsonInput, cmsTutorProfileIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("tutorProfile")));
     window.addEventListener("beforeunload", (event) => { if (!hasUnsavedChanges()) { return; } event.preventDefault(); event.returnValue = UnsavedChangesMessage; });

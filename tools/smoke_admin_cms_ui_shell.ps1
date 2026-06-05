@@ -67,6 +67,12 @@ if ($errors.Count -eq 0) {
         'cms-scenario-description',
         'cms-scenario-setup-message',
         'cms-scenario-definition-json',
+        'data-cms-structured-scenario-editor="true"',
+        'Structured scenario editor',
+        'cms-scenario-validate-structured-button',
+        'cms-scenario-goal-text',
+        'cms-scenario-context-option-lines',
+        'cms-scenario-ai-instruction-lines',
         'cms-scenario-format-json-button',
         'cms-scenario-validate-json-button',
         'Advanced: edit the complete scenario definition JSON. Save draft before publishing.',
@@ -105,6 +111,8 @@ if ($errors.Count -eq 0) {
         'event.stopPropagation()',
         'button.type = "button"',
         'validateCmsScenarioJsonInput',
+        'validateCmsStructuredScenarioInput',
+        'mergeCmsStructuredScenarioFieldsToDefinition',
         'formatCmsScenarioJsonInput',
         'definitionJson',
         '/api/admin/dev/cms/content-packs/{slug}/audit-entries',
@@ -114,7 +122,7 @@ if ($errors.Count -eq 0) {
         'Request/correlation id'
     )) { Assert-FileContains -path $jsPath -needle $needle }
 
-    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section', 'cms-audit-controls', 'cms-stable-key-cell')) {
+    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section', 'cms-scenario-structured-editor', 'cms-fieldset', 'cms-audit-controls', 'cms-stable-key-cell')) {
         Assert-FileContains -path $cssPath -needle $needle
     }
 

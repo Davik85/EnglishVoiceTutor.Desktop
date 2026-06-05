@@ -161,6 +161,7 @@ public sealed class UpdateCmsScenarioRequest
     public string? Description { get; set; }
     public string? SetupMessage { get; set; }
     public string? DefinitionJson { get; set; }
+    public bool? StructuredScenarioFieldsEdited { get; set; }
     public bool? IsActive { get; set; }
     public string? Reason { get; set; }
 }
