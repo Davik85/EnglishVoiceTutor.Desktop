@@ -40,6 +40,8 @@ if ($errors.Count -eq 0) {
         'cms-sub-panel-tutors',
         'cms-sub-panel-validation-preview',
         'cms-sub-panel-versions-publish',
+        'cms-sub-tab-button-audit',
+        'cms-sub-panel-audit',
         'Overview',
         'Topics',
         'Scenarios',
@@ -71,7 +73,13 @@ if ($errors.Count -eq 0) {
         'cms-prompt-template-body',
         'cms-tutor-profile-display-name',
         'cms-tutor-profile-communication-style-json',
-        'cms-tutor-profile-safety-notes-json'
+        'cms-tutor-profile-safety-notes-json',
+        'Recent CMS changes',
+        'cms-audit-entity-type',
+        'cms-audit-stable-key',
+        'cms-audit-limit',
+        'Refresh audit',
+        'cms-audit-list'
     )) { Assert-FileContains -path $indexPath -needle $needle }
 
     foreach ($needle in @(
@@ -98,10 +106,15 @@ if ($errors.Count -eq 0) {
         'button.type = "button"',
         'validateCmsScenarioJsonInput',
         'formatCmsScenarioJsonInput',
-        'definitionJson'
+        'definitionJson',
+        '/api/admin/dev/cms/content-packs/{slug}/audit-entries',
+        'cmsAuditEntityTypeSelect',
+        'cmsAuditStableKeyInput',
+        'No CMS audit entries match the selected filters.',
+        'Request/correlation id'
     )) { Assert-FileContains -path $jsPath -needle $needle }
 
-    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section')) {
+    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section', 'cms-audit-controls', 'cms-stable-key-cell')) {
         Assert-FileContains -path $cssPath -needle $needle
     }
 

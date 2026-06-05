@@ -38,7 +38,7 @@ $requiredCmsIds = @(
     "cms-prompt-template-form", "cms-selected-prompt-template-identity", "cms-prompt-template-body", "cms-prompt-template-is-active", "cms-prompt-template-save-button", "cms-prompt-template-reset-button", "cms-prompt-template-message",
     "cms-tutor-profile-form", "cms-selected-tutor-profile-identity", "cms-tutor-profile-display-name", "cms-tutor-profile-communication-style-json", "cms-tutor-profile-safety-notes-json", "cms-tutor-profile-is-active", "cms-tutor-profile-save-button", "cms-tutor-profile-reset-button", "cms-tutor-profile-message",
     "cms-run-validation-button", "cms-validation-result", "cms-load-preview-button", "cms-preview-summary",
-    "cms-load-versions-button", "cms-publish-change-summary", "cms-publish-button", "cms-restore-version-select", "cms-restore-reason", "cms-restore-button", "cms-versions-list", "cms-load-audit-button", "cms-audit-limit", "cms-audit-list"
+    "cms-load-versions-button", "cms-publish-change-summary", "cms-publish-button", "cms-restore-version-select", "cms-restore-reason", "cms-restore-button", "cms-versions-list", "cms-load-audit-button", "cms-audit-entity-type", "cms-audit-stable-key", "cms-audit-limit", "cms-audit-loading", "cms-audit-error", "cms-audit-list"
 )
 $requiredSystemIds = @("capabilities-list")
 
