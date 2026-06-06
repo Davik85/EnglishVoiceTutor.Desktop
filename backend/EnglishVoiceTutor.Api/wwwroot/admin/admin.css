@@ -166,3 +166,9 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
 .cms-go-to-publish-button:hover { background: #065f46; }
 .cms-publish-notice { background: #fffbeb; border: 1px solid #f59e0b; border-left: 5px solid #f59e0b; border-radius: 10px; color: #92400e; font-weight: 700; margin: 8px 0 12px; padding: 10px 12px; }
 .cms-publish-focus { box-shadow: 0 0 0 4px rgba(37, 99, 235, .24); outline: 2px solid #2563eb; outline-offset: 2px; }
+.cms-field-help { font-size: 12px; margin: 4px 0 0; }
+.cms-publish-instructions { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 10px; color: #1e3a8a; font-weight: 700; margin: 8px 0 12px; padding: 10px 12px; }
+.cms-publish-error-details { background: #fef2f2; border: 1px solid #fca5a5; border-left: 5px solid #dc2626; border-radius: 10px; color: #991b1b; margin: 8px 0 12px; padding: 10px 12px; }
+.cms-publish-error-details.hidden { display: none; }
+.cms-publish-error-details ul { margin: 6px 0 0 20px; padding: 0; }
+.cms-publish-error-title { font-weight: 800; margin: 0; }

@@ -36,6 +36,67 @@ function Invoke-JsonPost([string]$Uri, [object]$Body) {
     }
 }
 
+function Get-RestErrorBody([System.Management.Automation.ErrorRecord]$ErrorRecord) {
+    if ($ErrorRecord.ErrorDetails -and -not [string]::IsNullOrWhiteSpace($ErrorRecord.ErrorDetails.Message)) {
+        return [string]$ErrorRecord.ErrorDetails.Message
+    }
+
+    $response = $ErrorRecord.Exception.Response
+    if (-not $response) { return '' }
+
+    $contentProperty = $response.PSObject.Properties['Content']
+    if ($contentProperty -and $contentProperty.Value) {
+        try {
+            return [string]$contentProperty.Value.ReadAsStringAsync().GetAwaiter().GetResult()
+        } catch {
+            try { return [string]$contentProperty.Value.ReadAsStringAsync().Result } catch { }
+        }
+    }
+
+    if ($response.PSObject.Methods.Name -contains 'GetResponseStream') {
+        $stream = $null
+        $reader = $null
+        try {
+            $stream = $response.GetResponseStream()
+            if ($stream) {
+                $reader = New-Object System.IO.StreamReader($stream)
+                return $reader.ReadToEnd()
+            }
+        } finally {
+            if ($reader) { $reader.Dispose() }
+            if ($stream) { $stream.Dispose() }
+        }
+    }
+
+    return ''
+}
+
+function Invoke-JsonPostExpectBadRequest([string]$Uri, [object]$Body) {
+    $json = $Body | ConvertTo-Json -Depth 12
+    try {
+        Invoke-RestMethod -Method Post -Uri $Uri -Headers $jsonHeaders -Body $json -TimeoutSec 120 | Out-Null
+        throw "CMS POST unexpectedly succeeded for $Uri."
+    } catch {
+        $response = $_.Exception.Response
+        if (-not $response -or [int]$response.StatusCode -ne 400) {
+            throw "CMS POST did not return expected HTTP 400 for $Uri. $_"
+        }
+
+        $errorBody = Get-RestErrorBody -ErrorRecord $_
+        if ([string]::IsNullOrWhiteSpace($errorBody)) {
+            throw "CMS POST returned HTTP 400 for $Uri but did not include a readable JSON error body."
+        }
+
+        try {
+            return $errorBody | ConvertFrom-Json
+        } catch {
+            $bodyPreview = $errorBody
+            if ($bodyPreview.Length -gt 500) { $bodyPreview = $bodyPreview.Substring(0, 500) }
+            throw "CMS POST returned HTTP 400 for $Uri but the response body was not valid JSON. Body: $bodyPreview"
+        }
+    }
+}
+
 function Invoke-JsonPut([string]$Uri, [object]$Body) {
     $json = $Body | ConvertTo-Json -Depth 12
     try {
@@ -147,6 +208,13 @@ $validation = Invoke-JsonPost -Uri "$contentPackUrl/validate" -Body @{}
 if (-not $validation.success) {
     $validation | ConvertTo-Json -Depth 12 | Write-Host
     throw 'CMS draft validation failed after bounded smoke update.'
+}
+
+$missingSummaryPublish = Invoke-JsonPostExpectBadRequest -Uri $publishUrl -Body @{ changeSummary = '' }
+$missingSummaryErrors = @($missingSummaryPublish.errors)
+if (-not $missingSummaryPublish -or $missingSummaryPublish.success -or -not ($missingSummaryErrors -contains 'A changeSummary is required when publishing changed draft content.')) {
+    $missingSummaryPublish | ConvertTo-Json -Depth 12 | Write-Host
+    throw 'CMS publish endpoint did not reject changed draft publish without changeSummary using the expected clear error.'
 }
 
 $publish = Invoke-JsonPost -Uri $publishUrl -Body @{ changeSummary = 'Step 5D-6c smoke: publish bounded topic and full scenario JSON update.' }

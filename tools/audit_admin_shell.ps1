@@ -38,7 +38,7 @@ $requiredCmsIds = @(
     "cms-prompt-template-form", "cms-selected-prompt-template-identity", "cms-prompt-template-body", "cms-prompt-template-is-active", "cms-prompt-template-save-button", "cms-prompt-template-reset-button", "cms-prompt-template-message", "cms-prompt-template-publish-discovery",
     "cms-tutor-profile-form", "cms-selected-tutor-profile-identity", "cms-tutor-profile-display-name", "cms-tutor-profile-communication-style-json", "cms-tutor-profile-safety-notes-json", "cms-tutor-profile-is-active", "cms-tutor-profile-save-button", "cms-tutor-profile-reset-button", "cms-tutor-profile-message", "cms-tutor-profile-publish-discovery",
     "cms-run-validation-button", "cms-validation-result", "cms-load-preview-button", "cms-preview-summary",
-    "cms-publish-section", "cms-unpublished-draft-notice", "cms-load-versions-button", "cms-publish-change-summary", "cms-publish-button", "cms-restore-version-select", "cms-restore-reason", "cms-restore-button", "cms-versions-list", "cms-load-audit-button", "cms-audit-entity-type", "cms-audit-stable-key", "cms-audit-limit", "cms-audit-loading", "cms-audit-error", "cms-audit-list"
+    "cms-publish-section", "cms-unpublished-draft-notice", "cms-publish-instructions", "cms-publish-error-details", "cms-load-versions-button", "cms-publish-change-summary", "cms-publish-button", "cms-restore-version-select", "cms-restore-reason", "cms-restore-button", "cms-versions-list", "cms-load-audit-button", "cms-audit-entity-type", "cms-audit-stable-key", "cms-audit-limit", "cms-audit-loading", "cms-audit-error", "cms-audit-list"
 )
 $requiredSystemIds = @("capabilities-list")
 
@@ -51,10 +51,10 @@ $requiredJsEndpoints = @(
     "/api/admin/dev/cms/content-packs/{slug}/validate", "/api/admin/dev/cms/content-packs/{slug}/preview-summary", "/api/admin/dev/cms/content-packs/{slug}/versions", "/api/admin/dev/cms/content-packs/{slug}/publish", "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore", "/api/admin/dev/cms/content-packs/{slug}/audit-entries"
 )
 $requiredJsLookupRefs = @("user-lookup", "premium", "free-lesson", "cms-content")
-$requiredJsFunctionRefs = @("updateSelectedUserHeader", "updateUserRequiredEmptyStates", "applySelectedUserPayload", "clearSelectedUserState", "selectCmsSubTab", "loadCmsContentPacks", "renderCmsContentPackSummary", "renderCmsTopicsTable", "renderCmsScenariosTable", "renderCmsPromptTemplatesTable", "renderCmsTutorProfilesTable", "validateCmsStructuredScenarioInput", "mergeCmsStructuredScenarioFieldsToDefinition", "runCmsValidation", "loadCmsPreviewSummary", "loadCmsVersions", "publishCmsDraft", "restoreCmsVersion", "loadCmsAuditEntries", "renderCmsAuditEntries", "goToCmsPublishSection", "showCmsPublishDiscoveryForMessage")
+$requiredJsFunctionRefs = @("updateSelectedUserHeader", "updateUserRequiredEmptyStates", "applySelectedUserPayload", "clearSelectedUserState", "selectCmsSubTab", "loadCmsContentPacks", "renderCmsContentPackSummary", "renderCmsTopicsTable", "renderCmsScenariosTable", "renderCmsPromptTemplatesTable", "renderCmsTutorProfilesTable", "validateCmsStructuredScenarioInput", "mergeCmsStructuredScenarioFieldsToDefinition", "runCmsValidation", "loadCmsPreviewSummary", "loadCmsVersions", "publishCmsDraft", "restoreCmsVersion", "loadCmsAuditEntries", "renderCmsAuditEntries", "goToCmsPublishSection", "showCmsPublishDiscoveryForMessage", "extractCmsBackendMessages", "renderCmsPublishErrorDetails", "clearCmsPublishErrorDetails")
 $forbiddenJsStorageTokens = @("localStorage", "sessionStorage")
 
-$requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "tab-panel", "selected-user-summary", "empty-state-card", "compact-table", "cms-grid-two", "cms-toolbar", "cms-sub-tabs", "cms-sub-tab-button", "cms-sub-panel", "cms-workspace-grid", "cms-json-output", "cms-selectable-row", "cms-selected-row", "cms-action-column", "cms-select-button", "cms-scenario-structured-editor", "cms-fieldset", "cms-publish-discovery", "cms-publish-notice", "cms-publish-focus")
+$requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "tab-panel", "selected-user-summary", "empty-state-card", "compact-table", "cms-grid-two", "cms-toolbar", "cms-sub-tabs", "cms-sub-tab-button", "cms-sub-panel", "cms-workspace-grid", "cms-json-output", "cms-selectable-row", "cms-selected-row", "cms-action-column", "cms-select-button", "cms-scenario-structured-editor", "cms-fieldset", "cms-publish-discovery", "cms-publish-notice", "cms-publish-instructions", "cms-publish-error-details", "cms-publish-focus")
 
 function Add-Error([string]$message) { $errors.Add($message) }
 
@@ -73,6 +73,9 @@ if (-not (Test-Path -LiteralPath $indexPath)) {
     Add-Error "Missing file: $indexPath"
 } else {
     $indexContent = Get-Content -LiteralPath $indexPath -Raw
+    if ($indexContent.IndexOf('placeholder="Optional summary"', [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+        Add-Error "index.html: publish change summary must not be labelled optional because backend requires changeSummary when changed content is published."
+    }
     $idAttributeRegex = [regex]'\sid\s*=\s*(["''])(?<id>[^"'']+)\1'
     $allIdMatches = $idAttributeRegex.Matches($indexContent)
     $idCounts = @{}
@@ -103,7 +106,7 @@ if (-not (Test-Path -LiteralPath $indexPath)) {
             Add-Error "index.html: missing CMS sub-tab marker '$cmsMarker'."
         }
     }
-    foreach ($publishDiscoveryMarker in @('Draft saved. To apply this content to runtime, publish the current draft.', 'Go to Publish', 'Draft changes are saved but not visible to runtime until published.', 'Publish current draft', 'data-cms-publish-discovery="true"')) {
+    foreach ($publishDiscoveryMarker in @('Draft saved. To apply this content to runtime, publish the current draft.', 'Go to Publish', 'Draft changes are saved but not visible to runtime until published.', '1. Enter a short change summary. 2. Click Publish current draft. 3. Confirm publishing.', 'Publish change summary', 'Required when publishing changed content', 'data-cms-publish-error-details="true"', 'Publish current draft', 'data-cms-publish-discovery="true"')) {
         if ($indexContent.IndexOf($publishDiscoveryMarker, [System.StringComparison]::Ordinal) -lt 0) {
             Add-Error "index.html: missing CMS publish discoverability marker '$publishDiscoveryMarker'."
         }
@@ -133,6 +136,9 @@ if (-not (Test-Path -LiteralPath $jsPath)) {
     }
     if ($jsContent.IndexOf("confirm(", [System.StringComparison]::Ordinal) -lt 0) {
         Add-Error "admin.js: missing publish/restore confirm() safety guard."
+    }
+    if ($jsContent.IndexOf("Enter a publish change summary before publishing changed content.", [System.StringComparison]::Ordinal) -lt 0) {
+        Add-Error "admin.js: missing local publish summary validation message."
     }
     foreach ($forbiddenToken in $forbiddenJsStorageTokens) {
         if ($jsContent.IndexOf($forbiddenToken, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {

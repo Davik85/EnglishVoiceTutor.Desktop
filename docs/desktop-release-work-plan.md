@@ -63,7 +63,7 @@ The desktop hardening block is stable enough to pause external tester handoff an
 
 This priority change does not make public release ready. It does not move production billing forward. Production billing, Paddle production operations, payment editing, entitlement editing, broad user management, mobile-specific CMS, and full production Admin remain deferred.
 
-CMS content MVP planning lives in `docs/CMS_ADMIN_PLANNING.md` and `docs/cms-content-mvp-plan.md`. The clean-machine checklist and package flow below remain required later before actual external tester delivery.
+CMS content MVP planning lives in `docs/CMS_ADMIN_PLANNING.md` and `docs/cms-content-mvp-plan.md`. Admin CMS publish UX note: `Save draft` remains draft-only and shows **Go to Publish** after successful saves; changed-content publishing requires a short change summary and displays backend validation details on failure; learner runtime is unchanged by default, CMS runtime reads only published snapshots when explicitly enabled, and static JSON remains default. The clean-machine checklist and package flow below remain required later before actual external tester delivery.
 
 ## Completed or accepted Phase 5B items
 
