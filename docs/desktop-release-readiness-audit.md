@@ -91,7 +91,7 @@ P1 means the issue blocks MVP user experience or causes major confusion.
 - Conversation Mode needs MVP acceptance for entry/exit, recording UX, auto-send behavior, bot voice auto-play behavior, avatar framing, and small/medium window layout.
 - Lesson Chat has many commands and state transitions; text input, send button, hint, translate, play voice, finish, back, and lesson-complete states need a focused UI pass to remove confusing disabled states or unclear status messages.
 - Release packaging is limited to a tester zip script. There is no signed installer, signing plan, update plan, or documented public download path.
-- CMS/Admin is not ready for public operations. Admin CMS Content now exists for development/admin content editing with refresh resilience and unsaved-change protection, but production RBAC, draft-save audit logging, and approval workflow remain future work. Desktop runtime still uses static JSON by default with CMS reads disabled unless configured and static JSON fallback available.
+- CMS/Admin is not ready for public operations. Admin CMS Content now exists for development/admin content editing with refresh resilience, unsaved-change protection, structured scenario editing, draft-save audit logging, smoke/test audit filtering, required publish summary validation, and a locally verified published-snapshot runtime read path. Production RBAC and approval workflow remain future work. Desktop/runtime content still uses static JSON by default with CMS reads disabled unless configured and static JSON fallback available.
 
 ## P2 polish
 
@@ -110,7 +110,7 @@ P2 means useful improvements that can wait until after first controlled test use
 These should not block the first controlled test release:
 
 - Production Paddle rollout and production billing operations automation.
-- Full CMS implementation, draft/published workflow, rollback, roles, RBAC, and content versioning.
+- Production CMS hardening: roles/RBAC, critical-change approval, external tester handoff readiness, and public-release operations after the development/admin CMS MVP usability refinements.
 - Mobile entitlement bridge for Apple App Store / Google Play.
 - Automatic update infrastructure.
 - Rich analytics dashboards.

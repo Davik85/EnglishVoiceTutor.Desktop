@@ -1,6 +1,6 @@
 # User Settings Endpoints
 
-Review date: 2026-06-01.
+Review date: 2026-06-06.
 
 ## Status
 
@@ -52,4 +52,4 @@ Review date: 2026-06-01.
 
 - Production billing is not ready.
 - Public release is not declared ready.
-- Full CMS/Admin production operations are not implemented. Development/admin Admin CMS Content exists, but production RBAC, CMS draft-save audit logging, and critical-change approval remain future work.
+- Full CMS/Admin production operations are not implemented. Development/admin Admin CMS Content exists, CMS draft-save audit logging is implemented for successful Save draft operations, smoke/test audit entries are hidden by default with a debug checkbox, and production RBAC plus critical-change approval remain future work.

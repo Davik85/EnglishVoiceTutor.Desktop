@@ -1,6 +1,6 @@
 # CMS / Admin Planning
 
-Review date: 2026-06-04.
+Review date: 2026-06-06.
 
 ## Current product decision
 
@@ -22,9 +22,20 @@ Relevant existing foundation:
 - `tools/smoke_admin_foundation.ps1`
 - `tools/audit_admin_shell.ps1`
 
-Current Admin foundation supports development bootstrap admin status/capabilities, user lookup, manual Premium grant/revoke, free lesson allowance reset, audit-action visibility, and the development/admin-only `CMS Content` workspace. The Admin CMS workspace has sub-tabs for Overview, Topics, Scenarios, Prompts, Tutors, Validation & Preview, and Versions & Publish. It supports content pack overview, topic editing, scenario editing, structured scenario editing, full scenario JSON editing, prompt template editing, tutor behavior profile editing, validation/preview summary, and versions/publish/restore flows. It is still not production Admin/CMS, not production RBAC, and not public-release readiness.
+Current Admin foundation supports development bootstrap admin status/capabilities, user lookup, manual Premium grant/revoke, free lesson allowance reset, audit-action visibility, and the development/admin-only `CMS Content` workspace. The Admin CMS workspace has sub-tabs for Overview, Topics, Scenarios, Prompts, Tutors, Validation & Preview, Versions & Publish, and Audit. It supports content pack overview, topic editing, scenario editing, structured scenario editing, advanced full scenario JSON editing, prompt template editing, tutor behavior profile editing, validation/preview summary, versions/publish/restore flows, and read-only recent audit review with smoke/test entries hidden by default. It is still not production Admin/CMS, not production RBAC, and not public-release readiness.
 
-Admin CMS refresh resilience is in place: admin auth survives refresh via the existing admin-only HTTP-only cookie, the JWT remains memory-only in JavaScript, browser Web Storage is not used, the URL hash stores only safe workspace identifiers, and selected user/CMS entities are restored after session validation. Unsaved CMS changes are tracked in memory, show a visible dirty indicator, warn before refresh/navigation/entity switching/logout discards edits, and are not persisted in browser storage or the URL hash. `Save draft` remains explicit and required to persist CMS edits.
+Admin CMS refresh resilience is in place: admin auth survives refresh via the existing admin-only HTTP-only cookie, the JWT remains memory-only in JavaScript, browser Web Storage is not used, the URL hash stores only safe workspace identifiers, and selected user/CMS entities are restored after session validation. Unsaved CMS changes are tracked in memory, show a visible dirty indicator, warn before refresh/navigation/entity switching/logout discards edits, and are not persisted in browser storage or the URL hash. `Save draft` remains explicit and required to persist CMS edits. It persists drafts only, never runtime-visible content; after save the UI tells the admin to publish the current draft and offers **Go to Publish**. Browser publishing requires a change summary for changed-content publishes and shows a clear local validation error when that summary is missing.
+
+
+## Latest completed Admin CMS Content step
+
+The latest development/admin Admin CMS Content step is complete for structured scenario editing, draft-save publish guidance, required publish summary validation, clearer publish errors, smoke/test audit filtering, and the confirmed local CMS runtime published-snapshot read path. Structured scenario fields load from and update canonical `DefinitionJson` while preserving unknown JSON fields; Advanced JSON remains available for rare technical changes. `Format JSON` only pretty-prints, and `Validate JSON` only checks syntax and required scenario fields; neither action saves, publishes, or persists edits.
+
+Publishing remains isolated in **Versions & Publish**. Draft changes are not visible to learner runtime until published. Published versions are immutable, and restore copies a previous published version into a new version instead of mutating old versions.
+
+Local runtime CMS read was confirmed only under explicit development configuration: `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`; backend logs showed `Source=CmsPublishedSnapshot`, `VersionNumber=34`, validation passed, no fallback, and the expected 6 topics, 26 scenarios, 3 prompt templates, and 2 tutor behavior profiles. Static JSON fallback remains available.
+
+This is still a development/admin CMS MVP, not production CMS/RBAC readiness, not critical-change approval readiness, not external tester handoff, and not public release readiness. The next recommended implementation step is Admin CMS scenario editor usability refinement: clearer collapsible sections, editor helper text, and better long scenario editing ergonomics. Production RBAC and critical-change approval come later.
 
 ## CMS/Admin content MVP goal
 
@@ -116,7 +127,7 @@ CMS content lifecycle must include:
 6. Previous published versions can be viewed and restored.
 7. Broken drafts never affect users.
 8. Static JSON remains available as fallback during rollout.
-9. Audit trail records who changed what and when; the current Admin CMS Audit subtab exposes recent draft-save changes as read-only metadata rows with entity type, stable key, and limit filters.
+9. Audit trail records who changed what and when; the current Admin CMS Audit subtab exposes recent draft-save changes as read-only metadata rows with entity type, stable key, and limit filters, hides smoke/test entries by default, and offers a **Show smoke/test entries** checkbox for debugging.
 
 ## Validation requirements
 
