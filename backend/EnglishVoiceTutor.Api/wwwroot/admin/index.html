@@ -229,7 +229,7 @@
                                             <p class="muted">Use structured fields for normal editing. Use Advanced JSON only for rare technical changes. Structured saves update the canonical DefinitionJson while preserving unknown JSON fields.</p>
                                             <p id="cms-scenario-structured-status" class="muted" role="status"></p>
                                             <div class="cms-button-row cms-scenario-structured-save-row" data-cms-scenario-save-area="structured"><button id="cms-scenario-structured-save-button" type="submit">Save draft</button><button id="cms-scenario-structured-reset-button" type="button">Reload selected</button></div>
-                                            <div id="cms-scenario-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true" data-cms-publish-discovery-for="scenario"><span>Draft saved. To apply this content to runtime, publish the current draft.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
+                                            <div id="cms-scenario-structured-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true" data-cms-publish-discovery-for="scenario-structured" data-cms-scenario-draft-saved-visible="false"><span>Draft saved. To apply this content to runtime, publish the current draft.</span><span class="cms-visible-state-marker">Scenario draft saved locally.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
 
                                             <fieldset class="cms-fieldset"><legend>Basic fields</legend>
                                                 <div class="field"><label for="cms-scenario-title">Title</label><input id="cms-scenario-title" name="cms-scenario-title" type="text" /></div>
@@ -277,7 +277,7 @@
                                             <p id="cms-scenario-json-status" class="muted" role="status"></p>
                                         </section>
                                         <div class="cms-button-row" data-cms-scenario-save-area="advanced-json"><button id="cms-scenario-save-button" type="submit">Save draft</button><button id="cms-scenario-reset-button" type="button">Reload selected</button><span id="cms-scenario-dirty-status" class="cms-dirty-status hidden" role="status">Unsaved changes</span></div>
-                                        <div id="cms-scenario-json-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true" data-cms-publish-discovery-for="scenario"><span>Draft saved. To apply this content to runtime, publish the current draft.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
+                                        <div id="cms-scenario-json-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true" data-cms-publish-discovery-for="scenario-advanced-json" data-cms-scenario-draft-saved-visible="false"><span>Draft saved. To apply this content to runtime, publish the current draft.</span><span class="cms-visible-state-marker">Scenario draft saved locally.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
                                         <p id="cms-scenario-message" class="success" role="status"></p>
                                     </form>
                                 </article>
@@ -373,6 +373,7 @@
                                 </div>
                                 <p id="cms-audit-loading" class="audit-loading hidden" role="status">Loading CMS audit entries...</p>
                                 <p id="cms-audit-error" class="error" role="alert"></p>
+                                <p id="cms-audit-smoke-filter-status" class="muted cms-audit-smoke-filter-status" role="status" data-cms-smoke-visible-text="Smoke/test entries visible.">Smoke/test entries hidden.</p>
                                 <div id="cms-audit-list" class="table-wrap cms-wide-table-wrap" data-cms-audit-list="true"></div>
                             </article>
                         </section>

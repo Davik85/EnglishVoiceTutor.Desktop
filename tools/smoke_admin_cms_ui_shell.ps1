@@ -65,8 +65,8 @@ if ($errors.Count -eq 0) {
         'cms-publish-button',
         'Publish current draft',
         'cms-topic-publish-discovery',
-        'cms-scenario-publish-discovery',
-        'cms-scenario-json-publish-discovery',
+        'cms-scenario-structured-publish-discovery',
+        'cms-scenario-structured-publish-discovery', 'cms-scenario-json-publish-discovery',
         'cms-prompt-template-publish-discovery',
         'cms-tutor-profile-publish-discovery',
         'Draft saved. To apply this content to runtime, publish the current draft.',
@@ -142,7 +142,7 @@ if ($errors.Count -eq 0) {
         'No CMS audit entries match the selected filters.',
         'Request/correlation id',
         'goToCmsPublishSection',
-        'showCmsPublishDiscoveryForMessage',
+        'showScenarioDraftSavedPublishCallouts',
         'CmsSubTabs.versionsPublish',
         'Use Go to Publish to open Versions & Publish',
         'extractCmsBackendMessages',
@@ -158,16 +158,25 @@ if ($errors.Count -eq 0) {
         'shouldShowCmsSmokeAuditEntries'
     )) { Assert-FileContains -path $jsPath -needle $needle }
 
-    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section', 'cms-scenario-structured-editor', 'cms-fieldset', 'cms-audit-controls', 'cms-stable-key-cell', 'cms-publish-discovery', 'cms-publish-notice', 'cms-publish-instructions', 'cms-publish-error-details', 'cms-publish-focus', 'cms-scenario-structured-save-row', 'cms-audit-smoke-toggle')) {
+    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section', 'cms-scenario-structured-editor', 'cms-fieldset', 'cms-audit-controls', 'cms-stable-key-cell', 'cms-publish-discovery', 'cms-publish-notice', 'cms-publish-instructions', 'cms-publish-error-details', 'cms-publish-focus', 'cms-scenario-structured-save-row', 'cms-audit-smoke-toggle', 'cms-audit-smoke-filter-status', 'cms-visible-state-marker')) {
         Assert-FileContains -path $cssPath -needle $needle
     }
 
 
-    $scenarioStructuredPattern = [regex]'id="cms-scenario-structured-save-button"[\s\S]*?id="cms-scenario-publish-discovery"[\s\S]*?Go to Publish'
+    $scenarioStructuredPattern = [regex]'id="cms-scenario-structured-save-button"[\s\S]*?id="cms-scenario-structured-publish-discovery"[\s\S]*?Go to Publish'
     if (-not $scenarioStructuredPattern.IsMatch((Get-Content -LiteralPath $indexPath -Raw))) { Add-Error 'index.html: scenario structured save area is not followed by a local Go to Publish callout.' }
     $scenarioJsonPattern = [regex]'data-cms-scenario-save-area="advanced-json"[\s\S]*?id="cms-scenario-json-publish-discovery"[\s\S]*?Go to Publish'
     if (-not $scenarioJsonPattern.IsMatch((Get-Content -LiteralPath $indexPath -Raw))) { Add-Error 'index.html: scenario Advanced JSON save area is not followed by a local Go to Publish callout.' }
     $jsSource = Get-Content -LiteralPath $jsPath -Raw
+
+    foreach ($explicitScenarioCallout in @('id="cms-scenario-structured-publish-discovery"', 'id="cms-scenario-json-publish-discovery"', 'data-cms-scenario-draft-saved-visible="false"')) {
+        if ((Get-Content -LiteralPath $indexPath -Raw).IndexOf($explicitScenarioCallout, [System.StringComparison]::Ordinal) -lt 0) { Add-Error "index.html: missing explicit scenario callout marker '$explicitScenarioCallout'." }
+    }
+    if ($jsSource.IndexOf('showScenarioDraftSavedPublishCallouts', [System.StringComparison]::Ordinal) -lt 0 -or $jsSource.IndexOf('cmsScenarioStructuredPublishDiscoveryElement', [System.StringComparison]::Ordinal) -lt 0 -or $jsSource.IndexOf('cmsScenarioJsonPublishDiscoveryElement', [System.StringComparison]::Ordinal) -lt 0) { Add-Error 'admin.js: missing explicit function that directly shows both scenario publish callouts.' }
+    if ($jsSource.IndexOf('JSON.stringify({ changeSummary: summary })', [System.StringComparison]::Ordinal) -lt 0) { Add-Error 'admin.js: publish request payload must send changeSummary.' }
+    if ($jsSource.IndexOf('String(entry?.reason || entry?.Reason || "").toLowerCase()', [System.StringComparison]::Ordinal) -lt 0 -or $jsSource.IndexOf('reason.includes("smoke")', [System.StringComparison]::Ordinal) -lt 0) { Add-Error 'admin.js: audit smoke filter must check reason case-insensitively for smoke.' }
+    if ($jsSource.IndexOf('cmsAuditShowSmokeInput.addEventListener("change"', [System.StringComparison]::Ordinal) -lt 0 -or $jsSource.IndexOf('updateCmsAuditSmokeFilterStatus(); await loadCmsAuditEntries();', [System.StringComparison]::Ordinal) -lt 0) { Add-Error 'admin.js: audit checkbox change handler must reload visible audit entries.' }
+
     if ($jsSource.IndexOf('if (!summary)', [System.StringComparison]::Ordinal) -lt 0 -or $jsSource.IndexOf('adminFetch(cmsPath(ApiPaths.cmsPublishTemplate', [System.StringComparison]::Ordinal) -lt $jsSource.IndexOf('if (!summary)', [System.StringComparison]::Ordinal)) { Add-Error 'admin.js: publish summary validation must happen before the publish API call.' }
     if ($jsSource.IndexOf('Publish failed', [System.StringComparison]::Ordinal) -lt 0 -or $jsSource.IndexOf('source.title', [System.StringComparison]::Ordinal) -lt 0 -or $jsSource.IndexOf('validation?.errors', [System.StringComparison]::Ordinal) -lt 0) { Add-Error 'admin.js: publish error rendering must include detailed backend fields, not only the generic invalid request message.' }
 

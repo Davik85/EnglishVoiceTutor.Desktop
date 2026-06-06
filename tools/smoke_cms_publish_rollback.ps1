@@ -164,7 +164,7 @@ if ($smokeDescription -eq $originalDescription) {
 
 $updateBody = @{
     description = $smokeDescription
-    reason = 'Step 5D-6c smoke: bounded topic description update before publish.'
+    reason = 'SMOKE: Step 5D-6c bounded topic description update before publish.'
 }
 $update = Invoke-JsonPut -Uri "$contentPackUrl/topics/$($topic.id)" -Body $updateBody
 if (-not $update.success -or $update.noChanges) {
@@ -197,7 +197,7 @@ $scenarioUpdate = Invoke-JsonPut -Uri $scenarioDetailUrl -Body @{
     setupMessage = $scenarioDetail.setupMessage
     definitionJson = $scenarioDefinitionJson
     isActive = $scenarioDetail.isActive
-    reason = 'Step 5D-6c smoke: full scenario JSON update before publish.'
+    reason = 'SMOKE: Step 5D-6c full scenario JSON update before publish.'
 }
 if (-not $scenarioUpdate.success) {
     $scenarioUpdate | ConvertTo-Json -Depth 12 | Write-Host
@@ -217,7 +217,7 @@ if (-not $missingSummaryPublish -or $missingSummaryPublish.success -or -not ($mi
     throw 'CMS publish endpoint did not reject changed draft publish without changeSummary using the expected clear error.'
 }
 
-$publish = Invoke-JsonPost -Uri $publishUrl -Body @{ changeSummary = 'Step 5D-6c smoke: publish bounded topic and full scenario JSON update.' }
+$publish = Invoke-JsonPost -Uri $publishUrl -Body @{ changeSummary = 'SMOKE: Step 5D-6c publish bounded topic and full scenario JSON update.' }
 if (-not $publish.success -or -not $publish.created -or $publish.noChanges) {
     $publish | ConvertTo-Json -Depth 12 | Write-Host
     throw 'CMS publish endpoint did not create a changed published version.'
@@ -253,7 +253,7 @@ if (-not $publishedVersion -or $publishedVersion.snapshotHash -ne $publish.snaps
 }
 
 $restore = Invoke-JsonPost -Uri "$versionsUrl/$previousVersionNumber/restore" -Body @{
-    reason = 'Step 5D-6c smoke: restore previous published version after full scenario JSON update.'
+    reason = 'SMOKE: Step 5D-6c restore previous published version after full scenario JSON update.'
     publishRestoredVersion = $true
 }
 if (-not $restore.success -or -not $restore.draftRestored) {

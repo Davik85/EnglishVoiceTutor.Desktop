@@ -228,6 +228,8 @@
     const cmsScenarioResetButton = document.getElementById("cms-scenario-reset-button");
     const cmsScenarioStructuredResetButton = document.getElementById("cms-scenario-structured-reset-button");
     const cmsScenarioMessageElement = document.getElementById("cms-scenario-message");
+    const cmsScenarioStructuredPublishDiscoveryElement = document.getElementById("cms-scenario-structured-publish-discovery");
+    const cmsScenarioJsonPublishDiscoveryElement = document.getElementById("cms-scenario-json-publish-discovery");
     const cmsScenarioDirtyStatusElement = document.getElementById("cms-scenario-dirty-status");
     const cmsPromptTemplateForm = document.getElementById("cms-prompt-template-form");
     const cmsPromptTemplateBodyInput = document.getElementById("cms-prompt-template-body");
@@ -265,6 +267,7 @@
     const cmsAuditShowSmokeInput = document.getElementById("cms-audit-show-smoke");
     const cmsAuditLoadingElement = document.getElementById("cms-audit-loading");
     const cmsAuditErrorElement = document.getElementById("cms-audit-error");
+    const cmsAuditSmokeFilterStatusElement = document.getElementById("cms-audit-smoke-filter-status");
     const cmsAuditListElement = document.getElementById("cms-audit-list");
 
     function getHashParameters() {
@@ -942,18 +945,38 @@
     function setCmsAuditError(message) { cmsAuditErrorElement.textContent = message || ""; }
     function setCmsAuditLoading(isLoading) { cmsAuditLoadingElement.classList.toggle("hidden", !isLoading); cmsLoadAuditButton.disabled = isLoading; }
     function setCmsEntityMessage(element, message, isError) { element.className = isError ? "error" : "success"; element.textContent = message || ""; }
-    function hideCmsPublishDiscovery(options = {}) { cmsPublishDiscoveryElements.forEach((element) => element.classList.add("hidden")); if (options.clearDraftSaved) { cmsDraftSavedInSession = false; cmsDraftLikelyHasChangesInSession = false; } }
+    function hideCmsPublishDiscovery(options = {}) {
+        cmsPublishDiscoveryElements.forEach((element) => {
+            element.classList.add("hidden");
+            if (element.hasAttribute("data-cms-scenario-draft-saved-visible")) { element.dataset.cmsScenarioDraftSavedVisible = "false"; }
+        });
+        if (options.clearDraftSaved) { cmsDraftSavedInSession = false; cmsDraftLikelyHasChangesInSession = false; }
+    }
+    function showScenarioDraftSavedPublishCallouts(draftLikelyHasChanges = true) {
+        cmsDraftSavedInSession = true;
+        cmsDraftLikelyHasChangesInSession = Boolean(draftLikelyHasChanges);
+        [cmsScenarioStructuredPublishDiscoveryElement, cmsScenarioJsonPublishDiscoveryElement].forEach((element) => {
+            if (!element) { return; }
+            element.classList.remove("hidden");
+            element.hidden = false;
+            element.style.removeProperty("display");
+            element.dataset.cmsScenarioDraftSavedVisible = "true";
+        });
+    }
     function showCmsPublishDiscoveryForMessage(messageElement, draftLikelyHasChanges = true) {
         cmsDraftSavedInSession = true;
         cmsDraftLikelyHasChangesInSession = Boolean(draftLikelyHasChanges);
+        if (messageElement === cmsScenarioMessageElement) {
+            showScenarioDraftSavedPublishCallouts(draftLikelyHasChanges);
+            return;
+        }
         cmsPublishDiscoveryElements.forEach((element) => {
-            const isScenarioCallout = messageElement === cmsScenarioMessageElement && element.dataset.cmsPublishDiscoveryFor === "scenario";
-            const isMatch = isScenarioCallout || element.previousElementSibling === messageElement;
+            const isMatch = element.previousElementSibling === messageElement;
             element.classList.toggle("hidden", !isMatch);
         });
     }
     async function goToCmsPublishSection() {
-        setCmsError(""); clearCmsPublishErrorDetails();
+        setCmsError(""); setCmsSuccess(""); clearCmsPublishErrorDetails();
         activateTab(Tabs.cmsContent);
         selectCmsSubTab(CmsSubTabs.versionsPublish, true);
         try { await loadCmsVersions(); } catch (error) { handleCmsError(error); }
@@ -1071,8 +1094,16 @@
     function getSelectedCmsAuditLimit() { const limit = Number.parseInt(cmsAuditLimitSelect.value, 10); return [10, 25, 50, 100].includes(limit) ? limit : 25; }
     function shouldShowCmsSmokeAuditEntries() { return Boolean(cmsAuditShowSmokeInput?.checked); }
     function isCmsSmokeAuditEntry(entry) {
-        const reason = String(entry?.reason || "").toLowerCase();
-        return reason.includes("smoke") || reason.includes("cms draft-save audit smoke") || reason.includes("cms structured scenario editor smoke");
+        const reason = String(entry?.reason || entry?.Reason || "").toLowerCase();
+        return reason.includes("smoke");
+    }
+    function getVisibleCmsAuditEntries(entries) {
+        const filteredEntries = shouldShowCmsSmokeAuditEntries() ? entries : entries.filter((entry) => !isCmsSmokeAuditEntry(entry));
+        return filteredEntries.slice(0, getSelectedCmsAuditLimit());
+    }
+    function updateCmsAuditSmokeFilterStatus() {
+        if (!cmsAuditSmokeFilterStatusElement) { return; }
+        cmsAuditSmokeFilterStatusElement.textContent = shouldShowCmsSmokeAuditEntries() ? "Smoke/test entries visible." : "Smoke/test entries hidden.";
     }
 
     function appendCmsBackendMessages(target, values, prefix) {
@@ -1145,6 +1176,8 @@
     function selectCmsSubTab(tabId, force = false) {
         const selectedTabId = isKnownCmsSubTab(tabId) ? tabId : CmsSubTabs.overview;
         if (!force && selectedTabId !== getHashCmsSubTab() && !confirmDiscardUnsavedChanges()) { return; }
+        if (selectedTabId === CmsSubTabs.versionsPublish) { clearCmsPublishErrorDetails(); setCmsError(""); }
+        if (selectedTabId === CmsSubTabs.audit) { updateCmsAuditSmokeFilterStatus(); }
         updateAdminHash(getCurrentActiveTab(), selectedTabId);
         cmsSubTabButtons.forEach((button) => {
             const isActive = button.dataset.cmsSubTabId === selectedTabId;
@@ -1332,11 +1365,17 @@
         if (!cmsSelectedTopic) { setCmsEntityMessage(cmsTopicMessageElement, "Select a topic first.", true); return; }
         await saveCmsDraft(ApiPaths.cmsTopicTemplate, { topicId: cmsSelectedTopic.id }, { title: cmsTopicTitleInput.value, description: cmsTopicDescriptionInput.value, sortOrder: Number(cmsTopicSortOrderInput.value || 0), isActive: cmsTopicIsActiveInput.checked, reason: "Admin CMS UI shell draft edit" }, cmsTopicMessageElement, loadCmsTopics, () => selectCmsTopic(cmsSelectedTopic));
     }
-    async function saveCmsScenarioDraft() {
+    async function saveCmsScenarioDraft(submitter = null) {
         if (!cmsSelectedScenario) { setCmsEntityMessage(cmsScenarioMessageElement, "Select a scenario first.", true); return; }
-        if (!validateCmsStructuredScenarioInput()) { setCmsEntityMessage(cmsScenarioMessageElement, "Save draft blocked: fix structured scenario fields first.", true); return; }
-        if (!validateCmsScenarioJsonInput()) { setCmsEntityMessage(cmsScenarioMessageElement, "Save draft blocked: fix Advanced JSON first.", true); return; }
-        await saveCmsDraft(ApiPaths.cmsScenarioTemplate, { scenarioId: cmsSelectedScenario.id }, { title: cmsScenarioTitleInput.value, description: cmsScenarioDescriptionInput.value, setupMessage: cmsScenarioSetupMessageInput.value, definitionJson: cmsScenarioDefinitionJsonInput.value, structuredScenarioFieldsEdited: true, isActive: cmsScenarioIsActiveInput.checked, reason: "Admin CMS UI shell structured scenario draft edit" }, cmsScenarioMessageElement, loadCmsScenarios, () => selectCmsScenario(cmsSelectedScenario));
+        const isAdvancedJsonSave = submitter?.id === "cms-scenario-save-button";
+        if (isAdvancedJsonSave) {
+            if (!validateCmsScenarioJsonInput()) { setCmsEntityMessage(cmsScenarioMessageElement, "Save draft blocked: fix Advanced JSON first.", true); return; }
+        } else {
+            if (!validateCmsStructuredScenarioInput()) { setCmsEntityMessage(cmsScenarioMessageElement, "Save draft blocked: fix structured scenario fields first.", true); return; }
+            if (!validateCmsScenarioJsonInput()) { setCmsEntityMessage(cmsScenarioMessageElement, "Save draft blocked: fix Advanced JSON first.", true); return; }
+        }
+        await saveCmsDraft(ApiPaths.cmsScenarioTemplate, { scenarioId: cmsSelectedScenario.id }, { title: cmsScenarioTitleInput.value, description: cmsScenarioDescriptionInput.value, setupMessage: cmsScenarioSetupMessageInput.value, definitionJson: cmsScenarioDefinitionJsonInput.value, structuredScenarioFieldsEdited: !isAdvancedJsonSave, isActive: cmsScenarioIsActiveInput.checked, reason: isAdvancedJsonSave ? "Admin CMS UI shell advanced JSON scenario draft edit" : "Admin CMS UI shell structured scenario draft edit" }, cmsScenarioMessageElement, loadCmsScenarios, () => selectCmsScenario(cmsSelectedScenario));
+        showScenarioDraftSavedPublishCallouts(true);
     }
     async function saveCmsPromptTemplateDraft() {
         if (!cmsSelectedPromptTemplate) { setCmsEntityMessage(cmsPromptTemplateMessageElement, "Select a prompt template first.", true); return; }
@@ -1371,6 +1410,7 @@
         catch (error) { handleCmsError(error); return null; }
     }
     async function loadCmsVersions() {
+        clearCmsPublishErrorDetails();
         const versionsPayload = await adminFetch(cmsPath(ApiPaths.cmsVersionsTemplate, { slug: getSelectedCmsSlug() }));
         const versions = Array.isArray(versionsPayload?.versions) ? versionsPayload.versions : [];
         renderCmsVersions(versions); return versionsPayload;
@@ -1380,7 +1420,7 @@
         setCmsAuditLoading(true);
         try {
             const requestedLimit = getSelectedCmsAuditLimit();
-            const queryLimit = shouldShowCmsSmokeAuditEntries() ? requestedLimit : 100;
+            const queryLimit = Math.max(100, requestedLimit);
             const query = new URLSearchParams({ limit: String(queryLimit) });
             const entityType = cmsAuditEntityTypeSelect.value.trim();
             const stableKey = cmsAuditStableKeyInput.value.trim();
@@ -1401,7 +1441,8 @@
         }
     }
     function renderCmsAuditEntries(entries) {
-        const visibleEntries = (shouldShowCmsSmokeAuditEntries() ? entries : entries.filter((entry) => !isCmsSmokeAuditEntry(entry))).slice(0, getSelectedCmsAuditLimit());
+        updateCmsAuditSmokeFilterStatus();
+        const visibleEntries = getVisibleCmsAuditEntries(entries);
         const rows = visibleEntries.map((entry) => Object.assign({}, entry, {
             actor: entry.actorEmail || entry.actorUserId || "-",
             changedFieldList: (entry.changedFields || []).join(", ") || "-",
@@ -1489,7 +1530,7 @@
     cmsScenarioTopicFilterSelect.addEventListener("change", () => { renderCmsScenariosTable(); });
     cmsTopicForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsTopicDraft(); });
     cmsTopicResetButton.addEventListener("click", async () => { if (cmsSelectedTopic) { await selectCmsTopic(cmsSelectedTopic); } });
-    cmsScenarioForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsScenarioDraft(); });
+    cmsScenarioForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsScenarioDraft(event.submitter); });
     cmsScenarioResetButton.addEventListener("click", async () => { if (cmsSelectedScenario) { await selectCmsScenario(cmsSelectedScenario); } });
     cmsScenarioStructuredResetButton.addEventListener("click", async () => { if (cmsSelectedScenario) { await selectCmsScenario(cmsSelectedScenario); } });
     cmsScenarioFormatJsonButton.addEventListener("click", () => { formatCmsScenarioJsonInput(); });
@@ -1501,11 +1542,12 @@
     cmsRunValidationButton.addEventListener("click", async () => { await runCmsValidation(); });
     cmsLoadPreviewButton.addEventListener("click", async () => { await loadCmsPreviewSummary(); });
     cmsLoadVersionsButton.addEventListener("click", async () => { try { await loadCmsVersions(); setCmsSuccess("CMS versions loaded."); } catch (error) { handleCmsError(error); } });
+    cmsPublishChangeSummaryInput.addEventListener("input", () => { clearCmsPublishErrorDetails(); setCmsError(""); });
     cmsLoadAuditButton.addEventListener("click", async () => { await loadCmsAuditEntries(); });
     cmsAuditEntityTypeSelect.addEventListener("change", async () => { await loadCmsAuditEntries(); });
     cmsAuditStableKeyInput.addEventListener("keydown", async (event) => { if (event.key === "Enter") { event.preventDefault(); await loadCmsAuditEntries(); } });
     cmsAuditLimitSelect.addEventListener("change", async () => { await loadCmsAuditEntries(); });
-    cmsAuditShowSmokeInput.addEventListener("change", async () => { await loadCmsAuditEntries(); });
+    cmsAuditShowSmokeInput.addEventListener("change", async () => { updateCmsAuditSmokeFilterStatus(); await loadCmsAuditEntries(); });
     cmsPublishButton.addEventListener("click", async () => { await publishCmsDraft(); });
     cmsRestoreButton.addEventListener("click", async () => { await restoreCmsVersion(); });
     [cmsTopicTitleInput, cmsTopicDescriptionInput, cmsTopicSortOrderInput, cmsTopicIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("topic")));
