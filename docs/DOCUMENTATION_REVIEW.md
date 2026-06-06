@@ -31,7 +31,7 @@ Docs were synchronized to record the current accepted state:
 - Latest confirmed EF migration is `20260604121000_AddCmsDraftSaveAuditMetadata`.
 - Current smoke/audit scripts include the desktop release gate, lesson/localization/backend-boundary audits, single active lesson guard smoke, Paddle smokes, Admin smokes, and CMS content foundation smokes/audits.
 - Admin CMS Content under `/admin/` now documents refresh resilience, selected user/entity restore, memory-only JWT, existing admin-only HTTP-only cookie refresh auth, safe URL hash identifiers only, no Web Storage use, in-memory unsaved-change tracking, explicit `Save draft`, and static JSON fallback.
-- Admin CMS Content now documents content pack overview, topic/scenario/prompt template/tutor behavior profile editing, structured scenario editing, advanced full scenario JSON editing, validation/preview summary, versions/publish/restore flow, required publish summaries, draft-save publish discoverability, audit filtering, and the exact non-persisting meaning of `Format JSON` and `Validate JSON`.
+- Admin CMS Content now documents content pack overview, topic/scenario/prompt template/tutor behavior profile editing, Step 5D-6e Scenarios editor usability refinement (local Jump to navigation, collapsible/visually separated structured sections, helper text, structured fields as the normal path, and Advanced JSON as a technical fallback), validation/preview summary, versions/publish/restore flow, required publish summaries, draft-save publish discoverability, immutable published-version history/restore-as-new-version behavior, audit filtering, and the exact non-persisting meaning of `Format JSON` and `Validate JSON`.
 
 ## Intentionally deferred documentation topics
 
@@ -49,7 +49,7 @@ Update documentation again after any of these future events:
 - production backend URL/configuration is approved for a broader release;
 - production Paddle billing is configured and manually smoke-tested;
 - refund/chargeback/revocation/reconciliation behavior is implemented;
-- Admin CMS scenario editor usability refinement is completed after the structured editor foundation;
+- Admin CMS Validation & Preview/content QA workflow ergonomics are refined after the completed Step 5D-6e scenario editor usability work;
 - production RBAC and later CMS critical-change approval workflow are approved or implemented;
 - installer/signing/update/distribution path is selected;
 - Study languages, Interface languages, or Native/Explanation catalog changes are explicitly approved.
