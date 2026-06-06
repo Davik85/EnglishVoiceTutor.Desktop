@@ -189,6 +189,8 @@ builder.Services.AddScoped<IAdminAuditLogService, AdminAuditLogService>();
 builder.Services.AddScoped<ICmsContentValidationService, CmsContentValidationService>();
 builder.Services.AddScoped<ICmsContentImportService, CmsContentImportService>();
 builder.Services.AddScoped<ICmsPublishedContentService, CmsPublishedContentService>();
+
+builder.Services.AddScoped<ICmsRuntimeLessonContentService, CmsRuntimeLessonContentService>();
 builder.Services.AddScoped<ICmsContentAdminService, CmsContentAdminService>();
 builder.Services.AddScoped<ICmsContentPublishingService, CmsContentPublishingService>();
 

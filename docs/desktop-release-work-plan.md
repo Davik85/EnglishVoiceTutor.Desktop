@@ -174,3 +174,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
 ## Public release status
 
 Public release is not declared ready. This work plan supports continued controlled desktop hardening and tester packaging only. External tester handoff is paused until CMS/Admin content MVP foundation is ready enough for practical content changes without code edits; the clean-machine checklist remains later before actual external tester delivery.
+
+
+## CMS runtime gate before tester handoff
+
+External tester handoff remains paused until the controlled CMS runtime read path is verified. The desktop UI and packaged static lesson/prompt/tutor files remain unchanged for this step. Backend runtime content continues to use static JSON unless `CmsContent:UsePublishedSnapshotForRuntime=true` and `CmsContent:ReadPublishedSnapshotEnabled=true` are explicitly configured. The admin/development diagnostic `/api/admin/dev/cms/runtime-content/status` and `tools/smoke_cms_runtime_content_read.ps1` should be used to prove published snapshot reads, expected counts, valid hash, and no fallback on the happy path before tester packaging resumes.

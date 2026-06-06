@@ -8,6 +8,8 @@ public sealed class CmsContentOptions
 
     public bool ReadPublishedSnapshotEnabled { get; set; } = false;
 
+    public bool UsePublishedSnapshotForRuntime { get; set; } = false;
+
     public string ContentPackSlug { get; set; } = CmsContentConstants.StaticImport.ContentPackSlug;
 
     public bool FallbackToStaticJson { get; set; } = true;
