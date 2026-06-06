@@ -36,6 +36,25 @@ function Invoke-JsonPost([string]$Uri, [object]$Body) {
     }
 }
 
+function Invoke-JsonPostExpectBadRequest([string]$Uri, [object]$Body) {
+    $json = $Body | ConvertTo-Json -Depth 12
+    try {
+        Invoke-RestMethod -Method Post -Uri $Uri -Headers $jsonHeaders -Body $json -TimeoutSec 120 | Out-Null
+        throw "CMS POST unexpectedly succeeded for $Uri."
+    } catch {
+        $response = $_.Exception.Response
+        if (-not $response -or [int]$response.StatusCode -ne 400) {
+            throw "CMS POST did not return expected HTTP 400 for $Uri. $_"
+        }
+
+        if ($_.ErrorDetails -and -not [string]::IsNullOrWhiteSpace($_.ErrorDetails.Message)) {
+            return $_.ErrorDetails.Message | ConvertFrom-Json
+        }
+
+        throw "CMS POST returned HTTP 400 for $Uri but did not include a readable JSON error body."
+    }
+}
+
 function Invoke-JsonPut([string]$Uri, [object]$Body) {
     $json = $Body | ConvertTo-Json -Depth 12
     try {
@@ -147,6 +166,13 @@ $validation = Invoke-JsonPost -Uri "$contentPackUrl/validate" -Body @{}
 if (-not $validation.success) {
     $validation | ConvertTo-Json -Depth 12 | Write-Host
     throw 'CMS draft validation failed after bounded smoke update.'
+}
+
+$missingSummaryPublish = Invoke-JsonPostExpectBadRequest -Uri $publishUrl -Body @{ changeSummary = '' }
+$missingSummaryErrors = @($missingSummaryPublish.errors)
+if (-not $missingSummaryPublish -or $missingSummaryPublish.success -or -not ($missingSummaryErrors -contains 'A changeSummary is required when publishing changed draft content.')) {
+    $missingSummaryPublish | ConvertTo-Json -Depth 12 | Write-Host
+    throw 'CMS publish endpoint did not reject changed draft publish without changeSummary using the expected clear error.'
 }
 
 $publish = Invoke-JsonPost -Uri $publishUrl -Body @{ changeSummary = 'Step 5D-6c smoke: publish bounded topic and full scenario JSON update.' }

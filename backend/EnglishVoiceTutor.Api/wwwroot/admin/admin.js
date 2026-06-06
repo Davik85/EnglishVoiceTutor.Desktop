@@ -77,6 +77,7 @@
     let tabsInitialized = false;
     let restoringCmsSelection = false;
     let cmsDraftSavedInSession = false;
+    let cmsDraftLikelyHasChangesInSession = false;
 
     const loginCard = document.getElementById("login-card");
     const dashboard = document.getElementById("dashboard");
@@ -249,6 +250,7 @@
     const cmsPreviewSummaryElement = document.getElementById("cms-preview-summary");
     const cmsLoadVersionsButton = document.getElementById("cms-load-versions-button");
     const cmsPublishChangeSummaryInput = document.getElementById("cms-publish-change-summary");
+    const cmsPublishErrorDetailsElement = document.getElementById("cms-publish-error-details");
     const cmsPublishButton = document.getElementById("cms-publish-button");
     const cmsRestoreVersionSelect = document.getElementById("cms-restore-version-select");
     const cmsRestoreReasonInput = document.getElementById("cms-restore-reason");
@@ -920,19 +922,35 @@
     function setCmsLoading(isLoading) { cmsLoadingElement.classList.toggle("hidden", !isLoading); }
     function setCmsError(message) { cmsErrorElement.textContent = message || ""; }
     function setCmsSuccess(message) { cmsSuccessElement.textContent = message || ""; }
+    function clearCmsPublishErrorDetails() { if (cmsPublishErrorDetailsElement) { cmsPublishErrorDetailsElement.textContent = ""; cmsPublishErrorDetailsElement.classList.add("hidden"); } }
+    function renderCmsPublishErrorDetails(errorOrPayload) {
+        if (!cmsPublishErrorDetailsElement) { return; }
+        const details = extractCmsBackendMessages(errorOrPayload);
+        cmsPublishErrorDetailsElement.textContent = "";
+        if (details.length === 0) { cmsPublishErrorDetailsElement.classList.add("hidden"); return; }
+        const title = document.createElement("p");
+        title.className = "cms-publish-error-title";
+        title.textContent = "Publish validation details:";
+        const list = document.createElement("ul");
+        details.forEach((detail) => { const item = document.createElement("li"); item.textContent = detail; list.appendChild(item); });
+        cmsPublishErrorDetailsElement.appendChild(title);
+        cmsPublishErrorDetailsElement.appendChild(list);
+        cmsPublishErrorDetailsElement.classList.remove("hidden");
+    }
     function setCmsAuditError(message) { cmsAuditErrorElement.textContent = message || ""; }
     function setCmsAuditLoading(isLoading) { cmsAuditLoadingElement.classList.toggle("hidden", !isLoading); cmsLoadAuditButton.disabled = isLoading; }
     function setCmsEntityMessage(element, message, isError) { element.className = isError ? "error" : "success"; element.textContent = message || ""; }
-    function hideCmsPublishDiscovery() { cmsPublishDiscoveryElements.forEach((element) => element.classList.add("hidden")); }
-    function showCmsPublishDiscoveryForMessage(messageElement) {
+    function hideCmsPublishDiscovery(options = {}) { cmsPublishDiscoveryElements.forEach((element) => element.classList.add("hidden")); if (options.clearDraftSaved) { cmsDraftSavedInSession = false; cmsDraftLikelyHasChangesInSession = false; } }
+    function showCmsPublishDiscoveryForMessage(messageElement, draftLikelyHasChanges = true) {
         cmsDraftSavedInSession = true;
+        cmsDraftLikelyHasChangesInSession = Boolean(draftLikelyHasChanges);
         cmsPublishDiscoveryElements.forEach((element) => {
             const isMatch = element.previousElementSibling === messageElement;
             element.classList.toggle("hidden", !isMatch);
         });
     }
     async function goToCmsPublishSection() {
-        setCmsError("");
+        setCmsError(""); clearCmsPublishErrorDetails();
         activateTab(Tabs.cmsContent);
         selectCmsSubTab(CmsSubTabs.versionsPublish, true);
         try { await loadCmsVersions(); } catch (error) { handleCmsError(error); }
@@ -1048,6 +1066,27 @@
     function formatShortHash(hash) { const value = String(hash || ""); return value.length > 16 ? `${value.slice(0, 12)}...${value.slice(-4)}` : formatValue(value); }
     function getSelectedCmsAuditLimit() { const limit = Number.parseInt(cmsAuditLimitSelect.value, 10); return [10, 25, 50, 100].includes(limit) ? limit : 25; }
 
+    function appendCmsBackendMessages(target, values, prefix) {
+        if (!Array.isArray(values)) { return; }
+        values.forEach((value) => {
+            const text = String(value || "").trim();
+            if (text) { target.push(prefix ? `${prefix}: ${text}` : text); }
+        });
+    }
+    function extractCmsBackendMessages(payload) {
+        const source = payload?.cmsPayload || payload;
+        const details = Array.isArray(payload?.cmsDetails) ? [...payload.cmsDetails] : [];
+        if (source) {
+            appendCmsBackendMessages(details, source.errors, "Error");
+            appendCmsBackendMessages(details, source.warnings, "Warning");
+            appendCmsBackendMessages(details, source.validation?.errors, "Validation error");
+            appendCmsBackendMessages(details, source.validation?.warnings, "Validation warning");
+            if (source.error) { details.push(String(source.error)); }
+            if (source.message) { details.push(String(source.message)); }
+        }
+        return [...new Set(details.map((detail) => String(detail || "").trim()).filter(Boolean))];
+    }
+
     async function adminFetch(path, options = {}) {
         const headers = getAdminHeaders(options.headers || {});
         if (options.body && !headers["Content-Type"]) { headers["Content-Type"] = "application/json"; }
@@ -1055,9 +1094,14 @@
         if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
         if (response.status === HttpStatus.notFound) { throw new Error("CMS item was not found."); }
         if (response.status === HttpStatus.badRequest) {
-            let message = "CMS request is invalid. Check draft fields and validation messages.";
-            try { const payload = await response.json(); message = payload?.error || payload?.message || message; } catch (_) { }
-            throw new Error(message);
+            let payload = null;
+            try { payload = await response.json(); } catch (_) { }
+            const details = extractCmsBackendMessages(payload);
+            const message = details.length > 0 ? details.join("\n") : (payload?.error || payload?.message || "CMS request is invalid. Check draft fields and validation messages.");
+            const error = new Error(message);
+            error.cmsPayload = payload;
+            error.cmsDetails = details;
+            throw error;
         }
         if (response.status === HttpStatus.conflict) { throw new Error("CMS request conflicted with current state."); }
         if (!response.ok) { throw new Error("CMS request failed."); }
@@ -1290,7 +1334,7 @@
             const detail = payload.noChanges ? "No draft field changes were detected." : `Changed fields: ${changedFields}.`;
             await reloadList(); await reloadSelected(); await runCmsValidation(); await loadCmsPreviewSummary();
             setCmsEntityMessage(messageElement, `Draft saved. To apply this content to runtime, publish the current draft. ${detail}`, false);
-            showCmsPublishDiscoveryForMessage(messageElement);
+            showCmsPublishDiscoveryForMessage(messageElement, !payload.noChanges);
             if (isCmsSubTabActive(CmsSubTabs.audit)) { await loadCmsAuditEntries(); }
             else { setCmsSuccess("Open Audit to view the saved audit entry. Use Go to Publish to open Versions & Publish when you are ready to publish current draft changes."); }
         } catch (error) { const message = getCmsErrorMessage(error); setCmsEntityMessage(messageElement, message, true); if (isAuthErrorMessage(message)) { resetSession(); setError(message); } }
@@ -1369,13 +1413,22 @@
     async function publishCmsDraft() {
         if (hasUnsavedChanges() && !confirm(UnsavedChangesMessage)) { return; }
         const summary = cmsPublishChangeSummaryInput.value.trim();
+        clearCmsPublishErrorDetails();
+        if (cmsDraftSavedInSession && cmsDraftLikelyHasChangesInSession && !summary) {
+            const message = "Enter a publish change summary before publishing changed content.";
+            setCmsError(message); setCmsSuccess(""); renderCmsPublishErrorDetails({ errors: [message] });
+            cmsPublishChangeSummaryInput.focus();
+            return;
+        }
         if (!confirm("Publish current CMS draft content? Runtime learner behavior still remains static JSON by default.")) { return; }
         setCmsError(""); setCmsSuccess("Publishing CMS draft...");
         try {
             const payload = await adminFetch(cmsPath(ApiPaths.cmsPublishTemplate, { slug: getSelectedCmsSlug() }), { method: "POST", body: JSON.stringify({ changeSummary: summary }) });
-            setCmsSuccess(payload.noChanges ? "Publish completed with no draft changes to publish." : `Published CMS draft as version ${payload.versionNumber || "-"}.`);
+            clearCmsPublishErrorDetails();
+            hideCmsPublishDiscovery({ clearDraftSaved: true });
+            setCmsSuccess(payload.noChanges ? "Publish completed with no draft changes to publish." : "Draft published. Runtime CMS mode will use the new published snapshot when enabled.");
             await refreshCmsContentPack(); await runCmsValidation(); await loadCmsPreviewSummary();
-        } catch (error) { handleCmsError(error); }
+        } catch (error) { renderCmsPublishErrorDetails(error); handleCmsError(error); }
     }
     async function restoreCmsVersion() {
         if (hasUnsavedChanges() && !confirm(UnsavedChangesMessage)) { return; }
