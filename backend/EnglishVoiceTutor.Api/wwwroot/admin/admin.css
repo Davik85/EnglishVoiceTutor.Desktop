@@ -158,3 +158,11 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
 .cms-nested-grid { gap: 12px; }
 #cms-scenario-structured-status { min-height: 24px; }
 #cms-scenario-first-bot-message-lines, #cms-scenario-context-option-lines, #cms-scenario-valid-context-keywords-lines, #cms-scenario-custom-context-rules-lines, #cms-scenario-can-do-lines, #cms-scenario-guided-follow-up-lines, #cms-scenario-ai-instruction-lines { font-family: inherit; }
+
+.cms-publish-discovery { align-items: center; background: #ecfdf5; border: 1px solid #10b981; border-radius: 10px; color: #065f46; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; padding: 10px 12px; }
+.cms-publish-discovery.hidden { display: none; }
+.cms-publish-discovery span { font-weight: 700; }
+.cms-go-to-publish-button { background: #047857; border-color: #047857; color: #fff; padding: 7px 12px; }
+.cms-go-to-publish-button:hover { background: #065f46; }
+.cms-publish-notice { background: #fffbeb; border: 1px solid #f59e0b; border-left: 5px solid #f59e0b; border-radius: 10px; color: #92400e; font-weight: 700; margin: 8px 0 12px; padding: 10px 12px; }
+.cms-publish-focus { box-shadow: 0 0 0 4px rgba(37, 99, 235, .24); outline: 2px solid #2563eb; outline-offset: 2px; }

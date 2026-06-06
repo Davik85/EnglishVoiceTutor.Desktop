@@ -201,6 +201,7 @@
                                         <label class="checkbox-field"><input id="cms-topic-is-active" name="cms-topic-is-active" type="checkbox" /> Active</label>
                                         <div class="cms-button-row"><button id="cms-topic-save-button" type="submit">Save draft</button><button id="cms-topic-reset-button" type="button">Reload selected</button><span id="cms-topic-dirty-status" class="cms-dirty-status hidden" role="status">Unsaved changes</span></div>
                                         <p id="cms-topic-message" class="success" role="status"></p>
+                                        <div id="cms-topic-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true"><span>Draft saved. To apply this content to runtime, publish the current draft.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
                                     </form>
                                 </article>
                             </div>
@@ -275,6 +276,7 @@
                                         </section>
                                         <div class="cms-button-row"><button id="cms-scenario-save-button" type="submit">Save draft</button><button id="cms-scenario-reset-button" type="button">Reload selected</button><span id="cms-scenario-dirty-status" class="cms-dirty-status hidden" role="status">Unsaved changes</span></div>
                                         <p id="cms-scenario-message" class="success" role="status"></p>
+                                        <div id="cms-scenario-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true"><span>Draft saved. To apply this content to runtime, publish the current draft.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
                                     </form>
                                 </article>
                             </div>
@@ -294,6 +296,7 @@
                                         <label class="checkbox-field"><input id="cms-prompt-template-is-active" name="cms-prompt-template-is-active" type="checkbox" /> Active</label>
                                         <div class="cms-button-row"><button id="cms-prompt-template-save-button" type="submit">Save draft</button><button id="cms-prompt-template-reset-button" type="button">Reload selected</button><span id="cms-prompt-template-dirty-status" class="cms-dirty-status hidden" role="status">Unsaved changes</span></div>
                                         <p id="cms-prompt-template-message" class="success" role="status"></p>
+                                        <div id="cms-prompt-template-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true"><span>Draft saved. To apply this content to runtime, publish the current draft.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
                                     </form>
                                 </article>
                             </div>
@@ -315,6 +318,7 @@
                                         <label class="checkbox-field"><input id="cms-tutor-profile-is-active" name="cms-tutor-profile-is-active" type="checkbox" /> Active</label>
                                         <div class="cms-button-row"><button id="cms-tutor-profile-save-button" type="submit">Save draft</button><button id="cms-tutor-profile-reset-button" type="button">Reload selected</button><span id="cms-tutor-profile-dirty-status" class="cms-dirty-status hidden" role="status">Unsaved changes</span></div>
                                         <p id="cms-tutor-profile-message" class="success" role="status"></p>
+                                        <div id="cms-tutor-profile-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true"><span>Draft saved. To apply this content to runtime, publish the current draft.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
                                     </form>
                                 </article>
                             </div>
@@ -336,8 +340,9 @@
                         </section>
 
                         <section id="cms-sub-panel-versions-publish" class="cms-sub-panel hidden" role="tabpanel" aria-labelledby="cms-sub-tab-button-versions-publish" data-cms-sub-panel="versions-publish">
-                            <article class="card" aria-labelledby="cms-lifecycle-heading">
+                            <article id="cms-publish-section" class="card" aria-labelledby="cms-lifecycle-heading" tabindex="-1">
                                 <h3 id="cms-lifecycle-heading">Versions &amp; Publish</h3>
+                                <div id="cms-unpublished-draft-notice" class="cms-publish-notice" role="status">Draft changes are saved but not visible to runtime until published.</div>
                                 <p class="muted"><strong>Development-only:</strong> old versions are not mutated, runtime still uses static JSON by default, and publish/restore actions require confirmation.</p>
                                 <div class="cms-lifecycle-actions">
                                     <button id="cms-load-versions-button" type="button">Load versions</button>
