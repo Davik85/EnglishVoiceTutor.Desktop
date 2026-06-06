@@ -579,7 +579,7 @@ Structured scenario editor update: the Admin CMS Scenarios subtab now includes a
 
 ## Save draft publish guidance
 
-Admin CMS draft saves now include explicit publish guidance in the editing context. A successful `Save draft` shows “Draft saved. To apply this content to runtime, publish the current draft.” and a **Go to Publish** action. The action only switches the UI to **Versions & Publish** and preserves content pack/entity/user URL hash state; it does not publish. The confirmed **Publish current draft** button in **Versions & Publish** remains the only publish mechanism. Runtime CMS mode continues to read only published snapshots, static JSON remains default, and the CMS runtime path remains disabled by default.
+Admin CMS draft saves now include explicit publish guidance in the editing context. A successful `Save draft` shows “Draft saved. To apply this content to runtime, publish the current draft.” and a **Go to Publish** action. The action only switches the UI to **Versions & Publish** and preserves content pack/entity/user URL hash state; it does not publish. The confirmed **Publish current draft** button in **Versions & Publish** remains the only publish mechanism. Changed-content publish requires a short publish change summary, while no-change publish checks can skip one; backend publish errors/warnings and validation details are displayed near the publish controls. Runtime CMS mode continues to read only published snapshots, static JSON remains default, and the CMS runtime path remains disabled by default.
 
 ## Controlled runtime CMS read path implementation note
 

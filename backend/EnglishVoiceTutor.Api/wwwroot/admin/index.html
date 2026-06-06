@@ -344,9 +344,11 @@
                                 <h3 id="cms-lifecycle-heading">Versions &amp; Publish</h3>
                                 <div id="cms-unpublished-draft-notice" class="cms-publish-notice" role="status">Draft changes are saved but not visible to runtime until published.</div>
                                 <p class="muted"><strong>Development-only:</strong> old versions are not mutated, runtime still uses static JSON by default, and publish/restore actions require confirmation.</p>
+                                <p id="cms-publish-instructions" class="cms-publish-instructions">1. Enter a short change summary. 2. Click Publish current draft. 3. Confirm publishing.</p>
+                                <div id="cms-publish-error-details" class="cms-publish-error-details hidden" role="alert" data-cms-publish-error-details="true"></div>
                                 <div class="cms-lifecycle-actions">
                                     <button id="cms-load-versions-button" type="button">Load versions</button>
-                                    <div class="field cms-change-summary-field"><label for="cms-publish-change-summary">Publish change summary</label><input id="cms-publish-change-summary" name="cms-publish-change-summary" type="text" placeholder="Optional summary" /></div>
+                                    <div class="field cms-change-summary-field"><label for="cms-publish-change-summary">Publish change summary</label><input id="cms-publish-change-summary" name="cms-publish-change-summary" type="text" placeholder="Required when publishing changed content" aria-describedby="cms-publish-change-summary-help" /><p id="cms-publish-change-summary-help" class="muted cms-field-help">Required when publishing changed content. No-change publish checks can skip a summary.</p></div>
                                     <button id="cms-publish-button" type="button">Publish current draft</button>
                                     <div class="field cms-version-select-field"><label for="cms-restore-version-select">Restore version</label><select id="cms-restore-version-select" name="cms-restore-version-select"></select></div>
                                     <div class="field cms-change-summary-field"><label for="cms-restore-reason">Restore reason</label><input id="cms-restore-reason" name="cms-restore-reason" type="text" placeholder="Required for audit clarity" /></div>

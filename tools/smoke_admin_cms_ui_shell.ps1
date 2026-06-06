@@ -19,6 +19,10 @@ foreach ($path in @($indexPath, $jsPath, $cssPath)) {
     if (-not (Test-Path -LiteralPath $path)) { Add-Error "Missing file: $path" }
 }
 
+if ((Test-Path -LiteralPath $indexPath) -and ((Get-Content -LiteralPath $indexPath -Raw).IndexOf('placeholder="Optional summary"', [System.StringComparison]::OrdinalIgnoreCase) -ge 0)) {
+    Add-Error 'index.html: publish summary is labelled optional even though changed-content publish requires changeSummary.'
+}
+
 if ($errors.Count -eq 0) {
     foreach ($needle in @(
         'tab-button-cms-content',
@@ -67,6 +71,11 @@ if ($errors.Count -eq 0) {
         'Draft saved. To apply this content to runtime, publish the current draft.',
         'Go to Publish',
         'Draft changes are saved but not visible to runtime until published.',
+        '1. Enter a short change summary. 2. Click Publish current draft. 3. Confirm publishing.',
+        'Publish change summary',
+        'Required when publishing changed content',
+        'data-cms-publish-error-details="true"',
+        'Enter a publish change summary before publishing changed content.',
         'cms-restore-button',
         'cms-topic-title',
         'cms-topic-description',
@@ -131,10 +140,12 @@ if ($errors.Count -eq 0) {
         'goToCmsPublishSection',
         'showCmsPublishDiscoveryForMessage',
         'CmsSubTabs.versionsPublish',
-        'Use Go to Publish to open Versions & Publish'
+        'Use Go to Publish to open Versions & Publish',
+        'extractCmsBackendMessages',
+        'renderCmsPublishErrorDetails'
     )) { Assert-FileContains -path $jsPath -needle $needle }
 
-    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section', 'cms-scenario-structured-editor', 'cms-fieldset', 'cms-audit-controls', 'cms-stable-key-cell', 'cms-publish-discovery', 'cms-publish-notice', 'cms-publish-focus')) {
+    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section', 'cms-scenario-structured-editor', 'cms-fieldset', 'cms-audit-controls', 'cms-stable-key-cell', 'cms-publish-discovery', 'cms-publish-notice', 'cms-publish-instructions', 'cms-publish-error-details', 'cms-publish-focus')) {
         Assert-FileContains -path $cssPath -needle $needle
     }
 
