@@ -1,11 +1,11 @@
 # Current State
 
-Review date: 2026-06-04.
+Review date: 2026-06-06.
 
 
 ## Step 5D-6d current state — Admin CMS refresh resilience and unsaved-change protection
 
-Admin CMS publish discoverability update: `Save draft` remains draft-only and never publishes. After a successful draft save, admins now see “Draft saved. To apply this content to runtime, publish the current draft.” plus a **Go to Publish** action that opens **Versions & Publish** without bypassing the existing confirmation-based **Publish current draft** flow. Publishing changed content requires a publish change summary; the Admin CMS blocks blank summaries after draft saves and now shows backend publish validation errors/warnings instead of only a generic invalid-request message. Runtime reads only published snapshots when CMS runtime mode is explicitly enabled; static JSON remains the default and the CMS runtime path remains disabled by default.
+Latest Admin CMS Content step completed: structured scenario editor, draft save notice / publish discoverability, required publish summary, clearer publish validation errors, smoke/test audit filtering, and confirmed local CMS runtime published-snapshot read path. Admin CMS publish discoverability update: `Save draft` remains draft-only and never publishes. After a successful draft save, admins now see “Draft saved. To apply this content to runtime, publish the current draft.” plus a **Go to Publish** action that opens **Versions & Publish** without bypassing the existing confirmation-based **Publish current draft** flow. Publishing changed content requires a publish change summary; the Admin CMS blocks blank summaries after draft saves and now shows backend publish validation errors/warnings instead of only a generic invalid-request message. Runtime reads only published snapshots when CMS runtime mode is explicitly enabled; static JSON remains the default and the CMS runtime path remains disabled by default.
 
 Step 5D-6d is complete. The development/admin-only Admin shell under `/admin/` now restores safe workspace selection state across browser refresh without using browser Web Storage. Admin authentication survives refresh through the existing admin-only HTTP-only cookie, while the admin JWT remains memory-only in JavaScript. The Admin shell does not use `sessionStorage`, `localStorage`, or IndexedDB for auth, selected workspace state, or unsaved content.
 
@@ -21,7 +21,7 @@ Scenario editing includes bounded fields plus an advanced Full scenario JSON edi
 
 Runtime learner behavior remains unchanged by default. The CMS read path remains controlled by configuration and disabled by default for learner runtime; `CmsContent:ReadPublishedSnapshotEnabled` defaults to `false`, `CmsContent:ContentPackSlug` defaults to `static-json-v1`, and `CmsContent:FallbackToStaticJson` defaults to `true`. Static JSON fallback remains available when CMS reads are disabled, missing, invalid, corrupt, or fail. External tester handoff remains paused until the CMS/Admin content MVP is ready enough for practical content changes without code edits. Production billing remains deferred and public release remains not ready. No EF migration, lesson JSON edit, prompt/tutor source edit, desktop UI change, admin HTML/CSS/JS change, billing/Paddle/subscription/entitlement/payment change, schema change, or password reset behavior change is part of this documentation update.
 
-The Admin CMS is still not production-ready. Production RBAC is not implemented. CMS draft-save audit logging is implemented for successful Admin CMS Save draft operations, and the Admin CMS Audit subtab exposes recent CMS changes as read-only rows filtered by selected content pack, entity type, stable key text, and limit. Audit rows show metadata and shortened hashes only; full edited content bodies are not stored or displayed in audit rows. Role-based critical-change approval remains future work and should wait until production roles exist.
+The Admin CMS is still not production-ready. Production RBAC is not implemented. CMS draft-save audit logging is implemented for successful Admin CMS Save draft operations, and the Admin CMS Audit subtab exposes recent CMS changes as read-only rows filtered by selected content pack, entity type, stable key text, and limit. Smoke/test entries are hidden by default, a **Show smoke/test entries** checkbox exists for debugging, and normal manual Admin CMS UI changes remain visible. Audit rows show metadata and shortened hashes only; full edited content bodies are not stored or displayed in audit rows. Role-based critical-change approval remains future work and should wait until production roles exist.
 
 ## Short summary
 
@@ -215,8 +215,10 @@ Current confirmed migrations:
 - `20260601090000_AddLessonSessionHeartbeat`
 - `20260601120000_AddPasswordResetFoundation`
 - `20260603120000_AddCmsContentFoundation`
+- `20260604120000_AddCmsScenarioDefinitionJson`
+- `20260604121000_AddCmsDraftSaveAuditMetadata`
 
-Latest confirmed EF migration: `20260603120000_AddCmsContentFoundation`.
+Latest confirmed EF migration: `20260604121000_AddCmsDraftSaveAuditMetadata`.
 
 ## Current smoke/audit scripts
 
@@ -231,6 +233,12 @@ Current documented smoke/audit scripts:
 - `tools/audit_admin_shell.ps1`
 - `tools/audit_cms_content_foundation.ps1`
 - `tools/smoke_cms_content_import.ps1`
+- `tools/smoke_cms_published_content_read.ps1`
+- `tools/smoke_cms_content_admin_api.ps1`
+- `tools/smoke_cms_publish_rollback.ps1`
+- `tools/smoke_cms_draft_save_audit.ps1`
+- `tools/smoke_cms_structured_scenario_editor.ps1`
+- `tools/smoke_cms_runtime_content_read.ps1`
 - `tools/smoke_billing_checkout.ps1`
 - `tools/smoke_paddle_checkout_adapter.ps1`
 - `tools/smoke_paddle_checkout_client_token_guard.ps1`
@@ -268,7 +276,7 @@ Local automated validation expected before the next release handoff, after CMS/A
 - Public release is not declared ready.
 - Production billing is not ready and remains deferred while CMS/Admin content MVP is prioritized before tester handoff.
 - Paddle production webhook delivery, production checkout configuration, provider credentials, product/price mapping, environment separation, and manual production smoke verification are not complete.
-- Full production CMS/Admin operational readiness remains deferred. Development/admin CMS content APIs now include draft read/update, validation/preview, version list/detail, publish, and restore/rollback endpoints, and the backend Admin shell now includes a basic development-only CMS Content UI editor shell. External tester handoff remains paused.
+- Full production CMS/Admin operational readiness remains deferred. Development/admin CMS content APIs and Admin CMS UI now include draft read/update, structured scenario editing, validation/preview, version list/detail, required-summary publish, restore/rollback, draft-save audit visibility with smoke/test filtering, and a locally verified runtime published-snapshot read path. External tester handoff remains paused.
 - Prompt/scenario/bot-behavior quality polishing is deferred to the content-focused CMS/Admin MVP.
 - Installer/signing and Microsoft Store packaging are not complete.
 - Mobile app implementation and mobile app-store entitlement bridge are not complete.
@@ -289,4 +297,4 @@ Structured scenario editor update: the Admin CMS Scenarios subtab now includes a
 
 ## Controlled CMS runtime read path status
 
-Static JSON remains the default runtime lesson-content source. A controlled backend runtime CMS mode now exists behind `CmsContent:UsePublishedSnapshotForRuntime`; it also requires the existing `CmsContent:ReadPublishedSnapshotEnabled` published snapshot read flag. The content pack slug defaults to `static-json-v1`, and `CmsContent:FallbackToStaticJson` remains the safe fallback switch. When enabled, runtime reads only the current immutable published snapshot for the configured pack, maps topics, scenarios including `DefinitionJson`, prompt templates, and tutor behavior profiles into the same lesson-content model family used by the static content baseline, validates required counts and fields, and logs only source/slug/version/hash/count/validation metadata. Draft saves are not runtime-visible until publish. The admin/development diagnostic endpoint is `/api/admin/dev/cms/runtime-content/status`. External tester handoff remains paused until the controlled runtime path and existing CMS editing flows are verified; production RBAC and approval workflow remain future work.
+Confirmed local runtime read: with `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`, backend logs confirmed `Source=CmsPublishedSnapshot`, `ContentPackSlug=static-json-v1`, `VersionNumber=34`, `FallbackUsed=False`, `ValidationPassed=True`, `TopicCount=6`, `ScenarioCount=26`, `PromptTemplateCount=3`, and `TutorBehaviorProfileCount=2`. Static JSON remains the default runtime lesson-content source. A controlled backend runtime CMS mode now exists behind `CmsContent:UsePublishedSnapshotForRuntime`; it also requires the existing `CmsContent:ReadPublishedSnapshotEnabled` published snapshot read flag. The content pack slug defaults to `static-json-v1`, and `CmsContent:FallbackToStaticJson` remains the safe fallback switch. When enabled, runtime reads only the current immutable published snapshot for the configured pack, maps topics, scenarios including `DefinitionJson`, prompt templates, and tutor behavior profiles into the same lesson-content model family used by the static content baseline, validates required counts and fields, and logs only source/slug/version/hash/count/validation metadata. Draft saves are not runtime-visible until publish. The admin/development diagnostic endpoint is `/api/admin/dev/cms/runtime-content/status`. External tester handoff remains paused until the controlled runtime path and existing CMS editing flows are verified; production RBAC and approval workflow remain future work.

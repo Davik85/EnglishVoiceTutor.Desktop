@@ -1,6 +1,6 @@
 # Desktop Release Work Plan
 
-Review date: 2026-06-03.
+Review date: 2026-06-06.
 
 ## Current conclusion
 
@@ -51,7 +51,7 @@ Manual `dotnet publish` is only a lower-level developer/troubleshooting path.
 
 ### Phase 5D — CMS/Admin content MVP (current focus before tester handoff)
 
-CMS/Admin content MVP now starts before external tester handoff because desktop hardening is stable enough to pause delivery. Development/admin Admin CMS Content now covers content pack overview, topic/scenario/full scenario JSON/prompt template/tutor behavior profile editing, validation/preview summary, versions/publish/restore flow, refresh resilience, and unsaved-change warnings. The next recommended CMS implementation step is draft-save audit logging. Full production Admin, production RBAC, critical-change approval, and operational support scope remain deferred.
+CMS/Admin content MVP now starts before external tester handoff because desktop hardening is stable enough to pause delivery. Development/admin Admin CMS Content now covers content pack overview, topic/scenario/prompt template/tutor behavior profile editing, structured scenario editing, advanced full scenario JSON editing, validation/preview summary, versions/publish/restore flow, refresh resilience, unsaved-change warnings, required publish summary validation, draft-save publish discoverability, audit filtering, and the controlled local runtime published-snapshot read path. The next recommended CMS implementation step is Admin CMS scenario editor usability refinement, not billing. Full production Admin, production RBAC, critical-change approval, and operational support scope remain deferred.
 
 ### Phase 5C — Production billing readiness (deferred)
 
@@ -63,7 +63,7 @@ The desktop hardening block is stable enough to pause external tester handoff an
 
 This priority change does not make public release ready. It does not move production billing forward. Production billing, Paddle production operations, payment editing, entitlement editing, broad user management, mobile-specific CMS, and full production Admin remain deferred.
 
-CMS content MVP planning lives in `docs/CMS_ADMIN_PLANNING.md` and `docs/cms-content-mvp-plan.md`. Admin CMS publish UX note: `Save draft` remains draft-only and shows **Go to Publish** after successful saves; changed-content publishing requires a short change summary and displays backend validation details on failure; learner runtime is unchanged by default, CMS runtime reads only published snapshots when explicitly enabled, and static JSON remains default. The clean-machine checklist and package flow below remain required later before actual external tester delivery.
+CMS content MVP planning lives in `docs/CMS_ADMIN_PLANNING.md` and `docs/cms-content-mvp-plan.md`. Admin CMS publish UX note: `Save draft` remains draft-only and shows **Go to Publish** after successful saves; changed-content publishing requires a short change summary and displays a clear local validation error when the summary is missing; backend validation details still display on failure. Learner runtime is unchanged by default, CMS runtime reads only published snapshots when explicitly enabled, and static JSON remains default. The latest local runtime check confirmed the published-snapshot path with `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`, with `Source=CmsPublishedSnapshot`, version 34, expected content counts, validation passed, and no fallback. The clean-machine checklist and package flow below remain required later before actual external tester delivery.
 
 ## Completed or accepted Phase 5B items
 
@@ -161,7 +161,7 @@ Keep this list separate from completed/accepted work:
 5. Installer/signing/update/download plan for public release.
 6. Security/privacy release checklist review.
 7. Final P0/P1 triage.
-8. CMS/Admin content MVP foundation before external tester handoff; CMS draft-save audit logging is next, and full production Admin/RBAC/approval readiness remains later.
+8. CMS/Admin content MVP foundation before external tester handoff; structured scenario editing, draft-save audit logging, required publish summary validation, audit filtering, and the local runtime published-snapshot read path are complete for development/admin MVP scope. The next refinement is Admin CMS scenario editor usability: clearer collapsible sections, helper text, and better long-scenario editing ergonomics. Full production Admin/RBAC/approval readiness remains later.
 
 ## Current validation commands
 
@@ -180,4 +180,4 @@ Public release is not declared ready. This work plan supports continued controll
 
 Admin CMS workflow remains safe for tester preparation: `Save draft` does not publish, and saved drafts are not runtime-visible until the existing **Versions & Publish** / **Publish current draft** confirmation flow is used. The editor now makes that path discoverable with a post-save **Go to Publish** action. Static JSON remains the default learner runtime source, and the CMS runtime read path remains disabled by default unless explicitly configured and verified with `tools/smoke_cms_runtime_content_read.ps1`.
 
-External tester handoff remains paused until the controlled CMS runtime read path is verified. The desktop UI and packaged static lesson/prompt/tutor files remain unchanged for this step. Backend runtime content continues to use static JSON unless `CmsContent:UsePublishedSnapshotForRuntime=true` and `CmsContent:ReadPublishedSnapshotEnabled=true` are explicitly configured. The admin/development diagnostic `/api/admin/dev/cms/runtime-content/status` and `tools/smoke_cms_runtime_content_read.ps1` should be used to prove published snapshot reads, expected counts, valid hash, and no fallback on the happy path before tester packaging resumes.
+External tester handoff remains paused even though the controlled local CMS runtime read path has now been verified. The desktop UI and packaged static lesson/prompt/tutor files remain unchanged for this step. Backend runtime content continues to use static JSON unless `CmsContent:UsePublishedSnapshotForRuntime=true` and `CmsContent:ReadPublishedSnapshotEnabled=true` are explicitly configured. The admin/development diagnostic `/api/admin/dev/cms/runtime-content/status` and `tools/smoke_cms_runtime_content_read.ps1` should continue to prove published snapshot reads, expected counts, valid hash, validation passed, and no fallback on the happy path before tester packaging resumes. This is not production CMS/RBAC readiness.

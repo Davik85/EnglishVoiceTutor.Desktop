@@ -98,7 +98,7 @@ powershell -ExecutionPolicy Bypass -File tools/run_desktop_release_gate.ps1 -Inc
 Expected result:
 
 - migrations can be listed;
-- latest confirmed EF migration is `20260601090000_AddLessonSessionHeartbeat`;
+- latest confirmed EF migration is `20260604121000_AddCmsDraftSaveAuditMetadata`;
 - database update applies no unexpected migrations for the current local database;
 - `has-pending-model-changes` reports no pending model changes.
 
@@ -366,8 +366,8 @@ Known issues:
 - Production billing readiness remains deferred until desktop hardening is complete.
 - Production Paddle configuration, webhook delivery, provider credentials, product/price mapping, and environment separation remain separate readiness work.
 - Refund, chargeback, manual revocation automation, optional subscription reconciliation, and future mobile entitlement bridge work remain deferred.
-- Full production CMS/Admin readiness remains deferred: Admin CMS Content exists for development/admin editing with refresh resilience and unsaved-change warnings, but production RBAC, CMS draft-save audit logging, and critical-change approval are not implemented.
-- Prompt/scenario/bot-behavior quality polishing is deferred to CMS/Admin so it can support safe editing, validation, preview, versioning, rollback, and later audited draft saves.
+- Full production CMS/Admin readiness remains deferred: Admin CMS Content exists for development/admin editing with refresh resilience, unsaved-change warnings, structured scenario editing, draft-save audit logging, smoke/test audit filtering, required publish summary validation, and local runtime published-snapshot read verification, but production RBAC and critical-change approval are not implemented.
+- Prompt/scenario/bot-behavior quality polishing is deferred to CMS/Admin so it can support safe editing, structured scenario usability refinement, validation, preview, versioning, rollback, and audited draft saves.
 - Clean-machine installer/signing validation remains a later release packaging gate.
 - Public release is not implied by passing this smoke gate; final P0/P1 triage is still required.
 

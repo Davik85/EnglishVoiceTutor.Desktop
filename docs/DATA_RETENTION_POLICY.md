@@ -1,6 +1,6 @@
 # Data Retention and Storage Policy (Draft)
 
-Review date: 2026-06-01.
+Review date: 2026-06-06.
 
 This is a technical MVP retention policy draft (not a legal policy).
 
@@ -60,5 +60,5 @@ Backend persistence foundation (PostgreSQL + EF Core) is implemented for:
 - Production-wide auth enforcement for all runtime endpoints.
 - Production billing operations completion.
 - Roles/authorization layers for production operations.
-- CMS/Admin workflow: development/admin Admin CMS Content exists, but production RBAC, CMS draft-save audit logging, and critical-change approval remain future work. Unsaved CMS content is not retained in browser storage or URL hash.
+- CMS/Admin workflow: development/admin Admin CMS Content exists, and successful Admin CMS Save draft operations write bounded audit rows with actor identity, UTC timestamp, content pack, entity type/stable key, changed fields, hashes, source/status/reason, and request/correlation id when available. Smoke/test audit entries are hidden by default in the Admin CMS Audit subtab and can be shown with the debugging checkbox. Full edited values, secrets, tokens, passwords, provider keys, webhook secrets, SMTP passwords, and bearer tokens must not be retained in audit rows. Unsaved CMS content is not retained in browser storage or URL hash. Production RBAC and critical-change approval remain future work.
 - Contabo deployment.
