@@ -91,7 +91,7 @@ P1 means the issue blocks MVP user experience or causes major confusion.
 - Conversation Mode needs MVP acceptance for entry/exit, recording UX, auto-send behavior, bot voice auto-play behavior, avatar framing, and small/medium window layout.
 - Lesson Chat has many commands and state transitions; text input, send button, hint, translate, play voice, finish, back, and lesson-complete states need a focused UI pass to remove confusing disabled states or unclear status messages.
 - Release packaging is limited to a tester zip script. There is no signed installer, signing plan, update plan, or documented public download path.
-- CMS/Admin is not ready for public operations. Admin CMS Content now exists for development/admin content editing with refresh resilience, unsaved-change protection, structured scenario editing, draft-save audit logging, smoke/test audit filtering, required publish summary validation, and a locally verified published-snapshot runtime read path. Production RBAC and approval workflow remain future work. Desktop/runtime content still uses static JSON by default with CMS reads disabled unless configured and static JSON fallback available.
+- CMS/Admin is not ready for public operations. Admin CMS Content now exists for development/admin content editing with refresh resilience, unsaved-change protection, Step 5D-6e Scenarios editor usability refinement (local **Jump to** navigation, collapsible/visually separated structured sections, helper text, recommended structured-field editing, and visually separated Advanced JSON technical fallback), draft-save audit logging, smoke/test audit filtering, required publish summary validation, immutable published versions/restore-as-new-version behavior, and a locally verified published-snapshot runtime read path. Production RBAC and approval workflow remain future work. Desktop/runtime content still uses static JSON by default with CMS reads disabled unless configured and static JSON fallback available.
 
 ## P2 polish
 
@@ -110,7 +110,7 @@ P2 means useful improvements that can wait until after first controlled test use
 These should not block the first controlled test release:
 
 - Production Paddle rollout and production billing operations automation.
-- Production CMS hardening: roles/RBAC, critical-change approval, external tester handoff readiness, and public-release operations after the development/admin CMS MVP usability refinements.
+- Production CMS hardening: roles/RBAC, critical-change approval, external tester handoff readiness, and public-release operations after the development/admin CMS MVP and later governance work are accepted.
 - Mobile entitlement bridge for Apple App Store / Google Play.
 - Automatic update infrastructure.
 - Rich analytics dashboards.
@@ -443,7 +443,7 @@ These should not block the first controlled test release:
 **Risks**
 - Passing JSON validation does not guarantee teaching quality, scenario naturalness, level accuracy, or full multilingual quality.
 - Free Conversation needs careful safety and topic-boundary behavior review.
-- Lesson runtime remains static JSON by default. Admin CMS Content can now edit draft topics, scenarios, full scenario JSON, prompt templates, and tutor behavior profiles for development/admin use, but tester handoff remains paused until the CMS/Admin content MVP is ready enough for practical content changes without code edits.
+- Lesson runtime remains static JSON by default. Admin CMS Content can now edit draft topics, scenarios through recommended structured sections or visually separated Advanced JSON fallback, prompt templates, and tutor behavior profiles for development/admin use, but tester handoff remains paused until the CMS/Admin content MVP is ready enough for practical content changes without code edits.
 
 **Release recommendation**
 - Content is good enough for controlled MVP if a human samples each topic/language combination most likely to be used.
@@ -455,7 +455,7 @@ These should not block the first controlled test release:
 ### 17. CMS/Admin dependency
 
 **Current status**
-- Local Development CMS/admin support foundation and Admin CMS Content workspace exist, including content pack overview, topic/scenario/full scenario JSON/prompt/tutor editing, validation/preview summary, versions/publish/restore, refresh resilience, selected user/entity restore, and unsaved-change warnings. CMS/Admin is still not mature enough for release because production RBAC, draft-save audit logging, and critical-change approval are not implemented.
+- Local Development CMS/admin support foundation and Admin CMS Content workspace exist, including content pack overview, topic/scenario structured editing with local Jump to navigation and helper text, visually separated Advanced JSON fallback, prompt/tutor editing, validation/preview summary, versions/publish/restore, refresh resilience, selected user/entity restore, unsaved-change warnings, draft-save audit logging, smoke/test audit filtering, required publish summaries, and immutable published-version history. CMS/Admin is still not mature enough for release because production RBAC and critical-change approval are not implemented.
 - Desktop does not require a full CMS to run current JSON-based lesson content.
 - Backend remains the operational source of truth for accounts, usage, payments, entitlements, and lesson history.
 
@@ -465,7 +465,7 @@ These should not block the first controlled test release:
 
 **Release recommendation**
 - Desktop controlled MVP can proceed without CMS if support volume is intentionally limited.
-- Before public release, implement CMS draft-save audit logging, later add critical-change approval after production roles exist, and run a separate CMS/Admin v1 audit focused on support/content operations.
+- Before public release, add production RBAC, later add critical-change approval after production roles exist, and run a separate CMS/Admin v1 audit focused on support/content operations.
 
 **Suggested next task**
 - Step 5B-17: CMS/Admin operational readiness audit after CMS draft-save audit logging and production-role decisions.
@@ -639,7 +639,7 @@ Use `docs/desktop-release-work-plan.md` as the controlling consolidated plan for
 9. **Step 5B-9: Conversation Mode MVP acceptance or beta/hide decision**
    - Validate avatar layout, record UX, auto-send, auto-play, return/back, and layout on common window sizes.
 10. **Step 5B-10: Avatar framing/profile/prompt acceptance pass**
-    - Defer prompt/dialogue/scenario/bot-behavior quality polishing to CMS/Admin; keep only blocking avatar/framing defects in desktop hardening. Do not claim production CMS readiness until RBAC, draft-save audit logging, and approval workflow are addressed.
+    - Defer prompt/dialogue/scenario/bot-behavior quality polishing to CMS/Admin; keep only blocking avatar/framing defects in desktop hardening. Do not claim production CMS readiness until production RBAC and approval workflow are addressed.
 11. **Step 5B-11: Lesson completion, early exit, summary, and progress manual test**
     - Validate Finish, Back, summary, History, statistics, and progress behavior.
 12. **Step 5B-12: Free-limit/paywall desktop UX acceptance without billing logic changes**
