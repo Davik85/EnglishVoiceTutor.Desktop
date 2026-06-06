@@ -17,7 +17,7 @@ $auditUrl = "$contentPackUrl/audit-entries"
 function Assert-ValidScenarioDefinition {
     param([string]$DefinitionJson, [string]$ExpectedScenarioKey, [string]$ExpectedGoal)
 
-    $definition = $DefinitionJson | ConvertFrom-Json -Depth 100
+    $definition = $DefinitionJson | ConvertFrom-Json
     if ($definition.id -ne $ExpectedScenarioKey) {
         throw "DefinitionJson id '$($definition.id)' does not match stable scenario key '$ExpectedScenarioKey'."
     }
@@ -61,7 +61,7 @@ $scenario = @($scenarios)[0]
 if (-not $scenario) { throw 'No CMS scenarios were returned.' }
 
 $detail = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $headers -TimeoutSec 60
-$definition = $detail.definitionJson | ConvertFrom-Json -Depth 100
+$definition = $detail.definitionJson | ConvertFrom-Json
 $originalGoal = [string]$definition.learningGoal.goal
 $marker = "structured-smoke-$([guid]::NewGuid().ToString('N'))"
 $updatedGoal = "$originalGoal [$marker]"
@@ -85,7 +85,7 @@ $updatedDetail = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/scenarios/$
 Assert-ValidScenarioDefinition -DefinitionJson $updatedDetail.definitionJson -ExpectedScenarioKey $detail.stableScenarioKey -ExpectedGoal $updatedGoal
 Assert-RecentStructuredAuditEntry -StableKey $detail.stableScenarioKey -SinceUtc $startedAtUtc
 
-$restoreDefinition = $updatedDetail.definitionJson | ConvertFrom-Json -Depth 100
+$restoreDefinition = $updatedDetail.definitionJson | ConvertFrom-Json
 $restoreDefinition.learningGoal.goal = $originalGoal
 $restoreBody = @{
     title = $detail.title
