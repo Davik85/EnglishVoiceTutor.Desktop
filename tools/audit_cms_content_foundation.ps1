@@ -12,8 +12,12 @@ $smokeImportPath = Join-Path $repoRoot 'tools/smoke_cms_content_import.ps1'
 $publishedReadServicePath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Services/Cms/CmsPublishedContentService.cs'
 $publishedReadInterfacePath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Services/Cms/ICmsPublishedContentService.cs'
 $publishedReadModelsPath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Services/Cms/CmsPublishedContentModels.cs'
+$runtimeReadServicePath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Services/Cms/CmsRuntimeLessonContentService.cs'
+$runtimeReadInterfacePath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Services/Cms/ICmsRuntimeLessonContentService.cs'
+$runtimeReadModelsPath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Services/Cms/CmsRuntimeContentModels.cs'
 $cmsContentOptionsPath = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Options/CmsContentOptions.cs'
 $smokePublishedReadPath = Join-Path $repoRoot 'tools/smoke_cms_published_content_read.ps1'
+$smokeRuntimeReadPath = Join-Path $repoRoot 'tools/smoke_cms_runtime_content_read.ps1'
 $entityRoot = Join-Path $repoRoot 'backend/EnglishVoiceTutor.Api/Data/Entities/Cms'
 $desktopCodeExtensions = @(
     '.cs',
@@ -113,8 +117,12 @@ foreach ($requiredPath in @(
     $publishedReadServicePath,
     $publishedReadInterfacePath,
     $publishedReadModelsPath,
+    $runtimeReadServicePath,
+    $runtimeReadInterfacePath,
+    $runtimeReadModelsPath,
     $cmsContentOptionsPath,
-    $smokePublishedReadPath
+    $smokePublishedReadPath,
+    $smokeRuntimeReadPath
 )) {
     if (-not (Test-Path $requiredPath)) {
         throw "CMS content foundation/read-path file is missing: $requiredPath"
@@ -147,9 +155,11 @@ foreach ($expectedConstant in @(
     'ImportPublished',
     'CmsContent:ReadPublishedSnapshotEnabled',
     'CmsContent:ContentPackSlug',
+    'CmsContent:UsePublishedSnapshotForRuntime',
     'CmsContent:FallbackToStaticJson',
     'CmsPublishedSnapshot',
     'StaticJsonFallback',
+    'StaticJson',
     'CmsSnapshotHashMismatch'
 )) {
     if ($constantsText -notmatch [regex]::Escape($expectedConstant)) {

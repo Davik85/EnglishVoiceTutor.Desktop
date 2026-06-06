@@ -48,6 +48,7 @@ public static class CmsContentConstants
     public static class PublishedRead
     {
         public const string ReadPublishedSnapshotEnabledKey = "CmsContent:ReadPublishedSnapshotEnabled";
+        public const string UsePublishedSnapshotForRuntimeKey = "CmsContent:UsePublishedSnapshotForRuntime";
         public const string ContentPackSlugKey = "CmsContent:ContentPackSlug";
         public const string FallbackToStaticJsonKey = "CmsContent:FallbackToStaticJson";
     }
@@ -57,6 +58,7 @@ public static class CmsContentConstants
         public const string AdminCms = "AdminCms";
         public const string CmsPublishedSnapshot = "CmsPublishedSnapshot";
         public const string StaticJsonFallback = "StaticJsonFallback";
+        public const string StaticJson = "StaticJson";
     }
 
     public static class ContentAuditStatuses

@@ -88,6 +88,7 @@ public static class ApiConstants
     public const string AdminUserFreeLessonAllowanceResetRoute = "/api/admin/users/{userId:guid}/free-lesson-allowance/reset";
     public const string AdminDevCmsStaticContentImportRoute = "/api/admin/dev/cms/static-content/import";
     public const string AdminDevCmsPublishedContentStatusRoute = "/api/admin/dev/cms/published-content/status";
+    public const string AdminDevCmsRuntimeContentStatusRoute = "/api/admin/dev/cms/runtime-content/status";
     public const string AdminDevCmsContentPacksRoute = "/api/admin/dev/cms/content-packs";
     public const string AdminDevCmsContentPackRoute = "/api/admin/dev/cms/content-packs/{slug}";
     public const string AdminDevCmsContentPackTopicsRoute = "/api/admin/dev/cms/content-packs/{slug}/topics";
