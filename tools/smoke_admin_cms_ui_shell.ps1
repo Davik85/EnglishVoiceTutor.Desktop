@@ -66,6 +66,7 @@ if ($errors.Count -eq 0) {
         'Publish current draft',
         'cms-topic-publish-discovery',
         'cms-scenario-publish-discovery',
+        'cms-scenario-json-publish-discovery',
         'cms-prompt-template-publish-discovery',
         'cms-tutor-profile-publish-discovery',
         'Draft saved. To apply this content to runtime, publish the current draft.',
@@ -73,7 +74,7 @@ if ($errors.Count -eq 0) {
         'Draft changes are saved but not visible to runtime until published.',
         '1. Enter a short change summary. 2. Click Publish current draft. 3. Confirm publishing.',
         'Publish change summary',
-        'Required when publishing changed content',
+        'Required before publishing from the Admin CMS browser UI',
         'data-cms-publish-error-details="true"',
         'cms-restore-button',
         'cms-topic-title',
@@ -85,6 +86,8 @@ if ($errors.Count -eq 0) {
         'cms-scenario-definition-json',
         'data-cms-structured-scenario-editor="true"',
         'Structured scenario editor',
+        'cms-scenario-structured-save-button',
+        'cms-scenario-structured-reset-button',
         'cms-scenario-validate-structured-button',
         'cms-scenario-goal-text',
         'cms-scenario-context-option-lines',
@@ -100,6 +103,8 @@ if ($errors.Count -eq 0) {
         'cms-audit-entity-type',
         'cms-audit-stable-key',
         'cms-audit-limit',
+        'cms-audit-show-smoke',
+        'Show smoke/test entries',
         'Refresh audit',
         'cms-audit-list'
     )) { Assert-FileContains -path $indexPath -needle $needle }
@@ -142,12 +147,29 @@ if ($errors.Count -eq 0) {
         'Use Go to Publish to open Versions & Publish',
         'extractCmsBackendMessages',
         'renderCmsPublishErrorDetails',
-        'Enter a publish change summary before publishing changed content.'
+        'Publish failed',
+        'validation?.errors',
+        'validation?.warnings',
+        'source.title',
+        'source.detail',
+        'Enter a publish change summary before publishing.',
+        'if (!summary)',
+        'isCmsSmokeAuditEntry',
+        'shouldShowCmsSmokeAuditEntries'
     )) { Assert-FileContains -path $jsPath -needle $needle }
 
-    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section', 'cms-scenario-structured-editor', 'cms-fieldset', 'cms-audit-controls', 'cms-stable-key-cell', 'cms-publish-discovery', 'cms-publish-notice', 'cms-publish-instructions', 'cms-publish-error-details', 'cms-publish-focus')) {
+    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section', 'cms-scenario-structured-editor', 'cms-fieldset', 'cms-audit-controls', 'cms-stable-key-cell', 'cms-publish-discovery', 'cms-publish-notice', 'cms-publish-instructions', 'cms-publish-error-details', 'cms-publish-focus', 'cms-scenario-structured-save-row', 'cms-audit-smoke-toggle')) {
         Assert-FileContains -path $cssPath -needle $needle
     }
+
+
+    $scenarioStructuredPattern = [regex]'id="cms-scenario-structured-save-button"[\s\S]*?id="cms-scenario-publish-discovery"[\s\S]*?Go to Publish'
+    if (-not $scenarioStructuredPattern.IsMatch((Get-Content -LiteralPath $indexPath -Raw))) { Add-Error 'index.html: scenario structured save area is not followed by a local Go to Publish callout.' }
+    $scenarioJsonPattern = [regex]'data-cms-scenario-save-area="advanced-json"[\s\S]*?id="cms-scenario-json-publish-discovery"[\s\S]*?Go to Publish'
+    if (-not $scenarioJsonPattern.IsMatch((Get-Content -LiteralPath $indexPath -Raw))) { Add-Error 'index.html: scenario Advanced JSON save area is not followed by a local Go to Publish callout.' }
+    $jsSource = Get-Content -LiteralPath $jsPath -Raw
+    if ($jsSource.IndexOf('if (!summary)', [System.StringComparison]::Ordinal) -lt 0 -or $jsSource.IndexOf('adminFetch(cmsPath(ApiPaths.cmsPublishTemplate', [System.StringComparison]::Ordinal) -lt $jsSource.IndexOf('if (!summary)', [System.StringComparison]::Ordinal)) { Add-Error 'admin.js: publish summary validation must happen before the publish API call.' }
+    if ($jsSource.IndexOf('Publish failed', [System.StringComparison]::Ordinal) -lt 0 -or $jsSource.IndexOf('source.title', [System.StringComparison]::Ordinal) -lt 0 -or $jsSource.IndexOf('validation?.errors', [System.StringComparison]::Ordinal) -lt 0) { Add-Error 'admin.js: publish error rendering must include detailed backend fields, not only the generic invalid request message.' }
 
     $staticContentStatus = git -C $repoRoot status --short -- Content/Lessons Content/Prompts Content/Tutors
     if ($staticContentStatus) {

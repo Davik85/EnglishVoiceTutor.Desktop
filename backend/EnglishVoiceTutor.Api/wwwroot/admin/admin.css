@@ -172,3 +172,5 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
 .cms-publish-error-details.hidden { display: none; }
 .cms-publish-error-details ul { margin: 6px 0 0 20px; padding: 0; }
 .cms-publish-error-title { font-weight: 800; margin: 0; }
+.cms-scenario-structured-save-row { margin-bottom: 10px; margin-top: 10px; }
+.cms-audit-smoke-toggle { align-self: center; margin-bottom: 8px; }

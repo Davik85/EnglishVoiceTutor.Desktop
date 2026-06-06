@@ -115,46 +115,46 @@ $topic = @($topics)[0]
 $topicDetail = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/topics/$($topic.id)" -Headers $headers -TimeoutSec 60
 $topicDescription = [string]$topicDetail.description
 $topicMarker = "audit-smoke-$([guid]::NewGuid().ToString('N'))"
-$topicBody = @{ title = $topicDetail.title; description = "$topicDescription $topicMarker".Trim(); sortOrder = $topicDetail.sortOrder; isActive = $topicDetail.isActive; reason = 'CMS draft-save audit smoke: topic bounded field.' } | ConvertTo-Json -Depth 20
+$topicBody = @{ title = $topicDetail.title; description = "$topicDescription $topicMarker".Trim(); sortOrder = $topicDetail.sortOrder; isActive = $topicDetail.isActive; reason = 'SMOKE: CMS draft-save audit: topic bounded field.' } | ConvertTo-Json -Depth 20
 Invoke-RestMethod -Method Put -Uri "$contentPackUrl/topics/$($topic.id)" -Headers $jsonHeaders -Body $topicBody -TimeoutSec 60 | Out-Null
 Assert-AuditEntry -EntityType 'Topic' -StableKey $topicDetail.stableTopicKey -ExpectedChangedField 'Description' -SinceUtc $startedAtUtc
-$restoreTopicBody = @{ title = $topicDetail.title; description = $topicDescription; sortOrder = $topicDetail.sortOrder; isActive = $topicDetail.isActive; reason = 'CMS draft-save audit smoke: restore topic bounded field.' } | ConvertTo-Json -Depth 20
+$restoreTopicBody = @{ title = $topicDetail.title; description = $topicDescription; sortOrder = $topicDetail.sortOrder; isActive = $topicDetail.isActive; reason = 'SMOKE: CMS draft-save audit: restore topic bounded field.' } | ConvertTo-Json -Depth 20
 Invoke-RestMethod -Method Put -Uri "$contentPackUrl/topics/$($topic.id)" -Headers $jsonHeaders -Body $restoreTopicBody -TimeoutSec 60 | Out-Null
 
 $scenarios = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/scenarios" -Headers $headers -TimeoutSec 60
 $scenario = @($scenarios)[0]
 $scenarioDetail = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $headers -TimeoutSec 60
 $scenarioDescription = [string]$scenarioDetail.description
-$scenarioBody = @{ title = $scenarioDetail.title; description = "$scenarioDescription $topicMarker".Trim(); setupMessage = $scenarioDetail.setupMessage; definitionJson = $scenarioDetail.definitionJson; isActive = $scenarioDetail.isActive; reason = 'CMS draft-save audit smoke: scenario bounded field.' } | ConvertTo-Json -Depth 100
+$scenarioBody = @{ title = $scenarioDetail.title; description = "$scenarioDescription $topicMarker".Trim(); setupMessage = $scenarioDetail.setupMessage; definitionJson = $scenarioDetail.definitionJson; isActive = $scenarioDetail.isActive; reason = 'SMOKE: CMS draft-save audit: scenario bounded field.' } | ConvertTo-Json -Depth 100
 Invoke-RestMethod -Method Put -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $jsonHeaders -Body $scenarioBody -TimeoutSec 60 | Out-Null
 Assert-AuditEntry -EntityType 'Scenario' -StableKey $scenarioDetail.stableScenarioKey -ExpectedChangedField 'Description' -SinceUtc $startedAtUtc
 
 $scenarioDefinition = $scenarioDetail.definitionJson | ConvertFrom-Json
 $scenarioDefinition | Add-Member -NotePropertyName auditSmokeMarker -NotePropertyValue $topicMarker -Force
-$scenarioJsonBody = @{ title = $scenarioDetail.title; description = "$scenarioDescription $topicMarker".Trim(); setupMessage = $scenarioDetail.setupMessage; definitionJson = ($scenarioDefinition | ConvertTo-Json -Depth 100); isActive = $scenarioDetail.isActive; reason = 'CMS draft-save audit smoke: full scenario JSON.' } | ConvertTo-Json -Depth 100
+$scenarioJsonBody = @{ title = $scenarioDetail.title; description = "$scenarioDescription $topicMarker".Trim(); setupMessage = $scenarioDetail.setupMessage; definitionJson = ($scenarioDefinition | ConvertTo-Json -Depth 100); isActive = $scenarioDetail.isActive; reason = 'SMOKE: CMS draft-save audit: full scenario JSON.' } | ConvertTo-Json -Depth 100
 Invoke-RestMethod -Method Put -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $jsonHeaders -Body $scenarioJsonBody -TimeoutSec 60 | Out-Null
 Assert-AuditEntry -EntityType 'Scenario' -StableKey $scenarioDetail.stableScenarioKey -ExpectedChangedField 'DefinitionJson' -SinceUtc $startedAtUtc
-$restoreScenarioBody = @{ title = $scenarioDetail.title; description = $scenarioDescription; setupMessage = $scenarioDetail.setupMessage; definitionJson = $scenarioDetail.definitionJson; isActive = $scenarioDetail.isActive; reason = 'CMS draft-save audit smoke: restore scenario fields.' } | ConvertTo-Json -Depth 100
+$restoreScenarioBody = @{ title = $scenarioDetail.title; description = $scenarioDescription; setupMessage = $scenarioDetail.setupMessage; definitionJson = $scenarioDetail.definitionJson; isActive = $scenarioDetail.isActive; reason = 'SMOKE: CMS draft-save audit: restore scenario fields.' } | ConvertTo-Json -Depth 100
 Invoke-RestMethod -Method Put -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $jsonHeaders -Body $restoreScenarioBody -TimeoutSec 60 | Out-Null
 
 $templates = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/prompt-templates" -Headers $headers -TimeoutSec 60
 $template = @($templates)[0]
 $templateDetail = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/prompt-templates/$($template.id)" -Headers $headers -TimeoutSec 60
 $templateBodyText = [string]$templateDetail.body
-$templateBody = @{ body = "$templateBodyText`n<!-- $topicMarker -->"; isActive = $templateDetail.isActive; reason = 'CMS draft-save audit smoke: prompt template body.' } | ConvertTo-Json -Depth 20
+$templateBody = @{ body = "$templateBodyText`n<!-- $topicMarker -->"; isActive = $templateDetail.isActive; reason = 'SMOKE: CMS draft-save audit: prompt template body.' } | ConvertTo-Json -Depth 20
 Invoke-RestMethod -Method Put -Uri "$contentPackUrl/prompt-templates/$($template.id)" -Headers $jsonHeaders -Body $templateBody -TimeoutSec 60 | Out-Null
 Assert-AuditEntry -EntityType 'PromptTemplate' -StableKey $templateDetail.templateKey -ExpectedChangedField 'Body' -SinceUtc $startedAtUtc
-$restoreTemplateBody = @{ body = $templateBodyText; isActive = $templateDetail.isActive; reason = 'CMS draft-save audit smoke: restore prompt template body.' } | ConvertTo-Json -Depth 20
+$restoreTemplateBody = @{ body = $templateBodyText; isActive = $templateDetail.isActive; reason = 'SMOKE: CMS draft-save audit: restore prompt template body.' } | ConvertTo-Json -Depth 20
 Invoke-RestMethod -Method Put -Uri "$contentPackUrl/prompt-templates/$($template.id)" -Headers $jsonHeaders -Body $restoreTemplateBody -TimeoutSec 60 | Out-Null
 
 $profiles = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/tutor-behavior-profiles" -Headers $headers -TimeoutSec 60
 $profile = @($profiles)[0]
 $profileDetail = Invoke-RestMethod -Method Get -Uri "$contentPackUrl/tutor-behavior-profiles/$($profile.id)" -Headers $headers -TimeoutSec 60
 $displayName = [string]$profileDetail.displayName
-$profileBody = @{ displayName = "$displayName $topicMarker".Trim(); communicationStyleJson = $profileDetail.communicationStyleJson; safetyNotesJson = $profileDetail.safetyNotesJson; isActive = $profileDetail.isActive; reason = 'CMS draft-save audit smoke: tutor profile display name.' } | ConvertTo-Json -Depth 100
+$profileBody = @{ displayName = "$displayName $topicMarker".Trim(); communicationStyleJson = $profileDetail.communicationStyleJson; safetyNotesJson = $profileDetail.safetyNotesJson; isActive = $profileDetail.isActive; reason = 'SMOKE: CMS draft-save audit: tutor profile display name.' } | ConvertTo-Json -Depth 100
 Invoke-RestMethod -Method Put -Uri "$contentPackUrl/tutor-behavior-profiles/$($profile.id)" -Headers $jsonHeaders -Body $profileBody -TimeoutSec 60 | Out-Null
 Assert-AuditEntry -EntityType 'TutorBehaviorProfile' -StableKey $profileDetail.tutorId -ExpectedChangedField 'DisplayName' -SinceUtc $startedAtUtc
-$restoreProfileBody = @{ displayName = $displayName; communicationStyleJson = $profileDetail.communicationStyleJson; safetyNotesJson = $profileDetail.safetyNotesJson; isActive = $profileDetail.isActive; reason = 'CMS draft-save audit smoke: restore tutor profile display name.' } | ConvertTo-Json -Depth 100
+$restoreProfileBody = @{ displayName = $displayName; communicationStyleJson = $profileDetail.communicationStyleJson; safetyNotesJson = $profileDetail.safetyNotesJson; isActive = $profileDetail.isActive; reason = 'SMOKE: CMS draft-save audit: restore tutor profile display name.' } | ConvertTo-Json -Depth 100
 Invoke-RestMethod -Method Put -Uri "$contentPackUrl/tutor-behavior-profiles/$($profile.id)" -Headers $jsonHeaders -Body $restoreProfileBody -TimeoutSec 60 | Out-Null
 
 Write-Host 'CMS draft-save audit smoke test passed.'

@@ -228,6 +228,8 @@
                                             </div>
                                             <p class="muted">Use structured fields for normal editing. Use Advanced JSON only for rare technical changes. Structured saves update the canonical DefinitionJson while preserving unknown JSON fields.</p>
                                             <p id="cms-scenario-structured-status" class="muted" role="status"></p>
+                                            <div class="cms-button-row cms-scenario-structured-save-row" data-cms-scenario-save-area="structured"><button id="cms-scenario-structured-save-button" type="submit">Save draft</button><button id="cms-scenario-structured-reset-button" type="button">Reload selected</button></div>
+                                            <div id="cms-scenario-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true" data-cms-publish-discovery-for="scenario"><span>Draft saved. To apply this content to runtime, publish the current draft.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
 
                                             <fieldset class="cms-fieldset"><legend>Basic fields</legend>
                                                 <div class="field"><label for="cms-scenario-title">Title</label><input id="cms-scenario-title" name="cms-scenario-title" type="text" /></div>
@@ -274,9 +276,9 @@
                                             <div class="field"><label for="cms-scenario-definition-json">Full scenario JSON</label><textarea id="cms-scenario-definition-json" name="cms-scenario-definition-json" rows="24" spellcheck="false"></textarea></div>
                                             <p id="cms-scenario-json-status" class="muted" role="status"></p>
                                         </section>
-                                        <div class="cms-button-row"><button id="cms-scenario-save-button" type="submit">Save draft</button><button id="cms-scenario-reset-button" type="button">Reload selected</button><span id="cms-scenario-dirty-status" class="cms-dirty-status hidden" role="status">Unsaved changes</span></div>
+                                        <div class="cms-button-row" data-cms-scenario-save-area="advanced-json"><button id="cms-scenario-save-button" type="submit">Save draft</button><button id="cms-scenario-reset-button" type="button">Reload selected</button><span id="cms-scenario-dirty-status" class="cms-dirty-status hidden" role="status">Unsaved changes</span></div>
+                                        <div id="cms-scenario-json-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true" data-cms-publish-discovery-for="scenario"><span>Draft saved. To apply this content to runtime, publish the current draft.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
                                         <p id="cms-scenario-message" class="success" role="status"></p>
-                                        <div id="cms-scenario-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true"><span>Draft saved. To apply this content to runtime, publish the current draft.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
                                     </form>
                                 </article>
                             </div>
@@ -348,7 +350,7 @@
                                 <div id="cms-publish-error-details" class="cms-publish-error-details hidden" role="alert" data-cms-publish-error-details="true"></div>
                                 <div class="cms-lifecycle-actions">
                                     <button id="cms-load-versions-button" type="button">Load versions</button>
-                                    <div class="field cms-change-summary-field"><label for="cms-publish-change-summary">Publish change summary</label><input id="cms-publish-change-summary" name="cms-publish-change-summary" type="text" placeholder="Required when publishing changed content" aria-describedby="cms-publish-change-summary-help" /><p id="cms-publish-change-summary-help" class="muted cms-field-help">Required when publishing changed content. No-change publish checks can skip a summary.</p></div>
+                                    <div class="field cms-change-summary-field"><label for="cms-publish-change-summary">Publish change summary</label><input id="cms-publish-change-summary" name="cms-publish-change-summary" type="text" placeholder="Required when publishing changed content" aria-describedby="cms-publish-change-summary-help" /><p id="cms-publish-change-summary-help" class="muted cms-field-help">Required before publishing from the Admin CMS browser UI.</p></div>
                                     <button id="cms-publish-button" type="button">Publish current draft</button>
                                     <div class="field cms-version-select-field"><label for="cms-restore-version-select">Restore version</label><select id="cms-restore-version-select" name="cms-restore-version-select"></select></div>
                                     <div class="field cms-change-summary-field"><label for="cms-restore-reason">Restore reason</label><input id="cms-restore-reason" name="cms-restore-reason" type="text" placeholder="Required for audit clarity" /></div>
@@ -366,6 +368,7 @@
                                     <div class="field cms-version-select-field"><label for="cms-audit-entity-type">Entity type</label><select id="cms-audit-entity-type" name="cms-audit-entity-type"><option value="" selected>All</option><option value="Topic">Topic</option><option value="Scenario">Scenario</option><option value="PromptTemplate">PromptTemplate</option><option value="TutorBehaviorProfile">TutorBehaviorProfile</option></select></div>
                                     <div class="field cms-audit-stable-key-field"><label for="cms-audit-stable-key">Stable key contains</label><input id="cms-audit-stable-key" name="cms-audit-stable-key" type="text" autocomplete="off" placeholder="Optional stable key" /></div>
                                     <div class="field cms-version-select-field"><label for="cms-audit-limit">Limit</label><select id="cms-audit-limit" name="cms-audit-limit"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option></select></div>
+                                    <label class="checkbox-field cms-audit-smoke-toggle"><input id="cms-audit-show-smoke" name="cms-audit-show-smoke" type="checkbox" /> Show smoke/test entries</label>
                                     <button id="cms-load-audit-button" type="button">Refresh audit</button>
                                 </div>
                                 <p id="cms-audit-loading" class="audit-loading hidden" role="status">Loading CMS audit entries...</p>

@@ -226,6 +226,7 @@
     const cmsScenarioJsonStatusElement = document.getElementById("cms-scenario-json-status");
     const cmsSelectedScenarioIdentityElement = document.getElementById("cms-selected-scenario-identity");
     const cmsScenarioResetButton = document.getElementById("cms-scenario-reset-button");
+    const cmsScenarioStructuredResetButton = document.getElementById("cms-scenario-structured-reset-button");
     const cmsScenarioMessageElement = document.getElementById("cms-scenario-message");
     const cmsScenarioDirtyStatusElement = document.getElementById("cms-scenario-dirty-status");
     const cmsPromptTemplateForm = document.getElementById("cms-prompt-template-form");
@@ -261,6 +262,7 @@
     const cmsAuditEntityTypeSelect = document.getElementById("cms-audit-entity-type");
     const cmsAuditStableKeyInput = document.getElementById("cms-audit-stable-key");
     const cmsAuditLimitSelect = document.getElementById("cms-audit-limit");
+    const cmsAuditShowSmokeInput = document.getElementById("cms-audit-show-smoke");
     const cmsAuditLoadingElement = document.getElementById("cms-audit-loading");
     const cmsAuditErrorElement = document.getElementById("cms-audit-error");
     const cmsAuditListElement = document.getElementById("cms-audit-list");
@@ -930,7 +932,7 @@
         if (details.length === 0) { cmsPublishErrorDetailsElement.classList.add("hidden"); return; }
         const title = document.createElement("p");
         title.className = "cms-publish-error-title";
-        title.textContent = "Publish validation details:";
+        title.textContent = "Publish failed";
         const list = document.createElement("ul");
         details.forEach((detail) => { const item = document.createElement("li"); item.textContent = detail; list.appendChild(item); });
         cmsPublishErrorDetailsElement.appendChild(title);
@@ -945,7 +947,8 @@
         cmsDraftSavedInSession = true;
         cmsDraftLikelyHasChangesInSession = Boolean(draftLikelyHasChanges);
         cmsPublishDiscoveryElements.forEach((element) => {
-            const isMatch = element.previousElementSibling === messageElement;
+            const isScenarioCallout = messageElement === cmsScenarioMessageElement && element.dataset.cmsPublishDiscoveryFor === "scenario";
+            const isMatch = isScenarioCallout || element.previousElementSibling === messageElement;
             element.classList.toggle("hidden", !isMatch);
         });
     }
@@ -954,10 +957,11 @@
         activateTab(Tabs.cmsContent);
         selectCmsSubTab(CmsSubTabs.versionsPublish, true);
         try { await loadCmsVersions(); } catch (error) { handleCmsError(error); }
-        if (cmsDraftSavedInSession && cmsPublishSectionElement) {
+        if (cmsPublishSectionElement) {
             cmsPublishSectionElement.classList.add("cms-publish-focus");
             cmsPublishSectionElement.focus({ preventScroll: true });
             cmsPublishSectionElement.scrollIntoView({ behavior: "smooth", block: "start" });
+            cmsPublishChangeSummaryInput.focus({ preventScroll: true });
             window.setTimeout(() => cmsPublishSectionElement.classList.remove("cms-publish-focus"), 2400);
         }
     }
@@ -1065,13 +1069,27 @@
     function formatCmsScenarioJsonInput() { const formatted = prettyPrintCmsJson(cmsScenarioDefinitionJsonInput.value); if (!formatted.isValid) { setCmsScenarioJsonStatus(`Format failed: invalid JSON syntax (${formatted.message}). Nothing was saved or published.`, true); return false; } cmsScenarioDefinitionJsonInput.value = formatted.text; updateCmsDirtyState("scenario"); setCmsScenarioJsonStatus("Formatted JSON for easier editing. Nothing was saved or published; use Save draft to persist edits.", false); return true; }
     function formatShortHash(hash) { const value = String(hash || ""); return value.length > 16 ? `${value.slice(0, 12)}...${value.slice(-4)}` : formatValue(value); }
     function getSelectedCmsAuditLimit() { const limit = Number.parseInt(cmsAuditLimitSelect.value, 10); return [10, 25, 50, 100].includes(limit) ? limit : 25; }
+    function shouldShowCmsSmokeAuditEntries() { return Boolean(cmsAuditShowSmokeInput?.checked); }
+    function isCmsSmokeAuditEntry(entry) {
+        const reason = String(entry?.reason || "").toLowerCase();
+        return reason.includes("smoke") || reason.includes("cms draft-save audit smoke") || reason.includes("cms structured scenario editor smoke");
+    }
 
     function appendCmsBackendMessages(target, values, prefix) {
-        if (!Array.isArray(values)) { return; }
-        values.forEach((value) => {
-            const text = String(value || "").trim();
-            if (text) { target.push(prefix ? `${prefix}: ${text}` : text); }
-        });
+        if (!values) { return; }
+        if (Array.isArray(values)) {
+            values.forEach((value) => appendCmsBackendMessages(target, value, prefix));
+            return;
+        }
+        if (typeof values === "object") {
+            Object.keys(values).forEach((key) => {
+                const nestedPrefix = prefix ? `${prefix} ${key}` : key;
+                appendCmsBackendMessages(target, values[key], nestedPrefix);
+            });
+            return;
+        }
+        const text = String(values || "").trim();
+        if (text) { target.push(prefix ? `${prefix}: ${text}` : text); }
     }
     function extractCmsBackendMessages(payload) {
         const source = payload?.cmsPayload || payload;
@@ -1081,6 +1099,8 @@
             appendCmsBackendMessages(details, source.warnings, "Warning");
             appendCmsBackendMessages(details, source.validation?.errors, "Validation error");
             appendCmsBackendMessages(details, source.validation?.warnings, "Validation warning");
+            if (source.title) { details.push(String(source.title)); }
+            if (source.detail) { details.push(String(source.detail)); }
             if (source.error) { details.push(String(source.error)); }
             if (source.message) { details.push(String(source.message)); }
         }
@@ -1359,7 +1379,9 @@
         setCmsAuditError("");
         setCmsAuditLoading(true);
         try {
-            const query = new URLSearchParams({ limit: String(getSelectedCmsAuditLimit()) });
+            const requestedLimit = getSelectedCmsAuditLimit();
+            const queryLimit = shouldShowCmsSmokeAuditEntries() ? requestedLimit : 100;
+            const query = new URLSearchParams({ limit: String(queryLimit) });
             const entityType = cmsAuditEntityTypeSelect.value.trim();
             const stableKey = cmsAuditStableKeyInput.value.trim();
             if (entityType) { query.set("entityType", entityType); }
@@ -1379,7 +1401,8 @@
         }
     }
     function renderCmsAuditEntries(entries) {
-        const rows = entries.map((entry) => Object.assign({}, entry, {
+        const visibleEntries = (shouldShowCmsSmokeAuditEntries() ? entries : entries.filter((entry) => !isCmsSmokeAuditEntry(entry))).slice(0, getSelectedCmsAuditLimit());
+        const rows = visibleEntries.map((entry) => Object.assign({}, entry, {
             actor: entry.actorEmail || entry.actorUserId || "-",
             changedFieldList: (entry.changedFields || []).join(", ") || "-",
             shortBeforeHash: formatShortHash(entry.beforeHash),
@@ -1414,8 +1437,8 @@
         if (hasUnsavedChanges() && !confirm(UnsavedChangesMessage)) { return; }
         const summary = cmsPublishChangeSummaryInput.value.trim();
         clearCmsPublishErrorDetails();
-        if (cmsDraftSavedInSession && cmsDraftLikelyHasChangesInSession && !summary) {
-            const message = "Enter a publish change summary before publishing changed content.";
+        if (!summary) {
+            const message = "Enter a publish change summary before publishing.";
             setCmsError(message); setCmsSuccess(""); renderCmsPublishErrorDetails({ errors: [message] });
             cmsPublishChangeSummaryInput.focus();
             return;
@@ -1468,6 +1491,7 @@
     cmsTopicResetButton.addEventListener("click", async () => { if (cmsSelectedTopic) { await selectCmsTopic(cmsSelectedTopic); } });
     cmsScenarioForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsScenarioDraft(); });
     cmsScenarioResetButton.addEventListener("click", async () => { if (cmsSelectedScenario) { await selectCmsScenario(cmsSelectedScenario); } });
+    cmsScenarioStructuredResetButton.addEventListener("click", async () => { if (cmsSelectedScenario) { await selectCmsScenario(cmsSelectedScenario); } });
     cmsScenarioFormatJsonButton.addEventListener("click", () => { formatCmsScenarioJsonInput(); });
     cmsScenarioValidateJsonButton.addEventListener("click", () => { validateCmsScenarioJsonInput(); });
     cmsPromptTemplateForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsPromptTemplateDraft(); });
@@ -1481,6 +1505,7 @@
     cmsAuditEntityTypeSelect.addEventListener("change", async () => { await loadCmsAuditEntries(); });
     cmsAuditStableKeyInput.addEventListener("keydown", async (event) => { if (event.key === "Enter") { event.preventDefault(); await loadCmsAuditEntries(); } });
     cmsAuditLimitSelect.addEventListener("change", async () => { await loadCmsAuditEntries(); });
+    cmsAuditShowSmokeInput.addEventListener("change", async () => { await loadCmsAuditEntries(); });
     cmsPublishButton.addEventListener("click", async () => { await publishCmsDraft(); });
     cmsRestoreButton.addEventListener("click", async () => { await restoreCmsVersion(); });
     [cmsTopicTitleInput, cmsTopicDescriptionInput, cmsTopicSortOrderInput, cmsTopicIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("topic")));
