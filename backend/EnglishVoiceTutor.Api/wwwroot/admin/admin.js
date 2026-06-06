@@ -231,6 +231,7 @@
     const cmsScenarioStructuredPublishDiscoveryElement = document.getElementById("cms-scenario-structured-publish-discovery");
     const cmsScenarioJsonPublishDiscoveryElement = document.getElementById("cms-scenario-json-publish-discovery");
     const cmsScenarioDirtyStatusElement = document.getElementById("cms-scenario-dirty-status");
+    const cmsScenarioSectionNavButtons = [...document.querySelectorAll("[data-cms-scenario-section-target]")];
     const cmsPromptTemplateForm = document.getElementById("cms-prompt-template-form");
     const cmsPromptTemplateBodyInput = document.getElementById("cms-prompt-template-body");
     const cmsPromptTemplateIsActiveInput = document.getElementById("cms-prompt-template-is-active");
@@ -269,6 +270,15 @@
     const cmsAuditErrorElement = document.getElementById("cms-audit-error");
     const cmsAuditSmokeFilterStatusElement = document.getElementById("cms-audit-smoke-filter-status");
     const cmsAuditListElement = document.getElementById("cms-audit-list");
+
+
+    function focusCmsScenarioEditorSection(sectionId) {
+        const section = document.getElementById(sectionId);
+        if (!section) { return; }
+        if (section.tagName.toLowerCase() === "details") { section.open = true; }
+        section.scrollIntoView({ behavior: "smooth", block: "start" });
+        window.setTimeout(() => { section.focus({ preventScroll: true }); }, 150);
+    }
 
     function getHashParameters() {
         return new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -1521,6 +1531,7 @@
 
     cmsSubTabButtons.forEach((button) => { button.addEventListener("click", () => { selectCmsSubTab(button.dataset.cmsSubTabId); }); });
     cmsGoToPublishButtons.forEach((button) => { button.addEventListener("click", async () => { await goToCmsPublishSection(); }); });
+    cmsScenarioSectionNavButtons.forEach((button) => { button.addEventListener("click", () => { focusCmsScenarioEditorSection(button.dataset.cmsScenarioSectionTarget); }); });
     selectCmsSubTab(getHashCmsSubTab(), true);
     cmsLoadContentPacksButton.addEventListener("click", async () => { await loadCmsContentPacks(); });
     cmsContentPackSelect.addEventListener("change", async () => { setCmsLoading(true); try { if (await refreshCmsContentPack(false)) { setCmsSuccess("CMS content pack refreshed."); } } catch (error) { handleCmsError(error); } finally { setCmsLoading(false); } });
