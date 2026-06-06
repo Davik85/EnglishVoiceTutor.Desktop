@@ -36,6 +36,41 @@ function Invoke-JsonPost([string]$Uri, [object]$Body) {
     }
 }
 
+function Get-RestErrorBody([System.Management.Automation.ErrorRecord]$ErrorRecord) {
+    if ($ErrorRecord.ErrorDetails -and -not [string]::IsNullOrWhiteSpace($ErrorRecord.ErrorDetails.Message)) {
+        return [string]$ErrorRecord.ErrorDetails.Message
+    }
+
+    $response = $ErrorRecord.Exception.Response
+    if (-not $response) { return '' }
+
+    $contentProperty = $response.PSObject.Properties['Content']
+    if ($contentProperty -and $contentProperty.Value) {
+        try {
+            return [string]$contentProperty.Value.ReadAsStringAsync().GetAwaiter().GetResult()
+        } catch {
+            try { return [string]$contentProperty.Value.ReadAsStringAsync().Result } catch { }
+        }
+    }
+
+    if ($response.PSObject.Methods.Name -contains 'GetResponseStream') {
+        $stream = $null
+        $reader = $null
+        try {
+            $stream = $response.GetResponseStream()
+            if ($stream) {
+                $reader = New-Object System.IO.StreamReader($stream)
+                return $reader.ReadToEnd()
+            }
+        } finally {
+            if ($reader) { $reader.Dispose() }
+            if ($stream) { $stream.Dispose() }
+        }
+    }
+
+    return ''
+}
+
 function Invoke-JsonPostExpectBadRequest([string]$Uri, [object]$Body) {
     $json = $Body | ConvertTo-Json -Depth 12
     try {
@@ -47,11 +82,18 @@ function Invoke-JsonPostExpectBadRequest([string]$Uri, [object]$Body) {
             throw "CMS POST did not return expected HTTP 400 for $Uri. $_"
         }
 
-        if ($_.ErrorDetails -and -not [string]::IsNullOrWhiteSpace($_.ErrorDetails.Message)) {
-            return $_.ErrorDetails.Message | ConvertFrom-Json
+        $errorBody = Get-RestErrorBody -ErrorRecord $_
+        if ([string]::IsNullOrWhiteSpace($errorBody)) {
+            throw "CMS POST returned HTTP 400 for $Uri but did not include a readable JSON error body."
         }
 
-        throw "CMS POST returned HTTP 400 for $Uri but did not include a readable JSON error body."
+        try {
+            return $errorBody | ConvertFrom-Json
+        } catch {
+            $bodyPreview = $errorBody
+            if ($bodyPreview.Length -gt 500) { $bodyPreview = $bodyPreview.Substring(0, 500) }
+            throw "CMS POST returned HTTP 400 for $Uri but the response body was not valid JSON. Body: $bodyPreview"
+        }
     }
 }
 
