@@ -75,7 +75,6 @@ if ($errors.Count -eq 0) {
         'Publish change summary',
         'Required when publishing changed content',
         'data-cms-publish-error-details="true"',
-        'Enter a publish change summary before publishing changed content.',
         'cms-restore-button',
         'cms-topic-title',
         'cms-topic-description',
@@ -142,7 +141,8 @@ if ($errors.Count -eq 0) {
         'CmsSubTabs.versionsPublish',
         'Use Go to Publish to open Versions & Publish',
         'extractCmsBackendMessages',
-        'renderCmsPublishErrorDetails'
+        'renderCmsPublishErrorDetails',
+        'Enter a publish change summary before publishing changed content.'
     )) { Assert-FileContains -path $jsPath -needle $needle }
 
     foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section', 'cms-scenario-structured-editor', 'cms-fieldset', 'cms-audit-controls', 'cms-stable-key-cell', 'cms-publish-discovery', 'cms-publish-notice', 'cms-publish-instructions', 'cms-publish-error-details', 'cms-publish-focus')) {

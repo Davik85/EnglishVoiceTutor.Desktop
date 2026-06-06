@@ -137,6 +137,9 @@ if (-not (Test-Path -LiteralPath $jsPath)) {
     if ($jsContent.IndexOf("confirm(", [System.StringComparison]::Ordinal) -lt 0) {
         Add-Error "admin.js: missing publish/restore confirm() safety guard."
     }
+    if ($jsContent.IndexOf("Enter a publish change summary before publishing changed content.", [System.StringComparison]::Ordinal) -lt 0) {
+        Add-Error "admin.js: missing local publish summary validation message."
+    }
     foreach ($forbiddenToken in $forbiddenJsStorageTokens) {
         if ($jsContent.IndexOf($forbiddenToken, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
             Add-Error "admin.js: forbidden token '$forbiddenToken' found. JWT must remain memory-only."
