@@ -77,7 +77,7 @@ $updateBody = @{
     definitionJson = $updatedDefinitionJson
     structuredScenarioFieldsEdited = $true
     isActive = $detail.isActive
-    reason = 'CMS structured scenario editor smoke: update learning goal.'
+    reason = 'SMOKE: CMS structured scenario editor update learning goal.'
 } | ConvertTo-Json -Depth 100
 Invoke-RestMethod -Method Put -Uri "$contentPackUrl/scenarios/$($detail.id)" -Headers $jsonHeaders -Body $updateBody -TimeoutSec 60 | Out-Null
 
@@ -94,7 +94,7 @@ $restoreBody = @{
     definitionJson = ($restoreDefinition | ConvertTo-Json -Depth 100)
     structuredScenarioFieldsEdited = $true
     isActive = $detail.isActive
-    reason = 'CMS structured scenario editor smoke: restore learning goal.'
+    reason = 'SMOKE: CMS structured scenario editor restore learning goal.'
 } | ConvertTo-Json -Depth 100
 Invoke-RestMethod -Method Put -Uri "$contentPackUrl/scenarios/$($detail.id)" -Headers $jsonHeaders -Body $restoreBody -TimeoutSec 60 | Out-Null
 

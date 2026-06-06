@@ -87,7 +87,7 @@ $saveBody = @{
     setupMessage = $scenarioDetail.setupMessage
     definitionJson = $validDefinitionJson
     isActive = $scenarioDetail.isActive
-    reason = 'Step 5D-6c smoke: valid full scenario JSON draft save.'
+    reason = 'SMOKE: Step 5D-6c valid full scenario JSON draft save.'
 } | ConvertTo-Json -Depth 100
 $saveResponse = Invoke-RestMethod -Method Put -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $jsonHeaders -Body $saveBody -TimeoutSec 60
 if (-not $saveResponse.success) {
@@ -103,7 +103,7 @@ try {
         setupMessage = $scenarioDetail.setupMessage
         definitionJson = '{ invalid scenario json'
         isActive = $scenarioDetail.isActive
-        reason = 'Step 5D-6c smoke: invalid full scenario JSON rejection.'
+        reason = 'SMOKE: Step 5D-6c invalid full scenario JSON rejection.'
     } | ConvertTo-Json -Depth 12
     Invoke-RestMethod -Method Put -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $jsonHeaders -Body $invalidBody -TimeoutSec 60 | Out-Null
 } catch {
@@ -119,7 +119,7 @@ $restoreBody = @{
     setupMessage = $scenarioDetail.setupMessage
     definitionJson = $scenarioDetail.definitionJson
     isActive = $scenarioDetail.isActive
-    reason = 'Step 5D-6c smoke: restore original full scenario JSON after draft save smoke.'
+    reason = 'SMOKE: Step 5D-6c restore original full scenario JSON after draft save.'
 } | ConvertTo-Json -Depth 100
 Invoke-RestMethod -Method Put -Uri "$contentPackUrl/scenarios/$($scenario.id)" -Headers $jsonHeaders -Body $restoreBody -TimeoutSec 60 | Out-Null
 
