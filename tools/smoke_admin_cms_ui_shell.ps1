@@ -59,6 +59,14 @@ if ($errors.Count -eq 0) {
         'cms-run-validation-button',
         'cms-load-preview-button',
         'cms-publish-button',
+        'Publish current draft',
+        'cms-topic-publish-discovery',
+        'cms-scenario-publish-discovery',
+        'cms-prompt-template-publish-discovery',
+        'cms-tutor-profile-publish-discovery',
+        'Draft saved. To apply this content to runtime, publish the current draft.',
+        'Go to Publish',
+        'Draft changes are saved but not visible to runtime until published.',
         'cms-restore-button',
         'cms-topic-title',
         'cms-topic-description',
@@ -119,10 +127,14 @@ if ($errors.Count -eq 0) {
         'cmsAuditEntityTypeSelect',
         'cmsAuditStableKeyInput',
         'No CMS audit entries match the selected filters.',
-        'Request/correlation id'
+        'Request/correlation id',
+        'goToCmsPublishSection',
+        'showCmsPublishDiscoveryForMessage',
+        'CmsSubTabs.versionsPublish',
+        'Use Go to Publish to open Versions & Publish'
     )) { Assert-FileContains -path $jsPath -needle $needle }
 
-    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section', 'cms-scenario-structured-editor', 'cms-fieldset', 'cms-audit-controls', 'cms-stable-key-cell')) {
+    foreach ($needle in @('cms-grid-two', 'cms-toolbar', 'cms-json-output', 'cms-lifecycle-actions', 'cms-sub-tabs', 'cms-sub-tab-button', 'cms-sub-panel', 'cms-workspace-grid', 'cms-selectable-row', 'cms-selected-row', 'cms-action-column', 'cms-select-button', 'cms-scenario-json-section', 'cms-scenario-structured-editor', 'cms-fieldset', 'cms-audit-controls', 'cms-stable-key-cell', 'cms-publish-discovery', 'cms-publish-notice', 'cms-publish-focus')) {
         Assert-FileContains -path $cssPath -needle $needle
     }
 

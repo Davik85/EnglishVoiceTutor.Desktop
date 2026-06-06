@@ -178,4 +178,6 @@ Public release is not declared ready. This work plan supports continued controll
 
 ## CMS runtime gate before tester handoff
 
+Admin CMS workflow remains safe for tester preparation: `Save draft` does not publish, and saved drafts are not runtime-visible until the existing **Versions & Publish** / **Publish current draft** confirmation flow is used. The editor now makes that path discoverable with a post-save **Go to Publish** action. Static JSON remains the default learner runtime source, and the CMS runtime read path remains disabled by default unless explicitly configured and verified with `tools/smoke_cms_runtime_content_read.ps1`.
+
 External tester handoff remains paused until the controlled CMS runtime read path is verified. The desktop UI and packaged static lesson/prompt/tutor files remain unchanged for this step. Backend runtime content continues to use static JSON unless `CmsContent:UsePublishedSnapshotForRuntime=true` and `CmsContent:ReadPublishedSnapshotEnabled=true` are explicitly configured. The admin/development diagnostic `/api/admin/dev/cms/runtime-content/status` and `tools/smoke_cms_runtime_content_read.ps1` should be used to prove published snapshot reads, expected counts, valid hash, and no fallback on the happy path before tester packaging resumes.

@@ -5,6 +5,8 @@ Review date: 2026-06-04.
 
 ## Step 5D-6d current state — Admin CMS refresh resilience and unsaved-change protection
 
+Admin CMS publish discoverability update: `Save draft` remains draft-only and never publishes. After a successful draft save, admins now see “Draft saved. To apply this content to runtime, publish the current draft.” plus a **Go to Publish** action that opens **Versions & Publish** without bypassing the existing confirmation-based **Publish current draft** flow. Runtime reads only published snapshots when CMS runtime mode is explicitly enabled; static JSON remains the default and the CMS runtime path remains disabled by default.
+
 Step 5D-6d is complete. The development/admin-only Admin shell under `/admin/` now restores safe workspace selection state across browser refresh without using browser Web Storage. Admin authentication survives refresh through the existing admin-only HTTP-only cookie, while the admin JWT remains memory-only in JavaScript. The Admin shell does not use `sessionStorage`, `localStorage`, or IndexedDB for auth, selected workspace state, or unsaved content.
 
 After a valid admin session is verified, the Admin shell parses only safe URL hash identifiers: `adminTab`, `cmsSubTab`, `selectedUserId`, `contentPackSlug`, `topicKey`, `scenarioKey`, `promptTemplateKey`, and `tutorId`. Selected user details are restored by `selectedUserId` through an admin-only user lookup. Selected CMS topic, scenario, prompt template, and tutor behavior profile details are restored by stable keys/IDs. Passwords, tokens, prompt bodies, full scenario JSON, tutor profile JSON, and unsaved draft field values are intentionally not stored in the URL hash or browser storage.
