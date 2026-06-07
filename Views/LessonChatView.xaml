@@ -21,6 +21,14 @@
             </Style>
             <converters:AvatarAnimationUriConverter x:Key="AvatarAnimationUriConverter" />
 
+            <LinearGradientBrush x:Key="NormalAvatarDimOverlayBrush" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#990B1724" Offset="0" />
+                <GradientStop Color="#1A0B1724" Offset="0.36" />
+                <GradientStop Color="#330B1724" Offset="0.62" />
+                <GradientStop Color="#B30B1724" Offset="1" />
+            </LinearGradientBrush>
+            <SolidColorBrush x:Key="ConversationAvatarNoDimOverlayBrush" Color="#000B1724" />
+
             <Style x:Key="PrimaryLessonButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
                 <Setter Property="MinHeight" Value="38" />
                 <Setter Property="Background" Value="{StaticResource AccentBrush}" />
@@ -132,10 +140,10 @@
                                        gif:AnimationBehavior.SourceUri="{Binding AvatarAnimationAssetUri, Converter={StaticResource AvatarAnimationUriConverter}}">
                                     <Image.Style>
                                         <Style TargetType="Image">
-                                            <Setter Property="Stretch" Value="UniformToFill" />
+                                            <Setter Property="Stretch" Value="{x:Static models:LessonChatLayoutOptions.NormalAvatarStretchMode}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
-                                                    <Setter Property="Stretch" Value="Uniform" />
+                                                    <Setter Property="Stretch" Value="{x:Static models:LessonChatLayoutOptions.ConversationAvatarStretchMode}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -143,14 +151,16 @@
                                 </Image>
 
                                 <Border IsHitTestVisible="False">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#990B1724" Offset="0" />
-                                            <GradientStop Color="#1A0B1724" Offset="0.36" />
-                                            <GradientStop Color="#330B1724" Offset="0.62" />
-                                            <GradientStop Color="#B30B1724" Offset="1" />
-                                        </LinearGradientBrush>
-                                    </Border.Background>
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{StaticResource NormalAvatarDimOverlayBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
+                                                    <Setter Property="Background" Value="{StaticResource ConversationAvatarNoDimOverlayBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
                                 </Border>
 
 
