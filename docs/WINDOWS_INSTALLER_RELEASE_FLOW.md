@@ -10,6 +10,7 @@ Inno Setup is the primary Windows direct-download installer track for Language V
 - Stable installer AppId: `LanguageVoiceTutor.Desktop`.
 - Default install directory: `{autopf}\Language Voice Tutor`, normally under Program Files.
 - Expected installer artifact: `artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe`.
+- Server-ready direct-download output: `artifacts\releases\windows\direct`.
 - Existing executable name remains `EnglishVoiceTutor.Desktop.exe` to avoid risky project-wide renames.
 
 Velopack was rejected/deprecated for this project because its Windows installer is a one-click installer and does not match the desired release-like wizard UX. External testers should not be sent Velopack packages.
@@ -37,7 +38,7 @@ Standard uninstall removes installed application files and shortcuts. It should 
 
 Future Windows direct-download updates should reuse the same AppId, `LanguageVoiceTutor.Desktop`, so installing a newer Inno installer updates the existing installation.
 
-No automatic update UX is implemented yet. A future in-app update UX may download the same Inno installer and run it only after explicit user confirmation. It must not run during an active lesson and must not introduce silent updates.
+No automatic update UX is implemented yet. A future in-app update UX may download the same Inno installer and run it only after explicit user confirmation. It must not run during an active lesson and must not introduce silent updates. The generated `latest.json` manifest is intended for a future download page and future in-app update-check, but the current app does not fetch it automatically.
 
 ## Install Inno Setup locally
 
@@ -68,11 +69,23 @@ If `ISCC.exe` is not in a default location:
 powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0 -IsccPath "C:\Tools\Inno Setup 6\ISCC.exe"
 ```
 
-Expected output:
+Expected installer output:
 
 ```text
 artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe
 ```
+
+Expected server-ready direct-download output:
+
+```text
+artifacts\releases\windows\direct\LanguageVoiceTutorSetup-{version}.exe
+artifacts\releases\windows\direct\latest.json
+artifacts\releases\windows\direct\changelog.json
+artifacts\releases\windows\direct\known-issues.json
+artifacts\releases\windows\direct\checksums.sha256
+```
+
+`latest.json` includes product identity, platform, architecture, channel, version, UTC release date, installer filename/relative URL, SHA-256, size, minimum supported version, manual-confirmation update mode, and current release notes. It must not include absolute local file paths. `changelog.json` and `known-issues.json` are placeholders for tester-facing release communication until richer release notes are supplied.
 
 Generated files under `artifacts\` must not be committed.
 
@@ -86,6 +99,7 @@ Before external handoff, verify on a clean or representative Windows machine:
 - launch from the Start Menu shortcut;
 - create and launch from the optional Desktop shortcut;
 - verify backend URL configuration and login/session behavior;
+- verify Settings shows `Version: v{version}` and ask testers to include that Settings version when reporting bugs;
 - start a lesson;
 - verify TTS/STT when the backend is running and configured;
 - install a newer version over an older version and confirm the same AppId upgrade path works;

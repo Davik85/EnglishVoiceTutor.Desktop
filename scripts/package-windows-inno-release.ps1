@@ -4,19 +4,50 @@ param(
     [string]$Version,
 
     [ValidateNotNullOrEmpty()]
-    [string]$IsccPath
+    [string]$IsccPath,
+
+    [string[]]$ChangelogItem = @()
 )
 
 $ErrorActionPreference = "Stop"
 
 $runtime = "win-x64"
+$productName = "Language Voice Tutor"
+$appId = "LanguageVoiceTutor.Desktop"
+$platform = "windows"
+$architecture = "win-x64"
+$channel = "direct-tester"
+$updateMode = "manual-confirmation"
 $mainExe = "EnglishVoiceTutor.Desktop.exe"
 $installerBaseName = "LanguageVoiceTutorSetup-$Version.exe"
 $semVerPattern = '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$'
+$semVerCorePattern = '^(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)'
+$defaultChangelogItems = @(
+    "Windows direct-download installer package generated for tester validation.",
+    "Settings displays the installed app version for support and bug reports.",
+    "Server-ready direct-download release manifest files generated for future download and update-check flows."
+)
+$knownIssues = @(
+    "Installer is unsigned and may trigger Windows SmartScreen warnings.",
+    "Update UI inside the app is not implemented yet."
+)
+$manifestNotes = @(
+    "code signing deferred",
+    "update UI not implemented yet",
+    "do not update during active lesson once update UI exists"
+)
 
 if ($Version -notmatch $semVerPattern) {
     throw "Installer version '$Version' is invalid. Use a SemVer-compatible version such as 0.1.0 or 0.1.0-beta.1. Build metadata and four-part versions are not supported for installer file naming."
 }
+
+$semVerCoreMatch = [regex]::Match($Version, $semVerCorePattern)
+if (-not $semVerCoreMatch.Success) {
+    throw "Installer version '$Version' did not contain a numeric SemVer core."
+}
+
+$numericAssemblyVersion = "{0}.{1}.{2}.0" -f $semVerCoreMatch.Groups["major"].Value, $semVerCoreMatch.Groups["minor"].Value, $semVerCoreMatch.Groups["patch"].Value
+$releaseChangelogItems = if ($ChangelogItem.Count -gt 0) { @($ChangelogItem) } else { @($defaultChangelogItems) }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = (Resolve-Path (Join-Path $scriptRoot "..")).Path
@@ -24,7 +55,9 @@ $projectPath = Join-Path $repoRoot "EnglishVoiceTutor.Desktop.csproj"
 $innoScriptPath = Join-Path $repoRoot "installer\windows\LanguageVoiceTutor.iss"
 $publishDirectory = Join-Path $repoRoot "artifacts\publish\win-x64-inno"
 $installerDirectory = Join-Path $repoRoot "artifacts\installers\windows"
+$releaseDirectory = Join-Path $repoRoot "artifacts\releases\windows\direct"
 $expectedInstallerPath = Join-Path $installerDirectory $installerBaseName
+$releaseInstallerPath = Join-Path $releaseDirectory $installerBaseName
 
 function Resolve-IsccPath {
     param([string]$ExplicitPath)
@@ -78,6 +111,19 @@ function Assert-PublishOutputIsSafe {
     }
 }
 
+function Write-JsonFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [object]$Value
+    )
+
+    $json = $Value | ConvertTo-Json -Depth 8
+    Set-Content -Path $Path -Value $json -Encoding utf8
+}
+
 if (-not (Test-Path $projectPath -PathType Leaf)) {
     throw "EnglishVoiceTutor.Desktop.csproj was not found. Run this script from the repository checkout or keep it in the scripts folder."
 }
@@ -96,15 +142,26 @@ Write-Host "Version: $Version"
 Write-Host "Runtime: $runtime"
 Write-Host "Publish directory: $publishDirectory"
 Write-Host "Installer directory: $installerDirectory"
+Write-Host "Direct release directory: $releaseDirectory"
 Write-Host "ISCC.exe: $isccExe"
 
 Remove-Item -Recurse -Force $publishDirectory -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $publishDirectory | Out-Null
 New-Item -ItemType Directory -Force -Path $installerDirectory | Out-Null
+New-Item -ItemType Directory -Force -Path $releaseDirectory | Out-Null
 Remove-Item -Force $expectedInstallerPath -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $releaseDirectory "LanguageVoiceTutorSetup-*.exe") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $releaseDirectory "latest.json") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $releaseDirectory "changelog.json") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $releaseDirectory "known-issues.json") -ErrorAction SilentlyContinue
+Remove-Item -Force (Join-Path $releaseDirectory "checksums.sha256") -ErrorAction SilentlyContinue
 
 Write-Host "Publishing desktop app..."
-dotnet publish $projectPath -c Release -r $runtime --self-contained true -o $publishDirectory
+dotnet publish $projectPath -c Release -r $runtime --self-contained true -o $publishDirectory `
+    /p:Version=$Version `
+    /p:InformationalVersion=$Version `
+    /p:AssemblyVersion=$numericAssemblyVersion `
+    /p:FileVersion=$numericAssemblyVersion
 
 $exePath = Join-Path $publishDirectory $mainExe
 if (-not (Test-Path $exePath -PathType Leaf)) {
@@ -132,6 +189,48 @@ if (-not (Test-Path $expectedInstallerPath -PathType Leaf)) {
     throw "Expected installer was not created: $expectedInstallerPath"
 }
 
+Write-Host "Creating server-ready direct-download release manifest files..."
+Copy-Item -Path $expectedInstallerPath -Destination $releaseInstallerPath -Force
+$installerFile = Get-Item -Path $releaseInstallerPath
+$installerHash = (Get-FileHash -Path $releaseInstallerPath -Algorithm SHA256).Hash.ToLowerInvariant()
+$releaseDateUtc = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+$latestManifest = [ordered]@{
+    productName = $productName
+    appId = $appId
+    platform = $platform
+    architecture = $architecture
+    channel = $channel
+    version = $Version
+    releaseDateUtc = $releaseDateUtc
+    installerFileName = $installerBaseName
+    installerRelativeUrl = $installerBaseName
+    installerSha256 = $installerHash
+    installerSizeBytes = $installerFile.Length
+    minimumSupportedVersion = $Version
+    updateMode = $updateMode
+    notes = @($manifestNotes)
+}
+
+$changelogManifest = [ordered]@{
+    version = $Version
+    releaseDateUtc = $releaseDateUtc
+    items = @($releaseChangelogItems)
+}
+
+$knownIssuesManifest = [ordered]@{
+    version = $Version
+    releaseDateUtc = $releaseDateUtc
+    issues = @($knownIssues)
+}
+
+Write-JsonFile -Path (Join-Path $releaseDirectory "latest.json") -Value $latestManifest
+Write-JsonFile -Path (Join-Path $releaseDirectory "changelog.json") -Value $changelogManifest
+Write-JsonFile -Path (Join-Path $releaseDirectory "known-issues.json") -Value $knownIssuesManifest
+Set-Content -Path (Join-Path $releaseDirectory "checksums.sha256") -Value ("$installerHash  $installerBaseName") -Encoding ascii
+
 Write-Host "Inno Setup installer created successfully."
 Write-Host "Publish output: $publishDirectory"
 Write-Host "Installer: $expectedInstallerPath"
+Write-Host "Direct release output: $releaseDirectory"
+Write-Host "Latest manifest: $(Join-Path $releaseDirectory 'latest.json')"

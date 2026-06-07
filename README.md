@@ -47,6 +47,19 @@ dotnet run
 
 The desktop app is backend-driven. Backend-unavailable checks are resilience-only: the app should not crash, Settings/Account should remain usable, and backend-required lesson or AI actions should show a friendly localized message instead of a raw exception. Full lesson functionality, including Send, Hint, Translate, Play voice/TTS, Finish, Summary, and Account Login/Logout, must be tested with the backend running.
 
+
+## Windows direct-download release
+
+Inno Setup is the primary Windows direct-download installer flow. Build it with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0
+```
+
+The primary installer is written to `artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe`. Server-ready direct-download files are also generated under `artifacts\releases\windows\direct`, including `latest.json`, `changelog.json`, `known-issues.json`, and `checksums.sha256`. The current app does not check this manifest automatically; it is a foundation for a future download page and future manual-confirmation update-check UI. Generated `artifacts\` files must not be committed. Code signing is still deferred.
+
+The Settings screen footer displays the installed app version, for example `Version: v0.1.0`. Testers should include that version when reporting bugs.
+
 ## Security rule
 
 OpenAI API keys are backend-only. `OPENAI_API_KEY` is needed only for real AI/TTS/STT testing, must never be stored in the desktop app, must never be committed to source control, and must never be sent to testers. The desktop app only needs a Backend URL and must call backend APIs only.

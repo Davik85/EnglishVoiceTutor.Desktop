@@ -695,13 +695,19 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0"
-                               Margin="0,0,16,0"
-                               VerticalAlignment="Center"
-                               Text="{Binding StatusMessage}"
-                               FontSize="13"
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               TextWrapping="Wrap" />
+                    <StackPanel Grid.Column="0"
+                                Margin="0,0,16,0"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   FontSize="13"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Margin="0,6,0,0"
+                                   Text="{Binding InstalledAppVersionText}"
+                                   FontSize="12"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
 
                     <WrapPanel Grid.Column="1" HorizontalAlignment="Right" ItemHeight="38">
                         <Button MinWidth="132"

@@ -20,7 +20,7 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 public partial class SettingsViewModel : ViewModelBase
 {
     public event EventHandler? ClearPasswordRequested;
-    private const string AppVersionFallbackText = "local build";
+    private const string AppVersionFallbackText = "0.0.0-local";
     private const string OpenAiNotConfiguredStatus = "not_configured";
     private const string DiagnosticsReportTitle = "Language Voice Tutor Desktop diagnostics";
     private const string DiagnosticsCurrentDateTimeLabel = "Current date/time";
@@ -180,6 +180,8 @@ public partial class SettingsViewModel : ViewModelBase
     public string CopyDiagnosticsText => diagnosticsLocalizedText.CopyButtonText;
 
     public string AppVersionText => appVersionText;
+
+    public string InstalledAppVersionText => $"Version: v{appVersionText}";
 
     public string DiagnosticsBackendUrlText => SanitizeDiagnosticsValue(BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl));
 
@@ -785,6 +787,7 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(RefreshDiagnosticsButtonText));
         OnPropertyChanged(nameof(CopyDiagnosticsText));
         OnPropertyChanged(nameof(DiagnosticsCopyStatusText));
+        OnPropertyChanged(nameof(InstalledAppVersionText));
         OnPropertyChanged(nameof(DiagnosticsBackendStatusText));
         OnPropertyChanged(nameof(DiagnosticsDatabaseStatusText));
         OnPropertyChanged(nameof(DiagnosticsAiStatusText));
@@ -1363,14 +1366,15 @@ public partial class SettingsViewModel : ViewModelBase
 
     private static string BuildAppVersionText()
     {
-        var version = Assembly.GetExecutingAssembly().GetName().Version;
-        if (version is null)
+        var assembly = Assembly.GetExecutingAssembly();
+        var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (!string.IsNullOrWhiteSpace(informationalVersion))
         {
-            return AppVersionFallbackText;
+            return informationalVersion.Trim();
         }
 
-        var versionText = version.ToString(fieldCount: 3);
-        return string.IsNullOrWhiteSpace(versionText) ? AppVersionFallbackText : versionText;
+        var assemblyVersion = assembly.GetName().Version?.ToString(fieldCount: 3);
+        return string.IsNullOrWhiteSpace(assemblyVersion) ? AppVersionFallbackText : assemblyVersion;
     }
 
     private static int CountLessonsToday(IReadOnlyList<LessonHistoryItem> lessonHistory)
