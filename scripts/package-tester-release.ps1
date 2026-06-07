@@ -57,8 +57,10 @@ $forbiddenFiles = Get-ChildItem -Path $publishDirectory -Recurse -File |
         $_.Name -ieq "auth-session.json" -or
         $_.Name -imatch "token" -or
         $_.Name -imatch "secret" -or
-        $_.Name -imatch "openai.*api.*key" -or
-        $_.Name -imatch "api.*key"
+        $_.Name -imatch "api[._ -]*key" -or
+        $_.Name -imatch "openai[._ -]*api[._ -]*key" -or
+        $_.Name -ieq ".env" -or
+        $_.Name -ilike ".env.*"
     }
 
 if ($forbiddenFiles) {

@@ -3,7 +3,7 @@
 
 ## Parallel Windows installer/update foundation
 
-A minimal Velopack foundation exists for controlled Windows tester installer/update work. It is documented in [`docs/WINDOWS_INSTALLER_UPDATE_FLOW.md`](WINDOWS_INSTALLER_UPDATE_FLOW.md) and built with `scripts/package-windows-velopack-tester-release.ps1`. This is not a replacement for the canonical tester zip yet; the accepted tester handoff remains `artifacts/packages/LanguageVoiceTutor.Desktop-win-x64-self-contained.zip` from `scripts/package-tester-release.ps1` until install/update smoke is accepted.
+The Windows direct-download installer foundation is now Inno Setup. It is documented in [`docs/WINDOWS_INSTALLER_RELEASE_FLOW.md`](WINDOWS_INSTALLER_RELEASE_FLOW.md) and built with `scripts/package-windows-inno-release.ps1`. Velopack is deprecated/rejected because its one-click Windows installer does not match the desired release-like wizard UX. ZIP packaging remains only an emergency/developer fallback through `scripts/package-tester-release.ps1`.
 
 This foundation does not make the app public-release ready, does not add Microsoft Store/MSIX packaging, does not enable production billing, and does not add production RBAC/Admin readiness. Follow-up work must add update UI and active-lesson-safe update confirmation before updates are offered to testers inside the app.
 
@@ -12,7 +12,7 @@ Review date: 2026-06-06.
 
 ## Current conclusion
 
-The desktop product has completed a large release-hardening block and is suitable for continued controlled tester validation, but public release is not declared ready. The tester ZIP package flow, accepted Welcome screen polish, Lesson Chat window auto-sizing, core Lesson Chat/voice/TTS flow, Release Diagnostics gate, protected auth session storage, and backend-enforced single active lesson guard are accepted. External tester handoff is now paused so CMS/Admin content MVP can start before testers review content. Production billing remains deferred.
+The desktop product has completed a large release-hardening block and is suitable for continued controlled tester validation, but public release is not declared ready. The Inno Setup installer foundation, emergency/developer ZIP fallback, accepted Welcome screen polish, Lesson Chat window auto-sizing, core Lesson Chat/voice/TTS flow, Release Diagnostics gate, protected auth session storage, and backend-enforced single active lesson guard are accepted for continued smoke work. External tester handoff is still paused so CMS/Admin content MVP can continue before testers review content. Production billing remains deferred.
 
 ## Source documents reviewed
 
@@ -46,7 +46,7 @@ Desktop hardening is accepted enough to pause tester handoff and start CMS/Admin
 
 ```powershell
 cd C:\dev\EnglishVoiceTutor.Desktop
-powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0
 ```
 
 Default tester artifact:
@@ -135,7 +135,7 @@ Accepted manually:
 
 ### Step 5B-8: Tester ZIP package acceptance — accepted
 
-- `scripts/package-tester-release.ps1` is the canonical tester distribution flow.
+- `scripts/package-windows-inno-release.ps1` is the recommended Windows installer packaging flow; `scripts/package-tester-release.ps1` remains only an emergency/developer ZIP fallback.
 - Expected ZIP: `artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip`.
 - The ZIP was verified on another Windows device after extraction.
 - Extracted app starts.
@@ -176,7 +176,7 @@ Keep this list separate from completed/accepted work:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\run_desktop_release_gate.ps1
 powershell -ExecutionPolicy Bypass -File .\tools\smoke_single_active_lesson_guard.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0
 ```
 
 ## Public release status
