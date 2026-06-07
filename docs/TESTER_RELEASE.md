@@ -6,6 +6,8 @@ The older ZIP package created by `scripts/package-tester-release.ps1` remains av
 
 Velopack is deprecated/rejected for this project. Its Windows installer is a one-click flow and does not match the desired release-like installer UX with destination-directory selection. External testers should not receive Velopack packages.
 
+The server-ready direct-download folder can now be validated locally and dry-run uploaded with the manual helper documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). Server upload is prepared but not executed automatically, and it does not deploy the backend, create the download website, or add update UI. External tester handoff remains blocked until server/static download, clean-machine install, and the controlled tester checklist pass.
+
 ## What the tester release is
 
 The tester release is:

@@ -35,3 +35,7 @@ The installer should use standard Windows uninstall integration. Uninstall remov
 - Code signing is deferred, but required before broad public distribution.
 - Microsoft Store/MSIX is deferred.
 - Public release readiness is not claimed.
+
+## Server upload boundary
+
+The server-ready folder can be validated and optionally copied to a future static HTTPS server folder using the scripts documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). This upload preparation is manual only and does not deploy the backend, does not create a download website, and does not implement update UI. The current desktop app still does not fetch `latest.json`; future update UI must keep manual confirmation and must not prompt during an active lesson.

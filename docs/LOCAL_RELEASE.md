@@ -59,6 +59,14 @@ artifacts\releases\windows\direct\known-issues.json
 artifacts\releases\windows\direct\checksums.sha256
 ```
 
+Validate the direct-release metadata and checksums before server preparation or tester handoff:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
+```
+
+Optional future upload to a static HTTPS server folder is documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). The upload helper supports `-DryRun` and never runs automatically; backend deployment, the download website, and update UI remain separate later work.
+
 Copy the installer to another Windows device or clean VM, install it, choose a custom directory during smoke testing, launch the app, and verify backend connection, login/account, backend history, and the core lesson flow. Also verify the Settings footer displays the installed version, for example `Version: v0.1.0`; testers should report this value when filing bugs.
 
 ## Emergency/developer ZIP fallback
