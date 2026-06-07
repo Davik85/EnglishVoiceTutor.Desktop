@@ -26,7 +26,7 @@ Normal Lesson Chat TTS settings:
 
 - model: `tts-1`;
 - purpose: `lesson_chat_tts`;
-- voice: backend/default voice configuration;
+- voice: selected tutor/user voice from Settings;
 - speech instructions: not used for normal `tts-1` Lesson Chat playback.
 
 Normal Lesson Chat TTS should continue to speak the visible bot message text.
@@ -49,7 +49,7 @@ Conversation Mode TTS settings:
 
 - model: `gpt-4o-mini-tts`;
 - purpose: `conversation_mode_tts`;
-- voice: `coral`;
+- voice: selected tutor/user voice from Settings (`coral` by default, `onyx` for David);
 - speed: `1.0`;
 - instructions: calm speech instructions for natural, friendly learner-facing delivery.
 

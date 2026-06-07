@@ -1,7 +1,17 @@
 # Current State
 
-Review date: 2026-06-06.
+Review date: 2026-06-07.
 
+
+## Accepted pause point before server setup
+
+Language Voice Tutor Desktop MVP works, the backend works locally, and the PostgreSQL + EF Core persistence foundation exists. Desktop auth session storage is protected with Windows DPAPI, the single active lesson guard is accepted, and the backend remains the source of truth. The desktop must not store OpenAI API keys or call OpenAI directly.
+
+The CMS/Admin Content MVP is advanced enough to pause and continue test deployment preparation later: `/admin/` works; the CMS Content workspace has Overview, Topics, Scenarios, Prompts, Tutors, Validation & Preview, Versions & Publish, and Audit tabs; `Save draft` does not publish; publishing requires **Versions & Publish** plus a publish summary; published versions are immutable; restore creates a new published version; CMS draft-save audit logging works. The runtime published-snapshot path was checked locally, but runtime still defaults to static JSON unless explicitly switched.
+
+Public release is not ready. Backend deployment is not done yet, and server setup/static HTTPS download preparation is the next stage. Production billing, production RBAC, critical-change approval workflow, Microsoft Store, App Store, Google Play, and Mac version are deferred. Language Voice Tutor remains a global/international product; do not introduce YooKassa or Russia-only billing assumptions.
+
+Windows direct-download release state: Inno Setup is the primary installer track with stable AppId `LanguageVoiceTutor.Desktop`; Velopack is rejected/deprecated; ZIP packaging is only an emergency/developer fallback. Expected installer output is `artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe`; server-ready direct-download files are under `artifacts\releases\windows\direct` and include `latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, and `LanguageVoiceTutorSetup-{version}.exe`. The current app displays `Version: v{version}` in Settings, does not automatically check `latest.json`, and must only add future update UX with manual confirmation and active-lesson protection. `scripts/validate-windows-direct-release.ps1` validates local release artifacts; `scripts/upload-windows-direct-release.ps1` supports dry-run/future SCP without hardcoded server secrets. Code signing remains deferred, so SmartScreen warnings are expected. Generated `artifacts/` files must not be committed. External tester handoff is still blocked until server/static HTTPS download exists, clean-machine install passes, and the controlled tester checklist passes.
 
 ## Step 5D-6d current state — Admin CMS refresh resilience and unsaved-change protection
 
@@ -25,7 +35,7 @@ The Admin CMS is still not production-ready. Production RBAC is not implemented.
 
 ## Short summary
 
-EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. The recent desktop release-hardening block accepted the core lesson/voice/TTS flow and the backend-enforced single-active-lesson guard. The Windows direct-download installer foundation is now Inno Setup for the public `Language Voice Tutor` product name; ZIP packaging remains only an emergency/developer fallback. Public release is not declared ready. The product owner has paused external tester handoff and moved CMS/Admin content MVP ahead of tester delivery. Production billing remains deferred.
+EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. The recent desktop release-hardening block accepted the core lesson/voice/TTS flow and the backend-enforced single-active-lesson guard. The Windows direct-download installer foundation is now Inno Setup for the public `Language Voice Tutor` product name; ZIP packaging remains only an emergency/developer fallback. Public release is not declared ready. The CMS/Admin Content MVP is advanced enough to pause for server setup/test deployment preparation. External tester handoff remains blocked until server/static HTTPS download exists, clean-machine install passes, and the controlled tester checklist passes. Production billing remains deferred.
 
 ## Product architecture principle
 
