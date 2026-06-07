@@ -87,7 +87,7 @@ The current MVP baseline is documentation-first and behavior-stable:
 - Hint works in normal Lesson Chat and Conversation Mode, including the semi-transparent Conversation Mode overlay.
 - Conversation Mode works with the TTS provider: full avatar overlay, red record button, exit/back button, latest user and bot phrase bubbles, recording, transcription, bot reply generation, voice playback, and multiple turns.
 - Normal Lesson Chat TTS remains `tts-1` with `purpose=lesson_chat_tts`.
-- Conversation Mode TTS uses `gpt-4o-mini-tts`, voice `coral`, `purpose=conversation_mode_tts`, speed `1.0`, and calm speech instructions.
+- Conversation Mode TTS uses `gpt-4o-mini-tts`, the selected tutor voice (`coral` by default, `onyx` for David), `purpose=conversation_mode_tts`, speed `1.0`, and calm speech instructions.
 - Usage/cost logging exists, but exact pricing fields are still approximate or missing where pricing constants are not configured.
 - UI has the Soft Learning Desktop style: light blue frame, rounded cards/buttons/inputs, level colors, topic colors, and warm hint/feedback cards.
 - Step 5B-2 adds a centralized native/interface/explanation language foundation for global language preferences, with English UI fallback for languages that do not have localized UI text yet. Study languages were not expanded and remain English, French, German, Portuguese, Spanish, and Italian.

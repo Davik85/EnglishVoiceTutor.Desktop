@@ -4,6 +4,7 @@
 
 - `elena` (default)
 - `nelli`
+- `david`
 
 Tutor identity is loaded from `Content/Tutors/*.json` and remains separate from lesson scenario JSON in `Content/Lessons/**`.
 
@@ -26,6 +27,16 @@ Tutor identity is loaded from `Content/Tutors/*.json` and remains separate from 
 - Personality: kind, cheerful, likes jokes
 - Speaking style: friendly, playful, light, supportive
 
+### David (`david`)
+- Display name: David
+- Age: 40
+- City: Los Angeles
+- Role: entrepreneur in the IT industry
+- Interests: technology, startups
+- Personality: friendly, cheerful, supportive
+- Speaking style: clear, upbeat, encouraging, practical
+- Preferred voice: Onyx (male)
+
 ## Avatar state files
 
 Each avatar can provide these files:
@@ -42,6 +53,15 @@ Preferred per-avatar structure:
 
 - `Assets/Avatars/elena/`
 - `Assets/Avatars/nelli/`
+- `Assets/Avatars/david/`
+
+Full expected David paths:
+
+- `Assets/Avatars/david/avatar-idle.gif`
+- `Assets/Avatars/david/avatar-listening.gif`
+- `Assets/Avatars/david/avatar-speaking.gif`
+- `Assets/Avatars/david/avatar-thinking.gif`
+- `Assets/Avatars/david/avatar-transcribing.gif`
 
 Full expected Nelli paths:
 

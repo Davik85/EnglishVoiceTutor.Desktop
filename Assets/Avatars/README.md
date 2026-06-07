@@ -24,6 +24,12 @@ This folder contains animated Lesson Chat avatar GIF resources.
 - `Assets/Avatars/nelli/avatar-thinking.gif`
 - `Assets/Avatars/nelli/avatar-transcribing.gif`
 
+- `Assets/Avatars/david/avatar-idle.gif`
+- `Assets/Avatars/david/avatar-listening.gif`
+- `Assets/Avatars/david/avatar-speaking.gif`
+- `Assets/Avatars/david/avatar-thinking.gif`
+- `Assets/Avatars/david/avatar-transcribing.gif`
+
 Desktop resolution fallback order is:
 
 1. selected avatar nested path

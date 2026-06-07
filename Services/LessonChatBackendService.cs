@@ -258,6 +258,7 @@ public sealed class LessonChatBackendService
         double? speechSpeed = null,
         string? model = null,
         string? instructions = null,
+        string? speechVoice = null,
         StudyLanguageDefinition? targetLanguage = null,
         Guid? backendSessionId = null)
     {
@@ -284,6 +285,7 @@ public sealed class LessonChatBackendService
                     Purpose = purpose,
                     Model = resolvedModel,
                     Instructions = instructionsToSend,
+                    SpeechVoice = speechVoice,
                     SpeechSpeed = speechSpeed,
                     TargetLanguageId = resolvedTargetLanguage.Id,
                     TargetLanguageName = resolvedTargetLanguage.EnglishName,

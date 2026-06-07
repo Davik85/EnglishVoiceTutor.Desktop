@@ -1673,10 +1673,11 @@ static async Task<IResult> HandleAudioSpeechAsync(
         }
 
         logger.LogInformation(
-            "Audio speech endpoint request accepted. Endpoint={Endpoint}; Model={Model}; Purpose={Purpose}; SpeechSpeed={SpeechSpeed}; HasInstructions={HasInstructions}; InstructionsLength={InstructionsLength}; InputLength={InputLength}; TargetLanguageId={TargetLanguageId}; TargetLanguageCode={TargetLanguageCode}.",
+            "Audio speech endpoint request accepted. Endpoint={Endpoint}; Model={Model}; Purpose={Purpose}; SpeechVoice={SpeechVoice}; SpeechSpeed={SpeechSpeed}; HasInstructions={HasInstructions}; InstructionsLength={InstructionsLength}; InputLength={InputLength}; TargetLanguageId={TargetLanguageId}; TargetLanguageCode={TargetLanguageCode}.",
             "audio/speech",
             request.Model ?? OpenAiConstants.DefaultBotVoiceSpeechModel,
             request.Purpose,
+            request.SpeechVoice ?? OpenAiConstants.DefaultSpeechVoice,
             request.SpeechSpeed,
             !string.IsNullOrWhiteSpace(request.Instructions),
             request.Instructions?.Length ?? 0,
@@ -1684,7 +1685,7 @@ static async Task<IResult> HandleAudioSpeechAsync(
             string.IsNullOrWhiteSpace(request.TargetLanguageId) ? StudyLanguageCatalog.DefaultStudyLanguageId : request.TargetLanguageId,
             string.IsNullOrWhiteSpace(request.TargetLanguageCode) ? StudyLanguageCatalog.English.Bcp47Code : request.TargetLanguageCode);
 
-        var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, request.Purpose, request.SpeechSpeed, request.Model, request.Instructions, request.TargetLanguageName, request.TargetLanguageId, cancellationToken);
+        var audioBytes = await audioSpeechService.CreateSpeechAsync(request.Text, request.Purpose, request.SpeechSpeed, request.Model, request.Instructions, request.SpeechVoice, request.TargetLanguageName, request.TargetLanguageId, cancellationToken);
 
         return Results.File(audioBytes, OpenAiConstants.SpeechResponseContentType);
     }

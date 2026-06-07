@@ -42,7 +42,7 @@ public sealed class AudioSpeechService
         _logger = logger;
     }
 
-    public async Task<byte[]> CreateSpeechAsync(string text, string? purpose = null, double? speechSpeed = null, string? model = null, string? instructions = null, string? targetLanguageName = null, string? targetLanguageId = null, CancellationToken clientCancellationToken = default)
+    public async Task<byte[]> CreateSpeechAsync(string text, string? purpose = null, double? speechSpeed = null, string? model = null, string? instructions = null, string? speechVoice = null, string? targetLanguageName = null, string? targetLanguageId = null, CancellationToken clientCancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -65,7 +65,7 @@ public sealed class AudioSpeechService
         {
             Model = resolvedModel,
             Input = text,
-            Voice = OpenAiConstants.DefaultSpeechVoice,
+            Voice = ResolveSpeechVoice(speechVoice),
             Instructions = resolvedInstructions,
             Speed = resolvedSpeechSpeed,
             ResponseFormat = OpenAiConstants.DefaultSpeechResponseFormat
@@ -159,6 +159,13 @@ public sealed class AudioSpeechService
     private static bool SpeechModelSupportsInstructions(string model)
     {
         return string.Equals(model, OpenAiConstants.ConversationModeTtsModel, StringComparison.Ordinal);
+    }
+
+    private static string ResolveSpeechVoice(string? requestedSpeechVoice)
+    {
+        return string.IsNullOrWhiteSpace(requestedSpeechVoice)
+            ? OpenAiConstants.DefaultSpeechVoice
+            : requestedSpeechVoice.Trim();
     }
 
     private static string? ResolveStudyLanguage(string? targetLanguageName, string? targetLanguageId)

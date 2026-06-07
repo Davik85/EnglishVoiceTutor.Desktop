@@ -76,6 +76,7 @@ public class UserSettingsService
             NativeLanguageName = NativeLanguageCatalog.DefaultLanguageId,
             StudyLanguageId = StudyLanguageCatalog.DefaultStudyLanguageId,
             SelectedTutorAvatarId = TutorAvatarOptions.DefaultAvatarId,
+            SpeechVoiceId = SpeechVoiceOptions.GetPreferredVoiceIdForTutor(TutorAvatarOptions.DefaultAvatarId),
             UserDisplayName = string.Empty,
             LearningGoal = string.Empty,
             BackendBaseUrl = BackendConstants.DefaultBackendBaseUrl,
@@ -91,6 +92,9 @@ public class UserSettingsService
 
         settings.StudyLanguageId = StudyLanguageCatalog.GetById(settings.StudyLanguageId).Id;
         settings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(settings.SelectedTutorAvatarId).Id;
+        settings.SpeechVoiceId = string.IsNullOrWhiteSpace(settings.SpeechVoiceId)
+            ? SpeechVoiceOptions.GetPreferredVoiceIdForTutor(settings.SelectedTutorAvatarId)
+            : SpeechVoiceOptions.GetById(settings.SpeechVoiceId).Id;
         settings.UserDisplayName = NormalizeOptionalText(settings.UserDisplayName);
         settings.LearningGoal = NormalizeOptionalText(settings.LearningGoal);
         settings.BackendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(settings.BackendBaseUrl);

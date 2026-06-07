@@ -36,6 +36,7 @@ public sealed record VoiceSessionStartRequest
     public IReadOnlyList<string> TutorProfileCommunicationStyle { get; init; } = [];
     public Dictionary<string, string> TutorProfileSpeakingRules { get; init; } = new(StringComparer.OrdinalIgnoreCase);
     public IReadOnlyList<string> TutorProfileIdentityRules { get; init; } = [];
+    public string SpeechVoice { get; init; } = string.Empty;
     public string SelectedLevel { get; init; } = string.Empty;
     public string Topic { get; init; } = string.Empty;
     public string TopicTitle { get; init; } = string.Empty;
