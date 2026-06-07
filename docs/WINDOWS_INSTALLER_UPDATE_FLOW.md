@@ -11,7 +11,8 @@ Velopack was rejected/deprecated for this project because its Windows installer 
 - Default install directory: `{autopf}\Language Voice Tutor`
 - Start Menu shortcut: `Language Voice Tutor`
 - Optional Desktop shortcut: `Language Voice Tutor`
-- Expected artifact: `artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe`
+- Expected installer artifact: `artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe`
+- Server-ready direct-download files: `artifacts\releases\windows\direct`
 
 The existing executable remains `EnglishVoiceTutor.Desktop.exe` to avoid risky project-wide renames.
 
@@ -19,7 +20,11 @@ The existing executable remains `EnglishVoiceTutor.Desktop.exe` to avoid risky p
 
 Future direct-download updates should reuse the same Inno Setup AppId, `LanguageVoiceTutor.Desktop`, so installing a newer installer updates the existing installation.
 
-No automatic update UX is implemented yet. Future in-app update UX should download the same Inno installer and run it only after explicit user confirmation. It must not run during an active lesson and must not perform silent updates.
+No automatic update UX is implemented yet. The packaging script generates `artifacts\releases\windows\direct\latest.json` as a stable foundation for a future download page and future in-app update-check, but the current app does not read the manifest automatically and does not show update prompts. Future in-app update UX should download the same Inno installer and run it only after explicit user confirmation. It must not run during an active lesson and must not perform silent updates.
+
+## Direct-download manifest files
+
+`latest.json` is intentionally simple and future update-check friendly. It describes the Language Voice Tutor Windows x64 direct-tester installer with a relative installer URL, SHA-256 checksum, file size, `manual-confirmation` update mode, and notes that code signing and update UI are deferred. The same folder also contains `changelog.json`, `known-issues.json`, and `checksums.sha256`. These files are generated artifacts under `artifacts\` and must not be committed.
 
 ## Uninstall behavior
 

@@ -107,6 +107,7 @@ CMS draft-save audit logging is implemented for successful Admin CMS Save draft 
 - No narrowing of the Native/Explanation language catalog.
 - No lesson JSON rewrite.
 - No public release declaration yet.
+- No automatic update-check or update UI yet; the direct-download `latest.json` manifest is only a foundation for a future download page and future manual-confirmation update-check that must not run during active lessons.
 
 ## After accepted Welcome screen and Lesson Chat sizing hardening
 
@@ -127,3 +128,11 @@ Step 5D-6e scenario editor usability refinement update: the Admin CMS Scenarios 
 
 Admin CMS workflow note: draft edits must still be published through **Versions & Publish** before they can be visible to runtime CMS mode. The editor now exposes a post-save **Go to Publish** path, but it does not auto-publish and does not replace the confirmed **Publish current draft** action. Keep static JSON as the default runtime source unless CMS runtime settings are explicitly enabled and verified with `tools/smoke_cms_runtime_content_read.ps1`.
 Before external tester handoff, keep re-verifying the disabled-by-default CMS runtime read path with `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__ContentPackSlug=static-json-v1`, and the desired `CmsContent__FallbackToStaticJson` setting. Run the runtime diagnostic smoke (`tools/smoke_cms_runtime_content_read.ps1`) after importing/publishing CMS content. The latest local run confirmed `CmsPublishedSnapshot`, content pack `static-json-v1`, version 34, 6 topics, 26 scenarios, 3 prompt templates, 2 tutor behavior profiles, validation passed, and `fallbackUsed=false`; continue confirming those expectations after CMS changes. Also keep fallback verification in the manual/regression checklist: use a non-existent content pack slug with fallback enabled to confirm `StaticJson` plus `fallbackUsed=true`, and with fallback disabled to confirm a clear server-side unavailable result. Production RBAC and approval workflow remain future work.
+
+## Windows direct-download release follow-ups
+
+- When packaging tester builds, keep Inno Setup as the primary Windows direct-download path and keep ZIP packaging only as an emergency/developer fallback.
+- Verify testers report the Settings footer version with every bug report.
+- Do not commit generated files from `artifacts\installers\windows` or `artifacts\releases\windows\direct`.
+- Add update-check UI only in a future task, with manual confirmation and active-lesson protection.
+- Complete code signing later before broad public distribution.

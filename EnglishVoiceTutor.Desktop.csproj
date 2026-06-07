@@ -9,6 +9,11 @@
     <Product>Language Voice Tutor</Product>
     <AssemblyTitle>Language Voice Tutor Desktop</AssemblyTitle>
     <Description>Language Voice Tutor Desktop</Description>
+    <Version>0.0.0-local</Version>
+    <InformationalVersion>0.0.0-local</InformationalVersion>
+    <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <FileVersion>0.0.0.0</FileVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

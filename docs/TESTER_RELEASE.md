@@ -11,6 +11,7 @@ Velopack is deprecated/rejected for this project. Its Windows installer is a one
 The tester release is:
 
 - a Windows installer named `LanguageVoiceTutorSetup-{version}.exe`;
+- server-ready direct-download files under `artifacts\releases\windows\direct`;
 - branded publicly as `Language Voice Tutor`;
 - built from the desktop app publish output;
 - intended to work with a separately reachable backend, either local, ngrok, or hosted;
@@ -23,7 +24,7 @@ This tester release is **not**:
 - an MSIX package;
 - Microsoft Store packaging;
 - a code-signed public release;
-- an auto-update system;
+- an auto-update system or update-check UI;
 - a backend deployment;
 - proof that public release is ready;
 - proof that production billing is ready;
@@ -52,6 +53,18 @@ Expected installer artifact:
 ```text
 artifacts\installers\windows\LanguageVoiceTutorSetup-0.1.0.exe
 ```
+
+Expected server-ready direct-download files:
+
+```text
+artifacts\releases\windows\direct\LanguageVoiceTutorSetup-0.1.0.exe
+artifacts\releases\windows\direct\latest.json
+artifacts\releases\windows\direct\changelog.json
+artifacts\releases\windows\direct\known-issues.json
+artifacts\releases\windows\direct\checksums.sha256
+```
+
+`latest.json` is for a future download page and future in-app update-check only. The current app does not check this manifest automatically. Future update UI must require manual confirmation and must not run during an active lesson.
 
 ## Emergency/developer ZIP fallback
 
@@ -83,6 +96,7 @@ The desktop app does not contain an OpenAI API key, must not call OpenAI directl
 - Launch from the Start Menu shortcut.
 - Create and launch from the optional Desktop shortcut.
 - Verify backend URL configuration and login/session behavior.
+- Verify the Settings footer shows the installed app version, and tell testers to include that version in bug reports.
 - Start a lesson.
 - Verify TTS/STT if the backend is running and configured.
 - Install a newer version over an older version.

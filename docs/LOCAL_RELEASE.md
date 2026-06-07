@@ -49,7 +49,17 @@ Expected installer output:
 artifacts\installers\windows\LanguageVoiceTutorSetup-0.1.0.exe
 ```
 
-Copy the installer to another Windows device or clean VM, install it, choose a custom directory during smoke testing, launch the app, and verify backend connection, login/account, backend history, and the core lesson flow.
+Expected server-ready direct-download output:
+
+```text
+artifacts\releases\windows\direct\LanguageVoiceTutorSetup-0.1.0.exe
+artifacts\releases\windows\direct\latest.json
+artifacts\releases\windows\direct\changelog.json
+artifacts\releases\windows\direct\known-issues.json
+artifacts\releases\windows\direct\checksums.sha256
+```
+
+Copy the installer to another Windows device or clean VM, install it, choose a custom directory during smoke testing, launch the app, and verify backend connection, login/account, backend history, and the core lesson flow. Also verify the Settings footer displays the installed version, for example `Version: v0.1.0`; testers should report this value when filing bugs.
 
 ## Emergency/developer ZIP fallback
 
@@ -77,6 +87,6 @@ The desktop app does not contain an OpenAI API key, must not call OpenAI directl
 
 - Microsoft Store/MSIX remains deferred.
 - Code signing is deferred but required before broad public distribution.
-- Automatic update UX is not implemented.
+- Automatic update UX is not implemented; the generated `latest.json` is only for the future download page and future in-app update-check.
 - Future in-app update UX should download the same Inno installer and run it only after explicit user confirmation, never during an active lesson.
 - Public release is not declared ready.
