@@ -4,6 +4,8 @@ This document describes local Windows release checks for `EnglishVoiceTutor.Desk
 
 For the full shareable tester zip workflow, see [`docs/TESTER_RELEASE.md`](TESTER_RELEASE.md).
 
+Velopack tester installer/update packaging is now available as a parallel foundation only. It does not replace the canonical zip handoff until installer/update smoke testing is accepted. See [`docs/WINDOWS_INSTALLER_UPDATE_FLOW.md`](WINDOWS_INSTALLER_UPDATE_FLOW.md).
+
 Canonical tester package command from the repository root:
 
 ```powershell
@@ -35,13 +37,37 @@ This workflow does **not** add or configure:
 
 - Microsoft Store packaging;
 - MSIX packaging;
-- a Windows installer;
+- a replacement for the canonical tester zip;
+- an accepted Windows installer handoff;
 - code signing;
-- auto-update;
+- auto-update UI or automatic update behavior;
 - a deployed production backend;
 - single-file publishing.
 
 Keep this release folder-based until installer and packaging requirements are decided.
+
+
+## Parallel Velopack tester installer foundation
+
+The optional Velopack tester installer package can be built locally after installing the `vpk` .NET global tool. This is for controlled installer/update smoke work only and must not be treated as the accepted tester handoff yet.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-velopack-tester-release.ps1 -Version 0.1.0-tester.1
+```
+
+Expected Velopack output folder:
+
+```text
+artifacts\releases\windows\tester
+```
+
+The accepted fallback tester artifact remains:
+
+```text
+artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+```
+
+See [`docs/WINDOWS_INSTALLER_UPDATE_FLOW.md`](WINDOWS_INSTALLER_UPDATE_FLOW.md) for channel, versioning, expected release files, deferred update UI, and smoke requirements.
 
 ## Prerequisites
 
