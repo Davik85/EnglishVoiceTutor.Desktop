@@ -35,7 +35,7 @@ Publishing remains isolated in **Versions & Publish**. Draft changes are not vis
 
 Local runtime CMS read was confirmed only under explicit development configuration: `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`; backend logs showed `Source=CmsPublishedSnapshot`, `VersionNumber=34`, validation passed, no fallback, and the expected 6 topics, 26 scenarios, 3 prompt templates, and 2 tutor behavior profiles. Static JSON fallback remains available.
 
-This is still a development/admin CMS MVP, not production CMS/RBAC readiness, not critical-change approval readiness, not external tester handoff, and not public release readiness. The next recommended implementation step is another CMS/admin improvement, not billing: refine validation/preview and content QA workflow ergonomics for practical admin content review. Production RBAC and critical-change approval come later.
+This is still a development/admin CMS MVP, not production CMS/RBAC readiness, not critical-change approval readiness, not external tester handoff, and not public release readiness. The CMS/Admin Content MVP is advanced enough to pause for server setup and test deployment preparation; production billing remains deferred. Production RBAC and critical-change approval come later.
 
 ## CMS/Admin content MVP goal
 

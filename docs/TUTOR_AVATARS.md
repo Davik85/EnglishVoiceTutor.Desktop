@@ -35,7 +35,7 @@ Tutor identity is loaded from `Content/Tutors/*.json` and remains separate from 
 - Interests: technology, startups
 - Personality: friendly, cheerful, supportive
 - Speaking style: clear, upbeat, encouraging, practical
-- Preferred voice: Onyx (male)
+- Preferred voice: Onyx (deep style hint; do not present voice labels as guaranteed speaker gender)
 
 ## Avatar state files
 
@@ -91,6 +91,10 @@ Legacy flat GIF files in `Assets/Avatars/` are intentionally kept for compatibil
 5. Verify settings selection persists via `UserSettings.SelectedTutorAvatarId` pipeline.
 6. Verify lesson chat display name and prompt personality come from selected tutor profile.
 7. Keep lesson scenario JSON avatar-neutral (do not hardcode tutor identity in lesson JSON).
+
+## Voice-label caution
+
+Voice labels are learner-facing style hints only and must not overclaim guaranteed speaker gender. David prefers Onyx by default, but the selected voice is still user-configurable in Settings and is passed through normal Lesson Chat TTS and Conversation Mode TTS.
 
 ## Deferred work
 

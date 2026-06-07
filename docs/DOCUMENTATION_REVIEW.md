@@ -1,6 +1,6 @@
 # Documentation Review
 
-Review date: 2026-06-06.
+Review date: 2026-06-07.
 
 ## What was reviewed
 
@@ -13,7 +13,7 @@ The documentation sync reviewed repository docs and release-relevant scripts/cod
 - CMS/Admin planning docs;
 - auth/session storage implementation;
 - active lesson heartbeat/remote-release implementation and smoke script;
-- package tester script and release gate script;
+- Inno Setup release packaging/validation/upload helpers, package tester fallback script, and release gate script;
 - EF migration files;
 - current audit/smoke scripts.
 
@@ -21,9 +21,10 @@ The documentation sync reviewed repository docs and release-relevant scripts/cod
 
 Docs were synchronized to record the current accepted state:
 
-- `scripts/package-tester-release.ps1` is the canonical current tester ZIP flow.
-- Default tester ZIP is `artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip`.
-- The tester ZIP was verified on another Windows device after extraction.
+- Inno Setup is the primary Windows direct-download installer track. Expected installer: `artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe`.
+- Server-ready direct-download files are generated under `artifacts\releases\windows\direct`: `latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, and `LanguageVoiceTutorSetup-{version}.exe`.
+- `scripts/validate-windows-direct-release.ps1` validates local release artifacts, and `scripts/upload-windows-direct-release.ps1` supports dry-run/future SCP upload without hardcoded server secrets.
+- Velopack is rejected/deprecated. ZIP packaging through `scripts/package-tester-release.ps1` remains only an emergency/developer fallback.
 - Packaged Release hides Diagnostics by default and uses local `EVT_DESKTOP_DIAGNOSTICS=1` only for support/testing.
 - Core Lesson Chat, Conversation Mode, TTS, transcription, translation, hints, feedback, and summary are accepted for the current controlled desktop MVP.
 - Desktop auth session storage uses a Windows DPAPI-protected local `auth-session.json` payload, not raw plaintext token JSON.
@@ -38,8 +39,9 @@ Docs were synchronized to record the current accepted state:
 - Production billing operations remain deferred and are not production-ready.
 - Full production CMS/Admin operational readiness remains deferred: production RBAC and role-based critical-change approval are not implemented yet. CMS draft-save audit logging is implemented for successful development/admin Save draft operations only.
 - Prompt/scenario/dialogue/bot-behavior quality polishing is deferred to CMS/Admin.
+- Server setup/static HTTPS direct-download preparation is next, but backend deployment is not done yet.
 - Public release is not declared ready.
-- Installer/signing/Microsoft Store packaging is not documented as complete.
+- Code signing, Microsoft Store, App Store, Google Play, and Mac version are not documented as complete.
 - Mobile app implementation and mobile entitlement bridge are not documented as complete.
 
 ## Future documentation updates needed
@@ -51,5 +53,6 @@ Update documentation again after any of these future events:
 - refund/chargeback/revocation/reconciliation behavior is implemented;
 - Admin CMS Validation & Preview/content QA workflow ergonomics are refined after the completed Step 5D-6e scenario editor usability work;
 - production RBAC and later CMS critical-change approval workflow are approved or implemented;
-- installer/signing/update/distribution path is selected;
+- server/static HTTPS download and backend deployment preparation are completed;
+- code signing/update/distribution readiness changes;
 - Study languages, Interface languages, or Native/Explanation catalog changes are explicitly approved.

@@ -18,17 +18,17 @@ The WPF project includes `Assets/Avatars/**/*.gif` as resources, so correctly na
 
 Settings offers this shared safe built-in OpenAI voice catalog for normal Lesson Chat TTS and Conversation Mode TTS:
 
-- Alloy — neutral voice
-- Ash — calm voice
-- Coral — warm female-style voice
-- Echo — clear male-style voice
-- Fable — expressive male-style voice
-- Onyx — deep male-style voice
-- Nova — bright female-style voice
-- Sage — calm voice
-- Shimmer — soft female-style voice
+- Alloy — neutral style
+- Ash — calm style
+- Coral — warm style
+- Echo — clear style
+- Fable — expressive style
+- Onyx — deep style
+- Nova — bright style
+- Sage — calm style
+- Shimmer — soft style
 
-These labels are style hints for learners and should not be presented as guaranteed speaker gender.
+These labels are style hints for learners and must not be presented as guaranteed speaker gender. The selected voice is persisted and passed into normal Lesson Chat TTS and Conversation Mode TTS; David prefers Onyx by default.
 
 ## Conversation Mode framing
 
