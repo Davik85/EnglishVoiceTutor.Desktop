@@ -5,17 +5,14 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.ViewModels;
 
 namespace EnglishVoiceTutor.Desktop;
 
 public partial class MainWindow : Window
 {
-    private const double LessonPreferredWindowWidth = 1320;
-    private const double LessonPreferredWindowHeight = 940;
-    private const double LessonMinimumReadableWidth = 1180;
-    private const double LessonMinimumReadableHeight = 820;
-
+    private LessonChatViewModel? currentLessonChatViewModel;
     private bool shutdownCleanupStarted;
     private bool shutdownCleanupCompleted;
 
@@ -59,6 +56,8 @@ public partial class MainWindow : Window
             mainViewModel.PropertyChanged -= MainViewModel_PropertyChanged;
         }
 
+        UnsubscribeFromLessonChatViewModel();
+
         if (DataContext is IDisposable disposable)
         {
             disposable.Dispose();
@@ -99,24 +98,70 @@ public partial class MainWindow : Window
 
     private void ApplyLayoutForViewModel(ViewModelBase viewModel)
     {
-        if (viewModel is not LessonChatViewModel)
+        if (viewModel is not LessonChatViewModel lessonChatViewModel)
+        {
+            UnsubscribeFromLessonChatViewModel();
+            return;
+        }
+
+        SubscribeToLessonChatViewModel(lessonChatViewModel);
+        Dispatcher.BeginInvoke(new Action(() => ApplyLessonWindowSize(lessonChatViewModel.IsConversationModeEnabled)), DispatcherPriority.Loaded);
+    }
+
+    private void SubscribeToLessonChatViewModel(LessonChatViewModel lessonChatViewModel)
+    {
+        if (ReferenceEquals(currentLessonChatViewModel, lessonChatViewModel))
         {
             return;
         }
 
-        Dispatcher.BeginInvoke(new Action(EnsureLessonWindowSize), DispatcherPriority.Loaded);
+        UnsubscribeFromLessonChatViewModel();
+        currentLessonChatViewModel = lessonChatViewModel;
+        currentLessonChatViewModel.PropertyChanged += LessonChatViewModel_PropertyChanged;
     }
 
-    private void EnsureLessonWindowSize()
+    private void UnsubscribeFromLessonChatViewModel()
+    {
+        if (currentLessonChatViewModel is null)
+        {
+            return;
+        }
+
+        currentLessonChatViewModel.PropertyChanged -= LessonChatViewModel_PropertyChanged;
+        currentLessonChatViewModel = null;
+    }
+
+    private void LessonChatViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(LessonChatViewModel.IsConversationModeEnabled) || sender is not LessonChatViewModel lessonChatViewModel)
+        {
+            return;
+        }
+
+        Dispatcher.BeginInvoke(new Action(() => ApplyLessonWindowSize(lessonChatViewModel.IsConversationModeEnabled)), DispatcherPriority.Loaded);
+    }
+
+    private void ApplyLessonWindowSize(bool isConversationModeEnabled)
     {
         if (WindowState != WindowState.Normal)
         {
             return;
         }
 
+        if (isConversationModeEnabled)
+        {
+            ApplyConversationModeWindowSize();
+            return;
+        }
+
+        ApplyNormalLessonChatWindowSize();
+    }
+
+    private void ApplyNormalLessonChatWindowSize()
+    {
         var workingArea = GetCurrentMonitorWorkingAreaInDips();
-        var targetWidth = GetLessonTargetSize(LessonPreferredWindowWidth, LessonMinimumReadableWidth, workingArea.Width);
-        var targetHeight = GetLessonTargetSize(LessonPreferredWindowHeight, LessonMinimumReadableHeight, workingArea.Height);
+        var targetWidth = GetLessonTargetSize(DesktopLayoutOptions.LessonChatWindowPreferredWidth, DesktopLayoutOptions.LessonChatWindowMinimumReadableWidth, workingArea.Width);
+        var targetHeight = GetLessonTargetSize(DesktopLayoutOptions.LessonChatWindowPreferredHeight, DesktopLayoutOptions.LessonChatWindowMinimumReadableHeight, workingArea.Height);
         var currentWidth = ActualWidth > 0 ? ActualWidth : Width;
         var currentHeight = ActualHeight > 0 ? ActualHeight : Height;
         var newWidth = Math.Max(currentWidth, targetWidth);
@@ -130,6 +175,24 @@ public partial class MainWindow : Window
         }
 
         KeepWindowInsideWorkingArea(workingArea, centerIfExpanded: expanded);
+    }
+
+    private void ApplyConversationModeWindowSize()
+    {
+        var workingArea = GetCurrentMonitorWorkingAreaInDips();
+        var targetWidth = GetLessonTargetSize(DesktopLayoutOptions.ConversationModeWindowPreferredWidth, DesktopLayoutOptions.ConversationModeWindowMinimumReadableWidth, workingArea.Width);
+        var targetHeight = GetLessonTargetSize(DesktopLayoutOptions.ConversationModeWindowPreferredHeight, DesktopLayoutOptions.ConversationModeWindowMinimumReadableHeight, workingArea.Height);
+        var currentWidth = ActualWidth > 0 ? ActualWidth : Width;
+        var currentHeight = ActualHeight > 0 ? ActualHeight : Height;
+        var resized = Math.Abs(currentWidth - targetWidth) > 0.5 || Math.Abs(currentHeight - targetHeight) > 0.5;
+
+        if (resized)
+        {
+            Width = targetWidth;
+            Height = targetHeight;
+        }
+
+        KeepWindowInsideWorkingArea(workingArea, centerIfExpanded: resized);
     }
 
     private static double GetLessonTargetSize(double preferredSize, double minimumReadableSize, double availableSize)
