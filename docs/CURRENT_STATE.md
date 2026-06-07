@@ -25,7 +25,7 @@ The Admin CMS is still not production-ready. Production RBAC is not implemented.
 
 ## Short summary
 
-EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. The recent desktop release-hardening block accepted the core lesson/voice/TTS flow, the backend-enforced single-active-lesson guard, and the tester ZIP package flow. Public release is not declared ready. The product owner has paused external tester handoff and moved CMS/Admin content MVP ahead of tester delivery. Production billing remains deferred.
+EnglishVoiceTutor currently has a working Windows desktop MVP backed by a working backend, PostgreSQL, and EF Core persistence foundation. The recent desktop release-hardening block accepted the core lesson/voice/TTS flow and the backend-enforced single-active-lesson guard. The Windows direct-download installer foundation is now Inno Setup for the public `Language Voice Tutor` product name; ZIP packaging remains only an emergency/developer fallback. Public release is not declared ready. The product owner has paused external tester handoff and moved CMS/Admin content MVP ahead of tester delivery. Production billing remains deferred.
 
 ## Product architecture principle
 
@@ -78,46 +78,36 @@ The CMS/Admin content MVP is content-focused and should cover lesson topics, sub
 
 Planning baseline: `docs/CMS_ADMIN_PLANNING.md`. Detailed plan: `docs/cms-content-mvp-plan.md`. Current runtime lesson loading remains unchanged by default and continues to use the static JSON/content behavior. The `CmsContent` configuration defaults keep `ReadPublishedSnapshotEnabled=false`, `ContentPackSlug=static-json-v1`, and `FallbackToStaticJson=true`; imported CMS rows and snapshots do not affect learners unless a later explicitly approved runtime integration enables CMS reads behind that disabled-by-default flag. Static JSON remains the fallback when CMS reads are disabled, missing, invalid, corrupt, or fail. The development/admin-only Admin CMS Content workspace can load `static-json-v1`, view content summaries and lists, edit topics, scenarios through the recommended structured sections or the technical Advanced JSON fallback, prompt templates, and tutor behavior profiles, run validation, load preview summaries, list versions, publish a changed draft with confirmation and required publish summary, and restore a previous version by creating a new published version with confirmation. Format/validation actions do not save; `Save draft` is required. It does not add a learner runtime switch, lesson JSON edits, prompt/tutor file edits, OpenAI calls, billing changes, study-language changes, interface-language changes, production CMS/RBAC, production approval workflow, or public release readiness; draft-save audit logging and read-only Admin CMS recent-change visibility are implemented for successful Save draft operations.
 
-## Tester ZIP package state
+## Windows installer and ZIP fallback state
 
-The canonical current tester distribution flow is `scripts/package-tester-release.ps1` from the repository root:
+The recommended Windows direct-download installer flow is Inno Setup:
 
 ```powershell
 cd C:\dev\EnglishVoiceTutor.Desktop
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0
+```
+
+Expected installer artifact:
+
+```text
+artifacts\installers\windows\LanguageVoiceTutorSetup-0.1.0.exe
+```
+
+The installer uses the public product name `Language Voice Tutor`, the stable AppId `LanguageVoiceTutor.Desktop`, Program Files by default, normal Windows uninstall integration, a Start Menu shortcut, an optional Desktop shortcut, and an optional launch-after-install action. Velopack is deprecated/rejected because its one-click installer does not match the desired release-like installer UX.
+
+ZIP packaging remains available only as an emergency/developer fallback:
+
+```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
 ```
 
-Expected default tester ZIP:
+Expected default ZIP:
 
 ```text
 artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip
 ```
 
-Advanced/developer-only framework-dependent ZIP, when a target machine already has the required .NET Desktop Runtime:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1 -FrameworkDependent
-```
-
-The current tester ZIP has been verified on another Windows device after extraction, but new external tester handoff remains paused while the CMS/Admin content MVP foundation continues. CMS publish/version/rollback backend endpoints now exist for Development/admin use, while learner runtime remains static JSON by default and CMS published-snapshot reading remains disabled by default:
-
-- `EnglishVoiceTutor.Desktop.exe` starts.
-- Diagnostics is hidden by default in the packaged Release app.
-- Backend connection works.
-- Account login works.
-- Backend lesson history is visible/preserved.
-- Normal Lesson Chat works.
-- Conversation Mode works.
-- TTS works.
-- Voice transcription works.
-- Translation works.
-- Hints work.
-- Feedback works.
-- Summary works.
-- Active lesson guard works.
-- Remote active lesson release stops the old device/session.
-
-`dotnet publish` is only a lower-level implementation detail or troubleshooting path. It is not the main tester handoff flow.
+External tester handoff remains paused while the CMS/Admin content MVP foundation continues. Public release is not declared ready, code signing is not done, Microsoft Store/MSIX remains deferred, and update UX is not implemented.
 
 ## Backend-required packaged desktop scope
 
@@ -269,7 +259,7 @@ Local automated validation expected before the next release handoff, after CMS/A
 
 1. `powershell -ExecutionPolicy Bypass -File .\tools\run_desktop_release_gate.ps1`
 2. `powershell -ExecutionPolicy Bypass -File .\tools\smoke_single_active_lesson_guard.ps1` with the required backend/test setup.
-3. `powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1`
+3. `powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0`
 
 ## Deferred scope / not ready yet
 
