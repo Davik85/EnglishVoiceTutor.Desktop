@@ -2,6 +2,8 @@
 
 This document is the canonical current desktop tester distribution workflow for `EnglishVoiceTutor.Desktop`. The accepted tester handoff artifact is the zip created by `scripts/package-tester-release.ps1`, not a loose manual `dotnet publish` folder.
 
+> **Installer/update note:** The Velopack Windows tester installer/update flow is now available as a parallel foundation only. It does not replace this accepted zip flow until installer/update smoke testing is accepted. See [`docs/WINDOWS_INSTALLER_UPDATE_FLOW.md`](WINDOWS_INSTALLER_UPDATE_FLOW.md).
+
 ## What this tester release is
 
 This tester release is:
@@ -355,3 +357,15 @@ Generated package output lives under `artifacts/` and should not be committed. T
 - Settings localization: switch Interface language to Russian and confirm Progress helper text is Russian, Account signed-out/status text is localized, and the Save button shows the full `Сохранить` label without clipping.
 - Password reset is not available to testers unless it is explicitly enabled later after domain email/provider setup.
 - The tester ZIP must not contain `auth-session.json`, local account tokens, OpenAI API keys, or provider secrets.
+
+
+## Parallel Velopack tester track
+
+For controlled installer/update testing, build the optional Velopack package from the repository root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-velopack-tester-release.ps1 -Version 0.1.0-tester.1
+```
+
+Expected Velopack output is `artifacts\releases\windows\tester`, including `Setup.exe`, `releases.win-x64-tester.json`, and at least one `*-full.nupkg`. This track is not a public release, not a Microsoft Store/MSIX release, not production billing readiness, and not production Admin/RBAC readiness. Keep giving testers the canonical zip unless the installer/update smoke has explicitly been accepted.
+

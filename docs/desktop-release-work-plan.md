@@ -1,5 +1,13 @@
 # Desktop Release Work Plan
 
+
+## Parallel Windows installer/update foundation
+
+A minimal Velopack foundation exists for controlled Windows tester installer/update work. It is documented in [`docs/WINDOWS_INSTALLER_UPDATE_FLOW.md`](WINDOWS_INSTALLER_UPDATE_FLOW.md) and built with `scripts/package-windows-velopack-tester-release.ps1`. This is not a replacement for the canonical tester zip yet; the accepted tester handoff remains `artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-self-contained.zip` from `scripts/package-tester-release.ps1` until install/update smoke is accepted.
+
+This foundation does not make the app public-release ready, does not add Microsoft Store/MSIX packaging, does not enable production billing, and does not add production RBAC/Admin readiness. Follow-up work must add update UI and active-lesson-safe update confirmation before updates are offered to testers inside the app.
+
+
 Review date: 2026-06-06.
 
 ## Current conclusion
