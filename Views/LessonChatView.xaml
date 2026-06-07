@@ -6,6 +6,7 @@
              xmlns:behaviors="clr-namespace:EnglishVoiceTutor.Desktop.Behaviors"
              xmlns:converters="clr-namespace:EnglishVoiceTutor.Desktop.Converters"
              xmlns:gif="https://github.com/XamlAnimatedGif/XamlAnimatedGif"
+             xmlns:models="clr-namespace:EnglishVoiceTutor.Desktop.Models"
              mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="900">
@@ -108,17 +109,17 @@
                                 <Style TargetType="Border">
                                     <Setter Property="Grid.ColumnSpan" Value="1" />
                                     <Setter Property="HorizontalAlignment" Value="Stretch" />
-                                    <Setter Property="MaxWidth" Value="360" />
-                                    <Setter Property="MinHeight" Value="500" />
-                                    <Setter Property="Height" Value="500" />
-                                    <Setter Property="MaxHeight" Value="500" />
+                                    <Setter Property="MaxWidth" Value="{x:Static models:LessonChatLayoutOptions.NormalAvatarFrameMaxWidth}" />
+                                    <Setter Property="MinHeight" Value="{x:Static models:LessonChatLayoutOptions.NormalAvatarFrameHeight}" />
+                                    <Setter Property="Height" Value="{x:Static models:LessonChatLayoutOptions.NormalAvatarFrameHeight}" />
+                                    <Setter Property="MaxHeight" Value="{x:Static models:LessonChatLayoutOptions.NormalAvatarFrameHeight}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
                                             <Setter Property="Grid.ColumnSpan" Value="3" />
-                                            <Setter Property="MaxWidth" Value="760" />
-                                            <Setter Property="MinHeight" Value="660" />
-                                            <Setter Property="Height" Value="660" />
-                                            <Setter Property="MaxHeight" Value="660" />
+                                            <Setter Property="MaxWidth" Value="{x:Static models:LessonChatLayoutOptions.ConversationAvatarFrameMaxWidth}" />
+                                            <Setter Property="MinHeight" Value="{x:Static models:LessonChatLayoutOptions.ConversationAvatarFrameHeight}" />
+                                            <Setter Property="Height" Value="{x:Static models:LessonChatLayoutOptions.ConversationAvatarFrameHeight}" />
+                                            <Setter Property="MaxHeight" Value="{x:Static models:LessonChatLayoutOptions.ConversationAvatarFrameHeight}" />
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </DataTrigger>
                                     </Style.Triggers>
@@ -127,9 +128,19 @@
                             <Grid>
                                 <Image HorizontalAlignment="Stretch"
                                        VerticalAlignment="Stretch"
-                                       Stretch="UniformToFill"
                                        RenderOptions.BitmapScalingMode="HighQuality"
-                                       gif:AnimationBehavior.SourceUri="{Binding AvatarAnimationAssetUri, Converter={StaticResource AvatarAnimationUriConverter}}" />
+                                       gif:AnimationBehavior.SourceUri="{Binding AvatarAnimationAssetUri, Converter={StaticResource AvatarAnimationUriConverter}}">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Setter Property="Stretch" Value="UniformToFill" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsConversationModeEnabled}" Value="True">
+                                                    <Setter Property="Stretch" Value="Uniform" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
 
                                 <Border IsHitTestVisible="False">
                                     <Border.Background>
