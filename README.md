@@ -58,6 +58,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.
 
 The primary installer is written to `artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe`. Server-ready direct-download files are also generated under `artifacts\releases\windows\direct`, including `latest.json`, `changelog.json`, `known-issues.json`, and `checksums.sha256`. The current app does not check this manifest automatically; it is a foundation for a future download page and future manual-confirmation update-check UI. Generated `artifacts\` files must not be committed. Code signing is still deferred.
 
+Validate the generated direct-release folder with `powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1`. Optional future static-server upload is documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](docs/WINDOWS_RELEASE_SERVER_UPLOAD.md); it supports dry-run/manual SCP only and does not deploy the backend, create a download website, or implement update UI.
+
 The Settings screen footer displays the installed app version, for example `Version: v0.1.0`. Testers should include that version when reporting bugs.
 
 ## Security rule

@@ -89,6 +89,16 @@ artifacts\releases\windows\direct\checksums.sha256
 
 Generated files under `artifacts\` must not be committed.
 
+## Validate and prepare optional server upload
+
+After building the Inno release, validate the server-ready folder before any handoff or upload:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
+```
+
+Optional future server upload is documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). The upload helper validates first and can run with `-DryRun`, but it does not run automatically, does not include secrets, does not deploy the backend, does not create a download website, and does not implement update UI. External tester handoff remains blocked until static server download, clean-machine install, and the controlled tester checklist pass.
+
 ## Smoke checklist
 
 Before external handoff, verify on a clean or representative Windows machine:

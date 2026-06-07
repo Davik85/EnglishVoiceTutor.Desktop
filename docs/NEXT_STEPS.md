@@ -131,6 +131,7 @@ Before external tester handoff, keep re-verifying the disabled-by-default CMS ru
 
 ## Windows direct-download release follow-ups
 
+- Use [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md) to validate `artifacts\releases\windows\direct`, dry-run future static-server upload, and perform a manual upload only after server SSH access exists; this must not deploy the backend or run automatically.
 - When packaging tester builds, keep Inno Setup as the primary Windows direct-download path and keep ZIP packaging only as an emergency/developer fallback.
 - Verify testers report the Settings footer version with every bug report.
 - Do not commit generated files from `artifacts\installers\windows` or `artifacts\releases\windows\direct`.
