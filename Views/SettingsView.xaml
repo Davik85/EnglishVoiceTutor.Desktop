@@ -349,6 +349,19 @@
 
                             <Border Margin="{StaticResource SettingsSectionGap}" Style="{StaticResource SettingsSectionCardStyle}">
                                 <StackPanel>
+                                    <TextBlock Text="{Binding SpeechVoiceTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                    <TextBlock Text="{Binding SpeechVoiceSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+
+                                    <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
+                                              ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
+                                              ItemsSource="{Binding AvailableSpeechVoices}"
+                                              SelectedItem="{Binding SelectedSpeechVoiceOption, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMemberPath="DisplayName" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="{StaticResource SettingsSectionGap}" Style="{StaticResource SettingsSectionCardStyle}">
+                                <StackPanel>
                                     <TextBlock Text="{Binding AvatarProfileTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
                                     <TextBlock Margin="0,2,0,10"
                                                Text="{Binding SelectedTutorAvatarDisplayName}"

@@ -5,4 +5,5 @@ namespace EnglishVoiceTutor.Api.Services;
 public static class TutorAvatarProfiles
 {
     public const string DefaultAvatarId = "elena";
+    public const string DavidAvatarId = "david";
 }

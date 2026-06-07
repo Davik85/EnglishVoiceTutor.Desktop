@@ -32,6 +32,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     private readonly string nativeLanguageName;
     private readonly StudyLanguageDefinition studyLanguage;
     private readonly string tutorAvatarId;
+    private readonly string speechVoiceId;
     private readonly TutorAvatarOption tutorAvatar;
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly BackendLessonSessionClient backendLessonSessionClient;
@@ -103,6 +104,8 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     private const int FeedbackBlockedTextPreviewMaxLength = 120;
     private static readonly ConversationModeVoiceProvider CurrentConversationModeVoiceProvider = ResolveConversationModeVoiceProvider(BackendConstants.DefaultConversationModeVoiceProvider);
     private const double ConversationModeTtsSpeechSpeed = BackendConstants.ConversationModeTtsSpeechSpeed;
+
+    private string CurrentSpeechVoiceId => SpeechVoiceOptions.GetById(speechVoiceId).Id;
 
     private static ConversationModeVoiceProvider ResolveConversationModeVoiceProvider(string providerName)
     {
@@ -612,6 +615,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         string userDisplayName,
         string learningGoal,
         TutorAvatarOption tutorAvatar,
+        string speechVoiceId,
         TutorProfile? tutorProfile,
         LessonScenario? lessonScenario,
         LessonChatBackendService lessonChatBackendService,
@@ -635,6 +639,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         LearningGoal = NormalizeOptionalText(learningGoal);
         this.tutorAvatar = tutorAvatar;
         tutorAvatarId = tutorAvatar.Id;
+        this.speechVoiceId = SpeechVoiceOptions.GetById(string.IsNullOrWhiteSpace(speechVoiceId) ? SpeechVoiceOptions.GetPreferredVoiceIdForTutor(tutorAvatar.Id) : speechVoiceId).Id;
         TutorAvatarDisplayName = tutorAvatar.DisplayName;
         this.tutorProfile = tutorProfile ?? new TutorProfile { Id = tutorAvatar.Id, DisplayName = tutorAvatar.DisplayName };
         this.lessonScenario = lessonScenario ?? new LessonScenario();
@@ -1325,7 +1330,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             ConversationLatestBotText = openingBotMessage.Text;
         }
 
-        Debug.WriteLine($"Conversation mode started with TTS provider: Provider={CurrentConversationModeVoiceProvider}; CurrentLessonPhase={CurrentLessonPhase}; UsesTranscriptionEndpoint=True; UsesLessonChatEndpoint=True; UsesAudioSpeechEndpoint=True; RealtimeWebSocketOpened=False; RealtimeSessionStarted={isRealtimeSessionStarted}; TtsPurpose={BackendConstants.ConversationModeTtsPurpose}; TtsModel={BackendConstants.ConversationModeTtsModel}; TtsVoice=coral; TtsSpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; OpeningMessageId={openingBotMessage?.Id.ToString(CultureInfo.InvariantCulture) ?? "none"}.");
+        Debug.WriteLine($"Conversation mode started with TTS provider: Provider={CurrentConversationModeVoiceProvider}; CurrentLessonPhase={CurrentLessonPhase}; UsesTranscriptionEndpoint=True; UsesLessonChatEndpoint=True; UsesAudioSpeechEndpoint=True; RealtimeWebSocketOpened=False; RealtimeSessionStarted={isRealtimeSessionStarted}; TtsPurpose={BackendConstants.ConversationModeTtsPurpose}; TtsModel={BackendConstants.ConversationModeTtsModel}; TtsVoice={CurrentSpeechVoiceId}; TtsSpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; OpeningMessageId={openingBotMessage?.Id.ToString(CultureInfo.InvariantCulture) ?? "none"}.");
 
         if (openingBotMessage is null)
         {
@@ -1738,7 +1743,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 Debug.WriteLine($"Warning: Conversation Mode TTS input differs from visible bot text. MessageId={message.Id}; VisibleTextLength={visibleText.Length}; TtsInputLength={ttsInputText.Length}; TextMatchesVisible=False.");
             }
 
-            Debug.WriteLine($"Conversation Mode TTS playback requested: MessageId={message.Id}; IsOpeningPlayback={isOpeningPlayback}; Purpose={BackendConstants.ConversationModeTtsPurpose}; Model={BackendConstants.ConversationModeTtsModel}; Voice=coral; SpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; HasInstructions=True; InstructionsLength={BuildConversationModeTtsInstructions().Length}; RealtimeWebSocketOpened=False.");
+            Debug.WriteLine($"Conversation Mode TTS playback requested: MessageId={message.Id}; IsOpeningPlayback={isOpeningPlayback}; Purpose={BackendConstants.ConversationModeTtsPurpose}; Model={BackendConstants.ConversationModeTtsModel}; Voice={CurrentSpeechVoiceId}; SpeechSpeed={ConversationModeTtsSpeechSpeed.ToString(CultureInfo.InvariantCulture)}; HasInstructions=True; InstructionsLength={BuildConversationModeTtsInstructions().Length}; RealtimeWebSocketOpened=False.");
             await PlayBotVoiceForMessageCoreAsync(
                 message,
                 isAutoPlay: false,
@@ -1946,7 +1951,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             Debug.WriteLine($"Bot voice exact text: MessageId={message.Id}; VoiceRequestId={voiceRequestId}; RawTextLength={rawTextLength}; VoiceTextLength={inputLength}; IsExactText={isExactText}; AutoPlay={isAutoPlay}; IsSetupMessage={IsSetupVoiceMessage(message)}; SegmentIndex={segmentIndex};");
             Debug.WriteLine($"Bot voice segment request: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; SegmentLength={inputLength}; SegmentTextPreview={CreateBotVoiceSegmentPreview(ttsInputText)};");
             Debug.WriteLine($"Bot voice segment request starting: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; SegmentIndex={segmentIndex}; InputLength={inputLength}; RequestStartedMs={totalStopwatch.ElapsedMilliseconds}; TimeoutMs={timeout.TotalMilliseconds}; HardTimeoutSeconds={timeout.TotalSeconds}.");
-            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(ttsInputText, linkedCancellationTokenSource.Token, speechPurpose, speechSpeed, speechModel, speechInstructions, studyLanguage, backendLessonSessionId);
+            var speechResponse = await lessonChatBackendService.CreateBotSpeechAsync(ttsInputText, linkedCancellationTokenSource.Token, speechPurpose, speechSpeed, speechModel, speechInstructions, CurrentSpeechVoiceId, studyLanguage, backendLessonSessionId);
             Debug.WriteLine($"Bot voice segment backend response received: Path={AudioConstants.BotVoiceDefaultPathName}; MessageId={message.Id}; VoiceRequestId={voiceRequestId}; SegmentIndex={segmentIndex}; InputLength={inputLength}; SegmentReadyMs={totalStopwatch.ElapsedMilliseconds}; BackendElapsedMs={backendStopwatch.ElapsedMilliseconds}; BackendAudioBytes={speechResponse.AudioBytes.Length}; ContentType={speechResponse.ContentType}.");
 
             var saveStopwatch = Stopwatch.StartNew();
@@ -2872,6 +2877,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             TutorProfileCommunicationStyle = tutorProfile.CommunicationStyle,
             TutorProfileSpeakingRules = tutorProfile.SpeakingRules,
             TutorProfileIdentityRules = tutorProfile.IdentityRules,
+            SpeechVoice = CurrentSpeechVoiceId,
             SelectedLevel = SelectedLevel,
             Topic = lessonScenario.Metadata.Topic,
             TopicTitle = SelectedTopic.Title,

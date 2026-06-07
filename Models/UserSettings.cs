@@ -14,6 +14,8 @@ public class UserSettings
 
     public string SelectedTutorAvatarId { get; set; } = TutorAvatarOptions.DefaultAvatarId;
 
+    public string SpeechVoiceId { get; set; } = SpeechVoiceOptions.GetPreferredVoiceIdForTutor(TutorAvatarOptions.DefaultAvatarId);
+
     public string UserDisplayName { get; set; } = string.Empty;
 
     public string LearningGoal { get; set; } = string.Empty;

@@ -192,6 +192,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             userSettings.NativeLanguageName,
             userSettings.StudyLanguageId,
             userSettings.SelectedTutorAvatarId,
+            userSettings.SpeechVoiceId,
             userSettings.UserDisplayName,
             userSettings.LearningGoal,
             userSettings.BackendBaseUrl,
@@ -210,12 +211,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             navigateBack);
     }
 
-    private void SaveSettings(string interfaceLanguageId, string nativeLanguage, string studyLanguageId, string tutorAvatarId, string userDisplayName, string learningGoal, string backendBaseUrl, string audioInputDeviceId)
+    private void SaveSettings(string interfaceLanguageId, string nativeLanguage, string studyLanguageId, string tutorAvatarId, string speechVoiceId, string userDisplayName, string learningGoal, string backendBaseUrl, string audioInputDeviceId)
     {
         userSettings.InterfaceLanguageId = InterfaceLanguageOptions.GetById(interfaceLanguageId).Id;
         userSettings.NativeLanguageName = NativeLanguageCatalog.GetByIdOrName(nativeLanguage).Id;
         userSettings.StudyLanguageId = StudyLanguageCatalog.GetById(studyLanguageId).Id;
         userSettings.SelectedTutorAvatarId = TutorAvatarOptions.GetById(tutorAvatarId).Id;
+        userSettings.SpeechVoiceId = SpeechVoiceOptions.GetById(speechVoiceId).Id;
         userSettings.UserDisplayName = userDisplayName;
         userSettings.LearningGoal = learningGoal;
         userSettings.BackendBaseUrl = backendBaseUrl;
@@ -235,6 +237,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         userSettings.NativeLanguageName = persistedSettings.NativeLanguageName;
         userSettings.StudyLanguageId = persistedSettings.StudyLanguageId;
         userSettings.SelectedTutorAvatarId = persistedSettings.SelectedTutorAvatarId;
+        userSettings.SpeechVoiceId = persistedSettings.SpeechVoiceId;
         userSettings.UserDisplayName = persistedSettings.UserDisplayName;
         userSettings.LearningGoal = persistedSettings.LearningGoal;
         userSettings.BackendBaseUrl = persistedSettings.BackendBaseUrl;
@@ -598,6 +601,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             userSettings.UserDisplayName,
             userSettings.LearningGoal,
             TutorAvatarOptions.GetById(userSettings.SelectedTutorAvatarId),
+            SpeechVoiceOptions.GetById(userSettings.SpeechVoiceId).Id,
             LoadTutorProfile(userSettings.SelectedTutorAvatarId),
             LoadLessonScenarioForSubtopic(selectedTopic, selectedSubtopic),
             lessonChatBackendService,

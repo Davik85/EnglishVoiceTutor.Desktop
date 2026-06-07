@@ -338,7 +338,8 @@ public sealed class RealtimeVoiceSessionService
             _ = Task.Run(() => ReceiveOpenAiEventsAsync(openAiSocket, cancellationToken), CancellationToken.None);
 
             var instructions = lessonPromptBuilder.BuildRealtimeInstructions(request);
-            var sessionUpdateEvent = CreateRealtimeSessionUpdateEvent(instructions);
+            var resolvedSpeechVoice = ResolveRealtimeSpeechVoice(request.SpeechVoice);
+            var sessionUpdateEvent = CreateRealtimeSessionUpdateEvent(instructions, resolvedSpeechVoice);
             LogRealtimeSessionUpdateShape(sessionUpdateEvent, instructions.Length);
             await SendOpenAiEventAsync(sessionUpdateEvent, cancellationToken);
 
@@ -352,13 +353,13 @@ public sealed class RealtimeVoiceSessionService
             logger.LogInformation("Realtime session created. SessionId={SessionId}; Model={Model}; Voice={Voice}; LessonType={LessonType}; Topic={Topic}; Subtopic={Subtopic}; Level={Level}.",
                 sessionId,
                 OpenAiConstants.DefaultRealtimeVoiceModel,
-                OpenAiConstants.DefaultRealtimeVoice,
+                resolvedSpeechVoice,
                 request.LessonType,
                 string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
                 string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
                 request.SelectedLevel);
 
-            await SendDesktopEventAsync(new { type = "session.ready", sessionId, model = OpenAiConstants.DefaultRealtimeVoiceModel, voice = OpenAiConstants.DefaultRealtimeVoice }, cancellationToken);
+            await SendDesktopEventAsync(new { type = "session.ready", sessionId, model = OpenAiConstants.DefaultRealtimeVoiceModel, voice = resolvedSpeechVoice }, cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -376,8 +377,21 @@ public sealed class RealtimeVoiceSessionService
     }
 
 
-    private static object CreateRealtimeSessionUpdateEvent(string instructions)
+    private static string ResolveRealtimeSpeechVoice(string? requestedSpeechVoice)
     {
+        return string.IsNullOrWhiteSpace(requestedSpeechVoice)
+            ? OpenAiConstants.DefaultRealtimeVoice
+            : requestedSpeechVoice.Trim();
+    }
+
+    private static object CreateRealtimeSessionUpdateEvent(string instructions, string speechVoice)
+    {
+        var voice = OpenAiConstants.DefaultRealtimeVoice;
+        if (!string.IsNullOrWhiteSpace(speechVoice))
+        {
+            voice = speechVoice.Trim();
+        }
+
         return new
         {
             type = "session.update",
@@ -410,7 +424,7 @@ public sealed class RealtimeVoiceSessionService
                             type = OpenAiConstants.RealtimeAudioPcmFormatType,
                             rate = OpenAiConstants.RealtimeOutputAudioSampleRate
                         },
-                        voice = OpenAiConstants.DefaultRealtimeVoice
+                        voice = voice
                     }
                 }
             }

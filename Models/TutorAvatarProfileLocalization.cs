@@ -74,6 +74,17 @@ public static class TutorAvatarProfileLocalization
                     InterestsText: "Drawing, computer games",
                     PersonalityText: "Kind, cheerful, likes jokes",
                     SpeakingStyleText: "Friendly, playful, light, supportive")
+            },
+            [TutorAvatarOptions.DavidAvatarId] = new Dictionary<string, TutorAvatarLocalizedProfileText>(StringComparer.OrdinalIgnoreCase)
+            {
+                [InterfaceLanguageOptions.EnglishId] = new(
+                    ShortDescription: "40, Los Angeles, IT entrepreneur; friendly, cheerful, and supportive.",
+                    AgeText: "40",
+                    Location: "Los Angeles",
+                    Role: "Entrepreneur in the IT industry",
+                    InterestsText: "Technology, startups",
+                    PersonalityText: "Friendly, cheerful, supportive",
+                    SpeakingStyleText: "Clear, upbeat, encouraging, practical")
             }
         });
 

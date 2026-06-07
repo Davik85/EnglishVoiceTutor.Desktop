@@ -45,7 +45,7 @@ public partial class SettingsViewModel : ViewModelBase
         @"\bBearer\s+[A-Za-z0-9\-._~+/]+=*",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-    private readonly Action<string, string, string, string, string, string, string, string> saveSettings;
+    private readonly Action<string, string, string, string, string, string, string, string, string> saveSettings;
     private readonly Action navigateBack;
     private readonly LessonChatBackendService lessonChatBackendService;
     private readonly BackendDiagnosticsService backendDiagnosticsService;
@@ -247,6 +247,8 @@ public partial class SettingsViewModel : ViewModelBase
 
     public IReadOnlyList<TutorAvatarOption> AvailableTutorAvatars { get; } = TutorAvatarOptions.All;
 
+    public IReadOnlyList<SpeechVoiceOption> AvailableSpeechVoices { get; } = SpeechVoiceOptions.All;
+
     public ObservableCollection<AudioInputDeviceOption> AudioInputDevices { get; } = [];
 
     private TutorAvatarLocalizedProfileText SelectedTutorAvatarProfileText =>
@@ -294,6 +296,13 @@ public partial class SettingsViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(SelectedTutorAvatarSpeakingStyleText))]
     [NotifyPropertyChangedFor(nameof(DiagnosticsTutorAvatarText))]
     private TutorAvatarOption? selectedTutorAvatarOption;
+
+    [ObservableProperty]
+    private SpeechVoiceOption selectedSpeechVoiceOption = SpeechVoiceOptions.Coral;
+
+    public string SpeechVoiceTitle => LocalizeUiText("Tutor voice");
+
+    public string SpeechVoiceSubtitle => LocalizeUiText("Choose the voice used for normal lesson playback and Conversation Mode TTS.");
 
     [ObservableProperty]
     private string userDisplayName = string.Empty;
@@ -353,6 +362,7 @@ public partial class SettingsViewModel : ViewModelBase
         string currentNativeLanguage,
         string currentStudyLanguageId,
         string currentTutorAvatarId,
+        string currentSpeechVoiceId,
         string currentUserDisplayName,
         string currentLearningGoal,
         string currentBackendBaseUrl,
@@ -367,7 +377,7 @@ public partial class SettingsViewModel : ViewModelBase
         AuthBackendService authBackendService,
         AudioInputDeviceService audioInputDeviceService,
         AudioRecordingService audioRecordingService,
-        Action<string, string, string, string, string, string, string, string> saveSettings,
+        Action<string, string, string, string, string, string, string, string, string> saveSettings,
         Action navigateBack)
     {
         selectedInterfaceLanguageOption = InterfaceLanguageOptions.GetById(currentInterfaceLanguageId);
@@ -376,6 +386,8 @@ public partial class SettingsViewModel : ViewModelBase
         selectedNativeLanguageOption = NativeLanguageCatalog.GetByIdOrName(currentNativeLanguage);
         selectedStudyLanguage = StudyLanguageCatalog.GetById(currentStudyLanguageId);
         selectedTutorAvatarOption = TutorAvatarOptions.GetById(currentTutorAvatarId);
+        selectedSpeechVoiceOption = SpeechVoiceOptions.GetById(string.IsNullOrWhiteSpace(currentSpeechVoiceId) ? SpeechVoiceOptions.GetPreferredVoiceIdForTutor(selectedTutorAvatarOption.Id) : currentSpeechVoiceId);
+        backendSettingsSpeechVoice = selectedSpeechVoiceOption.Id;
         userDisplayName = currentUserDisplayName;
         learningGoal = currentLearningGoal;
         backendBaseUrl = currentBackendBaseUrl;
@@ -638,6 +650,33 @@ public partial class SettingsViewModel : ViewModelBase
         _ = SaveBackendUserSettingsAsync();
     }
 
+    partial void OnSelectedTutorAvatarOptionChanged(TutorAvatarOption? value)
+    {
+        if (isApplyingBackendSettings)
+        {
+            return;
+        }
+
+        SelectedSpeechVoiceOption = SpeechVoiceOptions.GetById(SpeechVoiceOptions.GetPreferredVoiceIdForTutor(value?.Id));
+        DiagnosticsCopyStatusText = string.Empty;
+        SaveCurrentSettingsLocally();
+        _ = SaveBackendUserSettingsAsync();
+    }
+
+    partial void OnSelectedSpeechVoiceOptionChanged(SpeechVoiceOption value)
+    {
+        backendSettingsSpeechVoice = SpeechVoiceOptions.GetById(value?.Id).Id;
+
+        if (isApplyingBackendSettings)
+        {
+            return;
+        }
+
+        DiagnosticsCopyStatusText = string.Empty;
+        SaveCurrentSettingsLocally();
+        _ = SaveBackendUserSettingsAsync();
+    }
+
     partial void OnSelectedAudioInputDeviceOptionChanged(AudioInputDeviceOption? value)
     {
         if (!isRefreshingAudioInputDevices)
@@ -751,6 +790,8 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(BackendUrlLabel));
         OnPropertyChanged(nameof(BackendUrlSubtitle));
         OnPropertyChanged(nameof(TutorAvatarSubtitle));
+        OnPropertyChanged(nameof(SpeechVoiceTitle));
+        OnPropertyChanged(nameof(SpeechVoiceSubtitle));
         OnPropertyChanged(nameof(AvatarProfileTitle));
         OnPropertyChanged(nameof(AvatarAgeLabel));
         OnPropertyChanged(nameof(AvatarLocationLabel));
@@ -1128,9 +1169,7 @@ public partial class SettingsViewModel : ViewModelBase
             {
                 StudyLanguage = GetSupportedBackendStudyLanguage(SelectedStudyLanguage),
                 ExplanationLanguage = SelectedNativeLanguageOption.Id,
-                SpeechVoice = string.IsNullOrWhiteSpace(backendSettingsSpeechVoice)
-                    ? BackendConstants.DefaultBackendSettingsSpeechVoice
-                    : backendSettingsSpeechVoice.Trim(),
+                SpeechVoice = SpeechVoiceOptions.GetById(backendSettingsSpeechVoice).Id,
                 SpeechSpeed = backendSettingsSpeechSpeed <= 0
                     ? BackendConstants.DefaultBackendSettingsSpeechSpeed
                     : backendSettingsSpeechSpeed,
@@ -1239,8 +1278,8 @@ public partial class SettingsViewModel : ViewModelBase
     private void ApplyBackendUserSettings(BackendUserSettingsResponse settings)
     {
         backendSettingsSpeechVoice = string.IsNullOrWhiteSpace(settings.SpeechVoice)
-            ? BackendConstants.DefaultBackendSettingsSpeechVoice
-            : settings.SpeechVoice.Trim();
+            ? SpeechVoiceOptions.GetPreferredVoiceIdForTutor(SelectedTutorAvatarOption?.Id)
+            : SpeechVoiceOptions.GetById(settings.SpeechVoice).Id;
         backendSettingsSpeechSpeed = settings.SpeechSpeed <= 0
             ? BackendConstants.DefaultBackendSettingsSpeechSpeed
             : settings.SpeechSpeed;
@@ -1251,6 +1290,7 @@ public partial class SettingsViewModel : ViewModelBase
         try
         {
             SelectedStudyLanguage = backendStudyLanguage;
+            SelectedSpeechVoiceOption = SpeechVoiceOptions.GetById(backendSettingsSpeechVoice);
         }
         finally
         {
@@ -1262,7 +1302,7 @@ public partial class SettingsViewModel : ViewModelBase
     {
         var selectedAvatar = SelectedTutorAvatarOption ?? TutorAvatarOptions.Elena;
         var selectedAudioInputDeviceId = SelectedAudioInputDeviceOption?.Id ?? AudioConstants.DefaultAudioInputDeviceId;
-        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguageOption.Id, SelectedStudyLanguage.Id, selectedAvatar.Id, UserDisplayName, LearningGoal, BackendBaseUrl, selectedAudioInputDeviceId);
+        saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguageOption.Id, SelectedStudyLanguage.Id, selectedAvatar.Id, SelectedSpeechVoiceOption.Id, UserDisplayName, LearningGoal, BackendBaseUrl, selectedAudioInputDeviceId);
     }
 
     private void SetBackendSettingsSyncStatus(BackendSettingsSyncStatus status)
