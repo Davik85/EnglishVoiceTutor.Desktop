@@ -30,6 +30,11 @@ This tester release is **not**:
 
 Keep the MVP tester release simple until installer, signing, hosting, and public release requirements are decided.
 
+
+## Branding note
+
+The tester installer is now branded as `Language Voice Tutor`. If a developer previously installed the old local `EnglishVoiceTutor.Desktop` Velopack tester package, uninstall it before testing the new `LanguageVoiceTutor.Desktop` package. External testers should only receive the new Language Voice Tutor installer after this local smoke passes.
+
 ## Required order before sharing a tester package
 
 1. Run the automated desktop release gate from the repository root:
@@ -70,7 +75,7 @@ artifacts\publish\win-x64-self-contained
 Then it creates the current tester handoff zip:
 
 ```text
-artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip
 ```
 
 Send this zip to testers. Do not send a loose `dotnet publish` command as the main tester flow. Manual `dotnet publish` remains only a lower-level implementation detail and developer troubleshooting tool.
@@ -80,7 +85,7 @@ Send this zip to testers. Do not send a loose `dotnet publish` command as the ma
 The default tester package is self-contained so early testers can unzip the package and run the app without manually installing `windowsdesktop-runtime-10` or any other .NET Desktop Runtime:
 
 ```text
-artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip
 ```
 
 The self-contained package is larger because it includes the required runtime components. This is the recommended package for tester releases.
@@ -100,7 +105,7 @@ artifacts\publish\win-x64-framework-dependent
 And creates:
 
 ```text
-artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-framework-dependent.zip
+artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-framework-dependent.zip
 ```
 
 The package script does not require administrator privileges, does not publish or modify the backend, does not create or modify `%APPDATA%` settings, does not include local lesson history, and rejects obvious API-key-like files in the publish output.
@@ -166,7 +171,7 @@ Do not commit this variable in scripts, docs with machine-specific values, setti
 
 - Run the automated release gate.
 - Confirm EF checks if backend schema changed.
-- Create `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip`.
+- Create `artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip`.
 - Start the backend locally, prepare a temporary ngrok URL, or confirm a hosted backend URL.
 - Verify backend health before sending instructions.
 - Do not send `OPENAI_API_KEY` to testers.
@@ -233,7 +238,7 @@ Use this option only if a hosted backend is available. Send the hosted Backend U
 
 Ask the tester to follow these steps:
 
-1. Copy or download `EnglishVoiceTutor.Desktop-win-x64-self-contained.zip` on the target Windows device.
+1. Copy or download `LanguageVoiceTutor.Desktop-win-x64-self-contained.zip` on the target Windows device.
 2. Extract the zip to a normal writable folder.
 3. Open the extracted folder.
 4. Run `EnglishVoiceTutor.Desktop.exe`.

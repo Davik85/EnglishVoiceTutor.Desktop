@@ -6,7 +6,7 @@
         xmlns:viewModels="clr-namespace:EnglishVoiceTutor.Desktop.ViewModels"
         xmlns:views="clr-namespace:EnglishVoiceTutor.Desktop.Views"
         mc:Ignorable="d"
-        Title="English Voice Tutor Desktop"
+        Title="Language Voice Tutor Desktop"
         Width="760"
         Height="800"
         MinWidth="680"

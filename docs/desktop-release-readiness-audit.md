@@ -15,7 +15,7 @@ This audit remains useful as the Step 5A baseline, but the following release-har
 - Settings/Diagnostics Release gate: packaged Release hides Diagnostics by default; Release Diagnostics appears only when `EVT_DESKTOP_DIAGNOSTICS=1` is set locally.
 - Protected auth session storage: desktop still uses `auth-session.json`, but current Windows storage writes a DPAPI-protected Base64 payload rather than raw plaintext token JSON.
 - Core Lesson Chat / Conversation Mode / TTS / transcription / translation / hints / feedback / summary flow is manually accepted.
-- Canonical tester handoff is `scripts/package-tester-release.ps1`, producing `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip`; `dotnet publish` is only a lower-level troubleshooting path.
+- Canonical tester handoff is `scripts/package-tester-release.ps1`, producing `artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip`; `dotnet publish` is only a lower-level troubleshooting path.
 - The tester ZIP was verified on another Windows device after extraction, including app start, Diagnostics hidden by default, backend connection, account login, backend history, accepted lesson flow, active lesson guard, and remote active lesson release.
 - Backend-enforced single active lesson protection is heartbeat-based, uses a 2-minute freshness window, supports remote release, marks the old session `Abandoned`, and rejects old heartbeat/message actions with `lesson_session_ended_elsewhere`.
 - Prompt/dialogue/scenario/bot-behavior quality polishing is intentionally deferred to CMS/Admin.
@@ -23,7 +23,7 @@ This audit remains useful as the Step 5A baseline, but the following release-har
 
 ## Executive summary
 
-English Voice Tutor Desktop is close enough for focused internal validation, but it is not ready for external MVP users without a short release-hardening pass.
+Language Voice Tutor Desktop is close enough for focused internal validation, but it is not ready for external MVP users without a short release-hardening pass.
 
 What is close to release-ready:
 - The core desktop learning path exists: first launch, level/topic/situation selection, Lesson Chat, text messages, hints, translation, TTS playback, voice recording/transcription, Conversation Mode, lesson finish, summary, and history.

@@ -43,7 +43,7 @@ CMS draft-save audit logging is implemented for successful Admin CMS Save draft 
      powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
      ```
 
-   - Default tester artifact: `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip`.
+   - Default tester artifact: `artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip`.
    - `dotnet publish` remains a lower-level troubleshooting/developer path, not the main tester flow.
 4. Production billing readiness later.
    - Production-readiness checklist: `docs/paddle-production-readiness-checklist.md`.
@@ -84,7 +84,7 @@ CMS draft-save audit logging is implemented for successful Admin CMS Save draft 
 
 ## Billing and platform boundaries to preserve
 
-- English Voice Tutor remains global, cross-platform, and provider-agnostic.
+- Language Voice Tutor remains global, cross-platform, and provider-agnostic.
 - Do not introduce YooKassa, Russian payment flows, or Russia-only billing assumptions.
 - Do not change Paddle, billing, subscription, entitlement, or Admin UI logic during desktop documentation/hardening work.
 - Paddle is the current desktop/web billing provider adapter only.
