@@ -9,8 +9,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$packageId = "EnglishVoiceTutor.Desktop"
-$packageTitle = "English Voice Tutor"
+$packageId = "LanguageVoiceTutor.Desktop"
+$packageTitle = "Language Voice Tutor"
 $runtime = "win-x64"
 $mainExe = "EnglishVoiceTutor.Desktop.exe"
 
@@ -39,7 +39,7 @@ Set-Location $repoRoot
 $publishDirectory = Join-Path $repoRoot "artifacts\publish\win-x64-velopack-tester"
 $releaseDirectory = Join-Path $repoRoot "artifacts\releases\windows\tester"
 
-Write-Host "English Voice Tutor Desktop Velopack tester release"
+Write-Host "Language Voice Tutor Desktop Velopack tester release"
 Write-Host "Repository root: $repoRoot"
 Write-Host "Package id: $packageId"
 Write-Host "Package title: $packageTitle"

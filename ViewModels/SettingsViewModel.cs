@@ -22,7 +22,7 @@ public partial class SettingsViewModel : ViewModelBase
     public event EventHandler? ClearPasswordRequested;
     private const string AppVersionFallbackText = "local build";
     private const string OpenAiNotConfiguredStatus = "not_configured";
-    private const string DiagnosticsReportTitle = "English Voice Tutor Desktop diagnostics";
+    private const string DiagnosticsReportTitle = "Language Voice Tutor Desktop diagnostics";
     private const string DiagnosticsCurrentDateTimeLabel = "Current date/time";
     private const string DiagnosticsAuthTokenPresentLabel = "Auth token present";
     private const string DiagnosticsAuthenticatedLabel = "Authenticated";

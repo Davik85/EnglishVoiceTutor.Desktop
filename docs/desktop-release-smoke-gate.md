@@ -38,7 +38,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
 4. Use the script-created zip as the tester handoff artifact:
 
 ```text
-artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip
 ```
 
 5. Copy/send the zip to another Windows device.
@@ -251,7 +251,7 @@ Release-ready Interface language IDs remain exactly:
 - Do not narrow Native/Explanation language support.
 - Do not expand Interface languages without full localization QA.
 - Do not add YooKassa, Russian payment flows, or Russia-only billing assumptions.
-- Keep English Voice Tutor global, cross-platform, and provider-agnostic.
+- Keep Language Voice Tutor global, cross-platform, and provider-agnostic.
 
 ## Required smoke gate report format
 

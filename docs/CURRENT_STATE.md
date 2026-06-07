@@ -90,7 +90,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
 Expected default tester ZIP:
 
 ```text
-artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip
 ```
 
 Advanced/developer-only framework-dependent ZIP, when a target machine already has the required .NET Desktop Runtime:

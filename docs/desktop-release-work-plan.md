@@ -3,7 +3,7 @@
 
 ## Parallel Windows installer/update foundation
 
-A minimal Velopack foundation exists for controlled Windows tester installer/update work. It is documented in [`docs/WINDOWS_INSTALLER_UPDATE_FLOW.md`](WINDOWS_INSTALLER_UPDATE_FLOW.md) and built with `scripts/package-windows-velopack-tester-release.ps1`. This is not a replacement for the canonical tester zip yet; the accepted tester handoff remains `artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-self-contained.zip` from `scripts/package-tester-release.ps1` until install/update smoke is accepted.
+A minimal Velopack foundation exists for controlled Windows tester installer/update work. It is documented in [`docs/WINDOWS_INSTALLER_UPDATE_FLOW.md`](WINDOWS_INSTALLER_UPDATE_FLOW.md) and built with `scripts/package-windows-velopack-tester-release.ps1`. This is not a replacement for the canonical tester zip yet; the accepted tester handoff remains `artifacts/packages/LanguageVoiceTutor.Desktop-win-x64-self-contained.zip` from `scripts/package-tester-release.ps1` until install/update smoke is accepted.
 
 This foundation does not make the app public-release ready, does not add Microsoft Store/MSIX packaging, does not enable production billing, and does not add production RBAC/Admin readiness. Follow-up work must add update UI and active-lesson-safe update confirmation before updates are offered to testers inside the app.
 
@@ -34,7 +34,7 @@ The desktop product has completed a large release-hardening block and is suitabl
 - Backend remains the source of truth for account, trial, subscription, Premium/free status, usage, limits, lesson history, active lesson state, payments, entitlements, and AI/TTS/STT calls.
 - Desktop must call backend APIs only and must not store or call OpenAI directly with an OpenAI API key.
 - `OPENAI_API_KEY` is backend-only, required only for real AI/TTS/STT testing, and must never be committed or sent to testers.
-- English Voice Tutor remains global, cross-platform, and provider-agnostic.
+- Language Voice Tutor remains global, cross-platform, and provider-agnostic.
 - Do not introduce YooKassa, Russian payment flows, or Russia-only billing assumptions.
 - Do not change Paddle, billing, subscription, entitlement, Admin UI, lesson JSON, Study languages, Interface languages, Native/Explanation language catalog, database schema, or backend AI behavior in this documentation/hardening step.
 
@@ -52,7 +52,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
 Default tester artifact:
 
 ```text
-artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip
 ```
 
 Manual `dotnet publish` is only a lower-level developer/troubleshooting path.
@@ -136,7 +136,7 @@ Accepted manually:
 ### Step 5B-8: Tester ZIP package acceptance — accepted
 
 - `scripts/package-tester-release.ps1` is the canonical tester distribution flow.
-- Expected ZIP: `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip`.
+- Expected ZIP: `artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip`.
 - The ZIP was verified on another Windows device after extraction.
 - Extracted app starts.
 - Diagnostics is hidden by default.

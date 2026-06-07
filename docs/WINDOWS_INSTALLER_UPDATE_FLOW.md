@@ -6,8 +6,9 @@ This document defines the safe Velopack foundation for controlled Windows tester
 
 - The existing tester zip flow remains the canonical and accepted fallback tester flow.
 - The canonical zip script remains `scripts/package-tester-release.ps1`.
-- The canonical zip output remains `artifacts/packages/EnglishVoiceTutor.Desktop-win-x64-self-contained.zip`.
+- The canonical zip output remains `artifacts/packages/LanguageVoiceTutor.Desktop-win-x64-self-contained.zip`.
 - The Velopack flow is a new parallel tester installer/update foundation until installer and update smoke testing is accepted.
+- Public-facing tester installer branding is now `Language Voice Tutor`; the Velopack tester package id is now `LanguageVoiceTutor.Desktop`.
 - This does **not** mean public release is ready.
 - This does **not** mean Microsoft Store distribution is ready.
 - This does **not** enable production billing.
@@ -89,16 +90,43 @@ When server upload is approved later, upload the Velopack release files for this
 /releases/windows/tester/win-x64/
   Setup.exe
   releases.win-x64-tester.json
-  EnglishVoiceTutor.Desktop-0.1.0-tester.1-full.nupkg
+  LanguageVoiceTutor.Desktop-0.1.0-tester.1-full.nupkg
 ```
 
 The release index and all package files referenced by the release index must stay together in the same static update folder. The zip fallback can remain separate, for example:
 
 ```text
-/releases/windows/tester/zip/EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+/releases/windows/tester/zip/LanguageVoiceTutor.Desktop-win-x64-self-contained.zip
 ```
 
 Do not deploy anything as part of the local packaging script. Upload policy, hosting, retention, authentication, and public download pages are separate future decisions.
+
+
+## Tester uninstall
+
+Velopack installs this app into the current user's LocalAppData directory by package id. The old local tester package id was `EnglishVoiceTutor.Desktop`; the new tester package id is `LanguageVoiceTutor.Desktop`. Because this tester identity changed before external handoff, developers who installed the old local tester build should uninstall the old package before validating the new one.
+
+Uninstall the old local tester package if it exists:
+
+```powershell
+& "$env:LOCALAPPDATA\EnglishVoiceTutor.Desktop\Update.exe" uninstall
+```
+
+Uninstall the new local tester package if needed:
+
+```powershell
+& "$env:LOCALAPPDATA\LanguageVoiceTutor.Desktop\Update.exe" uninstall
+```
+
+Check the current user's Velopack uninstall registry entries with:
+
+```powershell
+Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall* | Where-Object { $_.DisplayName -like "*Voice Tutor*" } | Select-Object DisplayName, DisplayVersion, UninstallString
+```
+
+After a successful Velopack install, Settings > Apps > Installed apps should show the public app name, `Language Voice Tutor`. Uninstall should remove shortcuts and the Velopack install directory for the selected package id. It does not delete the user's account, backend lesson history, subscription state, entitlement state, or other backend-owned data.
+
+Tester reinstall/update validation should use the documented uninstall commands and checklist steps. Do not rely on manually deleting random AppData folders unless a checklist explicitly instructs you to do so for a specific validation case.
 
 ## Code signing and Windows warnings
 

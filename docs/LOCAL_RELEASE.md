@@ -16,10 +16,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
 Expected default tester zip output:
 
 ```text
-artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip
 ```
 
 Tester releases should use this self-contained tester zip by default so testers can copy it to another Windows device, extract it, and run `EnglishVoiceTutor.Desktop.exe` without installing the .NET Desktop Runtime. Use the framework-dependent publish documented below only for developer checks or controlled machines that already have the matching .NET Desktop Runtime installed.
+
+
+## Naming note
+
+Internal project and repository names may still contain `EnglishVoiceTutor.Desktop` temporarily. Public-facing release naming is now `Language Voice Tutor`. This is intentional to avoid risky project-wide namespace churn before server deployment.
 
 ## Scope
 
@@ -64,7 +69,7 @@ artifacts\releases\windows\tester
 The accepted fallback tester artifact remains:
 
 ```text
-artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip
+artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip
 ```
 
 See [`docs/WINDOWS_INSTALLER_UPDATE_FLOW.md`](WINDOWS_INSTALLER_UPDATE_FLOW.md) for channel, versioning, expected release files, deferred update UI, and smoke requirements.
@@ -129,7 +134,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\run_desktop_release_gate.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
 ```
 
-4. Copy `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip` to another Windows device.
+4. Copy `artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip` to another Windows device.
 5. Extract the zip.
 6. Run `EnglishVoiceTutor.Desktop.exe` from the extracted folder.
 7. Verify backend connection, login/account, backend history, and the core lesson flow.
@@ -380,7 +385,7 @@ Known issues:
 
 ### Desktop launch
 
-- [ ] Extract `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip` on another Windows device when validating tester handoff.
+- [ ] Extract `artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip` on another Windows device when validating tester handoff.
 - [ ] Run `EnglishVoiceTutor.Desktop.exe` from the extracted folder.
 - [ ] App opens without Visual Studio.
 - [ ] Welcome screen opens.

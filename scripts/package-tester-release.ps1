@@ -29,9 +29,9 @@ if ($FrameworkDependent) {
 
 $publishDirectory = Join-Path $repoRoot ("artifacts\publish\win-x64-{0}" -f $packageKind)
 $packagesDirectory = Join-Path $repoRoot "artifacts\packages"
-$zipPath = Join-Path $packagesDirectory ("EnglishVoiceTutor.Desktop-win-x64-{0}.zip" -f $packageKind)
+$zipPath = Join-Path $packagesDirectory ("LanguageVoiceTutor.Desktop-win-x64-{0}.zip" -f $packageKind)
 
-Write-Host "English Voice Tutor Desktop tester package"
+Write-Host "Language Voice Tutor Desktop tester package"
 Write-Host "Repository root: $repoRoot"
 Write-Host "Package type: $packageKind"
 Write-Host "Publish directory: $publishDirectory"

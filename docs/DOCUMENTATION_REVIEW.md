@@ -22,7 +22,7 @@ The documentation sync reviewed repository docs and release-relevant scripts/cod
 Docs were synchronized to record the current accepted state:
 
 - `scripts/package-tester-release.ps1` is the canonical current tester ZIP flow.
-- Default tester ZIP is `artifacts\packages\EnglishVoiceTutor.Desktop-win-x64-self-contained.zip`.
+- Default tester ZIP is `artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip`.
 - The tester ZIP was verified on another Windows device after extraction.
 - Packaged Release hides Diagnostics by default and uses local `EVT_DESKTOP_DIAGNOSTICS=1` only for support/testing.
 - Core Lesson Chat, Conversation Mode, TTS, transcription, translation, hints, feedback, and summary are accepted for the current controlled desktop MVP.

@@ -2,7 +2,7 @@
 
 ## Architecture
 
-English Voice Tutor uses a backend-first storage architecture. PostgreSQL is the main product database and EF Core is the backend data access layer.
+Language Voice Tutor uses a backend-first storage architecture. PostgreSQL is the main product database and EF Core is the backend data access layer.
 
 The desktop application must not connect directly to PostgreSQL. Desktop features should continue calling backend APIs, and future storage work should happen server-side behind those APIs.
 
