@@ -53,11 +53,13 @@ public partial class SettingsView : UserControl
         if (e.OldValue is SettingsViewModel oldViewModel)
         {
             oldViewModel.ClearPasswordRequested -= OnClearPasswordRequested;
+            oldViewModel.ClearPasswordRecoveryFieldsRequested -= OnClearPasswordRecoveryFieldsRequested;
         }
 
         if (e.NewValue is SettingsViewModel newViewModel)
         {
             newViewModel.ClearPasswordRequested += OnClearPasswordRequested;
+            newViewModel.ClearPasswordRecoveryFieldsRequested += OnClearPasswordRecoveryFieldsRequested;
         }
     }
 
@@ -66,6 +68,7 @@ public partial class SettingsView : UserControl
         if (DataContext is SettingsViewModel viewModel)
         {
             viewModel.ClearPasswordRequested -= OnClearPasswordRequested;
+            viewModel.ClearPasswordRecoveryFieldsRequested -= OnClearPasswordRecoveryFieldsRequested;
         }
 
         DataContextChanged -= OnDataContextChanged;
@@ -77,6 +80,15 @@ public partial class SettingsView : UserControl
         AccountPasswordBox.Clear();
     }
 
+    private void OnClearPasswordRecoveryFieldsRequested(object? sender, EventArgs e)
+    {
+        ResetNewPasswordBox.Clear();
+        ResetConfirmPasswordBox.Clear();
+        CurrentPasswordBox.Clear();
+        ChangeNewPasswordBox.Clear();
+        ChangeConfirmPasswordBox.Clear();
+    }
+
     private void AccountPasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e)
     {
         if (DataContext is not SettingsViewModel viewModel || sender is not PasswordBox passwordBox)
@@ -85,5 +97,45 @@ public partial class SettingsView : UserControl
         }
 
         viewModel.Password = passwordBox.Password;
+    }
+
+    private void ResetNewPasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel viewModel && sender is PasswordBox passwordBox)
+        {
+            viewModel.ResetNewPassword = passwordBox.Password;
+        }
+    }
+
+    private void ResetConfirmPasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel viewModel && sender is PasswordBox passwordBox)
+        {
+            viewModel.ResetConfirmPassword = passwordBox.Password;
+        }
+    }
+
+    private void CurrentPasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel viewModel && sender is PasswordBox passwordBox)
+        {
+            viewModel.CurrentPassword = passwordBox.Password;
+        }
+    }
+
+    private void ChangeNewPasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel viewModel && sender is PasswordBox passwordBox)
+        {
+            viewModel.ChangeNewPassword = passwordBox.Password;
+        }
+    }
+
+    private void ChangeConfirmPasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel viewModel && sender is PasswordBox passwordBox)
+        {
+            viewModel.ChangeConfirmPassword = passwordBox.Password;
+        }
     }
 }

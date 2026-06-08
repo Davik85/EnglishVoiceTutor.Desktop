@@ -14,6 +14,7 @@ public static class AuthEndpoints
         app.MapPost(ApiConstants.AuthRegisterRoute, RegisterAsync);
         app.MapPost(ApiConstants.AuthLoginRoute, LoginAsync);
         app.MapGet(ApiConstants.AuthMeRoute, GetMeAsync).RequireAuthorization();
+        app.MapPost(ApiConstants.AuthChangePasswordRoute, ChangePasswordAsync).RequireAuthorization();
         app.MapPost(ApiConstants.AuthPasswordResetRequestRoute, RequestPasswordResetAsync);
         app.MapPost(ApiConstants.AuthPasswordResetConfirmRoute, ConfirmPasswordResetAsync);
     }
@@ -113,9 +114,17 @@ public static class AuthEndpoints
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
-        await passwordResetService.RequestPasswordResetAsync(request, cancellationToken);
-        loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Password reset request completed. Result=Accepted");
-        return Results.Ok(new PasswordResetResponse { Message = AuthConstants.PasswordResetAcceptedMessage });
+        try
+        {
+            await passwordResetService.RequestPasswordResetAsync(request, cancellationToken);
+            loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Password reset request completed. Result=Accepted");
+            return Results.Ok(new PasswordResetResponse { Message = AuthConstants.PasswordResetAcceptedMessage });
+        }
+        catch (PasswordResetDeliveryUnavailableException)
+        {
+            loggerFactory.CreateLogger("AuthEndpoints").LogWarning("Password reset request completed. Result=DeliveryUnavailable");
+            return Results.Json(new PasswordResetResponse { Message = AuthConstants.PasswordResetDeliveryUnavailableMessage }, statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
     }
 
     private static async Task<IResult> ConfirmPasswordResetAsync(
@@ -133,6 +142,27 @@ public static class AuthEndpoints
         }
 
         return Results.Ok(new PasswordResetResponse { Message = AuthConstants.PasswordResetConfirmedMessage });
+    }
+
+    private static async Task<IResult> ChangePasswordAsync(
+        ChangePasswordRequest request,
+        ClaimsPrincipal principal,
+        IAuthService authService,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
+    {
+        var userId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!userId.HasValue)
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await authService.ChangePasswordAsync(userId.Value, request, cancellationToken);
+        loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Password change completed. Result={Result}", result);
+
+        return result == ChangePasswordResult.Success
+            ? Results.Ok(new ChangePasswordResponse { Message = AuthConstants.PasswordChangeSuccessMessage })
+            : Results.BadRequest(new ChangePasswordResponse { Message = AuthConstants.PasswordChangeInvalidMessage });
     }
 
     private static async Task<IResult> GetMeAsync(

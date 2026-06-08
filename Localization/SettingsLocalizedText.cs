@@ -65,4 +65,15 @@ public sealed record SettingsLocalizedText(
     string UpgradeButtonText = "Upgrade",
     string DiagnosticsTitle = "Diagnostics",
     string LearningTabHeader = "Learning",
-    string ProgressTabHeader = "Progress");
+    string ProgressTabHeader = "Progress",
+    string ForgotPasswordTitle = "Forgot password?",
+    string ForgotPasswordSubtitle = "Request reset instructions by email, then paste the reset code and choose a new password.",
+    string ForgotPasswordButtonText = "Send reset instructions",
+    string ResetTokenLabel = "Reset code",
+    string NewPasswordLabel = "New password",
+    string ConfirmNewPasswordLabel = "Confirm new password",
+    string ResetPasswordButtonText = "Reset password",
+    string ChangePasswordTitle = "Change password",
+    string ChangePasswordSubtitle = "Update the password for the signed-in account.",
+    string CurrentPasswordLabel = "Current password",
+    string ChangePasswordButtonText = "Change password");

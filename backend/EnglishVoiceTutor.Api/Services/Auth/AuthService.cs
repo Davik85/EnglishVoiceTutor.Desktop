@@ -114,6 +114,38 @@ public sealed class AuthService(
         return jwtTokenService.CreateAuthResponse(user, user.Profile?.DisplayName, user.CreatedAt);
     }
 
+
+    public async Task<ChangePasswordResult> ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword)
+            || string.IsNullOrWhiteSpace(request.NewPassword)
+            || request.NewPassword.Length < AuthConstants.MinimumPasswordLength
+            || !string.Equals(request.NewPassword, request.ConfirmNewPassword, StringComparison.Ordinal))
+        {
+            return ChangePasswordResult.InvalidRequest;
+        }
+
+        var user = await dbContext.Users
+            .AsTracking()
+            .SingleOrDefaultAsync(candidate => candidate.Id == userId, cancellationToken);
+
+        if (user is null)
+        {
+            return ChangePasswordResult.UserNotFound;
+        }
+
+        var verifyResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
+        if (verifyResult == PasswordVerificationResult.Failed)
+        {
+            return ChangePasswordResult.InvalidCurrentPassword;
+        }
+
+        user.PasswordHash = passwordHasher.HashPassword(user, request.NewPassword);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Password changed. UserId={UserId}", user.Id);
+        return ChangePasswordResult.Success;
+    }
+
     public async Task<AuthUserDto?> GetCurrentUserAsync(Guid userId, CancellationToken cancellationToken)
     {
         return await dbContext.Users

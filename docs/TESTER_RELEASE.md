@@ -146,3 +146,9 @@ The desktop app does not contain an OpenAI API key, must not call OpenAI directl
 - Uninstall via Windows Settings / Installed Apps.
 - Verify the install directory is removed.
 - Verify user/backend account data is not deleted.
+
+## Password recovery/change tester note (2026-06-08)
+
+Password recovery/reset and signed-in password change are implemented for the desktop Account settings flow and backend API. Password reset email delivery requires SMTP settings on the server in `/etc/languagevoicetutor/backend.env`; real SMTP credentials must never be committed. The intended production sender is `support@languagevoicetutor.com`.
+
+Tester handoff is not ready yet. Remaining blockers are CMS server verification, a basic public download page, a basic update UI/system, clean-machine smoke, and final checklist completion.

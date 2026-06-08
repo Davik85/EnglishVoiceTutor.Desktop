@@ -234,3 +234,26 @@ After the first manual deploy, send back:
 - Results for `curl -fsS https://api.languagevoicetutor.com/health` after nginx/TLS are configured.
 - Confirmation that no secrets were printed or committed.
 - Any server warnings, failed commands, or changed assumptions.
+
+## Password reset SMTP environment (2026-06-08)
+
+Password reset email delivery is configured only through server environment variables, normally in `/etc/languagevoicetutor/backend.env`. Do not commit real SMTP credentials.
+
+Example placeholders:
+
+```bash
+PasswordReset__Enabled=true
+PasswordReset__TokenLifetimeMinutes=60
+PasswordReset__ResetUrlBase=
+PasswordReset__RequireConfiguredEmailSender=true
+SmtpEmail__Enabled=true
+SmtpEmail__Host=smtp.example.com
+SmtpEmail__Port=587
+SmtpEmail__UseStartTls=true
+SmtpEmail__UserName=change-me
+SmtpEmail__Password=change-me
+SmtpEmail__FromAddress=support@languagevoicetutor.com
+SmtpEmail__FromName=Language Voice Tutor Support
+```
+
+If password reset is enabled and `PasswordReset__RequireConfiguredEmailSender=true`, the backend requires a configured SMTP sender before accepting reset requests. External tester handoff remains blocked until CMS server verification, a basic public download page, a basic update UI/system, clean-machine smoke, and checklist completion are done.

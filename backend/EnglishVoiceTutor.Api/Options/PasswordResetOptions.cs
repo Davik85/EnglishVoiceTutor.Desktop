@@ -8,4 +8,5 @@ public sealed class PasswordResetOptions
     public bool Enabled { get; set; }
     public int TokenLifetimeMinutes { get; set; } = DefaultTokenLifetimeMinutes;
     public string ResetUrlBase { get; set; } = string.Empty;
+    public bool RequireConfiguredEmailSender { get; set; } = true;
 }
