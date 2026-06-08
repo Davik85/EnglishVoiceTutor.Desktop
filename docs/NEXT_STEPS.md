@@ -1,6 +1,6 @@
 # Next Steps
 
-Review date: 2026-06-07.
+Review date: 2026-06-08.
 
 
 ## After latest Admin CMS Content step
@@ -9,44 +9,41 @@ Step 5D-6d completed Admin CMS refresh resilience and unsaved-change protection.
 
 Admin CMS Content now supports content pack overview, topic editing, scenario editing, structured scenario editing, full scenario JSON editing, prompt template editing, tutor behavior profile editing, validation/preview summary, and versions/publish/restore flows under the existing `/admin/` shell. Step 5D-6e is complete: the Scenarios editor now includes compact local **Jump to** navigation, collapsible/visually separated Basic fields, Lesson setup, Context selection / choices, Conversation flow / response guidance, Wrap-up / summary guidance, and Advanced JSON sections, and helper text for normal content editors. Structured fields remain the recommended normal editing path; Advanced JSON remains a visually separated technical fallback for rare full-JSON edits. `Format JSON` only pretty-prints JSON for easier editing. `Validate JSON` checks syntax and required scenario fields. Neither action saves or publishes; `Save draft` is required to persist CMS edits and remains draft-only. Unsaved CMS dirty state is tracked in memory against the last loaded/saved baseline, unsaved content is not stored in browser storage or the URL hash, and refresh/navigation/entity switching/logout warns before discarding edits. After successful Save draft operations, the editor shows **Go to Publish**; publishing changed content still happens only from **Versions & Publish**, requires a short change summary, and publish failures display backend validation details. Published versions remain immutable; restore creates a new published version rather than mutating old history. Runtime reads only published snapshots when CMS runtime mode is explicitly enabled; static JSON remains default. A local run confirmed `Source=CmsPublishedSnapshot`, `ContentPackSlug=static-json-v1`, `VersionNumber=34`, `FallbackUsed=False`, `ValidationPassed=True`, 6 topics, 26 scenarios, 3 prompt templates, and 2 tutor behavior profiles with `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`.
 
-Runtime learner behavior remains unchanged by default. CMS reads remain controlled by configuration and disabled by default, with static JSON fallback still available. The CMS/Admin Content MVP is advanced enough to pause CMS feature work and continue test deployment preparation. Backend deployment and static HTTPS download setup are next; production RBAC, role-based content approval, production billing operations, and full external tester handoff are still not production-ready.
+Runtime learner behavior remains unchanged by default. CMS reads remain controlled by configuration and disabled by default, with static JSON fallback still available. The CMS/Admin Content MVP is advanced enough to pause CMS feature work and continue test deployment preparation. Version `0.1.8-tester.1` passed internal smoke against the production-like setup, but external tester handoff is not approved. The next work must stay focused on tester handoff blockers before any new product features. Production RBAC, role-based content approval, production billing operations, and full external tester handoff are still not production-ready.
 
 CMS draft-save audit logging is implemented for successful Admin CMS Save draft operations, and the Admin CMS Audit subtab now exposes recent CMS changes as read-only rows filtered by selected content pack, entity type, stable key text, and limit. Smoke/test audit entries are hidden by default, a **Show smoke/test entries** checkbox exists for debugging, and normal manual Admin CMS UI changes remain visible. Audit rows show metadata and shortened before/after hashes; full edited content bodies are not stored or displayed in audit rows. The later CMS governance step is a critical-change approval workflow, but it should wait until production roles/RBAC exist.
 
 ## Desktop backend profile checkpoint
 
-Local desktop development keeps the default Backend URL `http://localhost:5000`. Inno tester/release packages default to `https://api.languagevoicetutor.com` through `scripts/package-windows-inno-release.ps1`, which passes `DesktopBackendBaseUrl` to `dotnet publish` and prints the selected Backend URL. Existing saved localhost settings may migrate to the deployed API only in tester/release builds where that deployed API is the build default; custom values must remain untouched. Confirm the generated `latest.json` non-secret `backendBaseUrl` with `scripts/validate-windows-direct-release.ps1` before handoff. Backend APIs remain server-side source of truth, the desktop must never contain OpenAI keys, production billing remains deferred, and public release is not ready until clean-machine install plus the controlled tester checklist pass.
+Local desktop development keeps the default Backend URL `http://localhost:5000`. Inno tester/release packages default to `https://api.languagevoicetutor.com` through `scripts/package-windows-inno-release.ps1`, which passes `DesktopBackendBaseUrl` to `dotnet publish` and prints the selected Backend URL. Existing saved localhost settings may migrate to the deployed API only in tester/release builds where that deployed API is the build default; custom values must remain untouched. Confirm the generated `latest.json` non-secret `backendBaseUrl` with `scripts/validate-windows-direct-release.ps1` before handoff. Backend APIs remain server-side source of truth, the desktop must never contain OpenAI keys, production billing remains deferred, and public release/external tester handoff are not ready until password recovery/change, server-connected CMS verification, a public download page, update UI/system, clean-machine install, and the controlled tester checklist pass.
 
 ## Recommended next product order
 
-1. Server setup and test deployment preparation.
-   - Backend Linux deployment scripts/templates are now prepared for manual Ubuntu 24.04 test deployment; follow `docs/BACKEND_SERVER_DEPLOYMENT.md` for local package, dry-run upload, real upload, server env file, systemd, nginx, Certbot, health checks, and rollback.
-   - Static HTTPS direct-download hosting remains a separate track from backend API hosting. The backend API is available at `https://api.languagevoicetutor.com`; the existing static site remains `https://languagevoicetutor.com`.
-   - Keep backend deployment health verified separately. Keep backend as the source of truth for auth, lessons, active lesson state, usage, billing/access, CMS runtime selection, and AI/TTS/STT calls.
-   - Desktop must continue to store no OpenAI API keys and must not call OpenAI directly.
-   - Do not commit secrets, IP addresses, usernames, passwords, API keys, tokens, SSH keys, database passwords, provider keys, generated artifacts, or environment-specific values.
-   - External tester handoff remains blocked until backend deployment, clean-machine install, and the controlled tester checklist pass.
-2. Windows direct-download release preparation.
-   - Keep Inno Setup as the primary Windows direct-download installer path. Stable installer AppId: `LanguageVoiceTutor.Desktop`. Expected installer artifact: `artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe`.
-   - Server-ready direct-download files are generated under `artifacts\releases\windows\direct`: `latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, and `LanguageVoiceTutorSetup-{version}.exe`.
-   - Validate local release artifacts with `scripts/validate-windows-direct-release.ps1`. The upload helper supports dry-run/future SCP only and must not hardcode server secrets.
-   - `latest.json` is only for the future download page and future in-app manual update-check. The app does not automatically check it yet. Future update UX must require manual confirmation and must not run during an active lesson.
-   - Code signing remains deferred, so Windows SmartScreen warnings are expected for now. Generated `artifacts/` files must not be committed.
-   - ZIP packaging remains only an emergency/developer fallback through `scripts/package-tester-release.ps1`; do not present ZIP as the primary external tester handoff once the Inno installer smoke passes.
-   - Velopack is rejected/deprecated and must not be reintroduced.
-3. CMS/Admin content MVP pause point.
-   - Planning baseline: `docs/CMS_ADMIN_PLANNING.md`. Detailed content MVP plan: `docs/cms-content-mvp-plan.md`.
-   - Step 5D-0 through Step 5D-6e are complete enough to pause and continue deployment preparation. `/admin/` works, the CMS Content workspace exists, and Overview, Topics, Scenarios, Prompts, Tutors, Validation & Preview, Versions & Publish, and Audit tabs exist.
-   - `Save draft` is explicit and draft-only. Publishing happens only from **Versions & Publish**, requires a publish summary for changed content, keeps old published versions immutable, and restore creates a new published version.
-   - CMS draft-save audit logging works for successful Save draft operations. Runtime published-snapshot loading was checked locally, but runtime still defaults to static JSON unless explicitly switched with the CMS runtime settings.
-   - Production RBAC and critical-change approval workflow remain deferred.
-4. Production billing readiness later.
-   - Production billing is deferred. Do not change Paddle, billing, checkout, subscriptions, entitlements, payment code, or provider configuration during server setup documentation/preparation.
-   - Language Voice Tutor is a global/international product. Do not introduce YooKassa, Russia-only, or provider-specific regional billing assumptions.
-   - Keep production billing marked incomplete until production webhook delivery, checkout configuration, provider credentials, product/price mapping, environment separation, and manual smoke verification are completed safely outside tracked files and without committing secrets.
-5. Remaining platform/store work later.
-   - Microsoft Store, Apple App Store, Google Play, and Mac version are deferred.
-   - Mobile entitlement bridge, remaining billing operations, production CMS/Admin governance, and public release readiness remain future work.
+Do not propose or start new product features before the readiness blockers below. Version `0.1.8-tester.1` has internal smoke readiness only, not tester-release readiness.
+
+1. Password recovery / password reset.
+   - Implement and verify the complete password recovery flow.
+   - Keep secrets, provider credentials, reset tokens, and copied environment values out of git.
+2. Password change for signed-in users.
+   - Implement and verify a signed-in password change flow.
+   - Confirm existing sessions and error states behave predictably.
+3. Connect and verify CMS/Admin content flow on the server.
+   - Verify the server-connected CMS/Admin content workflow end to end.
+   - Confirm draft, publish, runtime published-snapshot selection, fallback behavior, and audit expectations on the server before tester handoff.
+4. Build a basic public download website/page for testers.
+   - Provide a simple public page for the Language Voice Tutor Windows installer.
+   - Keep static release hosting separate from backend API hosting.
+   - Do not commit generated installer artifacts from `artifacts/`.
+5. Implement a basic update system / update UI.
+   - Use the existing direct-release manifest foundation.
+   - Require manual confirmation and avoid update prompts during active lessons.
+   - Do not introduce silent updates.
+6. Run clean-machine tester release smoke.
+   - Verify install, launch, registration/login/session restore, trial entitlement, lesson start, normal chat, Conversation Mode, TTS, translation, feedback, hints, lesson history, active/restored session behavior, update guidance, and uninstall/upgrade expectations on a clean or representative Windows machine.
+7. Only then hand off to first controlled testers.
+   - Handoff is not approved until Steps 1-6 pass.
+   - Keep code signing deferred for now and document expected SmartScreen warnings.
+   - Keep public release, production billing, production RBAC, app stores, and Mac/mobile work deferred.
 
 ## Already completed or accepted (do not relist as future work)
 
@@ -97,13 +94,13 @@ Local desktop development keeps the default Backend URL `http://localhost:5000`.
 - No narrowing of the Native/Explanation language catalog.
 - No lesson JSON rewrite.
 - No public release declaration yet.
-- No automatic update-check or update UI yet; the direct-download `latest.json` manifest is only a foundation for a future download page and future manual-confirmation update-check that must not run during active lessons.
+- No automatic update-check or update UI yet; the direct-download `latest.json` manifest for `0.1.8-tester.1` has been validated/uploaded as a hosting foundation only. A basic update UI/system remains a blocker before external tester handoff and must require manual confirmation without interrupting active lessons.
 
 ## After accepted Welcome screen and Lesson Chat sizing hardening
 
 - Treat Welcome screen polish and Lesson Chat window auto-sizing as done for the current desktop hardening phase.
 - CMS/Admin content MVP is advanced enough to pause feature work for server setup and test deployment preparation.
-- Continue next with backend deployment environment setup and static HTTPS direct-download preparation; keep production billing deferred and public release not ready.
+- Continue next with password recovery/reset, signed-in password change, server-connected CMS verification, a public download page, basic update UI/system, clean-machine tester smoke, and only then controlled tester handoff; keep production billing deferred and public release not ready.
 - Keep production billing/Paddle rollout work deferred during server setup/test deployment preparation.
 - Set up a domain email/provider later before enabling password reset delivery. Password reset remains disabled/not exposed as a working tester flow until that setup exists.
 

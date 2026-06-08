@@ -103,6 +103,8 @@ The current MVP baseline is documentation-first and behavior-stable:
 - Step 5B-3b limits the Interface language selector to release-ready UI localizations that passed the desktop coverage audit. Native/explanation languages remain the broad Step 5B-2 catalog, study languages were not expanded, and new Interface languages should be added only after UI localization QA passes.
 - Step 5B-3c completes missing core UI localization for the release-ready Interface languages. English fallback remains a runtime safety mechanism, Native/Explanation languages remain broad, and study languages were not expanded.
 
+Current release-readiness status: `0.1.8-tester.1` passed internal smoke only; external tester handoff is not approved yet. See `docs/CURRENT_STATE.md`, `docs/NEXT_STEPS.md`, and `docs/TESTER_RELEASE.md`.
+
 Detailed review docs live in `docs/`:
 
 - `docs/CURRENT_STATE.md`
