@@ -485,7 +485,7 @@
 
                                     <TextBlock Text="{Binding AccountDisplayNameLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
                                     <TextBox Style="{StaticResource SettingsTextBoxStyle}"
-                                             Text="{Binding RegistrationDisplayName, UpdateSourceTrigger=PropertyChanged}" />
+                                             Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" />
 
                                     <WrapPanel Margin="0,14,0,0">
                                         <Button MinWidth="100"
