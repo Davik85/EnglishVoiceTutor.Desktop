@@ -44,6 +44,30 @@ $compiledOutputExtensions = @(
 )
 
 
+function Initialize-ZipCompressionTypes {
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+}
+
+function Get-ZipEntryName {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$SourceRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath
+    )
+
+    $sourceRootWithSeparator = $SourceRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+    if (-not $FilePath.StartsWith($sourceRootWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "File path is not under source directory. Source: $SourceRoot File: $FilePath"
+    }
+
+    $relativePath = $FilePath.Substring($sourceRootWithSeparator.Length)
+    $relativePath = $relativePath.Replace([System.IO.Path]::DirectorySeparatorChar, '/')
+    return $relativePath.Replace([System.IO.Path]::AltDirectorySeparatorChar, '/')
+}
+
 function New-ZipArchiveWithForwardSlashEntries {
     param(
         [Parameter(Mandatory = $true)]
@@ -53,15 +77,14 @@ function New-ZipArchiveWithForwardSlashEntries {
         [string]$DestinationPath
     )
 
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    Initialize-ZipCompressionTypes
 
     $sourceRoot = (Resolve-Path -LiteralPath $SourceDirectory).Path.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
     $destinationFullPath = [System.IO.Path]::GetFullPath($DestinationPath)
     $zipArchive = [System.IO.Compression.ZipFile]::Open($destinationFullPath, [System.IO.Compression.ZipArchiveMode]::Create)
     try {
         Get-ChildItem -LiteralPath $sourceRoot -Recurse -File | ForEach-Object {
-            $relativePath = [System.IO.Path]::GetRelativePath($sourceRoot, $_.FullName).Replace([System.IO.Path]::DirectorySeparatorChar, '/')
-            $relativePath = $relativePath.Replace([System.IO.Path]::AltDirectorySeparatorChar, '/')
+            $relativePath = Get-ZipEntryName -SourceRoot $sourceRoot -FilePath $_.FullName
             [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zipArchive, $_.FullName, $relativePath, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
         }
     }
