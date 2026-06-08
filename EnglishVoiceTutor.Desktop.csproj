@@ -14,6 +14,7 @@
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
     <FileVersion>0.0.0.0</FileVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <DesktopBackendBaseUrl Condition="'$(DesktopBackendBaseUrl)' == ''">http://localhost:5000</DesktopBackendBaseUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,6 +35,28 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <Target Name="ValidateDesktopBackendBaseUrl" BeforeTargets="BeforeBuild">
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(DesktopBackendBaseUrl)', '^https?://\S+$'))" Text="DesktopBackendBaseUrl must be an absolute http/https URL." />
+  </Target>
+
+  <Target Name="GenerateDesktopBackendBuildSettings" BeforeTargets="BeforeCompile" DependsOnTargets="ValidateDesktopBackendBaseUrl">
+    <PropertyGroup>
+      <DesktopBackendBuildSettingsFile>$(IntermediateOutputPath)DesktopBackendBuildSettings.g.cs</DesktopBackendBuildSettingsFile>
+    </PropertyGroup>
+    <ItemGroup>
+      <DesktopBackendBuildSettingsLine Include="// &lt;auto-generated /&gt;" />
+      <DesktopBackendBuildSettingsLine Include="namespace EnglishVoiceTutor.Desktop.Constants;" />
+      <DesktopBackendBuildSettingsLine Include="internal static class DesktopBackendBuildSettings" />
+      <DesktopBackendBuildSettingsLine Include="{" />
+      <DesktopBackendBuildSettingsLine Include="    public const string DefaultBackendBaseUrl = &quot;$(DesktopBackendBaseUrl)&quot;;" />
+      <DesktopBackendBuildSettingsLine Include="}" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(DesktopBackendBuildSettingsFile)" Lines="@(DesktopBackendBuildSettingsLine)" Overwrite="true" Encoding="UTF-8" />
+    <ItemGroup>
+      <Compile Include="$(DesktopBackendBuildSettingsFile)" AutoGen="true" DesignTime="true" Visible="false" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />

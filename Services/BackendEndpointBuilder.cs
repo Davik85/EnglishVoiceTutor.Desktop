@@ -6,22 +6,54 @@ public static class BackendEndpointBuilder
 {
     public static string NormalizeBaseUrl(string? backendBaseUrl)
     {
+        return NormalizeBaseUrl(backendBaseUrl, BackendConstants.DefaultBackendBaseUrl);
+    }
+
+    public static string NormalizeBaseUrl(string? backendBaseUrl, string fallbackBaseUrl)
+    {
+        var normalizedFallback = NormalizeAbsoluteHttpUrl(fallbackBaseUrl) ?? BackendConstants.LegacyLocalBackendBaseUrl;
+
+        return NormalizeAbsoluteHttpUrl(backendBaseUrl) ?? normalizedFallback;
+    }
+
+    public static string ResolveSavedBaseUrlForCurrentBuild(string? savedBackendBaseUrl)
+    {
+        var normalizedBuildDefault = NormalizeBaseUrl(BackendConstants.DefaultBackendBaseUrl, BackendConstants.LegacyLocalBackendBaseUrl);
+        var normalizedSavedUrl = NormalizeAbsoluteHttpUrl(savedBackendBaseUrl);
+
+        if (normalizedSavedUrl is null)
+        {
+            return normalizedBuildDefault;
+        }
+
+        var normalizedLegacyLocalDefault = NormalizeBaseUrl(BackendConstants.LegacyLocalBackendBaseUrl, BackendConstants.LegacyLocalBackendBaseUrl);
+        if (!string.Equals(normalizedBuildDefault, normalizedLegacyLocalDefault, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(normalizedSavedUrl, normalizedLegacyLocalDefault, StringComparison.OrdinalIgnoreCase))
+        {
+            return normalizedBuildDefault;
+        }
+
+        return normalizedSavedUrl;
+    }
+
+    private static string? NormalizeAbsoluteHttpUrl(string? backendBaseUrl)
+    {
         var trimmedUrl = backendBaseUrl?.Trim().TrimEnd('/');
 
         if (string.IsNullOrWhiteSpace(trimmedUrl))
         {
-            return BackendConstants.DefaultBackendBaseUrl;
+            return null;
         }
 
         if (!Uri.TryCreate(trimmedUrl, UriKind.Absolute, out var uri))
         {
-            return BackendConstants.DefaultBackendBaseUrl;
+            return null;
         }
 
         if (!string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
             && !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
         {
-            return BackendConstants.DefaultBackendBaseUrl;
+            return null;
         }
 
         return uri.ToString().TrimEnd('/');

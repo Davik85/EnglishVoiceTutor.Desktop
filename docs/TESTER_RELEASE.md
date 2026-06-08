@@ -1,5 +1,14 @@
 # Tester release workflow
 
+
+## Backend URL profile
+
+Local development builds default to `http://localhost:5000`. The primary Inno tester/release installer flow defaults packaged builds to `https://api.languagevoicetutor.com` by passing `DesktopBackendBaseUrl` during publish; use `-BackendBaseUrl` only when intentionally testing another absolute http/https backend. Settings/Diagnostics continue to show the current Backend URL so tester reports can confirm the profile in use.
+
+Existing installed-user settings are handled conservatively: empty Backend URL values use the current build default, saved legacy `http://localhost:5000` values migrate to `https://api.languagevoicetutor.com` only in tester/release builds where that is the build default, and custom values are preserved.
+
+The backend remains the source of truth. The desktop must not store OpenAI API keys and must not call OpenAI directly. Production billing remains deferred, and public release is still blocked until clean-machine install and the controlled tester checklist pass.
+
 The recommended Windows tester handoff is now the Inno Setup installer documented in [`docs/WINDOWS_INSTALLER_RELEASE_FLOW.md`](WINDOWS_INSTALLER_RELEASE_FLOW.md), after the installer smoke checklist passes.
 
 The older ZIP package created by `scripts/package-tester-release.ps1` remains available only as an emergency/developer fallback. Do not present the ZIP as the main tester handoff when the Inno installer is available and smoke-tested.
@@ -16,7 +25,7 @@ The tester release is:
 - server-ready direct-download files under `artifacts\releases\windows\direct`;
 - branded publicly as `Language Voice Tutor`;
 - built from the desktop app publish output;
-- intended to work with a separately reachable backend, either local, ngrok, or hosted;
+- intended to work with the deployed hosted backend by default, with local/ngrok/custom backends only for deliberate overrides;
 - focused on checking launch, Settings, account login/session restore, backend history, Lesson Chat, voice recording/transcription, TTS, Conversation Mode, translation, hints, feedback, Summary, active lesson guard, and clean close behavior.
 
 ## What the tester release is not
