@@ -62,6 +62,12 @@ Validate the generated direct-release folder with `powershell -ExecutionPolicy B
 
 The Settings screen footer displays the installed app version, for example `Version: v0.1.0`. Testers should include that version when reporting bugs.
 
+## Backend Linux deployment foundation
+
+A safe Ubuntu 24.04 backend deployment foundation is documented in [`docs/BACKEND_SERVER_DEPLOYMENT.md`](docs/BACKEND_SERVER_DEPLOYMENT.md). It packages the backend as a self-contained `linux-x64` archive from the local Windows development machine, uploads it to a versioned server release folder under `/opt/languagevoicetutor/backend`, and documents a systemd service plus nginx reverse proxy for `api.languagevoicetutor.com`. This foundation is prepared only; it does not mean the backend has been deployed, and public release remains not ready.
+
+Generated backend publish/package files are written under `artifacts/` and must not be committed. Real server configuration must live outside git, for example `/etc/languagevoicetutor/backend.env`, and must never include committed database passwords, OpenAI keys, provider keys, JWT signing keys, SSH keys, tokens, or other secrets. Production billing remains deferred.
+
 ## Security rule
 
 OpenAI API keys are backend-only. `OPENAI_API_KEY` is needed only for real AI/TTS/STT testing, must never be stored in the desktop app, must never be committed to source control, and must never be sent to testers. The desktop app only needs a Backend URL and must call backend APIs only.
