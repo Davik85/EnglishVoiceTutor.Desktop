@@ -82,14 +82,18 @@ Invoke-LoggedCommand -Command @('ssh', '-p', $SshPort.ToString(), $serverTarget,
 
 Invoke-LoggedCommand -Command @('scp', '-P', $SshPort.ToString(), $archivePath, "${serverTarget}:$remoteArchivePath")
 
-$deployCommand = @(
-    "set -e",
+$remoteExecutablePath = "$remoteReleaseDir/EnglishVoiceTutor.Api"
+$remoteDeployScript = @(
+    "set -euo pipefail",
     "rm -rf $(Quote-ForRemoteShell $remoteReleaseDir)",
     "mkdir -p $(Quote-ForRemoteShell $remoteReleaseDir)",
     "unzip -q $(Quote-ForRemoteShell $remoteArchivePath) -d $(Quote-ForRemoteShell $remoteReleaseDir)",
-    "chmod +x $(Quote-ForRemoteShell "$remoteReleaseDir/EnglishVoiceTutor.Api") || true",
+    "test -f $(Quote-ForRemoteShell $remoteExecutablePath)",
+    "chmod 755 $(Quote-ForRemoteShell $remoteExecutablePath)",
+    "test -x $(Quote-ForRemoteShell $remoteExecutablePath)",
     "ln -sfn $(Quote-ForRemoteShell $remoteReleaseDir) $(Quote-ForRemoteShell $remoteCurrentLink)"
 ) -join ' && '
+$deployCommand = "bash -lc $(Quote-ForRemoteShell $remoteDeployScript)"
 Invoke-LoggedCommand -Command @('ssh', '-p', $SshPort.ToString(), $serverTarget, $deployCommand)
 
 if ($RestartService) {

@@ -131,3 +131,10 @@ Before external tester handoff, keep re-verifying the disabled-by-default CMS ru
 - Configure password reset delivery on the server by adding SMTP settings to `/etc/languagevoicetutor/backend.env`; do not commit SMTP credentials or other secrets. Use `support@languagevoicetutor.com` as the production sender identity.
 - Verify on the production backend that a registered user can request a reset, receive the code, reset the password, log in with the new password, and fail login with the old password. Verify signed-in Change password the same way.
 - External tester handoff remains blocked until CMS server verification, basic public download page, basic update UI/system, clean-machine smoke, and checklist completion are finished.
+
+## Account recovery/change tester-readiness follow-up (2026-06-08)
+
+- Verify password reset email delivery on the production server with SMTP values stored only in `/etc/languagevoicetutor/backend.env`; do not commit or paste real SMTP credentials into docs, logs, or release notes.
+- Smoke test login failure, wrong-current-password change, short-password validation, reset-code failure, and successful reset/change against `https://api.languagevoicetutor.com` before external tester handoff.
+- Confirm the hardened backend upload script leaves `/opt/languagevoicetutor/backend/releases/<version>/EnglishVoiceTutor.Api` executable and fails loudly if it cannot.
+- External tester handoff remains blocked until CMS server verification, a basic public download page, update UI/system, clean-machine smoke, and checklist completion.

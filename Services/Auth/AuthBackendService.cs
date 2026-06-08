@@ -25,13 +25,13 @@ public sealed class AuthBackendService
         backendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(value);
     }
 
-    public Task<AuthResponse?> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
+    public Task<AuthOperationResult> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
         return AuthenticateAsync(BackendConstants.AuthRegisterEndpoint, request, cancellationToken);
     }
 
-    public Task<AuthResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
+    public Task<AuthOperationResult> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
         return AuthenticateAsync(BackendConstants.AuthLoginEndpoint, request, cancellationToken);
@@ -123,24 +123,32 @@ public sealed class AuthBackendService
         try
         {
             using var response = await httpClient.SendAsync(request, cancellationToken);
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            var message = await TryReadPasswordOperationMessageAsync(response, cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return PasswordOperationResult.Success(message);
+            }
+
+            if ((int)response.StatusCode >= 500)
+            {
+                return PasswordOperationResult.BackendUnavailable();
+            }
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized && string.IsNullOrWhiteSpace(message))
             {
                 return PasswordOperationResult.Unauthorized();
             }
 
-            var payload = await response.Content.ReadFromJsonAsync<PasswordResetResponse>(JsonOptions, cancellationToken);
-            var message = payload?.Message ?? string.Empty;
-            return response.IsSuccessStatusCode
-                ? PasswordOperationResult.Success(message)
-                : PasswordOperationResult.Failed(string.IsNullOrWhiteSpace(message) ? response.ReasonPhrase ?? string.Empty : message);
+            return PasswordOperationResult.Failed(string.IsNullOrWhiteSpace(message) ? response.ReasonPhrase ?? string.Empty : message);
         }
-        catch
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
             return PasswordOperationResult.BackendUnavailable();
         }
     }
 
-    private async Task<AuthResponse?> AuthenticateAsync<TRequest>(string endpointPath, TRequest requestBody, CancellationToken cancellationToken)
+    private async Task<AuthOperationResult> AuthenticateAsync<TRequest>(string endpointPath, TRequest requestBody, CancellationToken cancellationToken)
     {
         using var httpClient = CreateHttpClient();
 
@@ -154,13 +162,18 @@ public sealed class AuthBackendService
 
             if (!response.IsSuccessStatusCode)
             {
-                return null;
+                if ((int)response.StatusCode >= 500)
+                {
+                    return AuthOperationResult.BackendUnavailable();
+                }
+
+                return AuthOperationResult.Failed(await TryReadAuthErrorMessageAsync(response, cancellationToken));
             }
 
             var payload = await response.Content.ReadFromJsonAsync<AuthResponse>(JsonOptions, cancellationToken);
             if (payload is null)
             {
-                return null;
+                return AuthOperationResult.BackendUnavailable();
             }
 
             var storedSession = new StoredAuthSession
@@ -174,15 +187,41 @@ public sealed class AuthBackendService
             if (AuthSessionStorageService.IsExpired(storedSession))
             {
                 await sessionStorageService.ClearAsync(cancellationToken);
-                return null;
+                return AuthOperationResult.Failed(string.Empty);
             }
 
             await sessionStorageService.SaveAsync(storedSession, cancellationToken);
-            return payload;
+            return AuthOperationResult.Success(payload);
         }
-        catch
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
         {
-            return null;
+            return AuthOperationResult.BackendUnavailable();
+        }
+    }
+
+    private static async Task<string> TryReadPasswordOperationMessageAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payload = await response.Content.ReadFromJsonAsync<PasswordResetResponse>(JsonOptions, cancellationToken);
+            return payload?.Message ?? string.Empty;
+        }
+        catch (Exception exception) when (exception is JsonException or NotSupportedException)
+        {
+            return string.Empty;
+        }
+    }
+
+    private static async Task<string> TryReadAuthErrorMessageAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payload = await response.Content.ReadFromJsonAsync<AuthErrorResponse>(JsonOptions, cancellationToken);
+            return payload?.Error ?? string.Empty;
+        }
+        catch (Exception exception) when (exception is JsonException or NotSupportedException)
+        {
+            return string.Empty;
         }
     }
 
@@ -202,6 +241,36 @@ public sealed class AuthBackendService
 
         return httpClient;
     }
+}
+
+public enum AuthOperationResultStatus
+{
+    Success = 0,
+    Failed = 1,
+    BackendUnavailable = 2
+}
+
+public sealed class AuthOperationResult
+{
+    private AuthOperationResult(AuthOperationResultStatus status, AuthResponse? response, string message)
+    {
+        Status = status;
+        Response = response;
+        Message = message;
+    }
+
+    public AuthOperationResultStatus Status { get; }
+    public AuthResponse? Response { get; }
+    public string Message { get; }
+
+    public static AuthOperationResult Success(AuthResponse response) => new(AuthOperationResultStatus.Success, response, string.Empty);
+    public static AuthOperationResult Failed(string message) => new(AuthOperationResultStatus.Failed, null, message);
+    public static AuthOperationResult BackendUnavailable() => new(AuthOperationResultStatus.BackendUnavailable, null, string.Empty);
+}
+
+public sealed class AuthErrorResponse
+{
+    public string Error { get; set; } = string.Empty;
 }
 
 public enum AuthMeResultStatus

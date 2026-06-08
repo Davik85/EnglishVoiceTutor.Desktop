@@ -27,6 +27,7 @@ public partial class SettingsViewModel : ViewModelBase
     private const string DiagnosticsCurrentDateTimeLabel = "Current date/time";
     private const string DiagnosticsAuthTokenPresentLabel = "Auth token present";
     private const string DiagnosticsAuthenticatedLabel = "Authenticated";
+    private const int MinimumPasswordLength = 8;
     private const string DiagnosticsSessionRestoreAttemptedLabel = "Session restore attempted";
     private const string UnavailableAudioInputDeviceId = "unavailable_audio_input_device";
     private const string StudyLanguageTitleText = "Study language";
@@ -359,6 +360,10 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private string currentUserDisplayName = string.Empty;
     [ObservableProperty]
+    private bool isPasswordResetPanelExpanded;
+    [ObservableProperty]
+    private bool isChangePasswordPanelExpanded;
+    [ObservableProperty]
     private bool isAuthenticated;
     [ObservableProperty]
     private bool isBusy;
@@ -478,6 +483,46 @@ public partial class SettingsViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void ShowPasswordResetPanel()
+    {
+        IsPasswordResetPanelExpanded = true;
+        IsChangePasswordPanelExpanded = false;
+        ChangePasswordStatusMessage = string.Empty;
+        ClearPasswordRecoveryFields();
+    }
+
+    [RelayCommand]
+    private void ClosePasswordResetPanel()
+    {
+        IsPasswordResetPanelExpanded = false;
+        PasswordRecoveryStatusMessage = string.Empty;
+        ClearPasswordRecoveryFields();
+    }
+
+    [RelayCommand]
+    private void ShowChangePasswordPanel()
+    {
+        if (!IsAuthenticated)
+        {
+            ChangePasswordStatusMessage = BackendUxText.SignInRequired;
+            return;
+        }
+
+        IsChangePasswordPanelExpanded = true;
+        IsPasswordResetPanelExpanded = false;
+        PasswordRecoveryStatusMessage = string.Empty;
+        ClearPasswordRecoveryFields();
+    }
+
+    [RelayCommand]
+    private void CloseChangePasswordPanel()
+    {
+        IsChangePasswordPanelExpanded = false;
+        ChangePasswordStatusMessage = string.Empty;
+        ClearPasswordRecoveryFields();
+    }
+
+    [RelayCommand]
     private async Task RequestPasswordResetAsync()
     {
         ErrorMessage = string.Empty;
@@ -514,9 +559,21 @@ public partial class SettingsViewModel : ViewModelBase
     {
         ErrorMessage = string.Empty;
         PasswordRecoveryStatusMessage = string.Empty;
-        if (string.IsNullOrWhiteSpace(ResetToken) || string.IsNullOrWhiteSpace(ResetNewPassword) || string.IsNullOrWhiteSpace(ResetConfirmPassword))
+        if (string.IsNullOrWhiteSpace(ResetToken))
+        {
+            PasswordRecoveryStatusMessage = BackendUxText.ResetCodeRequired;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(ResetNewPassword) || string.IsNullOrWhiteSpace(ResetConfirmPassword))
         {
             PasswordRecoveryStatusMessage = BackendUxText.PasswordResetFieldsRequired;
+            return;
+        }
+
+        if (ResetNewPassword.Length < MinimumPasswordLength)
+        {
+            PasswordRecoveryStatusMessage = BackendUxText.PasswordTooShort;
             return;
         }
 
@@ -563,9 +620,21 @@ public partial class SettingsViewModel : ViewModelBase
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(CurrentPassword) || string.IsNullOrWhiteSpace(ChangeNewPassword) || string.IsNullOrWhiteSpace(ChangeConfirmPassword))
+        if (string.IsNullOrWhiteSpace(CurrentPassword))
+        {
+            ChangePasswordStatusMessage = BackendUxText.CurrentPasswordRequired;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(ChangeNewPassword) || string.IsNullOrWhiteSpace(ChangeConfirmPassword))
         {
             ChangePasswordStatusMessage = BackendUxText.PasswordChangeFieldsRequired;
+            return;
+        }
+
+        if (ChangeNewPassword.Length < MinimumPasswordLength)
+        {
+            ChangePasswordStatusMessage = BackendUxText.PasswordTooShort;
             return;
         }
 
@@ -1275,22 +1344,26 @@ public partial class SettingsViewModel : ViewModelBase
         return true;
     }
 
-    private async Task AuthenticateAsync(Func<Task<AuthResponse?>> authenticateAsync, string failureMessage)
+    private async Task AuthenticateAsync(Func<Task<AuthOperationResult>> authenticateAsync, string failureMessage)
     {
         IsBusy = true;
         ErrorMessage = string.Empty;
         try
         {
-            var response = await authenticateAsync();
-            if (response is null || response.User is null)
+            var result = await authenticateAsync();
+            if (result.Status == AuthOperationResultStatus.BackendUnavailable)
             {
-                ErrorMessage = await lessonChatBackendService.CheckHealthAsync(BackendBaseUrl)
-                    ? failureMessage
-                    : BackendUxText.CouldNotConnect;
+                ErrorMessage = BackendUxText.CouldNotConnect;
                 return;
             }
 
-            ApplyAuthenticatedUser(response.User);
+            if (result.Response is null || result.Response.User is null)
+            {
+                ErrorMessage = string.IsNullOrWhiteSpace(result.Message) ? failureMessage : result.Message;
+                return;
+            }
+
+            ApplyAuthenticatedUser(result.Response.User);
             RequestPasswordClear();
             await LoadSettingsForCurrentSessionAsync();
             await RefreshSubscriptionStatusAsync();
@@ -1318,7 +1391,10 @@ public partial class SettingsViewModel : ViewModelBase
         CurrentUserEmail = LocalizeUiText(DefaultAccountSignedOutText);
         CurrentUserDisplayName = string.Empty;
         IsAuthenticated = false;
+        IsPasswordResetPanelExpanded = false;
+        IsChangePasswordPanelExpanded = false;
         RequestPasswordClear();
+        ClearPasswordRecoveryFields();
     }
 
     private void RequestPasswordClear()
