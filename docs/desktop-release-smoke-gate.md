@@ -4,11 +4,25 @@ Step: 5B desktop release gate, updated 2026-06-02 for accepted Welcome screen po
 
 ## Purpose
 
-This smoke gate is the repeatable pre-package safety check for the current desktop release-hardening phase. It confirms that the desktop app, backend build, lesson content, interface localization coverage, local backend readiness, and backend-unavailable resilience wording are still safe before creating the canonical tester zip with `scripts/package-tester-release.ps1`.
+This smoke gate is the repeatable pre-package safety check for the current desktop release-hardening phase. It confirms that the desktop app, backend build, lesson content, interface localization coverage, local backend readiness, and backend-unavailable resilience wording are still safe before creating the primary Inno tester installer with `scripts/package-windows-inno-release.ps1`.
 
 This gate does not add product features. It does not change runtime localization behavior, billing, subscriptions, entitlements, Admin UI, database schema, lesson JSON, Study languages, Interface languages, or Native/Explanation language support.
 
 Localization is considered closed for the current release-hardening phase. Future Interface languages must be added only 1-2 at a time after full UI localization and audit coverage.
+
+
+
+## Backend URL profile check
+
+Normal local desktop builds default to `http://localhost:5000`. The primary Inno tester/release package defaults to `https://api.languagevoicetutor.com` through the `DesktopBackendBaseUrl` MSBuild property passed by `scripts/package-windows-inno-release.ps1`; the script prints the Backend URL used. Empty saved settings use the current build default, saved legacy localhost settings can migrate to the deployed API only in those tester/release builds, and custom Backend URL values remain preserved. Settings/Diagnostics must still show the current Backend URL.
+
+Validate packaged release metadata with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
+```
+
+The backend remains the server-side source of truth, the desktop must not contain OpenAI keys or call OpenAI directly, production billing remains deferred, and public release is still blocked until clean-machine install plus the controlled tester checklist pass.
 
 ## When to run this gate
 
@@ -28,25 +42,31 @@ The current accepted desktop tester distribution flow is:
 
 1. Run this automated release gate.
 2. Run EF checks when backend schema changed or database validation is required.
-3. Create the tester zip from the repository root:
+3. Build the primary Inno installer from the repository root:
 
 ```powershell
 cd C:\dev\EnglishVoiceTutor.Desktop
-powershell -ExecutionPolicy Bypass -File .\scripts\package-tester-release.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0
 ```
 
-4. Use the script-created zip as the tester handoff artifact:
+4. Confirm the package script prints `Packaged backend URL: https://api.languagevoicetutor.com` unless a deliberate `-BackendBaseUrl` override is being tested.
+5. Validate the server-ready direct-release folder:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
+```
+
+6. Use the script-created installer as the tester handoff artifact:
 
 ```text
-artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip
+artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe
 ```
 
-5. Copy/send the zip to another Windows device.
-6. Extract the zip.
-7. Run `EnglishVoiceTutor.Desktop.exe` from the extracted folder.
-8. Verify backend connection, login/account, backend history, accepted core lesson flow, active lesson guard, and remote active lesson release.
+7. Copy/send the installer to another Windows device or clean VM.
+8. Install and launch the app.
+9. Verify backend connection, login/account, backend history, accepted core lesson flow, active lesson guard, and remote active lesson release.
 
-Manual `dotnet publish` commands are lower-level implementation detail only. They are not the main tester handoff flow.
+Manual `dotnet publish` commands are lower-level implementation detail only. The ZIP package remains an emergency/developer fallback, not the main tester handoff flow.
 
 ## Automated checks
 

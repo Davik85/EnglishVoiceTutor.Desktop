@@ -162,6 +162,17 @@ if ($null -ne $latest) {
     Assert-PresentString -Name "installerSha256" -Value $latest.installerSha256
     Assert-Equal -Name "updateMode" -Actual $latest.updateMode -Expected $requiredUpdateMode
 
+    if ($latest.PSObject.Properties.Name -contains "backendBaseUrl") {
+        $backendUri = $null
+        $backendBaseUrl = [string]$latest.backendBaseUrl
+        if ([System.Uri]::TryCreate($backendBaseUrl, [System.UriKind]::Absolute, [ref]$backendUri) -and ($backendUri.Scheme -eq [System.Uri]::UriSchemeHttp -or $backendUri.Scheme -eq [System.Uri]::UriSchemeHttps)) {
+            Write-ValidationPass "backendBaseUrl is an absolute http/https URL: $backendBaseUrl"
+        }
+        else {
+            Write-ValidationFail "backendBaseUrl must be an absolute http/https URL when present."
+        }
+    }
+
     if ($latest.installerSizeBytes -is [int] -or $latest.installerSizeBytes -is [long] -or $latest.installerSizeBytes -is [decimal] -or $latest.installerSizeBytes -is [double]) {
         if ([int64]$latest.installerSizeBytes -gt 0) {
             Write-ValidationPass "installerSizeBytes is greater than 0."

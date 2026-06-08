@@ -13,12 +13,16 @@ Runtime learner behavior remains unchanged by default. CMS reads remain controll
 
 CMS draft-save audit logging is implemented for successful Admin CMS Save draft operations, and the Admin CMS Audit subtab now exposes recent CMS changes as read-only rows filtered by selected content pack, entity type, stable key text, and limit. Smoke/test audit entries are hidden by default, a **Show smoke/test entries** checkbox exists for debugging, and normal manual Admin CMS UI changes remain visible. Audit rows show metadata and shortened before/after hashes; full edited content bodies are not stored or displayed in audit rows. The later CMS governance step is a critical-change approval workflow, but it should wait until production roles/RBAC exist.
 
+## Desktop backend profile checkpoint
+
+Local desktop development keeps the default Backend URL `http://localhost:5000`. Inno tester/release packages default to `https://api.languagevoicetutor.com` through `scripts/package-windows-inno-release.ps1`, which passes `DesktopBackendBaseUrl` to `dotnet publish` and prints the selected Backend URL. Existing saved localhost settings may migrate to the deployed API only in tester/release builds where that deployed API is the build default; custom values must remain untouched. Confirm the generated `latest.json` non-secret `backendBaseUrl` with `scripts/validate-windows-direct-release.ps1` before handoff. Backend APIs remain server-side source of truth, the desktop must never contain OpenAI keys, production billing remains deferred, and public release is not ready until clean-machine install plus the controlled tester checklist pass.
+
 ## Recommended next product order
 
 1. Server setup and test deployment preparation.
    - Backend Linux deployment scripts/templates are now prepared for manual Ubuntu 24.04 test deployment; follow `docs/BACKEND_SERVER_DEPLOYMENT.md` for local package, dry-run upload, real upload, server env file, systemd, nginx, Certbot, health checks, and rollback.
-   - Static HTTPS direct-download hosting remains a separate track from backend API hosting. The API is planned for `api.languagevoicetutor.com`; the existing static site remains `languagevoicetutor.com`.
-   - Backend deployment is not done yet. Keep backend as the source of truth for auth, lessons, active lesson state, usage, billing/access, CMS runtime selection, and AI/TTS/STT calls.
+   - Static HTTPS direct-download hosting remains a separate track from backend API hosting. The backend API is available at `https://api.languagevoicetutor.com`; the existing static site remains `https://languagevoicetutor.com`.
+   - Keep backend deployment health verified separately. Keep backend as the source of truth for auth, lessons, active lesson state, usage, billing/access, CMS runtime selection, and AI/TTS/STT calls.
    - Desktop must continue to store no OpenAI API keys and must not call OpenAI directly.
    - Do not commit secrets, IP addresses, usernames, passwords, API keys, tokens, SSH keys, database passwords, provider keys, generated artifacts, or environment-specific values.
    - External tester handoff remains blocked until backend deployment, clean-machine install, and the controlled tester checklist pass.
