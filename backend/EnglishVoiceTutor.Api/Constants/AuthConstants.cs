@@ -14,6 +14,6 @@ public static class AuthConstants
     public const string PasswordResetDeliveryUnavailableMessage = "Password reset email delivery is not configured. Please contact support.";
     public const string PasswordChangeSuccessMessage = "Password updated.";
     public const string PasswordChangeInvalidCurrentPasswordMessage = "Current password is incorrect.";
-    public const string PasswordChangeInvalidLengthMessage = $"Password must be at least {MinimumPasswordLength} characters.";
+    public static readonly string PasswordChangeInvalidLengthMessage = $"Password must be at least {MinimumPasswordLength} characters.";
     public const string PasswordChangeInvalidMessage = "Password could not be updated.";
 }
