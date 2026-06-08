@@ -40,23 +40,12 @@
     <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(DesktopBackendBaseUrl)', '^https?://\S+$'))" Text="DesktopBackendBaseUrl must be an absolute http/https URL." />
   </Target>
 
-  <Target Name="GenerateDesktopBackendBuildSettings" BeforeTargets="BeforeCompile" DependsOnTargets="ValidateDesktopBackendBaseUrl">
-    <PropertyGroup>
-      <DesktopBackendBuildSettingsFile>$(IntermediateOutputPath)DesktopBackendBuildSettings.g.cs</DesktopBackendBuildSettingsFile>
-    </PropertyGroup>
-    <ItemGroup>
-      <DesktopBackendBuildSettingsLine Include="// &lt;auto-generated /&gt;" />
-      <DesktopBackendBuildSettingsLine Include="namespace EnglishVoiceTutor.Desktop.Constants;" />
-      <DesktopBackendBuildSettingsLine Include="internal static class DesktopBackendBuildSettings" />
-      <DesktopBackendBuildSettingsLine Include="{" />
-      <DesktopBackendBuildSettingsLine Include="    public const string DefaultBackendBaseUrl = &quot;$(DesktopBackendBaseUrl)&quot;;" />
-      <DesktopBackendBuildSettingsLine Include="}" />
-    </ItemGroup>
-    <WriteLinesToFile File="$(DesktopBackendBuildSettingsFile)" Lines="@(DesktopBackendBuildSettingsLine)" Overwrite="true" Encoding="UTF-8" />
-    <ItemGroup>
-      <Compile Include="$(DesktopBackendBuildSettingsFile)" AutoGen="true" DesignTime="true" Visible="false" />
-    </ItemGroup>
-  </Target>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>DesktopBackendBaseUrl</_Parameter1>
+      <_Parameter2>$(DesktopBackendBaseUrl)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
