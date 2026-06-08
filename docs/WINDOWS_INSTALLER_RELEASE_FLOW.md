@@ -2,6 +2,13 @@
 
 Inno Setup is the primary Windows direct-download installer track for Language Voice Tutor. This replaces the temporary Velopack tester installer track before external tester handoff.
 
+## Current v0.1.8-tester.1 validation
+
+The Windows direct-release path has been validated for `0.1.8-tester.1`: the Inno installer was generated and validated, static Windows direct release hosting works, `latest.json` for `0.1.8-tester.1` is available from the production domain, the release files were uploaded, and server-side release files were verified.
+
+This validation does not approve external tester handoff. Code signing remains deferred, so SmartScreen warnings are expected. No automatic update UI/system is implemented yet; update UI remains a blocker before external tester handoff and must require manual confirmation without interrupting active lessons. Generated `artifacts/` files must not be committed.
+
+
 ## Decision
 
 - Primary installer technology: Inno Setup 6.
@@ -103,7 +110,7 @@ After building the Inno release, validate the server-ready folder before any han
 powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
 ```
 
-Optional future server upload is documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). The upload helper validates first and can run with `-DryRun`, but it does not run automatically, does not include secrets, does not deploy the backend, does not create a download website, and does not implement update UI. External tester handoff remains blocked until clean-machine install and the controlled tester checklist pass.
+Optional future server upload is documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). The upload helper validates first and can run with `-DryRun`, but it does not run automatically, does not include secrets, does not deploy the backend, does not create a download website, and does not implement update UI. External tester handoff remains blocked until password recovery/change, server-connected CMS verification, a basic public download page, update UI/system, clean-machine install, and the controlled tester checklist pass.
 
 ## Smoke checklist
 

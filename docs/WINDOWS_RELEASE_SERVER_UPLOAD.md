@@ -4,6 +4,13 @@ This document describes the safe, optional foundation for copying the already ge
 
 The primary Windows installer track is the Inno Setup installer. ZIP packages remain only an emergency/developer fallback. This upload foundation does not deploy the backend, does not create the download website, does not implement update UI, does not make the app public-release ready, and does not sign the installer. Code signing is still deferred.
 
+## Current v0.1.8-tester.1 hosting validation
+
+Static Windows direct release hosting has been validated for `0.1.8-tester.1`. The Windows installer was generated, validated, uploaded, and the server-side release files were verified. `latest.json` for `0.1.8-tester.1` is available from the production domain.
+
+This is hosting validation only. It does not create a tester download website/page, does not implement update UI/system, does not sign the installer, and does not approve external tester handoff. Code signing remains deferred. The current app still does not automatically check `latest.json`.
+
+
 Backend API deployment is documented separately in [`BACKEND_SERVER_DEPLOYMENT.md`](BACKEND_SERVER_DEPLOYMENT.md). Keep the static Windows direct-download files on `languagevoicetutor.com` separate from the future backend API reverse proxy on `api.languagevoicetutor.com`.
 
 ## Purpose
@@ -149,4 +156,4 @@ Compare the downloaded installer hash with `checksums.sha256` and the `installer
 - Verify checksums after upload and again over HTTPS before sharing links.
 - Keep backend deployment as a separate later step.
 - Keep update UI as a separate later step. Any future update UI must require manual confirmation, use the Inno installer, and avoid update prompts during active lessons.
-- External tester handoff remains blocked until server/static download, clean-machine install, and the controlled tester checklist all pass.
+- External tester handoff remains blocked until password recovery/change, server-connected CMS verification, a basic public download page, update UI/system, clean-machine install, and the controlled tester checklist all pass.

@@ -1,6 +1,13 @@
 # Backend Server Deployment Foundation
 
-This document describes the prepared deployment foundation for the Language Voice Tutor backend on Ubuntu 24.04. It is a manual, test-deployment workflow only. It does not mean the backend has been deployed, and it does not make the public release ready.
+This document describes the prepared deployment foundation for the Language Voice Tutor backend on Ubuntu 24.04. It is a manual, test-deployment workflow. The current production-like backend has now been verified for the `0.1.8-tester.1` internal smoke baseline, but that does not make external tester handoff or public release ready.
+
+
+## Current server verification for v0.1.8-tester.1
+
+The production-like backend is reachable at `https://api.languagevoicetutor.com` for the `0.1.8-tester.1` internal smoke baseline. The backend health endpoint and database health endpoint have been verified healthy on the server, and PostgreSQL migrations have been applied on the server.
+
+Do not copy server secrets, passwords, API keys, private keys, tokens, private environment values, private IP-sensitive credentials, or provider credentials into this document or any tracked file.
 
 ## Scope
 
