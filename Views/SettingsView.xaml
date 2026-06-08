@@ -511,6 +511,73 @@
                                                 Style="{StaticResource SecondaryButtonStyle}" />
                                     </WrapPanel>
 
+
+
+                                    <Separator Margin="0,18,0,10" />
+                                    <TextBlock Text="{Binding ForgotPasswordTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                    <TextBlock Text="{Binding ForgotPasswordSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+                                    <Button MinWidth="160"
+                                            MinHeight="36"
+                                            Margin="0,8,0,8"
+                                            HorizontalAlignment="Left"
+                                            Content="{Binding ForgotPasswordButtonText}"
+                                            Foreground="{StaticResource AccentBrush}"
+                                            Command="{Binding RequestPasswordResetCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}" />
+                                    <TextBlock Text="{Binding ResetTokenLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                    <TextBox Style="{StaticResource SettingsTextBoxStyle}"
+                                             Text="{Binding ResetToken, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="{Binding NewPasswordLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                    <PasswordBox x:Name="ResetNewPasswordBox"
+                                                 Style="{StaticResource SettingsPasswordBoxStyle}"
+                                                 PasswordChanged="ResetNewPasswordBox_OnPasswordChanged" />
+                                    <TextBlock Text="{Binding ConfirmNewPasswordLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                    <PasswordBox x:Name="ResetConfirmPasswordBox"
+                                                 Style="{StaticResource SettingsPasswordBoxStyle}"
+                                                 PasswordChanged="ResetConfirmPasswordBox_OnPasswordChanged" />
+                                    <Button MinWidth="140"
+                                            MinHeight="36"
+                                            Margin="0,10,0,0"
+                                            HorizontalAlignment="Left"
+                                            Content="{Binding ResetPasswordButtonText}"
+                                            Foreground="White"
+                                            Command="{Binding ConfirmPasswordResetCommand}"
+                                            Style="{StaticResource PrimaryButtonStyle}" />
+                                    <TextBlock Margin="0,8,0,0"
+                                               Text="{Binding PasswordRecoveryStatusMessage}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+
+                                    <Separator Margin="0,18,0,10" />
+                                    <TextBlock Text="{Binding ChangePasswordTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                    <TextBlock Text="{Binding ChangePasswordSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+                                    <TextBlock Text="{Binding CurrentPasswordLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                    <PasswordBox x:Name="CurrentPasswordBox"
+                                                 Style="{StaticResource SettingsPasswordBoxStyle}"
+                                                 PasswordChanged="CurrentPasswordBox_OnPasswordChanged" />
+                                    <TextBlock Text="{Binding NewPasswordLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                    <PasswordBox x:Name="ChangeNewPasswordBox"
+                                                 Style="{StaticResource SettingsPasswordBoxStyle}"
+                                                 PasswordChanged="ChangeNewPasswordBox_OnPasswordChanged" />
+                                    <TextBlock Text="{Binding ConfirmNewPasswordLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                    <PasswordBox x:Name="ChangeConfirmPasswordBox"
+                                                 Style="{StaticResource SettingsPasswordBoxStyle}"
+                                                 PasswordChanged="ChangeConfirmPasswordBox_OnPasswordChanged" />
+                                    <Button MinWidth="140"
+                                            MinHeight="36"
+                                            Margin="0,10,0,0"
+                                            HorizontalAlignment="Left"
+                                            Content="{Binding ChangePasswordButtonText}"
+                                            Foreground="White"
+                                            Command="{Binding ChangePasswordCommand}"
+                                            Style="{StaticResource PrimaryButtonStyle}" />
+                                    <TextBlock Margin="0,8,0,0"
+                                               Text="{Binding ChangePasswordStatusMessage}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+
                                     <TextBlock Margin="0,10,0,0"
                                                Text="{Binding ErrorMessage}"
                                                FontSize="12"

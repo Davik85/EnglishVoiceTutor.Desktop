@@ -4,6 +4,8 @@ namespace EnglishVoiceTutor.Api.Services.Email;
 
 public sealed class NoOpPasswordResetEmailSender(ILogger<NoOpPasswordResetEmailSender> logger) : IPasswordResetEmailSender
 {
+    public bool IsConfigured => false;
+
     public Task SendPasswordResetAsync(UserEntity user, string resetToken, string resetUrl, CancellationToken cancellationToken)
     {
         logger.LogInformation(

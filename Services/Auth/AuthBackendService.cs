@@ -37,6 +37,30 @@ public sealed class AuthBackendService
         return AuthenticateAsync(BackendConstants.AuthLoginEndpoint, request, cancellationToken);
     }
 
+    public async Task<PasswordOperationResult> RequestPasswordResetAsync(PasswordResetRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return await PostPasswordOperationAsync(BackendConstants.AuthPasswordResetRequestEndpoint, request, accessToken: null, cancellationToken);
+    }
+
+    public async Task<PasswordOperationResult> ConfirmPasswordResetAsync(PasswordResetConfirmRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return await PostPasswordOperationAsync(BackendConstants.AuthPasswordResetConfirmEndpoint, request, accessToken: null, cancellationToken);
+    }
+
+    public async Task<PasswordOperationResult> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var session = await sessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+        if (session is null)
+        {
+            return PasswordOperationResult.Unauthorized();
+        }
+
+        return await PostPasswordOperationAsync(BackendConstants.AuthChangePasswordEndpoint, request, session.AccessToken, cancellationToken);
+    }
+
     public async Task<AuthMeResult> GetMeAsync(string accessToken, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(accessToken))
@@ -84,6 +108,36 @@ public sealed class AuthBackendService
     public Task LogoutAsync(CancellationToken cancellationToken = default)
     {
         return sessionStorageService.ClearAsync(cancellationToken);
+    }
+
+
+    private async Task<PasswordOperationResult> PostPasswordOperationAsync<TRequest>(string endpointPath, TRequest requestBody, string? accessToken, CancellationToken cancellationToken)
+    {
+        using var httpClient = CreateHttpClient();
+        using var request = new HttpRequestMessage(HttpMethod.Post, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath))
+        {
+            Content = JsonContent.Create(requestBody, options: JsonOptions)
+        };
+        AuthenticatedRequestHelper.AddBearerTokenIfPresent(request, accessToken);
+
+        try
+        {
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                return PasswordOperationResult.Unauthorized();
+            }
+
+            var payload = await response.Content.ReadFromJsonAsync<PasswordResetResponse>(JsonOptions, cancellationToken);
+            var message = payload?.Message ?? string.Empty;
+            return response.IsSuccessStatusCode
+                ? PasswordOperationResult.Success(message)
+                : PasswordOperationResult.Failed(string.IsNullOrWhiteSpace(message) ? response.ReasonPhrase ?? string.Empty : message);
+        }
+        catch
+        {
+            return PasswordOperationResult.BackendUnavailable();
+        }
     }
 
     private async Task<AuthResponse?> AuthenticateAsync<TRequest>(string endpointPath, TRequest requestBody, CancellationToken cancellationToken)
@@ -171,4 +225,30 @@ public sealed class AuthMeResult
     public static AuthMeResult Success(AuthUserDto user) => new(AuthMeResultStatus.Success, user);
     public static AuthMeResult InvalidSession() => new(AuthMeResultStatus.InvalidSession, null);
     public static AuthMeResult BackendUnavailable() => new(AuthMeResultStatus.BackendUnavailable, null);
+}
+
+public enum PasswordOperationResultStatus
+{
+    Success = 0,
+    Failed = 1,
+    Unauthorized = 2,
+    BackendUnavailable = 3
+}
+
+public sealed class PasswordOperationResult
+{
+    private PasswordOperationResult(PasswordOperationResultStatus status, string message)
+    {
+        Status = status;
+        Message = message;
+    }
+
+    public PasswordOperationResultStatus Status { get; }
+    public string Message { get; }
+    public bool IsSuccess => Status == PasswordOperationResultStatus.Success;
+
+    public static PasswordOperationResult Success(string message) => new(PasswordOperationResultStatus.Success, message);
+    public static PasswordOperationResult Failed(string message) => new(PasswordOperationResultStatus.Failed, message);
+    public static PasswordOperationResult Unauthorized() => new(PasswordOperationResultStatus.Unauthorized, string.Empty);
+    public static PasswordOperationResult BackendUnavailable() => new(PasswordOperationResultStatus.BackendUnavailable, string.Empty);
 }

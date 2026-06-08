@@ -29,6 +29,12 @@ public sealed class PasswordResetService(
             return;
         }
 
+        if (options.Value.RequireConfiguredEmailSender && !emailSender.IsConfigured)
+        {
+            logger.LogWarning("Password reset request rejected because email delivery is not configured.");
+            throw new PasswordResetDeliveryUnavailableException();
+        }
+
         var normalizedEmail = NormalizeEmail(request.Email);
         if (string.IsNullOrWhiteSpace(normalizedEmail))
         {
@@ -145,3 +151,5 @@ public sealed class PasswordResetService(
         return string.IsNullOrWhiteSpace(email) ? string.Empty : email.Trim().ToLowerInvariant();
     }
 }
+
+public sealed class PasswordResetDeliveryUnavailableException : Exception;

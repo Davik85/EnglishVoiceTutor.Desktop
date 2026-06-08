@@ -26,4 +26,15 @@ public sealed record BackendUxLocalizedText(
     string EndOtherLessonAndContinue,
     string Cancel,
     string EndOtherLessonFailed,
-    string LessonSessionEndedElsewhere);
+    string LessonSessionEndedElsewhere,
+    string EmailRequired = "Email is required.",
+    string PasswordResetRequested = "If an account exists for that email, reset instructions will be sent.",
+    string PasswordResetRequestFailed = "Could not request password reset. Please try again.",
+    string PasswordResetFieldsRequired = "Reset code and new password are required.",
+    string PasswordsDoNotMatch = "Passwords do not match.",
+    string PasswordResetConfirmed = "Password reset complete. You can now log in with the new password.",
+    string PasswordResetConfirmFailed = "Password reset could not be completed. Check the code and try again.",
+    string SignInRequired = "Please sign in first.",
+    string PasswordChangeFieldsRequired = "Current password, new password, and confirmation are required.",
+    string PasswordChanged = "Password updated.",
+    string PasswordChangeFailed = "Password could not be updated. Check your current password and try again.");

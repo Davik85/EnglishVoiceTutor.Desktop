@@ -11,4 +11,7 @@ public static class AuthConstants
     public const string PasswordResetAcceptedMessage = "If an account exists for that email, password reset instructions will be sent when password reset email delivery is enabled.";
     public const string PasswordResetConfirmedMessage = "If the reset token is valid, the password has been updated.";
     public const string PasswordResetInvalidMessage = "Password reset could not be completed.";
+    public const string PasswordResetDeliveryUnavailableMessage = "Password reset email delivery is not configured. Please contact support.";
+    public const string PasswordChangeSuccessMessage = "Password updated.";
+    public const string PasswordChangeInvalidMessage = "Password could not be updated.";
 }

@@ -20,6 +20,7 @@ namespace EnglishVoiceTutor.Desktop.ViewModels;
 public partial class SettingsViewModel : ViewModelBase
 {
     public event EventHandler? ClearPasswordRequested;
+    public event EventHandler? ClearPasswordRecoveryFieldsRequested;
     private const string AppVersionFallbackText = "0.0.0-local";
     private const string OpenAiNotConfiguredStatus = "not_configured";
     private const string DiagnosticsReportTitle = "Language Voice Tutor Desktop diagnostics";
@@ -228,6 +229,17 @@ public partial class SettingsViewModel : ViewModelBase
     public string AccountRegisterButtonText => localizedText.AccountRegisterButtonText;
     public string AccountLoginButtonText => localizedText.AccountLoginButtonText;
     public string AccountLogoutButtonText => localizedText.AccountLogoutButtonText;
+    public string ForgotPasswordTitle => localizedText.ForgotPasswordTitle;
+    public string ForgotPasswordSubtitle => localizedText.ForgotPasswordSubtitle;
+    public string ForgotPasswordButtonText => localizedText.ForgotPasswordButtonText;
+    public string ResetTokenLabel => localizedText.ResetTokenLabel;
+    public string NewPasswordLabel => localizedText.NewPasswordLabel;
+    public string ConfirmNewPasswordLabel => localizedText.ConfirmNewPasswordLabel;
+    public string ResetPasswordButtonText => localizedText.ResetPasswordButtonText;
+    public string ChangePasswordTitle => localizedText.ChangePasswordTitle;
+    public string ChangePasswordSubtitle => localizedText.ChangePasswordSubtitle;
+    public string CurrentPasswordLabel => localizedText.CurrentPasswordLabel;
+    public string ChangePasswordButtonText => localizedText.ChangePasswordButtonText;
     public string CurrentAccountLabel => localizedText.CurrentAccountLabel;
     public string SettingsSourceLabel => localizedText.SettingsSourceLabel;
     public string SubscriptionStatusTitle => localizedText.SubscriptionStatusTitle;
@@ -326,6 +338,22 @@ public partial class SettingsViewModel : ViewModelBase
     private string password = string.Empty;
     [ObservableProperty]
     private string displayName = string.Empty;
+    [ObservableProperty]
+    private string resetToken = string.Empty;
+    [ObservableProperty]
+    private string resetNewPassword = string.Empty;
+    [ObservableProperty]
+    private string resetConfirmPassword = string.Empty;
+    [ObservableProperty]
+    private string currentPassword = string.Empty;
+    [ObservableProperty]
+    private string changeNewPassword = string.Empty;
+    [ObservableProperty]
+    private string changeConfirmPassword = string.Empty;
+    [ObservableProperty]
+    private string passwordRecoveryStatusMessage = string.Empty;
+    [ObservableProperty]
+    private string changePasswordStatusMessage = string.Empty;
     [ObservableProperty]
     private string currentUserEmail = string.Empty;
     [ObservableProperty]
@@ -447,6 +475,133 @@ public partial class SettingsViewModel : ViewModelBase
                 Password = Password
             }),
             BackendUxText.LoginFailed);
+    }
+
+    [RelayCommand]
+    private async Task RequestPasswordResetAsync()
+    {
+        ErrorMessage = string.Empty;
+        PasswordRecoveryStatusMessage = string.Empty;
+        if (string.IsNullOrWhiteSpace(Email))
+        {
+            PasswordRecoveryStatusMessage = BackendUxText.EmailRequired;
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var result = await authBackendService.RequestPasswordResetAsync(new PasswordResetRequest
+            {
+                Email = Email.Trim()
+            });
+
+            PasswordRecoveryStatusMessage = result.Status switch
+            {
+                PasswordOperationResultStatus.Success => string.IsNullOrWhiteSpace(result.Message) ? BackendUxText.PasswordResetRequested : result.Message,
+                PasswordOperationResultStatus.BackendUnavailable => BackendUxText.CouldNotConnect,
+                _ => string.IsNullOrWhiteSpace(result.Message) ? BackendUxText.PasswordResetRequestFailed : result.Message
+            };
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ConfirmPasswordResetAsync()
+    {
+        ErrorMessage = string.Empty;
+        PasswordRecoveryStatusMessage = string.Empty;
+        if (string.IsNullOrWhiteSpace(ResetToken) || string.IsNullOrWhiteSpace(ResetNewPassword) || string.IsNullOrWhiteSpace(ResetConfirmPassword))
+        {
+            PasswordRecoveryStatusMessage = BackendUxText.PasswordResetFieldsRequired;
+            return;
+        }
+
+        if (!string.Equals(ResetNewPassword, ResetConfirmPassword, StringComparison.Ordinal))
+        {
+            PasswordRecoveryStatusMessage = BackendUxText.PasswordsDoNotMatch;
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var result = await authBackendService.ConfirmPasswordResetAsync(new PasswordResetConfirmRequest
+            {
+                Token = ResetToken.Trim(),
+                NewPassword = ResetNewPassword
+            });
+
+            if (result.IsSuccess)
+            {
+                ClearPasswordRecoveryFields();
+                PasswordRecoveryStatusMessage = string.IsNullOrWhiteSpace(result.Message) ? BackendUxText.PasswordResetConfirmed : result.Message;
+                return;
+            }
+
+            PasswordRecoveryStatusMessage = result.Status == PasswordOperationResultStatus.BackendUnavailable
+                ? BackendUxText.CouldNotConnect
+                : string.IsNullOrWhiteSpace(result.Message) ? BackendUxText.PasswordResetConfirmFailed : result.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ChangePasswordAsync()
+    {
+        ErrorMessage = string.Empty;
+        ChangePasswordStatusMessage = string.Empty;
+        if (!IsAuthenticated)
+        {
+            ChangePasswordStatusMessage = BackendUxText.SignInRequired;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(CurrentPassword) || string.IsNullOrWhiteSpace(ChangeNewPassword) || string.IsNullOrWhiteSpace(ChangeConfirmPassword))
+        {
+            ChangePasswordStatusMessage = BackendUxText.PasswordChangeFieldsRequired;
+            return;
+        }
+
+        if (!string.Equals(ChangeNewPassword, ChangeConfirmPassword, StringComparison.Ordinal))
+        {
+            ChangePasswordStatusMessage = BackendUxText.PasswordsDoNotMatch;
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var result = await authBackendService.ChangePasswordAsync(new ChangePasswordRequest
+            {
+                CurrentPassword = CurrentPassword,
+                NewPassword = ChangeNewPassword,
+                ConfirmNewPassword = ChangeConfirmPassword
+            });
+
+            ChangePasswordStatusMessage = result.Status switch
+            {
+                PasswordOperationResultStatus.Success => string.IsNullOrWhiteSpace(result.Message) ? BackendUxText.PasswordChanged : result.Message,
+                PasswordOperationResultStatus.Unauthorized => BackendUxText.SessionExpired,
+                PasswordOperationResultStatus.BackendUnavailable => BackendUxText.CouldNotConnect,
+                _ => string.IsNullOrWhiteSpace(result.Message) ? BackendUxText.PasswordChangeFailed : result.Message
+            };
+
+            if (result.IsSuccess)
+            {
+                ClearPasswordRecoveryFields();
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]
@@ -845,6 +1000,17 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(AccountRegisterButtonText));
         OnPropertyChanged(nameof(AccountLoginButtonText));
         OnPropertyChanged(nameof(AccountLogoutButtonText));
+        OnPropertyChanged(nameof(ForgotPasswordTitle));
+        OnPropertyChanged(nameof(ForgotPasswordSubtitle));
+        OnPropertyChanged(nameof(ForgotPasswordButtonText));
+        OnPropertyChanged(nameof(ResetTokenLabel));
+        OnPropertyChanged(nameof(NewPasswordLabel));
+        OnPropertyChanged(nameof(ConfirmNewPasswordLabel));
+        OnPropertyChanged(nameof(ResetPasswordButtonText));
+        OnPropertyChanged(nameof(ChangePasswordTitle));
+        OnPropertyChanged(nameof(ChangePasswordSubtitle));
+        OnPropertyChanged(nameof(CurrentPasswordLabel));
+        OnPropertyChanged(nameof(ChangePasswordButtonText));
         OnPropertyChanged(nameof(CurrentAccountLabel));
         OnPropertyChanged(nameof(SettingsSourceLabel));
         OnPropertyChanged(nameof(SubscriptionStatusTitle));
@@ -1159,6 +1325,17 @@ public partial class SettingsViewModel : ViewModelBase
     {
         Password = string.Empty;
         ClearPasswordRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ClearPasswordRecoveryFields()
+    {
+        ResetToken = string.Empty;
+        ResetNewPassword = string.Empty;
+        ResetConfirmPassword = string.Empty;
+        CurrentPassword = string.Empty;
+        ChangeNewPassword = string.Empty;
+        ChangeConfirmPassword = string.Empty;
+        ClearPasswordRecoveryFieldsRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private async Task SaveBackendUserSettingsAsync()

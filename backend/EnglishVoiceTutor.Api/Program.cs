@@ -62,6 +62,8 @@ builder.Services.Configure<AdminBootstrapOptions>(
     builder.Configuration.GetSection(AdminBootstrapOptions.SectionName));
 builder.Services.Configure<PasswordResetOptions>(
     builder.Configuration.GetSection(PasswordResetOptions.SectionName));
+builder.Services.Configure<SmtpEmailOptions>(
+    builder.Configuration.GetSection(SmtpEmailOptions.SectionName));
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt configuration section is required.");
@@ -159,7 +161,15 @@ builder.Services.AddScoped<IPasswordHasher<EnglishVoiceTutor.Api.Data.Entities.U
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
-builder.Services.AddSingleton<IPasswordResetEmailSender, NoOpPasswordResetEmailSender>();
+builder.Services.AddSingleton<IPasswordResetEmailSender>(services =>
+{
+    var smtpOptions = services.GetRequiredService<IConfiguration>().GetSection(SmtpEmailOptions.SectionName).Get<SmtpEmailOptions>() ?? new SmtpEmailOptions();
+    return smtpOptions.Enabled
+        ? services.GetRequiredService<SmtpPasswordResetEmailSender>()
+        : services.GetRequiredService<NoOpPasswordResetEmailSender>();
+});
+builder.Services.AddSingleton<NoOpPasswordResetEmailSender>();
+builder.Services.AddSingleton<SmtpPasswordResetEmailSender>();
 builder.Services.AddScoped<IRequestUserResolver, RequestUserResolver>();
 builder.Services.AddScoped<ISubscriptionStatusService, SubscriptionStatusService>();
 builder.Services.AddScoped<ILessonAccessDecisionService, LessonAccessDecisionService>();
