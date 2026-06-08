@@ -152,3 +152,11 @@ The desktop app does not contain an OpenAI API key, must not call OpenAI directl
 Password recovery/reset and signed-in password change are implemented for the desktop Account settings flow and backend API. Password reset email delivery requires SMTP settings on the server in `/etc/languagevoicetutor/backend.env`; real SMTP credentials must never be committed. The intended production sender is `support@languagevoicetutor.com`.
 
 Tester handoff is not ready yet. Remaining blockers are CMS server verification, a basic public download page, a basic update UI/system, clean-machine smoke, and final checklist completion.
+
+## Account password flow note (2026-06-08)
+
+The Account screen password reset/change flow is being polished for tester readiness. Forgot password and Change password panels are collapsed by default, sensitive fields are cleared on close/success, and validation/auth failures should show clear messages rather than a generic server-unavailable warning.
+
+SMTP credentials for password reset email delivery remain server-only in `/etc/languagevoicetutor/backend.env`; no secrets are committed. Backend deployment packaging/upload now avoids Windows backslash ZIP entries for the Linux backend package and verifies the deployed backend executable bit before reporting success.
+
+External tester handoff is still blocked until CMS server verification, a basic public download page, update UI/system, clean-machine smoke, and checklist completion.

@@ -45,8 +45,7 @@ public sealed class SmtpPasswordResetEmailSender(IOptions<SmtpEmailOptions> opti
 
     private static bool IsSmtpConfigured(SmtpEmailOptions options)
     {
-        return options.Enabled
-            && !string.IsNullOrWhiteSpace(options.Host)
+        return !string.IsNullOrWhiteSpace(options.Host)
             && options.Port > 0
             && !string.IsNullOrWhiteSpace(options.FromAddress);
     }

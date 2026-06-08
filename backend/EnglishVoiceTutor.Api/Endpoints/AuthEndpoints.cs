@@ -67,7 +67,7 @@ public static class AuthEndpoints
         if (response is null)
         {
             loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Auth login completed. Result=Unauthorized");
-            return Results.Unauthorized();
+            return Results.Json(new { error = AuthConstants.InvalidCredentialsError }, statusCode: StatusCodes.Status401Unauthorized);
         }
 
         var principal = CreatePrincipal(response);
@@ -123,7 +123,7 @@ public static class AuthEndpoints
         catch (PasswordResetDeliveryUnavailableException)
         {
             loggerFactory.CreateLogger("AuthEndpoints").LogWarning("Password reset request completed. Result=DeliveryUnavailable");
-            return Results.Json(new PasswordResetResponse { Message = AuthConstants.PasswordResetDeliveryUnavailableMessage }, statusCode: StatusCodes.Status503ServiceUnavailable);
+            return Results.Json(new PasswordResetResponse { Message = AuthConstants.PasswordResetDeliveryUnavailableMessage }, statusCode: StatusCodes.Status424FailedDependency);
         }
     }
 
@@ -160,9 +160,15 @@ public static class AuthEndpoints
         var result = await authService.ChangePasswordAsync(userId.Value, request, cancellationToken);
         loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Password change completed. Result={Result}", result);
 
-        return result == ChangePasswordResult.Success
-            ? Results.Ok(new ChangePasswordResponse { Message = AuthConstants.PasswordChangeSuccessMessage })
-            : Results.BadRequest(new ChangePasswordResponse { Message = AuthConstants.PasswordChangeInvalidMessage });
+        return result switch
+        {
+            ChangePasswordResult.Success => Results.Ok(new ChangePasswordResponse { Message = AuthConstants.PasswordChangeSuccessMessage }),
+            ChangePasswordResult.InvalidCurrentPassword => Results.Json(
+                new ChangePasswordResponse { Message = AuthConstants.PasswordChangeInvalidCurrentPasswordMessage },
+                statusCode: StatusCodes.Status401Unauthorized),
+            ChangePasswordResult.InvalidPasswordLength => Results.BadRequest(new ChangePasswordResponse { Message = AuthConstants.PasswordChangeInvalidLengthMessage }),
+            _ => Results.BadRequest(new ChangePasswordResponse { Message = AuthConstants.PasswordChangeInvalidMessage })
+        };
     }
 
     private static async Task<IResult> GetMeAsync(

@@ -29,9 +29,10 @@ public sealed class PasswordResetService(
             return;
         }
 
-        if (options.Value.RequireConfiguredEmailSender && !emailSender.IsConfigured)
+        var emailDeliveryRequired = options.Value.RequireConfiguredEmailSender;
+        if (emailDeliveryRequired && !emailSender.IsConfigured)
         {
-            logger.LogWarning("Password reset request rejected because email delivery is not configured.");
+            logger.LogWarning("Password reset request rejected because email delivery is not configured. PasswordResetEnabled={PasswordResetEnabled}; RequireConfiguredEmailSender={RequireConfiguredEmailSender}.", options.Value.Enabled, emailDeliveryRequired);
             throw new PasswordResetDeliveryUnavailableException();
         }
 
@@ -65,8 +66,17 @@ public sealed class PasswordResetService(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var resetUrl = BuildResetUrl(rawToken);
-        await emailSender.SendPasswordResetAsync(user, rawToken, resetUrl, cancellationToken);
-        logger.LogInformation("Password reset token created. UserId={UserId}; ExpiresAtUtc={ExpiresAtUtc}.", user.Id, resetToken.ExpiresAtUtc);
+        try
+        {
+            await emailSender.SendPasswordResetAsync(user, rawToken, resetUrl, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(exception, "Password reset email delivery failed. UserId={UserId}; ResetUrlConfigured={ResetUrlConfigured}.", user.Id, !string.IsNullOrWhiteSpace(resetUrl));
+            throw new PasswordResetDeliveryUnavailableException();
+        }
+
+        logger.LogInformation("Password reset token created and delivery attempted. UserId={UserId}; ExpiresAtUtc={ExpiresAtUtc}.", user.Id, resetToken.ExpiresAtUtc);
     }
 
     public async Task<bool> ConfirmPasswordResetAsync(PasswordResetConfirmRequest request, CancellationToken cancellationToken)

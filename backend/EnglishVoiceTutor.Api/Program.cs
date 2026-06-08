@@ -164,7 +164,21 @@ builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddSingleton<IPasswordResetEmailSender>(services =>
 {
     var smtpOptions = services.GetRequiredService<IConfiguration>().GetSection(SmtpEmailOptions.SectionName).Get<SmtpEmailOptions>() ?? new SmtpEmailOptions();
-    return smtpOptions.Enabled
+    var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("PasswordResetEmailSenderConfiguration");
+    var smtpConfigured = !string.IsNullOrWhiteSpace(smtpOptions.Host)
+        && smtpOptions.Port > 0
+        && !string.IsNullOrWhiteSpace(smtpOptions.FromAddress);
+
+    logger.LogInformation(
+        "Password reset SMTP configuration loaded. Enabled={Enabled}; HostPresent={HostPresent}; PortConfigured={PortConfigured}; FromAddressPresent={FromAddressPresent}; UsernamePresent={UsernamePresent}; UseStartTls={UseStartTls}.",
+        smtpOptions.Enabled,
+        !string.IsNullOrWhiteSpace(smtpOptions.Host),
+        smtpOptions.Port > 0,
+        !string.IsNullOrWhiteSpace(smtpOptions.FromAddress),
+        !string.IsNullOrWhiteSpace(smtpOptions.UserName),
+        smtpOptions.UseStartTls);
+
+    return smtpConfigured
         ? services.GetRequiredService<SmtpPasswordResetEmailSender>()
         : services.GetRequiredService<NoOpPasswordResetEmailSender>();
 });
