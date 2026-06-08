@@ -8,7 +8,19 @@ public sealed class SmtpEmailOptions
     public string Host { get; set; } = string.Empty;
     public int Port { get; set; } = 587;
     public bool UseStartTls { get; set; } = true;
+    public bool UseSsl
+    {
+        get => UseStartTls;
+        set => UseStartTls = value;
+    }
+
     public string UserName { get; set; } = string.Empty;
+    public string Username
+    {
+        get => UserName;
+        set => UserName = value;
+    }
+
     public string Password { get; set; } = string.Empty;
     public string FromAddress { get; set; } = "support@languagevoicetutor.com";
     public string FromName { get; set; } = "Language Voice Tutor Support";

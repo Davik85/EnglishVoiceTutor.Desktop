@@ -15,5 +15,6 @@ public enum ChangePasswordResult
     Success = 0,
     InvalidRequest = 1,
     InvalidCurrentPassword = 2,
-    UserNotFound = 3
+    UserNotFound = 3,
+    InvalidPasswordLength = 4
 }

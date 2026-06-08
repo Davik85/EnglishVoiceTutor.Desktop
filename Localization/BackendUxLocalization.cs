@@ -46,7 +46,7 @@ public static class BackendUxLocalization
             "The server response could not be read. Please try again.",
             "Could not load settings from the backend. Local settings are still available.",
             "Local settings were saved, but the backend could not be updated.",
-            "Login failed. Check your email and password.",
+            "Email or password is incorrect.",
             "Registration failed. Please review your details and try again.",
             "Signed in.",
             "Signed out.",

@@ -43,6 +43,33 @@ $compiledOutputExtensions = @(
     '.runtimeconfig.json'
 )
 
+
+function New-ZipArchiveWithForwardSlashEntries {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$SourceDirectory,
+
+        [Parameter(Mandatory = $true)]
+        [string]$DestinationPath
+    )
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+    $sourceRoot = (Resolve-Path -LiteralPath $SourceDirectory).Path.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    $destinationFullPath = [System.IO.Path]::GetFullPath($DestinationPath)
+    $zipArchive = [System.IO.Compression.ZipFile]::Open($destinationFullPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        Get-ChildItem -LiteralPath $sourceRoot -Recurse -File | ForEach-Object {
+            $relativePath = [System.IO.Path]::GetRelativePath($sourceRoot, $_.FullName).Replace([System.IO.Path]::DirectorySeparatorChar, '/')
+            $relativePath = $relativePath.Replace([System.IO.Path]::AltDirectorySeparatorChar, '/')
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zipArchive, $_.FullName, $relativePath, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+        }
+    }
+    finally {
+        $zipArchive.Dispose()
+    }
+}
+
 function Assert-NoForbiddenFileNames {
     param(
         [Parameter(Mandatory = $true)]
@@ -147,7 +174,7 @@ if (-not $archiveInputFiles) {
 
 Assert-NoForbiddenFileNames -Path $publishDir -Label 'archive input'
 
-Compress-Archive -Path (Join-Path $publishDir '*') -DestinationPath $archivePath -CompressionLevel Optimal -Force
+New-ZipArchiveWithForwardSlashEntries -SourceDirectory $publishDir -DestinationPath $archivePath
 
 if (-not (Test-Path -LiteralPath $archivePath)) {
     throw "Archive was not created: $archivePath"

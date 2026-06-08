@@ -257,3 +257,16 @@ SmtpEmail__FromName=Language Voice Tutor Support
 ```
 
 If password reset is enabled and `PasswordReset__RequireConfiguredEmailSender=true`, the backend requires a configured SMTP sender before accepting reset requests. External tester handoff remains blocked until CMS server verification, a basic public download page, a basic update UI/system, clean-machine smoke, and checklist completion are done.
+
+## Backend upload executable verification update (2026-06-08)
+
+The backend Linux package/upload flow now creates ZIP entries with Linux-friendly forward slashes and runs deployment through a single remote `bash -lc` invocation. After extraction it explicitly checks:
+
+```bash
+test -f /opt/languagevoicetutor/backend/releases/<version>/EnglishVoiceTutor.Api
+test -x /opt/languagevoicetutor/backend/releases/<version>/EnglishVoiceTutor.Api
+```
+
+The upload script applies `chmod 755` to the main backend executable and does not swallow chmod/test failures. If the executable is missing or not executable, deployment fails loudly and must not be treated as successful. The script still does not write secrets and does not run EF migrations.
+
+Password reset SMTP values, including credentials, must remain server-only in `/etc/languagevoicetutor/backend.env`. The production Zoho-style settings may use `SmtpEmail__Username` and `SmtpEmail__UseSsl`; no SMTP password or raw reset token should be logged or committed.

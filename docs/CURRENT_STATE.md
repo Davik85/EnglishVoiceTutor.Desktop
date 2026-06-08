@@ -354,3 +354,11 @@ Inno Setup remains the primary Windows direct-download installer track. `scripts
 - Backend routes now support generic password reset requests, one-time reset confirmation with token expiration/revocation, and authenticated signed-in password changes. The desktop Account settings UI exposes a tester-friendly Forgot password flow and a signed-in Change password flow.
 - SMTP delivery is environment-driven. Production SMTP credentials must be configured on the server through `/etc/languagevoicetutor/backend.env`; credentials, tokens, private keys, and provider secrets must not be committed. Expected sender identity is `support@languagevoicetutor.com`.
 - External tester handoff is still blocked until CMS server verification, a basic public download page, a basic update UI/system, clean-machine smoke, and checklist completion are done.
+
+## Account recovery/change polish and backend deploy hardening (2026-06-08)
+
+- Account password recovery/change is being polished for tester readiness: the Account screen keeps account/subscription status and sign-in fields visible, while Forgot password and Change password forms are collapsed by default and clear sensitive fields on close/success.
+- Desktop validation now keeps normal 400/401 auth validation failures user-facing instead of presenting them as server outages. Wrong login credentials map to `Email or password is incorrect.`, wrong current password maps to `Current password is incorrect.`, short new passwords map to `Password must be at least 8 characters.`, and invalid reset codes map to `Password reset code is invalid or expired.`
+- SMTP credentials remain server-only in `/etc/languagevoicetutor/backend.env`; no SMTP password, reset token, or other secret is committed. The backend now accepts the production-style `SmtpEmail__Username` and `SmtpEmail__UseSsl` environment names as aliases for the SMTP sender settings.
+- Backend upload hardening now packages Linux archive entries with forward slashes and verifies `/opt/languagevoicetutor/backend/releases/<version>/EnglishVoiceTutor.Api` exists and is executable before reporting success.
+- External tester handoff is still blocked until CMS server verification, a basic public download page, update UI/system, clean-machine smoke, and checklist completion.

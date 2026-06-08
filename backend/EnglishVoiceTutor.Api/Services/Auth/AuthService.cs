@@ -119,10 +119,14 @@ public sealed class AuthService(
     {
         if (string.IsNullOrWhiteSpace(request.CurrentPassword)
             || string.IsNullOrWhiteSpace(request.NewPassword)
-            || request.NewPassword.Length < AuthConstants.MinimumPasswordLength
             || !string.Equals(request.NewPassword, request.ConfirmNewPassword, StringComparison.Ordinal))
         {
             return ChangePasswordResult.InvalidRequest;
+        }
+
+        if (request.NewPassword.Length < AuthConstants.MinimumPasswordLength)
+        {
+            return ChangePasswordResult.InvalidPasswordLength;
         }
 
         var user = await dbContext.Users
