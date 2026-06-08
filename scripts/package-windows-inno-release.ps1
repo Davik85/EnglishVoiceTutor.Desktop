@@ -6,6 +6,9 @@ param(
     [ValidateNotNullOrEmpty()]
     [string]$IsccPath,
 
+    [ValidateNotNullOrEmpty()]
+    [string]$BackendBaseUrl = "https://api.languagevoicetutor.com",
+
     [string[]]$ChangelogItem = @()
 )
 
@@ -32,6 +35,7 @@ $knownIssues = @(
     "Update UI inside the app is not implemented yet."
 )
 $manifestNotes = @(
+    "backendBaseUrl records the non-secret packaged default backend profile",
     "code signing deferred",
     "update UI not implemented yet",
     "do not update during active lesson once update UI exists"
@@ -58,6 +62,23 @@ $installerDirectory = Join-Path $repoRoot "artifacts\installers\windows"
 $releaseDirectory = Join-Path $repoRoot "artifacts\releases\windows\direct"
 $expectedInstallerPath = Join-Path $installerDirectory $installerBaseName
 $releaseInstallerPath = Join-Path $releaseDirectory $installerBaseName
+
+
+function Normalize-BackendBaseUrl {
+    param([string]$Value)
+
+    $trimmedValue = $Value.Trim().TrimEnd("/")
+    $uri = $null
+    if (-not [System.Uri]::TryCreate($trimmedValue, [System.UriKind]::Absolute, [ref]$uri)) {
+        throw "BackendBaseUrl must be an absolute http/https URL. Received: $Value"
+    }
+
+    if ($uri.Scheme -ne [System.Uri]::UriSchemeHttp -and $uri.Scheme -ne [System.Uri]::UriSchemeHttps) {
+        throw "BackendBaseUrl must use http or https. Received: $Value"
+    }
+
+    return $uri.AbsoluteUri.TrimEnd("/")
+}
 
 function Resolve-IsccPath {
     param([string]$ExplicitPath)
@@ -132,6 +153,7 @@ if (-not (Test-Path $innoScriptPath -PathType Leaf)) {
     throw "Inno Setup script was not found: $innoScriptPath"
 }
 
+$BackendBaseUrl = Normalize-BackendBaseUrl -Value $BackendBaseUrl
 $isccExe = Resolve-IsccPath -ExplicitPath $IsccPath
 
 Set-Location $repoRoot
@@ -144,6 +166,7 @@ Write-Host "Publish directory: $publishDirectory"
 Write-Host "Installer directory: $installerDirectory"
 Write-Host "Direct release directory: $releaseDirectory"
 Write-Host "ISCC.exe: $isccExe"
+Write-Host "Packaged backend URL: $BackendBaseUrl"
 
 Remove-Item -Recurse -Force $publishDirectory -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $publishDirectory | Out-Null
@@ -161,7 +184,8 @@ dotnet publish $projectPath -c Release -r $runtime --self-contained true -o $pub
     /p:Version=$Version `
     /p:InformationalVersion=$Version `
     /p:AssemblyVersion=$numericAssemblyVersion `
-    /p:FileVersion=$numericAssemblyVersion
+    /p:FileVersion=$numericAssemblyVersion `
+    /p:DesktopBackendBaseUrl=$BackendBaseUrl
 
 $exePath = Join-Path $publishDirectory $mainExe
 if (-not (Test-Path $exePath -PathType Leaf)) {
@@ -207,6 +231,7 @@ $latestManifest = [ordered]@{
     installerRelativeUrl = $installerBaseName
     installerSha256 = $installerHash
     installerSizeBytes = $installerFile.Length
+    backendBaseUrl = $BackendBaseUrl
     minimumSupportedVersion = $Version
     updateMode = $updateMode
     notes = @($manifestNotes)
@@ -234,3 +259,4 @@ Write-Host "Publish output: $publishDirectory"
 Write-Host "Installer: $expectedInstallerPath"
 Write-Host "Direct release output: $releaseDirectory"
 Write-Host "Latest manifest: $(Join-Path $releaseDirectory 'latest.json')"
+Write-Host "Packaged backend URL: $BackendBaseUrl"

@@ -97,7 +97,7 @@ public class UserSettingsService
             : SpeechVoiceOptions.GetById(settings.SpeechVoiceId).Id;
         settings.UserDisplayName = NormalizeOptionalText(settings.UserDisplayName);
         settings.LearningGoal = NormalizeOptionalText(settings.LearningGoal);
-        settings.BackendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(settings.BackendBaseUrl);
+        settings.BackendBaseUrl = BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(settings.BackendBaseUrl);
         settings.AudioInputDeviceId = string.IsNullOrWhiteSpace(settings.AudioInputDeviceId)
             ? AudioConstants.DefaultAudioInputDeviceId
             : settings.AudioInputDeviceId.Trim();

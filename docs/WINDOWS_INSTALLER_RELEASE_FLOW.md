@@ -57,6 +57,12 @@ Run from the repository root on Windows:
 powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0
 ```
 
+By default this packages the desktop with Backend URL `https://api.languagevoicetutor.com`. To intentionally test another absolute http/https backend, pass `-BackendBaseUrl`, for example:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0 -BackendBaseUrl https://api.languagevoicetutor.com
+```
+
 For prerelease builds:
 
 ```powershell
@@ -85,19 +91,19 @@ artifacts\releases\windows\direct\known-issues.json
 artifacts\releases\windows\direct\checksums.sha256
 ```
 
-`latest.json` includes product identity, platform, architecture, channel, version, UTC release date, installer filename/relative URL, SHA-256, size, minimum supported version, manual-confirmation update mode, and current release notes. It must not include absolute local file paths. `changelog.json` and `known-issues.json` are placeholders for tester-facing release communication until richer release notes are supplied.
+`latest.json` includes product identity, platform, architecture, channel, version, UTC release date, installer filename/relative URL, SHA-256, size, non-secret `backendBaseUrl`, minimum supported version, manual-confirmation update mode, and current release notes. It must not include absolute local file paths. `changelog.json` and `known-issues.json` are placeholders for tester-facing release communication until richer release notes are supplied.
 
 Generated files under `artifacts\` must not be committed.
 
 ## Validate and prepare optional server upload
 
-After building the Inno release, validate the server-ready folder before any handoff or upload:
+After building the Inno release, validate the server-ready folder before any handoff or upload. This also checks that `backendBaseUrl`, when present, is an absolute http/https URL:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
 ```
 
-Optional future server upload is documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). The upload helper validates first and can run with `-DryRun`, but it does not run automatically, does not include secrets, does not deploy the backend, does not create a download website, and does not implement update UI. External tester handoff remains blocked until static server download, clean-machine install, and the controlled tester checklist pass.
+Optional future server upload is documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). The upload helper validates first and can run with `-DryRun`, but it does not run automatically, does not include secrets, does not deploy the backend, does not create a download website, and does not implement update UI. External tester handoff remains blocked until clean-machine install and the controlled tester checklist pass.
 
 ## Smoke checklist
 
@@ -119,4 +125,4 @@ Before external handoff, verify on a clean or representative Windows machine:
 
 ## Backend and secrets boundaries
 
-The backend remains the source of truth. The desktop must not store OpenAI API keys and must not call OpenAI directly. Do not place secrets, local `.env` files, local auth/session files, local settings, or local lesson history in the publish output or installer.
+Local development builds keep `http://localhost:5000` as the default Backend URL. Inno tester/release packages default to `https://api.languagevoicetutor.com`; saved legacy localhost user settings may migrate to that deployed API only in builds where it is the current packaged default, while custom Backend URL values are preserved. The backend remains the source of truth. The desktop must not store OpenAI API keys and must not call OpenAI directly. Do not place secrets, local `.env` files, local auth/session files, local settings, or local lesson history in the publish output or installer.
