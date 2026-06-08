@@ -4,6 +4,8 @@ This document describes the safe, optional foundation for copying the already ge
 
 The primary Windows installer track is the Inno Setup installer. ZIP packages remain only an emergency/developer fallback. This upload foundation does not deploy the backend, does not create the download website, does not implement update UI, does not make the app public-release ready, and does not sign the installer. Code signing is still deferred.
 
+Backend API deployment is documented separately in [`BACKEND_SERVER_DEPLOYMENT.md`](BACKEND_SERVER_DEPLOYMENT.md). Keep the static Windows direct-download files on `languagevoicetutor.com` separate from the future backend API reverse proxy on `api.languagevoicetutor.com`.
+
 ## Purpose
 
 The Inno release script creates a server-ready release folder that can later be mirrored to a static HTTPS location. The folder is intended to hold the installer and small release metadata files for a future download page and future manual-confirmation update-check flow.

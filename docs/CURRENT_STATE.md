@@ -220,6 +220,12 @@ Current confirmed migrations:
 
 Latest confirmed EF migration: `20260604121000_AddCmsDraftSaveAuditMetadata`.
 
+## Backend Linux deployment foundation
+
+The backend deployment foundation for Ubuntu 24.04 is prepared in documentation and scripts only. Local packaging uses `scripts/package-backend-linux-release.ps1` to publish `backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj` as a self-contained `linux-x64` backend archive under `artifacts/packages/backend`. Manual upload support uses `scripts/upload-backend-linux-release.ps1` to place a zip on the VPS, extract it to `/opt/languagevoicetutor/backend/releases/{version}`, and update `/opt/languagevoicetutor/backend/current`. Server templates live under `docs/server/`, and the full operator guide is `docs/BACKEND_SERVER_DEPLOYMENT.md`. No backend deployment has been completed by this repository change, no EF migration was added, and generated `artifacts/` files must not be committed.
+
+Production billing remains deferred for this test deployment path. Paddle/provider keys are not required unless checkout/billing tests are deliberately enabled later. External tester handoff remains blocked until backend deployment, clean-machine install, and controlled tester checklist validation all pass.
+
 ## Current smoke/audit scripts
 
 Current documented smoke/audit scripts:

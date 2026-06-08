@@ -1,0 +1,26 @@
+# Example systemd unit for the Language Voice Tutor backend.
+# Install as /etc/systemd/system/languagevoicetutor-backend.service after reviewing paths.
+# Kestrel must bind only to localhost through ASPNETCORE_URLS in /etc/languagevoicetutor/backend.env.
+
+[Unit]
+Description=Language Voice Tutor Backend API
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=deploy
+Group=deploy
+WorkingDirectory=/opt/languagevoicetutor/backend/current
+EnvironmentFile=/etc/languagevoicetutor/backend.env
+ExecStart=/opt/languagevoicetutor/backend/current/EnglishVoiceTutor.Api
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGINT
+SyslogIdentifier=languagevoicetutor-backend
+
+# Keep writable runtime data outside the release folder if future backend features need files.
+ReadWritePaths=/var/log/languagevoicetutor/backend
+
+[Install]
+WantedBy=multi-user.target

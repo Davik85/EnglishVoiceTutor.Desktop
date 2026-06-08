@@ -16,11 +16,12 @@ CMS draft-save audit logging is implemented for successful Admin CMS Save draft 
 ## Recommended next product order
 
 1. Server setup and test deployment preparation.
-   - This is the next stage after this documentation update.
-   - Prepare the backend deployment environment and a static HTTPS direct-download location without committing secrets, IP addresses, usernames, passwords, API keys, tokens, SSH keys, database passwords, provider keys, generated artifacts, or environment-specific values.
+   - Backend Linux deployment scripts/templates are now prepared for manual Ubuntu 24.04 test deployment; follow `docs/BACKEND_SERVER_DEPLOYMENT.md` for local package, dry-run upload, real upload, server env file, systemd, nginx, Certbot, health checks, and rollback.
+   - Static HTTPS direct-download hosting remains a separate track from backend API hosting. The API is planned for `api.languagevoicetutor.com`; the existing static site remains `languagevoicetutor.com`.
    - Backend deployment is not done yet. Keep backend as the source of truth for auth, lessons, active lesson state, usage, billing/access, CMS runtime selection, and AI/TTS/STT calls.
    - Desktop must continue to store no OpenAI API keys and must not call OpenAI directly.
-   - External tester handoff remains blocked until server/static HTTPS download exists, clean-machine install passes, and the controlled tester checklist passes.
+   - Do not commit secrets, IP addresses, usernames, passwords, API keys, tokens, SSH keys, database passwords, provider keys, generated artifacts, or environment-specific values.
+   - External tester handoff remains blocked until backend deployment, clean-machine install, and the controlled tester checklist pass.
 2. Windows direct-download release preparation.
    - Keep Inno Setup as the primary Windows direct-download installer path. Stable installer AppId: `LanguageVoiceTutor.Desktop`. Expected installer artifact: `artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe`.
    - Server-ready direct-download files are generated under `artifacts\releases\windows\direct`: `latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, and `LanguageVoiceTutorSetup-{version}.exe`.
