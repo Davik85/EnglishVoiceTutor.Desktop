@@ -186,3 +186,24 @@ Expected: no pending model changes.
 ## Deployment note
 
 Deploy the backend build using the existing server deployment process. Do not upload generated `artifacts/`, installer files, release zips, or secrets. A typical publish/copy/restart sequence should be run from the deploy workstation or CI environment that already has server access configured; keep SSH keys and passwords outside this repository.
+
+## First production CMS content-pack initialization
+
+Production CMS/Admin login works when `AdminBootstrap__Enabled=true` and the signed-in account is in `AdminBootstrap__AdminEmails`. On a first production setup, the Admin CMS database may not yet contain the `static-json-v1` content pack/draft even though learner runtime is correctly reporting `runtimeSource=StaticJson`.
+
+If the CMS Content overview says **"Content pack static-json-v1 has not been initialized in CMS yet."**, use the admin-only **Initialize from static JSON** action. It calls:
+
+```bash
+curl -fsS -X POST -H "Authorization: Bearer $EVT_ADMIN_BEARER_TOKEN" https://api.languagevoicetutor.com/api/admin/dev/cms/content-packs/static-json-v1/initialize-from-static-json | jq .
+```
+
+Expected behavior:
+
+- the endpoint is protected by the existing `BootstrapAdmin` policy;
+- it creates `static-json-v1` if the CMS content pack is missing;
+- it imports the packaged static JSON topics, scenarios, prompt templates, tutor profiles, and available study-language metadata references into CMS draft/admin tables supported by the current schema;
+- it preserves existing draft content instead of blindly overwriting it;
+- it does not publish automatically;
+- it does not switch runtime.
+
+Runtime remains `StaticJson` until `CmsContent__UsePublishedSnapshotForRuntime=true` is intentionally enabled after separate validation/publishing. Keep `CmsContent__UsePublishedSnapshotForRuntime=false` as the safe default during production verification. No EF schema change is required for this initialization foundation.

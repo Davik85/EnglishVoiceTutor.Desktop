@@ -130,6 +130,120 @@ public sealed class CmsContentImportService(
         return result;
     }
 
+    public async Task<CmsContentImportResult> InitializeStaticJsonV1DraftAsync(Guid? actorUserId, CancellationToken cancellationToken)
+    {
+        var result = new CmsContentImportResult
+        {
+            ContentPackSlug = CmsContentConstants.StaticImport.ContentPackSlug,
+            ContentPackName = CmsContentConstants.StaticImport.ContentPackName,
+            RuntimeUnchanged = true
+        };
+
+        CmsStaticContentImportDraft draft;
+        try
+        {
+            draft = await LoadDraftAsync(cancellationToken);
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+        {
+            result.Errors.Add(ex.Message);
+            return result;
+        }
+
+        result.Warnings.AddRange(draft.Warnings);
+        result.Counts.TopicsRead = draft.Topics.Count;
+        result.Counts.ScenariosRead = draft.Scenarios.Count;
+        result.Counts.PromptTemplatesRead = draft.PromptTemplates.Count;
+        result.Counts.TutorBehaviorProfilesRead = draft.TutorBehaviorProfiles.Count;
+
+        var validation = validationService.Validate(draft);
+        result.Warnings.AddRange(validation.Warnings);
+        if (!validation.Success)
+        {
+            result.Errors.AddRange(validation.Errors);
+            return result;
+        }
+
+        result.SnapshotHash = CmsContentJson.Sha256Hex(BuildSnapshotJson(draft));
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var now = DateTimeOffset.UtcNow;
+        var auditEntries = new List<ContentAuditLogEntity>();
+        var pack = await dbContext.ContentPacks.SingleOrDefaultAsync(
+            candidate => candidate.Slug == CmsContentConstants.StaticImport.ContentPackSlug,
+            cancellationToken);
+
+        if (pack is null)
+        {
+            pack = new ContentPackEntity
+            {
+                Id = Guid.NewGuid(),
+                Slug = CmsContentConstants.StaticImport.ContentPackSlug,
+                Name = CmsContentConstants.StaticImport.ContentPackName,
+                Description = CmsContentConstants.StaticImport.ContentPackDescription,
+                Status = CmsContentConstants.ContentPackStatuses.Draft,
+                BaseStaticContentVersion = CmsContentConstants.StaticImport.BaseStaticContentVersion,
+                CreatedByUserId = actorUserId,
+                UpdatedByUserId = actorUserId,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            };
+            dbContext.ContentPacks.Add(pack);
+            result.ContentPackCreated = true;
+            result.Messages.Add("Content pack initialized.");
+            AddAudit(auditEntries, actorUserId, CmsContentConstants.ContentAuditActions.ImportCreated, nameof(ContentPackEntity), pack.Id, pack.Id, null, HashPack(pack), ["Slug", "Name", "Description", "Status"]);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        else
+        {
+            result.ContentPackAlreadyExisted = true;
+            result.Messages.Add("Content pack already exists.");
+        }
+
+        result.ContentPackId = pack.Id;
+
+        var hasDraftContent = await HasAnyDraftContentAsync(pack.Id, cancellationToken);
+        if (hasDraftContent)
+        {
+            result.DraftPreserved = true;
+            result.Counts.TopicsSkipped = result.Counts.TopicsRead;
+            result.Counts.ScenariosSkipped = result.Counts.ScenariosRead;
+            result.Counts.PromptTemplatesSkipped = result.Counts.PromptTemplatesRead;
+            result.Counts.TutorBehaviorProfilesSkipped = result.Counts.TutorBehaviorProfilesRead;
+            result.Messages.Add("Draft preserved.");
+            result.Messages.Add("Replacing an existing draft requires an explicit future confirmation flow; no CMS draft rows were overwritten.");
+        }
+        else
+        {
+            await UpsertTopicsAsync(pack.Id, actorUserId, draft, result, auditEntries, now, cancellationToken);
+            await UpsertScenariosAsync(pack.Id, actorUserId, draft, result, auditEntries, now, cancellationToken);
+            await UpsertPromptTemplatesAsync(pack.Id, actorUserId, draft, result, auditEntries, now, cancellationToken);
+            await UpsertTutorProfilesAsync(pack.Id, actorUserId, draft, result, auditEntries, now, cancellationToken);
+            result.DraftInitialized = true;
+            result.Messages.Add("CMS draft content initialized from static JSON.");
+        }
+
+        result.Messages.Add("Learner runtime was not changed; static JSON remains the default until CmsContent__UsePublishedSnapshotForRuntime=true is intentionally enabled.");
+        result.PublishedSnapshotCreated = false;
+        result.Counts.AuditLogEntriesCreated = auditEntries.Count;
+        dbContext.ContentAuditLogs.AddRange(auditEntries);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        result.IdempotentNoChanges = !result.ContentPackCreated && !result.DraftInitialized;
+        result.Success = true;
+        return result;
+    }
+
+    private async Task<bool> HasAnyDraftContentAsync(Guid contentPackId, CancellationToken cancellationToken)
+    {
+        return await dbContext.CmsLessonTopics.AnyAsync(topic => topic.ContentPackId == contentPackId, cancellationToken)
+            || await dbContext.CmsLessonScenarios.AnyAsync(scenario => scenario.ContentPackId == contentPackId, cancellationToken)
+            || await dbContext.PromptTemplates.AnyAsync(template => template.ContentPackId == contentPackId, cancellationToken)
+            || await dbContext.TutorBehaviorProfiles.AnyAsync(tutor => tutor.ContentPackId == contentPackId, cancellationToken);
+    }
+
     private static async Task<CmsStaticContentImportDraft> LoadDraftAsync(CancellationToken cancellationToken)
     {
         var contentRoot = Path.Combine(AppContext.BaseDirectory, CmsContentConstants.StaticImport.ContentRootFolder);

@@ -24,7 +24,8 @@
         cmsVersionsTemplate: "/api/admin/dev/cms/content-packs/{slug}/versions",
         cmsPublishTemplate: "/api/admin/dev/cms/content-packs/{slug}/publish",
         cmsRestoreTemplate: "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore",
-        cmsAuditEntriesTemplate: "/api/admin/dev/cms/content-packs/{slug}/audit-entries"
+        cmsAuditEntriesTemplate: "/api/admin/dev/cms/content-packs/{slug}/audit-entries",
+        cmsStaticJsonV1Initialize: "/api/admin/dev/cms/content-packs/static-json-v1/initialize-from-static-json"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
@@ -168,6 +169,8 @@
     const cmsLoadContentPacksButton = document.getElementById("cms-load-content-packs-button");
     const cmsContentPackSelect = document.getElementById("cms-content-pack-select");
     const cmsRefreshButton = document.getElementById("cms-refresh-button");
+    const cmsInitializeStaticJsonButton = document.getElementById("cms-initialize-static-json-button");
+    const cmsStaticJsonInitializePanel = document.getElementById("cms-static-json-initialize-panel");
     const cmsLoadingElement = document.getElementById("cms-loading");
     const cmsErrorElement = document.getElementById("cms-error");
     const cmsSuccessElement = document.getElementById("cms-success");
@@ -1153,7 +1156,7 @@
         if (options.body && !headers["Content-Type"]) { headers["Content-Type"] = "application/json"; }
         const response = await fetch(path, Object.assign({}, options, { headers }));
         if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
-        if (response.status === HttpStatus.notFound) { throw new Error("CMS item was not found."); }
+        if (response.status === HttpStatus.notFound) { const error = new Error("CMS item was not found."); error.status = HttpStatus.notFound; throw error; }
         if (response.status === HttpStatus.badRequest) {
             let payload = null;
             try { payload = await response.json(); } catch (_) { }
@@ -1170,7 +1173,21 @@
         return response.json();
     }
 
+    function setCmsStaticJsonInitializePanelVisible(visible) { if (cmsStaticJsonInitializePanel) { cmsStaticJsonInitializePanel.classList.toggle("hidden", !visible); } }
+
+    function clearCmsContentPackSummary(slug) {
+        cmsSummarySlugElement.textContent = formatValue(slug);
+        cmsSummaryNameElement.textContent = "-";
+        cmsSummaryStatusElement.textContent = "Not initialized";
+        cmsSummaryTopicCountElement.textContent = "-";
+        cmsSummaryScenarioCountElement.textContent = "-";
+        cmsSummaryPromptTemplateCountElement.textContent = "-";
+        cmsSummaryTutorProfileCountElement.textContent = "-";
+        cmsSummaryPublishedVersionElement.textContent = "-";
+    }
+
     function renderCmsContentPackSummary(summary) {
+        setCmsStaticJsonInitializePanelVisible(false);
         cmsSummarySlugElement.textContent = formatValue(summary?.slug);
         cmsSummaryNameElement.textContent = formatValue(summary?.name);
         cmsSummaryStatusElement.textContent = formatValue(summary?.status);
@@ -1310,7 +1327,18 @@
         if (!restoreSelection && !confirmDiscardUnsavedChanges()) { return false; }
         const slug = getSelectedCmsSlug();
         updateHashField("contentPackSlug", slug);
-        const summary = await adminFetch(cmsPath(ApiPaths.cmsContentPackTemplate, { slug }));
+        let summary;
+        try {
+            summary = await adminFetch(cmsPath(ApiPaths.cmsContentPackTemplate, { slug }));
+        } catch (error) {
+            if (error.status === HttpStatus.notFound && slug === "static-json-v1") {
+                clearCmsContentPackSummary(slug);
+                setCmsStaticJsonInitializePanelVisible(true);
+                setCmsError("Content pack static-json-v1 has not been initialized in CMS yet. Use Initialize from static JSON to prepare CMS draft content. Learner runtime is not changed.");
+                return false;
+            }
+            throw error;
+        }
         renderCmsContentPackSummary(summary);
         await Promise.all([loadCmsTopics(), loadCmsScenarios(), loadCmsPromptTemplates(), loadCmsTutorProfiles(), loadCmsVersions(), loadCmsAuditEntries()]);
         clearAllCmsDirtyState();
@@ -1407,6 +1435,20 @@
             if (isCmsSubTabActive(CmsSubTabs.audit)) { await loadCmsAuditEntries(); }
             else { setCmsSuccess("Open Audit to view the saved audit entry. Use Go to Publish to open Versions & Publish when you are ready to publish current draft changes."); }
         } catch (error) { const message = getCmsErrorMessage(error); setCmsEntityMessage(messageElement, message, true); if (isAuthErrorMessage(message)) { resetSession(); setError(message); } }
+    }
+
+
+    async function initializeStaticJsonContentPack() {
+        setCmsError(""); setCmsSuccess(""); setCmsLoading(true);
+        try {
+            const result = await adminFetch(ApiPaths.cmsStaticJsonV1Initialize, { method: "POST" });
+            const messages = Array.isArray(result?.messages) ? result.messages : [];
+            setCmsSuccess(messages.length > 0 ? messages.join(" ") : "Content pack initialized. Learner runtime remains static JSON; no publish was performed.");
+            cmsContentPackSelect.value = "static-json-v1";
+            updateHashField("contentPackSlug", "static-json-v1");
+            await refreshCmsContentPack(true);
+        } catch (error) { handleCmsError(error); }
+        finally { setCmsLoading(false); }
     }
 
     async function runCmsValidation() {
@@ -1536,6 +1578,7 @@
     cmsLoadContentPacksButton.addEventListener("click", async () => { await loadCmsContentPacks(); });
     cmsContentPackSelect.addEventListener("change", async () => { setCmsLoading(true); try { if (await refreshCmsContentPack(false)) { setCmsSuccess("CMS content pack refreshed."); } } catch (error) { handleCmsError(error); } finally { setCmsLoading(false); } });
     cmsRefreshButton.addEventListener("click", async () => { setCmsLoading(true); try { if (await refreshCmsContentPack(false)) { setCmsSuccess("CMS content pack refreshed."); } } catch (error) { handleCmsError(error); } finally { setCmsLoading(false); } });
+    cmsInitializeStaticJsonButton.addEventListener("click", async () => { await initializeStaticJsonContentPack(); });
     cmsTopicFilterInput.addEventListener("input", () => { renderCmsTopicsTable(); });
     cmsScenarioFilterInput.addEventListener("input", () => { renderCmsScenariosTable(); });
     cmsScenarioTopicFilterSelect.addEventListener("change", () => { renderCmsScenariosTable(); });

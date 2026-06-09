@@ -160,3 +160,8 @@ Before external tester handoff, keep re-verifying the disabled-by-default CMS ru
 A basic public download page foundation is now prepared under `site/public/`. The page is static and reads `latest.json` from the existing Windows direct release folder at `/releases/windows/direct/latest.json`; it does not implement auto-update and does not replace the future update UI. It is only a tester download page for invited testers.
 
 Before external tester handoff, deploy the static page only after reviewing `scripts/upload-static-site.ps1` with `-DryRun`, verifying the public HTTPS page loads the manifest, and confirming the fallback link remains available if the manifest request fails. External tester handoff is still blocked until the update UI/system and the clean-machine smoke checklist pass.
+## CMS/Admin first-production initialization next step
+
+Before external tester handoff, verify the Admin CMS selected content pack `static-json-v1`. If the overview reports that the pack has not been initialized, sign in as a bootstrap admin and click **Initialize from static JSON** (or POST `/api/admin/dev/cms/content-packs/static-json-v1/initialize-from-static-json`). This admin-only step imports the current packaged static JSON content into CMS draft/admin storage where supported.
+
+The initialization action does not publish automatically and does not switch runtime. Keep `CmsContent__UsePublishedSnapshotForRuntime=false` until a separate publish/validation decision intentionally enables `CmsContent__UsePublishedSnapshotForRuntime=true`. Public release / external tester handoff remains blocked until this CMS/Admin initialization/verification and the update/version-check system are complete.

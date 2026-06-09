@@ -169,6 +169,11 @@
                                         <select id="cms-content-pack-select" name="cms-content-pack-select"><option value="static-json-v1" selected>static-json-v1</option></select>
                                     </div>
                                     <button id="cms-refresh-button" type="button">Refresh selected pack</button>
+                                    <button id="cms-initialize-static-json-button" type="button">Initialize from static JSON</button>
+                                </div>
+                                <div id="cms-static-json-initialize-panel" class="cms-warning-card cms-static-json-initialize-panel hidden" role="status">
+                                    <p><strong>Content pack static-json-v1 has not been initialized in CMS yet.</strong></p>
+                                    <p class="muted">Use Initialize from static JSON to create CMS draft/admin content from the packaged static JSON. This does not publish automatically and does not change learner runtime; runtime stays on static JSON by default.</p>
                                 </div>
                                 <h3 id="cms-summary-heading">Content pack summary</h3>
                                 <dl id="cms-content-pack-summary" class="meta cms-summary-meta">
