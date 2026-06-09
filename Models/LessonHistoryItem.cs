@@ -8,6 +8,12 @@ public class LessonHistoryItem
 
     public string SelectedLevel { get; set; } = string.Empty;
 
+    public Guid? OwnerUserId { get; set; }
+
+    public string? OwnerEmail { get; set; }
+
+    public string? OwnerKey { get; set; }
+
     public string TopicTitle { get; set; } = string.Empty;
 
     public string SubtopicTitle { get; set; } = string.Empty;

@@ -171,7 +171,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public void NavigateToLessonSummary(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput, Guid? backendLessonSessionId)
     {
         HideAccessPanel();
-        SaveLessonHistory(selectedLevel, selectedTopic, selectedSubtopic, summaryInput);
+        _ = SaveLessonHistoryAsync(selectedLevel, selectedTopic, selectedSubtopic, summaryInput);
         CurrentViewModel = CreateLessonSummaryViewModel(selectedLevel, selectedTopic, selectedSubtopic, summaryInput);
         _ = TrySaveLessonSummaryAsync(summaryInput, backendLessonSessionId);
     }
@@ -185,7 +185,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void NavigateToSettings(Action navigateBack)
     {
         HideAccessPanel();
-        var lessonHistory = lessonHistoryService.LoadCompletedLessons();
+        var lessonHistory = lessonHistoryService.LoadVisibleCompletedLessonsForCurrentSessionAsync().GetAwaiter().GetResult();
 
         CurrentViewModel = new SettingsViewModel(
             userSettings.InterfaceLanguageId,
@@ -205,6 +205,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             backendUserSettingsClient,
             backendSubscriptionStatusClient,
             authBackendService,
+            lessonHistoryService,
             audioInputDeviceService,
             audioRecordingService,
             SaveSettings,
@@ -246,7 +247,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         authBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
     }
 
-    private void SaveLessonHistory(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput)
+    private async Task SaveLessonHistoryAsync(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput)
     {
         var item = new LessonHistoryItem
         {
@@ -260,7 +261,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             UsefulPhrases = LessonSummaryViewModel.BuildUsefulPhrases(summaryInput, AppLocalization.GetText(userSettings.InterfaceLanguageId))
         };
 
-        lessonHistoryService.Add(item);
+        await lessonHistoryService.AddForCurrentSessionAsync(item);
     }
 
 

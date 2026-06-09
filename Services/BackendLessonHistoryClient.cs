@@ -23,7 +23,12 @@ public sealed class BackendLessonHistoryClient
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.DevLessonHistoryEndpoint));
             var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
-            AuthenticatedRequestHelper.AddBearerTokenIfPresent(request, session?.AccessToken);
+            if (string.IsNullOrWhiteSpace(session?.AccessToken))
+            {
+                return BackendLessonHistoryClientResult.Failure("Backend lesson history GET skipped because no authenticated session is available.");
+            }
+
+            AuthenticatedRequestHelper.AddBearerTokenIfPresent(request, session.AccessToken);
             using var response = await httpClient.SendAsync(request, cancellationToken);
 
             if (!response.IsSuccessStatusCode)

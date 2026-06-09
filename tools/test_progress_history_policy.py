@@ -20,11 +20,11 @@ for needle in [
 if "return LoadCompletedLessons();" not in history_service:
     raise SystemExit("LessonHistoryService.Load must return sanitized completed-lesson records.")
 
-if "lessonHistoryService.LoadCompletedLessons();" not in main_vm:
-    raise SystemExit("Settings progress must be built from LessonHistoryService.LoadCompletedLessons().")
+if "lessonHistoryService.LoadVisibleCompletedLessonsForCurrentSessionAsync().GetAwaiter().GetResult();" not in main_vm:
+    raise SystemExit("Settings progress must be initially built from the current-session visible lesson history source.")
 
-if "lessonHistoryService.LoadCompletedLessons(selectedLevel)" not in history_vm:
-    raise SystemExit("Lesson History view must use the same completed-lesson source as Settings progress.")
+if "lessonHistoryService.LoadVisibleCompletedLessonsForCurrentSessionAsync(selectedLevel)" not in history_vm:
+    raise SystemExit("Lesson History view must use the same current-session visible completed-lesson source as Settings progress.")
 
 if "TotalCompletedLessonsText = lessonHistory.Count.ToString();" not in settings_vm:
     raise SystemExit("Progress total must be derived from the completed lesson history collection count.")

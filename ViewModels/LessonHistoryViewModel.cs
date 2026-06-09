@@ -48,7 +48,7 @@ public partial class LessonHistoryViewModel : ViewModelBase
         _ = LoadHistoryAsync(lessonHistoryService, backendLessonHistoryClient, backendBaseUrl, selectedLevel);
     }
 
-    private Task LoadHistoryAsync(
+    private async Task LoadHistoryAsync(
         LessonHistoryService lessonHistoryService,
         BackendLessonHistoryClient backendLessonHistoryClient,
         string? backendBaseUrl,
@@ -57,9 +57,36 @@ public partial class LessonHistoryViewModel : ViewModelBase
         _ = backendLessonHistoryClient;
         _ = backendBaseUrl;
 
-        var localItems = lessonHistoryService.LoadCompletedLessons(selectedLevel);
+        var backendResult = await backendLessonHistoryClient.GetHistoryAsync(backendBaseUrl);
+        if (backendResult.Succeeded)
+        {
+            ReplaceItems(MapBackendItems(backendResult.Items, selectedLevel));
+            return;
+        }
+
+        var localItems = await lessonHistoryService.LoadVisibleCompletedLessonsForCurrentSessionAsync(selectedLevel);
         ReplaceItems(localItems);
-        return Task.CompletedTask;
+    }
+
+
+    private static IReadOnlyList<LessonHistoryItem> MapBackendItems(IReadOnlyList<BackendLessonHistoryItemResponse> backendItems, string selectedLevel)
+    {
+        return backendItems
+            .Where(item => string.Equals(item.Status, "completed", StringComparison.OrdinalIgnoreCase) || item.FinishedAt.HasValue)
+            .Where(item => string.IsNullOrWhiteSpace(selectedLevel) || string.Equals(item.Level, selectedLevel, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(item => item.FinishedAt ?? item.UpdatedAt)
+            .Select(item => new LessonHistoryItem
+            {
+                Id = item.SessionId,
+                CompletedAt = (item.FinishedAt ?? item.UpdatedAt).LocalDateTime,
+                SelectedLevel = item.Level,
+                TopicTitle = item.TopicTitle,
+                SubtopicTitle = item.SubtopicTitle,
+                GoodText = item.SummaryPreview ?? string.Empty,
+                ImproveText = string.Empty,
+                UsefulPhrases = []
+            })
+            .ToList();
     }
 
     private void ReplaceItems(IReadOnlyList<LessonHistoryItem> items)
