@@ -185,7 +185,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void NavigateToSettings(Action navigateBack)
     {
         HideAccessPanel();
-        var lessonHistory = lessonHistoryService.LoadVisibleCompletedLessonsForCurrentSessionAsync().GetAwaiter().GetResult();
 
         CurrentViewModel = new SettingsViewModel(
             userSettings.InterfaceLanguageId,
@@ -199,7 +198,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             userSettings.AudioInputDeviceId,
             userSettingsService.SettingsFilePath,
             lessonHistoryService.LessonHistoryFilePath,
-            lessonHistory,
+            Array.Empty<LessonHistoryItem>(),
             lessonChatBackendService,
             backendDiagnosticsService,
             backendUserSettingsClient,

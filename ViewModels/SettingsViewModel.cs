@@ -728,6 +728,7 @@ public partial class SettingsViewModel : ViewModelBase
             if (meResult.Status == AuthMeResultStatus.BackendUnavailable || meResult.User is null)
             {
                 SettingsSource = LocalizeUiText(SettingsSourceAuthenticatedText);
+                await RefreshLearningStatisticsAsync();
                 ResetSubscriptionStatus();
                 StatusMessage = BackendUxText.CouldNotConnect;
                 return;
@@ -803,11 +804,11 @@ public partial class SettingsViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void CopyDiagnostics()
+    private async Task CopyDiagnosticsAsync()
     {
         try
         {
-            Clipboard.SetText(BuildDiagnosticsReport());
+            Clipboard.SetText(await BuildDiagnosticsReportAsync());
             DiagnosticsCopyStatusText = diagnosticsLocalizedText.CopySuccessMessage;
         }
         catch
@@ -1158,18 +1159,16 @@ public partial class SettingsViewModel : ViewModelBase
             : SelectedAudioInputDeviceOption.DisplayName;
     }
 
-    private string BuildDiagnosticsReport()
+    private async Task<string> BuildDiagnosticsReportAsync()
     {
-        static string awaitSafe(Task<bool> task)
+        var authTokenPresent = false;
+        try
         {
-            try
-            {
-                return FormatDiagnosticBoolean(task.GetAwaiter().GetResult());
-            }
-            catch
-            {
-                return FormatDiagnosticBoolean(false);
-            }
+            authTokenPresent = await authBackendService.HasStoredSessionAsync();
+        }
+        catch
+        {
+            authTokenPresent = false;
         }
 
         var report = new StringBuilder();
@@ -1194,7 +1193,7 @@ public partial class SettingsViewModel : ViewModelBase
         AppendDiagnosticsLine(report, DiagnosticsInterfaceLanguageLabel, DiagnosticsInterfaceLanguageText);
         AppendDiagnosticsLine(report, DiagnosticsNativeLanguageLabel, DiagnosticsNativeLanguageText);
         AppendDiagnosticsLine(report, DiagnosticsStudyLanguageLabel, DiagnosticsStudyLanguageText);
-        AppendDiagnosticsLine(report, DiagnosticsAuthTokenPresentLabel, awaitSafe(authBackendService.HasStoredSessionAsync()));
+        AppendDiagnosticsLine(report, DiagnosticsAuthTokenPresentLabel, FormatDiagnosticBoolean(authTokenPresent));
         AppendDiagnosticsLine(report, DiagnosticsAuthenticatedLabel, FormatDiagnosticBoolean(IsAuthenticated));
         AppendDiagnosticsLine(report, DiagnosticsSessionRestoreAttemptedLabel, FormatDiagnosticBoolean(sessionRestoreAttempted));
         AppendDiagnosticsLine(report, "Backend settings sync", GetBackendSettingsSyncStatusText());
