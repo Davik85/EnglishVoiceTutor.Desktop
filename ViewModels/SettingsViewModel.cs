@@ -56,7 +56,8 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly AudioInputDeviceService audioInputDeviceService;
     private readonly AudioRecordingService audioRecordingService;
     private readonly AuthBackendService authBackendService;
-    private readonly LessonHistoryItem? latestLesson;
+    private readonly LessonHistoryService lessonHistoryService;
+    private LessonHistoryItem? latestLesson;
     private readonly string appVersionText;
     private readonly string settingsFilePathText;
     private readonly string lessonHistoryFilePathText;
@@ -213,11 +214,14 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string BackButtonText => localizedText.BackButtonText;
 
-    public string TotalCompletedLessonsText { get; }
+    [ObservableProperty]
+    private string totalCompletedLessonsText = "0";
 
-    public string LessonsTodayText { get; }
+    [ObservableProperty]
+    private string lessonsTodayText = "0";
 
-    public string CurrentStreakText { get; }
+    [ObservableProperty]
+    private string currentStreakText = "0";
 
     public string LastCompletedLessonText => BuildLastCompletedLessonText(latestLesson, localizedText.NoCompletedLessonsText);
     public string LearningTabHeader => localizedText.LearningTabHeader;
@@ -408,6 +412,7 @@ public partial class SettingsViewModel : ViewModelBase
         BackendUserSettingsClient backendUserSettingsClient,
         BackendSubscriptionStatusClient backendSubscriptionStatusClient,
         AuthBackendService authBackendService,
+        LessonHistoryService lessonHistoryService,
         AudioInputDeviceService audioInputDeviceService,
         AudioRecordingService audioRecordingService,
         Action<string, string, string, string, string, string, string, string, string> saveSettings,
@@ -432,17 +437,13 @@ public partial class SettingsViewModel : ViewModelBase
         this.backendUserSettingsClient = backendUserSettingsClient;
         this.backendSubscriptionStatusClient = backendSubscriptionStatusClient;
         this.authBackendService = authBackendService;
+        this.lessonHistoryService = lessonHistoryService;
         this.audioInputDeviceService = audioInputDeviceService;
         this.audioRecordingService = audioRecordingService;
         this.saveSettings = saveSettings;
         this.navigateBack = navigateBack;
 
-        latestLesson = lessonHistory
-            .OrderByDescending(item => item.CompletedAt)
-            .FirstOrDefault();
-        TotalCompletedLessonsText = lessonHistory.Count.ToString();
-        LessonsTodayText = CountLessonsToday(lessonHistory).ToString();
-        CurrentStreakText = CalculateCurrentStreak(lessonHistory).ToString();
+        ApplyLearningStatistics(lessonHistory);
         RefreshAudioInputDevices(currentAudioInputDeviceId, showUnavailableStatus: false);
         _ = RestoreSessionAsync();
     }
@@ -683,6 +684,7 @@ public partial class SettingsViewModel : ViewModelBase
             await authBackendService.LogoutAsync();
             ClearAccountState();
             await LoadSettingsForCurrentSessionAsync();
+            await RefreshLearningStatisticsAsync();
             await RefreshSubscriptionStatusAsync();
             StatusMessage = BackendUxText.SignedOut;
         }
@@ -705,6 +707,7 @@ public partial class SettingsViewModel : ViewModelBase
             {
                 ClearAccountState();
                 await LoadDevelopmentSettingsAsync();
+                await RefreshLearningStatisticsAsync();
                 await RefreshSubscriptionStatusAsync();
                 return;
             }
@@ -716,6 +719,7 @@ public partial class SettingsViewModel : ViewModelBase
                 await authBackendService.LogoutAsync();
                 ClearAccountState();
                 await LoadDevelopmentSettingsAsync();
+                await RefreshLearningStatisticsAsync();
                 await RefreshSubscriptionStatusAsync();
                 StatusMessage = BackendUxText.SessionExpired;
                 return;
@@ -731,6 +735,7 @@ public partial class SettingsViewModel : ViewModelBase
 
             ApplyAuthenticatedUser(meResult.User);
             await LoadAuthenticatedSettingsAsync(session.AccessToken);
+            await RefreshLearningStatisticsAsync();
             await RefreshSubscriptionStatusAsync();
             StatusMessage = BackendUxText.SessionRestored;
         }
@@ -1366,6 +1371,7 @@ public partial class SettingsViewModel : ViewModelBase
             ApplyAuthenticatedUser(result.Response.User);
             RequestPasswordClear();
             await LoadSettingsForCurrentSessionAsync();
+            await RefreshLearningStatisticsAsync();
             await RefreshSubscriptionStatusAsync();
             StatusMessage = BackendUxText.SignedIn;
         }
@@ -1668,6 +1674,23 @@ public partial class SettingsViewModel : ViewModelBase
 
         var assemblyVersion = assembly.GetName().Version?.ToString(fieldCount: 3);
         return string.IsNullOrWhiteSpace(assemblyVersion) ? AppVersionFallbackText : assemblyVersion;
+    }
+
+    private async Task RefreshLearningStatisticsAsync()
+    {
+        var lessonHistory = await lessonHistoryService.LoadVisibleCompletedLessonsForCurrentSessionAsync();
+        ApplyLearningStatistics(lessonHistory);
+    }
+
+    private void ApplyLearningStatistics(IReadOnlyList<LessonHistoryItem> lessonHistory)
+    {
+        latestLesson = lessonHistory
+            .OrderByDescending(item => item.CompletedAt)
+            .FirstOrDefault();
+        TotalCompletedLessonsText = lessonHistory.Count.ToString();
+        LessonsTodayText = CountLessonsToday(lessonHistory).ToString();
+        CurrentStreakText = CalculateCurrentStreak(lessonHistory).ToString();
+        OnPropertyChanged(nameof(LastCompletedLessonText));
     }
 
     private static int CountLessonsToday(IReadOnlyList<LessonHistoryItem> lessonHistory)
