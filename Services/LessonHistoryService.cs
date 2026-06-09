@@ -92,6 +92,7 @@ public class LessonHistoryService
         var normalizedOwnerKeys = ownerKeys
             .Select(NormalizeOwnerKey)
             .Where(ownerKey => !string.IsNullOrWhiteSpace(ownerKey))
+            .Select(ownerKey => ownerKey!)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (normalizedOwnerKeys.Count == 0)
         {
