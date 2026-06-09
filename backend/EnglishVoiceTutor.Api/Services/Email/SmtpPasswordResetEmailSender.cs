@@ -10,7 +10,7 @@ public sealed class SmtpPasswordResetEmailSender(IOptions<SmtpEmailOptions> opti
 {
     public bool IsConfigured => IsSmtpConfigured(options.Value);
 
-    public async Task SendPasswordResetAsync(UserEntity user, string resetToken, string resetUrl, CancellationToken cancellationToken)
+    public async Task SendPasswordResetAsync(UserEntity user, string resetCode, string resetUrl, CancellationToken cancellationToken)
     {
         var smtpOptions = options.Value;
         if (!IsSmtpConfigured(smtpOptions))
@@ -22,7 +22,7 @@ public sealed class SmtpPasswordResetEmailSender(IOptions<SmtpEmailOptions> opti
         {
             From = new MailAddress(smtpOptions.FromAddress.Trim(), smtpOptions.FromName.Trim()),
             Subject = "Reset your Language Voice Tutor password",
-            Body = BuildBody(resetToken, resetUrl),
+            Body = BuildBody(resetCode, resetUrl),
             IsBodyHtml = false
         };
         message.To.Add(new MailAddress(user.Email));
@@ -50,12 +50,12 @@ public sealed class SmtpPasswordResetEmailSender(IOptions<SmtpEmailOptions> opti
             && !string.IsNullOrWhiteSpace(options.FromAddress);
     }
 
-    private static string BuildBody(string resetToken, string resetUrl)
+    private static string BuildBody(string resetCode, string resetUrl)
     {
         var instructions = string.IsNullOrWhiteSpace(resetUrl)
-            ? "Open Language Voice Tutor Desktop, choose Forgot password?, and paste the reset code below."
-            : $"Open this reset link or paste the reset code into Language Voice Tutor Desktop.\n\nReset link: {resetUrl}";
+            ? "Open Language Voice Tutor Desktop, choose Forgot password?, and enter the reset code below."
+            : $"Open this reset link or enter the reset code in Language Voice Tutor Desktop.\n\nReset link: {resetUrl}";
 
-        return $"We received a request to reset your Language Voice Tutor password.\n\n{instructions}\n\nReset code:\n{resetToken}\n\nThis code expires soon and can be used only once. If you did not request this reset, you can ignore this email.";
+        return $"We received a request to reset your Language Voice Tutor password.\n\n{instructions}\n\nReset code: {resetCode}\n\nThis code expires soon and can be used only once. If you did not request this reset, you can ignore this email.";
     }
 }

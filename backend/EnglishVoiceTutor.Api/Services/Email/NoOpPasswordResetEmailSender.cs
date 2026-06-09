@@ -6,7 +6,7 @@ public sealed class NoOpPasswordResetEmailSender(ILogger<NoOpPasswordResetEmailS
 {
     public bool IsConfigured => false;
 
-    public Task SendPasswordResetAsync(UserEntity user, string resetToken, string resetUrl, CancellationToken cancellationToken)
+    public Task SendPasswordResetAsync(UserEntity user, string resetCode, string resetUrl, CancellationToken cancellationToken)
     {
         logger.LogInformation(
             "Password reset email delivery is not configured. Reset email was not sent. UserId={UserId}; ResetUrlConfigured={ResetUrlConfigured}.",

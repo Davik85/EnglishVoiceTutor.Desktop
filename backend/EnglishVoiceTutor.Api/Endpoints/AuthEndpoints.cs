@@ -133,6 +133,12 @@ public static class AuthEndpoints
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        if (request.NewPassword.Length < AuthConstants.MinimumPasswordLength)
+        {
+            loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Password reset confirm completed. Result=InvalidPasswordLength");
+            return Results.BadRequest(new PasswordResetResponse { Message = AuthConstants.PasswordChangeInvalidLengthMessage });
+        }
+
         var confirmed = await passwordResetService.ConfirmPasswordResetAsync(request, cancellationToken);
         loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Password reset confirm completed. Result={Result}", confirmed ? "Ok" : "Rejected");
 

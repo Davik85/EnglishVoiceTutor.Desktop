@@ -185,7 +185,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void NavigateToSettings(Action navigateBack)
     {
         HideAccessPanel();
-        var lessonHistory = lessonHistoryService.Load();
+        var lessonHistory = lessonHistoryService.LoadCompletedLessons();
 
         CurrentViewModel = new SettingsViewModel(
             userSettings.InterfaceLanguageId,

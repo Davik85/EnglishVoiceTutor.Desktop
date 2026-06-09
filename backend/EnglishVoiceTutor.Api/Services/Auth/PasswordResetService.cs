@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using EnglishVoiceTutor.Api.Constants;
@@ -19,8 +20,6 @@ public sealed class PasswordResetService(
     IOptions<PasswordResetOptions> options,
     ILogger<PasswordResetService> logger) : IPasswordResetService
 {
-    private const int ResetTokenByteLength = 32;
-
     public async Task RequestPasswordResetAsync(PasswordResetRequest request, CancellationToken cancellationToken)
     {
         if (!options.Value.Enabled)
@@ -50,8 +49,8 @@ public sealed class PasswordResetService(
         }
 
         var now = DateTimeOffset.UtcNow;
-        var rawToken = GenerateToken();
-        var tokenHash = HashToken(rawToken);
+        var rawCode = GenerateResetCode();
+        var tokenHash = HashToken(rawCode);
         var lifetimeMinutes = GetTokenLifetimeMinutes();
         var resetToken = new PasswordResetTokenEntity
         {
@@ -65,10 +64,10 @@ public sealed class PasswordResetService(
         dbContext.PasswordResetTokens.Add(resetToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var resetUrl = BuildResetUrl(rawToken);
+        var resetUrl = BuildResetUrl(rawCode);
         try
         {
-            await emailSender.SendPasswordResetAsync(user, rawToken, resetUrl, cancellationToken);
+            await emailSender.SendPasswordResetAsync(user, rawCode, resetUrl, cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -76,7 +75,7 @@ public sealed class PasswordResetService(
             throw new PasswordResetDeliveryUnavailableException();
         }
 
-        logger.LogInformation("Password reset token created and delivery attempted. UserId={UserId}; ExpiresAtUtc={ExpiresAtUtc}.", user.Id, resetToken.ExpiresAtUtc);
+        logger.LogInformation("Password reset code created and delivery attempted. UserId={UserId}; ExpiresAtUtc={ExpiresAtUtc}.", user.Id, resetToken.ExpiresAtUtc);
     }
 
     public async Task<bool> ConfirmPasswordResetAsync(PasswordResetConfirmRequest request, CancellationToken cancellationToken)
@@ -127,7 +126,7 @@ public sealed class PasswordResetService(
             : PasswordResetOptions.DefaultTokenLifetimeMinutes;
     }
 
-    private string BuildResetUrl(string rawToken)
+    private string BuildResetUrl(string rawCode)
     {
         var resetUrlBase = options.Value.ResetUrlBase?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(resetUrlBase))
@@ -136,24 +135,18 @@ public sealed class PasswordResetService(
         }
 
         var separator = resetUrlBase.Contains('?') ? '&' : '?';
-        return $"{resetUrlBase}{separator}token={Uri.EscapeDataString(rawToken)}";
+        return $"{resetUrlBase}{separator}code={Uri.EscapeDataString(rawCode)}";
     }
 
-    private static string GenerateToken()
+    private static string GenerateResetCode()
     {
-        var bytes = RandomNumberGenerator.GetBytes(ResetTokenByteLength);
-        return Base64UrlEncode(bytes);
+        return RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6", CultureInfo.InvariantCulture);
     }
 
     private static string HashToken(string token)
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token.Trim()));
         return Convert.ToHexString(bytes).ToLowerInvariant();
-    }
-
-    private static string Base64UrlEncode(byte[] bytes)
-    {
-        return Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
     }
 
     private static string NormalizeEmail(string email)
