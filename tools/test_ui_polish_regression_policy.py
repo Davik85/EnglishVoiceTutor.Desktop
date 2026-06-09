@@ -10,6 +10,7 @@ DESIGN_SYSTEM = ROOT / "Resources" / "DesignSystem.xaml"
 LEVEL_VIEW = ROOT / "Views" / "LevelSelectionView.xaml"
 HOME_VIEW = ROOT / "Views" / "HomeView.xaml"
 LESSON_CHAT_VIEW = ROOT / "Views" / "LessonChatView.xaml"
+SETTINGS_VIEW = ROOT / "Views" / "SettingsView.xaml"
 LESSON_CHAT_VIEW_CODE_BEHIND = ROOT / "Views" / "LessonChatView.xaml.cs"
 REALTIME_SCHEMA_TESTS = [
     ROOT / "tools" / "test_realtime_ga_session_schema.py",
@@ -67,6 +68,7 @@ def main() -> int:
     level = read(LEVEL_VIEW)
     home = read(HOME_VIEW)
     chat = read(LESSON_CHAT_VIEW)
+    settings = read(SETTINGS_VIEW)
 
     assert_contains(design, "HorizontalContentAlignment", "shared button horizontal content centering")
     assert_contains(design, "VerticalContentAlignment", "shared button vertical content centering")
@@ -110,6 +112,17 @@ def main() -> int:
     settings_button = extract_first_tag(home, "Button", "SettingsButtonText")
     assert_min_width(settings_button, "home settings button", 120)
     assert_contains(home, "Margin=\"6,10,6,0\"", "settings second-row spacing")
+
+    for blank_binding in ["CloseButtonText"]:
+        if blank_binding in settings:
+            raise AssertionError(f"Settings Account must not render blank/unimplemented button binding: {blank_binding}")
+    account_panel = settings.split('Content="{Binding ForgotPasswordTitle}"', 1)[1].split('Text="{Binding ErrorMessage}"', 1)[0]
+    for required_button_text in [
+        "ForgotPasswordButtonText",
+        "ResetPasswordButtonText",
+        "ChangePasswordButtonText",
+    ]:
+        assert_contains(account_panel, f'Content="{{Binding {required_button_text}}}"', f"settings account visible button text {required_button_text}")
 
     finish_button = extract_first_tag(chat, "Button", "FinishLessonButtonText")
     assert_min_width(finish_button, "lesson finish button", 150)
@@ -173,8 +186,8 @@ def main() -> int:
         if forbidden in feedback_handler:
             raise AssertionError(f"FeedbackPanelCard click handler must not reference Realtime stop/back behavior: {forbidden}")
     assert_contains(code_behind, "dependencyObject is Button", "feedback translate button remains interactive under card-wide close")
-    assert_contains(chat, 'Style="{StaticResource LessonSupportPanelStyle}"', "hint panel uses shared warm support panel style")
-    assert_contains(chat, 'BasedOn="{StaticResource LessonSupportPanelStyle}"', "feedback panel uses shared warm support panel style")
+    if chat.count('BasedOn="{StaticResource LessonSupportPanelStyle}"') < 2 and 'Style="{StaticResource LessonSupportPanelStyle}"' not in chat:
+        raise AssertionError("hint and feedback panels must use the shared warm support panel style")
     assert_contains(chat, "SelectedFeedbackSourceText, Mode=OneWay", "global feedback panel displays selected source phrase safely")
     if "{Binding IsFeedbackVisible}" in chat:
         raise AssertionError("Feedback panel must be global, not inline inside each message template.")

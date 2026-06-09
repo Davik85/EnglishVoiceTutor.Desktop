@@ -6,5 +6,5 @@ public interface IPasswordResetEmailSender
 {
     bool IsConfigured { get; }
 
-    Task SendPasswordResetAsync(UserEntity user, string resetToken, string resetUrl, CancellationToken cancellationToken);
+    Task SendPasswordResetAsync(UserEntity user, string resetCode, string resetUrl, CancellationToken cancellationToken);
 }

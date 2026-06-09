@@ -555,12 +555,6 @@
                                                         Foreground="{StaticResource AccentBrush}"
                                                         Command="{Binding RequestPasswordResetCommand}"
                                                         Style="{StaticResource SecondaryButtonStyle}" />
-                                                <Button MinWidth="90"
-                                                        MinHeight="36"
-                                                        HorizontalAlignment="Left"
-                                                        Content="{Binding CloseButtonText}"
-                                                        Command="{Binding ClosePasswordResetPanelCommand}"
-                                                        Style="{StaticResource SecondaryButtonStyle}" />
                                             </StackPanel>
                                             <TextBlock Text="{Binding ResetTokenLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
                                             <TextBox Style="{StaticResource SettingsTextBoxStyle}"
@@ -620,12 +614,6 @@
                                                         Foreground="White"
                                                         Command="{Binding ChangePasswordCommand}"
                                                         Style="{StaticResource PrimaryButtonStyle}" />
-                                                <Button MinWidth="90"
-                                                        MinHeight="36"
-                                                        HorizontalAlignment="Left"
-                                                        Content="{Binding CloseButtonText}"
-                                                        Command="{Binding CloseChangePasswordPanelCommand}"
-                                                        Style="{StaticResource SecondaryButtonStyle}" />
                                             </StackPanel>
                                             <TextBlock Margin="0,8,0,0"
                                                        Text="{Binding ChangePasswordStatusMessage}"

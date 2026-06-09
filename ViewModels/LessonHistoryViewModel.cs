@@ -48,46 +48,18 @@ public partial class LessonHistoryViewModel : ViewModelBase
         _ = LoadHistoryAsync(lessonHistoryService, backendLessonHistoryClient, backendBaseUrl, selectedLevel);
     }
 
-    private async Task LoadHistoryAsync(
+    private Task LoadHistoryAsync(
         LessonHistoryService lessonHistoryService,
         BackendLessonHistoryClient backendLessonHistoryClient,
         string? backendBaseUrl,
         string selectedLevel)
     {
-        var backendResult = await backendLessonHistoryClient.GetHistoryAsync(backendBaseUrl);
-        if (backendResult.Succeeded)
-        {
-            var mappedBackendItems = backendResult.Items
-                .Where(item => string.Equals(item.Level, selectedLevel, StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(item => item.FinishedAt ?? item.StartedAt)
-                .Select(MapBackendItem)
-                .ToList();
+        _ = backendLessonHistoryClient;
+        _ = backendBaseUrl;
 
-            ReplaceItems(mappedBackendItems);
-            return;
-        }
-
-        var localItems = lessonHistoryService
-            .Load()
-            .Where(item => string.Equals(item.SelectedLevel, selectedLevel, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
+        var localItems = lessonHistoryService.LoadCompletedLessons(selectedLevel);
         ReplaceItems(localItems);
-    }
-
-    private static LessonHistoryItem MapBackendItem(BackendLessonHistoryItemResponse item)
-    {
-        return new LessonHistoryItem
-        {
-            Id = item.SessionId,
-            CompletedAt = (item.FinishedAt ?? item.StartedAt).LocalDateTime,
-            SelectedLevel = item.Level,
-            TopicTitle = item.TopicTitle,
-            SubtopicTitle = item.SubtopicTitle,
-            GoodText = item.SummaryPreview ?? string.Empty,
-            ImproveText = string.Empty,
-            UsefulPhrases = []
-        };
+        return Task.CompletedTask;
     }
 
     private void ReplaceItems(IReadOnlyList<LessonHistoryItem> items)
