@@ -49,13 +49,14 @@ public class LessonHistoryService
         string? selectedLevel = null,
         CancellationToken cancellationToken = default)
     {
-        var ownerKey = await GetCurrentOwnerKeyAsync(cancellationToken);
-        if (string.IsNullOrWhiteSpace(ownerKey))
+        // Signed-in current-session history uses owner aliases and keeps includeLegacyOwnerlessRecords: false semantics.
+        var ownerKeys = await GetCurrentOwnerKeysAsync(cancellationToken);
+        if (ownerKeys.Count == 0)
         {
             return [];
         }
 
-        return LoadCompletedLessonsForOwner(ownerKey, includeLegacyOwnerlessRecords: false, selectedLevel);
+        return LoadCompletedLessonsForOwnerKeys(ownerKeys, selectedLevel);
     }
 
     public IReadOnlyList<LessonHistoryItem> LoadCompletedLessonsForOwner(
@@ -67,6 +68,40 @@ public class LessonHistoryService
         var items = LoadRawItems()
             .Where(IsCompletedLessonRecord)
             .Where(item => IsVisibleForOwner(item, normalizedOwnerKey, includeLegacyOwnerlessRecords))
+            .GroupBy(item => item.Id == Guid.Empty ? BuildFallbackHistoryKey(item) : item.Id.ToString("D"), StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.OrderByDescending(item => item.CompletedAt).First())
+            .OrderByDescending(item => item.CompletedAt)
+            .Take(MaxHistoryItems)
+            .ToList();
+
+        if (!string.IsNullOrWhiteSpace(selectedLevel))
+        {
+            items = items
+                .Where(item => string.Equals(item.SelectedLevel, selectedLevel, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        return items;
+    }
+
+
+    public IReadOnlyList<LessonHistoryItem> LoadCompletedLessonsForOwnerKeys(
+        IReadOnlyCollection<string> ownerKeys,
+        string? selectedLevel = null)
+    {
+        var normalizedOwnerKeys = ownerKeys
+            .Select(NormalizeOwnerKey)
+            .Where(ownerKey => !string.IsNullOrWhiteSpace(ownerKey))
+            .Select(ownerKey => ownerKey!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (normalizedOwnerKeys.Count == 0)
+        {
+            return [];
+        }
+
+        var items = LoadRawItems()
+            .Where(IsCompletedLessonRecord)
+            .Where(item => IsVisibleForAnyOwner(item, normalizedOwnerKeys))
             .GroupBy(item => item.Id == Guid.Empty ? BuildFallbackHistoryKey(item) : item.Id.ToString("D"), StringComparer.OrdinalIgnoreCase)
             .Select(group => group.OrderByDescending(item => item.CompletedAt).First())
             .OrderByDescending(item => item.CompletedAt)
@@ -153,10 +188,33 @@ public class LessonHistoryService
         return string.IsNullOrWhiteSpace(email) ? string.Empty : email.Trim().ToLowerInvariant();
     }
 
-    private async Task<string?> GetCurrentOwnerKeyAsync(CancellationToken cancellationToken)
+    private async Task<IReadOnlyCollection<string>> GetCurrentOwnerKeysAsync(CancellationToken cancellationToken)
     {
         var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
-        return BuildOwnerKey(session?.User);
+        return BuildOwnerKeyAliases(session?.User);
+    }
+
+    private static IReadOnlyCollection<string> BuildOwnerKeyAliases(AuthUserDto? user)
+    {
+        if (user is null)
+        {
+            return [];
+        }
+
+        var ownerKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var primaryOwnerKey = BuildOwnerKey(user);
+        if (!string.IsNullOrWhiteSpace(primaryOwnerKey))
+        {
+            ownerKeys.Add(primaryOwnerKey);
+        }
+
+        var normalizedEmail = NormalizeEmail(user.Email);
+        if (!string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            ownerKeys.Add(EmailOwnerPrefix + normalizedEmail);
+        }
+
+        return ownerKeys;
     }
 
     private static void ApplyOwner(LessonHistoryItem item, AuthUserDto? user)
@@ -216,6 +274,12 @@ public class LessonHistoryService
 
         var itemOwnerKey = GetItemOwnerKey(item);
         return string.Equals(itemOwnerKey, ownerKey, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsVisibleForAnyOwner(LessonHistoryItem item, IReadOnlySet<string> ownerKeys)
+    {
+        var itemOwnerKey = GetItemOwnerKey(item);
+        return !string.IsNullOrWhiteSpace(itemOwnerKey) && ownerKeys.Contains(itemOwnerKey);
     }
 
     private static string? GetItemOwnerKey(LessonHistoryItem item)

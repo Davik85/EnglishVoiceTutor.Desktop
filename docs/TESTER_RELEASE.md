@@ -57,9 +57,9 @@ The server-ready direct-download folder can now be validated locally and dry-run
 
 ## Manual update check UI
 
-The desktop app now has a basic manual update section in Settings / Diagnostics. It shows the installed version, update channel, last checked time, status, latest version, and installer size. **Check for updates** fetches `https://languagevoicetutor.com/releases/windows/direct/latest.json`, validates that the manifest belongs to Language Voice Tutor Desktop for Windows x64, and compares tester versions with the same prerelease intent as the installer version policy.
+The desktop app now has a simple user-facing **Check for updates** button in normal Settings. It fetches `https://languagevoicetutor.com/releases/windows/direct/latest.json`, validates that the manifest belongs to Language Voice Tutor Desktop for Windows x64, and compares tester versions with the same prerelease intent as the installer version policy.
 
-If an update is available, **Download update** is enabled. The app downloads only after this explicit click, saves the installer under the current user's LocalAppData updates cache, verifies SHA-256 against `installerSha256`, and only then offers to open the installer or open the folder. Failed hash verification deletes the downloaded file and shows an error. The app does not run installers silently and does not perform automatic background updates. Testers should finish any active lesson before downloading or opening an installer; deeper active-lesson state integration from Settings remains a follow-up.
+If an update is available, the app asks before downloading and installing. The app saves the installer under the current user's LocalAppData updates cache, verifies SHA-256 against `installerSha256`, and only then asks whether to start the installer. Failed hash verification deletes the downloaded file and shows a friendly error. The app does not run installers silently and does not perform automatic background updates. Testers should finish any active lesson before starting an installer; deeper active-lesson state integration from Settings remains a follow-up.
 
 External tester handoff remains blocked until the clean-machine smoke checklist passes.
 
@@ -203,3 +203,10 @@ Installed-version checking is now part of the Windows installer foundation. This
 The future in-app update UI still needs to check `latest.json`, verify SHA-256 before running an installer, avoid updates during active lessons, and guide the user through download/install. Active-lesson detection is intentionally left to that future in-app UI because the standalone installer only knows whether the desktop executable is running, not whether a lesson is active.
 
 External tester handoff is still blocked until update/version-check verification and clean-machine smoke pass.
+
+
+## Current desktop update check
+
+A simple user-facing **Check for updates** button is available near the top of Settings. It is not Diagnostics-only and it does not expose a technical update dashboard. The check fetches the Windows direct-release `latest.json`, validates product name, app id, platform, and architecture, compares the installed version with the manifest version, and shows simple dialogs for up-to-date, update-available, newer-than-manifest, and connectivity/error cases.
+
+If an update is available, the app asks before downloading. After download, it verifies SHA-256 before offering to start the installer. The installer is launched normally only after user confirmation; no silent install switches are used and there is no background auto-update. Progress and Lesson History are account-scoped local data and must remain preserved across app restart, Windows restart, reinstall, and update. Clean-machine smoke is still required before external tester handoff.

@@ -68,10 +68,10 @@ if "var localItems = await lessonHistoryService.LoadVisibleCompletedLessonsForCu
 history_service = (ROOT / "Services" / "LessonHistoryService.cs").read_text(encoding="utf-8")
 if "if (string.IsNullOrWhiteSpace(ownerKey))" not in history_service or "return [];" not in history_service:
     errors.append("Current-session history must return empty when there is no authenticated owner.")
-if "includeLegacyOwnerlessRecords: false" not in history_service:
+if "IsVisibleForAnyOwner" not in history_service:
     errors.append("Signed-in current-session history must hide ownerless legacy records.")
-if "BuildOwnerKey(session?.User)" not in history_service:
-    errors.append("Progress and history must derive their visible source from the current auth session owner.")
+if "BuildOwnerKeyAliases(session?.User)" not in history_service:
+    errors.append("Progress and history must derive their visible source from the current auth session owner aliases.")
 
 if errors:
     for error in errors:

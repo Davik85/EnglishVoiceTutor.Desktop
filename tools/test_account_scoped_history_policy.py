@@ -16,6 +16,7 @@ for needle in ["OwnerUserId", "OwnerEmail", "OwnerKey"]:
 
 for needle in [
     "BuildOwnerKey",
+    "BuildOwnerKeyAliases",
     "UserIdOwnerPrefix",
     "EmailOwnerPrefix",
     "LoadVisibleCompletedLessonsForCurrentSessionAsync",
@@ -33,10 +34,10 @@ if "LoadRawItems()" not in history_service or "LoadCompletedLessons().ToList()" 
     raise SystemExit("Saving a new account-scoped record must preserve raw legacy/other-account records instead of rewriting only the visible scope.")
 
 if "LoadVisibleCompletedLessonsForCurrentSessionAsync(selectedLevel)" not in history_vm:
-    raise SystemExit("Lesson History view must read only current-session visible account-scoped local history on backend fallback.")
+    raise SystemExit("Lesson History view must read current-session visible account-scoped local history.")
 
-if "backendResult.Succeeded" not in history_vm or "ReplaceItems(MapBackendItems" not in history_vm:
-    raise SystemExit("Signed-in backend history success, including an empty response, must replace visible history instead of falling back to local data.")
+if "localItems.Count > 0" not in history_vm or "backendResult.Succeeded" not in history_vm:
+    raise SystemExit("Existing local current-account history must remain visible, with backend history used only when local history has no visible records.")
 
 if "LoadVisibleCompletedLessonsForCurrentSessionAsync()" not in settings_vm:
     raise SystemExit("Progress must use the same current-session visible account-scoped history source.")
