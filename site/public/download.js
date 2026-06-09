@@ -1,5 +1,5 @@
 const manifestUrl = "/releases/windows/direct/latest.json";
-const fallbackInstallerUrl = "/releases/windows/direct/LanguageVoiceTutorSetup-0.1.13-tester.1.exe";
+const releaseBaseUrl = "/releases/windows/direct/";
 
 const elements = {
     currentVersion: document.getElementById("current-version"),
@@ -7,15 +7,34 @@ const elements = {
     manifestStatus: document.getElementById("manifest-status"),
     detailVersion: document.getElementById("detail-version"),
     detailChannel: document.getElementById("detail-channel"),
+    detailInstaller: document.getElementById("detail-installer"),
     detailSize: document.getElementById("detail-size"),
     detailSha: document.getElementById("detail-sha"),
-    fallbackDownload: document.getElementById("fallback-download"),
 };
 
 function setText(element, value) {
     if (element) {
         element.textContent = value || "Unavailable";
     }
+}
+
+function setDownloadEnabled(isEnabled, installerUrl, installerFileName) {
+    if (!elements.downloadButton) {
+        return;
+    }
+
+    if (isEnabled) {
+        elements.downloadButton.href = installerUrl;
+        elements.downloadButton.download = installerFileName;
+        elements.downloadButton.setAttribute("aria-disabled", "false");
+        elements.downloadButton.classList.remove("is-disabled");
+        return;
+    }
+
+    elements.downloadButton.removeAttribute("href");
+    elements.downloadButton.removeAttribute("download");
+    elements.downloadButton.setAttribute("aria-disabled", "true");
+    elements.downloadButton.classList.add("is-disabled");
 }
 
 function formatBytes(bytes) {
@@ -39,48 +58,80 @@ function formatBytes(bytes) {
     return `${value.toFixed(1)} ${units[unitIndex]}`;
 }
 
-function getSafeInstallerUrl(installerRelativeUrl) {
+function normalizeInstallerRelativeUrl(installerRelativeUrl) {
     if (typeof installerRelativeUrl !== "string") {
-        return fallbackInstallerUrl;
+        throw new Error("Manifest is missing installerRelativeUrl.");
     }
 
     const trimmedUrl = installerRelativeUrl.trim();
-    if (!trimmedUrl.startsWith("/releases/windows/direct/") || !trimmedUrl.endsWith(".exe")) {
-        return fallbackInstallerUrl;
+    if (!/^LanguageVoiceTutorSetup-[A-Za-z0-9._-]+\.exe$/.test(trimmedUrl)) {
+        throw new Error("Manifest installerRelativeUrl is not a safe installer filename.");
     }
 
     return trimmedUrl;
 }
 
-function applyManifest(manifest) {
-    const installerUrl = getSafeInstallerUrl(manifest.installerRelativeUrl);
-    const version = manifest.version || "Unavailable";
-    const channel = manifest.channel || "Unavailable";
-    const installerSize = Number(manifest.installerSizeBytes);
-    const sha256 = manifest.installerSha256 || "Unavailable";
+function validateManifest(manifest) {
+    if (!manifest || typeof manifest !== "object") {
+        throw new Error("Manifest is not valid JSON data.");
+    }
 
-    elements.downloadButton.href = installerUrl;
-    setText(elements.currentVersion, version);
-    setText(elements.detailVersion, version);
-    setText(elements.detailChannel, channel);
-    setText(elements.detailSize, formatBytes(installerSize));
-    setText(elements.detailSha, sha256);
-    setText(elements.manifestStatus, "Release manifest loaded.");
+    if (typeof manifest.version !== "string" || manifest.version.trim() === "") {
+        throw new Error("Manifest is missing version.");
+    }
+
+    const installerRelativeUrl = normalizeInstallerRelativeUrl(manifest.installerRelativeUrl);
+    const installerFileName = typeof manifest.installerFileName === "string" && manifest.installerFileName.trim() !== ""
+        ? manifest.installerFileName.trim()
+        : installerRelativeUrl;
+
+    if (installerFileName !== installerRelativeUrl) {
+        throw new Error("Manifest installer filename does not match installerRelativeUrl.");
+    }
+
+    if (!installerFileName.includes(manifest.version.trim())) {
+        throw new Error("Manifest installer filename does not match the displayed version.");
+    }
+
+    return {
+        version: manifest.version.trim(),
+        channel: manifest.channel || "Unavailable",
+        installerFileName,
+        installerUrl: `${releaseBaseUrl}${installerRelativeUrl}`,
+        installerSizeBytes: Number(manifest.installerSizeBytes),
+        installerSha256: manifest.installerSha256 || "Unavailable",
+    };
 }
 
-function applyManifestFailure() {
-    elements.downloadButton.href = fallbackInstallerUrl;
-    setText(elements.currentVersion, "Unavailable");
-    setText(elements.manifestStatus, "Release manifest could not be loaded. The fallback download link is available below.");
+function applyManifest(manifest) {
+    const release = validateManifest(manifest);
 
-    if (elements.fallbackDownload) {
-        elements.fallbackDownload.hidden = false;
-    }
+    setDownloadEnabled(true, release.installerUrl, release.installerFileName);
+    setText(elements.currentVersion, release.version);
+    setText(elements.detailVersion, release.version);
+    setText(elements.detailChannel, release.channel);
+    setText(elements.detailInstaller, release.installerFileName);
+    setText(elements.detailSize, formatBytes(release.installerSizeBytes));
+    setText(elements.detailSha, release.installerSha256);
+    setText(elements.manifestStatus, "Release manifest loaded. The download link matches the current version shown above.");
+}
+
+function applyManifestFailure(message) {
+    setDownloadEnabled(false);
+    setText(elements.currentVersion, "Unavailable");
+    setText(elements.detailVersion, "Unavailable");
+    setText(elements.detailChannel, "Unavailable");
+    setText(elements.detailInstaller, "Unavailable");
+    setText(elements.detailSize, "Unavailable");
+    setText(elements.detailSha, "Unavailable");
+    setText(elements.manifestStatus, message);
 }
 
 async function loadManifest() {
+    setDownloadEnabled(false);
+
     try {
-        const response = await fetch(manifestUrl, { cache: "no-store" });
+        const response = await fetch(`${manifestUrl}?t=${Date.now()}`, { cache: "no-store" });
         if (!response.ok) {
             throw new Error(`Manifest request failed with ${response.status}`);
         }
@@ -88,9 +139,22 @@ async function loadManifest() {
         const manifest = await response.json();
         applyManifest(manifest);
     }
-    catch {
-        applyManifestFailure();
+    catch (error) {
+        const isValidationError = error instanceof Error
+            && error.message.startsWith("Manifest")
+            && !error.message.includes("request failed");
+        applyManifestFailure(
+            isValidationError
+                ? "Release manifest is invalid. Please try again later."
+                : "Could not load the latest release manifest. Please try again later."
+        );
     }
 }
+
+elements.downloadButton?.addEventListener("click", (event) => {
+    if (elements.downloadButton.getAttribute("aria-disabled") === "true" || !elements.downloadButton.href) {
+        event.preventDefault();
+    }
+});
 
 loadManifest();

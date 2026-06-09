@@ -17,7 +17,7 @@
 
             <div class="download-panel" aria-label="Windows download">
                 <p class="version-line">Current version: <strong id="current-version">Loading...</strong></p>
-                <a id="download-button" class="download-button" href="/releases/windows/direct/LanguageVoiceTutorSetup-0.1.13-tester.1.exe">Download for Windows</a>
+                <a id="download-button" class="download-button is-disabled" aria-disabled="true">Download for Windows</a>
                 <p id="manifest-status" class="status-note" role="status">Loading release details...</p>
                 <p class="warning-note">Windows may show a SmartScreen warning because code signing is deferred.</p>
             </div>
@@ -35,6 +35,10 @@
                     <dd id="detail-channel">Unavailable</dd>
                 </div>
                 <div>
+                    <dt>Installer</dt>
+                    <dd id="detail-installer">Unavailable</dd>
+                </div>
+                <div>
                     <dt>Installer size</dt>
                     <dd id="detail-size">Unavailable</dd>
                 </div>
@@ -43,10 +47,6 @@
                     <dd id="detail-sha">Unavailable</dd>
                 </div>
             </dl>
-            <p id="fallback-download" class="fallback-note" hidden>
-                Release manifest loading failed. Use this fallback direct link:
-                <a href="/releases/windows/direct/LanguageVoiceTutorSetup-0.1.13-tester.1.exe">LanguageVoiceTutorSetup-0.1.13-tester.1.exe</a>
-            </p>
         </section>
 
         <section class="support-card" aria-label="Support">
@@ -54,6 +54,6 @@
         </section>
     </main>
 
-    <script src="download.js" defer></script>
+    <script src="download.js?v=20260609-manifest-download" defer></script>
 </body>
 </html>

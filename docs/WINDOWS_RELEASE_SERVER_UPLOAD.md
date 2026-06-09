@@ -140,12 +140,13 @@ If `sha256sum` is unavailable on the server, use the server's equivalent checksu
 After DNS, HTTPS, and static serving are configured separately, verify the public URLs from a client machine:
 
 ```powershell
-Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/latest.json" -OutFile "$env:TEMP\latest.json"
-Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/LanguageVoiceTutorSetup-0.1.17-tester.1.exe" -OutFile "$env:TEMP\LanguageVoiceTutorSetup-0.1.17-tester.1.exe"
+$manifest = Invoke-RestMethod -Uri "https://example.com/releases/windows/direct/latest.json?t=$(Get-Date -Format yyyyMMddHHmmss)"
+$installerName = $manifest.installerFileName
+Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/$($manifest.installerRelativeUrl)" -OutFile "$env:TEMP\$installerName"
 Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/changelog.json" -OutFile "$env:TEMP\changelog.json"
 Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/known-issues.json" -OutFile "$env:TEMP\known-issues.json"
 Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/checksums.sha256" -OutFile "$env:TEMP\checksums.sha256"
-Get-FileHash -Path "$env:TEMP\LanguageVoiceTutorSetup-0.1.17-tester.1.exe" -Algorithm SHA256
+Get-FileHash -Path "$env:TEMP\$installerName" -Algorithm SHA256
 ```
 
 Compare the downloaded installer hash with `checksums.sha256` and the `installerSha256` value in `latest.json`.
@@ -164,7 +165,7 @@ Compare the downloaded installer hash with `checksums.sha256` and the `installer
 
 A basic public download page foundation is now prepared under `site/public/`. The page is static and uses plain HTML, CSS, and JavaScript only. It reads `latest.json` from the existing Windows direct release folder at `/releases/windows/direct/latest.json` and uses `installerRelativeUrl` from that manifest for the primary Windows download button.
 
-This tester page does not implement auto-update and complements the in-app manual update check, and does not change the Windows direct release files under `/releases/windows/direct`. It is only a tester download page for invited testers. The page includes the private tester status, release details when the manifest loads, a fallback link to the current tester installer if manifest loading fails, the SmartScreen/code-signing-deferred warning, and the support email address.
+This tester page does not implement auto-update and complements the in-app manual update check, and does not change the Windows direct release files under `/releases/windows/direct`. It is only a tester download page for invited testers. The page includes the private tester status, release details when the manifest loads, the manifest installer filename as a visible mismatch check, the SmartScreen/code-signing-deferred warning, and the support email address. The page must not hardcode old installer filenames; if `latest.json` cannot be loaded or is invalid, the button must remain disabled instead of serving a fallback installer. After every Windows release upload, verify both the displayed version and the actual downloaded filename from the public page.
 
 Use `scripts/upload-static-site.ps1` only to copy files from `site/public/` to the remote static website folder. The helper prints a summary, supports `-DryRun`, and must not be used for backend deployment or Windows release-file upload. Continue using the Windows direct-release upload helper only for release artifacts.
 

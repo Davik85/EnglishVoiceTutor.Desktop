@@ -122,6 +122,14 @@ h2 {
     background: var(--accent-dark);
 }
 
+.download-button.is-disabled,
+.download-button[aria-disabled="true"] {
+    cursor: not-allowed;
+    background: #8b958f;
+    color: #f4f4f4;
+    pointer-events: none;
+}
+
 .status-note {
     margin-bottom: 0;
     background: #eee7db;
