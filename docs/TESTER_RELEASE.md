@@ -1,6 +1,11 @@
 # Tester release workflow
 
 
+
+## Current blocker status as of 2026-06-09
+
+External tester handoff is still blocked. The backend is deployed at `https://api.languagevoicetutor.com`, PostgreSQL is healthy, the static tester download page is deployed at `https://languagevoicetutor.com`, and password reset/change flows are working. The remaining blockers are production/server CMS/Admin verification and the update/version-check system. During CMS/Admin verification, static JSON remains the default runtime source unless the published snapshot flag is intentionally enabled. Public release is not ready. The update UI/system is not implemented yet; version reinstallation/update checks are a planned next step after CMS/Admin verification.
+
 ## Current approval status
 
 Version `0.1.8-tester.1` passed the basic internal end-to-end smoke test against the real production-like server setup. This confirms internal smoke readiness only. Tester handoff is **not approved yet**, and Language Voice Tutor is not publicly released.
@@ -11,11 +16,11 @@ Confirmed in the internal smoke test: app start, registration, trial entitlement
 
 External tester handoff remains blocked by:
 
-1. Password recovery / password reset flow.
-2. Password change flow for signed-in users.
-3. CMS/Admin content flow connected and verified on the server.
-4. Basic public download website/page where testers can download the installer.
-5. Basic update system / update UI so testers can update from inside the app or through a clear guided flow.
+1. CMS/Admin content flow connected and verified on the server.
+2. Basic update system / update UI with installed-version checks so testers can update from inside the app or through a clear guided flow.
+3. Clean-machine tester release smoke and controlled tester checklist completion.
+
+Password reset/change flows and the static tester download page are working, but public release is still not ready.
 
 ## Minimum tester handoff checklist
 
@@ -26,6 +31,7 @@ Before the first controlled external tester receives Language Voice Tutor, confi
 - CMS/Admin content flow is connected and verified on the server.
 - Public tester download page exists and points to the correct Windows installer.
 - Basic update system / update UI exists and gives testers a clear manual update path.
+- Installed-version checks handle same-version reinstall confirmation, older-version update, newer-version warning/block or explicit confirmation, and never auto-update during an active lesson.
 - Clean-machine tester release smoke passes for install, launch, registration/login/session restore, trial entitlement, lesson start, normal chat, Conversation Mode, TTS, translation, feedback, hints, lesson history, active/restored session behavior, update guidance, and uninstall/upgrade expectations.
 - Generated files under `artifacts/` are not committed.
 - No passwords, API keys, tokens, private keys, provider credentials, private environment values, or personal credentials are committed or included in release docs.
@@ -38,7 +44,7 @@ Local development builds default to `http://localhost:5000`. The primary Inno te
 
 Existing installed-user settings are handled conservatively: empty Backend URL values use the current build default, saved legacy `http://localhost:5000` values migrate to `https://api.languagevoicetutor.com` only in tester/release builds where that is the build default, and custom values are preserved.
 
-The backend remains the source of truth. The desktop must not store OpenAI API keys and must not call OpenAI directly. Production billing remains deferred, public release is not approved, and external tester handoff remains blocked until password recovery/change, server-connected CMS verification, a public download page, update UI/system, clean-machine install, and the controlled tester checklist pass.
+The backend remains the source of truth. The desktop must not store OpenAI API keys and must not call OpenAI directly. Production billing remains deferred, public release is not approved, and external tester handoff remains blocked until server-connected CMS/Admin verification and update UI/system with installed-version checks, clean-machine install, and the controlled tester checklist pass.
 
 The recommended Windows tester handoff is now the Inno Setup installer documented in [`docs/WINDOWS_INSTALLER_RELEASE_FLOW.md`](WINDOWS_INSTALLER_RELEASE_FLOW.md), after the installer smoke checklist passes.
 
@@ -46,7 +52,7 @@ The older ZIP package created by `scripts/package-tester-release.ps1` remains av
 
 Velopack is deprecated/rejected for this project. Its Windows installer is a one-click flow and does not match the desired release-like installer UX with destination-directory selection. External testers should not receive Velopack packages.
 
-The server-ready direct-download folder can now be validated locally and dry-run uploaded with the manual helper documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). Server upload is prepared but not executed automatically, and it does not deploy the backend, create the download website, or add update UI. External tester handoff remains blocked until password recovery/change, server-connected CMS verification, a basic public download page, update UI/system, clean-machine install, and the controlled tester checklist pass.
+The server-ready direct-download folder can now be validated locally and dry-run uploaded with the manual helper documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). Server upload is prepared but not executed automatically, and it does not deploy the backend, create the download website, or add update UI. External tester handoff remains blocked until server-connected CMS/Admin verification, update UI/system with installed-version checks, clean-machine install, and the controlled tester checklist pass.
 
 ## What the tester release is
 
@@ -151,7 +157,7 @@ The desktop app does not contain an OpenAI API key, must not call OpenAI directl
 
 Password recovery/reset and signed-in password change are implemented for the desktop Account settings flow and backend API. Password reset email delivery requires SMTP settings on the server in `/etc/languagevoicetutor/backend.env`; real SMTP credentials must never be committed. The intended production sender is `support@languagevoicetutor.com`.
 
-Tester handoff is not ready yet. Remaining blockers are CMS server verification, a basic public download page, a basic update UI/system, clean-machine smoke, and final checklist completion.
+Tester handoff is not ready yet. Remaining blockers are CMS/Admin server verification, update UI/system with installed-version checks, clean-machine smoke, and final checklist completion.
 
 ## Account password flow note (2026-06-08)
 
@@ -159,7 +165,7 @@ The Account screen password reset/change flow is being polished for tester readi
 
 SMTP credentials for password reset email delivery remain server-only in `/etc/languagevoicetutor/backend.env`; no secrets are committed. Backend deployment packaging/upload now avoids Windows backslash ZIP entries for the Linux backend package and verifies the deployed backend executable bit before reporting success.
 
-External tester handoff is still blocked until CMS server verification, a basic public download page, update UI/system, clean-machine smoke, and checklist completion.
+External tester handoff is still blocked until CMS/Admin server verification, update UI/system with installed-version checks, clean-machine smoke, and checklist completion.
 
 ## Static tester download page foundation
 

@@ -1,7 +1,23 @@
 # Next Steps
 
-Review date: 2026-06-08.
+Review date: 2026-06-09.
 
+## Immediate priority: production/server CMS/Admin verification
+
+The current step is CMS/Admin server verification against `https://api.languagevoicetutor.com`. Password reset/change flows are working, PostgreSQL is healthy, and the static tester download page is deployed at `https://languagevoicetutor.com`, but external tester handoff remains blocked until CMS/Admin verification and the update/version-check system are complete. Public release is still not ready.
+
+Use `docs/CMS_ADMIN_SERVER_VERIFICATION.md` as the runbook. Keep static JSON as the default runtime source with `CmsContent__UsePublishedSnapshotForRuntime=false` unless the published CMS snapshot has been explicitly validated and the runtime switch is intentionally enabled. No EF migration is expected for this verification step unless `dotnet ef migrations has-pending-model-changes` reports a real model change.
+
+## Update/version-check system planned after CMS verification
+
+Before implementing update UI/system, implement installed-version checking rules:
+
+- same installed version: ask the user to confirm reinstall;
+- older installed version: allow the guided update flow;
+- newer installed version: warn and block, or demand explicit confirmation before continuing;
+- never auto-update during an active lesson.
+
+The current app displays its version but does not implement update checking, update UI, or automatic update behavior yet.
 
 ## After latest Admin CMS Content step
 
@@ -15,7 +31,7 @@ CMS draft-save audit logging is implemented for successful Admin CMS Save draft 
 
 ## Desktop backend profile checkpoint
 
-Local desktop development keeps the default Backend URL `http://localhost:5000`. Inno tester/release packages default to `https://api.languagevoicetutor.com` through `scripts/package-windows-inno-release.ps1`, which passes `DesktopBackendBaseUrl` to `dotnet publish` and prints the selected Backend URL. Existing saved localhost settings may migrate to the deployed API only in tester/release builds where that deployed API is the build default; custom values must remain untouched. Confirm the generated `latest.json` non-secret `backendBaseUrl` with `scripts/validate-windows-direct-release.ps1` before handoff. Backend APIs remain server-side source of truth, the desktop must never contain OpenAI keys, production billing remains deferred, and public release/external tester handoff are not ready until password recovery/change, server-connected CMS verification, a public download page, update UI/system, clean-machine install, and the controlled tester checklist pass.
+Local desktop development keeps the default Backend URL `http://localhost:5000`. Inno tester/release packages default to `https://api.languagevoicetutor.com` through `scripts/package-windows-inno-release.ps1`, which passes `DesktopBackendBaseUrl` to `dotnet publish` and prints the selected Backend URL. Existing saved localhost settings may migrate to the deployed API only in tester/release builds where that deployed API is the build default; custom values must remain untouched. Confirm the generated `latest.json` non-secret `backendBaseUrl` with `scripts/validate-windows-direct-release.ps1` before handoff. Backend APIs remain server-side source of truth, the desktop must never contain OpenAI keys, production billing remains deferred, and public release/external tester handoff are not ready until server-connected CMS/Admin verification and update UI/system with installed-version checks, clean-machine install, and the controlled tester checklist pass.
 
 ## Recommended next product order
 
@@ -30,7 +46,7 @@ Do not propose or start new product features before the readiness blockers below
 3. Connect and verify CMS/Admin content flow on the server.
    - Verify the server-connected CMS/Admin content workflow end to end.
    - Confirm draft, publish, runtime published-snapshot selection, fallback behavior, and audit expectations on the server before tester handoff.
-4. Build a basic public download website/page for testers.
+4. Verify the already-deployed static tester download page points at the intended installer during final handoff smoke.
    - Provide a simple public page for the Language Voice Tutor Windows installer.
    - Keep static release hosting separate from backend API hosting.
    - Do not commit generated installer artifacts from `artifacts/`.
@@ -86,7 +102,7 @@ Do not propose or start new product features before the readiness blockers below
 
 - No production Paddle rollout during server setup/test deployment preparation.
 - No production billing enablement from documentation alone.
-- No production CMS/Admin readiness yet: production RBAC and approval workflow are not implemented, although development/admin-only CMS draft-save audit logging now exists.
+- No production CMS/Admin readiness yet: production RBAC and approval workflow are not implemented, although bootstrap-admin CMS draft-save audit logging now exists.
 - No code-side dialogue/prompt quality polishing; use CMS/Admin content workflows for future prompt/scenario/bot-behavior polishing.
 - No mobile app-store bridge work before the desktop and billing gates are ready.
 - No expansion of Study languages.
@@ -105,7 +121,7 @@ Do not propose or start new product features before the readiness blockers below
 - Set up a domain email/provider later before enabling password reset delivery. Password reset remains disabled/not exposed as a working tester flow until that setup exists.
 
 
-Implemented CMS draft-save audit logging details: successful Topic, Scenario (bounded fields, structured scenario fields, and full scenario JSON), Prompt Template, and Tutor Behavior Profile Save draft operations write `DraftSaved` rows to `cms_content_audit_logs`. Rows capture audit id, `createdAtUtc`, actor user id, actor email when available, content pack id and slug, entity type, entity id, stable key (`stableTopicKey`, `stableScenarioKey`, `templateKey`, or `tutorId`), changed field names, before/after SHA-256 hashes, source `AdminCms`, status, and request id when available. Audit rows intentionally do not store full before/after JSON snapshots, prompt/tutor source text snapshots, passwords, tokens, provider secrets, OpenAI API keys, Paddle API keys/webhook secrets, or admin bearer tokens. Large edited values are represented by hashes. No-op Save draft requests avoid noisy draft-save audit rows. Admins can read recent CMS audit entries through development/admin-only audit endpoints and the CMS Content Audit subtab. Runtime learner behavior is unchanged: CMS read path remains disabled by default and static JSON fallback remains available. Production RBAC and critical-change approval remain future work.
+Implemented CMS draft-save audit logging details: successful Topic, Scenario (bounded fields, structured scenario fields, and full scenario JSON), Prompt Template, and Tutor Behavior Profile Save draft operations write `DraftSaved` rows to `cms_content_audit_logs`. Rows capture audit id, `createdAtUtc`, actor user id, actor email when available, content pack id and slug, entity type, entity id, stable key (`stableTopicKey`, `stableScenarioKey`, `templateKey`, or `tutorId`), changed field names, before/after SHA-256 hashes, source `AdminCms`, status, and request id when available. Audit rows intentionally do not store full before/after JSON snapshots, prompt/tutor source text snapshots, passwords, tokens, provider secrets, OpenAI API keys, Paddle API keys/webhook secrets, or admin bearer tokens. Large edited values are represented by hashes. No-op Save draft requests avoid noisy draft-save audit rows. Admins can read recent CMS audit entries through bootstrap-admin-protected audit endpoints and the CMS Content Audit subtab. Runtime learner behavior is unchanged: CMS read path remains disabled by default and static JSON fallback remains available. Production RBAC and critical-change approval remain future work.
 
 Step 5D-6e scenario editor usability refinement update: the Admin CMS Scenarios subtab now includes a safer structured editor for common scenario content (title/subtopic, description, setup message, first bot message guidance, context option titles, valid context keywords, custom context rules, invalid context redirect, goal text, can-do statements, opening/first-user-task/follow-up guidance, AI tutor instructions, wrap-up/final message guidance, hint example, and wrap/final turn counters), with compact local **Jump to** navigation, collapsible/visually separated Basic fields, Lesson setup, Context selection / choices, Conversation flow / response guidance, Wrap-up / summary guidance, and Advanced JSON sections, and concise helper text for normal content editors. `DefinitionJson` remains the canonical stored scenario definition; no per-field scenario database columns or EF migration were added. Structured edits parse the current `DefinitionJson`, update only known JSON paths, and write the merged valid JSON back to `DefinitionJson`, preserving unknown fields and advanced configuration in place. Structured fields remain the recommended normal editing path. Advanced JSON remains available as a visually separated technical fallback with `Format JSON` and `Validate JSON` for rare full-JSON changes. Save draft remains explicit and draft-only; invalid Advanced JSON or invalid structured numeric/required data is rejected before saving, and backend scenario validation still rejects invalid JSON, missing required fields, or accidental stable id/title/setup mismatches. CMS draft-save audit logging still records successful scenario saves with changed field names and before/after hashes without storing full scenario JSON bodies. Runtime learner behavior remains unchanged by default: the CMS read path is still disabled unless explicitly enabled, and static JSON fallback remains available.
 
@@ -130,14 +146,14 @@ Before external tester handoff, keep re-verifying the disabled-by-default CMS ru
 - Password recovery/reset and signed-in password change are implemented for backend and desktop and should be included in the next internal smoke.
 - Configure password reset delivery on the server by adding SMTP settings to `/etc/languagevoicetutor/backend.env`; do not commit SMTP credentials or other secrets. Use `support@languagevoicetutor.com` as the production sender identity.
 - Verify on the production backend that a registered user can request a reset, receive the code, reset the password, log in with the new password, and fail login with the old password. Verify signed-in Change password the same way.
-- External tester handoff remains blocked until CMS server verification, basic public download page, basic update UI/system, clean-machine smoke, and checklist completion are finished.
+- External tester handoff remains blocked until CMS/Admin server verification, update UI/system with installed-version checks, clean-machine smoke, and checklist completion are finished.
 
 ## Account recovery/change tester-readiness follow-up (2026-06-08)
 
 - Verify password reset email delivery on the production server with SMTP values stored only in `/etc/languagevoicetutor/backend.env`; do not commit or paste real SMTP credentials into docs, logs, or release notes.
 - Smoke test login failure, wrong-current-password change, short-password validation, reset-code failure, and successful reset/change against `https://api.languagevoicetutor.com` before external tester handoff.
 - Confirm the hardened backend upload script leaves `/opt/languagevoicetutor/backend/releases/<version>/EnglishVoiceTutor.Api` executable and fails loudly if it cannot.
-- External tester handoff remains blocked until CMS server verification, a basic public download page, update UI/system, clean-machine smoke, and checklist completion.
+- External tester handoff remains blocked until CMS/Admin server verification, update UI/system with installed-version checks, clean-machine smoke, and checklist completion.
 
 ## Static tester download page follow-up
 
