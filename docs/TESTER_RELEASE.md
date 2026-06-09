@@ -2,15 +2,15 @@
 
 ## Current blocker status as of 2026-06-09
 
-Desktop authenticated session persistence is now part of the tester-readiness foundation. The desktop does not store raw passwords; token/session data is stored under the current user app-data folder with Windows DPAPI protection. Logout clears persisted auth session data. Reinstall/update should preserve user app data and session storage. Same-version installer reinstall confirmation remains in place. This is still not the future in-app update UI; future update UI still needs the `latest.json` check, SHA-256 verification, and active-lesson-safe update flow. External tester handoff remains blocked until persisted-session verification, update UI/system, and clean-machine smoke pass.
+Desktop authenticated session persistence is now part of the tester-readiness foundation. The desktop does not store raw passwords; token/session data is stored under the current user app-data folder with Windows DPAPI protection. Logout clears persisted auth session data. Reinstall/update should preserve user app data and session storage. Same-version installer reinstall confirmation remains in place. The basic manual in-app update UI now checks `latest.json`, validates the manifest, verifies SHA-256 before offering to open the installer/folder, and does not silently auto-update. External tester handoff remains blocked until persisted-session verification and clean-machine smoke pass.
 
-External tester handoff is still blocked. The backend is deployed at `https://api.languagevoicetutor.com`, PostgreSQL is healthy, the static tester download page is deployed at `https://languagevoicetutor.com`, and password reset/change flows are working. The remaining blockers are production/server CMS/Admin verification and the update/version-check system. During CMS/Admin verification, static JSON remains the default runtime source unless the published snapshot flag is intentionally enabled. Public release is not ready. The update UI/system is not implemented yet; the Windows installer now has installed-version checks, but those checks still need package/clean-machine verification before tester handoff. The next Windows installer package should use `0.1.16-tester.1` unless release conventions intentionally select a different SemVer-compatible tester version.
+External tester handoff is still blocked. The backend is deployed at `https://api.languagevoicetutor.com`, PostgreSQL is healthy, the static tester download page is deployed at `https://languagevoicetutor.com`, and password reset/change flows are working. The remaining blockers are production/server CMS/Admin verification and clean-machine update/version-check verification. During CMS/Admin verification, static JSON remains the default runtime source unless the published snapshot flag is intentionally enabled. Public release is not ready. The basic manual update UI/system is implemented; the Windows installer has installed-version checks, and both still need package/clean-machine verification before tester handoff. The next Windows installer package should use `0.1.17-tester.1` unless release conventions intentionally select a different SemVer-compatible tester version.
 
 ## Current approval status
 
-Version `0.1.8-tester.1` passed the basic internal end-to-end smoke test against the real production-like server setup. This confirms internal smoke readiness only. Tester handoff is **not approved yet**, and Language Voice Tutor is not publicly released.
+Version `0.1.17-tester.1` passed the basic internal end-to-end smoke test against the real production-like server setup. This confirms internal smoke readiness only. Tester handoff is **not approved yet**, and Language Voice Tutor is not publicly released.
 
-Confirmed in the internal smoke test: app start, registration, trial entitlement, lesson start, normal lesson chat, Conversation Mode, TTS in normal chat and Conversation Mode, translation, feedback, hints, lesson history saving, active/restored session behavior after closing and reopening, backend reachability at `https://api.languagevoicetutor.com`, healthy backend health endpoint, healthy database health endpoint, applied PostgreSQL migrations, working static Windows direct release hosting, available production-domain `latest.json` for `0.1.8-tester.1`, and generated/validated/uploaded Windows installer release files verified on the server.
+Confirmed in the internal smoke test: app start, registration, trial entitlement, lesson start, normal lesson chat, Conversation Mode, TTS in normal chat and Conversation Mode, translation, feedback, hints, lesson history saving, active/restored session behavior after closing and reopening, backend reachability at `https://api.languagevoicetutor.com`, healthy backend health endpoint, healthy database health endpoint, applied PostgreSQL migrations, working static Windows direct release hosting, available production-domain `latest.json` for `0.1.17-tester.1`, and generated/validated/uploaded Windows installer release files verified on the server.
 
 ## Tester handoff blockers
 
@@ -44,7 +44,7 @@ Local development builds default to `http://localhost:5000`. The primary Inno te
 
 Existing installed-user settings are handled conservatively: empty Backend URL values use the current build default, saved legacy `http://localhost:5000` values migrate to `https://api.languagevoicetutor.com` only in tester/release builds where that is the build default, and custom values are preserved.
 
-The backend remains the source of truth. The desktop must not store OpenAI API keys and must not call OpenAI directly. Production billing remains deferred, public release is not approved, and external tester handoff remains blocked until server-connected CMS/Admin verification and update UI/system plus installed-version check verification, clean-machine install, and the controlled tester checklist pass.
+The backend remains the source of truth. The desktop must not store OpenAI API keys and must not call OpenAI directly. Production billing remains deferred, public release is not approved, and external tester handoff remains blocked until server-connected CMS/Admin verification and manual update UI verification, clean-machine install, and the controlled tester checklist pass.
 
 The recommended Windows tester handoff is now the Inno Setup installer documented in [`docs/WINDOWS_INSTALLER_RELEASE_FLOW.md`](WINDOWS_INSTALLER_RELEASE_FLOW.md), after the installer smoke checklist passes.
 
@@ -52,7 +52,16 @@ The older ZIP package created by `scripts/package-tester-release.ps1` remains av
 
 Velopack is deprecated/rejected for this project. Its Windows installer is a one-click flow and does not match the desired release-like installer UX with destination-directory selection. External testers should not receive Velopack packages.
 
-The server-ready direct-download folder can now be validated locally and dry-run uploaded with the manual helper documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). Server upload is prepared but not executed automatically, and it does not deploy the backend, create the download website, or add update UI. External tester handoff remains blocked until server-connected CMS/Admin verification, update UI/system plus installed-version check verification, clean-machine install, and the controlled tester checklist pass.
+The server-ready direct-download folder can now be validated locally and dry-run uploaded with the manual helper documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). Server upload is prepared but not executed automatically, and it does not deploy the backend, create the download website, or add automatic update service. External tester handoff remains blocked until server-connected CMS/Admin verification, manual update UI verification, clean-machine install, and the controlled tester checklist pass.
+
+
+## Manual update check UI
+
+The desktop app now has a basic manual update section in Settings / Diagnostics. It shows the installed version, update channel, last checked time, status, latest version, and installer size. **Check for updates** fetches `https://languagevoicetutor.com/releases/windows/direct/latest.json`, validates that the manifest belongs to Language Voice Tutor Desktop for Windows x64, and compares tester versions with the same prerelease intent as the installer version policy.
+
+If an update is available, **Download update** is enabled. The app downloads only after this explicit click, saves the installer under the current user's LocalAppData updates cache, verifies SHA-256 against `installerSha256`, and only then offers to open the installer or open the folder. Failed hash verification deletes the downloaded file and shows an error. The app does not run installers silently and does not perform automatic background updates. Testers should finish any active lesson before downloading or opening an installer; deeper active-lesson state integration from Settings remains a follow-up.
+
+External tester handoff remains blocked until the clean-machine smoke checklist passes.
 
 ## What the tester release is
 
@@ -72,7 +81,7 @@ This tester release is **not**:
 - an MSIX package;
 - Microsoft Store packaging;
 - a code-signed public release;
-- an auto-update system or update-check UI;
+- an automatic updater or background update service; the app has a basic manual Settings update check UI, but it does not auto-update;
 - a backend deployment;
 - proof that external tester handoff is approved;
 - proof that public release is ready;
@@ -113,7 +122,7 @@ artifacts\releases\windows\direct\known-issues.json
 artifacts\releases\windows\direct\checksums.sha256
 ```
 
-`latest.json` for `0.1.8-tester.1` is available from the production domain and the server-side release files were verified. The manifest is still for a future download page and future in-app update-check only. The current app does not check this manifest automatically. Future update UI must require manual confirmation and must not run during an active lesson.
+`latest.json` for `0.1.17-tester.1` is available from the production domain and the server-side release files were verified. The manifest is still for a future download page and future in-app update-check only. The current app does not check this manifest automatically. Future update UI must require manual confirmation and must not run during an active lesson.
 
 ## Emergency/developer ZIP fallback
 
@@ -157,7 +166,7 @@ The desktop app does not contain an OpenAI API key, must not call OpenAI directl
 
 Password recovery/reset and signed-in password change are implemented for the desktop Account settings flow and backend API. Password reset email delivery requires SMTP settings on the server in `/etc/languagevoicetutor/backend.env`; real SMTP credentials must never be committed. The intended production sender is `support@languagevoicetutor.com`.
 
-Tester handoff is not ready yet. Remaining blockers are CMS/Admin server verification, update UI/system plus installed-version check verification, clean-machine smoke, and final checklist completion.
+Tester handoff is not ready yet. Remaining blockers are CMS/Admin server verification, manual update UI verification and clean-machine smoke, and final checklist completion.
 
 ## Account password flow note (2026-06-08)
 
@@ -165,15 +174,15 @@ The Account screen password reset/change flow is being polished for tester readi
 
 SMTP credentials for password reset email delivery remain server-only in `/etc/languagevoicetutor/backend.env`; no secrets are committed. Backend deployment packaging/upload now avoids Windows backslash ZIP entries for the Linux backend package and verifies the deployed backend executable bit before reporting success.
 
-External tester handoff is still blocked until CMS/Admin server verification, update UI/system plus installed-version check verification, clean-machine smoke, and checklist completion.
+External tester handoff is still blocked until CMS/Admin server verification, manual update UI verification and clean-machine smoke, and checklist completion.
 
 ## Static tester download page foundation
 
 A basic public download page foundation is now prepared under `site/public/`. The page is static and reads `latest.json` from the existing Windows direct release folder at `/releases/windows/direct/latest.json`. It uses the manifest `installerRelativeUrl` value for the primary **Download for Windows** button and shows release details when manifest loading succeeds.
 
-This page does not implement auto-update and does not replace the future update UI. It is only a tester download page for invited testers, with a fallback direct installer link if the manifest cannot be loaded. It must not include login, payment, pricing, account management, analytics, cookies, third-party fonts, external dependencies, or marketing claims.
+This page does not implement auto-update and complements the in-app manual update UI. It is only a tester download page for invited testers, with a fallback direct installer link if the manifest cannot be loaded. It must not include login, payment, pricing, account management, analytics, cookies, third-party fonts, external dependencies, or marketing claims.
 
-External tester handoff is still blocked until the update UI/system and the clean-machine smoke checklist pass. Treat the page as a handoff foundation only, not as final tester-readiness approval.
+External tester handoff is still blocked until the manual update UI verification and the clean-machine smoke checklist pass. Treat the page as a handoff foundation only, not as final tester-readiness approval.
 
 ## CMS/Admin initialization gate for tester release
 

@@ -109,10 +109,10 @@ def main() -> int:
     assert_contains(docs, "does not store raw passwords", "raw password docs")
     assert_contains(docs, "Desktop authenticated session persistence is now part of the tester-readiness foundation", "tester-readiness docs")
     assert_contains(docs, "Same-version installer reinstall confirmation remains in place", "same-version reinstall docs")
-    assert_contains(docs, "This is still not the future in-app update UI", "future update UI separation docs")
+    assert_contains(docs, "basic manual in-app update UI now checks `latest.json`", "manual update UI docs")
     assert_contains(docs, "latest.json", "future latest.json docs")
     assert_contains(docs, "SHA-256", "future SHA-256 docs")
-    assert_contains(docs, "active-lesson-safe update flow", "active lesson safe update docs")
+    assert_contains(docs, "does not silently auto-update", "no silent auto-update docs")
     assert_contains(docs, "External tester handoff remains blocked", "external handoff blocker docs")
 
     print("Desktop auth session persistence policy checks passed.")

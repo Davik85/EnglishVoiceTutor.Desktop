@@ -2,20 +2,20 @@
 
 This document describes the safe, optional foundation for copying the already generated Windows direct-download release files to a future HTTPS static server folder.
 
-The primary Windows installer track is the Inno Setup installer. ZIP packages remain only an emergency/developer fallback. This upload foundation does not deploy the backend, does not create the download website, does not implement update UI, does not make the app public-release ready, and does not sign the installer. Code signing is still deferred.
+The primary Windows installer track is the Inno Setup installer. ZIP packages remain only an emergency/developer fallback. This upload foundation does not deploy the backend, does not create the download website, is consumed by the basic manual desktop update UI, does not make the app public-release ready, and does not sign the installer. Code signing is still deferred.
 
-## Current v0.1.8-tester.1 hosting validation
+## Current v0.1.17-tester.1 hosting validation
 
-Static Windows direct release hosting has been validated for `0.1.8-tester.1`. The Windows installer was generated, validated, uploaded, and the server-side release files were verified. `latest.json` for `0.1.8-tester.1` is available from the production domain.
+Static Windows direct release hosting has been validated for `0.1.17-tester.1`. The Windows installer was generated, validated, uploaded, and the server-side release files were verified. `latest.json` for `0.1.17-tester.1` is available from the production domain.
 
-This is hosting validation only. It does not create a tester download website/page, does not implement update UI/system, does not sign the installer, and does not approve external tester handoff. Code signing remains deferred. The current app still does not automatically check `latest.json`.
+This is hosting validation only. The desktop app now has a basic manual Settings update check UI that reads this `latest.json`, but hosting validation does not sign the installer and does not approve external tester handoff. Code signing remains deferred. The app still does not automatically check `latest.json` in the background and does not auto-update.
 
 
 Backend API deployment is documented separately in [`BACKEND_SERVER_DEPLOYMENT.md`](BACKEND_SERVER_DEPLOYMENT.md). Keep the static Windows direct-download files on `languagevoicetutor.com` separate from the future backend API reverse proxy on `api.languagevoicetutor.com`.
 
 ## Purpose
 
-Desktop authenticated session persistence is now part of the tester-readiness foundation. The desktop does not store raw passwords; token/session data is stored under the current user app-data folder with Windows DPAPI protection. Logout clears persisted auth session data. Reinstall/update should preserve user app data and session storage. Same-version installer reinstall confirmation remains in place. This is still not the future in-app update UI; future update UI still needs the `latest.json` check, SHA-256 verification, and active-lesson-safe update flow. External tester handoff remains blocked until persisted-session verification, update UI/system, and clean-machine smoke pass.
+Desktop authenticated session persistence is now part of the tester-readiness foundation. The desktop does not store raw passwords; token/session data is stored under the current user app-data folder with Windows DPAPI protection. Logout clears persisted auth session data. Reinstall/update should preserve user app data and session storage. Same-version installer reinstall confirmation remains in place. The basic in-app manual update UI now reads `latest.json`, validates the manifest identity, compares installed versus latest tester versions, downloads only by explicit user action, verifies SHA-256 before offering to open the installer or folder, and does not perform silent auto-update. Testers should not update during an active lesson; deeper active-lesson integration remains follow-up. External tester handoff remains blocked until persisted-session verification and clean-machine smoke pass.
 
 The Inno release script creates a server-ready release folder that can later be mirrored to a static HTTPS location. The folder is intended to hold the installer and small release metadata files for a future download page and future manual-confirmation update-check flow.
 
@@ -70,7 +70,7 @@ These are path expectations only. This task does not configure nginx, another we
 Build the Inno release first on a Windows machine with Inno Setup installed:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.16-tester.1
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.17-tester.1
 ```
 
 Then validate the generated direct-release folder:
@@ -141,11 +141,11 @@ After DNS, HTTPS, and static serving are configured separately, verify the publi
 
 ```powershell
 Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/latest.json" -OutFile "$env:TEMP\latest.json"
-Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/LanguageVoiceTutorSetup-0.1.16-tester.1.exe" -OutFile "$env:TEMP\LanguageVoiceTutorSetup-0.1.16-tester.1.exe"
+Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/LanguageVoiceTutorSetup-0.1.17-tester.1.exe" -OutFile "$env:TEMP\LanguageVoiceTutorSetup-0.1.17-tester.1.exe"
 Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/changelog.json" -OutFile "$env:TEMP\changelog.json"
 Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/known-issues.json" -OutFile "$env:TEMP\known-issues.json"
 Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/checksums.sha256" -OutFile "$env:TEMP\checksums.sha256"
-Get-FileHash -Path "$env:TEMP\LanguageVoiceTutorSetup-0.1.16-tester.1.exe" -Algorithm SHA256
+Get-FileHash -Path "$env:TEMP\LanguageVoiceTutorSetup-0.1.17-tester.1.exe" -Algorithm SHA256
 ```
 
 Compare the downloaded installer hash with `checksums.sha256` and the `installerSha256` value in `latest.json`.
@@ -157,29 +157,29 @@ Compare the downloaded installer hash with `checksums.sha256` and the `installer
 - Use SSH keys or secure authentication managed outside the repository.
 - Verify checksums after upload and again over HTTPS before sharing links.
 - Keep backend deployment as a separate later step.
-- Keep update UI as a separate later step. Any future update UI must require manual confirmation, use the Inno installer, and avoid update prompts during active lessons.
-- External tester handoff remains blocked until password recovery/change, server-connected CMS verification, a basic public download page, update UI/system, clean-machine install, and the controlled tester checklist all pass.
+- Keep the implemented update UI manual: require explicit check/download/open actions, use the Inno installer, verify SHA-256, and avoid update/install activity during active lessons.
+- External tester handoff remains blocked until clean-machine install and the controlled tester checklist pass.
 
 ## Static tester download page foundation
 
 A basic public download page foundation is now prepared under `site/public/`. The page is static and uses plain HTML, CSS, and JavaScript only. It reads `latest.json` from the existing Windows direct release folder at `/releases/windows/direct/latest.json` and uses `installerRelativeUrl` from that manifest for the primary Windows download button.
 
-This tester page does not implement auto-update, does not replace the future update UI, and does not change the Windows direct release files under `/releases/windows/direct`. It is only a tester download page for invited testers. The page includes the private tester status, release details when the manifest loads, a fallback link to the current tester installer if manifest loading fails, the SmartScreen/code-signing-deferred warning, and the support email address.
+This tester page does not implement auto-update and complements the in-app manual update UI, and does not change the Windows direct release files under `/releases/windows/direct`. It is only a tester download page for invited testers. The page includes the private tester status, release details when the manifest loads, a fallback link to the current tester installer if manifest loading fails, the SmartScreen/code-signing-deferred warning, and the support email address.
 
 Use `scripts/upload-static-site.ps1` only to copy files from `site/public/` to the remote static website folder. The helper prints a summary, supports `-DryRun`, and must not be used for backend deployment or Windows release-file upload. Continue using the Windows direct-release upload helper only for release artifacts.
 
-External tester handoff is still blocked until the update UI/system and the clean-machine smoke checklist pass. This static page does not make the desktop app public-release ready and does not approve external tester handoff.
+External tester handoff is still blocked until the manual update UI verification and the clean-machine smoke checklist pass. This static page does not make the desktop app public-release ready and does not approve external tester handoff.
 
 
 ## Windows installer installed-version check foundation
 
-Installed-version checking is now part of the Windows installer foundation. The Inno Setup installer keeps the same `LanguageVoiceTutor.Desktop` AppId and reads the installed Language Voice Tutor version from the standard Inno uninstall registry entry before continuing. The next tester installer package should be built as `0.1.16-tester.1` unless release conventions intentionally choose a different SemVer-compatible tester version.
+Installed-version checking is now part of the Windows installer foundation. The Inno Setup installer keeps the same `LanguageVoiceTutor.Desktop` AppId and reads the installed Language Voice Tutor version from the standard Inno uninstall registry entry before continuing. The next tester installer package should be built as `0.1.17-tester.1` unless release conventions intentionally choose a different SemVer-compatible tester version.
 
 - Same-version install asks for reinstall confirmation with the message: "Language Voice Tutor version <version> is already installed. Do you want to reinstall the same version?" The installer continues only when the user confirms.
 - Older installed version is treated as an update. The installer shows a clear update message and then continues through the normal installer flow.
 - Newer installed version warns and blocks by default. The installer warns that installing the older package may downgrade the app, then exits without making changes.
 - If Language Voice Tutor is running, the installer uses Inno Setup close-application handling for `EnglishVoiceTutor.Desktop.exe`; it must not silently install over a running app.
 
-This is not the future in-app update UI. The future update UI still needs to check `latest.json`, verify the installer SHA-256, avoid updates during active lessons, and guide the user through download/install with explicit confirmation. Active-lesson detection belongs in that future in-app update UI because the installer cannot safely inspect lesson state; installer behavior remains conservative and relies on closing the app before files are replaced.
+The basic in-app update UI now checks `latest.json` manually, verifies installer SHA-256, and guides the user through download/open actions with explicit confirmation. It is not a silent updater or background service. Active-lesson detection is documented in the UI as a safety rule; deeper Settings-level blocking remains future work because the installer cannot safely inspect lesson state and Settings does not currently expose active lesson state.
 
-External tester handoff is still blocked until update/version-check verification and clean-machine smoke pass.
+External tester handoff is still blocked until clean-machine smoke passes.
