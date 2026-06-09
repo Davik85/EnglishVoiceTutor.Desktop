@@ -178,9 +178,9 @@ External tester handoff is still blocked until CMS/Admin server verification, ma
 
 ## Static tester download page foundation
 
-A basic public download page foundation is now prepared under `site/public/`. The page is static and reads `latest.json` from the existing Windows direct release folder at `/releases/windows/direct/latest.json`. It uses the manifest `installerRelativeUrl` value for the primary **Download for Windows** button and shows release details when manifest loading succeeds.
+A basic public download page foundation is now prepared under `site/public/`. The page is static and reads `latest.json` from the existing Windows direct release folder at `/releases/windows/direct/latest.json`. It uses the manifest `installerRelativeUrl` value for the primary **Download for Windows** button, displays the manifest `version`, and shows the manifest `installerFileName` in release details when manifest loading succeeds.
 
-This page does not implement auto-update and complements the in-app manual update UI. It is only a tester download page for invited testers, with a fallback direct installer link if the manifest cannot be loaded. It must not include login, payment, pricing, account management, analytics, cookies, third-party fonts, external dependencies, or marketing claims.
+This page does not implement auto-update and complements the in-app manual update UI. It is only a tester download page for invited testers. If the manifest cannot be loaded or is invalid, the page must keep the download button disabled instead of using a hardcoded installer fallback. The page must not hardcode old installer filenames, and after every Windows release upload the displayed version and actual downloaded filename must both be verified. It must not include login, payment, pricing, account management, analytics, cookies, third-party fonts, external dependencies, or marketing claims.
 
 External tester handoff is still blocked until the manual update UI verification and the clean-machine smoke checklist pass. Treat the page as a handoff foundation only, not as final tester-readiness approval.
 

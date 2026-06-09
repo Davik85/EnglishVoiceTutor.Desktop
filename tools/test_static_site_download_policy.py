@@ -11,6 +11,8 @@ INDEX = SITE_PUBLIC / "index.html"
 DOWNLOAD_JS = SITE_PUBLIC / "download.js"
 STYLES = SITE_PUBLIC / "styles.css"
 UPLOAD_SCRIPT = ROOT / "scripts" / "upload-static-site.ps1"
+OLD_INSTALLER_VERSION_PATTERN = re.compile(r"0\.1\.(?:13|16|17|18)")
+INSTALLER_EXE_PATTERN = re.compile(r'LanguageVoiceTutorSetup-[^\s"\'<>]+\.exe')
 
 SENSITIVE_ASSIGNMENT_PATTERNS = [
     re.compile(r"(?i)(api[_-]?key|secret|password|passwd|pwd|token)\s*[:=]\s*['\"][^'\"]+['\"]"),
@@ -36,6 +38,19 @@ def assert_no_sensitive_values(path: pathlib.Path) -> None:
             raise AssertionError(f"Potential sensitive value found in {path.relative_to(ROOT)}: {match.group(0)}")
 
 
+def assert_no_hardcoded_installer_fallback(path: pathlib.Path) -> None:
+    text = read(path)
+    if OLD_INSTALLER_VERSION_PATTERN.search(text):
+        raise AssertionError(f"Old tester installer version is hardcoded in {path.relative_to(ROOT)}")
+
+    for match in INSTALLER_EXE_PATTERN.finditer(text):
+        matched_text = match.group(0)
+        before = text[max(0, match.start() - 80):match.start()]
+        if "A-Za-z0-9._-" in matched_text or "installerFileName" in before or "installerRelativeUrl" in before:
+            continue
+        raise AssertionError(f"Hardcoded installer executable fallback in {path.relative_to(ROOT)}: {matched_text}")
+
+
 def main() -> int:
     for path in [INDEX, DOWNLOAD_JS, STYLES, UPLOAD_SCRIPT]:
         if not path.exists():
@@ -46,12 +61,24 @@ def main() -> int:
     upload_script = read(UPLOAD_SCRIPT)
 
     assert_contains(index, 'href="styles.css"', "stylesheet reference")
-    assert_contains(index, 'src="download.js"', "download script reference")
+    assert_contains(index, 'src="download.js?v=', "cache-busted download script reference")
+    assert_contains(index, 'id="detail-installer"', "manifest installer filename display")
+    assert_contains(index, 'aria-disabled="true"', "initial disabled download button")
     assert_contains(download_js, '"/releases/windows/direct/latest.json"', "release manifest URL")
     assert_contains(download_js, "installerRelativeUrl", "installerRelativeUrl usage")
+    assert_contains(download_js, "installerFileName", "installerFileName usage")
+    assert_contains(download_js, "Date.now()", "latest.json cache busting")
+    assert_contains(download_js, 'removeAttribute("href")', "disabled button removes href")
+    assert_contains(download_js, "setDownloadEnabled(false)", "download disabled before manifest load")
+    assert_contains(download_js, "`${releaseBaseUrl}${installerRelativeUrl}`", "download href built from manifest installerRelativeUrl")
+    assert_contains(download_js, "Could not load the latest release manifest. Please try again later.", "friendly manifest load failure")
+    assert_contains(download_js, "Release manifest is invalid. Please try again later.", "safe invalid manifest failure")
     assert_contains(upload_script, "[switch]$DryRun", "DryRun switch")
     assert_contains(upload_script, "site\\public", "static site source folder")
     assert_contains(upload_script, "Release files: not touched. Backend deployment: not touched.", "deployment scope guard")
+
+    for path in [INDEX, DOWNLOAD_JS]:
+        assert_no_hardcoded_installer_fallback(path)
 
     for path in [*SITE_PUBLIC.iterdir(), UPLOAD_SCRIPT]:
         if path.is_file():
