@@ -36,7 +36,7 @@ if "RefreshLearningStatisticsAsync" not in settings_vm or "lessonHistoryService.
 if "TotalCompletedLessonsText = lessonHistory.Count.ToString();" not in settings_vm:
     errors.append("Progress total must be derived from the completed lesson history collection count.")
 
-if "includeLegacyOwnerlessRecords: false" not in history_service:
+if "IsVisibleForAnyOwner" not in history_service:
     errors.append("Signed-in current-session history must hide legacy ownerless local records.")
 
 if "return [];" not in history_service:

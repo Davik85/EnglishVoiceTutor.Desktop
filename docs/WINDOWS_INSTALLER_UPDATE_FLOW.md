@@ -24,7 +24,7 @@ No automatic update UX is implemented yet. The packaging script generates `artif
 
 ## Direct-download manifest files
 
-`latest.json` is intentionally simple and future update-check friendly. It describes the Language Voice Tutor Windows x64 direct-tester installer with a relative installer URL, SHA-256 checksum, file size, `manual-confirmation` update mode, and notes that code signing and update UI are deferred. The same folder also contains `changelog.json`, `known-issues.json`, and `checksums.sha256`. These files are generated artifacts under `artifacts\` and must not be committed.
+`latest.json` is intentionally simple and future update-check friendly. It describes the Language Voice Tutor Windows x64 direct-tester installer with a relative installer URL, SHA-256 checksum, file size, `manual-confirmation` update mode, and notes that code signing is deferred and the desktop uses a manual-confirmation update flow. The same folder also contains `changelog.json`, `known-issues.json`, and `checksums.sha256`. These files are generated artifacts under `artifacts\` and must not be committed.
 
 ## Uninstall behavior
 

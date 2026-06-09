@@ -57,15 +57,15 @@ public partial class LessonHistoryViewModel : ViewModelBase
         _ = backendLessonHistoryClient;
         _ = backendBaseUrl;
 
-        var backendResult = await backendLessonHistoryClient.GetHistoryAsync(backendBaseUrl);
-        if (backendResult.Succeeded)
+        var localItems = await lessonHistoryService.LoadVisibleCompletedLessonsForCurrentSessionAsync(selectedLevel);
+        if (localItems.Count > 0)
         {
-            ReplaceItems(MapBackendItems(backendResult.Items, selectedLevel));
+            ReplaceItems(localItems);
             return;
         }
 
-        var localItems = await lessonHistoryService.LoadVisibleCompletedLessonsForCurrentSessionAsync(selectedLevel);
-        ReplaceItems(localItems);
+        var backendResult = await backendLessonHistoryClient.GetHistoryAsync(backendBaseUrl);
+        ReplaceItems(backendResult.Succeeded ? MapBackendItems(backendResult.Items, selectedLevel) : localItems);
     }
 
 

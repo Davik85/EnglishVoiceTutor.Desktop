@@ -2,7 +2,7 @@
 
 ## Manual update UI status
 
-Basic manual update check UI is implemented in desktop Settings / Diagnostics. It reads the Windows direct-release `latest.json`, validates the Language Voice Tutor Windows x64 manifest identity, compares installed and latest tester versions, and downloads only after explicit user action. Downloaded installers are saved to a user-writable updates cache and must pass SHA-256 verification before the UI offers to open the installer or its folder. The app does not provide silent auto-update or a background updater, and testers should not update during an active lesson.
+A simple manual update check is implemented in normal desktop Settings. It reads the Windows direct-release `latest.json`, validates the Language Voice Tutor Windows x64 manifest identity, compares installed and latest tester versions, asks before downloading/installing, verifies SHA-256 before offering to start the installer, and does not silently auto-update.
 
 Follow-up before external tester handoff: run a clean-machine smoke test of the installer, update check, manual download, hash verification, session persistence, lessons/history/progress, and no silent install behavior. External tester handoff remains blocked until that passes.
 
@@ -41,7 +41,7 @@ CMS draft-save audit logging is implemented for successful Admin CMS Save draft 
 
 ## Desktop backend profile checkpoint
 
-Local desktop development keeps the default Backend URL `http://localhost:5000`. Inno tester/release packages default to `https://api.languagevoicetutor.com` through `scripts/package-windows-inno-release.ps1`, which passes `DesktopBackendBaseUrl` to `dotnet publish` and prints the selected Backend URL. Existing saved localhost settings may migrate to the deployed API only in tester/release builds where that deployed API is the build default; custom values must remain untouched. Confirm the generated `latest.json` non-secret `backendBaseUrl` with `scripts/validate-windows-direct-release.ps1` before handoff. Backend APIs remain server-side source of truth, the desktop must never contain OpenAI keys, production billing remains deferred, and public release/external tester handoff are not ready until server-connected CMS/Admin verification and manual update UI verification, clean-machine install, and the controlled tester checklist pass.
+Local desktop development keeps the default Backend URL `http://localhost:5000`. Inno tester/release packages default to `https://api.languagevoicetutor.com` through `scripts/package-windows-inno-release.ps1`, which passes `DesktopBackendBaseUrl` to `dotnet publish` and prints the selected Backend URL. Existing saved localhost settings may migrate to the deployed API only in tester/release builds where that deployed API is the build default; custom values must remain untouched. Confirm the generated `latest.json` non-secret `backendBaseUrl` with `scripts/validate-windows-direct-release.ps1` before handoff. Backend APIs remain server-side source of truth, the desktop must never contain OpenAI keys, production billing remains deferred, and public release/external tester handoff are not ready until server-connected CMS/Admin verification and manual update check verification, clean-machine install, and the controlled tester checklist pass.
 
 ## Recommended next product order
 
@@ -120,13 +120,13 @@ Do not propose or start new product features before the readiness blockers below
 - No narrowing of the Native/Explanation language catalog.
 - No lesson JSON rewrite.
 - No public release declaration yet.
-- No automatic update-check or auto-updater exists. The basic manual update UI reads the direct-download `latest.json` manifest only after user action, requires manual confirmation, verifies SHA-256, and must not interrupt active lessons. Clean-machine manual update UI verification remains required before external tester handoff.
+- No automatic update-check or auto-updater exists. The simple manual update check reads the direct-download `latest.json` manifest only after user action, requires manual confirmation, verifies SHA-256 before starting the installer, and must not interrupt active lessons. Clean-machine manual update check verification remains required before external tester handoff.
 
 ## After accepted Welcome screen and Lesson Chat sizing hardening
 
 - Treat Welcome screen polish and Lesson Chat window auto-sizing as done for the current desktop hardening phase.
 - CMS/Admin content MVP is advanced enough to pause feature work for server setup and test deployment preparation.
-- Continue next with password recovery/reset, signed-in password change, server-connected CMS verification, a public download page, manual update UI verification, clean-machine tester smoke, and only then controlled tester handoff; keep production billing deferred and public release not ready.
+- Continue next with password recovery/reset, signed-in password change, server-connected CMS verification, a public download page, manual update check verification, clean-machine tester smoke, and only then controlled tester handoff; keep production billing deferred and public release not ready.
 - Keep production billing/Paddle rollout work deferred during server setup/test deployment preparation.
 - Set up a domain email/provider later before enabling password reset delivery. Password reset remains disabled/not exposed as a working tester flow until that setup exists.
 
@@ -156,25 +156,25 @@ Before external tester handoff, keep re-verifying the disabled-by-default CMS ru
 - Password recovery/reset and signed-in password change are implemented for backend and desktop and should be included in the next internal smoke.
 - Configure password reset delivery on the server by adding SMTP settings to `/etc/languagevoicetutor/backend.env`; do not commit SMTP credentials or other secrets. Use `support@languagevoicetutor.com` as the production sender identity.
 - Verify on the production backend that a registered user can request a reset, receive the code, reset the password, log in with the new password, and fail login with the old password. Verify signed-in Change password the same way.
-- External tester handoff remains blocked until CMS/Admin server verification, manual update UI verification and clean-machine smoke, and checklist completion are finished.
+- External tester handoff remains blocked until CMS/Admin server verification, manual update check verification and clean-machine smoke, and checklist completion are finished.
 
 ## Account recovery/change tester-readiness follow-up (2026-06-08)
 
 - Verify password reset email delivery on the production server with SMTP values stored only in `/etc/languagevoicetutor/backend.env`; do not commit or paste real SMTP credentials into docs, logs, or release notes.
 - Smoke test login failure, wrong-current-password change, short-password validation, reset-code failure, and successful reset/change against `https://api.languagevoicetutor.com` before external tester handoff.
 - Confirm the hardened backend upload script leaves `/opt/languagevoicetutor/backend/releases/<version>/EnglishVoiceTutor.Api` executable and fails loudly if it cannot.
-- External tester handoff remains blocked until CMS/Admin server verification, manual update UI verification and clean-machine smoke, and checklist completion.
+- External tester handoff remains blocked until CMS/Admin server verification, manual update check verification and clean-machine smoke, and checklist completion.
 
 ## Static tester download page follow-up
 
 A basic public download page foundation is now prepared under `site/public/`. The page is static and reads `latest.json` from the existing Windows direct release folder at `/releases/windows/direct/latest.json`; it does not implement auto-update and complements the in-app manual update UI. It is only a tester download page for invited testers.
 
-Before external tester handoff, deploy the static page only after reviewing `scripts/upload-static-site.ps1` with `-DryRun`, verifying the public HTTPS page loads the manifest, and confirming the fallback link remains available if the manifest request fails. External tester handoff is still blocked until the manual update UI verification and the clean-machine smoke checklist pass.
+Before external tester handoff, deploy the static page only after reviewing `scripts/upload-static-site.ps1` with `-DryRun`, verifying the public HTTPS page loads the manifest, and confirming the fallback link remains available if the manifest request fails. External tester handoff is still blocked until the manual update check verification and the clean-machine smoke checklist pass.
 ## CMS/Admin first-production initialization next step
 
 Before external tester handoff, verify the Admin CMS selected content pack `static-json-v1`. If the overview reports that the pack has not been initialized, sign in as a bootstrap admin and click **Initialize from static JSON** (or POST `/api/admin/dev/cms/content-packs/static-json-v1/initialize-from-static-json`). This admin-only step imports the current packaged static JSON content into CMS draft/admin storage where supported.
 
-The initialization action does not publish automatically and does not switch runtime. Keep `CmsContent__UsePublishedSnapshotForRuntime=false` until a separate publish/validation decision intentionally enables `CmsContent__UsePublishedSnapshotForRuntime=true`. Public release / external tester handoff remains blocked until this CMS/Admin initialization/verification, installed-version check verification, manual update UI verification, and clean-machine smoke are complete.
+The initialization action does not publish automatically and does not switch runtime. Keep `CmsContent__UsePublishedSnapshotForRuntime=false` until a separate publish/validation decision intentionally enables `CmsContent__UsePublishedSnapshotForRuntime=true`. Public release / external tester handoff remains blocked until this CMS/Admin initialization/verification, installed-version check verification, manual update check verification, and clean-machine smoke are complete.
 
 
 ## Windows installer version-check foundation status
@@ -189,3 +189,10 @@ Installed-version checking is now part of the Windows installer foundation. Befo
 This is not the future in-app update UI. Future update UI still needs to check `latest.json`, verify SHA-256, avoid updates during active lessons, and guide the user through download/install. Active-lesson detection belongs to that future in-app update UI because the installer can only conservatively handle a running executable.
 
 External tester handoff is still blocked until update/version-check verification and clean-machine smoke pass.
+
+
+## Update UX and history preservation follow-up
+
+The desktop now has a simple manual update check from normal Settings, not just Diagnostics. It validates `latest.json`, compares versions, asks before downloading/installing, verifies SHA-256 before starting the installer, and never performs a silent auto-update. Keep future update work within this manual-confirmation safety model unless a separate signed updater design is approved.
+
+Before external tester handoff, run a clean-machine smoke that confirms the account remains signed in and account-scoped Progress and Lesson History survive app restart, Windows restart, reinstall, and update. Ownerless legacy local records should stay hidden for signed-in users, and records from other accounts must stay hidden.

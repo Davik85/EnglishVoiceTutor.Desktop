@@ -192,31 +192,9 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string InstalledAppVersionText => $"Version: v{appVersionText}";
 
-    public string UpdateSectionTitle => "App updates";
-
-    public string UpdateSectionSubtitle => "Check manually for a newer Windows tester installer. Updates are never downloaded or installed automatically.";
-
-    public string UpdateCurrentVersionLabel => "Current version";
-
-    public string UpdateChannelLabel => "Update channel";
-
-    public string UpdateLastCheckedLabel => "Last checked";
-
-    public string UpdateStatusLabel => "Update status";
-
-    public string UpdateLatestVersionLabel => "Latest version";
-
-    public string UpdateInstallerSizeLabel => "Installer size";
-
-    public string UpdateManifestUrlText => UpdateManifestClient.LatestManifestUrl;
-
-    public string UpdateChannelText => UpdateVersionComparer.GetChannel(appVersionText);
-
-    public string UpdateLastCheckedText => LastUpdateCheckTime is null ? "Not checked yet" : LastUpdateCheckTime.Value.LocalDateTime.ToString("g");
-
-    public string UpdateSmartScreenNote => "Code signing is deferred for this tester build, so Windows SmartScreen may show a warning when you open the installer.";
-
-    public string UpdateActiveLessonNote => "Do not download or open an installer during an active lesson. Finish your lesson first, then return here.";
+    public string CheckForUpdatesButtonText => IsCheckingForUpdates || IsDownloadingUpdate
+        ? "Checking for updates..."
+        : "Check for updates";
 
     public string DiagnosticsBackendUrlText => SanitizeDiagnosticsValue(BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl));
 
@@ -371,40 +349,14 @@ public partial class SettingsViewModel : ViewModelBase
     private string diagnosticsCopyStatusText = string.Empty;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(UpdateLastCheckedText))]
-    private DateTimeOffset? lastUpdateCheckTime;
-
-    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CheckForUpdatesButtonText))]
     [NotifyCanExecuteChangedFor(nameof(CheckForUpdatesCommand))]
-    [NotifyCanExecuteChangedFor(nameof(DownloadUpdateCommand))]
-    [NotifyCanExecuteChangedFor(nameof(OpenDownloadedInstallerCommand))]
-    [NotifyCanExecuteChangedFor(nameof(OpenDownloadedInstallerFolderCommand))]
     private bool isCheckingForUpdates;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CheckForUpdatesButtonText))]
     [NotifyCanExecuteChangedFor(nameof(CheckForUpdatesCommand))]
-    [NotifyCanExecuteChangedFor(nameof(DownloadUpdateCommand))]
-    [NotifyCanExecuteChangedFor(nameof(OpenDownloadedInstallerCommand))]
-    [NotifyCanExecuteChangedFor(nameof(OpenDownloadedInstallerFolderCommand))]
     private bool isDownloadingUpdate;
-
-    [ObservableProperty]
-    private string updateStatusText = "Not checked yet.";
-
-    [ObservableProperty]
-    private string updateLatestVersionText = "—";
-
-    [ObservableProperty]
-    private string updateInstallerSizeText = "—";
-
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(DownloadUpdateCommand))]
-    private bool isUpdateAvailable;
-
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(OpenDownloadedInstallerCommand))]
-    [NotifyCanExecuteChangedFor(nameof(OpenDownloadedInstallerFolderCommand))]
-    private string verifiedInstallerPath = string.Empty;
 
     [ObservableProperty]
     private string email = string.Empty;
@@ -876,46 +828,47 @@ public partial class SettingsViewModel : ViewModelBase
     private async Task CheckForUpdatesAsync()
     {
         IsCheckingForUpdates = true;
-        UpdateStatusText = "Checking for updates...";
-        UpdateLatestVersionText = "—";
-        UpdateInstallerSizeText = "—";
-        IsUpdateAvailable = false;
-        VerifiedInstallerPath = string.Empty;
         latestUpdateManifest = null;
         latestInstallerUri = null;
 
         try
         {
             var result = await updateManifestClient.LoadLatestAsync();
-            LastUpdateCheckTime = DateTimeOffset.Now;
             if (!result.IsSuccess || result.ValidationResult?.Manifest is null || result.ValidationResult.InstallerUri is null)
             {
-                UpdateStatusText = string.IsNullOrWhiteSpace(result.ErrorMessage)
-                    ? "Could not check for updates right now. Please try again later."
-                    : result.ErrorMessage;
+                ShowUpdateMessage(
+                    "Could not check for updates right now. Please check your internet connection and try again.",
+                    MessageBoxImage.Information);
                 return;
             }
 
             latestUpdateManifest = result.ValidationResult.Manifest;
             latestInstallerUri = result.ValidationResult.InstallerUri;
-            UpdateLatestVersionText = latestUpdateManifest.Version;
-            UpdateInstallerSizeText = FormatFileSize(latestUpdateManifest.InstallerSizeBytes);
 
             var comparison = UpdateVersionComparer.Compare(appVersionText, latestUpdateManifest.Version);
-            if (comparison < 0)
-            {
-                IsUpdateAvailable = true;
-                UpdateStatusText = "Update available.";
-                return;
-            }
-
             if (comparison == 0)
             {
-                UpdateStatusText = "You are using the latest version.";
+                ShowUpdateMessage("You are using the latest version.", MessageBoxImage.Information);
                 return;
             }
 
-            UpdateStatusText = "This installed version is newer than the public update manifest. You can keep using this build unless your tester instructions say otherwise.";
+            if (comparison > 0)
+            {
+                ShowUpdateMessage("This app version is newer than the public update manifest.", MessageBoxImage.Warning);
+                return;
+            }
+
+            var downloadChoice = MessageBox.Show(
+                $"A new version of Language Voice Tutor is available. Do you want to download and install it now?\n\nCurrent version: {appVersionText}\nLatest version: {latestUpdateManifest.Version}",
+                "Update available",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+            if (downloadChoice != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            await DownloadVerifyAndMaybeRunUpdateAsync(latestUpdateManifest, latestInstallerUri);
         }
         finally
         {
@@ -923,32 +876,29 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanDownloadUpdate))]
-    private async Task DownloadUpdateAsync()
+    private async Task DownloadVerifyAndMaybeRunUpdateAsync(UpdateManifest manifest, Uri installerUri)
     {
-        if (latestUpdateManifest is null || latestInstallerUri is null)
-        {
-            UpdateStatusText = "Check for updates before downloading.";
-            return;
-        }
-
         IsDownloadingUpdate = true;
-        VerifiedInstallerPath = string.Empty;
-        UpdateStatusText = "Downloading update...";
-
         try
         {
-            var result = await updateDownloadService.DownloadAndVerifyAsync(latestUpdateManifest, latestInstallerUri);
-            if (!result.IsSuccess)
+            var result = await updateDownloadService.DownloadAndVerifyAsync(manifest, installerUri);
+            if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.FilePath))
             {
-                UpdateStatusText = string.IsNullOrWhiteSpace(result.ErrorMessage)
-                    ? "The update could not be downloaded or verified."
-                    : result.ErrorMessage;
+                ShowUpdateMessage(
+                    "The update could not be downloaded or verified. Please try again later.",
+                    MessageBoxImage.Warning);
                 return;
             }
 
-            VerifiedInstallerPath = result.FilePath;
-            UpdateStatusText = "Installer downloaded and verified. You can open the installer or open its folder when you are not in an active lesson.";
+            var installChoice = MessageBox.Show(
+                "The update was downloaded and verified. Do you want to start the installer now?",
+                "Start installer?",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+            if (installChoice == MessageBoxResult.Yes)
+            {
+                UpdateDownloadService.OpenInstaller(result.FilePath);
+            }
         }
         finally
         {
@@ -956,23 +906,12 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanOpenVerifiedInstaller))]
-    private void OpenDownloadedInstaller()
+    private static void ShowUpdateMessage(string message, MessageBoxImage icon)
     {
-        UpdateDownloadService.OpenInstaller(VerifiedInstallerPath);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanOpenVerifiedInstaller))]
-    private void OpenDownloadedInstallerFolder()
-    {
-        UpdateDownloadService.OpenContainingFolder(VerifiedInstallerPath);
+        MessageBox.Show(message, "App updates", MessageBoxButton.OK, icon);
     }
 
     private bool CanCheckForUpdates() => !IsCheckingForUpdates && !IsDownloadingUpdate;
-
-    private bool CanDownloadUpdate() => IsUpdateAvailable && !IsCheckingForUpdates && !IsDownloadingUpdate;
-
-    private bool CanOpenVerifiedInstaller() => !string.IsNullOrWhiteSpace(VerifiedInstallerPath) && !IsCheckingForUpdates && !IsDownloadingUpdate;
 
     [RelayCommand]
     private async Task CopyDiagnosticsAsync()
@@ -1345,10 +1284,7 @@ public partial class SettingsViewModel : ViewModelBase
         var report = new StringBuilder();
         report.AppendLine(DiagnosticsReportTitle);
         AppendDiagnosticsLine(report, DiagnosticsAppVersionLabel, AppVersionText);
-        AppendDiagnosticsLine(report, "Update manifest", UpdateManifestUrlText);
-        AppendDiagnosticsLine(report, "Update channel", UpdateChannelText);
-        AppendDiagnosticsLine(report, "Update last checked", UpdateLastCheckedText);
-        AppendDiagnosticsLine(report, "Update status", UpdateStatusText);
+        AppendDiagnosticsLine(report, "Update flow", "Manual confirmation");
         AppendDiagnosticsLine(report, DiagnosticsBackendUrlLabel, DiagnosticsBackendUrlText);
         AppendDiagnosticsLine(report, DiagnosticsBackendStatusLabel, DiagnosticsBackendStatusText);
         AppendDiagnosticsLine(report, DiagnosticsDatabaseStatusLabel, DiagnosticsDatabaseStatusText);

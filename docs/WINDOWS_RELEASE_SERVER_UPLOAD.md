@@ -15,7 +15,7 @@ Backend API deployment is documented separately in [`BACKEND_SERVER_DEPLOYMENT.m
 
 ## Purpose
 
-Desktop authenticated session persistence is now part of the tester-readiness foundation. The desktop does not store raw passwords; token/session data is stored under the current user app-data folder with Windows DPAPI protection. Logout clears persisted auth session data. Reinstall/update should preserve user app data and session storage. Same-version installer reinstall confirmation remains in place. The basic in-app manual update UI now reads `latest.json`, validates the manifest identity, compares installed versus latest tester versions, downloads only by explicit user action, verifies SHA-256 before offering to open the installer or folder, and does not perform silent auto-update. Testers should not update during an active lesson; deeper active-lesson integration remains follow-up. External tester handoff remains blocked until persisted-session verification and clean-machine smoke pass.
+Desktop authenticated session persistence is now part of the tester-readiness foundation. The desktop does not store raw passwords; token/session data is stored under the current user app-data folder with Windows DPAPI protection. Logout clears persisted auth session data. Reinstall/update should preserve user app data and session storage. Same-version installer reinstall confirmation remains in place. The basic in-app manual update check now reads `latest.json`, validates the manifest identity, compares installed versus latest tester versions, asks before downloading/installing, verifies SHA-256 before offering to start the installer, and does not perform silent auto-update. Testers should not update during an active lesson; deeper active-lesson integration remains follow-up. External tester handoff remains blocked until persisted-session verification and clean-machine smoke pass.
 
 The Inno release script creates a server-ready release folder that can later be mirrored to a static HTTPS location. The folder is intended to hold the installer and small release metadata files for a future download page and future manual-confirmation update-check flow.
 
@@ -164,7 +164,7 @@ Compare the downloaded installer hash with `checksums.sha256` and the `installer
 
 A basic public download page foundation is now prepared under `site/public/`. The page is static and uses plain HTML, CSS, and JavaScript only. It reads `latest.json` from the existing Windows direct release folder at `/releases/windows/direct/latest.json` and uses `installerRelativeUrl` from that manifest for the primary Windows download button.
 
-This tester page does not implement auto-update and complements the in-app manual update UI, and does not change the Windows direct release files under `/releases/windows/direct`. It is only a tester download page for invited testers. The page includes the private tester status, release details when the manifest loads, a fallback link to the current tester installer if manifest loading fails, the SmartScreen/code-signing-deferred warning, and the support email address.
+This tester page does not implement auto-update and complements the in-app manual update check, and does not change the Windows direct release files under `/releases/windows/direct`. It is only a tester download page for invited testers. The page includes the private tester status, release details when the manifest loads, a fallback link to the current tester installer if manifest loading fails, the SmartScreen/code-signing-deferred warning, and the support email address.
 
 Use `scripts/upload-static-site.ps1` only to copy files from `site/public/` to the remote static website folder. The helper prints a summary, supports `-DryRun`, and must not be used for backend deployment or Windows release-file upload. Continue using the Windows direct-release upload helper only for release artifacts.
 
@@ -183,3 +183,8 @@ Installed-version checking is now part of the Windows installer foundation. The 
 The basic in-app update UI now checks `latest.json` manually, verifies installer SHA-256, and guides the user through download/open actions with explicit confirmation. It is not a silent updater or background service. Active-lesson detection is documented in the UI as a safety rule; deeper Settings-level blocking remains future work because the installer cannot safely inspect lesson state and Settings does not currently expose active lesson state.
 
 External tester handoff is still blocked until clean-machine smoke passes.
+
+
+## Manifest and desktop update UX
+
+The Windows release manifest supports the desktop manual-confirmation update flow. The Settings **Check for updates** action fetches `latest.json`, validates the manifest identity, compares installed and latest versions, asks before downloading/installing, verifies SHA-256 before starting the installer, and does not silently auto-update. The update flow must preserve app data, persisted auth session storage, and account-scoped local Progress/Lesson History through reinstall/update. Clean-machine smoke remains required before external tester handoff.
