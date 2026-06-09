@@ -12,12 +12,15 @@ Use `docs/CMS_ADMIN_SERVER_VERIFICATION.md` as the runbook. Keep static JSON as 
 
 The Windows installer installed-version check foundation is now implemented before the future in-app update UI/system:
 
-- same installed version: asks the user to confirm reinstall;
-- older installed version: allows the guided installer update flow;
-- newer installed version: warns and blocks by default;
+- same installed version: ask the user to confirm reinstall;
+- older installed version: allow the guided update flow;
+- newer installed version: warn and block;
 - running app replacement is guarded by Inno Setup close-application behavior.
 
 The current app displays its version but does not implement update checking, update UI, or automatic update behavior yet. Future in-app update UI still must avoid prompting or installing during an active lesson.
+Future in-app update UI must never auto-update during an active lesson.
+
+Desktop authenticated session persistence is now part of the tester-readiness foundation. The desktop stores the existing access-token session under the user app-data folder with Windows DPAPI protection, does not store raw passwords, restores the cached identity on restart while validating with the backend when available, and clears persisted auth session data on logout. Reinstall/update should preserve user app data and session storage. Same-version installer reinstall confirmation remains in place. This is still not the future in-app update UI; future update UI still needs the `latest.json` check, SHA-256 verification, and active-lesson-safe update flow. External tester handoff remains blocked until persisted-session verification, update UI/system, and clean-machine smoke pass.
 
 ## After latest Admin CMS Content step
 
