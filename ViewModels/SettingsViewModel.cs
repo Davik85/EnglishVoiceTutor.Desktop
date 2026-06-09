@@ -83,6 +83,9 @@ public partial class SettingsViewModel : ViewModelBase
     private bool sessionRestoreAttempted;
     private bool isRefreshingAudioInputDevices;
     private bool isSelectedAudioInputDeviceUnavailable;
+    private string lastBackendErrorCategory = "none";
+    private HttpStatusCode? lastBackendStatusCode;
+    private string lastBackendHealthResult = "not checked";
 
     public string Title => localizedText.Title;
 
@@ -449,7 +452,7 @@ public partial class SettingsViewModel : ViewModelBase
         backendSettingsSpeechVoice = selectedSpeechVoiceOption.Id;
         userDisplayName = currentUserDisplayName;
         learningGoal = currentLearningGoal;
-        backendBaseUrl = currentBackendBaseUrl;
+        backendBaseUrl = BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(currentBackendBaseUrl);
         settingsFilePathText = settingsFilePath;
         lessonHistoryFilePathText = lessonHistoryFilePath;
         appVersionText = BuildAppVersionText();
@@ -723,6 +726,7 @@ public partial class SettingsViewModel : ViewModelBase
         try
         {
             sessionRestoreAttempted = true;
+            await RefreshBackendHealthDiagnosticsAsync();
             var session = await authBackendService.TryRestoreSessionAsync();
             if (session is null)
             {
@@ -771,7 +775,7 @@ public partial class SettingsViewModel : ViewModelBase
     private async Task SaveAsync()
     {
         SaveCurrentSettingsLocally();
-        BackendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl);
+        BackendBaseUrl = BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(BackendBaseUrl);
         StatusMessage = localizedText.SettingsSavedMessage;
         await SaveBackendUserSettingsAsync();
     }
@@ -934,6 +938,7 @@ public partial class SettingsViewModel : ViewModelBase
         SetDiagnosticStatuses(DiagnosticBackendStatus.Checking, DiagnosticDatabaseStatus.Checking, DiagnosticAiStatus.Checking);
 
         var diagnosticsResult = await backendDiagnosticsService.CheckAsync(BackendBaseUrl);
+        RecordHealthDiagnostics(diagnosticsResult);
         DatabaseProviderText = diagnosticsResult.DatabaseHealth?.Provider ?? string.Empty;
         DatabaseErrorText = diagnosticsResult.DatabaseError ?? string.Empty;
 
@@ -975,7 +980,9 @@ public partial class SettingsViewModel : ViewModelBase
 
     partial void OnBackendBaseUrlChanged(string value)
     {
-        authBackendService.SetBackendBaseUrl(value);
+        var effectiveBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(value);
+        authBackendService.SetBackendBaseUrl(effectiveBaseUrl);
+        OnPropertyChanged(nameof(DiagnosticsBackendUrlText));
     }
 
     partial void OnSelectedStudyLanguageChanged(StudyLanguageDefinition value)
@@ -1287,6 +1294,9 @@ public partial class SettingsViewModel : ViewModelBase
         AppendDiagnosticsLine(report, "Update flow", "Manual confirmation");
         AppendDiagnosticsLine(report, DiagnosticsBackendUrlLabel, DiagnosticsBackendUrlText);
         AppendDiagnosticsLine(report, DiagnosticsBackendStatusLabel, DiagnosticsBackendStatusText);
+        AppendDiagnosticsLine(report, "Backend health check", lastBackendHealthResult);
+        AppendDiagnosticsLine(report, "Last backend error category", lastBackendErrorCategory);
+        AppendDiagnosticsLine(report, "Last backend HTTP status", FormatBackendStatusCode(lastBackendStatusCode));
         AppendDiagnosticsLine(report, DiagnosticsDatabaseStatusLabel, DiagnosticsDatabaseStatusText);
         if (!string.IsNullOrWhiteSpace(DatabaseProviderText))
         {
@@ -1391,15 +1401,17 @@ public partial class SettingsViewModel : ViewModelBase
                     return;
                 }
 
+                RecordBackendFailure("settings", result.StatusCode);
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
-                StatusMessage = BackendUxText.SettingsLoadUnavailable;
+                StatusMessage = BuildSettingsLoadFailureMessage(result.StatusCode);
                 return;
             }
 
             if (result.Value is null)
             {
+                RecordBackendFailure("settings_empty_response", result.StatusCode);
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
-                StatusMessage = BackendUxText.SettingsLoadUnavailable;
+                StatusMessage = BuildSettingsLoadFailureMessage(result.StatusCode);
                 return;
             }
 
@@ -1410,8 +1422,9 @@ public partial class SettingsViewModel : ViewModelBase
         }
         catch
         {
+            RecordBackendFailure("settings_exception", null);
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
-            StatusMessage = BackendUxText.SettingsLoadUnavailable;
+            StatusMessage = BuildSettingsLoadFailureMessage(null);
         }
     }
 
@@ -1422,9 +1435,10 @@ public partial class SettingsViewModel : ViewModelBase
             var result = await backendUserSettingsClient.GetDevelopmentSettingsAsync(BackendBaseUrl);
             if (!result.IsSuccess || result.Value is null)
             {
+                RecordBackendFailure(result.Value is null ? "settings_empty_response" : "settings", result.StatusCode);
                 SettingsSource = LocalizeUiText(SettingsSourceDevelopmentText);
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
-                StatusMessage = BackendUxText.SettingsLoadUnavailable;
+                StatusMessage = BuildSettingsLoadFailureMessage(result.StatusCode);
                 return;
             }
 
@@ -1435,9 +1449,10 @@ public partial class SettingsViewModel : ViewModelBase
         }
         catch
         {
+            RecordBackendFailure("settings_exception", null);
             SettingsSource = LocalizeUiText(SettingsSourceDevelopmentText);
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
-            StatusMessage = BackendUxText.SettingsLoadUnavailable;
+            StatusMessage = BuildSettingsLoadFailureMessage(null);
         }
     }
 
@@ -1466,18 +1481,21 @@ public partial class SettingsViewModel : ViewModelBase
         try
         {
             var result = await authenticateAsync();
-            if (result.Status == AuthOperationResultStatus.BackendUnavailable)
+            if (result.Status != AuthOperationResultStatus.Success)
             {
-                ErrorMessage = BackendUxText.CouldNotConnect;
+                RecordBackendFailure(result.ErrorCategory, result.StatusCode);
+                ErrorMessage = BuildAuthFailureMessage(result, failureMessage);
                 return;
             }
 
             if (result.Response is null || result.Response.User is null)
             {
+                RecordBackendFailure("unexpected_response", result.StatusCode);
                 ErrorMessage = string.IsNullOrWhiteSpace(result.Message) ? failureMessage : result.Message;
                 return;
             }
 
+            RecordBackendFailure("none", null);
             ApplyAuthenticatedUser(result.Response.User);
             RequestPasswordClear();
             await LoadSettingsForCurrentSessionAsync();
@@ -1487,12 +1505,67 @@ public partial class SettingsViewModel : ViewModelBase
         }
         catch
         {
+            RecordBackendFailure("auth_exception", null);
             ErrorMessage = BackendUxText.CouldNotConnect;
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private async Task RefreshBackendHealthDiagnosticsAsync()
+    {
+        var diagnosticsResult = await backendDiagnosticsService.CheckAsync(BackendBaseUrl);
+        RecordHealthDiagnostics(diagnosticsResult);
+    }
+
+    private void RecordHealthDiagnostics(BackendDiagnosticsResult diagnosticsResult)
+    {
+        lastBackendHealthResult = diagnosticsResult.IsBackendHealthy
+            ? $"healthy ({FormatBackendStatusCode(diagnosticsResult.BackendStatusCode)})"
+            : $"unavailable ({diagnosticsResult.ErrorCategory}; {FormatBackendStatusCode(diagnosticsResult.BackendStatusCode)})";
+        lastBackendErrorCategory = diagnosticsResult.ErrorCategory;
+        lastBackendStatusCode = diagnosticsResult.BackendStatusCode;
+    }
+
+    private void RecordBackendFailure(string category, HttpStatusCode? statusCode)
+    {
+        lastBackendErrorCategory = string.IsNullOrWhiteSpace(category) ? "unknown" : category;
+        lastBackendStatusCode = statusCode;
+    }
+
+    private static string FormatBackendStatusCode(HttpStatusCode? statusCode)
+    {
+        return statusCode is null ? "none" : $"HTTP {(int)statusCode.Value}";
+    }
+
+    private string BuildSettingsLoadFailureMessage(HttpStatusCode? statusCode)
+    {
+        if (statusCode is null)
+        {
+            return $"{BackendUxText.SettingsLoadUnavailable} Server health: {lastBackendHealthResult}.";
+        }
+
+        return $"Could not load account settings ({FormatBackendStatusCode(statusCode)}). Local settings are still available.";
+    }
+
+    private string BuildAuthFailureMessage(AuthOperationResult result, string fallbackMessage)
+    {
+        if (!string.IsNullOrWhiteSpace(result.Message))
+        {
+            return result.Message;
+        }
+
+        return result.ErrorCategory switch
+        {
+            "authorization" => fallbackMessage,
+            "validation" => fallbackMessage,
+            "server_error" => "The server returned an error. Please try again later.",
+            "network" or "timeout" => BackendUxText.CouldNotConnect,
+            "unexpected_response" => BackendUxText.BackendUnexpectedResponse,
+            _ => fallbackMessage
+        };
     }
 
     private void ApplyAuthenticatedUser(AuthUserDto user)

@@ -40,9 +40,11 @@ Before the first controlled external tester receives Language Voice Tutor, confi
 
 ## Backend URL profile
 
+Production tester builds must use `https://api.languagevoicetutor.com`. The installed app must show/use that effective Backend URL and must not silently fall back to localhost, 127.0.0.1, an empty URL, or a stale local development override. Clean-machine smoke must verify health, registration, login, settings sync, lesson start, history, progress, password reset, and update check from a real installed build. Tester handoff is blocked until the installed-build backend connectivity issue is verified fixed on a second Windows device.
+
 Local development builds default to `http://localhost:5000`. The primary Inno tester/release installer flow defaults packaged builds to `https://api.languagevoicetutor.com` by passing `DesktopBackendBaseUrl` during publish; use `-BackendBaseUrl` only when intentionally testing another absolute http/https backend. Settings/Diagnostics continue to show the current Backend URL so tester reports can confirm the profile in use.
 
-Existing installed-user settings are handled conservatively: empty Backend URL values use the current build default, saved legacy `http://localhost:5000` values migrate to `https://api.languagevoicetutor.com` only in tester/release builds where that is the build default, and custom values are preserved.
+Existing installed-user settings are handled conservatively: empty Backend URL values use the current build default, saved legacy `http://localhost:5000` values migrate to `https://api.languagevoicetutor.com` in tester/release builds where that is the build default, and unsafe localhost, loopback, or plain-http development overrides are ignored instead of silently replacing production.
 
 The backend remains the source of truth. The desktop must not store OpenAI API keys and must not call OpenAI directly. Production billing remains deferred, public release is not approved, and external tester handoff remains blocked until server-connected CMS/Admin verification and manual update UI verification, clean-machine install, and the controlled tester checklist pass.
 
