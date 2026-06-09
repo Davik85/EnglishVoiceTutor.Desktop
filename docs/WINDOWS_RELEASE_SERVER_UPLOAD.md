@@ -68,7 +68,7 @@ These are path expectations only. This task does not configure nginx, another we
 Build the Inno release first on a Windows machine with Inno Setup installed:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.5-tester.1
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.16-tester.1
 ```
 
 Then validate the generated direct-release folder:
@@ -139,11 +139,11 @@ After DNS, HTTPS, and static serving are configured separately, verify the publi
 
 ```powershell
 Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/latest.json" -OutFile "$env:TEMP\latest.json"
-Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/LanguageVoiceTutorSetup-0.1.5-tester.1.exe" -OutFile "$env:TEMP\LanguageVoiceTutorSetup-0.1.5-tester.1.exe"
+Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/LanguageVoiceTutorSetup-0.1.16-tester.1.exe" -OutFile "$env:TEMP\LanguageVoiceTutorSetup-0.1.16-tester.1.exe"
 Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/changelog.json" -OutFile "$env:TEMP\changelog.json"
 Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/known-issues.json" -OutFile "$env:TEMP\known-issues.json"
 Invoke-WebRequest -Uri "https://example.com/releases/windows/direct/checksums.sha256" -OutFile "$env:TEMP\checksums.sha256"
-Get-FileHash -Path "$env:TEMP\LanguageVoiceTutorSetup-0.1.5-tester.1.exe" -Algorithm SHA256
+Get-FileHash -Path "$env:TEMP\LanguageVoiceTutorSetup-0.1.16-tester.1.exe" -Algorithm SHA256
 ```
 
 Compare the downloaded installer hash with `checksums.sha256` and the `installerSha256` value in `latest.json`.
@@ -167,3 +167,17 @@ This tester page does not implement auto-update, does not replace the future upd
 Use `scripts/upload-static-site.ps1` only to copy files from `site/public/` to the remote static website folder. The helper prints a summary, supports `-DryRun`, and must not be used for backend deployment or Windows release-file upload. Continue using the Windows direct-release upload helper only for release artifacts.
 
 External tester handoff is still blocked until the update UI/system and the clean-machine smoke checklist pass. This static page does not make the desktop app public-release ready and does not approve external tester handoff.
+
+
+## Windows installer installed-version check foundation
+
+Installed-version checking is now part of the Windows installer foundation. The Inno Setup installer keeps the same `LanguageVoiceTutor.Desktop` AppId and reads the installed Language Voice Tutor version from the standard Inno uninstall registry entry before continuing. The next tester installer package should be built as `0.1.16-tester.1` unless release conventions intentionally choose a different SemVer-compatible tester version.
+
+- Same-version install asks for reinstall confirmation with the message: "Language Voice Tutor version <version> is already installed. Do you want to reinstall the same version?" The installer continues only when the user confirms.
+- Older installed version is treated as an update. The installer shows a clear update message and then continues through the normal installer flow.
+- Newer installed version warns and blocks by default. The installer warns that installing the older package may downgrade the app, then exits without making changes.
+- If Language Voice Tutor is running, the installer uses Inno Setup close-application handling for `EnglishVoiceTutor.Desktop.exe`; it must not silently install over a running app.
+
+This is not the future in-app update UI. The future update UI still needs to check `latest.json`, verify the installer SHA-256, avoid updates during active lessons, and guide the user through download/install with explicit confirmation. Active-lesson detection belongs in that future in-app update UI because the installer cannot safely inspect lesson state; installer behavior remains conservative and relies on closing the app before files are replaced.
+
+External tester handoff is still blocked until update/version-check verification and clean-machine smoke pass.

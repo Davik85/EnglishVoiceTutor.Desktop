@@ -10,14 +10,14 @@ Use `docs/CMS_ADMIN_SERVER_VERIFICATION.md` as the runbook. Keep static JSON as 
 
 ## Update/version-check system planned after CMS verification
 
-Before implementing update UI/system, implement installed-version checking rules:
+The Windows installer installed-version check foundation is now implemented before the future in-app update UI/system:
 
-- same installed version: ask the user to confirm reinstall;
-- older installed version: allow the guided update flow;
-- newer installed version: warn and block, or demand explicit confirmation before continuing;
-- never auto-update during an active lesson.
+- same installed version: asks the user to confirm reinstall;
+- older installed version: allows the guided installer update flow;
+- newer installed version: warns and blocks by default;
+- running app replacement is guarded by Inno Setup close-application behavior.
 
-The current app displays its version but does not implement update checking, update UI, or automatic update behavior yet.
+The current app displays its version but does not implement update checking, update UI, or automatic update behavior yet. Future in-app update UI still must avoid prompting or installing during an active lesson.
 
 ## After latest Admin CMS Content step
 
@@ -31,7 +31,7 @@ CMS draft-save audit logging is implemented for successful Admin CMS Save draft 
 
 ## Desktop backend profile checkpoint
 
-Local desktop development keeps the default Backend URL `http://localhost:5000`. Inno tester/release packages default to `https://api.languagevoicetutor.com` through `scripts/package-windows-inno-release.ps1`, which passes `DesktopBackendBaseUrl` to `dotnet publish` and prints the selected Backend URL. Existing saved localhost settings may migrate to the deployed API only in tester/release builds where that deployed API is the build default; custom values must remain untouched. Confirm the generated `latest.json` non-secret `backendBaseUrl` with `scripts/validate-windows-direct-release.ps1` before handoff. Backend APIs remain server-side source of truth, the desktop must never contain OpenAI keys, production billing remains deferred, and public release/external tester handoff are not ready until server-connected CMS/Admin verification and update UI/system with installed-version checks, clean-machine install, and the controlled tester checklist pass.
+Local desktop development keeps the default Backend URL `http://localhost:5000`. Inno tester/release packages default to `https://api.languagevoicetutor.com` through `scripts/package-windows-inno-release.ps1`, which passes `DesktopBackendBaseUrl` to `dotnet publish` and prints the selected Backend URL. Existing saved localhost settings may migrate to the deployed API only in tester/release builds where that deployed API is the build default; custom values must remain untouched. Confirm the generated `latest.json` non-secret `backendBaseUrl` with `scripts/validate-windows-direct-release.ps1` before handoff. Backend APIs remain server-side source of truth, the desktop must never contain OpenAI keys, production billing remains deferred, and public release/external tester handoff are not ready until server-connected CMS/Admin verification and update UI/system plus installed-version check verification, clean-machine install, and the controlled tester checklist pass.
 
 ## Recommended next product order
 
@@ -146,14 +146,14 @@ Before external tester handoff, keep re-verifying the disabled-by-default CMS ru
 - Password recovery/reset and signed-in password change are implemented for backend and desktop and should be included in the next internal smoke.
 - Configure password reset delivery on the server by adding SMTP settings to `/etc/languagevoicetutor/backend.env`; do not commit SMTP credentials or other secrets. Use `support@languagevoicetutor.com` as the production sender identity.
 - Verify on the production backend that a registered user can request a reset, receive the code, reset the password, log in with the new password, and fail login with the old password. Verify signed-in Change password the same way.
-- External tester handoff remains blocked until CMS/Admin server verification, update UI/system with installed-version checks, clean-machine smoke, and checklist completion are finished.
+- External tester handoff remains blocked until CMS/Admin server verification, update UI/system plus installed-version check verification, clean-machine smoke, and checklist completion are finished.
 
 ## Account recovery/change tester-readiness follow-up (2026-06-08)
 
 - Verify password reset email delivery on the production server with SMTP values stored only in `/etc/languagevoicetutor/backend.env`; do not commit or paste real SMTP credentials into docs, logs, or release notes.
 - Smoke test login failure, wrong-current-password change, short-password validation, reset-code failure, and successful reset/change against `https://api.languagevoicetutor.com` before external tester handoff.
 - Confirm the hardened backend upload script leaves `/opt/languagevoicetutor/backend/releases/<version>/EnglishVoiceTutor.Api` executable and fails loudly if it cannot.
-- External tester handoff remains blocked until CMS/Admin server verification, update UI/system with installed-version checks, clean-machine smoke, and checklist completion.
+- External tester handoff remains blocked until CMS/Admin server verification, update UI/system plus installed-version check verification, clean-machine smoke, and checklist completion.
 
 ## Static tester download page follow-up
 
@@ -164,4 +164,18 @@ Before external tester handoff, deploy the static page only after reviewing `scr
 
 Before external tester handoff, verify the Admin CMS selected content pack `static-json-v1`. If the overview reports that the pack has not been initialized, sign in as a bootstrap admin and click **Initialize from static JSON** (or POST `/api/admin/dev/cms/content-packs/static-json-v1/initialize-from-static-json`). This admin-only step imports the current packaged static JSON content into CMS draft/admin storage where supported.
 
-The initialization action does not publish automatically and does not switch runtime. Keep `CmsContent__UsePublishedSnapshotForRuntime=false` until a separate publish/validation decision intentionally enables `CmsContent__UsePublishedSnapshotForRuntime=true`. Public release / external tester handoff remains blocked until this CMS/Admin initialization/verification and the update/version-check system are complete.
+The initialization action does not publish automatically and does not switch runtime. Keep `CmsContent__UsePublishedSnapshotForRuntime=false` until a separate publish/validation decision intentionally enables `CmsContent__UsePublishedSnapshotForRuntime=true`. Public release / external tester handoff remains blocked until this CMS/Admin initialization/verification, installed-version check verification, future update UI/system, and clean-machine smoke are complete.
+
+
+## Windows installer version-check foundation status
+
+Installed-version checking is now part of the Windows installer foundation. Before the future in-app update system is implemented, the Inno Setup installer now checks the installed Language Voice Tutor version from the existing installer identity.
+
+- Same-version install asks for reinstall confirmation and only continues when the user confirms.
+- Older installed version is treated as an update after a clear update message.
+- Newer installed version warns and blocks by default rather than silently downgrading.
+- Running app replacement is guarded with Inno Setup close-application behavior.
+
+This is not the future in-app update UI. Future update UI still needs to check `latest.json`, verify SHA-256, avoid updates during active lessons, and guide the user through download/install. Active-lesson detection belongs to that future in-app update UI because the installer can only conservatively handle a running executable.
+
+External tester handoff is still blocked until update/version-check verification and clean-machine smoke pass.
