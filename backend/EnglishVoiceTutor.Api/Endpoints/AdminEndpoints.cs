@@ -48,6 +48,9 @@ public static class AdminEndpoints
         app.MapPost(ApiConstants.AdminDevCmsStaticContentImportRoute, ImportStaticCmsContentAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
+        app.MapPost(ApiConstants.AdminDevCmsStaticJsonV1InitializeRoute, InitializeStaticJsonV1CmsContentPackAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
         app.MapGet(ApiConstants.AdminDevCmsPublishedContentStatusRoute, GetPublishedCmsContentStatusAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
@@ -539,6 +542,21 @@ public static class AdminEndpoints
         }
 
         var result = await cmsContentImportService.ImportStaticContentAsync(adminUserId.Value, cancellationToken);
+        return result.Success ? Results.Ok(result) : Results.BadRequest(result);
+    }
+
+    private static async Task<IResult> InitializeStaticJsonV1CmsContentPackAsync(
+        ClaimsPrincipal principal,
+        ICmsContentImportService cmsContentImportService,
+        CancellationToken cancellationToken)
+    {
+        var adminUserId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!adminUserId.HasValue)
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await cmsContentImportService.InitializeStaticJsonV1DraftAsync(adminUserId.Value, cancellationToken);
         return result.Success ? Results.Ok(result) : Results.BadRequest(result);
     }
 

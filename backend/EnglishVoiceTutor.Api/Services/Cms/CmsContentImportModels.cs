@@ -10,6 +10,12 @@ public sealed class CmsContentImportResult
     public string? SnapshotHash { get; set; }
     public bool PublishedSnapshotCreated { get; set; }
     public bool IdempotentNoChanges { get; set; }
+    public bool ContentPackCreated { get; set; }
+    public bool ContentPackAlreadyExisted { get; set; }
+    public bool DraftInitialized { get; set; }
+    public bool DraftPreserved { get; set; }
+    public bool RuntimeUnchanged { get; set; }
+    public List<string> Messages { get; set; } = [];
     public CmsContentImportCounts Counts { get; set; } = new();
     public List<string> Errors { get; set; } = [];
     public List<string> Warnings { get; set; } = [];

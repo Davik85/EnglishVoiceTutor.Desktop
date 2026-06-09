@@ -601,3 +601,9 @@ The next recommended implementation step is another CMS/admin improvement, not b
 2. Keep `Save draft` draft-only and keep publishing isolated in **Versions & Publish** with required publish summaries for changed content.
 3. Continue preserving immutable published version history; restore should keep creating a new published version rather than mutating old versions.
 4. Later, after production roles exist, add proper production RBAC and critical-change approval workflow.
+
+## First production initialization foundation
+
+The CMS MVP includes an admin-only **Initialize from static JSON** foundation for `static-json-v1`. It is intended for first production setup when the Admin CMS database has no initialized draft/content pack yet. The action imports the current packaged static JSON lesson topics, scenarios, prompt templates, tutor profiles, and available study-language metadata references into the current CMS draft/admin model where supported.
+
+The action is idempotent and safe: it creates the missing content pack, preserves existing draft content instead of blindly overwriting it, does not publish automatically, and does not switch runtime. Runtime remains static JSON until `CmsContent__UsePublishedSnapshotForRuntime=true` is intentionally enabled after separate validation and publishing.

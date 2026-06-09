@@ -174,3 +174,9 @@ A basic public download page foundation is now prepared under `site/public/`. Th
 This page does not implement auto-update and does not replace the future update UI. It is only a tester download page for invited testers, with a fallback direct installer link if the manifest cannot be loaded. It must not include login, payment, pricing, account management, analytics, cookies, third-party fonts, external dependencies, or marketing claims.
 
 External tester handoff is still blocked until the update UI/system and the clean-machine smoke checklist pass. Treat the page as a handoff foundation only, not as final tester-readiness approval.
+
+## CMS/Admin initialization gate for tester release
+
+External tester handoff is still blocked. CMS/Admin login works for the bootstrap admin path, but first production setup may require initializing `static-json-v1` inside CMS. Use the admin-only **Initialize from static JSON** action in CMS Content Overview, then verify the content pack summary and draft lists.
+
+This action only prepares CMS draft/admin content from packaged static JSON. It does not publish automatically and does not switch runtime. Learner runtime remains static JSON while `CmsContent__UsePublishedSnapshotForRuntime=false`; only an intentional later change to `CmsContent__UsePublishedSnapshotForRuntime=true` can move runtime to a published CMS snapshot.

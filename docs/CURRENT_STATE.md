@@ -373,3 +373,11 @@ Inno Setup remains the primary Windows direct-download installer track. `scripts
 A basic public download page foundation is now prepared under `site/public/`. The page is static, uses plain HTML/CSS/JS, and reads `latest.json` from the existing Windows direct release folder at `/releases/windows/direct/latest.json`. It uses `installerRelativeUrl` from the manifest for the primary Windows installer link and shows version, channel, installer size, and SHA-256 when the manifest loads.
 
 The static page does not implement auto-update, does not replace the future update UI, and does not change backend API logic or desktop app behavior. It is only a tester download page for invited testers. External tester handoff is still blocked until the update UI/system and the clean-machine smoke checklist pass.
+
+## CMS/Admin static-json-v1 initialization status
+
+CMS/Admin login works for the configured bootstrap admin account, and protected Admin CMS APIs remain behind authentication/authorization. The current production-safe default is still static JSON runtime: `CmsContent__UsePublishedSnapshotForRuntime=false`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`.
+
+On first production setup, `static-json-v1` may need the admin-only **Initialize from static JSON** action before the CMS Content overview can show topics, scenarios, prompt templates, tutor profiles, and available study-language metadata references. This initialization creates or prepares CMS draft/admin content only, preserves any existing draft content, does not publish automatically, and does not switch runtime. Runtime remains `StaticJson` until `CmsContent__UsePublishedSnapshotForRuntime=true` is intentionally enabled after verification.
+
+Public release / external tester handoff remains blocked until CMS initialization/verification and update/version-check work are complete.
