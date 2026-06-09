@@ -362,3 +362,9 @@ Inno Setup remains the primary Windows direct-download installer track. `scripts
 - SMTP credentials remain server-only in `/etc/languagevoicetutor/backend.env`; no SMTP password, reset token, or other secret is committed. The backend now accepts the production-style `SmtpEmail__Username` and `SmtpEmail__UseSsl` environment names as aliases for the SMTP sender settings.
 - Backend upload hardening now packages Linux archive entries with forward slashes and verifies `/opt/languagevoicetutor/backend/releases/<version>/EnglishVoiceTutor.Api` exists and is executable before reporting success.
 - External tester handoff is still blocked until CMS server verification, a basic public download page, update UI/system, clean-machine smoke, and checklist completion.
+
+## Static tester download page foundation status
+
+A basic public download page foundation is now prepared under `site/public/`. The page is static, uses plain HTML/CSS/JS, and reads `latest.json` from the existing Windows direct release folder at `/releases/windows/direct/latest.json`. It uses `installerRelativeUrl` from the manifest for the primary Windows installer link and shows version, channel, installer size, and SHA-256 when the manifest loads.
+
+The static page does not implement auto-update, does not replace the future update UI, and does not change backend API logic or desktop app behavior. It is only a tester download page for invited testers. External tester handoff is still blocked until the update UI/system and the clean-machine smoke checklist pass.
