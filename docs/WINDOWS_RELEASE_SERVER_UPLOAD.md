@@ -15,6 +15,8 @@ Backend API deployment is documented separately in [`BACKEND_SERVER_DEPLOYMENT.m
 
 ## Purpose
 
+Desktop authenticated session persistence is now part of the tester-readiness foundation. The desktop does not store raw passwords; token/session data is stored under the current user app-data folder with Windows DPAPI protection. Logout clears persisted auth session data. Reinstall/update should preserve user app data and session storage. Same-version installer reinstall confirmation remains in place. This is still not the future in-app update UI; future update UI still needs the `latest.json` check, SHA-256 verification, and active-lesson-safe update flow. External tester handoff remains blocked until persisted-session verification, update UI/system, and clean-machine smoke pass.
+
 The Inno release script creates a server-ready release folder that can later be mirrored to a static HTTPS location. The folder is intended to hold the installer and small release metadata files for a future download page and future manual-confirmation update-check flow.
 
 The backend remains the source of truth for accounts, access, subscriptions, lessons, AI calls, and runtime app behavior. The desktop app must not store or call OpenAI API keys directly, and release files must not contain API keys or other secrets.

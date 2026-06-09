@@ -104,9 +104,16 @@ public sealed class AuthSessionStorageService
 
     public Task ClearAsync(CancellationToken cancellationToken = default)
     {
-        if (File.Exists(authSessionFilePath))
+        try
         {
-            File.Delete(authSessionFilePath);
+            if (File.Exists(authSessionFilePath))
+            {
+                File.Delete(authSessionFilePath);
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // Startup/session restore must never crash because a stale or corrupt session file could not be removed.
         }
 
         return Task.CompletedTask;

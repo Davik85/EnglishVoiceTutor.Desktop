@@ -1,8 +1,8 @@
 # Tester release workflow
 
-
-
 ## Current blocker status as of 2026-06-09
+
+Desktop authenticated session persistence is now part of the tester-readiness foundation. The desktop does not store raw passwords; token/session data is stored under the current user app-data folder with Windows DPAPI protection. Logout clears persisted auth session data. Reinstall/update should preserve user app data and session storage. Same-version installer reinstall confirmation remains in place. This is still not the future in-app update UI; future update UI still needs the `latest.json` check, SHA-256 verification, and active-lesson-safe update flow. External tester handoff remains blocked until persisted-session verification, update UI/system, and clean-machine smoke pass.
 
 External tester handoff is still blocked. The backend is deployed at `https://api.languagevoicetutor.com`, PostgreSQL is healthy, the static tester download page is deployed at `https://languagevoicetutor.com`, and password reset/change flows are working. The remaining blockers are production/server CMS/Admin verification and the update/version-check system. During CMS/Admin verification, static JSON remains the default runtime source unless the published snapshot flag is intentionally enabled. Public release is not ready. The update UI/system is not implemented yet; the Windows installer now has installed-version checks, but those checks still need package/clean-machine verification before tester handoff. The next Windows installer package should use `0.1.16-tester.1` unless release conventions intentionally select a different SemVer-compatible tester version.
 

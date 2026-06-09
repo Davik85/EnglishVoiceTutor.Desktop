@@ -191,6 +191,8 @@ Backend-unavailable checks are resilience-only and must not be treated as full f
 
 ## Auth/session storage state
 
+Desktop authenticated session persistence is now part of the tester-readiness foundation. The desktop does not store raw passwords; token/session data is stored under the current user app-data folder with Windows DPAPI protection. Logout clears persisted auth session data. Reinstall/update should preserve user app data and session storage. Same-version installer reinstall confirmation remains in place. This is still not the future in-app update UI; future update UI still needs the `latest.json` check, SHA-256 verification, and active-lesson-safe update flow. External tester handoff remains blocked until persisted-session verification, update UI/system, and clean-machine smoke pass.
+
 The desktop still uses a local file named `auth-session.json` under the app data folder, but the current implementation writes a Windows DPAPI-protected Base64 payload using `ProtectedData.Protect(..., DataProtectionScope.CurrentUser)`. The protected payload contains the serialized session fields after decryption by the same Windows user: access token, token type, expiry, and user DTO. Loading can migrate an old plaintext JSON payload by reading it once and saving it back protected. Documentation must not describe the current token as raw plaintext storage.
 
 ## Active lesson state
