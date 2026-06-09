@@ -157,3 +157,13 @@ Compare the downloaded installer hash with `checksums.sha256` and the `installer
 - Keep backend deployment as a separate later step.
 - Keep update UI as a separate later step. Any future update UI must require manual confirmation, use the Inno installer, and avoid update prompts during active lessons.
 - External tester handoff remains blocked until password recovery/change, server-connected CMS verification, a basic public download page, update UI/system, clean-machine install, and the controlled tester checklist all pass.
+
+## Static tester download page foundation
+
+A basic public download page foundation is now prepared under `site/public/`. The page is static and uses plain HTML, CSS, and JavaScript only. It reads `latest.json` from the existing Windows direct release folder at `/releases/windows/direct/latest.json` and uses `installerRelativeUrl` from that manifest for the primary Windows download button.
+
+This tester page does not implement auto-update, does not replace the future update UI, and does not change the Windows direct release files under `/releases/windows/direct`. It is only a tester download page for invited testers. The page includes the private tester status, release details when the manifest loads, a fallback link to the current tester installer if manifest loading fails, the SmartScreen/code-signing-deferred warning, and the support email address.
+
+Use `scripts/upload-static-site.ps1` only to copy files from `site/public/` to the remote static website folder. The helper prints a summary, supports `-DryRun`, and must not be used for backend deployment or Windows release-file upload. Continue using the Windows direct-release upload helper only for release artifacts.
+
+External tester handoff is still blocked until the update UI/system and the clean-machine smoke checklist pass. This static page does not make the desktop app public-release ready and does not approve external tester handoff.

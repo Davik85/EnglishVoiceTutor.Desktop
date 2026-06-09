@@ -160,3 +160,11 @@ The Account screen password reset/change flow is being polished for tester readi
 SMTP credentials for password reset email delivery remain server-only in `/etc/languagevoicetutor/backend.env`; no secrets are committed. Backend deployment packaging/upload now avoids Windows backslash ZIP entries for the Linux backend package and verifies the deployed backend executable bit before reporting success.
 
 External tester handoff is still blocked until CMS server verification, a basic public download page, update UI/system, clean-machine smoke, and checklist completion.
+
+## Static tester download page foundation
+
+A basic public download page foundation is now prepared under `site/public/`. The page is static and reads `latest.json` from the existing Windows direct release folder at `/releases/windows/direct/latest.json`. It uses the manifest `installerRelativeUrl` value for the primary **Download for Windows** button and shows release details when manifest loading succeeds.
+
+This page does not implement auto-update and does not replace the future update UI. It is only a tester download page for invited testers, with a fallback direct installer link if the manifest cannot be loaded. It must not include login, payment, pricing, account management, analytics, cookies, third-party fonts, external dependencies, or marketing claims.
+
+External tester handoff is still blocked until the update UI/system and the clean-machine smoke checklist pass. Treat the page as a handoff foundation only, not as final tester-readiness approval.
