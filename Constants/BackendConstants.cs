@@ -6,6 +6,7 @@ namespace EnglishVoiceTutor.Desktop.Constants;
 public static class BackendConstants
 {
     public const string LegacyLocalBackendBaseUrl = "http://localhost:5000";
+    public const string ProductionBackendBaseUrl = "https://api.languagevoicetutor.com";
     public static readonly string DefaultBackendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(GetConfiguredDefaultBackendBaseUrl(), LegacyLocalBackendBaseUrl);
     private const string DesktopBackendBaseUrlMetadataName = "DesktopBackendBaseUrl";
 

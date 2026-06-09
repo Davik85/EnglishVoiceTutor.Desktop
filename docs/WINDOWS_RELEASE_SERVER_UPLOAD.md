@@ -19,6 +19,8 @@ Desktop authenticated session persistence is now part of the tester-readiness fo
 
 The Inno release script creates a server-ready release folder that can later be mirrored to a static HTTPS location. The folder is intended to hold the installer and small release metadata files for a future download page and future manual-confirmation update-check flow.
 
+Production tester builds must use `https://api.languagevoicetutor.com`. Before tester handoff, clean-machine smoke must verify health, registration, login, settings sync, lesson start, history, progress, password reset, and update check from a real installed build, and the installed-build backend connectivity issue must be verified fixed on a second Windows device.
+
 The backend remains the source of truth for accounts, access, subscriptions, lessons, AI calls, and runtime app behavior. The desktop app must not store or call OpenAI API keys directly, and release files must not contain API keys or other secrets.
 
 ## Local source folder

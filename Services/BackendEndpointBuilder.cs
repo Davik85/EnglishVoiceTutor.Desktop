@@ -12,28 +12,61 @@ public static class BackendEndpointBuilder
     public static string NormalizeBaseUrl(string? backendBaseUrl, string fallbackBaseUrl)
     {
         var normalizedFallback = NormalizeAbsoluteHttpUrl(fallbackBaseUrl) ?? BackendConstants.LegacyLocalBackendBaseUrl;
+        var normalizedUrl = NormalizeAbsoluteHttpUrl(backendBaseUrl);
 
-        return NormalizeAbsoluteHttpUrl(backendBaseUrl) ?? normalizedFallback;
+        if (normalizedUrl is not null && IsProductionBackendUrl(normalizedFallback) && IsUnsafeReleaseOverride(normalizedUrl))
+        {
+            return normalizedFallback;
+        }
+
+        return normalizedUrl ?? normalizedFallback;
     }
 
     public static string ResolveSavedBaseUrlForCurrentBuild(string? savedBackendBaseUrl)
     {
-        var normalizedBuildDefault = NormalizeBaseUrl(BackendConstants.DefaultBackendBaseUrl, BackendConstants.LegacyLocalBackendBaseUrl);
-        var normalizedSavedUrl = NormalizeAbsoluteHttpUrl(savedBackendBaseUrl);
+        return NormalizeBaseUrl(savedBackendBaseUrl, BackendConstants.DefaultBackendBaseUrl);
+    }
 
-        if (normalizedSavedUrl is null)
+    public static bool IsProductionBackendUrl(string? backendBaseUrl)
+    {
+        var normalizedUrl = NormalizeAbsoluteHttpUrl(backendBaseUrl);
+        var normalizedProductionUrl = NormalizeAbsoluteHttpUrl(BackendConstants.ProductionBackendBaseUrl);
+        return string.Equals(normalizedUrl, normalizedProductionUrl, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool WouldIgnoreUnsafeReleaseOverride(string? backendBaseUrl)
+    {
+        var normalizedBuildDefault = NormalizeAbsoluteHttpUrl(BackendConstants.DefaultBackendBaseUrl);
+        var normalizedUrl = NormalizeAbsoluteHttpUrl(backendBaseUrl);
+
+        return normalizedUrl is not null
+            && IsProductionBackendUrl(normalizedBuildDefault)
+            && IsUnsafeReleaseOverride(normalizedUrl);
+    }
+
+    private static bool IsUnsafeReleaseOverride(string normalizedBackendBaseUrl)
+    {
+        if (!Uri.TryCreate(normalizedBackendBaseUrl, UriKind.Absolute, out var uri))
         {
-            return normalizedBuildDefault;
+            return true;
         }
 
-        var normalizedLegacyLocalDefault = NormalizeBaseUrl(BackendConstants.LegacyLocalBackendBaseUrl, BackendConstants.LegacyLocalBackendBaseUrl);
-        if (!string.Equals(normalizedBuildDefault, normalizedLegacyLocalDefault, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(normalizedSavedUrl, normalizedLegacyLocalDefault, StringComparison.OrdinalIgnoreCase))
+        if (uri.IsLoopback)
         {
-            return normalizedBuildDefault;
+            return true;
         }
 
-        return normalizedSavedUrl;
+        if (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            && !IsProductionBackendUrl(normalizedBackendBaseUrl))
+        {
+            return true;
+        }
+
+        var host = uri.Host.Trim('[', ']');
+        return string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(host, "::1", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? NormalizeAbsoluteHttpUrl(string? backendBaseUrl)

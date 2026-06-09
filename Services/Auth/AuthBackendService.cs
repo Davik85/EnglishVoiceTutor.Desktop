@@ -12,6 +12,7 @@ public sealed class AuthBackendService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+    private const int MaxSafeAuthErrorLength = 180;
     private readonly AuthSessionStorageService sessionStorageService;
     private string backendBaseUrl = BackendConstants.DefaultBackendBaseUrl;
 
@@ -19,6 +20,12 @@ public sealed class AuthBackendService
     {
         this.sessionStorageService = sessionStorageService ?? new AuthSessionStorageService();
     }
+
+    public string EffectiveBackendBaseUrl => BackendEndpointBuilder.NormalizeBaseUrl(backendBaseUrl);
+
+    public string LastErrorCategory { get; private set; } = "none";
+
+    public HttpStatusCode? LastStatusCode { get; private set; }
 
     public void SetBackendBaseUrl(string? value)
     {
@@ -162,18 +169,18 @@ public sealed class AuthBackendService
 
             if (!response.IsSuccessStatusCode)
             {
-                if ((int)response.StatusCode >= 500)
-                {
-                    return AuthOperationResult.BackendUnavailable();
-                }
-
-                return AuthOperationResult.Failed(await TryReadAuthErrorMessageAsync(response, cancellationToken));
+                var safeMessage = await TryReadAuthErrorMessageAsync(response, cancellationToken);
+                var failure = AuthOperationResult.FromHttpFailure(response.StatusCode, safeMessage);
+                RecordAuthFailure(failure);
+                return failure;
             }
 
             var payload = await response.Content.ReadFromJsonAsync<AuthResponse>(JsonOptions, cancellationToken);
             if (payload is null)
             {
-                return AuthOperationResult.BackendUnavailable();
+                var failure = AuthOperationResult.UnexpectedResponse();
+                RecordAuthFailure(failure);
+                return failure;
             }
 
             var storedSession = new StoredAuthSession
@@ -187,15 +194,27 @@ public sealed class AuthBackendService
             if (AuthSessionStorageService.IsExpired(storedSession))
             {
                 await sessionStorageService.ClearAsync(cancellationToken);
-                return AuthOperationResult.Failed(string.Empty);
+                var failure = AuthOperationResult.UnexpectedResponse();
+                RecordAuthFailure(failure);
+                return failure;
             }
 
             await sessionStorageService.SaveAsync(storedSession, cancellationToken);
+            LastErrorCategory = "none";
+            LastStatusCode = null;
             return AuthOperationResult.Success(payload);
         }
-        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
-            return AuthOperationResult.BackendUnavailable();
+            var failure = AuthOperationResult.NetworkUnavailable();
+            RecordAuthFailure(failure);
+            return failure;
+        }
+        catch (JsonException)
+        {
+            var failure = AuthOperationResult.UnexpectedResponse();
+            RecordAuthFailure(failure);
+            return failure;
         }
     }
 
@@ -217,12 +236,34 @@ public sealed class AuthBackendService
         try
         {
             var payload = await response.Content.ReadFromJsonAsync<AuthErrorResponse>(JsonOptions, cancellationToken);
-            return payload?.Error ?? string.Empty;
+            return SanitizeSafeMessage(payload?.Error ?? payload?.Title ?? payload?.Detail ?? string.Empty);
         }
         catch (Exception exception) when (exception is JsonException or NotSupportedException)
         {
             return string.Empty;
         }
+    }
+
+    private void RecordAuthFailure(AuthOperationResult result)
+    {
+        LastErrorCategory = result.ErrorCategory;
+        LastStatusCode = result.StatusCode;
+    }
+
+    private static string SanitizeSafeMessage(string? message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return string.Empty;
+        }
+
+        var safeMessage = message.ReplaceLineEndings(" ").Trim();
+        if (safeMessage.Length > MaxSafeAuthErrorLength)
+        {
+            safeMessage = string.Concat(safeMessage.AsSpan(0, MaxSafeAuthErrorLength), "...");
+        }
+
+        return safeMessage;
     }
 
     private static HttpClient CreateHttpClient()
@@ -247,30 +288,55 @@ public enum AuthOperationResultStatus
 {
     Success = 0,
     Failed = 1,
-    BackendUnavailable = 2
+    BackendUnavailable = 2,
+    UnexpectedResponse = 3
 }
 
 public sealed class AuthOperationResult
 {
-    private AuthOperationResult(AuthOperationResultStatus status, AuthResponse? response, string message)
+    private AuthOperationResult(AuthOperationResultStatus status, AuthResponse? response, string message, string errorCategory, HttpStatusCode? statusCode)
     {
         Status = status;
         Response = response;
         Message = message;
+        ErrorCategory = errorCategory;
+        StatusCode = statusCode;
     }
 
     public AuthOperationResultStatus Status { get; }
     public AuthResponse? Response { get; }
     public string Message { get; }
+    public string ErrorCategory { get; }
+    public HttpStatusCode? StatusCode { get; }
 
-    public static AuthOperationResult Success(AuthResponse response) => new(AuthOperationResultStatus.Success, response, string.Empty);
-    public static AuthOperationResult Failed(string message) => new(AuthOperationResultStatus.Failed, null, message);
-    public static AuthOperationResult BackendUnavailable() => new(AuthOperationResultStatus.BackendUnavailable, null, string.Empty);
+    public static AuthOperationResult Success(AuthResponse response) => new(AuthOperationResultStatus.Success, response, string.Empty, "none", null);
+    public static AuthOperationResult Failed(string message) => new(AuthOperationResultStatus.Failed, null, message, "validation", null);
+    public static AuthOperationResult BackendUnavailable() => NetworkUnavailable();
+    public static AuthOperationResult NetworkUnavailable() => new(AuthOperationResultStatus.BackendUnavailable, null, string.Empty, "network", null);
+    public static AuthOperationResult UnexpectedResponse() => new(AuthOperationResultStatus.UnexpectedResponse, null, string.Empty, "unexpected_response", null);
+
+    public static AuthOperationResult FromHttpFailure(HttpStatusCode statusCode, string message)
+    {
+        var category = statusCode switch
+        {
+            HttpStatusCode.BadRequest or HttpStatusCode.Conflict or HttpStatusCode.UnprocessableEntity => "validation",
+            HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => "authorization",
+            _ when (int)statusCode >= 500 => "server_error",
+            _ => "http_error"
+        };
+
+        var status = (int)statusCode >= 500
+            ? AuthOperationResultStatus.BackendUnavailable
+            : AuthOperationResultStatus.Failed;
+        return new AuthOperationResult(status, null, message, category, statusCode);
+    }
 }
 
 public sealed class AuthErrorResponse
 {
     public string Error { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Detail { get; set; } = string.Empty;
 }
 
 public enum AuthMeResultStatus
