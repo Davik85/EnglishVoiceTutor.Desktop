@@ -11,19 +11,12 @@ public interface IBootstrapAdminAccessService
 }
 
 public sealed class BootstrapAdminAccessService(
-    IOptions<AdminBootstrapOptions> optionsAccessor,
-    IWebHostEnvironment environment) : IBootstrapAdminAccessService
+    IOptions<AdminBootstrapOptions> optionsAccessor) : IBootstrapAdminAccessService
 {
     private readonly AdminBootstrapOptions _options = optionsAccessor.Value;
-    private readonly IWebHostEnvironment _environment = environment;
 
     public bool IsBootstrapAdmin(ClaimsPrincipal principal)
     {
-        if (!_environment.IsDevelopment())
-        {
-            return false;
-        }
-
         if (!_options.Enabled)
         {
             return false;

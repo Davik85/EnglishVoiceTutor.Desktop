@@ -294,6 +294,7 @@ app.MapBillingCheckoutEndpoints();
 app.MapPaddleCheckoutLaunchEndpoints();
 app.MapPaddleWebhookEndpoints();
 app.MapAdminEndpoints();
+app.MapCmsDiagnosticsEndpoints();
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
     ApiConstants.ServiceName,
