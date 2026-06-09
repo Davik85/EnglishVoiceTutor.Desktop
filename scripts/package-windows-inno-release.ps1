@@ -32,13 +32,13 @@ $defaultChangelogItems = @(
 )
 $knownIssues = @(
     "Installer is unsigned and may trigger Windows SmartScreen warnings.",
-    "Update UI inside the app is not implemented yet."
+    "In-app updates use a manual-confirmation check from Settings."
 )
 $manifestNotes = @(
     "backendBaseUrl records the non-secret packaged default backend profile",
     "code signing deferred",
-    "update UI not implemented yet",
-    "do not update during active lesson once update UI exists"
+    "manual-confirmation update flow",
+    "finish active lessons before starting an installer"
 )
 
 if ($Version -notmatch $semVerPattern) {
