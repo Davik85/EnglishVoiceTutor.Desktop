@@ -35,16 +35,17 @@ CloseApplicationsFilter={#AppExeName}
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
-[Tasks]
-Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
-
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#AppIconFile}"; DestDir: "{app}\Assets\Branding"; Flags: ignoreversion
 
+[InstallDelete]
+Type: files; Name: "{commondesktop}\Language Voice Tutor.lnk"
+Type: files; Name: "{userdesktop}\Language Voice Tutor.lnk"
+
 [Icons]
 Name: "{group}\Language Voice Tutor"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{#InstalledAppIconFile}"
-Name: "{autodesktop}\Language Voice Tutor"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{#InstalledAppIconFile}"; Tasks: desktopicon
+Name: "{autodesktop}\Language Voice Tutor"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{#InstalledAppIconFile}"
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "Launch Language Voice Tutor"; Flags: nowait postinstall skipifsilent

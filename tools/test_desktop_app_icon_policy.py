@@ -97,6 +97,9 @@ def main() -> None:
     assert_regex(inno, r'Source:\s+"\{#AppIconFile\}";\s+DestDir:\s+"\{app\}\\Assets\\Branding"', "installed icon file")
     assert_regex(inno, r'Name:\s+"\{group\}\\Language Voice Tutor".*IconFilename:\s+"\{#InstalledAppIconFile\}"', "Start Menu shortcut icon")
     assert_regex(inno, r'Name:\s+"\{autodesktop\}\\Language Voice Tutor".*IconFilename:\s+"\{#InstalledAppIconFile\}"', "desktop shortcut icon")
+    assert_contains(inno, "[InstallDelete]", "installer removes stale shortcuts before recreating them")
+    assert_contains(inno, 'Type: files; Name: "{commondesktop}\\Language Voice Tutor.lnk"', "common desktop stale shortcut cleanup")
+    assert_contains(inno, 'Type: files; Name: "{userdesktop}\\Language Voice Tutor.lnk"', "user desktop stale shortcut cleanup")
 
     assert_contains(package_script, '$appIconPath = Join-Path $repoRoot "Assets\\Branding\\app-icon.ico"', "package icon path")
     assert_contains(package_script, "Test-Path $appIconPath -PathType Leaf", "package icon existence check")

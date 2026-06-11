@@ -41,5 +41,6 @@ public sealed class UpdateManifest
     public string UpdateMode { get; init; } = string.Empty;
 
     [JsonPropertyName("notes")]
-    public string Notes { get; init; } = string.Empty;
+    [JsonConverter(typeof(UpdateManifestNotesJsonConverter))]
+    public IReadOnlyList<string> Notes { get; init; } = [];
 }
