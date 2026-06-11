@@ -95,6 +95,5 @@ The desktop app does not contain an OpenAI API key, must not call OpenAI directl
 
 - Microsoft Store/MSIX remains deferred.
 - Code signing is deferred but required before broad public distribution.
-- Automatic update UX is not implemented; the generated `latest.json` is only for the future download page and future in-app update-check.
-- Future in-app update UX should download the same Inno installer and run it only after explicit user confirmation, never during an active lesson.
+- The release Settings UX includes a simple **Check for updates** button. It checks `latest.json`, validates the manifest, asks before download/install, verifies SHA-256 before launching the installer, and does not silently auto-update.
 - Public release is not declared ready.
