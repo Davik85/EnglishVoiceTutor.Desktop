@@ -55,46 +55,42 @@ CORS is not currently configured in the backend. Nginx should reverse-proxy API 
 Run from the repository root on the local Windows development machine:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.6-tester.1
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-tester.2
 ```
 
 This publishes `backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj` in Release mode for `linux-x64` as a self-contained deployment and writes:
 
 ```text
 artifacts\publish\backend-linux-x64
-artifacts\packages\backend\LanguageVoiceTutor.Backend-linux-x64-0.1.6-tester.1.zip
+artifacts\packages\backend\LanguageVoiceTutor.Backend-linux-x64-0.1.35-tester.2.zip
 ```
 
-Generated files under `artifacts/` must not be committed.
+The production server does not need a git checkout, `dotnet` SDK, or `dotnet` runtime for this self-contained package. Generated files under `artifacts/` must not be committed. Do not rebuild or replace desktop release artifacts as part of backend deployment.
 
 ## Upload dry-run
 
-Dry-run validates the local archive and prints the SSH/SCP commands without uploading:
+Dry-run can build the archive locally, then print the SSH/SCP/systemd commands without uploading or restarting anything:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.6-tester.1 `
-  -ServerHost "api.languagevoicetutor.com" `
-  -ServerUser "deploy" `
-  -RemotePath "/opt/languagevoicetutor/backend" `
+  -Version 0.1.35-tester.2 `
+  -PackageFirst `
   -DryRun
 ```
 
-Use real SSH host details only from the local operator environment. Do not commit IP addresses, SSH key paths, passwords, tokens, or secrets.
+The script defaults to SSH host `lvt-server`, user `deploy`, and remote path `/opt/languagevoicetutor/backend`. Override `-ServerHost`, `-ServerUser`, `-RemotePath`, or `-SshPort` only from the local operator environment. Do not commit IP addresses, SSH key paths, passwords, tokens, or secrets.
 
-## Upload
+## Upload and restart
 
-After SSH access exists outside git, run:
+After the refresh-token migration has been reviewed and is ready to apply, run from Windows:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.6-tester.1 `
-  -ServerHost "api.languagevoicetutor.com" `
-  -ServerUser "deploy" `
-  -RemotePath "/opt/languagevoicetutor/backend"
+  -Version 0.1.35-tester.2 `
+  -PackageFirst
 ```
 
-If the server uses a non-default SSH port, add `-SshPort 2222` with the actual port. The upload script creates a versioned release folder, unzips the archive, and updates `current`. It does not restart the service unless `-RestartService` is explicitly provided, and it never runs EF migrations.
+The upload script creates `/opt/languagevoicetutor/backend/releases/<version>`, uploads and unzips the archive, validates `EnglishVoiceTutor.Api`, atomically switches `/opt/languagevoicetutor/backend/current`, records `/opt/languagevoicetutor/backend/previous` when an older current release exists, restarts `languagevoicetutor-backend.service`, and prints service status. Pass `-NoRestart` only when a separate controlled restart is planned. The script never runs EF migrations and never reads or prints production database secrets.
 
 ## Server environment file
 
@@ -199,9 +195,36 @@ curl -fsS https://api.languagevoicetutor.com/api/health/database
 
 ## EF migrations
 
-No EF migration is needed for this deployment foundation. No database schema change is required for the existing health endpoints or the package/upload/service documentation.
+The refresh-token backend requires migration `20260611000000_AddUserRefreshTokens`. Apply it to production before or alongside deploying backend code that issues or validates refresh tokens. Do not run migrations automatically from the upload script. Apply EF migrations deliberately and explicitly only after reviewing the target database, backups, environment, and migration list.
 
-Do not run migrations automatically from the upload script. Apply EF migrations deliberately and explicitly only after reviewing the target database, backups, environment, and migration list.
+Generate a reviewed SQL script locally from the last known production migration to the refresh-token migration:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\generate-backend-refresh-token-migration-sql.ps1
+```
+
+This writes a generated SQL file under `artifacts\sql\backend`, which must not be committed. If the exact previous production migration is uncertain, generate an idempotent script instead and review it carefully:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\generate-backend-refresh-token-migration-sql.ps1 -Idempotent
+```
+
+Preferred production apply options are:
+
+1. From a trusted admin machine with direct PostgreSQL access and `psql` installed, apply the reviewed SQL while letting `psql` prompt for the password so the password is not written into shell history or logs:
+
+   ```powershell
+   psql "host=<db-host> port=5432 dbname=lvt_app_db user=lvt_app sslmode=require" -v ON_ERROR_STOP=1 -f .\artifacts\sql\backend\20260611000000_AddUserRefreshTokens.from-20260604121000.sql
+   ```
+
+2. If the server has `psql` and peer/admin database access, upload only the reviewed SQL file and apply it without printing the application connection string:
+
+   ```powershell
+   scp .\artifacts\sql\backend\20260611000000_AddUserRefreshTokens.from-20260604121000.sql deploy@lvt-server:/tmp/20260611000000_AddUserRefreshTokens.sql
+   ssh deploy@lvt-server "sudo -u postgres psql -d lvt_app_db -v ON_ERROR_STOP=1 -f /tmp/20260611000000_AddUserRefreshTokens.sql && rm -f /tmp/20260611000000_AddUserRefreshTokens.sql"
+   ```
+
+Do not echo `ConnectionStrings__DefaultConnection`, `PGPASSWORD`, or database URLs into terminal logs. Do not commit generated SQL or any file containing database credentials.
 
 ## Rollback idea
 
@@ -214,12 +237,13 @@ Each upload extracts to a versioned folder under:
 To roll back manually, point `current` to a previous release and restart the service:
 
 ```bash
-sudo ln -sfn /opt/languagevoicetutor/backend/releases/<previous-version> /opt/languagevoicetutor/backend/current
+sudo ln -sfn /opt/languagevoicetutor/backend/releases/<previous-version> /opt/languagevoicetutor/backend/current.next
+sudo mv -Tf /opt/languagevoicetutor/backend/current.next /opt/languagevoicetutor/backend/current
 sudo systemctl restart languagevoicetutor-backend.service
 sudo systemctl status languagevoicetutor-backend.service --no-pager
 ```
 
-Keep old releases until the new release has been verified.
+If `/opt/languagevoicetutor/backend/previous` exists and points to the desired release, rollback can use that symlink target. Keep old releases until the new release has been verified. Database migrations are normally not rolled back automatically; confirm compatibility before switching code backward after a schema change.
 
 ## What to send back after the first deploy
 

@@ -28,8 +28,9 @@ public sealed class BackendLessonHistoryClient
 
         try
         {
-            var session = await authBackendService.EnsureAuthenticatedSessionAsync(cancellationToken);
-            if (session.Status != AuthSessionEnsureStatus.Success || string.IsNullOrWhiteSpace(session.Session?.AccessToken))
+            var sessionResult = await authBackendService.EnsureAuthenticatedSessionAsync(cancellationToken);
+            var session = sessionResult.Session;
+            if (sessionResult.Status != AuthSessionEnsureStatus.Success || session is null || string.IsNullOrWhiteSpace(session.AccessToken))
             {
                 return BackendLessonHistoryClientResult.Failure("Backend lesson history GET skipped because no authenticated session is available.");
             }

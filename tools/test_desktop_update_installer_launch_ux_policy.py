@@ -10,7 +10,7 @@ INSTALLER_READY_MESSAGE = (
     "The update was downloaded and verified. Language Voice Tutor will close and restart "
     "during installation. Do you want to start the installer now?"
 )
-LAUNCH_HELPER = "TryLaunchVerifiedInstallerAfterAppShutdown"
+LAUNCH_HELPER = "TryStartVerifiedInstallerAfterAppShutdown"
 
 
 def read(relative: str) -> str:
@@ -62,7 +62,7 @@ def main() -> None:
     assert_contains(download_service, "timeout /t", "delayed installer start")
     assert_contains(download_service, "BeginApplicationShutdown", "app shutdown request")
     assert_contains(download_service, "application.Dispatcher.BeginInvoke", "non-blocking shutdown dispatch")
-    assert_contains(download_service, "showLaunchFailure?.Invoke", "friendly installer launch failure message")
+    assert_contains(download_service, "showStartFailure?.Invoke", "friendly installer launch failure message")
     assert_contains(download_service, "SHA256.HashDataAsync", "mandatory SHA-256 verification remains")
     assert_contains(download_service, "The downloaded installer did not pass verification. It was deleted for safety.", "failed SHA-256 blocks launch")
 
