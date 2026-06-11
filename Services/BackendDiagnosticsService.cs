@@ -72,25 +72,67 @@ public sealed class BackendDiagnosticsService
     {
         try
         {
-            using var response = await httpClient.GetAsync(BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath), cancellationToken);
+            var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath);
+            using var response = await httpClient.GetAsync(endpointUri, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
+                var safeBodySnippet = await response.Content.ReadAsStringAsync(cancellationToken);
+                await BackendRequestDiagnosticsService.RecordAsync(
+                    GetRequestName(endpointPath),
+                    HttpMethod.Get,
+                    endpointUri,
+                    backendBaseUrl,
+                    response.StatusCode,
+                    responseBodySnippet: safeBodySnippet,
+                    cancellationToken: cancellationToken);
                 return new HealthRequestResult<T>(default, response.StatusCode, (int)response.StatusCode >= 500 ? "server_error" : "http_error");
             }
 
+            await BackendRequestDiagnosticsService.RecordAsync(
+                GetRequestName(endpointPath),
+                HttpMethod.Get,
+                endpointUri,
+                backendBaseUrl,
+                response.StatusCode,
+                cancellationToken: cancellationToken);
             var payload = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
             return payload is null
                 ? new HealthRequestResult<T>(default, response.StatusCode, "unexpected_response")
                 : new HealthRequestResult<T>(payload, response.StatusCode, "none");
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
+            await BackendRequestDiagnosticsService.RecordAsync(
+                GetRequestName(endpointPath),
+                HttpMethod.Get,
+                BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath),
+                backendBaseUrl,
+                exception: exception,
+                cancellationToken: CancellationToken.None);
             return new HealthRequestResult<T>(default, null, "timeout");
         }
         catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
         {
+            await BackendRequestDiagnosticsService.RecordAsync(
+                GetRequestName(endpointPath),
+                HttpMethod.Get,
+                BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath),
+                backendBaseUrl,
+                exception: exception,
+                cancellationToken: CancellationToken.None);
             return new HealthRequestResult<T>(default, null, exception is JsonException ? "unexpected_response" : "network");
         }
+    }
+
+    private static string GetRequestName(string endpointPath)
+    {
+        return endpointPath switch
+        {
+            BackendConstants.RootHealthEndpoint => "backend_health",
+            BackendConstants.HealthEndpoint => "backend_health_api_fallback",
+            BackendConstants.DatabaseHealthEndpoint => "database_health",
+            _ => "backend_health"
+        };
     }
 
     private static HttpClient CreateHttpClient()

@@ -51,12 +51,14 @@ public sealed class BackendUserSettingsClient
         CancellationToken cancellationToken)
     {
         using var httpClient = CreateHttpClient();
-        using var request = new HttpRequestMessage(HttpMethod.Get, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath));
+        var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath);
+        using var request = new HttpRequestMessage(HttpMethod.Get, endpointUri);
         AddBearerToken(request, accessToken);
 
         try
         {
             using var response = await httpClient.SendAsync(request, cancellationToken);
+            await RecordSettingsDiagnosticsAsync(GetSettingsRequestName(endpointPath, HttpMethod.Get), HttpMethod.Get, endpointUri, backendBaseUrl, response, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 return BackendUserSettingsClientResult<BackendUserSettingsResponse>.Failure(
@@ -69,12 +71,14 @@ public sealed class BackendUserSettingsClient
                 ? BackendUserSettingsClientResult<BackendUserSettingsResponse>.Failure($"Backend settings GET {endpointPath} returned an empty response.")
                 : BackendUserSettingsClientResult<BackendUserSettingsResponse>.Success(settings);
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
+            await BackendRequestDiagnosticsService.RecordAsync(GetSettingsRequestName(endpointPath, HttpMethod.Get), HttpMethod.Get, endpointUri, backendBaseUrl, exception: exception, cancellationToken: CancellationToken.None);
             return BackendUserSettingsClientResult<BackendUserSettingsResponse>.Failure($"Backend settings GET {endpointPath} timed out.");
         }
         catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
         {
+            await BackendRequestDiagnosticsService.RecordAsync(GetSettingsRequestName(endpointPath, HttpMethod.Get), HttpMethod.Get, endpointUri, backendBaseUrl, exception: exception, cancellationToken: CancellationToken.None);
             return BackendUserSettingsClientResult<BackendUserSettingsResponse>.Failure($"Backend settings GET {endpointPath} is unavailable.");
         }
     }
@@ -89,7 +93,8 @@ public sealed class BackendUserSettingsClient
         ArgumentNullException.ThrowIfNull(request);
 
         using var httpClient = CreateHttpClient();
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Put, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath))
+        var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath);
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Put, endpointUri)
         {
             Content = JsonContent.Create(request, options: JsonOptions)
         };
@@ -98,6 +103,7 @@ public sealed class BackendUserSettingsClient
         try
         {
             using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+            await RecordSettingsDiagnosticsAsync(GetSettingsRequestName(endpointPath, HttpMethod.Put), HttpMethod.Put, endpointUri, backendBaseUrl, response, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 return BackendUserSettingsClientResult<BackendUserSettingsResponse>.Failure(
@@ -110,14 +116,47 @@ public sealed class BackendUserSettingsClient
                 ? BackendUserSettingsClientResult<BackendUserSettingsResponse>.Failure($"Backend settings PUT {endpointPath} returned an empty response.")
                 : BackendUserSettingsClientResult<BackendUserSettingsResponse>.Success(settings);
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
+            await BackendRequestDiagnosticsService.RecordAsync(GetSettingsRequestName(endpointPath, HttpMethod.Put), HttpMethod.Put, endpointUri, backendBaseUrl, exception: exception, cancellationToken: CancellationToken.None);
             return BackendUserSettingsClientResult<BackendUserSettingsResponse>.Failure($"Backend settings PUT {endpointPath} timed out.");
         }
         catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
         {
+            await BackendRequestDiagnosticsService.RecordAsync(GetSettingsRequestName(endpointPath, HttpMethod.Put), HttpMethod.Put, endpointUri, backendBaseUrl, exception: exception, cancellationToken: CancellationToken.None);
             return BackendUserSettingsClientResult<BackendUserSettingsResponse>.Failure($"Backend settings PUT {endpointPath} is unavailable.");
         }
+    }
+
+    private static async Task RecordSettingsDiagnosticsAsync(
+        string requestName,
+        HttpMethod method,
+        Uri endpointUri,
+        string? backendBaseUrl,
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        var safeBodySnippet = response.IsSuccessStatusCode
+            ? null
+            : await response.Content.ReadAsStringAsync(cancellationToken);
+        await BackendRequestDiagnosticsService.RecordAsync(
+            requestName,
+            method,
+            endpointUri,
+            backendBaseUrl,
+            response.StatusCode,
+            responseBodySnippet: safeBodySnippet,
+            cancellationToken: cancellationToken);
+    }
+
+    private static string GetSettingsRequestName(string endpointPath, HttpMethod method)
+    {
+        return endpointPath switch
+        {
+            BackendConstants.MeSettingsEndpoint => method == HttpMethod.Get ? "cloud_settings_get" : "cloud_settings_put",
+            BackendConstants.DevUserSettingsEndpoint => method == HttpMethod.Get ? "dev_settings_get" : "dev_settings_put",
+            _ => "cloud_settings"
+        };
     }
 
     private static string BuildHttpFailureMessage(string method, string endpointPath, HttpStatusCode statusCode)

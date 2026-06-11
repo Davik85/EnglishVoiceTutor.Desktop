@@ -76,12 +76,14 @@ public sealed class AuthBackendService
         }
 
         using var httpClient = CreateHttpClient();
-        using var request = new HttpRequestMessage(HttpMethod.Get, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.AuthMeEndpoint));
+        var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.AuthMeEndpoint);
+        using var request = new HttpRequestMessage(HttpMethod.Get, endpointUri);
         AuthenticatedRequestHelper.AddBearerTokenIfPresent(request, accessToken);
 
         try
         {
             using var response = await httpClient.SendAsync(request, cancellationToken);
+            await RecordAuthRequestDiagnosticsAsync("auth_me", HttpMethod.Get, endpointUri, response, cancellationToken);
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
                 await sessionStorageService.ClearAsync(cancellationToken);
@@ -96,8 +98,15 @@ public sealed class AuthBackendService
             var user = await response.Content.ReadFromJsonAsync<AuthUserDto>(JsonOptions, cancellationToken);
             return user is null ? AuthMeResult.BackendUnavailable() : AuthMeResult.Success(user);
         }
-        catch
+        catch (Exception exception)
         {
+            await BackendRequestDiagnosticsService.RecordAsync(
+                "auth_me",
+                HttpMethod.Get,
+                endpointUri,
+                backendBaseUrl,
+                exception: exception,
+                cancellationToken: CancellationToken.None);
             return AuthMeResult.BackendUnavailable();
         }
     }
@@ -161,11 +170,13 @@ public sealed class AuthBackendService
 
         try
         {
+            var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath);
             using var response = await httpClient.PostAsJsonAsync(
-                BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath),
+                endpointUri,
                 requestBody,
                 JsonOptions,
                 cancellationToken);
+            await RecordAuthRequestDiagnosticsAsync(GetAuthRequestName(endpointPath), HttpMethod.Post, endpointUri, response, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -206,6 +217,13 @@ public sealed class AuthBackendService
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
+            await BackendRequestDiagnosticsService.RecordAsync(
+                GetAuthRequestName(endpointPath),
+                HttpMethod.Post,
+                BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath),
+                backendBaseUrl,
+                exception: exception,
+                cancellationToken: CancellationToken.None);
             var failure = AuthOperationResult.NetworkUnavailable();
             RecordAuthFailure(failure);
             return failure;
@@ -216,6 +234,37 @@ public sealed class AuthBackendService
             RecordAuthFailure(failure);
             return failure;
         }
+    }
+
+    private async Task RecordAuthRequestDiagnosticsAsync(
+        string requestName,
+        HttpMethod method,
+        Uri endpointUri,
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        var safeBodySnippet = response.IsSuccessStatusCode
+            ? null
+            : await response.Content.ReadAsStringAsync(cancellationToken);
+        await BackendRequestDiagnosticsService.RecordAsync(
+            requestName,
+            method,
+            endpointUri,
+            backendBaseUrl,
+            response.StatusCode,
+            responseBodySnippet: safeBodySnippet,
+            cancellationToken: cancellationToken);
+    }
+
+    private static string GetAuthRequestName(string endpointPath)
+    {
+        return endpointPath switch
+        {
+            BackendConstants.AuthRegisterEndpoint => "auth_register",
+            BackendConstants.AuthLoginEndpoint => "auth_login",
+            BackendConstants.AuthMeEndpoint => "auth_me",
+            _ => "auth_request"
+        };
     }
 
     private static async Task<string> TryReadPasswordOperationMessageAsync(HttpResponseMessage response, CancellationToken cancellationToken)

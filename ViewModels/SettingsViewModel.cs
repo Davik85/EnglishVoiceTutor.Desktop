@@ -1313,6 +1313,7 @@ public partial class SettingsViewModel : ViewModelBase
 
         AppendDiagnosticsLine(report, DiagnosticsAiStatusLabel, DiagnosticsAiStatusText);
         AppendDiagnosticsLine(report, DiagnosticsSettingsFileLabel, SettingsFilePathText);
+        AppendDiagnosticsLine(report, "Backend request diagnostics log", BackendRequestDiagnosticsService.LogFilePath);
         AppendDiagnosticsLine(report, DiagnosticsLessonHistoryFileLabel, LessonHistoryFilePathText);
         AppendDiagnosticsLine(report, DiagnosticsInterfaceLanguageLabel, DiagnosticsInterfaceLanguageText);
         AppendDiagnosticsLine(report, DiagnosticsNativeLanguageLabel, DiagnosticsNativeLanguageText);
@@ -1327,6 +1328,9 @@ public partial class SettingsViewModel : ViewModelBase
         AppendDiagnosticsLine(report, DiagnosticsTutorAvatarLabel, DiagnosticsTutorAvatarText);
         AppendDiagnosticsLine(report, DiagnosticsMicrophoneLabel, DiagnosticsMicrophoneText);
         AppendDiagnosticsLine(report, DiagnosticsCurrentDateTimeLabel, DateTimeOffset.Now.ToString("u"));
+        report.AppendLine();
+        report.AppendLine("Backend request diagnostics log contents:");
+        report.AppendLine(await BackendRequestDiagnosticsService.ReadReportAsync());
 
         return report.ToString().TrimEnd();
     }

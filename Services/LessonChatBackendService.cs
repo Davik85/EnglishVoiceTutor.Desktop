@@ -31,7 +31,7 @@ public sealed class AudioTranscriptionBackendException : Exception
 
 public sealed class LessonChatBackendService
 {
-    private const string HealthyStatus = "ok";
+    private const string HealthyStatus = "Healthy";
     private const string LessonSessionEndedElsewhereErrorCode = "lesson_session_ended_elsewhere";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private string backendBaseUrl = BackendConstants.DefaultBackendBaseUrl;
@@ -53,7 +53,7 @@ public sealed class LessonChatBackendService
 
         try
         {
-            using var response = await httpClient.GetAsync(CreateEndpointUri(backendBaseUrlOverride, BackendConstants.HealthEndpoint), cancellationToken);
+            using var response = await httpClient.GetAsync(CreateEndpointUri(backendBaseUrlOverride, BackendConstants.RootHealthEndpoint), cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
