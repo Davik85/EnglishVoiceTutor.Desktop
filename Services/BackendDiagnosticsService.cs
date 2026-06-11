@@ -27,7 +27,16 @@ public sealed class BackendDiagnosticsService
     public async Task<BackendDiagnosticsResult> CheckAsync(string? backendBaseUrl, CancellationToken cancellationToken = default)
     {
         using var httpClient = CreateHttpClient();
-        var backendHealth = await GetHealthAsync<BackendHealthResponse>(httpClient, backendBaseUrl, BackendConstants.HealthEndpoint, cancellationToken);
+        var backendHealth = await GetHealthAsync<BackendHealthResponse>(httpClient, backendBaseUrl, BackendConstants.RootHealthEndpoint, cancellationToken);
+        if (backendHealth.Payload is null || !IsHealthyStatus(backendHealth.Payload.Status))
+        {
+            var apiBackendHealth = await GetHealthAsync<BackendHealthResponse>(httpClient, backendBaseUrl, BackendConstants.HealthEndpoint, cancellationToken);
+            if (apiBackendHealth.Payload is not null && IsHealthyStatus(apiBackendHealth.Payload.Status))
+            {
+                backendHealth = apiBackendHealth;
+            }
+        }
+
         var isBackendHealthy = backendHealth.Payload is not null && IsHealthyStatus(backendHealth.Payload.Status);
 
         if (!isBackendHealthy)

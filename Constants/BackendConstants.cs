@@ -28,6 +28,7 @@ public static class BackendConstants
     public const string AudioSpeechEndpoint = "/api/audio/speech";
     public const string AudioSpeechStreamEndpoint = "/api/audio/speech-stream";
     public const string RealtimeVoiceEndpoint = "/api/realtime-voice";
+    public const string RootHealthEndpoint = "/health";
     public const string HealthEndpoint = "/api/health";
     public const string DatabaseHealthEndpoint = "/api/health/database";
     public const string BackendConfigStatusEndpoint = "/api/backend/config-status";

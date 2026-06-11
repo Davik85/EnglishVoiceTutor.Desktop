@@ -62,9 +62,13 @@ def main() -> None:
     assert_contains(endpoint_builder, "return normalizedFallback;", "unsafe release override falls back to production")
     assert_contains(settings_vm, "ResolveSavedBaseUrlForCurrentBuild", "settings uses resolved effective backend URL")
 
+    assert_contains(constants, 'RootHealthEndpoint = "/health"', "root health endpoint")
     assert_contains(diagnostics, "BackendStatusCode", "health diagnostics status code")
     assert_contains(diagnostics, "ErrorCategory", "health diagnostics category")
+    assert_contains(diagnostics, "BackendConstants.RootHealthEndpoint", "health diagnostics checks root health")
+    assert_contains(diagnostics, "BackendConstants.HealthEndpoint", "health diagnostics falls back to api health")
     assert_contains(settings_vm, "RefreshBackendHealthDiagnosticsAsync", "startup/settings health check")
+    assert_contains(settings_vm, "BackendStatus = diagnosticsResult.IsBackendHealthy", "health result updates backend status separately")
     assert_contains(settings_vm, "Backend health check", "diagnostics report health result")
     assert_contains(settings_vm, "Last backend error category", "diagnostics report last category")
     assert_contains(settings_vm, "Last backend HTTP status", "diagnostics report last HTTP status")

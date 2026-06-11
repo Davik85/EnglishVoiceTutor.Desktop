@@ -4,14 +4,14 @@
 
 A simple manual update check is implemented in normal desktop Settings. It reads the Windows direct-release `latest.json`, validates the Language Voice Tutor Windows x64 manifest identity, compares installed and latest tester versions, asks before downloading/installing, verifies SHA-256 before offering to start the installer, and does not silently auto-update.
 
-Follow-up before external tester handoff: run a clean-machine smoke test of the installer, update check, manual download, hash verification, session persistence, lessons/history/progress, and no silent install behavior. External tester handoff remains blocked until that passes.
+Follow-up before external tester handoff: run a clean-machine smoke test of the installer, backend health, registration, login, lesson start/completion, progress/history, password reset, update check, manual download, hash verification, session persistence, quiet local fallback when optional cloud settings/status endpoints are unavailable, and no silent install behavior. External tester handoff remains blocked until that passes.
 
 
 Review date: 2026-06-09.
 
 ## Immediate priority: production/server CMS/Admin verification
 
-The current step is CMS/Admin server verification against `https://api.languagevoicetutor.com`. Password reset/change flows are working, PostgreSQL is healthy, and the static tester download page is deployed at `https://languagevoicetutor.com`, but external tester handoff remains blocked until CMS/Admin verification and the update/version-check system are complete. Public release is still not ready.
+The current step is CMS/Admin server verification against `https://api.languagevoicetutor.com`. Password reset/change flows are working, PostgreSQL is healthy, backend connectivity is verified by `/health` or `/api/health`, and the static tester download page is deployed at `https://languagevoicetutor.com`, but external tester handoff remains blocked until CMS/Admin verification and the update/version-check system are complete. Public release is still not ready.
 
 Use `docs/CMS_ADMIN_SERVER_VERIFICATION.md` as the runbook. Keep static JSON as the default runtime source with `CmsContent__UsePublishedSnapshotForRuntime=false` unless the published CMS snapshot has been explicitly validated and the runtime switch is intentionally enabled. No EF migration is expected for this verification step unless `dotnet ef migrations has-pending-model-changes` reports a real model change.
 

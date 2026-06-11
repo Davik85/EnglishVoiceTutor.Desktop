@@ -1408,7 +1408,10 @@ public partial class SettingsViewModel : ViewModelBase
 
                 RecordOptionalSettingsResult(result.StatusCode);
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
-                StatusMessage = BuildSettingsLoadFailureMessage(result.StatusCode);
+                if (!IsOptionalEndpointMissing(result.StatusCode))
+                {
+                    StatusMessage = BuildSettingsLoadFailureMessage(result.StatusCode);
+                }
                 return;
             }
 
@@ -1443,11 +1446,17 @@ public partial class SettingsViewModel : ViewModelBase
             var result = await backendUserSettingsClient.GetDevelopmentSettingsAsync(BackendBaseUrl);
             if (!result.IsSuccess || result.Value is null)
             {
-                RecordBackendFailure(result.Value is null ? "settings_empty_response" : "settings", result.StatusCode);
+                if (!IsOptionalEndpointMissing(result.StatusCode))
+                {
+                    RecordBackendFailure(result.Value is null ? "settings_empty_response" : "settings", result.StatusCode);
+                }
                 RecordOptionalSettingsResult(result.StatusCode);
                 SettingsSource = LocalizeUiText(SettingsSourceDevelopmentText);
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
-                StatusMessage = BuildSettingsLoadFailureMessage(result.StatusCode);
+                if (!IsOptionalEndpointMissing(result.StatusCode))
+                {
+                    StatusMessage = BuildSettingsLoadFailureMessage(result.StatusCode);
+                }
                 return;
             }
 
@@ -1524,22 +1533,15 @@ public partial class SettingsViewModel : ViewModelBase
 
     private async Task RunPostAuthRefreshesAsync()
     {
-        var settingsStatusMessage = string.Empty;
-
         try
         {
             await LoadSettingsForCurrentSessionAsync();
-            if (IsOptionalEndpointMissing(lastBackendStatusCode) && !string.IsNullOrWhiteSpace(StatusMessage))
-            {
-                settingsStatusMessage = StatusMessage;
-            }
         }
         catch
         {
             RecordBackendFailure("settings_exception", null);
             RecordOptionalSettingsResult(null, "unavailable");
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
-            settingsStatusMessage = BuildSettingsLoadFailureMessage(null);
         }
 
         try
@@ -1561,15 +1563,17 @@ public partial class SettingsViewModel : ViewModelBase
             ResetSubscriptionStatus();
         }
 
-        StatusMessage = string.IsNullOrWhiteSpace(settingsStatusMessage)
-            ? BackendUxText.SignedIn
-            : $"{BackendUxText.SignedIn} {settingsStatusMessage}";
+        StatusMessage = BackendUxText.SignedIn;
     }
 
     private async Task RefreshBackendHealthDiagnosticsAsync()
     {
         var diagnosticsResult = await backendDiagnosticsService.CheckAsync(BackendBaseUrl);
         RecordHealthDiagnostics(diagnosticsResult);
+        if (!diagnosticsResult.IsBackendHealthy)
+        {
+            StatusMessage = $"{BackendUxText.CouldNotConnect} Server health: {lastBackendHealthResult}.";
+        }
     }
 
     private void RecordHealthDiagnostics(BackendDiagnosticsResult diagnosticsResult)
@@ -1579,6 +1583,9 @@ public partial class SettingsViewModel : ViewModelBase
             : $"unavailable ({diagnosticsResult.ErrorCategory}; {FormatBackendStatusCode(diagnosticsResult.BackendStatusCode)})";
         lastBackendErrorCategory = diagnosticsResult.ErrorCategory;
         lastBackendStatusCode = diagnosticsResult.BackendStatusCode;
+        BackendStatus = diagnosticsResult.IsBackendHealthy
+            ? DiagnosticBackendStatus.Connected
+            : DiagnosticBackendStatus.Unavailable;
     }
 
     private void RecordBackendFailure(string category, HttpStatusCode? statusCode)
@@ -1593,7 +1600,8 @@ public partial class SettingsViewModel : ViewModelBase
             ? (IsOptionalEndpointMissing(statusCode) ? "missing optional settings endpoint" : "settings")
             : category;
         lastBackendSettingsResult = $"{normalizedCategory} ({FormatBackendStatusCode(statusCode)})";
-        if (!string.Equals(normalizedCategory, "success", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(normalizedCategory, "success", StringComparison.OrdinalIgnoreCase)
+            && !IsOptionalEndpointMissing(statusCode))
         {
             RecordBackendFailure(normalizedCategory, statusCode);
         }

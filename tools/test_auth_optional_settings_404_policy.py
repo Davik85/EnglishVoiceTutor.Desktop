@@ -47,12 +47,16 @@ def main() -> None:
     assert_contains(settings_vm, "await RunPostAuthRefreshesAsync();", "registration/login use isolated post-auth refresh")
     assert_contains(settings_vm, "IsOptionalEndpointMissing", "optional 404 classifier")
     assert_contains(settings_vm, "statusCode == HttpStatusCode.NotFound", "404 is optional endpoint missing")
-    assert_contains(settings_vm, "Cloud settings are not available yet. Local settings are still available.", "safe cloud settings 404 message")
+    assert_contains(settings_vm, "Cloud settings are not available yet. Local settings are still available.", "safe cloud settings 404 save message")
+    assert_contains(settings_vm, """if (!IsOptionalEndpointMissing(result.StatusCode))
+                {
+                    StatusMessage = BuildSettingsLoadFailureMessage(result.StatusCode);
+                }""", "settings open suppresses optional 404 global warning")
     assert_contains(settings_vm, "missing optional settings endpoint", "settings diagnostics distinguish optional 404")
     assert_contains(settings_vm, "missing optional account status endpoint", "account status diagnostics distinguish optional 404")
     assert_contains(settings_vm, "Backend settings endpoint", "diagnostics include settings endpoint status")
     assert_contains(settings_vm, "Account status endpoint", "diagnostics include account status endpoint status")
-    assert_contains(settings_vm, "BackendUxText.SignedIn", "auth success remains signed in after optional refresh")
+    assert_contains(settings_vm, "StatusMessage = BackendUxText.SignedIn;", "auth success remains signed in after optional refresh")
 
     post_auth = re.search(r"private async Task RunPostAuthRefreshesAsync\(\).*?\n    private async Task RefreshBackendHealthDiagnosticsAsync", settings_vm, re.S)
     if not post_auth:
@@ -61,6 +65,8 @@ def main() -> None:
     for expected in ["LoadSettingsForCurrentSessionAsync", "RefreshLearningStatisticsAsync", "RefreshSubscriptionStatusAsync"]:
         assert_contains(post_auth_body, expected, f"post-auth {expected}")
     assert_contains(post_auth_body, "catch", "post-auth optional refresh catches failures")
+    assert_contains(post_auth_body, "StatusMessage = BackendUxText.SignedIn;", "post-auth optional refresh status remains signed in")
+    assert_not_contains(post_auth_body, "BuildSettingsLoadFailureMessage", "post-auth optional refresh must not surface cloud settings fallback as auth result")
     assert_not_contains(post_auth_body, "ErrorMessage = BackendUxText.CouldNotConnect", "post-auth optional refresh must not convert auth success to auth failure")
 
     for text, label in [(settings_vm, "SettingsViewModel"), (auth_backend, "AuthBackendService")]:
