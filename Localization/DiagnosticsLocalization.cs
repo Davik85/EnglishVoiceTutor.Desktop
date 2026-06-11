@@ -11,7 +11,7 @@ public static class DiagnosticsLocalization
             settings.DiagnosticsTitle,
             "Technical information for troubleshooting.",
             "App version",
-            "Backend URL",
+            "Server endpoint",
             "Backend status",
             "Database status",
             "AI status",

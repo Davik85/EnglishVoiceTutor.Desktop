@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Shared.NativeLanguages;
 using EnglishVoiceTutor.Shared.StudyLanguages;
@@ -20,6 +21,9 @@ public class UserSettings
 
     public string LearningGoal { get; set; } = string.Empty;
 
+#if !DEBUG
+    [JsonIgnore]
+#endif
     public string BackendBaseUrl { get; set; } = BackendConstants.DefaultBackendBaseUrl;
 
     public string AudioInputDeviceId { get; set; } = AudioConstants.DefaultAudioInputDeviceId;

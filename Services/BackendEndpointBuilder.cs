@@ -6,25 +6,46 @@ public static class BackendEndpointBuilder
 {
     public static string NormalizeBaseUrl(string? backendBaseUrl)
     {
+#if DEBUG
         return NormalizeBaseUrl(backendBaseUrl, BackendConstants.DefaultBackendBaseUrl);
+#else
+        return BackendConstants.ProductionBackendBaseUrl;
+#endif
     }
 
     public static string NormalizeBaseUrl(string? backendBaseUrl, string fallbackBaseUrl)
     {
-        var normalizedFallback = NormalizeAbsoluteHttpUrl(fallbackBaseUrl) ?? BackendConstants.LegacyLocalBackendBaseUrl;
+#if DEBUG
+        var normalizedFallback = NormalizeAbsoluteHttpUrl(fallbackBaseUrl)
+            ?? NormalizeAbsoluteHttpUrl(BackendConstants.DeveloperBackendBaseUrl)
+            ?? BackendConstants.ProductionBackendBaseUrl;
         var normalizedUrl = NormalizeAbsoluteHttpUrl(backendBaseUrl);
-
-        if (normalizedUrl is not null && IsProductionBackendUrl(normalizedFallback) && IsUnsafeReleaseOverride(normalizedUrl))
-        {
-            return normalizedFallback;
-        }
-
         return normalizedUrl ?? normalizedFallback;
+#else
+        _ = backendBaseUrl;
+        _ = fallbackBaseUrl;
+        return BackendConstants.ProductionBackendBaseUrl;
+#endif
+    }
+
+    public static string ResolveBuildDefaultBaseUrl(string? configuredBackendBaseUrl)
+    {
+#if DEBUG
+        return NormalizeBaseUrl(configuredBackendBaseUrl, BackendConstants.DeveloperBackendBaseUrl);
+#else
+        _ = configuredBackendBaseUrl;
+        return BackendConstants.ProductionBackendBaseUrl;
+#endif
     }
 
     public static string ResolveSavedBaseUrlForCurrentBuild(string? savedBackendBaseUrl)
     {
+#if DEBUG
         return NormalizeBaseUrl(savedBackendBaseUrl, BackendConstants.DefaultBackendBaseUrl);
+#else
+        _ = savedBackendBaseUrl;
+        return BackendConstants.ProductionBackendBaseUrl;
+#endif
     }
 
     public static bool IsProductionBackendUrl(string? backendBaseUrl)
@@ -36,37 +57,13 @@ public static class BackendEndpointBuilder
 
     public static bool WouldIgnoreUnsafeReleaseOverride(string? backendBaseUrl)
     {
-        var normalizedBuildDefault = NormalizeAbsoluteHttpUrl(BackendConstants.DefaultBackendBaseUrl);
+#if DEBUG
+        _ = backendBaseUrl;
+        return false;
+#else
         var normalizedUrl = NormalizeAbsoluteHttpUrl(backendBaseUrl);
-
-        return normalizedUrl is not null
-            && IsProductionBackendUrl(normalizedBuildDefault)
-            && IsUnsafeReleaseOverride(normalizedUrl);
-    }
-
-    private static bool IsUnsafeReleaseOverride(string normalizedBackendBaseUrl)
-    {
-        if (!Uri.TryCreate(normalizedBackendBaseUrl, UriKind.Absolute, out var uri))
-        {
-            return true;
-        }
-
-        if (uri.IsLoopback)
-        {
-            return true;
-        }
-
-        if (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
-            && !IsProductionBackendUrl(normalizedBackendBaseUrl))
-        {
-            return true;
-        }
-
-        var host = uri.Host.Trim('[', ']');
-        return string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(host, "::1", StringComparison.OrdinalIgnoreCase)
-            || host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
+        return normalizedUrl is not null && !IsProductionBackendUrl(normalizedUrl);
+#endif
     }
 
     private static string? NormalizeAbsoluteHttpUrl(string? backendBaseUrl)

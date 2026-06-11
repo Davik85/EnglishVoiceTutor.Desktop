@@ -103,7 +103,8 @@ def main() -> None:
         "EffectiveBackendBaseUrl",
         "BackendBaseUrlSource",
         "packaged default",
-        "local settings override",
+        "developer override",
+        "packaged production server",
         "Bearer {RedactedText}",
         "EmailPattern",
     ]:
@@ -130,8 +131,10 @@ def main() -> None:
         combined = "\n".join([diagnostics, auth, settings_client, subscription])
         assert_contains(combined, request_name, f"logged request name {request_name}")
 
-    assert_contains(settings_vm, "Backend request diagnostics log", "diagnostics report exposes log path")
-    assert_contains(settings_vm, "BackendRequestDiagnosticsService.ReadReportAsync", "copy/export includes request diagnostics")
+    assert_contains(settings_vm, "Backend request diagnostics log", "internal diagnostics report tracks log path")
+    assert_contains(settings_vm, "BackendRequestDiagnosticsService.ReadReportAsync", "internal copy/export includes request diagnostics")
+    assert_not_contains(read("Views/SettingsView.xaml"), "DiagnosticsSection", "release Settings UI Diagnostics tab")
+    assert_not_contains(read("Views/SettingsView.xaml"), "BackendBaseUrl", "release Settings UI backend URL field")
     assert_contains(settings_vm, "StatusMessage = BackendUxText.SignedIn;", "post-auth optional failures do not overwrite auth success")
 
     for text, label in [(settings_vm, "SettingsViewModel"), (auth, "AuthBackendService"), (diagnostics, "BackendDiagnosticsService")]:

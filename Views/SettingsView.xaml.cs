@@ -7,11 +7,10 @@ namespace EnglishVoiceTutor.Desktop.Views;
 
 public partial class SettingsView : UserControl
 {
-    private const string ReleaseDiagnosticsSupportFlagName = "EVT_DESKTOP_DIAGNOSTICS";
 #if DEBUG
     public static readonly bool DesktopDiagnosticsEnabled = true;
 #else
-    public static readonly bool DesktopDiagnosticsEnabled = IsReleaseDiagnosticsSupportFlagEnabled();
+    public static readonly bool DesktopDiagnosticsEnabled = false;
 #endif
 
     private const string LearningTabHeaderText = "Learning";
@@ -37,15 +36,6 @@ public partial class SettingsView : UserControl
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
         Unloaded += OnUnloaded;
-    }
-
-    private static bool IsReleaseDiagnosticsSupportFlagEnabled()
-    {
-        var flagValue = Environment.GetEnvironmentVariable(ReleaseDiagnosticsSupportFlagName);
-
-        return string.Equals(flagValue, "1", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(flagValue, "true", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(flagValue, "yes", StringComparison.OrdinalIgnoreCase);
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)

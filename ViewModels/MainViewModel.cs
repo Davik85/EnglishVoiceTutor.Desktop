@@ -101,8 +101,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         botVoiceTempFileCleanupService.CleanupOldBotVoiceFiles();
         authBackendService = new AuthBackendService(authSessionStorageService);
         userSettings = userSettingsService.Load();
-        lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
-        authBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
+        lessonChatBackendService.SetBackendBaseUrl(BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(userSettings.BackendBaseUrl));
+        authBackendService.SetBackendBaseUrl(BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(userSettings.BackendBaseUrl));
         currentViewModel = CreateWelcomeViewModel();
         _ = TryRestoreSavedAuthSessionOnStartupAsync();
     }
@@ -220,13 +220,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         userSettings.SpeechVoiceId = SpeechVoiceOptions.GetById(speechVoiceId).Id;
         userSettings.UserDisplayName = userDisplayName;
         userSettings.LearningGoal = learningGoal;
-        userSettings.BackendBaseUrl = backendBaseUrl;
+        userSettings.BackendBaseUrl = BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(backendBaseUrl);
         userSettings.AudioInputDeviceId = audioInputDeviceId;
         userSettingsService.Save(userSettings);
         OnPropertyChanged(nameof(AppFlowDirection));
         OnPropertyChanged(nameof(AccessPanelCloseActionText));
-        lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
-        authBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
+        lessonChatBackendService.SetBackendBaseUrl(BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(userSettings.BackendBaseUrl));
+        authBackendService.SetBackendBaseUrl(BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(userSettings.BackendBaseUrl));
         Debug.WriteLine($"Settings saved: StudyLanguageId={userSettings.StudyLanguageId}; InterfaceLanguageId={userSettings.InterfaceLanguageId}; TutorAvatarId={userSettings.SelectedTutorAvatarId}; BackendBaseUrlConfigured={!string.IsNullOrWhiteSpace(userSettings.BackendBaseUrl)}. Start a new lesson to apply changed study language to lesson content.");
     }
 
@@ -242,8 +242,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         userSettings.LearningGoal = persistedSettings.LearningGoal;
         userSettings.BackendBaseUrl = persistedSettings.BackendBaseUrl;
         userSettings.AudioInputDeviceId = persistedSettings.AudioInputDeviceId;
-        lessonChatBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
-        authBackendService.SetBackendBaseUrl(userSettings.BackendBaseUrl);
+        lessonChatBackendService.SetBackendBaseUrl(BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(userSettings.BackendBaseUrl));
+        authBackendService.SetBackendBaseUrl(BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(userSettings.BackendBaseUrl));
     }
 
     private async Task SaveLessonHistoryAsync(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic, LessonSummaryInput summaryInput)

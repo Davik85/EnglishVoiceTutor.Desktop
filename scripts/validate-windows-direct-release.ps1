@@ -10,6 +10,7 @@ $requiredAppId = "LanguageVoiceTutor.Desktop"
 $requiredPlatform = "windows"
 $requiredArchitecture = "win-x64"
 $requiredUpdateMode = "manual-confirmation"
+$requiredBackendBaseUrl = "https://api.languagevoicetutor.com"
 $requiredManifestFiles = @(
     "latest.json",
     "changelog.json",
@@ -167,6 +168,7 @@ if ($null -ne $latest) {
         $backendBaseUrl = [string]$latest.backendBaseUrl
         if ([System.Uri]::TryCreate($backendBaseUrl, [System.UriKind]::Absolute, [ref]$backendUri) -and ($backendUri.Scheme -eq [System.Uri]::UriSchemeHttp -or $backendUri.Scheme -eq [System.Uri]::UriSchemeHttps)) {
             Write-ValidationPass "backendBaseUrl is an absolute http/https URL: $backendBaseUrl"
+            Assert-Equal -Name "backendBaseUrl" -Actual $backendBaseUrl -Expected $requiredBackendBaseUrl
         }
         else {
             Write-ValidationFail "backendBaseUrl must be an absolute http/https URL when present."

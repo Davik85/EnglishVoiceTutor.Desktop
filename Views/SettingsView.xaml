@@ -15,7 +15,6 @@
         <sys:Double x:Key="SettingsDropdownWidth">276</sys:Double>
         <sys:Double x:Key="SettingsTextInputWidth">340</sys:Double>
         <sys:Double x:Key="SettingsMicrophoneDropdownWidth">440</sys:Double>
-        <sys:Double x:Key="SettingsBackendUrlInputWidth">480</sys:Double>
         <sys:Double x:Key="SettingsControlHeight">42</sys:Double>
         <Thickness x:Key="SettingsPagePadding">28,24,28,22</Thickness>
         <Thickness x:Key="SettingsSectionGap">0,16,0,0</Thickness>
@@ -48,9 +47,6 @@
             <Setter Property="Margin" Value="0,6,0,0" />
         </Style>
 
-        <Style x:Key="SettingsBackendUrlTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource SettingsTextBoxStyle}">
-            <Setter Property="Width" Value="{StaticResource SettingsBackendUrlInputWidth}" />
-        </Style>
 
         <Style x:Key="SettingsPasswordBoxStyle" TargetType="PasswordBox">
             <Setter Property="Width" Value="{StaticResource SettingsTextInputWidth}" />
@@ -272,11 +268,6 @@
                                  Content="{Binding ProgressTabHeader}"
                                  GroupName="SettingsSections"
                                  Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
-                    <RadioButton x:Name="DiagnosticsSectionNav"
-                                 Content="{Binding DiagnosticsTitle}"
-                                 GroupName="SettingsSections"
-                                 Style="{StaticResource SettingsSectionNavigationButtonStyle}"
-                                 Visibility="{Binding IsDiagnosticsTabVisible, ElementName=Root, Converter={StaticResource BooleanToVisibilityConverter}}" />
                 </StackPanel>
 
                 <ScrollViewer x:Name="LearningSection" Grid.Column="1" Style="{StaticResource SettingsSectionScrollViewerStyle}" Visibility="{Binding IsChecked, ElementName=LearningSectionNav, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -703,119 +694,7 @@
                         </StackPanel>
                 </ScrollViewer>
 
-                <ScrollViewer x:Name="DiagnosticsSection" Grid.Column="1">
-                    <ScrollViewer.Style>
-                        <Style TargetType="ScrollViewer" BasedOn="{StaticResource SettingsSectionScrollViewerStyle}">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding IsChecked, ElementName=DiagnosticsSectionNav}" Value="True" />
-                                        <Condition Binding="{Binding IsDiagnosticsTabVisible, ElementName=Root}" Value="True" />
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </MultiDataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ScrollViewer.Style>
-                        <StackPanel Style="{StaticResource SettingsSectionStackStyle}">
-                            <Border Style="{StaticResource SettingsSectionCardStyle}">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding ConnectionTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
-                                    <TextBlock Text="{Binding BackendUrlSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
 
-                                    <TextBlock Text="{Binding BackendUrlLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
-                                    <TextBox Style="{StaticResource SettingsBackendUrlTextBoxStyle}"
-                                             Text="{Binding BackendBaseUrl, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Margin="{StaticResource SettingsSectionGap}" Style="{StaticResource SettingsSectionCardStyle}">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding DiagnosticsTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
-                                    <TextBlock Text="{Binding DiagnosticsSubtitle}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
-
-                                    <Grid Margin="0,14,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding DiagnosticsAppVersionLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AppVersionText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding DiagnosticsBackendUrlLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DiagnosticsBackendUrlText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding DiagnosticsBackendStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DiagnosticsBackendStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding DiagnosticsDatabaseStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DiagnosticsDatabaseStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding DiagnosticsAiStatusLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DiagnosticsAiStatusText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding DiagnosticsSettingsFileLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SettingsFilePathText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{Binding DiagnosticsLessonHistoryFileLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LessonHistoryFilePathText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="7" Grid.Column="0" Text="{Binding DiagnosticsInterfaceLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding DiagnosticsInterfaceLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{Binding DiagnosticsNativeLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding DiagnosticsNativeLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{Binding DiagnosticsStudyLanguageLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding DiagnosticsStudyLanguageText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{Binding DiagnosticsTutorAvatarLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding DiagnosticsTutorAvatarText}" Style="{StaticResource DiagnosticsValueStyle}" />
-
-                                        <TextBlock Grid.Row="11" Grid.Column="0" Text="{Binding DiagnosticsMicrophoneLabel, StringFormat={}{0}:}" Style="{StaticResource DiagnosticsLabelStyle}" />
-                                        <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding DiagnosticsMicrophoneText}" Style="{StaticResource DiagnosticsValueStyle}" />
-                                    </Grid>
-
-                                    <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
-                                        <Button MinWidth="150"
-                                                Height="34"
-                                                Content="{Binding RefreshDiagnosticsButtonText}"
-                                                Command="{Binding RefreshDiagnosticsCommand}"
-                                                Style="{StaticResource PrimaryButtonStyle}" />
-                                        <Button MinWidth="150"
-                                                Height="34"
-                                                Margin="10,0,0,0"
-                                                Content="{Binding CopyDiagnosticsText}"
-                                                Command="{Binding CopyDiagnosticsCommand}"
-                                                Style="{StaticResource PrimaryButtonStyle}" />
-                                    </StackPanel>
-
-                                    <TextBlock Margin="0,8,0,0"
-                                               Text="{Binding DiagnosticsCopyStatusText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-                            </Border>
-
-                        </StackPanel>
-                </ScrollViewer>
 
             </Grid>
 

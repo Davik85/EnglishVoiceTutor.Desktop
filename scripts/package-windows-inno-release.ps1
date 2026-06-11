@@ -21,6 +21,7 @@ $platform = "windows"
 $architecture = "win-x64"
 $channel = "direct-tester"
 $updateMode = "manual-confirmation"
+$productionBackendBaseUrl = "https://api.languagevoicetutor.com"
 $mainExe = "EnglishVoiceTutor.Desktop.exe"
 $installerBaseName = "LanguageVoiceTutorSetup-$Version.exe"
 $semVerPattern = '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$'
@@ -130,6 +131,23 @@ function Assert-PublishOutputIsSafe {
         $forbiddenList = ($forbiddenFiles | ForEach-Object { $_.FullName }) -join [Environment]::NewLine
         throw "Publish output contains forbidden installer files:$([Environment]::NewLine)$forbiddenList"
     }
+
+    $forbiddenReleaseStrings = @(
+        "http://localhost:5000",
+        "127.0.0.1",
+        "localhost",
+        "Backend URL"
+    )
+
+    $publishedFiles = @(Get-ChildItem -Path $PublishPath -Recurse -File -Force)
+    foreach ($file in $publishedFiles) {
+        foreach ($forbidden in $forbiddenReleaseStrings) {
+            $match = Select-String -Path $file.FullName -Pattern $forbidden -SimpleMatch -Quiet -ErrorAction SilentlyContinue
+            if ($match) {
+                throw "Release publish output contains forbidden backend override/UI string '$forbidden' in $($file.FullName)."
+            }
+        }
+    }
 }
 
 function Write-JsonFile {
@@ -154,6 +172,9 @@ if (-not (Test-Path $innoScriptPath -PathType Leaf)) {
 }
 
 $BackendBaseUrl = Normalize-BackendBaseUrl -Value $BackendBaseUrl
+if ($BackendBaseUrl -ne $productionBackendBaseUrl) {
+    throw "Tester/release installed builds are server-only and must use $productionBackendBaseUrl. Local/custom backend URLs are DEBUG/developer-only."
+}
 $isccExe = Resolve-IsccPath -ExplicitPath $IsccPath
 
 Set-Location $repoRoot
@@ -192,7 +213,7 @@ if (-not (Test-Path $exePath -PathType Leaf)) {
     throw "Publish completed, but $mainExe was not found in the publish directory."
 }
 
-Write-Host "Scanning publish output for forbidden local data and secret-like files..."
+Write-Host "Scanning publish output for forbidden local data, backend overrides, and secret-like files..."
 Assert-PublishOutputIsSafe -PublishPath $publishDirectory
 
 Write-Host "Building Inno Setup installer..."

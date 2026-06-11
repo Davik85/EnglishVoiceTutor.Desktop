@@ -37,7 +37,7 @@ public static class BackendUxLocalization
     private static readonly IReadOnlyDictionary<string, BackendUxLocalizedText> TextByLanguageId = new Dictionary<string, BackendUxLocalizedText>(StringComparer.OrdinalIgnoreCase)
     {
         ["en"] = new(
-            "Backend is unavailable. Please start the local backend and try again.",
+            "Backend is unavailable. Please check your connection and try again.",
             "Could not connect to the server. Please check that the backend is running.",
             "This action needs the backend. Please try again after the server is available.",
             "The server returned an error. Please try again.",
@@ -118,7 +118,7 @@ public static class BackendUxLocalization
             "Impossible de terminer la leçon sur un autre appareil. Réessayez.",
             "Cette leçon a été terminée sur un autre appareil. Commencez une nouvelle leçon pour continuer."),
         ["de"] = new(
-            "Das Backend ist nicht verfügbar. Starte das lokale Backend und versuche es erneut.",
+            "Das Backend ist nicht verfügbar. Prüfe deine Verbindung und versuche es erneut.",
             "Keine Verbindung zum Server möglich. Prüfe, ob das Backend läuft.",
             "Diese Aktion benötigt das Backend. Versuche es erneut, wenn der Server verfügbar ist.",
             "Der Server hat einen Fehler zurückgegeben. Versuche es erneut.",
@@ -226,7 +226,7 @@ public static class BackendUxLocalization
             "Не удалось завершить урок на другом устройстве. Попробуйте ещё раз.",
             "Этот урок был завершён на другом устройстве. Начните новый урок, чтобы продолжить."),
         ["pl"] = new(
-            "Backend jest niedostępny. Uruchom lokalny backend i spróbuj ponownie.",
+            "Backend jest niedostępny. Sprawdź połączenie i spróbuj ponownie.",
             "Nie można połączyć się z serwerem. Sprawdź, czy backend działa.",
             "Ta akcja wymaga backendu. Spróbuj ponownie, gdy serwer będzie dostępny.",
             "Serwer zwrócił błąd. Spróbuj ponownie.",

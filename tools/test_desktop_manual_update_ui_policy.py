@@ -26,7 +26,8 @@ def main() -> None:
     manifest_notes = read("docs/WINDOWS_INSTALLER_UPDATE_FLOW.md") + read("docs/TESTER_RELEASE.md") + read("scripts/package-windows-inno-release.ps1")
 
     learning_section = settings_xaml.split('<ScrollViewer x:Name="AccountSection"', 1)[0]
-    diagnostics_section = settings_xaml.split('<ScrollViewer x:Name="DiagnosticsSection"', 1)[-1]
+    diagnostics_split = settings_xaml.split('<ScrollViewer x:Name="DiagnosticsSection"', 1)
+    diagnostics_section = diagnostics_split[-1] if len(diagnostics_split) > 1 else ""
     assert_contains(learning_section, "CheckForUpdatesCommand", "user-facing update button outside Diagnostics-only UI")
     assert_contains(settings_vm, "Check for updates", "user-facing update button text")
     assert_not_contains(diagnostics_section, "Check for updates", "Diagnostics-only update entry point")

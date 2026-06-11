@@ -26,11 +26,16 @@ public static partial class BackendRequestDiagnosticsService
 
     public static string GetBaseUrlSource(string? backendBaseUrl)
     {
+#if DEBUG
         var normalizedInput = BackendEndpointBuilder.NormalizeBaseUrl(backendBaseUrl);
         var normalizedDefault = BackendEndpointBuilder.NormalizeBaseUrl(BackendConstants.DefaultBackendBaseUrl);
         return string.Equals(normalizedInput, normalizedDefault, StringComparison.OrdinalIgnoreCase)
             ? "packaged default"
-            : "local settings override";
+            : "developer override";
+#else
+        _ = backendBaseUrl;
+        return "packaged production server";
+#endif
     }
 
     public static async Task RecordAsync(
