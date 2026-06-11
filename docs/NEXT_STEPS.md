@@ -210,3 +210,9 @@ The desktop now has a simple manual update check from normal Settings, not just 
 Before external tester handoff, run a clean-machine smoke that confirms the account remains signed in and account-scoped Progress and Lesson History survive app restart, Windows restart, reinstall, and update. Ownerless legacy local records should stay hidden for signed-in users, and records from other accounts must stay hidden.
 
 Optional cloud settings/account status note: direct `POST https://api.languagevoicetutor.com/api/auth/register` has been verified to return `201 Created` with an access token, and `GET https://api.languagevoicetutor.com/api/auth/me` works with that token. Optional cloud settings/account status routes may be unavailable or return `404`; the desktop must treat that as local-default fallback and must not convert successful registration/login into an auth failure.
+
+## Clean-machine release smoke additions for desktop update/layout regressions
+
+- Clean-machine smoke must include update-over-existing-install: install the fixed build over a logged-in 0.1.25 tester install, confirm the user remains signed in, restart the app, and confirm auth session, account identity, local settings, lesson history, and progress are preserved.
+- Clean-machine smoke must include smaller-screen layout checks. On smaller laptop / scaled display targets, confirm the title bar and close button are visible, the Welcome/start screen primary actions are visible without scrolling, Settings can be opened without scrolling to find it, and the app clamps startup size and position to the visible working area instead of relying on root scrolling.
+- Keep the release boundary unchanged: release Settings must not show Diagnostics or Backend URL controls, installed builds stay locked to `https://api.languagevoicetutor.com`, and Backend/auth/lessons remain unchanged.

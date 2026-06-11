@@ -6,11 +6,14 @@
              mc:Ignorable="d"
              d:DesignHeight="720"
              d:DesignWidth="760">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
-            <Border Width="540"
-                Height="640"
+    <Grid x:Name="WelcomeRoot"
+          Margin="18"
+          Background="{StaticResource AppBackgroundBrush}"
+          SizeChanged="OnWelcomeRootSizeChanged">
+        <Border x:Name="WelcomeCard"
+                Width="540"
                 MaxWidth="540"
+                MinHeight="420"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Background="{StaticResource SurfaceBrush}"
@@ -27,11 +30,13 @@
                                   Color="#FF173B57" />
             </Border.Effect>
 
-            <Grid>
-                <Image Source="/Assets/Welcome/welcome-cover.png"
+            <Grid x:Name="WelcomeHeroSurface">
+                <Image x:Name="WelcomeHeroImage"
+                       Source="/Assets/Welcome/welcome-cover.png"
                        Stretch="UniformToFill"
                        HorizontalAlignment="Stretch"
                        VerticalAlignment="Stretch"
+                       MaxHeight="430"
                        SnapsToDevicePixels="True" />
 
                 <Rectangle IsHitTestVisible="False">
@@ -45,15 +50,18 @@
                     </Rectangle.Fill>
                 </Rectangle>
 
-                <Grid Margin="24,14,24,20">
+                <Grid x:Name="WelcomeOverlay"
+                      Margin="24,14,24,20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" MinHeight="96" />
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0"
+                    <Border x:Name="WelcomeHeaderPanel"
+                            Grid.Row="0"
                             Width="452"
+                            MaxWidth="452"
                             Padding="18,11,18,12"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Top"
@@ -90,8 +98,11 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="2"
+                    <Border x:Name="WelcomePrimaryActionsPanel"
+                            Grid.Row="2"
                             Width="452"
+                            MaxWidth="452"
+                            MinHeight="96"
                             Padding="18,12"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Bottom"
@@ -163,7 +174,6 @@
                     </Border>
                 </Grid>
             </Grid>
-            </Border>
-        </Grid>
-    </ScrollViewer>
+        </Border>
+    </Grid>
 </UserControl>
