@@ -1,4 +1,6 @@
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Models.Updates;
 
@@ -11,62 +13,131 @@ public sealed class UpdateManifestClient
     public const string ExpectedAppId = "LanguageVoiceTutor.Desktop";
     public const string ExpectedPlatform = "windows";
     public const string ExpectedArchitecture = "win-x64";
+    private const int ManifestRequestTimeoutSeconds = 45;
+    private const string ManifestFailureCategoryConfiguration = "configuration";
+    private const string ManifestFailureCategoryHttpStatus = "http_status";
+    private const string ManifestFailureCategoryNetwork = "network";
+    private const string ManifestFailureCategoryTimeout = "timeout";
+    private const string ManifestFailureCategoryParse = "parse";
+    private const string ManifestFailureCategoryValidation = "validation";
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly HttpClient httpClient;
 
     public UpdateManifestClient(HttpClient? httpClient = null)
     {
-        this.httpClient = httpClient ?? new HttpClient();
+        this.httpClient = httpClient ?? CreateHttpClient();
     }
 
     public async Task<UpdateCheckResult> LoadLatestAsync(CancellationToken cancellationToken = default)
     {
         if (!Uri.TryCreate(LatestManifestUrl, UriKind.Absolute, out var manifestUri) || !IsHttpsUri(manifestUri))
         {
-            return UpdateCheckResult.Failure("The update manifest address is not a valid HTTPS URL.");
+            return UpdateCheckResult.Failure(
+                "The update manifest address is not a valid HTTPS URL.",
+                LatestManifestUrl,
+                ManifestFailureCategoryConfiguration);
         }
 
         try
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeout.CancelAfter(TimeSpan.FromSeconds(20));
+            timeout.CancelAfter(TimeSpan.FromSeconds(ManifestRequestTimeoutSeconds));
 
             using var request = new HttpRequestMessage(HttpMethod.Get, manifestUri);
-            request.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue
-            {
-                NoCache = true,
-                NoStore = true,
-                MaxAge = TimeSpan.Zero
-            };
-            request.Headers.Pragma.ParseAdd("no-cache");
+            ConfigureManifestRequestHeaders(request);
 
             using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
             if (!response.IsSuccessStatusCode)
             {
-                return UpdateCheckResult.Failure("Could not load update information right now. Please try again later.");
+                return UpdateCheckResult.Failure(
+                    "Could not load update information right now. Please try again later.",
+                    manifestUri.AbsoluteUri,
+                    ManifestFailureCategoryHttpStatus,
+                    response.StatusCode,
+                    response.ReasonPhrase ?? string.Empty);
             }
 
             await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
-            var manifest = await JsonSerializer.DeserializeAsync<UpdateManifest>(stream, JsonOptions, timeout.Token);
+            UpdateManifest? manifest;
+            try
+            {
+                manifest = await JsonSerializer.DeserializeAsync<UpdateManifest>(stream, JsonOptions, timeout.Token);
+            }
+            catch (JsonException exception)
+            {
+                return UpdateCheckResult.Failure(
+                    "The update information could not be read as valid JSON.",
+                    manifestUri.AbsoluteUri,
+                    ManifestFailureCategoryParse,
+                    exceptionMessage: exception.Message);
+            }
+
             if (manifest is null)
             {
-                return UpdateCheckResult.Failure("The update information was empty or unreadable.");
+                return UpdateCheckResult.Failure(
+                    "The update information was empty or unreadable.",
+                    manifestUri.AbsoluteUri,
+                    ManifestFailureCategoryParse);
             }
 
             var validation = Validate(manifest, manifestUri);
             return validation.IsValid
-                ? UpdateCheckResult.Success(validation)
-                : UpdateCheckResult.Failure(validation.ErrorMessage);
+                ? UpdateCheckResult.Success(validation, manifestUri.AbsoluteUri)
+                : UpdateCheckResult.Failure(
+                    validation.ErrorMessage,
+                    manifestUri.AbsoluteUri,
+                    ManifestFailureCategoryValidation);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return UpdateCheckResult.Failure("The update check took too long. Please try again later.");
+            return UpdateCheckResult.Failure(
+                "The update check took too long. Please try again later.",
+                manifestUri.AbsoluteUri,
+                ManifestFailureCategoryTimeout);
         }
-        catch (Exception)
+        catch (HttpRequestException exception)
         {
-            return UpdateCheckResult.Failure("Could not check for updates right now. Please check your internet connection and try again.");
+            return UpdateCheckResult.Failure(
+                "Could not check for updates right now. Please check your internet connection and try again.",
+                manifestUri.AbsoluteUri,
+                ManifestFailureCategoryNetwork,
+                exception.StatusCode,
+                exception.Message);
         }
+        catch (Exception exception)
+        {
+            return UpdateCheckResult.Failure(
+                "Could not check for updates right now. Please check your internet connection and try again.",
+                manifestUri.AbsoluteUri,
+                ManifestFailureCategoryNetwork,
+                exceptionMessage: exception.Message);
+        }
+    }
+
+    private static HttpClient CreateHttpClient()
+    {
+        var handler = new HttpClientHandler
+        {
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli
+        };
+
+        return new HttpClient(handler);
+    }
+
+    private static void ConfigureManifestRequestHeaders(HttpRequestMessage request)
+    {
+        request.Headers.Accept.Clear();
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        request.Headers.UserAgent.Clear();
+        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("LanguageVoiceTutorDesktop", DesktopAppVersionProvider.GetCurrentVersionText()));
+        request.Headers.CacheControl = new CacheControlHeaderValue
+        {
+            NoCache = true,
+            NoStore = true,
+            MaxAge = TimeSpan.Zero
+        };
+        request.Headers.Pragma.ParseAdd("no-cache");
     }
 
     public static UpdateManifestValidationResult Validate(UpdateManifest manifest, Uri manifestUri)

@@ -924,11 +924,7 @@ public partial class SettingsViewModel : ViewModelBase
             var result = await updateManifestClient.LoadLatestAsync();
             if (!result.IsSuccess || result.ValidationResult?.Manifest is null || result.ValidationResult.InstallerUri is null)
             {
-                ShowUpdateMessage(
-                    string.IsNullOrWhiteSpace(result.ErrorMessage)
-                        ? "Could not check for updates right now. Please check your internet connection and try again."
-                        : result.ErrorMessage,
-                    MessageBoxImage.Information);
+                ShowUpdateMessage(BuildManualUpdateFailureMessage(result), MessageBoxImage.Information);
                 return;
             }
 
@@ -966,6 +962,40 @@ public partial class SettingsViewModel : ViewModelBase
         {
             IsCheckingForUpdates = false;
         }
+    }
+
+    private static string BuildManualUpdateFailureMessage(UpdateCheckResult result)
+    {
+        var message = new StringBuilder();
+        message.AppendLine(string.IsNullOrWhiteSpace(result.ErrorMessage)
+            ? "Could not check for updates right now. Please check your internet connection and try again."
+            : result.ErrorMessage);
+        message.AppendLine();
+        message.AppendLine("Private tester diagnostics:");
+        message.AppendLine($"Manifest URL: {SafeDiagnosticValue(result.ManifestUrl)}");
+        message.AppendLine($"Failure category: {SafeDiagnosticValue(result.FailureCategory)}");
+        message.AppendLine($"HTTP status: {(result.HttpStatusCode.HasValue ? $"{(int)result.HttpStatusCode.Value} {result.HttpStatusCode.Value}" : "not available")}");
+
+        if (!string.IsNullOrWhiteSpace(result.ExceptionMessage))
+        {
+            message.AppendLine($"Details: {TrimDiagnosticMessage(result.ExceptionMessage)}");
+        }
+
+        return message.ToString().TrimEnd();
+    }
+
+    private static string SafeDiagnosticValue(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "not available" : value.Trim();
+    }
+
+    private static string TrimDiagnosticMessage(string value)
+    {
+        const int MaximumDiagnosticMessageLength = 240;
+        var trimmed = value.Trim();
+        return trimmed.Length <= MaximumDiagnosticMessageLength
+            ? trimmed
+            : trimmed[..MaximumDiagnosticMessageLength] + "...";
     }
 
     private async Task DownloadVerifyAndMaybeRunUpdateAsync(UpdateManifest manifest, Uri installerUri)
