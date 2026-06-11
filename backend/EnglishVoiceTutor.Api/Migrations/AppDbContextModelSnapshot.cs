@@ -1397,6 +1397,61 @@ namespace EnglishVoiceTutor.Api.Migrations
                     b.ToTable("password_reset_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.UserRefreshTokenEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedByIp")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReplacedByTokenHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RevokedByIp")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("RevocationReason")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("user_refresh_tokens", (string)null);
+                });
+
             modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.PaymentEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2143,6 +2198,17 @@ namespace EnglishVoiceTutor.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.UserRefreshTokenEntity", b =>
+                {
+                    b.HasOne("EnglishVoiceTutor.Api.Data.Entities.UserEntity", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("EnglishVoiceTutor.Api.Data.Entities.PaymentEntity", b =>
                 {
                     b.HasOne("EnglishVoiceTutor.Api.Data.Entities.UserEntity", "User")
@@ -2270,6 +2336,8 @@ namespace EnglishVoiceTutor.Api.Migrations
                     b.Navigation("Payments");
 
                     b.Navigation("PasswordResetTokens");
+
+                    b.Navigation("RefreshTokens");
 
                     b.Navigation("Profile");
 

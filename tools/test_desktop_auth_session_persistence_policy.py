@@ -89,7 +89,7 @@ def main() -> int:
     assert_contains(auth_backend, "payload.ExpiresAtUtc", "expiry persisted from auth response")
     assert_contains(auth_backend, "payload.User", "user identity persisted from auth response")
     assert_contains(auth_backend, "sessionStorageService.GetValidSessionOrNullAsync", "restore uses validity check")
-    assert_contains(auth_backend, "return sessionStorageService.ClearAsync", "logout clears persisted session")
+    assert_contains(auth_backend, "await sessionStorageService.ClearAsync(cancellationToken);", "logout clears persisted session")
     assert_contains(auth_backend, "response.StatusCode == HttpStatusCode.Unauthorized", "backend rejection detection")
     assert_contains(auth_backend, "return AuthMeResult.BackendUnavailable();", "backend outage does not invalidate session")
 

@@ -64,6 +64,8 @@ public static class BackendConstants
     public const string AuthRegisterEndpoint = "/api/auth/register";
     public const string AuthLoginEndpoint = "/api/auth/login";
     public const string AuthMeEndpoint = "/api/auth/me";
+    public const string AuthRefreshEndpoint = "/api/auth/refresh";
+    public const string AuthRevokeEndpoint = "/api/auth/revoke";
     public const string AuthPasswordResetRequestEndpoint = "/api/auth/password-reset/request";
     public const string AuthPasswordResetConfirmEndpoint = "/api/auth/password-reset/confirm";
     public const string AuthChangePasswordEndpoint = "/api/auth/password/change";

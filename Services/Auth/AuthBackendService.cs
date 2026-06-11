@@ -61,21 +61,32 @@ public sealed class AuthBackendService
     public async Task<PasswordOperationResult> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        var session = await sessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
-        if (session is null)
+        var sessionResult = await EnsureAuthenticatedSessionAsync(cancellationToken);
+        if (sessionResult.Status == AuthSessionEnsureStatus.InvalidSession || sessionResult.Session is null)
         {
             return PasswordOperationResult.Unauthorized();
         }
 
-        return await PostPasswordOperationAsync(BackendConstants.AuthChangePasswordEndpoint, request, session.AccessToken, cancellationToken);
+        if (sessionResult.Status == AuthSessionEnsureStatus.TemporarilyUnavailable)
+        {
+            return PasswordOperationResult.BackendUnavailable();
+        }
+
+        return await PostPasswordOperationAsync(BackendConstants.AuthChangePasswordEndpoint, request, sessionResult.Session.AccessToken, cancellationToken);
     }
 
     public async Task<AuthMeResult> GetMeAsync(string accessToken, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(accessToken))
+        var sessionResult = await EnsureAuthenticatedSessionAsync(cancellationToken);
+        if (sessionResult.Status == AuthSessionEnsureStatus.InvalidSession || sessionResult.Session is null)
         {
             return AuthMeResult.InvalidSession();
         }
+        if (sessionResult.Status == AuthSessionEnsureStatus.TemporarilyUnavailable)
+        {
+            return AuthMeResult.BackendUnavailable();
+        }
+        accessToken = sessionResult.Session.AccessToken;
 
         using var httpClient = CreateHttpClient();
         var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.AuthMeEndpoint);
@@ -88,6 +99,17 @@ public sealed class AuthBackendService
             await RecordAuthRequestDiagnosticsAsync("auth_me", HttpMethod.Get, endpointUri, response, cancellationToken);
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
+                var retrySession = await RefreshSessionAsync(cancellationToken);
+                if (retrySession.Status == AuthRefreshStatus.Success && retrySession.Session is not null)
+                {
+                    return await GetMeAsync(retrySession.Session.AccessToken, cancellationToken);
+                }
+
+                if (retrySession.Status == AuthRefreshStatus.TemporarilyUnavailable)
+                {
+                    return AuthMeResult.BackendUnavailable();
+                }
+
                 await sessionStorageService.ClearAsync(cancellationToken);
                 NotifyAuthStateChanged(null);
                 return AuthMeResult.InvalidSession();
@@ -114,9 +136,10 @@ public sealed class AuthBackendService
         }
     }
 
-    public Task<StoredAuthSession?> TryRestoreSessionAsync(CancellationToken cancellationToken = default)
+    public async Task<StoredAuthSession?> TryRestoreSessionAsync(CancellationToken cancellationToken = default)
     {
-        return sessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+        var result = await EnsureAuthenticatedSessionAsync(cancellationToken);
+        return result.Session;
     }
 
     public Task<bool> HasStoredSessionAsync(CancellationToken cancellationToken = default)
@@ -124,10 +147,115 @@ public sealed class AuthBackendService
         return sessionStorageService.HasStoredSessionAsync(cancellationToken);
     }
 
-    public Task LogoutAsync(CancellationToken cancellationToken = default)
+    public async Task LogoutAsync(CancellationToken cancellationToken = default)
     {
+        var session = await sessionStorageService.LoadAsync(cancellationToken);
+        if (!string.IsNullOrWhiteSpace(session?.RefreshToken))
+        {
+            await RevokeRefreshTokenBestEffortAsync(session.RefreshToken, cancellationToken);
+        }
+
         NotifyAuthStateChanged(null);
-        return sessionStorageService.ClearAsync(cancellationToken);
+        await sessionStorageService.ClearAsync(cancellationToken);
+    }
+
+    public async Task<AuthSessionEnsureResult> EnsureAuthenticatedSessionAsync(CancellationToken cancellationToken = default)
+    {
+        var session = await sessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+        if (session is null)
+        {
+            NotifyAuthStateChanged(null);
+            return AuthSessionEnsureResult.InvalidSession();
+        }
+
+        if (!AuthSessionStorageService.ShouldRefreshAccessToken(session))
+        {
+            return AuthSessionEnsureResult.Success(session);
+        }
+
+        var refreshResult = await RefreshSessionAsync(cancellationToken);
+        return refreshResult.Status switch
+        {
+            AuthRefreshStatus.Success when refreshResult.Session is not null => AuthSessionEnsureResult.Success(refreshResult.Session),
+            AuthRefreshStatus.TemporarilyUnavailable => AuthSessionEnsureResult.TemporarilyUnavailable(session),
+            _ => AuthSessionEnsureResult.InvalidSession()
+        };
+    }
+
+    public Task<AuthRefreshResult> RefreshAuthenticatedSessionOnceAsync(CancellationToken cancellationToken = default)
+    {
+        return RefreshSessionAsync(cancellationToken);
+    }
+
+    private async Task<AuthRefreshResult> RefreshSessionAsync(CancellationToken cancellationToken)
+    {
+        var session = await sessionStorageService.LoadAsync(cancellationToken);
+        if (session is null || AuthSessionStorageService.IsRefreshTokenExpired(session))
+        {
+            await sessionStorageService.ClearAsync(cancellationToken);
+            NotifyAuthStateChanged(null);
+            return AuthRefreshResult.InvalidSession();
+        }
+
+        using var httpClient = CreateHttpClient();
+        var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.AuthRefreshEndpoint);
+        try
+        {
+            using var response = await httpClient.PostAsJsonAsync(endpointUri, new RefreshTokenRequest { RefreshToken = session.RefreshToken }, JsonOptions, cancellationToken);
+            await RecordAuthRequestDiagnosticsAsync("auth_refresh", HttpMethod.Post, endpointUri, response, cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden || response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                await sessionStorageService.ClearAsync(cancellationToken);
+                NotifyAuthStateChanged(null);
+                return AuthRefreshResult.InvalidSession();
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return AuthRefreshResult.TemporarilyUnavailable(session);
+            }
+
+            var payload = await response.Content.ReadFromJsonAsync<AuthResponse>(JsonOptions, cancellationToken);
+            if (payload is null || string.IsNullOrWhiteSpace(payload.RefreshToken))
+            {
+                return AuthRefreshResult.TemporarilyUnavailable(session);
+            }
+
+            var refreshedSession = new StoredAuthSession
+            {
+                AccessToken = payload.AccessToken,
+                TokenType = payload.TokenType,
+                ExpiresAtUtc = payload.ExpiresAtUtc,
+                RefreshToken = payload.RefreshToken,
+                RefreshTokenExpiresAtUtc = payload.RefreshTokenExpiresAtUtc,
+                User = payload.User
+            };
+            await sessionStorageService.SaveAsync(refreshedSession, cancellationToken);
+            NotifyAuthStateChanged(payload.User);
+            return AuthRefreshResult.Success(refreshedSession);
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            await BackendRequestDiagnosticsService.RecordAsync("auth_refresh", HttpMethod.Post, endpointUri, backendBaseUrl, exception: exception, cancellationToken: CancellationToken.None);
+            return AuthRefreshResult.TemporarilyUnavailable(session);
+        }
+    }
+
+    private async Task RevokeRefreshTokenBestEffortAsync(string refreshToken, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var httpClient = CreateHttpClient();
+            await httpClient.PostAsJsonAsync(
+                BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.AuthRevokeEndpoint),
+                new RevokeRefreshTokenRequest { RefreshToken = refreshToken },
+                JsonOptions,
+                cancellationToken);
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
+        {
+        }
     }
 
     private void NotifyAuthStateChanged(AuthUserDto? user)
@@ -208,10 +336,12 @@ public sealed class AuthBackendService
                 AccessToken = payload.AccessToken,
                 TokenType = payload.TokenType,
                 ExpiresAtUtc = payload.ExpiresAtUtc,
+                RefreshToken = payload.RefreshToken,
+                RefreshTokenExpiresAtUtc = payload.RefreshTokenExpiresAtUtc,
                 User = payload.User
             };
 
-            if (AuthSessionStorageService.IsExpired(storedSession))
+            if (AuthSessionStorageService.IsRefreshTokenExpired(storedSession))
             {
                 await sessionStorageService.ClearAsync(cancellationToken);
                 var failure = AuthOperationResult.UnexpectedResponse();
@@ -273,6 +403,7 @@ public sealed class AuthBackendService
             BackendConstants.AuthRegisterEndpoint => "auth_register",
             BackendConstants.AuthLoginEndpoint => "auth_login",
             BackendConstants.AuthMeEndpoint => "auth_me",
+            BackendConstants.AuthRefreshEndpoint => "auth_refresh",
             _ => "auth_request"
         };
     }
@@ -455,4 +586,61 @@ public sealed class AuthStateChangedEventArgs : EventArgs
     }
 
     public AuthUserDto? User { get; }
+}
+
+
+public sealed class RefreshTokenRequest
+{
+    public string RefreshToken { get; set; } = string.Empty;
+}
+
+public sealed class RevokeRefreshTokenRequest
+{
+    public string RefreshToken { get; set; } = string.Empty;
+}
+
+public enum AuthSessionEnsureStatus
+{
+    Success = 0,
+    InvalidSession = 1,
+    TemporarilyUnavailable = 2
+}
+
+public sealed class AuthSessionEnsureResult
+{
+    private AuthSessionEnsureResult(AuthSessionEnsureStatus status, StoredAuthSession? session)
+    {
+        Status = status;
+        Session = session;
+    }
+
+    public AuthSessionEnsureStatus Status { get; }
+    public StoredAuthSession? Session { get; }
+
+    public static AuthSessionEnsureResult Success(StoredAuthSession session) => new(AuthSessionEnsureStatus.Success, session);
+    public static AuthSessionEnsureResult InvalidSession() => new(AuthSessionEnsureStatus.InvalidSession, null);
+    public static AuthSessionEnsureResult TemporarilyUnavailable(StoredAuthSession session) => new(AuthSessionEnsureStatus.TemporarilyUnavailable, session);
+}
+
+public enum AuthRefreshStatus
+{
+    Success = 0,
+    InvalidSession = 1,
+    TemporarilyUnavailable = 2
+}
+
+public sealed class AuthRefreshResult
+{
+    private AuthRefreshResult(AuthRefreshStatus status, StoredAuthSession? session)
+    {
+        Status = status;
+        Session = session;
+    }
+
+    public AuthRefreshStatus Status { get; }
+    public StoredAuthSession? Session { get; }
+
+    public static AuthRefreshResult Success(StoredAuthSession session) => new(AuthRefreshStatus.Success, session);
+    public static AuthRefreshResult InvalidSession() => new(AuthRefreshStatus.InvalidSession, null);
+    public static AuthRefreshResult TemporarilyUnavailable(StoredAuthSession session) => new(AuthRefreshStatus.TemporarilyUnavailable, session);
 }

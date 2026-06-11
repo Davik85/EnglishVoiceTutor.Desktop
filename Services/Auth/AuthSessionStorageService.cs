@@ -83,7 +83,7 @@ public sealed class AuthSessionStorageService
             return null;
         }
 
-        if (IsExpired(session))
+        if (IsRefreshTokenExpired(session))
         {
             await ClearAsync(cancellationToken);
             return null;
@@ -107,10 +107,31 @@ public sealed class AuthSessionStorageService
         return Task.CompletedTask;
     }
 
-    public static bool IsExpired(StoredAuthSession session)
+    public static bool IsExpired(StoredAuthSession session) => IsAccessTokenExpired(session);
+
+    public static bool IsAccessTokenExpired(StoredAuthSession session)
     {
         ArgumentNullException.ThrowIfNull(session);
         return session.ExpiresAtUtc <= DateTimeOffset.UtcNow;
+    }
+
+    public static bool IsRefreshTokenExpired(StoredAuthSession session)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        if (string.IsNullOrWhiteSpace(session.RefreshToken))
+        {
+            return session.ExpiresAtUtc <= DateTimeOffset.UtcNow;
+        }
+
+        return session.RefreshTokenExpiresAtUtc <= DateTimeOffset.UtcNow;
+    }
+
+    public static bool ShouldRefreshAccessToken(StoredAuthSession session)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        return !string.IsNullOrWhiteSpace(session.RefreshToken)
+            && session.RefreshTokenExpiresAtUtc > DateTimeOffset.UtcNow
+            && session.ExpiresAtUtc <= DateTimeOffset.UtcNow.AddMinutes(5);
     }
 
     private async Task<StoredAuthSession?> TryLoadLegacySessionAsync(CancellationToken cancellationToken)

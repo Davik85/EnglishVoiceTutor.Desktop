@@ -13,6 +13,8 @@ public static class AuthEndpoints
     {
         app.MapPost(ApiConstants.AuthRegisterRoute, RegisterAsync);
         app.MapPost(ApiConstants.AuthLoginRoute, LoginAsync);
+        app.MapPost(ApiConstants.AuthRefreshRoute, RefreshAsync);
+        app.MapPost(ApiConstants.AuthRevokeRoute, RevokeAsync);
         app.MapGet(ApiConstants.AuthMeRoute, GetMeAsync).RequireAuthorization();
         app.MapPost(ApiConstants.AuthChangePasswordRoute, ChangePasswordAsync).RequireAuthorization();
         app.MapPost(ApiConstants.AuthPasswordResetRequestRoute, RequestPasswordResetAsync);
@@ -90,6 +92,34 @@ public static class AuthEndpoints
 
         loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Auth login completed. Result=Ok");
         return Results.Ok(response);
+    }
+
+    private static async Task<IResult> RefreshAsync(
+        RefreshTokenRequest request,
+        IAuthService authService,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
+    {
+        var response = await authService.RefreshAsync(request, cancellationToken);
+        if (response is null)
+        {
+            loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Auth refresh completed. Result=Unauthorized");
+            return Results.Json(new { error = AuthConstants.InvalidCredentialsError }, statusCode: StatusCodes.Status401Unauthorized);
+        }
+
+        loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Auth refresh completed. Result=Ok");
+        return Results.Ok(response);
+    }
+
+    private static async Task<IResult> RevokeAsync(
+        RevokeRefreshTokenRequest request,
+        IAuthService authService,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
+    {
+        await authService.RevokeRefreshTokenAsync(request, cancellationToken);
+        loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Auth revoke completed. Result=Ok");
+        return Results.NoContent();
     }
 
     private static ClaimsPrincipal CreatePrincipal(AuthResponse response)

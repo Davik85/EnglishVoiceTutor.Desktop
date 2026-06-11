@@ -27,6 +27,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<PaddleWebhookEventEntity> PaddleWebhookEvents => Set<PaddleWebhookEventEntity>();
     public DbSet<AdminActionEntity> AdminActions => Set<AdminActionEntity>();
     public DbSet<PasswordResetTokenEntity> PasswordResetTokens => Set<PasswordResetTokenEntity>();
+    public DbSet<UserRefreshTokenEntity> UserRefreshTokens => Set<UserRefreshTokenEntity>();
     public DbSet<ContentPackEntity> ContentPacks => Set<ContentPackEntity>();
     public DbSet<CmsLessonTopicEntity> CmsLessonTopics => Set<CmsLessonTopicEntity>();
     public DbSet<CmsLessonScenarioEntity> CmsLessonScenarios => Set<CmsLessonScenarioEntity>();
@@ -62,6 +63,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigurePaddleWebhookEvents(modelBuilder);
         ConfigureAdminActions(modelBuilder);
         ConfigurePasswordResetTokens(modelBuilder);
+        ConfigureUserRefreshTokens(modelBuilder);
         ConfigureCmsContent(modelBuilder);
     }
 
@@ -480,6 +482,28 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .OnDelete(DeleteBehavior.Restrict);
     }
 
+
+    private static void ConfigureUserRefreshTokens(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<UserRefreshTokenEntity>();
+        entity.ToTable(EntityConstants.TableNames.UserRefreshTokens);
+        entity.HasKey(token => token.Id);
+        entity.Property(token => token.TokenHash).IsRequired().HasMaxLength(EntityConstants.Lengths.TokenHashMaxLength);
+        entity.Property(token => token.CreatedAtUtc).IsRequired();
+        entity.Property(token => token.ExpiresAtUtc).IsRequired();
+        entity.Property(token => token.ReplacedByTokenHash).HasMaxLength(EntityConstants.Lengths.TokenHashMaxLength);
+        entity.Property(token => token.UserAgent).HasMaxLength(EntityConstants.Lengths.ShortTextMaxLength);
+        entity.Property(token => token.CreatedByIp).HasMaxLength(EntityConstants.Lengths.ShortTextMaxLength);
+        entity.Property(token => token.RevokedByIp).HasMaxLength(EntityConstants.Lengths.ShortTextMaxLength);
+        entity.Property(token => token.RevocationReason).HasMaxLength(EntityConstants.Lengths.ShortTextMaxLength);
+        entity.HasIndex(token => token.TokenHash).IsUnique();
+        entity.HasIndex(token => token.UserId);
+        entity.HasIndex(token => token.ExpiresAtUtc);
+        entity.HasOne(token => token.User)
+            .WithMany(user => user.RefreshTokens)
+            .HasForeignKey(token => token.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
 
     private static void ConfigureCmsContent(ModelBuilder modelBuilder)
     {

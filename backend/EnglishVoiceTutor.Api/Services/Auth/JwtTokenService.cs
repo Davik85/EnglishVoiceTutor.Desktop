@@ -14,7 +14,7 @@ public sealed class JwtTokenService(IOptions<JwtOptions> jwtOptionsAccessor) : I
 {
     private readonly JwtOptions _jwtOptions = jwtOptionsAccessor.Value;
 
-    public AuthResponse CreateAuthResponse(UserEntity user, string? displayName, DateTimeOffset createdAt)
+    public AuthResponse CreateAuthResponse(UserEntity user, string? displayName, DateTimeOffset createdAt, string refreshToken, DateTimeOffset refreshTokenExpiresAtUtc)
     {
         var now = DateTimeOffset.UtcNow;
         var expiresAt = now.AddMinutes(_jwtOptions.AccessTokenLifetimeMinutes);
@@ -48,6 +48,8 @@ public sealed class JwtTokenService(IOptions<JwtOptions> jwtOptionsAccessor) : I
             AccessToken = accessToken,
             TokenType = AuthConstants.TokenTypeBearer,
             ExpiresAtUtc = expiresAt,
+            RefreshToken = refreshToken,
+            RefreshTokenExpiresAtUtc = refreshTokenExpiresAtUtc,
             User = new AuthUserDto
             {
                 UserId = user.Id,

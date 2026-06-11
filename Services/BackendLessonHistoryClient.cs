@@ -12,24 +12,33 @@ public sealed class BackendLessonHistoryClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly AuthSessionStorageService authSessionStorageService = new();
+    private readonly AuthBackendService authBackendService;
+
+    public BackendLessonHistoryClient()
+    {
+        authBackendService = new AuthBackendService(authSessionStorageService);
+    }
 
     public async Task<BackendLessonHistoryClientResult> GetHistoryAsync(
         string? backendBaseUrl,
         CancellationToken cancellationToken = default)
     {
+        authBackendService.SetBackendBaseUrl(backendBaseUrl);
         using var httpClient = CreateHttpClient();
 
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.DevLessonHistoryEndpoint));
-            var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
-            if (string.IsNullOrWhiteSpace(session?.AccessToken))
+            var session = await authBackendService.EnsureAuthenticatedSessionAsync(cancellationToken);
+            if (session.Status != AuthSessionEnsureStatus.Success || string.IsNullOrWhiteSpace(session.Session?.AccessToken))
             {
                 return BackendLessonHistoryClientResult.Failure("Backend lesson history GET skipped because no authenticated session is available.");
             }
 
-            AuthenticatedRequestHelper.AddBearerTokenIfPresent(request, session.AccessToken);
-            using var response = await httpClient.SendAsync(request, cancellationToken);
+            using var response = await AuthenticatedRequestHelper.SendWithRefreshRetryAsync(
+                httpClient,
+                _ => new HttpRequestMessage(HttpMethod.Get, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.DevLessonHistoryEndpoint)),
+                authBackendService,
+                cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
