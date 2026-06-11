@@ -129,3 +129,20 @@ Before external handoff, verify on a clean or representative Windows machine:
 ## Backend and secrets boundaries
 
 Local development builds may use `http://localhost:5000` only in DEBUG/developer configuration. Inno tester/release packages are server-only and locked to `https://api.languagevoicetutor.com`; stale saved localhost/custom Backend URL values are ignored by release builds and are not written back. The backend remains the source of truth. The desktop must not store OpenAI API keys and must not call OpenAI directly. Do not place secrets, local `.env` files, local auth/session files, local settings, or local lesson history in the publish output or installer.
+
+## Update-over-existing-install validation
+
+The Inno installer must behave as an update/reinstall, not a full uninstall. It replaces files in the application directory but must not delete `%APPDATA%` or `%LOCALAPPDATA%` user data such as `auth-session.json`, `settings.json`, `lesson-history.json`, history, or progress. Installing a newer tester build over a logged-in build should preserve auth session, account identity, local settings, lesson history, and progress.
+
+Add these checks to release smoke before handoff:
+
+- install the fixed build over an existing logged-in 0.1.25 install;
+- confirm the user remains signed in after update;
+- restart the app and confirm the user remains signed in;
+- restart Windows if practical and confirm the user remains signed in;
+- confirm history/progress/settings are preserved;
+- verify the app opens fully inside the visible working area;
+- verify the Welcome/start screen primary actions are visible on smaller laptop screens without scrolling;
+- verify Settings access is visible without scrolling on the Welcome/start screen;
+- verify release Settings still have no Diagnostics tab and no Backend URL field;
+- run Check for updates.

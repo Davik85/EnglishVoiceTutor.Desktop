@@ -63,6 +63,10 @@ def main() -> int:
     assert_contains(storage, "ProtectedData.Unprotect", "DPAPI unprotect call")
     assert_contains(storage, "DataProtectionScope.CurrentUser", "current-user DPAPI scope")
     assert_contains(storage, "ProtectedPayloadPurpose", "purpose-bound DPAPI entropy")
+    assert_contains(storage, "LegacyProtectedPayloadPurposes", "legacy DPAPI purpose migration")
+    assert_contains(storage, "LegacyAppDataFolderNames", "legacy app-data folder migration")
+    assert_contains(storage, "AuthSessionFilePathCandidates", "stable and legacy auth session path candidates")
+    assert_contains(storage, "Environment.SpecialFolder.LocalApplicationData", "legacy local-app-data migration")
     assert_contains(storage, "Convert.ToBase64String", "protected payload written as encoded blob")
     assert_not_contains(stored_session.lower(), "password", "password field in stored session model")
     assert_not_contains(auth_response.lower(), "password", "password field in auth response model")
@@ -72,6 +76,8 @@ def main() -> int:
     assert_contains(storage, "await ClearAsync(cancellationToken);", "invalid auth-session cleanup")
     assert_contains(storage, "catch", "corrupt auth-session guarded load")
     assert_contains(storage, "MigratedFromPlainText", "legacy plaintext migration path")
+    assert_contains(storage, "await SaveAsync(migratedSession", "legacy path resave to stable current path")
+    assert_contains(storage, "!StringComparer.OrdinalIgnoreCase.Equals(path, authSessionFilePath)", "legacy migration skips current stable path")
     assert_contains(storage, "IsExpired", "stored token expiry check")
     assert_regex(storage, r"IsExpired\(StoredAuthSession session\).*ExpiresAtUtc\s*<=\s*DateTimeOffset\.UtcNow", "expiry rejects expired tokens")
 
@@ -104,6 +110,9 @@ def main() -> int:
 
     # Installer/update path must preserve app-data auth storage.
     assert_not_contains(installer, "{userappdata}", "installer must not delete roaming app-data session")
+    assert_not_contains(installer, "{localappdata}", "installer must not delete local app-data session")
+    assert_not_contains(installer, "[UninstallDelete]", "installer must not define app-data deletion on uninstall/update")
+    assert_not_contains(installer, "auth-session.json", "installer must not delete auth session")
     assert_contains(docs, "Reinstall/update should preserve user app data and session storage", "session preservation docs")
     assert_contains(docs, "Logout clears persisted auth session", "logout docs")
     assert_contains(docs, "does not store raw passwords", "raw password docs")

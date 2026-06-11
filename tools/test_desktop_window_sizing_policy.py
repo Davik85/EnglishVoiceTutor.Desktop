@@ -93,7 +93,15 @@ def main() -> None:
     assert_contains(main_code, "Math.Min(Math.Max(Width, MinWidth), workingArea.Width)", "width cannot exceed working area")
     assert_contains(main_code, "Math.Min(Math.Max(Height, MinHeight), workingArea.Height)", "height cannot exceed working area")
 
-    assert_contains(welcome_xaml, "<ScrollViewer", "welcome content scrolls on short screens")
+    assert_not_contains(welcome_xaml, "<ScrollViewer", "welcome root ScrollViewer hiding primary actions below the fold")
+    assert_contains(welcome_xaml, "WelcomePrimaryActionsPanel", "named welcome primary action area")
+    assert_contains(welcome_xaml, "WelcomeHeroImage", "named welcome hero image")
+    assert_contains(welcome_xaml, "MaxHeight=\"430\"", "welcome hero constrained max height")
+    assert_contains(welcome_xaml, "RowDefinition Height=\"Auto\" MinHeight=\"96\"", "welcome primary action row reserves visible space")
+    assert_contains(layout_constants, "WelcomeCompactHeightThreshold", "named compact welcome threshold")
+    assert_contains(layout_constants, "WelcomeCardMaximumHeight", "named welcome card max height")
+    assert_contains(layout_constants, "WelcomeMinimumActionAreaHeight", "named welcome action area reserve")
+    assert_contains(read("Views/WelcomeView.xaml.cs"), "ApplyAdaptiveWelcomeLayout", "welcome adapts to available size")
     assert_not_contains(settings_xaml, "BackendBaseUrl", "release Settings backend URL field")
     assert_not_contains(settings_xaml, "Backend URL", "release Settings backend URL label")
     assert_not_contains(settings_xaml, "DiagnosticsSection", "release Settings Diagnostics tab")
@@ -115,6 +123,7 @@ def main() -> None:
 
     assert_contains(docs, "clamps startup size and position to the visible working area", "window sizing docs")
     assert_contains(docs, "smaller laptop / scaled display", "scaled display smoke docs")
+    assert_contains(docs, "Welcome/start screen primary actions are visible", "welcome primary action visibility docs")
     assert_contains(docs, "Backend/auth/lessons remain unchanged", "unchanged backend/auth/lessons docs")
 
     print("Desktop window sizing policy checks passed.")
