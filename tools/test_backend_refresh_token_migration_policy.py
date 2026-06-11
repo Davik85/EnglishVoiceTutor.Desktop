@@ -41,6 +41,7 @@ def main() -> int:
 
     assert_contains(designer, "[DbContext(typeof(AppDbContext))]", "refresh-token migration DbContext metadata")
     assert_contains(designer, f'[Migration("{MIGRATION_ID}")]', "refresh-token migration id metadata")
+    assert_not_contains(migration, f'[Migration("{MIGRATION_ID}")]', "duplicate migration id attribute outside designer metadata")
     assert_contains(designer, "partial class AddUserRefreshTokens", "refresh-token designer partial class")
     assert_contains(designer, "void BuildTargetModel(ModelBuilder modelBuilder)", "refresh-token designer target model")
     assert_contains(designer, 'b.ToTable("user_refresh_tokens", (string)null);', "refresh-token target table metadata")
