@@ -85,11 +85,11 @@ def main() -> int:
     assert_contains(combined_docs, "Same-version install asks for reinstall confirmation", "same-version docs")
     assert_contains(combined_docs, "Older installed version is treated as an update", "older update docs")
     assert_regex(combined_docs, r"Newer installed version (?:warns and blocks|warns/blocks)", "newer downgrade docs")
-    assert_contains(combined_docs, "This is not the future in-app update UI", "future update UI separation docs")
-    assert_contains(combined_docs, "latest.json", "future latest.json docs")
-    assert_contains(combined_docs, "SHA-256", "future SHA-256 docs")
-    assert_contains(combined_docs, "active lessons", "future active lesson docs")
-    assert_contains(combined_docs, "External tester handoff is still blocked until update/version-check verification and clean-machine smoke pass", "handoff blocker docs")
+    assert_contains(combined_docs, "simple user-facing **Check for updates** button", "manual update UI docs")
+    assert_contains(combined_docs, "latest.json", "latest.json docs")
+    assert_contains(combined_docs, "SHA-256", "SHA-256 docs")
+    assert_contains(combined_docs, "does not silently auto-update", "manual no silent update docs")
+    assert_contains(combined_docs, "clean-machine smoke", "remaining clean-machine smoke docs")
 
     for path in MODIFIED_TEXT_FILES:
         assert_no_sensitive_values(path)

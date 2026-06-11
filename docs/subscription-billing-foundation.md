@@ -2,6 +2,10 @@
 
 This document describes the current implemented foundation for account, trial, subscription, entitlement, free-limit enforcement, development test accounts, provider-agnostic checkout, Paddle billing/webhook ingestion, Paddle subscription/payment snapshots, entitlement activation/extension, canceled/paused expiry policy, and local Development CMS/admin support.
 
+## Current tester release billing status
+
+As of the `0.1.26-tester.1` private tester/direct Windows release, trial entitlement after registration is working, but the production Billing/Paddle/subscription payment lifecycle remains deferred. Do not describe production checkout, production webhook operations, paid subscription lifecycle, or billing support operations as ready for tester/public production use.
+
 English Voice Tutor is a global, cross-platform, provider-agnostic product for desktop now and future mobile clients later. The backend is the source of truth for account, trial, subscription, entitlement, Premium/free status, daily free allowance, lesson history, usage, limits, payments, and billing state. Desktop and future mobile clients must rely on backend access/status decisions, not local payment assumptions.
 
 
