@@ -23,6 +23,7 @@ $channel = "direct-tester"
 $updateMode = "manual-confirmation"
 $productionBackendBaseUrl = "https://api.languagevoicetutor.com"
 $mainExe = "EnglishVoiceTutor.Desktop.exe"
+$bundledVersionFileName = "release-version.txt"
 $installerBaseName = "LanguageVoiceTutorSetup-$Version.exe"
 $semVerPattern = '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$'
 $semVerCorePattern = '^(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)'
@@ -212,6 +213,10 @@ $exePath = Join-Path $publishDirectory $mainExe
 if (-not (Test-Path $exePath -PathType Leaf)) {
     throw "Publish completed, but $mainExe was not found in the publish directory."
 }
+
+$bundledVersionFilePath = Join-Path $publishDirectory $bundledVersionFileName
+Set-Content -Path $bundledVersionFilePath -Value $Version -Encoding ascii -NoNewline
+Write-Host "Bundled release version file: $bundledVersionFilePath"
 
 Write-Host "Scanning publish output for forbidden local data, backend overrides, and secret-like files..."
 Assert-PublishOutputIsSafe -PublishPath $publishDirectory

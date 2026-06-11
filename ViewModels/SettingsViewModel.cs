@@ -925,7 +925,9 @@ public partial class SettingsViewModel : ViewModelBase
             if (!result.IsSuccess || result.ValidationResult?.Manifest is null || result.ValidationResult.InstallerUri is null)
             {
                 ShowUpdateMessage(
-                    "Could not check for updates right now. Please check your internet connection and try again.",
+                    string.IsNullOrWhiteSpace(result.ErrorMessage)
+                        ? "Could not check for updates right now. Please check your internet connection and try again."
+                        : result.ErrorMessage,
                     MessageBoxImage.Information);
                 return;
             }
@@ -936,7 +938,9 @@ public partial class SettingsViewModel : ViewModelBase
             var comparison = UpdateVersionComparer.Compare(appVersionText, latestUpdateManifest.Version);
             if (comparison == 0)
             {
-                ShowUpdateMessage("You are using the latest version.", MessageBoxImage.Information);
+                ShowUpdateMessage(
+                    $"You are using the latest version. Current: {appVersionText}. Latest: {latestUpdateManifest.Version}.",
+                    MessageBoxImage.Information);
                 return;
             }
 
