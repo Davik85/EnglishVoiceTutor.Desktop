@@ -60,7 +60,7 @@ public static class AppLocalization
             t.NativeLanguage,
             p.NativeLanguageSubtitle,
             l("Connection"),
-            l("Backend URL"),
+            l("Server endpoint"),
             l("Used by the app to reach the local or remote backend."),
             l("Your profile"),
             l("This helps your tutor personalize lessons."),
@@ -127,7 +127,7 @@ public static class AppLocalization
             t.Home, p.HomeSubtitle, $"{t.Level}:", p.DailyLimitText, l("Lesson history"), t.Settings,
             SubtopicsLocalization.GetTitleTemplate(languageId), SubtopicsLocalization.GetSubtitle(languageId), $"{t.Topic}:", $"{t.Situation}:", l("Please choose a situation before starting the lesson."), t.StartLesson,
             t.LessonChat, $"{t.Topic}:", $"{t.Situation}:", $"{t.Level}:", t.Send, t.StartRecording, t.StopRecording, t.Hint, p.AutoSendVoiceLabel, p.AutoSendVoiceToolTip, p.AutoPlayBotVoiceLabel, p.AutoPlayBotVoiceToolTip, t.FinishLesson, t.ConversationMode, l("Back to chat"), l("Back to chat"), t.ShowTranslation, t.HideTranslation, t.Translation, t.PlayVoice, l("View feedback"), t.Hint, l("Click to close"), l("Feedback"), l("Corrected version"), l("Grammar tip"), l("Vocabulary tip"), l("Culture tip"), l("More natural version"), l("Translate feedback"), l("Hide feedback translation"), l("Feedback translation"), l("Bot status:"), l("Ready"), l("Thinking"),
-            l("Recording... Click Stop recording when you finish."), l("Could not start voice recording. Please check your microphone."), l("Could not stop voice recording. Please try again."), l("Transcribing your voice..."), l("Voice transcription is ready. Review the text and press Send."), l("Could not transcribe the recording. Please try again or type your answer."), l("No speech was recognized. Please try again."), l("Please type your answer before sending."), l("Playing AI-generated bot voice..."), l("Could not play bot voice. Please try again."), l("Backend is unavailable. Please start the local backend and try again."), l("Backend health check failed. Please start the local backend."), l("Translating..."), l("Could not translate this text. Please try again."), l("Hint: Try answering with a short complete sentence."),
+            l("Recording... Click Stop recording when you finish."), l("Could not start voice recording. Please check your microphone."), l("Could not stop voice recording. Please try again."), l("Transcribing your voice..."), l("Voice transcription is ready. Review the text and press Send."), l("Could not transcribe the recording. Please try again or type your answer."), l("No speech was recognized. Please try again."), l("Please type your answer before sending."), l("Playing AI-generated bot voice..."), l("Could not play bot voice. Please try again."), l("Backend is unavailable. Please check your connection and try again."), l("Backend health check failed. Please check your connection."), l("Translating..."), l("Could not translate this text. Please try again."), l("Hint: Try answering with a short complete sentence."),
             t.Summary, t.WhatWentWell, t.WhatToImprove, t.UsefulPhrases, t.BackToLessons, t.Back, l("You completed a short practice dialogue and received AI feedback on your response."), l("Keep practicing full sentences and apply the feedback tips to improve grammar and vocabulary."), [l("Could you help me, please?"), l("I would like to..."), l("Could you repeat that, please?"), l("That sounds good to me.")],
             l("Lesson history"), l("Recent completed lessons on this device."), l("No completed lessons yet. Finish a lesson to see it here."), BuildTopicDisplayText(languageId), BuildSubtopicDisplayText(languageId));
     }
@@ -189,7 +189,7 @@ public static class AppLocalization
             ["es"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "Tu perfil",
                 ["This helps your tutor personalize lessons."] = "Esto ayuda a tu tutor a personalizar las lecciones.",
@@ -255,8 +255,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",
@@ -324,7 +324,7 @@ public static class AppLocalization
             ["fr"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "Votre profil",
                 ["This helps your tutor personalize lessons."] = "Cela aide votre tuteur à personnaliser les leçons.",
@@ -390,8 +390,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",
@@ -459,7 +459,7 @@ public static class AppLocalization
             ["de"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "Dein Profil",
                 ["This helps your tutor personalize lessons."] = "Das hilft deinem Tutor, Lektionen anzupassen.",
@@ -525,8 +525,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",
@@ -594,7 +594,7 @@ public static class AppLocalization
             ["it"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "Il tuo profilo",
                 ["This helps your tutor personalize lessons."] = "Aiuta il tutor a personalizzare le lezioni.",
@@ -660,8 +660,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",
@@ -729,7 +729,7 @@ public static class AppLocalization
             ["pt"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "Seu perfil",
                 ["This helps your tutor personalize lessons."] = "Isso ajuda seu tutor a personalizar as aulas.",
@@ -795,8 +795,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",
@@ -864,7 +864,7 @@ public static class AppLocalization
             ["ru"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "Ваш профиль",
                 ["This helps your tutor personalize lessons."] = "Это помогает тьютору персонализировать уроки.",
@@ -930,8 +930,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",
@@ -999,7 +999,7 @@ public static class AppLocalization
             ["pl"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "Twój profil",
                 ["This helps your tutor personalize lessons."] = "To pomaga tutorowi personalizować lekcje.",
@@ -1065,8 +1065,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",
@@ -1134,7 +1134,7 @@ public static class AppLocalization
             ["ar"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "ملفك الشخصي",
                 ["This helps your tutor personalize lessons."] = "يساعد ذلك المدرّس على تخصيص الدروس.",
@@ -1200,8 +1200,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",
@@ -1269,7 +1269,7 @@ public static class AppLocalization
             ["ja"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "あなたのプロフィール",
                 ["This helps your tutor personalize lessons."] = "チューターがレッスンを個別化するために使います。",
@@ -1335,8 +1335,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",
@@ -1404,7 +1404,7 @@ public static class AppLocalization
             ["ko"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "내 프로필",
                 ["This helps your tutor personalize lessons."] = "튜터가 수업을 맞춤 설정하는 데 도움이 됩니다.",
@@ -1470,8 +1470,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",
@@ -1539,7 +1539,7 @@ public static class AppLocalization
             ["sr"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "Ваш профил",
                 ["This helps your tutor personalize lessons."] = "Ово помаже тутору да прилагоди лекције.",
@@ -1605,8 +1605,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",
@@ -1674,7 +1674,7 @@ public static class AppLocalization
             ["hr"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "Vaš profil",
                 ["This helps your tutor personalize lessons."] = "To pomaže tutoru prilagoditi lekcije.",
@@ -1740,8 +1740,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",
@@ -1809,7 +1809,7 @@ public static class AppLocalization
             ["bg"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["Connection"] = "Conexión",
-                ["Backend URL"] = "URL del backend",
+                ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
                 ["Your profile"] = "Вашият профил",
                 ["This helps your tutor personalize lessons."] = "Това помага на тутора да персонализира уроците.",
@@ -1875,8 +1875,8 @@ public static class AppLocalization
                 ["Please type your answer before sending."] = "Escribe tu respuesta antes de enviar.",
                 ["Playing AI-generated bot voice..."] = "Reproduciendo voz del bot generada por IA...",
                 ["Could not play bot voice. Please try again."] = "No se pudo reproducir la voz. Inténtalo de nuevo.",
-                ["Backend is unavailable. Please start the local backend and try again."] = "El backend no está disponible. Inícialo e inténtalo de nuevo.",
-                ["Backend health check failed. Please start the local backend."] = "Falló la comprobación del backend. Inicia el backend local.",
+                ["Backend is unavailable. Please check your connection and try again."] = "El backend no está disponible. Comprueba tu conexión e inténtalo de nuevo.",
+                ["Backend health check failed. Please check your connection."] = "Falló la comprobación del backend. Comprueba tu conexión.",
                 ["Translating..."] = "Traduciendo...",
                 ["Could not translate this text. Please try again."] = "No se pudo traducir este texto. Inténtalo de nuevo.",
                 ["Hint: Try answering with a short complete sentence."] = "Pista: responde con una frase completa corta.",

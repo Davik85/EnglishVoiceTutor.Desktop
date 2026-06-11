@@ -39,6 +39,7 @@
 
   <Target Name="ValidateDesktopBackendBaseUrl" BeforeTargets="BeforeBuild">
     <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(DesktopBackendBaseUrl)', '^https?://\S+$'))" Text="DesktopBackendBaseUrl must be an absolute http/https URL." />
+    <Error Condition="'$(Configuration)' != 'Debug' and '$(DesktopBackendBaseUrl)' != 'https://api.languagevoicetutor.com'" Text="Non-Debug desktop builds are server-only and must use https://api.languagevoicetutor.com." />
   </Target>
 
   <ItemGroup>

@@ -56,10 +56,9 @@ def main() -> None:
     if not release_default_line or "localhost" in release_default_line.group(1).lower() or "127.0.0.1" in release_default_line.group(1):
         raise AssertionError("Release backend default must not be localhost or 127.0.0.1.")
 
-    assert_contains(endpoint_builder, "IsUnsafeReleaseOverride", "unsafe release override detection")
-    assert_contains(endpoint_builder, "uri.IsLoopback", "loopback override rejection")
-    assert_contains(endpoint_builder, "IsProductionBackendUrl(normalizedFallback)", "release override guard")
-    assert_contains(endpoint_builder, "return normalizedFallback;", "unsafe release override falls back to production")
+    assert_contains(endpoint_builder, "ResolveBuildDefaultBaseUrl", "build default resolver")
+    assert_contains(endpoint_builder, "ResolveSavedBaseUrlForCurrentBuild", "saved backend resolver")
+    assert_contains(endpoint_builder, "#else\n        return BackendConstants.ProductionBackendBaseUrl;", "release endpoint lock ignores overrides")
     assert_contains(settings_vm, "ResolveSavedBaseUrlForCurrentBuild", "settings uses resolved effective backend URL")
 
     assert_contains(constants, 'RootHealthEndpoint = "/health"', "root health endpoint")

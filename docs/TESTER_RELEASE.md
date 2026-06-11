@@ -1,5 +1,11 @@
 # Tester release workflow
 
+## Release backend lock (server-only installed builds)
+
+Release/tester installed builds are server-only. The only backend for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`. Local backend URLs are DEBUG/developer-only and must not be present as normal user Settings options. Diagnostics and Backend URL editing are not part of user/release Settings. Stale AppData `settings.json` backend URL values from older installs are ignored by release builds and are not written back into user-editable settings.
+
+Clean-machine smoke must verify registration/login/lesson/history/progress/update from an installed build against the fixed production backend. The installed build connectivity signal is `GET https://api.languagevoicetutor.com/health`; registration calls `POST https://api.languagevoicetutor.com/api/auth/register`, login calls `POST https://api.languagevoicetutor.com/api/auth/login`, and auth restore calls `GET https://api.languagevoicetutor.com/api/auth/me`. Optional cloud settings or subscription/status endpoint failures must not block auth or lessons and must not be treated as the backend connectivity signal.
+
 ## Current blocker status as of 2026-06-09
 
 Desktop authenticated session persistence is now part of the tester-readiness foundation. The desktop does not store raw passwords; token/session data is stored under the current user app-data folder with Windows DPAPI protection. Logout clears persisted auth session data. Reinstall/update should preserve user app data and session storage. Same-version installer reinstall confirmation remains in place. The basic manual in-app update UI now checks `latest.json`, validates the manifest, verifies SHA-256 before offering to open the installer/folder, and does not silently auto-update. External tester handoff remains blocked until persisted-session verification and clean-machine smoke pass.
@@ -40,22 +46,9 @@ Before the first controlled external tester receives Language Voice Tutor, confi
 
 ## Backend URL profile
 
-Production tester builds must use `https://api.languagevoicetutor.com`. The installed app must show/use that effective Backend URL and must not silently fall back to localhost, 127.0.0.1, an empty URL, or a stale local development override. Backend connectivity is verified by the health endpoint (`/health`, with `/api/health` fallback), not by optional cloud settings/account status endpoints. Clean-machine smoke must verify backend health, registration, login, lesson start/completion, progress/history, password reset, update check, and quiet local settings fallback when optional cloud settings/status are unavailable from a real installed build. Tester handoff is blocked until the installed-build backend connectivity issue is verified fixed on a second Windows device.
+Production tester/release installed builds are server-only and always use `https://api.languagevoicetutor.com`. The installed app must not use localhost, 127.0.0.1, local-network URLs, plain HTTP development URLs, empty URLs, stale AppData overrides, or any user-editable backend URL. Backend connectivity is verified by `GET https://api.languagevoicetutor.com/health`, not by optional cloud settings/account status endpoints.
 
-Local development builds default to `http://localhost:5000`. The primary Inno tester/release installer flow defaults packaged builds to `https://api.languagevoicetutor.com` by passing `DesktopBackendBaseUrl` during publish; use `-BackendBaseUrl` only when intentionally testing another absolute http/https backend. Settings/Diagnostics continue to show the current Backend URL so tester reports can confirm the profile in use.
-
-Existing installed-user settings are handled conservatively: empty Backend URL values use the current build default, saved legacy `http://localhost:5000` values migrate to `https://api.languagevoicetutor.com` in tester/release builds where that is the build default, and unsafe localhost, loopback, or plain-http development overrides are ignored instead of silently replacing production.
-
-The backend remains the source of truth. The desktop must not store OpenAI API keys and must not call OpenAI directly. Production billing remains deferred, public release is not approved, and external tester handoff remains blocked until server-connected CMS/Admin verification and manual update UI verification, clean-machine install, and the controlled tester checklist pass.
-
-The recommended Windows tester handoff is now the Inno Setup installer documented in [`docs/WINDOWS_INSTALLER_RELEASE_FLOW.md`](WINDOWS_INSTALLER_RELEASE_FLOW.md), after the installer smoke checklist passes.
-
-The older ZIP package created by `scripts/package-tester-release.ps1` remains available only as an emergency/developer fallback. Do not present the ZIP as the main tester handoff when the Inno installer is available and smoke-tested.
-
-Velopack is deprecated/rejected for this project. Its Windows installer is a one-click flow and does not match the desired release-like installer UX with destination-directory selection. External testers should not receive Velopack packages.
-
-The server-ready direct-download folder can now be validated locally and dry-run uploaded with the manual helper documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). Server upload is prepared but not executed automatically, and it does not deploy the backend, create the download website, or add automatic update service. External tester handoff remains blocked until server-connected CMS/Admin verification, manual update UI verification, clean-machine install, and the controlled tester checklist pass.
-
+Local backend URLs are DEBUG/developer-only. Release Settings does not include Diagnostics or Backend URL editing, and stale `settings.json` Backend URL fields are ignored and not written back. Clean-machine smoke must verify registration, login, lesson start/completion, history, progress, session restore, and Check for updates from a real installed build.
 
 ## Manual update check UI
 
@@ -73,7 +66,7 @@ The tester release is:
 - server-ready direct-download files under `artifacts\releases\windows\direct`;
 - branded publicly as `Language Voice Tutor`;
 - built from the desktop app publish output;
-- intended to work with the deployed hosted backend by default, with local/ngrok/custom backends only for deliberate overrides;
+- intended to work only with the deployed hosted backend in tester/release installed builds;
 - focused on checking launch, Settings, account login/session restore, backend history, Lesson Chat, voice recording/transcription, TTS, Conversation Mode, translation, hints, feedback, Summary, active lesson guard, and clean close behavior.
 
 ## What the tester release is not

@@ -4,6 +4,12 @@ This document describes the safe, optional foundation for copying the already ge
 
 The primary Windows installer track is the Inno Setup installer. ZIP packages remain only an emergency/developer fallback. This upload foundation does not deploy the backend, does not create the download website, is consumed by the basic manual desktop update UI, does not make the app public-release ready, and does not sign the installer. Code signing is still deferred.
 
+## Release backend lock (server-only installed builds)
+
+Release/tester installed builds are server-only. The only backend for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`. Local backend URLs are DEBUG/developer-only and must not be present as normal user Settings options. Diagnostics and Backend URL editing are not part of user/release Settings. Stale AppData `settings.json` backend URL values from older installs are ignored by release builds and are not written back into user-editable settings.
+
+Clean-machine smoke must verify registration/login/lesson/history/progress/update from an installed build against the fixed production backend. The installed build connectivity signal is `GET https://api.languagevoicetutor.com/health`; registration calls `POST https://api.languagevoicetutor.com/api/auth/register`, login calls `POST https://api.languagevoicetutor.com/api/auth/login`, and auth restore calls `GET https://api.languagevoicetutor.com/api/auth/me`. Optional cloud settings or subscription/status endpoint failures must not block auth or lessons and must not be treated as the backend connectivity signal.
+
 ## Current v0.1.17-tester.1 hosting validation
 
 Static Windows direct release hosting has been validated for `0.1.17-tester.1`. The Windows installer was generated, validated, uploaded, and the server-side release files were verified. `latest.json` for `0.1.17-tester.1` is available from the production domain.

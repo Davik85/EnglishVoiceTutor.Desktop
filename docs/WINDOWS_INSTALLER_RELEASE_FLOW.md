@@ -64,11 +64,7 @@ Run from the repository root on Windows:
 powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0
 ```
 
-By default this packages the desktop with Backend URL `https://api.languagevoicetutor.com`. To intentionally test another absolute http/https backend, pass `-BackendBaseUrl`, for example:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0 -BackendBaseUrl https://api.languagevoicetutor.com
-```
+This packages tester/release installed builds with the fixed production backend `https://api.languagevoicetutor.com`. The release package script rejects any other `-BackendBaseUrl`; local or custom backend URLs are DEBUG/developer-only and must not be used for installed tester/release builds.
 
 For prerelease builds:
 
@@ -132,4 +128,4 @@ Before external handoff, verify on a clean or representative Windows machine:
 
 ## Backend and secrets boundaries
 
-Local development builds keep `http://localhost:5000` as the default Backend URL. Inno tester/release packages default to `https://api.languagevoicetutor.com`; saved legacy localhost user settings may migrate to that deployed API only in builds where it is the current packaged default, while custom Backend URL values are preserved. The backend remains the source of truth. The desktop must not store OpenAI API keys and must not call OpenAI directly. Do not place secrets, local `.env` files, local auth/session files, local settings, or local lesson history in the publish output or installer.
+Local development builds may use `http://localhost:5000` only in DEBUG/developer configuration. Inno tester/release packages are server-only and locked to `https://api.languagevoicetutor.com`; stale saved localhost/custom Backend URL values are ignored by release builds and are not written back. The backend remains the source of truth. The desktop must not store OpenAI API keys and must not call OpenAI directly. Do not place secrets, local `.env` files, local auth/session files, local settings, or local lesson history in the publish output or installer.

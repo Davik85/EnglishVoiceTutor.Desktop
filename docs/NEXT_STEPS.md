@@ -1,5 +1,11 @@
 # Next Steps
 
+## Release backend lock (server-only installed builds)
+
+Release/tester installed builds are server-only. The only backend for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`. Local backend URLs are DEBUG/developer-only and must not be present as normal user Settings options. Diagnostics and Backend URL editing are not part of user/release Settings. Stale AppData `settings.json` backend URL values from older installs are ignored by release builds and are not written back into user-editable settings.
+
+Clean-machine smoke must verify registration/login/lesson/history/progress/update from an installed build against the fixed production backend. The installed build connectivity signal is `GET https://api.languagevoicetutor.com/health`; registration calls `POST https://api.languagevoicetutor.com/api/auth/register`, login calls `POST https://api.languagevoicetutor.com/api/auth/login`, and auth restore calls `GET https://api.languagevoicetutor.com/api/auth/me`. Optional cloud settings or subscription/status endpoint failures must not block auth or lessons and must not be treated as the backend connectivity signal.
+
 ## Manual update UI status
 
 A simple manual update check is implemented in normal desktop Settings. It reads the Windows direct-release `latest.json`, validates the Language Voice Tutor Windows x64 manifest identity, compares installed and latest tester versions, asks before downloading/installing, verifies SHA-256 before offering to start the installer, and does not silently auto-update.
@@ -43,7 +49,7 @@ CMS draft-save audit logging is implemented for successful Admin CMS Save draft 
 
 Production tester builds must use `https://api.languagevoicetutor.com`; Release builds must not silently use localhost, 127.0.0.1, empty URLs, or stale local development overrides. Clean-machine smoke must verify health, direct production auth/register, in-app registration, login, local settings fallback when optional cloud settings/account status are unavailable, lesson start, lesson completion, history, progress, password reset, and update check from a real installed build. Tester handoff is blocked until the installed-build auth/settings fallback issue is verified fixed on the problematic Windows device and a second Windows device.
 
-Local desktop development keeps the default Backend URL `http://localhost:5000`. Inno tester/release packages default to `https://api.languagevoicetutor.com` through `scripts/package-windows-inno-release.ps1`, which passes `DesktopBackendBaseUrl` to `dotnet publish` and prints the selected Backend URL. Existing saved localhost settings migrate to the deployed API in tester/release builds where that deployed API is the build default; unsafe localhost, loopback, and plain-http development overrides must not silently replace production. Confirm the generated `latest.json` non-secret `backendBaseUrl` with `scripts/validate-windows-direct-release.ps1` before handoff. Backend APIs remain server-side source of truth, the desktop must never contain OpenAI keys, production billing remains deferred, and public release/external tester handoff are not ready until server-connected CMS/Admin verification and manual update check verification, clean-machine install, and the controlled tester checklist pass.
+Local desktop development may use `http://localhost:5000` only in DEBUG/developer builds. Inno tester/release packages are server-only and must use `https://api.languagevoicetutor.com`; non-Debug builds reject any other `DesktopBackendBaseUrl`. Existing saved localhost, loopback, local-network, plain-http, or custom AppData Backend URL settings are ignored by release builds and are not written back. Confirm the generated `latest.json` non-secret `backendBaseUrl` with `scripts/validate-windows-direct-release.ps1` before handoff. Backend APIs remain server-side source of truth, the desktop must never contain OpenAI keys, production billing remains deferred, and public release/external tester handoff are not ready until server-connected CMS/Admin verification and manual update check verification, clean-machine install, and the controlled tester checklist pass.
 
 ## Recommended next product order
 
@@ -84,7 +90,7 @@ Do not propose or start new product features before the readiness blockers below
 - Paddle webhook ingestion, normalization, subscription lifecycle snapshots, payment snapshots, entitlement activation/extension, scheduled cancellation policy, past-due policy, canceled/paused expiry policy, and resumed/activated snapshot-only policy.
 - Local Development CMS/admin support foundation v1.
 - Step 5A desktop release readiness audit.
-- Step 5B Settings/Diagnostics release gate: packaged Release hides Diagnostics by default and enables it only with local `EVT_DESKTOP_DIAGNOSTICS=1`.
+- Step 5B Settings release gate: packaged Release hides Diagnostics and Backend URL editing for normal users; support investigation uses safe internal logs instead of a Settings diagnostics tab.
 - Step 5B native/interface/explanation language foundation.
 - Step 5B interface localization current phase closed for the release-ready list.
 - Backend-unavailable/account UX hardening for non-crash resilience and localized errors.

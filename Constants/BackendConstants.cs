@@ -5,18 +5,24 @@ namespace EnglishVoiceTutor.Desktop.Constants;
 
 public static class BackendConstants
 {
-    public const string LegacyLocalBackendBaseUrl = "http://localhost:5000";
     public const string ProductionBackendBaseUrl = "https://api.languagevoicetutor.com";
-    public static readonly string DefaultBackendBaseUrl = BackendEndpointBuilder.NormalizeBaseUrl(GetConfiguredDefaultBackendBaseUrl(), LegacyLocalBackendBaseUrl);
+#if DEBUG
+    public const string DeveloperBackendBaseUrl = "http://localhost:5000";
+#endif
+    public static readonly string DefaultBackendBaseUrl = BackendEndpointBuilder.ResolveBuildDefaultBaseUrl(GetConfiguredDefaultBackendBaseUrl());
     private const string DesktopBackendBaseUrlMetadataName = "DesktopBackendBaseUrl";
 
-    private static string GetConfiguredDefaultBackendBaseUrl()
+    private static string? GetConfiguredDefaultBackendBaseUrl()
     {
+#if DEBUG
         return typeof(BackendConstants)
             .Assembly
             .GetCustomAttributes<AssemblyMetadataAttribute>()
             .FirstOrDefault(attribute => string.Equals(attribute.Key, DesktopBackendBaseUrlMetadataName, StringComparison.Ordinal))
-            ?.Value ?? LegacyLocalBackendBaseUrl;
+            ?.Value ?? DeveloperBackendBaseUrl;
+#else
+        return ProductionBackendBaseUrl;
+#endif
     }
 
     public const string LessonChatReplyEndpoint = "/api/lesson-chat/reply";
