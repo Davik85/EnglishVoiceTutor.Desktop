@@ -89,7 +89,14 @@ public static class BackendEndpointBuilder
             return null;
         }
 
-        return uri.ToString().TrimEnd('/');
+        var builder = new UriBuilder(uri)
+        {
+            Path = string.Empty,
+            Query = string.Empty,
+            Fragment = string.Empty
+        };
+
+        return builder.Uri.ToString().TrimEnd('/');
     }
 
     public static Uri BuildEndpointUri(string? backendBaseUrl, string endpointPath)
