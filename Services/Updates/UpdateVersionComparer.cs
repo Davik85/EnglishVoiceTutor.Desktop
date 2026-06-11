@@ -103,7 +103,7 @@ public static class UpdateVersionComparer
 
             if (leftNumeric && rightNumeric)
             {
-                var numericComparison = int.Parse(left).CompareTo(int.Parse(right));
+                var numericComparison = ParseNumericToken(left).CompareTo(ParseNumericToken(right));
                 if (numericComparison != 0)
                 {
                     return Math.Sign(numericComparison);
@@ -137,6 +137,9 @@ public static class UpdateVersionComparer
         var token = new string((segment ?? string.Empty).TakeWhile(char.IsDigit).ToArray());
         return int.TryParse(token, out var number) ? number : 0;
     }
+
+    private static long ParseNumericToken(string value) =>
+        long.TryParse(value, out var number) ? number : long.MaxValue;
 
     private static bool IsNumericToken(string value) => !string.IsNullOrEmpty(value) && value.All(char.IsDigit);
 

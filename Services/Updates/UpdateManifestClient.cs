@@ -32,7 +32,16 @@ public sealed class UpdateManifestClient
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(TimeSpan.FromSeconds(20));
 
-            using var response = await httpClient.GetAsync(manifestUri, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            using var request = new HttpRequestMessage(HttpMethod.Get, manifestUri);
+            request.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue
+            {
+                NoCache = true,
+                NoStore = true,
+                MaxAge = TimeSpan.Zero
+            };
+            request.Headers.Pragma.ParseAdd("no-cache");
+
+            using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
             if (!response.IsSuccessStatusCode)
             {
                 return UpdateCheckResult.Failure("Could not load update information right now. Please try again later.");

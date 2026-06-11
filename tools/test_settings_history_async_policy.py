@@ -24,7 +24,7 @@ for path in UI_PATHS:
             errors.append(f"{path.relative_to(ROOT)} must not use blocking UI-thread pattern {label}.")
 
 main_vm = (ROOT / "ViewModels" / "MainViewModel.cs").read_text(encoding="utf-8")
-settings_nav = re.search(r"private void NavigateToSettings\(Action navigateBack\).*?\n    private void SaveSettings", main_vm, re.S)
+settings_nav = re.search(r"private void NavigateToSettings\(Action navigateBack(?:, SettingsSection initialSection = SettingsSection\.Learning)?\).*?\n    private void SaveSettings", main_vm, re.S)
 if not settings_nav:
     errors.append("Could not locate MainViewModel.NavigateToSettings.")
 else:
