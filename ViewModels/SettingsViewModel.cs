@@ -415,6 +415,18 @@ public partial class SettingsViewModel : ViewModelBase
     private string subscriptionCheckedAtText = SubscriptionStatusUnavailableText;
 
     [ObservableProperty]
+    private bool isLearningSectionSelected = true;
+
+    [ObservableProperty]
+    private bool isAccountSectionSelected;
+
+    [ObservableProperty]
+    private bool isAudioSectionSelected;
+
+    [ObservableProperty]
+    private bool isProgressSectionSelected;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DiagnosticsMicrophoneText))]
     private AudioInputDeviceOption? selectedAudioInputDeviceOption;
 
@@ -440,7 +452,8 @@ public partial class SettingsViewModel : ViewModelBase
         AudioInputDeviceService audioInputDeviceService,
         AudioRecordingService audioRecordingService,
         Action<string, string, string, string, string, string, string, string, string> saveSettings,
-        Action navigateBack)
+        Action navigateBack,
+        SettingsSection initialSection = SettingsSection.Learning)
     {
         selectedInterfaceLanguageOption = InterfaceLanguageOptions.GetById(currentInterfaceLanguageId);
         localizedText = SettingsLocalization.GetSettingsText(selectedInterfaceLanguageOption.Id);
@@ -467,9 +480,79 @@ public partial class SettingsViewModel : ViewModelBase
         this.saveSettings = saveSettings;
         this.navigateBack = navigateBack;
 
+        ApplyInitialSection(initialSection);
         ApplyLearningStatistics(lessonHistory);
         RefreshAudioInputDevices(currentAudioInputDeviceId, showUnavailableStatus: false);
         _ = RestoreSessionAsync();
+    }
+
+
+    partial void OnIsLearningSectionSelectedChanged(bool value)
+    {
+        if (value)
+        {
+            ClearOtherSelectedSections(nameof(IsLearningSectionSelected));
+        }
+    }
+
+    partial void OnIsAccountSectionSelectedChanged(bool value)
+    {
+        if (value)
+        {
+            ClearOtherSelectedSections(nameof(IsAccountSectionSelected));
+        }
+    }
+
+    partial void OnIsAudioSectionSelectedChanged(bool value)
+    {
+        if (value)
+        {
+            ClearOtherSelectedSections(nameof(IsAudioSectionSelected));
+        }
+    }
+
+    partial void OnIsProgressSectionSelectedChanged(bool value)
+    {
+        if (value)
+        {
+            ClearOtherSelectedSections(nameof(IsProgressSectionSelected));
+        }
+    }
+
+    private void ApplyInitialSection(SettingsSection initialSection)
+    {
+        IsLearningSectionSelected = initialSection == SettingsSection.Learning;
+        IsAccountSectionSelected = initialSection == SettingsSection.Account;
+        IsAudioSectionSelected = initialSection == SettingsSection.Audio;
+        IsProgressSectionSelected = initialSection == SettingsSection.Progress;
+
+        if (!IsLearningSectionSelected && !IsAccountSectionSelected && !IsAudioSectionSelected && !IsProgressSectionSelected)
+        {
+            IsLearningSectionSelected = true;
+        }
+    }
+
+    private void ClearOtherSelectedSections(string selectedPropertyName)
+    {
+        if (selectedPropertyName != nameof(IsLearningSectionSelected))
+        {
+            IsLearningSectionSelected = false;
+        }
+
+        if (selectedPropertyName != nameof(IsAccountSectionSelected))
+        {
+            IsAccountSectionSelected = false;
+        }
+
+        if (selectedPropertyName != nameof(IsAudioSectionSelected))
+        {
+            IsAudioSectionSelected = false;
+        }
+
+        if (selectedPropertyName != nameof(IsProgressSectionSelected))
+        {
+            IsProgressSectionSelected = false;
+        }
     }
 
     [RelayCommand]
@@ -2058,4 +2141,12 @@ public partial class SettingsViewModel : ViewModelBase
         NotConfigured,
         Unavailable
     }
+}
+
+public enum SettingsSection
+{
+    Learning,
+    Account,
+    Audio,
+    Progress
 }

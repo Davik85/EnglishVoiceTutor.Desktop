@@ -66,6 +66,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private ViewModelBase currentViewModel;
 
+    partial void OnCurrentViewModelChanging(ViewModelBase value)
+    {
+        if (currentViewModel is IDisposable disposableCurrentViewModel && !ReferenceEquals(currentViewModel, value))
+        {
+            disposableCurrentViewModel.Dispose();
+        }
+    }
+
     [ObservableProperty]
     private bool isAccessPanelVisible;
 
@@ -182,7 +190,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         CurrentViewModel = CreateLessonHistoryViewModel(selectedLevel);
     }
 
-    private void NavigateToSettings(Action navigateBack)
+    private void NavigateToSettings(Action navigateBack, SettingsSection initialSection = SettingsSection.Learning)
     {
         HideAccessPanel();
 
@@ -208,7 +216,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             audioInputDeviceService,
             audioRecordingService,
             SaveSettings,
-            navigateBack);
+            navigateBack,
+            initialSection);
     }
 
     private void SaveSettings(string interfaceLanguageId, string nativeLanguage, string studyLanguageId, string tutorAvatarId, string speechVoiceId, string userDisplayName, string learningGoal, string backendBaseUrl, string audioInputDeviceId)
@@ -558,7 +567,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private WelcomeViewModel CreateWelcomeViewModel()
     {
-        return new WelcomeViewModel(AppLocalization.GetText(userSettings.InterfaceLanguageId), NavigateToLevelSelection, () => NavigateToSettings(NavigateToWelcome));
+        return new WelcomeViewModel(
+            AppLocalization.GetText(userSettings.InterfaceLanguageId),
+            authBackendService,
+            NavigateToLevelSelection,
+            () => NavigateToSettings(NavigateToWelcome),
+            () => NavigateToSettings(NavigateToWelcome, SettingsSection.Account));
     }
 
     private LevelSelectionViewModel CreateLevelSelectionViewModel()

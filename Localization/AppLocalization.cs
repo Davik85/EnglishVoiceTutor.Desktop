@@ -122,7 +122,13 @@ public static class AppLocalization
 
         return new AppLocalizedText(
             languageId, settings,
-            l("Foreign language speaking practice"), l("Practice real-life lessons by text or voice with AI guidance."), t.StartLesson, t.Settings,
+            l("Foreign language speaking practice"),
+            l("Practice real-life lessons by text or voice with AI guidance."),
+            t.StartLesson,
+            t.Settings,
+            l("Sign in to account"),
+            l("Signed in as {0}"),
+            l("Signed in"),
             t.ChooseLevel, l("We will use this level later to adapt lessons and corrections."), $"{t.Level}:", l("Please select a level before continuing."), t.Continue, t.Back,
             t.Home, p.HomeSubtitle, $"{t.Level}:", p.DailyLimitText, l("Lesson history"), t.Settings,
             SubtopicsLocalization.GetTitleTemplate(languageId), SubtopicsLocalization.GetSubtitle(languageId), $"{t.Topic}:", $"{t.Situation}:", l("Please choose a situation before starting the lesson."), t.StartLesson,
@@ -188,6 +194,9 @@ public static class AppLocalization
         {
             ["es"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
+                ["Sign in to account"] = "Iniciar sesión en la cuenta",
+                ["Signed in as {0}"] = "Sesión iniciada como {0}",
+                ["Signed in"] = "Sesión iniciada",
                 ["Connection"] = "Conexión",
                 ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
@@ -324,6 +333,9 @@ public static class AppLocalization
             },
             ["fr"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
+                ["Sign in to account"] = "Se connecter au compte",
+                ["Signed in as {0}"] = "Connecté en tant que {0}",
+                ["Signed in"] = "Connecté",
                 ["Connection"] = "Conexión",
                 ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
@@ -460,6 +472,9 @@ public static class AppLocalization
             },
             ["de"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
+                ["Sign in to account"] = "Beim Konto anmelden",
+                ["Signed in as {0}"] = "Angemeldet als {0}",
+                ["Signed in"] = "Angemeldet",
                 ["Connection"] = "Conexión",
                 ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
@@ -596,6 +611,9 @@ public static class AppLocalization
             },
             ["it"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
+                ["Sign in to account"] = "Accedi all’account",
+                ["Signed in as {0}"] = "Accesso effettuato come {0}",
+                ["Signed in"] = "Accesso effettuato",
                 ["Connection"] = "Conexión",
                 ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
@@ -732,6 +750,9 @@ public static class AppLocalization
             },
             ["pt"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
+                ["Sign in to account"] = "Entrar na conta",
+                ["Signed in as {0}"] = "Conectado como {0}",
+                ["Signed in"] = "Conectado",
                 ["Connection"] = "Conexión",
                 ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
@@ -868,6 +889,9 @@ public static class AppLocalization
             },
             ["ru"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
+                ["Sign in to account"] = "Войти в аккаунт",
+                ["Signed in as {0}"] = "Вход выполнен: {0}",
+                ["Signed in"] = "Вход выполнен",
                 ["Connection"] = "Conexión",
                 ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",
@@ -1140,6 +1164,9 @@ public static class AppLocalization
             },
             ["ar"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
+                ["Sign in to account"] = "تسجيل الدخول إلى الحساب",
+                ["Signed in as {0}"] = "تم تسجيل الدخول باسم {0}",
+                ["Signed in"] = "تم تسجيل الدخول",
                 ["Connection"] = "Conexión",
                 ["Server endpoint"] = "Endpoint del servidor",
                 ["Used by the app to reach the local or remote backend."] = "Usada por la app para conectarse al backend local o remoto.",

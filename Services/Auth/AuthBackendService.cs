@@ -21,6 +21,8 @@ public sealed class AuthBackendService
         this.sessionStorageService = sessionStorageService ?? new AuthSessionStorageService();
     }
 
+    public event EventHandler<AuthStateChangedEventArgs>? AuthStateChanged;
+
     public string EffectiveBackendBaseUrl => BackendEndpointBuilder.NormalizeBaseUrl(backendBaseUrl);
 
     public string LastErrorCategory { get; private set; } = "none";
@@ -87,6 +89,7 @@ public sealed class AuthBackendService
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
                 await sessionStorageService.ClearAsync(cancellationToken);
+                NotifyAuthStateChanged(null);
                 return AuthMeResult.InvalidSession();
             }
 
@@ -123,7 +126,13 @@ public sealed class AuthBackendService
 
     public Task LogoutAsync(CancellationToken cancellationToken = default)
     {
+        NotifyAuthStateChanged(null);
         return sessionStorageService.ClearAsync(cancellationToken);
+    }
+
+    private void NotifyAuthStateChanged(AuthUserDto? user)
+    {
+        AuthStateChanged?.Invoke(this, new AuthStateChangedEventArgs(user));
     }
 
 
@@ -213,6 +222,7 @@ public sealed class AuthBackendService
             await sessionStorageService.SaveAsync(storedSession, cancellationToken);
             LastErrorCategory = "none";
             LastStatusCode = null;
+            NotifyAuthStateChanged(payload.User);
             return AuthOperationResult.Success(payload);
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
@@ -435,4 +445,14 @@ public sealed class PasswordOperationResult
     public static PasswordOperationResult Failed(string message) => new(PasswordOperationResultStatus.Failed, message);
     public static PasswordOperationResult Unauthorized() => new(PasswordOperationResultStatus.Unauthorized, string.Empty);
     public static PasswordOperationResult BackendUnavailable() => new(PasswordOperationResultStatus.BackendUnavailable, string.Empty);
+}
+
+public sealed class AuthStateChangedEventArgs : EventArgs
+{
+    public AuthStateChangedEventArgs(AuthUserDto? user)
+    {
+        User = user;
+    }
+
+    public AuthUserDto? User { get; }
 }
