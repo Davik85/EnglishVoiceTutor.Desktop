@@ -14,6 +14,8 @@
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
     <FileVersion>0.0.0.0</FileVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <AppIconPath>Assets\Branding\app-icon.ico</AppIconPath>
+    <ApplicationIcon Condition="Exists('$(AppIconPath)')">$(AppIconPath)</ApplicationIcon>
     <DesktopBackendBaseUrl Condition="'$(DesktopBackendBaseUrl)' == '' and '$(Configuration)' == 'Debug'">http://localhost:5000</DesktopBackendBaseUrl>
     <DesktopBackendBaseUrl Condition="'$(DesktopBackendBaseUrl)' == '' and '$(Configuration)' != 'Debug'">https://api.languagevoicetutor.com</DesktopBackendBaseUrl>
   </PropertyGroup>
@@ -27,8 +29,10 @@
   <ItemGroup>
     <None Remove="Assets/Avatars/**/*.gif" />
     <None Remove="Assets/Welcome/**/*.png" />
+    <None Remove="$(AppIconPath)" Condition="Exists('$(AppIconPath)')" />
     <Resource Include="Assets/Avatars/**/*.gif" />
     <Resource Include="Assets/Welcome/**/*.png" />
+    <Resource Include="$(AppIconPath)" Condition="Exists('$(AppIconPath)')" />
   </ItemGroup>
 
   <ItemGroup>

@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Services.Updates;
@@ -14,6 +15,7 @@ namespace EnglishVoiceTutor.Desktop;
 
 public partial class MainWindow : Window
 {
+    private const string AppIconResourcePath = "Assets/Branding/app-icon.ico";
     private LessonChatViewModel? currentLessonChatViewModel;
     private readonly DesktopStartupUpdateCheckService startupUpdateCheckService = new();
     private bool shutdownCleanupStarted;
@@ -22,6 +24,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        ApplyAppIconIfAvailable();
         ApplySafeStartupWindowPlacement(SystemParameters.WorkArea);
         DataContext = new MainViewModel();
 
@@ -30,6 +33,21 @@ public partial class MainWindow : Window
             mainViewModel.PropertyChanged += MainViewModel_PropertyChanged;
             ApplyLayoutForViewModel(mainViewModel.CurrentViewModel);
         }
+    }
+
+
+    private void ApplyAppIconIfAvailable()
+    {
+        var iconUri = new Uri(AppIconResourcePath, UriKind.Relative);
+        var resourceInfo = Application.GetResourceStream(iconUri);
+
+        if (resourceInfo is null)
+        {
+            return;
+        }
+
+        using var iconStream = resourceInfo.Stream;
+        Icon = BitmapFrame.Create(iconStream, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
     }
 
     protected override void OnSourceInitialized(EventArgs e)

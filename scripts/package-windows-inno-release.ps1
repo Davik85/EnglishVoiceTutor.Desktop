@@ -59,6 +59,7 @@ $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = (Resolve-Path (Join-Path $scriptRoot "..")).Path
 $projectPath = Join-Path $repoRoot "EnglishVoiceTutor.Desktop.csproj"
 $innoScriptPath = Join-Path $repoRoot "installer\windows\LanguageVoiceTutor.iss"
+$appIconPath = Join-Path $repoRoot "Assets\Branding\app-icon.ico"
 $publishDirectory = Join-Path $repoRoot "artifacts\publish\win-x64-inno"
 $installerDirectory = Join-Path $repoRoot "artifacts\installers\windows"
 $releaseDirectory = Join-Path $repoRoot "artifacts\releases\windows\direct"
@@ -172,6 +173,10 @@ if (-not (Test-Path $innoScriptPath -PathType Leaf)) {
     throw "Inno Setup script was not found: $innoScriptPath"
 }
 
+if (-not (Test-Path $appIconPath -PathType Leaf)) {
+    throw "Application icon was not found: $appIconPath. Generate it with scripts/generate-app-icon.ps1 before packaging."
+}
+
 $BackendBaseUrl = Normalize-BackendBaseUrl -Value $BackendBaseUrl
 if ($BackendBaseUrl -ne $productionBackendBaseUrl) {
     throw "Tester/release installed builds are server-only and must use $productionBackendBaseUrl. Local/custom backend URLs are DEBUG/developer-only."
@@ -189,6 +194,7 @@ Write-Host "Installer directory: $installerDirectory"
 Write-Host "Direct release directory: $releaseDirectory"
 Write-Host "ISCC.exe: $isccExe"
 Write-Host "Packaged backend URL: $BackendBaseUrl"
+Write-Host "Application icon: $appIconPath"
 
 Remove-Item -Recurse -Force $publishDirectory -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $publishDirectory | Out-Null

@@ -5,6 +5,8 @@
 #define AppPublisher "Language Voice Tutor"
 #define AppExeName "EnglishVoiceTutor.Desktop.exe"
 #define PublishDir "..\..\artifacts\publish\win-x64-inno"
+#define AppIconFile "..\..\Assets\Branding\app-icon.ico"
+#define InstalledAppIconFile "{app}\Assets\Branding\app-icon.ico"
 
 [Setup]
 AppId=LanguageVoiceTutor.Desktop
@@ -24,7 +26,8 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 UninstallDisplayName=Language Voice Tutor
-UninstallDisplayIcon={app}\{#AppExeName}
+UninstallDisplayIcon={#InstalledAppIconFile}
+SetupIconFile={#AppIconFile}
 SetupLogging=yes
 CloseApplications=yes
 CloseApplicationsFilter={#AppExeName}
@@ -37,10 +40,11 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#AppIconFile}"; DestDir: "{app}\Assets\Branding"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\Language Voice Tutor"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
-Name: "{autodesktop}\Language Voice Tutor"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{group}\Language Voice Tutor"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{#InstalledAppIconFile}"
+Name: "{autodesktop}\Language Voice Tutor"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{#InstalledAppIconFile}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "Launch Language Voice Tutor"; Flags: nowait postinstall skipifsilent
