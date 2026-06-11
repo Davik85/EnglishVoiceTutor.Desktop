@@ -87,11 +87,11 @@ public sealed class UpdateDownloadService
         }
     }
 
-    public static bool TryLaunchVerifiedInstallerAfterAppShutdown(string installerPath, Action<string>? showLaunchFailure = null)
+    public static bool TryStartVerifiedInstallerAfterAppShutdown(string installerPath, Action<string>? showStartFailure = null)
     {
         if (string.IsNullOrWhiteSpace(installerPath) || !File.Exists(installerPath))
         {
-            showLaunchFailure?.Invoke("The verified installer could not be found. Please check for updates again.");
+            showStartFailure?.Invoke("The verified installer could not be found. Please check for updates again.");
             return false;
         }
 
@@ -104,7 +104,7 @@ public sealed class UpdateDownloadService
         catch (Exception exception)
         {
             Debug.WriteLine($"Could not start update installer helper. Error={exception.Message}");
-            showLaunchFailure?.Invoke("The installer could not be started. Please try again, or restart the app and check for updates again.");
+            showStartFailure?.Invoke("The installer could not be started. Please try again, or restart the app and check for updates again.");
             return false;
         }
     }

@@ -112,7 +112,7 @@ public sealed class DesktopStartupUpdateCheckService
                 MessageBoxImage.Information);
             if (installChoice == MessageBoxResult.Yes)
             {
-                UpdateDownloadService.TryLaunchVerifiedInstallerAfterAppShutdown(result.FilePath, message => ShowUpdateMessage(owner, message, MessageBoxImage.Warning));
+                UpdateDownloadService.TryStartVerifiedInstallerAfterAppShutdown(result.FilePath, message => ShowUpdateMessage(owner, message, MessageBoxImage.Warning));
             }
         }
         catch (Exception exception)

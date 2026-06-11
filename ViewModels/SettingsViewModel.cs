@@ -1019,7 +1019,7 @@ public partial class SettingsViewModel : ViewModelBase
                 MessageBoxImage.Information);
             if (installChoice == MessageBoxResult.Yes)
             {
-                UpdateDownloadService.TryLaunchVerifiedInstallerAfterAppShutdown(result.FilePath, message => ShowUpdateMessage(message, MessageBoxImage.Warning));
+                UpdateDownloadService.TryStartVerifiedInstallerAfterAppShutdown(result.FilePath, message => ShowUpdateMessage(message, MessageBoxImage.Warning));
             }
         }
         finally

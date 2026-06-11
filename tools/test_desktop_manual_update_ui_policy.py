@@ -53,7 +53,7 @@ def main() -> None:
     assert_contains(settings_vm, "Could not check for updates right now. Please check your internet connection and try again.", "friendly manifest failure dialog")
     assert_contains(settings_vm, "The update was downloaded and verified. Language Voice Tutor will close and restart during installation. Do you want to start the installer now?", "post-verification installer confirmation")
     assert_contains(settings_vm, "DownloadAndVerifyAsync", "explicit download and verify step")
-    assert_contains(settings_vm, "TryLaunchVerifiedInstallerAfterAppShutdown(result.FilePath", "installer opens only after verified result")
+    assert_contains(settings_vm, "TryStartVerifiedInstallerAfterAppShutdown(result.FilePath", "installer opens only after verified result")
 
     assert_contains(manifest_client, "https://languagevoicetutor.com/releases/windows/direct/latest.json", "latest.json reference")
     for expected in ["ExpectedProductName", "ExpectedAppId", "ExpectedPlatform", "ExpectedArchitecture"]:

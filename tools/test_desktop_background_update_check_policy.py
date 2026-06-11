@@ -48,7 +48,7 @@ def main() -> None:
     assert_contains(startup_service, "UpdateVersionComparer.Compare", "background version comparison")
     assert_contains(startup_service, "DownloadAndVerifyAsync", "background flow uses existing download and verification service")
     assert_contains(download_service, "SHA256.HashDataAsync", "trusted SHA-256 verification remains in shared service")
-    assert_contains(startup_service, "UpdateDownloadService.TryLaunchVerifiedInstallerAfterAppShutdown(result.FilePath", "background flow uses shared installer launch")
+    assert_contains(startup_service, "UpdateDownloadService.TryStartVerifiedInstallerAfterAppShutdown(result.FilePath", "background flow uses shared installer launch")
 
     assert_contains(startup_service, UPDATE_MESSAGE, "first update confirmation")
     assert_contains(startup_service, INSTALLER_MESSAGE, "second installer confirmation")
