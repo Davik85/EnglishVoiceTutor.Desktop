@@ -9,6 +9,10 @@ Release/tester installed builds are server-only. The only backend for packaged n
 
 Clean-machine smoke must verify registration/login/lesson/history/progress/update from an installed build against the fixed production backend. The installed build connectivity signal is `GET https://api.languagevoicetutor.com/health`; registration calls `POST https://api.languagevoicetutor.com/api/auth/register`, login calls `POST https://api.languagevoicetutor.com/api/auth/login`, and auth restore calls `GET https://api.languagevoicetutor.com/api/auth/me`. Optional cloud settings or subscription/status endpoint failures must not block auth or lessons and must not be treated as the backend connectivity signal.
 
+## Desktop startup window sizing
+
+The desktop window now clamps startup size and position to the visible working area before normal use, respecting the Windows taskbar and display scaling instead of allowing the preferred design height to push the title bar above the screen. Clean-machine smoke must include a smaller laptop / scaled display check, including at least one 1366x768, 1280x720, or scaled-display equivalent where the title bar, close button, dragging, Settings, Account, Learning, Progress, Lesson History, lesson start, and Conversation Mode are verified. Backend/auth/lessons remain unchanged by this window-placement fix.
+
 ## Manual desktop update UI
 
 A simple manual update check is now implemented near the top of normal Settings for the Windows desktop app; it is user-facing and not Diagnostics-only. The app reads `https://languagevoicetutor.com/releases/windows/direct/latest.json` only when the user clicks **Check for updates**. It validates `productName`, `appId`, `platform`, and `architecture`, compares the installed app version with the manifest version using SemVer-style tester prerelease rules, and shows simple dialogs for up-to-date, update-available, newer-than-manifest, and connectivity/error cases.

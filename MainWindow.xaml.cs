@@ -6,6 +6,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Services.Windowing;
 using EnglishVoiceTutor.Desktop.ViewModels;
 
 namespace EnglishVoiceTutor.Desktop;
@@ -19,6 +20,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        ApplySafeStartupWindowPlacement(SystemParameters.WorkArea);
         DataContext = new MainViewModel();
 
         if (DataContext is MainViewModel mainViewModel)
@@ -26,6 +28,12 @@ public partial class MainWindow : Window
             mainViewModel.PropertyChanged += MainViewModel_PropertyChanged;
             ApplyLayoutForViewModel(mainViewModel.CurrentViewModel);
         }
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        ApplySafeStartupWindowPlacement(GetCurrentMonitorWorkingAreaInDips());
     }
 
     protected override void OnClosing(CancelEventArgs e)
@@ -160,8 +168,14 @@ public partial class MainWindow : Window
     private void ApplyNormalLessonChatWindowSize()
     {
         var workingArea = GetCurrentMonitorWorkingAreaInDips();
-        var targetWidth = GetLessonTargetSize(DesktopLayoutOptions.LessonChatWindowPreferredWidth, DesktopLayoutOptions.LessonChatWindowMinimumReadableWidth, workingArea.Width);
-        var targetHeight = GetLessonTargetSize(DesktopLayoutOptions.LessonChatWindowPreferredHeight, DesktopLayoutOptions.LessonChatWindowMinimumReadableHeight, workingArea.Height);
+        var targetSize = WindowPlacementService.GetSafeLessonSize(
+            DesktopLayoutOptions.LessonChatWindowPreferredWidth,
+            DesktopLayoutOptions.LessonChatWindowPreferredHeight,
+            DesktopLayoutOptions.LessonChatWindowMinimumReadableWidth,
+            DesktopLayoutOptions.LessonChatWindowMinimumReadableHeight,
+            workingArea);
+        var targetWidth = targetSize.Width;
+        var targetHeight = targetSize.Height;
         var currentWidth = ActualWidth > 0 ? ActualWidth : Width;
         var currentHeight = ActualHeight > 0 ? ActualHeight : Height;
         var newWidth = Math.Max(currentWidth, targetWidth);
@@ -180,8 +194,14 @@ public partial class MainWindow : Window
     private void ApplyConversationModeWindowSize()
     {
         var workingArea = GetCurrentMonitorWorkingAreaInDips();
-        var targetWidth = GetLessonTargetSize(DesktopLayoutOptions.ConversationModeWindowPreferredWidth, DesktopLayoutOptions.ConversationModeWindowMinimumReadableWidth, workingArea.Width);
-        var targetHeight = GetLessonTargetSize(DesktopLayoutOptions.ConversationModeWindowPreferredHeight, DesktopLayoutOptions.ConversationModeWindowMinimumReadableHeight, workingArea.Height);
+        var targetSize = WindowPlacementService.GetSafeLessonSize(
+            DesktopLayoutOptions.ConversationModeWindowPreferredWidth,
+            DesktopLayoutOptions.ConversationModeWindowPreferredHeight,
+            DesktopLayoutOptions.ConversationModeWindowMinimumReadableWidth,
+            DesktopLayoutOptions.ConversationModeWindowMinimumReadableHeight,
+            workingArea);
+        var targetWidth = targetSize.Width;
+        var targetHeight = targetSize.Height;
         var currentWidth = ActualWidth > 0 ? ActualWidth : Width;
         var currentHeight = ActualHeight > 0 ? ActualHeight : Height;
         var resized = Math.Abs(currentWidth - targetWidth) > 0.5 || Math.Abs(currentHeight - targetHeight) > 0.5;
@@ -195,15 +215,27 @@ public partial class MainWindow : Window
         KeepWindowInsideWorkingArea(workingArea, centerIfExpanded: resized);
     }
 
-    private static double GetLessonTargetSize(double preferredSize, double minimumReadableSize, double availableSize)
+    private void ApplySafeStartupWindowPlacement(Rect workingArea)
     {
-        if (availableSize <= 0)
+        if (WindowState != WindowState.Normal || workingArea.Width <= 0 || workingArea.Height <= 0)
         {
-            return preferredSize;
+            return;
         }
 
-        var size = Math.Min(preferredSize, availableSize);
-        return availableSize >= minimumReadableSize ? Math.Max(size, minimumReadableSize) : size;
+        ApplySafeMinimumSize(workingArea);
+        var safeStartupSize = WindowPlacementService.GetSafeStartupSize(workingArea);
+        Width = safeStartupSize.Width;
+        Height = safeStartupSize.Height;
+        var centeredPosition = WindowPlacementService.GetCenteredPosition(safeStartupSize, workingArea);
+        Left = centeredPosition.X;
+        Top = centeredPosition.Y;
+    }
+
+    private void ApplySafeMinimumSize(Rect workingArea)
+    {
+        var safeMinimumSize = WindowPlacementService.GetSafeMinimumSize(workingArea);
+        MinWidth = safeMinimumSize.Width;
+        MinHeight = safeMinimumSize.Height;
     }
 
     private void KeepWindowInsideWorkingArea(Rect workingArea, bool centerIfExpanded)
@@ -213,30 +245,28 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (centerIfExpanded && Width <= workingArea.Width && Height <= workingArea.Height)
+        ApplySafeMinimumSize(workingArea);
+
+        var safeWidth = Math.Min(Math.Max(Width, MinWidth), workingArea.Width);
+        var safeHeight = Math.Min(Math.Max(Height, MinHeight), workingArea.Height);
+        var safeSize = new Size(safeWidth, safeHeight);
+
+        if (Math.Abs(Width - safeWidth) > 0.5)
         {
-            Left = workingArea.Left + ((workingArea.Width - Width) / 2);
-            Top = workingArea.Top + ((workingArea.Height - Height) / 2);
-            return;
+            Width = safeWidth;
         }
 
-        if (Width <= workingArea.Width)
+        if (Math.Abs(Height - safeHeight) > 0.5)
         {
-            Left = Math.Min(Math.Max(Left, workingArea.Left), workingArea.Right - Width);
-        }
-        else
-        {
-            Left = workingArea.Left;
+            Height = safeHeight;
         }
 
-        if (Height <= workingArea.Height)
-        {
-            Top = Math.Min(Math.Max(Top, workingArea.Top), workingArea.Bottom - Height);
-        }
-        else
-        {
-            Top = workingArea.Top;
-        }
+        var requestedPosition = centerIfExpanded
+            ? WindowPlacementService.GetCenteredPosition(safeSize, workingArea)
+            : new Point(Left, Top);
+        var clampedPosition = WindowPlacementService.ClampPosition(requestedPosition, safeSize, workingArea);
+        Left = clampedPosition.X;
+        Top = clampedPosition.Y;
     }
 
     private Rect GetCurrentMonitorWorkingAreaInDips()
