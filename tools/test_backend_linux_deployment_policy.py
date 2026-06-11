@@ -2,6 +2,8 @@
 """Policy checks for the self-contained Linux backend deployment workflow."""
 from __future__ import annotations
 
+import shutil
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,11 +26,74 @@ def assert_not_contains(text: str, needle: str, label: str) -> None:
         raise AssertionError(f"Forbidden {label}: {needle}")
 
 
+def assert_no_bash_escaped_quotes_in_powershell_strings(text: str) -> None:
+    """Reject parser-breaking bash-style \" escapes inside PowerShell double-quoted strings."""
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        index = 0
+        while index < len(line):
+            if line[index] != '"':
+                index += 1
+                continue
+
+            index += 1
+            while index < len(line):
+                char = line[index]
+                next_char = line[index + 1] if index + 1 < len(line) else ""
+                if char == "`":
+                    index += 2
+                    continue
+                if char == '"' and next_char == '"':
+                    index += 2
+                    continue
+                if char == "\\" and next_char == '"':
+                    raise AssertionError(
+                        "PowerShell double-quoted strings must not use bash-style "
+                        f"\\\" escaping because it can break parsing (line {line_number})."
+                    )
+                if char == '"':
+                    break
+                index += 1
+            index += 1
+
+
+def assert_powershell_parser_accepts(relative: str) -> None:
+    executable = shutil.which("pwsh") or shutil.which("powershell")
+    if executable is None:
+        print(f"Skipping PowerShell parser check for {relative}: pwsh/powershell not available.")
+        return
+
+    script_path = ROOT / relative
+    parser_command = (
+        "$tokens = $null; "
+        "$errors = $null; "
+        f"[System.Management.Automation.Language.Parser]::ParseFile('{script_path.as_posix()}', [ref]$tokens, [ref]$errors) | Out-Null; "
+        "if ($errors.Count -gt 0) { "
+        "$errors | ForEach-Object { Write-Error $_.Message }; "
+        "exit 1 "
+        "}"
+    )
+    result = subprocess.run(
+        [executable, "-NoProfile", "-Command", parser_command],
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise AssertionError(
+            f"PowerShell parser rejected {relative}.\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+        )
+
+
 def main() -> None:
     package_script = read("scripts/package-backend-linux-release.ps1")
     upload_script = read("scripts/upload-backend-linux-release.ps1")
     migration_script = read("scripts/generate-backend-refresh-token-migration-sql.ps1")
     docs = read("docs/BACKEND_SERVER_DEPLOYMENT.md")
+
+    assert_no_bash_escaped_quotes_in_powershell_strings(upload_script)
+    assert_powershell_parser_accepts("scripts/upload-backend-linux-release.ps1")
 
     for needle in ["-r", "linux-x64", "--self-contained", "true", "PublishSingleFile=false"]:
         assert_contains(package_script, needle, "self-contained linux-x64 package publish")
@@ -37,9 +102,14 @@ def main() -> None:
         "$ServerHost = 'lvt-server'",
         "$ServerUser = 'deploy'",
         "$RemotePath = '/opt/languagevoicetutor/backend'",
+        "[switch]$DryRun",
+        "[switch]$PackageFirst",
         "$remoteBase/releases",
         "$remoteBase/current",
         "$remoteBase/previous",
+        "previous_target=\"\"",
+        "previous_target=$(readlink -f {0})",
+        "ln -sfn \"$previous_target\"",
         "mv -Tf",
         "sudo systemctl restart $serviceName",
         "sudo systemctl status $serviceName --no-pager",
@@ -47,8 +117,8 @@ def main() -> None:
     ]:
         assert_contains(upload_script, needle, "safe upload workflow")
 
-    for forbidden in ["git pull", "dotnet build", "dotnet ef database update", "Password="]:
-        assert_not_contains(upload_script, forbidden, "server-side build or secret handling")
+    for forbidden in ["git pull", "dotnet build", "dotnet ef database update", "Password=", "\\\""]:
+        assert_not_contains(upload_script, forbidden, "server-side build, secret handling, or parser-breaking quoting")
 
     for needle in [
         "20260611000000_AddUserRefreshTokens",

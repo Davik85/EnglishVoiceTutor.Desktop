@@ -100,21 +100,28 @@ Invoke-LoggedCommand -Command @('scp', '-P', $SshPort.ToString(), $archivePath, 
 
 $remoteExecutablePath = "$remoteReleaseDir/EnglishVoiceTutor.Api"
 $remoteCurrentTempLink = "$remoteBase/current.next"
+$quotedRemoteReleaseDir = Quote-ForRemoteShell $remoteReleaseDir
+$quotedRemoteArchivePath = Quote-ForRemoteShell $remoteArchivePath
+$quotedRemoteExecutablePath = Quote-ForRemoteShell $remoteExecutablePath
+$quotedRemoteCurrentLink = Quote-ForRemoteShell $remoteCurrentLink
+$quotedRemotePreviousLink = Quote-ForRemoteShell $remotePreviousLink
+$quotedRemoteCurrentTempLink = Quote-ForRemoteShell $remoteCurrentTempLink
+
 $remoteDeployScript = @(
-    "set -euo pipefail",
-    "previous_target=\"\"",
-    "if [ -L $(Quote-ForRemoteShell $remoteCurrentLink) ]; then previous_target=\$(readlink -f $(Quote-ForRemoteShell $remoteCurrentLink)); fi",
-    "rm -rf $(Quote-ForRemoteShell $remoteReleaseDir)",
-    "mkdir -p $(Quote-ForRemoteShell $remoteReleaseDir)",
-    "unzip -q $(Quote-ForRemoteShell $remoteArchivePath) -d $(Quote-ForRemoteShell $remoteReleaseDir)",
-    "test -f $(Quote-ForRemoteShell $remoteExecutablePath)",
-    "chmod 755 $(Quote-ForRemoteShell $remoteExecutablePath)",
-    "test -x $(Quote-ForRemoteShell $remoteExecutablePath)",
-    "ln -sfn $(Quote-ForRemoteShell $remoteReleaseDir) $(Quote-ForRemoteShell $remoteCurrentTempLink)",
-    "mv -Tf $(Quote-ForRemoteShell $remoteCurrentTempLink) $(Quote-ForRemoteShell $remoteCurrentLink)",
-    "if [ -n \"\$previous_target\" ] && [ -d \"\$previous_target\" ]; then ln -sfn \"\$previous_target\" $(Quote-ForRemoteShell $remotePreviousLink); fi",
-    "readlink -f $(Quote-ForRemoteShell $remoteCurrentLink)",
-    "if [ -L $(Quote-ForRemoteShell $remotePreviousLink) ]; then printf 'previous=%s\\n' \$(readlink -f $(Quote-ForRemoteShell $remotePreviousLink)); fi"
+    'set -euo pipefail',
+    'previous_target=""',
+    ('if [ -L {0} ]; then previous_target=$(readlink -f {0}); fi' -f $quotedRemoteCurrentLink),
+    ('rm -rf {0}' -f $quotedRemoteReleaseDir),
+    ('mkdir -p {0}' -f $quotedRemoteReleaseDir),
+    ('unzip -q {0} -d {1}' -f $quotedRemoteArchivePath, $quotedRemoteReleaseDir),
+    ('test -f {0}' -f $quotedRemoteExecutablePath),
+    ('chmod 755 {0}' -f $quotedRemoteExecutablePath),
+    ('test -x {0}' -f $quotedRemoteExecutablePath),
+    ('ln -sfn {0} {1}' -f $quotedRemoteReleaseDir, $quotedRemoteCurrentTempLink),
+    ('mv -Tf {0} {1}' -f $quotedRemoteCurrentTempLink, $quotedRemoteCurrentLink),
+    ('if [ -n "$previous_target" ] && [ -d "$previous_target" ]; then ln -sfn "$previous_target" {0}; fi' -f $quotedRemotePreviousLink),
+    ('readlink -f {0}' -f $quotedRemoteCurrentLink),
+    ('if [ -L {0} ]; then printf ''previous=%s\n'' $(readlink -f {0}); fi' -f $quotedRemotePreviousLink)
 ) -join ' && '
 $deployCommand = "bash -lc $(Quote-ForRemoteShell $remoteDeployScript)"
 Invoke-LoggedCommand -Command @('ssh', '-p', $SshPort.ToString(), $serverTarget, $deployCommand)
