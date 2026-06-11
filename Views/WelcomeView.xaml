@@ -6,8 +6,9 @@
              mc:Ignorable="d"
              d:DesignHeight="720"
              d:DesignWidth="760">
-    <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
-        <Border Width="540"
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="18" Background="{StaticResource AppBackgroundBrush}">
+            <Border Width="540"
                 Height="640"
                 MaxWidth="540"
                 HorizontalAlignment="Center"
@@ -162,6 +163,7 @@
                     </Border>
                 </Grid>
             </Grid>
-        </Border>
-    </Grid>
+            </Border>
+        </Grid>
+    </ScrollViewer>
 </UserControl>

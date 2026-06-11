@@ -1,5 +1,9 @@
 # Next Steps
 
+## Desktop window sizing smoke
+
+Clean-machine smoke must include a smaller laptop / scaled display check. Confirm the desktop window clamps startup size and position to the visible working area, opens with the title bar and close button visible, remains draggable/resizable, and keeps Settings, Account, Learning, Progress, Lesson History, lesson start, and Conversation Mode usable after restart. Backend/auth/lessons remain unchanged.
+
 ## Release backend lock (server-only installed builds)
 
 Release/tester installed builds are server-only. The only backend for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`. Local backend URLs are DEBUG/developer-only and must not be present as normal user Settings options. Diagnostics and Backend URL editing are not part of user/release Settings. Stale AppData `settings.json` backend URL values from older installs are ignored by release builds and are not written back into user-editable settings.

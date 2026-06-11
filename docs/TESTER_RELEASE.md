@@ -97,7 +97,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\run_desktop_release_gate.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.0
 ```
 
-3. Smoke-test the generated installer on another Windows device or clean VM.
+3. Smoke-test the generated installer on another Windows device or clean VM. Include a smaller laptop / scaled display check and confirm the desktop window clamps startup size and position to the visible working area with the title bar and close button visible after launch and restart. Backend/auth/lessons remain unchanged by this window-sizing check.
 4. Verify install directory selection, launch-after-install, Start Menu shortcut, optional Desktop shortcut, login/session, lesson start, TTS/STT with backend, over-install upgrade, and uninstall.
 5. Do not hand off the installer artifact yet unless the Tester handoff blockers and Minimum tester handoff checklist above are complete.
 
