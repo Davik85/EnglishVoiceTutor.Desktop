@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace EnglishVoiceTutor.Api.Migrations;
 
-[Migration("20260611000000_AddUserRefreshTokens")]
 public partial class AddUserRefreshTokens : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
