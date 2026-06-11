@@ -29,6 +29,8 @@ def assert_not_contains(text: str, needle: str, label: str) -> None:
 
 def main() -> None:
     manifest_client = read("Services/Updates/UpdateManifestClient.cs")
+    manifest_model = read("Models/Updates/UpdateManifest.cs")
+    manifest_notes_converter = read("Models/Updates/UpdateManifestNotesJsonConverter.cs")
     update_result = read("Services/Updates/UpdateCheckResult.cs")
     settings_vm = read("ViewModels/SettingsViewModel.cs")
     startup_service = read("Services/Updates/DesktopStartupUpdateCheckService.cs")
@@ -52,6 +54,20 @@ def main() -> None:
     assert_contains(manifest_client, "CacheControlHeaderValue", "valid typed no-cache headers")
     assert_contains(manifest_client, "request.Headers.Pragma.ParseAdd(\"no-cache\")", "valid pragma no-cache header")
     assert_contains(manifest_client, "JsonSerializer.DeserializeAsync<UpdateManifest>", "manifest JSON read and parse")
+    assert_not_contains(manifest_model, "public string Notes", "notes modeled only as a single string")
+    assert_contains(manifest_model, "JsonConverter(typeof(UpdateManifestNotesJsonConverter))", "notes tolerant converter")
+    assert_contains(manifest_model, "public IReadOnlyList<string> Notes", "notes modeled as string collection")
+    assert_contains(manifest_notes_converter, "JsonTokenType.StartArray", "notes array manifest support")
+    assert_contains(manifest_notes_converter, "JsonTokenType.String", "legacy notes string manifest support")
+    assert_contains(manifest_notes_converter, "return [];", "missing or null notes are tolerated")
+    for expected_note in [
+        "backendBaseUrl records the non-secret packaged default backend profile",
+        "code signing deferred",
+        "manual-confirmation update flow",
+        "finish active lessons before starting an installer",
+    ]:
+        assert_contains(package_script, expected_note, f"current latest.json notes array accepts {expected_note}")
+    assert_contains(package_script, "notes = @($manifestNotes)", "release manifest writes notes as an array")
 
     for expected in ["ManifestUrl", "FailureCategory", "HttpStatusCode", "ExceptionMessage"]:
         assert_contains(update_result, expected, f"structured manifest load result {expected}")
