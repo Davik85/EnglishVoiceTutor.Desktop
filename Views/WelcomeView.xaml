@@ -30,13 +30,14 @@
                                   Color="#FF173B57" />
             </Border.Effect>
 
-            <Grid x:Name="WelcomeHeroSurface">
+            <Grid x:Name="WelcomeHeroSurface"
+                  ClipToBounds="True"
+                  SizeChanged="OnWelcomeHeroSurfaceSizeChanged">
                 <Image x:Name="WelcomeHeroImage"
                        Source="/Assets/Welcome/welcome-cover.png"
                        Stretch="UniformToFill"
                        HorizontalAlignment="Stretch"
                        VerticalAlignment="Stretch"
-                       MaxHeight="430"
                        SnapsToDevicePixels="True" />
 
                 <Rectangle IsHitTestVisible="False">

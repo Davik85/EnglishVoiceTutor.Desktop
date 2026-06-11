@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using EnglishVoiceTutor.Desktop.Models;
 
 namespace EnglishVoiceTutor.Desktop.Views;
@@ -14,6 +15,11 @@ public partial class WelcomeView : UserControl
     private void OnWelcomeRootSizeChanged(object sender, SizeChangedEventArgs e)
     {
         ApplyAdaptiveWelcomeLayout(e.NewSize);
+    }
+
+    private void OnWelcomeHeroSurfaceSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        ApplyWelcomeHeroClip(e.NewSize);
     }
 
     private void ApplyAdaptiveWelcomeLayout(Size availableSize)
@@ -53,8 +59,24 @@ public partial class WelcomeView : UserControl
         WelcomeCard.Width = targetCardWidth;
         WelcomeHeaderPanel.Width = targetPanelWidth;
         WelcomePrimaryActionsPanel.Width = targetPanelWidth;
-        WelcomeHeroImage.MaxHeight = Math.Max(
-            DesktopLayoutOptions.WelcomeHeroMinimumHeight,
-            targetCardHeight - DesktopLayoutOptions.WelcomeMinimumActionAreaHeight);
+        WelcomeHeroSurface.Width = targetCardWidth;
+        WelcomeHeroSurface.Height = targetCardHeight;
+        WelcomeHeroImage.Width = targetCardWidth;
+        WelcomeHeroImage.Height = targetCardHeight;
+        ApplyWelcomeHeroClip(new Size(targetCardWidth, targetCardHeight));
+    }
+
+    private void ApplyWelcomeHeroClip(Size heroSize)
+    {
+        if (heroSize.Width <= 0 || heroSize.Height <= 0)
+        {
+            return;
+        }
+
+        var cornerRadius = WelcomeCard.CornerRadius.TopLeft;
+        WelcomeHeroSurface.Clip = new RectangleGeometry(
+            new Rect(0, 0, heroSize.Width, heroSize.Height),
+            cornerRadius,
+            cornerRadius);
     }
 }
