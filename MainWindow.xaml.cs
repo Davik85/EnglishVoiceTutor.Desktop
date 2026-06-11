@@ -6,6 +6,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Services.Updates;
 using EnglishVoiceTutor.Desktop.Services.Windowing;
 using EnglishVoiceTutor.Desktop.ViewModels;
 
@@ -14,6 +15,7 @@ namespace EnglishVoiceTutor.Desktop;
 public partial class MainWindow : Window
 {
     private LessonChatViewModel? currentLessonChatViewModel;
+    private readonly DesktopStartupUpdateCheckService startupUpdateCheckService = new();
     private bool shutdownCleanupStarted;
     private bool shutdownCleanupCompleted;
 
@@ -34,6 +36,12 @@ public partial class MainWindow : Window
     {
         base.OnSourceInitialized(e);
         ApplySafeStartupWindowPlacement(GetCurrentMonitorWorkingAreaInDips());
+    }
+
+    protected override void OnContentRendered(EventArgs e)
+    {
+        base.OnContentRendered(e);
+        startupUpdateCheckService.StartOnceWhenUiIsReady(this, IsLessonActive);
     }
 
     protected override void OnClosing(CancelEventArgs e)
@@ -138,6 +146,8 @@ public partial class MainWindow : Window
         currentLessonChatViewModel.PropertyChanged -= LessonChatViewModel_PropertyChanged;
         currentLessonChatViewModel = null;
     }
+
+    private bool IsLessonActive() => currentLessonChatViewModel is not null;
 
     private void LessonChatViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {

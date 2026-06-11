@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Net;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -23,7 +22,6 @@ public partial class SettingsViewModel : ViewModelBase
 {
     public event EventHandler? ClearPasswordRequested;
     public event EventHandler? ClearPasswordRecoveryFieldsRequested;
-    private const string AppVersionFallbackText = "0.0.0-local";
     private const string OpenAiNotConfiguredStatus = "not_configured";
     private const string DiagnosticsReportTitle = "Language Voice Tutor Desktop diagnostics";
     private const string DiagnosticsCurrentDateTimeLabel = "Current date/time";
@@ -457,7 +455,7 @@ public partial class SettingsViewModel : ViewModelBase
         backendBaseUrl = BackendEndpointBuilder.ResolveSavedBaseUrlForCurrentBuild(currentBackendBaseUrl);
         settingsFilePathText = settingsFilePath;
         lessonHistoryFilePathText = lessonHistoryFilePath;
-        appVersionText = BuildAppVersionText();
+        appVersionText = DesktopAppVersionProvider.GetCurrentVersionText();
         this.lessonChatBackendService = lessonChatBackendService;
         this.backendDiagnosticsService = backendDiagnosticsService;
         this.backendUserSettingsClient = backendUserSettingsClient;
@@ -1966,19 +1964,6 @@ public partial class SettingsViewModel : ViewModelBase
         return unitIndex == 0
             ? $"{bytes} {units[unitIndex]}"
             : $"{displayValue:0.0} {units[unitIndex]}";
-    }
-
-    private static string BuildAppVersionText()
-    {
-        var assembly = Assembly.GetExecutingAssembly();
-        var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        if (!string.IsNullOrWhiteSpace(informationalVersion))
-        {
-            return informationalVersion.Trim();
-        }
-
-        var assemblyVersion = assembly.GetName().Version?.ToString(fieldCount: 3);
-        return string.IsNullOrWhiteSpace(assemblyVersion) ? AppVersionFallbackText : assemblyVersion;
     }
 
     private async Task RefreshLearningStatisticsAsync()
