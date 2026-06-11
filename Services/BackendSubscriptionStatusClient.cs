@@ -18,15 +18,18 @@ public sealed class BackendSubscriptionStatusClient
         CancellationToken cancellationToken = default)
     {
         using var httpClient = CreateHttpClient();
+        var endpoint = BackendConstants.DevSubscriptionStatusEndpoint;
+        var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpoint);
 
         try
         {
             var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
             var hasAccessToken = !string.IsNullOrWhiteSpace(session?.AccessToken);
-            var endpoint = hasAccessToken
+            endpoint = hasAccessToken
                 ? BackendConstants.MeSubscriptionStatusEndpoint
                 : BackendConstants.DevSubscriptionStatusEndpoint;
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Get, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpoint));
+            endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpoint);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpointUri);
 
             if (hasAccessToken)
             {
@@ -34,6 +37,7 @@ public sealed class BackendSubscriptionStatusClient
             }
 
             using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+            await RecordSubscriptionDiagnosticsAsync(endpoint, endpointUri, backendBaseUrl, response, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 return BackendSubscriptionStatusClientResult.Failure(
@@ -46,14 +50,43 @@ public sealed class BackendSubscriptionStatusClient
                 ? BackendSubscriptionStatusClientResult.Failure($"Backend subscription status GET {endpoint} returned an empty response.")
                 : BackendSubscriptionStatusClientResult.Success(subscriptionStatus);
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
+            await BackendRequestDiagnosticsService.RecordAsync(GetSubscriptionRequestName(endpoint), HttpMethod.Get, endpointUri, backendBaseUrl, exception: exception, cancellationToken: CancellationToken.None);
             return BackendSubscriptionStatusClientResult.Failure("Backend subscription status GET timed out.");
         }
         catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException or InvalidOperationException)
         {
+            await BackendRequestDiagnosticsService.RecordAsync(GetSubscriptionRequestName(endpoint), HttpMethod.Get, endpointUri, backendBaseUrl, exception: exception, cancellationToken: CancellationToken.None);
             return BackendSubscriptionStatusClientResult.Failure("Backend subscription status GET is unavailable.");
         }
+    }
+
+    private static async Task RecordSubscriptionDiagnosticsAsync(
+        string endpointPath,
+        Uri endpointUri,
+        string? backendBaseUrl,
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        var safeBodySnippet = response.IsSuccessStatusCode
+            ? null
+            : await response.Content.ReadAsStringAsync(cancellationToken);
+        await BackendRequestDiagnosticsService.RecordAsync(
+            GetSubscriptionRequestName(endpointPath),
+            HttpMethod.Get,
+            endpointUri,
+            backendBaseUrl,
+            response.StatusCode,
+            responseBodySnippet: safeBodySnippet,
+            cancellationToken: cancellationToken);
+    }
+
+    private static string GetSubscriptionRequestName(string endpointPath)
+    {
+        return endpointPath == BackendConstants.MeSubscriptionStatusEndpoint
+            ? "subscription_status"
+            : "dev_subscription_status";
     }
 
     private static HttpClient CreateHttpClient()
