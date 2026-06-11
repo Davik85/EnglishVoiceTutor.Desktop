@@ -1013,13 +1013,13 @@ public partial class SettingsViewModel : ViewModelBase
             }
 
             var installChoice = MessageBox.Show(
-                "The update was downloaded and verified. Do you want to start the installer now?",
+                "The update was downloaded and verified. Language Voice Tutor will close and restart during installation. Do you want to start the installer now?",
                 "Start installer?",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Information);
             if (installChoice == MessageBoxResult.Yes)
             {
-                UpdateDownloadService.OpenInstaller(result.FilePath);
+                UpdateDownloadService.TryLaunchVerifiedInstallerAfterAppShutdown(result.FilePath, message => ShowUpdateMessage(message, MessageBoxImage.Warning));
             }
         }
         finally

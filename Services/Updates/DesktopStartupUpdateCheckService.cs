@@ -9,7 +9,7 @@ public sealed class DesktopStartupUpdateCheckService
     private const int StartupUpdateCheckDelaySeconds = 5;
     private const string UpdateAvailableMessage = "A new version of Language Voice Tutor is available. Do you want to download and install it now?";
     private const string UpdateAvailableTitle = "Update available";
-    private const string InstallerReadyMessage = "The update was downloaded and verified. Do you want to start the installer now?";
+    private const string InstallerReadyMessage = "The update was downloaded and verified. Language Voice Tutor will close and restart during installation. Do you want to start the installer now?";
     private const string InstallerReadyTitle = "Start installer?";
     private const string UpdateFailureMessage = "The update could not be downloaded or verified. Please try again later.";
     private const string ActiveLessonInstallerMessage = "Please finish your current lesson before starting the installer.";
@@ -112,7 +112,7 @@ public sealed class DesktopStartupUpdateCheckService
                 MessageBoxImage.Information);
             if (installChoice == MessageBoxResult.Yes)
             {
-                UpdateDownloadService.OpenInstaller(result.FilePath);
+                UpdateDownloadService.TryLaunchVerifiedInstallerAfterAppShutdown(result.FilePath, message => ShowUpdateMessage(owner, message, MessageBoxImage.Warning));
             }
         }
         catch (Exception exception)

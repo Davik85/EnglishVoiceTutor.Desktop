@@ -51,9 +51,9 @@ def main() -> None:
     assert_contains(settings_vm, "You are using the latest version.", "simple up-to-date dialog")
     assert_contains(settings_vm, "This app version is newer than the public update manifest.", "newer-than-manifest warning")
     assert_contains(settings_vm, "Could not check for updates right now. Please check your internet connection and try again.", "friendly manifest failure dialog")
-    assert_contains(settings_vm, "The update was downloaded and verified. Do you want to start the installer now?", "post-verification installer confirmation")
+    assert_contains(settings_vm, "The update was downloaded and verified. Language Voice Tutor will close and restart during installation. Do you want to start the installer now?", "post-verification installer confirmation")
     assert_contains(settings_vm, "DownloadAndVerifyAsync", "explicit download and verify step")
-    assert_contains(settings_vm, "OpenInstaller(result.FilePath)", "installer opens only after verified result")
+    assert_contains(settings_vm, "TryLaunchVerifiedInstallerAfterAppShutdown(result.FilePath", "installer opens only after verified result")
 
     assert_contains(manifest_client, "https://languagevoicetutor.com/releases/windows/direct/latest.json", "latest.json reference")
     for expected in ["ExpectedProductName", "ExpectedAppId", "ExpectedPlatform", "ExpectedArchitecture"]:
@@ -63,7 +63,9 @@ def main() -> None:
 
     assert_contains(download_service, "SHA256.HashDataAsync", "SHA-256 verification")
     assert_contains(download_service, "File.Delete", "delete unsafe download")
-    assert_contains(download_service, "UseShellExecute = true", "normal ShellExecute installer launch")
+    assert_contains(download_service, "cmd.exe", "external installer launch helper")
+    assert_contains(download_service, "timeout /t", "delayed installer launch")
+    assert_contains(download_service, "BeginApplicationShutdown", "app shutdown before installer launch")
     for forbidden in [" /S", "--silent", "/VERYSILENT", "/SILENT", "runas"]:
         assert_not_contains(download_service, forbidden, "silent/elevated installer switch")
 

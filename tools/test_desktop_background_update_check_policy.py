@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PROD_URL = "https://api.languagevoicetutor.com"
 UPDATE_MESSAGE = "A new version of Language Voice Tutor is available. Do you want to download and install it now?"
-INSTALLER_MESSAGE = "The update was downloaded and verified. Do you want to start the installer now?"
+INSTALLER_MESSAGE = "The update was downloaded and verified. Language Voice Tutor will close and restart during installation. Do you want to start the installer now?"
 LATEST_VERSION_MESSAGE = "You are using the latest version."
 
 
@@ -48,7 +48,7 @@ def main() -> None:
     assert_contains(startup_service, "UpdateVersionComparer.Compare", "background version comparison")
     assert_contains(startup_service, "DownloadAndVerifyAsync", "background flow uses existing download and verification service")
     assert_contains(download_service, "SHA256.HashDataAsync", "trusted SHA-256 verification remains in shared service")
-    assert_contains(startup_service, "UpdateDownloadService.OpenInstaller(result.FilePath)", "background flow uses shared installer launch")
+    assert_contains(startup_service, "UpdateDownloadService.TryLaunchVerifiedInstallerAfterAppShutdown(result.FilePath", "background flow uses shared installer launch")
 
     assert_contains(startup_service, UPDATE_MESSAGE, "first update confirmation")
     assert_contains(startup_service, INSTALLER_MESSAGE, "second installer confirmation")
