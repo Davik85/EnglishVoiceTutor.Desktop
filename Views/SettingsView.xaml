@@ -254,19 +254,22 @@
                     <RadioButton x:Name="LearningSectionNav"
                                  Content="{Binding LearningTabHeader}"
                                  GroupName="SettingsSections"
-                                 IsChecked="True"
+                                 IsChecked="{Binding IsLearningSectionSelected, Mode=TwoWay}"
                                  Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
                     <RadioButton x:Name="AccountSectionNav"
                                  Content="{Binding AccountTitle}"
                                  GroupName="SettingsSections"
+                                 IsChecked="{Binding IsAccountSectionSelected, Mode=TwoWay}"
                                  Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
                     <RadioButton x:Name="AudioSectionNav"
                                  Content="{Binding AudioInputTitle}"
                                  GroupName="SettingsSections"
+                                 IsChecked="{Binding IsAudioSectionSelected, Mode=TwoWay}"
                                  Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
                     <RadioButton x:Name="ProgressSectionNav"
                                  Content="{Binding ProgressTabHeader}"
                                  GroupName="SettingsSections"
+                                 IsChecked="{Binding IsProgressSectionSelected, Mode=TwoWay}"
                                  Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
                 </StackPanel>
 

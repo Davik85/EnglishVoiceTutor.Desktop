@@ -123,6 +123,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <TextBlock Grid.Row="0"
@@ -171,6 +172,18 @@
                                         FontWeight="SemiBold"
                                         Style="{StaticResource SecondaryButtonStyle}" />
                             </Grid>
+
+                            <Button Grid.Row="2"
+                                    Margin="0,10,0,0"
+                                    MinWidth="220"
+                                    MaxWidth="330"
+                                    Height="36"
+                                    HorizontalAlignment="Center"
+                                    Content="{Binding AccountStatusButtonText}"
+                                    Command="{Binding OpenAccountSettingsCommand}"
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    Style="{StaticResource SecondaryButtonStyle}" />
                         </Grid>
                     </Border>
                 </Grid>
