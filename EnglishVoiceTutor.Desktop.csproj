@@ -29,7 +29,6 @@
   <ItemGroup>
     <None Remove="Assets/Avatars/**/*.gif" />
     <None Remove="Assets/Welcome/**/*.png" />
-    <None Remove="$(AppIconPath)" Condition="Exists('$(AppIconPath)')" />
     <Resource Include="Assets/Avatars/**/*.gif" />
     <Resource Include="Assets/Welcome/**/*.png" />
     <Resource Include="$(AppIconPath)" Condition="Exists('$(AppIconPath)')" />
