@@ -2,7 +2,9 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Auth;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
+using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -13,11 +15,13 @@ public sealed class AuthService(
     AppDbContext dbContext,
     IPasswordHasher<UserEntity> passwordHasher,
     IJwtTokenService jwtTokenService,
+    IOptions<JwtOptions> jwtOptionsAccessor,
     ITrialClaimService trialClaimService,
     IDevelopmentTestAccountService developmentTestAccountService,
     ILogger<AuthService> logger) : IAuthService
 {
     private const string UniqueViolationSqlState = "23505";
+    private readonly JwtOptions jwtOptions = jwtOptionsAccessor.Value;
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken)
     {
@@ -83,7 +87,9 @@ public sealed class AuthService(
 
         await developmentTestAccountService.EnsureUnlimitedPremiumAccessIfConfiguredAsync(user.Id, user.Email, cancellationToken);
 
-        return jwtTokenService.CreateAuthResponse(user, displayName, createdAt);
+        var refreshToken = IssueRefreshToken(user.Id, createdAt);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return jwtTokenService.CreateAuthResponse(user, displayName, createdAt, refreshToken.Token, refreshToken.ExpiresAtUtc);
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
@@ -111,7 +117,104 @@ public sealed class AuthService(
 
         await developmentTestAccountService.EnsureUnlimitedPremiumAccessIfConfiguredAsync(user.Id, user.Email, cancellationToken);
 
-        return jwtTokenService.CreateAuthResponse(user, user.Profile?.DisplayName, user.CreatedAt);
+        var refreshToken = IssueRefreshToken(user.Id, DateTimeOffset.UtcNow);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return jwtTokenService.CreateAuthResponse(user, user.Profile?.DisplayName, user.CreatedAt, refreshToken.Token, refreshToken.ExpiresAtUtc);
+    }
+
+    public async Task<AuthResponse?> RefreshAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        {
+            return null;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var tokenHash = RefreshTokenHasher.HashToken(request.RefreshToken);
+        var storedToken = await dbContext.UserRefreshTokens
+            .AsTracking()
+            .Include(token => token.User)
+            .ThenInclude(user => user.Profile)
+            .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
+
+        if (storedToken is null)
+        {
+            return null;
+        }
+
+        if (storedToken.RevokedAtUtc is not null)
+        {
+            await RevokeTokenFamilyAsync(storedToken.UserId, now, "refresh_token_reuse", cancellationToken);
+            return null;
+        }
+
+        if (storedToken.ExpiresAtUtc <= now || !string.Equals(storedToken.User.Status, AuthConstants.ActiveUserStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var replacement = IssueRefreshToken(storedToken.UserId, now);
+        storedToken.RevokedAtUtc = now;
+        storedToken.ReplacedByTokenHash = RefreshTokenHasher.HashToken(replacement.Token);
+        storedToken.RevocationReason = "rotated";
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return jwtTokenService.CreateAuthResponse(
+            storedToken.User,
+            storedToken.User.Profile?.DisplayName,
+            storedToken.User.CreatedAt,
+            replacement.Token,
+            replacement.ExpiresAtUtc);
+    }
+
+    public async Task RevokeRefreshTokenAsync(RevokeRefreshTokenRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        {
+            return;
+        }
+
+        var tokenHash = RefreshTokenHasher.HashToken(request.RefreshToken);
+        var storedToken = await dbContext.UserRefreshTokens
+            .AsTracking()
+            .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
+        if (storedToken is null || storedToken.RevokedAtUtc is not null)
+        {
+            return;
+        }
+
+        storedToken.RevokedAtUtc = DateTimeOffset.UtcNow;
+        storedToken.RevocationReason = "logout";
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private RefreshTokenIssueResult IssueRefreshToken(Guid userId, DateTimeOffset now)
+    {
+        var rawToken = RefreshTokenHasher.GenerateToken();
+        var expiresAt = now.AddDays(Math.Max(1, jwtOptions.RefreshTokenLifetimeDays));
+        dbContext.UserRefreshTokens.Add(new UserRefreshTokenEntity
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            TokenHash = RefreshTokenHasher.HashToken(rawToken),
+            CreatedAtUtc = now,
+            ExpiresAtUtc = expiresAt
+        });
+        return new RefreshTokenIssueResult(rawToken, expiresAt);
+    }
+
+    private async Task RevokeTokenFamilyAsync(Guid userId, DateTimeOffset now, string reason, CancellationToken cancellationToken)
+    {
+        var tokens = await dbContext.UserRefreshTokens
+            .AsTracking()
+            .Where(token => token.UserId == userId && token.RevokedAtUtc == null)
+            .ToListAsync(cancellationToken);
+        foreach (var token in tokens)
+        {
+            token.RevokedAtUtc = now;
+            token.RevocationReason = reason;
+        }
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
 

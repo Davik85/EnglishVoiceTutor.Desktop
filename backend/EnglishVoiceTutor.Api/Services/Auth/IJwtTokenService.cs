@@ -5,5 +5,5 @@ namespace EnglishVoiceTutor.Api.Services.Auth;
 
 public interface IJwtTokenService
 {
-    AuthResponse CreateAuthResponse(UserEntity user, string? displayName, DateTimeOffset createdAt);
+    AuthResponse CreateAuthResponse(UserEntity user, string? displayName, DateTimeOffset createdAt, string refreshToken, DateTimeOffset refreshTokenExpiresAtUtc);
 }

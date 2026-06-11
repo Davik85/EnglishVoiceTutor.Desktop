@@ -25,6 +25,7 @@ public static class EntityConstants
         public const string PaddleWebhookEvents = "paddle_webhook_events";
         public const string AdminActions = "admin_actions";
         public const string PasswordResetTokens = "password_reset_tokens";
+        public const string UserRefreshTokens = "user_refresh_tokens";
         public const string ContentPacks = "cms_content_packs";
         public const string CmsLessonTopics = "cms_lesson_topics";
         public const string CmsLessonScenarios = "cms_lesson_scenarios";
