@@ -86,6 +86,8 @@ public partial class SettingsViewModel : ViewModelBase
     private string lastBackendErrorCategory = "none";
     private HttpStatusCode? lastBackendStatusCode;
     private string lastBackendHealthResult = "not checked";
+    private string lastBackendSettingsResult = "not checked";
+    private string lastAccountStatusResult = "not checked";
 
     public string Title => localizedText.Title;
 
@@ -754,6 +756,7 @@ public partial class SettingsViewModel : ViewModelBase
             {
                 SettingsSource = LocalizeUiText(SettingsSourceAuthenticatedText);
                 await RefreshLearningStatisticsAsync();
+                RecordAccountStatusResult(null, "unavailable");
                 ResetSubscriptionStatus();
                 StatusMessage = BackendUxText.CouldNotConnect;
                 return;
@@ -1318,6 +1321,8 @@ public partial class SettingsViewModel : ViewModelBase
         AppendDiagnosticsLine(report, DiagnosticsAuthenticatedLabel, FormatDiagnosticBoolean(IsAuthenticated));
         AppendDiagnosticsLine(report, DiagnosticsSessionRestoreAttemptedLabel, FormatDiagnosticBoolean(sessionRestoreAttempted));
         AppendDiagnosticsLine(report, "Backend settings sync", GetBackendSettingsSyncStatusText());
+        AppendDiagnosticsLine(report, "Backend settings endpoint", lastBackendSettingsResult);
+        AppendDiagnosticsLine(report, "Account status endpoint", lastAccountStatusResult);
         AppendDiagnosticsLine(report, "Last backend settings sync time", GetLastBackendSettingsSyncTimeText());
         AppendDiagnosticsLine(report, DiagnosticsTutorAvatarLabel, DiagnosticsTutorAvatarText);
         AppendDiagnosticsLine(report, DiagnosticsMicrophoneLabel, DiagnosticsMicrophoneText);
@@ -1401,7 +1406,7 @@ public partial class SettingsViewModel : ViewModelBase
                     return;
                 }
 
-                RecordBackendFailure("settings", result.StatusCode);
+                RecordOptionalSettingsResult(result.StatusCode);
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
                 StatusMessage = BuildSettingsLoadFailureMessage(result.StatusCode);
                 return;
@@ -1410,6 +1415,7 @@ public partial class SettingsViewModel : ViewModelBase
             if (result.Value is null)
             {
                 RecordBackendFailure("settings_empty_response", result.StatusCode);
+                RecordOptionalSettingsResult(result.StatusCode, "empty response");
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
                 StatusMessage = BuildSettingsLoadFailureMessage(result.StatusCode);
                 return;
@@ -1418,11 +1424,13 @@ public partial class SettingsViewModel : ViewModelBase
             ApplyBackendUserSettings(result.Value);
             SettingsSource = LocalizeUiText(SettingsSourceAuthenticatedText);
             SaveCurrentSettingsLocally();
+            RecordOptionalSettingsResult(null, "success");
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Available);
         }
         catch
         {
             RecordBackendFailure("settings_exception", null);
+            RecordOptionalSettingsResult(null, "unavailable");
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
             StatusMessage = BuildSettingsLoadFailureMessage(null);
         }
@@ -1436,6 +1444,7 @@ public partial class SettingsViewModel : ViewModelBase
             if (!result.IsSuccess || result.Value is null)
             {
                 RecordBackendFailure(result.Value is null ? "settings_empty_response" : "settings", result.StatusCode);
+                RecordOptionalSettingsResult(result.StatusCode);
                 SettingsSource = LocalizeUiText(SettingsSourceDevelopmentText);
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
                 StatusMessage = BuildSettingsLoadFailureMessage(result.StatusCode);
@@ -1445,11 +1454,13 @@ public partial class SettingsViewModel : ViewModelBase
             ApplyBackendUserSettings(result.Value);
             SettingsSource = LocalizeUiText(SettingsSourceDevelopmentText);
             SaveCurrentSettingsLocally();
+            RecordOptionalSettingsResult(null, "success");
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Available);
         }
         catch
         {
             RecordBackendFailure("settings_exception", null);
+            RecordOptionalSettingsResult(null, "unavailable");
             SettingsSource = LocalizeUiText(SettingsSourceDevelopmentText);
             SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
             StatusMessage = BuildSettingsLoadFailureMessage(null);
@@ -1498,10 +1509,7 @@ public partial class SettingsViewModel : ViewModelBase
             RecordBackendFailure("none", null);
             ApplyAuthenticatedUser(result.Response.User);
             RequestPasswordClear();
-            await LoadSettingsForCurrentSessionAsync();
-            await RefreshLearningStatisticsAsync();
-            await RefreshSubscriptionStatusAsync();
-            StatusMessage = BackendUxText.SignedIn;
+            await RunPostAuthRefreshesAsync();
         }
         catch
         {
@@ -1512,6 +1520,50 @@ public partial class SettingsViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    private async Task RunPostAuthRefreshesAsync()
+    {
+        var settingsStatusMessage = string.Empty;
+
+        try
+        {
+            await LoadSettingsForCurrentSessionAsync();
+            if (IsOptionalEndpointMissing(lastBackendStatusCode) && !string.IsNullOrWhiteSpace(StatusMessage))
+            {
+                settingsStatusMessage = StatusMessage;
+            }
+        }
+        catch
+        {
+            RecordBackendFailure("settings_exception", null);
+            RecordOptionalSettingsResult(null, "unavailable");
+            SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
+            settingsStatusMessage = BuildSettingsLoadFailureMessage(null);
+        }
+
+        try
+        {
+            await RefreshLearningStatisticsAsync();
+        }
+        catch
+        {
+            // Local progress/history refresh is non-blocking after successful authentication.
+        }
+
+        try
+        {
+            await RefreshSubscriptionStatusAsync();
+        }
+        catch
+        {
+            RecordAccountStatusResult(null, "unavailable");
+            ResetSubscriptionStatus();
+        }
+
+        StatusMessage = string.IsNullOrWhiteSpace(settingsStatusMessage)
+            ? BackendUxText.SignedIn
+            : $"{BackendUxText.SignedIn} {settingsStatusMessage}";
     }
 
     private async Task RefreshBackendHealthDiagnosticsAsync()
@@ -1535,6 +1587,26 @@ public partial class SettingsViewModel : ViewModelBase
         lastBackendStatusCode = statusCode;
     }
 
+    private void RecordOptionalSettingsResult(HttpStatusCode? statusCode, string? category = null)
+    {
+        var normalizedCategory = string.IsNullOrWhiteSpace(category)
+            ? (IsOptionalEndpointMissing(statusCode) ? "missing optional settings endpoint" : "settings")
+            : category;
+        lastBackendSettingsResult = $"{normalizedCategory} ({FormatBackendStatusCode(statusCode)})";
+        if (!string.Equals(normalizedCategory, "success", StringComparison.OrdinalIgnoreCase))
+        {
+            RecordBackendFailure(normalizedCategory, statusCode);
+        }
+    }
+
+    private void RecordAccountStatusResult(HttpStatusCode? statusCode, string? category = null)
+    {
+        var normalizedCategory = string.IsNullOrWhiteSpace(category)
+            ? (IsOptionalEndpointMissing(statusCode) ? "missing optional account status endpoint" : "account_status")
+            : category;
+        lastAccountStatusResult = $"{normalizedCategory} ({FormatBackendStatusCode(statusCode)})";
+    }
+
     private static string FormatBackendStatusCode(HttpStatusCode? statusCode)
     {
         return statusCode is null ? "none" : $"HTTP {(int)statusCode.Value}";
@@ -1542,12 +1614,22 @@ public partial class SettingsViewModel : ViewModelBase
 
     private string BuildSettingsLoadFailureMessage(HttpStatusCode? statusCode)
     {
+        if (IsOptionalEndpointMissing(statusCode))
+        {
+            return "Cloud settings are not available yet. Local settings are still available.";
+        }
+
         if (statusCode is null)
         {
             return $"{BackendUxText.SettingsLoadUnavailable} Server health: {lastBackendHealthResult}.";
         }
 
-        return $"Could not load account settings ({FormatBackendStatusCode(statusCode)}). Local settings are still available.";
+        return $"{BackendUxText.SettingsLoadUnavailable} ({FormatBackendStatusCode(statusCode)}).";
+    }
+
+    private static bool IsOptionalEndpointMissing(HttpStatusCode? statusCode)
+    {
+        return statusCode == HttpStatusCode.NotFound;
     }
 
     private string BuildAuthFailureMessage(AuthOperationResult result, string fallbackMessage)
@@ -1635,7 +1717,10 @@ public partial class SettingsViewModel : ViewModelBase
                 }
 
                 SetBackendSettingsSyncStatus(BackendSettingsSyncStatus.Unavailable);
-                StatusMessage = BackendUxText.SettingsSaveUnavailable;
+                RecordOptionalSettingsResult(result.StatusCode);
+                StatusMessage = IsOptionalEndpointMissing(result.StatusCode)
+                    ? BuildSettingsLoadFailureMessage(result.StatusCode)
+                    : BackendUxText.SettingsSaveUnavailable;
                 return;
             }
 
@@ -1672,6 +1757,7 @@ public partial class SettingsViewModel : ViewModelBase
             var result = await backendSubscriptionStatusClient.GetAsync(BackendBaseUrl);
             if (!result.IsSuccess || result.Value is null)
             {
+                RecordAccountStatusResult(result.StatusCode);
                 ResetSubscriptionStatus();
                 return;
             }
@@ -1688,9 +1774,11 @@ public partial class SettingsViewModel : ViewModelBase
             SubscriptionEnforcementText = $"{localizedText.SubscriptionEnforcementLabel}: {(status.EnforcementEnabled ? LocalizeUiText("On") : LocalizeUiText("Off"))}";
             SubscriptionSourceText = $"{localizedText.SubscriptionSourceLabel}: {LocalizeUiText("authenticated")}";
             SubscriptionCheckedAtText = $"{localizedText.SubscriptionCheckedAtLabel}: {status.CheckedAtUtc:u}";
+            RecordAccountStatusResult(null, "success");
         }
         catch
         {
+            RecordAccountStatusResult(null, "unavailable");
             ResetSubscriptionStatus();
         }
     }
