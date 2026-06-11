@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
+using System.Windows;
 using EnglishVoiceTutor.Desktop.Models.Updates;
 
 namespace EnglishVoiceTutor.Desktop.Services.Updates;
@@ -86,18 +87,65 @@ public sealed class UpdateDownloadService
         }
     }
 
-    public static void OpenInstaller(string installerPath)
+    public static bool TryLaunchVerifiedInstallerAfterAppShutdown(string installerPath, Action<string>? showLaunchFailure = null)
     {
         if (string.IsNullOrWhiteSpace(installerPath) || !File.Exists(installerPath))
+        {
+            showLaunchFailure?.Invoke("The verified installer could not be found. Please check for updates again.");
+            return false;
+        }
+
+        try
+        {
+            StartDetachedDelayedInstallerLauncher(installerPath);
+            BeginApplicationShutdown();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"Could not start update installer helper. Error={exception.Message}");
+            showLaunchFailure?.Invoke("The installer could not be started. Please try again, or restart the app and check for updates again.");
+            return false;
+        }
+    }
+
+    private static void StartDetachedDelayedInstallerLauncher(string installerPath)
+    {
+        var helperProcess = Process.Start(new ProcessStartInfo
+        {
+            FileName = Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe",
+            Arguments = BuildDelayedInstallerLaunchArguments(installerPath),
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            WindowStyle = ProcessWindowStyle.Hidden
+        });
+
+        if (helperProcess is null)
+        {
+            throw new InvalidOperationException("The update installer helper process could not be started.");
+        }
+    }
+
+    private static string BuildDelayedInstallerLaunchArguments(string installerPath)
+    {
+        const int installerLaunchDelaySeconds = 4;
+        return $"/d /c \"timeout /t {installerLaunchDelaySeconds} /nobreak >nul & start \"\" {QuoteForCmd(installerPath)}\"";
+    }
+
+    private static string QuoteForCmd(string value)
+    {
+        return $"\"{value.Replace("\"", "\"\"")}\"";
+    }
+
+    private static void BeginApplicationShutdown()
+    {
+        var application = Application.Current;
+        if (application is null)
         {
             return;
         }
 
-        Process.Start(new ProcessStartInfo
-        {
-            FileName = installerPath,
-            UseShellExecute = true
-        });
+        application.Dispatcher.BeginInvoke(new Action(application.Shutdown));
     }
 
     public static void OpenContainingFolder(string installerPath)
