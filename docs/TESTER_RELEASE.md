@@ -1,12 +1,18 @@
 # Tester release workflow
 
-Review date: 2026-06-11.
+Review date: 2026-06-12.
 
 ## Current approval status
 
-`0.1.26-tester.1` is the current validated public/tester Windows direct release. The Windows direct release was built and validated. The public tester download page reads `/releases/windows/direct/latest.json`, and the current `latest.json` points to `LanguageVoiceTutorSetup-0.1.26-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`.
+`0.1.28-tester.1` is the current public tester Windows direct manifest baseline. The public tester download page reads `/releases/windows/direct/latest.json`, and the current `latest.json` points to `LanguageVoiceTutorSetup-0.1.28-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.28-tester.1`, and `updateMode` set to `manual-confirmation`.
 
 This approves the current direct Windows package as the private tester build. It does not mean the product is fully public production-ready.
+
+## Current production backend state
+
+The production backend active release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2`, and `/opt/languagevoicetutor/backend/current` points to that release. The refresh-token migration `20260611000000_AddUserRefreshTokens` is applied. `user_refresh_tokens` ownership/permissions were corrected for the application DB user after the migration was initially applied as `postgres`, and login works after the permission fix.
+
+`https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. Operator manual smoke verified app launch, login, Account opening, lesson start, Lesson History updates, and Progress updates.
 
 ## Backend URL profile
 
@@ -31,7 +37,7 @@ The current tester build verifies:
 - Welcome/start screen clamped to the visible working area;
 - Welcome primary actions visible without scrolling on smaller screens;
 - Welcome cover image using cover-style fill/crop without gray bars;
-- public download page and manifest pointing to the correct `0.1.26-tester.1` installer.
+- public download page and manifest pointing to the correct `0.1.28-tester.1` installer.
 
 Raw passwords are not stored. Auth/session data is protected under the current user's app-data area, and logout clears persisted auth session data.
 
@@ -81,12 +87,14 @@ Before or during small-group tester handoff, confirm all items below:
 
 ## Remaining readiness items
 
-The following are still realistic follow-ups, not solved by the `0.1.26-tester.1` validation alone:
+The following are still realistic follow-ups, not solved by the current private tester manifest and backend validation alone:
 
 1. Complete a clean-machine smoke pass and record results.
 2. Complete update-over-existing-install validation and record results.
-3. Hand off to a small controlled external tester group.
-4. Run the tester feedback collection and triage process.
-5. Optionally validate CMS runtime read/publish later before making it the learner default.
-6. Complete production billing/Paddle/subscription payment lifecycle later.
-7. Add code signing later before broad distribution.
+3. Keep app restart/session restore and Windows restart/session restore in tester smoke.
+4. Keep smaller-screen/scaled-display smoke in tester smoke.
+5. Hand off to a small controlled external tester group.
+6. Run the tester feedback collection and triage process.
+7. Optionally validate CMS runtime read/publish later before making it the learner default.
+8. Complete production billing/Paddle/subscription payment lifecycle later.
+9. Add code signing later before broad distribution.

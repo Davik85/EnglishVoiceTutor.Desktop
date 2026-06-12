@@ -1,12 +1,12 @@
 # Current State
 
-Review date: 2026-06-11.
+Review date: 2026-06-12.
 
 ## Current tester Windows direct release
 
-`0.1.26-tester.1` is the current validated public/tester Windows direct release. The Windows direct release was built, validated, uploaded for direct download, and checked through the public tester download path.
+`0.1.28-tester.1` is the current public tester Windows direct manifest baseline. The Windows direct release is available through the public tester download path.
 
-The public download page at `https://languagevoicetutor.com` reads `/releases/windows/direct/latest.json`, and the current manifest points to `LanguageVoiceTutorSetup-0.1.26-tester.1.exe`. The manifest `backendBaseUrl` is `https://api.languagevoicetutor.com`, matching the installed tester/release backend lock. This remains a private tester/direct Windows release, not a broad public production launch.
+The public download page at `https://languagevoicetutor.com` reads `/releases/windows/direct/latest.json`. The current manifest points to `LanguageVoiceTutorSetup-0.1.28-tester.1.exe`, sets `version` and `minimumSupportedVersion` to `0.1.28-tester.1`, sets `backendBaseUrl` to `https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. This matches the installed tester/release backend lock. This remains a private tester/direct Windows release, not a broad public production launch.
 
 ## Release backend lock (server-only installed builds)
 
@@ -14,9 +14,15 @@ Release/tester installed builds are server-only. The only backend for packaged n
 
 Clean-machine smoke must verify registration/login/lesson/history/progress/update from an installed build against the fixed production backend. The installed build connectivity signal is `GET https://api.languagevoicetutor.com/health`; registration calls `POST https://api.languagevoicetutor.com/api/auth/register`, login calls `POST https://api.languagevoicetutor.com/api/auth/login`, and auth restore calls `GET https://api.languagevoicetutor.com/api/auth/me`. Optional cloud settings or subscription/status endpoint failures must not block auth or lessons and must not be treated as the backend connectivity signal.
 
+## Current production backend state
+
+The production backend active release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2`, and `/opt/languagevoicetutor/backend/current` points to that release. The refresh-token migration `20260611000000_AddUserRefreshTokens` is applied. The `user_refresh_tokens` ownership/permissions were corrected for the application DB user after the migration was initially applied as `postgres`, and login now works after that permission fix.
+
+Production backend health is currently healthy: `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. Operator manual smoke verified app launch, login, Account opening, lesson start, Lesson History updates, and Progress updates.
+
 ## Auth, account, and persistence
 
-Registration and login now work from installed tester/release builds against `https://api.languagevoicetutor.com`, including on another device. Trial assignment is granted after registration. The desktop stores the authenticated session under the current user's app-data area with Windows DPAPI protection and does not store raw passwords. Logout clears persisted auth session data.
+Registration and login now work from installed tester/release builds against `https://api.languagevoicetutor.com`, including the current backend permission-fixed login path. Trial assignment is granted after registration. The desktop stores the authenticated session under the current user's app-data area with Windows DPAPI protection and does not store raw passwords. Logout clears persisted auth session data.
 
 Auth session persistence works across app restart and Windows restart. Update/reinstall behavior has been hardened by preserving and migrating known auth-session paths, and update/reinstall should preserve auth session, user settings, Lesson History, and Progress.
 
@@ -58,9 +64,9 @@ Billing/Paddle/subscription payment lifecycle remains deferred. Do not imply pro
 
 ## External tester readiness
 
-Solved release blockers after `0.1.26-tester.1`:
+Solved release blockers for the current private tester baseline:
 
-- the public download page and `latest.json` now point to the correct `0.1.26-tester.1` installer;
+- the public download page and `latest.json` now point to the correct `0.1.28-tester.1` installer;
 - installed release builds no longer use localhost/local backend routing;
 - backend connectivity from another device is fixed;
 - registration, trial assignment, lesson start, bot voice, Conversation Mode, Lesson History, Progress, and auth restore are working;
@@ -74,11 +80,12 @@ Remaining realistic readiness items:
 
 1. Run a clean-machine smoke test of the current installer and public download flow.
 2. Run update-over-existing-install validation for session/settings/history/progress preservation.
-3. Run smaller-screen/scaled-display smoke.
-4. Hand off to a small controlled external tester group.
-5. Establish the feedback collection and triage process.
-6. Optionally validate CMS published-snapshot runtime read/publish later before ever making it the learner default.
-7. Finish production billing/payment lifecycle later.
-8. Add code signing later to reduce SmartScreen friction before broad distribution.
+3. Keep app restart/session restore and Windows restart/session restore in tester smoke.
+4. Run smaller-screen/scaled-display smoke.
+5. Hand off to a small controlled external tester group.
+6. Establish the feedback collection and triage process.
+7. Optionally validate CMS published-snapshot runtime read/publish later before ever making it the learner default.
+8. Finish production billing/payment lifecycle later.
+9. Add code signing later to reduce SmartScreen friction before broad distribution.
 
 Do not state that the product is fully public production-ready. The current state is a validated private tester/direct Windows release.

@@ -1,15 +1,25 @@
 # Windows release server upload
 
-Review date: 2026-06-11.
+Review date: 2026-06-12.
 
 ## Current uploaded release
 
-`0.1.26-tester.1` is the current validated public/tester Windows direct release. The Windows direct release was built and validated, and the public tester download path now resolves through `latest.json` to `LanguageVoiceTutorSetup-0.1.26-tester.1.exe`.
+`0.1.28-tester.1` is the current public tester Windows direct manifest baseline. The public tester download path resolves through `latest.json` to `LanguageVoiceTutorSetup-0.1.28-tester.1.exe`.
 
 The current manifest is served from:
 
 ```text
 https://languagevoicetutor.com/releases/windows/direct/latest.json
+```
+
+The current manifest values are:
+
+```text
+version: 0.1.28-tester.1
+installerFileName: LanguageVoiceTutorSetup-0.1.28-tester.1.exe
+backendBaseUrl: https://api.languagevoicetutor.com
+minimumSupportedVersion: 0.1.28-tester.1
+updateMode: manual-confirmation
 ```
 
 The manifest `backendBaseUrl` is:
@@ -39,7 +49,7 @@ artifacts\releases\windows\direct
 Expected files:
 
 ```text
-LanguageVoiceTutorSetup-0.1.26-tester.1.exe
+LanguageVoiceTutorSetup-0.1.28-tester.1.exe
 latest.json
 changelog.json
 known-issues.json
@@ -65,9 +75,11 @@ Get-FileHash -Path "$env:TEMP\$($manifest.installerFileName)" -Algorithm SHA256
 
 Confirm:
 
-- `version` is `0.1.26-tester.1`;
-- `installerFileName` is `LanguageVoiceTutorSetup-0.1.26-tester.1.exe`;
+- `version` is `0.1.28-tester.1`;
+- `installerFileName` is `LanguageVoiceTutorSetup-0.1.28-tester.1.exe`;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
+- `minimumSupportedVersion` is `0.1.28-tester.1`;
+- `updateMode` is `manual-confirmation`;
 - the SHA-256 matches `installerSha256` and `checksums.sha256`;
 - the public download page downloads the same installer named by the manifest.
 
@@ -87,7 +99,7 @@ The old technical update dashboard in Diagnostics is not part of release UX. Rel
 
 After upload, run or record a clean-machine smoke that covers:
 
-- public page downloads the correct `0.1.26-tester.1` installer;
+- public page downloads the correct `0.1.28-tester.1` installer;
 - installed build uses only `https://api.languagevoicetutor.com`;
 - registration/login work from another device;
 - trial grant after registration;

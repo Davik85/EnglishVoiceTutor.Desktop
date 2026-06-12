@@ -1,12 +1,16 @@
 # Next Steps
 
-Review date: 2026-06-11.
+Review date: 2026-06-12.
 
 ## Current release baseline
 
-The current validated public/tester Windows direct release is `0.1.26-tester.1`. The public tester download page reads `latest.json`, and `latest.json` points to `LanguageVoiceTutorSetup-0.1.26-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`.
+The current public tester manifest baseline is `0.1.28-tester.1`. The public tester download page reads `latest.json`, and `latest.json` points to `LanguageVoiceTutorSetup-0.1.28-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.28-tester.1`, and `updateMode` set to `manual-confirmation`.
 
 This is still a private tester/direct Windows release, not broad public production readiness.
+
+## Current backend verification
+
+Production backend release `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2` is active via `/opt/languagevoicetutor/backend/current`. The refresh-token migration `20260611000000_AddUserRefreshTokens` is applied; `user_refresh_tokens` ownership/permissions were corrected for the application DB user after the migration was initially applied as `postgres`. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`, and operator smoke verified app launch, login, Account opening, lesson start, Lesson History updates, and Progress updates.
 
 ## Immediate tester-readiness work
 

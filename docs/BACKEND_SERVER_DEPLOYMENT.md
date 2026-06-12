@@ -1,11 +1,12 @@
 # Backend Server Deployment Foundation
 
-This document describes the prepared deployment foundation for the Language Voice Tutor backend on Ubuntu 24.04. It is a manual, test-deployment workflow. The current production-like backend has now been verified for the `0.1.8-tester.1` internal smoke baseline, but that does not make external tester handoff or public release ready.
+This document describes the prepared deployment foundation for the Language Voice Tutor backend on Ubuntu 24.04. It is a manual backend-only deployment workflow. It does not upload Windows release files, run EF migrations, publish CMS runtime content, enable production billing, or make the product broadly public production-ready.
 
+## Current server verification for 0.1.35-backend.2
 
-## Current server verification for v0.1.8-tester.1
+The production backend active release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2`, and `/opt/languagevoicetutor/backend/current` points to that release. The refresh-token migration `20260611000000_AddUserRefreshTokens` is applied. The `user_refresh_tokens` ownership/permissions were corrected for the application DB user after the migration was initially applied as `postgres`, and login now works after the permission fix.
 
-The production-like backend is reachable at `https://api.languagevoicetutor.com` for the `0.1.8-tester.1` internal smoke baseline. The backend health endpoint and database health endpoint have been verified healthy on the server, and PostgreSQL migrations have been applied on the server.
+The production backend is reachable at `https://api.languagevoicetutor.com`. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. Operator manual smoke verified app launch, login, Account opening, lesson start, Lesson History updates, and Progress updates.
 
 Do not copy server secrets, passwords, API keys, private keys, tokens, private environment values, private IP-sensitive credentials, or provider credentials into this document or any tracked file.
 
@@ -13,7 +14,7 @@ Do not copy server secrets, passwords, API keys, private keys, tokens, private e
 
 - Static Windows installer hosting and backend API hosting are separate deployment tracks.
 - The current static HTTPS site is already available at `languagevoicetutor.com` for public/static hosting work.
-- The backend API is planned for `api.languagevoicetutor.com`.
+- The backend API is available at `api.languagevoicetutor.com`.
 - The backend remains the source of truth for AI/provider calls and account/subscription decisions.
 - The desktop app must call backend APIs only and must never store OpenAI API keys directly.
 - Production billing remains deferred. Paddle keys are not required for this test backend unless checkout/billing tests are deliberately enabled later.
@@ -55,14 +56,14 @@ CORS is not currently configured in the backend. Nginx should reverse-proxy API 
 Run from the repository root on the local Windows development machine:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-tester.2
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.2
 ```
 
 This publishes `backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj` in Release mode for `linux-x64` as a self-contained deployment and writes:
 
 ```text
 artifacts\publish\backend-linux-x64
-artifacts\packages\backend\LanguageVoiceTutor.Backend-linux-x64-0.1.35-tester.2.zip
+artifacts\packages\backend\LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.2.zip
 ```
 
 The production server does not need a git checkout, `dotnet` SDK, or `dotnet` runtime for this self-contained package. Generated files under `artifacts/` must not be committed. Do not rebuild or replace desktop release artifacts as part of backend deployment.
@@ -73,7 +74,7 @@ Dry-run can build the archive locally, then print the SSH/SCP/systemd commands w
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-tester.2 `
+  -Version 0.1.35-backend.2 `
   -PackageFirst `
   -DryRun
 ```
@@ -86,7 +87,7 @@ After the refresh-token migration has been reviewed and is ready to apply, run f
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-tester.2 `
+  -Version 0.1.35-backend.2 `
   -PackageFirst
 ```
 

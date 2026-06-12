@@ -1,12 +1,12 @@
 # Windows installer release flow
 
-Review date: 2026-06-11.
+Review date: 2026-06-12.
 
 Inno Setup is the primary Windows direct-download installer track for Language Voice Tutor.
 
 ## Current validated release
 
-`0.1.26-tester.1` is the current validated public/tester Windows direct release. The Windows direct installer was built and validated. The public tester download page reads `/releases/windows/direct/latest.json`, and `latest.json` points to `LanguageVoiceTutorSetup-0.1.26-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`.
+`0.1.28-tester.1` is the current public tester Windows direct manifest baseline. The Windows direct installer was built and validated. The public tester download page reads `/releases/windows/direct/latest.json`, and `latest.json` points to `LanguageVoiceTutorSetup-0.1.28-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.28-tester.1`, and `updateMode` set to `manual-confirmation`.
 
 This is a private tester/direct Windows release, not broad public production readiness. Code signing remains deferred, so SmartScreen warnings are still expected for controlled testers.
 
@@ -59,13 +59,13 @@ Installed-version checking is now part of the Windows installer foundation. The 
 Run from the repository root on Windows:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.26-tester.1
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.28-tester.1
 ```
 
 If `ISCC.exe` is not in a default location:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.26-tester.1 -IsccPath "C:\Tools\Inno Setup 6\ISCC.exe"
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.28-tester.1 -IsccPath "C:\Tools\Inno Setup 6\ISCC.exe"
 ```
 
 Expected installer output:

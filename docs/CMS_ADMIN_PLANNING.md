@@ -35,7 +35,7 @@ Publishing remains isolated in **Versions & Publish**. Draft changes are not vis
 
 Local runtime CMS read was confirmed only under explicit development configuration: `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`; backend logs showed `Source=CmsPublishedSnapshot`, `VersionNumber=34`, validation passed, no fallback, and the expected 6 topics, 26 scenarios, 3 prompt templates, and 2 tutor behavior profiles. Static JSON fallback remains available.
 
-CMS/Admin is connected, and `static-json-v1` is initialized as Draft/admin content for the current `0.1.26-tester.1` tester release state. This is still not full production RBAC readiness, not critical-change approval readiness, and not broad public release readiness. Learner runtime remains static JSON by default; CMS published-snapshot runtime reads must remain disabled/not the learner default unless explicitly enabled and validated later. Production billing remains deferred. Production RBAC and critical-change approval come later.
+CMS/Admin is connected, and `static-json-v1` is initialized as Draft/admin content for the current `0.1.28-tester.1` tester release state. This is still not full production RBAC readiness, not critical-change approval readiness, and not broad public release readiness. Learner runtime remains static JSON by default; CMS published-snapshot runtime reads must remain disabled/not the learner default unless explicitly enabled and validated later. Production billing remains deferred. Production RBAC and critical-change approval come later.
 
 ## CMS/Admin content MVP goal
 
