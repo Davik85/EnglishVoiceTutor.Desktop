@@ -37,7 +37,8 @@ The current tester build verifies:
 - Welcome/start screen clamped to the visible working area;
 - Welcome primary actions visible without scrolling on smaller screens;
 - Welcome cover image using cover-style fill/crop without gray bars;
-- public download page and manifest pointing to the correct `0.1.28-tester.1` installer.
+- public download page and manifest pointing to the correct `0.1.28-tester.1` installer;
+- installed tester/release output files use `LanguageVoiceTutor.Desktop.*` names while legacy `EnglishVoiceTutor.Desktop.*` install-folder files are cleaned during update/reinstall.
 
 Raw passwords are not stored. Auth/session data is protected under the current user's app-data area, and logout clears persisted auth session data.
 

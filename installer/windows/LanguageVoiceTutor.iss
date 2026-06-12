@@ -3,7 +3,8 @@
 #endif
 
 #define AppPublisher "Language Voice Tutor"
-#define AppExeName "EnglishVoiceTutor.Desktop.exe"
+#define AppExeName "LanguageVoiceTutor.Desktop.exe"
+#define LegacyAppExeName "EnglishVoiceTutor.Desktop.exe"
 #define PublishDir "..\..\artifacts\publish\win-x64-inno"
 #define AppIconFile "..\..\Assets\Branding\app-icon.ico"
 #define InstalledAppIconFile "{app}\Assets\Branding\app-icon.ico"
@@ -30,7 +31,7 @@ UninstallDisplayIcon={#InstalledAppIconFile}
 SetupIconFile={#AppIconFile}
 SetupLogging=yes
 CloseApplications=yes
-CloseApplicationsFilter={#AppExeName}
+CloseApplicationsFilter={#AppExeName},{#LegacyAppExeName}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -41,6 +42,11 @@ Source: "{#AppIconFile}"; DestDir: "{app}\Assets\Branding"; Flags: ignoreversion
 
 [InstallDelete]
 Type: files; Name: "{commondesktop}\Language Voice Tutor.lnk"
+Type: files; Name: "{app}\EnglishVoiceTutor.Desktop.exe"
+Type: files; Name: "{app}\EnglishVoiceTutor.Desktop.dll"
+Type: files; Name: "{app}\EnglishVoiceTutor.Desktop.deps.json"
+Type: files; Name: "{app}\EnglishVoiceTutor.Desktop.runtimeconfig.json"
+Type: files; Name: "{app}\EnglishVoiceTutor.Desktop.pdb"
 
 [Icons]
 Name: "{group}\Language Voice Tutor"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{#InstalledAppIconFile}"
