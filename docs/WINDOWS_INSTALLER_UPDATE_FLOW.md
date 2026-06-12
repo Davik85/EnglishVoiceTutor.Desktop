@@ -51,6 +51,31 @@ The update flow is manual-confirmation only:
 
 The app does not silently auto-update and must not launch an installer before SHA-256 verification.
 
+## Downloaded update installer cache
+
+When the user chooses **Check for updates** and confirms an available update, the desktop app downloads the verified installer into the current user's local app-data update cache:
+
+```text
+%LOCALAPPDATA%\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetup-{version}.exe
+```
+
+In code this is built from `Environment.SpecialFolder.LocalApplicationData` plus `LanguageVoiceTutor\Updates`, and the final file name comes from the validated manifest `installerFileName`. The in-progress download uses the same path with a `.download` suffix, for example:
+
+```text
+%LOCALAPPDATA%\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetup-{version}.exe.download
+```
+
+Current cleanup behavior: stale `.download` for the same target is deleted before a new download; timeout/failure deletes the `.download`; SHA-256 failure deletes both the `.download` and any existing same-name destination. Successfully verified installers remain in the update cache until replaced by the same file name or cleaned manually. They are not stored in a random temp folder.
+
+Manual cleanup for old downloaded update installers on a tester machine:
+
+```powershell
+Remove-Item "$env:LOCALAPPDATA\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetup-*.exe" -Force -ErrorAction SilentlyContinue
+Remove-Item "$env:LOCALAPPDATA\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetup-*.exe.download" -Force -ErrorAction SilentlyContinue
+```
+
+Follow-up TODO: add safe automatic retention cleanup for old `LanguageVoiceTutorSetup-*.exe` files after a verified installer has launched successfully or after a conservative retention period.
+
 ## Direct-download manifest files
 
 `latest.json` describes the Language Voice Tutor Windows x64 direct-tester installer with a relative installer URL, SHA-256 checksum, file size, `manual-confirmation` update mode, and notes that code signing is deferred. The same folder also contains `changelog.json`, `known-issues.json`, and `checksums.sha256`. These files are generated artifacts under `artifacts\` and must not be committed. Generated artifacts are not source of truth for the public/live Windows release until uploaded and verified through live `latest.json`.

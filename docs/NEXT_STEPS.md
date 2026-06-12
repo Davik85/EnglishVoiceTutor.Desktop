@@ -35,7 +35,7 @@ This is still a private tester/direct Windows release, not broad public producti
 
 ## Current backend verification
 
-Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2` is active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. The refresh-token migration `20260611000000_AddUserRefreshTokens` is applied; `user_refresh_tokens` ownership/permissions were corrected for the application DB user after the migration was initially applied as `postgres`. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`, and operator smoke verified app launch, login, Account opening, lesson start, Lesson History updates, and Progress updates.
+Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.3` is active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. Backend `0.1.35-backend.3` contains the lesson chat invalid-response resilience fix and did not require an EF migration. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2`. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`, and `languagevoicetutor-backend.service` started successfully after deploy.
 
 ## Immediate tester-readiness work
 
@@ -60,6 +60,7 @@ Clean-machine smoke must verify:
 - registration/login work against `https://api.languagevoicetutor.com`;
 - trial is granted after registration;
 - lesson start, bot voice/TTS, Conversation Mode, Lesson History, and Progress work;
+- Daily Life / Introductions or another guided roleplay allows at least 7 user messages without showing a generic server error;
 - auth persists after app restart and Windows restart;
 - update/reinstall preserves login, settings, Lesson History, and Progress after migrating preserved auth/session data from legacy `EnglishVoiceTutor.Desktop` local-data paths;
 - raw passwords are not stored;

@@ -18,8 +18,8 @@ DOCS = [
 ]
 
 REQUIRED = [
-    "0.1.26-tester.1",
-    "LanguageVoiceTutorSetup-0.1.26-tester.1.exe",
+    "0.1.35-tester.1",
+    "LanguageVoiceTutorSetup-0.1.35-tester.1.exe",
     "https://api.languagevoicetutor.com",
     "server-only",
     "Check for updates",

@@ -31,13 +31,13 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.35-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.35-tester.1`, and `updateMode` set to `manual-confirmation`.
 
-Local build `0.1.36-tester.2` has been built and validated locally, but it must not be described as public/live unless the website `latest.json` points to it over HTTPS. This approves only the live manifest package as the private tester build. It does not mean the product is fully public production-ready.
+Local build `0.1.36-tester.2` has been built and validated locally, but it must not be described as public/live unless the website `latest.json` points to it over HTTPS. This remains a private tester/direct Windows release channel. It approves only the live manifest package as the private tester build and does not mean the product is fully public production-ready.
 
 ## Current production backend state
 
-Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2` is active, and `/opt/languagevoicetutor/backend/current` points to that release; verify the live value from the server symlink before calling it current. The refresh-token migration `20260611000000_AddUserRefreshTokens` is applied. `user_refresh_tokens` ownership/permissions were corrected for the application DB user after the migration was initially applied as `postgres`, and login works after the permission fix.
+Latest known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.3` is active, and `/opt/languagevoicetutor/backend/current` points to that release; verify the live value from the server symlink before calling it current. Backend `0.1.35-backend.3` contains the lesson chat invalid-response resilience fix and did not require an EF migration. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2`.
 
-`https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. Operator manual smoke verified app launch, login, Account opening, lesson start, Lesson History updates, and Progress updates.
+`https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. The backend service started successfully after the `0.1.35-backend.3` deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
 ## Backend URL profile
 
@@ -81,6 +81,8 @@ The update flow is manual-confirmation only:
 6. App launches the installer only after user confirmation.
 
 The app does not silently auto-update.
+
+Downloaded update installers from **Check for updates** are saved in the current user's local update cache: `%LOCALAPPDATA%\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetup-{version}.exe`. In-progress downloads use `.exe.download`. Failed or invalid in-progress downloads are deleted by the app, but older verified installer EXEs are retained until replaced by the same filename or manually removed. Cleanup command: `Remove-Item "$env:LOCALAPPDATA\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetup-*.exe*" -Force -ErrorAction SilentlyContinue`.
 
 ## CMS/Admin and content runtime
 
