@@ -118,3 +118,5 @@ Remaining realistic readiness items:
 9. Add code signing later to reduce SmartScreen friction before broad distribution.
 
 Do not state that the product is fully public production-ready. The current state is a validated private tester/direct Windows release.
+
+- Lesson Chat UI polish: Finish confirmation typography improved, Start recording is green, Hint uses hint-color styling.
