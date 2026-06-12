@@ -10,6 +10,12 @@ The production backend is reachable at `https://api.languagevoicetutor.com`. `ht
 
 Do not copy server secrets, passwords, API keys, private keys, tokens, private environment values, private IP-sensitive credentials, or provider credentials into this document or any tracked file.
 
+## Current production backend snapshot
+
+Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2` is active via `/opt/languagevoicetutor/backend/current`. Verify the live value with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` before calling any backend version current.
+
+The refresh-token migration `20260611000000_AddUserRefreshTokens` is applied. Production backend health and database health are healthy at the documented HTTPS health endpoints. Backend deploys remain separate from EF database migrations; do not run migrations automatically from the upload/deploy flow.
+
 ## Scope
 
 - Static Windows installer hosting and backend API hosting are separate deployment tracks.
@@ -192,6 +198,10 @@ From a client after nginx and TLS are configured:
 ```bash
 curl -fsS https://api.languagevoicetutor.com/health
 curl -fsS https://api.languagevoicetutor.com/api/health/database
+
+# Windows/operator equivalent:
+Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
+Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
 ## EF migrations

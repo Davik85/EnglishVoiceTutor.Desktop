@@ -2,9 +2,34 @@
 
 Review date: 2026-06-12.
 
+## Source of truth for current versions
+
+These docs are a snapshot of the last known verified state. They can become stale and must not be used as the only source of truth for live versions. Always verify the live/public state before telling a tester that a version is current.
+
+Check the public Windows direct tester release from the live website manifest:
+
+```powershell
+Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
+```
+
+Check the production backend release from the server `current` symlink:
+
+```powershell
+ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"
+```
+
+Check production backend health and database health:
+
+```powershell
+Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
+Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
+```
+
+Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS.
+
 ## Current uploaded release
 
-`0.1.28-tester.1` is the current public tester Windows direct manifest baseline. The public tester download path resolves through `latest.json` to `LanguageVoiceTutorSetup-0.1.28-tester.1.exe`.
+The live public tester Windows direct manifest baseline must be checked from the website `latest.json`. Last verified public snapshot: the public tester download path resolved through `latest.json` to `LanguageVoiceTutorSetup-0.1.35-tester.1.exe`. Local build `0.1.36-tester.2` has been built and validated locally, but it is not public/live unless these upload steps are completed and the website `latest.json` points to it over HTTPS.
 
 The current manifest is served from:
 
@@ -15,10 +40,10 @@ https://languagevoicetutor.com/releases/windows/direct/latest.json
 The current manifest values are:
 
 ```text
-version: 0.1.28-tester.1
-installerFileName: LanguageVoiceTutorSetup-0.1.28-tester.1.exe
+version: 0.1.35-tester.1
+installerFileName: LanguageVoiceTutorSetup-0.1.35-tester.1.exe
 backendBaseUrl: https://api.languagevoicetutor.com
-minimumSupportedVersion: 0.1.28-tester.1
+minimumSupportedVersion: 0.1.35-tester.1
 updateMode: manual-confirmation
 ```
 
@@ -49,14 +74,14 @@ artifacts\releases\windows\direct
 Expected files:
 
 ```text
-LanguageVoiceTutorSetup-0.1.28-tester.1.exe
+LanguageVoiceTutorSetup-{version}.exe
 latest.json
 changelog.json
 known-issues.json
 checksums.sha256
 ```
 
-Generated files under `artifacts/` and installer `.exe` files must not be committed.
+Generated files under `artifacts/` and installer `.exe` files must not be committed. Generated artifacts are not source of truth for the public/live Windows release until uploaded and verified through live `latest.json`.
 
 ## Upload process
 
@@ -75,10 +100,10 @@ Get-FileHash -Path "$env:TEMP\$($manifest.installerFileName)" -Algorithm SHA256
 
 Confirm:
 
-- `version` is `0.1.28-tester.1`;
-- `installerFileName` is `LanguageVoiceTutorSetup-0.1.28-tester.1.exe`;
+- `version` matches the intended uploaded version and the live tester version you are announcing;
+- `installerFileName` is `LanguageVoiceTutorSetup-{version}.exe` for the intended uploaded version;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
-- `minimumSupportedVersion` is `0.1.28-tester.1`;
+- `minimumSupportedVersion` matches the intended support floor;
 - `updateMode` is `manual-confirmation`;
 - the SHA-256 matches `installerSha256` and `checksums.sha256`;
 - the public download page downloads the same installer named by the manifest.
@@ -99,7 +124,7 @@ The old technical update dashboard in Diagnostics is not part of release UX. Rel
 
 After upload, run or record a clean-machine smoke that covers:
 
-- public page downloads the correct `0.1.28-tester.1` installer;
+- public page downloads the installer named by live `latest.json`;
 - installed build uses only `https://api.languagevoicetutor.com`;
 - registration/login work from another device;
 - trial grant after registration;

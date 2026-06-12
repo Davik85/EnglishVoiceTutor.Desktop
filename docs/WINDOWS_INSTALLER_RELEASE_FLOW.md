@@ -2,11 +2,36 @@
 
 Review date: 2026-06-12.
 
+## Source of truth for current versions
+
+These docs are a snapshot of the last known verified state. They can become stale and must not be used as the only source of truth for live versions. Always verify the live/public state before telling a tester that a version is current.
+
+Check the public Windows direct tester release from the live website manifest:
+
+```powershell
+Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
+```
+
+Check the production backend release from the server `current` symlink:
+
+```powershell
+ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"
+```
+
+Check production backend health and database health:
+
+```powershell
+Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
+Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
+```
+
+Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS.
+
 Inno Setup is the primary Windows direct-download installer track for Language Voice Tutor.
 
 ## Current validated release
 
-`0.1.28-tester.1` is the current public tester Windows direct manifest baseline. The Windows direct installer was built and validated. The public tester download page reads `/releases/windows/direct/latest.json`, and `latest.json` points to `LanguageVoiceTutorSetup-0.1.28-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.28-tester.1`, and `updateMode` set to `manual-confirmation`.
+The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.35-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.35-tester.1`, and `updateMode` set to `manual-confirmation`. Local build `0.1.36-tester.2` has been built and validated locally, but it must not be described as public/live unless the website `latest.json` points to it over HTTPS.
 
 This is a private tester/direct Windows release, not broad public production readiness. Code signing remains deferred, so SmartScreen warnings are still expected for controlled testers.
 
@@ -60,13 +85,13 @@ Installed-version checking is now part of the Windows installer foundation. The 
 Run from the repository root on Windows:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.28-tester.1
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.36-tester.2
 ```
 
 If `ISCC.exe` is not in a default location:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.28-tester.1 -IsccPath "C:\Tools\Inno Setup 6\ISCC.exe"
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.36-tester.2 -IsccPath "C:\Tools\Inno Setup 6\ISCC.exe"
 ```
 
 Expected installer output:
@@ -85,7 +110,7 @@ artifacts\releases\windows\direct\known-issues.json
 artifacts\releases\windows\direct\checksums.sha256
 ```
 
-Generated files under `artifacts\` must not be committed.
+Generated files under `artifacts\` must not be committed. Generated artifacts are not source of truth for the public/live Windows release until uploaded and verified through live `latest.json`.
 
 ## Manifest and desktop update UX
 

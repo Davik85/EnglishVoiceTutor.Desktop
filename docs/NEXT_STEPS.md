@@ -2,20 +2,45 @@
 
 Review date: 2026-06-12.
 
+## Source of truth for current versions
+
+These docs are a snapshot of the last known verified state. They can become stale and must not be used as the only source of truth for live versions. Always verify the live/public state before telling a tester that a version is current.
+
+Check the public Windows direct tester release from the live website manifest:
+
+```powershell
+Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
+```
+
+Check the production backend release from the server `current` symlink:
+
+```powershell
+ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"
+```
+
+Check production backend health and database health:
+
+```powershell
+Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
+Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
+```
+
+Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS.
+
 ## Current release baseline
 
-The current public tester manifest baseline is `0.1.28-tester.1`. The public tester download page reads `latest.json`, and `latest.json` points to `LanguageVoiceTutorSetup-0.1.28-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.28-tester.1`, and `updateMode` set to `manual-confirmation`.
+The live public tester manifest baseline must be checked from `latest.json`, not from this document. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.35-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.35-tester.1`, and `updateMode` set to `manual-confirmation`. Local build `0.1.36-tester.2` has been built and validated locally, but it is not public/live unless the website `latest.json` points to it.
 
 This is still a private tester/direct Windows release, not broad public production readiness.
 
 ## Current backend verification
 
-Production backend release `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2` is active via `/opt/languagevoicetutor/backend/current`. The refresh-token migration `20260611000000_AddUserRefreshTokens` is applied; `user_refresh_tokens` ownership/permissions were corrected for the application DB user after the migration was initially applied as `postgres`. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`, and operator smoke verified app launch, login, Account opening, lesson start, Lesson History updates, and Progress updates.
+Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2` is active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. The refresh-token migration `20260611000000_AddUserRefreshTokens` is applied; `user_refresh_tokens` ownership/permissions were corrected for the application DB user after the migration was initially applied as `postgres`. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`, and operator smoke verified app launch, login, Account opening, lesson start, Lesson History updates, and Progress updates.
 
 ## Immediate tester-readiness work
 
 1. Run a clean-machine smoke test from the public download page and current `latest.json`.
-2. Validate update-over-existing-install from a prior `EnglishVoiceTutor.Desktop.*` installed tester build and confirm preserved auth/session data migrates to the current `LanguageVoiceTutor.Desktop` local-data path while login, user settings, Lesson History, and Progress survive update/reinstall.
+2. Validate update-over-existing-install from a prior `EnglishVoiceTutor.Desktop.*` installed tester build and confirm old installed `EnglishVoiceTutor.Desktop.*` files are cleaned from the install folder, preserved auth/session data migrates to the current `LanguageVoiceTutor.Desktop` local-data path, and login, user settings, Lesson History, and Progress survive update/reinstall.
 3. Confirm auth session restore across app restart and Windows restart.
 4. Confirm smaller-screen/scaled-display layout on at least one 1366x768, 1280x720, or equivalent scaled-display environment.
 5. Confirm Release Settings have only the simple **Check for updates** action and do not expose Diagnostics or Backend URL editing.
