@@ -15,20 +15,27 @@ public class UserSettingsService
     };
 
     private readonly string settingsFilePath;
+    private readonly string[] settingsFilePathCandidates;
 
     public UserSettingsService()
     {
-        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var appSettingsDirectory = Path.Combine(appDataPath, StorageConstants.AppDataFolderName);
-        settingsFilePath = Path.Combine(appSettingsDirectory, StorageConstants.SettingsFileName);
+        settingsFilePath = LocalUserDataMigrationService.GetCurrentRoamingFilePath(StorageConstants.SettingsFileName);
+        settingsFilePathCandidates = LocalUserDataMigrationService.BuildFilePathCandidates(StorageConstants.SettingsFileName, includeLocalCurrentPath: false);
     }
 
     public string SettingsFilePath => settingsFilePath;
+
+    public IReadOnlyList<string> SettingsFilePathCandidates => settingsFilePathCandidates;
 
     public UserSettings Load()
     {
         try
         {
+            if (!File.Exists(settingsFilePath))
+            {
+                LocalUserDataMigrationService.CopyFirstLegacyFileToCurrentWhenMissing(settingsFilePath, settingsFilePathCandidates, "user settings");
+            }
+
             if (!File.Exists(settingsFilePath))
             {
                 return CreateDefaultSettings();

@@ -15,6 +15,8 @@ FILES = {
     "main_vm": ROOT / "ViewModels/MainViewModel.cs",
     "settings_vm": ROOT / "ViewModels/SettingsViewModel.cs",
     "history_service": ROOT / "Services/LessonHistoryService.cs",
+    "user_data_migration": ROOT / "Services/LocalUserDataMigrationService.cs",
+    "storage_constants": ROOT / "Constants/StorageConstants.cs",
     "installer": ROOT / "installer/windows/LanguageVoiceTutor.iss",
     "current_state": ROOT / "docs/CURRENT_STATE.md",
     "next_steps": ROOT / "docs/NEXT_STEPS.md",
@@ -53,20 +55,22 @@ def main() -> int:
     main_vm = read("main_vm")
     settings_vm = read("settings_vm")
     history_service = read("history_service")
+    user_data_migration = read("user_data_migration")
+    storage_constants = read("storage_constants")
     installer = read("installer")
     docs = "\n".join(read(name) for name in ["current_state", "next_steps", "tester_release", "windows_upload"])
 
     # Secure local storage shape: app-data file, DPAPI current-user protection, no raw password field.
-    assert_contains(storage, "Environment.SpecialFolder.ApplicationData", "auth session app-data location")
+    assert_contains(user_data_migration, "Environment.SpecialFolder.ApplicationData", "auth session app-data location")
     assert_contains(storage, "StorageConstants.AuthSessionFileName", "auth session file constant")
     assert_contains(storage, "ProtectedData.Protect", "DPAPI protect call")
     assert_contains(storage, "ProtectedData.Unprotect", "DPAPI unprotect call")
     assert_contains(storage, "DataProtectionScope.CurrentUser", "current-user DPAPI scope")
     assert_contains(storage, "ProtectedPayloadPurpose", "purpose-bound DPAPI entropy")
     assert_contains(storage, "LegacyProtectedPayloadPurposes", "legacy DPAPI purpose migration")
-    assert_contains(storage, "LegacyAppDataFolderNames", "legacy app-data folder migration")
+    assert_contains(storage_constants, "LegacyAppDataFolderNames", "legacy app-data folder migration")
     assert_contains(storage, "AuthSessionFilePathCandidates", "stable and legacy auth session path candidates")
-    assert_contains(storage, "Environment.SpecialFolder.LocalApplicationData", "legacy local-app-data migration")
+    assert_contains(user_data_migration, "Environment.SpecialFolder.LocalApplicationData", "legacy local-app-data migration")
     assert_contains(storage, "Convert.ToBase64String", "protected payload written as encoded blob")
     assert_not_contains(stored_session.lower(), "password", "password field in stored session model")
     assert_not_contains(auth_response.lower(), "password", "password field in auth response model")

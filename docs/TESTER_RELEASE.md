@@ -33,12 +33,12 @@ The current tester build verifies:
 - Lesson History saving;
 - Progress;
 - auth session persistence after app restart and Windows restart;
-- hardened update/reinstall preservation for known auth session paths;
+- update from older builds migrates preserved auth/session data from legacy `EnglishVoiceTutor.Desktop` local-data paths;
 - Welcome/start screen clamped to the visible working area;
 - Welcome primary actions visible without scrolling on smaller screens;
 - Welcome cover image using cover-style fill/crop without gray bars;
 - public download page and manifest pointing to the correct `0.1.28-tester.1` installer;
-- installed tester/release output files use `LanguageVoiceTutor.Desktop.*` names while legacy `EnglishVoiceTutor.Desktop.*` install-folder files are cleaned during update/reinstall.
+- Installed file names were renamed to `LanguageVoiceTutor.Desktop.*`; legacy `EnglishVoiceTutor.Desktop.*` install-folder files are cleaned during update/reinstall without deleting user AppData.
 
 Raw passwords are not stored. Auth/session data is protected under the current user's app-data area, and logout clears persisted auth session data.
 
@@ -79,7 +79,7 @@ Before or during small-group tester handoff, confirm all items below:
 - Trial entitlement is granted after registration.
 - Lesson start, normal chat, TTS/bot voice, Conversation Mode, Lesson History, and Progress work.
 - Auth session persists across app restart and Windows restart.
-- Update-over-existing-install preserves auth session, settings, history, and progress.
+- Update/reinstall must preserve login, settings, Lesson History, and Progress, including migration from legacy `EnglishVoiceTutor.Desktop` local-data paths.
 - **Check for updates** asks before download/install, verifies SHA-256, and never silently auto-updates.
 - Smaller laptop/scaled display opens with title bar and primary Welcome actions visible, without gray cover bars.
 - Generated files under `artifacts/` are not committed.

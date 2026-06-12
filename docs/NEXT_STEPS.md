@@ -15,7 +15,7 @@ Production backend release `/opt/languagevoicetutor/backend/releases/0.1.35-back
 ## Immediate tester-readiness work
 
 1. Run a clean-machine smoke test from the public download page and current `latest.json`.
-2. Validate update-over-existing-install from a prior installed tester build and confirm auth session, user settings, Lesson History, and Progress survive update/reinstall.
+2. Validate update-over-existing-install from a prior `EnglishVoiceTutor.Desktop.*` installed tester build and confirm preserved auth/session data migrates to the current `LanguageVoiceTutor.Desktop` local-data path while login, user settings, Lesson History, and Progress survive update/reinstall.
 3. Confirm auth session restore across app restart and Windows restart.
 4. Confirm smaller-screen/scaled-display layout on at least one 1366x768, 1280x720, or equivalent scaled-display environment.
 5. Confirm Release Settings have only the simple **Check for updates** action and do not expose Diagnostics or Backend URL editing.
@@ -36,7 +36,7 @@ Clean-machine smoke must verify:
 - trial is granted after registration;
 - lesson start, bot voice/TTS, Conversation Mode, Lesson History, and Progress work;
 - auth persists after app restart and Windows restart;
-- update/reinstall preserves auth session, settings, history, and progress;
+- update/reinstall preserves login, settings, Lesson History, and Progress after migrating preserved auth/session data from legacy `EnglishVoiceTutor.Desktop` local-data paths;
 - raw passwords are not stored;
 - Welcome/start window clamps to the visible working area;
 - Welcome primary actions are visible without scrolling on smaller laptop screens;

@@ -19,7 +19,7 @@ This is a private tester/direct Windows release, not broad public production rea
 - Default install directory: `{autopf}\Language Voice Tutor`, normally under Program Files.
 - Expected installer artifact: `artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe`.
 - Server-ready direct-download output: `artifacts\releases\windows\direct`.
-- Installed tester/release output files now use `LanguageVoiceTutor.Desktop.*` names. Internal project, folder, and namespace names may remain `EnglishVoiceTutor.*` until a later safe cleanup to avoid risky project-wide churn.
+- Installed file names were renamed to `LanguageVoiceTutor.Desktop.*`. Installed tester/release output files now use `LanguageVoiceTutor.Desktop.*` names. Internal project, folder, and namespace names may remain `EnglishVoiceTutor.*` until a later safe cleanup to avoid risky project-wide churn.
 
 Velopack is rejected/deprecated for this project because its Windows installer is a one-click installer and does not match the desired release-like wizard UX. ZIP packaging remains only an emergency/developer fallback. Microsoft Store/MSIX remains deferred.
 
@@ -53,7 +53,7 @@ Installed-version checking is now part of the Windows installer foundation. The 
 - Older installed version is treated as an update and may continue after the installer explains that it will update Language Voice Tutor.
 - Newer installed version warns and blocks by default so testers do not accidentally downgrade to an older installer.
 - If Language Voice Tutor is running, the installer uses Inno Setup close-application handling for `LanguageVoiceTutor.Desktop.exe` and also handles the legacy `EnglishVoiceTutor.Desktop.exe` process during updates from older installed builds; it must not silently install over a running app.
-- During update/reinstall, the installer removes legacy `EnglishVoiceTutor.Desktop.*` application files only from the install folder so stale old-name binaries are not left beside the current `LanguageVoiceTutor.Desktop.*` files. It does not delete user AppData, settings, auth/session files, lesson history, progress, or backend data.
+- During update/reinstall, the installer removes legacy `EnglishVoiceTutor.Desktop.*` application files only from the install folder so stale old-name binaries are not left beside the current `LanguageVoiceTutor.Desktop.*` files. It does not delete user AppData, settings, auth/session files, lesson history, progress, or backend data. The app must migrate preserved auth/session data from legacy `EnglishVoiceTutor.Desktop` local-data paths to the current `LanguageVoiceTutor.Desktop` local-data path when needed.
 
 ## Build the installer locally
 
@@ -93,7 +93,7 @@ Generated files under `artifacts\` must not be committed.
 
 The desktop release UX has a simple user-facing **Check for updates** button in Settings. It fetches `latest.json`, validates manifest identity, compares installed and latest versions, asks before downloading/installing, verifies SHA-256 before starting the installer, and does not silently auto-update. The old technical update dashboard is not part of release UX.
 
-Update/reinstall validation must confirm app data, persisted auth session storage, settings, and account-scoped local Progress/Lesson History survive.
+Update/reinstall validation must confirm app data, persisted auth session storage, settings, and account-scoped local Progress/Lesson History survive. Update/reinstall must preserve login, settings, Lesson History, and Progress after the installed file-name rename.
 
 ## Validate release files
 
