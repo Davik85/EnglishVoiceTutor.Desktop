@@ -4701,26 +4701,44 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 MaxWidth = 560
             };
 
+            var title = new TextBlock
+            {
+                Text = localizedText.FinishLessonConfirmationTitle,
+                FontSize = 18,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = (System.Windows.Media.Brush?)Application.Current?.TryFindResource("TextPrimaryBrush"),
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+
             var message = new TextBlock
             {
                 Text = localizedText.FinishLessonConfirmationMessage,
                 TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 0, 0, 20)
+                FontSize = 15,
+                LineHeight = 22,
+                Foreground = (System.Windows.Media.Brush?)Application.Current?.TryFindResource("TextSecondaryBrush"),
+                Margin = new Thickness(0, 0, 0, 24)
             };
 
             var primaryButton = new Button
             {
                 Content = localizedText.FinishLessonConfirmationConfirmButtonText,
-                MinWidth = 150,
-                Padding = new Thickness(12, 6, 12, 6),
-                Margin = new Thickness(8, 0, 0, 0),
+                MinWidth = 152,
+                MinHeight = 40,
+                Padding = new Thickness(18, 8, 18, 8),
+                Margin = new Thickness(10, 0, 0, 0),
+                FontSize = 15,
+                Style = (Style?)Application.Current?.TryFindResource("PrimaryButtonStyle"),
                 IsDefault = true
             };
             var cancelButton = new Button
             {
                 Content = localizedText.FinishLessonConfirmationCancelButtonText,
-                MinWidth = 150,
-                Padding = new Thickness(12, 6, 12, 6),
+                MinWidth = 152,
+                MinHeight = 40,
+                Padding = new Thickness(18, 8, 18, 8),
+                FontSize = 15,
+                Style = (Style?)Application.Current?.TryFindResource("SecondaryButtonStyle"),
                 IsCancel = true
             };
 
@@ -4748,6 +4766,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 Margin = new Thickness(24),
                 Children =
                 {
+                    title,
                     message,
                     buttons
                 }
