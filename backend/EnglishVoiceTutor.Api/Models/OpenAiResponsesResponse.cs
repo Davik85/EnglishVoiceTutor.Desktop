@@ -7,6 +7,9 @@ public sealed class OpenAiResponsesResponse
     [JsonPropertyName("id")]
     public string Id { get; init; } = string.Empty;
 
+    [JsonPropertyName("output_text")]
+    public string OutputText { get; init; } = string.Empty;
+
     [JsonPropertyName("output")]
     public IReadOnlyList<OpenAiOutputItem> Output { get; init; } = [];
 
