@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <AssemblyName>LanguageVoiceTutor.Desktop</AssemblyName>
     <Product>Language Voice Tutor</Product>
     <AssemblyTitle>Language Voice Tutor Desktop</AssemblyTitle>
     <Description>Language Voice Tutor Desktop</Description>

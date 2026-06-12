@@ -19,7 +19,7 @@ This is a private tester/direct Windows release, not broad public production rea
 - Default install directory: `{autopf}\Language Voice Tutor`, normally under Program Files.
 - Expected installer artifact: `artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe`.
 - Server-ready direct-download output: `artifacts\releases\windows\direct`.
-- Existing executable name remains `EnglishVoiceTutor.Desktop.exe` to avoid risky project-wide renames.
+- Installed tester/release output files now use `LanguageVoiceTutor.Desktop.*` names. Internal project, folder, and namespace names may remain `EnglishVoiceTutor.*` until a later safe cleanup to avoid risky project-wide churn.
 
 Velopack is rejected/deprecated for this project because its Windows installer is a one-click installer and does not match the desired release-like wizard UX. ZIP packaging remains only an emergency/developer fallback. Microsoft Store/MSIX remains deferred.
 
@@ -52,7 +52,8 @@ Installed-version checking is now part of the Windows installer foundation. The 
 - Same-version install asks for reinstall confirmation and cancels if the user declines.
 - Older installed version is treated as an update and may continue after the installer explains that it will update Language Voice Tutor.
 - Newer installed version warns and blocks by default so testers do not accidentally downgrade to an older installer.
-- If Language Voice Tutor is running, the installer uses Inno Setup close-application handling for `EnglishVoiceTutor.Desktop.exe`; it must not silently install over a running app.
+- If Language Voice Tutor is running, the installer uses Inno Setup close-application handling for `LanguageVoiceTutor.Desktop.exe` and also handles the legacy `EnglishVoiceTutor.Desktop.exe` process during updates from older installed builds; it must not silently install over a running app.
+- During update/reinstall, the installer removes legacy `EnglishVoiceTutor.Desktop.*` application files only from the install folder so stale old-name binaries are not left beside the current `LanguageVoiceTutor.Desktop.*` files. It does not delete user AppData, settings, auth/session files, lesson history, progress, or backend data.
 
 ## Build the installer locally
 

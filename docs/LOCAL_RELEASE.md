@@ -6,7 +6,7 @@ The recommended Windows direct-download installer path is now the Inno Setup flo
 
 ## Naming note
 
-Internal project, executable, namespace, and repository names may still contain `EnglishVoiceTutor.Desktop`. Public-facing release naming is `Language Voice Tutor`. This avoids risky project-wide namespace churn.
+Installed tester/release output files use `LanguageVoiceTutor.Desktop.*` names. Internal project, repository, folder, and source namespace names may still contain `EnglishVoiceTutor.*` until a later safe cleanup. Public-facing release naming is `Language Voice Tutor`, while avoiding risky project-wide namespace churn.
 
 ## Scope
 

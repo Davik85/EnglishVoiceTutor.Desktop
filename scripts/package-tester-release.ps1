@@ -45,9 +45,9 @@ New-Item -ItemType Directory -Force -Path $packagesDirectory | Out-Null
 Write-Host "Publishing desktop app..."
 dotnet publish $projectPath -c Release -r win-x64 --self-contained $selfContainedValue -o $publishDirectory
 
-$exePath = Join-Path $publishDirectory "EnglishVoiceTutor.Desktop.exe"
+$exePath = Join-Path $publishDirectory "LanguageVoiceTutor.Desktop.exe"
 if (-not (Test-Path $exePath)) {
-    throw "Publish completed, but EnglishVoiceTutor.Desktop.exe was not found in the publish directory."
+    throw "Publish completed, but LanguageVoiceTutor.Desktop.exe was not found in the publish directory."
 }
 
 $forbiddenFiles = Get-ChildItem -Path $publishDirectory -Recurse -File |
