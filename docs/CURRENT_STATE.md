@@ -41,9 +41,9 @@ Clean-machine smoke must verify registration/login/lesson/history/progress/updat
 
 ## Current production backend state
 
-Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2` is active, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. The refresh-token migration `20260611000000_AddUserRefreshTokens` is applied. The `user_refresh_tokens` ownership/permissions were corrected for the application DB user after the migration was initially applied as `postgres`, and login now works after that permission fix.
+Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.3` is active, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Backend `0.1.35-backend.3` contains the backend-only lesson chat invalid OpenAI response resilience fix. No database migration was needed for this backend-only fix; the previous refresh-token migration `20260611000000_AddUserRefreshTokens` remains applied, and the earlier `user_refresh_tokens` ownership/permission fix remains part of the production history. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2`.
 
-Production backend health is currently healthy: `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. Operator manual smoke verified app launch, login, Account opening, lesson start, Lesson History updates, and Progress updates.
+Production backend health is currently healthy: `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. The `languagevoicetutor-backend.service` started successfully after the `0.1.35-backend.3` deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
 ## Auth, account, and persistence
 
@@ -76,6 +76,8 @@ The manual-confirmation update flow is:
 7. The app asks before launching the installer.
 
 There is no silent auto-update, no background update service, and no installer launch before SHA-256 verification.
+
+Downloaded update installers from **Check for updates** are saved in the current user's local update cache: `%LOCALAPPDATA%\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetup-{version}.exe`. In-progress downloads use `.exe.download`. Failed or invalid in-progress downloads are deleted by the app, but older verified installer EXEs are retained until replaced by the same filename or manually removed. Cleanup command: `Remove-Item "$env:LOCALAPPDATA\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetup-*.exe*" -Force -ErrorAction SilentlyContinue`.
 
 ## Desktop startup window and Welcome layout
 

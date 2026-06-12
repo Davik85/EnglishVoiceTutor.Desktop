@@ -2,19 +2,19 @@
 
 This document describes the prepared deployment foundation for the Language Voice Tutor backend on Ubuntu 24.04. It is a manual backend-only deployment workflow. It does not upload Windows release files, run EF migrations, publish CMS runtime content, enable production billing, or make the product broadly public production-ready.
 
-## Current server verification for 0.1.35-backend.2
+## Current server verification for 0.1.35-backend.3
 
-The production backend active release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2`, and `/opt/languagevoicetutor/backend/current` points to that release. The refresh-token migration `20260611000000_AddUserRefreshTokens` is applied. The `user_refresh_tokens` ownership/permissions were corrected for the application DB user after the migration was initially applied as `postgres`, and login now works after the permission fix.
+The production backend active release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.3`, and `/opt/languagevoicetutor/backend/current` points to that release. Backend `0.1.35-backend.3` contains the lesson chat invalid OpenAI response resilience fix. No EF migration was run or needed for this backend-only fix. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2`. The earlier refresh-token migration `20260611000000_AddUserRefreshTokens` remains applied.
 
-The production backend is reachable at `https://api.languagevoicetutor.com`. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. Operator manual smoke verified app launch, login, Account opening, lesson start, Lesson History updates, and Progress updates.
+The production backend is reachable at `https://api.languagevoicetutor.com`. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. The service `languagevoicetutor-backend.service` started successfully after deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
 Do not copy server secrets, passwords, API keys, private keys, tokens, private environment values, private IP-sensitive credentials, or provider credentials into this document or any tracked file.
 
 ## Current production backend snapshot
 
-Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2` is active via `/opt/languagevoicetutor/backend/current`. Verify the live value with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` before calling any backend version current.
+Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.3` is active via `/opt/languagevoicetutor/backend/current`. Verify the live value with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` before calling any backend version current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2`.
 
-The refresh-token migration `20260611000000_AddUserRefreshTokens` is applied. Production backend health and database health are healthy at the documented HTTPS health endpoints. Backend deploys remain separate from EF database migrations; do not run migrations automatically from the upload/deploy flow.
+Backend `0.1.35-backend.3` did not require an EF migration. The earlier refresh-token migration `20260611000000_AddUserRefreshTokens` remains applied. Production backend health and database health are healthy at the documented HTTPS health endpoints. Backend deploys remain separate from EF database migrations; do not run migrations automatically from the upload/deploy flow. Backend deploys also remain separate from Windows release upload; no Windows installer upload was performed for `0.1.35-backend.3`.
 
 ## Scope
 
@@ -62,14 +62,14 @@ CORS is not currently configured in the backend. Nginx should reverse-proxy API 
 Run from the repository root on the local Windows development machine:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.2
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.3
 ```
 
 This publishes `backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj` in Release mode for `linux-x64` as a self-contained deployment and writes:
 
 ```text
 artifacts\publish\backend-linux-x64
-artifacts\packages\backend\LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.2.zip
+artifacts\packages\backend\LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.3.zip
 ```
 
 The production server does not need a git checkout, `dotnet` SDK, or `dotnet` runtime for this self-contained package. Generated files under `artifacts/` must not be committed. Do not rebuild or replace desktop release artifacts as part of backend deployment.
@@ -80,7 +80,7 @@ Dry-run can build the archive locally, then print the SSH/SCP/systemd commands w
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-backend.2 `
+  -Version 0.1.35-backend.3 `
   -PackageFirst `
   -DryRun
 ```
@@ -89,11 +89,11 @@ The script defaults to SSH host `lvt-server`, user `deploy`, and remote path `/o
 
 ## Upload and restart
 
-After the refresh-token migration has been reviewed and is ready to apply, run from Windows:
+For a reviewed backend-only deployment, run from Windows. Keep any EF migration as a separate explicit operation; `0.1.35-backend.3` did not need one:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-backend.2 `
+  -Version 0.1.35-backend.3 `
   -PackageFirst
 ```
 
