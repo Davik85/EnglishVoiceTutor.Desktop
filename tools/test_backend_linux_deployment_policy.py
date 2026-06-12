@@ -2,6 +2,7 @@
 """Policy checks for the self-contained Linux backend deployment workflow."""
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -24,6 +25,11 @@ def assert_contains(text: str, needle: str, label: str) -> None:
 def assert_not_contains(text: str, needle: str, label: str) -> None:
     if needle in text:
         raise AssertionError(f"Forbidden {label}: {needle}")
+
+
+def assert_regex(text: str, pattern: str, label: str) -> None:
+    if re.search(pattern, text, flags=re.MULTILINE) is None:
+        raise AssertionError(f"Missing {label}: {pattern}")
 
 
 def assert_no_bash_escaped_quotes_in_powershell_strings(text: str) -> None:
@@ -121,11 +127,21 @@ def main() -> None:
         "mv -Tf",
         "chmod 755",
         "EnglishVoiceTutor.Api",
-        "sudo systemctl restart $serviceName",
-        "sudo systemctl status $serviceName --no-pager",
+        "$shouldRestartService = -not $NoRestart",
+        "Dry-run mode: sudo restart/status commands will be printed with SSH pseudo-terminal allocation (-tt) when restart is enabled.",
+        "@('ssh', '-tt', '-p', $SshPort.ToString(), $serverTarget, \"sudo systemctl restart $serviceName\")",
+        "@('ssh', '-tt', '-p', $SshPort.ToString(), $serverTarget, \"sudo systemctl status $serviceName --no-pager\")",
         "This script does not write secrets and does not run EF migrations",
     ]:
         assert_contains(upload_script, needle, "safe upload workflow")
+
+
+    assert_regex(
+        upload_script,
+        r"if \(\$shouldRestartService\) \{\s+Invoke-LoggedCommand -Command @\('ssh', '-tt', '-p', \$SshPort\.ToString\(\), \$serverTarget, \"sudo systemctl restart \$serviceName\"\)\s+Invoke-LoggedCommand -Command @\('ssh', '-tt', '-p', \$SshPort\.ToString\(\), \$serverTarget, \"sudo systemctl status \$serviceName --no-pager\"\)\s+\}\s+else \{\s+Write-Host \"Service restart skipped because -NoRestart was provided\.\"",
+        "-NoRestart-gated TTY sudo restart/status block",
+    )
+    assert_not_contains(upload_script, "sudo -S", "sudo password stdin handling")
 
     for forbidden in [
         "bash -lc",
@@ -170,6 +186,9 @@ def main() -> None:
         "lvt-server",
         "/opt/languagevoicetutor/backend/releases/<version>",
         "languagevoicetutor-backend.service",
+        "`ssh -tt`",
+        "the script does not run the sudo restart or sudo status commands",
+        "printed but not executed",
         "20260611000000_AddUserRefreshTokens",
         "psql",
         "Do not echo `ConnectionStrings__DefaultConnection`, `PGPASSWORD`, or database URLs",

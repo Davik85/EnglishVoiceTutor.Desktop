@@ -38,7 +38,7 @@ $localTempDeployDir = Join-Path $repoRoot "artifacts/temp/backend-linux-upload/$
 $localDeployScriptPath = Join-Path $localTempDeployDir 'deploy-backend-release.sh'
 $serverTarget = "$ServerUser@$ServerHost"
 $serviceName = 'languagevoicetutor-backend.service'
-$shouldRestartService = -not $NoRestart -or $RestartService
+$shouldRestartService = -not $NoRestart
 
 function Invoke-LoggedCommand {
     param(
@@ -98,6 +98,7 @@ Write-Host "Service: $serviceName"
 Write-Host "Restart service: $shouldRestartService"
 if ($DryRun) {
     Write-Host "Dry-run mode: commands will be printed but not executed."
+    Write-Host "Dry-run mode: sudo restart/status commands will be printed with SSH pseudo-terminal allocation (-tt) when restart is enabled."
 }
 
 $remoteExecutablePath = "$remoteReleaseDir/EnglishVoiceTutor.Api"
@@ -183,8 +184,8 @@ $deployCommand = "bash $(Quote-ForRemoteShell $remoteDeployScriptPath)"
 Invoke-LoggedCommand -Command @('ssh', '-p', $SshPort.ToString(), $serverTarget, $deployCommand)
 
 if ($shouldRestartService) {
-    Invoke-LoggedCommand -Command @('ssh', '-p', $SshPort.ToString(), $serverTarget, "sudo systemctl restart $serviceName")
-    Invoke-LoggedCommand -Command @('ssh', '-p', $SshPort.ToString(), $serverTarget, "sudo systemctl status $serviceName --no-pager")
+    Invoke-LoggedCommand -Command @('ssh', '-tt', '-p', $SshPort.ToString(), $serverTarget, "sudo systemctl restart $serviceName")
+    Invoke-LoggedCommand -Command @('ssh', '-tt', '-p', $SshPort.ToString(), $serverTarget, "sudo systemctl status $serviceName --no-pager")
 }
 else {
     Write-Host "Service restart skipped because -NoRestart was provided."
