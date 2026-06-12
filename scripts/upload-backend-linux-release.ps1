@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z][0-9A-Za-z.-]*)?$')]
+    [ValidatePattern('^[A-Za-z0-9._-]+$')]
     [string]$Version,
 
     [string]$ServerHost = 'lvt-server',
@@ -33,6 +33,9 @@ $remoteReleaseDir = "$remoteReleasesDir/$Version"
 $remoteCurrentLink = "$remoteBase/current"
 $remotePreviousLink = "$remoteBase/previous"
 $remoteArchivePath = "$remoteUploadDir/$archiveName"
+$remoteDeployScriptPath = "$remoteUploadDir/deploy-backend-release.sh"
+$localTempDeployDir = Join-Path $repoRoot "artifacts/temp/backend-linux-upload/$Version"
+$localDeployScriptPath = Join-Path $localTempDeployDir 'deploy-backend-release.sh'
 $serverTarget = "$ServerUser@$ServerHost"
 $serviceName = 'languagevoicetutor-backend.service'
 $shouldRestartService = -not $NoRestart -or $RestartService
@@ -67,6 +70,10 @@ if ($SshPort -lt 1 -or $SshPort -gt 65535) {
     throw "SshPort must be between 1 and 65535."
 }
 
+if ($RemotePath -notmatch '^/[-A-Za-z0-9._/]+$') {
+    throw "RemotePath must be an absolute Linux path containing only letters, digits, slash, dot, dash, and underscore."
+}
+
 if ($PackageFirst) {
     $packageScript = Join-Path $PSScriptRoot 'package-backend-linux-release.ps1'
     Write-Host "Creating backend linux-x64 package first."
@@ -93,37 +100,86 @@ if ($DryRun) {
     Write-Host "Dry-run mode: commands will be printed but not executed."
 }
 
+$remoteExecutablePath = "$remoteReleaseDir/EnglishVoiceTutor.Api"
+$remoteCurrentTempLink = "$remoteBase/current.next"
+
+New-Item -ItemType Directory -Force -Path $localTempDeployDir | Out-Null
+
+$deployScriptContent = @"
+#!/usr/bin/env bash
+set -euo pipefail
+
+version=$(Quote-ForRemoteShell $Version)
+remote_base=$(Quote-ForRemoteShell $remoteBase)
+upload_dir=$(Quote-ForRemoteShell $remoteUploadDir)
+archive_path=$(Quote-ForRemoteShell $remoteArchivePath)
+release_dir=$(Quote-ForRemoteShell $remoteReleaseDir)
+current_link=$(Quote-ForRemoteShell $remoteCurrentLink)
+previous_link=$(Quote-ForRemoteShell $remotePreviousLink)
+current_temp_link=$(Quote-ForRemoteShell $remoteCurrentTempLink)
+executable_path=$(Quote-ForRemoteShell $remoteExecutablePath)
+
+printf 'Deploying backend version: %s\n' "`$version"
+printf 'Upload folder: %s\n' "`$upload_dir"
+printf 'Release path: %s\n' "`$release_dir"
+
+if [ ! -f "`$archive_path" ]; then
+    printf 'Backend archive is missing: %s\n' "`$archive_path" >&2
+    exit 1
+fi
+
+previous_target=''
+if [ -L "`$current_link" ]; then
+    previous_target="`$(readlink -f "`$current_link")"
+fi
+
+rm -rf "`$release_dir"
+mkdir -p "`$release_dir"
+unzip -q "`$archive_path" -d "`$release_dir"
+
+if [ ! -f "`$executable_path" ]; then
+    printf 'Backend executable is missing after extraction: %s\n' "`$executable_path" >&2
+    exit 1
+fi
+
+chmod 755 "`$executable_path"
+if [ ! -x "`$executable_path" ]; then
+    printf 'Backend executable is not executable after chmod: %s\n' "`$executable_path" >&2
+    exit 1
+fi
+
+ln -sfn "`$release_dir" "`$current_temp_link"
+mv -Tf "`$current_temp_link" "`$current_link"
+
+if [ -n "`$previous_target" ] && [ -d "`$previous_target" ]; then
+    ln -sfn "`$previous_target" "`$previous_link"
+    printf 'previous=%s\n' "`$previous_target"
+else
+    rm -f "`$previous_link"
+    printf 'previous=<none>\n'
+fi
+
+current_target="`$(readlink -f "`$current_link")"
+printf 'current=%s\n' "`$current_target"
+printf 'release=%s\n' "`$release_dir"
+"@
+
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($localDeployScriptPath, $deployScriptContent.Replace("`r`n", "`n"), $utf8NoBom)
+
+Write-Host "Generated deploy script: $localDeployScriptPath"
+if ($DryRun) {
+    Write-Host "Generated deploy script content:"
+    Write-Host $deployScriptContent
+}
+
 $mkdirCommand = "mkdir -p $(Quote-ForRemoteShell $remoteUploadDir) $(Quote-ForRemoteShell $remoteReleasesDir)"
 Invoke-LoggedCommand -Command @('ssh', '-p', $SshPort.ToString(), $serverTarget, $mkdirCommand)
 
 Invoke-LoggedCommand -Command @('scp', '-P', $SshPort.ToString(), $archivePath, "${serverTarget}:$remoteArchivePath")
+Invoke-LoggedCommand -Command @('scp', '-P', $SshPort.ToString(), $localDeployScriptPath, "${serverTarget}:$remoteDeployScriptPath")
 
-$remoteExecutablePath = "$remoteReleaseDir/EnglishVoiceTutor.Api"
-$remoteCurrentTempLink = "$remoteBase/current.next"
-$quotedRemoteReleaseDir = Quote-ForRemoteShell $remoteReleaseDir
-$quotedRemoteArchivePath = Quote-ForRemoteShell $remoteArchivePath
-$quotedRemoteExecutablePath = Quote-ForRemoteShell $remoteExecutablePath
-$quotedRemoteCurrentLink = Quote-ForRemoteShell $remoteCurrentLink
-$quotedRemotePreviousLink = Quote-ForRemoteShell $remotePreviousLink
-$quotedRemoteCurrentTempLink = Quote-ForRemoteShell $remoteCurrentTempLink
-
-$remoteDeployScript = @(
-    'set -euo pipefail',
-    'previous_target=""',
-    ('if [ -L {0} ]; then previous_target=$(readlink -f {0}); fi' -f $quotedRemoteCurrentLink),
-    ('rm -rf {0}' -f $quotedRemoteReleaseDir),
-    ('mkdir -p {0}' -f $quotedRemoteReleaseDir),
-    ('unzip -q {0} -d {1}' -f $quotedRemoteArchivePath, $quotedRemoteReleaseDir),
-    ('test -f {0}' -f $quotedRemoteExecutablePath),
-    ('chmod 755 {0}' -f $quotedRemoteExecutablePath),
-    ('test -x {0}' -f $quotedRemoteExecutablePath),
-    ('ln -sfn {0} {1}' -f $quotedRemoteReleaseDir, $quotedRemoteCurrentTempLink),
-    ('mv -Tf {0} {1}' -f $quotedRemoteCurrentTempLink, $quotedRemoteCurrentLink),
-    ('if [ -n "$previous_target" ] && [ -d "$previous_target" ]; then ln -sfn "$previous_target" {0}; fi' -f $quotedRemotePreviousLink),
-    ('readlink -f {0}' -f $quotedRemoteCurrentLink),
-    ('if [ -L {0} ]; then printf ''previous=%s\n'' $(readlink -f {0}); fi' -f $quotedRemotePreviousLink)
-) -join ' && '
-$deployCommand = "bash -lc $(Quote-ForRemoteShell $remoteDeployScript)"
+$deployCommand = "bash $(Quote-ForRemoteShell $remoteDeployScriptPath)"
 Invoke-LoggedCommand -Command @('ssh', '-p', $SshPort.ToString(), $serverTarget, $deployCommand)
 
 if ($shouldRestartService) {

@@ -90,7 +90,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.
   -PackageFirst
 ```
 
-The upload script creates `/opt/languagevoicetutor/backend/releases/<version>`, uploads and unzips the archive, validates `EnglishVoiceTutor.Api`, atomically switches `/opt/languagevoicetutor/backend/current`, records `/opt/languagevoicetutor/backend/previous` when an older current release exists, restarts `languagevoicetutor-backend.service`, and prints service status. Pass `-NoRestart` only when a separate controlled restart is planned. The script never runs EF migrations and never reads or prints production database secrets.
+The upload script creates an ignored local deployment helper under `artifacts/temp/backend-linux-upload/<version>/deploy-backend-release.sh`, uploads the backend archive and helper script to `/opt/languagevoicetutor/backend/uploads/<version>/`, then runs the uploaded helper with `bash /opt/languagevoicetutor/backend/uploads/<version>/deploy-backend-release.sh`. The helper creates `/opt/languagevoicetutor/backend/releases/<version>`, unzips the archive, validates `EnglishVoiceTutor.Api`, sets its executable bit, atomically switches `/opt/languagevoicetutor/backend/current` through `current.next`, and records `/opt/languagevoicetutor/backend/previous` when an older current release exists. Keeping the release extraction and symlink switch in a normal `.sh` file avoids fragile nested PowerShell/SSH/bash inline quoting. The script then restarts `languagevoicetutor-backend.service` and prints service status as separate SSH commands. Pass `-NoRestart` only when a separate controlled restart is planned. The script never runs EF migrations and never reads or prints production database secrets.
 
 ## Server environment file
 

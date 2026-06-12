@@ -104,21 +104,52 @@ def main() -> None:
         "$RemotePath = '/opt/languagevoicetutor/backend'",
         "[switch]$DryRun",
         "[switch]$PackageFirst",
+        "[switch]$NoRestart",
+        "$remoteBase/uploads/$Version",
         "$remoteBase/releases",
         "$remoteBase/current",
         "$remoteBase/previous",
-        "previous_target=\"\"",
-        "previous_target=$(readlink -f {0})",
-        "ln -sfn \"$previous_target\"",
+        "deploy-backend-release.sh",
+        "#!/usr/bin/env bash",
+        "set -euo pipefail",
+        '$remoteDeployScriptPath = "$remoteUploadDir/deploy-backend-release.sh"',
+        "scp",
+        "bash $(Quote-ForRemoteShell $remoteDeployScriptPath)",
+        "previous_target=''",
+        "readlink -f",
+        'ln -sfn "`$previous_target" "`$previous_link"',
         "mv -Tf",
+        "chmod 755",
+        "EnglishVoiceTutor.Api",
         "sudo systemctl restart $serviceName",
         "sudo systemctl status $serviceName --no-pager",
         "This script does not write secrets and does not run EF migrations",
     ]:
         assert_contains(upload_script, needle, "safe upload workflow")
 
-    for forbidden in ["git pull", "dotnet build", "dotnet ef database update", "Password=", "\\\""]:
-        assert_not_contains(upload_script, forbidden, "server-side build, secret handling, or parser-breaking quoting")
+    for forbidden in [
+        "bash -lc",
+        "remoteDeployScript = @(",
+        " -join ' && '",
+        "git pull",
+        "dotnet build",
+        "dotnet ef database update",
+        "Database=",
+        "Password=",
+        "ConnectionStrings__DefaultConnection",
+        "PGPASSWORD",
+        "\\\"",
+    ]:
+        assert_not_contains(upload_script, forbidden, "server-side build, secret handling, parser-breaking quoting, or inline deploy script")
+
+    for needle in [
+        "[ValidatePattern('^[A-Za-z0-9._-]+$')]",
+        "artifacts/temp/backend-linux-upload/$Version",
+    ]:
+        assert_contains(upload_script, needle, "version validation and ignored generated deploy script path")
+
+    gitignore = read(".gitignore")
+    assert_contains(gitignore, "artifacts/", "ignored generated deploy scripts and artifacts")
 
     for needle in [
         "20260611000000_AddUserRefreshTokens",
