@@ -3,17 +3,20 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:models="clr-namespace:EnglishVoiceTutor.Desktop.Models"
              mc:Ignorable="d"
              d:DesignHeight="720"
-             d:DesignWidth="760">
+             d:DesignWidth="760"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True">
     <Grid x:Name="WelcomeRoot"
           Margin="18"
-          Background="{StaticResource AppBackgroundBrush}"
-          SizeChanged="OnWelcomeRootSizeChanged">
+          Background="{StaticResource AppBackgroundBrush}">
         <Border x:Name="WelcomeCard"
-                Width="540"
-                MaxWidth="540"
-                MinHeight="420"
+                Width="{x:Static models:DesktopLayoutOptions.WelcomeCardMaximumWidth}"
+                MaxWidth="{x:Static models:DesktopLayoutOptions.WelcomeCardMaximumWidth}"
+                MaxHeight="{x:Static models:DesktopLayoutOptions.WelcomeCardMaximumHeight}"
+                MinHeight="{x:Static models:DesktopLayoutOptions.WelcomeCardMinimumHeight}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Background="{StaticResource SurfaceBrush}"
@@ -32,6 +35,7 @@
 
             <Grid x:Name="WelcomeHeroSurface"
                   ClipToBounds="True"
+                  SnapsToDevicePixels="True"
                   SizeChanged="OnWelcomeHeroSurfaceSizeChanged">
                 <Image x:Name="WelcomeHeroImage"
                        Source="/Assets/Welcome/welcome-cover.png"
@@ -61,8 +65,8 @@
 
                     <Border x:Name="WelcomeHeaderPanel"
                             Grid.Row="0"
-                            Width="452"
-                            MaxWidth="452"
+                            Width="{x:Static models:DesktopLayoutOptions.WelcomePanelMaximumWidth}"
+                            MaxWidth="{x:Static models:DesktopLayoutOptions.WelcomePanelMaximumWidth}"
                             Padding="18,11,18,12"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Top"
@@ -101,9 +105,10 @@
 
                     <Border x:Name="WelcomePrimaryActionsPanel"
                             Grid.Row="2"
-                            Width="452"
-                            MaxWidth="452"
+                            Width="{x:Static models:DesktopLayoutOptions.WelcomePanelMaximumWidth}"
+                            MaxWidth="{x:Static models:DesktopLayoutOptions.WelcomePanelMaximumWidth}"
                             MinHeight="96"
+                            SnapsToDevicePixels="True"
                             Padding="18,12"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Bottom"
