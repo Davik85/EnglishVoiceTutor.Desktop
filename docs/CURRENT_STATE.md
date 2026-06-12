@@ -55,6 +55,8 @@ Auth session persistence works across app restart and Windows restart. Installed
 
 The current tester build has verified lesson start, normal lesson chat, TTS/bot voice, Conversation Mode, Lesson History saving, and Progress. Learner runtime content still uses packaged static JSON by default.
 
+Early manual **Finish lesson** clicks during an active lesson now ask for confirmation so accidental clicks do not end the session. Forced/final **Finish lesson** after the lesson limit remains one-click, and this is a desktop UI safety fix only. No backend deploy, no DB migration, and no Windows upload are required until an installer is intentionally packaged and published.
+
 ## CMS/Admin and runtime content
 
 CMS/Admin is connected. The `static-json-v1` CMS content pack has been initialized as Draft/admin content. This initialization does not publish runtime content automatically and does not switch learner runtime.

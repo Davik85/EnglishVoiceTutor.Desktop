@@ -56,6 +56,8 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     private string selectedCustomContextTitle = string.Empty;
     private bool isTranscribingAudio;
     private bool hasFinishedLesson;
+    private bool isFinishLessonInProgress;
+    private bool isFinishLessonConfirmationOpen;
     private Guid? backendLessonSessionId;
     private bool backendLessonSessionFinished;
     private CancellationTokenSource? backendLessonHeartbeatCancellationTokenSource;
@@ -817,7 +819,11 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
 
     private bool CanFinishLesson()
     {
-        return !hasFinishedLesson && !IsSending && !IsRecording;
+        return !hasFinishedLesson
+            && !isFinishLessonInProgress
+            && !isFinishLessonConfirmationOpen
+            && !IsSending
+            && !IsRecording;
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleVoiceRecording))]
@@ -4623,6 +4629,21 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     [RelayCommand(CanExecute = nameof(CanFinishLesson))]
     private async Task FinishLesson()
     {
+        if (isFinishLessonInProgress || isFinishLessonConfirmationOpen)
+        {
+            RefreshAllCommandStates();
+            return;
+        }
+
+        if (ShouldConfirmManualEarlyFinish() && !ShowFinishLessonConfirmation())
+        {
+            RefreshAllCommandStates();
+            return;
+        }
+
+        isFinishLessonInProgress = true;
+        RefreshAllCommandStates();
+
         var operationStopwatch = StartUiOperationDiagnostics(
             "finish_lesson",
             UiOperationWarningThresholdMilliseconds,
@@ -4637,11 +4658,106 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         }
         finally
         {
+            isFinishLessonInProgress = false;
             CompleteUiOperationDiagnostics(
                 operationStopwatch,
                 "finish_lesson",
                 UiOperationWarningThresholdMilliseconds,
                 $"CurrentLessonPhase={CurrentLessonPhase}; ConversationModeState={CurrentConversationModeState}; HasFinishedLesson={hasFinishedLesson}");
+            RefreshAllCommandStates();
+        }
+    }
+
+    private bool ShouldConfirmManualEarlyFinish()
+    {
+        return !hasFinishedLesson
+            && !IsCompletedAwaitingFinish
+            && !IsLessonLimitReached
+            && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay);
+    }
+
+    private bool ShowFinishLessonConfirmation()
+    {
+        if (isFinishLessonConfirmationOpen)
+        {
+            return false;
+        }
+
+        isFinishLessonConfirmationOpen = true;
+        RefreshAllCommandStates();
+
+        try
+        {
+            var owner = Application.Current?.MainWindow;
+            var dialog = new Window
+            {
+                Title = localizedText.FinishLessonConfirmationTitle,
+                Owner = owner,
+                WindowStartupLocation = owner is null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                ResizeMode = ResizeMode.NoResize,
+                ShowInTaskbar = false,
+                MinWidth = 420,
+                MaxWidth = 560
+            };
+
+            var message = new TextBlock
+            {
+                Text = localizedText.FinishLessonConfirmationMessage,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 20)
+            };
+
+            var primaryButton = new Button
+            {
+                Content = localizedText.FinishLessonConfirmationConfirmButtonText,
+                MinWidth = 150,
+                Padding = new Thickness(12, 6, 12, 6),
+                Margin = new Thickness(8, 0, 0, 0),
+                IsDefault = true
+            };
+            var cancelButton = new Button
+            {
+                Content = localizedText.FinishLessonConfirmationCancelButtonText,
+                MinWidth = 150,
+                Padding = new Thickness(12, 6, 12, 6),
+                IsCancel = true
+            };
+
+            primaryButton.Click += (_, _) =>
+            {
+                dialog.DialogResult = true;
+                dialog.Close();
+            };
+            cancelButton.Click += (_, _) =>
+            {
+                dialog.DialogResult = false;
+                dialog.Close();
+            };
+
+            var buttons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+            buttons.Children.Add(cancelButton);
+            buttons.Children.Add(primaryButton);
+
+            dialog.Content = new StackPanel
+            {
+                Margin = new Thickness(24),
+                Children =
+                {
+                    message,
+                    buttons
+                }
+            };
+
+            return dialog.ShowDialog() == true;
+        }
+        finally
+        {
+            isFinishLessonConfirmationOpen = false;
             RefreshAllCommandStates();
         }
     }
