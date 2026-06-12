@@ -1,26 +1,22 @@
+using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
+using EnglishVoiceTutor.Desktop.Services;
 using EnglishVoiceTutor.Desktop.Models.Auth;
 
 namespace EnglishVoiceTutor.Desktop.Services.Auth;
 
 public sealed class AuthSessionStorageService
 {
-    private const string ProtectedPayloadPurpose = "EnglishVoiceTutor.Desktop.AuthSession.v1";
+    private const string ProtectedPayloadPurpose = "LanguageVoiceTutor.Desktop.AuthSession.v1";
 
     private static readonly string[] LegacyProtectedPayloadPurposes =
     [
-        "LanguageVoiceTutor.Desktop.AuthSession.v1",
+        "EnglishVoiceTutor.Desktop.AuthSession.v1",
         "Language Voice Tutor.AuthSession.v1"
-    ];
-
-    private static readonly string[] LegacyAppDataFolderNames =
-    [
-        "LanguageVoiceTutor.Desktop",
-        "Language Voice Tutor"
     ];
 
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web)
@@ -33,11 +29,8 @@ public sealed class AuthSessionStorageService
 
     public AuthSessionStorageService()
     {
-        var roamingAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var appSettingsDirectory = Path.Combine(roamingAppDataPath, StorageConstants.AppDataFolderName);
-        authSessionFilePath = Path.Combine(appSettingsDirectory, StorageConstants.AuthSessionFileName);
-        authSessionFilePaths = BuildSessionFilePathCandidates(roamingAppDataPath, localAppDataPath);
+        authSessionFilePath = LocalUserDataMigrationService.GetCurrentRoamingFilePath(StorageConstants.AuthSessionFileName);
+        authSessionFilePaths = LocalUserDataMigrationService.BuildFilePathCandidates(StorageConstants.AuthSessionFileName);
     }
 
     public string AuthSessionFilePath => authSessionFilePath;
@@ -141,6 +134,7 @@ public sealed class AuthSessionStorageService
             var migratedSession = await TryLoadSessionFileAsync(legacySessionFilePath, isCurrentPath: false, cancellationToken);
             if (migratedSession is not null)
             {
+                Debug.WriteLine("Auth session migration restored a legacy session to the current app-data path.");
                 await SaveAsync(migratedSession, cancellationToken);
                 return migratedSession;
             }
@@ -182,6 +176,7 @@ public sealed class AuthSessionStorageService
         }
         catch
         {
+            Debug.WriteLine("Auth session storage ignored an unreadable session file.");
             TryDeleteSessionFile(sessionFilePath);
             return null;
         }
@@ -240,29 +235,6 @@ public sealed class AuthSessionStorageService
         var entropy = Encoding.UTF8.GetBytes(purpose);
         var bytes = ProtectedData.Unprotect(protectedBytes, entropy, DataProtectionScope.CurrentUser);
         return Encoding.UTF8.GetString(bytes);
-    }
-
-    private static string[] BuildSessionFilePathCandidates(string roamingAppDataPath, string localAppDataPath)
-    {
-        var candidates = new List<string>
-        {
-            Path.Combine(roamingAppDataPath, StorageConstants.AppDataFolderName, StorageConstants.AuthSessionFileName)
-        };
-
-        foreach (var appDataRoot in new[] { roamingAppDataPath, localAppDataPath })
-        {
-            foreach (var legacyFolderName in LegacyAppDataFolderNames)
-            {
-                candidates.Add(Path.Combine(appDataRoot, legacyFolderName, StorageConstants.AuthSessionFileName));
-            }
-        }
-
-        candidates.Add(Path.Combine(localAppDataPath, StorageConstants.AppDataFolderName, StorageConstants.AuthSessionFileName));
-
-        return candidates
-            .Where(path => !string.IsNullOrWhiteSpace(path))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
     }
 
     private static void TryDeleteSessionFile(string sessionFilePath)

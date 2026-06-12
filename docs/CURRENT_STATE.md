@@ -24,7 +24,7 @@ Production backend health is currently healthy: `https://api.languagevoicetutor.
 
 Registration and login now work from installed tester/release builds against `https://api.languagevoicetutor.com`, including the current backend permission-fixed login path. Trial assignment is granted after registration. The desktop stores the authenticated session under the current user's app-data area with Windows DPAPI protection and does not store raw passwords. Logout clears persisted auth session data.
 
-Auth session persistence works across app restart and Windows restart. Update/reinstall behavior has been hardened by preserving and migrating known auth-session paths, and update/reinstall should preserve auth session, user settings, Lesson History, and Progress.
+Auth session persistence works across app restart and Windows restart. Installed file names were renamed to `LanguageVoiceTutor.Desktop.*`. Update from older builds must migrate preserved auth/session data from legacy `EnglishVoiceTutor.Desktop` local-data paths, and update/reinstall must preserve login, settings, Lesson History, and Progress. For policy tracking, update/reinstall should preserve auth session, user settings, Lesson History, and Progress.
 
 ## Lessons and learner runtime
 
@@ -79,7 +79,7 @@ Solved release blockers for the current private tester baseline:
 Remaining realistic readiness items:
 
 1. Run a clean-machine smoke test of the current installer and public download flow.
-2. Run update-over-existing-install validation for session/settings/history/progress preservation.
+2. Run update-over-existing-install validation from old `EnglishVoiceTutor.Desktop.*` executable builds and confirm preserved auth/session data migrates to the current `LanguageVoiceTutor.Desktop` local-data path without losing login, settings, Lesson History, or Progress.
 3. Keep app restart/session restore and Windows restart/session restore in tester smoke.
 4. Run smaller-screen/scaled-display smoke.
 5. Hand off to a small controlled external tester group.

@@ -19,6 +19,7 @@ public class LessonHistoryService
     };
 
     private readonly string historyFilePath;
+    private readonly string[] historyFilePathCandidates;
     private readonly AuthSessionStorageService authSessionStorageService;
 
     public LessonHistoryService()
@@ -29,11 +30,13 @@ public class LessonHistoryService
     public LessonHistoryService(AuthSessionStorageService authSessionStorageService)
     {
         this.authSessionStorageService = authSessionStorageService;
-        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        historyFilePath = Path.Combine(appDataPath, StorageConstants.AppDataFolderName, StorageConstants.LessonHistoryFileName);
+        historyFilePath = LocalUserDataMigrationService.GetCurrentRoamingFilePath(StorageConstants.LessonHistoryFileName);
+        historyFilePathCandidates = LocalUserDataMigrationService.BuildFilePathCandidates(StorageConstants.LessonHistoryFileName, includeLocalCurrentPath: false);
     }
 
     public string LessonHistoryFilePath => historyFilePath;
+
+    public IReadOnlyList<string> LessonHistoryFilePathCandidates => historyFilePathCandidates;
 
     public IReadOnlyList<LessonHistoryItem> Load()
     {
@@ -235,6 +238,11 @@ public class LessonHistoryService
 
     private IReadOnlyList<LessonHistoryItem> LoadRawItems()
     {
+        if (!File.Exists(historyFilePath))
+        {
+            LocalUserDataMigrationService.CopyFirstLegacyFileToCurrentWhenMissing(historyFilePath, historyFilePathCandidates, "lesson history");
+        }
+
         if (!File.Exists(historyFilePath))
         {
             return [];
