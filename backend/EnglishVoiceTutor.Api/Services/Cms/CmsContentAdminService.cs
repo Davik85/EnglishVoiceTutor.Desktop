@@ -394,7 +394,8 @@ public sealed partial class CmsContentAdminService(
                 Topics = validation.Counts.Topics,
                 Scenarios = validation.Counts.Scenarios,
                 PromptTemplates = validation.Counts.PromptTemplates,
-                TutorBehaviorProfiles = validation.Counts.TutorBehaviorProfiles
+                TutorBehaviorProfiles = validation.Counts.TutorBehaviorProfiles,
+                LevelProfiles = CmsLevelProfiles.RequiredLevelCount
             },
             Errors = validation.Errors,
             Warnings = validation.Warnings,
@@ -441,6 +442,9 @@ public sealed partial class CmsContentAdminService(
             .Take(PreviewSampleSize)
             .ToListAsync(cancellationToken);
 
+        var levelTemplate = await dbContext.PromptTemplates.AsNoTracking().Where(template => template.ContentPackId == summary.Id && template.TemplateKey == CmsContentConstants.PromptTemplateKeys.LevelProfiles).Select(template => template.Body).SingleOrDefaultAsync(cancellationToken);
+        var sampleLevelProfiles = CmsLevelProfiles.DeserializeOrDefaults(levelTemplate).OrderBy(level => level.SortOrder).Select(level => new CmsContentPreviewLevelProfileResponse { StableLevelKey = level.StableLevelKey, DisplayName = level.DisplayName, WrapUpAfterUserTurn = level.WrapUpAfterUserTurn, FinalMessageAtUserTurn = level.FinalMessageAtUserTurn, IsActive = level.IsActive }).ToList();
+
         var sampleScenarios = sampleScenarioRows.Select(scenario => new CmsContentPreviewScenarioSummaryResponse
             {
                 Id = scenario.Id,
@@ -462,6 +466,8 @@ public sealed partial class CmsContentAdminService(
             ScenarioCount = summary.ScenarioCount,
             PromptTemplateCount = summary.PromptTemplateCount,
             TutorBehaviorProfileCount = summary.TutorBehaviorProfileCount,
+            LevelProfileCount = sampleLevelProfiles.Count,
+            SampleLevelProfiles = sampleLevelProfiles,
             CurrentPublishedVersionNumber = summary.CurrentPublishedVersionNumber,
             SampleTopics = sampleTopics,
             SampleScenarios = sampleScenarios,

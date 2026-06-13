@@ -185,3 +185,12 @@ CmsContent__FallbackToStaticJson=true
 During the controlled window, confirm the backend release, health, database health, and that Admin CMS has a published version before applying temporary flags. After restart, runtime status must show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, and counts of 6 topics, 26 scenarios, 3 prompt templates, and 3 tutor behavior profiles. Run a short installed-app lesson smoke only if explicitly approved.
 
 Rollback is to disable or remove the temporary CMS runtime flags and restart the backend, then rerun the read-only status check and confirm `effectiveSource=StaticJson`. CMS runtime must not become the learner default until after this controlled validation passes and a separate enablement decision is approved. This process has no billing, Paddle, subscription, entitlement, installer, desktop runtime, lesson JSON, public `latest.json`, deployment-script, or EF migration involvement.
+
+## CMS-managed level profiles (A1-B2)
+
+- CMS now manages A1, A2, B1, and B2 level behavior profiles through the CMS Content **Levels** tab.
+- Level profiles include stable level keys, display names, active flags, sort order, wrap-up turn, final-message turn, language complexity guidance, correction guidance, answer-length guidance, and admin notes.
+- Lesson length defaults come from the selected level profile: A1 is configured for a shorter lesson around 15 learner turns, while B2 supports a longer dialogue.
+- Scenario-specific lesson length values remain optional overrides when explicitly set and valid. Priority is: scenario override, then CMS level profile, then safe backend constants.
+- Backend runtime content remains the source of truth for lesson behavior. Desktop may keep its current level labels for display, but desktop and future mobile should use backend runtime behavior from the CMS published snapshot.
+- Static JSON fallback remains available; fallback runtime also receives safe default level profiles.

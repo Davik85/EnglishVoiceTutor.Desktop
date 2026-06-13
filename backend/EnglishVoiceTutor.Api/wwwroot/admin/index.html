@@ -149,6 +149,7 @@
                             <button id="cms-sub-tab-button-overview" class="cms-sub-tab-button active" type="button" role="tab" aria-controls="cms-sub-panel-overview" aria-selected="true" data-cms-sub-tab-id="overview">Overview</button>
                             <button id="cms-sub-tab-button-topics" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-topics" aria-selected="false" data-cms-sub-tab-id="topics">Topics</button>
                             <button id="cms-sub-tab-button-scenarios" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-scenarios" aria-selected="false" data-cms-sub-tab-id="scenarios">Scenarios</button>
+                            <button id="cms-sub-tab-button-levels" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-levels" aria-selected="false" data-cms-sub-tab-id="levels">Levels</button>
                             <button id="cms-sub-tab-button-prompts" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-prompts" aria-selected="false" data-cms-sub-tab-id="prompts">Prompts</button>
                             <button id="cms-sub-tab-button-tutors" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-tutors" aria-selected="false" data-cms-sub-tab-id="tutors">Tutors</button>
                             <button id="cms-sub-tab-button-validation-preview" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-validation-preview" aria-selected="false" data-cms-sub-tab-id="validation-preview">Validation &amp; Preview</button>
@@ -295,6 +296,38 @@
                                         <div class="cms-button-row cms-advanced-json-save-row" data-cms-scenario-save-area="advanced-json"><button id="cms-scenario-save-button" type="submit">Save draft</button><button id="cms-scenario-reset-button" type="button">Reload selected</button><span id="cms-scenario-dirty-status" class="cms-dirty-status hidden" role="status">Unsaved changes</span></div>
                                         <div id="cms-scenario-json-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true" data-cms-publish-discovery-for="scenario-advanced-json" data-cms-scenario-draft-saved-visible="false"><span>Draft saved. To apply this content to runtime, publish the current draft.</span><span class="cms-visible-state-marker">Scenario draft saved locally.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
                                         <p id="cms-scenario-message" class="success" role="status"></p>
+                                    </form>
+                                </article>
+                            </div>
+                        </section>
+
+
+                        <section id="cms-sub-panel-levels" class="cms-sub-panel hidden" role="tabpanel" aria-labelledby="cms-sub-tab-button-levels" data-cms-sub-panel="levels">
+                            <article class="card cms-warning-card" aria-labelledby="cms-levels-heading">
+                                <h3 id="cms-levels-heading">Level profiles</h3>
+                                <p>CMS level profiles control new lesson behavior after publish. A1 can be shorter (around 15 learner turns) and B2 can support longer dialogue. Scenario-specific length fields are optional overrides; otherwise backend level settings are the source of truth for desktop and future mobile.</p>
+                            </article>
+                            <div class="cms-two-column">
+                                <article class="card cms-list-card" aria-labelledby="cms-levels-list-heading">
+                                    <h3 id="cms-levels-list-heading">Levels</h3>
+                                    <div id="cms-levels-list" class="table-wrap"></div>
+                                </article>
+                                <article class="card" aria-labelledby="cms-level-editor-heading">
+                                    <h3 id="cms-level-editor-heading">Selected level</h3>
+                                    <form id="cms-level-form" class="cms-editor-form cms-editor-form-top" novalidate>
+                                        <p id="cms-selected-level-identity" class="muted">None selected</p>
+                                        <div class="field"><label for="cms-level-display-name">Display name</label><input id="cms-level-display-name" type="text" /></div>
+                                        <div class="field"><label for="cms-level-sort-order">Sort order</label><input id="cms-level-sort-order" type="number" min="0" step="1" /></div>
+                                        <div class="field"><label for="cms-level-wrap-up-turn">Wrap up after learner turn</label><input id="cms-level-wrap-up-turn" type="number" min="1" step="1" /></div>
+                                        <div class="field"><label for="cms-level-final-turn">Final message at learner turn</label><input id="cms-level-final-turn" type="number" min="2" step="1" /></div>
+                                        <div class="field"><label for="cms-level-complexity-guidance">Bot language complexity guidance</label><textarea id="cms-level-complexity-guidance" rows="3"></textarea></div>
+                                        <div class="field"><label for="cms-level-correction-guidance">Correction guidance</label><textarea id="cms-level-correction-guidance" rows="3"></textarea></div>
+                                        <div class="field"><label for="cms-level-answer-guidance">Answer length guidance</label><textarea id="cms-level-answer-guidance" rows="3"></textarea></div>
+                                        <div class="field"><label for="cms-level-admin-notes">Admin notes</label><textarea id="cms-level-admin-notes" rows="2"></textarea></div>
+                                        <label class="checkbox-field"><input id="cms-level-is-active" type="checkbox" /> Active</label>
+                                        <div class="cms-button-row"><button id="cms-level-save-button" type="submit">Save draft</button><button id="cms-level-reset-button" type="button">Reload selected</button><span id="cms-level-dirty-status" class="cms-dirty-status hidden" role="status">Unsaved changes</span></div>
+                                        <p id="cms-level-message" class="success" role="status"></p>
+                                        <div id="cms-level-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true"><span>Level draft saved. Publish the current draft before new lessons use it.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
                                     </form>
                                 </article>
                             </div>

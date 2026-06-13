@@ -657,3 +657,12 @@ Backend `0.1.35-backend.8` has clean runtime status diagnostics in the deployed 
 `-GenerateServerValidationPlan` prints the exact temporary flags for an explicitly approved controlled window only: `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`. It also prints the operator checklist and rollback path. After applying the flags manually and restarting backend during the controlled window, runtime status must show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, 6 topics, 26 scenarios, 3 prompt templates, and 3 tutor behavior profiles. Rollback is to disable/remove the CMS runtime flags, restart backend, and confirm `effectiveSource=StaticJson`.
 
 CMS published-snapshot runtime must not become the learner default until controlled validation passes and a separate approval is made. Billing/Paddle remains deferred and is not involved; no production config file, public Windows `latest.json`, installer behavior, desktop runtime behavior, deployment script, lesson JSON, or EF migration is changed by this tooling/documentation step.
+
+## CMS-managed level profiles (A1-B2)
+
+- CMS now manages A1, A2, B1, and B2 level behavior profiles through the CMS Content **Levels** tab.
+- Level profiles include stable level keys, display names, active flags, sort order, wrap-up turn, final-message turn, language complexity guidance, correction guidance, answer-length guidance, and admin notes.
+- Lesson length defaults come from the selected level profile: A1 is configured for a shorter lesson around 15 learner turns, while B2 supports a longer dialogue.
+- Scenario-specific lesson length values remain optional overrides when explicitly set and valid. Priority is: scenario override, then CMS level profile, then safe backend constants.
+- Backend runtime content remains the source of truth for lesson behavior. Desktop may keep its current level labels for display, but desktop and future mobile should use backend runtime behavior from the CMS published snapshot.
+- Static JSON fallback remains available; fallback runtime also receives safe default level profiles.

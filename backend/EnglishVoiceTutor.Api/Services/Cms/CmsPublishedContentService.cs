@@ -146,6 +146,7 @@ public sealed class CmsPublishedContentService : ICmsPublishedContentService
         result.Summary.ScenarioCount = content.Scenarios.Count;
         result.Summary.PromptTemplateCount = content.PromptTemplates.Count;
         result.Summary.TutorBehaviorProfileCount = content.TutorBehaviorProfiles.Count;
+        result.Summary.LevelProfileCount = content.LevelProfiles.Count;
     }
 
     private static void ValidateMappedContent(CmsPublishedContentReadResult result, CmsPublishedLessonContent content)
@@ -169,6 +170,8 @@ public sealed class CmsPublishedContentService : ICmsPublishedContentService
         {
             result.Errors.Add($"{CmsContentConstants.ErrorCodes.RequiredContentMissing}: Published CMS content snapshot has no tutor behavior profiles.");
         }
+
+        CmsLevelProfiles.Validate(content.LevelProfiles, result.Errors, "Published level profiles");
 
         var topicKeys = content.Topics.Select(topic => topic.StableTopicKey).ToHashSet(StringComparer.Ordinal);
         foreach (var topic in content.Topics)

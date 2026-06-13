@@ -713,6 +713,21 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine(ActiveLevelProfileHeader);
         prompt.AppendLine($"- Selected level: {ChooseFirstNonEmpty(request.SelectedLevel, request.Level)}");
 
+        if (!string.IsNullOrWhiteSpace(request.LevelBotLanguageComplexityGuidance))
+        {
+            prompt.AppendLine($"- CMS language complexity guidance: {request.LevelBotLanguageComplexityGuidance}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.LevelCorrectionGuidance))
+        {
+            prompt.AppendLine($"- CMS correction guidance: {request.LevelCorrectionGuidance}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.LevelAnswerLengthGuidance))
+        {
+            prompt.AppendLine($"- CMS answer length guidance: {request.LevelAnswerLengthGuidance}");
+        }
+
         if (!string.IsNullOrWhiteSpace(request.ActiveLevelProfileDifficultyNotes))
         {
             prompt.AppendLine($"- Difficulty notes: {request.ActiveLevelProfileDifficultyNotes}");
@@ -938,6 +953,9 @@ public sealed class LessonPromptBuilder
             UserTurnNumber = request.LearnerTurnCount,
             SoftWrapUpAfterUserTurn = request.SoftLearnerTurnLimit,
             FinalMessageAtUserTurn = request.HardLearnerTurnLimit,
+            LevelBotLanguageComplexityGuidance = request.LevelBotLanguageComplexityGuidance,
+            LevelCorrectionGuidance = request.LevelCorrectionGuidance,
+            LevelAnswerLengthGuidance = request.LevelAnswerLengthGuidance,
             TargetLanguageKeyPhrases = request.TargetLanguageKeyPhrases,
             GrammarFocus = request.GrammarFocus,
             ConversationOpening = request.ConversationOpening,
