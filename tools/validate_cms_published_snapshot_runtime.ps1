@@ -71,43 +71,61 @@ function Write-ServerValidationPlan {
     Write-Host "CMS published-snapshot runtime validation plan" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Safety boundary:" -ForegroundColor Yellow
-    Write-Host "- This script does not change production configuration."
-    Write-Host "- Apply these flags only in an explicitly approved controlled window."
-    Write-Host "- Remove the flags and restart the backend immediately after validation."
-    Write-Host "- Do not make CMS published-snapshot runtime the learner default until this validation passes and a separate approval is made."
-    Write-Host ""
-    Write-Host "Temporary environment variables/config flags required:" -ForegroundColor Cyan
-    Write-Host "  CmsContent__UsePublishedSnapshotForRuntime=true"
-    Write-Host "  CmsContent__ReadPublishedSnapshotEnabled=true"
-    Write-Host "  CmsContent__ContentPackSlug=$ExpectedContentPackSlug"
-    Write-Host "  CmsContent__FallbackToStaticJson=true"
-    Write-Host ""
-    Write-Host "Operator checklist:" -ForegroundColor Cyan
-    Write-Host "  1. Confirm backend current release, for example: ssh <server-alias> \"readlink -f /opt/languagevoicetutor/backend/current\""
-    Write-Host "  2. Confirm health and database health:"
-    Write-Host "       Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing"
-    Write-Host "       Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing"
-    Write-Host "  3. Confirm Admin CMS has a published version for $ExpectedContentPackSlug."
-    Write-Host "  4. Apply the temporary CMS runtime flags only in the approved controlled window."
-    Write-Host "  5. Restart backend."
-    Write-Host "  6. Load runtime status with admin auth:"
-    Write-Host "       .\tools\validate_cms_published_snapshot_runtime.ps1 -AccessToken '<admin-token>'"
-    Write-Host "  7. Confirm effectiveSource=$ExpectedPublishedSource."
-    Write-Host "  8. Confirm validationSuccess=true."
-    Write-Host "  9. Confirm counts: topics=$($ExpectedCounts.topics), scenarios=$($ExpectedCounts.scenarios), promptTemplates=$($ExpectedCounts.promptTemplates), tutorBehaviorProfiles=$($ExpectedCounts.tutorBehaviorProfiles)."
-    Write-Host " 10. Run a short installed-app lesson smoke only if approved for the controlled window."
-    Write-Host " 11. Remove/disable the temporary CMS runtime flags."
-    Write-Host " 12. Restart backend."
-    Write-Host " 13. Confirm effectiveSource=$ExpectedDefaultSource again."
-    Write-Host ""
-    Write-Host "Rollback placeholders (do not paste secrets into docs or chat):" -ForegroundColor Cyan
-    Write-Host "  # Remove or set false in the approved server configuration mechanism:"
-    Write-Host "  CmsContent__UsePublishedSnapshotForRuntime=false"
-    Write-Host "  CmsContent__ReadPublishedSnapshotEnabled=false"
-    Write-Host "  # Keep or remove non-secret slug/fallback entries according to operator policy."
-    Write-Host "  # Restart the backend with the approved service command, then rerun the read-only status check."
-}
+    Write-Output @"
+- This script does not change production configuration.
+- This plan mode is offline: it does not call backend endpoints and does not require admin authentication.
+- Apply these flags only in an explicitly approved controlled window.
+- Remove the flags and restart the backend immediately after validation.
+- Do not make CMS published-snapshot runtime the learner default until this validation passes and a separate approval is made.
+"@
 
+    Write-Host "Temporary environment variables/config flags required:" -ForegroundColor Cyan
+    Write-Output @"
+  CmsContent__UsePublishedSnapshotForRuntime=true
+  CmsContent__ReadPublishedSnapshotEnabled=true
+  CmsContent__ContentPackSlug=$ExpectedContentPackSlug
+  CmsContent__FallbackToStaticJson=true
+"@
+
+    Write-Host "Operator checklist:" -ForegroundColor Cyan
+    Write-Output @"
+  1. Confirm backend current release, for example: ssh <server-alias> "readlink -f /opt/languagevoicetutor/backend/current"
+  2. Confirm health and database health:
+       Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
+       Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
+  3. Confirm Admin CMS has a published version for $ExpectedContentPackSlug.
+  4. Apply the temporary CMS runtime flags only in the approved controlled window.
+  5. Restart backend.
+  6. Load runtime status with admin auth:
+       .\tools\validate_cms_published_snapshot_runtime.ps1 -AccessToken '<admin-token>'
+  7. Confirm effectiveSource=$ExpectedPublishedSource.
+  8. Confirm validationSuccess=true.
+  9. Confirm counts: topics=$($ExpectedCounts.topics), scenarios=$($ExpectedCounts.scenarios), promptTemplates=$($ExpectedCounts.promptTemplates), tutorBehaviorProfiles=$($ExpectedCounts.tutorBehaviorProfiles).
+ 10. Run a short installed-app lesson smoke only if approved for the controlled window.
+ 11. Remove/disable the temporary CMS runtime flags.
+ 12. Restart backend.
+ 13. Confirm effectiveSource=$ExpectedDefaultSource again.
+"@
+
+    Write-Host "Expected validation results:" -ForegroundColor Cyan
+    Write-Output @"
+  effectiveSource=$ExpectedPublishedSource
+  validationSuccess=true
+  topics=$($ExpectedCounts.topics)
+  scenarios=$($ExpectedCounts.scenarios)
+  promptTemplates=$($ExpectedCounts.promptTemplates)
+  tutorBehaviorProfiles=$($ExpectedCounts.tutorBehaviorProfiles)
+"@
+
+    Write-Host "Rollback/disable steps (do not paste secrets into docs or chat):" -ForegroundColor Cyan
+    Write-Output @"
+  # Remove or set false in the approved server configuration mechanism:
+  CmsContent__UsePublishedSnapshotForRuntime=false
+  CmsContent__ReadPublishedSnapshotEnabled=false
+  # Keep or remove non-secret slug/fallback entries according to operator policy.
+  # Restart the backend with the approved service command, then rerun the read-only status check.
+"@
+}
 if ($GenerateServerValidationPlan) {
     Write-ServerValidationPlan
     exit 0

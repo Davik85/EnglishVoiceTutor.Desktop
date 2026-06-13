@@ -173,7 +173,7 @@ Generate the explicit operator plan:
 powershell -ExecutionPolicy Bypass -File .\tools\validate_cms_published_snapshot_runtime.ps1 -GenerateServerValidationPlan
 ```
 
-The plan prints the temporary flags for an explicitly approved controlled server validation window only:
+The plan mode is offline and print-only: it must complete without admin auth, must not call backend endpoints, must not change configuration, and must not restart services. It prints the temporary flags for an explicitly approved controlled server validation window only:
 
 ```text
 CmsContent__UsePublishedSnapshotForRuntime=true
