@@ -1,6 +1,6 @@
 # Command Playbook
 
-Review date: 2026-06-12.
+Review date: 2026-06-13.
 
 ## Source of truth for current versions
 
@@ -32,20 +32,20 @@ Generated local files under `artifacts/` are not proof that a version is live on
 Example package command for the current backend snapshot:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.3
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.6
 ```
 
 Example upload/restart command for a reviewed backend-only deploy:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-backend.3 `
+  -Version 0.1.35-backend.6 `
   -PackageFirst
 ```
 
-Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.3`, no EF migration was needed and no Windows installer upload was performed.
+Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.6`, no EF migration was needed and no Windows installer upload was performed. Backend deploys do not upload Windows installer files and do not change `latest.json`.
 
-Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2`.
+Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.5`.
 
 ## Downloaded update installer cleanup
 
@@ -63,3 +63,63 @@ Remove-Item "$env:LOCALAPPDATA\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetu
 ```
 
 Release/tester installed builds are server-only and use `https://api.languagevoicetutor.com`; Local backend URLs are DEBUG/developer-only.
+
+## Admin CMS browser verification checks
+
+Use these checks after a backend deploy that changes `/admin` static assets. They do not replace manual browser verification, but they confirm the deployed shell references the expected cache-busted assets and readable Validation & Preview renderers.
+
+Fetch `/admin/` with a cache-busting query:
+
+```powershell
+Invoke-WebRequest "https://api.languagevoicetutor.com/admin/?v=admin-cms-20260613-raw-json-fix" -UseBasicParsing
+```
+
+Verify the `admin.js` and `admin.css` version token is present in the Admin shell:
+
+```powershell
+(Invoke-WebRequest "https://api.languagevoicetutor.com/admin/?v=admin-cms-20260613-raw-json-fix" -UseBasicParsing).Content | Select-String "admin-cms-20260613-raw-json-fix"
+```
+
+Fetch `admin.js` with a cache-busting query:
+
+```powershell
+Invoke-WebRequest "https://api.languagevoicetutor.com/admin/admin.js?v=admin-cms-20260613-raw-json-fix" -UseBasicParsing
+```
+
+Verify `renderCmsValidationResult` exists:
+
+```powershell
+(Invoke-WebRequest "https://api.languagevoicetutor.com/admin/admin.js?v=admin-cms-20260613-raw-json-fix" -UseBasicParsing).Content | Select-String "renderCmsValidationResult"
+```
+
+Verify `renderCmsPreviewSummary` exists:
+
+```powershell
+(Invoke-WebRequest "https://api.languagevoicetutor.com/admin/admin.js?v=admin-cms-20260613-raw-json-fix" -UseBasicParsing).Content | Select-String "renderCmsPreviewSummary"
+```
+
+Verify the collapsed raw validation JSON label exists:
+
+```powershell
+(Invoke-WebRequest "https://api.languagevoicetutor.com/admin/admin.js?v=admin-cms-20260613-raw-json-fix" -UseBasicParsing).Content | Select-String "Show raw validation JSON"
+```
+
+Verify the collapsed raw preview JSON label exists:
+
+```powershell
+(Invoke-WebRequest "https://api.languagevoicetutor.com/admin/admin.js?v=admin-cms-20260613-raw-json-fix" -UseBasicParsing).Content | Select-String "Show raw preview JSON"
+```
+
+Manual browser check:
+
+1. Login to `/admin`.
+2. Open **CMS Content**.
+3. Open `static-json-v1`.
+4. Run Validation.
+5. Load Preview summary.
+6. Confirm the UI is readable.
+7. Confirm raw JSON appears only inside collapsed details blocks.
+
+Current state: backend `0.1.35-backend.6` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.5`.
+
+Do not enable by default: these checks do not enable CMS published-snapshot runtime for learners. Learners still use packaged static JSON by default unless a separate controlled runtime-read validation and enablement decision is made.

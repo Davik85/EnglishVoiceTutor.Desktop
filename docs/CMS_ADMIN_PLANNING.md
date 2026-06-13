@@ -1,6 +1,6 @@
 # CMS / Admin Planning
 
-Review date: 2026-06-06.
+Review date: 2026-06-13.
 
 ## Current product decision
 
@@ -193,3 +193,38 @@ Structured scenario editor update: the Admin CMS Scenarios subtab now includes a
 ## Runtime published snapshot integration guardrails
 
 The CMS runtime read path is intentionally controlled and reversible. Static JSON remains default, and CMS runtime content is not enabled unless `CmsContent:UsePublishedSnapshotForRuntime=true` is set alongside `CmsContent:ReadPublishedSnapshotEnabled=true`. Runtime reads only immutable published snapshots for `CmsContent:ContentPackSlug` (`static-json-v1` by default), never draft content. Scenario `DefinitionJson` is carried through the published snapshot so structured scenario fields and unknown advanced JSON fields remain available to runtime logic. If the selected snapshot is missing or invalid, fallback to static JSON occurs only when `CmsContent:FallbackToStaticJson=true`; otherwise diagnostics report a server-side content error rather than silently serving broken CMS content. Logs and diagnostics expose source, slug, version, snapshot hash, counts, fallback state, validation status, and bounded errors/warnings only.
+
+## 2026-06-13 update — CMS connection readiness
+
+### Completed
+
+- Readable Validation & Preview UI is complete for the deployed Admin CMS. Validation now shows Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON instead of dumping raw JSON in the main result area. Preview now shows readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON.
+- Admin static asset cache busting and no-cache behavior are complete for `/admin` assets. `admin.js` and `admin.css` use the `admin-cms-20260613-raw-json-fix` version token, and no-cache headers apply to `/admin` static files only.
+- Backend `0.1.35-backend.6` is the deployed backend containing the latest Admin CMS UI/cache fixes. The current backend symlink points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.6`; rollback reference is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.5`.
+- Health and database health are green after deploy. Build is green. Admin shell audit is green. EF model check reports no pending model changes. No EF migration was required.
+
+### Current state
+
+The Admin CMS is ready for practical workflow validation. It is not yet approved for automatic learner runtime use. Learner runtime remains packaged static JSON by default, and CMS published-snapshot runtime remains disabled/not default unless explicitly enabled and validated later.
+
+### Next safe step
+
+Move from Admin CMS foundation/UI cleanup to CMS connection readiness:
+
+1. Verify publish and restore safety with `static-json-v1`.
+2. Confirm audit traceability for safe draft edits, publish, and restore actions.
+3. Add or confirm runtime-read diagnostics for source, slug, version, snapshot hash, fallback state, validation status, and bounded errors/warnings.
+4. Validate the published-snapshot runtime path only in a controlled development environment or explicitly approved environment.
+5. Keep rollback to static JSON documented and tested.
+
+### Not ready yet
+
+- Production RBAC remains future work.
+- Critical-change approval remains future work.
+- Full Admin CMS production readiness remains future work.
+- Billing and Paddle are outside CMS scope and remain deferred.
+- Broad public production release is not ready.
+
+### Do not enable by default
+
+Do not make CMS published-snapshot runtime the learner default during this readiness step. Keep static JSON as the learner default until the published-snapshot path is explicitly validated, rollback/disable instructions are documented, and a separate enablement decision is made.
