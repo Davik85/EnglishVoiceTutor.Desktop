@@ -641,3 +641,9 @@ The Admin CMS foundation is usable enough to move from UI/foundation cleanup int
 ### Do not enable by default
 
 Do not enable CMS published-snapshot runtime for learner traffic by default during this milestone. Make any runtime-read test controlled, explicitly configured, reversible, and backed by static JSON fallback.
+
+## Step 5D-7 update — Runtime status readiness without default enablement
+
+Step 5D-7 prepares the published-snapshot runtime read path for controlled validation without enabling CMS runtime content by default. The existing runtime service already chooses static JSON when `CmsContent:UsePublishedSnapshotForRuntime` is false, reads immutable published snapshots only when explicitly enabled, and falls back to static JSON when configured.
+
+The Admin CMS now includes a read-only **Runtime content status** panel backed by `GET /api/admin/dev/cms/runtime-status`. The response is restricted to safe metadata and bounded diagnostics; it does not expose scenario definitions, prompt bodies, tutor instruction bodies, secrets, tokens, API keys, connection strings, or auth headers. Static JSON remains the default. Next, run controlled environment validation with `CmsContent:UsePublishedSnapshotForRuntime=true`, `CmsContent:ReadPublishedSnapshotEnabled=true`, `CmsContent:ContentPackSlug=static-json-v1`, and `CmsContent:FallbackToStaticJson=true`, then decide separately whether to enable CMS runtime for a limited learner/tester group.

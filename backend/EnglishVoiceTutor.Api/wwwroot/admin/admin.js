@@ -25,7 +25,8 @@
         cmsPublishTemplate: "/api/admin/dev/cms/content-packs/{slug}/publish",
         cmsRestoreTemplate: "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore",
         cmsAuditEntriesTemplate: "/api/admin/dev/cms/content-packs/{slug}/audit-entries",
-        cmsStaticJsonV1Initialize: "/api/admin/dev/cms/content-packs/static-json-v1/initialize-from-static-json"
+        cmsStaticJsonV1Initialize: "/api/admin/dev/cms/content-packs/static-json-v1/initialize-from-static-json",
+        cmsRuntimeStatus: "/api/admin/dev/cms/runtime-status"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
@@ -255,6 +256,8 @@
     const cmsValidationResultElement = document.getElementById("cms-validation-result");
     const cmsLoadPreviewButton = document.getElementById("cms-load-preview-button");
     const cmsPreviewSummaryElement = document.getElementById("cms-preview-summary");
+    const cmsLoadRuntimeStatusButton = document.getElementById("cms-load-runtime-status-button");
+    const cmsRuntimeStatusElement = document.getElementById("cms-runtime-status");
     const cmsLoadVersionsButton = document.getElementById("cms-load-versions-button");
     const cmsPublishChangeSummaryInput = document.getElementById("cms-publish-change-summary");
     const cmsPublishErrorDetailsElement = document.getElementById("cms-publish-error-details");
@@ -1157,6 +1160,48 @@
         appendCmsMessageList(cmsValidationResultElement, "Warnings", getCmsResponseArray(validation, "warnings"), "No warnings");
         appendCmsRawJsonDetails(cmsValidationResultElement, "Show raw validation JSON", validation);
     }
+
+    function renderCmsRuntimeStatus(status) {
+        cmsRuntimeStatusElement.textContent = "";
+        cmsRuntimeStatusElement.className = "cms-result-panel cms-readable-result-panel";
+        const effectiveSource = String(getCmsResponseValue(status, "effectiveSource", getCmsResponseValue(status, "source", "")) || "");
+        const flagsEnabled = Boolean(getCmsResponseValue(status, "usePublishedSnapshotForRuntime", false)) && Boolean(getCmsResponseValue(status, "readPublishedSnapshotEnabled", false));
+        const fallbackUsed = Boolean(getCmsResponseValue(status, "fallbackUsed", false));
+        let headline = "Learner runtime still uses static JSON by default";
+        let positive = !flagsEnabled || effectiveSource === "StaticJson";
+        if (fallbackUsed) { headline = "Fallback to static JSON is active"; positive = true; }
+        else if (flagsEnabled && effectiveSource === "CmsPublishedSnapshot") { headline = "CMS published snapshot is active"; positive = true; }
+        const titleRow = document.createElement("div");
+        titleRow.className = "cms-result-title-row cms-status-row";
+        const title = document.createElement("h4");
+        title.textContent = headline;
+        titleRow.appendChild(title);
+        appendCmsStatusBadge(titleRow, getCmsResponseValue(status, "validationSuccess", false) ? "Validated" : "Needs attention", positive);
+        cmsRuntimeStatusElement.appendChild(titleRow);
+        const message = document.createElement("p");
+        message.className = "muted";
+        message.textContent = getCmsResponseValue(status, "message", "Runtime status loaded. No content bodies are displayed.");
+        cmsRuntimeStatusElement.appendChild(message);
+        appendCmsDefinitionList(cmsRuntimeStatusElement, [
+            { label: "Checked at (UTC)", value: getCmsResponseValue(status, "checkedAtUtc") },
+            { label: "Content pack slug", value: getCmsResponseValue(status, "contentPackSlug") },
+            { label: "Use published snapshot for runtime", value: getCmsResponseValue(status, "usePublishedSnapshotForRuntime") },
+            { label: "Read published snapshot enabled", value: getCmsResponseValue(status, "readPublishedSnapshotEnabled") },
+            { label: "Fallback to static JSON", value: getCmsResponseValue(status, "fallbackToStaticJson") },
+            { label: "Effective source", value: effectiveSource },
+            { label: "Published version number", value: getCmsResponseValue(status, "publishedVersionNumber") },
+            { label: "Snapshot hash", value: getCmsResponseValue(status, "snapshotHash") },
+            { label: "Topics", value: getCmsResponseValue(status, "topicCount") },
+            { label: "Scenarios", value: getCmsResponseValue(status, "scenarioCount") },
+            { label: "Prompt templates", value: getCmsResponseValue(status, "promptTemplateCount") },
+            { label: "Tutor behavior profiles", value: getCmsResponseValue(status, "tutorBehaviorProfileCount") },
+            { label: "Validation success", value: getCmsResponseValue(status, "validationSuccess") },
+            { label: "Fallback used", value: fallbackUsed }
+        ]);
+        appendCmsMessageList(cmsRuntimeStatusElement, "Errors", getCmsResponseArray(status, "errors"), "No errors", true);
+        appendCmsMessageList(cmsRuntimeStatusElement, "Warnings", getCmsResponseArray(status, "warnings"), "No warnings");
+    }
+
     function renderCmsPreviewSummary(preview) {
         cmsPreviewSummaryElement.textContent = "";
         cmsPreviewSummaryElement.className = "cms-result-panel cms-readable-result-panel";
@@ -1665,6 +1710,20 @@
             return null;
         }
     }
+    async function loadCmsRuntimeStatus() {
+        setCmsError("");
+        try {
+            const status = await adminFetch(ApiPaths.cmsRuntimeStatus);
+            renderCmsRuntimeStatus(status);
+            return status;
+        }
+        catch (error) {
+            clearCmsResultPanel(cmsRuntimeStatusElement, "Runtime status could not be loaded.");
+            handleCmsError(error);
+            return null;
+        }
+    }
+
     async function loadCmsPreviewSummary() {
         setCmsError("");
         try {
@@ -1812,6 +1871,7 @@
     cmsTutorProfileResetButton.addEventListener("click", async () => { if (cmsSelectedTutorProfile) { await selectCmsTutorProfile(cmsSelectedTutorProfile); } });
     cmsRunValidationButton.addEventListener("click", async () => { await runCmsValidation(); });
     cmsLoadPreviewButton.addEventListener("click", async () => { await loadCmsPreviewSummary(); });
+    cmsLoadRuntimeStatusButton.addEventListener("click", async () => { await loadCmsRuntimeStatus(); });
     cmsLoadVersionsButton.addEventListener("click", async () => { try { await loadCmsVersions(); setCmsSuccess("CMS versions loaded."); } catch (error) { handleCmsError(error); } });
     cmsPublishChangeSummaryInput.addEventListener("input", () => { clearCmsPublishErrorDetails(); setCmsError(""); });
     cmsLoadAuditButton.addEventListener("click", async () => { await loadCmsAuditEntries(); });

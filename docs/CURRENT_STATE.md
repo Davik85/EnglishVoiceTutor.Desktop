@@ -132,3 +132,9 @@ Remaining realistic readiness items:
 Do not state that the product is fully public production-ready. The current state is a validated private tester/direct Windows release.
 
 - Lesson Chat UI polish: Finish confirmation typography improved, Start recording is green, Hint uses hint-color styling.
+
+## CMS runtime status diagnostics
+
+Completed: the backend has an admin-only, read-only CMS runtime content status diagnostic at `GET /api/admin/dev/cms/runtime-status` (legacy alias: `/api/admin/dev/cms/runtime-content/status`). It reports safe metadata only: source, content pack slug, CMS runtime flags, fallback state, published version/hash when applicable, content counts, validation state, and bounded errors/warnings. It does not return lesson bodies, scenario `DefinitionJson`, prompt bodies, tutor instruction bodies, secrets, tokens, API keys, connection strings, or auth headers.
+
+This diagnostic does not enable CMS runtime content. Static JSON remains the learner runtime default unless `CmsContent:UsePublishedSnapshotForRuntime=true`, `CmsContent:ReadPublishedSnapshotEnabled=true`, `CmsContent:ContentPackSlug=static-json-v1`, and `CmsContent:FallbackToStaticJson=true` are explicitly configured in a controlled environment. The next step is controlled environment validation with those explicit flags, followed by a separate decision on whether to enable CMS runtime for a limited learner/tester group.
