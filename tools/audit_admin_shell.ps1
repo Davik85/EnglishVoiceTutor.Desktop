@@ -58,6 +58,43 @@ $requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "t
 
 function Add-Error([string]$message) { $errors.Add($message) }
 
+function Get-JsFunctionBody([string]$content, [string]$signature) {
+    $start = $content.IndexOf($signature, [System.StringComparison]::Ordinal)
+    if ($start -lt 0) { return $null }
+    $braceStart = $content.IndexOf("{", $start, [System.StringComparison]::Ordinal)
+    if ($braceStart -lt 0) { return $null }
+    $depth = 0
+    for ($index = $braceStart; $index -lt $content.Length; $index++) {
+        $character = $content[$index]
+        if ($character -eq '{') { $depth++ }
+        elseif ($character -eq '}') {
+            $depth--
+            if ($depth -eq 0) {
+                return $content.Substring($braceStart + 1, $index - $braceStart - 1)
+            }
+        }
+    }
+    return $null
+}
+
+function Assert-NoDirectValidationPreviewJsonRendering([string]$functionBody, [string]$functionName) {
+    if ($null -eq $functionBody) {
+        Add-Error "admin.js: missing function body for $functionName."
+        return
+    }
+    foreach ($forbiddenPattern in @(
+        'renderJsonOutput\s*\(',
+        'JSON\.stringify\s*\(',
+        '\.textContent\s*=\s*JSON\.stringify',
+        '\.innerText\s*=\s*JSON\.stringify',
+        '\.append\s*\([^)]*JSON\.stringify'
+    )) {
+        if ([regex]::IsMatch($functionBody, $forbiddenPattern)) {
+            Add-Error "admin.js: $functionName must not render JSON directly in the Validation & Preview result area (matched '$forbiddenPattern')."
+        }
+    }
+}
+
 function Assert-ContainsOnceById {
     param([hashtable]$idCounts, [string]$id)
     $matchCount = 0
@@ -115,6 +152,15 @@ if (-not (Test-Path -LiteralPath $indexPath)) {
     foreach ($validationPreviewMarker in @('Draft validation and preview only', 'does not publish content', 'does not enable CMS content for learners', 'does not change learner runtime behavior', 'Run validation', 'Load preview summary')) {
         if ($indexContent.IndexOf($validationPreviewMarker, [System.StringComparison]::Ordinal) -lt 0) {
             Add-Error "index.html: missing Validation & Preview marker '$validationPreviewMarker'."
+        }
+    }
+
+    foreach ($resultContainerPattern in @(
+        'id="cms-validation-result"[^>]*class="[^"]*cms-json-output',
+        'id="cms-preview-summary"[^>]*class="[^"]*cms-json-output'
+    )) {
+        if ([regex]::IsMatch($indexContent, $resultContainerPattern)) {
+            Add-Error "index.html: Validation & Preview root result containers must not use cms-json-output."
         }
     }
 
@@ -191,11 +237,18 @@ if (-not (Test-Path -LiteralPath $jsPath)) {
             Add-Error "admin.js: missing readable Validation & Preview marker '$validationPreviewJsMarker'."
         }
     }
-    $runValidationIndex = $jsContent.IndexOf("async function runCmsValidation()", [System.StringComparison]::Ordinal)
-    $loadPreviewIndex = $jsContent.IndexOf("async function loadCmsPreviewSummary()", [System.StringComparison]::Ordinal)
-    $renderJsonIndex = $jsContent.IndexOf("renderJsonOutput", [System.StringComparison]::Ordinal)
-    if ($renderJsonIndex -ge 0 -and (($runValidationIndex -ge 0 -and $renderJsonIndex -gt $runValidationIndex -and ($loadPreviewIndex -lt 0 -or $renderJsonIndex -lt $loadPreviewIndex)) -or ($loadPreviewIndex -ge 0 -and $renderJsonIndex -gt $loadPreviewIndex))) {
-        Add-Error "admin.js: Validation & Preview request handlers must not call renderJsonOutput directly."
+    $runValidationBody = Get-JsFunctionBody -content $jsContent -signature "async function runCmsValidation()"
+    $loadPreviewBody = Get-JsFunctionBody -content $jsContent -signature "async function loadCmsPreviewSummary()"
+    Assert-NoDirectValidationPreviewJsonRendering -functionBody $runValidationBody -functionName "runCmsValidation"
+    Assert-NoDirectValidationPreviewJsonRendering -functionBody $loadPreviewBody -functionName "loadCmsPreviewSummary"
+    foreach ($rendererMarker in @(
+        'appendCmsRawJsonDetails(cmsValidationResultElement, "Show raw validation JSON", validation)',
+        'appendCmsRawJsonDetails(cmsPreviewSummaryElement, "Show raw preview JSON", preview)',
+        'raw.textContent = JSON.stringify(payload, null, 2)'
+    )) {
+        if ($jsContent.IndexOf($rendererMarker, [System.StringComparison]::Ordinal) -lt 0) {
+            Add-Error "admin.js: missing collapsed raw JSON renderer marker '$rendererMarker'."
+        }
     }
     foreach ($forbiddenToken in $forbiddenJsStorageTokens) {
         if ($jsContent.IndexOf($forbiddenToken, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
