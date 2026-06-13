@@ -153,7 +153,13 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             lessonReply = CreateSafeFallbackLessonReply(request);
         }
 
-        var guardedReply = _tutorIdentityGuard.PreventWrongTutorSelfIntroduction(lessonReply, _avatarProfileProvider.GetById(request.TutorAvatarId), operation);
+        var guardTutorProfile = _avatarProfileProvider.GetById(request.TutorAvatarId);
+        if (!string.IsNullOrWhiteSpace(request.TutorDisplayName))
+        {
+            guardTutorProfile.DisplayName = request.TutorDisplayName.Trim();
+        }
+
+        var guardedReply = _tutorIdentityGuard.PreventWrongTutorSelfIntroduction(lessonReply, guardTutorProfile, operation);
         var isEnglishTargetLanguage = string.IsNullOrWhiteSpace(request.TargetLanguageId)
             || string.Equals(request.TargetLanguageId, "en", StringComparison.OrdinalIgnoreCase);
         if (AssistantOutputLanguageGuard.IsLanguageSwitchRequest(request.UserMessage)

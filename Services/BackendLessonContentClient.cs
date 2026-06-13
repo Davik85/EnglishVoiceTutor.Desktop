@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
+using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Desktop.Services.Auth;
 
@@ -37,6 +38,29 @@ public sealed class BackendLessonContentClient
             return await response.Content.ReadFromJsonAsync<LessonScenario>(JsonOptions, cancellationToken);
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException or NotSupportedException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    public async Task<IReadOnlyList<RuntimeTutorOption>?> GetRuntimeTutorOptionsAsync(string? backendBaseUrl, CancellationToken cancellationToken = default)
+    {
+        using var httpClient = CreateHttpClient();
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.RuntimeTutorOptionsEndpoint));
+            var authSession = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
+            AuthenticatedRequestHelper.AddBearerTokenIfPresent(request, authSession?.AccessToken);
+
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            return await response.Content.ReadFromJsonAsync<List<RuntimeTutorOption>>(JsonOptions, cancellationToken);
+        }
+        catch (Exception)
         {
             return null;
         }

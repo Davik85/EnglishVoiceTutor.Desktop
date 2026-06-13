@@ -35,7 +35,7 @@ public sealed class LessonPromptBuilder
     public string BuildInput(LessonChatRequest request)
     {
         var prompt = new StringBuilder();
-        var avatarProfile = _avatarProfileProvider.GetById(request.TutorAvatarId);
+        var avatarProfile = ResolveRequestTutorProfile(request, _avatarProfileProvider.GetById(request.TutorAvatarId));
 
         AppendLessonContext(prompt, request, avatarProfile);
         AppendTargetStudyLanguage(prompt, request);
@@ -284,7 +284,7 @@ public sealed class LessonPromptBuilder
     public string BuildHintInput(LessonChatRequest request)
     {
         var prompt = new StringBuilder();
-        var avatarProfile = _avatarProfileProvider.GetById(request.TutorAvatarId);
+        var avatarProfile = ResolveRequestTutorProfile(request, _avatarProfileProvider.GetById(request.TutorAvatarId));
 
         AppendLessonContext(prompt, request, avatarProfile, includeNativeLanguage: false);
         AppendCanonicalTeachingPolicy(prompt, request, avatarProfile, NormalChatMode);
@@ -469,6 +469,7 @@ public sealed class LessonPromptBuilder
 
     private static void AppendTutorIdentityRules(StringBuilder prompt, TutorAvatarProfile avatarProfile)
     {
+        prompt.AppendLine($"- Your current tutor display name is: {avatarProfile.DisplayName}. Use this name when introducing yourself.");
         prompt.AppendLine($"- You are {avatarProfile.DisplayName}.");
         prompt.AppendLine($"- If the learner asks your name, answer with \"I'm {avatarProfile.DisplayName}.\"");
         prompt.AppendLine($"- If you introduce yourself by name, use only this exact tutor name: {avatarProfile.DisplayName}.");
@@ -877,6 +878,28 @@ public sealed class LessonPromptBuilder
     }
 
 
+
+    private static TutorAvatarProfile ResolveRequestTutorProfile(LessonChatRequest request, TutorAvatarProfile fallbackProfile)
+    {
+        if (string.IsNullOrWhiteSpace(request.TutorDisplayName))
+        {
+            return fallbackProfile;
+        }
+
+        return new TutorAvatarProfile
+        {
+            Id = fallbackProfile.Id,
+            DisplayName = request.TutorDisplayName.Trim(),
+            Age = fallbackProfile.Age,
+            HomeCity = fallbackProfile.HomeCity,
+            CountryOrRegion = fallbackProfile.CountryOrRegion,
+            Studies = fallbackProfile.Studies,
+            Hobbies = fallbackProfile.Hobbies,
+            CommunicationStyle = fallbackProfile.CommunicationStyle,
+            SpeakingRules = fallbackProfile.SpeakingRules,
+            IdentityRules = fallbackProfile.IdentityRules
+        };
+    }
 
     private static TutorAvatarProfile CreateRealtimeTutorProfile(RealtimeVoiceSessionStartRequest request, TutorAvatarProfile fallbackProfile)
     {

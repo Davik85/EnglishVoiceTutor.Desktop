@@ -50,6 +50,7 @@ public static class BackendConstants
     public const string DevLessonContentScenarioEndpointTemplate = "/api/dev/lesson-content/scenarios/{0}";
     public const string MeLessonSessionsEndpoint = "/api/me/lesson-sessions";
     public const string MeLessonContentScenarioEndpointTemplate = "/api/me/lesson-content/scenarios/{0}";
+    public const string RuntimeTutorOptionsEndpoint = "/api/tutor-options";
     public const string DevLessonSessionFinishEndpointTemplate = "/api/dev/lesson-sessions/{0}/finish";
     public const string MeLessonSessionFinishEndpointTemplate = "/api/me/lesson-sessions/{0}/finish";
     public const string LessonSessionHeartbeatEndpointTemplate = "/api/lesson-sessions/{0}/heartbeat";
