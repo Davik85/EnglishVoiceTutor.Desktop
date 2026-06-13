@@ -51,10 +51,10 @@ $requiredJsEndpoints = @(
     "/api/admin/dev/cms/content-packs/{slug}/validate", "/api/admin/dev/cms/content-packs/{slug}/preview-summary", "/api/admin/dev/cms/content-packs/{slug}/versions", "/api/admin/dev/cms/content-packs/{slug}/publish", "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore", "/api/admin/dev/cms/content-packs/{slug}/audit-entries"
 )
 $requiredJsLookupRefs = @("user-lookup", "premium", "free-lesson", "cms-content")
-$requiredJsFunctionRefs = @("updateSelectedUserHeader", "updateUserRequiredEmptyStates", "applySelectedUserPayload", "clearSelectedUserState", "selectCmsSubTab", "loadCmsContentPacks", "renderCmsContentPackSummary", "renderCmsTopicsTable", "renderCmsScenariosTable", "renderCmsPromptTemplatesTable", "renderCmsTutorProfilesTable", "validateCmsStructuredScenarioInput", "mergeCmsStructuredScenarioFieldsToDefinition", "runCmsValidation", "loadCmsPreviewSummary", "loadCmsVersions", "publishCmsDraft", "restoreCmsVersion", "loadCmsAuditEntries", "renderCmsAuditEntries", "goToCmsPublishSection", "showScenarioDraftSavedPublishCallouts", "extractCmsBackendMessages", "renderCmsPublishErrorDetails", "clearCmsPublishErrorDetails", "isCmsSmokeAuditEntry", "shouldShowCmsSmokeAuditEntries")
+$requiredJsFunctionRefs = @("updateSelectedUserHeader", "updateUserRequiredEmptyStates", "applySelectedUserPayload", "clearSelectedUserState", "selectCmsSubTab", "loadCmsContentPacks", "renderCmsContentPackSummary", "renderCmsTopicsTable", "renderCmsScenariosTable", "renderCmsPromptTemplatesTable", "renderCmsTutorProfilesTable", "validateCmsStructuredScenarioInput", "mergeCmsStructuredScenarioFieldsToDefinition", "runCmsValidation", "loadCmsPreviewSummary", "renderCmsValidationResult", "renderCmsPreviewSummary", "appendCmsRawJsonDetails", "getCmsResponseValue", "loadCmsVersions", "publishCmsDraft", "restoreCmsVersion", "loadCmsAuditEntries", "renderCmsAuditEntries", "goToCmsPublishSection", "showScenarioDraftSavedPublishCallouts", "extractCmsBackendMessages", "renderCmsPublishErrorDetails", "clearCmsPublishErrorDetails", "isCmsSmokeAuditEntry", "shouldShowCmsSmokeAuditEntries")
 $forbiddenJsStorageTokens = @("localStorage", "sessionStorage")
 
-$requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "tab-panel", "selected-user-summary", "empty-state-card", "compact-table", "cms-grid-two", "cms-toolbar", "cms-result-panel", "cms-raw-json-details", "cms-section-header", "cms-sub-tabs", "cms-sub-tab-button", "cms-sub-panel", "cms-workspace-grid", "cms-json-output", "cms-selectable-row", "cms-selected-row", "cms-action-column", "cms-select-button", "cms-scenario-structured-editor", "cms-fieldset", "cms-publish-discovery", "cms-publish-notice", "cms-publish-instructions", "cms-publish-error-details", "cms-publish-focus", "cms-scenario-structured-save-row", "cms-audit-smoke-toggle", "cms-audit-smoke-filter-status", "cms-visible-state-marker")
+$requiredCssSelectors = @("admin-shell", "admin-sidebar", "admin-tab-button", "tab-panel", "selected-user-summary", "empty-state-card", "compact-table", "cms-grid-two", "cms-toolbar", "cms-result-panel", "cms-readable-result-panel", "cms-status-row", "cms-raw-json-details", "cms-section-header", "cms-sub-tabs", "cms-sub-tab-button", "cms-sub-panel", "cms-workspace-grid", "cms-json-output", "cms-selectable-row", "cms-selected-row", "cms-action-column", "cms-select-button", "cms-scenario-structured-editor", "cms-fieldset", "cms-publish-discovery", "cms-publish-notice", "cms-publish-instructions", "cms-publish-error-details", "cms-publish-focus", "cms-scenario-structured-save-row", "cms-audit-smoke-toggle", "cms-audit-smoke-filter-status", "cms-visible-state-marker")
 
 function Add-Error([string]$message) { $errors.Add($message) }
 
@@ -109,6 +109,12 @@ if (-not (Test-Path -LiteralPath $indexPath)) {
     foreach ($publishDiscoveryMarker in @('Draft saved. To apply this content to runtime, publish the current draft.', 'Go to Publish', 'Draft changes are saved but not visible to runtime until published.', '1. Enter a short change summary. 2. Click Publish current draft. 3. Confirm publishing.', 'Publish change summary', 'Required before publishing from the Admin CMS browser UI', 'data-cms-publish-error-details="true"', 'Publish current draft', 'data-cms-publish-discovery="true"', 'cms-scenario-structured-publish-discovery', 'cms-scenario-structured-publish-discovery', 'cms-scenario-json-publish-discovery', 'Smoke/test entries hidden.', 'Smoke/test entries visible.', 'Show smoke/test entries')) {
         if ($indexContent.IndexOf($publishDiscoveryMarker, [System.StringComparison]::Ordinal) -lt 0) {
             Add-Error "index.html: missing CMS publish discoverability marker '$publishDiscoveryMarker'."
+        }
+    }
+
+    foreach ($validationPreviewMarker in @('Draft validation and preview only', 'does not publish content', 'does not enable CMS content for learners', 'does not change learner runtime behavior', 'Run validation', 'Load preview summary')) {
+        if ($indexContent.IndexOf($validationPreviewMarker, [System.StringComparison]::Ordinal) -lt 0) {
+            Add-Error "index.html: missing Validation & Preview marker '$validationPreviewMarker'."
         }
     }
 
@@ -179,6 +185,17 @@ if (-not (Test-Path -LiteralPath $jsPath)) {
         if ($jsContent.IndexOf($auditSmokeMarker, [System.StringComparison]::Ordinal) -lt 0) {
             Add-Error "admin.js: missing audit smoke filter marker '$auditSmokeMarker'."
         }
+    }
+    foreach ($validationPreviewJsMarker in @("renderCmsValidationResult(validation)", "renderCmsPreviewSummary(preview)", "Show raw validation JSON", "Show raw preview JSON", "Content pack name", "Current published version number", "definitionJsonPresent", "definitionJsonValid")) {
+        if ($jsContent.IndexOf($validationPreviewJsMarker, [System.StringComparison]::Ordinal) -lt 0) {
+            Add-Error "admin.js: missing readable Validation & Preview marker '$validationPreviewJsMarker'."
+        }
+    }
+    $runValidationIndex = $jsContent.IndexOf("async function runCmsValidation()", [System.StringComparison]::Ordinal)
+    $loadPreviewIndex = $jsContent.IndexOf("async function loadCmsPreviewSummary()", [System.StringComparison]::Ordinal)
+    $renderJsonIndex = $jsContent.IndexOf("renderJsonOutput", [System.StringComparison]::Ordinal)
+    if ($renderJsonIndex -ge 0 -and (($runValidationIndex -ge 0 -and $renderJsonIndex -gt $runValidationIndex -and ($loadPreviewIndex -lt 0 -or $renderJsonIndex -lt $loadPreviewIndex)) -or ($loadPreviewIndex -ge 0 -and $renderJsonIndex -gt $loadPreviewIndex))) {
+        Add-Error "admin.js: Validation & Preview request handlers must not call renderJsonOutput directly."
     }
     foreach ($forbiddenToken in $forbiddenJsStorageTokens) {
         if ($jsContent.IndexOf($forbiddenToken, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {

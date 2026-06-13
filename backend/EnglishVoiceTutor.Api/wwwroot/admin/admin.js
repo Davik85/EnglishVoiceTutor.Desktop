@@ -1001,8 +1001,28 @@
             window.setTimeout(() => cmsPublishSectionElement.classList.remove("cms-publish-focus"), 2400);
         }
     }
-    function renderJsonOutput(element, payload) { element.textContent = JSON.stringify(payload, null, 2); }
-    function clearCmsResultPanel(element, message) { element.textContent = message; }
+    function clearCmsResultPanel(element, message) {
+        element.textContent = "";
+        element.className = "cms-result-panel";
+        const empty = document.createElement("p");
+        empty.className = "empty-state";
+        empty.textContent = message;
+        element.appendChild(empty);
+    }
+    function getCmsResponseValue(source, camelKey, fallbackValue = undefined) {
+        if (!source || typeof source !== "object") { return fallbackValue; }
+        if (Object.prototype.hasOwnProperty.call(source, camelKey)) { return source[camelKey]; }
+        const pascalKey = camelKey.charAt(0).toUpperCase() + camelKey.slice(1);
+        if (Object.prototype.hasOwnProperty.call(source, pascalKey)) { return source[pascalKey]; }
+        return fallbackValue;
+    }
+    function getCmsResponseArray(source, camelKey) {
+        const value = getCmsResponseValue(source, camelKey, []);
+        return Array.isArray(value) ? value : [];
+    }
+    function formatCmsPreviewPublishedVersion(value) {
+        return value === null || value === undefined || value === "" ? "None" : formatValue(value);
+    }
     function appendCmsDefinitionList(container, rows, className = "meta cms-preview-meta") {
         const list = document.createElement("dl");
         list.className = className;
@@ -1099,65 +1119,68 @@
     }
     function renderCmsValidationResult(validation) {
         cmsValidationResultElement.textContent = "";
-        cmsValidationResultElement.className = "cms-result-panel";
+        cmsValidationResultElement.className = "cms-result-panel cms-readable-result-panel";
+        const counts = getCmsResponseValue(validation, "counts", {});
+        const success = Boolean(getCmsResponseValue(validation, "success", false));
         const titleRow = document.createElement("div");
-        titleRow.className = "cms-result-title-row";
+        titleRow.className = "cms-result-title-row cms-status-row";
         const title = document.createElement("h4");
-        title.textContent = validation?.success ? "Validation passed" : "Validation failed";
+        title.textContent = success ? "Validation passed" : "Validation failed";
         titleRow.appendChild(title);
-        appendCmsStatusBadge(titleRow, validation?.success ? "Passed" : "Failed", Boolean(validation?.success));
+        appendCmsStatusBadge(titleRow, success ? "Passed" : "Failed", success);
         cmsValidationResultElement.appendChild(titleRow);
         appendCmsDefinitionList(cmsValidationResultElement, [
-            { label: "Content pack slug", value: validation?.contentPackSlug },
-            { label: "Checked at (UTC)", value: validation?.checkedAtUtc },
-            { label: "Topics", value: validation?.counts?.topics },
-            { label: "Scenarios", value: validation?.counts?.scenarios },
-            { label: "Prompt templates", value: validation?.counts?.promptTemplates },
-            { label: "Tutor behavior profiles", value: validation?.counts?.tutorBehaviorProfiles }
+            { label: "Content pack slug", value: getCmsResponseValue(validation, "contentPackSlug") },
+            { label: "Checked at (UTC)", value: getCmsResponseValue(validation, "checkedAtUtc") },
+            { label: "Topics", value: getCmsResponseValue(counts, "topics") },
+            { label: "Scenarios", value: getCmsResponseValue(counts, "scenarios") },
+            { label: "Prompt templates", value: getCmsResponseValue(counts, "promptTemplates") },
+            { label: "Tutor behavior profiles", value: getCmsResponseValue(counts, "tutorBehaviorProfiles") }
         ]);
-        appendCmsMessageList(cmsValidationResultElement, "Errors", validation?.errors, "No errors", true);
-        appendCmsMessageList(cmsValidationResultElement, "Warnings", validation?.warnings, "No warnings");
+        appendCmsMessageList(cmsValidationResultElement, "Errors", getCmsResponseArray(validation, "errors"), "No errors", true);
+        appendCmsMessageList(cmsValidationResultElement, "Warnings", getCmsResponseArray(validation, "warnings"), "No warnings");
         appendCmsRawJsonDetails(cmsValidationResultElement, "Show raw validation JSON", validation);
     }
     function renderCmsPreviewSummary(preview) {
         cmsPreviewSummaryElement.textContent = "";
-        cmsPreviewSummaryElement.className = "cms-result-panel";
+        cmsPreviewSummaryElement.className = "cms-result-panel cms-readable-result-panel";
         const titleRow = document.createElement("div");
-        titleRow.className = "cms-result-title-row";
+        titleRow.className = "cms-result-title-row cms-status-row";
         const title = document.createElement("h4");
-        title.textContent = preview?.contentPackName || "Draft preview summary";
+        const contentPackName = getCmsResponseValue(preview, "contentPackName");
+        title.textContent = contentPackName || "Draft preview summary";
         titleRow.appendChild(title);
         cmsPreviewSummaryElement.appendChild(titleRow);
         appendCmsDefinitionList(cmsPreviewSummaryElement, [
-            { label: "Content pack slug", value: preview?.contentPackSlug },
-            { label: "Content pack status", value: preview?.contentPackStatus },
-            { label: "Current published version number", value: preview?.currentPublishedVersionNumber },
-            { label: "Generated at (UTC)", value: preview?.generatedAtUtc },
-            { label: "Topics", value: preview?.topicCount },
-            { label: "Scenarios", value: preview?.scenarioCount },
-            { label: "Prompt templates", value: preview?.promptTemplateCount },
-            { label: "Tutor behavior profiles", value: preview?.tutorBehaviorProfileCount }
+            { label: "Content pack slug", value: getCmsResponseValue(preview, "contentPackSlug") },
+            { label: "Content pack name", value: contentPackName },
+            { label: "Content pack status", value: getCmsResponseValue(preview, "contentPackStatus") },
+            { label: "Current published version number", value: formatCmsPreviewPublishedVersion(getCmsResponseValue(preview, "currentPublishedVersionNumber")) },
+            { label: "Topics", value: getCmsResponseValue(preview, "topicCount") },
+            { label: "Scenarios", value: getCmsResponseValue(preview, "scenarioCount") },
+            { label: "Prompt templates", value: getCmsResponseValue(preview, "promptTemplateCount") },
+            { label: "Tutor behavior profiles", value: getCmsResponseValue(preview, "tutorBehaviorProfileCount") }
         ]);
         const topicsHeading = document.createElement("h4");
         topicsHeading.textContent = "Sample topics";
         cmsPreviewSummaryElement.appendChild(topicsHeading);
         appendCmsSimpleTable(cmsPreviewSummaryElement, [
-            { key: "stableTopicKey", label: "Stable topic key" },
-            { key: "title", label: "Title" },
-            { key: "sortOrder", label: "Sort order" },
-            { label: "Active", value: (row) => row?.isActive ? "Yes" : "No" }
-        ], preview?.sampleTopics, "No sample topics returned.");
+            { key: "stableTopicKey", label: "stableTopicKey", value: (row) => getCmsResponseValue(row, "stableTopicKey") },
+            { key: "title", label: "title", value: (row) => getCmsResponseValue(row, "title") },
+            { key: "sortOrder", label: "sortOrder", value: (row) => getCmsResponseValue(row, "sortOrder") },
+            { key: "isActive", label: "isActive", value: (row) => getCmsResponseValue(row, "isActive") }
+        ], getCmsResponseArray(preview, "sampleTopics"), "No sample topics returned.");
         const scenariosHeading = document.createElement("h4");
         scenariosHeading.textContent = "Sample scenarios";
         cmsPreviewSummaryElement.appendChild(scenariosHeading);
         appendCmsSimpleTable(cmsPreviewSummaryElement, [
-            { key: "stableScenarioKey", label: "Stable scenario key" },
-            { key: "topicKey", label: "Topic key" },
-            { key: "title", label: "Title" },
-            { label: "Active", value: (row) => row?.isActive ? "Yes" : "No" },
-            { label: "DefinitionJson present", value: (row) => row?.definitionJsonPresent ? "Yes" : "No" },
-            { label: "DefinitionJson valid", value: (row) => row?.definitionJsonValid ? "Yes" : "No" }
-        ], preview?.sampleScenarios, "No sample scenarios returned.");
+            { key: "stableScenarioKey", label: "stableScenarioKey", value: (row) => getCmsResponseValue(row, "stableScenarioKey") },
+            { key: "topicKey", label: "topicKey", value: (row) => getCmsResponseValue(row, "topicKey") },
+            { key: "title", label: "title", value: (row) => getCmsResponseValue(row, "title") },
+            { key: "isActive", label: "isActive", value: (row) => getCmsResponseValue(row, "isActive") },
+            { key: "definitionJsonPresent", label: "definitionJsonPresent", value: (row) => getCmsResponseValue(row, "definitionJsonPresent") },
+            { key: "definitionJsonValid", label: "definitionJsonValid", value: (row) => getCmsResponseValue(row, "definitionJsonValid") }
+        ], getCmsResponseArray(preview, "sampleScenarios"), "No sample scenarios returned.");
         appendCmsRawJsonDetails(cmsPreviewSummaryElement, "Show raw preview JSON", preview);
     }
     function tryParseCmsJson(text) { try { return { isValid: true, value: JSON.parse(text) }; } catch (error) { return { isValid: false, message: error instanceof Error ? error.message : "Invalid JSON." }; } }
@@ -1614,10 +1637,16 @@
         try {
             const validation = await adminFetch(cmsPath(ApiPaths.cmsValidateTemplate, { slug: getSelectedCmsSlug() }), { method: "POST" });
             renderCmsValidationResult(validation);
-            if (!validation.success) { setCmsError(`Validation failed with ${(validation.errors || []).length} errors and ${(validation.warnings || []).length} warnings.`); }
+            if (!getCmsResponseValue(validation, "success", false)) {
+                setCmsError(`Validation failed with ${getCmsResponseArray(validation, "errors").length} errors and ${getCmsResponseArray(validation, "warnings").length} warnings.`);
+            }
             return validation;
         }
-        catch (error) { handleCmsError(error); return null; }
+        catch (error) {
+            clearCmsResultPanel(cmsValidationResultElement, "Validation could not be loaded.");
+            handleCmsError(error);
+            return null;
+        }
     }
     async function loadCmsPreviewSummary() {
         setCmsError("");
