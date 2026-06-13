@@ -67,6 +67,9 @@ public sealed record VoiceSessionStartRequest
     public int LearnerTurnCount { get; init; }
     public int SoftLearnerTurnLimit { get; init; }
     public int HardLearnerTurnLimit { get; init; }
+    public string LevelBotLanguageComplexityGuidance { get; init; } = string.Empty;
+    public string LevelCorrectionGuidance { get; init; } = string.Empty;
+    public string LevelAnswerLengthGuidance { get; init; } = string.Empty;
     public IReadOnlyList<string> TargetLanguageKeyPhrases { get; init; } = [];
     public IReadOnlyList<string> GrammarFocus { get; init; } = [];
 
