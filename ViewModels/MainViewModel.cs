@@ -668,7 +668,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 localScenario.Id,
                 timeoutCancellation.Token);
 
-            if (IsRuntimeLessonScenarioValid(runtimeScenario))
+            if (runtimeScenario is not null && IsRuntimeLessonScenarioValid(runtimeScenario))
             {
                 Debug.WriteLine($"Using backend runtime lesson scenario from CMS/static runtime source. ScenarioId={runtimeScenario.Id}; SetupMessageLength={runtimeScenario.LessonSetup.SetupMessage.Length}.");
                 return runtimeScenario;
