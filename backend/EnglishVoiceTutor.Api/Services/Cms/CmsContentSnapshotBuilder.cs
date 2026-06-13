@@ -61,6 +61,7 @@ internal static class CmsContentSnapshotBuilder
             ?? new Dictionary<string, CmsPublishedLessonScenario>(StringComparer.Ordinal);
         var baseTutorProfiles = baseContent?.TutorBehaviorProfiles.ToDictionary(profile => profile.TutorId, StringComparer.Ordinal)
             ?? new Dictionary<string, CmsPublishedTutorBehaviorProfile>(StringComparer.Ordinal);
+        var levelProfiles = ResolveLevelProfiles(promptTemplates);
 
         return CmsContentJson.SerializeDeterministic(new
         {
@@ -103,7 +104,8 @@ internal static class CmsContentSnapshotBuilder
                 tutor.DisplayName,
                 tutor.IsActive,
                 TutorProfile = BuildTutorProfile(tutor, baseTutorProfiles.TryGetValue(tutor.TutorId, out var baseTutor) ? baseTutor.TutorProfile : null)
-            })
+            }),
+            LevelProfiles = levelProfiles.OrderBy(level => level.SortOrder).ThenBy(level => level.StableLevelKey, StringComparer.Ordinal)
         });
     }
 
@@ -111,6 +113,12 @@ internal static class CmsContentSnapshotBuilder
     {
         return JsonSerializer.Deserialize<CmsPublishedLessonContent>(snapshotJson, ReadJsonOptions)
             ?? throw new JsonException("Published CMS content snapshot deserialized to an empty content object.");
+    }
+
+    private static List<CmsLevelProfile> ResolveLevelProfiles(IReadOnlyList<PromptTemplateEntity> promptTemplates)
+    {
+        var template = promptTemplates.FirstOrDefault(template => template.TemplateKey == CmsContentConstants.PromptTemplateKeys.LevelProfiles && template.IsActive);
+        return CmsLevelProfiles.DeserializeOrDefaults(template?.Body);
     }
 
     private static LessonScenario BuildLessonScenario(CmsLessonScenarioEntity scenario, LessonScenario? baseScenario)

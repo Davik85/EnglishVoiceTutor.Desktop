@@ -129,3 +129,12 @@ Next safe step: move from Admin CMS foundation/UI cleanup to CMS connection read
 The Admin CMS now exposes a read-only **Runtime content status** section and the protected endpoint `GET /api/admin/dev/cms/runtime-status`. Use it to confirm the effective learner content source, validation result, counts, published snapshot metadata, and fallback state without exposing content bodies or secrets.
 
 Static JSON remains the default. The diagnostic does not enable CMS runtime content and does not change production defaults. Runtime status is clean on backend `0.1.35-backend.8` with approved tutor-id validation for `david`, `elena`, and `nelli`. For the next controlled validation, use `tools/validate_cms_published_snapshot_runtime.ps1 -GenerateServerValidationPlan`; the temporary flags are `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`. The validation must be explicit, temporary, reversible, and operator-approved. After validation, decide separately whether to enable CMS runtime for a limited learner/tester group; rollback is removing/disabling those explicit flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
+
+## CMS-managed level profiles (A1-B2)
+
+- CMS now manages A1, A2, B1, and B2 level behavior profiles through the CMS Content **Levels** tab.
+- Level profiles include stable level keys, display names, active flags, sort order, wrap-up turn, final-message turn, language complexity guidance, correction guidance, answer-length guidance, and admin notes.
+- Lesson length defaults come from the selected level profile: A1 is configured for a shorter lesson around 15 learner turns, while B2 supports a longer dialogue.
+- Scenario-specific lesson length values remain optional overrides when explicitly set and valid. Priority is: scenario override, then CMS level profile, then safe backend constants.
+- Backend runtime content remains the source of truth for lesson behavior. Desktop may keep its current level labels for display, but desktop and future mobile should use backend runtime behavior from the CMS published snapshot.
+- Static JSON fallback remains available; fallback runtime also receives safe default level profiles.

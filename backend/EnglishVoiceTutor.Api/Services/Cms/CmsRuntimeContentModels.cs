@@ -28,6 +28,7 @@ public sealed class CmsRuntimeLessonContentSummary
     public int ScenarioCount { get; set; }
     public int PromptTemplateCount { get; set; }
     public int TutorBehaviorProfileCount { get; set; }
+    public int LevelProfileCount { get; set; }
     public bool HashValid { get; set; }
     public bool ValidationPassed { get; set; }
     public bool ValidationSuccess { get; set; }
@@ -39,6 +40,7 @@ public sealed class CmsRuntimeLessonContent
     public List<CmsPublishedLessonScenario> Scenarios { get; set; } = [];
     public List<CmsPublishedPromptTemplate> PromptTemplates { get; set; } = [];
     public List<CmsPublishedTutorBehaviorProfile> TutorBehaviorProfiles { get; set; } = [];
+    public List<CmsLevelProfile> LevelProfiles { get; set; } = [];
 }
 
 public sealed class CmsRuntimeLessonContentStatusResponse
@@ -61,6 +63,7 @@ public sealed class CmsRuntimeLessonContentStatusResponse
     public int ScenarioCount { get; set; }
     public int PromptTemplateCount { get; set; }
     public int TutorBehaviorProfileCount { get; set; }
+    public int LevelProfileCount { get; set; }
     public bool HashValid { get; set; }
     public bool ValidationPassed { get; set; }
     public bool ValidationSuccess { get; set; }
@@ -89,6 +92,7 @@ public sealed class CmsRuntimeLessonContentStatusResponse
             ScenarioCount = result.Summary.ScenarioCount,
             PromptTemplateCount = result.Summary.PromptTemplateCount,
             TutorBehaviorProfileCount = result.Summary.TutorBehaviorProfileCount,
+            LevelProfileCount = result.Summary.LevelProfileCount,
             HashValid = result.Summary.HashValid,
             ValidationPassed = validationPassed,
             ValidationSuccess = validationPassed,

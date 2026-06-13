@@ -32,6 +32,7 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
         ValidateTopics(draft, result);
         ValidateScenarios(draft, result);
         ValidatePromptTemplates(draft, result);
+        ValidateLevelProfiles(draft.PromptTemplates.FirstOrDefault(template => template.TemplateKey == CmsContentConstants.PromptTemplateKeys.LevelProfiles)?.Body, result);
         ValidateTutorProfiles(draft, result);
         ValidateSecrets(draft, result);
         ValidateDeterministicSerialization(draft, result);
@@ -83,6 +84,7 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
         ValidateDraftTopics(topics, scenarios, result);
         ValidateDraftScenarios(topics, scenarios, result);
         ValidateDraftPromptTemplates(promptTemplates, result);
+        ValidateLevelProfiles(promptTemplates.FirstOrDefault(template => template.TemplateKey == CmsContentConstants.PromptTemplateKeys.LevelProfiles && template.IsActive)?.Body, result);
         ValidateDraftTutorProfiles(tutorProfiles, result);
         ValidateDraftJsonPayloads(scenarios, promptTemplates, tutorProfiles, result);
         ValidateDraftSecrets(scenarios, promptTemplates, tutorProfiles, result);
@@ -173,7 +175,7 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
 
             if (scenario.Metadata.FinalMessageAtUserTurn < scenario.Metadata.SoftWrapUpAfterUserTurn)
             {
-                result.Errors.Add($"Scenario '{scenarioDraft.StableScenarioKey}' final-message turn must be greater than or equal to the soft wrap-up turn.");
+                result.Errors.Add($"Scenario '{scenarioDraft.StableScenarioKey}' final-message turn must be greater than the soft wrap-up turn.");
             }
         }
     }
@@ -184,6 +186,19 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
         {
             Require(template.TemplateKey, "A prompt template is missing its template key.", result);
             Require(template.Body, $"Prompt template '{template.TemplateKey}' is empty.", result);
+        }
+    }
+
+
+    private static void ValidateLevelProfiles(string? levelProfilesJson, CmsContentValidationResult result)
+    {
+        try
+        {
+            CmsLevelProfiles.Validate(CmsLevelProfiles.DeserializeOrDefaults(levelProfilesJson), result.Errors, "CMS level profiles");
+        }
+        catch (JsonException)
+        {
+            result.Errors.Add("CMS level profiles JSON is invalid.");
         }
     }
 
@@ -292,19 +307,19 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
 
             if (scenario.SoftWrapUpAfterUserTurn is <= 0)
             {
-                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' has an invalid soft wrap-up turn value.");
+                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' has an invalid optional soft wrap-up override value.");
             }
 
             if (scenario.FinalMessageAtUserTurn is <= 0)
             {
-                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' has an invalid final-message turn value.");
+                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' has an invalid optional final-message override value.");
             }
 
             if (scenario.SoftWrapUpAfterUserTurn.HasValue &&
                 scenario.FinalMessageAtUserTurn.HasValue &&
-                scenario.FinalMessageAtUserTurn.Value < scenario.SoftWrapUpAfterUserTurn.Value)
+                scenario.FinalMessageAtUserTurn.Value <= scenario.SoftWrapUpAfterUserTurn.Value)
             {
-                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' final-message turn must be greater than or equal to the soft wrap-up turn.");
+                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' final-message turn must be greater than the soft wrap-up turn.");
             }
         }
     }

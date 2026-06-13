@@ -59,6 +59,7 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
         if (publishedResult.Success && publishedResult.Content is not null)
         {
             result = MapPublishedResult(publishedResult);
+            ApplyCmsLevelProfiles(result.Content);
             ValidateRuntimeContent(result);
             if (result.Errors.Count == 0)
             {
@@ -115,6 +116,7 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
             Content = content,
             Summary = CreateSummary(content, hashValid: true)
         };
+        ApplyCmsLevelProfiles(result.Content);
         ValidateRuntimeContent(result);
         result.Success = result.Errors.Count == 0;
         result.Summary.ValidationPassed = result.Success;
@@ -130,7 +132,8 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
                 Topics = publishedResult.Content.Topics,
                 Scenarios = publishedResult.Content.Scenarios,
                 PromptTemplates = publishedResult.Content.PromptTemplates,
-                TutorBehaviorProfiles = publishedResult.Content.TutorBehaviorProfiles
+                TutorBehaviorProfiles = publishedResult.Content.TutorBehaviorProfiles,
+                LevelProfiles = publishedResult.Content.LevelProfiles.Count > 0 ? publishedResult.Content.LevelProfiles : CmsLevelProfiles.Defaults.ToList()
             };
 
         return new CmsRuntimeLessonContentReadResult
@@ -151,6 +154,7 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
                 ScenarioCount = publishedResult.Summary.ScenarioCount,
                 PromptTemplateCount = publishedResult.Summary.PromptTemplateCount,
                 TutorBehaviorProfileCount = publishedResult.Summary.TutorBehaviorProfileCount,
+                LevelProfileCount = publishedResult.Summary.LevelProfileCount,
                 HashValid = publishedResult.Summary.HashValid,
                 ValidationPassed = publishedResult.Summary.ValidationPassed
             },
@@ -167,8 +171,37 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
             ScenarioCount = content.Scenarios.Count,
             PromptTemplateCount = content.PromptTemplates.Count,
             TutorBehaviorProfileCount = content.TutorBehaviorProfiles.Count,
+            LevelProfileCount = content.LevelProfiles.Count,
             HashValid = hashValid
         };
+    }
+
+    private static void ApplyCmsLevelProfiles(CmsRuntimeLessonContent? content)
+    {
+        if (content is null)
+        {
+            return;
+        }
+
+        var profiles = content.LevelProfiles.Count > 0 ? content.LevelProfiles : CmsLevelProfiles.Defaults;
+        foreach (var scenario in content.Scenarios)
+        {
+            foreach (var profile in profiles.Where(profile => profile.IsActive))
+            {
+                scenario.Lesson.LevelProfiles[profile.DisplayName] = new EnglishVoiceTutor.Desktop.Models.LessonContent.LevelProfile
+                {
+                    Level = profile.DisplayName,
+                    DifficultyNotes = profile.BotLanguageComplexityGuidance,
+                    TutorLanguageStyle = profile.BotLanguageComplexityGuidance,
+                    FeedbackStrictness = profile.CorrectionGuidance,
+                    HintStrategy = profile.AnswerLengthGuidance,
+                    CorrectionPriority = profile.CorrectionGuidance,
+                    ConversationDepth = profile.AnswerLengthGuidance,
+                    SoftWrapUpAfterUserTurn = profile.WrapUpAfterUserTurn,
+                    FinalMessageAtUserTurn = profile.FinalMessageAtUserTurn
+                };
+            }
+        }
     }
 
     private static void ValidateRuntimeContent(CmsRuntimeLessonContentReadResult result)
@@ -183,6 +216,7 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
         RequireCount(result.Summary.ScenarioCount, RequiredScenarioCount, "scenarios", result);
         RequireCount(result.Summary.PromptTemplateCount, RequiredPromptTemplateCount, "prompt templates", result);
         ValidateTutorBehaviorProfileIds(result);
+        CmsLevelProfiles.Validate(result.Content.LevelProfiles, result.Errors, "Runtime level profiles");
 
         foreach (var topic in result.Content.Topics)
         {
@@ -257,9 +291,9 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
 
     private static void RequireCount(int actual, int expected, string label, CmsRuntimeLessonContentReadResult result)
     {
-        if (actual != expected)
+        if (actual < expected)
         {
-            result.Errors.Add($"Runtime content expected {expected} {label}, but found {actual}.");
+            result.Errors.Add($"Runtime content expected at least {expected} {label}, but found {actual}.");
         }
     }
 
@@ -278,6 +312,7 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
         var promptsRoot = Path.Combine(contentRoot, CmsContentConstants.StaticImport.PromptsFolder);
         var tutorsRoot = Path.Combine(contentRoot, CmsContentConstants.StaticImport.TutorsFolder);
         var content = new CmsRuntimeLessonContent();
+        content.LevelProfiles.AddRange(CmsLevelProfiles.Defaults);
         var topicOrder = new Dictionary<string, int>(StringComparer.Ordinal);
 
         foreach (var scenarioFile in Directory.EnumerateFiles(lessonsRoot, "*.json", SearchOption.AllDirectories).OrderBy(path => Path.GetRelativePath(lessonsRoot, path), StringComparer.Ordinal))

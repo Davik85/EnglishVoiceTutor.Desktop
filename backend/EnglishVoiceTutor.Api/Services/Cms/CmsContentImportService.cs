@@ -314,6 +314,15 @@ public sealed class CmsContentImportService(
             });
         }
 
+        draft.PromptTemplates.Add(new CmsStaticPromptTemplateDraft
+        {
+            TemplateKey = CmsContentConstants.PromptTemplateKeys.LevelProfiles,
+            Body = CmsLevelProfiles.DefaultJson(),
+            AllowedPlaceholdersJson = CmsContentJson.EmptyArrayJson,
+            RequiredPlaceholdersJson = CmsContentJson.EmptyArrayJson,
+            IsActive = true
+        });
+
         foreach (var tutorPath in Directory.EnumerateFiles(tutorsRoot, "*.json", SearchOption.TopDirectoryOnly).OrderBy(path => path, StringComparer.Ordinal))
         {
             var tutor = await ReadJsonFileAsync<TutorProfile>(tutorPath, cancellationToken);
@@ -698,7 +707,8 @@ public sealed class CmsContentImportService(
                 tutor.DisplayName,
                 tutor.IsActive,
                 TutorProfile = tutor.TutorProfile
-            })
+            }),
+            LevelProfiles = CmsLevelProfiles.DeserializeOrDefaults(draft.PromptTemplates.FirstOrDefault(template => template.TemplateKey == CmsContentConstants.PromptTemplateKeys.LevelProfiles)?.Body)
         });
     }
 

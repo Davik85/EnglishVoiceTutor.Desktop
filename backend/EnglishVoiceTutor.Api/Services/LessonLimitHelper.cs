@@ -1,5 +1,6 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
+using EnglishVoiceTutor.Api.Services.Cms;
 
 namespace EnglishVoiceTutor.Api.Services;
 
@@ -12,9 +13,12 @@ public static class LessonLimitHelper
             return request.SoftWrapUpAfterUserTurn;
         }
 
-        return request.SoftLearnerTurnLimit > 0
-            ? request.SoftLearnerTurnLimit
-            : ApiConstants.DefaultLessonSoftLearnerTurnLimit;
+        if (request.SoftLearnerTurnLimit > 0)
+        {
+            return request.SoftLearnerTurnLimit;
+        }
+
+        return ResolveLevelTurnLimits(request).WrapUpAfterUserTurn;
     }
 
     public static int GetHardLearnerTurnLimit(LessonChatRequest request)
@@ -24,9 +28,17 @@ public static class LessonLimitHelper
             return request.FinalMessageAtUserTurn;
         }
 
-        return request.HardLearnerTurnLimit > 0
-            ? request.HardLearnerTurnLimit
-            : ApiConstants.DefaultLessonHardLearnerTurnLimit;
+        if (request.HardLearnerTurnLimit > 0)
+        {
+            return request.HardLearnerTurnLimit;
+        }
+
+        return ResolveLevelTurnLimits(request).FinalMessageAtUserTurn;
+    }
+
+    private static CmsLevelProfile ResolveLevelTurnLimits(LessonChatRequest request)
+    {
+        return CmsLevelProfiles.Resolve(string.IsNullOrWhiteSpace(request.SelectedLevel) ? request.Level : request.SelectedLevel);
     }
 
     public static int GetRemainingLearnerTurns(LessonChatRequest request)

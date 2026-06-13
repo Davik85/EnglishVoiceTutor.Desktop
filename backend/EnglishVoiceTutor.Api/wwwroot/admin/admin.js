@@ -61,7 +61,7 @@
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
     const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", system: "system" });
-    const CmsSubTabs = Object.freeze({ overview: "overview", topics: "topics", scenarios: "scenarios", prompts: "prompts", tutors: "tutors", validationPreview: "validation-preview", versionsPublish: "versions-publish", audit: "audit" });
+    const CmsSubTabs = Object.freeze({ overview: "overview", topics: "topics", scenarios: "scenarios", levels: "levels", prompts: "prompts", tutors: "tutors", validationPreview: "validation-preview", versionsPublish: "versions-publish", audit: "audit" });
     const LookupSources = Object.freeze({ userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson" });
     let accessToken = null;
     let selectedUserId = null;
@@ -71,10 +71,12 @@
     let cmsSelectedTopic = null;
     let cmsSelectedScenario = null;
     let cmsSelectedPromptTemplate = null;
+    let cmsSelectedLevel = null;
     let cmsSelectedTutorProfile = null;
     let cmsTopics = [];
     let cmsScenarios = [];
     let cmsPromptTemplates = [];
+    let cmsLevels = [];
     let cmsTutorProfiles = [];
     let tabsInitialized = false;
     let restoringCmsSelection = false;
@@ -236,6 +238,21 @@
     const cmsScenarioJsonPublishDiscoveryElement = document.getElementById("cms-scenario-json-publish-discovery");
     const cmsScenarioDirtyStatusElement = document.getElementById("cms-scenario-dirty-status");
     const cmsScenarioSectionNavButtons = [...document.querySelectorAll("[data-cms-scenario-section-target]")];
+    const cmsLevelForm = document.getElementById("cms-level-form");
+    const cmsLevelsListElement = document.getElementById("cms-levels-list");
+    const cmsSelectedLevelIdentityElement = document.getElementById("cms-selected-level-identity");
+    const cmsLevelDisplayNameInput = document.getElementById("cms-level-display-name");
+    const cmsLevelSortOrderInput = document.getElementById("cms-level-sort-order");
+    const cmsLevelWrapUpTurnInput = document.getElementById("cms-level-wrap-up-turn");
+    const cmsLevelFinalTurnInput = document.getElementById("cms-level-final-turn");
+    const cmsLevelComplexityGuidanceInput = document.getElementById("cms-level-complexity-guidance");
+    const cmsLevelCorrectionGuidanceInput = document.getElementById("cms-level-correction-guidance");
+    const cmsLevelAnswerGuidanceInput = document.getElementById("cms-level-answer-guidance");
+    const cmsLevelAdminNotesInput = document.getElementById("cms-level-admin-notes");
+    const cmsLevelIsActiveInput = document.getElementById("cms-level-is-active");
+    const cmsLevelResetButton = document.getElementById("cms-level-reset-button");
+    const cmsLevelMessageElement = document.getElementById("cms-level-message");
+    const cmsLevelDirtyStatusElement = document.getElementById("cms-level-dirty-status");
     const cmsPromptTemplateForm = document.getElementById("cms-prompt-template-form");
     const cmsPromptTemplateBodyInput = document.getElementById("cms-prompt-template-body");
     const cmsPromptTemplateIsActiveInput = document.getElementById("cms-prompt-template-is-active");
@@ -349,13 +366,14 @@
         cmsScenarioFirstUserTaskInput, cmsScenarioGuidedFollowUpLinesInput, cmsScenarioAiInstructionLinesInput,
         cmsScenarioWrapUpMessageInput, cmsScenarioFinalMessageInput, cmsScenarioHintExampleInput
     ].filter(Boolean);
-    const cmsDirtyBaselines = { topic: null, scenario: null, promptTemplate: null, tutorProfile: null };
-    const cmsDirtyState = { topic: false, scenario: false, promptTemplate: false, tutorProfile: false };
+    const cmsDirtyBaselines = { topic: null, scenario: null, level: null, promptTemplate: null, tutorProfile: null };
+    const cmsDirtyState = { topic: false, scenario: false, level: false, promptTemplate: false, tutorProfile: false };
 
     function getCmsDraftSnapshot(editorKey) {
         if (editorKey === "topic") { return { title: cmsTopicTitleInput.value, description: cmsTopicDescriptionInput.value, sortOrder: cmsTopicSortOrderInput.value, isActive: cmsTopicIsActiveInput.checked }; }
         if (editorKey === "scenario") { return { title: cmsScenarioTitleInput.value, description: cmsScenarioDescriptionInput.value, setupMessage: cmsScenarioSetupMessageInput.value, structuredScenarioFields: getCmsStructuredScenarioSnapshot(), definitionJson: cmsScenarioDefinitionJsonInput.value, isActive: cmsScenarioIsActiveInput.checked }; }
         if (editorKey === "promptTemplate") { return { body: cmsPromptTemplateBodyInput.value, isActive: cmsPromptTemplateIsActiveInput.checked }; }
+        if (editorKey === "level") { return { displayName: cmsLevelDisplayNameInput.value, sortOrder: cmsLevelSortOrderInput.value, wrapUpAfterUserTurn: cmsLevelWrapUpTurnInput.value, finalMessageAtUserTurn: cmsLevelFinalTurnInput.value, botLanguageComplexityGuidance: cmsLevelComplexityGuidanceInput.value, correctionGuidance: cmsLevelCorrectionGuidanceInput.value, answerLengthGuidance: cmsLevelAnswerGuidanceInput.value, adminNotes: cmsLevelAdminNotesInput.value, isActive: cmsLevelIsActiveInput.checked }; }
         if (editorKey === "tutorProfile") { return { displayName: cmsTutorProfileDisplayNameInput.value, communicationStyleJson: cmsTutorProfileCommunicationStyleJsonInput.value, safetyNotesJson: cmsTutorProfileSafetyNotesJsonInput.value, isActive: cmsTutorProfileIsActiveInput.checked }; }
         return null;
     }
@@ -365,6 +383,7 @@
         if (editorKey === "topic") { return cmsTopicDirtyStatusElement; }
         if (editorKey === "scenario") { return cmsScenarioDirtyStatusElement; }
         if (editorKey === "promptTemplate") { return cmsPromptTemplateDirtyStatusElement; }
+        if (editorKey === "level") { return cmsLevelDirtyStatusElement; }
         if (editorKey === "tutorProfile") { return cmsTutorProfileDirtyStatusElement; }
         return null;
     }
@@ -1498,6 +1517,10 @@
         renderCmsTable(cmsScenariosListElement, [{ key: "stableScenarioKey", label: "stableScenarioKey" }, { key: "topicKey", label: "Topic key" }, { key: "title", label: "Title" }, { key: "isActive", label: "Active" }], getFilteredCmsScenarios(), { onSelect: selectCmsScenario, selectedId: cmsSelectedScenario?.id });
     }
 
+    function renderCmsLevelsTable() {
+        renderCmsTable(cmsLevelsListElement, [{ key: "stableLevelKey", label: "Level" }, { key: "displayName", label: "Name" }, { key: "wrapUpAfterUserTurn", label: "Wrap" }, { key: "finalMessageAtUserTurn", label: "Final" }, { key: "isActive", label: "Active" }], cmsLevels, { onSelect: selectCmsLevel, selectedId: cmsSelectedLevel?.stableLevelKey });
+    }
+
     function renderCmsPromptTemplatesTable() {
         renderCmsTable(cmsPromptTemplatesListElement, [{ key: "templateKey", label: "templateKey" }, { key: "targetStudyLanguageId", label: "Study language" }, { key: "isActive", label: "Active" }], cmsPromptTemplates, { onSelect: selectCmsPromptTemplate, selectedId: cmsSelectedPromptTemplate?.id });
     }
@@ -1625,6 +1648,7 @@
         cmsPromptTemplates = await adminFetch(cmsPath(ApiPaths.cmsPromptTemplatesTemplate, { slug }));
         cmsPromptTemplates = Array.isArray(cmsPromptTemplates) ? cmsPromptTemplates : [];
         renderCmsPromptTemplatesTable();
+        loadCmsLevelsFromPromptTemplate();
     }
     async function loadCmsTutorProfiles() {
         const slug = getSelectedCmsSlug();
@@ -1637,6 +1661,36 @@
     function fillCmsTopicForm() { const item = cmsSelectedTopic; cmsSelectedTopicIdentityElement.textContent = item ? `${item.stableTopicKey} (${item.id})` : "None selected"; cmsTopicTitleInput.value = item?.title || ""; cmsTopicDescriptionInput.value = item?.description || ""; cmsTopicSortOrderInput.value = item?.sortOrder ?? ""; cmsTopicIsActiveInput.checked = Boolean(item?.isActive); setCmsEntityMessage(cmsTopicMessageElement, "", false); hideCmsPublishDiscovery(); setCmsBaseline("topic"); }
     async function selectCmsScenario(row, force = false) { if (!force && !restoringCmsSelection && cmsSelectedScenario?.id !== row.id && !confirmDiscardUnsavedChanges()) { return; } cmsSelectedScenario = row; updateHashField("scenarioKey", row.stableScenarioKey || null); renderCmsScenariosTable(); cmsSelectedScenario = await adminFetch(cmsPath(ApiPaths.cmsScenarioTemplate, { slug: getSelectedCmsSlug(), scenarioId: row.id })); fillCmsScenarioForm(); renderCmsScenariosTable(); }
     function fillCmsScenarioForm() { const item = cmsSelectedScenario; cmsSelectedScenarioIdentityElement.textContent = item ? `${item.stableScenarioKey} (${item.id})` : "None selected"; cmsScenarioTitleInput.value = item?.title || ""; cmsScenarioDescriptionInput.value = item?.description || ""; cmsScenarioSetupMessageInput.value = item?.setupMessage || ""; cmsScenarioIsActiveInput.checked = Boolean(item?.isActive); cmsScenarioDefinitionJsonInput.value = item?.definitionJson || ""; setCmsScenarioJsonStatus(item?.isDefinitionJsonFallback ? "Showing fallback JSON built from existing draft fields; save draft to persist it as full scenario JSON." : "", Boolean(item?.isDefinitionJsonFallback)); fillCmsStructuredScenarioFieldsFromDefinition(); setCmsEntityMessage(cmsScenarioMessageElement, "", false); hideCmsPublishDiscovery(); setCmsBaseline("scenario"); }
+    function loadCmsLevelsFromPromptTemplate() {
+        const template = cmsPromptTemplates.find(item => item.templateKey === "level_profiles");
+        if (!template) { cmsLevels = []; renderCmsLevelsTable(); return; }
+        adminFetch(cmsPath(ApiPaths.cmsPromptTemplateTemplate, { slug: getSelectedCmsSlug(), templateId: template.id })).then(full => {
+            try { cmsLevels = JSON.parse(full.body || "[]"); } catch { cmsLevels = []; }
+            cmsLevels.forEach(level => { level.id = level.stableLevelKey; });
+            cmsLevels.sort((a, b) => (Number(a.sortOrder || 0) - Number(b.sortOrder || 0)) || String(a.stableLevelKey || "").localeCompare(String(b.stableLevelKey || "")));
+            renderCmsLevelsTable();
+            if (!cmsSelectedLevel && cmsLevels.length > 0) selectCmsLevel(cmsLevels[0], true);
+        }).catch(handleCmsError);
+    }
+
+    function selectCmsLevel(row, force = false) {
+        if (!force && cmsSelectedLevel?.stableLevelKey !== row.stableLevelKey && !confirmDiscardUnsavedChanges()) { return; }
+        cmsSelectedLevel = row;
+        cmsSelectedLevelIdentityElement.textContent = row ? `${row.stableLevelKey} (${row.displayName || "unnamed"})` : "None selected";
+        cmsLevelDisplayNameInput.value = row?.displayName || "";
+        cmsLevelSortOrderInput.value = row?.sortOrder ?? 0;
+        cmsLevelWrapUpTurnInput.value = row?.wrapUpAfterUserTurn ?? "";
+        cmsLevelFinalTurnInput.value = row?.finalMessageAtUserTurn ?? "";
+        cmsLevelComplexityGuidanceInput.value = row?.botLanguageComplexityGuidance || "";
+        cmsLevelCorrectionGuidanceInput.value = row?.correctionGuidance || "";
+        cmsLevelAnswerGuidanceInput.value = row?.answerLengthGuidance || "";
+        cmsLevelAdminNotesInput.value = row?.adminNotes || "";
+        cmsLevelIsActiveInput.checked = Boolean(row?.isActive);
+        setCmsEntityMessage(cmsLevelMessageElement, "", false);
+        setCmsBaseline("level");
+        renderCmsLevelsTable();
+    }
+
     async function selectCmsPromptTemplate(row, force = false) { if (!force && !restoringCmsSelection && cmsSelectedPromptTemplate?.id !== row.id && !confirmDiscardUnsavedChanges()) { return; } cmsSelectedPromptTemplate = row; updateHashField("promptTemplateKey", row.templateKey || null); renderCmsPromptTemplatesTable(); cmsSelectedPromptTemplate = await adminFetch(cmsPath(ApiPaths.cmsPromptTemplateTemplate, { slug: getSelectedCmsSlug(), templateId: row.id })); fillCmsPromptTemplateForm(); renderCmsPromptTemplatesTable(); }
     function fillCmsPromptTemplateForm() { const item = cmsSelectedPromptTemplate; cmsSelectedPromptTemplateIdentityElement.textContent = item ? `${item.templateKey} (${item.id})` : "None selected"; cmsPromptTemplateBodyInput.value = item?.body || ""; cmsPromptTemplateIsActiveInput.checked = Boolean(item?.isActive); setCmsEntityMessage(cmsPromptTemplateMessageElement, "", false); hideCmsPublishDiscovery(); setCmsBaseline("promptTemplate"); }
     async function selectCmsTutorProfile(row, force = false) { if (!force && !restoringCmsSelection && cmsSelectedTutorProfile?.id !== row.id && !confirmDiscardUnsavedChanges()) { return; } cmsSelectedTutorProfile = row; updateHashField("tutorId", row.tutorId || null); renderCmsTutorProfilesTable(); cmsSelectedTutorProfile = await adminFetch(cmsPath(ApiPaths.cmsTutorProfileTemplate, { slug: getSelectedCmsSlug(), profileId: row.id })); fillCmsTutorProfileForm(); renderCmsTutorProfilesTable(); }
@@ -1658,6 +1712,14 @@
         await saveCmsDraft(ApiPaths.cmsScenarioTemplate, { scenarioId: cmsSelectedScenario.id }, { title: cmsScenarioTitleInput.value, description: cmsScenarioDescriptionInput.value, setupMessage: cmsScenarioSetupMessageInput.value, definitionJson: cmsScenarioDefinitionJsonInput.value, structuredScenarioFieldsEdited: !isAdvancedJsonSave, isActive: cmsScenarioIsActiveInput.checked, reason: isAdvancedJsonSave ? "Admin CMS UI shell advanced JSON scenario draft edit" : "Admin CMS UI shell structured scenario draft edit" }, cmsScenarioMessageElement, loadCmsScenarios, () => selectCmsScenario(cmsSelectedScenario));
         showScenarioDraftSavedPublishCallouts(true);
     }
+    async function saveCmsLevelDraft() {
+        if (!cmsSelectedLevel) { setCmsEntityMessage(cmsLevelMessageElement, "Select a level first.", true); return; }
+        const template = cmsPromptTemplates.find(item => item.templateKey === "level_profiles");
+        if (!template) { setCmsEntityMessage(cmsLevelMessageElement, "The level_profiles CMS template is missing. Initialize static JSON draft first.", true); return; }
+        const updated = cmsLevels.map(level => level.stableLevelKey === cmsSelectedLevel.stableLevelKey ? { ...level, displayName: cmsLevelDisplayNameInput.value, sortOrder: Number(cmsLevelSortOrderInput.value || 0), wrapUpAfterUserTurn: Number(cmsLevelWrapUpTurnInput.value || 0), finalMessageAtUserTurn: Number(cmsLevelFinalTurnInput.value || 0), botLanguageComplexityGuidance: cmsLevelComplexityGuidanceInput.value, correctionGuidance: cmsLevelCorrectionGuidanceInput.value, answerLengthGuidance: cmsLevelAnswerGuidanceInput.value, adminNotes: cmsLevelAdminNotesInput.value, isActive: cmsLevelIsActiveInput.checked } : level);
+        await saveCmsDraft(ApiPaths.cmsPromptTemplateTemplate, { templateId: template.id }, { body: JSON.stringify(updated, null, 2), isActive: true, reason: "Admin CMS UI level profile draft edit" }, cmsLevelMessageElement, loadCmsPromptTemplates, () => { cmsLevels = updated; selectCmsLevel(updated.find(level => level.stableLevelKey === cmsSelectedLevel.stableLevelKey), true); });
+    }
+
     async function saveCmsPromptTemplateDraft() {
         if (!cmsSelectedPromptTemplate) { setCmsEntityMessage(cmsPromptTemplateMessageElement, "Select a prompt template first.", true); return; }
         await saveCmsDraft(ApiPaths.cmsPromptTemplateTemplate, { templateId: cmsSelectedPromptTemplate.id }, { body: cmsPromptTemplateBodyInput.value, isActive: cmsPromptTemplateIsActiveInput.checked, reason: "Admin CMS UI shell draft edit" }, cmsPromptTemplateMessageElement, loadCmsPromptTemplates, () => selectCmsPromptTemplate(cmsSelectedPromptTemplate));
@@ -1865,6 +1927,8 @@
     cmsScenarioStructuredResetButton.addEventListener("click", async () => { if (cmsSelectedScenario) { await selectCmsScenario(cmsSelectedScenario); } });
     cmsScenarioFormatJsonButton.addEventListener("click", () => { formatCmsScenarioJsonInput(); });
     cmsScenarioValidateJsonButton.addEventListener("click", () => { validateCmsScenarioJsonInput(); });
+    cmsLevelForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsLevelDraft(); });
+    cmsLevelResetButton.addEventListener("click", () => { if (cmsSelectedLevel) { selectCmsLevel(cmsSelectedLevel, true); } });
     cmsPromptTemplateForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsPromptTemplateDraft(); });
     cmsPromptTemplateResetButton.addEventListener("click", async () => { if (cmsSelectedPromptTemplate) { await selectCmsPromptTemplate(cmsSelectedPromptTemplate); } });
     cmsTutorProfileForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsTutorProfileDraft(); });
@@ -1885,6 +1949,7 @@
     cmsScenarioStructuredInputs.forEach((element) => element.addEventListener("input", () => { if (element !== cmsScenarioIsActiveInput) { try { mergeCmsStructuredScenarioFieldsToDefinition({ silent: true }); setCmsScenarioStructuredStatus("Structured edits are reflected in Advanced JSON. Save draft is still required.", false); } catch (error) { setCmsScenarioStructuredStatus(`Structured merge pending: ${error instanceof Error ? error.message : "Unable to assemble scenario JSON."}`, true); } } updateCmsDirtyState("scenario"); }));
     cmsScenarioDefinitionJsonInput.addEventListener("input", () => { fillCmsStructuredScenarioFieldsFromDefinition(); updateCmsDirtyState("scenario"); });
     cmsScenarioValidateStructuredButton.addEventListener("click", validateCmsStructuredScenarioInput);
+    [cmsLevelDisplayNameInput, cmsLevelSortOrderInput, cmsLevelWrapUpTurnInput, cmsLevelFinalTurnInput, cmsLevelComplexityGuidanceInput, cmsLevelCorrectionGuidanceInput, cmsLevelAnswerGuidanceInput, cmsLevelAdminNotesInput, cmsLevelIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("level")));
     [cmsPromptTemplateBodyInput, cmsPromptTemplateIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("promptTemplate")));
     [cmsTutorProfileDisplayNameInput, cmsTutorProfileCommunicationStyleJsonInput, cmsTutorProfileSafetyNotesJsonInput, cmsTutorProfileIsActiveInput].forEach((element) => element.addEventListener("input", () => updateCmsDirtyState("tutorProfile")));
     window.addEventListener("beforeunload", (event) => { if (!hasUnsavedChanges()) { return; } event.preventDefault(); event.returnValue = UnsavedChangesMessage; });

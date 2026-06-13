@@ -40,6 +40,7 @@ public static class CmsContentConstants
         public const string LessonTutorBase = "lesson_tutor_base";
         public const string LessonSetupRules = "lesson_setup_rules";
         public const string LessonResponseRules = "lesson_response_rules";
+        public const string LevelProfiles = "level_profiles";
         public const string Hint = "hint";
         public const string Feedback = "feedback";
         public const string Summary = "summary";

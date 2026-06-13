@@ -14,6 +14,8 @@ public sealed class CmsContentPackSummaryResponse
     public int ScenarioCount { get; set; }
     public int PromptTemplateCount { get; set; }
     public int TutorBehaviorProfileCount { get; set; }
+    public int LevelProfileCount { get; set; }
+    public List<CmsContentPreviewLevelProfileResponse> SampleLevelProfiles { get; set; } = [];
     public int? CurrentPublishedVersionNumber { get; set; }
     public DateTimeOffset? CurrentPublishedAtUtc { get; set; }
 }
@@ -97,6 +99,7 @@ public sealed class CmsContentValidationCountsResponse
     public int Scenarios { get; set; }
     public int PromptTemplates { get; set; }
     public int TutorBehaviorProfiles { get; set; }
+    public int LevelProfiles { get; set; }
 }
 
 public sealed class CmsContentPreviewResponse
@@ -108,6 +111,8 @@ public sealed class CmsContentPreviewResponse
     public int ScenarioCount { get; set; }
     public int PromptTemplateCount { get; set; }
     public int TutorBehaviorProfileCount { get; set; }
+    public int LevelProfileCount { get; set; }
+    public List<CmsContentPreviewLevelProfileResponse> SampleLevelProfiles { get; set; } = [];
     public int? CurrentPublishedVersionNumber { get; set; }
     public List<CmsContentPreviewTopicSummaryResponse> SampleTopics { get; set; } = [];
     public List<CmsContentPreviewScenarioSummaryResponse> SampleScenarios { get; set; } = [];
@@ -121,6 +126,15 @@ public sealed class CmsContentPreviewTopicSummaryResponse
     public string StableTopicKey { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public int SortOrder { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public sealed class CmsContentPreviewLevelProfileResponse
+{
+    public string StableLevelKey { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public int WrapUpAfterUserTurn { get; set; }
+    public int FinalMessageAtUserTurn { get; set; }
     public bool IsActive { get; set; }
 }
 
