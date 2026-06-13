@@ -37,4 +37,6 @@ public sealed class LessonScenario
     public RepetitionLogic RepetitionLogic { get; set; } = new();
 
     public List<string> AiTutorPromptInstructions { get; set; } = [];
+
+    public List<TutorRuntimeMetadata> TutorProfiles { get; set; } = [];
 }

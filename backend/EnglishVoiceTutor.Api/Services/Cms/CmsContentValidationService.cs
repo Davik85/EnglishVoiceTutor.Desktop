@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities.Cms;
+using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,11 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
     private static readonly HashSet<string> SupportedStudyLanguageIds = StudyLanguageCatalog.All
         .Select(language => language.Id)
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    private static readonly IReadOnlyList<string> RequiredTutorBehaviorProfileIds = TutorAvatarOptions.All
+        .Select(avatar => avatar.Id)
+        .OrderBy(id => id, StringComparer.Ordinal)
+        .ToArray();
 
     public CmsContentValidationResult Validate(CmsStaticContentImportDraft draft)
     {
@@ -204,6 +210,7 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
 
     private static void ValidateTutorProfiles(CmsStaticContentImportDraft draft, CmsContentValidationResult result)
     {
+        ValidateTutorProfileIds(draft.TutorBehaviorProfiles.Select(tutor => tutor.TutorId), "Tutor behavior profile", result);
         foreach (var tutor in draft.TutorBehaviorProfiles)
         {
             Require(tutor.TutorId, "A tutor behavior profile is missing its tutor id.", result);
@@ -335,12 +342,38 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
 
     private static void ValidateDraftTutorProfiles(IReadOnlyList<TutorBehaviorProfileEntity> tutorProfiles, CmsContentValidationResult result)
     {
+        ValidateTutorProfileIds(tutorProfiles.Select(profile => profile.TutorId), "Draft tutor behavior profile", result);
         foreach (var profile in tutorProfiles)
         {
             Require(profile.TutorId, $"Draft tutor behavior profile '{profile.Id}' is missing tutor id.", result);
             Require(profile.DisplayName, $"Draft tutor behavior profile '{profile.TutorId}' is missing display name.", result);
             Require(profile.CommunicationStyleJson, $"Draft tutor behavior profile '{profile.TutorId}' is missing communication style JSON.", result);
         }
+    }
+
+    private static void ValidateTutorProfileIds(IEnumerable<string> tutorIds, string label, CmsContentValidationResult result)
+    {
+        var actualIds = tutorIds
+            .Select(id => id?.Trim() ?? string.Empty)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        var actualIdSet = actualIds.ToHashSet(StringComparer.Ordinal);
+        var requiredIdSet = RequiredTutorBehaviorProfileIds.ToHashSet(StringComparer.Ordinal);
+        var missingIds = RequiredTutorBehaviorProfileIds.Where(id => !actualIdSet.Contains(id)).ToArray();
+        var unknownIds = actualIds.Where(id => !requiredIdSet.Contains(id)).Distinct(StringComparer.Ordinal).ToArray();
+        var duplicateIds = actualIds.GroupBy(id => id, StringComparer.Ordinal).Where(group => group.Count() > 1).Select(group => group.Key).ToArray();
+
+        if (missingIds.Length > 0 || unknownIds.Length > 0 || duplicateIds.Length > 0)
+        {
+            result.Errors.Add($"{label} ids do not match approved stable tutor ids. Expected required tutor ids: {FormatIds(RequiredTutorBehaviorProfileIds)}; actual tutor ids: {FormatIds(actualIds)}; missing tutor ids: {FormatIds(missingIds)}; unknown/extra tutor ids: {FormatIds(unknownIds)}; duplicate tutor ids: {FormatIds(duplicateIds)}.");
+        }
+    }
+
+    private static string FormatIds(IEnumerable<string> ids)
+    {
+        var values = ids.Where(id => !string.IsNullOrWhiteSpace(id)).ToArray();
+        return values.Length == 0 ? "none" : string.Join(", ", values);
     }
 
     private static void ValidateDraftJsonPayloads(

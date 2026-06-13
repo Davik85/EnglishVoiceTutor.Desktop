@@ -131,3 +131,7 @@ CMS published snapshot is the active runtime source. The diagnostic confirms run
 - Scenario-specific lesson length values remain optional overrides when explicitly set and valid. Priority is: scenario override, then CMS level profile, then safe backend constants.
 - Backend runtime content remains the source of truth for lesson behavior. Desktop may keep its current level labels for display, but desktop and future mobile should use backend runtime behavior from the CMS published snapshot.
 - Static JSON fallback remains available; fallback runtime also receives safe default level profiles.
+
+## CMS tutor display name verification
+
+When changing a tutor Display name in Admin CMS, use Save draft + Publish and then start a new desktop lesson to verify the lesson chat bubble uses the CMS-published display name. Keep the stable tutor/avatar IDs (`elena`, `nelli`, `david`) unchanged because avatar image selection continues to use those IDs rather than display names.

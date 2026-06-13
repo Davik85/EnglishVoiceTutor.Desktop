@@ -27,6 +27,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 using Microsoft.EntityFrameworkCore;
 using HttpBadHttpRequestException = Microsoft.AspNetCore.Http.BadHttpRequestException;
@@ -387,6 +388,16 @@ static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
     {
         return Results.NotFound(new { error = "Scenario was not found in runtime lesson content." });
     }
+
+    scenario.Lesson.TutorProfiles = result.Content.TutorBehaviorProfiles
+        .Where(profile => profile.IsActive)
+        .OrderBy(profile => profile.TutorId, StringComparer.Ordinal)
+        .Select(profile => new TutorRuntimeMetadata
+        {
+            TutorId = profile.TutorId.Trim(),
+            DisplayName = profile.DisplayName.Trim()
+        })
+        .ToList();
 
     loggerFactory.CreateLogger("RuntimeLessonContentEndpoint").LogInformation(
         "Runtime lesson scenario served. ScenarioKey={ScenarioKey}; Source={Source}; FallbackUsed={FallbackUsed}; VersionNumber={VersionNumber}; ContentPackSlug={ContentPackSlug}; SetupMessageLength={SetupMessageLength}; FirstBotRuleCount={FirstBotRuleCount}.",

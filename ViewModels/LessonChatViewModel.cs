@@ -642,8 +642,10 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         this.tutorAvatar = tutorAvatar;
         tutorAvatarId = tutorAvatar.Id;
         this.speechVoiceId = SpeechVoiceOptions.GetById(string.IsNullOrWhiteSpace(speechVoiceId) ? SpeechVoiceOptions.GetPreferredVoiceIdForTutor(tutorAvatar.Id) : speechVoiceId).Id;
-        TutorAvatarDisplayName = tutorAvatar.DisplayName;
         this.tutorProfile = tutorProfile ?? new TutorProfile { Id = tutorAvatar.Id, DisplayName = tutorAvatar.DisplayName };
+        TutorAvatarDisplayName = string.IsNullOrWhiteSpace(this.tutorProfile.DisplayName)
+            ? tutorAvatar.DisplayName
+            : this.tutorProfile.DisplayName.Trim();
         this.lessonScenario = lessonScenario ?? new LessonScenario();
         activeLevelProfile = ResolveActiveLevelProfile(this.lessonScenario, selectedLevel);
         this.lessonChatBackendService = lessonChatBackendService;

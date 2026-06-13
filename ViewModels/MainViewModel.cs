@@ -607,6 +607,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         RefreshMutableUserSettingsFromPersistedSettings();
         Debug.WriteLine($"Starting lesson with StudyLanguageId={userSettings.StudyLanguageId}; Topic={selectedTopic.Title}; Subtopic={selectedSubtopic.Title}; Level={selectedLevel}.");
+        var lessonScenario = await LoadRuntimeLessonScenarioForSubtopicAsync(selectedTopic, selectedSubtopic);
+        var tutorProfile = LoadTutorProfile(userSettings.SelectedTutorAvatarId, lessonScenario);
+
         return new LessonChatViewModel(
             AppLocalization.GetText(userSettings.InterfaceLanguageId),
             selectedLevel,
@@ -618,8 +621,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             userSettings.LearningGoal,
             TutorAvatarOptions.GetById(userSettings.SelectedTutorAvatarId),
             SpeechVoiceOptions.GetById(userSettings.SpeechVoiceId).Id,
-            LoadTutorProfile(userSettings.SelectedTutorAvatarId),
-            await LoadRuntimeLessonScenarioForSubtopicAsync(selectedTopic, selectedSubtopic),
+            tutorProfile,
+            lessonScenario,
             lessonChatBackendService,
             backendLessonSessionClient,
             backendLessonMessageClient,
@@ -632,21 +635,35 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             (summaryInput, backendLessonSessionId) => NavigateToLessonSummary(selectedLevel, selectedTopic, selectedSubtopic, summaryInput, backendLessonSessionId));
     }
 
-    private TutorProfile LoadTutorProfile(string tutorAvatarId)
+    private TutorProfile LoadTutorProfile(string tutorAvatarId, LessonScenario? runtimeScenario = null)
     {
+        var avatar = TutorAvatarOptions.GetById(tutorAvatarId);
+        TutorProfile profile;
         try
         {
-            return lessonContentService.LoadTutorProfile(TutorAvatarOptions.GetById(tutorAvatarId).Id);
+            profile = lessonContentService.LoadTutorProfile(avatar.Id);
         }
         catch (Exception exception)
         {
             System.Diagnostics.Debug.WriteLine($"Tutor profile load failed. TutorProfileId={tutorAvatarId}; {exception.Message}");
-            return new TutorProfile
+            profile = new TutorProfile
             {
-                Id = TutorAvatarOptions.DefaultAvatarId,
-                DisplayName = TutorAvatarOptions.Elena.DisplayName
+                Id = avatar.Id,
+                DisplayName = avatar.DisplayName
             };
         }
+
+        var runtimeDisplayName = runtimeScenario?.TutorProfiles
+            .FirstOrDefault(tutor => string.Equals(tutor.TutorId, avatar.Id, StringComparison.OrdinalIgnoreCase))
+            ?.DisplayName
+            ?.Trim();
+        if (!string.IsNullOrWhiteSpace(runtimeDisplayName))
+        {
+            profile.Id = avatar.Id;
+            profile.DisplayName = runtimeDisplayName;
+        }
+
+        return profile;
     }
 
 
