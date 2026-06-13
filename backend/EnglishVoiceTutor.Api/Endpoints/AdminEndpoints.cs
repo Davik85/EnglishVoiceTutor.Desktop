@@ -57,6 +57,9 @@ public static class AdminEndpoints
         app.MapGet(ApiConstants.AdminDevCmsRuntimeContentStatusRoute, GetRuntimeCmsContentStatusAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
+        app.MapGet(ApiConstants.AdminDevCmsRuntimeStatusRoute, GetRuntimeCmsContentStatusAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
         app.MapGet(ApiConstants.AdminDevCmsContentPacksRoute, ListCmsContentPacksAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
@@ -520,14 +523,7 @@ public static class AdminEndpoints
     {
         var result = await cmsRuntimeLessonContentService.ReadRuntimeLessonContentAsync(cancellationToken);
         var response = CmsRuntimeLessonContentStatusResponse.FromResult(result);
-        return result.Success ? Results.Ok(response) : Results.Problem(
-            title: "Runtime lesson content is unavailable.",
-            detail: string.Join(" ", result.Errors),
-            statusCode: StatusCodes.Status503ServiceUnavailable,
-            extensions: new Dictionary<string, object?>
-            {
-                ["runtimeContent"] = response
-            });
+        return Results.Ok(response);
     }
 
     private static async Task<IResult> ImportStaticCmsContentAsync(

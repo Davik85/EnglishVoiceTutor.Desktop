@@ -228,3 +228,9 @@ Move from Admin CMS foundation/UI cleanup to CMS connection readiness:
 ### Do not enable by default
 
 Do not make CMS published-snapshot runtime the learner default during this readiness step. Keep static JSON as the learner default until the published-snapshot path is explicitly validated, rollback/disable instructions are documented, and a separate enablement decision is made.
+
+## Runtime content status diagnostic
+
+A bootstrap-admin protected, read-only runtime status diagnostic is available at `GET /api/admin/dev/cms/runtime-status`. The Admin CMS **Validation & Preview** area displays this as **Runtime content status**. It intentionally shows metadata only: flags, effective source, slug, version/hash, counts, validation status, fallback status, and bounded errors/warnings.
+
+This diagnostic must not be treated as runtime enablement. Learner runtime remains static JSON by default; CMS published snapshots are read for runtime only when the explicit CMS runtime flags are set in a controlled environment. The controlled path is validate published snapshot reads with fallback enabled, document rollback to static JSON, then decide whether any limited learner/tester group should use CMS runtime content.

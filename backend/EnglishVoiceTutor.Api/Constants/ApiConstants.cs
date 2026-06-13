@@ -93,6 +93,7 @@ public static class ApiConstants
     public const string AdminDevCmsStaticJsonV1InitializeRoute = "/api/admin/dev/cms/content-packs/static-json-v1/initialize-from-static-json";
     public const string AdminDevCmsPublishedContentStatusRoute = "/api/admin/dev/cms/published-content/status";
     public const string AdminDevCmsRuntimeContentStatusRoute = "/api/admin/dev/cms/runtime-content/status";
+    public const string AdminDevCmsRuntimeStatusRoute = "/api/admin/dev/cms/runtime-status";
     public const string CmsRuntimeContentSourceStatusRoute = "/api/cms/runtime-content/source-status";
     public const string AdminDevCmsContentPacksRoute = "/api/admin/dev/cms/content-packs";
     public const string AdminDevCmsContentPackRoute = "/api/admin/dev/cms/content-packs/{slug}";

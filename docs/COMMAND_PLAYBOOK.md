@@ -123,3 +123,19 @@ Manual browser check:
 Current state: backend `0.1.35-backend.6` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.5`.
 
 Do not enable by default: these checks do not enable CMS published-snapshot runtime for learners. Learners still use packaged static JSON by default unless a separate controlled runtime-read validation and enablement decision is made.
+
+## Admin CMS runtime status diagnostic
+
+Local or controlled-environment runtime status check:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\smoke_cms_runtime_status.ps1 -BaseUrl http://localhost:5000 -AccessToken <admin-bearer-token>
+```
+
+Manual endpoint check after signing in as a bootstrap admin:
+
+```powershell
+Invoke-RestMethod "https://api.languagevoicetutor.com/api/admin/dev/cms/runtime-status" -Headers @{ Authorization = "Bearer <admin-bearer-token>" }
+```
+
+The runtime status endpoint is read-only and does not enable CMS runtime content. Static JSON remains default unless the controlled runtime validation environment explicitly sets `CmsContent:UsePublishedSnapshotForRuntime=true`, `CmsContent:ReadPublishedSnapshotEnabled=true`, `CmsContent:ContentPackSlug=static-json-v1`, and `CmsContent:FallbackToStaticJson=true`. Rollback is to remove/disable those explicit CMS runtime flags so the effective source returns to static JSON.

@@ -119,3 +119,9 @@ Next safe step: move from Admin CMS foundation/UI cleanup to CMS connection read
 - Production CMS RBAC and critical-change approval remain deferred.
 - Code signing remains deferred.
 - Broader public release readiness remains deferred until after controlled tester feedback and operational hardening.
+
+## CMS runtime status validation path
+
+The Admin CMS now exposes a read-only **Runtime content status** section and the protected endpoint `GET /api/admin/dev/cms/runtime-status`. Use it to confirm the effective learner content source, validation result, counts, published snapshot metadata, and fallback state without exposing content bodies or secrets.
+
+Static JSON remains the default. The diagnostic does not enable CMS runtime content and does not change production defaults. For the next controlled validation, set all runtime-read flags explicitly in a non-default environment: `CmsContent:UsePublishedSnapshotForRuntime=true`, `CmsContent:ReadPublishedSnapshotEnabled=true`, `CmsContent:ContentPackSlug=static-json-v1`, and `CmsContent:FallbackToStaticJson=true`. After validation, decide separately whether to enable CMS runtime for a limited learner/tester group; rollback is removing those explicit flags so runtime returns to static JSON.
