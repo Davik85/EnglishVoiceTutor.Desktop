@@ -32,9 +32,45 @@ public partial class MainWindow : Window
         {
             mainViewModel.PropertyChanged += MainViewModel_PropertyChanged;
             ApplyLayoutForViewModel(mainViewModel.CurrentViewModel);
+            ApplyWindowThemeForViewModel(mainViewModel.CurrentViewModel);
         }
     }
 
+
+    private void ApplyWindowThemeForViewModel(ViewModelBase viewModel)
+    {
+        Background = viewModel is WelcomeViewModel
+            ? (Brush)FindResource("StartScreenSunnySkyBackgroundBrush")
+            : (Brush)FindResource("AppBackgroundBrush");
+
+        ApplyCaptionColorForViewModel(viewModel);
+    }
+
+    private void ApplyCaptionColorForViewModel(ViewModelBase viewModel)
+    {
+        var captionColor = viewModel is WelcomeViewModel
+            ? (Color)FindResource("StartScreenCaptionColor")
+            : (Color)FindResource("AppBackgroundColor");
+
+        TrySetCaptionColor(captionColor);
+    }
+
+    private void TrySetCaptionColor(Color color)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var windowHandle = new WindowInteropHelper(this).Handle;
+        if (windowHandle == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var colorRef = color.R | (color.G << 8) | (color.B << 16);
+        _ = DwmSetWindowAttribute(windowHandle, DwmwaCaptionColor, ref colorRef, Marshal.SizeOf<int>());
+    }
 
     private void ApplyAppIconIfAvailable()
     {
@@ -54,6 +90,11 @@ public partial class MainWindow : Window
     {
         base.OnSourceInitialized(e);
         ApplySafeStartupWindowPlacement(GetCurrentMonitorWorkingAreaInDips());
+
+        if (DataContext is MainViewModel mainViewModel)
+        {
+            ApplyCaptionColorForViewModel(mainViewModel.CurrentViewModel);
+        }
     }
 
     protected override void OnContentRendered(EventArgs e)
@@ -128,6 +169,7 @@ public partial class MainWindow : Window
         }
 
         ApplyLayoutForViewModel(mainViewModel.CurrentViewModel);
+        ApplyWindowThemeForViewModel(mainViewModel.CurrentViewModel);
     }
 
     private void ApplyLayoutForViewModel(ViewModelBase viewModel)
@@ -337,7 +379,11 @@ public partial class MainWindow : Window
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     private static extern bool GetMonitorInfo(IntPtr monitorHandle, ref MonitorInfo monitorInfo);
 
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr windowHandle, int attribute, ref int attributeValue, int attributeSize);
+
     private const uint MonitorDefaultToNearest = 0x00000002;
+    private const int DwmwaCaptionColor = 35;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct MonitorInfo

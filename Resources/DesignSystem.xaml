@@ -14,6 +14,11 @@
     <Color x:Key="BorderSoftColor">#FFE3EDF7</Color>
     <Color x:Key="BorderAccentSoftColor">#FFD6E6F5</Color>
     <Color x:Key="FrameBorderColor">#FFD6E6F5</Color>
+    <Color x:Key="StartScreenSkyTopColor">#FFEAF6FF</Color>
+    <Color x:Key="StartScreenSkyMiddleColor">#FFF7FBFF</Color>
+    <Color x:Key="StartScreenSunlightSoftColor">#FFFFF1D2</Color>
+    <Color x:Key="StartScreenSunlightBottomColor">#FFFFE8BF</Color>
+    <Color x:Key="StartScreenCaptionColor">#FFEAF6FF</Color>
 
     <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackgroundColor}" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
@@ -28,6 +33,14 @@
     <SolidColorBrush x:Key="BorderSoftBrush" Color="{StaticResource BorderSoftColor}" />
     <SolidColorBrush x:Key="BorderAccentSoftBrush" Color="{StaticResource BorderAccentSoftColor}" />
     <SolidColorBrush x:Key="FrameBorderBrush" Color="{StaticResource FrameBorderColor}" />
+    <LinearGradientBrush x:Key="StartScreenSunnySkyBackgroundBrush"
+                         StartPoint="0,0"
+                         EndPoint="0,1">
+        <GradientStop Color="{StaticResource StartScreenSkyTopColor}" Offset="0" />
+        <GradientStop Color="{StaticResource StartScreenSkyMiddleColor}" Offset="0.36" />
+        <GradientStop Color="{StaticResource StartScreenSunlightSoftColor}" Offset="0.78" />
+        <GradientStop Color="{StaticResource StartScreenSunlightBottomColor}" Offset="1" />
+    </LinearGradientBrush>
 
     <CornerRadius x:Key="CornerSmall">10</CornerRadius>
     <CornerRadius x:Key="CornerTextInput">12</CornerRadius>
