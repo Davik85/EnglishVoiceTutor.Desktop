@@ -153,12 +153,7 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             lessonReply = CreateSafeFallbackLessonReply(request);
         }
 
-        var guardTutorProfile = _avatarProfileProvider.GetById(request.TutorAvatarId);
-        if (!string.IsNullOrWhiteSpace(request.TutorDisplayName))
-        {
-            guardTutorProfile.DisplayName = request.TutorDisplayName.Trim();
-        }
-
+        var guardTutorProfile = ResolveGuardTutorProfile(request, _avatarProfileProvider.GetById(request.TutorAvatarId));
         var guardedReply = _tutorIdentityGuard.PreventWrongTutorSelfIntroduction(lessonReply, guardTutorProfile, operation);
         var isEnglishTargetLanguage = string.IsNullOrWhiteSpace(request.TargetLanguageId)
             || string.Equals(request.TargetLanguageId, "en", StringComparison.OrdinalIgnoreCase);
@@ -566,6 +561,28 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
         validationReason = string.Empty;
         return true;
+    }
+
+    private static TutorAvatarProfile ResolveGuardTutorProfile(LessonChatRequest request, TutorAvatarProfile fallbackProfile)
+    {
+        if (string.IsNullOrWhiteSpace(request.TutorDisplayName))
+        {
+            return fallbackProfile;
+        }
+
+        return new TutorAvatarProfile
+        {
+            Id = fallbackProfile.Id,
+            DisplayName = request.TutorDisplayName.Trim(),
+            Age = fallbackProfile.Age,
+            HomeCity = fallbackProfile.HomeCity,
+            CountryOrRegion = fallbackProfile.CountryOrRegion,
+            Studies = fallbackProfile.Studies,
+            Hobbies = fallbackProfile.Hobbies,
+            CommunicationStyle = fallbackProfile.CommunicationStyle,
+            SpeakingRules = fallbackProfile.SpeakingRules,
+            IdentityRules = fallbackProfile.IdentityRules
+        };
     }
 
     private static LessonChatResponse CreateSafeFallbackLessonReply(LessonChatRequest request)
