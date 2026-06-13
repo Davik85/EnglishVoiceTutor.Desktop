@@ -66,19 +66,19 @@ body.landing-page {
 
 .app-panel__shade {
     background:
-        linear-gradient(180deg, rgba(4, 18, 32, 0.76) 0%, rgba(4, 18, 32, 0.34) 45%, rgba(4, 18, 32, 0.72) 100%),
-        linear-gradient(90deg, rgba(4, 18, 32, 0.36), rgba(4, 18, 32, 0.1));
+        linear-gradient(180deg, rgba(4, 18, 32, 0.5) 0%, rgba(4, 18, 32, 0.18) 46%, rgba(4, 18, 32, 0.48) 100%),
+        linear-gradient(90deg, rgba(4, 18, 32, 0.22), rgba(4, 18, 32, 0.06));
     z-index: -1;
 }
 
 .app-panel__content {
-    width: min(560px, calc(100% - 40px));
-    margin: clamp(28px, 7vw, 72px) auto auto;
-    padding: clamp(22px, 4vw, 36px);
+    width: min(440px, calc(100% - 48px));
+    margin: clamp(20px, 5vh, 44px) auto auto;
+    padding: clamp(18px, 3vw, 28px);
     border: 1px solid rgba(255, 255, 255, 0.22);
-    border-radius: 28px;
-    background: rgba(5, 22, 38, 0.42);
-    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
+    border-radius: 24px;
+    background: rgba(5, 22, 38, 0.34);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
     backdrop-filter: blur(4px);
 }
 
@@ -87,7 +87,7 @@ body.landing-page {
     display: inline-flex;
     align-items: center;
     width: fit-content;
-    margin: 0 0 16px;
+    margin: 0 0 12px;
     border-radius: 999px;
     font-size: 0.82rem;
     font-weight: 800;
@@ -100,31 +100,31 @@ body.landing-page {
 }
 
 .app-panel__badge {
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.18);
+    padding: 7px 11px;
+    background: rgba(255, 255, 255, 0.2);
     color: #ffffff;
 }
 
 .app-panel h1,
 .app-panel h2 {
-    margin: 0 0 18px;
-    font-size: clamp(2.1rem, 5vw, 4.7rem);
-    line-height: 0.98;
+    margin: 0 0 14px;
+    font-size: clamp(1.9rem, 3.6vw, 3.5rem);
+    line-height: 1;
     text-wrap: balance;
 }
 
 .app-panel p {
-    max-width: 32rem;
+    max-width: 27rem;
     margin: 0;
-    color: rgba(255, 255, 255, 0.88);
-    font-size: clamp(1rem, 1.6vw, 1.28rem);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: clamp(0.98rem, 1.35vw, 1.14rem);
 }
 
 .app-panel__cue {
     display: inline-flex;
     align-items: center;
-    margin-top: 28px;
-    padding: 13px 18px;
+    margin-top: 22px;
+    padding: 11px 16px;
     border-radius: 999px;
     background: #ffffff;
     color: #0d2b4c;
@@ -164,11 +164,11 @@ body.landing-page {
 }
 
 .app-panel--inactive .app-panel__image {
-    filter: grayscale(0.35) brightness(0.58) saturate(0.75);
+    filter: grayscale(0.18) brightness(0.84) saturate(0.9);
 }
 
 .app-panel--inactive .app-panel__shade {
-    background: rgba(7, 21, 36, 0.68);
+    background: rgba(7, 21, 36, 0.42);
 }
 
 .site-footer {
@@ -384,8 +384,8 @@ dd {
     }
 
     .app-panel__content {
-        width: min(100% - 28px, 560px);
-        margin-top: 24px;
+        width: min(100% - 28px, 440px);
+        margin-top: 20px;
     }
 
     .site-footer {
