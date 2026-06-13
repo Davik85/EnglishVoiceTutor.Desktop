@@ -75,9 +75,13 @@ body.landing-page {
 }
 
 .app-panel__content {
-    width: min(440px, calc(100% - 48px));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: min(680px, calc(100% - 72px));
+    height: clamp(380px, 50vh, 520px);
     margin: 0;
-    padding: clamp(18px, 3vw, 28px);
+    padding: clamp(22px, 3vw, 34px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 24px;
     background: rgba(5, 22, 38, 0.24);
@@ -387,7 +391,8 @@ dd {
     }
 
     .app-panel__content {
-        width: min(100% - 28px, 440px);
+        width: min(100% - 28px, 560px);
+        height: auto;
         margin: var(--landing-card-top) 0;
     }
 
