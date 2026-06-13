@@ -200,7 +200,7 @@ The CMS runtime read path is intentionally controlled and reversible. Static JSO
 
 - Readable Validation & Preview UI is complete for the deployed Admin CMS. Validation now shows Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON instead of dumping raw JSON in the main result area. Preview now shows readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON.
 - Admin static asset cache busting and no-cache behavior are complete for `/admin` assets. `admin.js` and `admin.css` use the `admin-cms-20260613-raw-json-fix` version token, and no-cache headers apply to `/admin` static files only.
-- Backend `0.1.35-backend.6` is the deployed backend containing the latest Admin CMS UI/cache fixes. The current backend symlink points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.6`; rollback reference is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.5`.
+- Backend `0.1.35-backend.7` is the deployed backend containing the latest Admin CMS UI/cache fixes. The current backend symlink points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.7`; rollback reference is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.6`.
 - Health and database health are green after deploy. Build is green. Admin shell audit is green. EF model check reports no pending model changes. No EF migration was required.
 
 ### Current state
@@ -233,4 +233,4 @@ Do not make CMS published-snapshot runtime the learner default during this readi
 
 A bootstrap-admin protected, read-only runtime status diagnostic is available at `GET /api/admin/dev/cms/runtime-status`. The Admin CMS **Validation & Preview** area displays this as **Runtime content status**. It intentionally shows metadata only: flags, effective source, slug, version/hash, counts, validation status, fallback status, and bounded errors/warnings.
 
-This diagnostic must not be treated as runtime enablement. Learner runtime remains static JSON by default; CMS published snapshots are read for runtime only when the explicit CMS runtime flags are set in a controlled environment. The controlled path is validate published snapshot reads with fallback enabled, document rollback to static JSON, then decide whether any limited learner/tester group should use CMS runtime content.
+Controlled server validation comes first; localhost is only an explicit developer override for local backend work. This diagnostic must not be treated as runtime enablement. Learner runtime remains static JSON by default; CMS published snapshots are read for runtime only when the explicit CMS runtime flags are set in a controlled environment. The controlled path is validate published snapshot reads with fallback enabled, document rollback to static JSON, then decide whether any limited learner/tester group should use CMS runtime content.

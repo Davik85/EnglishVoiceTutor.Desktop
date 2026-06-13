@@ -120,17 +120,25 @@ Manual browser check:
 6. Confirm the UI is readable.
 7. Confirm raw JSON appears only inside collapsed details blocks.
 
-Current state: backend `0.1.35-backend.6` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.5`.
+Current state: backend `0.1.35-backend.7` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.6`.
 
 Do not enable by default: these checks do not enable CMS published-snapshot runtime for learners. Learners still use packaged static JSON by default unless a separate controlled runtime-read validation and enablement decision is made.
 
 ## Admin CMS runtime status diagnostic
 
-Local or controlled-environment runtime status check:
+Server release/backend verification runtime status check. The smoke script now defaults to the server backend, not localhost:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\smoke_cms_runtime_status.ps1 -BaseUrl http://localhost:5000 -AccessToken <admin-bearer-token>
+powershell -ExecutionPolicy Bypass -File .\tools\smoke_cms_runtime_status.ps1
 ```
+
+Optional explicit server form:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\smoke_cms_runtime_status.ps1 -BaseUrl "https://api.languagevoicetutor.com"
+```
+
+If the endpoint requires admin auth, provide an admin bearer token or approved admin auth method without printing or hardcoding token values. Localhost is not the default for release/backend verification and should be used only when explicitly passed for approved local backend development runs.
 
 Manual endpoint check after signing in as a bootstrap admin:
 
