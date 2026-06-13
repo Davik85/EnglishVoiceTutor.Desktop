@@ -333,7 +333,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
 
             HideAccessPanel();
-            CurrentViewModel = CreateLessonChatViewModel(selectedLevel, selectedTopic, selectedSubtopic);
+            CurrentViewModel = await CreateLessonChatViewModelAsync(selectedLevel, selectedTopic, selectedSubtopic);
         }
         catch (Exception exception)
         {
@@ -603,7 +603,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             subtopic => NavigateToLessonChat(selectedLevel, selectedTopic, subtopic));
     }
 
-    private LessonChatViewModel CreateLessonChatViewModel(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic)
+    private async Task<LessonChatViewModel> CreateLessonChatViewModelAsync(string selectedLevel, Topic selectedTopic, Subtopic selectedSubtopic)
     {
         RefreshMutableUserSettingsFromPersistedSettings();
         Debug.WriteLine($"Starting lesson with StudyLanguageId={userSettings.StudyLanguageId}; Topic={selectedTopic.Title}; Subtopic={selectedSubtopic.Title}; Level={selectedLevel}.");
@@ -619,7 +619,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             TutorAvatarOptions.GetById(userSettings.SelectedTutorAvatarId),
             SpeechVoiceOptions.GetById(userSettings.SpeechVoiceId).Id,
             LoadTutorProfile(userSettings.SelectedTutorAvatarId),
-            LoadRuntimeLessonScenarioForSubtopic(selectedTopic, selectedSubtopic),
+            await LoadRuntimeLessonScenarioForSubtopicAsync(selectedTopic, selectedSubtopic),
             lessonChatBackendService,
             backendLessonSessionClient,
             backendLessonMessageClient,
@@ -650,34 +650,47 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
 
-    private LessonScenario LoadRuntimeLessonScenarioForSubtopic(Topic selectedTopic, Subtopic selectedSubtopic)
+    private async Task<LessonScenario> LoadRuntimeLessonScenarioForSubtopicAsync(Topic selectedTopic, Subtopic selectedSubtopic)
     {
         var localScenario = LoadLessonScenarioForSubtopic(selectedTopic, selectedSubtopic);
         if (string.IsNullOrWhiteSpace(localScenario.Id))
         {
+            Debug.WriteLine("Using packaged local lesson scenario fallback. Reason=missing_local_scenario_id.");
             return localScenario;
         }
 
+        Debug.WriteLine($"Runtime lesson scenario loading started. ScenarioId={localScenario.Id}.");
         try
         {
-            var runtimeScenario = backendLessonContentClient
-                .GetRuntimeScenarioAsync(userSettings.BackendBaseUrl, localScenario.Id)
-                .GetAwaiter()
-                .GetResult();
+            using var timeoutCancellation = new CancellationTokenSource(TimeSpan.FromSeconds(BackendConstants.RuntimeLessonScenarioRequestTimeoutSeconds));
+            var runtimeScenario = await backendLessonContentClient.GetRuntimeScenarioAsync(
+                userSettings.BackendBaseUrl,
+                localScenario.Id,
+                timeoutCancellation.Token);
 
-            if (runtimeScenario is not null && !string.IsNullOrWhiteSpace(runtimeScenario.Id))
+            if (IsRuntimeLessonScenarioValid(runtimeScenario))
             {
-                Debug.WriteLine($"Loaded runtime lesson scenario from backend CMS/static runtime source. ScenarioId={runtimeScenario.Id}; SetupMessageLength={runtimeScenario.LessonSetup.SetupMessage.Length}.");
+                Debug.WriteLine($"Using backend runtime lesson scenario from CMS/static runtime source. ScenarioId={runtimeScenario.Id}; SetupMessageLength={runtimeScenario.LessonSetup.SetupMessage.Length}.");
                 return runtimeScenario;
             }
+
+            Debug.WriteLine($"Backend runtime lesson scenario failed validation or was unavailable; packaged local content fallback will be used. ScenarioId={localScenario.Id}.");
         }
         catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException or TaskCanceledException)
         {
-            Debug.WriteLine($"Runtime lesson scenario load failed; packaged local content fallback will be used. ScenarioId={localScenario.Id}; {exception.Message}");
+            Debug.WriteLine($"Backend runtime lesson scenario failed; packaged local content fallback will be used. ScenarioId={localScenario.Id}; Error={exception.Message}");
         }
 
         Debug.WriteLine($"Using packaged local lesson scenario fallback. ScenarioId={localScenario.Id}; SetupMessageLength={localScenario.LessonSetup.SetupMessage.Length}.");
         return localScenario;
+    }
+
+    private static bool IsRuntimeLessonScenarioValid(LessonScenario? runtimeScenario)
+    {
+        return runtimeScenario is not null
+            && !string.IsNullOrWhiteSpace(runtimeScenario.Id)
+            && runtimeScenario.LessonSetup is not null
+            && !string.IsNullOrWhiteSpace(runtimeScenario.LessonSetup.SetupMessage);
     }
 
     private LessonScenario LoadLessonScenarioForSubtopic(Topic selectedTopic, Subtopic selectedSubtopic)
