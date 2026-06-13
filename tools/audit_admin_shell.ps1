@@ -8,6 +8,7 @@ $indexPath = Join-Path $repoRoot "backend/EnglishVoiceTutor.Api/wwwroot/admin/in
 $jsPath = Join-Path $repoRoot "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js"
 $cssPath = Join-Path $repoRoot "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.css"
 $checkedFiles = @($indexPath, $jsPath, $cssPath)
+$requiredAdminAssetVersionToken = "admin-cms-20260613-raw-json-fix"
 
 $requiredTabButtonIds = @(
     "tab-button-overview", "tab-button-user-lookup", "tab-button-premium", "tab-button-free-lesson", "tab-button-audit-log", "tab-button-cms-content", "tab-button-system"
@@ -112,6 +113,22 @@ if (-not (Test-Path -LiteralPath $indexPath)) {
     $indexContent = Get-Content -LiteralPath $indexPath -Raw
     if ($indexContent.IndexOf('placeholder="Optional summary"', [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
         Add-Error "index.html: publish change summary must not be labelled optional because backend requires changeSummary when changed content is published."
+    }
+    foreach ($assetReferencePattern in @(
+        "<link[^>]+href=""/admin/admin\.css\?v=$requiredAdminAssetVersionToken""",
+        "<script[^>]+src=""/admin/admin\.js\?v=$requiredAdminAssetVersionToken"""
+    )) {
+        if (-not [regex]::IsMatch($indexContent, $assetReferencePattern)) {
+            Add-Error "index.html: admin.css and admin.js must be referenced with the current cache-busting query token '$requiredAdminAssetVersionToken'."
+        }
+    }
+    foreach ($unversionedAssetReferencePattern in @(
+        "<link[^>]+href=""/admin/admin\.css""",
+        "<script[^>]+src=""/admin/admin\.js"""
+    )) {
+        if ([regex]::IsMatch($indexContent, $unversionedAssetReferencePattern)) {
+            Add-Error "index.html: Admin shell assets must not use unversioned references."
+        }
     }
     $idAttributeRegex = [regex]'\sid\s*=\s*(["''])(?<id>[^"'']+)\1'
     $allIdMatches = $idAttributeRegex.Matches($indexContent)
