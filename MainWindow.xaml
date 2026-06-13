@@ -44,8 +44,9 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Border Margin="14"
-            Background="{StaticResource AppBackgroundBrush}"
+    <Border x:Name="ShellFrame"
+            Margin="14"
+            Background="{Binding Background, RelativeSource={RelativeSource AncestorType=Window}}"
             BorderBrush="{StaticResource FrameBorderBrush}"
             BorderThickness="1"
             CornerRadius="24"
