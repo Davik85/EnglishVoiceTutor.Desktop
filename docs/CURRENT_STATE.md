@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-06-12.
+Review date: 2026-06-13.
 
 ## Source of truth for current versions
 
@@ -41,9 +41,11 @@ Clean-machine smoke must verify registration/login/lesson/history/progress/updat
 
 ## Current production backend state
 
-Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.3` is active, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Backend `0.1.35-backend.3` contains the backend-only lesson chat invalid OpenAI response resilience fix. No database migration was needed for this backend-only fix; the previous refresh-token migration `20260611000000_AddUserRefreshTokens` remains applied, and the earlier `user_refresh_tokens` ownership/permission fix remains part of the production history. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2`.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.6`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.5`.
 
-Production backend health is currently healthy: `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. The `languagevoicetutor-backend.service` started successfully after the `0.1.35-backend.3` deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
+Completed: backend `0.1.35-backend.6` contains the latest Admin CMS Validation & Preview readable UI fix and the Admin static asset cache busting/no-cache fix for `/admin` assets. The Admin CMS Validation & Preview area no longer shows raw JSON directly in the main result area. Validation renders a readable panel with Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON. Preview renders readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON. Admin static asset cache busting was added for `admin.js` and `admin.css` using token `admin-cms-20260613-raw-json-fix`, and no-cache headers were added for `/admin` static files only.
+
+Completed: health and database health are green after deploy. `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. The build is green, the Admin shell audit is green, and the EF model check reports no pending model changes. No EF migration was required. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
 ## Auth, account, and persistence
 
@@ -59,9 +61,13 @@ Early manual **Finish lesson** clicks during an active lesson now ask for confir
 
 ## CMS/Admin and runtime content
 
-CMS/Admin is connected. The `static-json-v1` CMS content pack has been initialized as Draft/admin content. This initialization does not publish runtime content automatically and does not switch learner runtime.
+Current state: CMS/Admin is connected. The `static-json-v1` CMS content pack has been initialized as Draft/admin content. This initialization does not publish runtime content automatically and does not switch learner runtime.
 
-Learners still use static JSON by default. CMS published-snapshot runtime reads remain disabled/not the learner default unless `CmsContent__UsePublishedSnapshotForRuntime=true` and the related published-snapshot read path are explicitly enabled and validated later. Do not describe CMS runtime publishing as production-live for learners yet. Production RBAC and critical-change approval remain future work.
+Completed: the Admin CMS Validation & Preview UI regression is fixed and readable. Raw JSON diagnostics are available only inside collapsed details blocks. `Save draft` remains draft-only, and publishing remains isolated in **Versions & Publish**.
+
+Do not enable by default: learners still use packaged static JSON by default. CMS published-snapshot runtime reads remain disabled/not the learner default unless `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__UsePublishedSnapshotForRuntime=true`, and the related published-snapshot read path are explicitly enabled and validated later in a controlled or explicitly approved environment. Keep fallback to static JSON. Do not describe CMS runtime publishing as production-live for learners yet. Production RBAC and critical-change approval remain future work.
+
+Next safe step: use the fixed Admin CMS UI to complete practical CMS workflow validation: validate draft content, preview sample topics/scenarios, save a safe draft edit, confirm audit, publish with a clear change summary, restore a previous version, confirm old versions are immutable, and document controlled runtime-read flags and rollback before any learner runtime change is considered.
 
 ## Manual desktop update UI
 
@@ -91,6 +97,12 @@ Clean-machine smoke must include a smaller laptop / scaled display check, includ
 
 Billing/Paddle/subscription payment lifecycle remains deferred. Do not imply production billing is ready. Trial entitlement for registration is working, but production checkout, webhook operations, subscription lifecycle operations, billing support operations, and broad payment readiness remain later work.
 
+## Release status
+
+Current state: the project is preparing for controlled release / tester handoff. CMS readiness is now part of release preparation because practical content operations must work before broader handoff. Broad public production release is still not ready. Production billing remains deferred, and Paddle production readiness remains deferred.
+
+Not ready yet: do not claim broad public production readiness, production billing readiness, production RBAC readiness, critical-change approval readiness, full Admin CMS production readiness, mobile readiness, or learner CMS runtime default readiness.
+
 ## External tester readiness
 
 Solved release blockers for the current private tester baseline:
@@ -113,7 +125,7 @@ Remaining realistic readiness items:
 4. Run smaller-screen/scaled-display smoke.
 5. Hand off to a small controlled external tester group.
 6. Establish the feedback collection and triage process.
-7. Optionally validate CMS published-snapshot runtime read/publish later before ever making it the learner default.
+7. Complete CMS practical readiness as a release gate: validate the deployed Admin CMS workflow, publish/restore safely, confirm audit traceability, and document controlled runtime-read flags and rollback before considering any learner runtime change.
 8. Finish production billing/payment lifecycle later.
 9. Add code signing later to reduce SmartScreen friction before broad distribution.
 

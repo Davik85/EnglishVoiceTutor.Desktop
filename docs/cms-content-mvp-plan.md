@@ -1,6 +1,6 @@
 # CMS/Admin Content MVP Plan
 
-Review date: 2026-06-06.
+Review date: 2026-06-13.
 
 
 
@@ -607,3 +607,37 @@ The next recommended implementation step is another CMS/admin improvement, not b
 The CMS MVP includes an admin-only **Initialize from static JSON** foundation for `static-json-v1`. For the current last verified private tester/direct Windows state, `static-json-v1` has been initialized as Draft/admin content; the same action remains the documented first-setup path for future clean environments when the Admin CMS database has no initialized draft/content pack yet. The action imports the current packaged static JSON lesson topics, scenarios, prompt templates, tutor profiles, and available study-language metadata references into the current CMS draft/admin model where supported.
 
 The action is idempotent and safe: it creates the missing content pack, preserves existing draft content instead of blindly overwriting it, does not publish automatically, and does not switch runtime. Runtime remains static JSON until `CmsContent__UsePublishedSnapshotForRuntime=true` is intentionally enabled after separate validation and publishing.
+
+## 2026-06-13 update — latest CMS MVP refinements
+
+### Completed
+
+- Validation & Preview readable content QA UI is complete. Validation shows Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON. Preview shows readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON.
+- Raw JSON diagnostics are available only inside collapsed details blocks in the main Validation & Preview workflow.
+- Admin asset cache busting and no-cache behavior are complete for `/admin` static assets. `admin.js` and `admin.css` use the `admin-cms-20260613-raw-json-fix` version token.
+- Deployed verification is on backend `0.1.35-backend.6`. Backend health is green, database health is green, build is green, Admin shell audit is green, and the EF model check reports no pending model changes.
+- No EF migration was required for this refinement.
+- No learner runtime default changed. Learners still use packaged static JSON by default, and CMS published-snapshot runtime is not enabled by default.
+
+## Next CMS MVP milestone — Prepare CMS for controlled runtime connection
+
+### Current state
+
+The Admin CMS foundation is usable enough to move from UI/foundation cleanup into practical content workflow and controlled runtime-read validation. This is release preparation for controlled tester handoff, not broad public production readiness.
+
+### Next safe step
+
+1. Validate `static-json-v1` draft content.
+2. Publish a known-good content version.
+3. Verify the published snapshot exists.
+4. Verify the restore workflow.
+5. Verify the audit log.
+6. Define the config flags for a controlled CMS runtime read path.
+7. Test the CMS runtime read path behind explicit flags only.
+8. Confirm fallback to static JSON.
+9. Document rollback and disable steps.
+10. Keep CMS runtime disabled as the learner default during this step.
+
+### Do not enable by default
+
+Do not enable CMS published-snapshot runtime for learner traffic by default during this milestone. Make any runtime-read test controlled, explicitly configured, reversible, and backed by static JSON fallback.
