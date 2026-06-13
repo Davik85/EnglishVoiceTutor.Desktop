@@ -29,19 +29,19 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Current release baseline
 
-The live public tester manifest baseline must be checked from `latest.json`, not from this document. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.35-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.35-tester.1`, and `updateMode` set to `manual-confirmation`. Local build `0.1.36-tester.2` has been built and validated locally, but it is not public/live unless the website `latest.json` points to it.
+The live public tester manifest baseline must be checked from `latest.json`, not from this document. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.36-tester.8.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.36-tester.8`, and `updateMode` set to `manual-confirmation`. `0.1.36-tester.8` is the current uploaded Windows tester build in the public direct Windows release folder; verify the website `latest.json` over HTTPS before tester handoff.
 
 This is still a private tester/direct Windows release, not broad public production readiness.
 
 ## Current backend verification
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.8` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.7`. Backend `0.1.35-backend.8` contains the latest Admin CMS Validation & Preview readable UI fix plus `/admin` static asset cache busting/no-cache behavior. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. No EF migration was required.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.8`. Backend `0.1.35-backend.11` contains the latest Admin CMS Validation & Preview readable UI fix plus `/admin` static asset cache busting/no-cache behavior. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. No EF migration was required.
 
-Deployed runtime status diagnostics are visible on backend `0.1.35-backend.8` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and keeps learner runtime on static JSON by default: `effectiveSource=StaticJson`, `validationSuccess=true`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next step is controlled CMS published-snapshot runtime validation with explicit temporary flags, not default learner enablement.
+Deployed runtime status diagnostics are visible on backend `0.1.35-backend.11` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next step is controlled tester handoff and feedback collection.
 
 ## CMS connection readiness and controlled release preparation
 
-Current state: CMS practical readiness is now a release gate for controlled release / tester handoff. Learner runtime still uses packaged static JSON by default. Do not enable CMS published-snapshot runtime reads for learner traffic by default.
+Current state: CMS practical readiness has passed the runtime connection milestone. CMS published snapshot is now the active runtime content source for controlled tester lessons. Do not start broad public release from this state.
 
 ### A. Verify deployed Admin CMS manually
 
@@ -64,30 +64,23 @@ Current state: CMS practical readiness is now a release gate for controlled rele
 7. Restore the previous published version.
 8. Confirm old versions are immutable.
 
-### C. Prepare controlled runtime validation path
+### C. Runtime milestone status
 
-1. Run `tools/validate_cms_published_snapshot_runtime.ps1` in default read-only mode to confirm `effectiveSource=StaticJson`, `validationSuccess=true`, `usePublishedSnapshotForRuntime=false`, and learner runtime is not using CMS snapshot.
-2. Run `tools/validate_cms_published_snapshot_runtime.ps1 -GenerateServerValidationPlan` to print the exact temporary config flags and rollback checklist.
-3. Validate the runtime path only in a controlled development environment or explicitly approved server window.
-4. Keep fallback to static JSON.
-5. Remove/disable the temporary CMS runtime flags and restart backend after validation.
-6. Do not make CMS runtime default for learners yet.
-
-### D. Only after successful validation
-
-1. Decide whether CMS published-snapshot runtime can be enabled for learner traffic.
-2. Add rollback and disable instructions before enabling.
-3. Keep broad public production release and production billing deferred.
+1. Confirm runtime status remains `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, with no errors and no warnings.
+2. Keep fallback to static JSON available for rollback, but treat any normal-runtime fallback as a condition to investigate.
+3. Remember that **Save draft** alone does not affect the app; **Publish** is required. Existing active lessons may keep old content until a new lesson starts.
+4. Keep broad public production release and production billing deferred.
 
 ## Immediate tester-readiness work
 
-1. Run a clean-machine smoke test from the public download page and current `latest.json`.
+1. Verify the installed tester build from the public site and current `latest.json`.
 2. Validate update-over-existing-install from a prior `EnglishVoiceTutor.Desktop.*` installed tester build and confirm old installed `EnglishVoiceTutor.Desktop.*` files are cleaned from the install folder, preserved auth/session data migrates to the current `LanguageVoiceTutor.Desktop` local-data path, and login, user settings, Lesson History, and Progress survive update/reinstall.
 3. Confirm auth session restore across app restart and Windows restart.
 4. Confirm smaller-screen/scaled-display layout on at least one 1366x768, 1280x720, or equivalent scaled-display environment.
 5. Confirm Release Settings have only the simple **Check for updates** action and do not expose Diagnostics or Backend URL editing.
-6. Prepare the small external tester handoff group and feedback collection process.
-7. Treat CMS practical readiness as a release gate before broader tester handoff.
+6. Perform a short smoke test: launch, login/register, start a new lesson, confirm CMS-controlled scenario content is visible after publish, compare A1 and B2 behavior, verify voice/TTS, Lesson History, and Progress.
+7. Prepare the small external tester handoff group and instructions.
+8. Collect feedback on lesson quality, A1/A2/B1/B2 level behavior, voice, UI, and CMS-controlled content.
 
 ## Release backend lock (server-only installed builds)
 
@@ -115,7 +108,7 @@ Clean-machine smoke must verify:
 
 ## CMS/Admin follow-up
 
-Next safe step: move from Admin CMS foundation/UI cleanup to CMS connection readiness. Verify publish/restore safety, audit traceability, runtime-read diagnostics, controlled published-snapshot validation, and rollback to static JSON. Learner runtime still uses static JSON by default. Do not enable CMS published-snapshot runtime reads for learners until the runtime read/publish path is explicitly enabled, validated, documented, and approved later.
+Next safe step: controlled tester handoff and feedback collection. CMS published snapshot runtime is active; verify Save draft + Publish changes in the desktop app, keep static JSON fallback available, and investigate if normal runtime status shows fallback active.
 
 ## Deferred work
 
@@ -128,7 +121,7 @@ Next safe step: move from Admin CMS foundation/UI cleanup to CMS connection read
 
 The Admin CMS now exposes a read-only **Runtime content status** section and the protected endpoint `GET /api/admin/dev/cms/runtime-status`. Use it to confirm the effective learner content source, validation result, counts, published snapshot metadata, and fallback state without exposing content bodies or secrets.
 
-Static JSON remains the default. The diagnostic does not enable CMS runtime content and does not change production defaults. Runtime status is clean on backend `0.1.35-backend.8` with approved tutor-id validation for `david`, `elena`, and `nelli`. For the next controlled validation, use `tools/validate_cms_published_snapshot_runtime.ps1 -GenerateServerValidationPlan`; the temporary flags are `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`. The validation must be explicit, temporary, reversible, and operator-approved. After validation, decide separately whether to enable CMS runtime for a limited learner/tester group; rollback is removing/disabling those explicit flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
+CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.11` with approved tutor-id validation for `david`, `elena`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
 
 ## CMS-managed level profiles (A1-B2)
 
