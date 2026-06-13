@@ -1,6 +1,7 @@
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Options;
+using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using Microsoft.Extensions.Options;
 
@@ -11,7 +12,11 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
     private const int RequiredTopicCount = 6;
     private const int RequiredScenarioCount = 26;
     private const int RequiredPromptTemplateCount = 3;
-    private const int RequiredTutorBehaviorProfileCount = 2;
+
+    private static readonly IReadOnlyList<string> RequiredTutorBehaviorProfileIds = TutorAvatarOptions.All
+        .Select(avatar => avatar.Id)
+        .OrderBy(id => id, StringComparer.Ordinal)
+        .ToArray();
 
     private static readonly JsonSerializerOptions ReadJsonOptions = new()
     {
@@ -177,7 +182,7 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
         RequireCount(result.Summary.TopicCount, RequiredTopicCount, "topics", result);
         RequireCount(result.Summary.ScenarioCount, RequiredScenarioCount, "scenarios", result);
         RequireCount(result.Summary.PromptTemplateCount, RequiredPromptTemplateCount, "prompt templates", result);
-        RequireCount(result.Summary.TutorBehaviorProfileCount, RequiredTutorBehaviorProfileCount, "tutor behavior profiles", result);
+        ValidateTutorBehaviorProfileIds(result);
 
         foreach (var topic in result.Content.Topics)
         {
@@ -217,6 +222,37 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
                 result.Errors.Add($"Runtime tutor behavior profile '{tutor.TutorId}' has no communication style rules.");
             }
         }
+    }
+
+    private static void ValidateTutorBehaviorProfileIds(CmsRuntimeLessonContentReadResult result)
+    {
+        if (result.Content is null)
+        {
+            return;
+        }
+
+        var actualIds = result.Content.TutorBehaviorProfiles
+            .Select(profile => profile.TutorId.Trim())
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        var actualIdSet = actualIds.ToHashSet(StringComparer.Ordinal);
+        var requiredIdSet = RequiredTutorBehaviorProfileIds.ToHashSet(StringComparer.Ordinal);
+        var missingIds = RequiredTutorBehaviorProfileIds.Where(id => !actualIdSet.Contains(id)).ToArray();
+        var unknownIds = actualIds.Where(id => !requiredIdSet.Contains(id)).Distinct(StringComparer.Ordinal).ToArray();
+        var duplicateIds = actualIds.GroupBy(id => id, StringComparer.Ordinal).Where(group => group.Count() > 1).Select(group => group.Key).ToArray();
+
+        if (missingIds.Length > 0 || unknownIds.Length > 0 || duplicateIds.Length > 0)
+        {
+            result.Errors.Add(
+                $"Runtime tutor behavior profile ids do not match approved tutor avatars. Expected required tutor ids: {FormatIds(RequiredTutorBehaviorProfileIds)}; actual tutor ids: {FormatIds(actualIds)}; missing tutor ids: {FormatIds(missingIds)}; unknown/extra tutor ids: {FormatIds(unknownIds)}; duplicate tutor ids: {FormatIds(duplicateIds)}.");
+        }
+    }
+
+    private static string FormatIds(IEnumerable<string> ids)
+    {
+        var values = ids.Where(id => !string.IsNullOrWhiteSpace(id)).ToArray();
+        return values.Length == 0 ? "none" : string.Join(", ", values);
     }
 
     private static void RequireCount(int actual, int expected, string label, CmsRuntimeLessonContentReadResult result)

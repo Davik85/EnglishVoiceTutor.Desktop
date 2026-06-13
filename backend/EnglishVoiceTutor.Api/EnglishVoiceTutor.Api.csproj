@@ -9,6 +9,8 @@
     <Compile Include="../../Shared/StudyLanguages/**/*.cs" Link="Shared/StudyLanguages/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../Shared/NativeLanguages/**/*.cs" Link="Shared/NativeLanguages/%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="../../Models/LessonContent/**/*.cs" Link="Models/LessonContent/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../Models/TutorAvatarOption.cs" Link="Models/TutorAvatarOption.cs" />
+    <Compile Include="../../Models/TutorAvatarOptions.cs" Link="Models/TutorAvatarOptions.cs" />
   </ItemGroup>
 
   <ItemGroup>
