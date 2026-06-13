@@ -80,6 +80,7 @@ public static class BackendConstants
     public const int BackendCheckoutSessionTimeoutSeconds = 10;
     public const int BackendLessonAccessTimeoutSeconds = 5;
     public const int LessonSessionRequestTimeoutSeconds = 5;
+    public const int RuntimeLessonScenarioRequestTimeoutSeconds = 5;
     public const int LessonSessionHeartbeatIntervalSeconds = 30;
     public const int LessonMessageRequestTimeoutSeconds = 5;
     public const int LessonSummaryRequestTimeoutSeconds = 5;
