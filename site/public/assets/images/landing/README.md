@@ -14,4 +14,4 @@ Recommended images:
 - Keep the most important content near the center of the image.
 - The homepage fits these images with `object-fit: cover`, so edges may be cropped depending on the visitor's screen size.
 
-The current `.webp` files are text-only source-control stubs, not real image assets. Replace them with final production WebP images before launch.
+Replace the files in place when updating production artwork; do not change these filenames unless `site/public/index.html` is updated at the same time.
