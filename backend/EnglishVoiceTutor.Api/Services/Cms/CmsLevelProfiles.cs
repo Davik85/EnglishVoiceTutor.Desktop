@@ -23,10 +23,10 @@ public static class CmsLevelProfiles
 
     public static IReadOnlyList<CmsLevelProfile> Defaults =>
     [
-        new() { StableLevelKey = "a1", DisplayName = "A1 Beginner", IsActive = true, SortOrder = 10, WrapUpAfterUserTurn = A1WrapUpAfterUserTurn, FinalMessageAtUserTurn = A1FinalMessageAtUserTurn, BotLanguageComplexityGuidance = "Use simple short sentences, simple words, and one question at a time. Give more support.", CorrectionGuidance = "Correct one important mistake gently and give a short model answer.", AnswerLengthGuidance = "Use 1-2 short sentences.", AdminNotes = "Shortest default lesson length for new learners." },
-        new() { StableLevelKey = "a2", DisplayName = "A2 Elementary", IsActive = true, SortOrder = 20, WrapUpAfterUserTurn = A2WrapUpAfterUserTurn, FinalMessageAtUserTurn = A2FinalMessageAtUserTurn, BotLanguageComplexityGuidance = "Use simple but slightly more varied language. Ask one clear question at a time.", CorrectionGuidance = "Correct lightly with short examples.", AnswerLengthGuidance = "Use 1-3 short sentences.", AdminNotes = "Short-to-medium lesson length." },
-        new() { StableLevelKey = "b1", DisplayName = "B1 Intermediate", IsActive = true, SortOrder = 30, WrapUpAfterUserTurn = B1WrapUpAfterUserTurn, FinalMessageAtUserTurn = B1FinalMessageAtUserTurn, BotLanguageComplexityGuidance = "Use more natural dialogue with moderate detail.", CorrectionGuidance = "Give moderate corrections for clarity, grammar, and natural phrasing.", AnswerLengthGuidance = "Use concise natural turns with one useful detail.", AdminNotes = "Medium lesson length." },
-        new() { StableLevelKey = "b2", DisplayName = "B2 Upper-Intermediate", IsActive = true, SortOrder = 40, WrapUpAfterUserTurn = B2WrapUpAfterUserTurn, FinalMessageAtUserTurn = B2FinalMessageAtUserTurn, BotLanguageComplexityGuidance = "Support longer discussion, natural expressions, and nuanced dialogue.", CorrectionGuidance = "Give deeper corrections for precision, register, and naturalness.", AnswerLengthGuidance = "Use natural but not monologue-length responses.", AdminNotes = "Longest default lesson length." }
+        new() { StableLevelKey = "a1", DisplayName = "A1 Beginner", IsActive = true, SortOrder = 1, WrapUpAfterUserTurn = A1WrapUpAfterUserTurn, FinalMessageAtUserTurn = A1FinalMessageAtUserTurn, BotLanguageComplexityGuidance = "Use simple short sentences, simple words, and one question at a time. Give more support.", CorrectionGuidance = "Correct one important mistake gently and give a short model answer.", AnswerLengthGuidance = "Use 1-2 short sentences.", AdminNotes = "Shortest default lesson length for new learners." },
+        new() { StableLevelKey = "a2", DisplayName = "A2 Elementary", IsActive = true, SortOrder = 2, WrapUpAfterUserTurn = A2WrapUpAfterUserTurn, FinalMessageAtUserTurn = A2FinalMessageAtUserTurn, BotLanguageComplexityGuidance = "Use simple but slightly more varied language. Ask one clear question at a time.", CorrectionGuidance = "Correct lightly with short examples.", AnswerLengthGuidance = "Use 1-3 short sentences.", AdminNotes = "Short-to-medium lesson length." },
+        new() { StableLevelKey = "b1", DisplayName = "B1 Intermediate", IsActive = true, SortOrder = 3, WrapUpAfterUserTurn = B1WrapUpAfterUserTurn, FinalMessageAtUserTurn = B1FinalMessageAtUserTurn, BotLanguageComplexityGuidance = "Use more natural dialogue with moderate detail.", CorrectionGuidance = "Give moderate corrections for clarity, grammar, and natural phrasing.", AnswerLengthGuidance = "Use concise natural turns with one useful detail.", AdminNotes = "Medium lesson length." },
+        new() { StableLevelKey = "b2", DisplayName = "B2 Upper-Intermediate", IsActive = true, SortOrder = 4, WrapUpAfterUserTurn = B2WrapUpAfterUserTurn, FinalMessageAtUserTurn = B2FinalMessageAtUserTurn, BotLanguageComplexityGuidance = "Support longer discussion, natural expressions, and nuanced dialogue.", CorrectionGuidance = "Give deeper corrections for precision, register, and naturalness.", AnswerLengthGuidance = "Use natural but not monologue-length responses.", AdminNotes = "Longest default lesson length." }
     ];
 
     public static string DefaultJson() => JsonSerializer.Serialize(Defaults, JsonOptions);
@@ -35,6 +35,24 @@ public static class CmsLevelProfiles
     {
         if (string.IsNullOrWhiteSpace(json)) return Defaults.Select(Clone).ToList();
         return JsonSerializer.Deserialize<List<CmsLevelProfile>>(json, JsonOptions) ?? Defaults.Select(Clone).ToList();
+    }
+
+
+    public static List<CmsLevelProfile> AddMissingRequiredDefaults(IEnumerable<CmsLevelProfile>? profiles)
+    {
+        var result = profiles?.Select(Clone).ToList() ?? [];
+        foreach (var requiredDefault in Defaults)
+        {
+            if (!result.Any(profile => string.Equals(profile.StableLevelKey?.Trim(), requiredDefault.StableLevelKey, StringComparison.OrdinalIgnoreCase)))
+            {
+                result.Add(Clone(requiredDefault));
+            }
+        }
+
+        return result
+            .OrderBy(profile => profile.SortOrder)
+            .ThenBy(profile => profile.StableLevelKey, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     public static CmsLevelProfile Resolve(string? selectedLevel, IEnumerable<CmsLevelProfile>? profiles = null)

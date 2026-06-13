@@ -305,7 +305,8 @@
                         <section id="cms-sub-panel-levels" class="cms-sub-panel hidden" role="tabpanel" aria-labelledby="cms-sub-tab-button-levels" data-cms-sub-panel="levels">
                             <article class="card cms-warning-card" aria-labelledby="cms-levels-heading">
                                 <h3 id="cms-levels-heading">Level profiles</h3>
-                                <p>CMS level profiles control new lesson behavior after publish. A1 can be shorter (around 15 learner turns) and B2 can support longer dialogue. Scenario-specific length fields are optional overrides; otherwise backend level settings are the source of truth for desktop and future mobile.</p>
+                                <p>CMS level profiles control new lesson behavior after publish. Save draft only persists CMS draft data; publish through Versions & Publish before new lessons use level changes. Scenario-specific length fields are optional overrides; otherwise backend level settings are the source of truth for desktop and future mobile.</p>
+                                <p>Use Initialize default levels when an older content pack is missing required A1/A2/B1/B2 profiles. This adds only missing required defaults to the selected draft and does not delete topics, scenarios, prompts, or tutors.</p>
                             </article>
                             <div class="cms-two-column">
                                 <article class="card cms-list-card" aria-labelledby="cms-levels-list-heading">
@@ -325,7 +326,7 @@
                                         <div class="field"><label for="cms-level-answer-guidance">Answer length guidance</label><textarea id="cms-level-answer-guidance" rows="3"></textarea></div>
                                         <div class="field"><label for="cms-level-admin-notes">Admin notes</label><textarea id="cms-level-admin-notes" rows="2"></textarea></div>
                                         <label class="checkbox-field"><input id="cms-level-is-active" type="checkbox" /> Active</label>
-                                        <div class="cms-button-row"><button id="cms-level-save-button" type="submit">Save draft</button><button id="cms-level-reset-button" type="button">Reload selected</button><span id="cms-level-dirty-status" class="cms-dirty-status hidden" role="status">Unsaved changes</span></div>
+                                        <div class="cms-button-row"><button id="cms-level-save-button" type="submit">Save draft</button><button id="cms-level-initialize-button" type="button">Initialize default levels</button><button id="cms-level-reset-button" type="button">Reload selected</button><span id="cms-level-dirty-status" class="cms-dirty-status hidden" role="status">Unsaved changes</span></div>
                                         <p id="cms-level-message" class="success" role="status"></p>
                                         <div id="cms-level-publish-discovery" class="cms-publish-discovery hidden" role="status" data-cms-publish-discovery="true"><span>Level draft saved. Publish the current draft before new lessons use it.</span><button class="cms-go-to-publish-button" type="button">Go to Publish</button></div>
                                     </form>
