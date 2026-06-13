@@ -12,6 +12,7 @@
     --footer-background: #0d2b4c;
     --footer-text: #dce9f7;
     --footer-link: #ffffff;
+    --landing-card-top: clamp(20px, 2.5vw, 28px);
 }
 
 * {
@@ -42,6 +43,8 @@ body.landing-page {
 .app-panel {
     position: relative;
     display: flex;
+    align-items: flex-start;
+    justify-content: center;
     min-height: calc(100vh - 88px);
     isolation: isolate;
     overflow: hidden;
@@ -73,7 +76,7 @@ body.landing-page {
 
 .app-panel__content {
     width: min(440px, calc(100% - 48px));
-    margin: clamp(20px, 5vh, 44px) auto auto;
+    margin: var(--landing-card-top) 0 0;
     padding: clamp(18px, 3vw, 28px);
     border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 24px;
@@ -385,7 +388,7 @@ dd {
 
     .app-panel__content {
         width: min(100% - 28px, 440px);
-        margin-top: 20px;
+        margin-top: var(--landing-card-top);
     }
 
     .site-footer {
