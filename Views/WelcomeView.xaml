@@ -9,9 +9,20 @@
              d:DesignWidth="760"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True">
+    <UserControl.Resources>
+        <LinearGradientBrush x:Key="StartScreenSunnySkyBackgroundBrush"
+                             StartPoint="0,0"
+                             EndPoint="0,1">
+            <GradientStop Color="#FFEAF6FF" Offset="0" />
+            <GradientStop Color="#FFF7FBFF" Offset="0.34" />
+            <GradientStop Color="#FFFFF4DC" Offset="0.76" />
+            <GradientStop Color="#FFFFE8C7" Offset="1" />
+        </LinearGradientBrush>
+    </UserControl.Resources>
+
     <Grid x:Name="WelcomeRoot"
           Margin="18"
-          Background="{StaticResource AppBackgroundBrush}">
+          Background="{StaticResource StartScreenSunnySkyBackgroundBrush}">
         <Border x:Name="WelcomeCard"
                 Width="{x:Static models:DesktopLayoutOptions.WelcomeCardMaximumWidth}"
                 MaxWidth="{x:Static models:DesktopLayoutOptions.WelcomeCardMaximumWidth}"
