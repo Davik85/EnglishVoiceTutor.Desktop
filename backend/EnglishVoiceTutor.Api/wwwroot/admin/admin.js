@@ -82,6 +82,12 @@
     let restoringCmsSelection = false;
     let cmsDraftSavedInSession = false;
     let cmsDraftLikelyHasChangesInSession = false;
+    const CmsDefaultLevelProfiles = [
+        { stableLevelKey: "a1", displayName: "A1 Beginner", isActive: true, sortOrder: 1, wrapUpAfterUserTurn: 10, finalMessageAtUserTurn: 15, botLanguageComplexityGuidance: "Use simple short sentences, simple words, and one question at a time. Give more support.", correctionGuidance: "Correct one important mistake gently and give a short model answer.", answerLengthGuidance: "Use 1-2 short sentences.", adminNotes: "Default required A1 level profile." },
+        { stableLevelKey: "a2", displayName: "A2 Elementary", isActive: true, sortOrder: 2, wrapUpAfterUserTurn: 14, finalMessageAtUserTurn: 20, botLanguageComplexityGuidance: "Use simple but slightly more varied language. Ask one clear question at a time.", correctionGuidance: "Correct lightly with short examples.", answerLengthGuidance: "Use 1-3 short sentences.", adminNotes: "Default required A2 level profile." },
+        { stableLevelKey: "b1", displayName: "B1 Intermediate", isActive: true, sortOrder: 3, wrapUpAfterUserTurn: 18, finalMessageAtUserTurn: 25, botLanguageComplexityGuidance: "Use more natural dialogue with moderate detail.", correctionGuidance: "Give moderate corrections for clarity, grammar, and natural phrasing.", answerLengthGuidance: "Use concise natural turns with one useful detail.", adminNotes: "Default required B1 level profile." },
+        { stableLevelKey: "b2", displayName: "B2 Upper-Intermediate", isActive: true, sortOrder: 4, wrapUpAfterUserTurn: 24, finalMessageAtUserTurn: 32, botLanguageComplexityGuidance: "Support longer discussion, natural expressions, and deeper corrections.", correctionGuidance: "Give deeper corrections for precision, register, and naturalness.", answerLengthGuidance: "Use natural but not monologue-length responses.", adminNotes: "Default required B2 level profile." }
+    ];
 
     const loginCard = document.getElementById("login-card");
     const dashboard = document.getElementById("dashboard");
@@ -251,6 +257,7 @@
     const cmsLevelAdminNotesInput = document.getElementById("cms-level-admin-notes");
     const cmsLevelIsActiveInput = document.getElementById("cms-level-is-active");
     const cmsLevelResetButton = document.getElementById("cms-level-reset-button");
+    const cmsLevelInitializeButton = document.getElementById("cms-level-initialize-button");
     const cmsLevelMessageElement = document.getElementById("cms-level-message");
     const cmsLevelDirtyStatusElement = document.getElementById("cms-level-dirty-status");
     const cmsPromptTemplateForm = document.getElementById("cms-prompt-template-form");
@@ -1518,7 +1525,7 @@
     }
 
     function renderCmsLevelsTable() {
-        renderCmsTable(cmsLevelsListElement, [{ key: "stableLevelKey", label: "Level" }, { key: "displayName", label: "Name" }, { key: "wrapUpAfterUserTurn", label: "Wrap" }, { key: "finalMessageAtUserTurn", label: "Final" }, { key: "isActive", label: "Active" }], cmsLevels, { onSelect: selectCmsLevel, selectedId: cmsSelectedLevel?.stableLevelKey });
+        renderCmsTable(cmsLevelsListElement, [{ key: "stableLevelKey", label: "Level" }, { key: "displayName", label: "Name" }, { key: "wrapUpAfterUserTurn", label: "Wrap" }, { key: "finalMessageAtUserTurn", label: "Final" }, { key: "isActive", label: "Active" }], cmsLevels, { onSelect: selectCmsLevel, selectedId: cmsSelectedLevel?.stableLevelKey, emptyMessage: "No saved level profiles found. Use Initialize default levels, then Save draft and publish." });
     }
 
     function renderCmsPromptTemplatesTable() {
@@ -1661,15 +1668,37 @@
     function fillCmsTopicForm() { const item = cmsSelectedTopic; cmsSelectedTopicIdentityElement.textContent = item ? `${item.stableTopicKey} (${item.id})` : "None selected"; cmsTopicTitleInput.value = item?.title || ""; cmsTopicDescriptionInput.value = item?.description || ""; cmsTopicSortOrderInput.value = item?.sortOrder ?? ""; cmsTopicIsActiveInput.checked = Boolean(item?.isActive); setCmsEntityMessage(cmsTopicMessageElement, "", false); hideCmsPublishDiscovery(); setCmsBaseline("topic"); }
     async function selectCmsScenario(row, force = false) { if (!force && !restoringCmsSelection && cmsSelectedScenario?.id !== row.id && !confirmDiscardUnsavedChanges()) { return; } cmsSelectedScenario = row; updateHashField("scenarioKey", row.stableScenarioKey || null); renderCmsScenariosTable(); cmsSelectedScenario = await adminFetch(cmsPath(ApiPaths.cmsScenarioTemplate, { slug: getSelectedCmsSlug(), scenarioId: row.id })); fillCmsScenarioForm(); renderCmsScenariosTable(); }
     function fillCmsScenarioForm() { const item = cmsSelectedScenario; cmsSelectedScenarioIdentityElement.textContent = item ? `${item.stableScenarioKey} (${item.id})` : "None selected"; cmsScenarioTitleInput.value = item?.title || ""; cmsScenarioDescriptionInput.value = item?.description || ""; cmsScenarioSetupMessageInput.value = item?.setupMessage || ""; cmsScenarioIsActiveInput.checked = Boolean(item?.isActive); cmsScenarioDefinitionJsonInput.value = item?.definitionJson || ""; setCmsScenarioJsonStatus(item?.isDefinitionJsonFallback ? "Showing fallback JSON built from existing draft fields; save draft to persist it as full scenario JSON." : "", Boolean(item?.isDefinitionJsonFallback)); fillCmsStructuredScenarioFieldsFromDefinition(); setCmsEntityMessage(cmsScenarioMessageElement, "", false); hideCmsPublishDiscovery(); setCmsBaseline("scenario"); }
+    function mergeMissingDefaultCmsLevels(levels) {
+        const merged = Array.isArray(levels) ? levels.map(level => ({ ...level })) : [];
+        CmsDefaultLevelProfiles.forEach(defaultLevel => {
+            if (!merged.some(level => String(level.stableLevelKey || "").toLowerCase() === defaultLevel.stableLevelKey)) {
+                merged.push({ ...defaultLevel });
+            }
+        });
+        merged.forEach(level => { level.id = level.stableLevelKey; });
+        merged.sort((a, b) => (Number(a.sortOrder || 0) - Number(b.sortOrder || 0)) || String(a.stableLevelKey || "").localeCompare(String(b.stableLevelKey || "")));
+        return merged;
+    }
+
+    function setCmsLevelsDraftReady(levels, message) {
+        cmsLevels = mergeMissingDefaultCmsLevels(levels);
+        renderCmsLevelsTable();
+        if (cmsLevels.length > 0) { selectCmsLevel(cmsLevels[0], true); }
+        setCmsEntityMessage(cmsLevelMessageElement, message, false);
+    }
+
     function loadCmsLevelsFromPromptTemplate() {
         const template = cmsPromptTemplates.find(item => item.templateKey === "level_profiles");
-        if (!template) { cmsLevels = []; renderCmsLevelsTable(); return; }
+        if (!template) { setCmsLevelsDraftReady([], "No saved level_profiles template exists for this draft. Default required levels are shown so you can Save draft, then publish through Versions & Publish."); return; }
         adminFetch(cmsPath(ApiPaths.cmsPromptTemplateTemplate, { slug: getSelectedCmsSlug(), templateId: template.id })).then(full => {
-            try { cmsLevels = JSON.parse(full.body || "[]"); } catch { cmsLevels = []; }
-            cmsLevels.forEach(level => { level.id = level.stableLevelKey; });
-            cmsLevels.sort((a, b) => (Number(a.sortOrder || 0) - Number(b.sortOrder || 0)) || String(a.stableLevelKey || "").localeCompare(String(b.stableLevelKey || "")));
+            let parsed = [];
+            try { parsed = JSON.parse(full.body || "[]"); } catch { parsed = []; }
+            cmsLevels = mergeMissingDefaultCmsLevels(parsed);
             renderCmsLevelsTable();
             if (!cmsSelectedLevel && cmsLevels.length > 0) selectCmsLevel(cmsLevels[0], true);
+            if (cmsLevels.length !== (Array.isArray(parsed) ? parsed.length : 0)) {
+                setCmsEntityMessage(cmsLevelMessageElement, "Missing required levels were added as draft-ready defaults. Save draft, then publish through Versions & Publish before runtime uses them.", false);
+            }
         }).catch(handleCmsError);
     }
 
@@ -1715,9 +1744,14 @@
     async function saveCmsLevelDraft() {
         if (!cmsSelectedLevel) { setCmsEntityMessage(cmsLevelMessageElement, "Select a level first.", true); return; }
         const template = cmsPromptTemplates.find(item => item.templateKey === "level_profiles");
-        if (!template) { setCmsEntityMessage(cmsLevelMessageElement, "The level_profiles CMS template is missing. Initialize static JSON draft first.", true); return; }
         const updated = cmsLevels.map(level => level.stableLevelKey === cmsSelectedLevel.stableLevelKey ? { ...level, displayName: cmsLevelDisplayNameInput.value, sortOrder: Number(cmsLevelSortOrderInput.value || 0), wrapUpAfterUserTurn: Number(cmsLevelWrapUpTurnInput.value || 0), finalMessageAtUserTurn: Number(cmsLevelFinalTurnInput.value || 0), botLanguageComplexityGuidance: cmsLevelComplexityGuidanceInput.value, correctionGuidance: cmsLevelCorrectionGuidanceInput.value, answerLengthGuidance: cmsLevelAnswerGuidanceInput.value, adminNotes: cmsLevelAdminNotesInput.value, isActive: cmsLevelIsActiveInput.checked } : level);
-        await saveCmsDraft(ApiPaths.cmsPromptTemplateTemplate, { templateId: template.id }, { body: JSON.stringify(updated, null, 2), isActive: true, reason: "Admin CMS UI level profile draft edit" }, cmsLevelMessageElement, loadCmsPromptTemplates, () => { cmsLevels = updated; selectCmsLevel(updated.find(level => level.stableLevelKey === cmsSelectedLevel.stableLevelKey), true); });
+        await saveCmsDraft(ApiPaths.cmsPromptTemplateTemplate, { templateId: template?.id || "level_profiles" }, { body: JSON.stringify(updated, null, 2), isActive: true, reason: "Admin CMS UI level profile draft edit" }, cmsLevelMessageElement, loadCmsPromptTemplates, () => { cmsLevels = updated; selectCmsLevel(updated.find(level => level.stableLevelKey === cmsSelectedLevel.stableLevelKey), true); });
+    }
+
+    function initializeDefaultCmsLevels() {
+        if (!confirmDiscardUnsavedChanges()) { return; }
+        setCmsLevelsDraftReady(cmsLevels, "Default required A1/A2/B1/B2 level profiles are ready. Click Save draft to persist them, then publish through Versions & Publish before runtime uses them.");
+        updateCmsDirtyState("level");
     }
 
     async function saveCmsPromptTemplateDraft() {
@@ -1929,6 +1963,7 @@
     cmsScenarioValidateJsonButton.addEventListener("click", () => { validateCmsScenarioJsonInput(); });
     cmsLevelForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsLevelDraft(); });
     cmsLevelResetButton.addEventListener("click", () => { if (cmsSelectedLevel) { selectCmsLevel(cmsSelectedLevel, true); } });
+    cmsLevelInitializeButton.addEventListener("click", initializeDefaultCmsLevels);
     cmsPromptTemplateForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsPromptTemplateDraft(); });
     cmsPromptTemplateResetButton.addEventListener("click", async () => { if (cmsSelectedPromptTemplate) { await selectCmsPromptTemplate(cmsSelectedPromptTemplate); } });
     cmsTutorProfileForm.addEventListener("submit", async (event) => { event.preventDefault(); await saveCmsTutorProfileDraft(); });

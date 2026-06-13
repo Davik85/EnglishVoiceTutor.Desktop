@@ -18,8 +18,9 @@ def test_cms_level_profiles_are_named_and_required() -> None:
     text = LEVELS.read_text(encoding="utf-8")
     for key in ('"a1"', '"a2"', '"b1"', '"b2"'):
         require(text, key, f"required level key {key}")
-    for const in ("A1FinalMessageAtUserTurn = 15", "B2FinalMessageAtUserTurn = 32", "RequiredLevelCount = 4"):
+    for const in ("A1FinalMessageAtUserTurn = 15", "B2FinalMessageAtUserTurn = 32", "RequiredLevelCount = 4", "SortOrder = 1", "SortOrder = 4"):
         require(text, const, f"named level constant {const}")
+    require(text, "AddMissingRequiredDefaults", "safe repair helper for existing packs")
     require(text, "finalMessageAtUserTurn must be greater than wrapUpAfterUserTurn", "turn validation")
     require(text, "unknown active level ids", "unknown active id validation")
 
@@ -39,7 +40,12 @@ def test_admin_has_levels_tab_and_validation() -> None:
     validation = VALIDATION.read_text(encoding="utf-8")
     require(html, 'data-cms-sub-tab-id="levels"', "levels CMS sub-tab")
     require(html, "cms-level-final-turn", "level final turn editor")
+    require(html, "cms-level-initialize-button", "default level initialization button")
+    require(html, "Save draft only persists CMS draft data", "publish explanation for levels")
     require(js, "level_profiles", "level profiles template binding")
+    require(js, "CmsDefaultLevelProfiles", "draft-ready default level profiles")
+    require(js, "mergeMissingDefaultCmsLevels", "missing level merge without overwriting existing levels")
+    require(js, 'template?.id || "level_profiles"', "save path for missing level_profiles template")
     require(js, "Admin CMS UI level profile draft edit", "level save draft reason")
     require(validation, "ValidateLevelProfiles", "draft level validation")
 

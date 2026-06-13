@@ -308,13 +308,41 @@ public sealed partial class CmsContentAdminService(
         ArgumentNullException.ThrowIfNull(request);
 
         var template = await FindPromptTemplateAsync(slug, templateIdOrKey, cancellationToken, asNoTracking: false);
+        var normalizedTemplateKey = NormalizeRouteValue(templateIdOrKey);
+        var createdLevelTemplate = false;
         if (template is null)
         {
-            return null;
+            if (normalizedTemplateKey != CmsContentConstants.PromptTemplateKeys.LevelProfiles)
+            {
+                return null;
+            }
+
+            var pack = await FindContentPackAsync(slug, cancellationToken);
+            if (pack is null)
+            {
+                return null;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            template = new PromptTemplateEntity
+            {
+                Id = Guid.NewGuid(),
+                ContentPackId = pack.Id,
+                TemplateKey = CmsContentConstants.PromptTemplateKeys.LevelProfiles,
+                Body = CmsLevelProfiles.DefaultJson(),
+                AllowedPlaceholdersJson = CmsContentJson.EmptyArrayJson,
+                RequiredPlaceholdersJson = CmsContentJson.EmptyArrayJson,
+                IsActive = true,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now,
+                UpdatedByUserId = actorUserId
+            };
+            dbContext.PromptTemplates.Add(template);
+            createdLevelTemplate = true;
         }
 
         var beforeHash = HashPromptTemplate(template);
-        var changedFields = new List<string>();
+        var changedFields = createdLevelTemplate ? new List<string> { "Created" } : [];
         SetIfChanged(template.Body, request.Body, changedFields, value => template.Body = value, nameof(template.Body));
         SetIfChanged(template.IsActive, request.IsActive, changedFields, value => template.IsActive = value, nameof(template.IsActive));
 
