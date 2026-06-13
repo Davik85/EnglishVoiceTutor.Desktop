@@ -29,9 +29,9 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Current tester Windows direct release
 
-The public website `latest.json` remains the public source of truth for the live Windows direct tester release. Last verified snapshot: it pointed to `LanguageVoiceTutorSetup-0.1.35-tester.1.exe`, set `version` and `minimumSupportedVersion` to `0.1.35-tester.1`, set `backendBaseUrl` to `https://api.languagevoicetutor.com`, and used `updateMode: manual-confirmation`. This matches the installed tester/release backend lock.
+The public website `latest.json` remains the public source of truth for the live Windows direct tester release. Last verified snapshot: it pointed to `LanguageVoiceTutorSetup-0.1.36-tester.8.exe`, set `version` and `minimumSupportedVersion` to `0.1.36-tester.8`, set `backendBaseUrl` to `https://api.languagevoicetutor.com`, and used `updateMode: manual-confirmation`. This matches the installed tester/release backend lock.
 
-Local build `0.1.36-tester.2` has been built and validated locally, but it must not be described as public/live unless the live website `latest.json` points to it over HTTPS. This remains a private tester/direct Windows release, not a broad public production launch.
+`0.1.36-tester.8` is the current uploaded Windows tester build in the public direct Windows release folder. Continue to verify the HTTPS `latest.json` before handoff. This remains a controlled tester/direct Windows release, not a broad public production launch.
 
 ## Release backend lock (server-only installed builds)
 
@@ -41,9 +41,9 @@ Clean-machine smoke must verify registration/login/lesson/history/progress/updat
 
 ## Current production backend state
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.8`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.7`.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.8`.
 
-Completed: backend `0.1.35-backend.8` is deployed and contains the latest Admin CMS Validation & Preview readable UI fix and the Admin static asset cache busting/no-cache fix for `/admin` assets. The Admin CMS Validation & Preview area no longer shows raw JSON directly in the main result area. Validation renders a readable panel with Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON. Preview renders readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON. Admin static asset cache busting was added for `admin.js` and `admin.css` using token `admin-cms-20260613-raw-json-fix`, and no-cache headers were added for `/admin` static files only.
+Completed: backend `0.1.35-backend.11` is deployed and contains the latest Admin CMS Validation & Preview readable UI fix and the Admin static asset cache busting/no-cache fix for `/admin` assets. The Admin CMS Validation & Preview area no longer shows raw JSON directly in the main result area. Validation renders a readable panel with Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON. Preview renders readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON. Admin static asset cache busting was added for `admin.js` and `admin.css` using token `admin-cms-20260613-raw-json-fix`, and no-cache headers were added for `/admin` static files only.
 
 Completed: health and database health are green after deploy. `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. The build is green, the Admin shell audit is green, and the EF model check reports no pending model changes. No EF migration was required. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
@@ -55,19 +55,19 @@ Auth session persistence works across app restart and Windows restart. Installed
 
 ## Lessons and learner runtime
 
-The current tester build has verified lesson start, normal lesson chat, TTS/bot voice, Conversation Mode, Lesson History saving, and Progress. Learner runtime content still uses packaged static JSON by default.
+The current tester build has verified lesson start, normal lesson chat, TTS/bot voice, Conversation Mode, Lesson History saving, and Progress. Learner runtime content now uses the CMS published snapshot as the active content source.
 
 Early manual **Finish lesson** clicks during an active lesson now ask for confirmation so accidental clicks do not end the session. Forced/final **Finish lesson** after the lesson limit remains one-click, and this is a desktop UI safety fix only. No backend deploy, no DB migration, and no Windows upload are required until an installer is intentionally packaged and published.
 
 ## CMS/Admin and runtime content
 
-Current state: CMS/Admin is connected. The `static-json-v1` CMS content pack has been initialized as Draft/admin content. This initialization does not publish runtime content automatically and does not switch learner runtime.
+Current state: CMS/Admin is connected, and the CMS published snapshot is now the active runtime content source for learner lessons. Runtime status is clean with `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, and no warnings.
 
-Completed: the Admin CMS Validation & Preview UI regression is fixed and readable. Raw JSON diagnostics are available only inside collapsed details blocks. `Save draft` remains draft-only, and publishing remains isolated in **Versions & Publish**.
+Completed: CMS scenario edits are visible in the desktop app after the operator clicks **Save draft** and then **Publish current draft**. `Save draft` alone remains draft-only and does not affect the app; **Publish** is required. Existing active lessons may keep old content until the learner starts a new lesson.
 
-Do not enable by default: learners still use packaged static JSON by default. CMS published-snapshot runtime reads remain disabled/not the learner default unless `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__UsePublishedSnapshotForRuntime=true`, and the related published-snapshot read path are explicitly enabled and validated later in a controlled or explicitly approved environment. Keep fallback to static JSON. Do not describe CMS runtime publishing as production-live for learners yet. Production RBAC and critical-change approval remain future work.
+Completed: CMS-managed A1, A2, B1, and B2 level behavior profiles are active and affect lesson behavior. A1 and B2 lessons differ as expected, and additional level polishing will continue later based on tester feedback.
 
-Next safe step: run controlled CMS published-snapshot runtime validation with an explicit, temporary, reversible, operator-approved flag plan. Use `tools/validate_cms_published_snapshot_runtime.ps1` first in read-only mode to confirm the current default remains `effectiveSource=StaticJson`, then use `-GenerateServerValidationPlan` to print the temporary server flags and rollback checklist. CMS runtime must not become the learner default until this controlled validation passes and a separate enablement decision is approved.
+Fallback to packaged static JSON remains available for rollback/safety, but fallback should not be active during normal runtime status. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, and no warnings. Production RBAC and critical-change approval remain future work.
 
 ## Manual desktop update UI
 
@@ -129,7 +129,7 @@ Remaining realistic readiness items:
 8. Finish production billing/payment lifecycle later.
 9. Add code signing later to reduce SmartScreen friction before broad distribution.
 
-Do not state that the product is fully public production-ready. The current state is a validated private tester/direct Windows release.
+Do not state that the product is fully public production-ready. The current state is a validated controlled tester/direct Windows release.
 
 - Lesson Chat UI polish: Finish confirmation typography improved, Start recording is green, Hint uses hint-color styling.
 
@@ -139,9 +139,9 @@ Completed: the backend has an admin-only, read-only CMS runtime content status d
 
 
 
-Current runtime-status result on deployed backend `0.1.35-backend.8` is clean: `effectiveSource=StaticJson`, `validationSuccess=Yes`, no errors, no warnings, and `tutorBehaviorProfiles=3`. Learner runtime remains static JSON by default. The prior runtime-validation root cause was an obsolete hardcoded exact tutor behavior profile count of 2. Static JSON, CMS static import/draft construction, and desktop tutor avatar options all define the approved tutor ids `david`, `elena`, and `nelli`; the third profile is legitimate product content, not a smoke/test artifact. Runtime validation now derives the required tutor ids from the approved desktop avatar definitions and reports expected, actual, missing, unknown/extra, and duplicate tutor ids without exposing tutor instruction bodies. The next step is controlled CMS published-snapshot runtime validation, not default learner enablement. The `tools/smoke_cms_runtime_status.ps1` and `tools/validate_cms_published_snapshot_runtime.ps1` scripts default to the server-only backend `https://api.languagevoicetutor.com`; localhost must be passed explicitly only for approved local developer runs.
+Current runtime-status result on deployed backend `0.1.35-backend.11` is clean: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. Learner runtime now uses the CMS published snapshot. The prior runtime-validation root cause was an obsolete hardcoded exact tutor behavior profile count of 2. Static JSON, CMS static import/draft construction, and desktop tutor avatar options all define the approved tutor ids `david`, `elena`, and `nelli`; the third profile is legitimate product content, not a smoke/test artifact. Runtime validation now derives the required tutor ids from the approved desktop avatar definitions and reports expected, actual, missing, unknown/extra, and duplicate tutor ids without exposing tutor instruction bodies. The `tools/smoke_cms_runtime_status.ps1` and `tools/validate_cms_published_snapshot_runtime.ps1` scripts default to the server-only backend `https://api.languagevoicetutor.com`; localhost must be passed explicitly only for approved local developer runs.
 
-This diagnostic does not enable CMS runtime content. Static JSON remains the learner runtime default unless `CmsContent:UsePublishedSnapshotForRuntime=true`, `CmsContent:ReadPublishedSnapshotEnabled=true`, `CmsContent:ContentPackSlug=static-json-v1`, and `CmsContent:FallbackToStaticJson=true` are explicitly configured in a controlled environment. The next step is controlled environment validation with those explicit flags, followed by a separate decision on whether to enable CMS runtime for a limited learner/tester group.
+This diagnostic confirms the current runtime content source. Static JSON fallback remains available for safety and rollback, but it should not be active in normal runtime status now that CMS published snapshot runtime is active.
 
 ## CMS-managed level profiles (A1-B2)
 

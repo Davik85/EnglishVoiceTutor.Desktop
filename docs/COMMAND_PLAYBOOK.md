@@ -32,18 +32,18 @@ Generated local files under `artifacts/` are not proof that a version is live on
 Example package command for the current backend snapshot:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.7
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.8
 ```
 
 Example upload/restart command for a reviewed backend-only deploy:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-backend.7 `
+  -Version 0.1.35-backend.8 `
   -PackageFirst
 ```
 
-Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.7`, no EF migration was needed and no Windows installer upload was performed. Backend deploys do not upload Windows installer files and do not change `latest.json`.
+Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.8`, no EF migration was needed and no Windows installer upload was performed. Backend deploys do not upload Windows installer files and do not change `latest.json`.
 
 Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.5`.
 
@@ -120,9 +120,9 @@ Manual browser check:
 6. Confirm the UI is readable.
 7. Confirm raw JSON appears only inside collapsed details blocks.
 
-Current state: backend `0.1.35-backend.8` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.7`.
+Current state: backend `0.1.35-backend.11` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.8`.
 
-Do not enable by default: these checks do not enable CMS published-snapshot runtime for learners. Learners still use packaged static JSON by default unless a separate controlled runtime-read validation and enablement decision is made.
+Current milestone: CMS published-snapshot runtime is active for controlled tester lessons. These checks must confirm the active CMS source and clean fallback state rather than enabling broad public release.
 
 ## Admin CMS runtime status diagnostic
 
@@ -182,9 +182,9 @@ CmsContent__ContentPackSlug=static-json-v1
 CmsContent__FallbackToStaticJson=true
 ```
 
-During the controlled window, confirm the backend release, health, database health, and that Admin CMS has a published version before applying temporary flags. After restart, runtime status must show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, and counts of 6 topics, 26 scenarios, 3 prompt templates, and 3 tutor behavior profiles. Run a short installed-app lesson smoke only if explicitly approved.
+For the current controlled tester phase, confirm the backend release, health, database health, and that Admin CMS has a published version. Runtime status must show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, and counts of 6 topics, 26 scenarios, 3 prompt templates, and 3 tutor behavior profiles. Run a short installed-app lesson smoke before handoff.
 
-Rollback is to disable or remove the temporary CMS runtime flags and restart the backend, then rerun the read-only status check and confirm `effectiveSource=StaticJson`. CMS runtime must not become the learner default until after this controlled validation passes and a separate enablement decision is approved. This process has no billing, Paddle, subscription, entitlement, installer, desktop runtime, lesson JSON, public `latest.json`, deployment-script, or EF migration involvement.
+Rollback remains disabling or removing the CMS runtime flags and restarting the backend, then rerunning the read-only status check and confirming `effectiveSource=StaticJson`. CMS runtime is active for the controlled tester phase; do not expand this into broad public release without a separate decision. This process has no billing, Paddle, subscription, entitlement, installer, desktop runtime, lesson JSON, public `latest.json`, deployment-script, or EF migration involvement.
 
 ## CMS-managed level profiles (A1-B2)
 
@@ -194,3 +194,19 @@ Rollback is to disable or remove the temporary CMS runtime flags and restart the
 - Scenario-specific lesson length values remain optional overrides when explicitly set and valid. Priority is: scenario override, then CMS level profile, then safe backend constants.
 - Backend runtime content remains the source of truth for lesson behavior. Desktop may keep its current level labels for display, but desktop and future mobile should use backend runtime behavior from the CMS published snapshot.
 - Static JSON fallback remains available; fallback runtime also receives safe default level profiles.
+
+## Current controlled tester handoff checks after CMS runtime milestone
+
+Use these checks after backend `0.1.35-backend.11` and Windows tester `0.1.36-tester.8` are in place. The public direct Windows manifest should point to `version=0.1.36-tester.8`, `installerFileName=LanguageVoiceTutorSetup-0.1.36-tester.8.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, and `updateMode=manual-confirmation`.
+
+Verify the public tester manifest before handoff:
+
+```powershell
+Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
+```
+
+Verify CMS runtime status through the Admin runtime-status diagnostic. Normal runtime status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, and no warnings. Static JSON fallback remains available for rollback/safety, but fallback should not be active in normal status.
+
+When checking CMS content changes, remember: **Save draft** alone does not affect the app, **Publish current draft** is required, and existing active lessons may keep old content until a new lesson starts. Start a new lesson before confirming scenario edits or A1/A2/B1/B2 behavior changes in the desktop app.
+
+Next commands/checks are tester-handoff oriented only: verify the installed tester build from the public site, perform a short smoke test, prepare tester handoff, and collect feedback on lesson quality, level behavior, voice, UI, and CMS-controlled content. Do not touch billing/Paddle in this phase and do not start broad public release yet.
