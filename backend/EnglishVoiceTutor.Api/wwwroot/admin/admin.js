@@ -1014,7 +1014,9 @@
         if (Object.prototype.hasOwnProperty.call(source, camelKey)) { return source[camelKey]; }
         const pascalKey = camelKey.charAt(0).toUpperCase() + camelKey.slice(1);
         if (Object.prototype.hasOwnProperty.call(source, pascalKey)) { return source[pascalKey]; }
-        return fallbackValue;
+        const expectedKey = camelKey.toLowerCase();
+        const matchingKey = Object.keys(source).find((key) => key.toLowerCase() === expectedKey);
+        return matchingKey ? source[matchingKey] : fallbackValue;
     }
     function getCmsResponseArray(source, camelKey) {
         const value = getCmsResponseValue(source, camelKey, []);
@@ -1022,6 +1024,20 @@
     }
     function formatCmsPreviewPublishedVersion(value) {
         return value === null || value === undefined || value === "" ? "None" : formatValue(value);
+    }
+    function formatCmsYesNo(value) {
+        if (value === true) { return "Yes"; }
+        if (value === false) { return "No"; }
+        if (typeof value === "string") {
+            const normalized = value.trim().toLowerCase();
+            if (normalized === "true" || normalized === "yes") { return "Yes"; }
+            if (normalized === "false" || normalized === "no") { return "No"; }
+        }
+        return formatValue(value);
+    }
+    function getCmsCountValue(source, counts, countKey, legacyKey) {
+        const directValue = getCmsResponseValue(source, legacyKey);
+        return directValue === undefined ? getCmsResponseValue(counts, countKey) : directValue;
     }
     function appendCmsDefinitionList(container, rows, className = "meta cms-preview-meta") {
         const list = document.createElement("dl");
@@ -1151,15 +1167,16 @@
         title.textContent = contentPackName || "Draft preview summary";
         titleRow.appendChild(title);
         cmsPreviewSummaryElement.appendChild(titleRow);
+        const counts = getCmsResponseValue(preview, "counts", {});
         appendCmsDefinitionList(cmsPreviewSummaryElement, [
             { label: "Content pack slug", value: getCmsResponseValue(preview, "contentPackSlug") },
             { label: "Content pack name", value: contentPackName },
             { label: "Content pack status", value: getCmsResponseValue(preview, "contentPackStatus") },
             { label: "Current published version number", value: formatCmsPreviewPublishedVersion(getCmsResponseValue(preview, "currentPublishedVersionNumber")) },
-            { label: "Topics", value: getCmsResponseValue(preview, "topicCount") },
-            { label: "Scenarios", value: getCmsResponseValue(preview, "scenarioCount") },
-            { label: "Prompt templates", value: getCmsResponseValue(preview, "promptTemplateCount") },
-            { label: "Tutor behavior profiles", value: getCmsResponseValue(preview, "tutorBehaviorProfileCount") }
+            { label: "Topics", value: getCmsCountValue(preview, counts, "topics", "topicCount") },
+            { label: "Scenarios", value: getCmsCountValue(preview, counts, "scenarios", "scenarioCount") },
+            { label: "Prompt templates", value: getCmsCountValue(preview, counts, "promptTemplates", "promptTemplateCount") },
+            { label: "Tutor behavior profiles", value: getCmsCountValue(preview, counts, "tutorBehaviorProfiles", "tutorBehaviorProfileCount") }
         ]);
         const topicsHeading = document.createElement("h4");
         topicsHeading.textContent = "Sample topics";
@@ -1178,8 +1195,8 @@
             { key: "topicKey", label: "topicKey", value: (row) => getCmsResponseValue(row, "topicKey") },
             { key: "title", label: "title", value: (row) => getCmsResponseValue(row, "title") },
             { key: "isActive", label: "isActive", value: (row) => getCmsResponseValue(row, "isActive") },
-            { key: "definitionJsonPresent", label: "definitionJsonPresent", value: (row) => getCmsResponseValue(row, "definitionJsonPresent") },
-            { key: "definitionJsonValid", label: "definitionJsonValid", value: (row) => getCmsResponseValue(row, "definitionJsonValid") }
+            { key: "definitionJsonPresent", label: "DefinitionJson present", value: (row) => formatCmsYesNo(getCmsResponseValue(row, "definitionJsonPresent")) },
+            { key: "definitionJsonValid", label: "DefinitionJson valid", value: (row) => formatCmsYesNo(getCmsResponseValue(row, "definitionJsonValid")) }
         ], getCmsResponseArray(preview, "sampleScenarios"), "No sample scenarios returned.");
         appendCmsRawJsonDetails(cmsPreviewSummaryElement, "Show raw preview JSON", preview);
     }
