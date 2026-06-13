@@ -27,6 +27,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 using Microsoft.EntityFrameworkCore;
@@ -276,6 +277,7 @@ app.MapPost(ApiConstants.DevLessonSessionAbandonRoute, HandleAbandonLessonSessio
 app.MapPost(ApiConstants.DevActiveLessonSessionAbandonRoute, HandleAbandonActiveLessonSessionAsync);
 app.MapGet(ApiConstants.DevLessonSessionsRoute, HandleGetDevLessonSessionsAsync);
 app.MapGet(ApiConstants.DevLessonContentScenarioRoute, HandleGetRuntimeLessonScenarioAsync);
+app.MapGet(ApiConstants.RuntimeTutorOptionsRoute, HandleGetRuntimeTutorOptionsAsync);
 app.MapGet(ApiConstants.DevLessonSessionByIdRoute, HandleGetLessonSessionByIdAsync);
 app.MapPost(ApiConstants.DevLessonSessionMessagesRoute, HandleCreateLessonMessageAsync);
 app.MapGet(ApiConstants.DevLessonSessionMessagesRoute, HandleGetLessonMessagesAsync);
@@ -410,6 +412,52 @@ static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
         scenario.Lesson.LessonSetup.FirstBotMessageShouldExplain.Count);
 
     return Results.Ok(scenario.Lesson);
+}
+
+static int ResolveTutorOptionSortOrder(string tutorId)
+{
+    for (var index = 0; index < TutorAvatarOptions.All.Count; index++)
+    {
+        if (string.Equals(TutorAvatarOptions.All[index].Id, tutorId, StringComparison.OrdinalIgnoreCase))
+        {
+            return index;
+        }
+    }
+
+    return int.MaxValue;
+}
+
+static async Task<IResult> HandleGetRuntimeTutorOptionsAsync(
+    ICmsRuntimeLessonContentService cmsRuntimeLessonContentService,
+    CancellationToken cancellationToken)
+{
+    var localOptionsById = TutorAvatarOptions.All.ToDictionary(option => option.Id, StringComparer.OrdinalIgnoreCase);
+    var result = await cmsRuntimeLessonContentService.ReadRuntimeLessonContentAsync(cancellationToken);
+    if (result.Success && result.Content is not null)
+    {
+        var runtimeOptions = result.Content.TutorBehaviorProfiles
+            .Where(profile => localOptionsById.ContainsKey(profile.TutorId.Trim()))
+            .OrderBy(profile => ResolveTutorOptionSortOrder(profile.TutorId))
+            .Select(profile => new
+            {
+                tutorId = profile.TutorId.Trim(),
+                displayName = string.IsNullOrWhiteSpace(profile.DisplayName) ? localOptionsById[profile.TutorId.Trim()].DisplayName : profile.DisplayName.Trim(),
+                isActive = profile.IsActive
+            })
+            .ToList();
+
+        if (runtimeOptions.Count > 0)
+        {
+            return Results.Ok(runtimeOptions);
+        }
+    }
+
+    return Results.Ok(TutorAvatarOptions.All.Select(option => new
+    {
+        tutorId = option.Id,
+        displayName = option.DisplayName,
+        isActive = true
+    }));
 }
 
 static async Task<IResult> HandleCreateDevLessonSessionAsync(

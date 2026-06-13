@@ -24,6 +24,8 @@ public sealed class LessonChatBackendRequest
 
     public string TutorAvatarId { get; init; } = string.Empty;
 
+    public string TutorDisplayName { get; init; } = string.Empty;
+
     public string UserDisplayName { get; init; } = string.Empty;
 
     public string LearningGoal { get; init; } = string.Empty;

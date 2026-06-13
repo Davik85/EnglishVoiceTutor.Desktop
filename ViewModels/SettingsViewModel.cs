@@ -55,6 +55,7 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly BackendSubscriptionStatusClient backendSubscriptionStatusClient;
     private readonly AudioInputDeviceService audioInputDeviceService;
     private readonly AudioRecordingService audioRecordingService;
+    private readonly BackendLessonContentClient backendLessonContentClient = new();
     private readonly AuthBackendService authBackendService;
     private readonly LessonHistoryService lessonHistoryService;
     private readonly UpdateManifestClient updateManifestClient = new();
@@ -275,7 +276,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public IReadOnlyList<StudyLanguageDefinition> AvailableStudyLanguages { get; } = StudyLanguageCatalog.All;
 
-    public IReadOnlyList<TutorAvatarOption> AvailableTutorAvatars { get; } = TutorAvatarOptions.All;
+    public ObservableCollection<TutorAvatarOption> AvailableTutorAvatars { get; } = new(TutorAvatarOptions.All);
 
     public IReadOnlyList<SpeechVoiceOption> AvailableSpeechVoices { get; } = SpeechVoiceOptions.All;
 
@@ -477,6 +478,7 @@ public partial class SettingsViewModel : ViewModelBase
         this.lessonHistoryService = lessonHistoryService;
         this.audioInputDeviceService = audioInputDeviceService;
         this.audioRecordingService = audioRecordingService;
+        _ = LoadRuntimeTutorAvatarOptionsAsync();
         this.saveSettings = saveSettings;
         this.navigateBack = navigateBack;
 
@@ -1113,6 +1115,35 @@ public partial class SettingsViewModel : ViewModelBase
         DiagnosticsCopyStatusText = string.Empty;
         SaveCurrentSettingsLocally();
         _ = SaveBackendUserSettingsAsync();
+    }
+
+    private async Task LoadRuntimeTutorAvatarOptionsAsync()
+    {
+        var runtimeOptions = await backendLessonContentClient.GetRuntimeTutorOptionsAsync(BackendBaseUrl);
+        if (runtimeOptions is null || runtimeOptions.Count == 0)
+        {
+            return;
+        }
+
+        var optionsById = runtimeOptions
+            .Where(option => option.IsActive && !string.IsNullOrWhiteSpace(option.TutorId))
+            .ToDictionary(option => option.TutorId.Trim(), StringComparer.OrdinalIgnoreCase);
+
+        await Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            var selectedId = SelectedTutorAvatarOption?.Id ?? TutorAvatarOptions.DefaultAvatarId;
+            AvailableTutorAvatars.Clear();
+            foreach (var localOption in TutorAvatarOptions.All)
+            {
+                var displayName = optionsById.TryGetValue(localOption.Id, out var runtimeOption) && !string.IsNullOrWhiteSpace(runtimeOption.DisplayName)
+                    ? runtimeOption.DisplayName.Trim()
+                    : localOption.DisplayName;
+                AvailableTutorAvatars.Add(new TutorAvatarOption(localOption.Id, displayName));
+            }
+
+            SelectedTutorAvatarOption = AvailableTutorAvatars.FirstOrDefault(option => string.Equals(option.Id, selectedId, StringComparison.OrdinalIgnoreCase))
+                ?? TutorAvatarOptions.GetById(selectedId);
+        });
     }
 
     partial void OnSelectedTutorAvatarOptionChanged(TutorAvatarOption? value)
