@@ -12,7 +12,7 @@
     --footer-background: #0d2b4c;
     --footer-text: #dce9f7;
     --footer-link: #ffffff;
-    --landing-card-top: clamp(20px, 2.5vw, 28px);
+    --landing-card-top: clamp(18px, 4vh, 42px);
 }
 
 * {
@@ -69,19 +69,19 @@ body.landing-page {
 
 .app-panel__shade {
     background:
-        linear-gradient(180deg, rgba(4, 18, 32, 0.5) 0%, rgba(4, 18, 32, 0.18) 46%, rgba(4, 18, 32, 0.48) 100%),
-        linear-gradient(90deg, rgba(4, 18, 32, 0.22), rgba(4, 18, 32, 0.06));
+        linear-gradient(180deg, rgba(4, 18, 32, 0.34) 0%, rgba(4, 18, 32, 0.1) 46%, rgba(4, 18, 32, 0.32) 100%),
+        linear-gradient(90deg, rgba(4, 18, 32, 0.16), rgba(4, 18, 32, 0.03));
     z-index: -1;
 }
 
 .app-panel__content {
-    width: min(440px, calc(100% - 48px));
+    width: min(540px, calc(100% - 56px));
     margin: var(--landing-card-top) 0 0;
-    padding: clamp(18px, 3vw, 28px);
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    border-radius: 24px;
-    background: rgba(5, 22, 38, 0.34);
-    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+    padding: clamp(12px, 1.8vw, 18px) clamp(16px, 2.5vw, 28px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 18px;
+    background: rgba(5, 22, 38, 0.28);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
     backdrop-filter: blur(4px);
 }
 
@@ -90,7 +90,7 @@ body.landing-page {
     display: inline-flex;
     align-items: center;
     width: fit-content;
-    margin: 0 0 12px;
+    margin: 0 0 7px;
     border-radius: 999px;
     font-size: 0.82rem;
     font-weight: 800;
@@ -103,16 +103,16 @@ body.landing-page {
 }
 
 .app-panel__badge {
-    padding: 7px 11px;
+    padding: 5px 9px;
     background: rgba(255, 255, 255, 0.2);
     color: #ffffff;
 }
 
 .app-panel h1,
 .app-panel h2 {
-    margin: 0 0 14px;
-    font-size: clamp(1.9rem, 3.6vw, 3.5rem);
-    line-height: 1;
+    margin: 0 0 8px;
+    font-size: clamp(1.75rem, 3.1vw, 3.15rem);
+    line-height: 0.98;
     text-wrap: balance;
 }
 
@@ -120,14 +120,14 @@ body.landing-page {
     max-width: 27rem;
     margin: 0;
     color: rgba(255, 255, 255, 0.9);
-    font-size: clamp(0.98rem, 1.35vw, 1.14rem);
+    font-size: clamp(0.94rem, 1.1vw, 1.06rem);
 }
 
 .app-panel__cue {
     display: inline-flex;
     align-items: center;
-    margin-top: 22px;
-    padding: 11px 16px;
+    margin-top: 12px;
+    padding: 8px 14px;
     border-radius: 999px;
     background: #ffffff;
     color: #0d2b4c;
@@ -171,7 +171,7 @@ body.landing-page {
 }
 
 .app-panel--inactive .app-panel__shade {
-    background: rgba(7, 21, 36, 0.42);
+    background: rgba(7, 21, 36, 0.3);
 }
 
 .site-footer {
@@ -387,7 +387,7 @@ dd {
     }
 
     .app-panel__content {
-        width: min(100% - 28px, 440px);
+        width: min(100% - 28px, 520px);
         margin-top: var(--landing-card-top);
     }
 
