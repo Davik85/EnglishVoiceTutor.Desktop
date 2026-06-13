@@ -1,15 +1,17 @@
 # Landing page images
 
-Temporary SVG placeholders live in this folder for the public homepage split-screen panels.
+The public homepage split-screen panels load these final image filenames:
 
-Replace these files with final production images when ready, keeping the same filenames to avoid HTML changes:
+- `windows-desktop.webp` — replace this with the final laptop or desktop image for the Windows app panel.
+- `mobile.webp` — replace this with the final mobile phone image for the future mobile app panel.
 
-- `windows-desktop-placeholder.svg` — laptop or desktop screenshot image for the Windows app panel.
-- `mobile-placeholder.svg` — phone screenshot image for the future mobile app panel.
+Keep these exact filenames when adding the final production images. Keeping the filenames unchanged means `site/public/index.html` does not need to be edited again.
 
-Recommended source images:
+Recommended images:
 
-- Use wide images around 16:9 or 4:3 for the Windows panel.
-- Use portrait phone-focused artwork around 9:16 for the mobile panel, with safe background space around the phone.
-- Export optimized SVG, WebP, PNG, or JPG assets. If changing extensions, update `site/public/index.html`.
-- The page uses `object-fit: cover`, so keep important content near the center of each image.
+- Prefer optimized WebP files.
+- Use images around `1600x1200` or `1920x1200` pixels.
+- Keep the most important content near the center of the image.
+- The homepage fits these images with `object-fit: cover`, so edges may be cropped depending on the visitor's screen size.
+
+The current `.webp` files are text-only source-control stubs, not real image assets. Replace them with final production WebP images before launch.
