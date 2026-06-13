@@ -151,3 +151,7 @@ This diagnostic confirms the current runtime content source. Static JSON fallbac
 - Scenario-specific lesson length values remain optional overrides when explicitly set and valid. Priority is: scenario override, then CMS level profile, then safe backend constants.
 - Backend runtime content remains the source of truth for lesson behavior. Desktop may keep its current level labels for display, but desktop and future mobile should use backend runtime behavior from the CMS published snapshot.
 - Static JSON fallback remains available; fallback runtime also receives safe default level profiles.
+
+## CMS tutor display names
+
+CMS tutor behavior profile display names are runtime-managed learner-facing labels. The approved tutor/avatar IDs (`elena`, `nelli`, `david`) remain stable internal identifiers for profile lookup and avatar image selection, while newly started desktop lessons prefer the published CMS display name from backend runtime lesson content and fall back to packaged static names only when runtime metadata is unavailable.
