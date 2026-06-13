@@ -343,16 +343,31 @@
                         </section>
 
                         <section id="cms-sub-panel-validation-preview" class="cms-sub-panel hidden" role="tabpanel" aria-labelledby="cms-sub-tab-button-validation-preview" data-cms-sub-panel="validation-preview">
+                            <article class="card cms-warning-card cms-validation-preview-notice" aria-labelledby="cms-validation-preview-notice-heading">
+                                <h3 id="cms-validation-preview-notice-heading">Draft validation and preview only</h3>
+                                <p class="muted">Run these checks before publishing to review the current CMS draft. Validation and preview do not publish content, do not enable CMS content for learners, and do not change learner runtime behavior.</p>
+                                <p class="muted">Learner runtime still uses packaged static JSON by default. Publishing remains isolated in the Versions &amp; Publish sub-tab.</p>
+                            </article>
                             <div class="cms-grid-two">
                                 <article class="card" aria-labelledby="cms-validation-heading">
-                                    <h3 id="cms-validation-heading">Validation</h3>
-                                    <button id="cms-run-validation-button" type="button">Run validation</button>
-                                    <div id="cms-validation-result" class="cms-json-output" aria-live="polite">No validation loaded.</div>
+                                    <div class="cms-section-header">
+                                        <div>
+                                            <h3 id="cms-validation-heading">Draft validation</h3>
+                                            <p class="muted">Checks draft topics, scenarios, prompts, and tutor behavior profiles without publishing them.</p>
+                                        </div>
+                                        <button id="cms-run-validation-button" type="button">Run validation</button>
+                                    </div>
+                                    <div id="cms-validation-result" class="cms-result-panel" aria-live="polite">No validation loaded.</div>
                                 </article>
                                 <article class="card" aria-labelledby="cms-preview-heading">
-                                    <h3 id="cms-preview-heading">Preview summary</h3>
-                                    <button id="cms-load-preview-button" type="button">Load preview summary</button>
-                                    <div id="cms-preview-summary" class="cms-json-output" aria-live="polite">No preview loaded.</div>
+                                    <div class="cms-section-header">
+                                        <div>
+                                            <h3 id="cms-preview-heading">Draft preview summary</h3>
+                                            <p class="muted">Loads a readable summary of sample draft content from the existing preview endpoint.</p>
+                                        </div>
+                                        <button id="cms-load-preview-button" type="button">Load preview summary</button>
+                                    </div>
+                                    <div id="cms-preview-summary" class="cms-result-panel" aria-live="polite">No preview loaded.</div>
                                 </article>
                             </div>
                         </section>

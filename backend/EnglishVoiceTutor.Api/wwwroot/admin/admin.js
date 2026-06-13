@@ -1002,6 +1002,164 @@
         }
     }
     function renderJsonOutput(element, payload) { element.textContent = JSON.stringify(payload, null, 2); }
+    function clearCmsResultPanel(element, message) { element.textContent = message; }
+    function appendCmsDefinitionList(container, rows, className = "meta cms-preview-meta") {
+        const list = document.createElement("dl");
+        list.className = className;
+        rows.forEach((row) => {
+            const term = document.createElement("dt");
+            term.textContent = row.label;
+            const value = document.createElement("dd");
+            value.textContent = formatValue(row.value);
+            list.appendChild(term);
+            list.appendChild(value);
+        });
+        container.appendChild(list);
+    }
+    function appendCmsStatusBadge(container, label, isPositive) {
+        const badge = document.createElement("span");
+        badge.className = `badge ${isPositive ? "available" : "unavailable"} cms-status-badge`;
+        badge.textContent = label;
+        badge.setAttribute("aria-label", `Validation status: ${label}`);
+        container.appendChild(badge);
+    }
+    function appendCmsMessageList(container, headingText, messages, emptyText, isErrorList = false) {
+        const section = document.createElement("section");
+        section.className = "cms-message-list";
+        const heading = document.createElement("h4");
+        heading.textContent = headingText;
+        section.appendChild(heading);
+        const normalizedMessages = Array.isArray(messages) ? messages.filter((message) => String(message || "").trim()) : [];
+        if (normalizedMessages.length === 0) {
+            const empty = document.createElement("p");
+            empty.className = "empty-state";
+            empty.textContent = emptyText;
+            section.appendChild(empty);
+        } else {
+            const list = document.createElement("ul");
+            list.className = isErrorList ? "cms-error-list" : "cms-warning-list";
+            normalizedMessages.forEach((message) => {
+                const item = document.createElement("li");
+                item.textContent = message;
+                list.appendChild(item);
+            });
+            section.appendChild(list);
+        }
+        container.appendChild(section);
+    }
+    function appendCmsRawJsonDetails(container, summaryText, payload) {
+        const details = document.createElement("details");
+        details.className = "cms-raw-json-details";
+        const summary = document.createElement("summary");
+        summary.textContent = summaryText;
+        const raw = document.createElement("pre");
+        raw.className = "cms-json-output";
+        raw.textContent = JSON.stringify(payload, null, 2);
+        details.appendChild(summary);
+        details.appendChild(raw);
+        container.appendChild(details);
+    }
+    function appendCmsSimpleTable(container, columns, rows, emptyMessage) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "table-wrap";
+        if (!Array.isArray(rows) || rows.length === 0) {
+            const empty = document.createElement("p");
+            empty.className = "empty-state";
+            empty.textContent = emptyMessage;
+            wrapper.appendChild(empty);
+            container.appendChild(wrapper);
+            return;
+        }
+        const table = document.createElement("table");
+        table.className = "compact-table cms-table";
+        const thead = document.createElement("thead");
+        const headRow = document.createElement("tr");
+        columns.forEach((column) => {
+            const th = document.createElement("th");
+            th.scope = "col";
+            th.textContent = column.label;
+            headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+        const tbody = document.createElement("tbody");
+        rows.forEach((row) => {
+            const tr = document.createElement("tr");
+            columns.forEach((column) => {
+                const td = document.createElement("td");
+                const value = typeof column.value === "function" ? column.value(row) : row?.[column.key];
+                td.textContent = formatValue(value);
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        wrapper.appendChild(table);
+        container.appendChild(wrapper);
+    }
+    function renderCmsValidationResult(validation) {
+        cmsValidationResultElement.textContent = "";
+        cmsValidationResultElement.className = "cms-result-panel";
+        const titleRow = document.createElement("div");
+        titleRow.className = "cms-result-title-row";
+        const title = document.createElement("h4");
+        title.textContent = validation?.success ? "Validation passed" : "Validation failed";
+        titleRow.appendChild(title);
+        appendCmsStatusBadge(titleRow, validation?.success ? "Passed" : "Failed", Boolean(validation?.success));
+        cmsValidationResultElement.appendChild(titleRow);
+        appendCmsDefinitionList(cmsValidationResultElement, [
+            { label: "Content pack slug", value: validation?.contentPackSlug },
+            { label: "Checked at (UTC)", value: validation?.checkedAtUtc },
+            { label: "Topics", value: validation?.counts?.topics },
+            { label: "Scenarios", value: validation?.counts?.scenarios },
+            { label: "Prompt templates", value: validation?.counts?.promptTemplates },
+            { label: "Tutor behavior profiles", value: validation?.counts?.tutorBehaviorProfiles }
+        ]);
+        appendCmsMessageList(cmsValidationResultElement, "Errors", validation?.errors, "No errors", true);
+        appendCmsMessageList(cmsValidationResultElement, "Warnings", validation?.warnings, "No warnings");
+        appendCmsRawJsonDetails(cmsValidationResultElement, "Show raw validation JSON", validation);
+    }
+    function renderCmsPreviewSummary(preview) {
+        cmsPreviewSummaryElement.textContent = "";
+        cmsPreviewSummaryElement.className = "cms-result-panel";
+        const titleRow = document.createElement("div");
+        titleRow.className = "cms-result-title-row";
+        const title = document.createElement("h4");
+        title.textContent = preview?.contentPackName || "Draft preview summary";
+        titleRow.appendChild(title);
+        cmsPreviewSummaryElement.appendChild(titleRow);
+        appendCmsDefinitionList(cmsPreviewSummaryElement, [
+            { label: "Content pack slug", value: preview?.contentPackSlug },
+            { label: "Content pack status", value: preview?.contentPackStatus },
+            { label: "Current published version number", value: preview?.currentPublishedVersionNumber },
+            { label: "Generated at (UTC)", value: preview?.generatedAtUtc },
+            { label: "Topics", value: preview?.topicCount },
+            { label: "Scenarios", value: preview?.scenarioCount },
+            { label: "Prompt templates", value: preview?.promptTemplateCount },
+            { label: "Tutor behavior profiles", value: preview?.tutorBehaviorProfileCount }
+        ]);
+        const topicsHeading = document.createElement("h4");
+        topicsHeading.textContent = "Sample topics";
+        cmsPreviewSummaryElement.appendChild(topicsHeading);
+        appendCmsSimpleTable(cmsPreviewSummaryElement, [
+            { key: "stableTopicKey", label: "Stable topic key" },
+            { key: "title", label: "Title" },
+            { key: "sortOrder", label: "Sort order" },
+            { label: "Active", value: (row) => row?.isActive ? "Yes" : "No" }
+        ], preview?.sampleTopics, "No sample topics returned.");
+        const scenariosHeading = document.createElement("h4");
+        scenariosHeading.textContent = "Sample scenarios";
+        cmsPreviewSummaryElement.appendChild(scenariosHeading);
+        appendCmsSimpleTable(cmsPreviewSummaryElement, [
+            { key: "stableScenarioKey", label: "Stable scenario key" },
+            { key: "topicKey", label: "Topic key" },
+            { key: "title", label: "Title" },
+            { label: "Active", value: (row) => row?.isActive ? "Yes" : "No" },
+            { label: "DefinitionJson present", value: (row) => row?.definitionJsonPresent ? "Yes" : "No" },
+            { label: "DefinitionJson valid", value: (row) => row?.definitionJsonValid ? "Yes" : "No" }
+        ], preview?.sampleScenarios, "No sample scenarios returned.");
+        appendCmsRawJsonDetails(cmsPreviewSummaryElement, "Show raw preview JSON", preview);
+    }
     function tryParseCmsJson(text) { try { return { isValid: true, value: JSON.parse(text) }; } catch (error) { return { isValid: false, message: error instanceof Error ? error.message : "Invalid JSON." }; } }
     function prettyPrintCmsJson(text) { const parsed = tryParseCmsJson(text); return parsed.isValid ? { isValid: true, text: JSON.stringify(parsed.value, null, 2) } : parsed; }
     function setCmsScenarioJsonStatus(message, isError) { cmsScenarioJsonStatusElement.className = isError ? "error" : "success"; cmsScenarioJsonStatusElement.textContent = message || ""; }
@@ -1453,13 +1611,26 @@
 
     async function runCmsValidation() {
         setCmsError("");
-        try { const validation = await adminFetch(cmsPath(ApiPaths.cmsValidateTemplate, { slug: getSelectedCmsSlug() }), { method: "POST" }); renderJsonOutput(cmsValidationResultElement, validation); if (!validation.success) { setCmsError(`Validation failed with ${(validation.errors || []).length} errors and ${(validation.warnings || []).length} warnings.`); } return validation; }
+        try {
+            const validation = await adminFetch(cmsPath(ApiPaths.cmsValidateTemplate, { slug: getSelectedCmsSlug() }), { method: "POST" });
+            renderCmsValidationResult(validation);
+            if (!validation.success) { setCmsError(`Validation failed with ${(validation.errors || []).length} errors and ${(validation.warnings || []).length} warnings.`); }
+            return validation;
+        }
         catch (error) { handleCmsError(error); return null; }
     }
     async function loadCmsPreviewSummary() {
         setCmsError("");
-        try { const preview = await adminFetch(cmsPath(ApiPaths.cmsPreviewSummaryTemplate, { slug: getSelectedCmsSlug() })); renderJsonOutput(cmsPreviewSummaryElement, preview); return preview; }
-        catch (error) { handleCmsError(error); return null; }
+        try {
+            const preview = await adminFetch(cmsPath(ApiPaths.cmsPreviewSummaryTemplate, { slug: getSelectedCmsSlug() }));
+            renderCmsPreviewSummary(preview);
+            return preview;
+        }
+        catch (error) {
+            clearCmsResultPanel(cmsPreviewSummaryElement, "Preview could not be loaded.");
+            handleCmsError(error);
+            return null;
+        }
     }
     async function loadCmsVersions() {
         clearCmsPublishErrorDetails();
