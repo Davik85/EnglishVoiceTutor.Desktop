@@ -234,3 +234,7 @@ Do not make CMS published-snapshot runtime the learner default during this readi
 A bootstrap-admin protected, read-only runtime status diagnostic is available at `GET /api/admin/dev/cms/runtime-status`. The Admin CMS **Validation & Preview** area displays this as **Runtime content status**. It intentionally shows metadata only: flags, effective source, slug, version/hash, counts, validation status, fallback status, and bounded errors/warnings.
 
 Controlled server validation comes first; localhost is only an explicit developer override for local backend work. This diagnostic must not be treated as runtime enablement. Learner runtime remains static JSON by default; CMS published snapshots are read for runtime only when the explicit CMS runtime flags are set in a controlled environment. The controlled path is validate published snapshot reads with fallback enabled, document rollback to static JSON, then decide whether any limited learner/tester group should use CMS runtime content.
+
+### Runtime tutor profile validation note
+
+The runtime validator must treat desktop tutor avatar definitions as the approved tutor-id source of truth. The currently approved tutor ids are `david`, `elena`, and `nelli`, matching packaged `Content/Tutors/*.json` and CMS static import/draft construction. The previous exact count of 2 was outdated; future diagnostics should report expected, actual, missing, unknown/extra, and duplicate ids while never exposing prompt or tutor instruction bodies.

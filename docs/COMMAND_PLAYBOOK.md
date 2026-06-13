@@ -146,4 +146,11 @@ Manual endpoint check after signing in as a bootstrap admin:
 Invoke-RestMethod "https://api.languagevoicetutor.com/api/admin/dev/cms/runtime-status" -Headers @{ Authorization = "Bearer <admin-bearer-token>" }
 ```
 
+
+CMS runtime tutor profile validation policy check:
+
+```powershell
+python .\tools\test_cms_runtime_tutor_profile_validation_policy.py
+```
+
 The runtime status endpoint is read-only and does not enable CMS runtime content. Static JSON remains default unless the controlled runtime validation environment explicitly sets `CmsContent:UsePublishedSnapshotForRuntime=true`, `CmsContent:ReadPublishedSnapshotEnabled=true`, `CmsContent:ContentPackSlug=static-json-v1`, and `CmsContent:FallbackToStaticJson=true`. Rollback is to remove/disable those explicit CMS runtime flags so the effective source returns to static JSON.
