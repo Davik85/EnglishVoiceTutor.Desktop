@@ -32,18 +32,18 @@ Generated local files under `artifacts/` are not proof that a version is live on
 Example package command for the current backend snapshot:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.6
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.7
 ```
 
 Example upload/restart command for a reviewed backend-only deploy:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-backend.6 `
+  -Version 0.1.35-backend.7 `
   -PackageFirst
 ```
 
-Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.6`, no EF migration was needed and no Windows installer upload was performed. Backend deploys do not upload Windows installer files and do not change `latest.json`.
+Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.7`, no EF migration was needed and no Windows installer upload was performed. Backend deploys do not upload Windows installer files and do not change `latest.json`.
 
 Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.5`.
 
@@ -120,7 +120,7 @@ Manual browser check:
 6. Confirm the UI is readable.
 7. Confirm raw JSON appears only inside collapsed details blocks.
 
-Current state: backend `0.1.35-backend.7` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.6`.
+Current state: backend `0.1.35-backend.8` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.7`.
 
 Do not enable by default: these checks do not enable CMS published-snapshot runtime for learners. Learners still use packaged static JSON by default unless a separate controlled runtime-read validation and enablement decision is made.
 
@@ -154,3 +154,34 @@ python .\tools\test_cms_runtime_tutor_profile_validation_policy.py
 ```
 
 The runtime status endpoint is read-only and does not enable CMS runtime content. Static JSON remains default unless the controlled runtime validation environment explicitly sets `CmsContent:UsePublishedSnapshotForRuntime=true`, `CmsContent:ReadPublishedSnapshotEnabled=true`, `CmsContent:ContentPackSlug=static-json-v1`, and `CmsContent:FallbackToStaticJson=true`. Rollback is to remove/disable those explicit CMS runtime flags so the effective source returns to static JSON.
+
+## Controlled CMS published-snapshot runtime validation
+
+Use `tools/validate_cms_published_snapshot_runtime.ps1` for the next runtime validation step. Its default mode is read-only and targets `https://api.languagevoicetutor.com/api/admin/dev/cms/runtime-status`; provide an admin bearer token with `-AccessToken` or set `EVT_ADMIN_BEARER_TOKEN` after using an approved admin auth method. The token must never be printed, committed, or hardcoded. Without admin auth, 401/403 is an expected safe failure.
+
+Default read-only check:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\validate_cms_published_snapshot_runtime.ps1
+```
+
+The read-only check must confirm `effectiveSource=StaticJson`, `validationSuccess=true`, `usePublishedSnapshotForRuntime=false`, and that learner runtime is not using the CMS snapshot. It does not change server configuration, restart services, or enable CMS runtime.
+
+Generate the explicit operator plan:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\validate_cms_published_snapshot_runtime.ps1 -GenerateServerValidationPlan
+```
+
+The plan prints the temporary flags for an explicitly approved controlled server validation window only:
+
+```text
+CmsContent__UsePublishedSnapshotForRuntime=true
+CmsContent__ReadPublishedSnapshotEnabled=true
+CmsContent__ContentPackSlug=static-json-v1
+CmsContent__FallbackToStaticJson=true
+```
+
+During the controlled window, confirm the backend release, health, database health, and that Admin CMS has a published version before applying temporary flags. After restart, runtime status must show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, and counts of 6 topics, 26 scenarios, 3 prompt templates, and 3 tutor behavior profiles. Run a short installed-app lesson smoke only if explicitly approved.
+
+Rollback is to disable or remove the temporary CMS runtime flags and restart the backend, then rerun the read-only status check and confirm `effectiveSource=StaticJson`. CMS runtime must not become the learner default until after this controlled validation passes and a separate enablement decision is approved. This process has no billing, Paddle, subscription, entitlement, installer, desktop runtime, lesson JSON, public `latest.json`, deployment-script, or EF migration involvement.

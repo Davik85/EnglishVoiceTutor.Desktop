@@ -33,7 +33,7 @@ Step 5D-6e is complete for the development/admin Admin CMS Scenarios editor usab
 
 Publishing remains isolated in **Versions & Publish**. Draft changes are not visible to learner runtime until published. Published versions are immutable, and restore copies a previous published version into a new version instead of mutating old versions.
 
-Local runtime CMS read was confirmed only under explicit development configuration: `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`; backend logs showed `Source=CmsPublishedSnapshot`, `VersionNumber=34`, validation passed, no fallback, and the expected 6 topics, 26 scenarios, 3 prompt templates, and 2 tutor behavior profiles. Static JSON fallback remains available.
+Local runtime CMS read was confirmed only under explicit development configuration: `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`; backend logs showed `Source=CmsPublishedSnapshot`, `VersionNumber=34`, validation passed, no fallback, and the expected 6 topics, 26 scenarios, 3 prompt templates, and 3 tutor behavior profiles. Static JSON fallback remains available.
 
 CMS/Admin is connected, and `static-json-v1` is initialized as Draft/admin content for the last verified tester release snapshot. This is still not full production RBAC readiness, not critical-change approval readiness, and not broad public release readiness. Learner runtime remains static JSON by default; CMS published-snapshot runtime reads must remain disabled/not the learner default unless explicitly enabled and validated later. Production billing remains deferred. Production RBAC and critical-change approval come later.
 
@@ -200,7 +200,7 @@ The CMS runtime read path is intentionally controlled and reversible. Static JSO
 
 - Readable Validation & Preview UI is complete for the deployed Admin CMS. Validation now shows Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON instead of dumping raw JSON in the main result area. Preview now shows readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON.
 - Admin static asset cache busting and no-cache behavior are complete for `/admin` assets. `admin.js` and `admin.css` use the `admin-cms-20260613-raw-json-fix` version token, and no-cache headers apply to `/admin` static files only.
-- Backend `0.1.35-backend.7` is the deployed backend containing the latest Admin CMS UI/cache fixes. The current backend symlink points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.7`; rollback reference is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.6`.
+- Backend `0.1.35-backend.8` is the deployed backend containing the latest Admin CMS UI/cache fixes. The current backend symlink points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.8`; rollback reference is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.7`.
 - Health and database health are green after deploy. Build is green. Admin shell audit is green. EF model check reports no pending model changes. No EF migration was required.
 
 ### Current state
@@ -238,3 +238,13 @@ Controlled server validation comes first; localhost is only an explicit develope
 ### Runtime tutor profile validation note
 
 The runtime validator must treat desktop tutor avatar definitions as the approved tutor-id source of truth. The currently approved tutor ids are `david`, `elena`, and `nelli`, matching packaged `Content/Tutors/*.json` and CMS static import/draft construction. The previous exact count of 2 was outdated; future diagnostics should report expected, actual, missing, unknown/extra, and duplicate ids while never exposing prompt or tutor instruction bodies.
+
+## 2026-06-13 update — Controlled published-snapshot runtime validation tooling
+
+Backend `0.1.35-backend.8` is active and runtime status diagnostics are clean: `effectiveSource=StaticJson`, `validationSuccess=Yes`, no errors, no warnings, and `tutorBehaviorProfiles=3`. StaticJson default is validated, and learner runtime still uses static JSON by default.
+
+The next step is controlled CMS published-snapshot runtime validation using `tools/validate_cms_published_snapshot_runtime.ps1`. The script is safe by default: read-only mode calls the admin runtime-status diagnostic and verifies that CMS snapshot runtime is not the learner default. `-GenerateServerValidationPlan` only prints the temporary operator plan and does not edit production config, restart services, or run destructive commands.
+
+Controlled validation must be explicit, temporary, reversible, and operator-approved. The temporary flags are `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`. During validation, runtime status must confirm `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, 6 topics, 26 scenarios, 3 prompt templates, and 3 tutor behavior profiles. Rollback is to disable or remove the temporary CMS runtime flags, restart backend, and confirm `effectiveSource=StaticJson` again.
+
+CMS runtime must not become the learner default until after the controlled validation passes and a separate enablement decision is approved. Billing, Paddle, subscriptions, entitlements, payments, installer behavior, desktop runtime behavior, public `latest.json`, deployment scripts, lesson JSON, and EF migrations are outside this validation step.

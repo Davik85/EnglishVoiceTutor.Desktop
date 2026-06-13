@@ -35,9 +35,9 @@ This is still a private tester/direct Windows release, not broad public producti
 
 ## Current backend verification
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.7` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.6`. Backend `0.1.35-backend.7` contains the latest Admin CMS Validation & Preview readable UI fix plus `/admin` static asset cache busting/no-cache behavior. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. No EF migration was required.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.8` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.7`. Backend `0.1.35-backend.8` contains the latest Admin CMS Validation & Preview readable UI fix plus `/admin` static asset cache busting/no-cache behavior. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. No EF migration was required.
 
-Deployed runtime status diagnostics are visible on backend `0.1.35-backend.7` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic keeps learner runtime on static JSON by default and reports `effectiveSource=StaticJson`. The local root cause of the tutor behavior profile mismatch was an obsolete hardcoded exact count of 2 in runtime validation. Product content now legitimately supports the approved tutor ids `david`, `elena`, and `nelli`; validation should require those ids and reject only missing, duplicate, or unknown/extra tutor ids. Deploy and verify that runtime status reports `validationSuccess=true` for the current static JSON/default path before enabling CMS published-snapshot runtime for learners.
+Deployed runtime status diagnostics are visible on backend `0.1.35-backend.8` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and keeps learner runtime on static JSON by default: `effectiveSource=StaticJson`, `validationSuccess=true`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next step is controlled CMS published-snapshot runtime validation with explicit temporary flags, not default learner enablement.
 
 ## CMS connection readiness and controlled release preparation
 
@@ -66,10 +66,12 @@ Current state: CMS practical readiness is now a release gate for controlled rele
 
 ### C. Prepare controlled runtime validation path
 
-1. Document the exact config flags required to read from a published CMS snapshot.
-2. Validate the runtime path only in a controlled development environment or an explicitly approved environment.
-3. Keep fallback to static JSON.
-4. Do not make CMS runtime default for learners yet.
+1. Run `tools/validate_cms_published_snapshot_runtime.ps1` in default read-only mode to confirm `effectiveSource=StaticJson`, `validationSuccess=true`, `usePublishedSnapshotForRuntime=false`, and learner runtime is not using CMS snapshot.
+2. Run `tools/validate_cms_published_snapshot_runtime.ps1 -GenerateServerValidationPlan` to print the exact temporary config flags and rollback checklist.
+3. Validate the runtime path only in a controlled development environment or explicitly approved server window.
+4. Keep fallback to static JSON.
+5. Remove/disable the temporary CMS runtime flags and restart backend after validation.
+6. Do not make CMS runtime default for learners yet.
 
 ### D. Only after successful validation
 
@@ -126,4 +128,4 @@ Next safe step: move from Admin CMS foundation/UI cleanup to CMS connection read
 
 The Admin CMS now exposes a read-only **Runtime content status** section and the protected endpoint `GET /api/admin/dev/cms/runtime-status`. Use it to confirm the effective learner content source, validation result, counts, published snapshot metadata, and fallback state without exposing content bodies or secrets.
 
-Static JSON remains the default. The diagnostic does not enable CMS runtime content and does not change production defaults. The obsolete exact tutor behavior profile count has been replaced locally with approved tutor-id validation for `david`, `elena`, and `nelli`; deploy and verify runtime status on the target backend before enabling CMS published-snapshot runtime for learners. For the next controlled validation, set all runtime-read flags explicitly in a non-default environment: `CmsContent:UsePublishedSnapshotForRuntime=true`, `CmsContent:ReadPublishedSnapshotEnabled=true`, `CmsContent:ContentPackSlug=static-json-v1`, and `CmsContent:FallbackToStaticJson=true`. After validation, decide separately whether to enable CMS runtime for a limited learner/tester group; rollback is removing those explicit flags so runtime returns to static JSON.
+Static JSON remains the default. The diagnostic does not enable CMS runtime content and does not change production defaults. Runtime status is clean on backend `0.1.35-backend.8` with approved tutor-id validation for `david`, `elena`, and `nelli`. For the next controlled validation, use `tools/validate_cms_published_snapshot_runtime.ps1 -GenerateServerValidationPlan`; the temporary flags are `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`. The validation must be explicit, temporary, reversible, and operator-approved. After validation, decide separately whether to enable CMS runtime for a limited learner/tester group; rollback is removing/disabling those explicit flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
