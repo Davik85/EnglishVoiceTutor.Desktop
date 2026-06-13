@@ -190,3 +190,24 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
 .cms-scenario-structured-save-row { margin-bottom: 10px; margin-top: 10px; }
 .cms-audit-smoke-toggle { align-self: center; margin-bottom: 8px; }
 .cms-audit-smoke-filter-status { margin: 8px 0; }
+.cms-validation-preview-notice { margin-bottom: 16px; }
+.cms-section-header { align-items: flex-start; display: flex; gap: 12px; justify-content: space-between; margin-bottom: 12px; }
+.cms-section-header h3 { margin: 0 0 6px; }
+.cms-section-header .muted { margin: 0; }
+.cms-result-panel { border: 1px solid #e5e7eb; border-radius: 10px; margin-top: 12px; padding: 14px; }
+.cms-result-title-row { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; margin-bottom: 12px; }
+.cms-result-title-row h4 { margin: 0; }
+.cms-status-badge { letter-spacing: .02em; }
+.cms-preview-meta { grid-template-columns: minmax(190px, 260px) 1fr; margin: 12px 0 16px; }
+.cms-preview-meta dd { margin: 0; }
+.cms-message-list { border-top: 1px solid #e5e7eb; margin-top: 14px; padding-top: 12px; }
+.cms-message-list h4 { margin: 0 0 8px; }
+.cms-error-list, .cms-warning-list { margin: 0; padding-left: 22px; }
+.cms-error-list li, .cms-warning-list li { margin-bottom: 6px; }
+.cms-raw-json-details { margin-top: 16px; }
+.cms-raw-json-details summary { cursor: pointer; font-weight: 700; }
+.cms-raw-json-details .cms-json-output { margin-top: 10px; }
+
+@media (max-width: 1024px) {
+  .cms-section-header { align-items: stretch; flex-direction: column; }
+}
