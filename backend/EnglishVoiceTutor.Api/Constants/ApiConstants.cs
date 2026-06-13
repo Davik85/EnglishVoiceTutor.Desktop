@@ -52,6 +52,7 @@ public static class ApiConstants
     public const string AuthPasswordResetConfirmRoute = "/api/auth/password-reset/confirm";
     public const string MeUserSettingsRoute = "/api/me/settings";
     public const string MeLessonSessionsRoute = "/api/me/lesson-sessions";
+    public const string MeLessonContentScenarioRoute = "/api/me/lesson-content/scenarios/{scenarioKey}";
     public const string MeLessonSessionByIdRoute = "/api/me/lesson-sessions/{sessionId:guid}";
     public const string MeLessonSessionFinishRoute = "/api/me/lesson-sessions/{sessionId:guid}/finish";
     public const string LessonSessionHeartbeatRoute = "/api/lesson-sessions/{sessionId:guid}/heartbeat";
@@ -60,6 +61,7 @@ public static class ApiConstants
     public const string MeLessonSessionMessagesRoute = "/api/me/lesson-sessions/{sessionId:guid}/messages";
     public const string DevUserSettingsRoute = "/api/dev/user-settings";
     public const string DevLessonSessionsRoute = "/api/dev/lesson-sessions";
+    public const string DevLessonContentScenarioRoute = "/api/dev/lesson-content/scenarios/{scenarioKey}";
     public const string DevLessonSessionByIdRoute = "/api/dev/lesson-sessions/{sessionId:guid}";
     public const string DevLessonSessionFinishRoute = "/api/dev/lesson-sessions/{sessionId:guid}/finish";
     public const string DevLessonSessionHeartbeatRoute = "/api/dev/lesson-sessions/{sessionId:guid}/heartbeat";

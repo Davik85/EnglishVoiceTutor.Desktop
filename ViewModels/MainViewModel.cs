@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -39,6 +40,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly BackendUserSettingsClient backendUserSettingsClient = new();
     private readonly BackendSubscriptionStatusClient backendSubscriptionStatusClient = new();
     private readonly BackendLessonSessionClient backendLessonSessionClient = new();
+    private readonly BackendLessonContentClient backendLessonContentClient = new();
     private readonly BackendLessonMessageClient backendLessonMessageClient = new();
     private readonly BackendLessonSummaryClient backendLessonSummaryClient = new();
     private readonly BackendLessonHistoryClient backendLessonHistoryClient = new();
@@ -617,7 +619,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             TutorAvatarOptions.GetById(userSettings.SelectedTutorAvatarId),
             SpeechVoiceOptions.GetById(userSettings.SpeechVoiceId).Id,
             LoadTutorProfile(userSettings.SelectedTutorAvatarId),
-            LoadLessonScenarioForSubtopic(selectedTopic, selectedSubtopic),
+            LoadRuntimeLessonScenarioForSubtopic(selectedTopic, selectedSubtopic),
             lessonChatBackendService,
             backendLessonSessionClient,
             backendLessonMessageClient,
@@ -645,6 +647,37 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 DisplayName = TutorAvatarOptions.Elena.DisplayName
             };
         }
+    }
+
+
+    private LessonScenario LoadRuntimeLessonScenarioForSubtopic(Topic selectedTopic, Subtopic selectedSubtopic)
+    {
+        var localScenario = LoadLessonScenarioForSubtopic(selectedTopic, selectedSubtopic);
+        if (string.IsNullOrWhiteSpace(localScenario.Id))
+        {
+            return localScenario;
+        }
+
+        try
+        {
+            var runtimeScenario = backendLessonContentClient
+                .GetRuntimeScenarioAsync(userSettings.BackendBaseUrl, localScenario.Id)
+                .GetAwaiter()
+                .GetResult();
+
+            if (runtimeScenario is not null && !string.IsNullOrWhiteSpace(runtimeScenario.Id))
+            {
+                Debug.WriteLine($"Loaded runtime lesson scenario from backend CMS/static runtime source. ScenarioId={runtimeScenario.Id}; SetupMessageLength={runtimeScenario.LessonSetup.SetupMessage.Length}.");
+                return runtimeScenario;
+            }
+        }
+        catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException or TaskCanceledException)
+        {
+            Debug.WriteLine($"Runtime lesson scenario load failed; packaged local content fallback will be used. ScenarioId={localScenario.Id}; {exception.Message}");
+        }
+
+        Debug.WriteLine($"Using packaged local lesson scenario fallback. ScenarioId={localScenario.Id}; SetupMessageLength={localScenario.LessonSetup.SetupMessage.Length}.");
+        return localScenario;
     }
 
     private LessonScenario LoadLessonScenarioForSubtopic(Topic selectedTopic, Subtopic selectedSubtopic)

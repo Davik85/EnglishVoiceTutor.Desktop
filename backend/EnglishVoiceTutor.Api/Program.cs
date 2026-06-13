@@ -274,10 +274,12 @@ app.MapPost(ApiConstants.DevLessonSessionHeartbeatRoute, HandleLessonSessionHear
 app.MapPost(ApiConstants.DevLessonSessionAbandonRoute, HandleAbandonLessonSessionAsync);
 app.MapPost(ApiConstants.DevActiveLessonSessionAbandonRoute, HandleAbandonActiveLessonSessionAsync);
 app.MapGet(ApiConstants.DevLessonSessionsRoute, HandleGetDevLessonSessionsAsync);
+app.MapGet(ApiConstants.DevLessonContentScenarioRoute, HandleGetRuntimeLessonScenarioAsync);
 app.MapGet(ApiConstants.DevLessonSessionByIdRoute, HandleGetLessonSessionByIdAsync);
 app.MapPost(ApiConstants.DevLessonSessionMessagesRoute, HandleCreateLessonMessageAsync);
 app.MapGet(ApiConstants.DevLessonSessionMessagesRoute, HandleGetLessonMessagesAsync);
 app.MapPost(ApiConstants.MeLessonSessionsRoute, HandleCreateDevLessonSessionAsync).RequireAuthorization();
+app.MapGet(ApiConstants.MeLessonContentScenarioRoute, HandleGetRuntimeLessonScenarioAsync).RequireAuthorization();
 app.MapPut(ApiConstants.MeLessonSessionFinishRoute, HandleFinishLessonSessionAsync).RequireAuthorization();
 app.MapPost(ApiConstants.LessonSessionHeartbeatRoute, HandleLessonSessionHeartbeatAsync).RequireAuthorization();
 app.MapPost(ApiConstants.LessonSessionAbandonRoute, HandleAbandonLessonSessionAsync).RequireAuthorization();
@@ -355,6 +357,49 @@ static async Task<IResult> HandleDatabaseHealthAsync(
 }
 
 
+
+
+static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
+    string scenarioKey,
+    ICmsRuntimeLessonContentService cmsRuntimeLessonContentService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    if (string.IsNullOrWhiteSpace(scenarioKey))
+    {
+        return Results.BadRequest(new { error = "Scenario key is required." });
+    }
+
+    var result = await cmsRuntimeLessonContentService.ReadRuntimeLessonContentAsync(cancellationToken);
+    if (!result.Success || result.Content is null)
+    {
+        return Results.Problem(
+            title: "Runtime lesson content unavailable",
+            detail: "Runtime lesson content could not be loaded or validated.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    var scenario = result.Content.Scenarios
+        .FirstOrDefault(item => string.Equals(item.StableScenarioKey, scenarioKey.Trim(), StringComparison.OrdinalIgnoreCase)
+            || string.Equals(item.Lesson.Id, scenarioKey.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    if (scenario is null)
+    {
+        return Results.NotFound(new { error = "Scenario was not found in runtime lesson content." });
+    }
+
+    loggerFactory.CreateLogger("RuntimeLessonContentEndpoint").LogInformation(
+        "Runtime lesson scenario served. ScenarioKey={ScenarioKey}; Source={Source}; FallbackUsed={FallbackUsed}; VersionNumber={VersionNumber}; ContentPackSlug={ContentPackSlug}; SetupMessageLength={SetupMessageLength}; FirstBotRuleCount={FirstBotRuleCount}.",
+        scenario.StableScenarioKey,
+        result.Source,
+        result.FallbackUsed,
+        result.VersionNumber,
+        result.ContentPackSlug,
+        scenario.Lesson.LessonSetup.SetupMessage.Length,
+        scenario.Lesson.LessonSetup.FirstBotMessageShouldExplain.Count);
+
+    return Results.Ok(scenario.Lesson);
+}
 
 static async Task<IResult> HandleCreateDevLessonSessionAsync(
     StartLessonSessionRequest request,
