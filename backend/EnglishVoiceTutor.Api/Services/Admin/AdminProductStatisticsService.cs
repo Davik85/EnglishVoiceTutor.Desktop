@@ -121,15 +121,20 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             .Select(usageEvent => new { usageEvent.StudyLanguage, usageEvent.UserId })
             .ToListAsync(cancellationToken);
 
-        var groupedLanguages = lessonLanguages
-            .Select(item => new LanguageUserPair(NormalizeLanguageForStatistics(item.StudyLanguage), item.UserId))
-            .Concat(usageLanguages.Select(item => new LanguageUserPair(NormalizeLanguageForStatistics(item.StudyLanguage), item.UserId)))
-            .Distinct()
-            .GroupBy(item => item.Language, StringComparer.Ordinal)
-            .Select(group => new LanguageDistributionCount(group.Key, group.Count()))
-            .ToList();
+        var uniqueLanguageUsers = new HashSet<LanguageUserPair>();
+        foreach (var item in lessonLanguages)
+        {
+            var normalizedLanguage = NormalizeLanguageForStatistics(item.StudyLanguage);
+            uniqueLanguageUsers.Add(new LanguageUserPair(normalizedLanguage, item.UserId));
+        }
 
-        return BuildDistribution(groupedLanguages);
+        foreach (var item in usageLanguages)
+        {
+            var normalizedLanguage = NormalizeLanguageForStatistics(item.StudyLanguage);
+            uniqueLanguageUsers.Add(new LanguageUserPair(normalizedLanguage, item.UserId));
+        }
+
+        return BuildDistribution(GroupLanguageUserCounts(uniqueLanguageUsers));
     }
 
     private async Task<IReadOnlyList<AdminLanguageDistributionItem>> GetNativeLanguageDistributionAsync(CancellationToken cancellationToken)
@@ -154,10 +159,36 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
 
     private static IReadOnlyList<LanguageDistributionCount> GroupLanguageCounts(IEnumerable<string?> languages)
     {
-        return languages
-            .Select(NormalizeLanguageForStatistics)
-            .GroupBy(language => language, StringComparer.Ordinal)
-            .Select(group => new LanguageDistributionCount(group.Key, group.Count()))
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var rawLanguage in languages)
+        {
+            var normalizedLanguage = NormalizeLanguageForStatistics(rawLanguage);
+            counts[normalizedLanguage] = counts.TryGetValue(normalizedLanguage, out var current)
+                ? current + 1
+                : 1;
+        }
+
+        return ToLanguageDistributionCounts(counts);
+    }
+
+    private static IReadOnlyList<LanguageDistributionCount> GroupLanguageUserCounts(IEnumerable<LanguageUserPair> languageUsers)
+    {
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var languageUser in languageUsers)
+        {
+            var normalizedLanguage = NormalizeLanguageForStatistics(languageUser.Language);
+            counts[normalizedLanguage] = counts.TryGetValue(normalizedLanguage, out var current)
+                ? current + 1
+                : 1;
+        }
+
+        return ToLanguageDistributionCounts(counts);
+    }
+
+    private static IReadOnlyList<LanguageDistributionCount> ToLanguageDistributionCounts(IReadOnlyDictionary<string, int> counts)
+    {
+        return counts
+            .Select(pair => new LanguageDistributionCount(pair.Key, pair.Value))
             .ToList();
     }
 
@@ -169,11 +200,16 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
     private static IReadOnlyList<AdminLanguageDistributionItem> BuildDistribution(
         IReadOnlyList<LanguageDistributionCount> groupedLanguages)
     {
-        var normalizedGroups = groupedLanguages
-            .Select(group => new LanguageDistributionCount(NormalizeLanguageForStatistics(group.Language), group.UserCount))
-            .GroupBy(group => group.Language, StringComparer.Ordinal)
-            .Select(group => new LanguageDistributionCount(group.Key, group.Sum(item => item.UserCount)))
-            .ToList();
+        var normalizedGroupCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var group in groupedLanguages)
+        {
+            var normalizedLanguage = NormalizeLanguageForStatistics(group.Language);
+            normalizedGroupCounts[normalizedLanguage] = normalizedGroupCounts.TryGetValue(normalizedLanguage, out var current)
+                ? current + group.UserCount
+                : group.UserCount;
+        }
+
+        var normalizedGroups = ToLanguageDistributionCounts(normalizedGroupCounts);
         var totalUsers = normalizedGroups.Sum(group => group.UserCount);
 
         return normalizedGroups
@@ -221,5 +257,5 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
     }
 
     private sealed record LanguageDistributionCount(string Language, int UserCount);
-    private sealed record LanguageUserPair(string? Language, Guid UserId);
+    private sealed record LanguageUserPair(string Language, Guid UserId);
 }
