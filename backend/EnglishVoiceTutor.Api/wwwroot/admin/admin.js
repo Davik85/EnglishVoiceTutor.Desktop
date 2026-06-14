@@ -2038,14 +2038,15 @@
     }
 
     function renderStatisticsOverview(payload) {
-        const definitions = payload.definitions || {};
+        const safePayload = payload && typeof payload === "object" ? payload : {};
+        const definitions = safePayload.definitions && typeof safePayload.definitions === "object" ? safePayload.definitions : {};
         const metrics = [
-            ["totalInstallations", "Tracked devices", payload.totalInstallations],
-            ["registeredUsersTotal", "Registered users", payload.registeredUsersTotal],
-            ["activeTrialsNow", "Active trials now", payload.activeTrialsNow],
-            ["activeUsersLast30Days", "Active users (30 days)", payload.activeUsersLast30Days],
-            ["activePremiumUsersNow", "Active Premium users now", payload.activePremiumUsersNow],
-            ["activeFreeUsersLast30Days", "Active Free users (30 days)", payload.activeFreeUsersLast30Days]
+            ["totalInstallations", "Tracked devices", safePayload.totalInstallations],
+            ["registeredUsersTotal", "Registered users", safePayload.registeredUsersTotal],
+            ["activeTrialsNow", "Active trials now", safePayload.activeTrialsNow],
+            ["activeUsersLast30Days", "Active users (30 days)", safePayload.activeUsersLast30Days],
+            ["activePremiumUsersNow", "Active Premium users now", safePayload.activePremiumUsersNow],
+            ["activeFreeUsersLast30Days", "Active Free users (30 days)", safePayload.activeFreeUsersLast30Days]
         ];
 
         statisticsCardsElement.textContent = "";
@@ -2064,17 +2065,18 @@
             statisticsCardsElement.appendChild(card);
         });
 
-        renderLanguageDistribution(studyLanguageDistributionElement, payload.selectedStudyLanguageDistribution || payload.studyLanguageDistribution || []);
-        renderLanguageDistribution(practicedStudyLanguageDistributionElement, payload.practicedStudyLanguageDistributionLast30Days || []);
-        renderLanguageDistribution(nativeLanguageDistributionElement, payload.nativeLanguageDistribution || []);
+        renderLanguageDistribution(studyLanguageDistributionElement, safePayload.selectedStudyLanguageDistribution || safePayload.studyLanguageDistribution || []);
+        renderLanguageDistribution(practicedStudyLanguageDistributionElement, safePayload.practicedStudyLanguageDistributionLast30Days || []);
+        renderLanguageDistribution(nativeLanguageDistributionElement, safePayload.nativeLanguageDistribution || []);
 
-        statisticsCheckedAtElement.textContent = `Checked at: ${payload.checkedAtUtc || "-"}; window start: ${payload.windowStartUtc || "-"}; window days: ${payload.windowDays || 30}`;
+        statisticsCheckedAtElement.textContent = `Checked at: ${safePayload.checkedAtUtc || "-"}; window start: ${safePayload.windowStartUtc || "-"}; window days: ${safePayload.windowDays || 30}`;
     }
 
     function renderLanguageDistribution(container, distribution) {
         container.textContent = "";
+        const items = Array.isArray(distribution) ? distribution : [];
 
-        if (!distribution.length) {
+        if (!items.length) {
             const empty = document.createElement("p");
             empty.className = "muted statistics-empty";
             empty.textContent = "No language data available.";
@@ -2094,14 +2096,14 @@
         thead.appendChild(headerRow);
 
         const tbody = document.createElement("tbody");
-        distribution.forEach((item) => {
+        items.forEach((item) => {
             const row = document.createElement("tr");
             const languageCell = document.createElement("td");
-            languageCell.textContent = item.language || "Unknown";
+            languageCell.textContent = item && item.language ? item.language : "Unknown";
             const userCountCell = document.createElement("td");
-            userCountCell.textContent = Number.isFinite(Number(item.userCount)) ? Number(item.userCount).toLocaleString() : "-";
+            userCountCell.textContent = Number.isFinite(Number(item && item.userCount)) ? Number(item.userCount).toLocaleString() : "-";
             const percentageCell = document.createElement("td");
-            percentageCell.textContent = Number.isFinite(Number(item.percentage)) ? `${Number(item.percentage).toFixed(1)}%` : "-";
+            percentageCell.textContent = Number.isFinite(Number(item && item.percentage)) ? `${Number(item.percentage).toFixed(1)}%` : "-";
             row.append(languageCell, userCountCell, percentageCell);
             tbody.appendChild(row);
         });
