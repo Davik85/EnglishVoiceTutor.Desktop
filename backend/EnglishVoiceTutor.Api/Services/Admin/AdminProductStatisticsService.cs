@@ -114,7 +114,7 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         var usageLanguages = dbContext.UsageEvents
             .AsNoTracking()
             .Where(usageEvent => usageEvent.CreatedAt >= windowStartUtc)
-            .Select(usageEvent => new LanguageUserPair(usageEvent.StudyLanguage, usageEvent.UserId));
+            .Select(usageEvent => new LanguageUserPair(usageEvent.StudyLanguage ?? string.Empty, usageEvent.UserId));
 
         var practicedLanguages = await lessonLanguages
             .Union(usageLanguages)
