@@ -93,37 +93,34 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
 
     private async Task<IReadOnlyList<AdminLanguageDistributionItem>> GetSelectedStudyLanguageDistributionAsync(CancellationToken cancellationToken)
     {
-        var groupedLanguages = await dbContext.UserSettings
+        var languages = await dbContext.UserSettings
             .AsNoTracking()
-            .GroupBy(settings => settings.StudyLanguage == null || settings.StudyLanguage.Trim() == string.Empty
-                ? UnknownLanguage
-                : settings.StudyLanguage.Trim())
-            .Select(group => new LanguageDistributionCount(group.Key, group.Count()))
+            .Select(settings => settings.StudyLanguage)
             .ToListAsync(cancellationToken);
 
-        return BuildDistribution(groupedLanguages, NormalizeStudyLanguage);
+        return BuildDistribution(GroupLanguageCounts(languages), NormalizeStudyLanguage);
     }
 
     private async Task<IReadOnlyList<AdminLanguageDistributionItem>> GetPracticedStudyLanguageDistributionLast30DaysAsync(DateTimeOffset windowStartUtc, CancellationToken cancellationToken)
     {
-        var lessonLanguages = dbContext.LessonSessions
+        var lessonLanguages = await dbContext.LessonSessions
             .AsNoTracking()
             .Where(session => session.StartedAt >= windowStartUtc)
-            .Select(session => new LanguageUserPair(session.StudyLanguage, session.UserId));
-
-        var usageLanguages = dbContext.UsageEvents
-            .AsNoTracking()
-            .Where(usageEvent => usageEvent.CreatedAt >= windowStartUtc)
-            .Select(usageEvent => new LanguageUserPair(usageEvent.StudyLanguage ?? string.Empty, usageEvent.UserId));
-
-        var practicedLanguages = await lessonLanguages
-            .Union(usageLanguages)
-            .Distinct()
+            .Select(session => new { session.StudyLanguage, session.UserId })
             .ToListAsync(cancellationToken);
 
-        var groupedLanguages = practicedLanguages
-            .GroupBy(item => string.IsNullOrWhiteSpace(item.Language) ? UnknownLanguage : item.Language.Trim(), StringComparer.Ordinal)
-            .Select(group => new LanguageDistributionCount(group.Key, group.Select(item => item.UserId).Distinct().Count()))
+        var usageLanguages = await dbContext.UsageEvents
+            .AsNoTracking()
+            .Where(usageEvent => usageEvent.CreatedAt >= windowStartUtc)
+            .Select(usageEvent => new { usageEvent.StudyLanguage, usageEvent.UserId })
+            .ToListAsync(cancellationToken);
+
+        var groupedLanguages = lessonLanguages
+            .Select(item => new LanguageUserPair(NormalizeMissingLanguage(item.StudyLanguage), item.UserId))
+            .Concat(usageLanguages.Select(item => new LanguageUserPair(NormalizeMissingLanguage(item.StudyLanguage), item.UserId)))
+            .Distinct()
+            .GroupBy(item => item.Language, StringComparer.Ordinal)
+            .Select(group => new LanguageDistributionCount(group.Key, group.Count()))
             .ToList();
 
         return BuildDistribution(groupedLanguages, NormalizeStudyLanguage);
@@ -142,14 +139,30 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             .ToListAsync(cancellationToken);
 
         var groupedLanguages = userLanguages
-            .Select(user => string.IsNullOrWhiteSpace(user.NativeLanguage) || string.Equals(user.NativeLanguage.Trim(), "unknown", StringComparison.OrdinalIgnoreCase)
+            .Select(user => IsUnknownNativeLanguage(user.NativeLanguage)
                 ? user.ExplanationLanguage
-                : user.NativeLanguage)
-            .GroupBy(language => string.IsNullOrWhiteSpace(language) ? UnknownLanguage : language.Trim(), StringComparer.Ordinal)
+                : user.NativeLanguage);
+
+        return BuildDistribution(GroupLanguageCounts(groupedLanguages), NormalizeNativeLanguage);
+    }
+
+    private static IReadOnlyList<LanguageDistributionCount> GroupLanguageCounts(IEnumerable<string?> languages)
+    {
+        return languages
+            .GroupBy(NormalizeMissingLanguage, StringComparer.Ordinal)
             .Select(group => new LanguageDistributionCount(group.Key, group.Count()))
             .ToList();
+    }
 
-        return BuildDistribution(groupedLanguages, NormalizeNativeLanguage);
+    private static string NormalizeMissingLanguage(string? language)
+    {
+        return string.IsNullOrWhiteSpace(language) ? UnknownLanguage : language.Trim();
+    }
+
+    private static bool IsUnknownNativeLanguage(string? language)
+    {
+        return string.IsNullOrWhiteSpace(language)
+            || string.Equals(language.Trim(), "unknown", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IReadOnlyList<AdminLanguageDistributionItem> BuildDistribution(
