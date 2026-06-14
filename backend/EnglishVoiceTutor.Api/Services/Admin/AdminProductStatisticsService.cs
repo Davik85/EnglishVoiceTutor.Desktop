@@ -119,8 +119,8 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             .Select(item => new LanguageUserPair(NormalizeMissingLanguage(item.StudyLanguage), item.UserId))
             .Concat(usageLanguages.Select(item => new LanguageUserPair(NormalizeMissingLanguage(item.StudyLanguage), item.UserId)))
             .Distinct()
-            .GroupBy(item => item.Language, StringComparer.Ordinal)
-            .Select(group => new LanguageDistributionCount(group.Key, group.Count()))
+            .GroupBy(item => NormalizeMissingLanguage(item.Language), StringComparer.Ordinal)
+            .Select(group => new LanguageDistributionCount(NormalizeMissingLanguage(group.Key), group.Count()))
             .ToList();
 
         return BuildDistribution(groupedLanguages, NormalizeStudyLanguage);
@@ -149,7 +149,8 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
     private static IReadOnlyList<LanguageDistributionCount> GroupLanguageCounts(IEnumerable<string?> languages)
     {
         return languages
-            .GroupBy(NormalizeMissingLanguage, StringComparer.Ordinal)
+            .Select(NormalizeMissingLanguage)
+            .GroupBy(language => language, StringComparer.Ordinal)
             .Select(group => new LanguageDistributionCount(group.Key, group.Count()))
             .ToList();
     }
@@ -170,7 +171,8 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         Func<string, string> normalizeLanguage)
     {
         var normalizedGroups = groupedLanguages
-            .GroupBy(group => normalizeLanguage(group.Language), StringComparer.Ordinal)
+            .Select(group => new LanguageDistributionCount(NormalizeMissingLanguage(normalizeLanguage(group.Language)), group.UserCount))
+            .GroupBy(group => group.Language, StringComparer.Ordinal)
             .Select(group => new LanguageDistributionCount(group.Key, group.Sum(item => item.UserCount)))
             .ToList();
         var totalUsers = normalizedGroups.Sum(group => group.UserCount);
