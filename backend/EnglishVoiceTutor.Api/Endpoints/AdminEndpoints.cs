@@ -27,6 +27,9 @@ public static class AdminEndpoints
         app.MapGet(ApiConstants.AdminCapabilitiesRoute, GetAdminCapabilities)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
+        app.MapGet(ApiConstants.AdminStatisticsOverviewRoute, GetProductStatisticsOverviewAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
         app.MapGet(ApiConstants.AdminUserByEmailRoute, GetAdminUserByEmailAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
@@ -159,6 +162,13 @@ public static class AdminEndpoints
     private static IResult GetAdminCapabilities(IAdminCapabilitiesService adminCapabilitiesService)
     {
         return Results.Ok(adminCapabilitiesService.GetCapabilities());
+    }
+
+    private static async Task<IResult> GetProductStatisticsOverviewAsync(
+        IAdminProductStatisticsService adminProductStatisticsService,
+        CancellationToken cancellationToken)
+    {
+        return Results.Ok(await adminProductStatisticsService.GetOverviewAsync(cancellationToken));
     }
 
     private static async Task<IResult> GetAdminUserByEmailAsync(

@@ -222,3 +222,22 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
   .cms-preview-meta { grid-template-columns: 1fr; }
   .cms-result-panel .compact-table { min-width: 640px; }
 }
+
+.section-title-row { align-items: flex-start; display: flex; gap: 12px; justify-content: space-between; }
+.section-title-row h2 { margin-bottom: 8px; }
+.statistics-grid { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 14px; }
+.stat-card { background: #f8fafc; border: 1px solid #dbeafe; border-radius: 12px; padding: 14px; }
+.stat-card h3 { color: #334155; font-size: 15px; margin: 0 0 8px; }
+.stat-value { color: #1d4ed8; font-size: 32px; font-weight: 800; line-height: 1; margin: 0 0 10px; }
+.stat-definition { font-size: 13px; margin: 0; }
+.statistics-timestamp { font-size: 13px; margin: 12px 0 0; }
+.statistics-note { background: #f8fafc; border-left: 4px solid #2563eb; margin-bottom: 0; padding: 10px 12px; }
+
+@media (max-width: 1024px) {
+  .statistics-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 720px) {
+  .section-title-row { align-items: stretch; flex-direction: column; }
+  .statistics-grid { grid-template-columns: 1fr; }
+}
