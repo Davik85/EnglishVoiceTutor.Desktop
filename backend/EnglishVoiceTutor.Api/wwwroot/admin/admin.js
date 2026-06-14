@@ -111,6 +111,7 @@
     const statisticsCheckedAtElement = document.getElementById("statistics-checked-at");
     const studyLanguageDistributionElement = document.getElementById("study-language-distribution");
     const nativeLanguageDistributionElement = document.getElementById("native-language-distribution");
+    const practicedStudyLanguageDistributionElement = document.getElementById("practiced-study-language-distribution");
 
     const lookupForm = document.getElementById("lookup-form");
     const lookupEmailInput = document.getElementById("lookup-email");
@@ -2039,7 +2040,7 @@
     function renderStatisticsOverview(payload) {
         const definitions = payload.definitions || {};
         const metrics = [
-            ["totalInstallations", "Tracked installations", payload.totalInstallations],
+            ["totalInstallations", "Tracked devices", payload.totalInstallations],
             ["registeredUsersTotal", "Registered users", payload.registeredUsersTotal],
             ["activeTrialsNow", "Active trials now", payload.activeTrialsNow],
             ["activeUsersLast30Days", "Active users (30 days)", payload.activeUsersLast30Days],
@@ -2063,7 +2064,8 @@
             statisticsCardsElement.appendChild(card);
         });
 
-        renderLanguageDistribution(studyLanguageDistributionElement, payload.studyLanguageDistribution || []);
+        renderLanguageDistribution(studyLanguageDistributionElement, payload.selectedStudyLanguageDistribution || payload.studyLanguageDistribution || []);
+        renderLanguageDistribution(practicedStudyLanguageDistributionElement, payload.practicedStudyLanguageDistributionLast30Days || []);
         renderLanguageDistribution(nativeLanguageDistributionElement, payload.nativeLanguageDistribution || []);
 
         statisticsCheckedAtElement.textContent = `Checked at: ${payload.checkedAtUtc || "-"}; window start: ${payload.windowStartUtc || "-"}; window days: ${payload.windowDays || 30}`;

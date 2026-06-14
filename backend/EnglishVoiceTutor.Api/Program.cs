@@ -20,6 +20,7 @@ using EnglishVoiceTutor.Api.Services.Subscriptions;
 using EnglishVoiceTutor.Api.Services.Billing;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Cms;
+using EnglishVoiceTutor.Api.Services.Devices;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -163,6 +164,7 @@ builder.Services.AddScoped<IPasswordHasher<EnglishVoiceTutor.Api.Data.Entities.U
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+builder.Services.AddScoped<IDeviceRegistrationService, DeviceRegistrationService>();
 builder.Services.AddSingleton<IPasswordResetEmailSender>(services =>
 {
     var smtpOptions = services.GetRequiredService<IConfiguration>().GetSection(SmtpEmailOptions.SectionName).Get<SmtpEmailOptions>() ?? new SmtpEmailOptions();
@@ -303,6 +305,7 @@ app.MapGet(ApiConstants.DevFreeLimitStatusRoute, HandleGetDevFreeLimitStatusAsyn
 app.MapGet(ApiConstants.DevFeedbackResultsRoute, HandleGetDevFeedbackResultsAsync);
 app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
 app.MapAuthEndpoints();
+app.MapDeviceEndpoints();
 app.MapSubscriptionStatusEndpoints();
 app.MapLessonAccessDecisionEndpoints();
 app.MapSubscriptionDiagnosticsEndpoints();
