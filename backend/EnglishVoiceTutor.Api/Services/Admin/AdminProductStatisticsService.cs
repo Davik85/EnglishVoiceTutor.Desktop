@@ -116,10 +116,9 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             .ToListAsync(cancellationToken);
 
         var groupedLanguages = lessonLanguages
-            .Select(item => new LanguageUserPair(item.StudyLanguage, item.UserId))
-            .Concat(usageLanguages.Select(item => new LanguageUserPair(item.StudyLanguage, item.UserId)))
-            .GroupBy(item => new LanguageUserPair(NormalizeMissingLanguage(item.Language), item.UserId))
-            .Select(group => group.Key)
+            .Select(item => new LanguageUserPair(NormalizeMissingLanguage(item.StudyLanguage), item.UserId))
+            .Concat(usageLanguages.Select(item => new LanguageUserPair(NormalizeMissingLanguage(item.StudyLanguage), item.UserId)))
+            .Distinct()
             .GroupBy(item => item.Language, StringComparer.Ordinal)
             .Select(group => new LanguageDistributionCount(group.Key, group.Count()))
             .ToList();
