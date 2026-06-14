@@ -75,23 +75,23 @@
                             <div id="statistics-cards" class="statistics-grid" aria-live="polite"></div>
                             <div class="statistics-distributions" aria-live="polite">
                                 <section class="statistics-distribution-card" aria-labelledby="selected-study-language-distribution-heading">
-                                    <h3 id="selected-study-language-distribution-heading">Current selected study languages</h3>
-                                    <p class="muted statistics-section-note">Current study-language setting per user. Unknown means missing stored value.</p>
+                                    <h3 id="selected-study-language-distribution-heading">Selected study languages</h3>
+                                    <p class="muted statistics-section-note">Current study-language setting per user. Only supported study languages are shown; unsupported or missing values are grouped as Unknown.</p>
                                     <div id="study-language-distribution"></div>
                                 </section>
                                 <section class="statistics-distribution-card" aria-labelledby="practiced-study-language-distribution-heading">
                                     <h3 id="practiced-study-language-distribution-heading">Practiced study languages (30 days)</h3>
-                                    <p class="muted statistics-section-note">Distinct users by language used in actual lesson or usage activity in the last 30 days.</p>
+                                    <p class="muted statistics-section-note">Distinct users by supported study language used in actual lesson or usage activity in the last 30 days; unsupported or missing values are grouped as Unknown.</p>
                                     <div id="practiced-study-language-distribution"></div>
                                 </section>
                                 <section class="statistics-distribution-card" aria-labelledby="native-language-distribution-heading">
                                     <h3 id="native-language-distribution-heading">Native languages</h3>
-                                    <p class="muted statistics-section-note">Profile native language only. Unknown means missing, empty, or unknown profile native language.</p>
+                                    <p class="muted statistics-section-note">Profile native language; missing values are normalized to the product default native language, English.</p>
                                     <div id="native-language-distribution"></div>
                                 </section>
                                 <section class="statistics-distribution-card" aria-labelledby="explanation-language-distribution-heading">
                                     <h3 id="explanation-language-distribution-heading">Explanation languages</h3>
-                                    <p class="muted statistics-section-note">Settings explanation language. This is an interface/content localization signal, not native language.</p>
+                                    <p class="muted statistics-section-note">Settings explanation/interface language; may reflect locale/defaulting behavior, not necessarily native language.</p>
                                     <div id="explanation-language-distribution"></div>
                                 </section>
                             </div>

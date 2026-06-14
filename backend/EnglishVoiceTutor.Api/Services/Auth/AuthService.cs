@@ -4,6 +4,7 @@ using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
+using EnglishVoiceTutor.Shared.NativeLanguages;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -55,7 +56,7 @@ public sealed class AuthService(
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 DisplayName = displayName,
-                NativeLanguage = "unknown",
+                NativeLanguage = NativeLanguageCatalog.DefaultLanguageId,
                 CurrentLevel = "unknown",
                 Timezone = "UTC",
                 CreatedAt = createdAt,
