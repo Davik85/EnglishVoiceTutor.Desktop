@@ -15,6 +15,7 @@ public sealed class AdminProductStatisticsOverviewResponse
     public required IReadOnlyList<AdminLanguageDistributionItem> SelectedStudyLanguageDistribution { get; init; }
     public required IReadOnlyList<AdminLanguageDistributionItem> PracticedStudyLanguageDistributionLast30Days { get; init; }
     public required IReadOnlyList<AdminLanguageDistributionItem> NativeLanguageDistribution { get; init; }
+    public required IReadOnlyList<AdminLanguageDistributionItem> ExplanationLanguageDistribution { get; init; }
     public required IReadOnlyDictionary<string, string> Definitions { get; init; }
 }
 

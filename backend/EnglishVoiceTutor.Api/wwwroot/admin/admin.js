@@ -111,6 +111,7 @@
     const statisticsCheckedAtElement = document.getElementById("statistics-checked-at");
     const studyLanguageDistributionElement = document.getElementById("study-language-distribution");
     const nativeLanguageDistributionElement = document.getElementById("native-language-distribution");
+    const explanationLanguageDistributionElement = document.getElementById("explanation-language-distribution");
     const practicedStudyLanguageDistributionElement = document.getElementById("practiced-study-language-distribution");
 
     const lookupForm = document.getElementById("lookup-form");
@@ -2068,6 +2069,7 @@
         renderLanguageDistribution(studyLanguageDistributionElement, safePayload.selectedStudyLanguageDistribution || safePayload.studyLanguageDistribution || []);
         renderLanguageDistribution(practicedStudyLanguageDistributionElement, safePayload.practicedStudyLanguageDistributionLast30Days || []);
         renderLanguageDistribution(nativeLanguageDistributionElement, safePayload.nativeLanguageDistribution || []);
+        renderLanguageDistribution(explanationLanguageDistributionElement, safePayload.explanationLanguageDistribution || []);
 
         statisticsCheckedAtElement.textContent = `Checked at: ${safePayload.checkedAtUtc || "-"}; window start: ${safePayload.windowStartUtc || "-"}; window days: ${safePayload.windowDays || 30}`;
     }

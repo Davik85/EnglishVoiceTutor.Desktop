@@ -35,6 +35,8 @@ def main() -> None:
         ".Select(usageEvent => new { usageEvent.StudyLanguage, usageEvent.UserId })\n            .ToListAsync(cancellationToken)",
         "GroupLanguageCounts(IEnumerable<string?> languages)",
         "NormalizeMissingLanguage(string? language)",
+        "NormalizeLanguageForStatistics(string? language)",
+        "GetExplanationLanguageDistributionAsync(CancellationToken cancellationToken)",
         "totalUsers == 0",
     ]:
         assert_contains(service, snippet, "EF-safe aggregate statistics pattern")
@@ -42,7 +44,8 @@ def main() -> None:
     for forbidden in [
         ".GroupBy(settings => settings.StudyLanguage == null || settings.StudyLanguage.Trim() == string.Empty",
         ".Union(usageLanguages)",
-        ".Select(usageEvent => new LanguageUserPair(",
+        "ExplanationLanguage = user.Settings == null ? null : user.Settings.ExplanationLanguage",
+        "? user.ExplanationLanguage",
         "user.Email",
         "PasswordHash",
     ]:
@@ -52,6 +55,7 @@ def main() -> None:
         "const safePayload = payload && typeof payload === \"object\" ? payload : {};",
         "const items = Array.isArray(distribution) ? distribution : [];",
         "safePayload.selectedStudyLanguageDistribution || safePayload.studyLanguageDistribution || []",
+        "safePayload.explanationLanguageDistribution || []",
         "No language data available.",
     ]:
         assert_contains(admin_js, snippet, "defensive admin statistics rendering")
