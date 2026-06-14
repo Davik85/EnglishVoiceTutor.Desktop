@@ -3,6 +3,7 @@
         login: "/api/auth/login",
         adminSession: "/api/admin/session",
         capabilities: "/api/admin/capabilities",
+        statisticsOverview: "/api/admin/statistics/overview",
         userLookupByEmail: "/api/admin/users/by-email",
         userLookupByIdTemplate: "/api/admin/users/{userId}",
         auditActionsTemplate: "/api/admin/users/{userId}/audit-actions",
@@ -50,7 +51,8 @@
         revokeNoEntitlements: "No revokable manual Premium entitlements.",
         resetInvalid: "Reset request is invalid. Check usage date and reason.",
         resetNotFound: "No consumed free lesson allowance was found for this user and date.",
-        resetFailed: "Unable to reset free lesson allowance."
+        resetFailed: "Unable to reset free lesson allowance.",
+        statisticsLoadFailed: "Unable to load product statistics."
     };
 
     const SummaryFields = ["userId", "email", "status", "createdAt", "lastLoginAt"];
@@ -102,6 +104,11 @@
     const environmentElement = document.getElementById("environment");
     const checkedAtElement = document.getElementById("checked-at");
     const capabilitiesListElement = document.getElementById("capabilities-list");
+    const refreshStatisticsButton = document.getElementById("refresh-statistics-button");
+    const statisticsLoadingElement = document.getElementById("statistics-loading");
+    const statisticsErrorElement = document.getElementById("statistics-error");
+    const statisticsCardsElement = document.getElementById("statistics-cards");
+    const statisticsCheckedAtElement = document.getElementById("statistics-checked-at");
 
     const lookupForm = document.getElementById("lookup-form");
     const lookupEmailInput = document.getElementById("lookup-email");
@@ -436,6 +443,7 @@
                 selectCmsSubTab(getHashCmsSubTab());
                 if (!cmsHasLoadedOnce) { await loadCmsContentPacks(); }
             }
+            if (tabId === Tabs.overview) { await loadProductStatistics(); }
         }));
     }
 
@@ -2020,6 +2028,57 @@
         });
     }
 
+
+    function setStatisticsLoading(isLoading) {
+        statisticsLoadingElement.classList.toggle("hidden", !isLoading);
+        refreshStatisticsButton.disabled = isLoading;
+    }
+
+    function renderStatisticsOverview(payload) {
+        const definitions = payload.definitions || {};
+        const metrics = [
+            ["totalInstallations", "Tracked installations", payload.totalInstallations],
+            ["registeredUsersTotal", "Registered users", payload.registeredUsersTotal],
+            ["activeTrialsNow", "Active trials now", payload.activeTrialsNow],
+            ["activeUsersLast30Days", "Active users (30 days)", payload.activeUsersLast30Days],
+            ["activePremiumUsersNow", "Active Premium users now", payload.activePremiumUsersNow],
+            ["activeFreeUsersLast30Days", "Active Free users (30 days)", payload.activeFreeUsersLast30Days]
+        ];
+
+        statisticsCardsElement.textContent = "";
+        metrics.forEach(([key, label, value]) => {
+            const card = document.createElement("section");
+            card.className = "stat-card";
+            const title = document.createElement("h3");
+            title.textContent = label;
+            const number = document.createElement("p");
+            number.className = "stat-value";
+            number.textContent = Number.isFinite(Number(value)) ? Number(value).toLocaleString() : "-";
+            const definition = document.createElement("p");
+            definition.className = "muted stat-definition";
+            definition.textContent = definitions[key] || "Aggregate read-only product statistic.";
+            card.append(title, number, definition);
+            statisticsCardsElement.appendChild(card);
+        });
+
+        statisticsCheckedAtElement.textContent = `Checked at: ${payload.checkedAtUtc || "-"}; window start: ${payload.windowStartUtc || "-"}; window days: ${payload.windowDays || 30}`;
+    }
+
+    async function loadProductStatistics() {
+        statisticsErrorElement.textContent = "";
+        setStatisticsLoading(true);
+        try {
+            const response = await fetch(ApiPaths.statisticsOverview, { method: "GET", headers: getAdminHeaders() });
+            if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+            if (!response.ok) { throw new Error(ErrorMessages.statisticsLoadFailed); }
+            renderStatisticsOverview(await response.json());
+        } catch (error) {
+            statisticsErrorElement.textContent = error instanceof Error ? error.message : ErrorMessages.statisticsLoadFailed;
+        } finally {
+            setStatisticsLoading(false);
+        }
+    }
+
     async function showAdminShellAfterAuth(preferredTabId) {
         await loadAdminCapabilities();
         setDashboardVisible(true);
@@ -2031,6 +2090,7 @@
         updateUserRequiredEmptyStates();
         await restoreSelectedUserFromHash();
         if (selectedTabId === Tabs.cmsContent && !cmsHasLoadedOnce) { await loadCmsContentPacks(); }
+        if (selectedTabId === Tabs.overview) { await loadProductStatistics(); }
     }
 
     async function restoreAdminSessionFromCookie() {
@@ -2068,6 +2128,7 @@
     revokeForm.addEventListener("submit", async (event) => { event.preventDefault(); await revokePremiumForSelectedUser(); });
     freeLessonResetForm.addEventListener("submit", async (event) => { event.preventDefault(); await resetFreeLessonAllowanceForSelectedUser(); });
     loadAuditButton.addEventListener("click", async () => { await loadAuditLogForSelectedUser(); });
+    refreshStatisticsButton.addEventListener("click", async () => { await loadProductStatistics(); });
     logoutButton.addEventListener("click", () => { logoutAdminSession(); });
     initializeTabs();
     updateSelectedUserHeader();

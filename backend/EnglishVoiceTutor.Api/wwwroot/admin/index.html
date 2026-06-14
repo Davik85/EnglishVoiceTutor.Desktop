@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>English Voice Tutor Admin</title>
-    <link rel="stylesheet" href="/admin/admin.css?v=admin-cms-20260613-raw-json-fix" />
+    <link rel="stylesheet" href="/admin/admin.css?v=admin-product-statistics-20260614" />
 </head>
 <body>
     <main class="layout" aria-live="polite">
@@ -61,6 +61,21 @@
                                 </ul>
                             </article>
                         </div>
+
+                        <article class="card product-statistics-card" aria-labelledby="product-statistics-heading">
+                            <div class="section-title-row">
+                                <div>
+                                    <h2 id="product-statistics-heading">Product Statistics</h2>
+                                    <p class="muted">Read-only aggregate backend statistics.</p>
+                                </div>
+                                <button id="refresh-statistics-button" type="button">Refresh statistics</button>
+                            </div>
+                            <p id="statistics-loading" class="lookup-loading hidden" role="status">Loading product statistics...</p>
+                            <p id="statistics-error" class="error" role="alert"></p>
+                            <div id="statistics-cards" class="statistics-grid" aria-live="polite"></div>
+                            <p id="statistics-checked-at" class="muted statistics-timestamp">Checked at: -</p>
+                            <p class="muted statistics-note">Installations mean tracked device/install records, not raw installer downloads. Active users are based on the last 30 days. Free users are inferred from recent activity without active trial or Premium.</p>
+                        </article>
                         <article class="card">
                             <p class="muted">Development bootstrap admin shell. Backend APIs remain the source of truth.</p>
                         </article>
@@ -462,6 +477,6 @@
             </div>
         </section>
     </main>
-    <script src="/admin/admin.js?v=admin-cms-20260613-raw-json-fix"></script>
+    <script src="/admin/admin.js?v=admin-product-statistics-20260614"></script>
 </body>
 </html>
