@@ -1,6 +1,7 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Admin;
 using EnglishVoiceTutor.Api.Data;
+using EnglishVoiceTutor.Shared.NativeLanguages;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services.Admin;
@@ -8,6 +9,7 @@ namespace EnglishVoiceTutor.Api.Services.Admin;
 public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdminProductStatisticsService
 {
     private const int ActivityWindowDays = 30;
+    private const string UnknownLanguage = "Unknown";
 
     private static readonly IReadOnlyDictionary<string, string> MetricDefinitions = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -16,7 +18,9 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         ["activeTrialsNow"] = "Distinct users with active trial grants at checkedAtUtc: active status, granted at or before checkedAtUtc, and expiring after checkedAtUtc.",
         ["activeUsersLast30Days"] = "Distinct users with a lesson session started or usage event created during the last 30 days.",
         ["activePremiumUsersNow"] = "Distinct users with active Premium access entitlements at checkedAtUtc: Premium plan/access type, active status, started, and not expired.",
-        ["activeFreeUsersLast30Days"] = "Distinct users active in the last 30 days who do not currently have active Premium and do not currently have active Trial; this is an inferred free-user category."
+        ["activeFreeUsersLast30Days"] = "Distinct users active in the last 30 days who do not currently have active Premium and do not currently have active Trial; this is an inferred free-user category.",
+        ["studyLanguageDistribution"] = "Users grouped by selected study language from user settings. Unknown means users without a stored study-language value.",
+        ["nativeLanguageDistribution"] = "Users grouped by native language from user profile. Unknown means users without a stored native-language value."
     };
 
     public async Task<AdminProductStatisticsOverviewResponse> GetOverviewAsync(CancellationToken cancellationToken)
@@ -62,6 +66,8 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         var activeUsersLast30Days = await activeUserIdsLast30Days.CountAsync(cancellationToken);
         var activePremiumUsersNow = await activePremiumUserIds.CountAsync(cancellationToken);
         var activeFreeUsersLast30Days = await activeFreeUserIdsLast30Days.CountAsync(cancellationToken);
+        var studyLanguageDistribution = await GetStudyLanguageDistributionAsync(cancellationToken);
+        var nativeLanguageDistribution = await GetNativeLanguageDistributionAsync(cancellationToken);
 
         return new AdminProductStatisticsOverviewResponse
         {
@@ -74,7 +80,89 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             ActiveUsersLast30Days = activeUsersLast30Days,
             ActivePremiumUsersNow = activePremiumUsersNow,
             ActiveFreeUsersLast30Days = activeFreeUsersLast30Days,
+            StudyLanguageDistribution = studyLanguageDistribution,
+            NativeLanguageDistribution = nativeLanguageDistribution,
             Definitions = MetricDefinitions
         };
     }
+
+    private async Task<IReadOnlyList<AdminLanguageDistributionItem>> GetStudyLanguageDistributionAsync(CancellationToken cancellationToken)
+    {
+        var groupedLanguages = await dbContext.UserSettings
+            .AsNoTracking()
+            .GroupBy(settings => settings.StudyLanguage == null || settings.StudyLanguage.Trim() == string.Empty
+                ? UnknownLanguage
+                : settings.StudyLanguage.Trim())
+            .Select(group => new LanguageDistributionCount(group.Key, group.Count()))
+            .ToListAsync(cancellationToken);
+
+        return BuildDistribution(groupedLanguages, NormalizeStudyLanguage);
+    }
+
+    private async Task<IReadOnlyList<AdminLanguageDistributionItem>> GetNativeLanguageDistributionAsync(CancellationToken cancellationToken)
+    {
+        var groupedLanguages = await dbContext.UserProfiles
+            .AsNoTracking()
+            .GroupBy(profile => profile.NativeLanguage == null || profile.NativeLanguage.Trim() == string.Empty
+                ? UnknownLanguage
+                : profile.NativeLanguage.Trim())
+            .Select(group => new LanguageDistributionCount(group.Key, group.Count()))
+            .ToListAsync(cancellationToken);
+
+        return BuildDistribution(groupedLanguages, NormalizeNativeLanguage);
+    }
+
+    private static IReadOnlyList<AdminLanguageDistributionItem> BuildDistribution(
+        IReadOnlyList<LanguageDistributionCount> groupedLanguages,
+        Func<string, string> normalizeLanguage)
+    {
+        var normalizedGroups = groupedLanguages
+            .GroupBy(group => normalizeLanguage(group.Language), StringComparer.Ordinal)
+            .Select(group => new LanguageDistributionCount(group.Key, group.Sum(item => item.UserCount)))
+            .ToList();
+        var totalUsers = normalizedGroups.Sum(group => group.UserCount);
+
+        return normalizedGroups
+            .OrderByDescending(group => group.UserCount)
+            .ThenBy(group => group.Language, StringComparer.Ordinal)
+            .Select(group => new AdminLanguageDistributionItem
+            {
+                Language = group.Language,
+                UserCount = group.UserCount,
+                Percentage = totalUsers == 0
+                    ? 0m
+                    : Math.Round(group.UserCount * 100m / totalUsers, 1, MidpointRounding.AwayFromZero)
+            })
+            .ToList();
+    }
+
+    private static string NormalizeStudyLanguage(string language)
+    {
+        if (string.IsNullOrWhiteSpace(language))
+        {
+            return UnknownLanguage;
+        }
+
+        return StudyLanguageConstants.IsSupported(language)
+            ? StudyLanguageConstants.ToCanonicalValue(language)
+            : language.Trim();
+    }
+
+    private static string NormalizeNativeLanguage(string language)
+    {
+        if (string.IsNullOrWhiteSpace(language))
+        {
+            return UnknownLanguage;
+        }
+
+        var trimmed = language.Trim();
+        var nativeLanguage = NativeLanguageCatalog.All.FirstOrDefault(item =>
+            string.Equals(item.Id, trimmed, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(item.EnglishName, trimmed, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(item.DisplayName, trimmed, StringComparison.OrdinalIgnoreCase));
+
+        return nativeLanguage?.EnglishName ?? trimmed;
+    }
+
+    private sealed record LanguageDistributionCount(string Language, int UserCount);
 }

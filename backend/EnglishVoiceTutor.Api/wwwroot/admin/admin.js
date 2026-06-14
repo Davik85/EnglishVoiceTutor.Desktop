@@ -109,6 +109,8 @@
     const statisticsErrorElement = document.getElementById("statistics-error");
     const statisticsCardsElement = document.getElementById("statistics-cards");
     const statisticsCheckedAtElement = document.getElementById("statistics-checked-at");
+    const studyLanguageDistributionElement = document.getElementById("study-language-distribution");
+    const nativeLanguageDistributionElement = document.getElementById("native-language-distribution");
 
     const lookupForm = document.getElementById("lookup-form");
     const lookupEmailInput = document.getElementById("lookup-email");
@@ -2061,7 +2063,49 @@
             statisticsCardsElement.appendChild(card);
         });
 
+        renderLanguageDistribution(studyLanguageDistributionElement, payload.studyLanguageDistribution || []);
+        renderLanguageDistribution(nativeLanguageDistributionElement, payload.nativeLanguageDistribution || []);
+
         statisticsCheckedAtElement.textContent = `Checked at: ${payload.checkedAtUtc || "-"}; window start: ${payload.windowStartUtc || "-"}; window days: ${payload.windowDays || 30}`;
+    }
+
+    function renderLanguageDistribution(container, distribution) {
+        container.textContent = "";
+
+        if (!distribution.length) {
+            const empty = document.createElement("p");
+            empty.className = "muted statistics-empty";
+            empty.textContent = "No language data available.";
+            container.appendChild(empty);
+            return;
+        }
+
+        const table = document.createElement("table");
+        table.className = "compact-table statistics-language-table";
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        ["Language", "Users", "Percentage"].forEach((label) => {
+            const th = document.createElement("th");
+            th.textContent = label;
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+
+        const tbody = document.createElement("tbody");
+        distribution.forEach((item) => {
+            const row = document.createElement("tr");
+            const languageCell = document.createElement("td");
+            languageCell.textContent = item.language || "Unknown";
+            const userCountCell = document.createElement("td");
+            userCountCell.textContent = Number.isFinite(Number(item.userCount)) ? Number(item.userCount).toLocaleString() : "-";
+            const percentageCell = document.createElement("td");
+            percentageCell.textContent = Number.isFinite(Number(item.percentage)) ? `${Number(item.percentage).toFixed(1)}%` : "-";
+            row.append(languageCell, userCountCell, percentageCell);
+            tbody.appendChild(row);
+        });
+
+        table.append(thead, tbody);
+        container.appendChild(table);
     }
 
     async function loadProductStatistics() {

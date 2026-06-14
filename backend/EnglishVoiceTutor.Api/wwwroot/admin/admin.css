@@ -230,6 +230,11 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
 .stat-card h3 { color: #334155; font-size: 15px; margin: 0 0 8px; }
 .stat-value { color: #1d4ed8; font-size: 32px; font-weight: 800; line-height: 1; margin: 0 0 10px; }
 .stat-definition { font-size: 13px; margin: 0; }
+.statistics-distributions { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+.statistics-distribution-card { background: #fff; border: 1px solid #dbeafe; border-radius: 12px; overflow-x: auto; padding: 14px; }
+.statistics-distribution-card h3 { color: #334155; font-size: 15px; margin: 0 0 10px; }
+.statistics-language-table { margin: 0; min-width: 320px; width: 100%; }
+.statistics-empty { font-size: 13px; margin: 0; }
 .statistics-timestamp { font-size: 13px; margin: 12px 0 0; }
 .statistics-note { background: #f8fafc; border-left: 4px solid #2563eb; margin-bottom: 0; padding: 10px 12px; }
 
@@ -240,4 +245,5 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
 @media (max-width: 720px) {
   .section-title-row { align-items: stretch; flex-direction: column; }
   .statistics-grid { grid-template-columns: 1fr; }
+  .statistics-distributions { grid-template-columns: 1fr; }
 }
