@@ -12,6 +12,8 @@ public sealed class AdminProductStatisticsOverviewResponse
     public int ActivePremiumUsersNow { get; init; }
     public int ActiveFreeUsersLast30Days { get; init; }
     public required IReadOnlyList<AdminLanguageDistributionItem> StudyLanguageDistribution { get; init; }
+    public required IReadOnlyList<AdminLanguageDistributionItem> SelectedStudyLanguageDistribution { get; init; }
+    public required IReadOnlyList<AdminLanguageDistributionItem> PracticedStudyLanguageDistributionLast30Days { get; init; }
     public required IReadOnlyList<AdminLanguageDistributionItem> NativeLanguageDistribution { get; init; }
     public required IReadOnlyDictionary<string, string> Definitions { get; init; }
 }

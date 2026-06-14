@@ -40,6 +40,7 @@ public static class BackendConstants
     public const string BackendConfigStatusEndpoint = "/api/backend/config-status";
     public const string DevUserSettingsEndpoint = "/api/dev/user-settings";
     public const string MeSettingsEndpoint = "/api/me/settings";
+    public const string MeDevicesEndpoint = "/api/me/devices";
     public const string DevSubscriptionStatusEndpoint = "/api/dev/subscription-status";
     public const string MeSubscriptionStatusEndpoint = "/api/me/subscription-status";
     public const string MeTrialClaimEndpoint = "/api/me/trial/claim";

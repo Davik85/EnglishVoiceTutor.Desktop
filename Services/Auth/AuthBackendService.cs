@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models.Auth;
@@ -15,6 +17,7 @@ public sealed class AuthBackendService
     private const int MaxSafeAuthErrorLength = 180;
     private readonly AuthSessionStorageService sessionStorageService;
     private string backendBaseUrl = BackendConstants.DefaultBackendBaseUrl;
+    private DateTimeOffset lastDeviceRegistrationAttemptUtc = DateTimeOffset.MinValue;
 
     public AuthBackendService(AuthSessionStorageService? sessionStorageService = null)
     {
@@ -170,6 +173,7 @@ public sealed class AuthBackendService
 
         if (!AuthSessionStorageService.ShouldRefreshAccessToken(session))
         {
+            RegisterCurrentDeviceInBackground(session.AccessToken);
             return AuthSessionEnsureResult.Success(session);
         }
 
@@ -233,6 +237,7 @@ public sealed class AuthBackendService
             };
             await sessionStorageService.SaveAsync(refreshedSession, cancellationToken);
             NotifyAuthStateChanged(payload.User);
+            RegisterCurrentDeviceInBackground(refreshedSession.AccessToken);
             return AuthRefreshResult.Success(refreshedSession);
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
@@ -256,6 +261,89 @@ public sealed class AuthBackendService
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
         {
         }
+    }
+
+
+    private void RegisterCurrentDeviceInBackground(string? accessToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        if (now - lastDeviceRegistrationAttemptUtc < TimeSpan.FromMinutes(15))
+        {
+            return;
+        }
+
+        lastDeviceRegistrationAttemptUtc = now;
+        _ = Task.Run(() => RegisterCurrentDeviceBestEffortAsync(accessToken, CancellationToken.None));
+    }
+
+    private async Task RegisterCurrentDeviceBestEffortAsync(string accessToken, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var httpClient = CreateHttpClient();
+            var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.MeDevicesEndpoint);
+            using var request = new HttpRequestMessage(HttpMethod.Post, endpointUri)
+            {
+                Content = JsonContent.Create(new DeviceRegistrationRequest
+                {
+                    Platform = ResolvePlatform(),
+                    DeviceName = "Desktop",
+                    AppVersion = ResolveAppVersion()
+                }, options: JsonOptions)
+            };
+            AuthenticatedRequestHelper.AddBearerTokenIfPresent(request, accessToken);
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            await BackendRequestDiagnosticsService.RecordAsync(
+                "device_register",
+                HttpMethod.Post,
+                endpointUri,
+                backendBaseUrl,
+                response.StatusCode,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            await BackendRequestDiagnosticsService.RecordAsync(
+                "device_register",
+                HttpMethod.Post,
+                BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.MeDevicesEndpoint),
+                backendBaseUrl,
+                exception: exception,
+                cancellationToken: CancellationToken.None);
+        }
+    }
+
+    private static string ResolvePlatform()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return "Windows";
+        }
+
+        if (OperatingSystem.IsMacOS())
+        {
+            return "macOS";
+        }
+
+        if (OperatingSystem.IsLinux())
+        {
+            return "Linux";
+        }
+
+        return RuntimeInformation.OSDescription.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Desktop";
+    }
+
+    private static string ResolveAppVersion()
+    {
+        var assembly = typeof(AuthBackendService).Assembly;
+        return assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            ?? assembly.GetName().Version?.ToString()
+            ?? BackendConstants.BackendUserAgentVersion;
     }
 
     private void NotifyAuthStateChanged(AuthUserDto? user)
@@ -350,6 +438,7 @@ public sealed class AuthBackendService
             }
 
             await sessionStorageService.SaveAsync(storedSession, cancellationToken);
+            RegisterCurrentDeviceInBackground(storedSession.AccessToken);
             LastErrorCategory = "none";
             LastStatusCode = null;
             NotifyAuthStateChanged(payload.User);
@@ -588,6 +677,13 @@ public sealed class AuthStateChangedEventArgs : EventArgs
     public AuthUserDto? User { get; }
 }
 
+
+public sealed class DeviceRegistrationRequest
+{
+    public string Platform { get; set; } = string.Empty;
+    public string DeviceName { get; set; } = string.Empty;
+    public string AppVersion { get; set; } = string.Empty;
+}
 
 public sealed class RefreshTokenRequest
 {
