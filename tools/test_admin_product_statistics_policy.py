@@ -50,6 +50,7 @@ def main() -> None:
         ".Union(usageLanguages)",
         "ExplanationLanguage = user.Settings == null ? null : user.Settings.ExplanationLanguage",
         "? user.ExplanationLanguage",
+        "NativeLanguageCatalog.English.EnglishName",
         "user.Email",
         "PasswordHash",
     ]:
