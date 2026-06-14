@@ -11,5 +11,14 @@ public sealed class AdminProductStatisticsOverviewResponse
     public int ActiveUsersLast30Days { get; init; }
     public int ActivePremiumUsersNow { get; init; }
     public int ActiveFreeUsersLast30Days { get; init; }
+    public required IReadOnlyList<AdminLanguageDistributionItem> StudyLanguageDistribution { get; init; }
+    public required IReadOnlyList<AdminLanguageDistributionItem> NativeLanguageDistribution { get; init; }
     public required IReadOnlyDictionary<string, string> Definitions { get; init; }
+}
+
+public sealed class AdminLanguageDistributionItem
+{
+    public required string Language { get; init; }
+    public int UserCount { get; init; }
+    public decimal Percentage { get; init; }
 }
