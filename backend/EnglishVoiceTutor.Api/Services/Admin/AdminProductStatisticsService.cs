@@ -23,10 +23,10 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         ["activePremiumUsersNow"] = "Distinct users with active Premium access entitlements at checkedAtUtc: Premium plan/access type, active status, started, and not expired.",
         ["activeFreeUsersLast30Days"] = "Distinct users active in the last 30 days who do not currently have active Premium and do not currently have active Trial; this is an inferred free-user category.",
         ["studyLanguageDistribution"] = "Backward-compatible alias of selectedStudyLanguageDistribution.",
-        ["selectedStudyLanguageDistribution"] = "Users grouped by current selected study language from user settings. Unknown means users without a stored study-language value.",
-        ["practicedStudyLanguageDistributionLast30Days"] = "Distinct active users grouped by study language used in lesson sessions or usage events during the last 30 days. Unknown means activity without a stored study-language value.",
-        ["nativeLanguageDistribution"] = "Users grouped by profile native language only. Unknown means the profile native language is missing, empty, or explicitly unknown.",
-        ["explanationLanguageDistribution"] = "Users grouped by settings explanation language. This is a rough interface/content localization signal and is not the same as native language. Unknown means the explanation language is missing, empty, or explicitly unknown."
+        ["selectedStudyLanguageDistribution"] = "Users grouped by current selected study language from user settings. Only supported study languages are displayed; unsupported values are grouped as Unknown and never displayed as supported languages.",
+        ["practicedStudyLanguageDistributionLast30Days"] = "Distinct active users grouped by supported study language used in lesson sessions or usage events during the last 30 days. Unsupported values are grouped as Unknown and never displayed as supported languages.",
+        ["nativeLanguageDistribution"] = "Users grouped by profile native language; missing/unknown values fall back to the product default native language, English.",
+        ["explanationLanguageDistribution"] = "Users grouped by explanation/interface language from settings; this is separate from native language and may reflect locale/default behavior."
     };
 
     public async Task<AdminProductStatisticsOverviewResponse> GetOverviewAsync(CancellationToken cancellationToken)
@@ -104,7 +104,7 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             .Select(settings => settings.StudyLanguage)
             .ToListAsync(cancellationToken);
 
-        return BuildDistribution(GroupLanguageCounts(languages));
+        return BuildDistribution(GroupLanguageCounts(languages, NormalizeStudyLanguageForStatistics));
     }
 
     private async Task<IReadOnlyList<AdminLanguageDistributionItem>> GetPracticedStudyLanguageDistributionLast30DaysAsync(DateTimeOffset windowStartUtc, CancellationToken cancellationToken)
@@ -124,17 +124,17 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         var uniqueLanguageUsers = new HashSet<LanguageUserPair>();
         foreach (var item in lessonLanguages)
         {
-            var normalizedLanguage = NormalizeLanguageForStatistics(item.StudyLanguage);
+            var normalizedLanguage = NormalizeStudyLanguageForStatistics(item.StudyLanguage);
             uniqueLanguageUsers.Add(new LanguageUserPair(normalizedLanguage, item.UserId));
         }
 
         foreach (var item in usageLanguages)
         {
-            var normalizedLanguage = NormalizeLanguageForStatistics(item.StudyLanguage);
+            var normalizedLanguage = NormalizeStudyLanguageForStatistics(item.StudyLanguage);
             uniqueLanguageUsers.Add(new LanguageUserPair(normalizedLanguage, item.UserId));
         }
 
-        return BuildDistribution(GroupLanguageUserCounts(uniqueLanguageUsers));
+        return BuildDistribution(GroupLanguageUserCounts(uniqueLanguageUsers, NormalizeStudyLanguageForStatistics));
     }
 
     private async Task<IReadOnlyList<AdminLanguageDistributionItem>> GetNativeLanguageDistributionAsync(CancellationToken cancellationToken)
@@ -144,7 +144,7 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             .Select(user => user.Profile == null ? null : user.Profile.NativeLanguage)
             .ToListAsync(cancellationToken);
 
-        return BuildDistribution(GroupLanguageCounts(languages));
+        return BuildDistribution(GroupLanguageCounts(languages, NormalizeNativeLanguageForStatistics));
     }
 
     private async Task<IReadOnlyList<AdminLanguageDistributionItem>> GetExplanationLanguageDistributionAsync(CancellationToken cancellationToken)
@@ -154,15 +154,15 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             .Select(settings => settings.ExplanationLanguage)
             .ToListAsync(cancellationToken);
 
-        return BuildDistribution(GroupLanguageCounts(languages));
+        return BuildDistribution(GroupLanguageCounts(languages, NormalizeExplanationLanguageForStatistics));
     }
 
-    private static IReadOnlyList<LanguageDistributionCount> GroupLanguageCounts(IEnumerable<string?> languages)
+    private static IReadOnlyList<LanguageDistributionCount> GroupLanguageCounts(IEnumerable<string?> languages, Func<string?, string> normalizeLanguage)
     {
         var counts = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var rawLanguage in languages)
         {
-            var normalizedLanguage = NormalizeLanguageForStatistics(rawLanguage);
+            var normalizedLanguage = normalizeLanguage(rawLanguage);
             counts[normalizedLanguage] = counts.TryGetValue(normalizedLanguage, out var current)
                 ? current + 1
                 : 1;
@@ -171,12 +171,12 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         return ToLanguageDistributionCounts(counts);
     }
 
-    private static IReadOnlyList<LanguageDistributionCount> GroupLanguageUserCounts(IEnumerable<LanguageUserPair> languageUsers)
+    private static IReadOnlyList<LanguageDistributionCount> GroupLanguageUserCounts(IEnumerable<LanguageUserPair> languageUsers, Func<string?, string> normalizeLanguage)
     {
         var counts = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var languageUser in languageUsers)
         {
-            var normalizedLanguage = NormalizeLanguageForStatistics(languageUser.Language);
+            var normalizedLanguage = normalizeLanguage(languageUser.Language);
             counts[normalizedLanguage] = counts.TryGetValue(normalizedLanguage, out var current)
                 ? current + 1
                 : 1;
@@ -203,7 +203,7 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         var normalizedGroupCounts = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var group in groupedLanguages)
         {
-            var normalizedLanguage = NormalizeLanguageForStatistics(group.Language);
+            var normalizedLanguage = group.Language;
             normalizedGroupCounts[normalizedLanguage] = normalizedGroupCounts.TryGetValue(normalizedLanguage, out var current)
                 ? current + group.UserCount
                 : group.UserCount;
@@ -226,17 +226,28 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             .ToList();
     }
 
-    private static string NormalizeLanguageForStatistics(string? language)
+    private static string NormalizeStudyLanguageForStatistics(string? language)
     {
-        if (string.IsNullOrWhiteSpace(language))
+        var trimmed = NormalizeMissingLanguage(language);
+        if (string.Equals(trimmed, UnknownLanguage, StringComparison.OrdinalIgnoreCase))
         {
             return UnknownLanguage;
         }
 
-        var trimmed = language.Trim();
-        if (string.Equals(trimmed, UnknownLanguage, StringComparison.OrdinalIgnoreCase))
+        var normalizedStudyLanguage = StudyLanguageNormalizer.NormalizeOrDefault(trimmed, UnknownLanguage);
+
+        return StudyLanguageConstants.IsSupported(normalizedStudyLanguage)
+            ? StudyLanguageConstants.ToCanonicalValue(normalizedStudyLanguage)
+            : UnknownLanguage;
+    }
+
+    private static string NormalizeNativeLanguageForStatistics(string? language)
+    {
+        var trimmed = NormalizeMissingLanguage(language);
+        if (string.Equals(trimmed, UnknownLanguage, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(trimmed, "unknown", StringComparison.OrdinalIgnoreCase))
         {
-            return UnknownLanguage;
+            return NativeLanguageCatalog.English.EnglishName;
         }
 
         var catalogLanguage = NativeLanguageCatalog.All.FirstOrDefault(item =>
@@ -244,16 +255,24 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             || string.Equals(item.EnglishName, trimmed, StringComparison.OrdinalIgnoreCase)
             || string.Equals(item.DisplayName, trimmed, StringComparison.OrdinalIgnoreCase));
 
-        if (catalogLanguage is not null)
+        return catalogLanguage?.EnglishName ?? NativeLanguageCatalog.English.EnglishName;
+    }
+
+    private static string NormalizeExplanationLanguageForStatistics(string? language)
+    {
+        var trimmed = NormalizeMissingLanguage(language);
+        if (string.Equals(trimmed, UnknownLanguage, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(trimmed, "unknown", StringComparison.OrdinalIgnoreCase))
         {
-            return catalogLanguage.EnglishName;
+            return NativeLanguageCatalog.English.EnglishName;
         }
 
-        var normalizedStudyLanguage = StudyLanguageNormalizer.NormalizeOrDefault(trimmed, UnknownLanguage);
+        var catalogLanguage = NativeLanguageCatalog.All.FirstOrDefault(item =>
+            string.Equals(item.Id, trimmed, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(item.EnglishName, trimmed, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(item.DisplayName, trimmed, StringComparison.OrdinalIgnoreCase));
 
-        return StudyLanguageConstants.IsSupported(normalizedStudyLanguage)
-            ? StudyLanguageConstants.ToCanonicalValue(normalizedStudyLanguage)
-            : normalizedStudyLanguage;
+        return catalogLanguage?.EnglishName ?? UnknownLanguage;
     }
 
     private sealed record LanguageDistributionCount(string Language, int UserCount);
