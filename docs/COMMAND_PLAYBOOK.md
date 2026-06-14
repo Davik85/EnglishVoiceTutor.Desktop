@@ -27,6 +27,114 @@ Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBas
 
 Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS.
 
+## Public website deployment commands
+
+Use this section for public landing page and website-file deploys only. This is separate from backend deployment and separate from Windows installer/release upload.
+
+Critical paths:
+
+- Public website nginx root: `/var/www/languagevoicetutor/site`
+- Do not upload website files to `/var/www/languagevoicetutor/`; that parent directory is not the nginx root for the public website.
+- Windows release files are separate from website files and are served from `/var/www/languagevoicetutor/releases/windows/direct` through an nginx alias for `/releases/windows/direct/`.
+
+Public website source files in this repository live under `site/public/`. Upload public website files only to `/var/www/languagevoicetutor/site` unless nginx diagnostics prove the root changed.
+
+### Pre-deployment diagnostics
+
+Check the nginx website root and release alias before uploading:
+
+```powershell
+ssh lvt-server "sudo nginx -T 2>/dev/null | sed -n '/server_name languagevoicetutor.com/,/}/p' | grep -E 'root /var/www/languagevoicetutor/site|alias /var/www/languagevoicetutor/releases/windows/direct'"
+```
+
+List the current website files from the correct website root:
+
+```powershell
+ssh lvt-server "find /var/www/languagevoicetutor/site -maxdepth 3 -type f | sort"
+```
+
+Verify the Windows release alias directory separately:
+
+```powershell
+ssh lvt-server "find /var/www/languagevoicetutor/releases/windows/direct -maxdepth 1 -type f | sort"
+```
+
+Optional public alias verification before a website deploy:
+
+```powershell
+Invoke-WebRequest https://languagevoicetutor.com/releases/windows/direct/latest.json -UseBasicParsing
+```
+
+### Backup the current public website root
+
+Create a timestamped backup from the correct website root before upload:
+
+```powershell
+ssh lvt-server "backup=/var/www/languagevoicetutor/site.backup.$(date -u +%Y%m%dT%H%M%SZ); sudo cp -a /var/www/languagevoicetutor/site \"$backup\"; echo \"$backup\""
+```
+
+Keep the printed backup path for rollback.
+
+### Upload public website files
+
+Upload landing page files to `/var/www/languagevoicetutor/site`, not to `/var/www/languagevoicetutor/`:
+
+```powershell
+scp .\site\public\index.html lvt-server:/tmp/index.html
+scp .\site\public\download.html lvt-server:/tmp/download.html
+scp .\site\public\styles.css lvt-server:/tmp/styles.css
+scp .\site\public\download.js lvt-server:/tmp/download.js
+ssh lvt-server "sudo mv /tmp/index.html /var/www/languagevoicetutor/site/index.html && sudo mv /tmp/download.html /var/www/languagevoicetutor/site/download.html && sudo mv /tmp/styles.css /var/www/languagevoicetutor/site/styles.css && sudo mv /tmp/download.js /var/www/languagevoicetutor/site/download.js"
+```
+
+Upload landing images and their README to the landing assets directory under the correct nginx root:
+
+```powershell
+ssh lvt-server "sudo mkdir -p /var/www/languagevoicetutor/site/assets/images/landing"
+scp .\site\public\assets\images\landing\windows-desktop.webp lvt-server:/tmp/windows-desktop.webp
+scp .\site\public\assets\images\landing\mobile.webp lvt-server:/tmp/mobile.webp
+scp .\site\public\assets\images\landing\README.md lvt-server:/tmp/landing-README.md
+ssh lvt-server "sudo mv /tmp/windows-desktop.webp /var/www/languagevoicetutor/site/assets/images/landing/windows-desktop.webp && sudo mv /tmp/mobile.webp /var/www/languagevoicetutor/site/assets/images/landing/mobile.webp && sudo mv /tmp/landing-README.md /var/www/languagevoicetutor/site/assets/images/landing/README.md"
+```
+
+Do not upload or move Windows installer files with these website commands. Windows installer release files stay in `/var/www/languagevoicetutor/releases/windows/direct`.
+
+### Cleanup if files were accidentally uploaded to the wrong root
+
+Only run this cleanup if diagnostics confirm accidental public website files were uploaded directly under `/var/www/languagevoicetutor/`. Do not remove `/var/www/languagevoicetutor/site` or `/var/www/languagevoicetutor/releases`.
+
+```powershell
+ssh lvt-server "sudo rm -f /var/www/languagevoicetutor/index.html /var/www/languagevoicetutor/download.html /var/www/languagevoicetutor/styles.css /var/www/languagevoicetutor/download.js && sudo rm -rf /var/www/languagevoicetutor/assets"
+```
+
+### Public verification
+
+Verify the website and landing assets over HTTPS after upload:
+
+```powershell
+Invoke-WebRequest https://languagevoicetutor.com/ -UseBasicParsing
+Invoke-WebRequest https://languagevoicetutor.com/download.html -UseBasicParsing
+Invoke-WebRequest https://languagevoicetutor.com/assets/images/landing/windows-desktop.webp -UseBasicParsing
+Invoke-WebRequest https://languagevoicetutor.com/assets/images/landing/mobile.webp -UseBasicParsing
+Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
+```
+
+The first four checks must return `200 OK`. The `latest.json` check must remain valid and should still show the intended Windows release metadata. For the resolved landing page incident, the verified manifest remained `version=0.1.36-tester.10`, `installerFileName=LanguageVoiceTutorSetup-0.1.36-tester.10.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=0.1.36-tester.10`, and `updateMode=manual-confirmation`.
+
+### Rollback public website files
+
+Rollback uses the timestamped backup directory printed by the backup command. Replace `<backup-dir>` with that exact path:
+
+```powershell
+ssh lvt-server "sudo rsync -a --delete <backup-dir>/ /var/www/languagevoicetutor/site/"
+```
+
+Re-run the public verification commands after rollback.
+
+### Resolved landing page deployment incident note
+
+A landing page update was initially uploaded to `/var/www/languagevoicetutor/`, but nginx serves the public website from `/var/www/languagevoicetutor/site`. Because the files were in the wrong parent directory, the live homepage did not update and public requests for `download.html` plus landing assets returned 404. Diagnostics confirmed the real nginx root, confirmed `/releases/windows/direct/` is a separate alias to `/var/www/languagevoicetutor/releases/windows/direct/`, and confirmed that Windows release files should not be mixed with website files. The accidental files were removed from the wrong parent directory, then `index.html`, `download.html`, `styles.css`, `download.js`, the landing images, and the landing README were uploaded to `/var/www/languagevoicetutor/site`. Public verification then returned `200 OK` for the homepage, `download.html`, and both landing images, while `latest.json` remained valid.
+
 ## Backend-only deployment commands
 
 Example package command for the current backend snapshot:
