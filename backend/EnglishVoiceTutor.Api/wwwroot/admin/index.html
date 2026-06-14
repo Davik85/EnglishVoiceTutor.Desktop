@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>English Voice Tutor Admin</title>
-    <link rel="stylesheet" href="/admin/admin.css?v=admin-stats-language-distribution-20260614" />
+    <link rel="stylesheet" href="/admin/admin.css?v=admin-stats-device-language-fix-20260614" />
 </head>
 <body>
     <main class="layout" aria-live="polite">
@@ -74,17 +74,24 @@
                             <p id="statistics-error" class="error" role="alert"></p>
                             <div id="statistics-cards" class="statistics-grid" aria-live="polite"></div>
                             <div class="statistics-distributions" aria-live="polite">
-                                <section class="statistics-distribution-card" aria-labelledby="study-language-distribution-heading">
-                                    <h3 id="study-language-distribution-heading">Study languages</h3>
+                                <section class="statistics-distribution-card" aria-labelledby="selected-study-language-distribution-heading">
+                                    <h3 id="selected-study-language-distribution-heading">Current selected study languages</h3>
+                                    <p class="muted statistics-section-note">Current study-language setting per user. Unknown means missing stored value.</p>
                                     <div id="study-language-distribution"></div>
                                 </section>
+                                <section class="statistics-distribution-card" aria-labelledby="practiced-study-language-distribution-heading">
+                                    <h3 id="practiced-study-language-distribution-heading">Practiced study languages (30 days)</h3>
+                                    <p class="muted statistics-section-note">Distinct users by language used in actual lesson or usage activity in the last 30 days.</p>
+                                    <div id="practiced-study-language-distribution"></div>
+                                </section>
                                 <section class="statistics-distribution-card" aria-labelledby="native-language-distribution-heading">
-                                    <h3 id="native-language-distribution-heading">Native languages</h3>
+                                    <h3 id="native-language-distribution-heading">Native / explanation languages</h3>
+                                    <p class="muted statistics-section-note">Profile native language with explanation-language fallback when native language is missing. Unknown means neither value is stored.</p>
                                     <div id="native-language-distribution"></div>
                                 </section>
                             </div>
                             <p id="statistics-checked-at" class="muted statistics-timestamp">Checked at: -</p>
-                            <p class="muted statistics-note">Installations mean tracked device/install records, not raw installer downloads. Active users are based on the last 30 days. Free users are inferred from recent activity without active trial or Premium.</p>
+                            <p class="muted statistics-note">Tracked devices are authenticated coarse device records, not raw installer downloads. Active users are based on the last 30 days. Free users are inferred from recent activity without active trial or Premium.</p>
                         </article>
                         <article class="card">
                             <p class="muted">Development bootstrap admin shell. Backend APIs remain the source of truth.</p>
@@ -487,6 +494,6 @@
             </div>
         </section>
     </main>
-    <script src="/admin/admin.js?v=admin-stats-language-distribution-20260614"></script>
+    <script src="/admin/admin.js?v=admin-stats-device-language-fix-20260614"></script>
 </body>
 </html>

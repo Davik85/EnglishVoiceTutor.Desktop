@@ -13,14 +13,16 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
 
     private static readonly IReadOnlyDictionary<string, string> MetricDefinitions = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["totalInstallations"] = "Tracked installation/device records from backend DeviceEntity rows; this is not raw installer download count.",
+        ["totalInstallations"] = "Tracked authenticated device records from backend DeviceEntity rows, upserted by user plus coarse platform, display device name, and app version. This is not raw installer download count.",
         ["registeredUsersTotal"] = "Total backend account records from UserEntity rows. No emails or personal data are returned.",
         ["activeTrialsNow"] = "Distinct users with active trial grants at checkedAtUtc: active status, granted at or before checkedAtUtc, and expiring after checkedAtUtc.",
         ["activeUsersLast30Days"] = "Distinct users with a lesson session started or usage event created during the last 30 days.",
         ["activePremiumUsersNow"] = "Distinct users with active Premium access entitlements at checkedAtUtc: Premium plan/access type, active status, started, and not expired.",
         ["activeFreeUsersLast30Days"] = "Distinct users active in the last 30 days who do not currently have active Premium and do not currently have active Trial; this is an inferred free-user category.",
-        ["studyLanguageDistribution"] = "Users grouped by selected study language from user settings. Unknown means users without a stored study-language value.",
-        ["nativeLanguageDistribution"] = "Users grouped by native language from user profile. Unknown means users without a stored native-language value."
+        ["studyLanguageDistribution"] = "Backward-compatible alias of selectedStudyLanguageDistribution.",
+        ["selectedStudyLanguageDistribution"] = "Users grouped by current selected study language from user settings. Unknown means users without a stored study-language value.",
+        ["practicedStudyLanguageDistributionLast30Days"] = "Distinct active users grouped by study language used in lesson sessions or usage events during the last 30 days. Unknown means activity without a stored study-language value.",
+        ["nativeLanguageDistribution"] = "Users grouped by profile native language, falling back to settings explanation language when native language is missing. Unknown means neither value is stored."
     };
 
     public async Task<AdminProductStatisticsOverviewResponse> GetOverviewAsync(CancellationToken cancellationToken)
@@ -66,7 +68,8 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         var activeUsersLast30Days = await activeUserIdsLast30Days.CountAsync(cancellationToken);
         var activePremiumUsersNow = await activePremiumUserIds.CountAsync(cancellationToken);
         var activeFreeUsersLast30Days = await activeFreeUserIdsLast30Days.CountAsync(cancellationToken);
-        var studyLanguageDistribution = await GetStudyLanguageDistributionAsync(cancellationToken);
+        var selectedStudyLanguageDistribution = await GetSelectedStudyLanguageDistributionAsync(cancellationToken);
+        var practicedStudyLanguageDistributionLast30Days = await GetPracticedStudyLanguageDistributionLast30DaysAsync(windowStartUtc, cancellationToken);
         var nativeLanguageDistribution = await GetNativeLanguageDistributionAsync(cancellationToken);
 
         return new AdminProductStatisticsOverviewResponse
@@ -80,13 +83,15 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             ActiveUsersLast30Days = activeUsersLast30Days,
             ActivePremiumUsersNow = activePremiumUsersNow,
             ActiveFreeUsersLast30Days = activeFreeUsersLast30Days,
-            StudyLanguageDistribution = studyLanguageDistribution,
+            StudyLanguageDistribution = selectedStudyLanguageDistribution,
+            SelectedStudyLanguageDistribution = selectedStudyLanguageDistribution,
+            PracticedStudyLanguageDistributionLast30Days = practicedStudyLanguageDistributionLast30Days,
             NativeLanguageDistribution = nativeLanguageDistribution,
             Definitions = MetricDefinitions
         };
     }
 
-    private async Task<IReadOnlyList<AdminLanguageDistributionItem>> GetStudyLanguageDistributionAsync(CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<AdminLanguageDistributionItem>> GetSelectedStudyLanguageDistributionAsync(CancellationToken cancellationToken)
     {
         var groupedLanguages = await dbContext.UserSettings
             .AsNoTracking()
@@ -99,15 +104,50 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         return BuildDistribution(groupedLanguages, NormalizeStudyLanguage);
     }
 
+    private async Task<IReadOnlyList<AdminLanguageDistributionItem>> GetPracticedStudyLanguageDistributionLast30DaysAsync(DateTimeOffset windowStartUtc, CancellationToken cancellationToken)
+    {
+        var lessonLanguages = dbContext.LessonSessions
+            .AsNoTracking()
+            .Where(session => session.StartedAt >= windowStartUtc)
+            .Select(session => new LanguageUserPair(session.StudyLanguage, session.UserId));
+
+        var usageLanguages = dbContext.UsageEvents
+            .AsNoTracking()
+            .Where(usageEvent => usageEvent.CreatedAt >= windowStartUtc)
+            .Select(usageEvent => new LanguageUserPair(usageEvent.StudyLanguage, usageEvent.UserId));
+
+        var practicedLanguages = await lessonLanguages
+            .Union(usageLanguages)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var groupedLanguages = practicedLanguages
+            .GroupBy(item => string.IsNullOrWhiteSpace(item.Language) ? UnknownLanguage : item.Language.Trim(), StringComparer.Ordinal)
+            .Select(group => new LanguageDistributionCount(group.Key, group.Select(item => item.UserId).Distinct().Count()))
+            .ToList();
+
+        return BuildDistribution(groupedLanguages, NormalizeStudyLanguage);
+    }
+
     private async Task<IReadOnlyList<AdminLanguageDistributionItem>> GetNativeLanguageDistributionAsync(CancellationToken cancellationToken)
     {
-        var groupedLanguages = await dbContext.UserProfiles
+        var userLanguages = await dbContext.Users
             .AsNoTracking()
-            .GroupBy(profile => profile.NativeLanguage == null || profile.NativeLanguage.Trim() == string.Empty
-                ? UnknownLanguage
-                : profile.NativeLanguage.Trim())
-            .Select(group => new LanguageDistributionCount(group.Key, group.Count()))
+            .Select(user => new
+            {
+                user.Id,
+                NativeLanguage = user.Profile == null ? null : user.Profile.NativeLanguage,
+                ExplanationLanguage = user.Settings == null ? null : user.Settings.ExplanationLanguage
+            })
             .ToListAsync(cancellationToken);
+
+        var groupedLanguages = userLanguages
+            .Select(user => string.IsNullOrWhiteSpace(user.NativeLanguage) || string.Equals(user.NativeLanguage.Trim(), "unknown", StringComparison.OrdinalIgnoreCase)
+                ? user.ExplanationLanguage
+                : user.NativeLanguage)
+            .GroupBy(language => string.IsNullOrWhiteSpace(language) ? UnknownLanguage : language.Trim(), StringComparer.Ordinal)
+            .Select(group => new LanguageDistributionCount(group.Key, group.Count()))
+            .ToList();
 
         return BuildDistribution(groupedLanguages, NormalizeNativeLanguage);
     }
@@ -165,4 +205,5 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
     }
 
     private sealed record LanguageDistributionCount(string Language, int UserCount);
+    private sealed record LanguageUserPair(string Language, Guid UserId);
 }
