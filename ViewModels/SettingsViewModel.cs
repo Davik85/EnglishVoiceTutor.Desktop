@@ -1117,6 +1117,18 @@ public partial class SettingsViewModel : ViewModelBase
         _ = SaveBackendUserSettingsAsync();
     }
 
+    partial void OnSelectedNativeLanguageOptionChanged(NativeLanguageDefinition value)
+    {
+        if (isApplyingBackendSettings)
+        {
+            return;
+        }
+
+        DiagnosticsCopyStatusText = string.Empty;
+        SaveCurrentSettingsLocally();
+        _ = SaveBackendUserSettingsAsync();
+    }
+
     private async Task LoadRuntimeTutorAvatarOptionsAsync()
     {
         var runtimeOptions = await backendLessonContentClient.GetRuntimeTutorOptionsAsync(BackendBaseUrl);
@@ -1849,8 +1861,9 @@ public partial class SettingsViewModel : ViewModelBase
         {
             var request = new UpdateBackendUserSettingsRequest
             {
+                NativeLanguage = SelectedNativeLanguageOption.Id,
                 StudyLanguage = GetSupportedBackendStudyLanguage(SelectedStudyLanguage),
-                ExplanationLanguage = SelectedNativeLanguageOption.Id,
+                ExplanationLanguage = SelectedInterfaceLanguageOption.Id,
                 SpeechVoice = SpeechVoiceOptions.GetById(backendSettingsSpeechVoice).Id,
                 SpeechSpeed = backendSettingsSpeechSpeed <= 0
                     ? BackendConstants.DefaultBackendSettingsSpeechSpeed
@@ -1977,7 +1990,13 @@ public partial class SettingsViewModel : ViewModelBase
         isApplyingBackendSettings = true;
         try
         {
+            if (!string.IsNullOrWhiteSpace(settings.NativeLanguage))
+            {
+                SelectedNativeLanguageOption = NativeLanguageCatalog.GetByIdOrName(settings.NativeLanguage);
+            }
+
             SelectedStudyLanguage = backendStudyLanguage;
+            SelectedInterfaceLanguageOption = InterfaceLanguageOptions.GetById(settings.ExplanationLanguage);
             SelectedSpeechVoiceOption = SpeechVoiceOptions.GetById(backendSettingsSpeechVoice);
         }
         finally

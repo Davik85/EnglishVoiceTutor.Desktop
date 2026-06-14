@@ -4,6 +4,8 @@ public sealed class BackendUserSettingsResponse
 {
     public Guid UserId { get; set; }
 
+    public string NativeLanguage { get; set; } = string.Empty;
+
     public string StudyLanguage { get; set; } = string.Empty;
 
     public string ExplanationLanguage { get; set; } = string.Empty;

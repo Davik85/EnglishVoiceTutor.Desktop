@@ -25,8 +25,8 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         ["studyLanguageDistribution"] = "Backward-compatible alias of selectedStudyLanguageDistribution.",
         ["selectedStudyLanguageDistribution"] = "Users grouped by current selected study language from user settings. Only supported study languages are displayed; unsupported values are grouped as Unknown and never displayed as supported languages.",
         ["practicedStudyLanguageDistributionLast30Days"] = "Distinct active users grouped by supported study language used in lesson sessions or usage events during the last 30 days. Unsupported values are grouped as Unknown and never displayed as supported languages.",
-        ["nativeLanguageDistribution"] = "Users grouped by profile native language; missing/unknown values fall back to the product default native language, English.",
-        ["explanationLanguageDistribution"] = "Users grouped by explanation/interface language from settings; this is separate from native language and may reflect locale/default behavior."
+        ["nativeLanguageDistribution"] = "Users grouped by profile native language only. Missing, unknown, or invalid values are grouped as Unknown and are not inferred from explanation/interface language.",
+        ["explanationLanguageDistribution"] = "Users grouped by explanation/interface language from settings only. Missing, unknown, or invalid values are grouped as Unknown."
     };
 
     public async Task<AdminProductStatisticsOverviewResponse> GetOverviewAsync(CancellationToken cancellationToken)
@@ -247,7 +247,7 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         if (string.Equals(trimmed, UnknownLanguage, StringComparison.OrdinalIgnoreCase)
             || string.Equals(trimmed, "unknown", StringComparison.OrdinalIgnoreCase))
         {
-            return NativeLanguageCatalog.English.EnglishName;
+            return UnknownLanguage;
         }
 
         var catalogLanguage = NativeLanguageCatalog.All.FirstOrDefault(item =>
@@ -255,7 +255,7 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             || string.Equals(item.EnglishName, trimmed, StringComparison.OrdinalIgnoreCase)
             || string.Equals(item.DisplayName, trimmed, StringComparison.OrdinalIgnoreCase));
 
-        return catalogLanguage?.EnglishName ?? NativeLanguageCatalog.English.EnglishName;
+        return catalogLanguage?.EnglishName ?? UnknownLanguage;
     }
 
     private static string NormalizeExplanationLanguageForStatistics(string? language)
@@ -264,7 +264,7 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         if (string.Equals(trimmed, UnknownLanguage, StringComparison.OrdinalIgnoreCase)
             || string.Equals(trimmed, "unknown", StringComparison.OrdinalIgnoreCase))
         {
-            return NativeLanguageCatalog.English.EnglishName;
+            return UnknownLanguage;
         }
 
         var catalogLanguage = NativeLanguageCatalog.All.FirstOrDefault(item =>

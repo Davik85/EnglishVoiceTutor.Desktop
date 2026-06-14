@@ -2,6 +2,7 @@ namespace EnglishVoiceTutor.Api.Contracts.UserSettings;
 
 public sealed record UserSettingsResponse(
     Guid UserId,
+    string NativeLanguage,
     string StudyLanguage,
     string ExplanationLanguage,
     string SpeechVoice,

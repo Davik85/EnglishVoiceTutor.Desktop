@@ -28,17 +28,25 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
 
     public async Task<UserSettingsResponse> GetOrCreateAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var settings = await LoadOrCreateUserSettingsAsync(userId, cancellationToken);
+        var user = await LoadOrCreateUserAsync(userId, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return ToResponse(settings);
+        return ToResponse(user);
     }
 
     public async Task<UserSettingsResponse> UpdateAsync(Guid userId, UpdateUserSettingsRequest request, CancellationToken cancellationToken)
     {
         ValidateUpdateRequest(request);
 
-        var settings = await LoadOrCreateUserSettingsAsync(userId, cancellationToken);
+        var user = await LoadOrCreateUserAsync(userId, cancellationToken);
+        var settings = user.Settings!;
+        var profile = user.Profile!;
         var now = DateTimeOffset.UtcNow;
+
+        if (!string.IsNullOrWhiteSpace(request.NativeLanguage))
+        {
+            profile.NativeLanguage = NativeLanguageCatalog.GetByIdOrName(request.NativeLanguage).Id;
+            profile.UpdatedAt = now;
+        }
 
         settings.StudyLanguage = StudyLanguageConstants.ToCanonicalValue(request.StudyLanguage);
         settings.ExplanationLanguage = NativeLanguageCatalog.GetByIdOrName(request.ExplanationLanguage).Id;
@@ -49,7 +57,7 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return ToResponse(settings);
+        return ToResponse(user);
     }
 
     public Task<UserSettingsResponse> GetDevUserSettingsAsync(CancellationToken cancellationToken)
@@ -62,7 +70,7 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         return UpdateAsync(devUserProvider.GetDevUserId(), request, cancellationToken);
     }
 
-    private async Task<UserSettingsEntity> LoadOrCreateUserSettingsAsync(Guid userId, CancellationToken cancellationToken)
+    private async Task<UserEntity> LoadOrCreateUserAsync(Guid userId, CancellationToken cancellationToken)
     {
         var user = await dbContext.Users
             .Include(existingUser => existingUser.Profile)
@@ -121,7 +129,7 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
             dbContext.UserSettings.Add(user.Settings);
         }
 
-        return user.Settings;
+        return user;
     }
 
     private static string BuildDefaultEmail(Guid userId)
@@ -134,6 +142,11 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         if (!StudyLanguageConstants.IsSupported(request.StudyLanguage))
         {
             throw new UserSettingsValidationException($"Study language must be one of: {string.Join(", ", StudyLanguageConstants.SupportedStudyLanguages)}.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.NativeLanguage) && !NativeLanguageCatalog.IsSupported(request.NativeLanguage))
+        {
+            throw new UserSettingsValidationException("Native language must be a supported language code or name.");
         }
 
         if (!NativeLanguageCatalog.IsSupported(request.ExplanationLanguage))
@@ -152,10 +165,16 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         }
     }
 
-    private static UserSettingsResponse ToResponse(UserSettingsEntity settings)
+    private static UserSettingsResponse ToResponse(UserEntity user)
     {
+        var settings = user.Settings ?? throw new InvalidOperationException("User settings are required.");
+        var nativeLanguage = string.IsNullOrWhiteSpace(user.Profile?.NativeLanguage)
+            ? DefaultNativeLanguage
+            : user.Profile.NativeLanguage;
+
         return new UserSettingsResponse(
             settings.UserId,
+            nativeLanguage,
             settings.StudyLanguage,
             settings.ExplanationLanguage,
             settings.SpeechVoice,
