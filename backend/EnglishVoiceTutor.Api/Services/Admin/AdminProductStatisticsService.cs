@@ -218,5 +218,5 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
     }
 
     private sealed record LanguageDistributionCount(string Language, int UserCount);
-    private sealed record LanguageUserPair(string Language, Guid UserId);
+    private sealed record LanguageUserPair(string? Language, Guid UserId);
 }
