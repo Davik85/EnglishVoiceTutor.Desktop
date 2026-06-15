@@ -1,6 +1,6 @@
 # Next Steps
 
-Review date: 2026-06-13.
+Review date: 2026-06-15.
 
 ## Source of truth for current versions
 
@@ -29,15 +29,23 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Current release baseline
 
-The live public tester manifest baseline must be checked from `latest.json`, not from this document. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.36-tester.8.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.36-tester.8`, and `updateMode` set to `manual-confirmation`. `0.1.36-tester.8` is the current uploaded Windows tester build in the public direct Windows release folder; verify the website `latest.json` over HTTPS before tester handoff.
+The live public tester manifest baseline must be checked from `latest.json`, not from this document. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.36-tester.15.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.36-tester.15`, and `updateMode` set to `manual-confirmation`. `0.1.36-tester.15` is the current uploaded Windows tester build in the public direct Windows release folder; verify the website `latest.json` over HTTPS before tester handoff.
 
 This is still a private tester/direct Windows release, not broad public production readiness.
 
+## Immediate next steps
+
+1. Finish visual smoke testing for `0.1.36-tester.15` on Russian, Polish, Bulgarian, and French home screens and key Settings screens.
+2. Collect controlled tester feedback.
+3. Only then decide the next smallest safe CMS/Admin step.
+
+Do not move billing/Paddle production readiness into the immediate next step; billing remains deferred until desktop hardening and tester feedback justify revisiting it.
+
 ## Current backend verification
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.8`. Backend `0.1.35-backend.11` contains the latest Admin CMS Validation & Preview readable UI fix plus `/admin` static asset cache busting/no-cache behavior. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. No EF migration was required.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`. Backend `0.1.35-backend.22` contains the latest Admin CMS Validation & Preview readable UI fix plus `/admin` static asset cache busting/no-cache behavior. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. No EF migration was required.
 
-Deployed runtime status diagnostics are visible on backend `0.1.35-backend.11` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next step is controlled tester handoff and feedback collection.
+Deployed runtime status diagnostics are visible on backend `0.1.35-backend.22` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: finish visual smoke testing for `0.1.36-tester.15` on Russian, Polish, Bulgarian, and French home screens plus key Settings screens; collect tester feedback; only then choose the next smallest safe CMS/Admin step.
 
 ## CMS connection readiness and controlled release preparation
 
@@ -121,7 +129,7 @@ Next safe step: controlled tester handoff and feedback collection. CMS published
 
 The Admin CMS now exposes a read-only **Runtime content status** section and the protected endpoint `GET /api/admin/dev/cms/runtime-status`. Use it to confirm the effective learner content source, validation result, counts, published snapshot metadata, and fallback state without exposing content bodies or secrets.
 
-CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.11` with approved tutor-id validation for `david`, `elena`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
+CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.22` with approved tutor-id validation for `david`, `elena`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
 
 ## CMS-managed level profiles (A1-B2)
 

@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-06-13.
+Review date: 2026-06-15.
 
 ## Source of truth for current versions
 
@@ -25,13 +25,13 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS.
+Generated local files under `artifacts/`, including `latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, installers, and packages, are generated release outputs and must not be committed. Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS.
 
 ## Current tester Windows direct release
 
-The public website `latest.json` remains the public source of truth for the live Windows direct tester release. Last verified snapshot: it pointed to `LanguageVoiceTutorSetup-0.1.36-tester.8.exe`, set `version` and `minimumSupportedVersion` to `0.1.36-tester.8`, set `backendBaseUrl` to `https://api.languagevoicetutor.com`, and used `updateMode: manual-confirmation`. This matches the installed tester/release backend lock.
+The public website `latest.json` remains the public source of truth for the live Windows direct tester release. Last verified snapshot: it pointed to `LanguageVoiceTutorSetup-0.1.36-tester.15.exe`, set `version` and `minimumSupportedVersion` to `0.1.36-tester.15`, set `backendBaseUrl` to `https://api.languagevoicetutor.com`, and used `updateMode: manual-confirmation`. This matches the installed tester/release backend lock.
 
-`0.1.36-tester.8` is the current uploaded Windows tester build in the public direct Windows release folder. Continue to verify the HTTPS `latest.json` before handoff. This remains a controlled tester/direct Windows release, not a broad public production launch.
+`0.1.36-tester.15` is the current uploaded Windows tester build in the public direct Windows release folder. Continue to verify the HTTPS `latest.json` before handoff. This remains a controlled tester/direct Windows release, not a broad public production launch.
 
 ## Release backend lock (server-only installed builds)
 
@@ -41,9 +41,9 @@ Clean-machine smoke must verify registration/login/lesson/history/progress/updat
 
 ## Current production backend state
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.8`.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`.
 
-Completed: backend `0.1.35-backend.11` is deployed and contains the latest Admin CMS Validation & Preview readable UI fix and the Admin static asset cache busting/no-cache fix for `/admin` assets. The Admin CMS Validation & Preview area no longer shows raw JSON directly in the main result area. Validation renders a readable panel with Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON. Preview renders readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON. Admin static asset cache busting was added for `admin.js` and `admin.css` using token `admin-cms-20260613-raw-json-fix`, and no-cache headers were added for `/admin` static files only.
+Completed: backend `0.1.35-backend.22` is deployed and contains the latest Admin CMS Validation & Preview readable UI fix and the Admin static asset cache busting/no-cache fix for `/admin` assets. The Admin CMS Validation & Preview area no longer shows raw JSON directly in the main result area. Validation renders a readable panel with Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON. Preview renders readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON. Admin static asset cache busting was added for `admin.js` and `admin.css` using token `admin-cms-20260613-raw-json-fix`, and no-cache headers were added for `/admin` static files only.
 
 Completed: health and database health are green after deploy. `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. The build is green, the Admin shell audit is green, and the EF model check reports no pending model changes. No EF migration was required. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
@@ -69,6 +69,14 @@ Completed: CMS-managed A1, A2, B1, and B2 level behavior profiles are active and
 
 Fallback to packaged static JSON remains available for rollback/safety, but fallback should not be active during normal runtime status. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, and no warnings. Production RBAC and critical-change approval remain future work.
 
+## Settings sync, device tracking, and product statistics
+
+Completed: settings sync now separates native language, selected study language, and explanation/interface language. `UserProfileEntity.NativeLanguage` is the source for native language, `UserSettingsEntity.StudyLanguage` remains the selected supported study language, and `UserSettingsEntity.ExplanationLanguage` is the separate explanation/interface language. Desktop sends `SelectedNativeLanguageOption.Id` as `NativeLanguage` and no longer sends native language as `ExplanationLanguage`. Existing `unknown` native-language values are not blindly backfilled; they are corrected when users save/sync from a fixed desktop client unless a reliable backend-side source is identified later.
+
+Completed: authenticated device tracking is privacy-safe and counts coarse backend `DeviceEntity` rows, not installer downloads or raw installs. `AppVersion` is latest-seen metadata, not part of identity, so the same user + platform + coarse device name updates `LastSeenAt` and latest `AppVersion` instead of creating a new device row after every app update. Raw hardware identifiers, machine fingerprints, serial numbers, MAC addresses, Windows usernames, IP addresses, and personal device IDs are not collected.
+
+Completed: Admin Product Statistics now exposes aggregate-only product metrics. Language distributions keep native language from profile, explanation language from settings, selected study language from settings, and practiced study language from lesson/usage activity filtered to supported study languages. Unsupported dirty study-language values such as Russian in `usage_events.StudyLanguage` are grouped as `Unknown/Unsupported`, not shown as supported study languages.
+
 ## Manual desktop update UI
 
 A simple user-facing **Check for updates** button is available near the top of normal Settings. It is not Diagnostics-only and it does not expose the old technical update dashboard.
@@ -86,6 +94,10 @@ The manual-confirmation update flow is:
 There is no silent auto-update, no background update service, and no installer launch before SHA-256 verification.
 
 Downloaded update installers from **Check for updates** are saved in the current user's local update cache: `%LOCALAPPDATA%\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetup-{version}.exe`. In-progress downloads use `.exe.download`. Failed or invalid in-progress downloads are deleted by the app, but older verified installer EXEs are retained until replaced by the same filename or manually removed. Cleanup command: `Remove-Item "$env:LOCALAPPDATA\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetup-*.exe*" -Force -ErrorAction SilentlyContinue`.
+
+## Desktop localization audit status
+
+Current audited release-blocking localization issues have been addressed for the 14 release-ready interface languages: `en`, `es`, `fr`, `de`, `it`, `pt`, `ru`, `pl`, `ar`, `ja`, `ko`, `sr`, `hr`, and `bg`. `tools/audit_interface_localization.py` is the localization audit tool, and the welcome/home hero layout hardening includes long localized hero text stability checks. If `tools/test_welcome_layout_stability_policy.py` exists in the branch, keep it in the release gate for localized home/welcome layout policy checks. This does not mean localization is permanently complete; future languages should be added only after full UI/audit coverage.
 
 ## Desktop startup window and Welcome layout
 
@@ -139,7 +151,7 @@ Completed: the backend has an admin-only, read-only CMS runtime content status d
 
 
 
-Current runtime-status result on deployed backend `0.1.35-backend.11` is clean: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. Learner runtime now uses the CMS published snapshot. The prior runtime-validation root cause was an obsolete hardcoded exact tutor behavior profile count of 2. Static JSON, CMS static import/draft construction, and desktop tutor avatar options all define the approved tutor ids `david`, `elena`, and `nelli`; the third profile is legitimate product content, not a smoke/test artifact. Runtime validation now derives the required tutor ids from the approved desktop avatar definitions and reports expected, actual, missing, unknown/extra, and duplicate tutor ids without exposing tutor instruction bodies. The `tools/smoke_cms_runtime_status.ps1` and `tools/validate_cms_published_snapshot_runtime.ps1` scripts default to the server-only backend `https://api.languagevoicetutor.com`; localhost must be passed explicitly only for approved local developer runs.
+Current runtime-status result on deployed backend `0.1.35-backend.22` is clean: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. Learner runtime now uses the CMS published snapshot. The prior runtime-validation root cause was an obsolete hardcoded exact tutor behavior profile count of 2. Static JSON, CMS static import/draft construction, and desktop tutor avatar options all define the approved tutor ids `david`, `elena`, and `nelli`; the third profile is legitimate product content, not a smoke/test artifact. Runtime validation now derives the required tutor ids from the approved desktop avatar definitions and reports expected, actual, missing, unknown/extra, and duplicate tutor ids without exposing tutor instruction bodies. The `tools/smoke_cms_runtime_status.ps1` and `tools/validate_cms_published_snapshot_runtime.ps1` scripts default to the server-only backend `https://api.languagevoicetutor.com`; localhost must be passed explicitly only for approved local developer runs.
 
 This diagnostic confirms the current runtime content source. Static JSON fallback remains available for safety and rollback, but it should not be active in normal runtime status now that CMS published snapshot runtime is active.
 

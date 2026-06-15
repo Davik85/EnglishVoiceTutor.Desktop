@@ -1,6 +1,6 @@
 # User Settings Endpoints
 
-Review date: 2026-06-06.
+Review date: 2026-06-15.
 
 ## Status
 
@@ -26,12 +26,24 @@ Review date: 2026-06-06.
 - Signed in -> uses `/api/me/settings`.
 - Logout -> returns to `/api/dev/user-settings`.
 - Backend-backed settings remain the source of truth for signed-in account preferences.
+- Authenticated request/response payloads include the separated `NativeLanguage`, `StudyLanguage`, and `ExplanationLanguage` concepts.
 
 ## Auth behavior
 
 - `GET /api/me/settings` and `PUT /api/me/settings` return `401` without a valid token.
 - Dev settings endpoint remains available in Development for local MVP testing.
 - Desktop stores the signed-in session in a local `auth-session.json` file, but current Windows storage writes a DPAPI-protected Base64 payload, not raw plaintext token JSON.
+
+## Language ownership and desktop mapping
+
+- `UserProfileEntity.NativeLanguage` is the backend source for native language.
+- `UserSettingsEntity.StudyLanguage` is the selected supported study language.
+- `UserSettingsEntity.ExplanationLanguage` is the explanation/interface language preference.
+- Desktop sends `SelectedNativeLanguageOption.Id` as `NativeLanguage`.
+- Desktop sends `SelectedInterfaceLanguageOption.Id` as `ExplanationLanguage`, or the current intended interface/explanation source if that UI is refactored later.
+- Desktop sends the selected supported study language as `StudyLanguage`.
+- Desktop must not send the native language as `ExplanationLanguage`.
+- Existing `UserProfile.NativeLanguage = "unknown"` production values are not blindly backfilled. They are corrected when users save/sync settings from a fixed desktop client unless a reliable backend-side source is identified later.
 
 ## Validation (applies to settings writes)
 

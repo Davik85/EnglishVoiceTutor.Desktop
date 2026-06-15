@@ -1,6 +1,6 @@
 # Command Playbook
 
-Review date: 2026-06-13.
+Review date: 2026-06-15.
 
 ## Source of truth for current versions
 
@@ -119,7 +119,7 @@ Invoke-WebRequest https://languagevoicetutor.com/assets/images/landing/mobile.we
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
 ```
 
-The first four checks must return `200 OK`. The `latest.json` check must remain valid and should still show the intended Windows release metadata. For the resolved landing page incident, the verified manifest remained `version=0.1.36-tester.10`, `installerFileName=LanguageVoiceTutorSetup-0.1.36-tester.10.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=0.1.36-tester.10`, and `updateMode=manual-confirmation`.
+The first four checks must return `200 OK`. The `latest.json` check must remain valid and should still show the intended Windows release metadata. For the resolved landing page incident, the verified manifest remained `version=0.1.36-tester.15`, `installerFileName=LanguageVoiceTutorSetup-0.1.36-tester.15.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=0.1.36-tester.15`, and `updateMode=manual-confirmation`.
 
 ### Rollback public website files
 
@@ -135,25 +135,37 @@ Re-run the public verification commands after rollback.
 
 A landing page update was initially uploaded to `/var/www/languagevoicetutor/`, but nginx serves the public website from `/var/www/languagevoicetutor/site`. Because the files were in the wrong parent directory, the live homepage did not update and public requests for `download.html` plus landing assets returned 404. Diagnostics confirmed the real nginx root, confirmed `/releases/windows/direct/` is a separate alias to `/var/www/languagevoicetutor/releases/windows/direct/`, and confirmed that Windows release files should not be mixed with website files. The accidental files were removed from the wrong parent directory, then `index.html`, `download.html`, `styles.css`, `download.js`, the landing images, and the landing README were uploaded to `/var/www/languagevoicetutor/site`. Public verification then returned `200 OK` for the homepage, `download.html`, and both landing images, while `latest.json` remained valid.
 
+## Windows direct release upload commands
+
+Canonical Windows direct release flow is separate from backend deployment:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.36-tester.15
+powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 0.1.36-tester.15
+```
+
+Upload Windows direct release files only to `/var/www/languagevoicetutor/releases/windows/direct`. Do not upload them to the public website root `/var/www/languagevoicetutor/site`, and do not mix this flow with backend deployment. Generated release outputs must remain uncommitted.
+
 ## Backend-only deployment commands
 
 Example package command for the current backend snapshot:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.8
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.22
 ```
 
 Example upload/restart command for a reviewed backend-only deploy:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-backend.8 `
+  -Version 0.1.35-backend.22 `
   -PackageFirst
 ```
 
-Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.8`, no EF migration was needed and no Windows installer upload was performed. Backend deploys do not upload Windows installer files and do not change `latest.json`.
+Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.22`, no EF migration was needed and no Windows installer upload was performed. Backend deploys do not upload Windows installer files and do not change `latest.json`.
 
-Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.5`.
+Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`.
 
 ## Downloaded update installer cleanup
 
@@ -228,7 +240,7 @@ Manual browser check:
 6. Confirm the UI is readable.
 7. Confirm raw JSON appears only inside collapsed details blocks.
 
-Current state: backend `0.1.35-backend.11` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.8`.
+Current state: backend `0.1.35-backend.22` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`.
 
 Current milestone: CMS published-snapshot runtime is active for controlled tester lessons. These checks must confirm the active CMS source and clean fallback state rather than enabling broad public release.
 

@@ -1,6 +1,6 @@
 # Persistence Status Checklist
 
-Review date: 2026-05-23.
+Review date: 2026-06-15.
 
 ## Implemented and validated
 
@@ -39,6 +39,15 @@ Dev endpoints remain available for local diagnostics.
 - Diagnostics-only mode in Development: `FreeLimits:EnforcementEnabled=false`.
 - Counters and diagnostics remain active.
 - Lesson Chat / Hint / STT / TTS are not blocked in this mode.
+
+## Device tracking
+
+**Implemented + Validated**
+- Device tracking is privacy-safe and authenticated.
+- It counts coarse backend `DeviceEntity` rows, not installer downloads or raw install events.
+- Tracked-device identity is same user + platform + coarse device name; `AppVersion` is stored as latest seen app version and is not part of identity.
+- Repeated app updates for the same user/platform/coarse device should update `LastSeenAt` and latest `AppVersion` rather than create a new row.
+- No raw hardware identifiers, machine fingerprints, serial numbers, MAC addresses, Windows usernames, IP addresses, or personal device IDs are collected.
 
 ## Data safety constraints
 
