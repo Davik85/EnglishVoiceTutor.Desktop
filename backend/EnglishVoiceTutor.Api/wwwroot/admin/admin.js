@@ -2042,7 +2042,7 @@
         const safePayload = payload && typeof payload === "object" ? payload : {};
         const definitions = safePayload.definitions && typeof safePayload.definitions === "object" ? safePayload.definitions : {};
         const metrics = [
-            ["totalInstallations", "Tracked devices", safePayload.totalInstallations],
+            ["totalInstallations", "Tracked app/device records", safePayload.totalInstallations],
             ["registeredUsersTotal", "Registered users", safePayload.registeredUsersTotal],
             ["activeTrialsNow", "Active trials now", safePayload.activeTrialsNow],
             ["activeUsersLast30Days", "Active users (30 days)", safePayload.activeUsersLast30Days],

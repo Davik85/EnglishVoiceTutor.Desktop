@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminProductStatisticsService.cs"
+DEVICE_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Devices/DeviceRegistrationService.cs"
 ADMIN_JS = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js"
 
 
@@ -27,7 +28,22 @@ def assert_not_contains(text: str, needle: str, label: str) -> None:
 
 def main() -> None:
     service = read(SERVICE)
+    device_service = read(DEVICE_SERVICE)
     admin_js = read(ADMIN_JS)
+
+
+    for snippet in [
+        "&& item.Platform == platform\n                && item.DeviceName == deviceName, cancellationToken)",
+        "device.LastSeenAt = now;\n            device.AppVersion = appVersion;",
+        "AppVersion = appVersion",
+    ]:
+        assert_contains(device_service, snippet, "privacy-safe tracked device upsert identity")
+
+    assert_not_contains(
+        device_service,
+        "&& item.DeviceName == deviceName\n                && item.AppVersion == appVersion",
+        "app version in tracked device lookup identity",
+    )
 
     for snippet in [
         ".AsNoTracking()\n            .Select(settings => settings.StudyLanguage)\n            .ToListAsync(cancellationToken)",
