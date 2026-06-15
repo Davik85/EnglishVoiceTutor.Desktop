@@ -82,25 +82,32 @@
                                               Color="#FF102A43" />
                         </Border.Effect>
 
-                        <StackPanel>
-                            <TextBlock Text="{Binding AppTitle}"
-                                       HorizontalAlignment="Center"
-                                       FontSize="24"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                       LineHeight="28"
-                                       TextAlignment="Center"
-                                       TextTrimming="CharacterEllipsis"
-                                       TextWrapping="NoWrap" />
+                        <Viewbox MaxHeight="86"
+                                 Stretch="Uniform"
+                                 StretchDirection="DownOnly">
+                            <StackPanel Width="416">
+                                <TextBlock Text="{Binding AppTitle}"
+                                           HorizontalAlignment="Center"
+                                           FontSize="22"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           LineHeight="25"
+                                           MaxLines="2"
+                                           TextAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextWrapping="Wrap" />
 
-                            <TextBlock Margin="0,4,0,0"
-                                       Text="{Binding Subtitle}"
-                                       FontSize="13"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
-                                       LineHeight="18"
-                                       TextAlignment="Center"
-                                       TextWrapping="Wrap" />
-                        </StackPanel>
+                                <TextBlock Margin="0,4,0,0"
+                                           Text="{Binding Subtitle}"
+                                           FontSize="12.5"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           LineHeight="17"
+                                           MaxLines="2"
+                                           TextAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Viewbox>
                     </Border>
 
                     <Border x:Name="WelcomePrimaryActionsPanel"
