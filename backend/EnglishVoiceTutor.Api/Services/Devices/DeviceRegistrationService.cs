@@ -24,8 +24,7 @@ public sealed class DeviceRegistrationService(AppDbContext dbContext) : IDeviceR
         var device = await dbContext.Devices
             .FirstOrDefaultAsync(item => item.UserId == userId
                 && item.Platform == platform
-                && item.DeviceName == deviceName
-                && item.AppVersion == appVersion, cancellationToken);
+                && item.DeviceName == deviceName, cancellationToken);
 
         if (device is null)
         {
@@ -44,6 +43,7 @@ public sealed class DeviceRegistrationService(AppDbContext dbContext) : IDeviceR
         else
         {
             device.LastSeenAt = now;
+            device.AppVersion = appVersion;
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
