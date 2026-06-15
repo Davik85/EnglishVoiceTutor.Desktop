@@ -82,7 +82,7 @@
                                               Color="#FF102A43" />
                         </Border.Effect>
 
-                        <Viewbox MaxHeight="86"
+                        <Viewbox MaxHeight="88"
                                  Stretch="Uniform"
                                  StretchDirection="DownOnly">
                             <StackPanel Width="416">
@@ -92,7 +92,7 @@
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource TextPrimaryBrush}"
                                            LineHeight="25"
-                                           MaxLines="2"
+                                           MaxHeight="50"
                                            TextAlignment="Center"
                                            TextTrimming="CharacterEllipsis"
                                            TextWrapping="Wrap" />
@@ -102,7 +102,7 @@
                                            FontSize="12.5"
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            LineHeight="17"
-                                           MaxLines="2"
+                                           MaxHeight="34"
                                            TextAlignment="Center"
                                            TextTrimming="CharacterEllipsis"
                                            TextWrapping="Wrap" />
