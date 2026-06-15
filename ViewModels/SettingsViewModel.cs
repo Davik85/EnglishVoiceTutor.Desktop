@@ -197,8 +197,8 @@ public partial class SettingsViewModel : ViewModelBase
     public string InstalledAppVersionText => $"Version: v{appVersionText}";
 
     public string CheckForUpdatesButtonText => IsCheckingForUpdates || IsDownloadingUpdate
-        ? "Checking for updates..."
-        : "Check for updates";
+        ? LocalizeUiText("Checking for updates...")
+        : LocalizeUiText("Check for updates");
 
     public string DiagnosticsBackendUrlText => SanitizeDiagnosticsValue(BackendEndpointBuilder.NormalizeBaseUrl(BackendBaseUrl));
 
@@ -926,7 +926,7 @@ public partial class SettingsViewModel : ViewModelBase
             var result = await updateManifestClient.LoadLatestAsync();
             if (!result.IsSuccess || result.ValidationResult?.Manifest is null || result.ValidationResult.InstallerUri is null)
             {
-                ShowUpdateMessage(BuildManualUpdateFailureMessage(result), MessageBoxImage.Information);
+                ShowUpdateMessage(BuildManualUpdateFailureMessage(result, LocalizeUiText), MessageBoxImage.Information);
                 return;
             }
 
@@ -937,20 +937,20 @@ public partial class SettingsViewModel : ViewModelBase
             if (comparison == 0)
             {
                 ShowUpdateMessage(
-                    $"You are using the latest version. Current: {appVersionText}. Latest: {latestUpdateManifest.Version}.",
+                    string.Format(LocalizeUiText("You are using the latest version. Current: {0}. Latest: {1}."), appVersionText, latestUpdateManifest.Version),
                     MessageBoxImage.Information);
                 return;
             }
 
             if (comparison > 0)
             {
-                ShowUpdateMessage("This app version is newer than the public update manifest.", MessageBoxImage.Warning);
+                ShowUpdateMessage(LocalizeUiText("This app version is newer than the public update manifest."), MessageBoxImage.Warning);
                 return;
             }
 
             var downloadChoice = MessageBox.Show(
-                $"A new version of Language Voice Tutor is available. Do you want to download and install it now?\n\nCurrent version: {appVersionText}\nLatest version: {latestUpdateManifest.Version}",
-                "Update available",
+                string.Format(LocalizeUiText("A new version of Language Voice Tutor is available. Do you want to download and install it now?\n\nCurrent version: {0}\nLatest version: {1}"), appVersionText, latestUpdateManifest.Version),
+                LocalizeUiText("Update available"),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Information);
             if (downloadChoice != MessageBoxResult.Yes)
@@ -966,12 +966,12 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    private static string BuildManualUpdateFailureMessage(UpdateCheckResult result)
+    private static string BuildManualUpdateFailureMessage(UpdateCheckResult result, Func<string, string> localize)
     {
         var message = new StringBuilder();
         message.AppendLine(string.IsNullOrWhiteSpace(result.ErrorMessage)
-            ? "Could not check for updates right now. Please check your internet connection and try again."
-            : result.ErrorMessage);
+            ? localize("Could not check for updates right now. Please check your internet connection and try again.")
+            : localize(result.ErrorMessage));
         message.AppendLine();
         message.AppendLine("Private tester diagnostics:");
         message.AppendLine($"Manifest URL: {SafeDiagnosticValue(result.ManifestUrl)}");
@@ -1009,19 +1009,19 @@ public partial class SettingsViewModel : ViewModelBase
             if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.FilePath))
             {
                 ShowUpdateMessage(
-                    "The update could not be downloaded or verified. Please try again later.",
+                    LocalizeUiText("The update could not be downloaded or verified. Please try again later."),
                     MessageBoxImage.Warning);
                 return;
             }
 
             var installChoice = MessageBox.Show(
-                "The update was downloaded and verified. Language Voice Tutor will close and restart during installation. Do you want to start the installer now?",
-                "Start installer?",
+                LocalizeUiText("The update was downloaded and verified. Language Voice Tutor will close and restart during installation. Do you want to start the installer now?"),
+                LocalizeUiText("Start installer?"),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Information);
             if (installChoice == MessageBoxResult.Yes)
             {
-                UpdateDownloadService.TryStartVerifiedInstallerAfterAppShutdown(result.FilePath, message => ShowUpdateMessage(message, MessageBoxImage.Warning));
+                UpdateDownloadService.TryStartVerifiedInstallerAfterAppShutdown(result.FilePath, message => ShowUpdateMessage(LocalizeUiText(message), MessageBoxImage.Warning));
             }
         }
         finally
@@ -1030,9 +1030,9 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    private static void ShowUpdateMessage(string message, MessageBoxImage icon)
+    private void ShowUpdateMessage(string message, MessageBoxImage icon)
     {
-        MessageBox.Show(message, "App updates", MessageBoxButton.OK, icon);
+        MessageBox.Show(message, LocalizeUiText("App updates"), MessageBoxButton.OK, icon);
     }
 
     private bool CanCheckForUpdates() => !IsCheckingForUpdates && !IsDownloadingUpdate;

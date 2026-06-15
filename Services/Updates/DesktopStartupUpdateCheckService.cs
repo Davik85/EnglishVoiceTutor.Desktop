@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows;
+using EnglishVoiceTutor.Desktop.Localization;
 using EnglishVoiceTutor.Desktop.Models.Updates;
 
 namespace EnglishVoiceTutor.Desktop.Services.Updates;
@@ -14,6 +15,8 @@ public sealed class DesktopStartupUpdateCheckService
     private const string UpdateFailureMessage = "The update could not be downloaded or verified. Please try again later.";
     private const string ActiveLessonInstallerMessage = "Please finish your current lesson before starting the installer.";
     private const string AppUpdatesTitle = "App updates";
+
+    private static string LocalizeUiText(string englishText) => AppLocalization.GetLearnerUiText(new EnglishVoiceTutor.Desktop.Services.UserSettingsService().Load().InterfaceLanguageId, englishText);
 
     private readonly UpdateManifestClient updateManifestClient;
     private readonly UpdateDownloadService updateDownloadService;
@@ -64,8 +67,8 @@ public sealed class DesktopStartupUpdateCheckService
 
             var downloadChoice = MessageBox.Show(
                 owner,
-                UpdateAvailableMessage,
-                UpdateAvailableTitle,
+                LocalizeUiText(UpdateAvailableMessage),
+                LocalizeUiText(UpdateAvailableTitle),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Information);
             if (downloadChoice != MessageBoxResult.Yes)
@@ -94,36 +97,36 @@ public sealed class DesktopStartupUpdateCheckService
             var result = await updateDownloadService.DownloadAndVerifyAsync(manifest, installerUri);
             if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.FilePath))
             {
-                ShowUpdateMessage(owner, UpdateFailureMessage, MessageBoxImage.Warning);
+                ShowUpdateMessage(owner, LocalizeUiText(UpdateFailureMessage), MessageBoxImage.Warning);
                 return;
             }
 
             if (isLessonActive?.Invoke() == true)
             {
-                ShowUpdateMessage(owner, ActiveLessonInstallerMessage, MessageBoxImage.Information);
+                ShowUpdateMessage(owner, LocalizeUiText(ActiveLessonInstallerMessage), MessageBoxImage.Information);
                 return;
             }
 
             var installChoice = MessageBox.Show(
                 owner,
-                InstallerReadyMessage,
-                InstallerReadyTitle,
+                LocalizeUiText(InstallerReadyMessage),
+                LocalizeUiText(InstallerReadyTitle),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Information);
             if (installChoice == MessageBoxResult.Yes)
             {
-                UpdateDownloadService.TryStartVerifiedInstallerAfterAppShutdown(result.FilePath, message => ShowUpdateMessage(owner, message, MessageBoxImage.Warning));
+                UpdateDownloadService.TryStartVerifiedInstallerAfterAppShutdown(result.FilePath, message => ShowUpdateMessage(owner, LocalizeUiText(message), MessageBoxImage.Warning));
             }
         }
         catch (Exception exception)
         {
             Debug.WriteLine($"Startup update download or installer prompt failed safely. Error={exception.Message}");
-            ShowUpdateMessage(owner, UpdateFailureMessage, MessageBoxImage.Warning);
+            ShowUpdateMessage(owner, LocalizeUiText(UpdateFailureMessage), MessageBoxImage.Warning);
         }
     }
 
     private static void ShowUpdateMessage(Window owner, string message, MessageBoxImage icon)
     {
-        MessageBox.Show(owner, message, AppUpdatesTitle, MessageBoxButton.OK, icon);
+        MessageBox.Show(owner, message, LocalizeUiText(AppUpdatesTitle), MessageBoxButton.OK, icon);
     }
 }
