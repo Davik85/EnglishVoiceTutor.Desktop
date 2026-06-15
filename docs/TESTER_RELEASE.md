@@ -1,6 +1,6 @@
 # Tester release workflow
 
-Review date: 2026-06-12.
+Review date: 2026-06-15.
 
 ## Source of truth for current versions
 
@@ -29,15 +29,19 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Current approval status
 
-The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.35-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.35-tester.1`, and `updateMode` set to `manual-confirmation`.
+The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.36-tester.15.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.36-tester.15`, and `updateMode` set to `manual-confirmation`.
 
-Local build `0.1.36-tester.2` has been built and validated locally, but it must not be described as public/live unless the website `latest.json` points to it over HTTPS. This remains a private tester/direct Windows release channel. It approves only the live manifest package as the private tester build and does not mean the product is fully public production-ready.
+`0.1.36-tester.15` is the intended live/direct tester release, but it must still be verified from the website `latest.json` over HTTPS before telling testers it is current. This remains a private tester/direct Windows release channel. It approves only the live manifest package as the private tester build and does not mean the product is fully public production-ready.
+
+## Release artifact boundary
+
+`latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, installers, packages, and other files under `artifacts/` are generated outputs and must not be committed. Public direct Windows release files are uploaded to `/var/www/languagevoicetutor/releases/windows/direct`; the public website root is separate at `/var/www/languagevoicetutor/site`. Backend deploy and Windows installer upload are separate flows.
 
 ## Current production backend state
 
-Latest known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.3` is active, and `/opt/languagevoicetutor/backend/current` points to that release; verify the live value from the server symlink before calling it current. Backend `0.1.35-backend.3` contains the lesson chat invalid-response resilience fix and did not require an EF migration. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.2`.
+Latest known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22` is active, and `/opt/languagevoicetutor/backend/current` points to that release; verify the live value from the server symlink before calling it current. Backend `0.1.35-backend.22` includes the release-hardening fixes for settings native-language sync, aggregate-only Admin Product Statistics language/device semantics, and privacy-safe tracked-device identity. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`.
 
-`https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. The backend service started successfully after the `0.1.35-backend.3` deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
+`https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. The backend service started successfully after the `0.1.35-backend.22` deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
 ## Backend URL profile
 

@@ -8,7 +8,7 @@ This smoke gate is the repeatable pre-package safety check for the current deskt
 
 This gate does not add product features. It does not change runtime localization behavior, billing, subscriptions, entitlements, Admin UI, database schema, lesson JSON, Study languages, Interface languages, or Native/Explanation language support.
 
-Localization is considered closed for the current release-hardening phase. Future Interface languages must be added only 1-2 at a time after full UI localization and audit coverage.
+Current audited release-blocking localization issues have been addressed for the 14 release-ready interface languages (`en`, `es`, `fr`, `de`, `it`, `pt`, `ru`, `pl`, `ar`, `ja`, `ko`, `sr`, `hr`, `bg`). Localization is not permanently complete. Future Interface languages must be added only after full UI localization and audit coverage. Run `tools/audit_interface_localization.py`; if `tools/test_welcome_layout_stability_policy.py` exists in the current branch, run it for home/welcome hero layout stability with long localized text.
 
 
 
@@ -56,7 +56,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.
 powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
 ```
 
-6. Use the script-created installer as the tester handoff artifact:
+6. Validate and upload through the canonical direct release scripts, keeping backend deploy separate from Windows release upload:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 0.1.36-tester.15
+```
+
+Public direct Windows release files go to `/var/www/languagevoicetutor/releases/windows/direct`; the public website root is separate at `/var/www/languagevoicetutor/site`. Generated release artifacts must not be committed.
+
+Use the script-created installer as the tester handoff artifact:
 
 ```text
 artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe

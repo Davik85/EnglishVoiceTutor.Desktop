@@ -1,21 +1,38 @@
 # Desktop backend settings sync
 
-The desktop app remains local-first for user settings. It still stores settings in the existing local settings file and lessons continue to read the study language through that local settings flow.
+Review date: 2026-06-15.
 
-Backend settings sync is currently limited to the temporary development user settings endpoints. It does not use authentication yet and should be replaced when real auth is implemented.
+The desktop app remains local-first for user settings while authenticated users also sync account preferences with the backend. Lessons continue to read the selected study language through the normal desktop settings flow, but signed-in saves also send the separated settings fields expected by the backend contract.
 
-## Current flow
+## Current authenticated flow
 
-- `GET /api/dev/user-settings` loads the temporary dev user's backend settings when Settings opens or diagnostics refreshes successfully.
-- If backend settings are loaded successfully, the desktop Study Language selection is updated from the backend value and the local settings file is kept consistent.
-- `PUT /api/dev/user-settings` updates backend settings when Settings is saved.
-- The desktop sends the current study language, explanation language, speech voice, speech speed, and conversation mode enabled values required by the backend contract.
-- Supported study languages are the existing desktop study languages: English, French, German, Portuguese, Spanish, and Italian.
+- Signed-in desktop clients use `GET /api/me/settings` and `PUT /api/me/settings` with the authenticated user token.
+- Signed-out/development fallback can still use `/api/dev/user-settings` for local diagnostics, but that endpoint is not the production account settings source.
+- Backend-backed settings remain the signed-in source of truth after a successful sync.
+- Backend failure must not break local app usage: Settings continues using local values, and backend sync status remains diagnostic-only.
+
+## Language ownership and sync contract
+
+The backend and desktop now treat native language, selected study language, and explanation/interface language as separate concepts:
+
+- `UserProfileEntity.NativeLanguage` is the source for the user's native language.
+- `UserSettingsEntity.StudyLanguage` is the selected supported study language for lessons.
+- `UserSettingsEntity.ExplanationLanguage` is the explanation/interface language preference, separate from native language.
+
+Desktop settings writes should map UI selections as follows:
+
+- `NativeLanguage` comes from `SelectedNativeLanguageOption.Id`.
+- `ExplanationLanguage` comes from `SelectedInterfaceLanguageOption.Id`, or the current intended interface/explanation language source if that UI is refactored later.
+- `StudyLanguage` comes from the selected supported study language option.
+
+Desktop must not send native language as `ExplanationLanguage`. Existing production users whose `UserProfile.NativeLanguage` is `unknown` are not blindly backfilled by the backend; those values are expected to be corrected when the user saves/syncs settings from a fixed desktop client, unless a reliable backend-side source is identified later.
+
+## Language boundaries
+
+- Supported study languages remain English, French, German, Portuguese, Spanish, and Italian.
+- Release-ready interface languages remain `en`, `es`, `fr`, `de`, `it`, `pt`, `ru`, `pl`, `ar`, `ja`, `ko`, `sr`, `hr`, and `bg`.
+- Future interface languages should be added only after full UI coverage and localization audit coverage.
 
 ## Local fallback
 
 Backend failure must not break local app usage. If the backend is unavailable, Settings continues using local settings and the user can still save local settings. Backend sync status is included in copied diagnostics as `available`, `unavailable`, or `not checked`.
-
-## Temporary limitation
-
-The `/api/dev/user-settings` endpoints are development-only integration points. This sync path is temporary until real authentication and per-user production settings are implemented.

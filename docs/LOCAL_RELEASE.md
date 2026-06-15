@@ -40,19 +40,19 @@ Run from the repository root:
 ```powershell
 cd C:\dev\EnglishVoiceTutor.Desktop
 powershell -ExecutionPolicy Bypass -File .\tools\run_desktop_release_gate.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.36-tester.2
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.36-tester.15
 ```
 
 Expected installer output:
 
 ```text
-artifacts\installers\windows\LanguageVoiceTutorSetup-0.1.36-tester.2.exe
+artifacts\installers\windows\LanguageVoiceTutorSetup-0.1.36-tester.15.exe
 ```
 
 Expected server-ready direct-download output:
 
 ```text
-artifacts\releases\windows\direct\LanguageVoiceTutorSetup-0.1.36-tester.2.exe
+artifacts\releases\windows\direct\LanguageVoiceTutorSetup-0.1.36-tester.15.exe
 artifacts\releases\windows\direct\latest.json
 artifacts\releases\windows\direct\changelog.json
 artifacts\releases\windows\direct\known-issues.json
@@ -65,9 +65,13 @@ Validate the direct-release metadata and checksums before server preparation or 
 powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
 ```
 
-Optional future upload to a static HTTPS server folder is documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). The upload helper supports `-DryRun` and never runs automatically; backend deployment, database migrations, the download website, and update UI remain separate work. A local `0.1.36-tester.2` installer is public/live only after the Windows direct release files are uploaded and live `latest.json` is verified over HTTPS.
+Optional future upload to a static HTTPS server folder is documented in [`docs/WINDOWS_RELEASE_SERVER_UPLOAD.md`](WINDOWS_RELEASE_SERVER_UPLOAD.md). The upload helper supports `-DryRun` and never runs automatically; backend deployment, database migrations, the download website, and update UI remain separate work. A local `0.1.36-tester.15` installer is public/live only after the Windows direct release files are uploaded and live `latest.json` is verified over HTTPS.
 
 Copy the installer to another Windows device or clean VM, install it, choose a custom directory during smoke testing, launch the app, and verify backend connection, login/account, backend history, and the core lesson flow. Also verify the Settings footer displays the installed version, for example `Version: v0.1.0`; testers should report this value when filing bugs.
+
+## Generated release artifacts
+
+`latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, installers, packages, and other files under `artifacts/` are generated outputs. Validate them locally and upload through the Windows direct release flow when intended, but do not commit them.
 
 ## Emergency/developer ZIP fallback
 

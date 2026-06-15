@@ -42,6 +42,17 @@ Usage events do not store:
 - response contract uses `{ "items": [...] }`.
 - intended for local development verification only.
 
+## Admin/Product Statistics semantics
+
+Admin Product Statistics exposes aggregate-only product metrics and must not expose personal data. Tracked-device counts are authenticated, privacy-safe counts of coarse backend `DeviceEntity` rows; they are not installer downloads, raw installs, machine fingerprints, serial numbers, MAC addresses, Windows usernames, IP addresses, or personal device identifiers. `AppVersion` is stored as the latest seen app version for a device row and is not part of the tracked-device identity, so the same user + platform + coarse device name should update `LastSeenAt` and latest `AppVersion` instead of creating a new row after every app update.
+
+Language distributions use separate semantics:
+
+- native language comes from the user profile;
+- explanation language comes from settings;
+- selected study language comes from settings;
+- practiced study language comes from lesson/usage activity and is filtered to supported study languages. Dirty unsupported study-language values such as Russian in `usage_events.StudyLanguage` are grouped as `Unknown/Unsupported` instead of being displayed as supported study languages.
+
 ## Out of scope (current)
 - Limit enforcement remains deferred.
 - CMS/admin panel
