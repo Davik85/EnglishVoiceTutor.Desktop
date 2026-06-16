@@ -28,6 +28,8 @@ public static class DesktopLayoutOptions
     public const double WelcomeCardMinimumHeight = 420;
     public const double WelcomeHeroMinimumHeight = 260;
     public const double WelcomeMinimumActionAreaHeight = 128;
+    public const double WelcomeHeaderTitleTwoLineHeight = 51;
+    public const double WelcomeHeaderSubtitleTwoLineHeight = 35;
 
     public const double LessonChatWindowPreferredWidth = 1320;
     public const double LessonChatWindowPreferredHeight = 940;

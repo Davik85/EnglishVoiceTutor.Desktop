@@ -36,6 +36,17 @@ def assert_no_regex(text: str, pattern: str, label: str) -> None:
         raise AssertionError(f"Forbidden {label}: {pattern}")
 
 
+def extract_named_element(text: str, name: str) -> str:
+    marker = f'x:Name="{name}"'
+    start = text.find(marker)
+    if start < 0:
+        raise AssertionError(f"Missing named element: {name}")
+    next_named = text.find('x:Name="', start + len(marker))
+    if next_named < 0:
+        return text[start:]
+    return text[start:next_named]
+
+
 def tracked_files() -> list[str]:
     result = subprocess.run(
         ["git", "ls-files"],
@@ -49,7 +60,9 @@ def tracked_files() -> list[str]:
 
 def main() -> None:
     welcome_xaml = read("Views/WelcomeView.xaml")
+    welcome_header_xaml = extract_named_element(welcome_xaml, "WelcomeHeaderPanel")
     welcome_code = read("Views/WelcomeView.xaml.cs")
+    layout_constants = read("Models/DesktopLayoutOptions.cs")
     backend_constants = read("Constants/BackendConstants.cs")
     endpoint_builder = read("Services/BackendEndpointBuilder.cs")
     settings_xaml = read("Views/SettingsView.xaml")
@@ -73,6 +86,16 @@ def main() -> None:
     assert_contains(welcome_code, "Math.Round(heroSize.Height)", "rounded hero clip height")
 
     assert_contains(welcome_xaml, "WelcomeHeaderPanel", "Welcome title overlay")
+    assert_not_contains(welcome_header_xaml, "<Viewbox", "Welcome header scale-to-fit text layout")
+    assert_contains(welcome_header_xaml, 'Text="{Binding AppTitle}"', "Welcome title binding")
+    assert_contains(welcome_header_xaml, 'Text="{Binding Subtitle}"', "Welcome subtitle binding")
+    assert_contains(welcome_header_xaml, 'TextWrapping="Wrap"', "Welcome localized header wrapping")
+    assert_contains(welcome_header_xaml, "WelcomeHeaderTitleTwoLineHeight", "named Welcome title two-line height")
+    assert_contains(welcome_header_xaml, "WelcomeHeaderSubtitleTwoLineHeight", "named Welcome subtitle two-line height")
+    assert_contains(layout_constants, "WelcomeHeaderTitleTwoLineHeight", "Welcome title two-line height constant")
+    assert_contains(layout_constants, "WelcomeHeaderSubtitleTwoLineHeight", "Welcome subtitle two-line height constant")
+    assert_not_contains(welcome_header_xaml, 'MaxLines="2"', "unsupported WPF Welcome header MaxLines property")
+    assert_not_contains(welcome_header_xaml, 'TextTrimming="CharacterEllipsis"', "Welcome localized header ellipsis trimming")
     assert_contains(welcome_xaml, "WelcomePrimaryActionsPanel", "Welcome action overlay")
     assert_contains(welcome_xaml, "StartLessonCommand", "Welcome Start lesson action")
     assert_contains(welcome_xaml, "OpenSettingsCommand", "Welcome Settings action")
