@@ -89,7 +89,7 @@
                                        FontWeight="SemiBold"
                                        Foreground="{StaticResource TextPrimaryBrush}"
                                        LineHeight="25"
-                                       MaxLines="2"
+                                       MaxHeight="{x:Static models:DesktopLayoutOptions.WelcomeHeaderTitleTwoLineHeight}"
                                        TextAlignment="Center"
                                        TextWrapping="Wrap" />
 
@@ -99,7 +99,7 @@
                                        FontSize="12.5"
                                        Foreground="{StaticResource TextSecondaryBrush}"
                                        LineHeight="17"
-                                       MaxLines="2"
+                                       MaxHeight="{x:Static models:DesktopLayoutOptions.WelcomeHeaderSubtitleTwoLineHeight}"
                                        TextAlignment="Center"
                                        TextWrapping="Wrap" />
                         </StackPanel>
