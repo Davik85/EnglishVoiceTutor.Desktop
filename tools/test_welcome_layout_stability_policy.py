@@ -36,6 +36,14 @@ def assert_no_regex(text: str, pattern: str, label: str) -> None:
         raise AssertionError(f"Forbidden {label}: {pattern}")
 
 
+def extract_double_constant(text: str, name: str) -> float:
+    pattern = rf"public\s+const\s+double\s+{re.escape(name)}\s*=\s*([0-9]+(?:\.[0-9]+)?)\s*;"
+    match = re.search(pattern, text)
+    if match is None:
+        raise AssertionError(f"Missing double constant: {name}")
+    return float(match.group(1))
+
+
 def extract_named_element(text: str, name: str) -> str:
     marker = f'x:Name="{name}"'
     start = text.find(marker)
@@ -92,9 +100,14 @@ def main() -> None:
     assert_contains(welcome_header_xaml, 'TextWrapping="Wrap"', "Welcome localized header wrapping")
     assert_contains(welcome_header_xaml, "WelcomeHeaderTitleTwoLineHeight", "named Welcome title two-line height")
     assert_contains(welcome_header_xaml, "WelcomeHeaderSubtitleTwoLineHeight", "named Welcome subtitle two-line height")
-    assert_contains(layout_constants, "WelcomeHeaderTitleTwoLineHeight", "Welcome title two-line height constant")
-    assert_contains(layout_constants, "WelcomeHeaderSubtitleTwoLineHeight", "Welcome subtitle two-line height constant")
+    title_two_line_height = extract_double_constant(layout_constants, "WelcomeHeaderTitleTwoLineHeight")
+    subtitle_two_line_height = extract_double_constant(layout_constants, "WelcomeHeaderSubtitleTwoLineHeight")
+    if title_two_line_height < 56:
+        raise AssertionError("Welcome title two-line height is too tight for Russian localized text")
+    if subtitle_two_line_height < 35:
+        raise AssertionError("Welcome subtitle two-line height is too tight for localized text")
     assert_not_contains(welcome_header_xaml, 'MaxLines="2"', "unsupported WPF Welcome header MaxLines property")
+    assert_not_contains(welcome_header_xaml, 'MaxLines=', "unsupported WPF Welcome header MaxLines property")
     assert_not_contains(welcome_header_xaml, 'TextTrimming="CharacterEllipsis"', "Welcome localized header ellipsis trimming")
     assert_contains(welcome_xaml, "WelcomePrimaryActionsPanel", "Welcome action overlay")
     assert_contains(welcome_xaml, "StartLessonCommand", "Welcome Start lesson action")
