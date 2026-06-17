@@ -1,6 +1,6 @@
 # Command Playbook
 
-Review date: 2026-06-15.
+Review date: 2026-06-17.
 
 ## Source of truth for current versions
 
@@ -140,32 +140,34 @@ A landing page update was initially uploaded to `/var/www/languagevoicetutor/`, 
 Canonical Windows direct release flow is separate from backend deployment:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.36-tester.15
+$ReleaseVersion = "<next-tester-version>"
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version $ReleaseVersion
 powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 0.1.36-tester.15
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version $ReleaseVersion
 ```
 
 Upload Windows direct release files only to `/var/www/languagevoicetutor/releases/windows/direct`. Do not upload them to the public website root `/var/www/languagevoicetutor/site`, and do not mix this flow with backend deployment. Generated release outputs must remain uncommitted.
 
 ## Backend-only deployment commands
 
-Example package command for the current backend snapshot:
+Example package command for the current backend snapshot (`0.1.35-backend.23` as last verified; use the server `current` symlink as source of truth):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.22
+$BackendVersion = "0.1.35-backend.23"
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version $BackendVersion
 ```
 
 Example upload/restart command for a reviewed backend-only deploy:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-backend.22 `
+  -Version $BackendVersion `
   -PackageFirst
 ```
 
-Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.22`, no EF migration was needed and no Windows installer upload was performed. Backend deploys do not upload Windows installer files and do not change `latest.json`.
+Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.23`, no EF migration was needed and no Windows installer upload was performed. Backend deploys do not upload Windows installer files and do not change `latest.json`.
 
-Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`.
+Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22`.
 
 ## Downloaded update installer cleanup
 
@@ -240,7 +242,7 @@ Manual browser check:
 6. Confirm the UI is readable.
 7. Confirm raw JSON appears only inside collapsed details blocks.
 
-Current state: backend `0.1.35-backend.22` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`.
+Current state: backend `0.1.35-backend.23` is the latest active backend example for these Admin CMS checks. Previous backend release for rollback reference remains `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22`.
 
 Current milestone: CMS published-snapshot runtime is active for controlled tester lessons. These checks must confirm the active CMS source and clean fallback state rather than enabling broad public release.
 
@@ -317,7 +319,7 @@ Rollback remains disabling or removing the CMS runtime flags and restarting the 
 
 ## Current controlled tester handoff checks after CMS runtime milestone
 
-Use these checks after backend `0.1.35-backend.11` and Windows tester `0.1.36-tester.8` are in place. The public direct Windows manifest should point to `version=0.1.36-tester.8`, `installerFileName=LanguageVoiceTutorSetup-0.1.36-tester.8.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, and `updateMode=manual-confirmation`.
+Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.23` and the live public direct Windows manifest points to `version=0.1.36-tester.15`, `installerFileName=LanguageVoiceTutorSetup-0.1.36-tester.15.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=0.1.36-tester.15`, and `updateMode=manual-confirmation`. For future tester handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
 
 Verify the public tester manifest before handoff:
 

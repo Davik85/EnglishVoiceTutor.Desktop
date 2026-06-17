@@ -1,6 +1,6 @@
 # Windows installer release flow
 
-Review date: 2026-06-12.
+Review date: 2026-06-17.
 
 ## Source of truth for current versions
 
@@ -31,7 +31,7 @@ Inno Setup is the primary Windows direct-download installer track for Language V
 
 ## Current validated release
 
-The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.35-tester.1.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.35-tester.1`, and `updateMode` set to `manual-confirmation`. Local build `0.1.36-tester.2` has been built and validated locally, but it must not be described as public/live unless the website `latest.json` points to it over HTTPS.
+The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.36-tester.15.exe` with `version` set to `0.1.36-tester.15`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.36-tester.15`, and `updateMode` set to `manual-confirmation`. Treat this as a controlled tester/direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
 
 This is a private tester/direct Windows release, not broad public production readiness. Code signing remains deferred, so SmartScreen warnings are still expected for controlled testers.
 
@@ -85,13 +85,15 @@ Installed-version checking is now part of the Windows installer foundation. The 
 Run from the repository root on Windows:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.36-tester.2
+$ReleaseVersion = "<next-tester-version>"
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version $ReleaseVersion
 ```
 
 If `ISCC.exe` is not in a default location:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.36-tester.2 -IsccPath "C:\Tools\Inno Setup 6\ISCC.exe"
+$ReleaseVersion = "<next-tester-version>"
+powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version $ReleaseVersion -IsccPath "C:\Tools\Inno Setup 6\ISCC.exe"
 ```
 
 Expected installer output:
