@@ -3,7 +3,9 @@ using EnglishVoiceTutor.Api.Contracts.Admin;
 
 namespace EnglishVoiceTutor.Api.Services.Admin;
 
-public sealed class AdminCapabilitiesService(IWebHostEnvironment webHostEnvironment) : IAdminCapabilitiesService
+public sealed class AdminCapabilitiesService(
+    IWebHostEnvironment webHostEnvironment,
+    IAdminRolePermissionCatalogService adminRolePermissionCatalogService) : IAdminCapabilitiesService
 {
     public AdminCapabilitiesResponse GetCapabilities()
     {
@@ -26,6 +28,8 @@ public sealed class AdminCapabilitiesService(IWebHostEnvironment webHostEnvironm
         {
             AdminSource = AdminAuthorizationConstants.BootstrapAdminSource,
             Environment = webHostEnvironment.EnvironmentName,
+            Roles = adminRolePermissionCatalogService.GetBootstrapAdminRoles(),
+            Permissions = adminRolePermissionCatalogService.GetBootstrapAdminPermissions(),
             Capabilities = new AdminCapabilitiesSnapshot
             {
                 AdminSelfCheck = true,
