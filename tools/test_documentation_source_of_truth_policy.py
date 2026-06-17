@@ -21,11 +21,15 @@ ALL_MARKDOWN = [ROOT / "README.md", *sorted((ROOT / "docs").glob("*.md"))]
 LATEST_JSON_COMMAND = "Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json"
 BACKEND_SYMLINK_COMMAND = 'ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"'
 PROD_BACKEND_URL = "https://api.languagevoicetutor.com"
-LOCAL_BUILD = "0.1.36-tester.2"
+CURRENT_TESTER_RELEASE = "0.1.36-tester.15"
+CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-0.1.36-tester.15.exe"
+CURRENT_BACKEND_RELEASE = "0.1.35-backend.23"
+PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.22"
+STALE_TESTER_RELEASES = ["0.1.35-tester.1", "0.1.36-tester.2", "0.1.36-tester.3"]
 DEFERRED_ITEMS = [
     "Code signing remains deferred",
     "Production billing/Paddle/subscription payment lifecycle remains deferred",
-    "CMS published-snapshot learner runtime remains disabled/not the default",
+    "CMS published-snapshot runtime is active for controlled tester lessons",
 ]
 
 
@@ -79,22 +83,36 @@ def main() -> int:
     )
     assert_contains(combined_main, PROD_BACKEND_URL, "release backend lock URL")
     assert_contains(combined_main, "Release/tester installed builds are server-only", "release backend lock wording")
+    assert_contains(combined_main, CURRENT_TESTER_RELEASE, "current verified tester release")
+    assert_contains(combined_main, CURRENT_TESTER_INSTALLER, "current verified tester installer")
+    assert_contains(combined_main, CURRENT_BACKEND_RELEASE, "current verified backend release")
     assert_contains(combined_main, "not broad public production readiness", "no broad production readiness wording")
     assert_contains(combined_main, "Do not state that the product is fully public production-ready", "no fully public production-ready wording")
 
     for item in DEFERRED_ITEMS:
         assert_contains(combined_main, item, f"deferred item: {item}")
 
-    assert_regex(
-        combined_all,
-        rf"{re.escape(LOCAL_BUILD)}.*not (?:be described as )?public/live|not public/live.*{re.escape(LOCAL_BUILD)}|{re.escape(LOCAL_BUILD)}.*public/live only after",
-        "local build is not public/live without upload/latest.json verification",
+    stale_current_context = (
+        r"(?:current|live|public|verified|baseline|snapshot|latest active|in place|manifest should point|"
+        r"Last verified public snapshot|Current verified manifest baseline)"
     )
-    assert_not_regex(
-        combined_all,
-        rf"{re.escape(LOCAL_BUILD)}[^\n.]*is (?:the )?(?:current )?(?:public|live)(?![^\n.]*only after)",
-        "local artifacts build claimed as public/live without an only-after-upload condition",
-    )
+    for stale_version in STALE_TESTER_RELEASES:
+        assert_not_regex(
+            combined_all,
+            rf"{stale_current_context}[^\n]*{re.escape(stale_version)}|{re.escape(stale_version)}[^\n]*(?:current|live|public|verified|baseline|snapshot|latest active|in place)",
+            f"stale tester version used as current/live/public baseline: {stale_version}",
+        )
+
+    for match in re.finditer(re.escape(PREVIOUS_BACKEND_ROLLBACK_RELEASE), combined_all):
+        line_start = combined_all.rfind("\n", 0, match.start()) + 1
+        line_end = combined_all.find("\n", match.end())
+        if line_end == -1:
+            line_end = len(combined_all)
+        line = combined_all[line_start:line_end].lower()
+        if "previous" not in line and "rollback" not in line:
+            raise AssertionError(
+                f"{PREVIOUS_BACKEND_ROLLBACK_RELEASE} must be clearly marked as previous/rollback reference: {combined_all[line_start:line_end]}"
+            )
     assert_not_regex(
         combined_all,
         r"artifacts[/\\][^\n.]*current public tester|current public tester[^\n.]*artifacts[/\\]",
