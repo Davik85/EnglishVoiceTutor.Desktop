@@ -136,7 +136,9 @@ public static class AdminEndpoints
         httpContext.Response.StatusCode = StatusCodes.Status204NoContent;
     }
 
-    private static IResult GetAdminMe(ClaimsPrincipal principal)
+    private static IResult GetAdminMe(
+        ClaimsPrincipal principal,
+        IAdminRolePermissionCatalogService adminRolePermissionCatalogService)
     {
         var userId = ClaimsUserAccessor.TryGetUserId(principal);
         var email = ClaimsUserAccessor.TryGetUserEmail(principal);
@@ -152,6 +154,9 @@ public static class AdminEndpoints
             Email = email,
             IsAdmin = true,
             AdminSource = AdminAuthorizationConstants.BootstrapAdminSource,
+            Roles = adminRolePermissionCatalogService.GetBootstrapAdminRoles(),
+            Permissions = adminRolePermissionCatalogService.GetBootstrapAdminPermissions(),
+            IsBootstrapAdmin = true,
             CheckedAtUtc = DateTimeOffset.UtcNow
         };
 
