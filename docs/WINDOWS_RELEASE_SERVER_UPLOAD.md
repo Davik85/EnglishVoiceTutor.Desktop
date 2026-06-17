@@ -1,6 +1,6 @@
 # Windows release server upload
 
-Review date: 2026-06-12.
+Review date: 2026-06-17.
 
 ## Source of truth for current versions
 
@@ -10,6 +10,12 @@ Check the public Windows direct tester release from the live website manifest:
 
 ```powershell
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
+```
+
+If a PowerShell path reads raw manifest text and `ConvertFrom-Json` fails because a UTF-8 BOM is present at the start of `latest.json`, strip the BOM before parsing:
+
+```powershell
+($raw -replace "^\uFEFF", "") | ConvertFrom-Json
 ```
 
 Check the production backend release from the server `current` symlink:
@@ -29,7 +35,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Current uploaded release
 
-The live public tester Windows direct manifest baseline must be checked from the website `latest.json`. Last verified public snapshot: the public tester download path resolved through `latest.json` to `LanguageVoiceTutorSetup-0.1.35-tester.1.exe`. Local build `0.1.36-tester.2` has been built and validated locally, but it is not public/live unless these upload steps are completed and the website `latest.json` points to it over HTTPS.
+The live public tester Windows direct manifest baseline must be checked from the website `latest.json`; it is always the source of truth. Last verified public snapshot: the public tester download path resolved through `latest.json` to `LanguageVoiceTutorSetup-0.1.36-tester.15.exe`. `0.1.36-tester.15` is the current verified uploaded tester build, but still verify the website `latest.json` over HTTPS before announcing it to testers.
 
 The current manifest is served from:
 
@@ -40,10 +46,10 @@ https://languagevoicetutor.com/releases/windows/direct/latest.json
 The current manifest values are:
 
 ```text
-version: 0.1.35-tester.1
-installerFileName: LanguageVoiceTutorSetup-0.1.35-tester.1.exe
+version: 0.1.36-tester.15
+installerFileName: LanguageVoiceTutorSetup-0.1.36-tester.15.exe
 backendBaseUrl: https://api.languagevoicetutor.com
-minimumSupportedVersion: 0.1.35-tester.1
+minimumSupportedVersion: 0.1.36-tester.15
 updateMode: manual-confirmation
 ```
 
@@ -132,8 +138,10 @@ After upload, run or record a clean-machine smoke that covers:
 - auth session persistence across app restart and Windows restart;
 - update/reinstall preservation of auth session, settings, history, and progress;
 - smaller-screen/scaled-display Welcome layout with visible primary actions and no gray cover bars;
+- Russian and French Welcome/start header text does not truncate or clip;
+- CMS scenario edits and level profile edits appear in newly started desktop lessons after Save draft + Publish;
 - no Diagnostics tab and no Backend URL field in release Settings.
 
 ## Deferred items
 
-Code signing remains deferred. Production billing/Paddle/subscription payment lifecycle remains deferred. CMS published-snapshot learner runtime remains disabled/not the default until explicitly enabled and validated later.
+Code signing remains deferred. Production billing/Paddle/subscription payment lifecycle remains deferred. CMS published-snapshot runtime is active for controlled tester lessons, with static JSON fallback available for rollback; broad public production release remains deferred.

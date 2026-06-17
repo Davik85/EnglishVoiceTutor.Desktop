@@ -1,6 +1,6 @@
 # Next Steps
 
-Review date: 2026-06-15.
+Review date: 2026-06-17.
 
 ## Source of truth for current versions
 
@@ -10,6 +10,12 @@ Check the public Windows direct tester release from the live website manifest:
 
 ```powershell
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
+```
+
+If a PowerShell path reads raw manifest text and `ConvertFrom-Json` fails because a UTF-8 BOM is present at the start of `latest.json`, strip the BOM before parsing:
+
+```powershell
+($raw -replace "^\uFEFF", "") | ConvertFrom-Json
 ```
 
 Check the production backend release from the server `current` symlink:
@@ -33,19 +39,24 @@ The live public tester manifest baseline must be checked from `latest.json`, not
 
 This is still a private tester/direct Windows release, not broad public production readiness.
 
+## Latest verified release summary
+
+Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy test passed; the desktop release gate passed; and backend `0.1.35-backend.23` is deployed and healthy. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, and Save draft + Publish changes are visible in newly started desktop lessons.
+
 ## Immediate next steps
 
-1. Finish visual smoke testing for `0.1.36-tester.15` on Russian, Polish, Bulgarian, and French home screens and key Settings screens.
-2. Collect controlled tester feedback.
-3. Only then decide the next smallest safe CMS/Admin step.
+1. Hand off `0.1.36-tester.15` only through the controlled tester/direct Windows channel after verifying live `latest.json`.
+2. Collect controlled tester feedback and keep non-blocking feedback in triage.
+3. Validate update-over-existing-install from an older `EnglishVoiceTutor.Desktop.*` installed build if that path has not already been recorded for this exact tester handoff.
+4. Only then decide the next smallest safe CMS/Admin or scenario/avatar behavior step.
 
 Do not move billing/Paddle production readiness into the immediate next step; billing remains deferred until desktop hardening and tester feedback justify revisiting it.
 
 ## Current backend verification
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`. Backend `0.1.35-backend.22` contains the latest Admin CMS Validation & Preview readable UI fix plus `/admin` static asset cache busting/no-cache behavior. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. No EF migration was required.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22`. Backend `0.1.35-backend.23` contains the latest Admin CMS Validation & Preview readable UI fix plus `/admin` static asset cache busting/no-cache behavior. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. No EF migration was required.
 
-Deployed runtime status diagnostics are visible on backend `0.1.35-backend.22` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: finish visual smoke testing for `0.1.36-tester.15` on Russian, Polish, Bulgarian, and French home screens plus key Settings screens; collect tester feedback; only then choose the next smallest safe CMS/Admin step.
+Deployed runtime status diagnostics are visible on backend `0.1.35-backend.23` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
 
 ## CMS connection readiness and controlled release preparation
 
@@ -81,14 +92,11 @@ Current state: CMS practical readiness has passed the runtime connection milesto
 
 ## Immediate tester-readiness work
 
-1. Verify the installed tester build from the public site and current `latest.json`.
-2. Validate update-over-existing-install from a prior `EnglishVoiceTutor.Desktop.*` installed tester build and confirm old installed `EnglishVoiceTutor.Desktop.*` files are cleaned from the install folder, preserved auth/session data migrates to the current `LanguageVoiceTutor.Desktop` local-data path, and login, user settings, Lesson History, and Progress survive update/reinstall.
-3. Confirm auth session restore across app restart and Windows restart.
-4. Confirm smaller-screen/scaled-display layout on at least one 1366x768, 1280x720, or equivalent scaled-display environment.
-5. Confirm Release Settings have only the simple **Check for updates** action and do not expose Diagnostics or Backend URL editing.
-6. Perform a short smoke test: launch, login/register, start a new lesson, confirm CMS-controlled scenario content is visible after publish, compare A1 and B2 behavior, verify voice/TTS, Lesson History, and Progress.
-7. Prepare the small external tester handoff group and instructions.
-8. Collect feedback on lesson quality, A1/A2/B1/B2 level behavior, voice, UI, and CMS-controlled content.
+1. Verify the installed tester build from the public site and current `latest.json` before every handoff.
+2. Validate update-over-existing-install from a prior `EnglishVoiceTutor.Desktop.*` installed tester build if not already recorded for this exact handoff, and confirm old installed `EnglishVoiceTutor.Desktop.*` files are cleaned from the install folder, preserved auth/session data migrates to the current `LanguageVoiceTutor.Desktop` local-data path, and login, user settings, Lesson History, and Progress survive update/reinstall.
+3. Prepare the small external tester handoff group and instructions.
+4. Collect feedback on lesson quality, A1/A2/B1/B2 level behavior, voice, UI, CMS-controlled content, and smaller-screen/touch behavior.
+5. Keep known non-blocking follow-ups in triage: touch drag/hold can visually select multiple topic/subtopic items, some scenario/avatar dialogue can restart or repeat, short scenarios such as "Asking someone to repeat" may need prompt/content polishing, bot voice autoplay can sometimes not play even when enabled, and occasional server-error feedback should remain in triage unless reproduced consistently.
 
 ## Release backend lock (server-only installed builds)
 
@@ -121,7 +129,7 @@ Next safe step: controlled tester handoff and feedback collection. CMS published
 ## Deferred work
 
 - Production billing/Paddle/subscription payment lifecycle remains deferred.
-- Production CMS RBAC and critical-change approval remain deferred.
+- Production role management/RBAC and critical-change approval remain deferred.
 - Code signing remains deferred.
 - Broader public release readiness remains deferred until after controlled tester feedback and operational hardening.
 
@@ -129,7 +137,7 @@ Next safe step: controlled tester handoff and feedback collection. CMS published
 
 The Admin CMS now exposes a read-only **Runtime content status** section and the protected endpoint `GET /api/admin/dev/cms/runtime-status`. Use it to confirm the effective learner content source, validation result, counts, published snapshot metadata, and fallback state without exposing content bodies or secrets.
 
-CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.22` with approved tutor-id validation for `david`, `elena`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
+CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.23` with approved tutor-id validation for `david`, `elena`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
 
 ## CMS-managed level profiles (A1-B2)
 
