@@ -1,6 +1,6 @@
 # Tester release workflow
 
-Review date: 2026-06-15.
+Review date: 2026-06-17.
 
 ## Source of truth for current versions
 
@@ -10,6 +10,12 @@ Check the public Windows direct tester release from the live website manifest:
 
 ```powershell
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
+```
+
+If a PowerShell path reads raw manifest text and `ConvertFrom-Json` fails because a UTF-8 BOM is present at the start of `latest.json`, strip the BOM before parsing:
+
+```powershell
+($raw -replace "^\uFEFF", "") | ConvertFrom-Json
 ```
 
 Check the production backend release from the server `current` symlink:
@@ -39,9 +45,9 @@ The public tester Windows direct manifest baseline must be checked from the live
 
 ## Current production backend state
 
-Latest known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22` is active, and `/opt/languagevoicetutor/backend/current` points to that release; verify the live value from the server symlink before calling it current. Backend `0.1.35-backend.22` includes the release-hardening fixes for settings native-language sync, aggregate-only Admin Product Statistics language/device semantics, and privacy-safe tracked-device identity. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`.
+Latest known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23` is active, and `/opt/languagevoicetutor/backend/current` points to that release; verify the live value from the server symlink before calling it current. Backend `0.1.35-backend.23` includes the release-hardening fixes for settings native-language sync, aggregate-only Admin Product Statistics language/device semantics, and privacy-safe tracked-device identity. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22`.
 
-`https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. The backend service started successfully after the `0.1.35-backend.22` deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
+`https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. The backend service started successfully after the `0.1.35-backend.23` deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
 ## Backend URL profile
 
@@ -71,6 +77,10 @@ The current tester build verifies:
 
 Raw passwords are not stored. Auth/session data is protected under the current user's app-data area, and logout clears persisted auth session data.
 
+## Latest verified smoke summary
+
+Clean-machine smoke passed: public download install works, installed app launches, registration/login works, auth/session persists after restart, interface/native/study language selection works, lesson start works, translation works, hints work, bot voice/TTS works, Conversation Mode works, and Lesson History/Progress update. CMS scenario edits and level profile edits are visible in the desktop app after **Save draft** plus **Publish**. Smaller Windows tablet / small-screen visual smoke passed for Welcome/start, primary actions, Settings, and lesson flow. Russian and French Welcome/start header text no longer truncates/clips after the localized layout fix. Admin roles/permissions policy test passed, the desktop release gate passed, and backend `0.1.35-backend.23` is deployed and healthy.
+
 ## Manual update flow
 
 Release Settings expose a single user-facing **Check for updates** button. The old technical update dashboard is not part of the release UX.
@@ -90,9 +100,7 @@ Downloaded update installers from **Check for updates** are saved in the current
 
 ## CMS/Admin and content runtime
 
-CMS/Admin is connected. The `static-json-v1` CMS content pack is initialized as Draft/admin content. Learner runtime still uses packaged static JSON by default.
-
-Do not claim CMS runtime publishing is production-live for learners. CMS published-snapshot runtime reads remain disabled/not the learner default unless explicitly enabled and validated later.
+CMS/Admin is connected. CMS published-snapshot runtime is active for controlled tester lessons. **Save draft** alone does not affect the desktop app; **Save draft** plus **Publish** is required, and newly started desktop lessons pick up published CMS changes. Static JSON fallback remains available for rollback. Normal runtime status should remain `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, with no errors and no warnings. Production critical-change approval remains future work.
 
 ## Windows installer installed-version behavior
 
@@ -121,12 +129,9 @@ Before or during small-group tester handoff, confirm all items below:
 
 The following are still realistic follow-ups, not solved by the current private tester manifest and backend validation alone:
 
-1. Complete a clean-machine smoke pass and record results.
-2. Complete update-over-existing-install validation and record results.
-3. Keep app restart/session restore and Windows restart/session restore in tester smoke.
-4. Keep smaller-screen/scaled-display smoke in tester smoke.
-5. Hand off to a small controlled external tester group.
-6. Run the tester feedback collection and triage process.
-7. Optionally validate CMS runtime read/publish later before making it the learner default.
-8. Complete production billing/Paddle/subscription payment lifecycle later.
-9. Add code signing later before broad distribution.
+1. Complete update-over-existing-install validation and record results.
+2. Hand off to a small controlled external tester group.
+3. Run the tester feedback collection and triage process.
+4. Triage known non-blocking feedback: touch drag/hold can visually select multiple topic/subtopic items even though navigation enters one item, some scenario/avatar dialogue can restart or repeat, short scenarios such as "Asking someone to repeat" need prompt/content polishing, bot voice autoplay can sometimes not play even when enabled, and occasional server-error feedback should remain in triage unless reproduced consistently.
+5. Complete production billing/Paddle/subscription payment lifecycle later.
+6. Add code signing later before broad distribution.

@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-06-15.
+Review date: 2026-06-17.
 
 ## Source of truth for current versions
 
@@ -10,6 +10,12 @@ Check the public Windows direct tester release from the live website manifest:
 
 ```powershell
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
+```
+
+If a PowerShell path reads raw manifest text and `ConvertFrom-Json` fails because a UTF-8 BOM is present at the start of `latest.json`, strip the BOM before parsing:
+
+```powershell
+($raw -replace "^\uFEFF", "") | ConvertFrom-Json
 ```
 
 Check the production backend release from the server `current` symlink:
@@ -41,9 +47,9 @@ Clean-machine smoke must verify registration/login/lesson/history/progress/updat
 
 ## Current production backend state
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.11`.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22`.
 
-Completed: backend `0.1.35-backend.22` is deployed and contains the latest Admin CMS Validation & Preview readable UI fix and the Admin static asset cache busting/no-cache fix for `/admin` assets. The Admin CMS Validation & Preview area no longer shows raw JSON directly in the main result area. Validation renders a readable panel with Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON. Preview renders readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON. Admin static asset cache busting was added for `admin.js` and `admin.css` using token `admin-cms-20260613-raw-json-fix`, and no-cache headers were added for `/admin` static files only.
+Completed: backend `0.1.35-backend.23` is deployed and contains the latest Admin CMS Validation & Preview readable UI fix and the Admin static asset cache busting/no-cache fix for `/admin` assets. The Admin CMS Validation & Preview area no longer shows raw JSON directly in the main result area. Validation renders a readable panel with Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON. Preview renders readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON. Admin static asset cache busting was added for `admin.js` and `admin.css` using token `admin-cms-20260613-raw-json-fix`, and no-cache headers were added for `/admin` static files only.
 
 Completed: health and database health are green after deploy. `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. The build is green, the Admin shell audit is green, and the EF model check reports no pending model changes. No EF migration was required. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
@@ -67,7 +73,13 @@ Completed: CMS scenario edits are visible in the desktop app after the operator 
 
 Completed: CMS-managed A1, A2, B1, and B2 level behavior profiles are active and affect lesson behavior. A1 and B2 lessons differ as expected, and additional level polishing will continue later based on tester feedback.
 
-Fallback to packaged static JSON remains available for rollback/safety, but fallback should not be active during normal runtime status. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, and no warnings. Production RBAC and critical-change approval remain future work.
+Fallback to packaged static JSON remains available for rollback/safety, but fallback should not be active during normal runtime status. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, and no warnings. Production role management/RBAC and critical-change approval remain future work.
+
+## Admin roles/permissions foundation
+
+Current state: stable admin role constants exist for `super_admin`, `support_agent`, `content_manager`, `finance_admin`, and `readonly_analyst`. Stable permission constants exist for admin self/capabilities, users, audit, CMS, runtime status, subscriptions diagnostics, premium grant/revoke, free lesson allowance reset, billing diagnostics, and product statistics. Bootstrap admins map to `super_admin` and currently receive the full permission set.
+
+`/api/admin/me` now exposes `roles`, `permissions`, and `isBootstrapAdmin`. `/api/admin/capabilities` now exposes roles and permissions. `ProductionRolesAvailable` remains `false`. This is a foundation only: current behavior remains BootstrapAdmin-based, production role management is not enabled, endpoint-level per-role/per-permission enforcement is not implemented, and no UI role management exists yet. Do not claim production role management/RBAC is complete. See `docs/ADMIN_ROLES_PERMISSIONS_FOUNDATION.md`.
 
 ## Settings sync, device tracking, and product statistics
 
@@ -113,7 +125,7 @@ Billing/Paddle/subscription payment lifecycle remains deferred. Do not imply pro
 
 Current state: the project is preparing for controlled release / tester handoff. CMS readiness is now part of release preparation because practical content operations must work before broader handoff. Broad public production release is still not ready. Production billing remains deferred, and Paddle production readiness remains deferred.
 
-Not ready yet: do not claim broad public production readiness, production billing readiness, production RBAC readiness, critical-change approval readiness, full Admin CMS production readiness, mobile readiness, or learner CMS runtime default readiness.
+Not ready yet: do not claim broad public production readiness, production billing readiness, production role management/RBAC readiness, critical-change approval readiness, full Admin CMS production readiness, or mobile readiness.
 
 ## External tester readiness
 
@@ -129,17 +141,26 @@ Solved release blockers for the current private tester baseline:
 - the Welcome cover no longer shows gray letterbox bars;
 - the user-facing manual update check is implemented.
 
+Current verified tester/release summary:
+
+- clean-machine install from the public download works;
+- installed app launches correctly;
+- registration/login works and auth/session persists after restart;
+- interface language, native language, and study language selection work;
+- lesson start, translation, hints, bot voice/TTS, Conversation Mode, Lesson History, and Progress work;
+- CMS scenario edits and level profile edits are visible in newly started desktop lessons after **Save draft** plus **Publish**;
+- smaller Windows tablet / small-screen visual smoke passed for Welcome/start, primary actions, Settings, and lesson flow;
+- Russian and French Welcome/start header text no longer truncates or clips after the localized layout fix;
+- admin roles/permissions policy tests passed, the desktop release gate passed, and backend `0.1.35-backend.23` is deployed and healthy.
+
 Remaining realistic readiness items:
 
-1. Run a clean-machine smoke test of the current installer and public download flow.
-2. Run update-over-existing-install validation from old `EnglishVoiceTutor.Desktop.*` executable builds and confirm preserved auth/session data migrates to the current `LanguageVoiceTutor.Desktop` local-data path without losing login, settings, Lesson History, or Progress.
-3. Keep app restart/session restore and Windows restart/session restore in tester smoke.
-4. Run smaller-screen/scaled-display smoke.
-5. Hand off to a small controlled external tester group.
-6. Establish the feedback collection and triage process.
-7. Complete CMS practical readiness as a release gate: validate the deployed Admin CMS workflow, publish/restore safely, confirm audit traceability, and document controlled runtime-read flags and rollback before considering any learner runtime change.
-8. Finish production billing/payment lifecycle later.
-9. Add code signing later to reduce SmartScreen friction before broad distribution.
+1. Validate update-over-existing-install from old `EnglishVoiceTutor.Desktop.*` executable builds and confirm preserved auth/session data migrates to the current `LanguageVoiceTutor.Desktop` local-data path without losing login, settings, Lesson History, or Progress.
+2. Hand off to a small controlled external tester group.
+3. Establish the feedback collection and triage process.
+4. Triage known tester feedback without claiming it is solved: touch drag/hold can visually select multiple topic/subtopic items, some scenario/avatar dialogue can restart or repeat, short scenarios such as "Asking someone to repeat" need content polishing, bot voice autoplay can sometimes not play even when enabled, and occasional server-error feedback should stay in triage unless reproduced consistently.
+5. Finish production billing/payment lifecycle later.
+6. Add code signing later to reduce SmartScreen friction before broad distribution.
 
 Do not state that the product is fully public production-ready. The current state is a validated controlled tester/direct Windows release.
 
@@ -151,7 +172,7 @@ Completed: the backend has an admin-only, read-only CMS runtime content status d
 
 
 
-Current runtime-status result on deployed backend `0.1.35-backend.22` is clean: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. Learner runtime now uses the CMS published snapshot. The prior runtime-validation root cause was an obsolete hardcoded exact tutor behavior profile count of 2. Static JSON, CMS static import/draft construction, and desktop tutor avatar options all define the approved tutor ids `david`, `elena`, and `nelli`; the third profile is legitimate product content, not a smoke/test artifact. Runtime validation now derives the required tutor ids from the approved desktop avatar definitions and reports expected, actual, missing, unknown/extra, and duplicate tutor ids without exposing tutor instruction bodies. The `tools/smoke_cms_runtime_status.ps1` and `tools/validate_cms_published_snapshot_runtime.ps1` scripts default to the server-only backend `https://api.languagevoicetutor.com`; localhost must be passed explicitly only for approved local developer runs.
+Current runtime-status result on deployed backend `0.1.35-backend.23` is clean: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. Learner runtime now uses the CMS published snapshot. The prior runtime-validation root cause was an obsolete hardcoded exact tutor behavior profile count of 2. Static JSON, CMS static import/draft construction, and desktop tutor avatar options all define the approved tutor ids `david`, `elena`, and `nelli`; the third profile is legitimate product content, not a smoke/test artifact. Runtime validation now derives the required tutor ids from the approved desktop avatar definitions and reports expected, actual, missing, unknown/extra, and duplicate tutor ids without exposing tutor instruction bodies. The `tools/smoke_cms_runtime_status.ps1` and `tools/validate_cms_published_snapshot_runtime.ps1` scripts default to the server-only backend `https://api.languagevoicetutor.com`; localhost must be passed explicitly only for approved local developer runs.
 
 This diagnostic confirms the current runtime content source. Static JSON fallback remains available for safety and rollback, but it should not be active in normal runtime status now that CMS published snapshot runtime is active.
 
