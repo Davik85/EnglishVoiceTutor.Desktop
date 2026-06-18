@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>English Voice Tutor Admin</title>
-    <link rel="stylesheet" href="/admin/admin.css?v=admin-stats-device-language-fix-20260614" />
+    <link rel="stylesheet" href="/admin/admin.css?v=admin-roles-permissions-ui-20260618" />
 </head>
 <body>
     <main class="layout" aria-live="polite">
@@ -48,17 +48,15 @@
                                     <dt>Admin source</dt><dd id="admin-source">-</dd>
                                     <dt>Environment</dt><dd id="environment">-</dd>
                                     <dt>Checked timestamp</dt><dd id="checked-at">-</dd>
+                                    <dt>Bootstrap admin</dt><dd id="bootstrap-admin-status">-</dd>
+                                    <dt>Roles</dt><dd id="admin-roles-badges" class="badge-row">-</dd>
+                                    <dt>Permission count</dt><dd id="admin-permission-count">-</dd>
                                 </dl>
                             </article>
                             <article class="card">
                                 <h2>Available workflows</h2>
-                                <ul class="placeholder-list">
-                                    <li>User Lookup <span class="badge available">available</span></li>
-                                    <li>Premium Grant <span class="badge available">available</span></li>
-                                    <li>Premium Revoke <span class="badge available">available</span></li>
-                                    <li>Free Lesson Reset <span class="badge available">available</span></li>
-                                    <li>Audit Log <span class="badge available">read-only</span></li>
-                                </ul>
+                                <p class="muted">Informational only. Tabs, buttons, and backend calls are not blocked by this client-side view.</p>
+                                <ul id="workflow-availability-list" class="placeholder-list"></ul>
                             </article>
                         </div>
 
@@ -99,7 +97,19 @@
                             <p class="muted statistics-note">Tracked devices are authenticated coarse app/device records, not raw installer downloads. Active users are based on the last 30 days. Free users are inferred from recent activity without active trial or Premium.</p>
                         </article>
                         <article class="card">
-                            <p class="muted">Development bootstrap admin shell. Backend APIs remain the source of truth.</p>
+                            <h2>Roles and permissions</h2>
+                            <p class="muted"><strong>Production role management is not enabled yet. Current access is still BootstrapAdmin-based.</strong></p>
+                            <div class="access-section">
+                                <h3>Roles</h3>
+                                <div id="roles-permissions-roles" class="badge-row">-</div>
+                            </div>
+                            <div class="access-section">
+                                <h3>Permissions</h3>
+                                <div id="roles-permissions-list" class="permission-list compact-permission-list">-</div>
+                            </div>
+                        </article>
+                        <article class="card">
+                            <p class="muted">Development bootstrap admin shell. Backend APIs remain the source of truth. This UI does not enforce production RBAC.</p>
                         </article>
                     </div>
 
@@ -493,12 +503,12 @@
 
                     <div id="tab-panel-system" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-system">
                         <article class="card"><h2>Capabilities Check</h2><ul id="capabilities-list" class="capability-list"></ul></article>
-                        <article class="card"><h2>Future Sections / Deferred Scope</h2><ul class="placeholder-list"><li>Billing / Paddle <span class="badge unavailable">disabled</span></li><li>Production Roles <span class="badge unavailable">disabled</span></li><li>Mobile Store Bridge <span class="badge unavailable">disabled</span></li></ul></article>
+                        <article class="card"><h2>Future Sections / Deferred Scope</h2><ul class="placeholder-list"><li>productionRolesAvailable <span id="system-production-roles-available" class="badge unavailable">false</span></li><li>Billing / Paddle <span class="badge unavailable">unavailable / disabled</span></li><li>Production RBAC <span class="badge unavailable">deferred</span></li><li>Mobile Store Bridge <span class="badge unavailable">disabled</span></li></ul></article>
                     </div>
                 </section>
             </div>
         </section>
     </main>
-    <script src="/admin/admin.js?v=admin-stats-device-language-fix-20260614"></script>
+    <script src="/admin/admin.js?v=admin-roles-permissions-ui-20260618"></script>
 </body>
 </html>

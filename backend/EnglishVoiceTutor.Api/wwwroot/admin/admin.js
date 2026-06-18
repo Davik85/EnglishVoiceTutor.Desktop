@@ -2,6 +2,7 @@
     const ApiPaths = {
         login: "/api/auth/login",
         adminSession: "/api/admin/session",
+        adminMe: "/api/admin/me",
         capabilities: "/api/admin/capabilities",
         statisticsOverview: "/api/admin/statistics/overview",
         userLookupByEmail: "/api/admin/users/by-email",
@@ -63,6 +64,34 @@
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
     const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", system: "system" });
+    const AdminPermissionIds = Object.freeze({
+        usersRead: "users.read",
+        usersDiagnosticsRead: "users.diagnostics.read",
+        premiumGrant: "premium.grant",
+        premiumRevoke: "premium.revoke",
+        freeLessonAllowanceReset: "free_lesson_allowance.reset",
+        auditRead: "audit.read",
+        cmsContentRead: "cms.content.read",
+        cmsContentWriteDraft: "cms.content.write_draft",
+        cmsContentPublish: "cms.content.publish",
+        cmsContentRestore: "cms.content.restore",
+        cmsRuntimeStatusRead: "cms.runtime_status.read",
+        productStatisticsRead: "product_statistics.read"
+    });
+    const WorkflowAvailabilityDefinitions = Object.freeze([
+        { label: "User Lookup", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.usersRead, AdminPermissionIds.usersDiagnosticsRead] },
+        { label: "Premium Grant", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.premiumGrant] },
+        { label: "Premium Revoke", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.premiumRevoke] },
+        { label: "Free Lesson Reset", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.freeLessonAllowanceReset] },
+        { label: "Audit Log", statusWhenAvailable: "read-only / available", anyPermissions: [AdminPermissionIds.auditRead] },
+        { label: "CMS Content", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsContentRead] },
+        { label: "CMS Draft Editing", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsContentWriteDraft] },
+        { label: "CMS Publish", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsContentPublish] },
+        { label: "CMS Restore", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsContentRestore] },
+        { label: "Runtime Status", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsRuntimeStatusRead] },
+        { label: "Product Statistics", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.productStatisticsRead] }
+    ]);
+
     const CmsSubTabs = Object.freeze({ overview: "overview", topics: "topics", scenarios: "scenarios", levels: "levels", prompts: "prompts", tutors: "tutors", validationPreview: "validation-preview", versionsPublish: "versions-publish", audit: "audit" });
     const LookupSources = Object.freeze({ userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson" });
     let accessToken = null;
@@ -84,6 +113,7 @@
     let restoringCmsSelection = false;
     let cmsDraftSavedInSession = false;
     let cmsDraftLikelyHasChangesInSession = false;
+    let adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" };
     const CmsDefaultLevelProfiles = [
         { stableLevelKey: "a1", displayName: "A1 Beginner", isActive: true, sortOrder: 1, wrapUpAfterUserTurn: 10, finalMessageAtUserTurn: 15, botLanguageComplexityGuidance: "Use simple short sentences, simple words, and one question at a time. Give more support.", correctionGuidance: "Correct one important mistake gently and give a short model answer.", answerLengthGuidance: "Use 1-2 short sentences.", adminNotes: "Default required A1 level profile." },
         { stableLevelKey: "a2", displayName: "A2 Elementary", isActive: true, sortOrder: 2, wrapUpAfterUserTurn: 14, finalMessageAtUserTurn: 20, botLanguageComplexityGuidance: "Use simple but slightly more varied language. Ask one clear question at a time.", correctionGuidance: "Correct lightly with short examples.", answerLengthGuidance: "Use 1-3 short sentences.", adminNotes: "Default required A2 level profile." },
@@ -104,6 +134,13 @@
     const environmentElement = document.getElementById("environment");
     const checkedAtElement = document.getElementById("checked-at");
     const capabilitiesListElement = document.getElementById("capabilities-list");
+    const bootstrapAdminStatusElement = document.getElementById("bootstrap-admin-status");
+    const adminRolesBadgesElement = document.getElementById("admin-roles-badges");
+    const adminPermissionCountElement = document.getElementById("admin-permission-count");
+    const workflowAvailabilityListElement = document.getElementById("workflow-availability-list");
+    const rolesPermissionsRolesElement = document.getElementById("roles-permissions-roles");
+    const rolesPermissionsListElement = document.getElementById("roles-permissions-list");
+    const systemProductionRolesAvailableElement = document.getElementById("system-production-roles-available");
     const refreshStatisticsButton = document.getElementById("refresh-statistics-button");
     const statisticsLoadingElement = document.getElementById("statistics-loading");
     const statisticsErrorElement = document.getElementById("statistics-error");
@@ -706,7 +743,7 @@
     const getSelectedAuditLimit = () => [10, 25, 50, 100].includes(Number.parseInt(auditLimitElement.value, 10)) ? Number.parseInt(auditLimitElement.value, 10) : 10;
 
     function resetDashboard() {
-        adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; capabilitiesListElement.textContent = "";
+        adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" }; adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; bootstrapAdminStatusElement.textContent = "-"; adminPermissionCountElement.textContent = "-"; capabilitiesListElement.textContent = ""; renderBadges(adminRolesBadgesElement, []); renderBadges(rolesPermissionsRolesElement, []); renderPermissionList(rolesPermissionsListElement, []); workflowAvailabilityListElement.textContent = ""; systemProductionRolesAvailableElement.textContent = "false"; systemProductionRolesAvailableElement.className = "badge unavailable";
         setLookupError(""); setLookupLoading(false); setLookupSourceLoading(LookupSources.premium, false); setLookupSourceLoading(LookupSources.freeLesson, false); clearLookupErrors(); clearUserLookupResult(); lookupForm.reset(); premiumLookupForm.reset(); freeLessonLookupForm.reset(); clearSelectedUserState();
         setGrantVisible(false); setRevokeVisible(false); setFreeLessonResetVisible(false); clearGrantState(); clearRevokeState(); clearFreeLessonResetState(); grantForm.reset(); revokeForm.reset(); freeLessonResetForm.reset(); clearAuditLog(); clearAllCmsDirtyState();
     }
@@ -2011,17 +2048,94 @@
         clearAdminHash();
     }
 
-    async function loadAdminCapabilities() {
-        const capabilitiesResponse = await fetch(ApiPaths.capabilities, { method: "GET", headers: getAdminHeaders() });
-        if (capabilitiesResponse.status === HttpStatus.unauthorized || capabilitiesResponse.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+
+    function normalizeStringList(value) {
+        return Array.isArray(value) ? value.map((item) => String(item || "").trim()).filter(Boolean) : [];
+    }
+
+    function renderBadges(container, values, emptyText = "-") {
+        container.textContent = "";
+        if (!Array.isArray(values) || values.length === 0) { container.textContent = emptyText; return; }
+        values.forEach((value) => {
+            const badge = document.createElement("span");
+            badge.className = "badge neutral";
+            badge.textContent = value;
+            container.appendChild(badge);
+        });
+    }
+
+    function renderPermissionList(container, permissions) {
+        container.textContent = "";
+        if (!Array.isArray(permissions) || permissions.length === 0) { container.textContent = "-"; return; }
+        permissions.forEach((permission) => {
+            const item = document.createElement("span");
+            item.className = "permission-chip";
+            item.textContent = permission;
+            container.appendChild(item);
+        });
+    }
+
+    function renderWorkflowAvailability() {
+        const permissionSet = new Set(adminAccessSnapshot.permissions);
+        workflowAvailabilityListElement.textContent = "";
+        WorkflowAvailabilityDefinitions.forEach((workflow) => {
+            const isAvailable = workflow.anyPermissions.some((permissionId) => permissionSet.has(permissionId));
+            const item = document.createElement("li");
+            const label = document.createElement("span");
+            label.textContent = workflow.label;
+            const badge = document.createElement("span");
+            badge.className = `badge ${isAvailable ? "available" : "unavailable"}`;
+            badge.textContent = isAvailable ? workflow.statusWhenAvailable : "not listed";
+            item.append(label, badge);
+            workflowAvailabilityListElement.appendChild(item);
+        });
+    }
+
+    function renderAdminAccessSnapshot() {
+        adminSourceElement.textContent = adminAccessSnapshot.adminSource || "-";
+        environmentElement.textContent = adminAccessSnapshot.environment || "-";
+        checkedAtElement.textContent = adminAccessSnapshot.checkedAtUtc || "-";
+        bootstrapAdminStatusElement.textContent = adminAccessSnapshot.isBootstrapAdmin ? "Yes" : "No";
+        adminPermissionCountElement.textContent = String(adminAccessSnapshot.permissions.length);
+        renderBadges(adminRolesBadgesElement, adminAccessSnapshot.roles);
+        renderBadges(rolesPermissionsRolesElement, adminAccessSnapshot.roles);
+        renderPermissionList(rolesPermissionsListElement, adminAccessSnapshot.permissions);
+        renderWorkflowAvailability();
+        systemProductionRolesAvailableElement.textContent = String(Boolean(adminAccessSnapshot.productionRolesAvailable));
+        systemProductionRolesAvailableElement.className = `badge ${adminAccessSnapshot.productionRolesAvailable ? "available" : "unavailable"}`;
+    }
+
+    async function loadAdminAccessSnapshot() {
+        const [meResponse, capabilitiesResponse] = await Promise.all([
+            fetch(ApiPaths.adminMe, { method: "GET", headers: getAdminHeaders() }),
+            fetch(ApiPaths.capabilities, { method: "GET", headers: getAdminHeaders() })
+        ]);
+        [meResponse, capabilitiesResponse].forEach((response) => {
+            if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+        });
+        if (!meResponse.ok) { throw new Error("Unable to load admin profile."); }
         if (!capabilitiesResponse.ok) { throw new Error("Unable to load admin capabilities."); }
+        const mePayload = await meResponse.json();
         const capabilitiesPayload = await capabilitiesResponse.json();
-        adminSourceElement.textContent = capabilitiesPayload.adminSource || "-";
-        environmentElement.textContent = capabilitiesPayload.environment || "-";
-        checkedAtElement.textContent = capabilitiesPayload.checkedAtUtc || "-";
+        const roles = normalizeStringList(mePayload.roles).length > 0 ? normalizeStringList(mePayload.roles) : normalizeStringList(capabilitiesPayload.roles);
+        const permissions = normalizeStringList(mePayload.permissions).length > 0 ? normalizeStringList(mePayload.permissions) : normalizeStringList(capabilitiesPayload.permissions);
+        adminAccessSnapshot = {
+            roles,
+            permissions,
+            isBootstrapAdmin: Boolean(mePayload.isBootstrapAdmin),
+            productionRolesAvailable: Boolean(capabilitiesPayload.productionRolesAvailable || capabilitiesPayload.capabilities?.productionRolesAvailable),
+            adminSource: mePayload.adminSource || capabilitiesPayload.adminSource || "",
+            environment: capabilitiesPayload.environment || "",
+            checkedAtUtc: mePayload.checkedAtUtc || capabilitiesPayload.checkedAtUtc || ""
+        };
+        renderAdminAccessSnapshot();
+        renderCapabilitiesList(capabilitiesPayload.capabilities || {});
+    }
+
+    function renderCapabilitiesList(capabilities) {
         capabilitiesListElement.textContent = "";
-        Object.keys(capabilitiesPayload.capabilities || {}).forEach((key) => {
-            const value = Boolean(capabilitiesPayload.capabilities[key]);
+        Object.keys(capabilities || {}).forEach((key) => {
+            const value = Boolean(capabilities[key]);
             const item = document.createElement("li");
             item.textContent = key;
             const badge = document.createElement("span");
@@ -2031,6 +2145,11 @@
             capabilitiesListElement.appendChild(item);
         });
     }
+
+    async function loadAdminCapabilities() {
+        await loadAdminAccessSnapshot();
+    }
+
 
 
     function setStatisticsLoading(isLoading) {

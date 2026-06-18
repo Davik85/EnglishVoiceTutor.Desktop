@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Static policy checks for Admin Shell roles/permissions UI awareness."""
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+ADMIN_JS = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js"
+ADMIN_HTML = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/index.html"
+
+
+def read(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def assert_contains(text: str, needle: str, label: str) -> None:
+    if needle not in text:
+        raise AssertionError(f"Missing {label}: {needle}")
+
+
+def assert_not_contains(text: str, needle: str, label: str) -> None:
+    if needle in text:
+        raise AssertionError(f"Unexpected {label}: {needle}")
+
+
+def main() -> None:
+    admin_js = read(ADMIN_JS)
+    admin_html = read(ADMIN_HTML)
+    combined = admin_js + "\n" + admin_html
+
+    assert_contains(admin_js, 'adminMe: "/api/admin/me"', "Admin Shell /api/admin/me path")
+    assert_contains(admin_js, "roles", "roles storage/rendering")
+    assert_contains(admin_js, "permissions", "permissions storage/rendering")
+    assert_contains(admin_js, "isBootstrapAdmin", "BootstrapAdmin state")
+    assert_contains(admin_js, "productionRolesAvailable", "production roles availability state")
+
+    for permission_id in [
+        "users.read",
+        "premium.grant",
+        "cms.content.read",
+        "cms.content.publish",
+        "cms.runtime_status.read",
+        "product_statistics.read",
+    ]:
+        assert_contains(admin_js, permission_id, f"workflow permission id {permission_id}")
+
+    assert_contains(combined, "Production role management is not enabled yet", "production role management deferred wording")
+    assert_contains(combined, "BootstrapAdmin-based", "BootstrapAdmin-based access wording")
+    assert_contains(combined, "Production RBAC", "production RBAC deferred wording")
+
+    # This UI-awareness step must remain informational: do not gate tabs, buttons, or fetches on permission checks.
+    assert_not_contains(admin_js, "hasPermission", "client-side permission enforcement helper")
+    assert_contains(admin_js, "renderWorkflowAvailability", "informational workflow permission rendering")
+    assert_not_contains(admin_js, "tabButtons.filter", "tab hiding based on permissions")
+    assert_not_contains(admin_js, "data-permission", "permission-bound UI controls")
+
+    # Billing/Paddle production readiness must remain unavailable/deferred.
+    assert_not_contains(combined, "PaddleCheckoutAvailable = true", "Paddle checkout production enablement")
+    assert_not_contains(combined, "PaddleWebhooksAvailable = true", "Paddle webhook production enablement")
+    assert_not_contains(combined, "billing/Paddle production", "billing/Paddle production enablement wording")
+
+    print("Admin roles/permissions UI policy checks passed.")
+
+
+if __name__ == "__main__":
+    main()
