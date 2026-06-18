@@ -248,3 +248,17 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
   .statistics-grid { grid-template-columns: 1fr; }
   .statistics-distributions { grid-template-columns: 1fr; }
 }
+
+.badge-row { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; }
+.badge.neutral { background: #e0f2fe; color: #075985; text-transform: none; }
+.access-section { border-top: 1px solid #e5e7eb; margin-top: 14px; padding-top: 12px; }
+.access-section h3 { font-size: 16px; margin: 0 0 8px; }
+.permission-list { align-items: center; display: flex; flex-wrap: wrap; gap: 6px; }
+.permission-chip { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 999px; color: #334155; display: inline-block; font-family: Consolas, Monaco, monospace; font-size: 12px; padding: 4px 8px; }
+.compact-permission-list { max-height: 180px; overflow: auto; padding-right: 4px; }
+
+@media (max-width: 720px) {
+  .meta { grid-template-columns: 1fr; }
+  .meta dd { margin: 0 0 8px; }
+  .capability-list li, .placeholder-list li { align-items: flex-start; flex-direction: column; gap: 6px; }
+}
