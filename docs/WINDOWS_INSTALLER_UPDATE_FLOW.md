@@ -1,6 +1,6 @@
 # Windows installer and manual update flow
 
-Review date: 2026-06-17.
+Review date: 2026-06-18.
 
 ## Source of truth for current versions
 
@@ -31,7 +31,7 @@ Inno Setup is the primary Windows direct-download installer foundation for Langu
 
 ## Current update status
 
-The public tester Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-0.1.36-tester.15.exe`, uses `version: 0.1.36-tester.15`, keeps `minimumSupportedVersion` at `0.1.36-tester.15`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. Future local builds are not public/live unless the live website manifest points to them.
+The public tester Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-0.1.36-tester.16.exe`, uses `version: 0.1.36-tester.16`, keeps `minimumSupportedVersion` at `0.1.36-tester.16`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. Future local builds are not public/live unless the live website manifest points to them.
 
 The desktop release UX has a simple user-facing **Check for updates** button in Settings. The old technical update dashboard in Diagnostics is not part of release UX. Release Settings must not expose Diagnostics or Backend URL editing.
 

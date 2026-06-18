@@ -21,10 +21,10 @@ ALL_MARKDOWN = [ROOT / "README.md", *sorted((ROOT / "docs").glob("*.md"))]
 LATEST_JSON_COMMAND = "Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json"
 BACKEND_SYMLINK_COMMAND = 'ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"'
 PROD_BACKEND_URL = "https://api.languagevoicetutor.com"
-CURRENT_TESTER_RELEASE = "0.1.36-tester.15"
-CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-0.1.36-tester.15.exe"
-CURRENT_BACKEND_RELEASE = "0.1.35-backend.23"
-PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.22"
+CURRENT_TESTER_RELEASE = "0.1.36-tester.16"
+CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-0.1.36-tester.16.exe"
+CURRENT_BACKEND_RELEASE = "0.1.35-backend.24"
+PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.23"
 STALE_TESTER_RELEASES = ["0.1.35-tester.1", "0.1.36-tester.2", "0.1.36-tester.3"]
 DEFERRED_ITEMS = [
     "Code signing remains deferred",

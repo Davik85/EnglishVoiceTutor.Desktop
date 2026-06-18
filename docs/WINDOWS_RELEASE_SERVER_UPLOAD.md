@@ -1,6 +1,6 @@
 # Windows release server upload
 
-Review date: 2026-06-17.
+Review date: 2026-06-18.
 
 ## Source of truth for current versions
 
@@ -35,7 +35,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Current uploaded release
 
-The live public tester Windows direct manifest baseline must be checked from the website `latest.json`; it is always the source of truth. Last verified public snapshot: the public tester download path resolved through `latest.json` to `LanguageVoiceTutorSetup-0.1.36-tester.15.exe`. `0.1.36-tester.15` is the current verified uploaded tester build, but still verify the website `latest.json` over HTTPS before announcing it to testers.
+The live public tester Windows direct manifest baseline must be checked from the website `latest.json`; it is always the source of truth. Last verified public snapshot: the public tester download path resolved through `latest.json` to `LanguageVoiceTutorSetup-0.1.36-tester.16.exe`. `0.1.36-tester.16` is the current verified uploaded tester build (previous tester release: `0.1.36-tester.15`), but still verify the website `latest.json` over HTTPS before announcing it to testers.
 
 The current manifest is served from:
 
@@ -46,10 +46,10 @@ https://languagevoicetutor.com/releases/windows/direct/latest.json
 The current manifest values are:
 
 ```text
-version: 0.1.36-tester.15
-installerFileName: LanguageVoiceTutorSetup-0.1.36-tester.15.exe
+version: 0.1.36-tester.16
+installerFileName: LanguageVoiceTutorSetup-0.1.36-tester.16.exe
 backendBaseUrl: https://api.languagevoicetutor.com
-minimumSupportedVersion: 0.1.36-tester.15
+minimumSupportedVersion: 0.1.36-tester.16
 updateMode: manual-confirmation
 ```
 
