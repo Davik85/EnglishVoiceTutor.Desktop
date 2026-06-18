@@ -17,6 +17,10 @@ public sealed class SubscriptionStatusResponse
     public bool CancelAtPeriodEnd { get; set; }
     public string? ScheduledChangeAction { get; set; }
     public DateTimeOffset? ScheduledChangeEffectiveAtUtc { get; set; }
+    public bool HasActivePaidProviderSubscription { get; set; }
+    public bool HasFuturePremiumEntitlement { get; set; }
+    public DateTimeOffset? FuturePremiumStartsAtUtc { get; set; }
+    public DateTimeOffset? FuturePremiumExpiresAtUtc { get; set; }
     public bool FreeLessonUsedToday { get; set; }
     public int FreeLessonRemainingToday { get; set; } = SubscriptionConstants.FreeLessonsPerDay;
     public string FreeLessonConsumptionRule { get; set; } = SubscriptionConstants.FreeLessonConsumptionRule;

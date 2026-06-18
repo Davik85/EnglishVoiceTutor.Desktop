@@ -45,6 +45,7 @@ public static class BackendConstants
     public const string MeSubscriptionStatusEndpoint = "/api/me/subscription-status";
     public const string MeTrialClaimEndpoint = "/api/me/trial/claim";
     public const string MeBillingCheckoutSessionEndpoint = "/api/me/billing/checkout-session";
+    public const string MeBillingSubscriptionCancelEndpoint = "/api/me/billing/subscription/cancel";
     public const string DevLessonAccessEndpoint = "/api/dev/lesson-access";
     public const string MeLessonAccessEndpoint = "/api/me/lesson-access";
     public const string DevLessonSessionsEndpoint = "/api/dev/lesson-sessions";

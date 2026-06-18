@@ -402,3 +402,13 @@ Deferred scope / next roadmap:
 - Admin UI was not changed.
 - Desktop UI is outside this documentation update; the current desktop upgrade/paywall flow exists for sandbox validation and remains backend-driven.
 - Latest payment persistence schema migration is `20260529000000_AddPaddlePaymentPersistenceV1`; latest overall confirmed EF migration is `20260604121000_AddCmsDraftSaveAuditMetadata`.
+
+## Desktop Premium billing controls
+
+The desktop Account subscription area can start a Premium purchase by calling the authenticated backend checkout-session endpoint with the `premium` plan. The desktop app opens the backend-hosted Paddle checkout URL in the user's browser and does not call Paddle directly or store Paddle API keys, price ids, webhook secrets, or other private billing secrets.
+
+Checkout creation is not Premium activation. Premium access remains backend-owned and becomes active only from backend entitlement state after Paddle webhook processing.
+
+The desktop Account subscription area can also request renewal cancellation through the authenticated backend current-user billing endpoint. The backend uses its own subscription snapshot to find the user's Paddle subscription id; the desktop never sends an arbitrary provider subscription id. Cancellation schedules cancel-at-period-end/next-billing-period behavior and does not revoke existing paid Premium entitlements directly. Existing paid Premium access remains available until the entitlement expires or until a future provider lifecycle/refund feature changes that state.
+
+Cancellation state is reflected through subscription snapshot fields such as `CancelAtPeriodEnd`, `ScheduledChangeAction`, `ScheduledChangeEffectiveAtUtc`, and `CurrentPeriodEndUtc` in the current-user subscription status response. Sandbox validation of checkout and webhook activation remains controlled tester validation and is not a broad production/live Paddle readiness claim.

@@ -161,3 +161,9 @@ CMS published snapshot is the active runtime source. The diagnostic confirms run
 ## CMS tutor display name verification
 
 When changing a tutor Display name in Admin CMS, use Save draft + Publish and then start a new desktop lesson to verify the lesson chat bubble uses the CMS-published display name. Keep the stable tutor/avatar IDs (`elena`, `nelli`, `david`) unchanged because avatar image selection continues to use those IDs rather than display names.
+
+## Premium billing follow-up
+
+- Continue validating the desktop Buy Premium and cancel-renewal flows against the sandbox backend.
+- Verify webhook-driven entitlement activation and cancel-at-period-end subscription snapshots before any production/live Paddle launch decision.
+- Do not add refund/reversal handling or Paddle customer portal flows until those backend-owned lifecycle policies are explicitly designed.
