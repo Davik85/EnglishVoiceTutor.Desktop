@@ -228,7 +228,7 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             cancellationToken);
 
         var entitlementChanged = false;
-        var effectiveExpiresAtUtc = schedule.ExpiresAtUtc;
+        DateTimeOffset? effectiveExpiresAtUtc = schedule.ExpiresAtUtc;
 
         if (entitlement is null)
         {
