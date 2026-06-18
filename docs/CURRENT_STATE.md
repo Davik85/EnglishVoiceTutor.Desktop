@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-06-17.
+Review date: 2026-06-18.
 
 ## Source of truth for current versions
 
@@ -35,9 +35,9 @@ Generated local files under `artifacts/`, including `latest.json`, `changelog.js
 
 ## Current tester Windows direct release
 
-The public website `latest.json` remains the public source of truth for the live Windows direct tester release. Last verified snapshot: it pointed to `LanguageVoiceTutorSetup-0.1.36-tester.15.exe`, set `version` and `minimumSupportedVersion` to `0.1.36-tester.15`, set `backendBaseUrl` to `https://api.languagevoicetutor.com`, and used `updateMode: manual-confirmation`. This matches the installed tester/release backend lock.
+The public website `latest.json` remains the public source of truth for the live Windows direct tester release. Last verified snapshot: it pointed to `LanguageVoiceTutorSetup-0.1.36-tester.16.exe`, set `version` and `minimumSupportedVersion` to `0.1.36-tester.16`, set `backendBaseUrl` to `https://api.languagevoicetutor.com`, and used `updateMode: manual-confirmation`. This matches the installed tester/release backend lock.
 
-`0.1.36-tester.15` is the current uploaded Windows tester build in the public direct Windows release folder. Continue to verify the HTTPS `latest.json` before handoff. This remains a controlled tester/direct Windows release, not a broad public production launch.
+`0.1.36-tester.16` is the current uploaded Windows tester build in the public direct Windows release folder. The previous tester release was `0.1.36-tester.15`. Continue to verify the HTTPS `latest.json` before handoff. This remains a controlled tester/direct Windows release, not a broad public production launch.
 
 ## Release backend lock (server-only installed builds)
 
@@ -47,9 +47,9 @@ Clean-machine smoke must verify registration/login/lesson/history/progress/updat
 
 ## Current production backend state
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22`.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.24`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23`.
 
-Completed: backend `0.1.35-backend.23` is deployed and contains the latest Admin CMS Validation & Preview readable UI fix and the Admin static asset cache busting/no-cache fix for `/admin` assets. The Admin CMS Validation & Preview area no longer shows raw JSON directly in the main result area. Validation renders a readable panel with Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON. Preview renders readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON. Admin static asset cache busting was added for `admin.js` and `admin.css` using token `admin-cms-20260613-raw-json-fix`, and no-cache headers were added for `/admin` static files only.
+Completed: backend `0.1.35-backend.24` is deployed and contains the latest Admin CMS Validation & Preview readable UI fix and the Admin static asset cache busting/no-cache fix for `/admin` assets. The Admin CMS Validation & Preview area no longer shows raw JSON directly in the main result area. Validation renders a readable panel with Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON. Preview renders readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON. Admin static asset cache busting was added for `admin.js` and `admin.css` using token `admin-cms-20260613-raw-json-fix`, and no-cache headers were added for `/admin` static files only.
 
 Completed: health and database health are green after deploy. `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. The build is green, the Admin shell audit is green, and the EF model check reports no pending model changes. No EF migration was required. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
@@ -79,7 +79,9 @@ Fallback to packaged static JSON remains available for rollback/safety, but fall
 
 Current state: stable admin role constants exist for `super_admin`, `support_agent`, `content_manager`, `finance_admin`, and `readonly_analyst`. Stable permission constants exist for admin self/capabilities, users, audit, CMS, runtime status, subscriptions diagnostics, premium grant/revoke, free lesson allowance reset, billing diagnostics, and product statistics. Bootstrap admins map to `super_admin` and currently receive the full permission set.
 
-`/api/admin/me` now exposes `roles`, `permissions`, and `isBootstrapAdmin`. `/api/admin/capabilities` now exposes roles and permissions. `ProductionRolesAvailable` remains `false`. This is a foundation only: current behavior remains BootstrapAdmin-based, production role management is not enabled, endpoint-level per-role/per-permission enforcement is not implemented, and no UI role management exists yet. Do not claim production role management/RBAC is complete. See `docs/ADMIN_ROLES_PERMISSIONS_FOUNDATION.md`.
+Admin Shell roles/permissions UI-awareness is completed. The Admin Shell loads `/api/admin/me` and `/api/admin/capabilities`; Overview shows admin source, environment, checked timestamp, Bootstrap admin status, role badges, permission count, and a Roles and permissions card. Available workflows are rendered from permissions informationally only. Tabs, buttons, and backend calls are not blocked by the client-side permission view. The System tab shows `productionRolesAvailable=false` and keeps Billing/Paddle unavailable/deferred.
+
+`/api/admin/me` now exposes `roles`, `permissions`, and `isBootstrapAdmin`. `/api/admin/capabilities` now exposes roles and permissions. `ProductionRolesAvailable` remains `false`. This is a foundation/UI-awareness milestone only: current behavior remains BootstrapAdmin-based, production role management is not enabled, endpoint-level per-role/per-permission enforcement is not implemented, and no UI role management exists yet. Do not claim production role management/RBAC is complete. See `docs/ADMIN_ROLES_PERMISSIONS_FOUNDATION.md`.
 
 ## Settings sync, device tracking, and product statistics
 
@@ -151,7 +153,7 @@ Current verified tester/release summary:
 - CMS scenario edits and level profile edits are visible in newly started desktop lessons after **Save draft** plus **Publish**;
 - smaller Windows tablet / small-screen visual smoke passed for Welcome/start, primary actions, Settings, and lesson flow;
 - Russian and French Welcome/start header text no longer truncates or clips after the localized layout fix;
-- admin roles/permissions policy tests passed, the desktop release gate passed, and backend `0.1.35-backend.23` is deployed and healthy.
+- admin roles/permissions policy and UI policy tests passed, the desktop release gate passed, and backend `0.1.35-backend.24` is deployed and healthy.
 
 Remaining realistic readiness items:
 
@@ -172,7 +174,7 @@ Completed: the backend has an admin-only, read-only CMS runtime content status d
 
 
 
-Current runtime-status result on deployed backend `0.1.35-backend.23` is clean: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. Learner runtime now uses the CMS published snapshot. The prior runtime-validation root cause was an obsolete hardcoded exact tutor behavior profile count of 2. Static JSON, CMS static import/draft construction, and desktop tutor avatar options all define the approved tutor ids `david`, `elena`, and `nelli`; the third profile is legitimate product content, not a smoke/test artifact. Runtime validation now derives the required tutor ids from the approved desktop avatar definitions and reports expected, actual, missing, unknown/extra, and duplicate tutor ids without exposing tutor instruction bodies. The `tools/smoke_cms_runtime_status.ps1` and `tools/validate_cms_published_snapshot_runtime.ps1` scripts default to the server-only backend `https://api.languagevoicetutor.com`; localhost must be passed explicitly only for approved local developer runs.
+Current runtime-status result on deployed backend `0.1.35-backend.24` is clean: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. Learner runtime now uses the CMS published snapshot. The prior runtime-validation root cause was an obsolete hardcoded exact tutor behavior profile count of 2. Static JSON, CMS static import/draft construction, and desktop tutor avatar options all define the approved tutor ids `david`, `elena`, and `nelli`; the third profile is legitimate product content, not a smoke/test artifact. Runtime validation now derives the required tutor ids from the approved desktop avatar definitions and reports expected, actual, missing, unknown/extra, and duplicate tutor ids without exposing tutor instruction bodies. The `tools/smoke_cms_runtime_status.ps1` and `tools/validate_cms_published_snapshot_runtime.ps1` scripts default to the server-only backend `https://api.languagevoicetutor.com`; localhost must be passed explicitly only for approved local developer runs.
 
 This diagnostic confirms the current runtime content source. Static JSON fallback remains available for safety and rollback, but it should not be active in normal runtime status now that CMS published snapshot runtime is active.
 

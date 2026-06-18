@@ -1,6 +1,6 @@
 # Tester release workflow
 
-Review date: 2026-06-17.
+Review date: 2026-06-18.
 
 ## Source of truth for current versions
 
@@ -35,9 +35,9 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Current approval status
 
-The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.36-tester.15.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.36-tester.15`, and `updateMode` set to `manual-confirmation`.
+The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.36-tester.16.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.36-tester.16`, and `updateMode` set to `manual-confirmation`.
 
-`0.1.36-tester.15` is the intended live/direct tester release, but it must still be verified from the website `latest.json` over HTTPS before telling testers it is current. This remains a private tester/direct Windows release channel. It approves only the live manifest package as the private tester build and does not mean the product is fully public production-ready.
+`0.1.36-tester.16` is the intended live/direct tester release (previous tester release: `0.1.36-tester.15`), but it must still be verified from the website `latest.json` over HTTPS before telling testers it is current. This remains a private tester/direct Windows release channel. It approves only the live manifest package as the private tester build and does not mean the product is fully public production-ready.
 
 ## Release artifact boundary
 
@@ -45,9 +45,9 @@ The public tester Windows direct manifest baseline must be checked from the live
 
 ## Current production backend state
 
-Latest known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23` is active, and `/opt/languagevoicetutor/backend/current` points to that release; verify the live value from the server symlink before calling it current. Backend `0.1.35-backend.23` includes the release-hardening fixes for settings native-language sync, aggregate-only Admin Product Statistics language/device semantics, and privacy-safe tracked-device identity. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.22`.
+Latest known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.24` is active, and `/opt/languagevoicetutor/backend/current` points to that release; verify the live value from the server symlink before calling it current. Backend `0.1.35-backend.24` includes the release-hardening fixes for settings native-language sync, aggregate-only Admin Product Statistics language/device semantics, and privacy-safe tracked-device identity. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23`.
 
-`https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. The backend service started successfully after the `0.1.35-backend.23` deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
+`https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. The backend service started successfully after the `0.1.35-backend.24` deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
 ## Backend URL profile
 
@@ -79,7 +79,7 @@ Raw passwords are not stored. Auth/session data is protected under the current u
 
 ## Latest verified smoke summary
 
-Clean-machine smoke passed: public download install works, installed app launches, registration/login works, auth/session persists after restart, interface/native/study language selection works, lesson start works, translation works, hints work, bot voice/TTS works, Conversation Mode works, and Lesson History/Progress update. CMS scenario edits and level profile edits are visible in the desktop app after **Save draft** plus **Publish**. Smaller Windows tablet / small-screen visual smoke passed for Welcome/start, primary actions, Settings, and lesson flow. Russian and French Welcome/start header text no longer truncates/clips after the localized layout fix. Admin roles/permissions policy test passed, the desktop release gate passed, and backend `0.1.35-backend.23` is deployed and healthy.
+Clean-machine smoke passed: public download install works, installed app launches, registration/login works, auth/session persists after restart, interface/native/study language selection works, lesson start works, translation works, hints work, bot voice/TTS works, Conversation Mode works, and Lesson History/Progress update. CMS scenario edits and level profile edits are visible in the desktop app after **Save draft** plus **Publish**. Smaller Windows tablet / small-screen visual smoke passed for Welcome/start, primary actions, Settings, and lesson flow. Russian and French Welcome/start header text no longer truncates/clips after the localized layout fix. Admin roles/permissions policy and UI policy tests passed, the desktop release gate passed, and backend `0.1.35-backend.24` is deployed and healthy.
 
 ## Manual update flow
 
