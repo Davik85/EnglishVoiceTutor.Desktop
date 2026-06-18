@@ -214,13 +214,21 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             return ActivationEventOutcome.Blocked();
         }
 
-        var entitlement = await FindCurrentProviderEventEntitlementAsync(
+        var entitlement = await FindCurrentOrScheduledProviderEventEntitlementAsync(
             validation.InternalUserId!.Value,
             nowUtc,
             cancellationToken);
 
+        var schedule = await CalculateStackedProviderEntitlementScheduleAsync(
+            validation.InternalUserId.Value,
+            validation.BillingPeriodStartsAtUtc,
+            validation.BillingPeriodEndsAtUtc!.Value,
+            entitlement,
+            nowUtc,
+            cancellationToken);
+
         var entitlementChanged = false;
-        var effectiveExpiresAtUtc = validation.BillingPeriodEndsAtUtc;
+        DateTimeOffset? effectiveExpiresAtUtc = schedule.ExpiresAtUtc;
 
         if (entitlement is null)
         {
@@ -233,8 +241,8 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
                 EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType,
                 Source = SubscriptionConstants.Entitlements.SourceProviderEvent,
                 Status = SubscriptionConstants.Entitlements.StatusActive,
-                StartsAtUtc = validation.BillingPeriodStartsAtUtc ?? nowUtc,
-                ExpiresAtUtc = validation.BillingPeriodEndsAtUtc,
+                StartsAtUtc = schedule.StartsAtUtc,
+                ExpiresAtUtc = schedule.ExpiresAtUtc,
                 Reason = CreateActivationReason(billingEvent),
                 CreatedAt = nowUtc,
                 UpdatedAt = nowUtc
@@ -242,9 +250,9 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
 
             entitlementChanged = true;
         }
-        else if (entitlement.ExpiresAtUtc is not null && validation.BillingPeriodEndsAtUtc > entitlement.ExpiresAtUtc.Value)
+        else if (entitlement.ExpiresAtUtc is null || schedule.ExpiresAtUtc > entitlement.ExpiresAtUtc.Value)
         {
-            entitlement.ExpiresAtUtc = validation.BillingPeriodEndsAtUtc;
+            entitlement.ExpiresAtUtc = schedule.ExpiresAtUtc;
             entitlement.Reason = CreateActivationReason(billingEvent);
             entitlement.UpdatedAt = nowUtc;
             effectiveExpiresAtUtc = entitlement.ExpiresAtUtc;
@@ -360,7 +368,59 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
     }
 
 
-    private Task<EntitlementEntity?> FindCurrentProviderEventEntitlementAsync(
+    private async Task<ProviderEntitlementSchedule> CalculateStackedProviderEntitlementScheduleAsync(
+        Guid userId,
+        DateTimeOffset? billingPeriodStartsAtUtc,
+        DateTimeOffset billingPeriodEndsAtUtc,
+        EntitlementEntity? existingProviderEventEntitlement,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var providerPaidPeriodStartsAtUtc = billingPeriodStartsAtUtc ?? nowUtc;
+        var providerPaidDuration = billingPeriodEndsAtUtc - providerPaidPeriodStartsAtUtc;
+        var latestActiveAccessEndUtc = await FindLatestActiveAccessEndAsync(userId, nowUtc, cancellationToken);
+        var stackStartsAtUtc = latestActiveAccessEndUtc is null
+            ? MaxDateTimeOffset(providerPaidPeriodStartsAtUtc, nowUtc)!.Value
+            : MaxDateTimeOffset(nowUtc, latestActiveAccessEndUtc)!.Value;
+
+        if (existingProviderEventEntitlement?.ExpiresAtUtc is not null)
+        {
+            stackStartsAtUtc = MaxDateTimeOffset(stackStartsAtUtc, existingProviderEventEntitlement.ExpiresAtUtc.Value)!.Value;
+        }
+
+        return new ProviderEntitlementSchedule(
+            stackStartsAtUtc,
+            stackStartsAtUtc.Add(providerPaidDuration));
+    }
+
+    private async Task<DateTimeOffset?> FindLatestActiveAccessEndAsync(
+        Guid userId,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var latestTrialGrantEndUtc = await dbContext.TrialGrants
+            .AsNoTracking()
+            .Where(trial => trial.UserId == userId
+                && trial.Status == SubscriptionConstants.Entitlements.StatusActive
+                && trial.GrantedAtUtc <= nowUtc
+                && trial.ExpiresAtUtc > nowUtc)
+            .MaxAsync(trial => (DateTimeOffset?)trial.ExpiresAtUtc, cancellationToken);
+
+        var latestPremiumEntitlementEndUtc = await dbContext.Entitlements
+            .AsNoTracking()
+            .Where(entitlement => entitlement.UserId == userId
+                && entitlement.PlanId == SubscriptionConstants.Plans.PremiumPlanId
+                && entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType
+                && entitlement.Status == SubscriptionConstants.Entitlements.StatusActive
+                && entitlement.StartsAtUtc <= nowUtc
+                && entitlement.ExpiresAtUtc.HasValue
+                && entitlement.ExpiresAtUtc.Value > nowUtc)
+            .MaxAsync(entitlement => entitlement.ExpiresAtUtc, cancellationToken);
+
+        return MaxDateTimeOffset(latestTrialGrantEndUtc, latestPremiumEntitlementEndUtc);
+    }
+
+    private Task<EntitlementEntity?> FindCurrentOrScheduledProviderEventEntitlementAsync(
         Guid userId,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken)
@@ -371,7 +431,6 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
                 && entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType
                 && entitlement.Source == SubscriptionConstants.Entitlements.SourceProviderEvent
                 && entitlement.Status == SubscriptionConstants.Entitlements.StatusActive
-                && entitlement.StartsAtUtc <= nowUtc
                 && (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > nowUtc))
             .OrderByDescending(entitlement => entitlement.ExpiresAtUtc == null)
             .ThenByDescending(entitlement => entitlement.ExpiresAtUtc)
@@ -425,6 +484,8 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         }
     }
 
+
+    private sealed record ProviderEntitlementSchedule(DateTimeOffset StartsAtUtc, DateTimeOffset ExpiresAtUtc);
 
     private sealed record ActivationEventOutcome(ActivationEventResult Result, DateTimeOffset? EntitlementExpiresAtUtc)
     {
