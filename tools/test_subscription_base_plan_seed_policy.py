@@ -1,6 +1,7 @@
 """Static policy checks for required base subscription plan seed data."""
 from pathlib import Path
 import re
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 MIGRATIONS = ROOT / "backend" / "EnglishVoiceTutor.Api" / "Migrations"
@@ -39,6 +40,18 @@ def all_text_files(root: Path):
             yield path
 
 
+def git_tracked_paths_under(paths: list[Path]) -> list[str]:
+    relative_paths = [path.relative_to(ROOT).as_posix() for path in paths]
+    result = subprocess.run(
+        ["git", "ls-files", "--", *relative_paths],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return [line for line in result.stdout.splitlines() if line]
+
+
 def main() -> None:
     constants = read(CONSTANTS)
     assert_contains(constants, 'FreePlanId = "free"', "free plan constant")
@@ -66,11 +79,10 @@ def main() -> None:
     assert_contains(default_config, '"PremiumPriceId": ""', "no Paddle price id in default config")
     assert_contains(default_config, '"ClientSideToken": ""', "no Paddle client token in default config")
 
-    for forbidden in GENERATED_FORBIDDEN:
-        if forbidden.exists():
-            tracked = [path for path in forbidden.rglob("*") if path.is_file()]
-            if tracked:
-                raise AssertionError(f"Generated artifact directory should not be present in the working tree: {forbidden}")
+    tracked_generated = git_tracked_paths_under(GENERATED_FORBIDDEN)
+    if tracked_generated:
+        formatted_paths = "\n".join(f"- {path}" for path in tracked_generated)
+        raise AssertionError(f"Generated artifact paths must not be tracked by git:\n{formatted_paths}")
 
     for root in DOCS_AND_CODE:
         for path in all_text_files(root):
