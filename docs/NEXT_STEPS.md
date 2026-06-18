@@ -52,6 +52,16 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 
 Do not move billing/Paddle production readiness into the immediate next step; billing remains deferred until desktop hardening and tester feedback justify revisiting it.
 
+## Subscription base plan deployment note
+
+- Treat active `free` and `premium` plan rows as required database reference data.
+- Missing plan rows break subscriptions and entitlements through FK constraints.
+- The backend includes an idempotent EF migration to seed/upsert those rows; operators should apply migrations explicitly during backend deployment validation when this release is deployed.
+- Do not add manual SQL as a recurring deployment requirement.
+- Keep free/trial/Premium status backend-owned, with Premium determined by entitlements rather than Desktop local state or Paddle directly.
+- Provider-event paid Premium should continue to stack after active trial/Premium access.
+- Production/live Paddle readiness remains deferred.
+
 ## Current backend verification
 
 Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.24` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23`. Backend `0.1.35-backend.24` contains the latest Admin CMS Validation & Preview readable UI fix plus `/admin` static asset cache busting/no-cache behavior. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. No EF migration was required.
