@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace EnglishVoiceTutor.Api.Migrations;
 
-[Migration("20260618090000_SeedBaseSubscriptionPlans")]
 public partial class SeedBaseSubscriptionPlans : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
