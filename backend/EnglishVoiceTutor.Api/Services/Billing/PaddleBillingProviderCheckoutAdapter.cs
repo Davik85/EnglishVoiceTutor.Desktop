@@ -8,9 +8,10 @@ using Microsoft.Extensions.Options;
 
 namespace EnglishVoiceTutor.Api.Services.Billing;
 
-public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheckoutAdapter
+public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheckoutAdapter, IBillingProviderSubscriptionCancellationAdapter
 {
     private const string TransactionsPath = "/transactions";
+    private const string SubscriptionsPath = "/subscriptions/";
     private const string PaddleRequestIdHeaderName = "Paddle-Request-Id";
 
     private readonly HttpClient httpClient;
@@ -31,6 +32,99 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
     }
 
     public string ProviderId => SubscriptionConstants.BillingProviders.Paddle;
+
+    public async Task<BillingProviderSubscriptionCancelResult> CancelSubscriptionRenewalAsync(
+        BillingProviderSubscriptionCancelRequest request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var environment = GetNormalizedEnvironment();
+        if (!options.CheckoutAdapterEnabled || string.IsNullOrWhiteSpace(options.ApiKey))
+        {
+            return new BillingProviderSubscriptionCancelResult
+            {
+                Accepted = false,
+                ProviderEnabled = false,
+                Provider = SubscriptionConstants.BillingProviders.Paddle,
+                Message = "Paddle billing is not configured.",
+                CurrentPeriodEndUtc = request.CurrentPeriodEndUtc
+            };
+        }
+
+        var baseUrl = GetBaseUrl(environment);
+        if (string.IsNullOrWhiteSpace(baseUrl) || !Uri.TryCreate(baseUrl, UriKind.Absolute, out var baseUri))
+        {
+            return new BillingProviderSubscriptionCancelResult
+            {
+                Accepted = false,
+                ProviderEnabled = false,
+                Provider = SubscriptionConstants.BillingProviders.Paddle,
+                Message = "Paddle billing is not configured.",
+                CurrentPeriodEndUtc = request.CurrentPeriodEndUtc
+            };
+        }
+
+        var subscriptionUri = new Uri(baseUri, SubscriptionsPath + Uri.EscapeDataString(request.ProviderSubscriptionId));
+        var payload = new
+        {
+            scheduled_change = new
+            {
+                action = SubscriptionConstants.ScheduledChangeActions.Cancel,
+                effective_from = "next_billing_period"
+            }
+        };
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Patch, subscriptionUri)
+        {
+            Content = JsonContent.Create(payload)
+        };
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", options.ApiKey.Trim());
+        httpRequest.Headers.TryAddWithoutValidation(SubscriptionConstants.Billing.PaddleApiVersionHeaderName, GetApiVersion());
+
+        try
+        {
+            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning("Paddle subscription renewal cancellation failed. StatusCode={StatusCode}; UserId={UserId}; Environment={Environment}.", (int)response.StatusCode, request.UserId, environment);
+                return new BillingProviderSubscriptionCancelResult
+                {
+                    Accepted = false,
+                    ProviderEnabled = true,
+                    Provider = SubscriptionConstants.BillingProviders.Paddle,
+                    Message = "Unable to schedule subscription cancellation.",
+                    CurrentPeriodEndUtc = request.CurrentPeriodEndUtc
+                };
+            }
+
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            var parsed = ParsePaddleSubscriptionCancelResponse(body);
+            return new BillingProviderSubscriptionCancelResult
+            {
+                Accepted = true,
+                ProviderEnabled = true,
+                Provider = SubscriptionConstants.BillingProviders.Paddle,
+                Message = "Subscription renewal cancellation is scheduled.",
+                SubscriptionStatus = parsed.Status,
+                CancelAtPeriodEnd = true,
+                ScheduledChangeEffectiveAtUtc = parsed.ScheduledChangeEffectiveAtUtc ?? request.CurrentPeriodEndUtc,
+                CurrentPeriodEndUtc = parsed.CurrentPeriodEndUtc ?? request.CurrentPeriodEndUtc
+            };
+        }
+        catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            logger.LogWarning(exception, "Paddle subscription renewal cancellation request failed. UserId={UserId}; Environment={Environment}.", request.UserId, environment);
+            return new BillingProviderSubscriptionCancelResult
+            {
+                Accepted = false,
+                ProviderEnabled = true,
+                Provider = SubscriptionConstants.BillingProviders.Paddle,
+                Message = "Unable to schedule subscription cancellation.",
+                CurrentPeriodEndUtc = request.CurrentPeriodEndUtc
+            };
+        }
+    }
 
     public async Task<BillingProviderCheckoutResult> CreateCheckoutSessionAsync(
         BillingProviderCheckoutRequest request,
@@ -323,4 +417,38 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
     }
 
     private sealed record PaddleCheckoutResponse(string TransactionId, string CheckoutUrl);
+
+    private static PaddleSubscriptionCancelResponse ParsePaddleSubscriptionCancelResponse(string responseBody)
+    {
+        using var document = JsonDocument.Parse(responseBody);
+        if (!document.RootElement.TryGetProperty("data", out var data))
+        {
+            return new PaddleSubscriptionCancelResponse(string.Empty, null, null);
+        }
+
+        var status = data.TryGetProperty("status", out var statusElement) && statusElement.ValueKind == JsonValueKind.String
+            ? statusElement.GetString() ?? string.Empty
+            : string.Empty;
+        DateTimeOffset? currentPeriodEnd = null;
+        if (data.TryGetProperty("current_billing_period", out var period)
+            && period.TryGetProperty("ends_at", out var endsAt)
+            && endsAt.ValueKind == JsonValueKind.String
+            && DateTimeOffset.TryParse(endsAt.GetString(), out var parsedEnd))
+        {
+            currentPeriodEnd = parsedEnd;
+        }
+
+        DateTimeOffset? effectiveAt = null;
+        if (data.TryGetProperty("scheduled_change", out var scheduledChange)
+            && scheduledChange.TryGetProperty("effective_at", out var effectiveAtElement)
+            && effectiveAtElement.ValueKind == JsonValueKind.String
+            && DateTimeOffset.TryParse(effectiveAtElement.GetString(), out var parsedEffectiveAt))
+        {
+            effectiveAt = parsedEffectiveAt;
+        }
+
+        return new PaddleSubscriptionCancelResponse(status, effectiveAt, currentPeriodEnd);
+    }
+
+    private sealed record PaddleSubscriptionCancelResponse(string Status, DateTimeOffset? ScheduledChangeEffectiveAtUtc, DateTimeOffset? CurrentPeriodEndUtc);
 }

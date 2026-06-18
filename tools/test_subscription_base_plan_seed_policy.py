@@ -12,6 +12,12 @@ DOCS_AND_CODE = [
     ROOT / "docs",
     ROOT / "tools",
 ]
+SAFE_TEXT_EXTENSIONS = {
+    ".cs", ".xaml", ".json", ".md", ".ps1", ".py", ".js", ".css", ".html",
+    ".csproj", ".props", ".targets", ".yml", ".yaml", ".txt", ".config",
+}
+ALLOWED_BINARY_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp", ".exe", ".dll", ".pdb", ".snk"}
+SKIPPED_PARTS = {"artifacts", "bin", "obj", "publish", "packages", ".git"}
 GENERATED_FORBIDDEN = [
     ROOT / "artifacts",
     ROOT / "bin",
@@ -32,12 +38,26 @@ def assert_contains(text: str, needle: str, label: str) -> None:
         raise AssertionError(f"Missing {label}: {needle}")
 
 
-def all_text_files(root: Path):
-    if not root.exists():
-        return
-    for path in root.rglob("*"):
-        if path.is_file() and path.suffix.lower() not in {".png", ".jpg", ".jpeg", ".gif", ".ico", ".webp", ".exe", ".dll", ".pdb"}:
-            yield path
+def tracked_text_files_under(paths: list[Path]):
+    for relative_path in git_tracked_paths_under(paths):
+        path = ROOT / relative_path
+        parts = set(path.relative_to(ROOT).parts)
+        if parts & SKIPPED_PARTS:
+            continue
+        suffix = path.suffix.lower()
+        if suffix in ALLOWED_BINARY_EXTENSIONS:
+            continue
+        if suffix not in SAFE_TEXT_EXTENSIONS:
+            continue
+        yield path
+
+
+def read_tracked_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        relative_path = path.relative_to(ROOT).as_posix()
+        raise AssertionError(f"Tracked text-like file is not valid UTF-8: {relative_path}") from exc
 
 
 def git_tracked_paths_under(paths: list[Path]) -> list[str]:
@@ -79,17 +99,31 @@ def main() -> None:
     assert_contains(default_config, '"PremiumPriceId": ""', "no Paddle price id in default config")
     assert_contains(default_config, '"ClientSideToken": ""', "no Paddle client token in default config")
 
+    desktop_backend_constants = read(ROOT / "Constants" / "BackendConstants.cs")
+    desktop_cancel_client = read(ROOT / "Services" / "BackendCancelSubscriptionClient.cs")
+    backend_cancel_endpoint = read(ROOT / "backend" / "EnglishVoiceTutor.Api" / "Endpoints" / "BillingSubscriptionEndpoints.cs")
+    backend_cancel_service = read(ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "Billing" / "BillingSubscriptionCancellationService.cs")
+    paddle_adapter = read(ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "Billing" / "PaddleBillingProviderCheckoutAdapter.cs")
+    assert_contains(desktop_backend_constants, 'MeBillingSubscriptionCancelEndpoint = "/api/me/billing/subscription/cancel"', "desktop backend cancel endpoint constant")
+    assert_contains(desktop_cancel_client, "AuthenticatedRequestHelper.AddBearerTokenIfPresent", "desktop authenticated cancel request")
+    assert_contains(backend_cancel_endpoint, ".RequireAuthorization()", "authenticated cancel endpoint")
+    if "providerSubscriptionId" in backend_cancel_endpoint or "ProviderSubscriptionId" in backend_cancel_endpoint:
+        raise AssertionError("Cancellation endpoint must not accept a provider subscription id from the client.")
+    assert_contains(backend_cancel_service, "ProviderSubscriptionId = subscription.ProviderSubscriptionId", "backend-owned provider subscription id")
+    if "dbContext.Entitlements" in backend_cancel_service:
+        raise AssertionError("Cancellation request path must not modify or query entitlements.")
+    assert_contains(paddle_adapter, 'effective_from = "next_billing_period"', "cancel-at-period-end Paddle request")
+
     tracked_generated = git_tracked_paths_under(GENERATED_FORBIDDEN)
     if tracked_generated:
         formatted_paths = "\n".join(f"- {path}" for path in tracked_generated)
         raise AssertionError(f"Generated artifact paths must not be tracked by git:\n{formatted_paths}")
 
-    for root in DOCS_AND_CODE:
-        for path in all_text_files(root):
-            text = read(path)
-            for pattern in SECRET_PATTERNS:
-                if pattern.search(text):
-                    raise AssertionError(f"Potential secret-like token found in tracked source: {path}")
+    for path in tracked_text_files_under(DOCS_AND_CODE):
+        text = read_tracked_text(path)
+        for pattern in SECRET_PATTERNS:
+            if pattern.search(text):
+                raise AssertionError(f"Potential secret-like token found in tracked source: {path}")
 
     print("Subscription base plan seed policy checks passed.")
 

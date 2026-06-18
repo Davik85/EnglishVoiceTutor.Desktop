@@ -200,3 +200,7 @@ CMS tutor behavior profile display names are runtime-managed learner-facing labe
 ### CMS tutor display names
 
 CMS tutor Display name is now the runtime-managed learner-facing tutor name after Save draft + Publish. Stable tutor/avatar IDs remain fixed as `elena`, `nelli`, and `david`; desktop new lessons and the Settings tutor avatar dropdown resolve published CMS display names by stable ID and fall back to packaged local names if runtime metadata is unavailable. Safety notes JSON remains available for extra behavior rules, but it should not be the normal way to rename a tutor.
+
+## Desktop Premium billing controls
+
+Desktop Account settings now expose user-facing Premium controls backed by the backend billing API: Buy Premium opens the backend-created Paddle checkout in the browser, and Cancel subscription requests backend-owned renewal cancellation at period end. The app does not activate Premium locally; entitlement activation still comes only from backend entitlement state after webhook processing. Cancellation state is shown from backend subscription snapshot fields, and already paid Premium time remains available until the entitlement expires. This remains sandbox/tester validation only; production/live Paddle readiness is still deferred.

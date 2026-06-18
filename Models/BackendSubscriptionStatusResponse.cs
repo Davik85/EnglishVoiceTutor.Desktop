@@ -11,6 +11,13 @@ public sealed class BackendSubscriptionStatusResponse
     public string SubscriptionStatus { get; init; } = string.Empty;
     public string BillingProvider { get; init; } = string.Empty;
     public DateTimeOffset? CurrentPeriodEndUtc { get; init; }
+    public bool CancelAtPeriodEnd { get; init; }
+    public string? ScheduledChangeAction { get; init; }
+    public DateTimeOffset? ScheduledChangeEffectiveAtUtc { get; init; }
+    public bool HasActivePaidProviderSubscription { get; init; }
+    public bool HasFuturePremiumEntitlement { get; init; }
+    public DateTimeOffset? FuturePremiumStartsAtUtc { get; init; }
+    public DateTimeOffset? FuturePremiumExpiresAtUtc { get; init; }
     public bool FreeLessonUsedToday { get; init; }
     public int FreeLessonRemainingToday { get; init; }
     public string FreeLessonConsumptionRule { get; init; } = string.Empty;

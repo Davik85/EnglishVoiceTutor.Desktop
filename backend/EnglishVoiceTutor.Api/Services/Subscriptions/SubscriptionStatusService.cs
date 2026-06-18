@@ -38,6 +38,11 @@ public sealed class SubscriptionStatusService(
             response.CancelAtPeriodEnd = latestSubscription.CancelAtPeriodEnd;
             response.ScheduledChangeAction = latestSubscription.ScheduledChangeAction;
             response.ScheduledChangeEffectiveAtUtc = latestSubscription.ScheduledChangeEffectiveAtUtc;
+            response.HasActivePaidProviderSubscription = string.Equals(latestSubscription.Provider, SubscriptionConstants.BillingProviders.Paddle, StringComparison.OrdinalIgnoreCase)
+                && !string.IsNullOrWhiteSpace(latestSubscription.ProviderSubscriptionId)
+                && (string.Equals(latestSubscription.Status, SubscriptionConstants.SubscriptionStatuses.Active, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(latestSubscription.Status, SubscriptionConstants.SubscriptionStatuses.Trialing, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(latestSubscription.Status, SubscriptionConstants.SubscriptionStatuses.PastDue, StringComparison.OrdinalIgnoreCase));
         }
 
         var premiumEntitlement = await dbContext.Entitlements
@@ -77,6 +82,21 @@ public sealed class SubscriptionStatusService(
 
         response.TrialActive = trialGrant is not null || trialEntitlement is not null;
         response.TrialEndsAtUtc = trialGrant?.ExpiresAtUtc ?? trialEntitlement?.ExpiresAtUtc;
+
+        var futurePremiumEntitlement = await dbContext.Entitlements
+            .AsNoTracking()
+            .Where(entitlement =>
+                entitlement.UserId == userId &&
+                entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType &&
+                entitlement.Status == SubscriptionConstants.Entitlements.StatusActive &&
+                entitlement.StartsAtUtc > now &&
+                (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > entitlement.StartsAtUtc))
+            .OrderBy(entitlement => entitlement.StartsAtUtc)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        response.HasFuturePremiumEntitlement = futurePremiumEntitlement is not null;
+        response.FuturePremiumStartsAtUtc = futurePremiumEntitlement?.StartsAtUtc;
+        response.FuturePremiumExpiresAtUtc = futurePremiumEntitlement?.ExpiresAtUtc;
 
         response.FreeLessonUsedToday = await dbContext.DailyFreeLessonUsages
             .AsNoTracking()

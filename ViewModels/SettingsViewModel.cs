@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -53,6 +54,8 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly BackendDiagnosticsService backendDiagnosticsService;
     private readonly BackendUserSettingsClient backendUserSettingsClient;
     private readonly BackendSubscriptionStatusClient backendSubscriptionStatusClient;
+    private readonly BackendCheckoutSessionClient backendCheckoutSessionClient = new();
+    private readonly BackendCancelSubscriptionClient backendCancelSubscriptionClient = new();
     private readonly AudioInputDeviceService audioInputDeviceService;
     private readonly AudioRecordingService audioRecordingService;
     private readonly BackendLessonContentClient backendLessonContentClient = new();
@@ -269,6 +272,9 @@ public partial class SettingsViewModel : ViewModelBase
     public string SubscriptionEnforcementLabel => localizedText.SubscriptionEnforcementLabel;
     public string SubscriptionSourceLabel => localizedText.SubscriptionSourceLabel;
     public string SubscriptionCheckedAtLabel => localizedText.SubscriptionCheckedAtLabel;
+    public string BuyPremiumButtonText => IsBillingActionInProgress ? LocalizeUiText("Opening checkout...") : LocalizeUiText("Buy Premium");
+    public string CancelSubscriptionButtonText => LocalizeUiText("Cancel subscription");
+    public string RefreshStatusButtonText => LocalizeUiText("Refresh status");
 
     public IReadOnlyList<InterfaceLanguageOption> AvailableInterfaceLanguages { get; } = InterfaceLanguageOptions.All;
 
@@ -414,6 +420,16 @@ public partial class SettingsViewModel : ViewModelBase
     private string subscriptionSourceText = SubscriptionStatusUnavailableText;
     [ObservableProperty]
     private string subscriptionCheckedAtText = SubscriptionStatusUnavailableText;
+    [ObservableProperty]
+    private string billingActionMessage = string.Empty;
+    [ObservableProperty]
+    private string cancelSubscriptionNoticeText = string.Empty;
+    [ObservableProperty]
+    private bool canBuyPremium;
+    [ObservableProperty]
+    private bool canCancelSubscription;
+    [ObservableProperty]
+    private bool isBillingActionInProgress;
 
     [ObservableProperty]
     private bool isLearningSectionSelected = true;
@@ -1374,6 +1390,9 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(SubscriptionEnforcementLabel));
         OnPropertyChanged(nameof(SubscriptionSourceLabel));
         OnPropertyChanged(nameof(SubscriptionCheckedAtLabel));
+        OnPropertyChanged(nameof(BuyPremiumButtonText));
+        OnPropertyChanged(nameof(CancelSubscriptionButtonText));
+        OnPropertyChanged(nameof(RefreshStatusButtonText));
         _ = RefreshSubscriptionStatusAsync();
     }
 
@@ -1945,12 +1964,137 @@ public partial class SettingsViewModel : ViewModelBase
             SubscriptionEnforcementText = $"{localizedText.SubscriptionEnforcementLabel}: {(status.EnforcementEnabled ? LocalizeUiText("On") : LocalizeUiText("Off"))}";
             SubscriptionSourceText = $"{localizedText.SubscriptionSourceLabel}: {LocalizeUiText("authenticated")}";
             SubscriptionCheckedAtText = $"{localizedText.SubscriptionCheckedAtLabel}: {status.CheckedAtUtc:u}";
+            CanBuyPremium = IsAuthenticated && !status.PremiumActive;
+            CanCancelSubscription = IsAuthenticated && status.HasActivePaidProviderSubscription && !status.CancelAtPeriodEnd;
+            var cancelEnd = status.ScheduledChangeEffectiveAtUtc ?? status.CurrentPeriodEndUtc;
+            CancelSubscriptionNoticeText = status.CancelAtPeriodEnd && cancelEnd is not null
+                ? $"{LocalizeUiText("Your subscription is set to end on")} {cancelEnd.Value:u}."
+                : string.Empty;
             RecordAccountStatusResult(null, "success");
         }
         catch
         {
             RecordAccountStatusResult(null, "unavailable");
             ResetSubscriptionStatus();
+        }
+    }
+
+    [RelayCommand]
+    private async Task BuyPremiumAsync()
+    {
+        if (IsBillingActionInProgress)
+        {
+            return;
+        }
+
+        var previousCanBuyPremium = CanBuyPremium;
+        IsBillingActionInProgress = true;
+        CanBuyPremium = false;
+        OnPropertyChanged(nameof(BuyPremiumButtonText));
+        BillingActionMessage = LocalizeUiText("Opening checkout...");
+        try
+        {
+            var result = await backendCheckoutSessionClient.CreateAsync(BackendBaseUrl);
+            var checkoutUrl = result.Value?.CheckoutUrl;
+            if (!result.IsSuccess || string.IsNullOrWhiteSpace(checkoutUrl))
+            {
+                BillingActionMessage = result.Value?.CheckoutEnabled == false
+                    ? LocalizeUiText("Premium purchase is not available yet.")
+                    : LocalizeUiText("Could not open Premium checkout. Please try again later.");
+                return;
+            }
+
+            BillingActionMessage = TryOpenExternalUrl(checkoutUrl)
+                ? LocalizeUiText("Checkout opened in your browser. After payment, return here and refresh your account status.")
+                : LocalizeUiText("Could not open Premium checkout. Please try again later.");
+        }
+        finally
+        {
+            IsBillingActionInProgress = false;
+            CanBuyPremium = previousCanBuyPremium;
+            OnPropertyChanged(nameof(BuyPremiumButtonText));
+        }
+    }
+
+    [RelayCommand]
+    private async Task CancelSubscriptionAsync()
+    {
+        if (IsBillingActionInProgress || !CanCancelSubscription)
+        {
+            return;
+        }
+
+        var confirmation = MessageBox.Show(
+            LocalizeUiText("You will keep access until the end of your paid period. Future renewal will be canceled."),
+            LocalizeUiText("Cancel renewal?"),
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Question);
+        if (confirmation != MessageBoxResult.OK)
+        {
+            return;
+        }
+
+        var previousCanCancelSubscription = CanCancelSubscription;
+        IsBillingActionInProgress = true;
+        CanCancelSubscription = false;
+        try
+        {
+            var result = await backendCancelSubscriptionClient.CancelAsync(BackendBaseUrl);
+            if (!result.IsSuccess || result.Value is null)
+            {
+                BillingActionMessage = LocalizeUiText("Could not cancel the subscription. Please try again later.");
+                return;
+            }
+
+            var effectiveAt = result.Value.ScheduledChangeEffectiveAtUtc ?? result.Value.CurrentPeriodEndUtc;
+            if (result.Value.AlreadyCanceling)
+            {
+                BillingActionMessage = effectiveAt is null
+                    ? LocalizeUiText("Your subscription is already set to end.")
+                    : $"{LocalizeUiText("Your subscription is already set to end on")} {effectiveAt.Value:u}.";
+            }
+            else if (result.Value.Success || result.Value.Accepted)
+            {
+                BillingActionMessage = effectiveAt is null
+                    ? LocalizeUiText("Renewal cancellation is scheduled. You will keep access until the end of your paid period.")
+                    : $"{LocalizeUiText("Renewal cancellation is scheduled. You will keep access until")} {effectiveAt.Value:u}.";
+            }
+            else
+            {
+                BillingActionMessage = LocalizeUiText("No active paid subscription was found.");
+            }
+
+            await RefreshSubscriptionStatusAsync();
+        }
+        finally
+        {
+            IsBillingActionInProgress = false;
+            if (string.IsNullOrWhiteSpace(CancelSubscriptionNoticeText))
+            {
+                CanCancelSubscription = previousCanCancelSubscription;
+            }
+        }
+    }
+
+    [RelayCommand]
+    private Task RefreshAccountStatusAsync() => RefreshSubscriptionStatusAsync();
+
+    private static bool TryOpenExternalUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            return false;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo { FileName = uri.ToString(), UseShellExecute = true });
+            return true;
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return false;
         }
     }
 
@@ -1963,6 +2107,10 @@ public partial class SettingsViewModel : ViewModelBase
         SubscriptionEnforcementText = SignedOutSubscriptionPlaceholderText;
         SubscriptionSourceText = SignedOutSubscriptionPlaceholderText;
         SubscriptionCheckedAtText = SignedOutSubscriptionPlaceholderText;
+        BillingActionMessage = string.Empty;
+        CancelSubscriptionNoticeText = string.Empty;
+        CanBuyPremium = false;
+        CanCancelSubscription = false;
     }
 
     private void ResetSubscriptionStatus()
@@ -1974,6 +2122,8 @@ public partial class SettingsViewModel : ViewModelBase
         SubscriptionEnforcementText = LocalizeUiText(SubscriptionStatusUnavailableText);
         SubscriptionSourceText = LocalizeUiText(SubscriptionStatusUnavailableText);
         SubscriptionCheckedAtText = LocalizeUiText(SubscriptionStatusUnavailableText);
+        CanBuyPremium = IsAuthenticated;
+        CanCancelSubscription = false;
     }
 
     private void ApplyBackendUserSettings(BackendUserSettingsResponse settings)
