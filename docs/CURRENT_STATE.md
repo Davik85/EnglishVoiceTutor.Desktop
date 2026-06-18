@@ -53,6 +53,12 @@ Completed: backend `0.1.35-backend.24` is deployed and contains the latest Admin
 
 Completed: health and database health are green after deploy. `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. The build is green, the Admin shell audit is green, and the EF model check reports no pending model changes. No EF migration was required. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
+## Subscription base plan reference data
+
+The `plans` table requires active `free` and `premium` reference rows. Missing rows break subscription and entitlement writes through `FK_subscriptions_plans_PlanId` and `FK_entitlements_plans_PlanId`. The backend now includes an idempotent EF migration to upsert `free / Free / free / active` and `premium / Premium / premium / active`, safe for fresh databases and databases where the rows already exist. Applying EF migrations remains a separate explicit operator action and is not performed by packaging/upload scripts.
+
+Free/trial/Premium status logic remains backend-owned. Premium access is determined by entitlements, not Desktop local state or Paddle directly. Provider-event paid Premium stacks after active trial/Premium access, and production/live Paddle readiness remains deferred.
+
 ## Auth, account, and persistence
 
 Registration and login now work from installed tester/release builds against `https://api.languagevoicetutor.com`, including the current backend permission-fixed login path. Trial assignment is granted after registration. The desktop stores the authenticated session under the current user's app-data area with Windows DPAPI protection and does not store raw passwords. Logout clears persisted auth session data.

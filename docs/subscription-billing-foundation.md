@@ -18,6 +18,16 @@ English Voice Tutor is a global, cross-platform, provider-agnostic product for d
 - Premium access still comes from `EntitlementEntity`; `SubscriptionEntity` remains a provider-agnostic subscription snapshot only, and `PaymentEntity` remains diagnostic payment history only.
 - This sandbox validation does not mean production billing setup is complete; production webhook setup verification and production checkout configuration remain separate work.
 
+
+## Required base subscription plans
+
+- The `free` and `premium` rows in the `plans` table are required reference data, not optional product-catalog content.
+- Required values are `PlanId=free`, `DisplayName=Free`, `Tier=free`, `IsActive=true` and `PlanId=premium`, `DisplayName=Premium`, `Tier=premium`, `IsActive=true`.
+- Missing base plan rows break subscription and entitlement writes through the `FK_subscriptions_plans_PlanId` and `FK_entitlements_plans_PlanId` constraints.
+- The database now has an EF migration with idempotent PostgreSQL upsert SQL for these base plans, so fresh databases and previously repaired databases converge without duplicate plan rows.
+- The seed keeps both base plans active and does not delete other plan rows. Database update remains an explicit operator step; packaging and backend upload scripts must not apply migrations automatically.
+- Free, trial, and Premium status logic remains backend-owned. Premium access is determined by entitlement rows, not by Desktop local state, Paddle checkout state, or Paddle subscription snapshots directly.
+
 ## Account requirement for normal lesson start
 
 - Normal lesson start requires sign-in.
@@ -47,6 +57,7 @@ English Voice Tutor is a global, cross-platform, provider-agnostic product for d
 - `EntitlementEntity` remains the source of Premium access.
 - Premium can come from trial, Development test-account grants, local admin grants, or validated provider billing events.
 - Valid provider billing activation creates or extends `provider_event` Premium `EntitlementEntity` rows from validated `reconciliation_pending` `transaction.completed` `billing_events` only.
+- Provider-event paid Premium stacks after active trial/Premium access; a future-start provider-event entitlement does not count as active Premium until its `StartsAtUtc` is reached.
 - Later valid period ends extend existing provider-event access; duplicate or older events do not duplicate or shorten entitlement.
 - Actual `subscription.canceled` and `subscription.paused` events expire only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context.
 - Scheduled cancellation and past-due snapshots do not revoke Premium early.

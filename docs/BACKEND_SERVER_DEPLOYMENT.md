@@ -27,6 +27,13 @@ Backend `0.1.35-backend.24` did not require an EF migration. Production backend 
 - The desktop app must call backend APIs only and must never store OpenAI API keys directly.
 - Production billing remains deferred. Paddle keys are not required for this test backend unless checkout/billing tests are deliberately enabled later.
 
+
+## Database migrations and base plans
+
+The backend upload/package scripts do not apply EF migrations automatically. Database update remains a separate explicit operator step. The subscription foundation requires active `free` and `premium` rows in `plans`; missing rows break subscription and entitlement writes through `FK_subscriptions_plans_PlanId` and `FK_entitlements_plans_PlanId`. The backend now includes an idempotent EF migration that upserts `free / Free / free / active` and `premium / Premium / premium / active`, safe on fresh databases and safe when the rows already exist.
+
+This reference-data migration does not enable production/live Paddle billing, does not change checkout behavior, does not change webhook signature validation, and does not move Premium authority out of backend entitlements. Provider-event paid Premium continues to stack after active trial/Premium access.
+
 ## Server layout
 
 Expected Ubuntu 24.04 paths:
