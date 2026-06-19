@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EnglishVoiceTutor.Desktop.Constants;
