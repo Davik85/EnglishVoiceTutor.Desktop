@@ -18,6 +18,15 @@ public sealed class SubscriptionStatusResponse
     public string? ScheduledChangeAction { get; set; }
     public DateTimeOffset? ScheduledChangeEffectiveAtUtc { get; set; }
     public bool HasActivePaidProviderSubscription { get; set; }
+    public bool CanRequestCancelRenewal { get; set; }
+    public string RenewalStatus { get; set; } = SubscriptionConstants.RenewalStatuses.Unknown;
+    public string NextRenewalState { get; set; } = SubscriptionConstants.NextRenewalStates.Unknown;
+    public string CancellationExplanationCode { get; set; } = SubscriptionConstants.CancellationExplanationCodes.Unknown;
+    public DateTimeOffset? PaidAccessUntilUtc { get; set; }
+    public bool ProviderSubscriptionPresent { get; set; }
+    public string? LastProviderEventId { get; set; }
+    public string? LastProviderEventType { get; set; }
+    public DateTimeOffset? LastProviderEventOccurredAtUtc { get; set; }
     public bool HasFuturePremiumEntitlement { get; set; }
     public DateTimeOffset? FuturePremiumStartsAtUtc { get; set; }
     public DateTimeOffset? FuturePremiumExpiresAtUtc { get; set; }

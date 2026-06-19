@@ -15,6 +15,11 @@ public sealed class BackendSubscriptionStatusResponse
     public string? ScheduledChangeAction { get; init; }
     public DateTimeOffset? ScheduledChangeEffectiveAtUtc { get; init; }
     public bool HasActivePaidProviderSubscription { get; init; }
+    public bool? CanRequestCancelRenewal { get; init; }
+    public string RenewalStatus { get; init; } = string.Empty;
+    public string NextRenewalState { get; init; } = string.Empty;
+    public string CancellationExplanationCode { get; init; } = string.Empty;
+    public DateTimeOffset? PaidAccessUntilUtc { get; init; }
     public bool HasFuturePremiumEntitlement { get; init; }
     public DateTimeOffset? FuturePremiumStartsAtUtc { get; init; }
     public DateTimeOffset? FuturePremiumExpiresAtUtc { get; init; }

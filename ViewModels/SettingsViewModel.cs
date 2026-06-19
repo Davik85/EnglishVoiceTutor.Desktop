@@ -419,6 +419,14 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private string subscriptionFreeLessonText = SubscriptionStatusUnavailableText;
     [ObservableProperty]
+    private string subscriptionRenewalText = SubscriptionStatusUnavailableText;
+    [ObservableProperty]
+    private string subscriptionNextRenewalText = SubscriptionStatusUnavailableText;
+    [ObservableProperty]
+    private string subscriptionPaidAccessUntilText = string.Empty;
+    [ObservableProperty]
+    private string subscriptionCancellationStatusText = SubscriptionStatusUnavailableText;
+    [ObservableProperty]
     private string subscriptionEnforcementText = SubscriptionStatusUnavailableText;
     [ObservableProperty]
     private string subscriptionSourceText = SubscriptionStatusUnavailableText;
@@ -1968,13 +1976,19 @@ public partial class SettingsViewModel : ViewModelBase
                 : status.FreeLessonUsedToday
                     ? $"{localizedText.SubscriptionFreeLessonLabel}: {LocalizeUiText("Used")}"
                     : string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Free lessons remaining today: {0}"), Math.Max(status.FreeLessonRemainingToday, 0));
+            SubscriptionRenewalText = BuildRenewalStatusText(status.RenewalStatus);
+            SubscriptionNextRenewalText = BuildNextRenewalText(status.NextRenewalState);
+            SubscriptionPaidAccessUntilText = status.PaidAccessUntilUtc is null ? string.Empty : string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Paid access until: {0}"), FormatLocalizedDate(status.PaidAccessUntilUtc.Value));
+            SubscriptionCancellationStatusText = BuildCancellationStatusText(status);
             SubscriptionEnforcementText = $"{localizedText.SubscriptionEnforcementLabel}: {(status.EnforcementEnabled ? LocalizeUiText("On") : LocalizeUiText("Off"))}";
             SubscriptionSourceText = $"{localizedText.SubscriptionSourceLabel}: {LocalizeUiText("authenticated")}";
             SubscriptionCheckedAtText = $"{localizedText.SubscriptionCheckedAtLabel}: {status.CheckedAtUtc:u}";
             CanBuyPremium = IsAuthenticated && !status.PremiumActive;
             var cancelEnd = status.ScheduledChangeEffectiveAtUtc ?? status.CurrentPeriodEndUtc;
             var cancellationAlreadyScheduled = status.CancelAtPeriodEnd || IsScheduledCancellation(status.ScheduledChangeAction);
-            CanCancelSubscription = IsAuthenticated && status.HasActivePaidProviderSubscription && !cancellationAlreadyScheduled;
+            CanCancelSubscription = IsAuthenticated && (status.CanRequestCancelRenewal ?? (status.HasActivePaidProviderSubscription && !cancellationAlreadyScheduled));
+            lastKnownRenewalStatus = status.RenewalStatus;
+            lastKnownPaidAccessUntilUtc = status.PaidAccessUntilUtc;
             CancelSubscriptionNoticeText = BuildCancelSubscriptionNotice(status, cancellationAlreadyScheduled, cancelEnd);
             RecordAccountStatusResult(null, "success");
         }
@@ -2053,7 +2067,19 @@ public partial class SettingsViewModel : ViewModelBase
             }
 
             var effectiveAt = result.Value.ScheduledChangeEffectiveAtUtc ?? result.Value.CurrentPeriodEndUtc;
-            if (result.Value.AlreadyCanceling)
+            await RefreshSubscriptionStatusAsync();
+            if (!result.Value.Success && !result.Value.Accepted && !result.Value.AlreadyCanceling)
+            {
+                BillingActionMessage = LocalizeUiText("No active paid subscription was found. No renewal cancellation is available from this account.");
+            }
+            else if (lastKnownRenewalStatus == "cancellation_scheduled")
+            {
+                var paidUntil = lastKnownPaidAccessUntilUtc ?? effectiveAt;
+                BillingActionMessage = paidUntil is null
+                    ? LocalizeUiText("Renewal canceled. Paid access remains until the end of the current paid period.")
+                    : string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Renewal is canceled. Paid access remains until {0}."), FormatLocalizedDate(paidUntil.Value));
+            }
+            else if (result.Value.AlreadyCanceling)
             {
                 BillingActionMessage = effectiveAt is null
                     ? LocalizeUiText("Renewal is already canceled.")
@@ -2067,10 +2093,8 @@ public partial class SettingsViewModel : ViewModelBase
             }
             else
             {
-                BillingActionMessage = LocalizeUiText("No active paid subscription was found.");
+                BillingActionMessage = LocalizeUiText("Cancellation request was sent, but the latest status does not confirm scheduled cancellation yet. Refresh status or check Admin diagnostics.");
             }
-
-            await RefreshSubscriptionStatusAsync();
         }
         finally
         {
@@ -2081,6 +2105,34 @@ public partial class SettingsViewModel : ViewModelBase
             }
         }
     }
+
+    private string lastKnownRenewalStatus = string.Empty;
+    private DateTimeOffset? lastKnownPaidAccessUntilUtc;
+
+    private string BuildRenewalStatusText(string? renewalStatus) => renewalStatus switch
+    {
+        "renewal_active" => LocalizeUiText("Renewal: active"),
+        "cancellation_scheduled" => LocalizeUiText("Renewal: cancellation scheduled"),
+        "no_paid_subscription" => LocalizeUiText("Renewal: no paid subscription"),
+        "subscription_canceled" => LocalizeUiText("Renewal: canceled"),
+        _ => LocalizeUiText("Renewal: unknown")
+    };
+
+    private string BuildNextRenewalText(string? nextRenewalState) => nextRenewalState switch
+    {
+        "renewal_expected" => LocalizeUiText("Next renewal: expected at the end of the current period"),
+        "no_renewal_scheduled" => LocalizeUiText("Next renewal: no further renewal scheduled"),
+        "not_applicable" => LocalizeUiText("Next renewal: not applicable"),
+        _ => LocalizeUiText("Next renewal: unknown")
+    };
+
+    private string BuildCancellationStatusText(BackendSubscriptionStatusResponse status) => status.CancellationExplanationCode switch
+    {
+        "already_scheduled" => LocalizeUiText("Cancellation status: already scheduled"),
+        "no_paid_provider_subscription" or "provider_subscription_missing" => LocalizeUiText("Cancellation status: not available for trial/manual Premium"),
+        "none" when status.CanRequestCancelRenewal == true => LocalizeUiText("Cancellation status: available"),
+        _ => LocalizeUiText("Cancellation status: unavailable")
+    };
 
     private string BuildCancelSubscriptionNotice(BackendSubscriptionStatusResponse status, bool cancellationAlreadyScheduled, DateTimeOffset? cancelEnd)
     {
@@ -2181,6 +2233,10 @@ public partial class SettingsViewModel : ViewModelBase
         SubscriptionPremiumText = LocalizeUiText(SubscriptionStatusUnavailableText);
         SubscriptionTrialText = LocalizeUiText(SubscriptionStatusUnavailableText);
         SubscriptionFreeLessonText = LocalizeUiText(SubscriptionStatusUnavailableText);
+        SubscriptionRenewalText = LocalizeUiText(SubscriptionStatusUnavailableText);
+        SubscriptionNextRenewalText = LocalizeUiText(SubscriptionStatusUnavailableText);
+        SubscriptionPaidAccessUntilText = string.Empty;
+        SubscriptionCancellationStatusText = LocalizeUiText(SubscriptionStatusUnavailableText);
         SubscriptionEnforcementText = LocalizeUiText(SubscriptionStatusUnavailableText);
         SubscriptionSourceText = LocalizeUiText(SubscriptionStatusUnavailableText);
         SubscriptionCheckedAtText = LocalizeUiText(SubscriptionStatusUnavailableText);
