@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -276,6 +277,8 @@ public partial class SettingsViewModel : ViewModelBase
     public string CancelSubscriptionButtonText => LocalizeUiText("Cancel subscription");
     public string RefreshStatusButtonText => LocalizeUiText("Refresh status");
 
+    public Visibility CancelSubscriptionButtonVisibility => CanCancelSubscription ? Visibility.Visible : Visibility.Collapsed;
+
     public IReadOnlyList<InterfaceLanguageOption> AvailableInterfaceLanguages { get; } = InterfaceLanguageOptions.All;
 
     public IReadOnlyList<NativeLanguageDefinition> AvailableNativeLanguages { get; } = NativeLanguageCatalog.All;
@@ -427,6 +430,7 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private bool canBuyPremium;
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CancelSubscriptionButtonVisibility))]
     private bool canCancelSubscription;
     [ObservableProperty]
     private bool isBillingActionInProgress;
@@ -1956,20 +1960,21 @@ public partial class SettingsViewModel : ViewModelBase
             SubscriptionPlanText = $"{localizedText.SubscriptionPlanLabel}: {(!string.IsNullOrWhiteSpace(status.PlanName) ? status.PlanName : LocalizeUiText("Free"))}";
             SubscriptionPremiumText = $"{localizedText.SubscriptionPremiumLabel}: {(status.PremiumActive ? LocalizeUiText("Active") : LocalizeUiText("Not active"))}";
             SubscriptionTrialText = status.TrialActive && status.TrialEndsAtUtc is not null
-                ? $"{localizedText.SubscriptionTrialLabel}: {LocalizeUiText("Active until")} {status.TrialEndsAtUtc.Value:u}"
+                ? $"{localizedText.SubscriptionTrialLabel}: {LocalizeUiText("Active until")} {FormatLocalizedDate(status.TrialEndsAtUtc.Value)}"
                 : $"{localizedText.SubscriptionTrialLabel}: {LocalizeUiText("Not active")}";
-            SubscriptionFreeLessonText = status.FreeLessonUsedToday
-                ? $"{localizedText.SubscriptionFreeLessonLabel}: {LocalizeUiText("Used")}"
-                : $"{localizedText.SubscriptionFreeLessonLabel}: {Math.Max(status.FreeLessonRemainingToday, 0)} {LocalizeUiText("remaining")}";
+            SubscriptionFreeLessonText = status.PremiumActive
+                ? LocalizeUiText("Free lessons: no daily limit")
+                : status.FreeLessonUsedToday
+                    ? $"{localizedText.SubscriptionFreeLessonLabel}: {LocalizeUiText("Used")}"
+                    : string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Free lessons remaining today: {0}"), Math.Max(status.FreeLessonRemainingToday, 0));
             SubscriptionEnforcementText = $"{localizedText.SubscriptionEnforcementLabel}: {(status.EnforcementEnabled ? LocalizeUiText("On") : LocalizeUiText("Off"))}";
             SubscriptionSourceText = $"{localizedText.SubscriptionSourceLabel}: {LocalizeUiText("authenticated")}";
             SubscriptionCheckedAtText = $"{localizedText.SubscriptionCheckedAtLabel}: {status.CheckedAtUtc:u}";
             CanBuyPremium = IsAuthenticated && !status.PremiumActive;
-            CanCancelSubscription = IsAuthenticated && status.HasActivePaidProviderSubscription && !status.CancelAtPeriodEnd;
             var cancelEnd = status.ScheduledChangeEffectiveAtUtc ?? status.CurrentPeriodEndUtc;
-            CancelSubscriptionNoticeText = status.CancelAtPeriodEnd && cancelEnd is not null
-                ? $"{LocalizeUiText("Your subscription is set to end on")} {cancelEnd.Value:u}."
-                : string.Empty;
+            var cancellationAlreadyScheduled = status.CancelAtPeriodEnd || IsScheduledCancellation(status.ScheduledChangeAction);
+            CanCancelSubscription = IsAuthenticated && status.HasActivePaidProviderSubscription && !cancellationAlreadyScheduled;
+            CancelSubscriptionNoticeText = BuildCancelSubscriptionNotice(status, cancellationAlreadyScheduled, cancelEnd);
             RecordAccountStatusResult(null, "success");
         }
         catch
@@ -2024,12 +2029,12 @@ public partial class SettingsViewModel : ViewModelBase
             return;
         }
 
-        var confirmation = MessageBox.Show(
-            LocalizeUiText("You will keep access until the end of your paid period. Future renewal will be canceled."),
+        var confirmation = ShowLocalizedConfirmationDialog(
             LocalizeUiText("Cancel renewal?"),
-            MessageBoxButton.OKCancel,
-            MessageBoxImage.Question);
-        if (confirmation != MessageBoxResult.OK)
+            LocalizeUiText("Canceling renewal stops future charges. Your paid Premium access remains until the end of the current paid period."),
+            LocalizeUiText("Cancel subscription"),
+            LocalizeUiText("Keep subscription"));
+        if (!confirmation)
         {
             return;
         }
@@ -2050,14 +2055,14 @@ public partial class SettingsViewModel : ViewModelBase
             if (result.Value.AlreadyCanceling)
             {
                 BillingActionMessage = effectiveAt is null
-                    ? LocalizeUiText("Your subscription is already set to end.")
-                    : $"{LocalizeUiText("Your subscription is already set to end on")} {effectiveAt.Value:u}.";
+                    ? LocalizeUiText("Renewal is already canceled.")
+                    : string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Renewal is already canceled. Premium access remains until {0}."), FormatLocalizedDate(effectiveAt.Value));
             }
             else if (result.Value.Success || result.Value.Accepted)
             {
                 BillingActionMessage = effectiveAt is null
-                    ? LocalizeUiText("Renewal cancellation is scheduled. You will keep access until the end of your paid period.")
-                    : $"{LocalizeUiText("Renewal cancellation is scheduled. You will keep access until")} {effectiveAt.Value:u}.";
+                    ? LocalizeUiText("Renewal canceled. Paid access remains until the end of the current paid period.")
+                    : string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Renewal canceled. Paid access remains until {0}."), FormatLocalizedDate(effectiveAt.Value));
             }
             else
             {
@@ -2074,6 +2079,62 @@ public partial class SettingsViewModel : ViewModelBase
                 CanCancelSubscription = previousCanCancelSubscription;
             }
         }
+    }
+
+    private string BuildCancelSubscriptionNotice(BackendSubscriptionStatusResponse status, bool cancellationAlreadyScheduled, DateTimeOffset? cancelEnd)
+    {
+        if (status.HasActivePaidProviderSubscription && cancellationAlreadyScheduled)
+        {
+            return cancelEnd is null
+                ? LocalizeUiText("Renewal is already canceled. Paid Premium access remains until the end of the current paid period.")
+                : string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Renewal is already canceled. Premium access remains until {0}."), FormatLocalizedDate(cancelEnd.Value));
+        }
+
+        if (!status.HasActivePaidProviderSubscription)
+        {
+            return LocalizeUiText("No paid subscription to cancel.");
+        }
+
+        return string.Empty;
+    }
+
+    private static bool IsScheduledCancellation(string? scheduledChangeAction)
+    {
+        return !string.IsNullOrWhiteSpace(scheduledChangeAction)
+            && scheduledChangeAction.Contains("cancel", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private string FormatLocalizedDate(DateTimeOffset value)
+    {
+        var culture = CultureInfo.GetCultureInfo(SelectedInterfaceLanguageOption.CulturePrefix);
+        return value.ToLocalTime().ToString("d", culture);
+    }
+
+    private static bool ShowLocalizedConfirmationDialog(string title, string message, string confirmButtonText, string cancelButtonText)
+    {
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 420,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ResizeMode = ResizeMode.NoResize,
+            ShowInTaskbar = false,
+            Owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(window => window.IsActive)
+        };
+
+        var panel = new StackPanel { Margin = new Thickness(20) };
+        panel.Children.Add(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 18) });
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        var confirmButton = new Button { Content = confirmButtonText, MinWidth = 140, Margin = new Thickness(0, 0, 8, 0), IsDefault = true };
+        var cancelButton = new Button { Content = cancelButtonText, MinWidth = 120, IsCancel = true };
+        confirmButton.Click += (_, _) => { dialog.DialogResult = true; dialog.Close(); };
+        cancelButton.Click += (_, _) => { dialog.DialogResult = false; dialog.Close(); };
+        buttons.Children.Add(confirmButton);
+        buttons.Children.Add(cancelButton);
+        panel.Children.Add(buttons);
+        dialog.Content = panel;
+        return dialog.ShowDialog() == true;
     }
 
     [RelayCommand]
