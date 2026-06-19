@@ -502,6 +502,7 @@
                                                 Content="{Binding CancelSubscriptionButtonText}"
                                                 Command="{Binding CancelSubscriptionCommand}"
                                                 IsEnabled="{Binding CanCancelSubscription}"
+                                                Visibility="{Binding CancelSubscriptionButtonVisibility}"
                                                 Style="{StaticResource SecondaryButtonStyle}" />
                                         <Button MinWidth="110"
                                                 MinHeight="32"
