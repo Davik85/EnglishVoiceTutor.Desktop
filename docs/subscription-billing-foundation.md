@@ -4,7 +4,7 @@ This document describes the current implemented foundation for account, trial, s
 
 ## Current tester release billing status
 
-As of the last verified private tester/direct Windows release snapshot, trial entitlement after registration is working, but the production Billing/Paddle/subscription payment lifecycle remains deferred. Do not describe production checkout, production webhook operations, paid subscription lifecycle, or billing support operations as ready for tester/public production use.
+As of the latest controlled tester/sandbox validation snapshot, trial entitlement after registration is working, Paddle sandbox checkout works through backend-hosted checkout, and Desktop `v0.1.36-tester.17` has Account controls for Buy Premium, Cancel subscription, and Refresh status. This is not broad production/live billing readiness. Do not describe production checkout, production webhook operations, paid subscription lifecycle, public launch readiness, or billing support operations as broadly ready.
 
 English Voice Tutor is a global, cross-platform, provider-agnostic product for desktop now and future mobile clients later. The backend is the source of truth for account, trial, subscription, entitlement, Premium/free status, daily free allowance, lesson history, usage, limits, payments, and billing state. Desktop and future mobile clients must rely on backend access/status decisions, not local payment assumptions.
 
@@ -12,11 +12,11 @@ English Voice Tutor is a global, cross-platform, provider-agnostic product for d
 ## Current Step 4F status note
 
 - Backend-hosted Paddle checkout launch page exists and is returned as a backend URL such as `/checkout/paddle?transactionId=...`.
-- The manual sandbox payment loop has been validated: **Upgrade -> Paddle Checkout -> transaction.completed webhook -> Premium active -> lesson allowed**.
+- The manual sandbox payment loop has been validated: **Desktop Buy Premium -> backend checkout-session -> backend-hosted Paddle checkout in browser -> transaction.completed webhook -> backend entitlement active -> Desktop Refresh status -> lesson allowed**.
 - A valid Paddle sandbox `transaction.completed` webhook activates Premium through the existing provider-event entitlement path.
 - Transient PostgreSQL serialization conflicts in billing processing are retried, including subscription snapshot processing and entitlement activation paths.
 - Premium access still comes from `EntitlementEntity`; `SubscriptionEntity` remains a provider-agnostic subscription snapshot only, and `PaymentEntity` remains diagnostic payment history only.
-- This sandbox validation does not mean production billing setup is complete; production webhook setup verification and production checkout configuration remain separate work.
+- This sandbox validation does not mean production billing setup is complete; production webhook setup verification, production checkout configuration, cancellation UX verification, and live Paddle readiness remain separate deferred work.
 
 
 ## Required base subscription plans
@@ -24,7 +24,7 @@ English Voice Tutor is a global, cross-platform, provider-agnostic product for d
 - The `free` and `premium` rows in the `plans` table are required reference data, not optional product-catalog content.
 - Required values are `PlanId=free`, `DisplayName=Free`, `Tier=free`, `IsActive=true` and `PlanId=premium`, `DisplayName=Premium`, `Tier=premium`, `IsActive=true`.
 - Missing base plan rows break subscription and entitlement writes through the `FK_subscriptions_plans_PlanId` and `FK_entitlements_plans_PlanId` constraints.
-- The database now has an EF migration with idempotent PostgreSQL upsert SQL for these base plans, so fresh databases and previously repaired databases converge without duplicate plan rows.
+- EF migration `20260618090000_SeedBaseSubscriptionPlans` has idempotent PostgreSQL upsert SQL for these base plans, is recorded in production `__EFMigrationsHistory`, and makes fresh databases and previously repaired databases converge without duplicate plan rows.
 - The seed keeps both base plans active and does not delete other plan rows. Database update remains an explicit operator step; packaging and backend upload scripts must not apply migrations automatically.
 - Free, trial, and Premium status logic remains backend-owned. Premium access is determined by entitlement rows, not by Desktop local state, Paddle checkout state, or Paddle subscription snapshots directly.
 
@@ -57,7 +57,7 @@ English Voice Tutor is a global, cross-platform, provider-agnostic product for d
 - `EntitlementEntity` remains the source of Premium access.
 - Premium can come from trial, Development test-account grants, local admin grants, or validated provider billing events.
 - Valid provider billing activation creates or extends `provider_event` Premium `EntitlementEntity` rows from validated `reconciliation_pending` `transaction.completed` `billing_events` only.
-- Provider-event paid Premium stacks after active trial/Premium access; a future-start provider-event entitlement does not count as active Premium until its `StartsAtUtc` is reached.
+- Provider-event paid Premium stacks after active trial/Premium access. If a user buys Premium during an active trial, paid Premium starts after `trialEndsAtUtc` and preserves the paid duration; a future-start provider-event entitlement does not count as active Premium until its `StartsAtUtc` is reached, so the trial remains the current access source until trial expiry.
 - Later valid period ends extend existing provider-event access; duplicate or older events do not duplicate or shorten entitlement.
 - Actual `subscription.canceled` and `subscription.paused` events expire only active `provider_event` Premium entitlement for the resolved internal user/provider subscription context.
 - Scheduled cancellation and past-due snapshots do not revoke Premium early.
@@ -151,6 +151,21 @@ Current completed behavior:
 - Entitlement activation is separate and can activate Premium only after webhook ingestion, normalization, reconciliation decision processing, and strict activation validation.
 - Optional real sandbox smoke script: `tools/smoke_paddle_checkout_live_sandbox.ps1`.
 - The optional real sandbox smoke requires `-AllowRealPaddleCall` and creates a real Paddle sandbox transaction only; it does not complete payment, call webhooks, or activate internal entitlement state.
+
+
+## Current-user cancel-renewal foundation
+
+Endpoint:
+- Authenticated current-user billing cancellation endpoint for cancel-renewal/cancel-at-period-end.
+
+Current completed behavior:
+- Cancellation is backend-owned; Desktop does not send an arbitrary Paddle/provider subscription id.
+- The backend uses the current user's subscription snapshot to resolve the provider subscription context.
+- The Paddle adapter supports cancel-at-period-end/next-billing-period behavior for sandbox validation.
+- A cancel request must mean cancel renewal, not immediate removal of paid access.
+- The cancel request path must not directly revoke `EntitlementEntity`.
+- Existing paid Premium or scheduled paid Premium remains until entitlement expiry unless a later explicitly designed provider lifecycle/refund/reversal path changes it.
+- Current-user subscription status exposes the cancellation and future-Premium fields needed by Desktop Account UI decisions, including scheduled cancellation/action/effective dates, current period end, entitlement expiry, future-start Premium, and enough state to show Buy/Cancel/Refresh decisions.
 
 ## Paddle webhook ingestion foundation v1
 
@@ -329,7 +344,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - Desktop Debug build passed.
 - Desktop Release build passed.
 - Backend build passed.
-- `dotnet ef migrations list` shows latest confirmed migration `20260604121000_AddCmsDraftSaveAuditMetadata`; latest billing-specific payment persistence migration remains `20260529000000_AddPaddlePaymentPersistenceV1`.
+- `dotnet ef migrations list` shows latest confirmed migration `20260618090000_SeedBaseSubscriptionPlans`; latest billing-specific payment persistence migration before base-plan seeding remains `20260529000000_AddPaddlePaymentPersistenceV1`.
 - `dotnet ef database update` reports the database is already up to date.
 - `dotnet ef migrations has-pending-model-changes` reports no model changes.
 - `tools/smoke_paddle_canceled_paused_expiry_policy.ps1` passed.
@@ -368,7 +383,7 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 
 ## Current latest EF migration
 
-- Latest confirmed EF migration is `20260604121000_AddCmsDraftSaveAuditMetadata`.
+- Latest confirmed EF migration is `20260618090000_SeedBaseSubscriptionPlans`.
 - `dotnet ef database update` reports the database is already up to date.
 - `dotnet ef migrations has-pending-model-changes` reports no model changes.
 
@@ -401,14 +416,16 @@ Deferred scope / next roadmap:
 - Trial/manual/admin/development/future-mobile entitlements are not touched by the provider-event canceled/paused expiry path.
 - Admin UI was not changed.
 - Desktop UI is outside this documentation update; the current desktop upgrade/paywall flow exists for sandbox validation and remains backend-driven.
-- Latest payment persistence schema migration is `20260529000000_AddPaddlePaymentPersistenceV1`; latest overall confirmed EF migration is `20260604121000_AddCmsDraftSaveAuditMetadata`.
+- Latest payment persistence schema migration is `20260529000000_AddPaddlePaymentPersistenceV1`; latest overall confirmed EF migration is `20260618090000_SeedBaseSubscriptionPlans`.
 
 ## Desktop Premium billing controls
 
-The desktop Account subscription area can start a Premium purchase by calling the authenticated backend checkout-session endpoint with the `premium` plan. The desktop app opens the backend-hosted Paddle checkout URL in the user's browser and does not call Paddle directly or store Paddle API keys, price ids, webhook secrets, or other private billing secrets.
+Desktop `v0.1.36-tester.17` Account subscription area includes **Buy Premium**, **Cancel subscription**, and **Refresh status** controls. Buy Premium calls the authenticated backend checkout-session endpoint with the `premium` plan. The desktop app opens the backend-hosted Paddle checkout URL in the user's browser and does not call Paddle directly or store Paddle API keys, price ids, webhook secrets, or other private billing secrets.
 
-Checkout creation is not Premium activation. Premium access remains backend-owned and becomes active only from backend entitlement state after Paddle webhook processing.
+Checkout creation is not Premium activation. Premium access remains backend-owned and becomes active only from backend entitlement state after Paddle webhook processing. The user must return to the app and use Refresh status after payment so the desktop can read the updated backend state.
 
 The desktop Account subscription area can also request renewal cancellation through the authenticated backend current-user billing endpoint. The backend uses its own subscription snapshot to find the user's Paddle subscription id; the desktop never sends an arbitrary provider subscription id. Cancellation schedules cancel-at-period-end/next-billing-period behavior and does not revoke existing paid Premium entitlements directly. Existing paid Premium access remains available until the entitlement expires or until a future provider lifecycle/refund feature changes that state.
 
-Cancellation state is reflected through subscription snapshot fields such as `CancelAtPeriodEnd`, `ScheduledChangeAction`, `ScheduledChangeEffectiveAtUtc`, and `CurrentPeriodEndUtc` in the current-user subscription status response. Sandbox validation of checkout and webhook activation remains controlled tester validation and is not a broad production/live Paddle readiness claim.
+Cancellation state is reflected through subscription snapshot fields such as `CancelAtPeriodEnd`, `ScheduledChangeAction`, `ScheduledChangeEffectiveAtUtc`, `CurrentPeriodEndUtc`, and future Premium/entitlement fields in the current-user subscription status response. Sandbox validation of checkout, webhook activation, paid Premium scheduling after trial, and cancel-renewal remains controlled tester validation and is not a broad production/live Paddle readiness claim.
+
+Known follow-ups: Premium-active users should see free lessons as unlimited/no daily free limit instead of “1 remaining”; Buy Premium, Cancel subscription, Refresh status, confirmation dialog, and cancellation result strings need full localization in all supported interface languages; cancel confirmation currently can mix English dialog text with localized OS button labels; “No active paid subscription was found” needs clearer localized UX copy/states; cancellation should be tested end-to-end against Paddle sandbox; referral/promo logic is not implemented and remains future work.

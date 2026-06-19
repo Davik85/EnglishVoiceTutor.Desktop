@@ -4,9 +4,9 @@ This document describes the prepared deployment foundation for the Language Voic
 
 Review date: 2026-06-18.
 
-## Current server verification for 0.1.35-backend.24
+## Current server verification for 0.1.35-backend.27
 
-The production backend active release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.24`, and `/opt/languagevoicetutor/backend/current` points to that release. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23`. Backend `0.1.35-backend.24` includes the Admin roles/permissions foundation and the current controlled CMS published-snapshot runtime validation state. No EF migration was run or needed for this backend deployment. The deployment used the existing package/upload helper flow and did not write secrets or run migrations.
+The production backend active release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.27`, and `/opt/languagevoicetutor/backend/current` points to that release. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.24`. Backend `0.1.35-backend.27` includes the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields needed by the Desktop billing UI, and a cancel request path that must not directly revoke entitlements. EF migration `20260618090000_SeedBaseSubscriptionPlans` has been applied and is recorded in production `__EFMigrationsHistory`. The deployment used the existing package/upload helper flow and did not write secrets; database migration remained a separate explicit operator step.
 
 The production backend is reachable at `https://api.languagevoicetutor.com`. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. The service `languagevoicetutor-backend.service` is active/running after deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, translation, hints, bot voice/TTS, Conversation Mode, Lesson History updates, Progress updates, and CMS Save draft + Publish visibility in newly started lessons.
 
@@ -14,9 +14,9 @@ Do not copy server secrets, passwords, API keys, private keys, tokens, private e
 
 ## Current production backend snapshot
 
-Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.24` is active via `/opt/languagevoicetutor/backend/current`. Verify the live value with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` before calling any backend version current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23`.
+Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.27` is active via `/opt/languagevoicetutor/backend/current`. Verify the live value with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` before calling any backend version current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.24`.
 
-Backend `0.1.35-backend.24` did not require an EF migration. Production backend health and database health are healthy at the documented HTTPS health endpoints. Backend deploys remain separate from EF database migrations; do not run migrations automatically from the upload/deploy flow. Backend deploys also remain separate from Windows release upload; no Windows installer upload is performed by the backend helper.
+Backend `0.1.35-backend.27` required base subscription plan reference data migration `20260618090000_SeedBaseSubscriptionPlans`, now recorded in production `__EFMigrationsHistory`. Production backend health and database health are healthy at the documented HTTPS health endpoints. Backend deploys remain separate from EF database migrations; do not run migrations automatically from the upload/deploy flow. Backend deploys also remain separate from Windows release upload; no Windows installer upload is performed by the backend helper.
 
 ## Scope
 
@@ -25,14 +25,14 @@ Backend `0.1.35-backend.24` did not require an EF migration. Production backend 
 - The backend API is available at `api.languagevoicetutor.com`.
 - The backend remains the source of truth for AI/provider calls and account/subscription decisions.
 - The desktop app must call backend APIs only and must never store OpenAI API keys directly.
-- Production billing remains deferred. Paddle keys are not required for this test backend unless checkout/billing tests are deliberately enabled later.
+- Production/live billing readiness remains deferred. Paddle sandbox keys may be configured only for controlled sandbox validation; do not treat this as broad production billing readiness.
 
 
 ## Database migrations and base plans
 
-The backend upload/package scripts do not apply EF migrations automatically. Database update remains a separate explicit operator step. The subscription foundation requires active `free` and `premium` rows in `plans`; missing rows break subscription and entitlement writes through `FK_subscriptions_plans_PlanId` and `FK_entitlements_plans_PlanId`. The backend now includes an idempotent EF migration that upserts `free / Free / free / active` and `premium / Premium / premium / active`, safe on fresh databases and safe when the rows already exist.
+The backend upload/package scripts do not apply EF migrations automatically. Database update remains a separate explicit operator step. The subscription foundation requires active `free` and `premium` rows in `plans`; missing rows break subscription and entitlement writes through `FK_subscriptions_plans_PlanId` and `FK_entitlements_plans_PlanId`. Backend `0.1.35-backend.27` includes EF migration `20260618090000_SeedBaseSubscriptionPlans`, recorded in production `__EFMigrationsHistory`, that upserts `free / Free / free / active` and `premium / Premium / premium / active`, safe on fresh databases and safe when the rows already exist.
 
-This reference-data migration does not enable production/live Paddle billing, does not change checkout behavior, does not change webhook signature validation, and does not move Premium authority out of backend entitlements. Provider-event paid Premium continues to stack after active trial/Premium access.
+This reference-data migration and the sandbox cancel-renewal/checkout work do not enable production/live Paddle billing and do not move Premium authority out of backend entitlements. Provider-event paid Premium continues to stack after active trial/Premium access.
 
 ## Server layout
 
@@ -71,14 +71,14 @@ CORS is not currently configured in the backend. Nginx should reverse-proxy API 
 Run from the repository root on the local Windows development machine:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.24
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.27
 ```
 
 This publishes `backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj` in Release mode for `linux-x64` as a self-contained deployment and writes:
 
 ```text
 artifacts\publish\backend-linux-x64
-artifacts\packages\backend\LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.24.zip
+artifacts\packages\backend\LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.27.zip
 ```
 
 The production server does not need a git checkout, `dotnet` SDK, or `dotnet` runtime for this self-contained package. Generated files under `artifacts/` must not be committed. Do not rebuild or replace desktop release artifacts as part of backend deployment.
@@ -89,7 +89,7 @@ Dry-run can build the archive locally, then print the SSH/SCP/systemd commands w
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-backend.24 `
+  -Version 0.1.35-backend.27 `
   -PackageFirst `
   -DryRun
 ```
@@ -98,11 +98,11 @@ The script defaults to SSH host `lvt-server`, user `deploy`, and remote path `/o
 
 ## Upload and restart
 
-For a reviewed backend-only deployment, run from Windows. Keep any EF migration as a separate explicit operation; `0.1.35-backend.24` did not need one:
+For a reviewed backend-only deployment, run from Windows. Keep EF migrations as separate explicit operations; `0.1.35-backend.27` pairs with the separately applied `20260618090000_SeedBaseSubscriptionPlans` migration:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-backend.24 `
+  -Version 0.1.35-backend.27 `
   -PackageFirst
 ```
 

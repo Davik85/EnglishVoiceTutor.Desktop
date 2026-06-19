@@ -35,38 +35,38 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Current release baseline
 
-The live public tester manifest baseline must be checked from `latest.json`, not from this document. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.36-tester.16.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.36-tester.16`, and `updateMode` set to `manual-confirmation`. `0.1.36-tester.16` is the current uploaded Windows tester build in the public direct Windows release folder; previous tester release: `0.1.36-tester.15`; verify the website `latest.json` over HTTPS before tester handoff.
+The live public tester manifest baseline must be checked from `latest.json`, not from this document. Latest built/manual-check snapshot: `v0.1.36-tester.17` installer was built and manually checked for controlled sandbox billing validation. The live public tester manifest baseline must still be checked from `latest.json` before handoff because the website manifest remains the public source of truth; previous verified public tester release: `0.1.36-tester.16`.
 
 This is still a private tester/direct Windows release, not broad public production readiness.
 
 ## Latest verified release summary
 
-Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy and UI policy tests passed; the desktop release gate passed; and backend `0.1.35-backend.24` is deployed and healthy. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, and Save draft + Publish changes are visible in newly started desktop lessons.
+Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy and UI policy tests passed; the desktop release gate passed; and backend `0.1.35-backend.27` is deployed and healthy. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, and Save draft + Publish changes are visible in newly started desktop lessons.
 
 ## Immediate next steps
 
-1. Hand off `0.1.36-tester.16` only through the controlled tester/direct Windows channel after verifying live `latest.json`.
+1. Hand off `0.1.36-tester.17` only through the controlled tester/direct Windows channel after verifying live `latest.json`; keep it clearly labeled as controlled tester/sandbox billing validation, not broad production/live billing readiness.
 2. Collect controlled tester feedback and keep non-blocking feedback in triage.
 3. Validate update-over-existing-install from an older `EnglishVoiceTutor.Desktop.*` installed build if that path has not already been recorded for this exact tester handoff.
 4. Only then decide the next smallest safe CMS/Admin or scenario/avatar behavior step.
 
-Do not move billing/Paddle production readiness into the immediate next step; billing remains deferred until desktop hardening and tester feedback justify revisiting it.
+Do not move billing/Paddle production readiness into the immediate next step. Continue sandbox checkout/cancel-renewal validation and Desktop billing UI hardening first; production/live billing readiness remains deferred.
 
 ## Subscription base plan deployment note
 
 - Treat active `free` and `premium` plan rows as required database reference data.
 - Missing plan rows break subscriptions and entitlements through FK constraints.
-- The backend includes an idempotent EF migration to seed/upsert those rows; operators should apply migrations explicitly during backend deployment validation when this release is deployed.
+- EF migration `20260618090000_SeedBaseSubscriptionPlans` idempotently seeds/upserts those rows and is now recorded in production `__EFMigrationsHistory`; operators should still apply future migrations explicitly during backend deployment validation.
 - Do not add manual SQL as a recurring deployment requirement.
 - Keep free/trial/Premium status backend-owned, with Premium determined by entitlements rather than Desktop local state or Paddle directly.
-- Provider-event paid Premium should continue to stack after active trial/Premium access.
+- Provider-event paid Premium should continue to stack after active trial/Premium access; future-start provider-event Premium must not count as `premiumActive` until `StartsAtUtc`, and active trial should remain the current access source until trial expiry.
 - Production/live Paddle readiness remains deferred.
 
 ## Current backend verification
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.24` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23`. Backend `0.1.35-backend.24` contains the latest Admin CMS Validation & Preview readable UI fix plus `/admin` static asset cache busting/no-cache behavior. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. No EF migration was required.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.27` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.24`. Backend `0.1.35-backend.27` contains the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields for Desktop Account billing UI decisions, and a cancel request path that must not directly revoke entitlements. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. EF migration `20260618090000_SeedBaseSubscriptionPlans` is recorded in production `__EFMigrationsHistory`.
 
-Deployed runtime status diagnostics are visible on backend `0.1.35-backend.24` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
+Deployed runtime status diagnostics are visible on backend `0.1.35-backend.27` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
 
 ## CMS connection readiness and controlled release preparation
 
@@ -138,7 +138,9 @@ Next safe step: controlled tester handoff and feedback collection. CMS published
 
 ## Deferred work
 
-- Production billing/Paddle/subscription payment lifecycle remains deferred.
+- Production/live billing/Paddle readiness remains deferred; current billing work is controlled tester/sandbox validation only.
+- Desktop billing UI follow-ups remain: Premium-active free lesson label should show unlimited/no daily free limit, Buy/Cancel/Refresh and confirmation strings need full localization, cancellation result messages need clearer localized UX states, and cancel-renewal should be tested end-to-end against Paddle sandbox.
+- Referral/promo logic remains future work.
 - Production role management/RBAC and critical-change approval remain deferred.
 - Code signing remains deferred.
 - Broader public release readiness remains deferred until after controlled tester feedback and operational hardening.
@@ -147,7 +149,7 @@ Next safe step: controlled tester handoff and feedback collection. CMS published
 
 The Admin CMS now exposes a read-only **Runtime content status** section and the protected endpoint `GET /api/admin/dev/cms/runtime-status`. Use it to confirm the effective learner content source, validation result, counts, published snapshot metadata, and fallback state without exposing content bodies or secrets.
 
-CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.24` with approved tutor-id validation for `david`, `elena`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
+CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.27` with approved tutor-id validation for `david`, `elena`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
 
 ## CMS-managed level profiles (A1-B2)
 
@@ -165,5 +167,5 @@ When changing a tutor Display name in Admin CMS, use Save draft + Publish and th
 ## Premium billing follow-up
 
 - Continue validating the desktop Buy Premium and cancel-renewal flows against the sandbox backend.
-- Verify webhook-driven entitlement activation and cancel-at-period-end subscription snapshots before any production/live Paddle launch decision.
+- Verify webhook-driven entitlement activation, paid Premium scheduling after trial, future-start `premiumActive=false` behavior until `StartsAtUtc`, and cancel-at-period-end subscription snapshots before any production/live Paddle launch decision.
 - Do not add refund/reversal handling or Paddle customer portal flows until those backend-owned lifecycle policies are explicitly designed.

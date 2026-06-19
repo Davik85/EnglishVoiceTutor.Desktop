@@ -35,9 +35,7 @@ Generated local files under `artifacts/`, including `latest.json`, `changelog.js
 
 ## Current tester Windows direct release
 
-The public website `latest.json` remains the public source of truth for the live Windows direct tester release. Last verified snapshot: it pointed to `LanguageVoiceTutorSetup-0.1.36-tester.16.exe`, set `version` and `minimumSupportedVersion` to `0.1.36-tester.16`, set `backendBaseUrl` to `https://api.languagevoicetutor.com`, and used `updateMode: manual-confirmation`. This matches the installed tester/release backend lock.
-
-`0.1.36-tester.16` is the current uploaded Windows tester build in the public direct Windows release folder. The previous tester release was `0.1.36-tester.15`. Continue to verify the HTTPS `latest.json` before handoff. This remains a controlled tester/direct Windows release, not a broad public production launch.
+The public website `latest.json` remains the public source of truth for the live Windows direct tester release. Latest built/manual-check snapshot: `0.1.36-tester.17` installer was built and manually checked for controlled sandbox billing validation. The public website `latest.json` still must be checked before handoff because it is the public source of truth for what is live. The previous verified public tester release was `0.1.36-tester.16`. Continue to verify the HTTPS `latest.json` before handoff. This remains a controlled tester/direct Windows release, not a broad public production launch.
 
 ## Release backend lock (server-only installed builds)
 
@@ -47,17 +45,17 @@ Clean-machine smoke must verify registration/login/lesson/history/progress/updat
 
 ## Current production backend state
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.24`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23`.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.27`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.24`.
 
-Completed: backend `0.1.35-backend.24` is deployed and contains the latest Admin CMS Validation & Preview readable UI fix and the Admin static asset cache busting/no-cache fix for `/admin` assets. The Admin CMS Validation & Preview area no longer shows raw JSON directly in the main result area. Validation renders a readable panel with Passed/Failed status, counts, errors, warnings, and collapsed raw validation JSON. Preview renders readable metadata, counts, sample topics, sample scenarios, and collapsed raw preview JSON. Admin static asset cache busting was added for `admin.js` and `admin.css` using token `admin-cms-20260613-raw-json-fix`, and no-cache headers were added for `/admin` static files only.
+Completed: backend `0.1.35-backend.27` is deployed and includes the latest billing/subscription foundation work: current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, current-user subscription status fields needed by the Desktop Account billing UI, and a cancel request path that must not directly revoke `EntitlementEntity`. It also retains the Admin CMS Validation & Preview readable UI fix and `/admin` static asset cache busting/no-cache behavior from earlier backend releases.
 
-Completed: health and database health are green after deploy. `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. The build is green, the Admin shell audit is green, and the EF model check reports no pending model changes. No EF migration was required. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
+Completed: health and database health are green after deploy. `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. The build is green, the Admin shell audit is green, the EF model check reports no pending model changes, and `20260618090000_SeedBaseSubscriptionPlans` is recorded in production `__EFMigrationsHistory`. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
 ## Subscription base plan reference data
 
-The `plans` table requires active `free` and `premium` reference rows. Missing rows break subscription and entitlement writes through `FK_subscriptions_plans_PlanId` and `FK_entitlements_plans_PlanId`. The backend now includes an idempotent EF migration to upsert `free / Free / free / active` and `premium / Premium / premium / active`, safe for fresh databases and databases where the rows already exist. Applying EF migrations remains a separate explicit operator action and is not performed by packaging/upload scripts.
+The `plans` table requires active `free` and `premium` reference rows. Missing rows break subscription and entitlement writes through `FK_subscriptions_plans_PlanId` and `FK_entitlements_plans_PlanId`. The backend includes EF migration `20260618090000_SeedBaseSubscriptionPlans`, now recorded in production `__EFMigrationsHistory`, to idempotently upsert `free / Free / free / active` and `premium / Premium / premium / active`, safe for fresh databases and databases where the rows already exist. Applying EF migrations remains a separate explicit operator action and is not performed by packaging/upload scripts.
 
-Free/trial/Premium status logic remains backend-owned. Premium access is determined by entitlements, not Desktop local state or Paddle directly. Provider-event paid Premium stacks after active trial/Premium access, and production/live Paddle readiness remains deferred.
+Free/trial/Premium status logic remains backend-owned. Premium access is determined by entitlements, not Desktop local state or Paddle directly. Provider-event paid Premium stacks after active trial/Premium access. If a user is on trial and buys Premium, paid Premium starts after `trialEndsAtUtc` and preserves the paid duration; future-start provider-event Premium does not count as `premiumActive` until `StartsAtUtc`, so the active trial remains the current access source until trial expiry. Production/live Paddle readiness remains deferred.
 
 ## Auth, account, and persistence
 
@@ -127,7 +125,7 @@ Clean-machine smoke must include a smaller laptop / scaled display check, includ
 
 ## Billing and subscriptions
 
-Billing/Paddle/subscription payment lifecycle remains deferred. Do not imply production billing is ready. Trial entitlement for registration is working, but production checkout, webhook operations, subscription lifecycle operations, billing support operations, and broad payment readiness remain later work.
+Billing work is in controlled sandbox/tester validation, not broad production/live billing readiness. Trial entitlement for registration is working, Paddle sandbox checkout works through backend-hosted checkout, and Premium activates only after valid backend Paddle webhook processing updates entitlement state. Production/live Paddle readiness, broad payment readiness, billing support operations, referral/promo logic, and public launch readiness remain deferred.
 
 ## Release status
 
@@ -159,7 +157,7 @@ Current verified tester/release summary:
 - CMS scenario edits and level profile edits are visible in newly started desktop lessons after **Save draft** plus **Publish**;
 - smaller Windows tablet / small-screen visual smoke passed for Welcome/start, primary actions, Settings, and lesson flow;
 - Russian and French Welcome/start header text no longer truncates or clips after the localized layout fix;
-- admin roles/permissions policy and UI policy tests passed, the desktop release gate passed, and backend `0.1.35-backend.24` is deployed and healthy.
+- admin roles/permissions policy and UI policy tests passed, the desktop release gate passed, and backend `0.1.35-backend.27` is deployed and healthy.
 
 Remaining realistic readiness items:
 
@@ -167,7 +165,7 @@ Remaining realistic readiness items:
 2. Hand off to a small controlled external tester group.
 3. Establish the feedback collection and triage process.
 4. Triage known tester feedback without claiming it is solved: touch drag/hold can visually select multiple topic/subtopic items, some scenario/avatar dialogue can restart or repeat, short scenarios such as "Asking someone to repeat" need content polishing, bot voice autoplay can sometimes not play even when enabled, and occasional server-error feedback should stay in triage unless reproduced consistently.
-5. Finish production billing/payment lifecycle later.
+5. Continue controlled sandbox billing validation, especially cancel-renewal UX and Paddle sandbox end-to-end cancellation, without claiming production/live billing readiness.
 6. Add code signing later to reduce SmartScreen friction before broad distribution.
 
 Do not state that the product is fully public production-ready. The current state is a validated controlled tester/direct Windows release.
@@ -180,7 +178,7 @@ Completed: the backend has an admin-only, read-only CMS runtime content status d
 
 
 
-Current runtime-status result on deployed backend `0.1.35-backend.24` is clean: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. Learner runtime now uses the CMS published snapshot. The prior runtime-validation root cause was an obsolete hardcoded exact tutor behavior profile count of 2. Static JSON, CMS static import/draft construction, and desktop tutor avatar options all define the approved tutor ids `david`, `elena`, and `nelli`; the third profile is legitimate product content, not a smoke/test artifact. Runtime validation now derives the required tutor ids from the approved desktop avatar definitions and reports expected, actual, missing, unknown/extra, and duplicate tutor ids without exposing tutor instruction bodies. The `tools/smoke_cms_runtime_status.ps1` and `tools/validate_cms_published_snapshot_runtime.ps1` scripts default to the server-only backend `https://api.languagevoicetutor.com`; localhost must be passed explicitly only for approved local developer runs.
+Current runtime-status result on deployed backend `0.1.35-backend.27` is clean: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. Learner runtime now uses the CMS published snapshot. The prior runtime-validation root cause was an obsolete hardcoded exact tutor behavior profile count of 2. Static JSON, CMS static import/draft construction, and desktop tutor avatar options all define the approved tutor ids `david`, `elena`, and `nelli`; the third profile is legitimate product content, not a smoke/test artifact. Runtime validation now derives the required tutor ids from the approved desktop avatar definitions and reports expected, actual, missing, unknown/extra, and duplicate tutor ids without exposing tutor instruction bodies. The `tools/smoke_cms_runtime_status.ps1` and `tools/validate_cms_published_snapshot_runtime.ps1` scripts default to the server-only backend `https://api.languagevoicetutor.com`; localhost must be passed explicitly only for approved local developer runs.
 
 This diagnostic confirms the current runtime content source. Static JSON fallback remains available for safety and rollback, but it should not be active in normal runtime status now that CMS published snapshot runtime is active.
 
@@ -203,4 +201,6 @@ CMS tutor Display name is now the runtime-managed learner-facing tutor name afte
 
 ## Desktop Premium billing controls
 
-Desktop Account settings now expose user-facing Premium controls backed by the backend billing API: Buy Premium opens the backend-created Paddle checkout in the browser, and Cancel subscription requests backend-owned renewal cancellation at period end. The app does not activate Premium locally; entitlement activation still comes only from backend entitlement state after webhook processing. Cancellation state is shown from backend subscription snapshot fields, and already paid Premium time remains available until the entitlement expires. This remains sandbox/tester validation only; production/live Paddle readiness is still deferred.
+Desktop `v0.1.36-tester.17` includes Account UI controls for **Buy Premium**, **Cancel subscription**, and **Refresh status**. Buy Premium calls the backend checkout-session endpoint, opens the backend-hosted Paddle checkout URL in the browser, never calls Paddle directly, and does not activate Premium locally; after payment, the user must return to the app and refresh status so the app can read backend entitlement state after valid webhook processing. Cancellation is backend-owned cancel-renewal/cancel-at-period-end behavior, not immediate paid-access removal: the request path must not directly revoke `EntitlementEntity`, and existing paid Premium or scheduled paid Premium remains until entitlement expiry.
+
+Known billing UI follow-ups: when Premium is active, the free lesson line should show unlimited/no daily free limit instead of “1 remaining”; new Buy Premium, Cancel subscription, Refresh status, confirmation-dialog, and cancellation-result strings need full localization across supported interface languages; cancel confirmation currently can mix localized OS button labels with English dialog text; “No active paid subscription was found” needs clearer localized UX copy/states; cancellation still needs end-to-end verification against Paddle sandbox. This remains controlled tester/sandbox billing validation only; production/live Paddle readiness, referral/promo logic, and broad public launch readiness are still deferred.
