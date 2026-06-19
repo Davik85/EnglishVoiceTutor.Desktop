@@ -57,7 +57,7 @@
     };
 
     const SummaryFields = ["userId", "email", "status", "createdAt", "lastLoginAt"];
-    const SubscriptionFields = ["planId", "planName", "premiumActive", "trialActive", "trialEndsAtUtc", "subscriptionStatus", "billingProvider", "currentPeriodEndUtc", "freeLessonUsedToday", "freeLessonRemainingToday", "enforcementEnabled", "source", "checkedAtUtc"];
+    const SubscriptionFields = ["planId", "planName", "premiumActive", "trialActive", "trialEndsAtUtc", "subscriptionStatus", "billingProvider", "renewalStatus", "nextRenewalState", "cancelAtPeriodEnd", "scheduledChangeAction", "scheduledChangeEffectiveAtUtc", "currentPeriodEndUtc", "paidAccessUntilUtc", "hasActivePaidProviderSubscription", "providerSubscriptionPresent", "canRequestCancelRenewal", "cancellationExplanationCode", "lastProviderEventId", "lastProviderEventType", "lastProviderEventOccurredAtUtc", "freeLessonUsedToday", "freeLessonRemainingToday", "enforcementEnabled", "source", "checkedAtUtc"];
     const EntitlementColumns = ["entitlementId", "planId", "entitlementType", "source", "status", "startsAtUtc", "expiresAtUtc", "reason", "createdAt", "updatedAt"];
     const LessonSessionColumns = ["sessionId", "lessonContentId", "studyLanguage", "topicTitle", "subtopicTitle", "level", "modeUsed", "status", "startedAt", "finishedAt", "validTurnCount", "estimatedCost"];
     const DailyUsageColumns = ["usageDate", "studyLanguage", "lessonsStarted", "lessonsCompleted", "chatReplyCount", "hintsUsed", "feedbackRequests", "transcriptionSeconds", "ttsSeconds", "estimatedCost", "updatedAt"];

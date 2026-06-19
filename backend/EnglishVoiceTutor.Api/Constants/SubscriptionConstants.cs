@@ -24,6 +24,38 @@ public static class SubscriptionConstants
         public const string Unknown = "unknown";
     }
 
+
+    public static class RenewalStatuses
+    {
+        public const string NoPaidSubscription = "no_paid_subscription";
+        public const string RenewalActive = "renewal_active";
+        public const string CancellationScheduled = "cancellation_scheduled";
+        public const string SubscriptionCanceled = "subscription_canceled";
+        public const string SubscriptionPaused = "subscription_paused";
+        public const string PastDue = "past_due";
+        public const string Unknown = "unknown";
+    }
+
+    public static class NextRenewalStates
+    {
+        public const string NotApplicable = "not_applicable";
+        public const string RenewalExpected = "renewal_expected";
+        public const string NoRenewalScheduled = "no_renewal_scheduled";
+        public const string Unknown = "unknown";
+    }
+
+    public static class CancellationExplanationCodes
+    {
+        public const string None = "none";
+        public const string NoPaidProviderSubscription = "no_paid_provider_subscription";
+        public const string AlreadyScheduled = "already_scheduled";
+        public const string ProviderSubscriptionMissing = "provider_subscription_missing";
+        public const string Canceled = "canceled";
+        public const string Paused = "paused";
+        public const string PastDue = "past_due";
+        public const string Unknown = "unknown";
+    }
+
     public static class BillingProviders
     {
         public const string None = "none";
