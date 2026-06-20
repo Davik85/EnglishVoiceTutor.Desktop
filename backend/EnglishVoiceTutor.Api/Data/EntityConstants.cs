@@ -24,6 +24,9 @@ public static class EntityConstants
         public const string BillingEvents = "billing_events";
         public const string PaddleWebhookEvents = "paddle_webhook_events";
         public const string AdminActions = "admin_actions";
+        public const string AdminUsers = "admin_users";
+        public const string AdminUserRoles = "admin_user_roles";
+        public const string AdminRoleAssignmentEvents = "admin_role_assignment_events";
         public const string PasswordResetTokens = "password_reset_tokens";
         public const string UserRefreshTokens = "user_refresh_tokens";
         public const string ContentPacks = "cms_content_packs";
@@ -82,6 +85,7 @@ public static class EntityConstants
         public const int MetadataJsonMaxLength = 4096;
         public const int ErrorMessageMaxLength = 1024;
         public const int ActionTypeMaxLength = 128;
+        public const int AdminRoleIdMaxLength = 80;
         public const int CmsSlugKeyMaxLength = 120;
         public const int CmsShortNameMaxLength = 200;
         public const int CmsDescriptionMaxLength = 2000;

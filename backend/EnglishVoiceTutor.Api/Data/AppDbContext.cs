@@ -26,6 +26,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<BillingEventEntity> BillingEvents => Set<BillingEventEntity>();
     public DbSet<PaddleWebhookEventEntity> PaddleWebhookEvents => Set<PaddleWebhookEventEntity>();
     public DbSet<AdminActionEntity> AdminActions => Set<AdminActionEntity>();
+    public DbSet<AdminUserEntity> AdminUsers => Set<AdminUserEntity>();
+    public DbSet<AdminUserRoleEntity> AdminUserRoles => Set<AdminUserRoleEntity>();
+    public DbSet<AdminRoleAssignmentEventEntity> AdminRoleAssignmentEvents => Set<AdminRoleAssignmentEventEntity>();
     public DbSet<PasswordResetTokenEntity> PasswordResetTokens => Set<PasswordResetTokenEntity>();
     public DbSet<UserRefreshTokenEntity> UserRefreshTokens => Set<UserRefreshTokenEntity>();
     public DbSet<ContentPackEntity> ContentPacks => Set<ContentPackEntity>();
@@ -62,6 +65,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureBillingEvents(modelBuilder);
         ConfigurePaddleWebhookEvents(modelBuilder);
         ConfigureAdminActions(modelBuilder);
+        ConfigureAdminRoleAssignmentPersistence(modelBuilder);
         ConfigurePasswordResetTokens(modelBuilder);
         ConfigureUserRefreshTokens(modelBuilder);
         ConfigureCmsContent(modelBuilder);
@@ -463,6 +467,94 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.HasIndex(action => new { action.TargetUserId, action.CreatedAtUtc });
         entity.HasOne(action => action.AdminUser).WithMany(user => user.AdminActionsCreated).HasForeignKey(action => action.AdminUserId).OnDelete(DeleteBehavior.Restrict);
         entity.HasOne(action => action.TargetUser).WithMany(user => user.AdminActionsReceived).HasForeignKey(action => action.TargetUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureAdminRoleAssignmentPersistence(ModelBuilder modelBuilder)
+    {
+        ConfigureAdminUsers(modelBuilder);
+        ConfigureAdminUserRoles(modelBuilder);
+        ConfigureAdminRoleAssignmentEvents(modelBuilder);
+    }
+
+    private static void ConfigureAdminUsers(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AdminUserEntity>();
+        entity.ToTable(EntityConstants.TableNames.AdminUsers);
+        entity.HasKey(adminUser => adminUser.Id);
+        entity.Property(adminUser => adminUser.NormalizedEmail).HasMaxLength(EntityConstants.Lengths.EmailMaxLength);
+        entity.Property(adminUser => adminUser.Status).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
+        entity.Property(adminUser => adminUser.CreatedAtUtc).IsRequired();
+        entity.Property(adminUser => adminUser.UpdatedAtUtc).IsRequired();
+        entity.HasIndex(adminUser => adminUser.UserId);
+        entity.HasIndex(adminUser => adminUser.NormalizedEmail);
+        entity.HasIndex(adminUser => adminUser.Status);
+        entity.HasOne(adminUser => adminUser.User)
+            .WithMany()
+            .HasForeignKey(adminUser => adminUser.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne(adminUser => adminUser.CreatedByAdminUser)
+            .WithMany(adminUser => adminUser.CreatedAdminUsers)
+            .HasForeignKey(adminUser => adminUser.CreatedByAdminUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureAdminUserRoles(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AdminUserRoleEntity>();
+        entity.ToTable(EntityConstants.TableNames.AdminUserRoles);
+        entity.HasKey(role => role.Id);
+        entity.Property(role => role.RoleId).IsRequired().HasMaxLength(EntityConstants.Lengths.AdminRoleIdMaxLength);
+        entity.Property(role => role.AssignedAtUtc).IsRequired();
+        entity.Property(role => role.Reason).IsRequired().HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
+        entity.Property(role => role.RevokeReason).HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
+        entity.HasIndex(role => role.AdminUserId);
+        entity.HasIndex(role => role.RoleId);
+        entity.HasIndex(role => role.AssignedByAdminUserId);
+        entity.HasIndex(role => role.RevokedAtUtc);
+        entity.HasIndex(role => new { role.AdminUserId, role.RoleId })
+            .IsUnique()
+            .HasFilter("\"RevokedAtUtc\" IS NULL");
+        entity.HasOne(role => role.AdminUser)
+            .WithMany(adminUser => adminUser.RoleAssignments)
+            .HasForeignKey(role => role.AdminUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne(role => role.AssignedByAdminUser)
+            .WithMany(adminUser => adminUser.RoleAssignmentsCreated)
+            .HasForeignKey(role => role.AssignedByAdminUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne(role => role.RevokedByAdminUser)
+            .WithMany(adminUser => adminUser.RoleAssignmentsRevoked)
+            .HasForeignKey(role => role.RevokedByAdminUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureAdminRoleAssignmentEvents(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AdminRoleAssignmentEventEntity>();
+        entity.ToTable(EntityConstants.TableNames.AdminRoleAssignmentEvents);
+        entity.HasKey(roleEvent => roleEvent.Id);
+        entity.Property(roleEvent => roleEvent.ActionType).IsRequired().HasMaxLength(EntityConstants.Lengths.ActionTypeMaxLength);
+        entity.Property(roleEvent => roleEvent.RoleId).HasMaxLength(EntityConstants.Lengths.AdminRoleIdMaxLength);
+        entity.Property(roleEvent => roleEvent.Reason).HasMaxLength(EntityConstants.Lengths.MediumTextMaxLength);
+        entity.Property(roleEvent => roleEvent.OldRolesJson).HasMaxLength(EntityConstants.Lengths.MetadataJsonMaxLength);
+        entity.Property(roleEvent => roleEvent.NewRolesJson).HasMaxLength(EntityConstants.Lengths.MetadataJsonMaxLength);
+        entity.Property(roleEvent => roleEvent.OccurredAtUtc).IsRequired();
+        entity.Property(roleEvent => roleEvent.Result).IsRequired().HasMaxLength(EntityConstants.Lengths.StatusMaxLength);
+        entity.Property(roleEvent => roleEvent.SafeMetadataJson).HasMaxLength(EntityConstants.Lengths.MetadataJsonMaxLength);
+        entity.HasIndex(roleEvent => roleEvent.ActorAdminUserId);
+        entity.HasIndex(roleEvent => roleEvent.TargetAdminUserId);
+        entity.HasIndex(roleEvent => roleEvent.RoleId);
+        entity.HasIndex(roleEvent => roleEvent.ActionType);
+        entity.HasIndex(roleEvent => roleEvent.Result);
+        entity.HasIndex(roleEvent => roleEvent.OccurredAtUtc);
+        entity.HasOne(roleEvent => roleEvent.ActorAdminUser)
+            .WithMany(adminUser => adminUser.ActorEvents)
+            .HasForeignKey(roleEvent => roleEvent.ActorAdminUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne(roleEvent => roleEvent.TargetAdminUser)
+            .WithMany(adminUser => adminUser.TargetEvents)
+            .HasForeignKey(roleEvent => roleEvent.TargetAdminUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigurePasswordResetTokens(ModelBuilder modelBuilder)
