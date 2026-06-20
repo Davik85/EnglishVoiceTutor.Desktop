@@ -2414,6 +2414,18 @@ public static class AppLocalization
         {
             ["en"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "Current tariff: {0}",
+                ["Free lessons remaining: {0}"] = "Free lessons remaining: {0}",
+                ["Premium: {0}"] = "Premium: {0}",
+                ["Auto-renewal: {0}"] = "Auto-renewal: {0}",
+                ["Trial"] = "Trial",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "without limits",
+                ["active"] = "active",
+                ["inactive"] = "inactive",
+                ["active until {0}"] = "active until {0}",
+                ["active from {0} to {1}"] = "active from {0} to {1}",
+
                 ["Buy Premium"] = "Buy Premium",
                 ["Cancel subscription"] = "Cancel subscription",
                 ["Refresh status"] = "Refresh status",
@@ -2471,6 +2483,18 @@ public static class AppLocalization
             },
             ["es"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "Tarifa actual: {0}",
+                ["Free lessons remaining: {0}"] = "Lecciones gratis restantes: {0}",
+                ["Premium: {0}"] = "Premium: {0}",
+                ["Auto-renewal: {0}"] = "Renovación automática: {0}",
+                ["Trial"] = "Prueba",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "sin límites",
+                ["active"] = "activa",
+                ["inactive"] = "inactiva",
+                ["active until {0}"] = "activa hasta {0}",
+                ["active from {0} to {1}"] = "activa de {0} a {1}",
+
                 ["Buy Premium"] = "Comprar Premium",
                 ["Cancel subscription"] = "Cancelar suscripción",
                 ["Refresh status"] = "Actualizar estado",
@@ -2528,6 +2552,18 @@ public static class AppLocalization
             },
             ["fr"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "Tarif actuel : {0}",
+                ["Free lessons remaining: {0}"] = "Leçons gratuites restantes : {0}",
+                ["Premium: {0}"] = "Premium : {0}",
+                ["Auto-renewal: {0}"] = "Renouvellement auto : {0}",
+                ["Trial"] = "Essai",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "sans limite",
+                ["active"] = "actif",
+                ["inactive"] = "inactif",
+                ["active until {0}"] = "actif jusqu’au {0}",
+                ["active from {0} to {1}"] = "actif du {0} au {1}",
+
                 ["Buy Premium"] = "Acheter Premium",
                 ["Cancel subscription"] = "Annuler l’abonnement",
                 ["Refresh status"] = "Actualiser l’état",
@@ -2585,6 +2621,18 @@ public static class AppLocalization
             },
             ["de"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "Aktueller Tarif: {0}",
+                ["Free lessons remaining: {0}"] = "Verbleibende Gratislektionen: {0}",
+                ["Premium: {0}"] = "Premium: {0}",
+                ["Auto-renewal: {0}"] = "Automatische Verlängerung: {0}",
+                ["Trial"] = "Testphase",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "ohne Begrenzung",
+                ["active"] = "aktiv",
+                ["inactive"] = "inaktiv",
+                ["active until {0}"] = "aktiv bis {0}",
+                ["active from {0} to {1}"] = "aktiv von {0} bis {1}",
+
                 ["Buy Premium"] = "Premium kaufen",
                 ["Cancel subscription"] = "Abo kündigen",
                 ["Refresh status"] = "Status aktualisieren",
@@ -2642,6 +2690,18 @@ public static class AppLocalization
             },
             ["it"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "Tariffa attuale: {0}",
+                ["Free lessons remaining: {0}"] = "Lezioni gratuite rimaste: {0}",
+                ["Premium: {0}"] = "Premium: {0}",
+                ["Auto-renewal: {0}"] = "Rinnovo automatico: {0}",
+                ["Trial"] = "Prova",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "senza limiti",
+                ["active"] = "attivo",
+                ["inactive"] = "non attivo",
+                ["active until {0}"] = "attivo fino al {0}",
+                ["active from {0} to {1}"] = "attivo dal {0} al {1}",
+
                 ["Buy Premium"] = "Acquista Premium",
                 ["Cancel subscription"] = "Annulla abbonamento",
                 ["Refresh status"] = "Aggiorna stato",
@@ -2699,6 +2759,18 @@ public static class AppLocalization
             },
             ["pt"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "Tarifa atual: {0}",
+                ["Free lessons remaining: {0}"] = "Aulas gratuitas restantes: {0}",
+                ["Premium: {0}"] = "Premium: {0}",
+                ["Auto-renewal: {0}"] = "Renovação automática: {0}",
+                ["Trial"] = "Teste",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "sem limites",
+                ["active"] = "ativo",
+                ["inactive"] = "inativo",
+                ["active until {0}"] = "ativo até {0}",
+                ["active from {0} to {1}"] = "ativo de {0} a {1}",
+
                 ["Buy Premium"] = "Comprar Premium",
                 ["Cancel subscription"] = "Cancelar assinatura",
                 ["Refresh status"] = "Atualizar estado",
@@ -2756,6 +2828,18 @@ public static class AppLocalization
             },
             ["ru"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "Текущий тариф: {0}",
+                ["Free lessons remaining: {0}"] = "Бесплатных уроков осталось: {0}",
+                ["Premium: {0}"] = "Премиум: {0}",
+                ["Auto-renewal: {0}"] = "Автопродление: {0}",
+                ["Trial"] = "Trial",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "без ограничений",
+                ["active"] = "активно",
+                ["inactive"] = "не активно",
+                ["active until {0}"] = "активен до {0}",
+                ["active from {0} to {1}"] = "активен с {0} до {1}",
+
                 ["Buy Premium"] = "Купить Premium",
                 ["Cancel subscription"] = "Отменить подписку",
                 ["Refresh status"] = "Обновить статус",
@@ -2813,6 +2897,18 @@ public static class AppLocalization
             },
             ["pl"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "Obecna taryfa: {0}",
+                ["Free lessons remaining: {0}"] = "Pozostałe darmowe lekcje: {0}",
+                ["Premium: {0}"] = "Premium: {0}",
+                ["Auto-renewal: {0}"] = "Automatyczne odnowienie: {0}",
+                ["Trial"] = "Okres próbny",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "bez limitu",
+                ["active"] = "aktywne",
+                ["inactive"] = "nieaktywne",
+                ["active until {0}"] = "aktywne do {0}",
+                ["active from {0} to {1}"] = "aktywne od {0} do {1}",
+
                 ["Buy Premium"] = "Kup Premium",
                 ["Cancel subscription"] = "Anuluj subskrypcję",
                 ["Refresh status"] = "Odśwież status",
@@ -2870,6 +2966,18 @@ public static class AppLocalization
             },
             ["ar"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "التعرفة الحالية: {0}",
+                ["Free lessons remaining: {0}"] = "الدروس المجانية المتبقية: {0}",
+                ["Premium: {0}"] = "Premium: {0}",
+                ["Auto-renewal: {0}"] = "التجديد التلقائي: {0}",
+                ["Trial"] = "تجربة",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "بلا حدود",
+                ["active"] = "نشط",
+                ["inactive"] = "غير نشط",
+                ["active until {0}"] = "نشط حتى {0}",
+                ["active from {0} to {1}"] = "نشط من {0} إلى {1}",
+
                 ["Buy Premium"] = "شراء Premium",
                 ["Cancel subscription"] = "إلغاء الاشتراك",
                 ["Refresh status"] = "تحديث الحالة",
@@ -2927,6 +3035,18 @@ public static class AppLocalization
             },
             ["ja"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "現在の料金プラン: {0}",
+                ["Free lessons remaining: {0}"] = "残り無料レッスン: {0}",
+                ["Premium: {0}"] = "Premium: {0}",
+                ["Auto-renewal: {0}"] = "自動更新: {0}",
+                ["Trial"] = "トライアル",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "無制限",
+                ["active"] = "有効",
+                ["inactive"] = "無効",
+                ["active until {0}"] = "{0}まで有効",
+                ["active from {0} to {1}"] = "{0}から{1}まで有効",
+
                 ["Buy Premium"] = "Premiumを購入",
                 ["Cancel subscription"] = "サブスクリプションをキャンセル",
                 ["Refresh status"] = "状態を更新",
@@ -2984,6 +3104,18 @@ public static class AppLocalization
             },
             ["ko"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "현재 요금제: {0}",
+                ["Free lessons remaining: {0}"] = "남은 무료 레슨: {0}",
+                ["Premium: {0}"] = "Premium: {0}",
+                ["Auto-renewal: {0}"] = "자동 갱신: {0}",
+                ["Trial"] = "체험",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "무제한",
+                ["active"] = "활성",
+                ["inactive"] = "비활성",
+                ["active until {0}"] = "{0}까지 활성",
+                ["active from {0} to {1}"] = "{0}부터 {1}까지 활성",
+
                 ["Buy Premium"] = "Premium 구매",
                 ["Cancel subscription"] = "구독 취소",
                 ["Refresh status"] = "상태 새로 고침",
@@ -3041,6 +3173,18 @@ public static class AppLocalization
             },
             ["sr"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "Trenutna tarifa: {0}",
+                ["Free lessons remaining: {0}"] = "Preostale besplatne lekcije: {0}",
+                ["Premium: {0}"] = "Premium: {0}",
+                ["Auto-renewal: {0}"] = "Automatska obnova: {0}",
+                ["Trial"] = "Probni period",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "bez ograničenja",
+                ["active"] = "aktivno",
+                ["inactive"] = "neaktivno",
+                ["active until {0}"] = "aktivno do {0}",
+                ["active from {0} to {1}"] = "aktivno od {0} do {1}",
+
                 ["Buy Premium"] = "Kupi Premium",
                 ["Cancel subscription"] = "Otkaži pretplatu",
                 ["Refresh status"] = "Osveži status",
@@ -3098,6 +3242,18 @@ public static class AppLocalization
             },
             ["hr"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "Trenutna tarifa: {0}",
+                ["Free lessons remaining: {0}"] = "Preostale besplatne lekcije: {0}",
+                ["Premium: {0}"] = "Premium: {0}",
+                ["Auto-renewal: {0}"] = "Automatska obnova: {0}",
+                ["Trial"] = "Probno razdoblje",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "bez ograničenja",
+                ["active"] = "aktivno",
+                ["inactive"] = "neaktivno",
+                ["active until {0}"] = "aktivno do {0}",
+                ["active from {0} to {1}"] = "aktivno od {0} do {1}",
+
                 ["Buy Premium"] = "Kupi Premium",
                 ["Cancel subscription"] = "Otkaži pretplatu",
                 ["Refresh status"] = "Osvježi status",
@@ -3155,6 +3311,18 @@ public static class AppLocalization
             },
             ["bg"] = new(StringComparer.OrdinalIgnoreCase)
             {
+                ["Current tariff: {0}"] = "Текущ тариф: {0}",
+                ["Free lessons remaining: {0}"] = "Оставащи безплатни уроци: {0}",
+                ["Premium: {0}"] = "Premium: {0}",
+                ["Auto-renewal: {0}"] = "Автоподновяване: {0}",
+                ["Trial"] = "Пробен период",
+                ["Premium tariff label"] = "Premium",
+                ["without limits"] = "без ограничения",
+                ["active"] = "активно",
+                ["inactive"] = "неактивно",
+                ["active until {0}"] = "активно до {0}",
+                ["active from {0} to {1}"] = "активно от {0} до {1}",
+
                 ["Buy Premium"] = "Купете Premium",
                 ["Cancel subscription"] = "Отказ на абонамента",
                 ["Refresh status"] = "Обнови статуса",

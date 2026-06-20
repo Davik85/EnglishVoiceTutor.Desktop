@@ -6,8 +6,10 @@ public static class SubscriptionConstants
     {
         public const string FreePlanId = "free";
         public const string PremiumPlanId = "premium";
+        public const string TrialPlanId = "trial";
         public const string FreePlanName = "Free";
         public const string PremiumPlanName = "Premium";
+        public const string TrialPlanName = "Trial";
         public const string FreeTier = "free";
         public const string PremiumTier = "premium";
     }

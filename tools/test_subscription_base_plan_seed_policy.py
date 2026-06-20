@@ -76,6 +76,7 @@ def main() -> None:
     constants = read(CONSTANTS)
     assert_contains(constants, 'FreePlanId = "free"', "free plan constant")
     assert_contains(constants, 'PremiumPlanId = "premium"', "premium plan constant")
+    assert_contains(constants, 'TrialPlanId = "trial"', "trial plan constant")
 
     migration_files = sorted(MIGRATIONS.glob("*.cs"))
     seed_migrations = [path for path in migration_files if "plan" in read(path).lower() and "on conflict" in read(path).lower()]
@@ -85,6 +86,8 @@ def main() -> None:
     combined_seed = "\n".join(read(path) for path in seed_migrations)
     assert_contains(combined_seed, "SubscriptionConstants.Plans.FreePlanId", "free plan seed constant usage")
     assert_contains(combined_seed, "SubscriptionConstants.Plans.PremiumPlanId", "premium plan seed constant usage")
+    assert_contains(combined_seed, "SubscriptionConstants.Plans.TrialPlanId", "trial plan seed constant usage")
+    assert_contains(combined_seed, "SubscriptionConstants.Plans.TrialPlanName", "trial plan seed display name")
     assert_contains(combined_seed, "ON CONFLICT", "PostgreSQL idempotent upsert")
     assert_contains(combined_seed, '"PlanId"', "PlanId conflict target")
     assert_contains(combined_seed, "TRUE", "active plan seed values")

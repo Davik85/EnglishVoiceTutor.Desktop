@@ -21,12 +21,20 @@ English Voice Tutor is a global, cross-platform, provider-agnostic product for d
 
 ## Required base subscription plans
 
-- The `free` and `premium` rows in the `plans` table are required reference data, not optional product-catalog content.
-- Required values are `PlanId=free`, `DisplayName=Free`, `Tier=free`, `IsActive=true` and `PlanId=premium`, `DisplayName=Premium`, `Tier=premium`, `IsActive=true`.
+- The `free`, `trial`, and `premium` rows in the `plans` table are required reference data, not optional product-catalog content.
+- Required values are `PlanId=free`, `DisplayName=Free`, `Tier=free`, `IsActive=true`; `PlanId=trial`, `DisplayName=Trial`, `Tier=premium`, `IsActive=true`; and `PlanId=premium`, `DisplayName=Premium`, `Tier=premium`, `IsActive=true`.
+- Trial is a first-class tariff/plan for display and reference purposes. Trial is not a Paddle product and is not added to checkout price/product mapping.
 - Missing base plan rows break subscription and entitlement writes through the `FK_subscriptions_plans_PlanId` and `FK_entitlements_plans_PlanId` constraints.
-- EF migration `20260618090000_SeedBaseSubscriptionPlans` has idempotent PostgreSQL upsert SQL for these base plans, is recorded in production `__EFMigrationsHistory`, and makes fresh databases and previously repaired databases converge without duplicate plan rows.
+- EF migration `20260618090000_SeedBaseSubscriptionPlans` has idempotent PostgreSQL upsert SQL for the original base plans and EF migration `20260620090000_SeedTrialSubscriptionPlan` adds the required Trial reference row with idempotent PostgreSQL upsert SQL. The original base-plan migration is recorded in production `__EFMigrationsHistory`; the Trial migration is data/reference seed only and makes fresh databases and previously repaired databases converge without duplicate plan rows.
 - The seed keeps both base plans active and does not delete other plan rows. Database update remains an explicit operator step; packaging and backend upload scripts must not apply migrations automatically.
 - Free, trial, and Premium status logic remains backend-owned. Premium access is determined by entitlement rows, not by Desktop local state, Paddle checkout state, or Paddle subscription snapshots directly.
+
+## Learner Account subscription UI
+
+- The learner Account subscription block is intentionally simplified to four customer-facing lines: current tariff, free lessons remaining, Premium status, and auto-renewal.
+- Trial is displayed as tariff `Trial`, including when paid Premium has been purchased during the trial but the paid provider-event entitlement is scheduled for after trial expiry.
+- Trial and Premium show free lessons as unlimited/without limits because active entitlement access bypasses the daily free lesson counter.
+- Renewal internals, cancellation explanations, provider-subscription presence, source/authenticated/enforcement/checked-at values, scheduled paid Premium starts/ends, and Paddle diagnostics remain Admin/diagnostic concerns and are not rendered in the learner Account block.
 
 ## Account requirement for normal lesson start
 
@@ -37,6 +45,7 @@ English Voice Tutor is a global, cross-platform, provider-agnostic product for d
 ## Trial behavior
 
 - A **7-day Premium trial** starts automatically after successful registration.
+- Trial access remains entitlement-owned: active trial grants/entitlements decide access, while the `trial` plan row gives learner-facing UI and reference data a real tariff named `Trial`. Because its tier is `premium`, active Trial behaves as Premium for lesson limits during the trial period.
 - Trial is **account-level** and intended to be shared by this account across desktop and future mobile clients.
 - Login does **not** create or extend trial.
 - `POST /api/me/trial/claim` still exists as a fallback/manual endpoint and remains one-trial-per-account.

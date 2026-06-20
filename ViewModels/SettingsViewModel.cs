@@ -1966,31 +1966,24 @@ public partial class SettingsViewModel : ViewModelBase
             }
 
             var status = result.Value;
-            SubscriptionPlanText = string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Current access: {0}"), BuildCurrentAccessLabel(status));
-            SubscriptionPremiumText = string.Empty;
-            SubscriptionTrialText = IsCurrentTrialPremium(status) && (status.CurrentAccessEndsAtUtc ?? status.TrialEndsAtUtc) is DateTimeOffset trialEnd
-                ? string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Trial active until: {0}"), FormatLocalizedDate(trialEnd))
-                : string.Empty;
-            var dailyLimitApplies = status.DailyFreeLimitApplies ?? !status.PremiumActive;
-            SubscriptionFreeLessonText = dailyLimitApplies
-                ? status.FreeLessonUsedToday
-                    ? $"{localizedText.SubscriptionFreeLessonLabel}: {LocalizeUiText("Used")}"
-                    : string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Free lessons remaining today: {0}"), Math.Max(status.FreeLessonRemainingToday, 0))
-                : LocalizeUiText("Free lessons: no daily limit");
-            SubscriptionRenewalText = BuildRenewalStatusText(status.RenewalStatus);
-            SubscriptionNextRenewalText = BuildNextRenewalText(status.NextRenewalState);
-            SubscriptionPaidAccessUntilText = BuildPaidAccessText(status);
-            SubscriptionCancellationStatusText = BuildCancellationStatusText(status);
-            SubscriptionEnforcementText = $"{localizedText.SubscriptionEnforcementLabel}: {(status.EnforcementEnabled ? LocalizeUiText("On") : LocalizeUiText("Off"))}";
-            SubscriptionSourceText = $"{localizedText.SubscriptionSourceLabel}: {LocalizeUiText("authenticated")}";
-            SubscriptionCheckedAtText = $"{localizedText.SubscriptionCheckedAtLabel}: {status.CheckedAtUtc:u}";
-            CanBuyPremium = IsAuthenticated && !status.PremiumActive;
+            SubscriptionPlanText = string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Current tariff: {0}"), BuildCurrentTariffLabel(status));
+            SubscriptionFreeLessonText = string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Free lessons remaining: {0}"), BuildFreeLessonsRemainingLabel(status));
+            SubscriptionPremiumText = string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Premium: {0}"), BuildPremiumDisplayStatusLabel(status));
+            SubscriptionRenewalText = string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Auto-renewal: {0}"), BuildAutoRenewalStatusLabel(status));
+            SubscriptionTrialText = string.Empty;
+            SubscriptionNextRenewalText = string.Empty;
+            SubscriptionPaidAccessUntilText = string.Empty;
+            SubscriptionCancellationStatusText = string.Empty;
+            SubscriptionEnforcementText = string.Empty;
+            SubscriptionSourceText = string.Empty;
+            SubscriptionCheckedAtText = string.Empty;
+            CanBuyPremium = IsAuthenticated && !string.Equals(status.CurrentTariffDisplayCode, "premium", StringComparison.OrdinalIgnoreCase);
             var cancelEnd = status.ScheduledChangeEffectiveAtUtc ?? status.CurrentPeriodEndUtc;
             var cancellationAlreadyScheduled = status.CancelAtPeriodEnd || IsScheduledCancellation(status.ScheduledChangeAction);
             CanCancelSubscription = IsAuthenticated && (status.CanRequestCancelRenewal ?? (status.HasActivePaidProviderSubscription && !cancellationAlreadyScheduled));
             lastKnownRenewalStatus = status.RenewalStatus;
             lastKnownPaidAccessUntilUtc = status.PaidAccessUntilUtc;
-            CancelSubscriptionNoticeText = BuildCancelSubscriptionNotice(status, cancellationAlreadyScheduled, cancelEnd);
+            CancelSubscriptionNoticeText = string.Empty;
             RecordAccountStatusResult(null, "success");
         }
         catch
@@ -2107,96 +2100,63 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
-    private string BuildCurrentAccessLabel(BackendSubscriptionStatusResponse status)
+    private string BuildCurrentTariffLabel(BackendSubscriptionStatusResponse status)
     {
-        var code = string.IsNullOrWhiteSpace(status.CurrentAccessDisplayCode) ? string.Empty : status.CurrentAccessDisplayCode;
+        var code = string.IsNullOrWhiteSpace(status.CurrentTariffDisplayCode) ? status.CurrentTariffId : status.CurrentTariffDisplayCode;
         return code switch
         {
-            "current_access_trial_premium" => LocalizeUiText("Trial Premium"),
-            "current_access_paid_premium" => LocalizeUiText("Paid Premium"),
-            "current_access_admin_premium" => LocalizeUiText("Admin Premium"),
-            "current_access_development_premium" => LocalizeUiText("Development Premium"),
-            "current_access_premium" => LocalizeUiText("Premium"),
-            "current_access_free" => LocalizeUiText("Free"),
-            _ when string.Equals(status.CurrentAccessTier, "trial_premium", StringComparison.OrdinalIgnoreCase) => LocalizeUiText("Trial Premium"),
-            _ when string.Equals(status.CurrentAccessTier, "paid_premium", StringComparison.OrdinalIgnoreCase) => LocalizeUiText("Paid Premium"),
-            _ when string.Equals(status.CurrentAccessTier, "admin_premium", StringComparison.OrdinalIgnoreCase) => LocalizeUiText("Admin Premium"),
-            _ when string.Equals(status.CurrentAccessTier, "development_premium", StringComparison.OrdinalIgnoreCase) => LocalizeUiText("Development Premium"),
-            _ when status.PremiumActive => LocalizeUiText("Premium"),
+            "trial" => LocalizeUiText("Trial"),
+            "premium" or "admin_premium" or "development_premium" or "manual_premium" => LocalizeUiText("Premium tariff label"),
+            "free" => LocalizeUiText("Free"),
+            _ when status.TrialActive => LocalizeUiText("Trial"),
+            _ when status.PremiumActive => LocalizeUiText("Premium tariff label"),
             _ => LocalizeUiText("Free")
         };
     }
 
-    private static bool IsCurrentTrialPremium(BackendSubscriptionStatusResponse status) =>
-        string.Equals(status.CurrentAccessTier, "trial_premium", StringComparison.OrdinalIgnoreCase)
-        || (status.TrialActive && status.PremiumActive && string.IsNullOrWhiteSpace(status.CurrentAccessTier));
-
-    private string BuildPaidAccessText(BackendSubscriptionStatusResponse status)
+    private string BuildFreeLessonsRemainingLabel(BackendSubscriptionStatusResponse status)
     {
-        var lines = new List<string>();
-        if (status.HasScheduledPaidPremium)
+        if (string.Equals(status.FreeLessonsRemainingDisplayCode, "unlimited", StringComparison.OrdinalIgnoreCase)
+            || status.TrialActive
+            || status.PremiumActive)
         {
-            if (status.ScheduledPaidPremiumStartUtc is DateTimeOffset scheduledStart)
-            {
-                lines.Add(string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Paid Premium starts: {0}"), FormatLocalizedDate(scheduledStart)));
-            }
-            if (status.ScheduledPaidPremiumEndUtc is DateTimeOffset scheduledEnd)
-            {
-                lines.Add(string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Paid Premium access until: {0}"), FormatLocalizedDate(scheduledEnd)));
-            }
-        }
-        else if (string.Equals(status.CurrentAccessTier, "paid_premium", StringComparison.OrdinalIgnoreCase) && (status.CurrentAccessEndsAtUtc ?? status.PaidAccessUntilUtc) is DateTimeOffset paidEnd)
-        {
-            lines.Add(string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Paid Premium access until: {0}"), FormatLocalizedDate(paidEnd)));
+            return LocalizeUiText("without limits");
         }
 
-        return string.Join(Environment.NewLine, lines);
+        var remaining = status.FreeLessonsRemainingToday ?? status.FreeLessonRemainingToday;
+        return Math.Max(remaining, 0).ToString(CultureInfo.CurrentCulture);
     }
+
+    private string BuildPremiumDisplayStatusLabel(BackendSubscriptionStatusResponse status)
+    {
+        var code = string.IsNullOrWhiteSpace(status.PremiumDisplayStatusCode)
+            ? status.PremiumActive || status.TrialActive ? "active_until" : "inactive"
+            : status.PremiumDisplayStatusCode;
+        var startsAt = status.PremiumStartsAtUtc ?? status.CurrentAccessStartsAtUtc;
+        var endsAt = status.PremiumEndsAtUtc ?? status.CurrentAccessEndsAtUtc ?? status.TrialEndsAtUtc ?? status.PaidAccessUntilUtc;
+
+        return code switch
+        {
+            "inactive" => LocalizeUiText("inactive"),
+            "active_from_to" when startsAt is DateTimeOffset start && endsAt is DateTimeOffset end =>
+                string.Format(CultureInfo.CurrentCulture, LocalizeUiText("active from {0} to {1}"), FormatLocalizedDate(start), FormatLocalizedDate(end)),
+            "active_until" when endsAt is DateTimeOffset end =>
+                string.Format(CultureInfo.CurrentCulture, LocalizeUiText("active until {0}"), FormatLocalizedDate(end)),
+            "active" => LocalizeUiText("active"),
+            _ when status.PremiumActive || status.TrialActive => endsAt is DateTimeOffset fallbackEnd
+                ? string.Format(CultureInfo.CurrentCulture, LocalizeUiText("active until {0}"), FormatLocalizedDate(fallbackEnd))
+                : LocalizeUiText("active"),
+            _ => LocalizeUiText("inactive")
+        };
+    }
+
+    private string BuildAutoRenewalStatusLabel(BackendSubscriptionStatusResponse status) =>
+        string.Equals(status.AutoRenewalStatusCode, "active", StringComparison.OrdinalIgnoreCase)
+            ? LocalizeUiText("active")
+            : LocalizeUiText("inactive");
 
     private string lastKnownRenewalStatus = string.Empty;
     private DateTimeOffset? lastKnownPaidAccessUntilUtc;
-
-    private string BuildRenewalStatusText(string? renewalStatus) => renewalStatus switch
-    {
-        "renewal_active" => LocalizeUiText("Renewal: active"),
-        "cancellation_scheduled" => LocalizeUiText("Renewal: cancellation scheduled"),
-        "no_paid_subscription" => LocalizeUiText("Renewal: no paid subscription"),
-        "subscription_canceled" => LocalizeUiText("Renewal: canceled"),
-        _ => LocalizeUiText("Renewal: unknown")
-    };
-
-    private string BuildNextRenewalText(string? nextRenewalState) => nextRenewalState switch
-    {
-        "renewal_expected" => LocalizeUiText("Next renewal: expected at the end of the current period"),
-        "no_renewal_scheduled" => LocalizeUiText("Next renewal: no further renewal scheduled"),
-        "not_applicable" => LocalizeUiText("Next renewal: not applicable"),
-        _ => LocalizeUiText("Next renewal: unknown")
-    };
-
-    private string BuildCancellationStatusText(BackendSubscriptionStatusResponse status) => status.CancellationExplanationCode switch
-    {
-        "already_scheduled" => LocalizeUiText("Cancellation status: already scheduled"),
-        "no_paid_provider_subscription" or "provider_subscription_missing" => LocalizeUiText("Cancellation status: not available for trial/manual Premium"),
-        "none" when status.CanRequestCancelRenewal == true => LocalizeUiText("Cancellation status: available"),
-        _ => LocalizeUiText("Cancellation status: unavailable")
-    };
-
-    private string BuildCancelSubscriptionNotice(BackendSubscriptionStatusResponse status, bool cancellationAlreadyScheduled, DateTimeOffset? cancelEnd)
-    {
-        if (status.HasActivePaidProviderSubscription && cancellationAlreadyScheduled)
-        {
-            return cancelEnd is null
-                ? LocalizeUiText("Renewal is already canceled. Paid Premium access remains until the end of the current paid period.")
-                : string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Renewal is already canceled. Premium access remains until {0}."), FormatLocalizedDate(cancelEnd.Value));
-        }
-
-        if (!status.HasActivePaidProviderSubscription)
-        {
-            return LocalizeUiText("No paid subscription to cancel.");
-        }
-
-        return string.Empty;
-    }
 
     private static bool IsScheduledCancellation(string? scheduledChangeAction)
     {

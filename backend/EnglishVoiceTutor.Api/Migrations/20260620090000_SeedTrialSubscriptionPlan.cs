@@ -1,0 +1,29 @@
+using EnglishVoiceTutor.Api.Constants;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace EnglishVoiceTutor.Api.Migrations;
+
+public partial class SeedTrialSubscriptionPlan : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.Sql($"""
+            INSERT INTO "plans" ("Id", "PlanId", "DisplayName", "Tier", "IsActive", "CreatedAt", "UpdatedAt")
+            VALUES
+                (gen_random_uuid(), '{SubscriptionConstants.Plans.TrialPlanId}', '{SubscriptionConstants.Plans.TrialPlanName}', '{SubscriptionConstants.Plans.PremiumTier}', TRUE, NOW(), NOW())
+            ON CONFLICT ("PlanId") DO UPDATE
+            SET
+                "DisplayName" = EXCLUDED."DisplayName",
+                "Tier" = EXCLUDED."Tier",
+                "IsActive" = TRUE,
+                "UpdatedAt" = NOW();
+            """);
+    }
+
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        // Trial is required reference data and is not removed automatically.
+    }
+}
