@@ -11,6 +11,8 @@ FILES = {
     "authorization_constants": ROOT / "backend/EnglishVoiceTutor.Api/Constants/AdminAuthorizationConstants.cs",
     "permission_constants": ROOT / "backend/EnglishVoiceTutor.Api/Constants/AdminPermissionConstants.cs",
     "catalog_service": ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRolePermissionCatalogService.cs",
+    "permission_handler": ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminPermissionAuthorizationHandler.cs",
+    "program": ROOT / "backend/EnglishVoiceTutor.Api/Program.cs",
     "admin_endpoints": ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs",
     "admin_js": ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js",
     "admin_index": ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/index.html",
@@ -82,6 +84,8 @@ def main() -> None:
     authorization_constants = read("authorization_constants")
     permission_constants = read("permission_constants")
     catalog_service = read("catalog_service")
+    permission_handler = read("permission_handler")
+    program = read("program")
     admin_endpoints = read("admin_endpoints")
     admin_ui = read("admin_js") + "\n" + read("admin_index")
 
@@ -97,6 +101,16 @@ def main() -> None:
         require(permission_constants, f'public const string {permission_constant} = "{permission_name}"', f"permission constant for {permission_name}")
         require(authorization_constants, f'public const string {policy_constant} = "AdminPermission:{permission_name}"', f"policy constant for {permission_name}")
         require(catalog_service, f"AdminPermissionConstants.{permission_constant}", f"BootstrapAdmin catalog includes {permission_name}")
+        require(program, f"AddAdminPermissionPolicy(options, AdminAuthorizationConstants.{policy_constant}, AdminPermissionConstants.{permission_constant})", f"registered permission policy mapping for {permission_name}")
+
+    require(permission_handler, "public sealed class AdminPermissionRequirement", "AdminPermissionRequirement class")
+    require(permission_handler, "public string PermissionName", "AdminPermissionRequirement permission name")
+    require(permission_handler, "public sealed class AdminPermissionAuthorizationHandler", "AdminPermissionAuthorizationHandler class")
+    require(permission_handler, "context.User.Identity?.IsAuthenticated != true", "permission handler authenticated-user fail closed check")
+    require(permission_handler, "_bootstrapAdminAccessService.IsBootstrapAdmin(context.User)", "permission handler reuses BootstrapAdmin access path")
+    require(permission_handler, "GetBootstrapAdminPermissions()", "permission handler checks BootstrapAdmin permission catalog")
+    require(program, "AddSingleton<IAuthorizationHandler, AdminPermissionAuthorizationHandler>()", "permission authorization handler registration")
+    require(program, "static void AddAdminPermissionPolicy", "central admin permission policy registration helper")
 
     for policy_constant in DANGEROUS_POLICY_CONSTANTS:
         require(authorization_constants, policy_constant, f"explicit dangerous action policy {policy_constant}")
