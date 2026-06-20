@@ -36,6 +36,7 @@ $ManualAdminSource = "manual_admin"
 $ActiveStatus = "active"
 $RevokedStatus = "revoked"
 $AdminSourceDevelopmentBootstrap = "development_config_bootstrap"
+$AdminSelfReadPermission = "admin.self.read"
 
 $GrantReason = "Admin smoke test manual Premium grant."
 $RevokeReason = "Admin smoke test manual Premium revoke."
@@ -203,6 +204,7 @@ $adminMeUrl = "$BaseUrl$AdminMePath"
 $adminMe = Invoke-ExpectStatusCode -Method $MethodGet -Url $adminMeUrl -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusOk)
 Assert-Equal -Expected $true -Actual $adminMe.Body.isAdmin -Message "admin/me isAdmin"
 Assert-Equal -Expected $AdminSourceDevelopmentBootstrap -Actual $adminMe.Body.adminSource -Message "admin/me adminSource"
+Assert-True -Condition ($adminMe.Body.permissions -contains $AdminSelfReadPermission) -Message "BootstrapAdmin /api/admin/me permissions include admin.self.read"
 Write-Pass "Admin identity check succeeded"
 
 Write-Step "Verify GET /api/admin/capabilities"

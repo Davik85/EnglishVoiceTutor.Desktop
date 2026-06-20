@@ -3,6 +3,7 @@ namespace EnglishVoiceTutor.Api.Constants;
 public static class AdminAuthorizationConstants
 {
     public const string BootstrapAdminPolicyName = "BootstrapAdmin";
+    public const string AdminSelfReadPermissionPolicyName = "AdminPermission:admin.self.read";
     public const string CmsDraftSavePermissionPolicyName = "AdminPermission:cms.content.write_draft";
     public const string CmsPublishPermissionPolicyName = "AdminPermission:cms.content.publish";
     public const string CmsRestorePermissionPolicyName = "AdminPermission:cms.content.restore";
