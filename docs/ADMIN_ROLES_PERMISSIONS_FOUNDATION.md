@@ -18,7 +18,7 @@ Legacy alias constants remain mapped to the new stable target role ids for compa
 
 Stable permission constants now exist for admin self/capabilities, users, audit, CMS, runtime status, subscriptions diagnostics, premium grant/revoke, free lesson allowance reset, billing diagnostics, and product statistics.
 
-Bootstrap admins map to `super_admin`. Bootstrap admins currently receive the full permission set. A static production role-to-permission catalog now exists for Owner/Super Admin, Support, Content Editor, Billing Support, and Read-only Auditor, but it is foundation-only and is not used for endpoint enforcement yet. Role assignment persistence, database tables, EF migrations, and Admin UI role management still do not exist. Existing Admin endpoints remain protected by BootstrapAdmin for controlled testing only; public RC readiness still requires endpoint-level permission enforcement or a documented owner-approved exception.
+Bootstrap admins map to `super_admin`. Bootstrap admins currently receive the full permission set. A static production role-to-permission catalog now exists for Owner/Super Admin, Support, Content Editor, Billing Support, and Read-only Auditor, and a static Admin endpoint/action-to-permission catalog now documents which production permission should protect each current Admin action plus future-only seams. These catalogs are foundation-only and are not used for endpoint enforcement yet. Role assignment persistence, database tables, EF migrations, and Admin UI role management still do not exist. Existing Admin endpoints remain protected by BootstrapAdmin for controlled testing only; public RC readiness still requires endpoint-level permission enforcement or a documented owner-approved exception.
 
 ## Exposed admin metadata
 
