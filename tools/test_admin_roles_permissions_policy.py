@@ -29,7 +29,10 @@ PERMISSIONS = {
     "AdminSelfRead": "admin.self.read",
     "AdminCapabilitiesRead": "admin.capabilities.read",
     "UsersRead": "users.read",
+    "UserLookupRead": "users.lookup.read",
+    "UserOverviewRead": "users.overview.read",
     "UsersDiagnosticsRead": "users.diagnostics.read",
+    "LessonHistoryDiagnosticsRead": "lesson_history.diagnostics.read",
     "AuditRead": "audit.read",
     "CmsContentRead": "cms.content.read",
     "CmsContentWriteDraft": "cms.content.write_draft",
@@ -37,11 +40,15 @@ PERMISSIONS = {
     "CmsContentRestore": "cms.content.restore",
     "CmsRuntimeStatusRead": "cms.runtime_status.read",
     "SubscriptionsDiagnosticsRead": "subscriptions.diagnostics.read",
+    "PremiumDiagnosticsRead": "premium.diagnostics.read",
     "PremiumGrant": "premium.grant",
     "PremiumRevoke": "premium.revoke",
     "FreeLessonAllowanceReset": "free_lesson_allowance.reset",
+    "BillingCancelRenewal": "billing.cancel_renewal",
     "BillingDiagnosticsRead": "billing.diagnostics.read",
     "ProductStatisticsRead": "product_statistics.read",
+    "SystemDiagnosticsRead": "system.diagnostics.read",
+    "AdminRolesManage": "admin.roles.manage",
 }
 
 BILLING_ACTIVATION_SNIPPETS = [
