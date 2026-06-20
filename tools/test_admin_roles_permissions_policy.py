@@ -159,8 +159,14 @@ def main() -> None:
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.ProductStatisticsReadPermissionPolicyName)", "admin product statistics overview endpoint uses ProductStatisticsRead permission policy")
     migrated_permission_authorizations = re.findall(r"RequireAuthorization\(AdminAuthorizationConstants\.(\w+PermissionPolicyName)\)", admin_endpoints)
     expected_permission_authorizations = ["AdminSelfReadPermissionPolicyName", "AdminCapabilitiesReadPermissionPolicyName", "ProductStatisticsReadPermissionPolicyName"]
-    if migrated_permission_authorizations != expected_permission_authorizations:
-        raise AssertionError(f"Exactly three safe read-only endpoints may use permission policies in this controlled migration step. Got: {migrated_permission_authorizations}")
+    existing_endpoint_authorizations = [
+        policy for policy in migrated_permission_authorizations
+        if policy != "AdminRoleManagementPermissionPolicyName"
+    ]
+    if existing_endpoint_authorizations != expected_permission_authorizations:
+        raise AssertionError(f"Exactly three existing safe read-only endpoints may use permission policies in this controlled migration step. Got: {existing_endpoint_authorizations}")
+    require(admin_endpoints, "app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)", "new role assignment diagnostics endpoint")
+    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "new role assignment diagnostics endpoint uses role-management permission")
     forbid(read("program"), "GetProductionRolePermissions()", "production role catalog endpoint enforcement")
 
     for needle in FORBIDDEN_PADDLE_CLIENT_REFERENCES:

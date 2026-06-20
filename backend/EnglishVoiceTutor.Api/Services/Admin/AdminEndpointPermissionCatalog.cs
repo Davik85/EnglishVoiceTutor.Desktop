@@ -16,6 +16,7 @@ public static class AdminEndpointPermissionCatalog
         new("admin.identity.read", "GET", ApiConstants.AdminMeRoute, AdminPermissionConstants.AdminSelfRead, "Read the signed-in admin identity and bootstrap role/permission capabilities."),
         new("admin.capabilities.read", "GET", ApiConstants.AdminCapabilitiesRoute, AdminPermissionConstants.AdminCapabilitiesRead, "Read Admin feature capability flags."),
         new("admin.product_overview.read", "GET", ApiConstants.AdminStatisticsOverviewRoute, AdminPermissionConstants.ProductStatisticsRead, "Read product statistics overview."),
+        new("admin.role_assignments.diagnostics.read", "GET", ApiConstants.AdminRoleAssignmentDiagnosticsRoute, AdminPermissionConstants.AdminRolesManage, "Read-only diagnostics for future persistent Admin role assignments."),
         new("admin.users.lookup_by_email", "GET", ApiConstants.AdminUserByEmailRoute, AdminPermissionConstants.UserLookupRead, "Look up an Admin-visible user record by email."),
         new("admin.users.overview.read", "GET", ApiConstants.AdminUserByIdRoute, AdminPermissionConstants.UserOverviewRead, "Read an Admin-visible user overview by user id."),
         new("admin.users.audit.read", "GET", ApiConstants.AdminUserAuditActionsRoute, AdminPermissionConstants.AuditRead, "Read audit actions for a target user."),
@@ -57,6 +58,6 @@ public static class AdminEndpointPermissionCatalog
         new("admin.premium.diagnostics.read", "FUTURE", null, AdminPermissionConstants.PremiumDiagnosticsRead, "Future Premium diagnostics seam; no active endpoint is switched to this permission yet."),
         new("admin.billing.diagnostics.read", "FUTURE", null, AdminPermissionConstants.BillingDiagnosticsRead, "Future billing/provider diagnostics seam; no active endpoint is switched to this permission yet."),
         new("admin.system.diagnostics.read", "FUTURE", null, AdminPermissionConstants.SystemDiagnosticsRead, "Future system diagnostics seam; no active endpoint is switched to this permission yet."),
-        new("admin.roles.manage", "FUTURE", null, AdminPermissionConstants.AdminRolesManage, "Future Admin role-management seam; no active endpoint or persistence exists yet.")
+        new("admin.roles.manage", "FUTURE", null, AdminPermissionConstants.AdminRolesManage, "Future Admin role-assignment mutation seam; no write endpoint is active yet.")
     ];
 }
