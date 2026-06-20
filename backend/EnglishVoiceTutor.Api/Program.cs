@@ -231,6 +231,7 @@ builder.Services.AddScoped<IBillingEventPaymentPersistenceService, BillingEventP
 builder.Services.AddScoped<IBillingEventEntitlementActivationService, BillingEventEntitlementActivationService>();
 builder.Services.AddScoped<IAdminUserLookupService, AdminUserLookupService>();
 builder.Services.AddSingleton<IAdminRolePermissionCatalogService, AdminRolePermissionCatalogService>();
+builder.Services.AddScoped<IAdminRoleAssignmentReadService, AdminRoleAssignmentReadService>();
 builder.Services.AddSingleton<IAdminCapabilitiesService, AdminCapabilitiesService>();
 builder.Services.AddScoped<IAdminAuditService, AdminAuditService>();
 builder.Services.AddScoped<IAdminPremiumGrantService, AdminPremiumGrantService>();
