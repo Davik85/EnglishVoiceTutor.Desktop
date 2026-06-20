@@ -80,6 +80,10 @@ Invoke-GateCommand "Admin RBAC permission policy foundation" {
     python "tools/test_admin_rbac_permission_policy_foundation.py"
 }
 
+Invoke-GateCommand "Admin role assignment persistence foundation" {
+    python "tools/test_admin_role_assignment_persistence_foundation.py"
+}
+
 Invoke-GateCommand "Admin roles permissions policy" {
     python "tools/test_admin_roles_permissions_policy.py"
 }

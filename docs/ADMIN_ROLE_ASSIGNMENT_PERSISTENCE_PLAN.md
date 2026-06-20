@@ -251,3 +251,8 @@ Audit logs must not contain:
 - Preserve BootstrapAdmin fallback during early rollout so controlled operators can recover access if persistent-role evaluation fails.
 - If role-management endpoints are later added, rollback must include a way to freeze writes while preserving audit history.
 - Rollback procedures must not require deleting audit records, dropping evidence, or committing SQL dumps/secrets to the repository.
+## 2026-06-20 foundation update
+
+The first database-only foundation for this plan now exists: EF entities, DbSet mappings, and an additive migration create `admin_users`, `admin_user_roles`, and `admin_role_assignment_events` for future Admin role assignment persistence. This foundation is intentionally inactive at runtime.
+
+Persistent roles are not evaluated by `AdminPermissionAuthorizationHandler` yet. No role assignment endpoints, Admin UI role management, invite flow, production admin seeding, or real admin emails were added. BootstrapAdmin remains the controlled-testing fallback, and production Admin RBAC remains incomplete until persistent role evaluation, write endpoints, audit safety checks, and endpoint-level enforcement are completed.
