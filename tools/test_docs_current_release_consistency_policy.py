@@ -18,8 +18,9 @@ DOCS = [
 ]
 
 REQUIRED = [
-    "0.1.35-tester.1",
-    "LanguageVoiceTutorSetup-0.1.35-tester.1.exe",
+    "0.1.36-tester.24",
+    "LanguageVoiceTutorSetup-0.1.36-tester.24.exe",
+    "0.1.35-backend.33",
     "https://api.languagevoicetutor.com",
     "server-only",
     "Check for updates",
@@ -28,6 +29,8 @@ REQUIRED = [
 ]
 
 FORBIDDEN_PATTERNS = [
+    (re.compile(r"(?:current|live|active|deployed and healthy)[^\n]*0\.1\.35-backend\.27", re.I), "old backend current wording"),
+    (re.compile(r"0\.1\.36-tester\.17[^\n]*(?:current|live|active|latest)", re.I), "old tester current wording"),
     (re.compile(r"update UI (?:is )?not implemented", re.I), "stale update UI not implemented wording"),
     (re.compile(r"automatic update UX is not implemented", re.I), "stale automatic update UX wording"),
     (re.compile(r"current app does not (?:check|fetch|read).*latest\.json", re.I | re.S), "stale app does not read manifest wording"),
