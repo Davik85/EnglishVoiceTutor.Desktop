@@ -20,7 +20,7 @@ public static class AdminEndpoints
     public static void MapAdminEndpoints(this WebApplication app)
     {
         app.MapGet(ApiConstants.AdminMeRoute, GetAdminMe)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.AdminSelfReadPermissionPolicyName);
 
         app.MapDelete(ApiConstants.AdminSessionRoute, DeleteAdminSessionAsync);
 

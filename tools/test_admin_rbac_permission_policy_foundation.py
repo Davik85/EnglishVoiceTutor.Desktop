@@ -20,6 +20,7 @@ FILES = {
 }
 
 PRODUCTION_PERMISSION_POLICIES = {
+    "AdminSelfReadPermissionPolicyName": ("AdminSelfRead", "admin.self.read"),
     "CmsDraftSavePermissionPolicyName": ("CmsContentWriteDraft", "cms.content.write_draft"),
     "CmsPublishPermissionPolicyName": ("CmsContentPublish", "cms.content.publish"),
     "CmsRestorePermissionPolicyName": ("CmsContentRestore", "cms.content.restore"),
@@ -35,6 +36,14 @@ PRODUCTION_PERMISSION_POLICIES = {
     "AuditLogViewPermissionPolicyName": ("AuditRead", "audit.read"),
     "SystemDiagnosticsPermissionPolicyName": ("SystemDiagnosticsRead", "system.diagnostics.read"),
     "AdminRoleManagementPermissionPolicyName": ("AdminRolesManage", "admin.roles.manage"),
+}
+
+MIGRATED_ENDPOINT = {
+    "action_key": "admin.identity.read",
+    "method": "GET",
+    "route_constant": "AdminMeRoute",
+    "permission_constant": "AdminSelfRead",
+    "policy_constant": "AdminSelfReadPermissionPolicyName",
 }
 
 DANGEROUS_ENDPOINT_MAPPINGS = {
@@ -100,6 +109,15 @@ def extract_constant_values(text: str, suffix: str | None = None) -> dict[str, s
     if suffix:
         values = {name: value for name, value in values.items() if name.endswith(suffix)}
     return values
+
+
+
+def extract_admin_endpoint_authorizations(admin_endpoints: str) -> list[tuple[str, str, str]]:
+    return re.findall(
+        r"app\.Map(Get|Post|Put|Delete)\(ApiConstants\.(Admin\w+Route),\s*[^)]*\)\s*\.RequireAuthorization\(AdminAuthorizationConstants\.(\w+)\)",
+        admin_endpoints,
+        flags=re.MULTILINE,
+    )
 
 
 def main() -> None:
@@ -187,9 +205,63 @@ def main() -> None:
         require(authorization_constants, policy_constant, f"explicit dangerous action policy {policy_constant}")
 
     require(authorization_constants, 'BootstrapAdminPolicyName = "BootstrapAdmin"', "existing BootstrapAdmin policy constant")
-    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName)", "admin endpoints still use BootstrapAdmin policy")
-    for policy_constant in PRODUCTION_PERMISSION_POLICIES:
-        forbid(admin_endpoints, f"AdminAuthorizationConstants.{policy_constant}", "production permission policy endpoint enforcement in this foundation-only step")
+    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName)", "non-migrated admin endpoints still use BootstrapAdmin policy")
+
+    endpoint_authorizations = extract_admin_endpoint_authorizations(admin_endpoints)
+    permission_policy_constants = set(PRODUCTION_PERMISSION_POLICIES)
+    migrated_authorizations = [
+        (method.upper(), route, policy)
+        for method, route, policy in endpoint_authorizations
+        if policy in permission_policy_constants
+    ]
+    expected_migration = (
+        MIGRATED_ENDPOINT["method"],
+        MIGRATED_ENDPOINT["route_constant"],
+        MIGRATED_ENDPOINT["policy_constant"],
+    )
+    if migrated_authorizations != [expected_migration]:
+        raise AssertionError(
+            "Exactly one Admin endpoint must use an AdminPermission:* policy, "
+            f"and it must be the admin identity endpoint. Got: {migrated_authorizations}"
+        )
+
+    for method, route, policy in endpoint_authorizations:
+        if (method.upper(), route, policy) == expected_migration:
+            continue
+        if policy != "BootstrapAdminPolicyName":
+            raise AssertionError(f"Unexpected migrated Admin endpoint: {(method, route, policy)}")
+
+    migrated_catalog_entries = [
+        mapping for mapping in endpoint_mappings
+        if mapping[0] == MIGRATED_ENDPOINT["action_key"]
+    ]
+    expected_catalog_entry = (
+        MIGRATED_ENDPOINT["action_key"],
+        MIGRATED_ENDPOINT["method"],
+        f"ApiConstants.{MIGRATED_ENDPOINT['route_constant']}",
+        MIGRATED_ENDPOINT["permission_constant"],
+    )
+    if len(migrated_catalog_entries) != 1 or migrated_catalog_entries[0][:4] != expected_catalog_entry:
+        raise AssertionError(
+            "Endpoint/action-to-permission catalog must map the migrated admin identity endpoint "
+            f"to AdminSelfRead. Got: {migrated_catalog_entries}"
+        )
+
+    require(catalog_service, "AdminPermissionConstants.AdminSelfRead", "BootstrapAdmin catalog includes admin.self.read")
+
+    dangerous_or_deferred_policies = set(DANGEROUS_POLICY_CONSTANTS) | {
+        "CmsDraftSavePermissionPolicyName",
+        "UserLookupPermissionPolicyName",
+        "UserOverviewPermissionPolicyName",
+        "LessonHistoryDiagnosticsPermissionPolicyName",
+        "PremiumDiagnosticsPermissionPolicyName",
+        "BillingEventDiagnosticsPermissionPolicyName",
+        "AuditLogViewPermissionPolicyName",
+        "SystemDiagnosticsPermissionPolicyName",
+        "AdminRoleManagementPermissionPolicyName",
+    }
+    for policy_constant in dangerous_or_deferred_policies:
+        forbid(admin_endpoints, f"AdminAuthorizationConstants.{policy_constant}", "dangerous/write/billing/CMS/Premium/free-lesson or deferred endpoint migration")
 
     for needle in FORBIDDEN_PADDLE_CLIENT_REFERENCES:
         forbid(admin_ui, needle, "direct Paddle reference in Admin UI")

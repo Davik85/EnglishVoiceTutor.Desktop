@@ -153,8 +153,11 @@ def main() -> None:
     require(catalog_service, "GetBootstrapAdminPermissions() => BootstrapAdminPermissions", "bootstrap admin permissions returned from catalog")
     require(capabilities_service, "ProductionRolesAvailable = false", "production roles remain disabled")
     require(program, "AddSingleton<IAdminRolePermissionCatalogService, AdminRolePermissionCatalogService>()", "catalog service registration")
-    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName)", "admin endpoints still use BootstrapAdmin policy")
-    forbid(admin_endpoints, "PermissionPolicyName", "production permission policy endpoint enforcement in this foundation-only step")
+    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName)", "non-migrated admin endpoints still use BootstrapAdmin policy")
+    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminSelfReadPermissionPolicyName)", "admin identity endpoint uses AdminSelfRead permission policy")
+    migrated_permission_authorizations = re.findall(r"RequireAuthorization\(AdminAuthorizationConstants\.(\w+PermissionPolicyName)\)", admin_endpoints)
+    if migrated_permission_authorizations != ["AdminSelfReadPermissionPolicyName"]:
+        raise AssertionError(f"Exactly one endpoint may use a permission policy in this proof of concept. Got: {migrated_permission_authorizations}")
     forbid(read("program"), "GetProductionRolePermissions()", "production role catalog endpoint enforcement")
 
     for needle in FORBIDDEN_PADDLE_CLIENT_REFERENCES:
