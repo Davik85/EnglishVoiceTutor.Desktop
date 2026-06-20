@@ -21,6 +21,7 @@ FILES = {
 
 PRODUCTION_PERMISSION_POLICIES = {
     "AdminSelfReadPermissionPolicyName": ("AdminSelfRead", "admin.self.read"),
+    "AdminCapabilitiesReadPermissionPolicyName": ("AdminCapabilitiesRead", "admin.capabilities.read"),
     "CmsDraftSavePermissionPolicyName": ("CmsContentWriteDraft", "cms.content.write_draft"),
     "CmsPublishPermissionPolicyName": ("CmsContentPublish", "cms.content.publish"),
     "CmsRestorePermissionPolicyName": ("CmsContentRestore", "cms.content.restore"),
@@ -38,13 +39,22 @@ PRODUCTION_PERMISSION_POLICIES = {
     "AdminRoleManagementPermissionPolicyName": ("AdminRolesManage", "admin.roles.manage"),
 }
 
-MIGRATED_ENDPOINT = {
-    "action_key": "admin.identity.read",
-    "method": "GET",
-    "route_constant": "AdminMeRoute",
-    "permission_constant": "AdminSelfRead",
-    "policy_constant": "AdminSelfReadPermissionPolicyName",
-}
+MIGRATED_ENDPOINTS = [
+    {
+        "action_key": "admin.identity.read",
+        "method": "GET",
+        "route_constant": "AdminMeRoute",
+        "permission_constant": "AdminSelfRead",
+        "policy_constant": "AdminSelfReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.capabilities.read",
+        "method": "GET",
+        "route_constant": "AdminCapabilitiesRoute",
+        "permission_constant": "AdminCapabilitiesRead",
+        "policy_constant": "AdminCapabilitiesReadPermissionPolicyName",
+    },
+]
 
 DANGEROUS_ENDPOINT_MAPPINGS = {
     "admin.premium.grant": "PremiumGrant",
@@ -214,40 +224,45 @@ def main() -> None:
         for method, route, policy in endpoint_authorizations
         if policy in permission_policy_constants
     ]
-    expected_migration = (
-        MIGRATED_ENDPOINT["method"],
-        MIGRATED_ENDPOINT["route_constant"],
-        MIGRATED_ENDPOINT["policy_constant"],
-    )
-    if migrated_authorizations != [expected_migration]:
+    expected_migrations = [
+        (
+            migrated_endpoint["method"],
+            migrated_endpoint["route_constant"],
+            migrated_endpoint["policy_constant"],
+        )
+        for migrated_endpoint in MIGRATED_ENDPOINTS
+    ]
+    if migrated_authorizations != expected_migrations:
         raise AssertionError(
-            "Exactly one Admin endpoint must use an AdminPermission:* policy, "
-            f"and it must be the admin identity endpoint. Got: {migrated_authorizations}"
+            "Exactly two Admin endpoints must use AdminPermission:* policies, and they must be "
+            f"the admin identity and capabilities endpoints. Got: {migrated_authorizations}"
         )
 
     for method, route, policy in endpoint_authorizations:
-        if (method.upper(), route, policy) == expected_migration:
+        if (method.upper(), route, policy) in expected_migrations:
             continue
         if policy != "BootstrapAdminPolicyName":
             raise AssertionError(f"Unexpected migrated Admin endpoint: {(method, route, policy)}")
 
-    migrated_catalog_entries = [
-        mapping for mapping in endpoint_mappings
-        if mapping[0] == MIGRATED_ENDPOINT["action_key"]
-    ]
-    expected_catalog_entry = (
-        MIGRATED_ENDPOINT["action_key"],
-        MIGRATED_ENDPOINT["method"],
-        f"ApiConstants.{MIGRATED_ENDPOINT['route_constant']}",
-        MIGRATED_ENDPOINT["permission_constant"],
-    )
-    if len(migrated_catalog_entries) != 1 or migrated_catalog_entries[0][:4] != expected_catalog_entry:
-        raise AssertionError(
-            "Endpoint/action-to-permission catalog must map the migrated admin identity endpoint "
-            f"to AdminSelfRead. Got: {migrated_catalog_entries}"
+    for migrated_endpoint in MIGRATED_ENDPOINTS:
+        migrated_catalog_entries = [
+            mapping for mapping in endpoint_mappings
+            if mapping[0] == migrated_endpoint["action_key"]
+        ]
+        expected_catalog_entry = (
+            migrated_endpoint["action_key"],
+            migrated_endpoint["method"],
+            f"ApiConstants.{migrated_endpoint['route_constant']}",
+            migrated_endpoint["permission_constant"],
         )
+        if len(migrated_catalog_entries) != 1 or migrated_catalog_entries[0][:4] != expected_catalog_entry:
+            raise AssertionError(
+                "Endpoint/action-to-permission catalog must map migrated endpoints to their "
+                f"expected permissions. Got for {migrated_endpoint['action_key']}: {migrated_catalog_entries}"
+            )
 
     require(catalog_service, "AdminPermissionConstants.AdminSelfRead", "BootstrapAdmin catalog includes admin.self.read")
+    require(catalog_service, "AdminPermissionConstants.AdminCapabilitiesRead", "BootstrapAdmin catalog includes admin.capabilities.read")
 
     dangerous_or_deferred_policies = set(DANGEROUS_POLICY_CONSTANTS) | {
         "CmsDraftSavePermissionPolicyName",

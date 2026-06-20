@@ -155,9 +155,11 @@ def main() -> None:
     require(program, "AddSingleton<IAdminRolePermissionCatalogService, AdminRolePermissionCatalogService>()", "catalog service registration")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName)", "non-migrated admin endpoints still use BootstrapAdmin policy")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminSelfReadPermissionPolicyName)", "admin identity endpoint uses AdminSelfRead permission policy")
+    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminCapabilitiesReadPermissionPolicyName)", "admin capabilities endpoint uses AdminCapabilitiesRead permission policy")
     migrated_permission_authorizations = re.findall(r"RequireAuthorization\(AdminAuthorizationConstants\.(\w+PermissionPolicyName)\)", admin_endpoints)
-    if migrated_permission_authorizations != ["AdminSelfReadPermissionPolicyName"]:
-        raise AssertionError(f"Exactly one endpoint may use a permission policy in this proof of concept. Got: {migrated_permission_authorizations}")
+    expected_permission_authorizations = ["AdminSelfReadPermissionPolicyName", "AdminCapabilitiesReadPermissionPolicyName"]
+    if migrated_permission_authorizations != expected_permission_authorizations:
+        raise AssertionError(f"Exactly two safe read-only endpoints may use permission policies in this proof of concept. Got: {migrated_permission_authorizations}")
     forbid(read("program"), "GetProductionRolePermissions()", "production role catalog endpoint enforcement")
 
     for needle in FORBIDDEN_PADDLE_CLIENT_REFERENCES:
