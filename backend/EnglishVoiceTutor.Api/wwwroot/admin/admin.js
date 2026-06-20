@@ -1049,8 +1049,23 @@
             if (!response.ok) { throw new Error(ErrorMessages.billingCancelFailed); }
 
             const payload = await response.json();
-            billingCancelRenewalSuccessElement.textContent = `Cancel paid renewal result: ${payload.resultCode || "unknown"}. Cancel at period end: ${formatValue(payload.cancelAtPeriodEnd)}. Effective at: ${payload.scheduledChangeEffectiveAtUtc || payload.currentPeriodEndUtc || "-"}.`;
-            billingCancelRenewalReasonInput.value = "";
+            const resultCode = payload.resultCode || "unknown";
+            const providerDiagnostics = [
+                payload.providerErrorCode ? `Provider error code: ${payload.providerErrorCode}` : "",
+                payload.providerErrorMessageSafe ? `Provider message: ${payload.providerErrorMessageSafe}` : "",
+                payload.providerHttpStatusCode ? `HTTP status: ${payload.providerHttpStatusCode}` : "",
+                payload.providerRequestId ? `Provider request ID: ${payload.providerRequestId}` : "",
+                payload.cancellationAttemptedAtUtc ? `Attempted at: ${payload.cancellationAttemptedAtUtc}` : "",
+                `Provider subscription present: ${formatValue(payload.providerSubscriptionPresent)}`,
+                payload.providerSubscriptionIdLast4 ? `Provider subscription ID last4: ${payload.providerSubscriptionIdLast4}` : "",
+                payload.providerSubscriptionIdHash ? `Provider subscription ID hash: ${payload.providerSubscriptionIdHash}` : ""
+            ].filter(Boolean).join(". ");
+            if (resultCode === "provider_error") {
+                billingCancelRenewalErrorElement.textContent = `Cancellation was not confirmed by the provider and is retryable if diagnostics still show canRequestCancelRenewal = Yes. Cancel at period end: ${formatValue(payload.cancelAtPeriodEnd)}. ${providerDiagnostics}`;
+            } else {
+                billingCancelRenewalSuccessElement.textContent = `Cancel paid renewal result: ${resultCode}. Cancel at period end: ${formatValue(payload.cancelAtPeriodEnd)}. Effective at: ${payload.scheduledChangeEffectiveAtUtc || payload.currentPeriodEndUtc || "-"}.`;
+                billingCancelRenewalReasonInput.value = "";
+            }
             await refreshSelectedUserAfterMutation();
         } catch (error) {
             const message = error instanceof Error ? error.message : ErrorMessages.billingCancelFailed;

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Options;
@@ -39,6 +40,7 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        var attemptedAtUtc = DateTimeOffset.UtcNow;
         var environment = GetNormalizedEnvironment();
         if (!options.CheckoutAdapterEnabled || string.IsNullOrWhiteSpace(options.ApiKey))
         {
@@ -85,16 +87,27 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
         try
         {
             using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+            var paddleRequestId = GetHeaderValue(response, PaddleRequestIdHeaderName);
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogWarning("Paddle subscription renewal cancellation failed. StatusCode={StatusCode}; UserId={UserId}; Environment={Environment}.", (int)response.StatusCode, request.UserId, environment);
+                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                var (providerErrorCode, providerErrorMessageSafe) = ParsePaddleError(errorBody);
+                logger.LogWarning("Paddle subscription renewal cancellation failed. StatusCode={StatusCode}; PaddleRequestId={PaddleRequestId}; ProviderErrorCode={ProviderErrorCode}; UserId={UserId}; Environment={Environment}.", (int)response.StatusCode, paddleRequestId, providerErrorCode, request.UserId, environment);
                 return new BillingProviderSubscriptionCancelResult
                 {
                     Accepted = false,
                     ProviderEnabled = true,
                     Provider = SubscriptionConstants.BillingProviders.Paddle,
                     Message = "Unable to schedule subscription cancellation.",
-                    CurrentPeriodEndUtc = request.CurrentPeriodEndUtc
+                    CurrentPeriodEndUtc = request.CurrentPeriodEndUtc,
+                    ProviderErrorCode = providerErrorCode,
+                    ProviderErrorMessageSafe = providerErrorMessageSafe,
+                    ProviderHttpStatusCode = (int)response.StatusCode,
+                    ProviderRequestId = paddleRequestId,
+                    CancellationAttemptedAtUtc = attemptedAtUtc,
+                    ProviderSubscriptionPresent = !string.IsNullOrWhiteSpace(request.ProviderSubscriptionId),
+                    ProviderSubscriptionIdLast4 = GetLast4(request.ProviderSubscriptionId),
+                    ProviderSubscriptionIdHash = HashProviderId(request.ProviderSubscriptionId)
                 };
             }
 
@@ -121,7 +134,13 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
                 ProviderEnabled = true,
                 Provider = SubscriptionConstants.BillingProviders.Paddle,
                 Message = "Unable to schedule subscription cancellation.",
-                CurrentPeriodEndUtc = request.CurrentPeriodEndUtc
+                CurrentPeriodEndUtc = request.CurrentPeriodEndUtc,
+                ProviderErrorCode = exception.GetType().Name,
+                ProviderErrorMessageSafe = "Provider cancellation request failed before confirmation.",
+                CancellationAttemptedAtUtc = attemptedAtUtc,
+                ProviderSubscriptionPresent = !string.IsNullOrWhiteSpace(request.ProviderSubscriptionId),
+                ProviderSubscriptionIdLast4 = GetLast4(request.ProviderSubscriptionId),
+                ProviderSubscriptionIdHash = HashProviderId(request.ProviderSubscriptionId)
             };
         }
     }
@@ -451,4 +470,48 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
     }
 
     private sealed record PaddleSubscriptionCancelResponse(string Status, DateTimeOffset? ScheduledChangeEffectiveAtUtc, DateTimeOffset? CurrentPeriodEndUtc);
+
+    private static (string Code, string Message) ParsePaddleError(string responseBody)
+    {
+        if (string.IsNullOrWhiteSpace(responseBody))
+        {
+            return ("provider_error", "Provider returned an error without a safe message.");
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(responseBody);
+            var root = document.RootElement;
+            var error = root.TryGetProperty("error", out var errorElement) ? errorElement : root;
+            var code = TryGetString(error, "code");
+            var detail = TryGetString(error, "detail");
+            var message = TryGetString(error, "message");
+            return (SanitizeDiagnosticValue(code, "provider_error"), SanitizeDiagnosticValue(detail ?? message, "Provider returned an error."));
+        }
+        catch (JsonException)
+        {
+            return ("provider_error", "Provider returned an unparseable error response.");
+        }
+    }
+
+    private static string? TryGetString(JsonElement element, string propertyName) =>
+        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.String
+            ? property.GetString()
+            : null;
+
+    private static string SanitizeDiagnosticValue(string? value, string fallback)
+    {
+        var text = string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+        return text.Length <= 240 ? text : text[..240];
+    }
+
+    private static string GetLast4(string value) =>
+        string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim()[Math.Max(0, value.Trim().Length - 4)..];
+
+    private static string HashProviderId(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+        var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value.Trim()));
+        return Convert.ToHexString(hash).ToLowerInvariant();
+    }
 }

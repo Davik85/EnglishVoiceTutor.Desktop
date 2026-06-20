@@ -324,6 +324,10 @@ $env:PaddleWebhook__TimestampToleranceSeconds = "300"
 - Smoke script (`tools/smoke_admin_foundation.ps1`) runs the admin shell audit first.
 - Admin UI was not changed for Paddle lifecycle documentation.
 
+## Controlled Paddle sandbox cancellation validation
+
+A focused manual checklist for Desktop and Admin cancel-renewal validation is maintained in `docs/paddle-sandbox-cancellation-validation.md`. That checklist is controlled tester/sandbox only and does not imply production/live Paddle readiness. It explicitly requires paid Premium to remain active until the paid access end, and it describes the safe `provider_error` diagnostics path without secrets, raw provider payloads, Authorization headers, customer secrets, connection strings, or full provider subscription IDs.
+
 ## Current smoke scripts
 
 - `tools/smoke_billing_checkout.ps1`
