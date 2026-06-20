@@ -64,3 +64,13 @@ If the Admin support action returns `provider_error`:
   - `providerSubscriptionPresent`
   - `providerSubscriptionIdLast4` or `providerSubscriptionIdHash`
 - Do not capture or paste raw Paddle payloads, API keys, webhook secrets, Authorization headers, customer secrets, connection strings, or full provider subscription IDs.
+
+## Paddle sandbox request-shape check
+
+The backend provider adapter schedules renewal cancellation with Paddle Billing by sending a backend-only request to the subscription cancel endpoint:
+
+- method: `POST`
+- path shape: `/subscriptions/{providerSubscriptionId}/cancel`
+- JSON body shape: `{ "effective_from": "next_billing_period" }`
+
+This replaces the earlier update-subscription style `PATCH /subscriptions/{id}` request with a nested `scheduled_change` payload, which Paddle sandbox rejected with `bad_request` / `Invalid request` for the cancel-renewal operation. Validate this only in sandbox/tester diagnostics. Do not include real provider IDs, API keys, Authorization headers, raw provider payloads, or customer secrets in captured notes.

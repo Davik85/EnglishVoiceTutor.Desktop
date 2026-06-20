@@ -37,6 +37,16 @@ BILLING_KEYS = [
     "On",
     "Off",
     "authenticated",
+    "Current access: {0}",
+    "Trial Premium",
+    "Paid Premium",
+    "Admin Premium",
+    "Development Premium",
+    "Premium",
+    "Free",
+    "Trial active until: {0}",
+    "Paid Premium starts: {0}",
+    "Paid Premium access until: {0}",
 ]
 
 EXPECTED_LANGUAGES = ["en", "es", "fr", "de", "it", "pt", "ru", "pl", "ar", "ja", "ko", "sr", "hr", "bg"]

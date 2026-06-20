@@ -24,10 +24,18 @@ require(xaml, '<WrapPanel Margin="0,12,0,0" Orientation="Horizontal">', 'billing
 for binding in ['BuyPremiumButtonText', 'CancelSubscriptionButtonText', 'RefreshStatusButtonText']:
     require(xaml, f'Text="{{Binding {binding}}}"', f'{binding} text binding')
 require(xaml, 'TextWrapping="Wrap"', 'button text wrapping')
-require(xaml, 'MaxWidth="300"', 'cancel button flexible maximum')
+forbid(xaml, 'MaxWidth="300"', 'cancel button fixed clipping maximum')
 button_region = xaml[xaml.find('<WrapPanel Margin="0,12,0,0" Orientation="Horizontal">'):xaml.find('</WrapPanel>', xaml.find('<WrapPanel Margin="0,12,0,0" Orientation="Horizontal">'))]
 for tiny in ['Width="120"', 'Width="150"', 'Width="110"']:
     forbid(button_region, tiny, 'hard fixed tiny billing button width')
+
+
+# Paddle Billing cancel-renewal request shape: official cancel endpoint with safe body only.
+require(adapter, 'SubscriptionCancelSuffix = "/cancel"', 'Paddle cancel endpoint suffix')
+require(adapter, 'new HttpRequestMessage(HttpMethod.Post, subscriptionUri)', 'Paddle cancel uses POST')
+require(adapter, 'effective_from = "next_billing_period"', 'Paddle cancel at period end body')
+forbid(adapter, 'scheduled_change = new', 'old update-subscription scheduled_change body for cancel')
+forbid(adapter, 'new HttpRequestMessage(HttpMethod.Patch, subscriptionUri)', 'old PATCH update-subscription cancel request')
 
 # Safe diagnostics fields must flow provider -> backend response -> Admin response/audit.
 for needle in ['ProviderErrorCode', 'ProviderErrorMessageSafe', 'ProviderHttpStatusCode', 'ProviderRequestId', 'CancellationAttemptedAtUtc', 'ProviderSubscriptionPresent', 'ProviderSubscriptionIdLast4', 'ProviderSubscriptionIdHash']:
