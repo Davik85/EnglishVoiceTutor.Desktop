@@ -25,7 +25,7 @@ public static class AdminEndpoints
         app.MapDelete(ApiConstants.AdminSessionRoute, DeleteAdminSessionAsync);
 
         app.MapGet(ApiConstants.AdminCapabilitiesRoute, GetAdminCapabilities)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.AdminCapabilitiesReadPermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminStatisticsOverviewRoute, GetProductStatisticsOverviewAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
