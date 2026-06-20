@@ -4,7 +4,7 @@ This document describes the current implemented foundation for account, trial, s
 
 ## Current tester release billing status
 
-As of the latest controlled tester/sandbox validation snapshot, trial entitlement after registration is working, Paddle sandbox checkout works through backend-hosted checkout, and Desktop `v0.1.36-tester.17` has Account controls for Buy Premium, Cancel subscription, and Refresh status. This is not broad production/live billing readiness. Do not describe production checkout, production webhook operations, paid subscription lifecycle, public launch readiness, or billing support operations as broadly ready.
+As of the latest controlled tester/sandbox validation snapshot, trial entitlement after registration is working, Paddle sandbox checkout works through backend-hosted checkout, and Desktop `v0.1.36-tester.24` has Account controls for Buy Premium, Cancel subscription, and Refresh status. This is not broad production/live billing readiness. Do not describe production checkout, production webhook operations, paid subscription lifecycle, public launch readiness, or billing support operations as broadly ready.
 
 English Voice Tutor is a global, cross-platform, provider-agnostic product for desktop now and future mobile clients later. The backend is the source of truth for account, trial, subscription, entitlement, Premium/free status, daily free allowance, lesson history, usage, limits, payments, and billing state. Desktop and future mobile clients must rely on backend access/status decisions, not local payment assumptions.
 
@@ -436,7 +436,7 @@ Deferred scope / next roadmap:
 
 ## Desktop Premium billing controls
 
-Desktop `v0.1.36-tester.17` Account subscription area includes **Buy Premium**, **Cancel subscription**, and **Refresh status** controls. Buy Premium calls the authenticated backend checkout-session endpoint with the `premium` plan. The desktop app opens the backend-hosted Paddle checkout URL in the user's browser and does not call Paddle directly or store Paddle API keys, price ids, webhook secrets, or other private billing secrets.
+Desktop `v0.1.36-tester.24` Account subscription area includes **Buy Premium**, **Cancel subscription**, and **Refresh status** controls. Buy Premium calls the authenticated backend checkout-session endpoint with the `premium` plan. The desktop app opens the backend-hosted Paddle checkout URL in the user's browser and does not call Paddle directly or store Paddle API keys, price ids, webhook secrets, or other private billing secrets.
 
 Checkout creation is not Premium activation. Premium access remains backend-owned and becomes active only from backend entitlement state after Paddle webhook processing. The user must return to the app and use Refresh status after payment so the desktop can read the updated backend state.
 

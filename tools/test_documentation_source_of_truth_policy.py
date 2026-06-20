@@ -21,15 +21,17 @@ ALL_MARKDOWN = [ROOT / "README.md", *sorted((ROOT / "docs").glob("*.md"))]
 LATEST_JSON_COMMAND = "Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json"
 BACKEND_SYMLINK_COMMAND = 'ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"'
 PROD_BACKEND_URL = "https://api.languagevoicetutor.com"
-CURRENT_TESTER_RELEASE = "0.1.36-tester.16"
-CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-0.1.36-tester.16.exe"
-CURRENT_BACKEND_RELEASE = "0.1.35-backend.24"
-PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.23"
-STALE_TESTER_RELEASES = ["0.1.35-tester.1", "0.1.36-tester.2", "0.1.36-tester.3"]
+CURRENT_TESTER_RELEASE = "0.1.36-tester.24"
+CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-0.1.36-tester.24.exe"
+CURRENT_BACKEND_RELEASE = "0.1.35-backend.33"
+PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.27"
+STALE_TESTER_RELEASES = ["0.1.35-tester.1", "0.1.36-tester.2", "0.1.36-tester.3", "0.1.36-tester.17"]
 DEFERRED_ITEMS = [
     "Code signing remains deferred",
     "Production billing/Paddle/subscription payment lifecycle remains deferred",
     "CMS published-snapshot runtime is active for controlled tester lessons",
+    "backend deployment, database migrations, the download website, and update UI remain separate work",
+    "Generated local files under `artifacts/`",
 ]
 
 
@@ -99,7 +101,7 @@ def main() -> int:
     for stale_version in STALE_TESTER_RELEASES:
         assert_not_regex(
             combined_all,
-            rf"{stale_current_context}[^\n]*{re.escape(stale_version)}|{re.escape(stale_version)}[^\n]*(?:current|live|public|verified|baseline|snapshot|latest active|in place)",
+            rf"{stale_current_context}[^\n]*{re.escape(stale_version)}(?![0-9])|{re.escape(stale_version)}(?![0-9])[^\n]*(?:current|live|public|verified|baseline|snapshot|latest active|in place)",
             f"stale tester version used as current/live/public baseline: {stale_version}",
         )
 
@@ -118,6 +120,18 @@ def main() -> int:
         r"artifacts[/\\][^\n.]*current public tester|current public tester[^\n.]*artifacts[/\\]",
         "artifacts treated as current public release",
     )
+
+
+    current_state = read(ROOT / "docs" / "CURRENT_STATE.md")
+    next_steps = read(ROOT / "docs" / "NEXT_STEPS.md")
+    assert_not_regex(current_state, r"(?:current|live|active|deployed and healthy)[^\n]*0\.1\.35-backend\.27", "old backend 0.1.35-backend.27 claimed current")
+    assert_not_regex(current_state, r"0\.1\.36-tester\.17[^\n]*(?:current|live|active|latest)", "old tester 0.1.36-tester.17 claimed current")
+    assert_not_regex(next_steps, r"immediate blocker[^\n]*(?:billing UI localization|cancel-renewal)|(?:billing UI localization|cancel-renewal)[^\n]*immediate blocker", "completed billing UI localization/cancel-renewal listed as immediate blocker")
+    assert_contains(combined_main, "controlled tester/direct Windows release, not a broad public production launch", "controlled tester not broad launch wording")
+    assert_contains(combined_main, "Production/live Paddle readiness remains deferred", "Paddle live deferred wording")
+    assert_regex(combined_main, r"Windows direct-release upload publishes static release files only\. It does not deploy the backend, does not run EF migrations", "Windows upload separate from backend/migrations wording")
+    assert_regex(combined_main, r"backend upload/package scripts do not apply EF migrations automatically|Backend deploys remain separate from EF database migrations", "migrations explicit not upload-script wording")
+    assert_regex(combined_main, r"Generated local files under `artifacts/`.*must not be committed|Generated artifacts.*must not be committed", "generated artifacts not committed wording")
 
     print("Documentation source-of-truth policy checks passed.")
     return 0
