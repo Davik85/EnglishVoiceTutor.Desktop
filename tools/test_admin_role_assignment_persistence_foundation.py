@@ -10,8 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP_DB_CONTEXT = ROOT / "backend/EnglishVoiceTutor.Api/Data/AppDbContext.cs"
 ENTITY_CONSTANTS = ROOT / "backend/EnglishVoiceTutor.Api/Data/EntityConstants.cs"
 ENTITIES = ROOT / "backend/EnglishVoiceTutor.Api/Data/Entities"
-MIGRATION = ROOT / "backend/EnglishVoiceTutor.Api/Migrations/20260620120000_AddAdminRoleAssignmentPersistence.cs"
-MIGRATION_DESIGNER = ROOT / "backend/EnglishVoiceTutor.Api/Migrations/20260620120000_AddAdminRoleAssignmentPersistence.Designer.cs"
+MIGRATIONS_DIR = ROOT / "backend/EnglishVoiceTutor.Api/Migrations"
 MODEL_SNAPSHOT = ROOT / "backend/EnglishVoiceTutor.Api/Migrations/AppDbContextModelSnapshot.cs"
 ADMIN_HANDLER = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminPermissionAuthorizationHandler.cs"
 ADMIN_ENDPOINTS = ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs"
@@ -57,6 +56,31 @@ def read(path: Path) -> str:
     return path.read_text(encoding="utf-8-sig")
 
 
+def discover_admin_role_assignment_migration() -> tuple[Path, Path]:
+    migrations = sorted(
+        path
+        for path in MIGRATIONS_DIR.glob("*_AddAdminRoleAssignmentPersistence.cs")
+        if not path.name.endswith(".Designer.cs")
+    )
+    if len(migrations) != 1:
+        found = [path.name for path in migrations]
+        raise AssertionError(
+            "Expected exactly one AddAdminRoleAssignmentPersistence migration file matching "
+            f"*_AddAdminRoleAssignmentPersistence.cs. Found: {found}"
+        )
+
+    migration = migrations[0]
+    migration_id = migration.name.removesuffix(".cs")
+    migration_designer = migration.with_name(f"{migration_id}.Designer.cs")
+    if not migration_designer.exists():
+        raise AssertionError(
+            "Missing matching AddAdminRoleAssignmentPersistence designer file: "
+            f"{migration_designer.relative_to(ROOT)}"
+        )
+
+    return migration, migration_designer
+
+
 def require(text: str, needle: str, label: str) -> None:
     if needle not in text:
         raise AssertionError(f"Missing {label}: {needle}")
@@ -67,15 +91,17 @@ def list_source_files(root: Path) -> list[Path]:
 
 
 def main() -> None:
+    migration_path, migration_designer_path = discover_admin_role_assignment_migration()
+
     app_db_context = read(APP_DB_CONTEXT)
     entity_constants = read(ENTITY_CONSTANTS)
-    migration = read(MIGRATION)
-    migration_designer = read(MIGRATION_DESIGNER)
+    migration = read(migration_path)
+    migration_designer = read(migration_designer_path)
     model_snapshot = read(MODEL_SNAPSHOT)
     admin_handler = read(ADMIN_HANDLER)
     admin_endpoints = read(ADMIN_ENDPOINTS)
 
-    migration_id = MIGRATION.name.removesuffix(".cs")
+    migration_id = migration_path.name.removesuffix(".cs")
     require(migration_designer, f'[Migration("{migration_id}")]', "matching EF migration metadata id")
     require(migration_designer, "[DbContext(typeof(AppDbContext))]", "migration DbContext metadata")
     require(migration_designer, "void BuildTargetModel(ModelBuilder modelBuilder)", "EF migration target model")
