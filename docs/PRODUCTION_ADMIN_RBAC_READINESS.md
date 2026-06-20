@@ -14,6 +14,8 @@ Current implementation note: the permission policy constants and registered perm
 
 Current static catalog update: `AdminRolePermissionCatalogService` now contains a foundation-only production role-to-permission catalog for Owner/Super Admin, Support, Content Editor, Billing Support, and Read-only Auditor. The catalog is intentionally static and is not role assignment persistence. There are still no production role tables, EF migrations, Admin UI role-management screens, or endpoint-level production RBAC enforcement. BootstrapAdmin remains controlled-testing only, and a public release candidate still requires endpoint-level permission enforcement or an explicit owner-approved exception. Manual Premium grant/revoke remains Super Admin only in the static catalog; Billing Support receives billing diagnostics and cancel-renewal only.
 
+Current endpoint/action catalog update: `AdminEndpointPermissionCatalog` now contains a static foundation-only mapping from current Admin endpoint/action identifiers to production admin permissions, plus documented future-only seams for permissions that do not yet have active endpoints. This mapping is not active authorization enforcement. Existing Admin endpoints still require `BootstrapAdmin`; endpoint-level production RBAC remains incomplete, and a public release candidate still requires endpoint-level permission enforcement or an owner-approved exception.
+
 
 ## Current Admin / BootstrapAdmin / authorization audit
 

@@ -11,6 +11,7 @@ FILES = {
     "authorization_constants": ROOT / "backend/EnglishVoiceTutor.Api/Constants/AdminAuthorizationConstants.cs",
     "permission_constants": ROOT / "backend/EnglishVoiceTutor.Api/Constants/AdminPermissionConstants.cs",
     "catalog_service": ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRolePermissionCatalogService.cs",
+    "endpoint_catalog": ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminEndpointPermissionCatalog.cs",
     "permission_handler": ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminPermissionAuthorizationHandler.cs",
     "program": ROOT / "backend/EnglishVoiceTutor.Api/Program.cs",
     "admin_endpoints": ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs",
@@ -34,6 +35,27 @@ PRODUCTION_PERMISSION_POLICIES = {
     "AuditLogViewPermissionPolicyName": ("AuditRead", "audit.read"),
     "SystemDiagnosticsPermissionPolicyName": ("SystemDiagnosticsRead", "system.diagnostics.read"),
     "AdminRoleManagementPermissionPolicyName": ("AdminRolesManage", "admin.roles.manage"),
+}
+
+DANGEROUS_ENDPOINT_MAPPINGS = {
+    "admin.premium.grant": "PremiumGrant",
+    "admin.premium.revoke": "PremiumRevoke",
+    "admin.free_lesson_allowance.reset": "FreeLessonAllowanceReset",
+    "admin.billing.cancel_renewal": "BillingCancelRenewal",
+    "admin.cms.publish": "CmsContentPublish",
+    "admin.cms.restore": "CmsContentRestore",
+    "admin.roles.manage": "AdminRolesManage",
+}
+
+FUTURE_ONLY_ENDPOINT_PERMISSIONS = {
+    "UsersRead",
+    "UsersDiagnosticsRead",
+    "LessonHistoryDiagnosticsRead",
+    "SubscriptionsDiagnosticsRead",
+    "PremiumDiagnosticsRead",
+    "BillingDiagnosticsRead",
+    "SystemDiagnosticsRead",
+    "AdminRolesManage",
 }
 
 DANGEROUS_POLICY_CONSTANTS = [
@@ -85,6 +107,7 @@ def main() -> None:
     permission_constants = read("permission_constants")
     catalog_service = read("catalog_service")
     permission_handler = read("permission_handler")
+    endpoint_catalog = read("endpoint_catalog")
     program = read("program")
     admin_endpoints = read("admin_endpoints")
     admin_ui = read("admin_js") + "\n" + read("admin_index")
@@ -96,6 +119,54 @@ def main() -> None:
     permission_values = extract_constant_values(permission_constants)
     if len(permission_values.values()) != len(set(permission_values.values())):
         raise AssertionError("Admin permission names must be unique.")
+
+
+    require(endpoint_catalog, "public sealed record AdminEndpointPermissionMapping", "admin endpoint permission mapping record")
+    require(endpoint_catalog, "public static class AdminEndpointPermissionCatalog", "static admin endpoint permission catalog")
+    require(endpoint_catalog, "public static IReadOnlyList<AdminEndpointPermissionMapping> Mappings", "static admin endpoint/action mapping list")
+
+    endpoint_mappings = re.findall(
+        r'new\("([^"\n]+)",\s*"([^"\n]+)",\s*(ApiConstants\.\w+|null),\s*AdminPermissionConstants\.(\w+),\s*"([^"\n]+)"\)',
+        endpoint_catalog,
+    )
+    if not endpoint_mappings:
+        raise AssertionError("Admin endpoint/action permission catalog must contain static mappings.")
+
+    action_keys = [mapping[0] for mapping in endpoint_mappings]
+    if len(action_keys) != len(set(action_keys)):
+        duplicates = sorted({key for key in action_keys if action_keys.count(key) > 1})
+        raise AssertionError(f"Admin endpoint/action keys must be unique: {duplicates}")
+
+    endpoint_permissions = {mapping[3] for mapping in endpoint_mappings}
+    unknown_endpoint_permissions = endpoint_permissions - set(permission_values)
+    if unknown_endpoint_permissions:
+        raise AssertionError(f"Endpoint catalog maps unknown permissions: {sorted(unknown_endpoint_permissions)}")
+
+    for action_key, permission_constant in DANGEROUS_ENDPOINT_MAPPINGS.items():
+        expected = (action_key, permission_constant)
+        if not any(mapping[0] == expected[0] and mapping[3] == expected[1] for mapping in endpoint_mappings):
+            raise AssertionError(f"Dangerous endpoint action {action_key} must map to {permission_constant}")
+
+    active_route_mappings = [mapping for mapping in endpoint_mappings if mapping[2] != "null"]
+    active_route_constants = {mapping[2].replace("ApiConstants.", "") for mapping in active_route_mappings}
+    mapped_methods_and_routes = {(mapping[1], mapping[2].replace("ApiConstants.", "")) for mapping in active_route_mappings}
+    endpoint_methods_and_routes = set(re.findall(r"app\.Map(Get|Post|Put|Delete)\(ApiConstants\.(Admin\w+Route),", admin_endpoints))
+    endpoint_methods_and_routes = {(method.upper(), route) for method, route in endpoint_methods_and_routes if route != "AdminSessionRoute"}
+    missing_route_mappings = endpoint_methods_and_routes - mapped_methods_and_routes
+    if missing_route_mappings:
+        raise AssertionError(f"Active Admin endpoints missing from endpoint permission catalog: {sorted(missing_route_mappings)}")
+
+    unknown_route_mappings = active_route_constants - set(re.findall(r"app\.Map(?:Get|Post|Put|Delete)\(ApiConstants\.(Admin\w+Route),", admin_endpoints))
+    if unknown_route_mappings:
+        raise AssertionError(f"Endpoint catalog references unmapped active Admin routes: {sorted(unknown_route_mappings)}")
+
+    missing_permission_coverage = set(permission_values) - endpoint_permissions
+    if missing_permission_coverage:
+        raise AssertionError(f"Production permissions missing endpoint/future mapping coverage: {sorted(missing_permission_coverage)}")
+
+    for permission_constant in FUTURE_ONLY_ENDPOINT_PERMISSIONS:
+        if not any(mapping[1] == "FUTURE" and mapping[3] == permission_constant for mapping in endpoint_mappings):
+            raise AssertionError(f"{permission_constant} must be deliberately documented as FUTURE in endpoint catalog")
 
     for policy_constant, (permission_constant, permission_name) in PRODUCTION_PERMISSION_POLICIES.items():
         require(permission_constants, f'public const string {permission_constant} = "{permission_name}"', f"permission constant for {permission_name}")
