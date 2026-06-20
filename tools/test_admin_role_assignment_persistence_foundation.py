@@ -17,6 +17,11 @@ PROGRAM = ROOT / "backend/EnglishVoiceTutor.Api/Program.cs"
 ADMIN_ROLE_READ_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentReadService.cs"
 ADMIN_ROLE_READ_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentReadService.cs"
 ADMIN_ROLE_READ_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentReadResult.cs"
+ADMIN_ROLE_DIAGNOSTICS_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentDiagnosticsService.cs"
+ADMIN_ROLE_DIAGNOSTICS_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentDiagnosticsService.cs"
+ADMIN_ROLE_DIAGNOSTICS_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentDiagnosticsResult.cs"
+API_CONSTANTS = ROOT / "backend/EnglishVoiceTutor.Api/Constants/ApiConstants.cs"
+ADMIN_ENDPOINT_PERMISSION_CATALOG = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminEndpointPermissionCatalog.cs"
 ADMIN_ENDPOINTS = ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs"
 DESKTOP_ROOT = ROOT
 ADMIN_UI_ROOT = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin"
@@ -108,6 +113,11 @@ def main() -> None:
     admin_role_read_service = read(ADMIN_ROLE_READ_SERVICE)
     admin_role_read_interface = read(ADMIN_ROLE_READ_INTERFACE)
     admin_role_read_result = read(ADMIN_ROLE_READ_RESULT)
+    admin_role_diagnostics_service = read(ADMIN_ROLE_DIAGNOSTICS_SERVICE)
+    admin_role_diagnostics_interface = read(ADMIN_ROLE_DIAGNOSTICS_INTERFACE)
+    admin_role_diagnostics_result = read(ADMIN_ROLE_DIAGNOSTICS_RESULT)
+    api_constants = read(API_CONSTANTS)
+    endpoint_permission_catalog = read(ADMIN_ENDPOINT_PERMISSION_CATALOG)
 
     migration_id = migration_path.name.removesuffix(".cs")
     require(migration_designer, f'[Migration("{migration_id}")]', "matching EF migration metadata id")
@@ -181,6 +191,49 @@ def main() -> None:
     require(admin_role_read_service, "knownRoleIds.Contains(role.RoleId)", "unknown persistent role filter")
     require(program, "AddScoped<IAdminRoleAssignmentReadService, AdminRoleAssignmentReadService>()", "read service DI registration")
 
+
+    require(admin_role_diagnostics_interface, "public interface IAdminRoleAssignmentDiagnosticsService", "diagnostics service interface")
+    require(admin_role_diagnostics_interface, "GetDiagnosticsAsync", "diagnostics read method")
+    require(admin_role_diagnostics_result, "public sealed record AdminRoleAssignmentDiagnosticsResult", "diagnostics result record")
+    for field in [
+        "int TotalAdminUsers",
+        "int ActiveAdminUsers",
+        "int DisabledAdminUsers",
+        "int PendingInviteAdminUsers",
+        "int TotalRoleAssignments",
+        "int ActiveRoleAssignments",
+        "int RevokedRoleAssignments",
+        "int TotalRoleAssignmentEvents",
+        "IReadOnlyList<string> RolesInUse",
+        "DateTimeOffset GeneratedAtUtc",
+    ]:
+        require(admin_role_diagnostics_result, field, f"diagnostics result field {field}")
+    require(admin_role_diagnostics_result, "public sealed record AdminRoleAssignmentDiagnosticsUserResult", "safe per-admin diagnostics result")
+    require(admin_role_diagnostics_result, "Guid? LinkedUserId", "nullable linked user id only")
+    if "Email" in admin_role_diagnostics_result or "NormalizedEmail" in admin_role_diagnostics_result:
+        raise AssertionError("Diagnostics response must not expose email fields in this first endpoint.")
+    require(admin_role_diagnostics_service, "public sealed class AdminRoleAssignmentDiagnosticsService", "diagnostics service implementation")
+    require(admin_role_diagnostics_service, "_dbContext.AdminUsers", "diagnostics reads AdminUsers")
+    require(admin_role_diagnostics_service, "_dbContext.AdminUserRoles", "diagnostics reads AdminUserRoles")
+    require(admin_role_diagnostics_service, "_dbContext.AdminRoleAssignmentEvents", "diagnostics reads AdminRoleAssignmentEvents")
+    require(admin_role_diagnostics_service, ".AsNoTracking()", "diagnostics no-tracking reads")
+    require(admin_role_diagnostics_service, "CountAsync(cancellationToken)", "diagnostics event aggregate count")
+    require(program, "AddScoped<IAdminRoleAssignmentDiagnosticsService, AdminRoleAssignmentDiagnosticsService>()", "diagnostics service DI registration")
+    require(api_constants, 'AdminRoleAssignmentDiagnosticsRoute = "/api/admin/role-assignments/diagnostics"', "diagnostics route constant")
+    require(admin_endpoints, "app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)", "GET-only diagnostics endpoint")
+    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "diagnostics role-management permission policy")
+    require(endpoint_permission_catalog, 'new("admin.role_assignments.diagnostics.read", "GET", ApiConstants.AdminRoleAssignmentDiagnosticsRoute, AdminPermissionConstants.AdminRolesManage', "diagnostics endpoint permission catalog mapping")
+    if re.search(r"AdminRoleAssignmentDiagnosticsRoute[\s\S]{0,220}BootstrapAdminPolicyName", admin_endpoints):
+        raise AssertionError("Diagnostics endpoint must not use BootstrapAdminPolicyName directly.")
+    if re.search(r"Map(Post|Put|Delete)\(ApiConstants\.AdminRoleAssignmentDiagnosticsRoute", admin_endpoints):
+        raise AssertionError("Diagnostics endpoint must be GET-only.")
+    for forbidden in [".Add(", ".AddAsync(", ".Attach(", ".Update(", ".UpdateRange(", ".Remove(", ".RemoveRange(", "SaveChanges", "ExecuteUpdate", "ExecuteDelete"]:
+        if forbidden in admin_role_diagnostics_service:
+            raise AssertionError(f"AdminRoleAssignmentDiagnosticsService must stay read-only and must not use: {forbidden}")
+    for forbidden in ["AssignedByAdminUserId =", "RevokedByAdminUserId =", "CreatedByAdminUserId =", "CreateInvite", "InviteToken", "AssignRole", "RevokeRole", "CreateAdminUser"]:
+        if forbidden in admin_role_diagnostics_service or forbidden in admin_endpoints:
+            raise AssertionError(f"Diagnostics endpoint must not create or mutate role assignments/admin users/invites: {forbidden}")
+
     forbidden_write_terms = [
         ".Add(", ".AddAsync(", ".Attach(", ".Update(", ".UpdateRange(", ".Remove(", ".RemoveRange(",
         "SaveChanges", "ExecuteUpdate", "ExecuteDelete", "AdminRoleAssignmentEvents"
@@ -198,13 +251,16 @@ def main() -> None:
         admin_endpoints,
         flags=re.MULTILINE,
     )
-    permission_migrated = {(method.upper(), route, policy) for method, route, policy in endpoint_authorizations if policy.endswith("PermissionPolicyName")}
+    permission_migrated = {(method.upper(), route, policy) for method, route, policy in endpoint_authorizations if policy.endswith("PermissionPolicyName") and route != "AdminRoleAssignmentDiagnosticsRoute"}
     if {policy for _, _, policy in permission_migrated} != MIGRATED_POLICY_CONSTANTS or len(permission_migrated) != 3:
         raise AssertionError(f"Exactly three safe read-only Admin endpoints must remain permission-policy migrated. Found: {sorted(permission_migrated)}")
 
     route_to_policy = {route: policy for _, route, policy in endpoint_authorizations}
-    if re.search(r"Map(Get|Post|Put|Delete)\(ApiConstants\.Admin[^\n]*(Role|Assignment)", admin_endpoints):
-        raise AssertionError("Role assignment endpoints must not exist yet.")
+    diagnostics_endpoint_count = len(re.findall(r"MapGet\(ApiConstants\.AdminRoleAssignmentDiagnosticsRoute", admin_endpoints))
+    if diagnostics_endpoint_count != 1:
+        raise AssertionError(f"Expected exactly one read-only role assignment diagnostics endpoint. Found: {diagnostics_endpoint_count}")
+    if re.search(r"Map(Post|Put|Delete)\(ApiConstants\.Admin[^\n]*(Role|Assignment)", admin_endpoints):
+        raise AssertionError("Role assignment mutation endpoints must not exist yet.")
     for route in BOOTSTRAP_REQUIRED_ROUTES:
         if route_to_policy.get(route) != "BootstrapAdminPolicyName":
             raise AssertionError(f"Dangerous/write/billing/CMS/Premium/free-lesson/user-level endpoint must remain BootstrapAdmin: {route}")

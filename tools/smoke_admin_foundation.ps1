@@ -25,6 +25,7 @@ $AdminMePath = "/api/admin/me"
 $AdminUsersByEmailPath = "/api/admin/users/by-email"
 $AdminCapabilitiesPath = "/api/admin/capabilities"
 $AdminStatisticsOverviewPath = "/api/admin/statistics/overview"
+$AdminRoleAssignmentDiagnosticsPath = "/api/admin/role-assignments/diagnostics"
 $AdminShellPath = "/admin/"
 $AdminAuditActionsPathTemplate = "/api/admin/users/{0}/audit-actions"
 $AdminPremiumGrantsPathTemplate = "/api/admin/users/{0}/premium-grants"
@@ -243,6 +244,26 @@ Assert-PropertyExists -Object $adminStatisticsOverview.Body -PropertyName "regis
 Assert-PropertyExists -Object $adminStatisticsOverview.Body -PropertyName "definitions" -Message "Statistics overview includes metric definitions"
 Assert-True -Condition ($adminCapabilities.Body.permissions -contains $ProductStatisticsReadPermission) -Message "BootstrapAdmin permissions include product_statistics.read for statistics overview policy"
 Write-Pass "Admin product statistics overview check succeeded"
+
+Write-Step "Verify GET /api/admin/role-assignments/diagnostics"
+$adminRoleAssignmentDiagnosticsUrl = "$BaseUrl$AdminRoleAssignmentDiagnosticsPath"
+$adminRoleAssignmentDiagnostics = Invoke-ExpectStatusCode -Method $MethodGet -Url $adminRoleAssignmentDiagnosticsUrl -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusOk)
+foreach ($propertyName in @(
+    "totalAdminUsers",
+    "activeAdminUsers",
+    "disabledAdminUsers",
+    "pendingInviteAdminUsers",
+    "totalRoleAssignments",
+    "activeRoleAssignments",
+    "revokedRoleAssignments",
+    "totalRoleAssignmentEvents",
+    "rolesInUse",
+    "adminUsers",
+    "generatedAtUtc"
+)) {
+    Assert-PropertyExists -Object $adminRoleAssignmentDiagnostics.Body -PropertyName $propertyName -Message "Role assignment diagnostics includes $propertyName"
+}
+Write-Pass "Admin role assignment diagnostics check succeeded"
 
 Write-Step "Verify admin user lookup by email"
 $lookupUrl = "{0}{1}?email={2}" -f $BaseUrl, $AdminUsersByEmailPath, [uri]::EscapeDataString($NormalEmail)

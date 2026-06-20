@@ -88,6 +88,7 @@ public static class ApiConstants
     public const string AdminSessionRoute = "/api/admin/session";
     public const string AdminCapabilitiesRoute = "/api/admin/capabilities";
     public const string AdminStatisticsOverviewRoute = "/api/admin/statistics/overview";
+    public const string AdminRoleAssignmentDiagnosticsRoute = "/api/admin/role-assignments/diagnostics";
     public const string AdminUserByEmailRoute = "/api/admin/users/by-email";
     public const string AdminUserByIdRoute = "/api/admin/users/{userId:guid}";
     public const string AdminUserPremiumGrantsRoute = "/api/admin/users/{userId:guid}/premium-grants";

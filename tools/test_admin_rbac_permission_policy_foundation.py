@@ -230,7 +230,7 @@ def main() -> None:
     migrated_authorizations = [
         (method.upper(), route, policy)
         for method, route, policy in endpoint_authorizations
-        if policy in permission_policy_constants
+        if policy in permission_policy_constants and route != "AdminRoleAssignmentDiagnosticsRoute"
     ]
     expected_migrations = [
         (
@@ -248,6 +248,8 @@ def main() -> None:
 
     for method, route, policy in endpoint_authorizations:
         if (method.upper(), route, policy) in expected_migrations:
+            continue
+        if route == "AdminRoleAssignmentDiagnosticsRoute" and method.upper() == "GET" and policy == "AdminRoleManagementPermissionPolicyName":
             continue
         if policy != "BootstrapAdminPolicyName":
             raise AssertionError(f"Unexpected migrated Admin endpoint: {(method, route, policy)}")
@@ -282,10 +284,12 @@ def main() -> None:
         "BillingEventDiagnosticsPermissionPolicyName",
         "AuditLogViewPermissionPolicyName",
         "SystemDiagnosticsPermissionPolicyName",
-        "AdminRoleManagementPermissionPolicyName",
     }
+    dangerous_or_deferred_policies.discard("AdminRoleManagementPermissionPolicyName")
     for policy_constant in dangerous_or_deferred_policies:
         forbid(admin_endpoints, f"AdminAuthorizationConstants.{policy_constant}", "dangerous/write/billing/CMS/Premium/free-lesson or deferred endpoint migration")
+    require(admin_endpoints, "app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)", "new diagnostics endpoint")
+    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "new diagnostics endpoint role-management policy")
 
     for needle in FORBIDDEN_PADDLE_CLIENT_REFERENCES:
         forbid(admin_ui, needle, "direct Paddle reference in Admin UI")
