@@ -1,5 +1,8 @@
 # Windows code signing readiness
 
+> Distribution direction note: OV/EV/direct-download code signing planning remains relevant only for the current direct installer path. Controlled tester/direct releases continue to use the existing Inno Setup flow until the owner explicitly changes the release flow. The preferred eventual full public distribution direction is Microsoft Store + MSIX, and that work should be handled later with a separate Microsoft Store/MSIX readiness checklist after the project is fully release-ready. This document does not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior.
+
+
 Review date: 2026-06-20.
 
 Scope: planning and documentation only. This page does not enable signing, change packaging behavior, change upload behavior, change backend deployment, change database migrations, change billing/Paddle behavior, or change Admin/CMS behavior.

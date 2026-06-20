@@ -12,6 +12,9 @@ Public release candidate readiness requires production Admin RBAC with endpoint-
 
 Current implementation note: the permission policy constants and registered permission policies are now available as a foundation seam and do not change current runtime admin access behavior. Existing Admin endpoints still use the broad BootstrapAdmin policy and have not been switched to the new permission policies. Production RBAC endpoint-level enforcement is still not fully enabled; a public release candidate still requires endpoint-level permission enforcement for these policies or an owner-approved exception.
 
+Current static catalog update: `AdminRolePermissionCatalogService` now contains a foundation-only production role-to-permission catalog for Owner/Super Admin, Support, Content Editor, Billing Support, and Read-only Auditor. The catalog is intentionally static and is not role assignment persistence. There are still no production role tables, EF migrations, Admin UI role-management screens, or endpoint-level production RBAC enforcement. BootstrapAdmin remains controlled-testing only, and a public release candidate still requires endpoint-level permission enforcement or an explicit owner-approved exception. Manual Premium grant/revoke remains Super Admin only in the static catalog; Billing Support receives billing diagnostics and cancel-renewal only.
+
+
 ## Current Admin / BootstrapAdmin / authorization audit
 
 ### How admin access is currently created or bootstrapped
@@ -29,10 +32,10 @@ Current implementation note: the permission policy constants and registered perm
 Existing role constants are foundation names only and are not production role assignments yet:
 
 - `super_admin`
-- `support_agent`
-- `content_manager`
-- `finance_admin`
-- `readonly_analyst`
+- `support`
+- `content_editor`
+- `billing_support`
+- `read_only_auditor`
 
 Existing permission constants cover admin self/capabilities, users, audit, CMS, runtime status, subscriptions diagnostics, premium grant/revoke, free lesson allowance reset, billing diagnostics, and product statistics. A technical seam now also defines and registers explicit production permission policy names for the documented least-privilege Admin RBAC actions, including user lookup/overview, lesson history diagnostics, premium diagnostics, cancel-renewal, system diagnostics, and admin role management. These policies are foundation-only and BootstrapAdmin-compatible: endpoint authorization still uses the broad BootstrapAdmin policy instead of per-permission policies, so this step does not change runtime admin access behavior.
 

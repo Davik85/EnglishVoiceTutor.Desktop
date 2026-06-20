@@ -6,17 +6,19 @@ Review date: 2026-06-18.
 
 The backend now has a stable admin roles/permissions foundation, and the Admin Shell roles/permissions UI-awareness deployment is completed. Production role management/RBAC is not enabled yet. Current production behavior remains BootstrapAdmin-based.
 
-Stable role constants now exist for:
+Stable production role constants now exist for:
 
 - `super_admin`
-- `support_agent`
-- `content_manager`
-- `finance_admin`
-- `readonly_analyst`
+- `support`
+- `content_editor`
+- `billing_support`
+- `read_only_auditor`
+
+Legacy alias constants remain mapped to the new stable target role ids for compatibility with older foundation terminology.
 
 Stable permission constants now exist for admin self/capabilities, users, audit, CMS, runtime status, subscriptions diagnostics, premium grant/revoke, free lesson allowance reset, billing diagnostics, and product statistics.
 
-Bootstrap admins map to `super_admin`. Bootstrap admins currently receive the full permission set.
+Bootstrap admins map to `super_admin`. Bootstrap admins currently receive the full permission set. A static production role-to-permission catalog now exists for Owner/Super Admin, Support, Content Editor, Billing Support, and Read-only Auditor, but it is foundation-only and is not used for endpoint enforcement yet. Role assignment persistence, database tables, EF migrations, and Admin UI role management still do not exist. Existing Admin endpoints remain protected by BootstrapAdmin for controlled testing only; public RC readiness still requires endpoint-level permission enforcement or a documented owner-approved exception.
 
 ## Exposed admin metadata
 

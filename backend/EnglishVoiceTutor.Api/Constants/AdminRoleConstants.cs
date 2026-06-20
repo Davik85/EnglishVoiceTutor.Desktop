@@ -3,8 +3,13 @@ namespace EnglishVoiceTutor.Api.Constants;
 public static class AdminRoleConstants
 {
     public const string SuperAdmin = "super_admin";
-    public const string SupportAgent = "support_agent";
-    public const string ContentManager = "content_manager";
-    public const string FinanceAdmin = "finance_admin";
-    public const string ReadonlyAnalyst = "readonly_analyst";
+    public const string Support = "support";
+    public const string ContentEditor = "content_editor";
+    public const string BillingSupport = "billing_support";
+    public const string ReadOnlyAuditor = "read_only_auditor";
+
+    public const string SupportAgent = Support;
+    public const string ContentManager = ContentEditor;
+    public const string FinanceAdmin = BillingSupport;
+    public const string ReadonlyAnalyst = ReadOnlyAuditor;
 }
