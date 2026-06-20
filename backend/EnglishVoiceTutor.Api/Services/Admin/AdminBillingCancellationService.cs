@@ -46,7 +46,15 @@ public sealed class AdminBillingCancellationService(
             ScheduledChangeAction = cancelResult.CancelAtPeriodEnd ? SubscriptionConstants.ScheduledChangeActions.Cancel : null,
             ScheduledChangeEffectiveAtUtc = cancelResult.ScheduledChangeEffectiveAtUtc,
             CurrentPeriodEndUtc = cancelResult.CurrentPeriodEndUtc,
-            AuditWritten = true
+            AuditWritten = true,
+            ProviderErrorCode = cancelResult.ProviderErrorCode,
+            ProviderErrorMessageSafe = cancelResult.ProviderErrorMessageSafe,
+            ProviderHttpStatusCode = cancelResult.ProviderHttpStatusCode,
+            ProviderRequestId = cancelResult.ProviderRequestId,
+            CancellationAttemptedAtUtc = cancelResult.CancellationAttemptedAtUtc,
+            ProviderSubscriptionPresent = cancelResult.ProviderSubscriptionPresent,
+            ProviderSubscriptionIdLast4 = cancelResult.ProviderSubscriptionIdLast4,
+            ProviderSubscriptionIdHash = cancelResult.ProviderSubscriptionIdHash
         };
 
         var safeMetadataJson = JsonSerializer.Serialize(new Dictionary<string, object?>
@@ -57,7 +65,15 @@ public sealed class AdminBillingCancellationService(
             ["cancelAtPeriodEnd"] = cancelResult.CancelAtPeriodEnd,
             ["scheduledChangeAction"] = response.ScheduledChangeAction,
             ["scheduledChangeEffectiveAtUtc"] = cancelResult.ScheduledChangeEffectiveAtUtc,
-            ["currentPeriodEndUtc"] = cancelResult.CurrentPeriodEndUtc
+            ["currentPeriodEndUtc"] = cancelResult.CurrentPeriodEndUtc,
+            ["providerErrorCode"] = cancelResult.ProviderErrorCode,
+            ["providerErrorMessageSafe"] = cancelResult.ProviderErrorMessageSafe,
+            ["providerHttpStatusCode"] = cancelResult.ProviderHttpStatusCode,
+            ["providerRequestId"] = cancelResult.ProviderRequestId,
+            ["cancellationAttemptedAtUtc"] = cancelResult.CancellationAttemptedAtUtc,
+            ["providerSubscriptionPresent"] = cancelResult.ProviderSubscriptionPresent,
+            ["providerSubscriptionIdLast4"] = cancelResult.ProviderSubscriptionIdLast4,
+            ["providerSubscriptionIdHash"] = cancelResult.ProviderSubscriptionIdHash
         });
 
         await adminAuditService.RecordTargetUserActionAsync(

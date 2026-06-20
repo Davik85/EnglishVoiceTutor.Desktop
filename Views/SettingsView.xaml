@@ -507,29 +507,42 @@
                                                FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                TextWrapping="Wrap" />
-                                    <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
-                                        <Button MinWidth="120"
+                                    <WrapPanel Margin="0,12,0,0" Orientation="Horizontal">
+                                        <Button MinWidth="136"
+                                                MaxWidth="260"
                                                 MinHeight="32"
-                                                Margin="0,0,8,0"
-                                                Content="{Binding BuyPremiumButtonText}"
+                                                Margin="0,0,8,8"
                                                 Foreground="White"
                                                 Command="{Binding BuyPremiumCommand}"
                                                 IsEnabled="{Binding CanBuyPremium}"
-                                                Style="{StaticResource PrimaryButtonStyle}" />
-                                        <Button MinWidth="150"
+                                                Style="{StaticResource PrimaryButtonStyle}">
+                                            <TextBlock Text="{Binding BuyPremiumButtonText}"
+                                                       TextAlignment="Center"
+                                                       TextWrapping="Wrap" />
+                                        </Button>
+                                        <Button MinWidth="176"
+                                                MaxWidth="300"
                                                 MinHeight="32"
-                                                Margin="0,0,8,0"
-                                                Content="{Binding CancelSubscriptionButtonText}"
+                                                Margin="0,0,8,8"
                                                 Command="{Binding CancelSubscriptionCommand}"
                                                 IsEnabled="{Binding CanCancelSubscription}"
                                                 Visibility="{Binding CancelSubscriptionButtonVisibility}"
-                                                Style="{StaticResource SecondaryButtonStyle}" />
-                                        <Button MinWidth="110"
+                                                Style="{StaticResource SecondaryButtonStyle}">
+                                            <TextBlock Text="{Binding CancelSubscriptionButtonText}"
+                                                       TextAlignment="Center"
+                                                       TextWrapping="Wrap" />
+                                        </Button>
+                                        <Button MinWidth="136"
+                                                MaxWidth="260"
                                                 MinHeight="32"
-                                                Content="{Binding RefreshStatusButtonText}"
+                                                Margin="0,0,8,8"
                                                 Command="{Binding RefreshAccountStatusCommand}"
-                                                Style="{StaticResource SecondaryButtonStyle}" />
-                                    </StackPanel>
+                                                Style="{StaticResource SecondaryButtonStyle}">
+                                            <TextBlock Text="{Binding RefreshStatusButtonText}"
+                                                       TextAlignment="Center"
+                                                       TextWrapping="Wrap" />
+                                        </Button>
+                                    </WrapPanel>
                                     <TextBlock Text="{Binding AccountEmailLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
                                     <TextBox Style="{StaticResource SettingsTextBoxStyle}"
                                              Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" />

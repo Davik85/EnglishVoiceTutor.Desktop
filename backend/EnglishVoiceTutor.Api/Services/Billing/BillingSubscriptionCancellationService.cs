@@ -46,7 +46,7 @@ public sealed class BillingSubscriptionCancellationService(
 
         if (!result.Accepted)
         {
-            return CreateResponse(false, false, false, result.Message, result.Provider, subscription.Status, subscription.CancelAtPeriodEnd, subscription.ScheduledChangeEffectiveAtUtc, subscription.CurrentPeriodEndUtc);
+            return CreateResponse(false, false, false, result.Message, result.Provider, subscription.Status, subscription.CancelAtPeriodEnd, subscription.ScheduledChangeEffectiveAtUtc, subscription.CurrentPeriodEndUtc, result);
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -65,7 +65,7 @@ public sealed class BillingSubscriptionCancellationService(
         || string.Equals(status, SubscriptionConstants.SubscriptionStatuses.Trialing, StringComparison.OrdinalIgnoreCase)
         || string.Equals(status, SubscriptionConstants.SubscriptionStatuses.PastDue, StringComparison.OrdinalIgnoreCase);
 
-    private static CancelBillingSubscriptionResponse CreateResponse(bool accepted, bool success, bool alreadyCanceling, string message, string provider, string status, bool cancelAtPeriodEnd, DateTimeOffset? effectiveAt, DateTimeOffset? periodEnd) => new()
+    private static CancelBillingSubscriptionResponse CreateResponse(bool accepted, bool success, bool alreadyCanceling, string message, string provider, string status, bool cancelAtPeriodEnd, DateTimeOffset? effectiveAt, DateTimeOffset? periodEnd, BillingProviderSubscriptionCancelResult? providerResult = null) => new()
     {
         Accepted = accepted,
         Success = success,
@@ -75,6 +75,14 @@ public sealed class BillingSubscriptionCancellationService(
         SubscriptionStatus = status,
         CancelAtPeriodEnd = cancelAtPeriodEnd,
         ScheduledChangeEffectiveAtUtc = effectiveAt,
-        CurrentPeriodEndUtc = periodEnd
+        CurrentPeriodEndUtc = periodEnd,
+        ProviderErrorCode = providerResult?.ProviderErrorCode ?? string.Empty,
+        ProviderErrorMessageSafe = providerResult?.ProviderErrorMessageSafe ?? string.Empty,
+        ProviderHttpStatusCode = providerResult?.ProviderHttpStatusCode,
+        ProviderRequestId = providerResult?.ProviderRequestId ?? string.Empty,
+        CancellationAttemptedAtUtc = providerResult?.CancellationAttemptedAtUtc,
+        ProviderSubscriptionPresent = providerResult?.ProviderSubscriptionPresent ?? false,
+        ProviderSubscriptionIdLast4 = providerResult?.ProviderSubscriptionIdLast4 ?? string.Empty,
+        ProviderSubscriptionIdHash = providerResult?.ProviderSubscriptionIdHash ?? string.Empty
     };
 }
