@@ -5,6 +5,7 @@ public static class AdminAuthorizationConstants
     public const string BootstrapAdminPolicyName = "BootstrapAdmin";
     public const string AdminSelfReadPermissionPolicyName = "AdminPermission:admin.self.read";
     public const string AdminCapabilitiesReadPermissionPolicyName = "AdminPermission:admin.capabilities.read";
+    public const string ProductStatisticsReadPermissionPolicyName = "AdminPermission:product_statistics.read";
     public const string CmsDraftSavePermissionPolicyName = "AdminPermission:cms.content.write_draft";
     public const string CmsPublishPermissionPolicyName = "AdminPermission:cms.content.publish";
     public const string CmsRestorePermissionPolicyName = "AdminPermission:cms.content.restore";

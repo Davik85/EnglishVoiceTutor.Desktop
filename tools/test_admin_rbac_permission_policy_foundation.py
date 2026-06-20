@@ -22,6 +22,7 @@ FILES = {
 PRODUCTION_PERMISSION_POLICIES = {
     "AdminSelfReadPermissionPolicyName": ("AdminSelfRead", "admin.self.read"),
     "AdminCapabilitiesReadPermissionPolicyName": ("AdminCapabilitiesRead", "admin.capabilities.read"),
+    "ProductStatisticsReadPermissionPolicyName": ("ProductStatisticsRead", "product_statistics.read"),
     "CmsDraftSavePermissionPolicyName": ("CmsContentWriteDraft", "cms.content.write_draft"),
     "CmsPublishPermissionPolicyName": ("CmsContentPublish", "cms.content.publish"),
     "CmsRestorePermissionPolicyName": ("CmsContentRestore", "cms.content.restore"),
@@ -53,6 +54,13 @@ MIGRATED_ENDPOINTS = [
         "route_constant": "AdminCapabilitiesRoute",
         "permission_constant": "AdminCapabilitiesRead",
         "policy_constant": "AdminCapabilitiesReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.product_overview.read",
+        "method": "GET",
+        "route_constant": "AdminStatisticsOverviewRoute",
+        "permission_constant": "ProductStatisticsRead",
+        "policy_constant": "ProductStatisticsReadPermissionPolicyName",
     },
 ]
 
@@ -234,8 +242,8 @@ def main() -> None:
     ]
     if migrated_authorizations != expected_migrations:
         raise AssertionError(
-            "Exactly two Admin endpoints must use AdminPermission:* policies, and they must be "
-            f"the admin identity and capabilities endpoints. Got: {migrated_authorizations}"
+            "Exactly three Admin endpoints must use AdminPermission:* policies, and they must be "
+            f"the admin identity, capabilities, and product statistics overview endpoints. Got: {migrated_authorizations}"
         )
 
     for method, route, policy in endpoint_authorizations:
@@ -263,6 +271,7 @@ def main() -> None:
 
     require(catalog_service, "AdminPermissionConstants.AdminSelfRead", "BootstrapAdmin catalog includes admin.self.read")
     require(catalog_service, "AdminPermissionConstants.AdminCapabilitiesRead", "BootstrapAdmin catalog includes admin.capabilities.read")
+    require(catalog_service, "AdminPermissionConstants.ProductStatisticsRead", "BootstrapAdmin catalog includes product_statistics.read")
 
     dangerous_or_deferred_policies = set(DANGEROUS_POLICY_CONSTANTS) | {
         "CmsDraftSavePermissionPolicyName",

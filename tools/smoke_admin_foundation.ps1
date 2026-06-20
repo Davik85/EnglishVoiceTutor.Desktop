@@ -24,6 +24,7 @@ $AuthLoginPath = "/api/auth/login"
 $AdminMePath = "/api/admin/me"
 $AdminUsersByEmailPath = "/api/admin/users/by-email"
 $AdminCapabilitiesPath = "/api/admin/capabilities"
+$AdminStatisticsOverviewPath = "/api/admin/statistics/overview"
 $AdminShellPath = "/admin/"
 $AdminAuditActionsPathTemplate = "/api/admin/users/{0}/audit-actions"
 $AdminPremiumGrantsPathTemplate = "/api/admin/users/{0}/premium-grants"
@@ -38,6 +39,7 @@ $RevokedStatus = "revoked"
 $AdminSourceDevelopmentBootstrap = "development_config_bootstrap"
 $AdminSelfReadPermission = "admin.self.read"
 $AdminCapabilitiesReadPermission = "admin.capabilities.read"
+$ProductStatisticsReadPermission = "product_statistics.read"
 
 $GrantReason = "Admin smoke test manual Premium grant."
 $RevokeReason = "Admin smoke test manual Premium revoke."
@@ -232,6 +234,16 @@ Assert-Equal -Expected $false -Actual $adminCapabilities.Body.capabilities.paddl
 Assert-Equal -Expected $false -Actual $adminCapabilities.Body.capabilities.mobileStoreEntitlementBridgeAvailable -Message "capabilities.mobileStoreEntitlementBridgeAvailable"
 Write-Pass "Admin capabilities check succeeded"
 
+Write-Step "Verify GET /api/admin/statistics/overview"
+$adminStatisticsOverviewUrl = "$BaseUrl$AdminStatisticsOverviewPath"
+$adminStatisticsOverview = Invoke-ExpectStatusCode -Method $MethodGet -Url $adminStatisticsOverviewUrl -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusOk)
+Assert-PropertyExists -Object $adminStatisticsOverview.Body -PropertyName "checkedAtUtc" -Message "Statistics overview includes checkedAtUtc"
+Assert-Equal -Expected 30 -Actual $adminStatisticsOverview.Body.windowDays -Message "Statistics overview windowDays"
+Assert-PropertyExists -Object $adminStatisticsOverview.Body -PropertyName "registeredUsersTotal" -Message "Statistics overview includes registeredUsersTotal"
+Assert-PropertyExists -Object $adminStatisticsOverview.Body -PropertyName "definitions" -Message "Statistics overview includes metric definitions"
+Assert-True -Condition ($adminCapabilities.Body.permissions -contains $ProductStatisticsReadPermission) -Message "BootstrapAdmin permissions include product_statistics.read for statistics overview policy"
+Write-Pass "Admin product statistics overview check succeeded"
+
 Write-Step "Verify admin user lookup by email"
 $lookupUrl = "{0}{1}?email={2}" -f $BaseUrl, $AdminUsersByEmailPath, [uri]::EscapeDataString($NormalEmail)
 $lookup = Invoke-ExpectStatusCode -Method $MethodGet -Url $lookupUrl -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusOk)
@@ -315,6 +327,8 @@ Write-Step "Verify expected error statuses"
 Invoke-ExpectStatusCode -Method $MethodGet -Url $adminMeUrl -Headers $null -Body $null -ExpectedStatusCodes @($StatusUnauthorized) | Out-Null
 Invoke-ExpectStatusCode -Method $MethodGet -Url $adminCapabilitiesUrl -Headers $null -Body $null -ExpectedStatusCodes @($StatusUnauthorized) | Out-Null
 Invoke-ExpectStatusCode -Method $MethodGet -Url $adminCapabilitiesUrl -Headers $normalHeaders -Body $null -ExpectedStatusCodes @($StatusForbidden) | Out-Null
+Invoke-ExpectStatusCode -Method $MethodGet -Url $adminStatisticsOverviewUrl -Headers $null -Body $null -ExpectedStatusCodes @($StatusUnauthorized) | Out-Null
+Invoke-ExpectStatusCode -Method $MethodGet -Url $adminStatisticsOverviewUrl -Headers $normalHeaders -Body $null -ExpectedStatusCodes @($StatusForbidden) | Out-Null
 Invoke-ExpectStatusCode -Method $MethodGet -Url ("{0}{1}?email={2}" -f $BaseUrl, $AdminUsersByEmailPath, [uri]::EscapeDataString($AdminEmail)) -Headers $normalHeaders -Body $null -ExpectedStatusCodes @($StatusForbidden) | Out-Null
 Invoke-ExpectStatusCode -Method $MethodGet -Url "$BaseUrl$([string]::Format($AdminAuditActionsPathTemplate, $targetUserId))?limit=0" -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusBadRequest) | Out-Null
 Invoke-ExpectStatusCode -Method $MethodGet -Url "$BaseUrl$([string]::Format($AdminAuditActionsPathTemplate, $MissingUserAuditUserId))" -Headers $adminHeaders -Body $null -ExpectedStatusCodes @($StatusNotFound) | Out-Null
