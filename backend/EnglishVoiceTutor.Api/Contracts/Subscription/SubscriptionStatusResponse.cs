@@ -57,6 +57,9 @@ public sealed class SubscriptionStatusResponse
     public string PremiumDisplayStatusCode { get; set; } = "inactive";
     public DateTimeOffset? PremiumStartsAtUtc { get; set; }
     public DateTimeOffset? PremiumEndsAtUtc { get; set; }
+    public DateTimeOffset? PremiumCoverageStartsAtUtc { get; set; }
+    public DateTimeOffset? PremiumCoverageEndsAtUtc { get; set; }
+    public string PremiumCoverageDisplayStatusCode { get; set; } = "inactive";
     public string AutoRenewalStatusCode { get; set; } = "inactive";
     public DateTimeOffset LearnerSubscriptionSummaryUpdatedAtUtc { get; set; }
 }

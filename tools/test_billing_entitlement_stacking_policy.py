@@ -78,6 +78,11 @@ def main() -> None:
     )
     assert_contains(
         status,
+        "CalculateContinuousPremiumCoverage",
+        "learner display coverage is separate from PremiumActive access decision",
+    )
+    assert_contains(
+        status,
         "!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > now",
         "subscription status excludes expired Premium entitlement",
     )

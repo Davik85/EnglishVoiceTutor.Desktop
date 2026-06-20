@@ -86,7 +86,7 @@ public sealed class SubscriptionStatusService(
         response.TrialActive = trialGrant is not null || trialEntitlement is not null;
         response.TrialEndsAtUtc = trialGrant?.ExpiresAtUtc ?? trialEntitlement?.ExpiresAtUtc;
 
-        var futurePremiumEntitlement = await dbContext.Entitlements
+        var futurePremiumEntitlements = await dbContext.Entitlements
             .AsNoTracking()
             .Where(entitlement =>
                 entitlement.UserId == userId &&
@@ -95,8 +95,10 @@ public sealed class SubscriptionStatusService(
                 entitlement.StartsAtUtc > now &&
                 (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > entitlement.StartsAtUtc))
             .OrderBy(entitlement => entitlement.StartsAtUtc)
-            .FirstOrDefaultAsync(cancellationToken);
+            .ThenBy(entitlement => entitlement.ExpiresAtUtc)
+            .ToListAsync(cancellationToken);
 
+        var futurePremiumEntitlement = futurePremiumEntitlements.FirstOrDefault();
         response.HasFuturePremiumEntitlement = futurePremiumEntitlement is not null;
         response.FuturePremiumStartsAtUtc = futurePremiumEntitlement?.StartsAtUtc;
         response.FuturePremiumExpiresAtUtc = futurePremiumEntitlement?.ExpiresAtUtc;
@@ -109,7 +111,7 @@ public sealed class SubscriptionStatusService(
 
         response.FreeLessonRemainingToday = response.FreeLessonUsedToday ? 0 : SubscriptionConstants.FreeLessonsPerDay;
         ApplyRenewalSummary(response, latestSubscription is not null);
-        ApplyLearnerSubscriptionSummary(response, premiumEntitlement, response.TrialActive, response.TrialEndsAtUtc, now);
+        ApplyLearnerSubscriptionSummary(response, premiumEntitlement, response.TrialActive, response.TrialEndsAtUtc, futurePremiumEntitlements, now);
 
         return response;
     }
@@ -189,6 +191,7 @@ public sealed class SubscriptionStatusService(
         EntitlementEntity? premiumEntitlement,
         bool trialActive,
         DateTimeOffset? trialEndsAtUtc,
+        IReadOnlyList<EntitlementEntity> futurePremiumEntitlements,
         DateTimeOffset now)
     {
         response.LearnerSubscriptionSummaryUpdatedAtUtc = now;
@@ -203,9 +206,13 @@ public sealed class SubscriptionStatusService(
             response.CurrentTariffDisplayCode = SubscriptionConstants.Plans.TrialPlanId;
             response.FreeLessonsRemainingDisplayCode = "unlimited";
             response.FreeLessonsRemainingToday = null;
-            response.PremiumDisplayStatusCode = trialEndsAtUtc.HasValue ? "active_until" : "active";
-            response.PremiumStartsAtUtc = premiumEntitlement?.StartsAtUtc;
-            response.PremiumEndsAtUtc = trialEndsAtUtc;
+            var coverage = CalculateContinuousPremiumCoverage(premiumEntitlement, trialActive, trialEndsAtUtc, futurePremiumEntitlements);
+            response.PremiumDisplayStatusCode = coverage.EndsAtUtc.HasValue ? "active_until" : "active";
+            response.PremiumStartsAtUtc = coverage.StartsAtUtc;
+            response.PremiumEndsAtUtc = coverage.EndsAtUtc;
+            response.PremiumCoverageStartsAtUtc = coverage.StartsAtUtc;
+            response.PremiumCoverageEndsAtUtc = coverage.EndsAtUtc;
+            response.PremiumCoverageDisplayStatusCode = response.PremiumDisplayStatusCode;
             return;
         }
 
@@ -216,9 +223,13 @@ public sealed class SubscriptionStatusService(
             response.CurrentTariffDisplayCode = SubscriptionConstants.Plans.PremiumPlanId;
             response.FreeLessonsRemainingDisplayCode = "unlimited";
             response.FreeLessonsRemainingToday = null;
-            response.PremiumStartsAtUtc = premiumEntitlement.StartsAtUtc;
-            response.PremiumEndsAtUtc = premiumEntitlement.ExpiresAtUtc ?? response.CurrentPeriodEndUtc;
-            response.PremiumDisplayStatusCode = response.PremiumEndsAtUtc.HasValue ? "active_until" : "active";
+            var coverage = CalculateContinuousPremiumCoverage(premiumEntitlement, trialActive, trialEndsAtUtc, futurePremiumEntitlements);
+            response.PremiumStartsAtUtc = coverage.StartsAtUtc;
+            response.PremiumEndsAtUtc = coverage.EndsAtUtc;
+            response.PremiumCoverageStartsAtUtc = coverage.StartsAtUtc;
+            response.PremiumCoverageEndsAtUtc = coverage.EndsAtUtc;
+            response.PremiumDisplayStatusCode = coverage.EndsAtUtc.HasValue ? "active_until" : "active";
+            response.PremiumCoverageDisplayStatusCode = response.PremiumDisplayStatusCode;
             return;
         }
 
@@ -230,7 +241,57 @@ public sealed class SubscriptionStatusService(
         response.PremiumDisplayStatusCode = "inactive";
         response.PremiumStartsAtUtc = null;
         response.PremiumEndsAtUtc = null;
+        response.PremiumCoverageStartsAtUtc = null;
+        response.PremiumCoverageEndsAtUtc = null;
+        response.PremiumCoverageDisplayStatusCode = "inactive";
     }
+
+    private static PremiumCoverageWindow CalculateContinuousPremiumCoverage(
+        EntitlementEntity? activePremiumEntitlement,
+        bool trialActive,
+        DateTimeOffset? trialEndsAtUtc,
+        IReadOnlyList<EntitlementEntity> futurePremiumEntitlements)
+    {
+        var coverageStartsAtUtc = activePremiumEntitlement?.StartsAtUtc;
+        var coverageEndsAtUtc = activePremiumEntitlement?.ExpiresAtUtc;
+
+        if (trialActive)
+        {
+            coverageEndsAtUtc = trialEndsAtUtc ?? coverageEndsAtUtc;
+        }
+
+        if (!coverageEndsAtUtc.HasValue)
+        {
+            return new PremiumCoverageWindow(coverageStartsAtUtc, coverageEndsAtUtc);
+        }
+
+        foreach (var entitlement in futurePremiumEntitlements
+                     .Where(entitlement => string.Equals(entitlement.Source, SubscriptionConstants.Entitlements.SourceProviderEvent, StringComparison.OrdinalIgnoreCase))
+                     .OrderBy(entitlement => entitlement.StartsAtUtc)
+                     .ThenBy(entitlement => entitlement.ExpiresAtUtc))
+        {
+            if (entitlement.StartsAtUtc > coverageEndsAtUtc.Value)
+            {
+                break;
+            }
+
+            coverageStartsAtUtc ??= entitlement.StartsAtUtc;
+            if (!entitlement.ExpiresAtUtc.HasValue)
+            {
+                coverageEndsAtUtc = null;
+                break;
+            }
+
+            if (entitlement.ExpiresAtUtc.Value > coverageEndsAtUtc.Value)
+            {
+                coverageEndsAtUtc = entitlement.ExpiresAtUtc.Value;
+            }
+        }
+
+        return new PremiumCoverageWindow(coverageStartsAtUtc, coverageEndsAtUtc);
+    }
+
+    private sealed record PremiumCoverageWindow(DateTimeOffset? StartsAtUtc, DateTimeOffset? EndsAtUtc);
 
     private static bool HasPaidProviderSubscription(SubscriptionEntity subscription)
     {
