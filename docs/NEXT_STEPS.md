@@ -64,6 +64,8 @@ Do not move billing/Paddle production readiness into the immediate next step. Co
 - Endpoint-level permission enforcement is required before exposing support, content, or billing admin actions broadly; Admin UI awareness is not enough.
 - Audit logging must remain mandatory for dangerous actions such as manual Premium grant/revoke, free lesson reset, cancel-renewal, CMS publish, CMS restore/rollback, and role/permission changes.
 - The detailed planning/audit document is `docs/PRODUCTION_ADMIN_RBAC_READINESS.md`.
+- Role assignment persistence is planned in `docs/ADMIN_ROLE_ASSIGNMENT_PERSISTENCE_PLAN.md`, but it is not implemented yet; Production Admin RBAC remains incomplete.
+- Public RC requires endpoint-level permission enforcement, role assignment persistence, role-change audit logging, and owner-approved cutover or a documented owner-approved exception.
 
 ## Subscription base plan deployment note
 
