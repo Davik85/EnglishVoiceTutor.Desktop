@@ -11,6 +11,7 @@
         manualPremiumGrantTemplate: "/api/admin/users/{userId}/premium-grants",
         manualPremiumRevokeTemplate: "/api/admin/users/{userId}/premium-grants/{entitlementId}/revoke",
         freeLessonAllowanceResetTemplate: "/api/admin/users/{userId}/free-lesson-allowance/reset",
+        billingCancelRenewalTemplate: "/api/admin/users/{userId}/billing/cancel-renewal",
         cmsContentPacks: "/api/admin/dev/cms/content-packs",
         cmsContentPackTemplate: "/api/admin/dev/cms/content-packs/{slug}",
         cmsTopicsTemplate: "/api/admin/dev/cms/content-packs/{slug}/topics",
@@ -53,7 +54,10 @@
         resetInvalid: "Reset request is invalid. Check usage date and reason.",
         resetNotFound: "No consumed free lesson allowance was found for this user and date.",
         resetFailed: "Unable to reset free lesson allowance.",
-        statisticsLoadFailed: "Unable to load product statistics."
+        statisticsLoadFailed: "Unable to load product statistics.",
+        billingCancelInvalid: "Cancel paid renewal reason is required.",
+        billingCancelNotFound: "Selected user was not found.",
+        billingCancelFailed: "Unable to cancel paid renewal."
     };
 
     const SummaryFields = ["userId", "email", "status", "createdAt", "lastLoginAt"];
@@ -216,6 +220,17 @@
     const freeLessonResetUsageDateInput = document.getElementById("free-lesson-reset-usage-date");
     const freeLessonResetReasonInput = document.getElementById("free-lesson-reset-reason");
     const freeLessonResetButton = document.getElementById("free-lesson-reset-button");
+
+    const billingCancelRenewalCard = document.getElementById("billing-cancel-renewal-card");
+    const billingCancelRenewalForm = document.getElementById("billing-cancel-renewal-form");
+    const billingCancelRenewalSelectedUserEmailElement = document.getElementById("billing-cancel-renewal-selected-user-email");
+    const billingCancelRenewalSelectedUserIdElement = document.getElementById("billing-cancel-renewal-selected-user-id");
+    const billingCancelRenewalAvailabilityElement = document.getElementById("billing-cancel-renewal-availability");
+    const billingCancelRenewalReasonInput = document.getElementById("billing-cancel-renewal-reason");
+    const billingCancelRenewalButton = document.getElementById("billing-cancel-renewal-button");
+    const billingCancelRenewalLoadingElement = document.getElementById("billing-cancel-renewal-loading");
+    const billingCancelRenewalErrorElement = document.getElementById("billing-cancel-renewal-error");
+    const billingCancelRenewalSuccessElement = document.getElementById("billing-cancel-renewal-success");
     const freeLessonResetLoadingElement = document.getElementById("free-lesson-reset-loading");
     const freeLessonResetErrorElement = document.getElementById("free-lesson-reset-error");
     const freeLessonResetSuccessElement = document.getElementById("free-lesson-reset-success");
@@ -571,6 +586,40 @@
     }
 
 
+    function clearBillingCancelRenewalMessages() { billingCancelRenewalErrorElement.textContent = ""; billingCancelRenewalSuccessElement.textContent = ""; }
+    function clearBillingCancelRenewalState() { billingCancelRenewalReasonInput.value = ""; clearBillingCancelRenewalMessages(); billingCancelRenewalAvailabilityElement.textContent = "Search for a user first."; }
+    function getBillingCancelRenewalAvailability(payload) {
+        const status = payload && payload.subscriptionStatus ? payload.subscriptionStatus : {};
+        if (status.canRequestCancelRenewal === true) { return { available: true, message: "Cancellation is available for this user's paid provider subscription." }; }
+        const code = status.cancellationExplanationCode || "unknown";
+        const renewal = status.renewalStatus || "unknown";
+        if (renewal === "cancellation_scheduled" || code === "already_scheduled") { return { available: false, message: "Cancellation is already scheduled." }; }
+        if (renewal === "subscription_canceled") { return { available: false, message: "Subscription is canceled." }; }
+        if (renewal === "no_paid_subscription" || code === "not_paid_provider_subscription") { return { available: false, message: "No paid provider subscription is available to cancel." }; }
+        return { available: false, message: "Cancellation availability is unknown." };
+    }
+    function updateBillingCancelRenewalControlsState(isLoading) {
+        const availability = getBillingCancelRenewalAvailability(selectedUserLookupPayload);
+        billingCancelRenewalReasonInput.disabled = isLoading || !selectedUserId || !availability.available;
+        billingCancelRenewalButton.disabled = isLoading || !selectedUserId || !availability.available;
+    }
+    function setBillingCancelRenewalLoading(isLoading) { billingCancelRenewalLoadingElement.classList.toggle("hidden", !isLoading); updateBillingCancelRenewalControlsState(isLoading); }
+    function setBillingCancelRenewalVisible(isVisible) {
+        billingCancelRenewalCard.classList.toggle("hidden", !isVisible);
+        billingCancelRenewalSelectedUserEmailElement.textContent = isVisible ? (selectedUserEmail || "-") : "-";
+        billingCancelRenewalSelectedUserIdElement.textContent = isVisible ? (selectedUserId || "-") : "-";
+        const availability = getBillingCancelRenewalAvailability(selectedUserLookupPayload);
+        billingCancelRenewalAvailabilityElement.textContent = availability.message;
+        if (!isVisible) { clearBillingCancelRenewalState(); }
+        updateBillingCancelRenewalControlsState(false);
+    }
+    function validateBillingCancelRenewalInput() {
+        const reason = String(billingCancelRenewalReasonInput.value || "").trim();
+        if (!reason) { return { isValid: false, message: ErrorMessages.billingCancelInvalid }; }
+        return { isValid: true, reason };
+    }
+
+
     const setRevokeError = (message) => { revokeErrorElement.textContent = message || ""; };
     const setRevokeSuccess = (message) => { revokeSuccessElement.textContent = message || ""; };
 
@@ -745,7 +794,7 @@
     function resetDashboard() {
         adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" }; adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; bootstrapAdminStatusElement.textContent = "-"; adminPermissionCountElement.textContent = "-"; capabilitiesListElement.textContent = ""; renderBadges(adminRolesBadgesElement, []); renderBadges(rolesPermissionsRolesElement, []); renderPermissionList(rolesPermissionsListElement, []); workflowAvailabilityListElement.textContent = ""; systemProductionRolesAvailableElement.textContent = "false"; systemProductionRolesAvailableElement.className = "badge unavailable";
         setLookupError(""); setLookupLoading(false); setLookupSourceLoading(LookupSources.premium, false); setLookupSourceLoading(LookupSources.freeLesson, false); clearLookupErrors(); clearUserLookupResult(); lookupForm.reset(); premiumLookupForm.reset(); freeLessonLookupForm.reset(); clearSelectedUserState();
-        setGrantVisible(false); setRevokeVisible(false); setFreeLessonResetVisible(false); clearGrantState(); clearRevokeState(); clearFreeLessonResetState(); grantForm.reset(); revokeForm.reset(); freeLessonResetForm.reset(); clearAuditLog(); clearAllCmsDirtyState();
+        setGrantVisible(false); setRevokeVisible(false); setBillingCancelRenewalVisible(false); setFreeLessonResetVisible(false); clearGrantState(); clearRevokeState(); clearBillingCancelRenewalState(); clearFreeLessonResetState(); grantForm.reset(); revokeForm.reset(); billingCancelRenewalForm.reset(); freeLessonResetForm.reset(); clearAuditLog(); clearAllCmsDirtyState();
     }
 
     function resetSession() {
@@ -829,6 +878,7 @@
         updateUserRequiredEmptyStates();
         setGrantVisible(Boolean(selectedUserId));
         setRevokeVisible(Boolean(selectedUserId));
+        setBillingCancelRenewalVisible(Boolean(selectedUserId));
         setFreeLessonResetVisible(Boolean(selectedUserId));
         clearAuditLog();
         updateHashField("selectedUserId", selectedUserId);
@@ -857,6 +907,7 @@
         updateUserRequiredEmptyStates();
         setGrantVisible(false);
         setRevokeVisible(false);
+        setBillingCancelRenewalVisible(false);
         setFreeLessonResetVisible(false);
         clearGrantState();
         clearRevokeState();
@@ -971,6 +1022,42 @@
                 expireAdminSession(message);
             }
         } finally { setRevokeLoading(false); }
+    }
+
+
+    async function cancelPaidRenewalForSelectedUser() {
+        if (!selectedUserId || !selectedUserEmail) { return; }
+        clearBillingCancelRenewalMessages();
+        const validation = validateBillingCancelRenewalInput();
+        if (!validation.isValid) { billingCancelRenewalErrorElement.textContent = validation.message; return; }
+
+        const confirmed = window.confirm("This cancels future renewals only. Paid Premium access remains until the current paid period ends.");
+        if (!confirmed) { return; }
+
+        setBillingCancelRenewalLoading(true);
+        try {
+            const endpoint = ApiPaths.billingCancelRenewalTemplate.replace("{userId}", encodeURIComponent(selectedUserId));
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: getAdminHeaders({ "Content-Type": "application/json" }),
+                body: JSON.stringify({ reason: validation.reason })
+            });
+
+            if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.billingCancelInvalid); }
+            if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.billingCancelNotFound); }
+            if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+            if (!response.ok) { throw new Error(ErrorMessages.billingCancelFailed); }
+
+            const payload = await response.json();
+            billingCancelRenewalSuccessElement.textContent = `Cancel paid renewal result: ${payload.resultCode || "unknown"}. Cancel at period end: ${formatValue(payload.cancelAtPeriodEnd)}. Effective at: ${payload.scheduledChangeEffectiveAtUtc || payload.currentPeriodEndUtc || "-"}.`;
+            billingCancelRenewalReasonInput.value = "";
+            await refreshSelectedUserAfterMutation();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : ErrorMessages.billingCancelFailed;
+            billingCancelRenewalErrorElement.textContent = message;
+            try { await refreshSelectedUserAfterMutation(); } catch (_) { }
+            if (isAuthErrorMessage(message)) { expireAdminSession(message); }
+        } finally { setBillingCancelRenewalLoading(false); }
     }
 
 
@@ -2295,6 +2382,7 @@
     grantForm.addEventListener("submit", async (event) => { event.preventDefault(); await grantPremiumForSelectedUser(); });
     revokeEntitlementIdElement.addEventListener("change", () => { renderSelectedRevokeEntitlementDetails(); updateRevokeControlsState(false); });
     revokeForm.addEventListener("submit", async (event) => { event.preventDefault(); await revokePremiumForSelectedUser(); });
+    billingCancelRenewalForm.addEventListener("submit", async (event) => { event.preventDefault(); await cancelPaidRenewalForSelectedUser(); });
     freeLessonResetForm.addEventListener("submit", async (event) => { event.preventDefault(); await resetFreeLessonAllowanceForSelectedUser(); });
     loadAuditButton.addEventListener("click", async () => { await loadAuditLogForSelectedUser(); });
     refreshStatisticsButton.addEventListener("click", async () => { await loadProductStatistics(); });
