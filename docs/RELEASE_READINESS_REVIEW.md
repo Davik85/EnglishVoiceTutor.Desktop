@@ -13,6 +13,8 @@ Scope: controlled tester/direct Windows release readiness and broader public-rel
 - Premium continuous coverage display is backend-computed and can include queued paid Premium periods; `PremiumActive` remains based only on active started entitlements.
 - Paddle sandbox checkout and sandbox cancel-renewal work through backend-owned flows. Production/live Paddle readiness remains deferred.
 - The release remains a controlled tester/direct Windows release, not broad public production launch.
+- Current controlled tester/direct Windows releases continue to use the existing Inno Setup installer flow; the preferred eventual full public release direction is Microsoft Store + MSIX after the project is fully release-ready. This review does not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior.
+
 
 ## 1. Release blockers for controlled external tester handoff
 

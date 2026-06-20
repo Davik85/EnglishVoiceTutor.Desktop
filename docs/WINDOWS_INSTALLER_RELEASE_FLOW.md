@@ -1,5 +1,8 @@
 # Windows installer release flow
 
+> Release direction note: this Inno Setup flow remains valid for controlled tester/direct Windows releases until the owner explicitly changes the release flow. The owner-preferred eventual full public distribution direction is Microsoft Store + MSIX, but MSIX/Microsoft Store work is deferred until the project is fully release-ready and should be planned in a separate readiness checklist. Do not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior for this future-direction note.
+
+
 Review date: 2026-06-18.
 
 ## Source of truth for current versions

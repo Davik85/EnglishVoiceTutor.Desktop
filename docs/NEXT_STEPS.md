@@ -39,6 +39,11 @@ The live public tester manifest baseline must be checked from `latest.json`, not
 
 This is still a private tester/direct Windows release, not broad public production readiness.
 
+## Public distribution direction
+
+Current controlled tester/direct Windows releases continue to use the existing Inno Setup installer flow. The owner-preferred direction for an eventual full public release is Microsoft Store + MSIX, but that work is deferred until the project is fully release-ready. Do not change the current packaging scripts, upload scripts, `latest.json` format, or release validation behavior as part of this planning note. A later public-release planning pass should add a separate Microsoft Store/MSIX readiness checklist before any Store submission or MSIX packaging work begins.
+
+
 ## Latest verified release summary
 
 Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy and UI policy tests passed; the desktop release gate passed; and backend `0.1.35-backend.33` is deployed and healthy. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, and Save draft + Publish changes are visible in newly started desktop lessons.

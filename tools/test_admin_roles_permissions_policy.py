@@ -2,6 +2,7 @@
 """Static policy checks for the provider-neutral admin roles/permissions foundation."""
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,15 +16,18 @@ FILES = {
     "admin_capabilities": ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminCapabilitiesResponse.cs",
     "capabilities_service": ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminCapabilitiesService.cs",
     "program": ROOT / "backend/EnglishVoiceTutor.Api/Program.cs",
+    "admin_endpoints": ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs",
+    "admin_js": ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js",
+    "admin_index": ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/index.html",
 }
 
-ROLE_IDS = [
-    "super_admin",
-    "support_agent",
-    "content_manager",
-    "finance_admin",
-    "readonly_analyst",
-]
+ROLE_CONSTANTS = {
+    "SuperAdmin": "super_admin",
+    "Support": "support",
+    "ContentEditor": "content_editor",
+    "BillingSupport": "billing_support",
+    "ReadOnlyAuditor": "read_only_auditor",
+}
 
 PERMISSIONS = {
     "AdminSelfRead": "admin.self.read",
@@ -51,13 +55,31 @@ PERMISSIONS = {
     "AdminRolesManage": "admin.roles.manage",
 }
 
-BILLING_ACTIVATION_SNIPPETS = [
-    "ProductionRolesAvailable = true",
-    "BillingProviderConfigured = true",
-    "PaddleCheckoutAvailable = true",
-    "PaddleWebhooksAvailable = true",
-    "MobileStoreEntitlementBridgeAvailable = true",
-]
+EXPECTED_ROLE_PERMISSIONS = {
+    "SuperAdmin": set(PERMISSIONS),
+    "Support": {
+        "AdminSelfRead", "AdminCapabilitiesRead", "UsersRead", "UserLookupRead", "UserOverviewRead",
+        "UsersDiagnosticsRead", "LessonHistoryDiagnosticsRead", "FreeLessonAllowanceReset", "SystemDiagnosticsRead",
+    },
+    "ContentEditor": {"AdminSelfRead", "AdminCapabilitiesRead", "CmsContentRead", "CmsContentWriteDraft", "CmsRuntimeStatusRead"},
+    "BillingSupport": {
+        "AdminSelfRead", "AdminCapabilitiesRead", "UserLookupRead", "UserOverviewRead",
+        "SubscriptionsDiagnosticsRead", "PremiumDiagnosticsRead", "BillingDiagnosticsRead", "BillingCancelRenewal",
+    },
+    "ReadOnlyAuditor": {
+        "AdminSelfRead", "AdminCapabilitiesRead", "AuditRead", "UsersDiagnosticsRead", "LessonHistoryDiagnosticsRead",
+        "SubscriptionsDiagnosticsRead", "PremiumDiagnosticsRead", "BillingDiagnosticsRead", "ProductStatisticsRead", "SystemDiagnosticsRead",
+    },
+}
+
+DANGEROUS_FOR_SUPPORT = {"PremiumGrant", "PremiumRevoke", "CmsContentPublish", "CmsContentRestore", "BillingCancelRenewal", "AdminRolesManage"}
+CONTENT_EDITOR_FORBIDDEN_PREFIXES = ("Billing", "Premium", "AdminRoles")
+BILLING_SUPPORT_FORBIDDEN = {"CmsContentWriteDraft", "CmsContentPublish", "CmsContentRestore", "AdminRolesManage", "PremiumGrant", "PremiumRevoke"}
+READ_ONLY_ACTIONS = {
+    "CmsContentWriteDraft", "CmsContentPublish", "CmsContentRestore", "PremiumGrant", "PremiumRevoke",
+    "FreeLessonAllowanceReset", "BillingCancelRenewal", "AdminRolesManage",
+}
+FORBIDDEN_PADDLE_CLIENT_REFERENCES = ["api.paddle.com", "Paddle.Api", "Paddle-Signature", "PADDLE_API_KEY", "PADDLE_WEBHOOK_SECRET", "webhook secret"]
 
 
 def read(name: str) -> str:
@@ -67,14 +89,24 @@ def read(name: str) -> str:
     return path.read_text(encoding="utf-8-sig")
 
 
-def assert_contains(text: str, needle: str, label: str) -> None:
+def require(text: str, needle: str, label: str) -> None:
     if needle not in text:
         raise AssertionError(f"Missing {label}: {needle}")
 
 
-def assert_not_contains(text: str, needle: str, label: str) -> None:
+def forbid(text: str, needle: str, label: str) -> None:
     if needle in text:
         raise AssertionError(f"Forbidden {label}: {needle}")
+
+
+def extract_role_block(catalog_service: str, role_constant: str) -> set[str]:
+    pattern = rf"\[AdminRoleConstants\.{role_constant}\]\s*=\s*(?:BootstrapAdminPermissions|\[(.*?)\])"
+    match = re.search(pattern, catalog_service, re.S)
+    if not match:
+        raise AssertionError(f"Missing production catalog entry for {role_constant}")
+    if match.group(0).endswith("BootstrapAdminPermissions"):
+        return set(PERMISSIONS)
+    return set(re.findall(r"AdminPermissionConstants\.(\w+)", match.group(1)))
 
 
 def main() -> None:
@@ -82,37 +114,64 @@ def main() -> None:
     permission_constants = read("permission_constants")
     catalog_service = read("catalog_service")
     catalog_interface = read("catalog_interface")
-    admin_me = read("admin_me")
-    admin_capabilities = read("admin_capabilities")
     capabilities_service = read("capabilities_service")
     program = read("program")
+    admin_endpoints = read("admin_endpoints")
+    admin_ui = read("admin_js") + "\n" + read("admin_index")
 
-    for role_id in ROLE_IDS:
-        assert_contains(role_constants, f'"{role_id}"', f"stable admin role ID {role_id}")
+    for constant_name, role_id in ROLE_CONSTANTS.items():
+        require(role_constants, f'public const string {constant_name} = "{role_id}"', f"stable production admin role {role_id}")
+        require(catalog_service, f"AdminRoleConstants.{constant_name}", f"production catalog role {role_id}")
 
     for constant_name, permission_id in PERMISSIONS.items():
-        assert_contains(permission_constants, f'public const string {constant_name} = "{permission_id}"', f"stable admin permission ID {permission_id}")
-        assert_contains(catalog_service, f"AdminPermissionConstants.{constant_name}", f"bootstrap catalog permission {permission_id}")
+        require(permission_constants, f'public const string {constant_name} = "{permission_id}"', f"stable admin permission ID {permission_id}")
+        require(catalog_service, f"AdminPermissionConstants.{constant_name}", f"catalog permission {permission_id}")
 
-    assert_contains(catalog_interface, "GetBootstrapAdminRoles()", "bootstrap role catalog method")
-    assert_contains(catalog_interface, "GetBootstrapAdminPermissions()", "bootstrap permission catalog method")
-    assert_contains(catalog_service, "AdminRoleConstants.SuperAdmin", "bootstrap admin maps to super_admin")
-    assert_contains(catalog_service, "GetBootstrapAdminRoles() => BootstrapAdminRoles", "bootstrap admin roles returned from catalog")
-    assert_contains(catalog_service, "GetBootstrapAdminPermissions() => BootstrapAdminPermissions", "bootstrap admin permissions returned from catalog")
+    require(catalog_interface, "GetProductionRolePermissions()", "static production role-permission catalog method")
+    require(catalog_service, "GetProductionRolePermissions() => ProductionRolePermissions", "production role catalog returned")
+    require(catalog_service, "[AdminRoleConstants.SuperAdmin] = BootstrapAdminPermissions", "Super Admin includes all production permissions")
 
-    for property_name in ["Roles", "Permissions", "IsBootstrapAdmin"]:
-        assert_contains(admin_me, property_name, f"AdminMeResponse {property_name}")
+    for role_constant, expected_permissions in EXPECTED_ROLE_PERMISSIONS.items():
+        actual_permissions = extract_role_block(catalog_service, role_constant)
+        unknown_permissions = actual_permissions - set(PERMISSIONS)
+        if unknown_permissions:
+            raise AssertionError(f"{role_constant} maps unknown permissions: {sorted(unknown_permissions)}")
+        if actual_permissions != expected_permissions:
+            raise AssertionError(f"{role_constant} permissions mismatch. Expected {sorted(expected_permissions)}, got {sorted(actual_permissions)}")
 
-    for property_name in ["Roles", "Permissions"]:
-        assert_contains(admin_capabilities, property_name, f"AdminCapabilitiesResponse {property_name}")
+    if extract_role_block(catalog_service, "Support") & DANGEROUS_FOR_SUPPORT:
+        raise AssertionError("Support includes dangerous permissions")
+    if any(permission.startswith(CONTENT_EDITOR_FORBIDDEN_PREFIXES) for permission in extract_role_block(catalog_service, "ContentEditor")):
+        raise AssertionError("Content Editor includes billing/Premium/admin-role permissions")
+    if extract_role_block(catalog_service, "BillingSupport") & BILLING_SUPPORT_FORBIDDEN:
+        raise AssertionError("Billing Support includes CMS write/publish/restore, manual Premium, or admin-role permissions")
+    if extract_role_block(catalog_service, "ReadOnlyAuditor") & READ_ONLY_ACTIONS:
+        raise AssertionError("Read-only Auditor includes write/action permissions")
 
-    assert_contains(capabilities_service, "Roles = adminRolePermissionCatalogService.GetBootstrapAdminRoles()", "capabilities exposes roles")
-    assert_contains(capabilities_service, "Permissions = adminRolePermissionCatalogService.GetBootstrapAdminPermissions()", "capabilities exposes permissions")
-    assert_contains(capabilities_service, "ProductionRolesAvailable = false", "production roles remain disabled")
-    assert_contains(program, "AddSingleton<IAdminRolePermissionCatalogService, AdminRolePermissionCatalogService>()", "catalog service registration")
+    require(catalog_service, "AdminRoleConstants.SuperAdmin", "bootstrap admin maps to super_admin")
+    require(catalog_service, "GetBootstrapAdminRoles() => BootstrapAdminRoles", "bootstrap admin roles returned from catalog")
+    require(catalog_service, "GetBootstrapAdminPermissions() => BootstrapAdminPermissions", "bootstrap admin permissions returned from catalog")
+    require(capabilities_service, "ProductionRolesAvailable = false", "production roles remain disabled")
+    require(program, "AddSingleton<IAdminRolePermissionCatalogService, AdminRolePermissionCatalogService>()", "catalog service registration")
+    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName)", "admin endpoints still use BootstrapAdmin policy")
+    forbid(admin_endpoints, "PermissionPolicyName", "production permission policy endpoint enforcement in this foundation-only step")
+    forbid(read("program"), "GetProductionRolePermissions()", "production role catalog endpoint enforcement")
 
-    for snippet in BILLING_ACTIVATION_SNIPPETS:
-        assert_not_contains(capabilities_service, snippet, "production billing/Paddle or RBAC activation")
+    for needle in FORBIDDEN_PADDLE_CLIENT_REFERENCES:
+        forbid(admin_ui, needle, "direct Paddle reference in Admin UI")
+
+    desktop_files = [
+        path for path in ROOT.rglob("*")
+        if path.is_file()
+        and ".git" not in path.parts
+        and "backend" not in path.parts
+        and "docs" not in path.parts
+        and "tools" not in path.parts
+        and path.suffix.lower() in {".cs", ".xaml", ".json", ".xml", ".config"}
+    ]
+    desktop_text = "\n".join(path.read_text(encoding="utf-8-sig", errors="ignore") for path in desktop_files)
+    for needle in FORBIDDEN_PADDLE_CLIENT_REFERENCES:
+        forbid(desktop_text, needle, "direct Paddle reference in Desktop code")
 
     print("Admin roles/permissions policy checks passed.")
 
