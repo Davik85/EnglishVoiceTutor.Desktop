@@ -85,13 +85,38 @@ def main() -> None:
 
     combined_seed = "\n".join(read(path) for path in seed_migrations)
     assert_contains(combined_seed, "SubscriptionConstants.Plans.FreePlanId", "free plan seed constant usage")
+    assert_contains(combined_seed, "SubscriptionConstants.Plans.FreePlanName", "free plan seed display name")
     assert_contains(combined_seed, "SubscriptionConstants.Plans.PremiumPlanId", "premium plan seed constant usage")
+    assert_contains(combined_seed, "SubscriptionConstants.Plans.PremiumPlanName", "premium plan seed display name")
     assert_contains(combined_seed, "SubscriptionConstants.Plans.TrialPlanId", "trial plan seed constant usage")
     assert_contains(combined_seed, "SubscriptionConstants.Plans.TrialPlanName", "trial plan seed display name")
+    assert_contains(combined_seed, "SubscriptionConstants.Plans.PremiumTier", "trial plan premium tier seed")
     assert_contains(combined_seed, "ON CONFLICT", "PostgreSQL idempotent upsert")
     assert_contains(combined_seed, '"PlanId"', "PlanId conflict target")
     assert_contains(combined_seed, "TRUE", "active plan seed values")
     assert_contains(combined_seed, '"IsActive" = TRUE', "existing plan reactivation")
+
+    trial_migration = read(MIGRATIONS / "20260620090000_SeedTrialSubscriptionPlan.cs")
+    trial_designer = read(MIGRATIONS / "20260620090000_SeedTrialSubscriptionPlan.Designer.cs")
+    assert_contains(trial_migration, "partial class SeedTrialSubscriptionPlan : Migration", "trial migration class")
+    assert_contains(trial_migration, "SubscriptionConstants.Plans.TrialPlanId", "trial migration trial plan id")
+    assert_contains(trial_migration, "SubscriptionConstants.Plans.TrialPlanName", "trial migration trial display name")
+    assert_contains(trial_migration, "SubscriptionConstants.Plans.PremiumTier", "trial migration premium tier")
+    assert_contains(trial_migration, "ON CONFLICT", "trial migration idempotent upsert")
+    assert_contains(trial_migration, '"PlanId"', "trial migration PlanId conflict target")
+    assert_contains(trial_designer, "[DbContext(typeof(AppDbContext))]", "trial migration DbContext metadata")
+    assert_contains(trial_designer, '[Migration("20260620090000_SeedTrialSubscriptionPlan")]', "trial migration id metadata")
+    assert_contains(trial_designer, "partial class SeedTrialSubscriptionPlan", "trial migration designer partial class")
+
+    base_migration_diff = subprocess.run(
+        ["git", "diff", "--", "backend/EnglishVoiceTutor.Api/Migrations/20260618090000_SeedBaseSubscriptionPlans.cs", "backend/EnglishVoiceTutor.Api/Migrations/20260618090000_SeedBaseSubscriptionPlans.Designer.cs"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    if base_migration_diff.stdout.strip():
+        raise AssertionError("Production-applied base subscription plan migration must not be edited.")
 
     default_config = read(APPSETTINGS)
     assert_contains(default_config, '"CheckoutEnabled": false', "billing checkout disabled by default")

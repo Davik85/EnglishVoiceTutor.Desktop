@@ -1,73 +1,110 @@
 from pathlib import Path
+
 ROOT = Path(__file__).resolve().parents[1]
 
-def read(path): return (ROOT / path).read_text(encoding='utf-8')
+
+def read(path):
+    return (ROOT / path).read_text(encoding="utf-8")
+
+
 def require(text, needle, label):
     if needle not in text:
         raise AssertionError(f"Missing {label}: {needle}")
+
 
 def forbid(text, needle, label):
     if needle in text:
         raise AssertionError(f"Forbidden {label}: {needle}")
 
-status = read('backend/EnglishVoiceTutor.Api/Services/Subscriptions/SubscriptionStatusService.cs')
-contract = read('backend/EnglishVoiceTutor.Api/Contracts/Subscription/SubscriptionStatusResponse.cs')
-admin = read('backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js')
-model = read('Models/BackendSubscriptionStatusResponse.cs')
-settings = read('ViewModels/SettingsViewModel.cs')
-xaml = read('Views/SettingsView.xaml')
-loc = read('Localization/AppLocalization.cs')
 
-for needle in ['RenewalStatus', 'NextRenewalState', 'CanRequestCancelRenewal', 'CancellationExplanationCode', 'PaidAccessUntilUtc']:
-    require(contract, needle, f'backend DTO {needle}')
-    require(model, needle, f'desktop DTO {needle}')
+status = read("backend/EnglishVoiceTutor.Api/Services/Subscriptions/SubscriptionStatusService.cs")
+contract = read("backend/EnglishVoiceTutor.Api/Contracts/Subscription/SubscriptionStatusResponse.cs")
+admin = read("backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js")
+model = read("Models/BackendSubscriptionStatusResponse.cs")
+settings = read("ViewModels/SettingsViewModel.cs")
+xaml = read("Views/SettingsView.xaml")
+loc = read("Localization/AppLocalization.cs")
+
+for needle in ["RenewalStatus", "NextRenewalState", "CanRequestCancelRenewal", "CancellationExplanationCode", "PaidAccessUntilUtc"]:
+    require(contract, needle, f"backend DTO {needle}")
+    require(model, needle, f"desktop DTO {needle}")
 
 for needle in [
-    'SubscriptionConstants.RenewalStatuses.RenewalActive',
-    'response.CanRequestCancelRenewal = true',
-    'SubscriptionConstants.RenewalStatuses.CancellationScheduled',
-    'SubscriptionConstants.RenewalStatuses.NoPaidSubscription',
-    'SubscriptionConstants.RenewalStatuses.SubscriptionCanceled',
-    'SubscriptionConstants.CancellationExplanationCodes.AlreadyScheduled',
+    "SubscriptionConstants.RenewalStatuses.RenewalActive",
+    "response.CanRequestCancelRenewal = true",
+    "SubscriptionConstants.RenewalStatuses.CancellationScheduled",
+    "SubscriptionConstants.RenewalStatuses.NoPaidSubscription",
+    "SubscriptionConstants.RenewalStatuses.SubscriptionCanceled",
+    "SubscriptionConstants.CancellationExplanationCodes.AlreadyScheduled",
 ]:
-    require(status, needle, f'backend mapping policy {needle}')
+    require(status, needle, f"backend mapping policy {needle}")
 
-for needle in ['renewalStatus', 'nextRenewalState', 'cancelAtPeriodEnd', 'scheduledChangeEffectiveAtUtc', 'currentPeriodEndUtc', 'paidAccessUntilUtc', 'canRequestCancelRenewal', 'cancellationExplanationCode', 'providerSubscriptionPresent']:
-    require(admin, f'"{needle}"', f'admin diagnostic field {needle}')
+for needle in [
+    "renewalStatus",
+    "nextRenewalState",
+    "cancelAtPeriodEnd",
+    "scheduledChangeAction",
+    "scheduledChangeEffectiveAtUtc",
+    "canRequestCancelRenewal",
+    "cancellationExplanationCode",
+]:
+    require(admin, f'"{needle}"', f"admin diagnostic field {needle}")
 
-for needle in ['status.CanRequestCancelRenewal ??', 'BuildRenewalStatusText', 'BuildNextRenewalText', 'BuildCancellationStatusText', 'lastKnownRenewalStatus == "cancellation_scheduled"']:
-    require(settings, needle, f'desktop cancellation state usage {needle}')
-for needle in ['SubscriptionRenewalText', 'SubscriptionNextRenewalText', 'SubscriptionPaidAccessUntilText', 'SubscriptionCancellationStatusText']:
-    require(xaml, needle, f'desktop account UI binding {needle}')
+for needle in [
+    'LocalizeUiText("Current tariff: {0}")',
+    'LocalizeUiText("Free lessons remaining: {0}")',
+    'LocalizeUiText("Premium: {0}")',
+    'LocalizeUiText("Auto-renewal: {0}")',
+    "BuildCurrentTariffLabel(status)",
+    "BuildFreeLessonsRemainingLabel(status)",
+    "BuildPremiumDisplayStatusLabel(status)",
+    "BuildAutoRenewalStatusLabel(status)",
+    "status.CanRequestCancelRenewal ??",
+]:
+    require(settings, needle, f"simplified desktop account summary or safe cancel visibility {needle}")
 
-for needle in ['Paddle.Api', 'api.paddle.com', 'Paddle-Signature', 'ApiKey', 'webhook secret', 'ProviderSubscriptionId']:
-    forbid(settings, needle, 'desktop provider secret/API detail')
-    forbid(xaml, needle, 'desktop provider secret/API detail')
+for needle in [
+    "SubscriptionPlanText",
+    "SubscriptionFreeLessonText",
+    "SubscriptionPremiumText",
+    "SubscriptionRenewalText",
+]:
+    require(xaml, needle, f"desktop account UI binding {needle}")
 
-supported = ['en','es','fr','de','it','pt','ru','pl','ar','ja','ko','sr','hr','bg']
-keys = ['Renewal: active','Renewal: cancellation scheduled','Renewal: no paid subscription','Next renewal: no further renewal scheduled','Cancellation status: already scheduled','Cancellation status: not available for trial/manual Premium','No active paid subscription was found. No renewal cancellation is available from this account.']
+for needle in [
+    "BuildRenewalStatusText",
+    "BuildNextRenewalStateText",
+    "BuildNextRenewalText",
+    "BuildCancellationStatusText",
+]:
+    forbid(settings, needle, f"learner technical billing diagnostic renderer {needle}")
+
+for needle in [
+    "renewal_expected",
+    "no_renewal_scheduled",
+    "cancellation_scheduled",
+    "cancellationExplanationCode",
+    "providerSubscriptionPresent",
+    "scheduledChangeAction",
+    "SubscriptionNextRenewalText",
+    "SubscriptionPaidAccessUntilText",
+    "SubscriptionCancellationStatusText",
+]:
+    forbid(xaml, needle, f"learner technical billing diagnostic binding or literal {needle}")
+
+for needle in ["Paddle.Api", "api.paddle.com", "Paddle-Signature", "ApiKey", "webhook secret", "ProviderSubscriptionId"]:
+    forbid(settings, needle, "desktop provider secret/API detail")
+    forbid(xaml, needle, "desktop provider secret/API detail")
+
+supported = ["en", "es", "fr", "de", "it", "pt", "ru", "pl", "ar", "ja", "ko", "sr", "hr", "bg"]
+keys = ["Current tariff: {0}", "Free lessons remaining: {0}", "Premium: {0}", "Auto-renewal: {0}"]
 for lang in supported:
     block_start = loc.find(f'["{lang}"] = new(StringComparer.OrdinalIgnoreCase)')
-    if block_start < 0: raise AssertionError(f'Missing localization block {lang}')
-    block_end = loc.find('\n            },', block_start)
+    if block_start < 0:
+        raise AssertionError(f"Missing localization block {lang}")
+    block_end = loc.find("\n            },", block_start)
     block = loc[block_start:block_end]
     for key in keys:
-        require(block, f'["{key}"]', f'{lang} localization for {key}')
-ru_block = loc[loc.find('["ru"] = new(StringComparer.OrdinalIgnoreCase)'):loc.find('\n            },', loc.find('["ru"] = new(StringComparer.OrdinalIgnoreCase)'))]
-pl_block = loc[loc.find('["pl"] = new(StringComparer.OrdinalIgnoreCase)'):loc.find('\n            },', loc.find('["pl"] = new(StringComparer.OrdinalIgnoreCase)'))]
-require(ru_block, 'Продление: активно', 'Russian renewal translation')
-require(pl_block, 'Odnowienie: aktywne', 'Polish renewal translation')
-print('Billing cancellation visibility policy checks passed.')
+        require(block, f'["{key}"]', f"{lang} localization for {key}")
 
-
-russian_phrase = 'Активная платная подписка не найдена'
-english_fallback = 'No active paid subscription was found. No renewal cancellation is available from this account.'
-for lang in supported:
-    start = loc.find(f'["{lang}"] = new(StringComparer.OrdinalIgnoreCase)')
-    end = loc.find('\n            },', start)
-    block = loc[start:end]
-    if lang != 'ru':
-        forbid(block, russian_phrase, f'Russian no-paid-subscription fallback in {lang}')
-    if lang == 'pl':
-        forbid(block.split('["No active paid subscription was found. No renewal cancellation is available from this account."] = ', 1)[1].split('\n', 1)[0], english_fallback + '",', 'Polish English fallback for cancel-unavailable string')
-require(ru_block, russian_phrase, 'Russian no-paid-subscription localized phrase')
+print("Billing cancellation visibility policy checks passed.")
