@@ -141,6 +141,10 @@ Get-FileHash -Path "$env:TEMP\$installerName" -Algorithm SHA256
 
 Compare the downloaded installer hash with `checksums.sha256` and the `installerSha256` value in `latest.json`.
 
+## Code signing readiness
+
+Code signing remains a planned release-hardening step, not an implemented packaging behavior. The current controlled tester/direct Windows flow may remain unsigned for now if the owner knowingly accepts SmartScreen and trust friction for the private tester cohort. Before a public release candidate or broad public distribution, the final Inno Setup installer should be signed or have a documented owner-approved exception, and signature verification must be added before upload. See `docs/WINDOWS_CODE_SIGNING_READINESS.md` for the current planning audit, non-secret handling rules, future signing/verification placement, and certificate option comparison.
+
 ## Security notes
 
 - Do not commit generated `artifacts/` files or installer `.exe` files.
