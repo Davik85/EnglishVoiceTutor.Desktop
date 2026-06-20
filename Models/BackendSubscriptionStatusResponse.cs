@@ -29,4 +29,17 @@ public sealed class BackendSubscriptionStatusResponse
     public DateTimeOffset CheckedAtUtc { get; init; }
     public string Source { get; init; } = string.Empty;
     public bool EnforcementEnabled { get; init; }
+    public string CurrentAccessTier { get; init; } = string.Empty;
+    public string CurrentAccessSource { get; init; } = string.Empty;
+    public bool CurrentAccessActive { get; init; }
+    public DateTimeOffset? CurrentAccessStartsAtUtc { get; init; }
+    public DateTimeOffset? CurrentAccessEndsAtUtc { get; init; }
+    public string CurrentAccessDisplayCode { get; init; } = string.Empty;
+    public bool? DailyFreeLimitApplies { get; init; }
+    public string DailyFreeLessonsLabelCode { get; init; } = string.Empty;
+    public DateTimeOffset? ScheduledPaidPremiumStartUtc { get; init; }
+    public DateTimeOffset? ScheduledPaidPremiumEndUtc { get; init; }
+    public bool HasScheduledPaidPremium { get; init; }
+    public string ScheduledPaidPremiumSource { get; init; } = string.Empty;
+    public string ScheduledPaidPremiumLabelCode { get; init; } = string.Empty;
 }

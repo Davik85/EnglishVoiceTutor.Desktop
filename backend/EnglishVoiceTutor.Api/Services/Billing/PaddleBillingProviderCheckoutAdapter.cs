@@ -13,6 +13,7 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
 {
     private const string TransactionsPath = "/transactions";
     private const string SubscriptionsPath = "/subscriptions/";
+    private const string SubscriptionCancelSuffix = "/cancel";
     private const string PaddleRequestIdHeaderName = "Paddle-Request-Id";
 
     private readonly HttpClient httpClient;
@@ -67,17 +68,13 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
             };
         }
 
-        var subscriptionUri = new Uri(baseUri, SubscriptionsPath + Uri.EscapeDataString(request.ProviderSubscriptionId));
+        var subscriptionUri = new Uri(baseUri, SubscriptionsPath + Uri.EscapeDataString(request.ProviderSubscriptionId) + SubscriptionCancelSuffix);
         var payload = new
         {
-            scheduled_change = new
-            {
-                action = SubscriptionConstants.ScheduledChangeActions.Cancel,
-                effective_from = "next_billing_period"
-            }
+            effective_from = "next_billing_period"
         };
 
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Patch, subscriptionUri)
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, subscriptionUri)
         {
             Content = JsonContent.Create(payload)
         };

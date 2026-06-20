@@ -55,6 +55,7 @@ public sealed class SubscriptionStatusService(
                 entitlement.StartsAtUtc <= now &&
                 (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > now))
             .OrderByDescending(entitlement => entitlement.ExpiresAtUtc)
+            .ThenByDescending(entitlement => entitlement.StartsAtUtc)
             .FirstOrDefaultAsync(cancellationToken);
 
         response.PremiumActive = premiumEntitlement is not null;
@@ -100,6 +101,8 @@ public sealed class SubscriptionStatusService(
         response.FuturePremiumStartsAtUtc = futurePremiumEntitlement?.StartsAtUtc;
         response.FuturePremiumExpiresAtUtc = futurePremiumEntitlement?.ExpiresAtUtc;
 
+        ApplyCurrentAccessSummary(response, premiumEntitlement, trialGrant is not null || trialEntitlement is not null, trialGrant?.ExpiresAtUtc ?? trialEntitlement?.ExpiresAtUtc, futurePremiumEntitlement);
+
         response.FreeLessonUsedToday = await dbContext.DailyFreeLessonUsages
             .AsNoTracking()
             .AnyAsync(usage => usage.UserId == userId && usage.UsageDate == todayUtc, cancellationToken);
@@ -108,6 +111,75 @@ public sealed class SubscriptionStatusService(
         ApplyRenewalSummary(response, latestSubscription is not null);
 
         return response;
+    }
+
+    private static void ApplyCurrentAccessSummary(
+        SubscriptionStatusResponse response,
+        EntitlementEntity? premiumEntitlement,
+        bool trialActive,
+        DateTimeOffset? trialEndsAtUtc,
+        EntitlementEntity? futurePremiumEntitlement)
+    {
+        if (premiumEntitlement is null)
+        {
+            response.CurrentAccessTier = "free";
+            response.CurrentAccessSource = "free";
+            response.CurrentAccessActive = false;
+            response.CurrentAccessDisplayCode = "current_access_free";
+            response.DailyFreeLimitApplies = true;
+            response.DailyFreeLessonsLabelCode = "daily_free_lessons_remaining";
+        }
+        else
+        {
+            response.CurrentAccessActive = true;
+            response.CurrentAccessStartsAtUtc = premiumEntitlement.StartsAtUtc;
+            response.CurrentAccessEndsAtUtc = premiumEntitlement.ExpiresAtUtc;
+            response.DailyFreeLimitApplies = false;
+            response.DailyFreeLessonsLabelCode = "daily_free_lessons_unlimited";
+
+            var source = premiumEntitlement.Source ?? string.Empty;
+            if (trialActive && string.Equals(source, SubscriptionConstants.Entitlements.SourceTrial, StringComparison.OrdinalIgnoreCase))
+            {
+                response.CurrentAccessTier = "trial_premium";
+                response.CurrentAccessSource = "trial";
+                response.CurrentAccessEndsAtUtc = trialEndsAtUtc ?? premiumEntitlement.ExpiresAtUtc;
+                response.CurrentAccessDisplayCode = "current_access_trial_premium";
+            }
+            else if (string.Equals(source, SubscriptionConstants.Entitlements.SourceProviderEvent, StringComparison.OrdinalIgnoreCase))
+            {
+                response.CurrentAccessTier = "paid_premium";
+                response.CurrentAccessSource = "provider_event";
+                response.CurrentAccessDisplayCode = "current_access_paid_premium";
+            }
+            else if (string.Equals(source, SubscriptionConstants.Entitlements.SourceManualAdmin, StringComparison.OrdinalIgnoreCase))
+            {
+                response.CurrentAccessTier = "admin_premium";
+                response.CurrentAccessSource = "admin";
+                response.CurrentAccessDisplayCode = "current_access_admin_premium";
+            }
+            else if (source.Contains("development", StringComparison.OrdinalIgnoreCase))
+            {
+                response.CurrentAccessTier = "development_premium";
+                response.CurrentAccessSource = "development";
+                response.CurrentAccessDisplayCode = "current_access_development_premium";
+            }
+            else
+            {
+                response.CurrentAccessTier = "unknown_premium";
+                response.CurrentAccessSource = string.IsNullOrWhiteSpace(source) ? "unknown" : source;
+                response.CurrentAccessDisplayCode = "current_access_premium";
+            }
+        }
+
+        if (futurePremiumEntitlement is not null
+            && string.Equals(futurePremiumEntitlement.Source, SubscriptionConstants.Entitlements.SourceProviderEvent, StringComparison.OrdinalIgnoreCase))
+        {
+            response.HasScheduledPaidPremium = true;
+            response.ScheduledPaidPremiumStartUtc = futurePremiumEntitlement.StartsAtUtc;
+            response.ScheduledPaidPremiumEndUtc = futurePremiumEntitlement.ExpiresAtUtc;
+            response.ScheduledPaidPremiumSource = "provider_event";
+            response.ScheduledPaidPremiumLabelCode = "scheduled_paid_premium";
+        }
     }
 
     private static bool HasPaidProviderSubscription(SubscriptionEntity subscription)

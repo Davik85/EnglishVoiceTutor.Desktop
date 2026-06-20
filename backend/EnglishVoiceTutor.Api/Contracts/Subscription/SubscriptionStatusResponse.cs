@@ -36,4 +36,17 @@ public sealed class SubscriptionStatusResponse
     public DateTimeOffset CheckedAtUtc { get; set; }
     public string Source { get; set; } = string.Empty;
     public bool EnforcementEnabled { get; set; } = SubscriptionConstants.EnforcementEnabled;
+    public string CurrentAccessTier { get; set; } = "free";
+    public string CurrentAccessSource { get; set; } = "free";
+    public bool CurrentAccessActive { get; set; }
+    public DateTimeOffset? CurrentAccessStartsAtUtc { get; set; }
+    public DateTimeOffset? CurrentAccessEndsAtUtc { get; set; }
+    public string CurrentAccessDisplayCode { get; set; } = "current_access_free";
+    public bool DailyFreeLimitApplies { get; set; } = true;
+    public string DailyFreeLessonsLabelCode { get; set; } = "daily_free_lessons_remaining";
+    public DateTimeOffset? ScheduledPaidPremiumStartUtc { get; set; }
+    public DateTimeOffset? ScheduledPaidPremiumEndUtc { get; set; }
+    public bool HasScheduledPaidPremium { get; set; }
+    public string ScheduledPaidPremiumSource { get; set; } = string.Empty;
+    public string ScheduledPaidPremiumLabelCode { get; set; } = string.Empty;
 }

@@ -1966,19 +1966,20 @@ public partial class SettingsViewModel : ViewModelBase
             }
 
             var status = result.Value;
-            SubscriptionPlanText = $"{localizedText.SubscriptionPlanLabel}: {(!string.IsNullOrWhiteSpace(status.PlanName) ? status.PlanName : LocalizeUiText("Free"))}";
-            SubscriptionPremiumText = $"{localizedText.SubscriptionPremiumLabel}: {(status.PremiumActive ? LocalizeUiText("Active") : LocalizeUiText("Not active"))}";
-            SubscriptionTrialText = status.TrialActive && status.TrialEndsAtUtc is not null
-                ? $"{localizedText.SubscriptionTrialLabel}: {LocalizeUiText("Active until")} {FormatLocalizedDate(status.TrialEndsAtUtc.Value)}"
-                : $"{localizedText.SubscriptionTrialLabel}: {LocalizeUiText("Not active")}";
-            SubscriptionFreeLessonText = status.PremiumActive
-                ? LocalizeUiText("Free lessons: no daily limit")
-                : status.FreeLessonUsedToday
+            SubscriptionPlanText = string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Current access: {0}"), BuildCurrentAccessLabel(status));
+            SubscriptionPremiumText = string.Empty;
+            SubscriptionTrialText = IsCurrentTrialPremium(status) && (status.CurrentAccessEndsAtUtc ?? status.TrialEndsAtUtc) is DateTimeOffset trialEnd
+                ? string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Trial active until: {0}"), FormatLocalizedDate(trialEnd))
+                : string.Empty;
+            var dailyLimitApplies = status.DailyFreeLimitApplies ?? !status.PremiumActive;
+            SubscriptionFreeLessonText = dailyLimitApplies
+                ? status.FreeLessonUsedToday
                     ? $"{localizedText.SubscriptionFreeLessonLabel}: {LocalizeUiText("Used")}"
-                    : string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Free lessons remaining today: {0}"), Math.Max(status.FreeLessonRemainingToday, 0));
+                    : string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Free lessons remaining today: {0}"), Math.Max(status.FreeLessonRemainingToday, 0))
+                : LocalizeUiText("Free lessons: no daily limit");
             SubscriptionRenewalText = BuildRenewalStatusText(status.RenewalStatus);
             SubscriptionNextRenewalText = BuildNextRenewalText(status.NextRenewalState);
-            SubscriptionPaidAccessUntilText = status.PaidAccessUntilUtc is null ? string.Empty : string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Paid access until: {0}"), FormatLocalizedDate(status.PaidAccessUntilUtc.Value));
+            SubscriptionPaidAccessUntilText = BuildPaidAccessText(status);
             SubscriptionCancellationStatusText = BuildCancellationStatusText(status);
             SubscriptionEnforcementText = $"{localizedText.SubscriptionEnforcementLabel}: {(status.EnforcementEnabled ? LocalizeUiText("On") : LocalizeUiText("Off"))}";
             SubscriptionSourceText = $"{localizedText.SubscriptionSourceLabel}: {LocalizeUiText("authenticated")}";
@@ -2106,6 +2107,52 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
+    private string BuildCurrentAccessLabel(BackendSubscriptionStatusResponse status)
+    {
+        var code = string.IsNullOrWhiteSpace(status.CurrentAccessDisplayCode) ? string.Empty : status.CurrentAccessDisplayCode;
+        return code switch
+        {
+            "current_access_trial_premium" => LocalizeUiText("Trial Premium"),
+            "current_access_paid_premium" => LocalizeUiText("Paid Premium"),
+            "current_access_admin_premium" => LocalizeUiText("Admin Premium"),
+            "current_access_development_premium" => LocalizeUiText("Development Premium"),
+            "current_access_premium" => LocalizeUiText("Premium"),
+            "current_access_free" => LocalizeUiText("Free"),
+            _ when string.Equals(status.CurrentAccessTier, "trial_premium", StringComparison.OrdinalIgnoreCase) => LocalizeUiText("Trial Premium"),
+            _ when string.Equals(status.CurrentAccessTier, "paid_premium", StringComparison.OrdinalIgnoreCase) => LocalizeUiText("Paid Premium"),
+            _ when string.Equals(status.CurrentAccessTier, "admin_premium", StringComparison.OrdinalIgnoreCase) => LocalizeUiText("Admin Premium"),
+            _ when string.Equals(status.CurrentAccessTier, "development_premium", StringComparison.OrdinalIgnoreCase) => LocalizeUiText("Development Premium"),
+            _ when status.PremiumActive => LocalizeUiText("Premium"),
+            _ => LocalizeUiText("Free")
+        };
+    }
+
+    private static bool IsCurrentTrialPremium(BackendSubscriptionStatusResponse status) =>
+        string.Equals(status.CurrentAccessTier, "trial_premium", StringComparison.OrdinalIgnoreCase)
+        || (status.TrialActive && status.PremiumActive && string.IsNullOrWhiteSpace(status.CurrentAccessTier));
+
+    private string BuildPaidAccessText(BackendSubscriptionStatusResponse status)
+    {
+        var lines = new List<string>();
+        if (status.HasScheduledPaidPremium)
+        {
+            if (status.ScheduledPaidPremiumStartUtc is DateTimeOffset scheduledStart)
+            {
+                lines.Add(string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Paid Premium starts: {0}"), FormatLocalizedDate(scheduledStart)));
+            }
+            if (status.ScheduledPaidPremiumEndUtc is DateTimeOffset scheduledEnd)
+            {
+                lines.Add(string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Paid Premium access until: {0}"), FormatLocalizedDate(scheduledEnd)));
+            }
+        }
+        else if (string.Equals(status.CurrentAccessTier, "paid_premium", StringComparison.OrdinalIgnoreCase) && (status.CurrentAccessEndsAtUtc ?? status.PaidAccessUntilUtc) is DateTimeOffset paidEnd)
+        {
+            lines.Add(string.Format(CultureInfo.CurrentCulture, LocalizeUiText("Paid Premium access until: {0}"), FormatLocalizedDate(paidEnd)));
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
     private string lastKnownRenewalStatus = string.Empty;
     private DateTimeOffset? lastKnownPaidAccessUntilUtc;
 
@@ -2168,8 +2215,9 @@ public partial class SettingsViewModel : ViewModelBase
         var dialog = new Window
         {
             Title = title,
-            Width = 420,
-            SizeToContent = SizeToContent.Height,
+            MinWidth = 480,
+            MaxWidth = 720,
+            SizeToContent = SizeToContent.WidthAndHeight,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             ResizeMode = ResizeMode.NoResize,
             ShowInTaskbar = false,
@@ -2178,9 +2226,10 @@ public partial class SettingsViewModel : ViewModelBase
 
         var panel = new StackPanel { Margin = new Thickness(20) };
         panel.Children.Add(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 18) });
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        var confirmButton = new Button { Content = confirmButtonText, MinWidth = 140, Margin = new Thickness(0, 0, 8, 0), IsDefault = true };
-        var cancelButton = new Button { Content = cancelButtonText, MinWidth = 120, IsCancel = true };
+        var buttons = new WrapPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        static TextBlock WrapButtonText(string text) => new() { Text = text, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None, MaxWidth = 280 };
+        var confirmButton = new Button { Content = WrapButtonText(confirmButtonText), MinWidth = 156, MinHeight = 36, Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(0, 0, 8, 8), IsDefault = true, HorizontalContentAlignment = HorizontalAlignment.Center };
+        var cancelButton = new Button { Content = WrapButtonText(cancelButtonText), MinWidth = 156, MinHeight = 36, Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(0, 0, 0, 8), IsCancel = true, HorizontalContentAlignment = HorizontalAlignment.Center };
         confirmButton.Click += (_, _) => { dialog.DialogResult = true; dialog.Close(); };
         cancelButton.Click += (_, _) => { dialog.DialogResult = false; dialog.Close(); };
         buttons.Children.Add(confirmButton);
