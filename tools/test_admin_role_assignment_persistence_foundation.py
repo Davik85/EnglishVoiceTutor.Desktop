@@ -11,6 +11,8 @@ APP_DB_CONTEXT = ROOT / "backend/EnglishVoiceTutor.Api/Data/AppDbContext.cs"
 ENTITY_CONSTANTS = ROOT / "backend/EnglishVoiceTutor.Api/Data/EntityConstants.cs"
 ENTITIES = ROOT / "backend/EnglishVoiceTutor.Api/Data/Entities"
 MIGRATION = ROOT / "backend/EnglishVoiceTutor.Api/Migrations/20260620120000_AddAdminRoleAssignmentPersistence.cs"
+MIGRATION_DESIGNER = ROOT / "backend/EnglishVoiceTutor.Api/Migrations/20260620120000_AddAdminRoleAssignmentPersistence.Designer.cs"
+MODEL_SNAPSHOT = ROOT / "backend/EnglishVoiceTutor.Api/Migrations/AppDbContextModelSnapshot.cs"
 ADMIN_HANDLER = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminPermissionAuthorizationHandler.cs"
 ADMIN_ENDPOINTS = ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs"
 DESKTOP_ROOT = ROOT
@@ -68,13 +70,22 @@ def main() -> None:
     app_db_context = read(APP_DB_CONTEXT)
     entity_constants = read(ENTITY_CONSTANTS)
     migration = read(MIGRATION)
+    migration_designer = read(MIGRATION_DESIGNER)
+    model_snapshot = read(MODEL_SNAPSHOT)
     admin_handler = read(ADMIN_HANDLER)
     admin_endpoints = read(ADMIN_ENDPOINTS)
+
+    migration_id = MIGRATION.name.removesuffix(".cs")
+    require(migration_designer, f'[Migration("{migration_id}")]', "matching EF migration metadata id")
+    require(migration_designer, "[DbContext(typeof(AppDbContext))]", "migration DbContext metadata")
+    require(migration_designer, "void BuildTargetModel(ModelBuilder modelBuilder)", "EF migration target model")
 
     for entity_name in ["AdminUserEntity", "AdminUserRoleEntity", "AdminRoleAssignmentEventEntity"]:
         entity_text = read(ENTITIES / f"{entity_name}.cs")
         require(entity_text, f"public sealed class {entity_name}", f"{entity_name} declaration")
         require(app_db_context, f"DbSet<{entity_name}>", f"{entity_name} DbSet")
+        require(migration_designer, f'Entity("EnglishVoiceTutor.Api.Data.Entities.{entity_name}"', f"{entity_name} migration metadata")
+        require(model_snapshot, f'Entity("EnglishVoiceTutor.Api.Data.Entities.{entity_name}"', f"{entity_name} model snapshot")
 
     for constant_name, table_name in [
         ("AdminUsers", "admin_users"),
@@ -84,15 +95,18 @@ def main() -> None:
         require(entity_constants, f'public const string {constant_name} = "{table_name}";', f"{table_name} table constant")
         require(app_db_context, f"EntityConstants.TableNames.{constant_name}", f"{table_name} mapping")
         require(migration, f'name: "{table_name}"', f"{table_name} migration table")
+        require(migration_designer, f'.ToTable("{table_name}"', f"{table_name} migration metadata table")
+        require(model_snapshot, f'.ToTable("{table_name}"', f"{table_name} model snapshot table")
 
     created_tables = set(re.findall(r'CreateTable\(\s*\n\s*name: "([^"]+)"', migration))
     if created_tables != EXPECTED_TABLES:
         raise AssertionError(f"Migration must create only admin role assignment persistence tables. Found: {sorted(created_tables)}")
 
-    if re.search(r'InsertData\(|UpdateData\(|DeleteData\(', migration):
-        raise AssertionError("Migration must not seed, update, or delete data.")
-    if re.search(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}', migration):
-        raise AssertionError("Migration must not contain real admin emails or users.")
+    for label, ef_text in [("migration", migration), ("migration metadata", migration_designer), ("model snapshot", model_snapshot)]:
+        if re.search(r'InsertData\(|UpdateData\(|DeleteData\(', ef_text):
+            raise AssertionError(f"{label} must not seed, update, or delete data.")
+        if re.search(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}', ef_text):
+            raise AssertionError(f"{label} must not contain real admin emails or users.")
     for forbidden in FORBIDDEN_TABLE_TERMS:
         if re.search(rf'name: "[^"]*{forbidden}[^"]*"', migration, flags=re.IGNORECASE):
             raise AssertionError(f"Migration must not create or alter {forbidden} tables.")
