@@ -52,6 +52,14 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 
 Do not move billing/Paddle production readiness into the immediate next step. Continue sandbox checkout/cancel-renewal validation and Desktop billing UI hardening first; production/live billing readiness remains deferred.
 
+## Production Admin RBAC release-hardening gate
+
+- BootstrapAdmin is acceptable for controlled testing only.
+- A public release candidate requires production Admin RBAC or a documented owner-approved exception.
+- Endpoint-level permission enforcement is required before exposing support, content, or billing admin actions broadly; Admin UI awareness is not enough.
+- Audit logging must remain mandatory for dangerous actions such as manual Premium grant/revoke, free lesson reset, cancel-renewal, CMS publish, CMS restore/rollback, and role/permission changes.
+- The detailed planning/audit document is `docs/PRODUCTION_ADMIN_RBAC_READINESS.md`.
+
 ## Subscription base plan deployment note
 
 - Treat active `free` and `premium` plan rows as required database reference data.

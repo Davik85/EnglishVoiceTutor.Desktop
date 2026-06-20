@@ -85,7 +85,10 @@ No new critical blockers were found in this documentation/source review, assumin
 ### Support/admin operations
 
 - Controlled tester support actions are available: manual Premium grant/revoke, free lesson reset, billing diagnostics, and admin cancel-renewal with reason.
-- Before public operations, add production RBAC, least-privilege roles, approval workflow for risky actions, support runbooks, and audit review process.
+- BootstrapAdmin is acceptable for controlled testing only. A public release candidate requires production Admin RBAC or a documented owner-approved exception.
+- Endpoint-level permission enforcement is required before exposing support, content, or billing admin actions broadly; Admin UI awareness is not enough.
+- Audit logging must remain mandatory for dangerous actions such as manual Premium grant/revoke, free lesson reset, cancel-renewal, CMS publish, CMS restore/rollback, and role/permission changes.
+- Before public operations, add production RBAC, least-privilege roles, approval workflow for risky actions, support runbooks, and audit review process. See `docs/PRODUCTION_ADMIN_RBAC_READINESS.md`.
 
 ### Security review findings
 
