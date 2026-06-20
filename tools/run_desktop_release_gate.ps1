@@ -76,6 +76,10 @@ Invoke-GateCommand "Desktop backend boundary audit" {
     & "tools/audit_desktop_backend_boundary.ps1"
 }
 
+Invoke-GateCommand "Admin RBAC permission policy foundation" {
+    python "tools/test_admin_rbac_permission_policy_foundation.py"
+}
+
 if ($IncludeEfChecks) {
     Invoke-GateCommand "EF migrations list" {
         dotnet ef migrations list --project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj" --startup-project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj"

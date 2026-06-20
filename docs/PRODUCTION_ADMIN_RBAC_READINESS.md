@@ -10,6 +10,8 @@ The current Admin foundation is acceptable for controlled tester/direct Windows 
 
 Public release candidate readiness requires production Admin RBAC with endpoint-level permission enforcement, or a documented owner-approved exception that explicitly accepts the BootstrapAdmin risk for a narrow time window. UI hiding or UI awareness alone must never be treated as authorization.
 
+Current implementation note: the permission policy constants seam does not change runtime authorization behavior. BootstrapAdmin remains acceptable only for controlled testing; a public release candidate still requires endpoint-level permission enforcement for these policies or an owner-approved exception.
+
 ## Current Admin / BootstrapAdmin / authorization audit
 
 ### How admin access is currently created or bootstrapped
@@ -32,7 +34,7 @@ Existing role constants are foundation names only and are not production role as
 - `finance_admin`
 - `readonly_analyst`
 
-Existing permission constants cover admin self/capabilities, users, audit, CMS, runtime status, subscriptions diagnostics, premium grant/revoke, free lesson allowance reset, billing diagnostics, and product statistics. They are returned to the Admin Shell for awareness, but endpoint authorization still uses the broad BootstrapAdmin policy instead of per-permission policies.
+Existing permission constants cover admin self/capabilities, users, audit, CMS, runtime status, subscriptions diagnostics, premium grant/revoke, free lesson allowance reset, billing diagnostics, and product statistics. A first technical seam now also defines explicit production permission policy names for the documented least-privilege Admin RBAC actions, including user lookup/overview, lesson history diagnostics, premium diagnostics, cancel-renewal, system diagnostics, and admin role management. These constants are foundation-only: they are not registered as active endpoint authorization policies and endpoint authorization still uses the broad BootstrapAdmin policy instead of per-permission policies.
 
 ### Admin endpoints and admin-like endpoints currently present
 

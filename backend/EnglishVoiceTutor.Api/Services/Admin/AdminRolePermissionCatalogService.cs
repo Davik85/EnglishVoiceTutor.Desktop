@@ -14,7 +14,10 @@ public sealed class AdminRolePermissionCatalogService : IAdminRolePermissionCata
         AdminPermissionConstants.AdminSelfRead,
         AdminPermissionConstants.AdminCapabilitiesRead,
         AdminPermissionConstants.UsersRead,
+        AdminPermissionConstants.UserLookupRead,
+        AdminPermissionConstants.UserOverviewRead,
         AdminPermissionConstants.UsersDiagnosticsRead,
+        AdminPermissionConstants.LessonHistoryDiagnosticsRead,
         AdminPermissionConstants.AuditRead,
         AdminPermissionConstants.CmsContentRead,
         AdminPermissionConstants.CmsContentWriteDraft,
@@ -22,11 +25,15 @@ public sealed class AdminRolePermissionCatalogService : IAdminRolePermissionCata
         AdminPermissionConstants.CmsContentRestore,
         AdminPermissionConstants.CmsRuntimeStatusRead,
         AdminPermissionConstants.SubscriptionsDiagnosticsRead,
+        AdminPermissionConstants.PremiumDiagnosticsRead,
         AdminPermissionConstants.PremiumGrant,
         AdminPermissionConstants.PremiumRevoke,
         AdminPermissionConstants.FreeLessonAllowanceReset,
+        AdminPermissionConstants.BillingCancelRenewal,
         AdminPermissionConstants.BillingDiagnosticsRead,
-        AdminPermissionConstants.ProductStatisticsRead
+        AdminPermissionConstants.ProductStatisticsRead,
+        AdminPermissionConstants.SystemDiagnosticsRead,
+        AdminPermissionConstants.AdminRolesManage
     ];
 
     public IReadOnlyList<string> GetBootstrapAdminRoles() => BootstrapAdminRoles;
