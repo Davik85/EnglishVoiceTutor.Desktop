@@ -13,6 +13,10 @@ ENTITIES = ROOT / "backend/EnglishVoiceTutor.Api/Data/Entities"
 MIGRATIONS_DIR = ROOT / "backend/EnglishVoiceTutor.Api/Migrations"
 MODEL_SNAPSHOT = ROOT / "backend/EnglishVoiceTutor.Api/Migrations/AppDbContextModelSnapshot.cs"
 ADMIN_HANDLER = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminPermissionAuthorizationHandler.cs"
+PROGRAM = ROOT / "backend/EnglishVoiceTutor.Api/Program.cs"
+ADMIN_ROLE_READ_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentReadService.cs"
+ADMIN_ROLE_READ_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentReadService.cs"
+ADMIN_ROLE_READ_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentReadResult.cs"
 ADMIN_ENDPOINTS = ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs"
 DESKTOP_ROOT = ROOT
 ADMIN_UI_ROOT = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin"
@@ -100,6 +104,10 @@ def main() -> None:
     model_snapshot = read(MODEL_SNAPSHOT)
     admin_handler = read(ADMIN_HANDLER)
     admin_endpoints = read(ADMIN_ENDPOINTS)
+    program = read(PROGRAM)
+    admin_role_read_service = read(ADMIN_ROLE_READ_SERVICE)
+    admin_role_read_interface = read(ADMIN_ROLE_READ_INTERFACE)
+    admin_role_read_result = read(ADMIN_ROLE_READ_RESULT)
 
     migration_id = migration_path.name.removesuffix(".cs")
     require(migration_designer, f'[Migration("{migration_id}")]', "matching EF migration metadata id")
@@ -155,7 +163,33 @@ def main() -> None:
     ]:
         require(app_db_context, f"HasIndex({index_snippet.split('.')[0]} => {index_snippet})", f"index for {index_snippet}")
 
-    for forbidden in ["AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
+
+    require(admin_role_read_interface, "public interface IAdminRoleAssignmentReadService", "read service interface")
+    require(admin_role_read_interface, "GetEffectiveRolesByUserIdAsync", "user-id role read method")
+    require(admin_role_read_interface, "GetEffectiveRolesByNormalizedEmailAsync", "normalized-email role read method")
+    require(admin_role_read_result, "public sealed record AdminRoleAssignmentReadResult", "read result record")
+    require(admin_role_read_result, "IReadOnlyList<string> RoleIds", "read result role ids")
+    require(admin_role_read_service, "public sealed class AdminRoleAssignmentReadService", "read service implementation")
+    require(admin_role_read_service, "AppDbContext dbContext", "read service AppDbContext dependency")
+    require(admin_role_read_service, "IAdminRolePermissionCatalogService", "known production role catalog dependency")
+    require(admin_role_read_service, "_dbContext.AdminUsers", "read service reads AdminUsers")
+    require(admin_role_read_service, "_dbContext.AdminUserRoles", "read service reads AdminUserRoles")
+    require(admin_role_read_service, ".AsNoTracking()", "read-only no-tracking queries")
+    require(admin_role_read_service, "adminUser.DisabledAtUtc.HasValue", "disabled admin filter")
+    require(admin_role_read_service, "!string.Equals(adminUser.Status, ActiveStatus", "inactive admin status filter")
+    require(admin_role_read_service, "role.RevokedAtUtc == null", "revoked role filter")
+    require(admin_role_read_service, "knownRoleIds.Contains(role.RoleId)", "unknown persistent role filter")
+    require(program, "AddScoped<IAdminRoleAssignmentReadService, AdminRoleAssignmentReadService>()", "read service DI registration")
+
+    forbidden_write_terms = [
+        ".Add(", ".AddAsync(", ".Attach(", ".Update(", ".UpdateRange(", ".Remove(", ".RemoveRange(",
+        "SaveChanges", "ExecuteUpdate", "ExecuteDelete", "AdminRoleAssignmentEvents"
+    ]
+    for forbidden in forbidden_write_terms:
+        if forbidden in admin_role_read_service:
+            raise AssertionError(f"AdminRoleAssignmentReadService must stay read-only and must not use: {forbidden}")
+
+    for forbidden in ["IAdminRoleAssignmentReadService", "AdminRoleAssignmentReadService", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
         if forbidden in admin_handler:
             raise AssertionError("AdminPermissionAuthorizationHandler must not read persistent admin role assignment tables yet.")
 
@@ -169,12 +203,18 @@ def main() -> None:
         raise AssertionError(f"Exactly three safe read-only Admin endpoints must remain permission-policy migrated. Found: {sorted(permission_migrated)}")
 
     route_to_policy = {route: policy for _, route, policy in endpoint_authorizations}
+    if re.search(r"Map(Get|Post|Put|Delete)\(ApiConstants\.Admin[^\n]*(Role|Assignment)", admin_endpoints):
+        raise AssertionError("Role assignment endpoints must not exist yet.")
     for route in BOOTSTRAP_REQUIRED_ROUTES:
         if route_to_policy.get(route) != "BootstrapAdminPolicyName":
             raise AssertionError(f"Dangerous/write/billing/CMS/Premium/free-lesson/user-level endpoint must remain BootstrapAdmin: {route}")
 
     desktop_text = "\n".join(read(path) for path in list_source_files(DESKTOP_ROOT) if "backend/EnglishVoiceTutor.Api" not in path.as_posix())
     admin_ui_text = "\n".join(read(path) for path in list_source_files(ADMIN_UI_ROOT))
+    require(admin_ui_text, "Production role management is not enabled yet", "Admin UI role management disabled copy")
+    for forbidden_admin_ui in ["assignRole", "revokeRole", "AdminRoleAssignment", "/api/admin/role", "/api/admin/roles"]:
+        if forbidden_admin_ui in admin_ui_text:
+            raise AssertionError(f"Admin UI role management must not exist yet: {forbidden_admin_ui}")
     for label, text in [("Desktop", desktop_text), ("Admin UI", admin_ui_text)]:
         for forbidden in ["api.paddle.com", "Paddle.Api", "PADDLE_API_KEY", "PADDLE_WEBHOOK_SECRET"]:
             if forbidden in text:
