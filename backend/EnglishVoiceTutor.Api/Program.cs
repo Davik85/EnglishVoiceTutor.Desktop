@@ -118,6 +118,7 @@ builder.Services
 
 builder.Services.AddSingleton<IBootstrapAdminAccessService, BootstrapAdminAccessService>();
 builder.Services.AddSingleton<IAuthorizationHandler, BootstrapAdminAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, AdminPermissionAuthorizationHandler>();
 
 builder.Services.AddAuthorization(options =>
 {
@@ -128,6 +129,22 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser();
         policy.AddRequirements(new BootstrapAdminRequirement());
     });
+
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName, AdminPermissionConstants.CmsContentWriteDraft);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.CmsPublishPermissionPolicyName, AdminPermissionConstants.CmsContentPublish);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.CmsRestorePermissionPolicyName, AdminPermissionConstants.CmsContentRestore);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.UserLookupPermissionPolicyName, AdminPermissionConstants.UserLookupRead);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.UserOverviewPermissionPolicyName, AdminPermissionConstants.UserOverviewRead);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.LessonHistoryDiagnosticsPermissionPolicyName, AdminPermissionConstants.LessonHistoryDiagnosticsRead);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.PremiumDiagnosticsPermissionPolicyName, AdminPermissionConstants.PremiumDiagnosticsRead);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.ManualPremiumGrantPermissionPolicyName, AdminPermissionConstants.PremiumGrant);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.ManualPremiumRevokePermissionPolicyName, AdminPermissionConstants.PremiumRevoke);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.FreeLessonResetPermissionPolicyName, AdminPermissionConstants.FreeLessonAllowanceReset);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.BillingCancelRenewalPermissionPolicyName, AdminPermissionConstants.BillingCancelRenewal);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.BillingEventDiagnosticsPermissionPolicyName, AdminPermissionConstants.BillingDiagnosticsRead);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.AuditLogViewPermissionPolicyName, AdminPermissionConstants.AuditRead);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.SystemDiagnosticsPermissionPolicyName, AdminPermissionConstants.SystemDiagnosticsRead);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName, AdminPermissionConstants.AdminRolesManage);
 });
 builder.Services.AddHttpContextAccessor();
 
@@ -226,6 +243,17 @@ builder.Services.AddScoped<ICmsPublishedContentService, CmsPublishedContentServi
 builder.Services.AddScoped<ICmsRuntimeLessonContentService, CmsRuntimeLessonContentService>();
 builder.Services.AddScoped<ICmsContentAdminService, CmsContentAdminService>();
 builder.Services.AddScoped<ICmsContentPublishingService, CmsContentPublishingService>();
+
+static void AddAdminPermissionPolicy(AuthorizationOptions options, string policyName, string permissionName)
+{
+    options.AddPolicy(policyName, policy =>
+    {
+        policy.AuthenticationSchemes.Add(JwtBearerDefaults.AuthenticationScheme);
+        policy.AuthenticationSchemes.Add(AdminAuthorizationConstants.AdminCookieAuthenticationScheme);
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new AdminPermissionRequirement(permissionName));
+    });
+}
 
 var app = builder.Build();
 
