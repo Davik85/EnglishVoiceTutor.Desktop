@@ -28,7 +28,7 @@ No new critical blockers were found in this documentation/source review, assumin
 
 ### Install/update flow
 
-- Add code signing for Windows installers.
+- Add code signing for Windows installers before a public release candidate or broad public distribution. Controlled tester/direct release can remain unsigned for now if accepted knowingly; public release candidate should require signing or a documented owner-approved exception, and signing verification must be added before broad public distribution.
 - Validate update/reinstall from older `EnglishVoiceTutor.Desktop.*` installed builds and confirm auth/session, settings, Lesson History, and Progress are preserved.
 - Keep manifest identity validation, SHA-256 verification, and user-confirmation-only update behavior.
 

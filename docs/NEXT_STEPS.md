@@ -144,7 +144,7 @@ Next safe step: controlled tester handoff and feedback collection. CMS published
 - Desktop billing UI follow-ups remain: Premium-active free lesson label should show unlimited/no daily free limit, Buy/Cancel/Refresh and confirmation strings need full localization, cancellation result messages need clearer localized UX states, and cancel-renewal should be tested end-to-end against Paddle sandbox.
 - Referral/promo logic remains future work.
 - Production role management/RBAC and critical-change approval remain deferred.
-- Code signing remains deferred.
+- Code signing remains deferred for the controlled tester/direct release and is not a blocker for the already completed controlled tester handoff if unsigned distribution is accepted knowingly. Before a public release candidate or broad public distribution, require Windows installer signing or a documented owner-approved exception, and add signing verification to the release validation/upload gate.
 - Broader public release readiness remains deferred until after controlled tester feedback and operational hardening.
 
 ## CMS runtime status validation path
