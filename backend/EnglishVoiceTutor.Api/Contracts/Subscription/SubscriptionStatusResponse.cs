@@ -49,4 +49,14 @@ public sealed class SubscriptionStatusResponse
     public bool HasScheduledPaidPremium { get; set; }
     public string ScheduledPaidPremiumSource { get; set; } = string.Empty;
     public string ScheduledPaidPremiumLabelCode { get; set; } = string.Empty;
+    public string CurrentTariffId { get; set; } = "free";
+    public string CurrentTariffName { get; set; } = "Free";
+    public string CurrentTariffDisplayCode { get; set; } = "free";
+    public string FreeLessonsRemainingDisplayCode { get; set; } = "numeric";
+    public int? FreeLessonsRemainingToday { get; set; }
+    public string PremiumDisplayStatusCode { get; set; } = "inactive";
+    public DateTimeOffset? PremiumStartsAtUtc { get; set; }
+    public DateTimeOffset? PremiumEndsAtUtc { get; set; }
+    public string AutoRenewalStatusCode { get; set; } = "inactive";
+    public DateTimeOffset LearnerSubscriptionSummaryUpdatedAtUtc { get; set; }
 }

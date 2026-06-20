@@ -109,6 +109,7 @@ public sealed class SubscriptionStatusService(
 
         response.FreeLessonRemainingToday = response.FreeLessonUsedToday ? 0 : SubscriptionConstants.FreeLessonsPerDay;
         ApplyRenewalSummary(response, latestSubscription is not null);
+        ApplyLearnerSubscriptionSummary(response, premiumEntitlement, response.TrialActive, response.TrialEndsAtUtc, now);
 
         return response;
     }
@@ -180,6 +181,55 @@ public sealed class SubscriptionStatusService(
             response.ScheduledPaidPremiumSource = "provider_event";
             response.ScheduledPaidPremiumLabelCode = "scheduled_paid_premium";
         }
+    }
+
+
+    private static void ApplyLearnerSubscriptionSummary(
+        SubscriptionStatusResponse response,
+        EntitlementEntity? premiumEntitlement,
+        bool trialActive,
+        DateTimeOffset? trialEndsAtUtc,
+        DateTimeOffset now)
+    {
+        response.LearnerSubscriptionSummaryUpdatedAtUtc = now;
+        response.AutoRenewalStatusCode = response.RenewalStatus == SubscriptionConstants.RenewalStatuses.RenewalActive
+            ? "active"
+            : "inactive";
+
+        if (trialActive)
+        {
+            response.CurrentTariffId = SubscriptionConstants.Plans.TrialPlanId;
+            response.CurrentTariffName = SubscriptionConstants.Plans.TrialPlanName;
+            response.CurrentTariffDisplayCode = SubscriptionConstants.Plans.TrialPlanId;
+            response.FreeLessonsRemainingDisplayCode = "unlimited";
+            response.FreeLessonsRemainingToday = null;
+            response.PremiumDisplayStatusCode = trialEndsAtUtc.HasValue ? "active_until" : "active";
+            response.PremiumStartsAtUtc = premiumEntitlement?.StartsAtUtc;
+            response.PremiumEndsAtUtc = trialEndsAtUtc;
+            return;
+        }
+
+        if (premiumEntitlement is not null)
+        {
+            response.CurrentTariffId = SubscriptionConstants.Plans.PremiumPlanId;
+            response.CurrentTariffName = SubscriptionConstants.Plans.PremiumPlanName;
+            response.CurrentTariffDisplayCode = SubscriptionConstants.Plans.PremiumPlanId;
+            response.FreeLessonsRemainingDisplayCode = "unlimited";
+            response.FreeLessonsRemainingToday = null;
+            response.PremiumStartsAtUtc = premiumEntitlement.StartsAtUtc;
+            response.PremiumEndsAtUtc = premiumEntitlement.ExpiresAtUtc ?? response.CurrentPeriodEndUtc;
+            response.PremiumDisplayStatusCode = response.PremiumEndsAtUtc.HasValue ? "active_until" : "active";
+            return;
+        }
+
+        response.CurrentTariffId = SubscriptionConstants.Plans.FreePlanId;
+        response.CurrentTariffName = SubscriptionConstants.Plans.FreePlanName;
+        response.CurrentTariffDisplayCode = SubscriptionConstants.Plans.FreePlanId;
+        response.FreeLessonsRemainingDisplayCode = "numeric";
+        response.FreeLessonsRemainingToday = Math.Max(response.FreeLessonRemainingToday, 0);
+        response.PremiumDisplayStatusCode = "inactive";
+        response.PremiumStartsAtUtc = null;
+        response.PremiumEndsAtUtc = null;
     }
 
     private static bool HasPaidProviderSubscription(SubscriptionEntity subscription)

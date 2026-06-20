@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static policy checks for Desktop billing access rendering and localized button layout."""
+"""Static policy checks for the simplified learner billing summary."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,34 +27,34 @@ def main() -> None:
     dto = DTO.read_text(encoding="utf-8")
     service = SERVICE.read_text(encoding="utf-8")
 
-    for field in ["CurrentAccessTier", "DailyFreeLimitApplies", "HasScheduledPaidPremium", "ScheduledPaidPremiumStartUtc"]:
+    for field in ["CurrentTariffId", "CurrentTariffName", "CurrentTariffDisplayCode", "FreeLessonsRemainingDisplayCode", "PremiumDisplayStatusCode", "AutoRenewalStatusCode"]:
         need(dto, field, f"backend DTO {field}")
         need(model, field, f"desktop model {field}")
 
-    need(service, 'response.CurrentAccessTier = "trial_premium"', "trial Premium current access")
-    need(service, 'response.DailyFreeLimitApplies = false', "Premium disables daily free limit")
-    need(service, 'response.HasScheduledPaidPremium = true', "future provider_event scheduled paid Premium")
-    need(service, 'entitlement.StartsAtUtc <= now', "future paid Premium is not active")
+    need(service, 'response.CurrentTariffId = SubscriptionConstants.Plans.TrialPlanId', "trial tariff summary")
+    need(service, 'response.FreeLessonsRemainingDisplayCode = "unlimited"', "unlimited lessons for entitlement tariffs")
+    need(service, 'response.AutoRenewalStatusCode = response.RenewalStatus == SubscriptionConstants.RenewalStatuses.RenewalActive', "learner auto-renewal summary")
+    need(service, 'if (trialActive)', "trial takes tariff priority over paid provider future/current details")
 
-    need(vm, 'LocalizeUiText("Current access: {0}")', "current access primary line")
-    need(vm, '"current_access_trial_premium" => LocalizeUiText("Trial Premium")', "trial Premium label")
-    need(vm, 'LocalizeUiText("Free lessons: no daily limit")', "unlimited free lesson label")
-    need(vm, 'status.DailyFreeLimitApplies ?? !status.PremiumActive', "backend-driven daily limit flag")
-    need(vm, 'LocalizeUiText("Paid Premium starts: {0}")', "scheduled paid start line")
-    need(vm, 'LocalizeUiText("Paid Premium access until: {0}")', "paid Premium until line")
-    forbid(vm, 'SubscriptionPlanText = $"{localizedText.SubscriptionPlanLabel}', "old Plan primary rendering")
+    need(vm, 'LocalizeUiText("Current tariff: {0}")', "current tariff primary line")
+    need(vm, 'LocalizeUiText("Free lessons remaining: {0}")', "free lessons summary line")
+    need(vm, 'LocalizeUiText("Premium: {0}")', "premium summary line")
+    need(vm, 'LocalizeUiText("Auto-renewal: {0}")', "auto-renewal summary line")
+    need(vm, '"trial" => LocalizeUiText("Trial")', "trial tariff label")
+    need(vm, 'return LocalizeUiText("without limits");', "trial/premium unlimited label")
+    need(vm, 'CancelSubscriptionNoticeText = string.Empty;', "no learner cancellation diagnostic notice")
+    forbid(vm, 'LocalizeUiText("Current access: {0}")', "old current access learner line")
+    for technical in ["BuildRenewalStatusText", "BuildNextRenewalText", "BuildCancellationStatusText", "BuildPaidAccessText"]:
+        forbid(vm, technical, f"technical learner renderer {technical}")
+
+    for forbidden_binding in ["SubscriptionTrialText", "SubscriptionNextRenewalText", "SubscriptionPaidAccessUntilText", "SubscriptionCancellationStatusText", "SubscriptionEnforcementText", "SubscriptionSourceText", "SubscriptionCheckedAtText"]:
+        forbid(xaml, f'Text="{{Binding {forbidden_binding}}}"', f"technical learner binding {forbidden_binding}")
+    for technical in ["renewal_expected", "nextRenewalState", "cancellationExplanationCode", "providerSubscriptionPresent", "scheduledChangeAction"]:
+        forbid(xaml, technical, f"technical token in learner XAML: {technical}")
 
     need(xaml, '<WrapPanel Margin="0,12,0,0" Orientation="Horizontal">', "billing button wrap panel")
-    forbid(xaml, 'MaxWidth="260"', "fixed clipping max width on billing buttons")
-    forbid(xaml, 'MaxWidth="300"', "fixed clipping max width on cancel button")
-    need(xaml, 'TextTrimming="None"', "non-trimming billing button content")
-
-    need(vm, 'SizeToContent = SizeToContent.WidthAndHeight', "confirmation dialog sizes to content")
-    need(vm, 'new WrapPanel { Orientation = Orientation.Horizontal', "confirmation buttons wrap")
-    need(vm, 'TextWrapping = TextWrapping.Wrap', "confirmation button wrapping")
-    need(vm, 'MinWidth = 156', "minimum tappable confirmation button width")
-    forbid(vm, 'Width = 420', "old fixed narrow dialog width")
-    print("Desktop billing access/layout policy passed.")
+    need(xaml, 'TextTrimming="None"', "non-trimming billing text")
+    print("Desktop learner billing summary policy passed.")
 
 if __name__ == "__main__":
     main()

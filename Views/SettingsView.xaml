@@ -448,52 +448,17 @@
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                TextWrapping="Wrap" TextTrimming="None" />
                                     <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionPremiumText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" TextTrimming="None" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionTrialText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" TextTrimming="None" />
-                                    <TextBlock Margin="0,2,0,0"
                                                Text="{Binding SubscriptionFreeLessonText}"
                                                FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                TextWrapping="Wrap" TextTrimming="None" />
                                     <TextBlock Margin="0,2,0,0"
+                                               Text="{Binding SubscriptionPremiumText}"
+                                               FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextWrapping="Wrap" TextTrimming="None" />
+                                    <TextBlock Margin="0,2,0,0"
                                                Text="{Binding SubscriptionRenewalText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" TextTrimming="None" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionNextRenewalText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" TextTrimming="None" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionPaidAccessUntilText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" TextTrimming="None" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionCancellationStatusText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" TextTrimming="None" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionEnforcementText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" TextTrimming="None" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionSourceText}"
-                                               FontSize="12"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap" TextTrimming="None" />
-                                    <TextBlock Margin="0,2,0,0"
-                                               Text="{Binding SubscriptionCheckedAtText}"
                                                FontSize="12"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                TextWrapping="Wrap" TextTrimming="None" />
