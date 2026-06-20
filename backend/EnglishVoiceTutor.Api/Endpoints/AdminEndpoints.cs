@@ -48,6 +48,9 @@ public static class AdminEndpoints
         app.MapPost(ApiConstants.AdminUserFreeLessonAllowanceResetRoute, ResetFreeLessonAllowanceAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
+        app.MapPost(ApiConstants.AdminUserBillingCancelRenewalRoute, CancelUserBillingRenewalAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
         app.MapPost(ApiConstants.AdminDevCmsStaticContentImportRoute, ImportStaticCmsContentAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
@@ -615,6 +618,45 @@ public static class AdminEndpoints
             result.Response);
     }
 
+
+
+    private static async Task<IResult> CancelUserBillingRenewalAsync(
+        ClaimsPrincipal principal,
+        Guid userId,
+        AdminBillingCancelRenewalRequest request,
+        IAdminBillingCancellationService adminBillingCancellationService,
+        CancellationToken cancellationToken)
+    {
+        var adminUserId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!adminUserId.HasValue)
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await adminBillingCancellationService.CancelRenewalAsync(
+            adminUserId.Value,
+            userId,
+            request,
+            cancellationToken);
+
+        if (result.IsInvalid)
+        {
+            return Results.BadRequest(new Dictionary<string, string[]>
+            {
+                ["reason"] = [result.ErrorMessage ?? string.Empty]
+            });
+        }
+
+        if (result.IsNotFound)
+        {
+            return Results.NotFound(new Dictionary<string, string[]>
+            {
+                [UserIdRouteKey] = [result.ErrorMessage ?? "Selected user was not found."]
+            });
+        }
+
+        return Results.Ok(result.Response);
+    }
 
     private static async Task<IResult> GetTargetUserAuditActionsAsync(
         Guid userId,

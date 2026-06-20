@@ -45,7 +45,7 @@ for needle in ['Paddle.Api', 'api.paddle.com', 'Paddle-Signature', 'ApiKey', 'we
     forbid(xaml, needle, 'desktop provider secret/API detail')
 
 supported = ['en','es','fr','de','it','pt','ru','pl','ar','ja','ko','sr','hr','bg']
-keys = ['Renewal: active','Renewal: cancellation scheduled','Renewal: no paid subscription','Next renewal: no further renewal scheduled','Cancellation status: already scheduled','Cancellation status: not available for trial/manual Premium']
+keys = ['Renewal: active','Renewal: cancellation scheduled','Renewal: no paid subscription','Next renewal: no further renewal scheduled','Cancellation status: already scheduled','Cancellation status: not available for trial/manual Premium','No active paid subscription was found. No renewal cancellation is available from this account.']
 for lang in supported:
     block_start = loc.find(f'["{lang}"] = new(StringComparer.OrdinalIgnoreCase)')
     if block_start < 0: raise AssertionError(f'Missing localization block {lang}')
@@ -58,3 +58,16 @@ pl_block = loc[loc.find('["pl"] = new(StringComparer.OrdinalIgnoreCase)'):loc.fi
 require(ru_block, 'Продление: активно', 'Russian renewal translation')
 require(pl_block, 'Odnowienie: aktywne', 'Polish renewal translation')
 print('Billing cancellation visibility policy checks passed.')
+
+
+russian_phrase = 'Активная платная подписка не найдена'
+english_fallback = 'No active paid subscription was found. No renewal cancellation is available from this account.'
+for lang in supported:
+    start = loc.find(f'["{lang}"] = new(StringComparer.OrdinalIgnoreCase)')
+    end = loc.find('\n            },', start)
+    block = loc[start:end]
+    if lang != 'ru':
+        forbid(block, russian_phrase, f'Russian no-paid-subscription fallback in {lang}')
+    if lang == 'pl':
+        forbid(block.split('["No active paid subscription was found. No renewal cancellation is available from this account."] = ', 1)[1].split('\n', 1)[0], english_fallback + '",', 'Polish English fallback for cancel-unavailable string')
+require(ru_block, russian_phrase, 'Russian no-paid-subscription localized phrase')

@@ -7,6 +7,7 @@ public static class AdminAuditConstants
         public const string ManualPremiumGrant = "manual_premium_grant";
         public const string ManualPremiumRevoke = "manual_premium_revoke";
         public const string FreeLessonAllowanceReset = "free_lesson_allowance_reset";
+        public const string AdminBillingCancelRenewalCompleted = "admin_billing_cancel_renewal_completed";
     }
 
     public static class ValidationErrors

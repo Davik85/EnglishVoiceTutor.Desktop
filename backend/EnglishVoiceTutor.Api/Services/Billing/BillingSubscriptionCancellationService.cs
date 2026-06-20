@@ -9,7 +9,10 @@ public sealed class BillingSubscriptionCancellationService(
     AppDbContext dbContext,
     IEnumerable<IBillingProviderSubscriptionCancellationAdapter> adapters) : IBillingSubscriptionCancellationService
 {
-    public async Task<CancelBillingSubscriptionResponse> CancelCurrentUserSubscriptionRenewalAsync(Guid userId, CancellationToken cancellationToken)
+    public Task<CancelBillingSubscriptionResponse> CancelCurrentUserSubscriptionRenewalAsync(Guid userId, CancellationToken cancellationToken) =>
+        CancelUserSubscriptionRenewalAsync(userId, cancellationToken);
+
+    public async Task<CancelBillingSubscriptionResponse> CancelUserSubscriptionRenewalAsync(Guid userId, CancellationToken cancellationToken)
     {
         var subscription = await dbContext.Subscriptions
             .Where(candidate => candidate.UserId == userId
