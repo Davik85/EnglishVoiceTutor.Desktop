@@ -28,7 +28,7 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.AdminCapabilitiesReadPermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminStatisticsOverviewRoute, GetProductStatisticsOverviewAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.ProductStatisticsReadPermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminUserByEmailRoute, GetAdminUserByEmailAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
