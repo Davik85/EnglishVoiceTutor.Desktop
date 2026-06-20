@@ -2129,11 +2129,13 @@ public partial class SettingsViewModel : ViewModelBase
 
     private string BuildPremiumDisplayStatusLabel(BackendSubscriptionStatusResponse status)
     {
-        var code = string.IsNullOrWhiteSpace(status.PremiumDisplayStatusCode)
-            ? status.PremiumActive || status.TrialActive ? "active_until" : "inactive"
-            : status.PremiumDisplayStatusCode;
-        var startsAt = status.PremiumStartsAtUtc ?? status.CurrentAccessStartsAtUtc;
-        var endsAt = status.PremiumEndsAtUtc ?? status.CurrentAccessEndsAtUtc ?? status.TrialEndsAtUtc ?? status.PaidAccessUntilUtc;
+        var code = string.IsNullOrWhiteSpace(status.PremiumCoverageDisplayStatusCode)
+            ? string.IsNullOrWhiteSpace(status.PremiumDisplayStatusCode)
+                ? status.PremiumActive || status.TrialActive ? "active_until" : "inactive"
+                : status.PremiumDisplayStatusCode
+            : status.PremiumCoverageDisplayStatusCode;
+        var startsAt = status.PremiumCoverageStartsAtUtc ?? status.PremiumStartsAtUtc ?? status.CurrentAccessStartsAtUtc;
+        var endsAt = status.PremiumCoverageEndsAtUtc ?? status.PremiumEndsAtUtc ?? status.CurrentAccessEndsAtUtc ?? status.TrialEndsAtUtc ?? status.PaidAccessUntilUtc;
 
         return code switch
         {

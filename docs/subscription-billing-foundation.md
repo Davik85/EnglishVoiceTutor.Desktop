@@ -33,6 +33,9 @@ English Voice Tutor is a global, cross-platform, provider-agnostic product for d
 
 - The learner Account subscription block is intentionally simplified to four customer-facing lines: current tariff, free lessons remaining, Premium status, and auto-renewal.
 - Trial is displayed as tariff `Trial`, including when paid Premium has been purchased during the trial but the paid provider-event entitlement is scheduled for after trial expiry.
+- The learner Premium line is a backend-computed display summary of the current continuous Premium coverage window. It can show coverage through the active Trial/Premium entitlement plus queued `provider_event` Premium entitlements only when each queued entitlement starts at or before the current coverage end; gaps stop the display chain.
+- This continuous coverage date is display-only and does not change access authority: `PremiumActive` still comes only from currently started, unexpired Premium `EntitlementEntity` rows, and future-start provider-event entitlements do not grant access before `StartsAtUtc`.
+- Admin diagnostics remain the place to inspect detailed entitlement schedules, sources, provider events, renewal/cancellation details, and raw timing.
 - Trial and Premium show free lessons as unlimited/without limits because active entitlement access bypasses the daily free lesson counter.
 - Renewal internals, cancellation explanations, provider-subscription presence, source/authenticated/enforcement/checked-at values, scheduled paid Premium starts/ends, and Paddle diagnostics remain Admin/diagnostic concerns and are not rendered in the learner Account block.
 

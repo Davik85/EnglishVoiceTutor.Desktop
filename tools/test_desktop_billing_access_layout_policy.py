@@ -27,7 +27,7 @@ def main() -> None:
     dto = DTO.read_text(encoding="utf-8")
     service = SERVICE.read_text(encoding="utf-8")
 
-    for field in ["CurrentTariffId", "CurrentTariffName", "CurrentTariffDisplayCode", "FreeLessonsRemainingDisplayCode", "PremiumDisplayStatusCode", "AutoRenewalStatusCode"]:
+    for field in ["CurrentTariffId", "CurrentTariffName", "CurrentTariffDisplayCode", "FreeLessonsRemainingDisplayCode", "PremiumDisplayStatusCode", "PremiumCoverageStartsAtUtc", "PremiumCoverageEndsAtUtc", "PremiumCoverageDisplayStatusCode", "AutoRenewalStatusCode"]:
         need(dto, field, f"backend DTO {field}")
         need(model, field, f"desktop model {field}")
 
@@ -42,6 +42,7 @@ def main() -> None:
     need(vm, 'LocalizeUiText("Auto-renewal: {0}")', "auto-renewal summary line")
     need(vm, '"trial" => LocalizeUiText("Trial")', "trial tariff label")
     need(vm, 'return LocalizeUiText("without limits");', "trial/premium unlimited label")
+    need(vm, "status.PremiumCoverageEndsAtUtc", "desktop uses backend Premium coverage end")
     need(vm, 'CancelSubscriptionNoticeText = string.Empty;', "no learner cancellation diagnostic notice")
     forbid(vm, 'LocalizeUiText("Current access: {0}")', "old current access learner line")
     for technical in ["BuildRenewalStatusText", "BuildNextRenewalText", "BuildCancellationStatusText", "BuildPaidAccessText"]:
