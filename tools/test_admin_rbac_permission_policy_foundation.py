@@ -230,7 +230,7 @@ def main() -> None:
     migrated_authorizations = [
         (method.upper(), route, policy)
         for method, route, policy in endpoint_authorizations
-        if policy in permission_policy_constants and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute", "AdminRoleAssignmentAssignRoute", "AdminRoleAssignmentBootstrapFirstOwnerRoute", "AdminRoleAssignmentDisableAdminRoute", "AdminRoleAssignmentProvisionAdminUserRoute"}
+        if policy in permission_policy_constants and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute", "AdminRoleAssignmentAssignRoute", "AdminRoleAssignmentBootstrapFirstOwnerRoute", "AdminRoleAssignmentDisableAdminRoute", "AdminRoleAssignmentProvisionAdminUserRoute", "AdminRoleAssignmentEnableAdminRoute"}
     ]
     expected_migrations = [
         (
@@ -258,6 +258,8 @@ def main() -> None:
         if route == "AdminRoleAssignmentAssignRoute" and method.upper() == "POST" and policy == "AdminRoleManagementPermissionPolicyName":
             continue
         if route == "AdminRoleAssignmentDisableAdminRoute" and method.upper() == "POST" and policy == "AdminRoleManagementPermissionPolicyName":
+            continue
+        if route == "AdminRoleAssignmentEnableAdminRoute" and method.upper() == "POST" and policy == "AdminRoleManagementPermissionPolicyName":
             continue
         if route == "AdminRoleAssignmentBootstrapFirstOwnerRoute" and method.upper() == "POST" and policy == "AdminRoleManagementPermissionPolicyName":
             continue
