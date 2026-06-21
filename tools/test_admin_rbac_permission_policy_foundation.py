@@ -65,6 +65,20 @@ MIGRATED_ENDPOINTS = [
         "policy_constant": "ProductStatisticsReadPermissionPolicyName",
     },
     {
+        "action_key": "admin.cms.published_status.read",
+        "method": "GET",
+        "route_constant": "AdminDevCmsPublishedContentStatusRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.runtime_content_status.read",
+        "method": "GET",
+        "route_constant": "AdminDevCmsRuntimeContentStatusRoute",
+        "permission_constant": "CmsRuntimeStatusRead",
+        "policy_constant": "CmsRuntimeStatusReadPermissionPolicyName",
+    },
+    {
         "action_key": "admin.cms.runtime_status.read",
         "method": "GET",
         "route_constant": "AdminDevCmsRuntimeStatusRoute",
@@ -75,6 +89,97 @@ MIGRATED_ENDPOINTS = [
         "action_key": "admin.cms.content_packs.list",
         "method": "GET",
         "route_constant": "AdminDevCmsContentPacksRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.content_pack.read",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.topics.list",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackTopicsRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.topic.read",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackTopicRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.scenarios.list",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackScenariosRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.scenario.read",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackScenarioRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.prompt_templates.list",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackPromptTemplatesRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.prompt_template.read",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackPromptTemplateRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.tutor_behavior_profiles.list",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackTutorBehaviorProfilesRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.tutor_behavior_profile.read",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackTutorBehaviorProfileRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.audit.read",
+        "method": "GET",
+        "route_constant": "AdminDevCmsAuditEntriesRoute",
+        "permission_constant": "AuditRead",
+        "policy_constant": "AuditLogViewPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.content_pack_audit.read",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackAuditEntriesRoute",
+        "permission_constant": "AuditRead",
+        "policy_constant": "AuditLogViewPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.versions.list",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackVersionsRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.version.read",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackVersionRoute",
         "permission_constant": "CmsContentRead",
         "policy_constant": "CmsContentReadPermissionPolicyName",
     },
@@ -276,8 +381,7 @@ def main() -> None:
     ]
     if migrated_authorizations != expected_migrations:
         raise AssertionError(
-            "Exactly five Admin endpoints must use AdminPermission:* policies, and they must be "
-            f"the admin identity, capabilities, product statistics overview, CMS runtime status, and CMS content-packs list endpoints. Got: {migrated_authorizations}"
+            f"Exactly twenty existing Admin endpoints must use AdminPermission:* policies after the controlled CMS read-only batch migration. Got: {migrated_authorizations}"
         )
 
     for method, route, policy in endpoint_authorizations:
@@ -313,7 +417,6 @@ def main() -> None:
         raise AssertionError("CMS content-packs list endpoint must not use BootstrapAdminPolicyName after migration")
     forbidden_cms_migrated_routes = {
         "AdminDevCmsStaticContentImportRoute", "AdminDevCmsStaticJsonV1InitializeRoute",
-        "AdminDevCmsPublishedContentStatusRoute", "AdminDevCmsRuntimeContentStatusRoute",
         "AdminDevCmsContentPackValidateRoute", "AdminDevCmsContentPackPreviewSummaryRoute",
         "AdminDevCmsContentPackPublishRoute", "AdminDevCmsContentPackVersionRestoreRoute",
     }
@@ -351,7 +454,6 @@ def main() -> None:
         "LessonHistoryDiagnosticsPermissionPolicyName",
         "PremiumDiagnosticsPermissionPolicyName",
         "BillingEventDiagnosticsPermissionPolicyName",
-        "AuditLogViewPermissionPolicyName",
         "SystemDiagnosticsPermissionPolicyName",
     }
     dangerous_or_deferred_policies.discard("AdminRoleManagementPermissionPolicyName")

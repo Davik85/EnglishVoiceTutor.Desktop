@@ -159,15 +159,23 @@ def main() -> None:
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.ProductStatisticsReadPermissionPolicyName)", "admin product statistics overview endpoint uses ProductStatisticsRead permission policy")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.CmsRuntimeStatusReadPermissionPolicyName)", "admin CMS runtime status endpoint uses CmsRuntimeStatusRead permission policy")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminDevCmsContentPacksRoute, ListCmsContentPacksAsync)", "admin CMS content packs list endpoint is GET-only")
-    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName)", "admin CMS content packs list endpoint uses CmsContentRead permission policy")
+    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName)", "admin CMS content read endpoints use CmsContentRead permission policy")
+    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName)", "admin CMS audit read endpoints use AuditRead permission policy")
     migrated_permission_authorizations = re.findall(r"RequireAuthorization\(AdminAuthorizationConstants\.(\w+PermissionPolicyName)\)", admin_endpoints)
-    expected_permission_authorizations = ["AdminSelfReadPermissionPolicyName", "AdminCapabilitiesReadPermissionPolicyName", "ProductStatisticsReadPermissionPolicyName", "CmsRuntimeStatusReadPermissionPolicyName", "CmsContentReadPermissionPolicyName"]
+    expected_permission_authorizations = [
+        "AdminSelfReadPermissionPolicyName", "AdminCapabilitiesReadPermissionPolicyName", "ProductStatisticsReadPermissionPolicyName",
+        "CmsContentReadPermissionPolicyName", "CmsRuntimeStatusReadPermissionPolicyName", "CmsRuntimeStatusReadPermissionPolicyName",
+        "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName",
+        "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName",
+        "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "AuditLogViewPermissionPolicyName", "AuditLogViewPermissionPolicyName",
+        "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName",
+    ]
     existing_endpoint_authorizations = [
         policy for policy in migrated_permission_authorizations
         if policy != "AdminRoleManagementPermissionPolicyName"
     ]
     if existing_endpoint_authorizations != expected_permission_authorizations:
-        raise AssertionError(f"Exactly five existing safe read-only endpoints may use permission policies in this controlled migration step. Got: {existing_endpoint_authorizations}")
+        raise AssertionError(f"Exactly twenty existing safe read-only endpoints may use permission policies after the controlled CMS read-only batch migration. Got: {existing_endpoint_authorizations}")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)", "new role assignment diagnostics endpoint")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "new role assignment diagnostics endpoint uses role-management permission")
     forbid(read("program"), "GetProductionRolePermissions()", "production role catalog endpoint enforcement")
