@@ -177,6 +177,34 @@ MIGRATED_ENDPOINTS = [
         "policy_constant": "CmsContentReadPermissionPolicyName",
     },
     {
+        "action_key": "admin.cms.topic.draft_save",
+        "method": "PUT",
+        "route_constant": "AdminDevCmsContentPackTopicRoute",
+        "permission_constant": "CmsContentWriteDraft",
+        "policy_constant": "CmsDraftSavePermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.scenario.draft_save",
+        "method": "PUT",
+        "route_constant": "AdminDevCmsContentPackScenarioRoute",
+        "permission_constant": "CmsContentWriteDraft",
+        "policy_constant": "CmsDraftSavePermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.prompt_template.draft_save",
+        "method": "PUT",
+        "route_constant": "AdminDevCmsContentPackPromptTemplateRoute",
+        "permission_constant": "CmsContentWriteDraft",
+        "policy_constant": "CmsDraftSavePermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.tutor_behavior_profile.draft_save",
+        "method": "PUT",
+        "route_constant": "AdminDevCmsContentPackTutorBehaviorProfileRoute",
+        "permission_constant": "CmsContentWriteDraft",
+        "policy_constant": "CmsDraftSavePermissionPolicyName",
+    },
+    {
         "action_key": "admin.cms.audit.read",
         "method": "GET",
         "route_constant": "AdminDevCmsAuditEntriesRoute",
@@ -191,6 +219,20 @@ MIGRATED_ENDPOINTS = [
         "policy_constant": "AuditLogViewPermissionPolicyName",
     },
     {
+        "action_key": "admin.cms.validate",
+        "method": "POST",
+        "route_constant": "AdminDevCmsContentPackValidateRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.preview_summary.read",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPackPreviewSummaryRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
         "action_key": "admin.cms.versions.list",
         "method": "GET",
         "route_constant": "AdminDevCmsContentPackVersionsRoute",
@@ -203,6 +245,20 @@ MIGRATED_ENDPOINTS = [
         "route_constant": "AdminDevCmsContentPackVersionRoute",
         "permission_constant": "CmsContentRead",
         "policy_constant": "CmsContentReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.publish",
+        "method": "POST",
+        "route_constant": "AdminDevCmsContentPackPublishRoute",
+        "permission_constant": "CmsContentPublish",
+        "policy_constant": "CmsPublishPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.restore",
+        "method": "POST",
+        "route_constant": "AdminDevCmsContentPackVersionRestoreRoute",
+        "permission_constant": "CmsContentRestore",
+        "policy_constant": "CmsRestorePermissionPolicyName",
     },
 ]
 
@@ -400,9 +456,9 @@ def main() -> None:
         )
         for migrated_endpoint in MIGRATED_ENDPOINTS
     ]
-    if migrated_authorizations != expected_migrations:
+    if len(migrated_authorizations) != 31 or set(migrated_authorizations) != set(expected_migrations):
         raise AssertionError(
-            f"Exactly twenty-three existing Admin endpoints must use AdminPermission:* policies after the controlled read-only Admin endpoint batch migration. Got: {migrated_authorizations}"
+            f"Exactly thirty-one existing Admin endpoints must use AdminPermission:* policies after the controlled CMS authoring workflow endpoint batch migration. Got: {migrated_authorizations}"
         )
 
     for method, route, policy in endpoint_authorizations:
@@ -436,14 +492,12 @@ def main() -> None:
         raise AssertionError("CMS content-packs list endpoint must be migrated as GET-only to CmsContentReadPermissionPolicyName")
     if ("GET", "AdminDevCmsContentPacksRoute", "BootstrapAdminPolicyName") in endpoint_authorizations:
         raise AssertionError("CMS content-packs list endpoint must not use BootstrapAdminPolicyName after migration")
-    forbidden_cms_migrated_routes = {
+    cms_import_init_routes = {
         "AdminDevCmsStaticContentImportRoute", "AdminDevCmsStaticJsonV1InitializeRoute",
-        "AdminDevCmsContentPackValidateRoute", "AdminDevCmsContentPackPreviewSummaryRoute",
-        "AdminDevCmsContentPackPublishRoute", "AdminDevCmsContentPackVersionRestoreRoute",
     }
     for method, route, policy in endpoint_authorizations:
-        if route in forbidden_cms_migrated_routes and policy != "BootstrapAdminPolicyName":
-            raise AssertionError(f"Forbidden CMS write/draft/publish/restore/import/validate/preview migration: {(method, route, policy)}")
+        if route in cms_import_init_routes and policy != "BootstrapAdminPolicyName":
+            raise AssertionError(f"CMS import/init endpoints must remain BootstrapAdmin-protected: {(method, route, policy)}")
 
     for migrated_endpoint in MIGRATED_ENDPOINTS:
         migrated_catalog_entries = [
@@ -472,13 +526,14 @@ def main() -> None:
     require(catalog_service, "AdminPermissionConstants.AuditRead", "BootstrapAdmin catalog includes audit.read")
 
     dangerous_or_deferred_policies = set(DANGEROUS_POLICY_CONSTANTS) | {
-        "CmsDraftSavePermissionPolicyName",
         "LessonHistoryDiagnosticsPermissionPolicyName",
         "PremiumDiagnosticsPermissionPolicyName",
         "BillingEventDiagnosticsPermissionPolicyName",
         "SystemDiagnosticsPermissionPolicyName",
     }
     dangerous_or_deferred_policies.discard("AdminRoleManagementPermissionPolicyName")
+    dangerous_or_deferred_policies.discard("CmsPublishPermissionPolicyName")
+    dangerous_or_deferred_policies.discard("CmsRestorePermissionPolicyName")
     for policy_constant in dangerous_or_deferred_policies:
         forbid(admin_endpoints, f"AdminAuthorizationConstants.{policy_constant}", "dangerous/write/billing/CMS/Premium/free-lesson or deferred endpoint migration")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)", "new diagnostics endpoint")
