@@ -51,6 +51,7 @@ Use placeholder accounts such as `<admin-email>` in notes. Do not paste real cre
      -AdminEmail "<admin-email>" `
      -AdminPassword "<admin-password>" `
      -ExpectedFallbackEnabled true `
+     -ExpectedActorMappingFound true `
      -ConfirmRbacCutoverValidation
    ```
 
@@ -64,6 +65,7 @@ Use placeholder accounts such as `<admin-email>` in notes. Do not paste real cre
      -AdminEmail "<admin-email>" `
      -AdminPassword "<admin-password>" `
      -ExpectedFallbackEnabled false `
+     -ExpectedActorMappingFound true `
      -ExpectedAdminPermissionEndpointStatus 200 `
      -ExpectedRoleManagementEndpointStatus 200 `
      -ConfirmRbacCutoverValidation `
