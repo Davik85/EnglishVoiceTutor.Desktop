@@ -40,6 +40,10 @@ ADMIN_ROLE_BOOTSTRAP_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Ad
 ADMIN_ROLE_BOOTSTRAP_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentBootstrapService.cs"
 ADMIN_ROLE_BOOTSTRAP_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentBootstrapRequest.cs"
 ADMIN_ROLE_BOOTSTRAP_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentBootstrapResult.cs"
+ADMIN_ROLE_PROVISIONING_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentAdminUserProvisioningService.cs"
+ADMIN_ROLE_PROVISIONING_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentAdminUserProvisioningService.cs"
+ADMIN_ROLE_PROVISIONING_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentAdminUserProvisioningRequest.cs"
+ADMIN_ROLE_PROVISIONING_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentAdminUserProvisioningResult.cs"
 ADMIN_ROLE_REVOKE_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentRevokeRequest.cs"
 ADMIN_ROLE_ASSIGN_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentAssignRequest.cs"
 ADMIN_ROLE_DISABLE_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentDisableAdminRequest.cs"
@@ -168,6 +172,10 @@ def main() -> None:
     admin_role_bootstrap_interface = read(ADMIN_ROLE_BOOTSTRAP_INTERFACE)
     admin_role_bootstrap_request = read(ADMIN_ROLE_BOOTSTRAP_REQUEST)
     admin_role_bootstrap_result = read(ADMIN_ROLE_BOOTSTRAP_RESULT)
+    admin_role_provisioning_service = read(ADMIN_ROLE_PROVISIONING_SERVICE)
+    admin_role_provisioning_interface = read(ADMIN_ROLE_PROVISIONING_INTERFACE)
+    admin_role_provisioning_request = read(ADMIN_ROLE_PROVISIONING_REQUEST)
+    admin_role_provisioning_result = read(ADMIN_ROLE_PROVISIONING_RESULT)
     admin_role_revoke_request = read(ADMIN_ROLE_REVOKE_REQUEST)
     admin_role_assign_request = read(ADMIN_ROLE_ASSIGN_REQUEST)
     admin_role_bootstrap_http_request = read(ADMIN_ROLE_BOOTSTRAP_HTTP_REQUEST)
@@ -182,6 +190,68 @@ def main() -> None:
     release_gate = read(RELEASE_GATE)
     bootstrap_smoke_script = read(BOOTSTRAP_SMOKE_SCRIPT)
     bootstrap_runbook = read(BOOTSTRAP_RUNBOOK)
+
+
+
+
+    require(admin_role_provisioning_interface, "public interface IAdminRoleAssignmentAdminUserProvisioningService", "provisioning service interface")
+    require(admin_role_provisioning_interface, "ProvisionAdminUserAsync", "provisioning service method")
+    require(admin_role_provisioning_service, "public sealed class AdminRoleAssignmentAdminUserProvisioningService", "provisioning service implementation")
+    require(admin_role_provisioning_request, "public sealed record AdminRoleAssignmentAdminUserProvisioningRequest", "provisioning request type")
+    require(admin_role_provisioning_result, "public sealed record AdminRoleAssignmentAdminUserProvisioningResult", "provisioning result type")
+    require(program, "AddScoped<IAdminRoleAssignmentAdminUserProvisioningService, AdminRoleAssignmentAdminUserProvisioningService>()", "provisioning DI registration")
+    for field in ["Guid ActorAdminUserId", "IReadOnlyList<string> ActorRoleIds", "Guid TargetAppUserId", "string? TargetNormalizedEmail", "string Reason", "string? SafeMetadataJson"]:
+        require(admin_role_provisioning_request, field, f"provisioning request field {field}")
+    forbidden_request_patterns = {
+        "RoleId": r"(?<!Actor)RoleId\b",
+        "TargetRole": r"TargetRole\b",
+        "ActorEmail": r"ActorEmail\b",
+        "Claims": r"Claims\b",
+        "Password": r"Password\b",
+        "Token": r"Token\b",
+        "Invite": r"Invite\b",
+    }
+    for forbidden, pattern in forbidden_request_patterns.items():
+        if re.search(pattern, admin_role_provisioning_request):
+            raise AssertionError(f"Provisioning request must not accept unsafe or role-assignment field: {forbidden}")
+    for field in ["bool IsSuccess", "string? ErrorCode", "string? Message", "Guid? AdminUserId", "Guid? AuditEventId", "DateTimeOffset OccurredAtUtc"]:
+        require(admin_role_provisioning_result, field, f"provisioning result field {field}")
+    for forbidden in ["Email", "Claims", "Token", "Raw", "MetadataJson", "Exception", "ConnectionString", "ProviderPayload"]:
+        if forbidden in admin_role_provisioning_result:
+            raise AssertionError(f"Provisioning result must not expose unsafe field: {forbidden}")
+    for forbidden in ["IAdminRoleAssignmentAdminUserProvisioningService", "AdminRoleAssignmentAdminUserProvisioningService", "AdminUserProvisioning"]:
+        if forbidden in admin_handler:
+            raise AssertionError(f"AdminPermissionAuthorizationHandler must not reference provisioning or persistent role services: {forbidden}")
+        if forbidden in admin_endpoints:
+            raise AssertionError(f"Admin endpoints must not call provisioning service yet: {forbidden}")
+    for route_term in ["provision", "create-admin", "invite", "enable-admin"]:
+        if route_term in api_constants.lower() or route_term in admin_endpoints.lower():
+            raise AssertionError(f"Provisioning/create-admin/invite/enable-admin HTTP routes must not be added: {route_term}")
+    for required in [
+        "request.ActorAdminUserId == Guid.Empty",
+        "request.ActorRoleIds is null || request.ActorRoleIds.Count == 0",
+        "CanProvisionAdminUsers(request.ActorRoleIds)",
+        "AdminRoleConstants.SuperAdmin",
+        "OwnerRoleId",
+        "request.TargetAppUserId == Guid.Empty",
+        "normalizedReason is null",
+        "AnyAsync(user => user.Id == request.TargetAppUserId",
+        "adminUser.UserId == request.TargetAppUserId",
+        "activeExistingTarget is not null",
+        "inactiveExistingTarget is not null",
+        "adminUser.NormalizedEmail == normalizedEmail",
+        "adminUser.UserId != request.TargetAppUserId",
+        "BeginTransactionAsync",
+        "IAdminRoleAssignmentAuditService",
+        "AppendAuditEventAsync",
+        "AdminRoleAssignmentAuditConstants.ActionTypes.AdminUserProvisioned",
+        "AdminRoleAssignmentAuditConstants.ActionTypes.AdminUserProvisioningDenied",
+        "_dbContext.AdminUsers.AddAsync",
+    ]:
+        require(admin_role_provisioning_service, required, f"provisioning safety/audit/write behavior {required}")
+    for forbidden in ["AdminUserRoles.Add", "AdminUserRoles.AddAsync", "new AdminUserRoleEntity", "AssignRoleAsync", "RevokeRoleAsync", "DisableAdminAsync", "EnableAdmin", "Invite", "Subscriptions", "Entitlements", "Billing", "Payments", "Paddle", "Lessons", "Cms", "Desktop"]:
+        if forbidden in admin_role_provisioning_service:
+            raise AssertionError(f"Provisioning service must not write role assignments or unrelated domains: {forbidden}")
 
 
     if not BOOTSTRAP_SMOKE_SCRIPT.exists():
