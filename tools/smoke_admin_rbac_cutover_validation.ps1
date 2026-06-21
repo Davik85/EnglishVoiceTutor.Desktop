@@ -26,7 +26,7 @@ param(
     [string]$BaseUrl = "http://localhost:5000",
     [string]$AdminEmail,
     [string]$AdminPassword,
-    [Nullable[bool]]$ExpectedFallbackEnabled = $null,
+    [object]$ExpectedFallbackEnabled = $null,
     [Nullable[bool]]$ExpectedActorMappingFound = $null,
     [int]$ExpectedAdminPermissionEndpointStatus = 200,
     [int]$ExpectedRoleManagementEndpointStatus = 200,
@@ -59,6 +59,36 @@ $RoleManagementReadEndpoints = @(
 )
 
 $RbacCutoverStatusPath = "/api/admin/rbac/cutover-status"
+
+
+function ConvertTo-OptionalBooleanParameter {
+    param(
+        [string]$ParameterName,
+        $Value
+    )
+
+    if ($null -eq $Value) {
+        throw "Parameter '$ParameterName' was provided without a value. Use true, false, 1, or 0."
+    }
+
+    if ($Value -is [bool]) {
+        return [bool]$Value
+    }
+
+    if ($Value -is [int] -or $Value -is [long] -or $Value -is [short] -or $Value -is [byte]) {
+        if ([int64]$Value -eq 1) { return $true }
+        if ([int64]$Value -eq 0) { return $false }
+    }
+
+    $text = [string]$Value
+    if (-not [string]::IsNullOrWhiteSpace($text)) {
+        $normalized = $text.Trim().ToLowerInvariant()
+        if ($normalized -in @("true", "`$true", "1")) { return $true }
+        if ($normalized -in @("false", "`$false", "0")) { return $false }
+    }
+
+    throw "Parameter '$ParameterName' has an unsupported value. Use true, false, 1, or 0."
+}
 
 function Write-Step {
     param([string]$Message)
@@ -213,8 +243,11 @@ Assert-LoginInputs
 
 Write-Host "Admin RBAC cutover validation target: $BaseUrl"
 Write-Host "Fallback setting under validation: $FallbackSettingPath"
-if ($ExpectedFallbackEnabled.HasValue) {
-    Write-Host ("Expected fallback enabled: {0}" -f $ExpectedFallbackEnabled.Value)
+$expectedFallbackEnabledProvided = $PSBoundParameters.ContainsKey('ExpectedFallbackEnabled')
+$expectedFallbackEnabledValue = $null
+if ($expectedFallbackEnabledProvided) {
+    $expectedFallbackEnabledValue = ConvertTo-OptionalBooleanParameter -ParameterName "ExpectedFallbackEnabled" -Value $ExpectedFallbackEnabled
+    Write-Host ("Expected fallback enabled: {0}" -f $expectedFallbackEnabledValue)
 }
 else {
     Write-Host "Expected fallback enabled: not asserted by this run"
@@ -248,10 +281,10 @@ $persistentRoleAuthorizationEnabled = [bool](Get-RequiredPropertyValue -Source $
 $generatedAtUtc = Get-RequiredPropertyValue -Source $cutoverStatus -PropertyName "generatedAtUtc"
 Write-Host ("[INFO] RBAC cutover status: fallbackEnabled={0}; defaultFallbackEnabled={1}; configValuePresent={2}; persistentRoleAuthorizationEnabled={3}; generatedAtUtc={4}" -f $effectiveFallbackEnabled, $defaultFallbackEnabled, $configValuePresent, $persistentRoleAuthorizationEnabled, $generatedAtUtc)
 
-if ($ExpectedFallbackEnabled.HasValue) {
-    $passed = $effectiveFallbackEnabled -eq $ExpectedFallbackEnabled.Value
+if ($expectedFallbackEnabledProvided) {
+    $passed = $effectiveFallbackEnabled -eq $expectedFallbackEnabledValue
     $result = if ($passed) { "PASS" } else { "FAIL" }
-    Write-Host ("[RESULT] RBAC cutover status fallback match: expected={0}; actual={1}; result={2}" -f $ExpectedFallbackEnabled.Value, $effectiveFallbackEnabled, $result)
+    Write-Host ("[RESULT] RBAC cutover status fallback match: expected={0}; actual={1}; result={2}" -f $expectedFallbackEnabledValue, $effectiveFallbackEnabled, $result)
     if (-not $passed) { $failures++ }
 }
 

@@ -94,7 +94,13 @@ def main() -> None:
     require(script, "$AuthLoginPath = \"/api/auth/login\"", "existing auth login endpoint")
     require(script, "$RbacCutoverStatusPath = \"/api/admin/rbac/cutover-status\"", "RBAC cutover status endpoint")
     require(script, "bootstrapAdminFallbackForAdminPermissionPoliciesEnabled", "fallback status comparison field")
-    require(script, "ExpectedFallbackEnabled.Value", "ExpectedFallbackEnabled is compared with backend status")
+    if re.search(r"ExpectedFallbackEnabled\.HasValue", script):
+        raise AssertionError("ExpectedFallbackEnabled must not use Nullable.HasValue; use an explicit provided-parameter check and normalization.")
+    require(script, "$PSBoundParameters.ContainsKey('ExpectedFallbackEnabled')", "robust ExpectedFallbackEnabled provided-value check")
+    require(script, "ConvertTo-OptionalBooleanParameter", "ExpectedFallbackEnabled normalization helper")
+    for supported_value in ['"true"', '"false"', '"1"', '"0"']:
+        require(script, supported_value, f"ExpectedFallbackEnabled supported value {supported_value}")
+    require(script, "expectedFallbackEnabledValue", "ExpectedFallbackEnabled normalized value is compared with backend status")
 
     endpoints = set(re.findall(r'"(/[A-Za-z0-9_./{}?-]+)"', script))
     unexpected = sorted(endpoint for endpoint in endpoints if endpoint.startswith("/") and endpoint not in SAFE_ENDPOINTS)
