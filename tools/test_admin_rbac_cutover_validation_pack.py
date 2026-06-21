@@ -64,8 +64,24 @@ def main() -> None:
     release_gate = read(RELEASE_GATE)
     admin_endpoints = read(ADMIN_ENDPOINTS)
 
-    if SCRIPT.name in release_gate:
-        raise AssertionError("Cutover validation smoke script must not be referenced by the desktop release gate.")
+    require(release_gate, "Admin RBAC permission policy foundation", "Admin RBAC permission policy foundation release-gate section")
+    require(release_gate, "tools/test_admin_rbac_permission_policy_foundation.py", "Admin RBAC permission policy foundation release-gate test")
+    require(release_gate, "Admin role assignment persistence foundation", "Admin role assignment persistence foundation release-gate section")
+    require(release_gate, "tools/test_admin_role_assignment_persistence_foundation.py", "Admin role assignment persistence foundation release-gate test")
+    require(release_gate, "Admin UI role management policy", "Admin UI role-management release-gate section")
+    require(release_gate, "tools/test_admin_ui_role_management_policy.py", "Admin UI role-management release-gate test")
+    require(release_gate, "Admin RBAC cutover validation pack", "Admin RBAC cutover validation pack release-gate section")
+    require(release_gate, "tools/test_admin_rbac_cutover_validation_pack.py", "Admin RBAC cutover validation pack release-gate test")
+    require(release_gate, "Admin roles permissions policy", "Admin roles permissions policy release-gate section")
+    require(release_gate, "tools/test_admin_roles_permissions_policy.py", "Admin roles permissions policy release-gate test")
+
+    for smoke_script in [
+        "tools/smoke_admin_rbac_cutover_validation.ps1",
+        "tools/smoke_admin_role_management_flow.ps1",
+        "tools/smoke_admin_role_assignment_bootstrap_first_owner.ps1",
+    ]:
+        if smoke_script in release_gate or Path(smoke_script).name in release_gate:
+            raise AssertionError(f"Manual opt-in smoke script must not be executed by the desktop release gate: {smoke_script}")
 
     require(script, '[string]$BaseUrl = "http://localhost:5000"', "localhost default BaseUrl")
     require(script, "AllowProductionUrl", "explicit production/non-local override switch")
