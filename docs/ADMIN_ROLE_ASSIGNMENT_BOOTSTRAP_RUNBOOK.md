@@ -69,6 +69,6 @@ This does not mean the desktop app, the controlled tester release backend, or th
 
 ## Current limitations
 
-Persistent roles are still not active in global authorization. AdminPermissionAuthorizationHandler still does not use persistent role read, safety, audit, write, actor, or bootstrap services. Existing BootstrapAdmin access remains the current controlled-tester runtime behavior for unmigrated Admin endpoints.
+Persistent roles are still not active in global authorization. AdminPermissionAuthorizationHandler uses persistent read service only for AdminPermission:* policy evaluation and still avoids safety, audit, write, actor, bootstrap, and provisioning services. Existing BootstrapAdmin access remains the current controlled-tester runtime behavior for unmigrated Admin endpoints, and BootstrapAdmin fallback remains preserved for AdminPermission:* policies.
 
 Admin UI role management still does not exist. There is no assign-role, disable-admin, create-admin, or invite flow in this runbook.
