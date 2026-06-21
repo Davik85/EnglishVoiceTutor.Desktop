@@ -24,6 +24,11 @@ ADMIN_ROLE_SAFETY_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/
 ADMIN_ROLE_DIAGNOSTICS_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentDiagnosticsService.cs"
 ADMIN_ROLE_DIAGNOSTICS_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentDiagnosticsService.cs"
 ADMIN_ROLE_DIAGNOSTICS_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentDiagnosticsResult.cs"
+ADMIN_ROLE_AUDIT_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentAuditService.cs"
+ADMIN_ROLE_AUDIT_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentAuditService.cs"
+ADMIN_ROLE_AUDIT_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentAuditRequest.cs"
+ADMIN_ROLE_AUDIT_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentAuditResult.cs"
+ADMIN_ROLE_AUDIT_CONSTANTS = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentAuditConstants.cs"
 API_CONSTANTS = ROOT / "backend/EnglishVoiceTutor.Api/Constants/ApiConstants.cs"
 ADMIN_ENDPOINT_PERMISSION_CATALOG = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminEndpointPermissionCatalog.cs"
 ADMIN_ENDPOINTS = ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs"
@@ -124,6 +129,11 @@ def main() -> None:
     admin_role_diagnostics_service = read(ADMIN_ROLE_DIAGNOSTICS_SERVICE)
     admin_role_diagnostics_interface = read(ADMIN_ROLE_DIAGNOSTICS_INTERFACE)
     admin_role_diagnostics_result = read(ADMIN_ROLE_DIAGNOSTICS_RESULT)
+    admin_role_audit_service = read(ADMIN_ROLE_AUDIT_SERVICE)
+    admin_role_audit_interface = read(ADMIN_ROLE_AUDIT_INTERFACE)
+    admin_role_audit_request = read(ADMIN_ROLE_AUDIT_REQUEST)
+    admin_role_audit_result = read(ADMIN_ROLE_AUDIT_RESULT)
+    admin_role_audit_constants = read(ADMIN_ROLE_AUDIT_CONSTANTS)
     api_constants = read(API_CONSTANTS)
     endpoint_permission_catalog = read(ADMIN_ENDPOINT_PERMISSION_CATALOG)
 
@@ -234,6 +244,60 @@ def main() -> None:
         if forbidden in admin_role_safety_service:
             raise AssertionError(f"AdminRoleAssignmentSafetyService must stay validation-only/read-only and must not use: {forbidden}")
 
+
+    require(admin_role_audit_interface, "public interface IAdminRoleAssignmentAuditService", "audit service interface")
+    require(admin_role_audit_interface, "AppendAuditEventAsync", "audit append method")
+    require(admin_role_audit_request, "public sealed record AdminRoleAssignmentAuditRequest", "audit request record")
+    for field in [
+        "Guid? ActorAdminUserId",
+        "Guid TargetAdminUserId",
+        "string ActionType",
+        "string? RoleId",
+        "string? Reason",
+        "IReadOnlyList<string>? OldRoles",
+        "IReadOnlyList<string>? NewRoles",
+        "string Result",
+        "string? SafeMetadataJson",
+    ]:
+        require(admin_role_audit_request, field, f"audit request field {field}")
+    require(admin_role_audit_result, "public sealed record AdminRoleAssignmentAuditResult", "audit result record")
+    require(admin_role_audit_result, "Guid EventId", "audit result event id")
+    require(admin_role_audit_result, "DateTimeOffset OccurredAtUtc", "audit result occurred timestamp")
+    require(admin_role_audit_constants, "public static class AdminRoleAssignmentAuditConstants", "audit constants class")
+    for constant_value in [
+        "assign_role", "revoke_role", "disable_admin", "enable_admin", "invite_created",
+        "invite_revoked", "last_owner_blocked", "self_escalation_blocked", "validation_denied",
+        "succeeded", "denied", "failed_validation", "failed_conflict",
+    ]:
+        require(admin_role_audit_constants, f'"{constant_value}"', f"audit constant {constant_value}")
+    require(admin_role_audit_service, "public sealed class AdminRoleAssignmentAuditService", "audit service implementation")
+    require(admin_role_audit_service, "AppDbContext dbContext", "audit service AppDbContext dependency")
+    require(admin_role_audit_service, "IAdminRolePermissionCatalogService", "audit service production role catalog dependency")
+    require(admin_role_audit_service, "new AdminRoleAssignmentEventEntity", "audit service writes event entity only")
+    require(admin_role_audit_service, "_dbContext.AdminRoleAssignmentEvents.AddAsync", "audit service appends only role assignment events")
+    require(admin_role_audit_service, "_dbContext.SaveChangesAsync(cancellationToken)", "audit service saves appended audit event")
+    require(program, "AddScoped<IAdminRoleAssignmentAuditService, AdminRoleAssignmentAuditService>()", "audit service DI registration")
+    for required_validation in [
+        "Target admin user id must not be empty.",
+        "ActionType must not be empty.",
+        "Result must not be empty.",
+        "A non-empty human-readable reason is required for safety-sensitive Admin role assignment audit events.",
+        "Role id is not a known production Admin role.",
+        "Safe metadata JSON is too long for Admin role assignment audit storage.",
+        "must not contain secret, credential, or raw provider payload fields",
+    ]:
+        require(admin_role_audit_service, required_validation, f"audit validation: {required_validation}")
+    for forbidden in [
+        "_dbContext.AdminUsers", "_dbContext.AdminUserRoles", "new AdminUserEntity", "new AdminUserRoleEntity",
+        "Subscriptions", "Entitlements", "Lessons", "Cms", "Paddle", "Billing", "Payment",
+        "PasswordReset", "UserRefreshToken", "TokenHash", "PasswordHash",
+    ]:
+        if forbidden in admin_role_audit_service:
+            raise AssertionError(f"AdminRoleAssignmentAuditService must not write/read unrelated tables or secret-bearing fields: {forbidden}")
+    for forbidden in [".Update(", ".UpdateRange(", ".Remove(", ".RemoveRange(", "ExecuteUpdate", "ExecuteDelete", ".Attach("]:
+        if forbidden in admin_role_audit_service:
+            raise AssertionError(f"AdminRoleAssignmentAuditService must append audit events only and must not use: {forbidden}")
+
     require(admin_role_diagnostics_interface, "public interface IAdminRoleAssignmentDiagnosticsService", "diagnostics service interface")
     require(admin_role_diagnostics_interface, "GetDiagnosticsAsync", "diagnostics read method")
     require(admin_role_diagnostics_result, "public sealed record AdminRoleAssignmentDiagnosticsResult", "diagnostics result record")
@@ -284,7 +348,7 @@ def main() -> None:
         if forbidden in admin_role_read_service:
             raise AssertionError(f"AdminRoleAssignmentReadService must stay read-only and must not use: {forbidden}")
 
-    for forbidden in ["IAdminRoleAssignmentReadService", "AdminRoleAssignmentReadService", "IAdminRoleAssignmentSafetyService", "AdminRoleAssignmentSafetyService", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
+    for forbidden in ["IAdminRoleAssignmentReadService", "AdminRoleAssignmentReadService", "IAdminRoleAssignmentSafetyService", "AdminRoleAssignmentSafetyService", "IAdminRoleAssignmentAuditService", "AdminRoleAssignmentAuditService", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
         if forbidden in admin_handler:
             raise AssertionError("AdminPermissionAuthorizationHandler must not read persistent admin role assignment tables yet.")
 
