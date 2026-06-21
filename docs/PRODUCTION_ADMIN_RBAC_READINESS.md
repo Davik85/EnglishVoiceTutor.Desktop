@@ -416,3 +416,11 @@ Before a public release candidate or broad Admin rollout:
 - Desktop must not call Paddle directly.
 - Admin UI must not call Paddle directly.
 - Backend remains the source of truth for billing, subscriptions, entitlements, trial, Premium, free access, and limits.
+
+## Controlled CMS read-only endpoint batch migration update
+
+The remaining clearly safe, existing CMS Admin read-only endpoints have been migrated as a controlled batch from `BootstrapAdminPolicyName` to narrow `AdminPermission:*` policies. There are now exactly 20 existing Admin endpoints protected directly by AdminPermission policies: admin self-read, capabilities, product statistics overview, CMS runtime/status/content read endpoints, CMS audit-read endpoints, and CMS version/content detail read endpoints.
+
+BootstrapAdmin fallback remains preserved by `AdminPermissionAuthorizationHandler` for the controlled tester rollout, so BootstrapAdmin operators retain access while persistent-role admins must hold the required active permission. No write, user lookup/overview/audit/diagnostics, billing, Premium, free-lesson, subscription, entitlement, lesson, or non-CMS endpoint was migrated in this batch. CMS write/draft/save/import/init/validate/preview/publish/restore/rollback endpoints also remain unmigrated and BootstrapAdmin-protected.
+
+Admin UI role management still does not exist. Production Admin RBAC remains incomplete until the remaining endpoint migration is completed, an operational role-management UI exists, BootstrapAdmin fallback is narrowed or removed through an owner-approved cutover, and rollback procedures are finalized.
