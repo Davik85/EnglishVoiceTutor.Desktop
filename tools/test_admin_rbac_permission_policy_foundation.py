@@ -440,8 +440,17 @@ def main() -> None:
     require(permission_handler, "public string PermissionName", "AdminPermissionRequirement permission name")
     require(permission_handler, "public sealed class AdminPermissionAuthorizationHandler", "AdminPermissionAuthorizationHandler class")
     require(permission_handler, "context.User.Identity?.IsAuthenticated != true", "permission handler authenticated-user fail closed check")
-    require(permission_handler, "_bootstrapAdminAccessService.IsBootstrapAdmin(context.User)", "permission handler reuses BootstrapAdmin access path")
-    require(permission_handler, "GetBootstrapAdminPermissions()", "permission handler checks BootstrapAdmin permission catalog")
+    require(authorization_constants, 'AdminAuthorizationConfigurationSection = "AdminAuthorization"', "AdminAuthorization configuration section constant")
+    require(authorization_constants, 'EnableBootstrapAdminFallbackForAdminPermissionPoliciesConfigurationKey = "EnableBootstrapAdminFallbackForAdminPermissionPolicies"', "BootstrapAdmin fallback cutover configuration key constant")
+    require(authorization_constants, 'EnableBootstrapAdminFallbackForAdminPermissionPoliciesConfigurationPath = AdminAuthorizationConfigurationSection + ":" + EnableBootstrapAdminFallbackForAdminPermissionPoliciesConfigurationKey', "BootstrapAdmin fallback cutover configuration path constant")
+    require(permission_handler, "IConfiguration configuration", "permission handler reads configuration")
+    require(permission_handler, "AdminAuthorizationConstants.EnableBootstrapAdminFallbackForAdminPermissionPoliciesConfigurationPath", "permission handler reads named BootstrapAdmin fallback configuration")
+    require(permission_handler, "GetValue<bool?>", "permission handler reads nullable fallback setting so missing config is distinguishable")
+    require(permission_handler, "?? true", "missing BootstrapAdmin fallback setting defaults enabled")
+    require(permission_handler, "if (!IsBootstrapAdminFallbackEnabled())", "explicit false disables BootstrapAdmin fallback")
+    require(permission_handler, "return;", "fallback-disabled path fails closed without satisfying requirement")
+    require(permission_handler, "_bootstrapAdminAccessService.IsBootstrapAdmin(context.User)", "permission handler reuses BootstrapAdmin access path when fallback is enabled")
+    require(permission_handler, "GetBootstrapAdminPermissions()", "permission handler checks BootstrapAdmin permission catalog when fallback is enabled")
     require(program, "AddScoped<IAuthorizationHandler, AdminPermissionAuthorizationHandler>()", "permission authorization handler scoped registration for persistent role reads")
     require(program, "static void AddAdminPermissionPolicy", "central admin permission policy registration helper")
 
@@ -452,6 +461,8 @@ def main() -> None:
     require(permission_handler, "GetEffectiveRolesByNormalizedEmailAsync", "permission handler uses existing normalized-email read path")
     require(permission_handler, "GetProductionRolePermissions()", "permission handler checks static production role permission catalog")
     require(permission_handler, "permissions.Contains(permissionName, StringComparer.Ordinal)", "permission handler evaluates exact required permission")
+    require(permission_handler, "if (await HasPersistentRolePermissionAsync(context, requirement.PermissionName))", "persistent role grant is evaluated before fallback switch")
+    require(permission_handler, "context.Succeed(requirement);", "persistent role grant still succeeds regardless of fallback setting")
     require(permission_handler, "return false;", "permission handler fails closed when persistent roles do not authorize")
     require(permission_handler, "_bootstrapAdminAccessService.IsBootstrapAdmin(context.User)", "permission handler preserves BootstrapAdmin fallback")
     for forbidden_dependency in [
@@ -468,6 +479,8 @@ def main() -> None:
 
     require(authorization_constants, 'BootstrapAdminPolicyName = "BootstrapAdmin"', "existing BootstrapAdmin policy constant")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName)", "non-migrated admin endpoints still use BootstrapAdmin policy")
+    if "EnableBootstrapAdminFallbackForAdminPermissionPolicies" in admin_endpoints:
+        raise AssertionError("BootstrapAdmin fallback cutover switch must not be applied in endpoint policy registrations.")
 
     endpoint_authorizations = extract_admin_endpoint_authorizations(admin_endpoints)
     permission_policy_constants = set(PRODUCTION_PERMISSION_POLICIES)

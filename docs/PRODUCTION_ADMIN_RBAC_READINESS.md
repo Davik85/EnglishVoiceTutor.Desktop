@@ -424,3 +424,13 @@ The remaining eligible existing read-only Admin endpoints have been batch-migrat
 BootstrapAdmin fallback remains preserved by `AdminPermissionAuthorizationHandler` for the controlled tester rollout, so BootstrapAdmin operators retain access while persistent-role admins must hold the required active permission. Role-assignment management endpoints remain on `AdminRoleManagementPermissionPolicyName`. CMS import/init endpoints remain BootstrapAdmin-protected. Premium grant/revoke, free-lesson reset, and billing cancel-renewal now use narrow AdminPermission policies while BootstrapAdmin fallback remains preserved; other still-unmigrated mutating or sensitive endpoints remain BootstrapAdmin-protected.
 
 Admin UI Role Management MVP now exists for controlled operations using the existing guarded role-assignment endpoints, but it was not expanded by the CMS authoring workflow migration or the user-impacting Admin action endpoint migration. It does not expose first-owner bootstrap, does not create app users or invites, and does not remove BootstrapAdmin fallback. Production Admin RBAC remains incomplete until final operational validation, owner-approved BootstrapAdmin fallback narrowing/removal, and rollback procedures are finalized.
+
+## Controlled BootstrapAdmin fallback cutover switch
+
+`AdminPermission:*` policy evaluation now has a controlled BootstrapAdmin fallback cutover switch: `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies`. The setting is enabled by default when it is missing, so the controlled tester rollout preserves the current mixed-mode behavior unless an owner explicitly changes configuration.
+
+When the switch is enabled, persistent active Admin role assignments are evaluated first and the existing BootstrapAdmin fallback remains available for `AdminPermission:*` policies. When the switch is set to `false`, `AdminPermission:*` policies fail closed unless persistent active Admin role assignments grant the required permission through the production role-permission catalog.
+
+This switch affects only `AdminPermission:*` policy fallback behavior. BootstrapAdmin-only endpoints, including CMS import/init endpoints, remain BootstrapAdmin-protected. Role-assignment management endpoints remain protected by `AdminRoleManagementPermissionPolicyName`.
+
+Do not disable the fallback until persistent Owner/SuperAdmin mapping, actor resolution, diagnostics, and the expected critical role assignments have been validated in the target environment. Production Admin RBAC remains incomplete until operational validation, fallback cutover execution, rollback procedures, and final production checks are completed.

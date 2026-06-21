@@ -27,4 +27,7 @@ public static class AdminAuthorizationConstants
     public const string AdminCookieName = "evt_admin_session";
     public const string BootstrapAdminSource = "development_config_bootstrap";
     public const string AdminUserLookupSource = "admin_user_lookup";
+    public const string AdminAuthorizationConfigurationSection = "AdminAuthorization";
+    public const string EnableBootstrapAdminFallbackForAdminPermissionPoliciesConfigurationKey = "EnableBootstrapAdminFallbackForAdminPermissionPolicies";
+    public const string EnableBootstrapAdminFallbackForAdminPermissionPoliciesConfigurationPath = AdminAuthorizationConfigurationSection + ":" + EnableBootstrapAdminFallbackForAdminPermissionPoliciesConfigurationKey;
 }
