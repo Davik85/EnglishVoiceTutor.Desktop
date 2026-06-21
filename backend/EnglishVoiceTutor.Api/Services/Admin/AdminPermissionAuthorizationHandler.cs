@@ -1,3 +1,4 @@
+using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Services.Auth;
 using Microsoft.AspNetCore.Authorization;
 
@@ -11,11 +12,13 @@ public sealed class AdminPermissionRequirement(string permissionName) : IAuthori
 public sealed class AdminPermissionAuthorizationHandler(
     IBootstrapAdminAccessService bootstrapAdminAccessService,
     IAdminRoleAssignmentReadService adminRoleAssignmentReadService,
-    IAdminRolePermissionCatalogService adminRolePermissionCatalogService) : AuthorizationHandler<AdminPermissionRequirement>
+    IAdminRolePermissionCatalogService adminRolePermissionCatalogService,
+    IConfiguration configuration) : AuthorizationHandler<AdminPermissionRequirement>
 {
     private readonly IBootstrapAdminAccessService _bootstrapAdminAccessService = bootstrapAdminAccessService;
     private readonly IAdminRoleAssignmentReadService _adminRoleAssignmentReadService = adminRoleAssignmentReadService;
     private readonly IAdminRolePermissionCatalogService _adminRolePermissionCatalogService = adminRolePermissionCatalogService;
+    private readonly IConfiguration _configuration = configuration;
 
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
@@ -37,6 +40,11 @@ public sealed class AdminPermissionAuthorizationHandler(
             return;
         }
 
+        if (!IsBootstrapAdminFallbackEnabled())
+        {
+            return;
+        }
+
         if (!_bootstrapAdminAccessService.IsBootstrapAdmin(context.User))
         {
             return;
@@ -47,6 +55,12 @@ public sealed class AdminPermissionAuthorizationHandler(
         {
             context.Succeed(requirement);
         }
+    }
+
+    private bool IsBootstrapAdminFallbackEnabled()
+    {
+        return _configuration.GetValue<bool?>(
+            AdminAuthorizationConstants.EnableBootstrapAdminFallbackForAdminPermissionPoliciesConfigurationPath) ?? true;
     }
 
     private async Task<bool> HasPersistentRolePermissionAsync(

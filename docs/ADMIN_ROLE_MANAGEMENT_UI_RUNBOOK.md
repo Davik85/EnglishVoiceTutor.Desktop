@@ -120,3 +120,22 @@ The smoke script must not call `POST /api/admin/role-assignments/bootstrap-first
 - Remaining endpoint migration is still pending.
 - Owner-approved BootstrapAdmin fallback narrowing/removal is still pending.
 - Final rollback procedures for public production operations are still pending.
+
+## AdminPermission BootstrapAdmin fallback cutover note
+
+The `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies` setting controls only the BootstrapAdmin fallback path for `AdminPermission:*` policies. Missing configuration or `true` keeps the fallback enabled. `false` disables the fallback for `AdminPermission:*` policies and requires persistent active Admin role assignments to grant each required permission.
+
+Safe controlled cutover procedure:
+
+1. Verify the release gate passes.
+2. Verify a persistent first Owner/SuperAdmin exists in the target environment.
+3. Verify actor mapping works for the owner-approved validation admin.
+4. Verify role assignment diagnostics are healthy.
+5. Verify critical roles have the expected permissions before changing configuration.
+6. Set `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies` to `false` only during owner-approved controlled validation.
+7. Verify `AdminPermission:*`-protected endpoints with persistent roles.
+8. Verify BootstrapAdmin-only endpoints intentionally remain BootstrapAdmin-only, including CMS import/init paths.
+9. Roll back by setting `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies` back to `true` or removing the override.
+10. Do not change this setting casually in production.
+
+Use environment-specific placeholders and approved secret-management channels for any deployment configuration. Do not place secrets, credentials, cookies, tokens, or real admin email addresses in this runbook.
