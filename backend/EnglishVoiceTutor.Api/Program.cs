@@ -134,6 +134,7 @@ builder.Services.AddAuthorization(options =>
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.AdminCapabilitiesReadPermissionPolicyName, AdminPermissionConstants.AdminCapabilitiesRead);
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.ProductStatisticsReadPermissionPolicyName, AdminPermissionConstants.ProductStatisticsRead);
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.CmsRuntimeStatusReadPermissionPolicyName, AdminPermissionConstants.CmsRuntimeStatusRead);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.CmsContentReadPermissionPolicyName, AdminPermissionConstants.CmsContentRead);
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName, AdminPermissionConstants.CmsContentWriteDraft);
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.CmsPublishPermissionPolicyName, AdminPermissionConstants.CmsContentPublish);
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.CmsRestorePermissionPolicyName, AdminPermissionConstants.CmsContentRestore);

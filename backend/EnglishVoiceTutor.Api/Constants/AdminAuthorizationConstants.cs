@@ -7,6 +7,7 @@ public static class AdminAuthorizationConstants
     public const string AdminCapabilitiesReadPermissionPolicyName = "AdminPermission:admin.capabilities.read";
     public const string ProductStatisticsReadPermissionPolicyName = "AdminPermission:product_statistics.read";
     public const string CmsRuntimeStatusReadPermissionPolicyName = "AdminPermission:cms.runtime_status.read";
+    public const string CmsContentReadPermissionPolicyName = "AdminPermission:cms.content.read";
     public const string CmsDraftSavePermissionPolicyName = "AdminPermission:cms.content.write_draft";
     public const string CmsPublishPermissionPolicyName = "AdminPermission:cms.content.publish";
     public const string CmsRestorePermissionPolicyName = "AdminPermission:cms.content.restore";
