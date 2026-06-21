@@ -84,6 +84,10 @@ Invoke-GateCommand "Admin role assignment persistence foundation" {
     python "tools/test_admin_role_assignment_persistence_foundation.py"
 }
 
+Invoke-GateCommand "Admin UI role management policy" {
+    python "tools/test_admin_ui_role_management_policy.py"
+}
+
 Invoke-GateCommand "Admin roles permissions policy" {
     python "tools/test_admin_roles_permissions_policy.py"
 }
