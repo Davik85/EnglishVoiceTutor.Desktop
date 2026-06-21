@@ -279,8 +279,14 @@ If the authenticated principal cannot be mapped to an active persistent AdminUse
 
 ### Internal first-owner bootstrap seam (current)
 
-An internal backend-only `IAdminRoleAssignmentBootstrapService` / `AdminRoleAssignmentBootstrapService` seam now exists for a future controlled bootstrap workflow. It is not exposed through HTTP, is not called by Admin endpoints, and does not add Admin UI role management.
+An internal backend-only `IAdminRoleAssignmentBootstrapService` / `AdminRoleAssignmentBootstrapService` seam exists for the controlled first-owner bootstrap workflow. It is now invoked only by the controlled bootstrap HTTP endpoint described below and does not add Admin UI role management.
 
 The service can create only the first persistent owner-equivalent mapping for the current authenticated app user under strict conditions. The project currently uses `AdminRoleConstants.SuperAdmin` as the initial Owner/SuperAdmin-equivalent role. The service fails closed for missing app-user identity, missing reason, any existing active non-disabled SuperAdmin assignment, disabled conflicting mappings for the same app user, active same-app-user mappings that already have active roles, and normalized-email conflicts with a different active Admin user.
 
-This seam does not activate persistent roles globally. Persistent role assignments are still not used by `AdminPermissionAuthorizationHandler`, and BootstrapAdmin access behavior remains unchanged. Production Admin RBAC remains incomplete until a controlled bootstrap endpoint, complete write workflows, operational Admin UI, persistent role evaluation, and endpoint-level enforcement are completed.
+This seam does not activate persistent roles globally. Persistent role assignments are still not used by `AdminPermissionAuthorizationHandler`, and BootstrapAdmin access behavior remains unchanged. Production Admin RBAC remains incomplete until complete write workflows, operational Admin UI, persistent role evaluation, and endpoint-level enforcement are completed.
+
+### Controlled first-owner bootstrap HTTP endpoint
+
+A controlled backend-only endpoint now exists at `POST /api/admin/role-assignments/bootstrap-first-owner` for bootstrapping only the first persistent Owner/SuperAdmin-equivalent Admin mapping for the current authenticated admin user. The endpoint is protected by `AdminRoleManagementPermissionPolicyName`, derives the app user id and optional trusted email only from server-side authenticated claims, and does not trust `appUserId`, email, role, target, or actor fields from the request body.
+
+This addition does not add assign-role, disable-admin, create-admin, invite, or Admin UI role-management workflows. It also does not activate persistent roles globally: `AdminPermissionAuthorizationHandler` still does not evaluate persistent role-assignment tables or read/safety/audit/write/actor/bootstrap services. Production Admin RBAC remains incomplete until complete write workflows, operational UI, persistent role evaluation, endpoint-level enforcement, and rollback procedures are completed.

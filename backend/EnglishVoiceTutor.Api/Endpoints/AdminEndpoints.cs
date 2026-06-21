@@ -39,6 +39,9 @@ public static class AdminEndpoints
         app.MapPost(ApiConstants.AdminRoleAssignmentRevokeRoute, RevokeAdminRoleAssignmentAsync)
             .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
 
+        app.MapPost(ApiConstants.AdminRoleAssignmentBootstrapFirstOwnerRoute, BootstrapFirstOwnerAdminRoleAssignmentAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+
         app.MapGet(ApiConstants.AdminUserByEmailRoute, GetAdminUserByEmailAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
@@ -214,6 +217,44 @@ public static class AdminEndpoints
         return Results.Ok(response);
     }
 
+
+    private static async Task<IResult> BootstrapFirstOwnerAdminRoleAssignmentAsync(
+        [FromBody] AdminRoleAssignmentBootstrapFirstOwnerRequest request,
+        ClaimsPrincipal principal,
+        IAdminRoleAssignmentBootstrapService adminRoleAssignmentBootstrapService,
+        CancellationToken cancellationToken)
+    {
+        var appUserId = ClaimsUserAccessor.TryGetUserId(principal);
+        if (!appUserId.HasValue)
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await adminRoleAssignmentBootstrapService.BootstrapFirstOwnerAsync(new AdminRoleAssignmentBootstrapRequest(
+            appUserId.Value,
+            NormalizeTrustedEmail(ClaimsUserAccessor.TryGetUserEmail(principal)),
+            request.Reason ?? string.Empty,
+            request.SafeMetadataJson), cancellationToken);
+
+        var response = ToAdminRoleAssignmentBootstrapFirstOwnerResponse(result);
+        return result.IsSuccess ? Results.Ok(response) : Results.Conflict(response);
+    }
+
+    private static AdminRoleAssignmentBootstrapFirstOwnerResponse ToAdminRoleAssignmentBootstrapFirstOwnerResponse(AdminRoleAssignmentBootstrapResult result) => new()
+    {
+        Success = result.IsSuccess,
+        ErrorCode = result.ErrorCode,
+        Message = result.Message,
+        AdminUserId = result.AdminUserId,
+        RoleId = result.RoleId,
+        AuditEventId = result.AuditEventId,
+        OccurredAtUtc = result.OccurredAtUtc
+    };
+
+    private static string? NormalizeTrustedEmail(string? email)
+    {
+        return string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+    }
 
     private static async Task<IResult> RevokeAdminRoleAssignmentAsync(
         [FromBody] AdminRoleAssignmentRevokeRequest request,

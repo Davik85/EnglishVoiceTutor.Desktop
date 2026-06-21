@@ -91,6 +91,7 @@ public static class ApiConstants
     public const string AdminRoleAssignmentDiagnosticsRoute = "/api/admin/role-assignments/diagnostics";
     public const string AdminRoleAssignmentActorRoute = "/api/admin/role-assignments/actor";
     public const string AdminRoleAssignmentRevokeRoute = "/api/admin/role-assignments/revoke";
+    public const string AdminRoleAssignmentBootstrapFirstOwnerRoute = "/api/admin/role-assignments/bootstrap-first-owner";
     public const string AdminUserByEmailRoute = "/api/admin/users/by-email";
     public const string AdminUserByIdRoute = "/api/admin/users/{userId:guid}";
     public const string AdminUserPremiumGrantsRoute = "/api/admin/users/{userId:guid}/premium-grants";
