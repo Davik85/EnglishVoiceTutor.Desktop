@@ -36,6 +36,10 @@ ADMIN_ROLE_WRITE_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/
 ADMIN_ROLE_WRITE_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentWriteService.cs"
 ADMIN_ROLE_WRITE_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentWriteRequest.cs"
 ADMIN_ROLE_WRITE_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentWriteResult.cs"
+ADMIN_ROLE_BOOTSTRAP_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentBootstrapService.cs"
+ADMIN_ROLE_BOOTSTRAP_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentBootstrapService.cs"
+ADMIN_ROLE_BOOTSTRAP_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentBootstrapRequest.cs"
+ADMIN_ROLE_BOOTSTRAP_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentBootstrapResult.cs"
 ADMIN_ROLE_REVOKE_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentRevokeRequest.cs"
 ADMIN_ROLE_ACTOR_RESPONSE = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentActorResponse.cs"
 ADMIN_ROLE_REVOKE_RESPONSE = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentRevokeResponse.cs"
@@ -151,6 +155,10 @@ def main() -> None:
     admin_role_write_interface = read(ADMIN_ROLE_WRITE_INTERFACE)
     admin_role_write_request = read(ADMIN_ROLE_WRITE_REQUEST)
     admin_role_write_result = read(ADMIN_ROLE_WRITE_RESULT)
+    admin_role_bootstrap_service = read(ADMIN_ROLE_BOOTSTRAP_SERVICE)
+    admin_role_bootstrap_interface = read(ADMIN_ROLE_BOOTSTRAP_INTERFACE)
+    admin_role_bootstrap_request = read(ADMIN_ROLE_BOOTSTRAP_REQUEST)
+    admin_role_bootstrap_result = read(ADMIN_ROLE_BOOTSTRAP_RESULT)
     admin_role_revoke_request = read(ADMIN_ROLE_REVOKE_REQUEST)
     admin_role_actor_response = read(ADMIN_ROLE_ACTOR_RESPONSE)
     admin_role_revoke_response = read(ADMIN_ROLE_REVOKE_RESPONSE)
@@ -398,6 +406,53 @@ def main() -> None:
         if forbidden in admin_role_write_service:
             raise AssertionError(f"AdminRoleAssignmentWriteService must not create users/invites, delete rows, or touch unrelated state: {forbidden}")
 
+
+
+    require(admin_role_bootstrap_interface, "public interface IAdminRoleAssignmentBootstrapService", "bootstrap service interface")
+    require(admin_role_bootstrap_interface, "BootstrapFirstOwnerAsync", "bootstrap first owner method")
+    require(admin_role_bootstrap_request, "public sealed record AdminRoleAssignmentBootstrapRequest", "bootstrap request record")
+    for field in ["Guid AppUserId", "string? NormalizedEmail", "string ActorReason", "string? SafeMetadataJson"]:
+        require(admin_role_bootstrap_request, field, f"bootstrap request trusted field {field}")
+    for forbidden in ["TargetAdminUserId", "TargetUserId", "AdminUserId", "RoleId", "ActorRoleIds", "AssignedByAdminUserId", "Email"]:
+        if forbidden in admin_role_bootstrap_request.replace("NormalizedEmail", ""):
+            raise AssertionError(f"Bootstrap request must not accept arbitrary target/admin/role/actor-role fields: {forbidden}")
+    require(admin_role_bootstrap_result, "public sealed record AdminRoleAssignmentBootstrapResult", "bootstrap result record")
+    for field in ["bool IsSuccess", "string? ErrorCode", "string? Message", "Guid? AdminUserId", "string? RoleId", "Guid? AuditEventId", "DateTimeOffset OccurredAtUtc"]:
+        require(admin_role_bootstrap_result, field, f"bootstrap result field {field}")
+    require(admin_role_bootstrap_service, "public sealed class AdminRoleAssignmentBootstrapService", "bootstrap service implementation")
+    require(admin_role_bootstrap_service, "AppDbContext dbContext", "bootstrap service AppDbContext dependency")
+    require(admin_role_bootstrap_service, "IAdminRoleAssignmentAuditService auditService", "bootstrap service audit dependency")
+    require(admin_role_bootstrap_service, "InitialOwnerRoleId = AdminRoleConstants.SuperAdmin", "bootstrap uses SuperAdmin owner-equivalent role")
+    require(admin_role_bootstrap_service, "request.AppUserId == Guid.Empty", "bootstrap requires app user id")
+    require(admin_role_bootstrap_service, "string.IsNullOrWhiteSpace(request.ActorReason)", "bootstrap requires reason")
+    require(admin_role_bootstrap_service, "role.RoleId == InitialOwnerRoleId && role.RevokedAtUtc == null", "bootstrap checks existing active owner role")
+    require(admin_role_bootstrap_service, "role.AdminUser.Status == ActiveStatus && role.AdminUser.DisabledAtUtc == null", "bootstrap checks owner admin is active non-disabled")
+    require(admin_role_bootstrap_service, "adminUser.UserId == request.AppUserId", "bootstrap checks same app-user mappings")
+    require(admin_role_bootstrap_service, "adminUser.DisabledAtUtc.HasValue", "bootstrap rejects disabled mappings")
+    require(admin_role_bootstrap_service, "adminUser.RoleAssignments.Any(role => role.RevokedAtUtc == null)", "bootstrap rejects active mapping with active roles")
+    require(admin_role_bootstrap_service, "adminUser.NormalizedEmail == normalizedEmail", "bootstrap checks normalized email conflict")
+    require(admin_role_bootstrap_service, "adminUser.UserId != request.AppUserId", "bootstrap rejects email mapped to different active admin")
+    require(admin_role_bootstrap_service, "BeginTransactionAsync", "bootstrap uses EF transaction")
+    require(admin_role_bootstrap_service, "CommitAsync", "bootstrap commits successful transaction")
+    require(admin_role_bootstrap_service, "new AdminUserEntity", "bootstrap creates AdminUserEntity")
+    require(admin_role_bootstrap_service, "new AdminUserRoleEntity", "bootstrap creates AdminUserRoleEntity")
+    require(admin_role_bootstrap_service, "_dbContext.AdminUsers.AddAsync", "bootstrap writes AdminUsers")
+    require(admin_role_bootstrap_service, "_dbContext.AdminUserRoles.AddAsync", "bootstrap writes AdminUserRoles")
+    require(admin_role_bootstrap_service, "AppendAuditEventAsync", "bootstrap uses audit service")
+    require(admin_role_bootstrap_service, "AdminRoleAssignmentAuditConstants.ActionTypes.FirstOwnerBootstrap", "bootstrap audits success action")
+    require(admin_role_bootstrap_service, "AdminRoleAssignmentAuditConstants.ActionTypes.ValidationDenied", "bootstrap audits denials when target exists")
+    require(admin_role_bootstrap_service, "AdminRoleAssignmentAuditConstants.Results.Succeeded", "bootstrap success audit result")
+    require(admin_role_bootstrap_service, "AdminRoleAssignmentAuditConstants.Results.FailedValidation", "bootstrap denied audit result")
+    require(admin_role_audit_constants, 'FirstOwnerBootstrap = "first_owner_bootstrap"', "bootstrap audit action constant")
+    require(admin_role_audit_service, "AdminRoleAssignmentAuditConstants.ActionTypes.FirstOwnerBootstrap", "audit service accepts bootstrap action")
+    require(program, "AddScoped<IAdminRoleAssignmentBootstrapService, AdminRoleAssignmentBootstrapService>()", "bootstrap service DI registration")
+    for forbidden in ["_dbContext.Users", "Subscriptions", "Entitlements", "Lessons", "Cms", "Paddle", "Billing", "Payment", "Desktop", "PasswordReset", "UserRefreshToken", "TokenHash", "PasswordHash", "Invite"]:
+        if forbidden in admin_role_bootstrap_service:
+            raise AssertionError(f"Bootstrap service must not touch unrelated state or invite flows: {forbidden}")
+    for forbidden_route in ["BootstrapRoute", "FirstOwner", "BootstrapFirstOwner", "IAdminRoleAssignmentBootstrapService", "AdminRoleAssignmentBootstrapService"]:
+        if forbidden_route in api_constants or forbidden_route in admin_endpoints:
+            raise AssertionError(f"No bootstrap HTTP endpoint or endpoint dependency may exist: {forbidden_route}")
+
     require(admin_role_diagnostics_interface, "public interface IAdminRoleAssignmentDiagnosticsService", "diagnostics service interface")
     require(admin_role_diagnostics_interface, "GetDiagnosticsAsync", "diagnostics read method")
     require(admin_role_diagnostics_result, "public sealed record AdminRoleAssignmentDiagnosticsResult", "diagnostics result record")
@@ -476,7 +531,7 @@ def main() -> None:
         if forbidden in admin_role_read_service:
             raise AssertionError(f"AdminRoleAssignmentReadService must stay read-only and must not use: {forbidden}")
 
-    for forbidden in ["IAdminRoleAssignmentReadService", "AdminRoleAssignmentReadService", "IAdminRoleAssignmentActorResolver", "AdminRoleAssignmentActorResolver", "IAdminRoleAssignmentSafetyService", "AdminRoleAssignmentSafetyService", "IAdminRoleAssignmentAuditService", "AdminRoleAssignmentAuditService", "IAdminRoleAssignmentWriteService", "AdminRoleAssignmentWriteService", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
+    for forbidden in ["IAdminRoleAssignmentReadService", "AdminRoleAssignmentReadService", "IAdminRoleAssignmentActorResolver", "AdminRoleAssignmentActorResolver", "IAdminRoleAssignmentSafetyService", "AdminRoleAssignmentSafetyService", "IAdminRoleAssignmentAuditService", "AdminRoleAssignmentAuditService", "IAdminRoleAssignmentWriteService", "AdminRoleAssignmentWriteService", "IAdminRoleAssignmentBootstrapService", "AdminRoleAssignmentBootstrapService", "AdminRoleAssignmentBootstrap", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
         if forbidden in admin_handler:
             raise AssertionError("AdminPermissionAuthorizationHandler must not read persistent admin role assignment tables yet.")
 
@@ -528,7 +583,7 @@ def main() -> None:
     for forbidden in ["AssignRoleAsync", "DisableAdminAsync", "_dbContext", "AdminUserRoles", "RevokedAtUtc =", "SaveChanges", "AppendAuditEventAsync", "ActorAdminUserId =", "ActorRoleIds ="]:
         if forbidden in revoke_handler:
             raise AssertionError(f"Revoke endpoint must not assign/disable, mutate EF directly, audit directly, or trust actor fields: {forbidden}")
-    for forbidden_route in ["AssignRoute", "DisableRoute", "CreateAdmin", "InviteRoute"]:
+    for forbidden_route in ["AssignRoute", "DisableRoute", "CreateAdmin", "InviteRoute", "BootstrapRoute"]:
         if forbidden_route in api_constants or forbidden_route in admin_endpoints:
             raise AssertionError(f"No assign/disable/create-admin/invite endpoint may exist: {forbidden_route}")
     for route in BOOTSTRAP_REQUIRED_ROUTES:
