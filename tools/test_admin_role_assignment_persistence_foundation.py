@@ -37,6 +37,7 @@ ADMIN_ROLE_WRITE_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admi
 ADMIN_ROLE_WRITE_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentWriteRequest.cs"
 ADMIN_ROLE_WRITE_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentWriteResult.cs"
 ADMIN_ROLE_REVOKE_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentRevokeRequest.cs"
+ADMIN_ROLE_ACTOR_RESPONSE = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentActorResponse.cs"
 ADMIN_ROLE_REVOKE_RESPONSE = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentRevokeResponse.cs"
 API_CONSTANTS = ROOT / "backend/EnglishVoiceTutor.Api/Constants/ApiConstants.cs"
 ADMIN_ENDPOINT_PERMISSION_CATALOG = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminEndpointPermissionCatalog.cs"
@@ -151,6 +152,7 @@ def main() -> None:
     admin_role_write_request = read(ADMIN_ROLE_WRITE_REQUEST)
     admin_role_write_result = read(ADMIN_ROLE_WRITE_RESULT)
     admin_role_revoke_request = read(ADMIN_ROLE_REVOKE_REQUEST)
+    admin_role_actor_response = read(ADMIN_ROLE_ACTOR_RESPONSE)
     admin_role_revoke_response = read(ADMIN_ROLE_REVOKE_RESPONSE)
     api_constants = read(API_CONSTANTS)
     endpoint_permission_catalog = read(ADMIN_ENDPOINT_PERMISSION_CATALOG)
@@ -424,15 +426,41 @@ def main() -> None:
     require(admin_role_diagnostics_service, "CountAsync(cancellationToken)", "diagnostics event aggregate count")
     require(program, "AddScoped<IAdminRoleAssignmentDiagnosticsService, AdminRoleAssignmentDiagnosticsService>()", "diagnostics service DI registration")
     require(api_constants, 'AdminRoleAssignmentDiagnosticsRoute = "/api/admin/role-assignments/diagnostics"', "diagnostics route constant")
+    require(api_constants, 'AdminRoleAssignmentActorRoute = "/api/admin/role-assignments/actor"', "actor mapping route constant")
     require(api_constants, 'AdminRoleAssignmentRevokeRoute = "/api/admin/role-assignments/revoke"', "revoke route constant")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)", "GET-only diagnostics endpoint")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "diagnostics role-management permission policy")
     require(endpoint_permission_catalog, 'new("admin.role_assignments.diagnostics.read", "GET", ApiConstants.AdminRoleAssignmentDiagnosticsRoute, AdminPermissionConstants.AdminRolesManage', "diagnostics endpoint permission catalog mapping")
+    require(endpoint_permission_catalog, 'new("admin.role_assignments.actor.read", "GET", ApiConstants.AdminRoleAssignmentActorRoute, AdminPermissionConstants.AdminRolesManage', "actor endpoint permission catalog mapping")
     require(endpoint_permission_catalog, 'new("admin.role_assignments.revoke", "POST", ApiConstants.AdminRoleAssignmentRevokeRoute, AdminPermissionConstants.AdminRolesManage', "revoke endpoint permission catalog mapping")
     if re.search(r"AdminRoleAssignmentDiagnosticsRoute[\s\S]{0,220}BootstrapAdminPolicyName", admin_endpoints):
         raise AssertionError("Diagnostics endpoint must not use BootstrapAdminPolicyName directly.")
     if re.search(r"Map(Post|Put|Delete)\(ApiConstants\.AdminRoleAssignmentDiagnosticsRoute", admin_endpoints):
         raise AssertionError("Diagnostics endpoint must be GET-only.")
+    require(admin_endpoints, "app.MapGet(ApiConstants.AdminRoleAssignmentActorRoute, GetAdminRoleAssignmentActorAsync)", "GET-only actor mapping endpoint")
+    actor_registration_start = admin_endpoints.index("app.MapGet(ApiConstants.AdminRoleAssignmentActorRoute, GetAdminRoleAssignmentActorAsync)")
+    actor_registration_end = admin_endpoints.index("app.MapPost(ApiConstants.AdminRoleAssignmentRevokeRoute", actor_registration_start)
+    actor_registration = admin_endpoints[actor_registration_start:actor_registration_end]
+    require(actor_registration, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "actor endpoint role-management permission policy")
+    if "BootstrapAdminPolicyName" in actor_registration:
+        raise AssertionError("Actor mapping endpoint must not use BootstrapAdminPolicyName directly.")
+    if re.search(r"Map(Post|Put|Delete)\(ApiConstants\.AdminRoleAssignmentActorRoute", admin_endpoints):
+        raise AssertionError("Actor mapping endpoint must be GET-only.")
+    actor_handler_start = admin_endpoints.index("private static async Task<IResult> GetAdminRoleAssignmentActorAsync")
+    actor_handler_end = admin_endpoints.index("private static async Task<IResult> RevokeAdminRoleAssignmentAsync")
+    actor_handler = admin_endpoints[actor_handler_start:actor_handler_end]
+    require(actor_handler, "IAdminRoleAssignmentActorResolver adminRoleAssignmentActorResolver", "actor endpoint actor resolver dependency")
+    require(actor_handler, "adminRoleAssignmentActorResolver.ResolveActorAsync(principal, cancellationToken)", "actor endpoint calls actor resolver")
+    require(actor_handler, "new AdminRoleAssignmentActorResponse", "actor endpoint returns response contract")
+    for forbidden in ["IAdminRoleAssignmentWriteService", "IAdminRoleAssignmentAuditService", "_dbContext", ".Add(", ".AddAsync(", ".Attach(", ".Update(", ".Remove(", "SaveChanges", "ExecuteUpdate", "ExecuteDelete", "[FromBody]"]:
+        if forbidden in actor_handler:
+            raise AssertionError(f"Actor mapping endpoint must stay read-only and must not use: {forbidden}")
+    require(admin_role_actor_response, "public sealed class AdminRoleAssignmentActorResponse", "actor response contract")
+    for field in ["bool IsActorMappingFound", "Guid? ActorAdminUserId", "IReadOnlyList<string> RoleIds", "string? ErrorCode", "string? Message", "DateTimeOffset GeneratedAtUtc"]:
+        require(admin_role_actor_response, field, f"safe actor response field {field}")
+    for forbidden in ["Email", "Claims", "Token", "Raw", "Metadata", "Exception", "ConnectionString", "ProviderPayload"]:
+        if forbidden in admin_role_actor_response:
+            raise AssertionError(f"Actor response must not expose unsafe field: {forbidden}")
     for forbidden in [".Add(", ".AddAsync(", ".Attach(", ".Update(", ".UpdateRange(", ".Remove(", ".RemoveRange(", "SaveChanges", "ExecuteUpdate", "ExecuteDelete"]:
         if forbidden in admin_role_diagnostics_service:
             raise AssertionError(f"AdminRoleAssignmentDiagnosticsService must stay read-only and must not use: {forbidden}")
@@ -457,7 +485,7 @@ def main() -> None:
         admin_endpoints,
         flags=re.MULTILINE,
     )
-    permission_migrated = {(method.upper(), route, policy) for method, route, policy in endpoint_authorizations if policy.endswith("PermissionPolicyName") and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentRevokeRoute"}}
+    permission_migrated = {(method.upper(), route, policy) for method, route, policy in endpoint_authorizations if policy.endswith("PermissionPolicyName") and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute"}}
     if {policy for _, _, policy in permission_migrated} != MIGRATED_POLICY_CONSTANTS or len(permission_migrated) != 3:
         raise AssertionError(f"Exactly three safe read-only Admin endpoints must remain permission-policy migrated. Found: {sorted(permission_migrated)}")
 
@@ -465,6 +493,9 @@ def main() -> None:
     diagnostics_endpoint_count = len(re.findall(r"MapGet\(ApiConstants\.AdminRoleAssignmentDiagnosticsRoute", admin_endpoints))
     if diagnostics_endpoint_count != 1:
         raise AssertionError(f"Expected exactly one read-only role assignment diagnostics endpoint. Found: {diagnostics_endpoint_count}")
+    actor_endpoint_count = len(re.findall(r"MapGet\(ApiConstants\.AdminRoleAssignmentActorRoute", admin_endpoints))
+    if actor_endpoint_count != 1:
+        raise AssertionError(f"Expected exactly one read-only role assignment actor mapping endpoint. Found: {actor_endpoint_count}")
 
     role_assignment_write_endpoints = re.findall(r"Map(Post|Put|Delete)\(ApiConstants\.(AdminRoleAssignment\w+Route)", admin_endpoints)
     if role_assignment_write_endpoints != [("Post", "AdminRoleAssignmentRevokeRoute")]:
