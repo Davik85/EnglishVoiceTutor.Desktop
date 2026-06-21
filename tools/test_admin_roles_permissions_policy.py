@@ -157,14 +157,15 @@ def main() -> None:
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminSelfReadPermissionPolicyName)", "admin identity endpoint uses AdminSelfRead permission policy")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminCapabilitiesReadPermissionPolicyName)", "admin capabilities endpoint uses AdminCapabilitiesRead permission policy")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.ProductStatisticsReadPermissionPolicyName)", "admin product statistics overview endpoint uses ProductStatisticsRead permission policy")
+    require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.CmsRuntimeStatusReadPermissionPolicyName)", "admin CMS runtime status endpoint uses CmsRuntimeStatusRead permission policy")
     migrated_permission_authorizations = re.findall(r"RequireAuthorization\(AdminAuthorizationConstants\.(\w+PermissionPolicyName)\)", admin_endpoints)
-    expected_permission_authorizations = ["AdminSelfReadPermissionPolicyName", "AdminCapabilitiesReadPermissionPolicyName", "ProductStatisticsReadPermissionPolicyName"]
+    expected_permission_authorizations = ["AdminSelfReadPermissionPolicyName", "AdminCapabilitiesReadPermissionPolicyName", "ProductStatisticsReadPermissionPolicyName", "CmsRuntimeStatusReadPermissionPolicyName"]
     existing_endpoint_authorizations = [
         policy for policy in migrated_permission_authorizations
         if policy != "AdminRoleManagementPermissionPolicyName"
     ]
     if existing_endpoint_authorizations != expected_permission_authorizations:
-        raise AssertionError(f"Exactly three existing safe read-only endpoints may use permission policies in this controlled migration step. Got: {existing_endpoint_authorizations}")
+        raise AssertionError(f"Exactly four existing safe read-only endpoints may use permission policies in this controlled migration step. Got: {existing_endpoint_authorizations}")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)", "new role assignment diagnostics endpoint")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "new role assignment diagnostics endpoint uses role-management permission")
     forbid(read("program"), "GetProductionRolePermissions()", "production role catalog endpoint enforcement")
