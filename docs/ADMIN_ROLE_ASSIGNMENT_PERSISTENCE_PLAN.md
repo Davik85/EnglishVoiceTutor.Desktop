@@ -264,3 +264,9 @@ The foundation remains intentionally inactive at runtime. Persistent roles are n
 A protected read-only backend diagnostics endpoint now exists at `GET /api/admin/role-assignments/diagnostics` for inspecting aggregate persistent Admin role assignment state. It is protected by the Admin role-management permission policy and returns safe counts plus minimal per-admin identifiers/status/role ids; it does not return emails, invite tokens, raw audit payloads, secrets, or provider metadata.
 
 This endpoint does not assign roles, revoke roles, create admin users, create invites, or write audit events. Persistent roles are still not active in authorization, no Admin UI role management exists yet, and BootstrapAdmin remains the controlled-testing fallback. Production Admin RBAC remains incomplete until persistent role evaluation, role assignment write endpoints, audit safety checks, and endpoint-level enforcement are completed.
+
+### Internal role assignment write service seam
+
+An internal backend-only `AdminRoleAssignmentWriteService` now exists as the next controlled Production Admin RBAC foundation seam for future role assignment operations. It is not exposed through HTTP endpoints and is not used by the Admin UI, Desktop, or runtime authorization. The service calls the validation-only safety service before assign, revoke, or disable mutations and appends audit events through the audit service for successful operations and validation/conflict failures.
+
+Role assignment write endpoints still do not exist, Admin UI role management still does not exist, and persistent Admin roles are still not active in authorization decisions. BootstrapAdmin remains the controlled-testing fallback. Production Admin RBAC remains incomplete until write endpoints, endpoint-level enforcement, persistent role evaluation, and UI/operational workflows are completed.

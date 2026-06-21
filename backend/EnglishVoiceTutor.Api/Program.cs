@@ -234,6 +234,7 @@ builder.Services.AddSingleton<IAdminRolePermissionCatalogService, AdminRolePermi
 builder.Services.AddScoped<IAdminRoleAssignmentReadService, AdminRoleAssignmentReadService>();
 builder.Services.AddScoped<IAdminRoleAssignmentSafetyService, AdminRoleAssignmentSafetyService>();
 builder.Services.AddScoped<IAdminRoleAssignmentAuditService, AdminRoleAssignmentAuditService>();
+builder.Services.AddScoped<IAdminRoleAssignmentWriteService, AdminRoleAssignmentWriteService>();
 builder.Services.AddScoped<IAdminRoleAssignmentDiagnosticsService, AdminRoleAssignmentDiagnosticsService>();
 builder.Services.AddSingleton<IAdminCapabilitiesService, AdminCapabilitiesService>();
 builder.Services.AddScoped<IAdminAuditService, AdminAuditService>();
