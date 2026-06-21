@@ -103,7 +103,7 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
 
         app.MapPut(ApiConstants.AdminDevCmsContentPackTopicRoute, UpdateCmsTopicAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminDevCmsContentPackScenariosRoute, ListCmsScenariosAsync)
             .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
@@ -112,7 +112,7 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
 
         app.MapPut(ApiConstants.AdminDevCmsContentPackScenarioRoute, UpdateCmsScenarioAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminDevCmsContentPackPromptTemplatesRoute, ListCmsPromptTemplatesAsync)
             .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
@@ -121,7 +121,7 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
 
         app.MapPut(ApiConstants.AdminDevCmsContentPackPromptTemplateRoute, UpdateCmsPromptTemplateAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminDevCmsContentPackTutorBehaviorProfilesRoute, ListCmsTutorBehaviorProfilesAsync)
             .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
@@ -130,7 +130,7 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
 
         app.MapPut(ApiConstants.AdminDevCmsContentPackTutorBehaviorProfileRoute, UpdateCmsTutorBehaviorProfileAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminDevCmsAuditEntriesRoute, ListCmsAuditEntriesAsync)
             .RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName);
@@ -139,10 +139,10 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName);
 
         app.MapPost(ApiConstants.AdminDevCmsContentPackValidateRoute, ValidateCmsContentPackAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminDevCmsContentPackPreviewSummaryRoute, GetCmsPreviewSummaryAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminDevCmsContentPackVersionsRoute, ListCmsContentVersionsAsync)
             .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
@@ -151,10 +151,10 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
 
         app.MapPost(ApiConstants.AdminDevCmsContentPackPublishRoute, PublishCmsContentPackAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.CmsPublishPermissionPolicyName);
 
         app.MapPost(ApiConstants.AdminDevCmsContentPackVersionRestoreRoute, RestoreCmsContentVersionAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.CmsRestorePermissionPolicyName);
     }
 
     private static async Task DeleteAdminSessionAsync(HttpContext httpContext)
