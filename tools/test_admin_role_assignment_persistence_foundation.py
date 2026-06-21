@@ -17,6 +17,10 @@ PROGRAM = ROOT / "backend/EnglishVoiceTutor.Api/Program.cs"
 ADMIN_ROLE_READ_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentReadService.cs"
 ADMIN_ROLE_READ_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentReadService.cs"
 ADMIN_ROLE_READ_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentReadResult.cs"
+ADMIN_ROLE_SAFETY_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentSafetyService.cs"
+ADMIN_ROLE_SAFETY_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentSafetyService.cs"
+ADMIN_ROLE_SAFETY_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentSafetyCheckRequest.cs"
+ADMIN_ROLE_SAFETY_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentSafetyCheckResult.cs"
 ADMIN_ROLE_DIAGNOSTICS_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentDiagnosticsService.cs"
 ADMIN_ROLE_DIAGNOSTICS_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentDiagnosticsService.cs"
 ADMIN_ROLE_DIAGNOSTICS_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentDiagnosticsResult.cs"
@@ -113,6 +117,10 @@ def main() -> None:
     admin_role_read_service = read(ADMIN_ROLE_READ_SERVICE)
     admin_role_read_interface = read(ADMIN_ROLE_READ_INTERFACE)
     admin_role_read_result = read(ADMIN_ROLE_READ_RESULT)
+    admin_role_safety_service = read(ADMIN_ROLE_SAFETY_SERVICE)
+    admin_role_safety_interface = read(ADMIN_ROLE_SAFETY_INTERFACE)
+    admin_role_safety_request = read(ADMIN_ROLE_SAFETY_REQUEST)
+    admin_role_safety_result = read(ADMIN_ROLE_SAFETY_RESULT)
     admin_role_diagnostics_service = read(ADMIN_ROLE_DIAGNOSTICS_SERVICE)
     admin_role_diagnostics_interface = read(ADMIN_ROLE_DIAGNOSTICS_INTERFACE)
     admin_role_diagnostics_result = read(ADMIN_ROLE_DIAGNOSTICS_RESULT)
@@ -192,6 +200,40 @@ def main() -> None:
     require(program, "AddScoped<IAdminRoleAssignmentReadService, AdminRoleAssignmentReadService>()", "read service DI registration")
 
 
+
+
+    require(admin_role_safety_interface, "public interface IAdminRoleAssignmentSafetyService", "safety service interface")
+    require(admin_role_safety_interface, "ValidateAssignRoleAsync", "assign-role safety method")
+    require(admin_role_safety_interface, "ValidateRevokeRoleAsync", "revoke-role safety method")
+    require(admin_role_safety_interface, "ValidateDisableAdminAsync", "disable-admin safety method")
+    require(admin_role_safety_request, "public sealed record AdminRoleAssignmentSafetyCheckRequest", "safety request record")
+    require(admin_role_safety_request, "Guid ActorAdminUserId", "safety request actor admin id")
+    require(admin_role_safety_request, "Guid TargetAdminUserId", "safety request target admin id")
+    require(admin_role_safety_request, "IReadOnlyList<string> ActorRoleIds", "safety request actor roles")
+    require(admin_role_safety_request, "string? Reason", "safety request reason")
+    require(admin_role_safety_result, "public sealed record AdminRoleAssignmentSafetyCheckResult", "safety result record")
+    require(admin_role_safety_result, "bool IsAllowed", "safety result allow flag")
+    require(admin_role_safety_result, "string? ErrorCode", "safety result error code")
+    require(admin_role_safety_result, "IReadOnlyList<string> Violations", "safety result violations")
+    require(admin_role_safety_service, "public sealed class AdminRoleAssignmentSafetyService", "safety service implementation")
+    require(admin_role_safety_service, "AppDbContext dbContext", "safety service AppDbContext dependency")
+    require(admin_role_safety_service, "IAdminRolePermissionCatalogService", "safety service production role catalog dependency")
+    require(admin_role_safety_service, "GetProductionRolePermissions()", "safety validates known roles from production catalog")
+    require(admin_role_safety_service, "A non-empty human-readable reason is required.", "safety validates reason requirement")
+    require(admin_role_safety_service, "Only Owner or SuperAdmin actors may manage Admin roles.", "safety validates owner/super-admin-only management")
+    require(admin_role_safety_service, "Only Owner or SuperAdmin actors may grant elevated Admin roles.", "safety validates no self-escalation for elevated roles")
+    require(admin_role_safety_service, "Cannot revoke SuperAdmin from the last active SuperAdmin.", "safety validates last super-admin revoke protection")
+    require(admin_role_safety_service, "Cannot disable the last active SuperAdmin.", "safety validates last super-admin disable protection")
+    require(admin_role_safety_service, "Cannot assign a role to a disabled admin user.", "safety validates disabled target protection")
+    require(admin_role_safety_service, "Target admin user does not exist.", "safety validates unknown target protection")
+    require(admin_role_safety_service, "_dbContext.AdminUsers", "safety reads AdminUsers")
+    require(admin_role_safety_service, "_dbContext.AdminUserRoles", "safety reads AdminUserRoles")
+    require(admin_role_safety_service, ".AsNoTracking()", "safety no-tracking reads")
+    require(program, "AddScoped<IAdminRoleAssignmentSafetyService, AdminRoleAssignmentSafetyService>()", "safety service DI registration")
+    for forbidden in ["SaveChanges", "SaveChangesAsync", ".Add(", ".AddAsync(", ".Attach(", ".Update(", ".UpdateRange(", ".Remove(", ".RemoveRange(", "ExecuteUpdate", "ExecuteDelete", "AdminRoleAssignmentEvents"]:
+        if forbidden in admin_role_safety_service:
+            raise AssertionError(f"AdminRoleAssignmentSafetyService must stay validation-only/read-only and must not use: {forbidden}")
+
     require(admin_role_diagnostics_interface, "public interface IAdminRoleAssignmentDiagnosticsService", "diagnostics service interface")
     require(admin_role_diagnostics_interface, "GetDiagnosticsAsync", "diagnostics read method")
     require(admin_role_diagnostics_result, "public sealed record AdminRoleAssignmentDiagnosticsResult", "diagnostics result record")
@@ -242,7 +284,7 @@ def main() -> None:
         if forbidden in admin_role_read_service:
             raise AssertionError(f"AdminRoleAssignmentReadService must stay read-only and must not use: {forbidden}")
 
-    for forbidden in ["IAdminRoleAssignmentReadService", "AdminRoleAssignmentReadService", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
+    for forbidden in ["IAdminRoleAssignmentReadService", "AdminRoleAssignmentReadService", "IAdminRoleAssignmentSafetyService", "AdminRoleAssignmentSafetyService", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
         if forbidden in admin_handler:
             raise AssertionError("AdminPermissionAuthorizationHandler must not read persistent admin role assignment tables yet.")
 
