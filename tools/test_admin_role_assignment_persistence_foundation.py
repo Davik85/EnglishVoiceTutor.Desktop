@@ -41,6 +41,8 @@ ADMIN_ROLE_BOOTSTRAP_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/
 ADMIN_ROLE_BOOTSTRAP_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentBootstrapRequest.cs"
 ADMIN_ROLE_BOOTSTRAP_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentBootstrapResult.cs"
 ADMIN_ROLE_REVOKE_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentRevokeRequest.cs"
+ADMIN_ROLE_BOOTSTRAP_HTTP_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentBootstrapFirstOwnerRequest.cs"
+ADMIN_ROLE_BOOTSTRAP_HTTP_RESPONSE = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentBootstrapFirstOwnerResponse.cs"
 ADMIN_ROLE_ACTOR_RESPONSE = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentActorResponse.cs"
 ADMIN_ROLE_REVOKE_RESPONSE = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Admin/AdminRoleAssignmentRevokeResponse.cs"
 API_CONSTANTS = ROOT / "backend/EnglishVoiceTutor.Api/Constants/ApiConstants.cs"
@@ -160,6 +162,8 @@ def main() -> None:
     admin_role_bootstrap_request = read(ADMIN_ROLE_BOOTSTRAP_REQUEST)
     admin_role_bootstrap_result = read(ADMIN_ROLE_BOOTSTRAP_RESULT)
     admin_role_revoke_request = read(ADMIN_ROLE_REVOKE_REQUEST)
+    admin_role_bootstrap_http_request = read(ADMIN_ROLE_BOOTSTRAP_HTTP_REQUEST)
+    admin_role_bootstrap_http_response = read(ADMIN_ROLE_BOOTSTRAP_HTTP_RESPONSE)
     admin_role_actor_response = read(ADMIN_ROLE_ACTOR_RESPONSE)
     admin_role_revoke_response = read(ADMIN_ROLE_REVOKE_RESPONSE)
     api_constants = read(API_CONSTANTS)
@@ -449,10 +453,6 @@ def main() -> None:
     for forbidden in ["_dbContext.Users", "Subscriptions", "Entitlements", "Lessons", "Cms", "Paddle", "Billing", "Payment", "Desktop", "PasswordReset", "UserRefreshToken", "TokenHash", "PasswordHash", "Invite"]:
         if forbidden in admin_role_bootstrap_service:
             raise AssertionError(f"Bootstrap service must not touch unrelated state or invite flows: {forbidden}")
-    for forbidden_route in ["BootstrapRoute", "FirstOwner", "BootstrapFirstOwner", "IAdminRoleAssignmentBootstrapService", "AdminRoleAssignmentBootstrapService"]:
-        if forbidden_route in api_constants or forbidden_route in admin_endpoints:
-            raise AssertionError(f"No bootstrap HTTP endpoint or endpoint dependency may exist: {forbidden_route}")
-
     require(admin_role_diagnostics_interface, "public interface IAdminRoleAssignmentDiagnosticsService", "diagnostics service interface")
     require(admin_role_diagnostics_interface, "GetDiagnosticsAsync", "diagnostics read method")
     require(admin_role_diagnostics_result, "public sealed record AdminRoleAssignmentDiagnosticsResult", "diagnostics result record")
@@ -483,11 +483,13 @@ def main() -> None:
     require(api_constants, 'AdminRoleAssignmentDiagnosticsRoute = "/api/admin/role-assignments/diagnostics"', "diagnostics route constant")
     require(api_constants, 'AdminRoleAssignmentActorRoute = "/api/admin/role-assignments/actor"', "actor mapping route constant")
     require(api_constants, 'AdminRoleAssignmentRevokeRoute = "/api/admin/role-assignments/revoke"', "revoke route constant")
+    require(api_constants, 'AdminRoleAssignmentBootstrapFirstOwnerRoute = "/api/admin/role-assignments/bootstrap-first-owner"', "bootstrap first owner route constant")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)", "GET-only diagnostics endpoint")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "diagnostics role-management permission policy")
     require(endpoint_permission_catalog, 'new("admin.role_assignments.diagnostics.read", "GET", ApiConstants.AdminRoleAssignmentDiagnosticsRoute, AdminPermissionConstants.AdminRolesManage', "diagnostics endpoint permission catalog mapping")
     require(endpoint_permission_catalog, 'new("admin.role_assignments.actor.read", "GET", ApiConstants.AdminRoleAssignmentActorRoute, AdminPermissionConstants.AdminRolesManage', "actor endpoint permission catalog mapping")
     require(endpoint_permission_catalog, 'new("admin.role_assignments.revoke", "POST", ApiConstants.AdminRoleAssignmentRevokeRoute, AdminPermissionConstants.AdminRolesManage', "revoke endpoint permission catalog mapping")
+    require(endpoint_permission_catalog, 'new("admin.role_assignments.bootstrap_first_owner", "POST", ApiConstants.AdminRoleAssignmentBootstrapFirstOwnerRoute, AdminPermissionConstants.AdminRolesManage', "bootstrap endpoint permission catalog mapping")
     if re.search(r"AdminRoleAssignmentDiagnosticsRoute[\s\S]{0,220}BootstrapAdminPolicyName", admin_endpoints):
         raise AssertionError("Diagnostics endpoint must not use BootstrapAdminPolicyName directly.")
     if re.search(r"Map(Post|Put|Delete)\(ApiConstants\.AdminRoleAssignmentDiagnosticsRoute", admin_endpoints):
@@ -502,7 +504,7 @@ def main() -> None:
     if re.search(r"Map(Post|Put|Delete)\(ApiConstants\.AdminRoleAssignmentActorRoute", admin_endpoints):
         raise AssertionError("Actor mapping endpoint must be GET-only.")
     actor_handler_start = admin_endpoints.index("private static async Task<IResult> GetAdminRoleAssignmentActorAsync")
-    actor_handler_end = admin_endpoints.index("private static async Task<IResult> RevokeAdminRoleAssignmentAsync")
+    actor_handler_end = admin_endpoints.index("private static async Task<IResult> BootstrapFirstOwnerAdminRoleAssignmentAsync")
     actor_handler = admin_endpoints[actor_handler_start:actor_handler_end]
     require(actor_handler, "IAdminRoleAssignmentActorResolver adminRoleAssignmentActorResolver", "actor endpoint actor resolver dependency")
     require(actor_handler, "adminRoleAssignmentActorResolver.ResolveActorAsync(principal, cancellationToken)", "actor endpoint calls actor resolver")
@@ -540,7 +542,7 @@ def main() -> None:
         admin_endpoints,
         flags=re.MULTILINE,
     )
-    permission_migrated = {(method.upper(), route, policy) for method, route, policy in endpoint_authorizations if policy.endswith("PermissionPolicyName") and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute"}}
+    permission_migrated = {(method.upper(), route, policy) for method, route, policy in endpoint_authorizations if policy.endswith("PermissionPolicyName") and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute", "AdminRoleAssignmentBootstrapFirstOwnerRoute"}}
     if {policy for _, _, policy in permission_migrated} != MIGRATED_POLICY_CONSTANTS or len(permission_migrated) != 3:
         raise AssertionError(f"Exactly three safe read-only Admin endpoints must remain permission-policy migrated. Found: {sorted(permission_migrated)}")
 
@@ -553,14 +555,50 @@ def main() -> None:
         raise AssertionError(f"Expected exactly one read-only role assignment actor mapping endpoint. Found: {actor_endpoint_count}")
 
     role_assignment_write_endpoints = re.findall(r"Map(Post|Put|Delete)\(ApiConstants\.(AdminRoleAssignment\w+Route)", admin_endpoints)
-    if role_assignment_write_endpoints != [("Post", "AdminRoleAssignmentRevokeRoute")]:
-        raise AssertionError(f"Expected exactly one role assignment write endpoint and it must be POST revoke-only. Found: {role_assignment_write_endpoints}")
+    if role_assignment_write_endpoints != [("Post", "AdminRoleAssignmentRevokeRoute"), ("Post", "AdminRoleAssignmentBootstrapFirstOwnerRoute")]:
+        raise AssertionError(f"Expected exactly two role assignment write endpoints: POST revoke and POST bootstrap-first-owner. Found: {role_assignment_write_endpoints}")
+    bootstrap_endpoint_count = len(re.findall(r"MapPost\(ApiConstants\.AdminRoleAssignmentBootstrapFirstOwnerRoute", admin_endpoints))
+    if bootstrap_endpoint_count != 1:
+        raise AssertionError(f"Expected exactly one bootstrap-first-owner endpoint. Found: {bootstrap_endpoint_count}")
+    if re.search(r"Map(Get|Put|Delete)\(ApiConstants\.AdminRoleAssignmentBootstrapFirstOwnerRoute", admin_endpoints):
+        raise AssertionError("Bootstrap first owner endpoint must be POST-only.")
     revoke_map_index = admin_endpoints.index("app.MapPost(ApiConstants.AdminRoleAssignmentRevokeRoute, RevokeAdminRoleAssignmentAsync)")
     next_map_index = admin_endpoints.find("app.Map", revoke_map_index + 1)
     revoke_registration = admin_endpoints[revoke_map_index:next_map_index]
     require(revoke_registration, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "revoke endpoint role-management permission policy")
     if "BootstrapAdminPolicyName" in revoke_registration:
         raise AssertionError("Revoke endpoint must not use BootstrapAdminPolicyName directly.")
+
+    bootstrap_map_index = admin_endpoints.index("app.MapPost(ApiConstants.AdminRoleAssignmentBootstrapFirstOwnerRoute, BootstrapFirstOwnerAdminRoleAssignmentAsync)")
+    bootstrap_next_map_index = admin_endpoints.find("app.Map", bootstrap_map_index + 1)
+    bootstrap_registration = admin_endpoints[bootstrap_map_index:bootstrap_next_map_index]
+    require(bootstrap_registration, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "bootstrap endpoint role-management permission policy")
+    if "BootstrapAdminPolicyName" in bootstrap_registration:
+        raise AssertionError("Bootstrap endpoint must not use BootstrapAdminPolicyName directly.")
+
+    bootstrap_handler_start = admin_endpoints.index("private static async Task<IResult> BootstrapFirstOwnerAdminRoleAssignmentAsync")
+    bootstrap_handler_end = admin_endpoints.index("private static async Task<IResult> RevokeAdminRoleAssignmentAsync")
+    bootstrap_handler = admin_endpoints[bootstrap_handler_start:bootstrap_handler_end]
+    require(bootstrap_handler, "IAdminRoleAssignmentBootstrapService adminRoleAssignmentBootstrapService", "bootstrap endpoint service dependency")
+    require(bootstrap_handler, "ClaimsUserAccessor.TryGetUserId(principal)", "bootstrap endpoint derives app user id from trusted principal")
+    require(bootstrap_handler, "ClaimsUserAccessor.TryGetUserEmail(principal)", "bootstrap endpoint derives email from trusted principal")
+    require(bootstrap_handler, "BootstrapFirstOwnerAsync(new AdminRoleAssignmentBootstrapRequest", "bootstrap endpoint calls bootstrap service")
+    require(bootstrap_handler, "Results.Unauthorized()", "bootstrap endpoint fails closed when app user id is unavailable")
+    require(bootstrap_handler, "Results.Ok(response) : Results.Conflict(response)", "bootstrap endpoint maps success and safe failure responses")
+    require(admin_role_bootstrap_http_request, "public sealed class AdminRoleAssignmentBootstrapFirstOwnerRequest", "bootstrap http request contract")
+    for field in ["string? Reason", "string? SafeMetadataJson"]:
+        require(admin_role_bootstrap_http_request, field, f"bootstrap http request field {field}")
+    for forbidden in ["AppUserId", "NormalizedEmail", "Email", "TargetAdminUserId", "ActorAdminUserId", "ActorRoleIds", "RoleId"]:
+        if forbidden in admin_role_bootstrap_http_request:
+            raise AssertionError(f"Bootstrap HTTP request must not accept trusted/server-owned field: {forbidden}")
+    for field in ["bool Success", "string? ErrorCode", "string? Message", "Guid? AdminUserId", "string? RoleId", "Guid? AuditEventId", "DateTimeOffset OccurredAtUtc"]:
+        require(admin_role_bootstrap_http_response, field, f"safe bootstrap response field {field}")
+    for forbidden in ["Email", "Claims", "Token", "Raw", "Metadata", "Exception", "ConnectionString", "ProviderPayload"]:
+        if forbidden in admin_role_bootstrap_http_response:
+            raise AssertionError(f"Bootstrap response must not expose unsafe field: {forbidden}")
+    for forbidden in ["IAdminRoleAssignmentWriteService", "IAdminRoleAssignmentAuditService", "_dbContext", "new AdminUser", "new AdminUserRole", ".Add(", ".AddAsync(", ".Attach(", ".Update(", ".Remove(", "SaveChanges", "ExecuteUpdate", "ExecuteDelete", "AdminRoleAssignmentWriteService", "AdminRoleAssignmentAuditService"]:
+        if forbidden in bootstrap_handler:
+            raise AssertionError(f"Bootstrap endpoint must delegate only to bootstrap service and must not use: {forbidden}")
 
     revoke_handler_start = admin_endpoints.index("private static async Task<IResult> RevokeAdminRoleAssignmentAsync")
     revoke_handler_end = admin_endpoints.index("private static async Task<IResult> GetAdminUserByEmailAsync")
@@ -583,7 +621,7 @@ def main() -> None:
     for forbidden in ["AssignRoleAsync", "DisableAdminAsync", "_dbContext", "AdminUserRoles", "RevokedAtUtc =", "SaveChanges", "AppendAuditEventAsync", "ActorAdminUserId =", "ActorRoleIds ="]:
         if forbidden in revoke_handler:
             raise AssertionError(f"Revoke endpoint must not assign/disable, mutate EF directly, audit directly, or trust actor fields: {forbidden}")
-    for forbidden_route in ["AssignRoute", "DisableRoute", "CreateAdmin", "InviteRoute", "BootstrapRoute"]:
+    for forbidden_route in ["AssignRoute", "DisableRoute", "CreateAdmin", "InviteRoute"]:
         if forbidden_route in api_constants or forbidden_route in admin_endpoints:
             raise AssertionError(f"No assign/disable/create-admin/invite endpoint may exist: {forbidden_route}")
     for route in BOOTSTRAP_REQUIRED_ROUTES:

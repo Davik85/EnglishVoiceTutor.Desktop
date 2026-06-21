@@ -19,6 +19,7 @@ public static class AdminEndpointPermissionCatalog
         new("admin.role_assignments.diagnostics.read", "GET", ApiConstants.AdminRoleAssignmentDiagnosticsRoute, AdminPermissionConstants.AdminRolesManage, "Read-only diagnostics for future persistent Admin role assignments."),
         new("admin.role_assignments.actor.read", "GET", ApiConstants.AdminRoleAssignmentActorRoute, AdminPermissionConstants.AdminRolesManage, "Read the authenticated admin's persistent actor mapping status without mutating role assignment state."),
         new("admin.role_assignments.revoke", "POST", ApiConstants.AdminRoleAssignmentRevokeRoute, AdminPermissionConstants.AdminRolesManage, "Revoke an existing persistent Admin role assignment through the guarded write-service seam."),
+        new("admin.role_assignments.bootstrap_first_owner", "POST", ApiConstants.AdminRoleAssignmentBootstrapFirstOwnerRoute, AdminPermissionConstants.AdminRolesManage, "Bootstrap the first persistent owner-equivalent Admin mapping for the authenticated admin user."),
         new("admin.users.lookup_by_email", "GET", ApiConstants.AdminUserByEmailRoute, AdminPermissionConstants.UserLookupRead, "Look up an Admin-visible user record by email."),
         new("admin.users.overview.read", "GET", ApiConstants.AdminUserByIdRoute, AdminPermissionConstants.UserOverviewRead, "Read an Admin-visible user overview by user id."),
         new("admin.users.audit.read", "GET", ApiConstants.AdminUserAuditActionsRoute, AdminPermissionConstants.AuditRead, "Read audit actions for a target user."),
