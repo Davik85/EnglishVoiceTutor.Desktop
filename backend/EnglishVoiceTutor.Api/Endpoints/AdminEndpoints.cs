@@ -45,6 +45,9 @@ public static class AdminEndpoints
         app.MapPost(ApiConstants.AdminRoleAssignmentDisableAdminRoute, DisableAdminRoleAssignmentAsync)
             .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
 
+        app.MapPost(ApiConstants.AdminRoleAssignmentProvisionAdminUserRoute, ProvisionAdminUserRoleAssignmentAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+
         app.MapPost(ApiConstants.AdminRoleAssignmentBootstrapFirstOwnerRoute, BootstrapFirstOwnerAdminRoleAssignmentAsync)
             .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
 
@@ -393,6 +396,50 @@ public static class AdminEndpoints
         Message = result.Message,
         AuditEventId = result.AuditEventId,
         TargetAdminUserId = result.TargetAdminUserId,
+        OccurredAtUtc = result.OccurredAtUtc
+    };
+
+
+    private static async Task<IResult> ProvisionAdminUserRoleAssignmentAsync(
+        [FromBody] AdminRoleAssignmentProvisionAdminUserRequest request,
+        ClaimsPrincipal principal,
+        IAdminRoleAssignmentActorResolver adminRoleAssignmentActorResolver,
+        IAdminRoleAssignmentAdminUserProvisioningService adminRoleAssignmentAdminUserProvisioningService,
+        CancellationToken cancellationToken)
+    {
+        var actorResolution = await adminRoleAssignmentActorResolver.ResolveActorAsync(principal, cancellationToken);
+        if (!actorResolution.IsActorMappingFound || !actorResolution.ActorAdminUserId.HasValue)
+        {
+            return Results.Conflict(new AdminRoleAssignmentProvisionAdminUserResponse
+            {
+                Success = false,
+                ErrorCode = actorResolution.ErrorCode ?? AdminRoleAssignmentActorResolver.ActorMappingUnavailableErrorCode,
+                Message = actorResolution.Message ?? "Persistent Admin actor mapping is not available for the authenticated principal, so AdminUser provisioning is disabled until safe actor identity and actor role resolution are available.",
+                AdminUserId = null,
+                AuditEventId = null,
+                OccurredAtUtc = DateTimeOffset.UtcNow
+            });
+        }
+
+        var provisioningResult = await adminRoleAssignmentAdminUserProvisioningService.ProvisionAdminUserAsync(new AdminRoleAssignmentAdminUserProvisioningRequest(
+            actorResolution.ActorAdminUserId.Value,
+            actorResolution.ActorRoleIds,
+            request.TargetAppUserId,
+            null,
+            request.Reason ?? string.Empty,
+            request.SafeMetadataJson), cancellationToken);
+
+        var response = ToAdminRoleAssignmentProvisionAdminUserResponse(provisioningResult);
+        return provisioningResult.IsSuccess ? Results.Ok(response) : Results.Conflict(response);
+    }
+
+    private static AdminRoleAssignmentProvisionAdminUserResponse ToAdminRoleAssignmentProvisionAdminUserResponse(AdminRoleAssignmentAdminUserProvisioningResult result) => new()
+    {
+        Success = result.IsSuccess,
+        ErrorCode = result.ErrorCode,
+        Message = result.Message,
+        AdminUserId = result.AdminUserId,
+        AuditEventId = result.AuditEventId,
         OccurredAtUtc = result.OccurredAtUtc
     };
 
