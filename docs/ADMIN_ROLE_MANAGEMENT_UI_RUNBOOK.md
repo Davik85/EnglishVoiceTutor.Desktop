@@ -1,5 +1,10 @@
 # Admin Role Management UI Runbook
 
+
+## 2026-06-21 production status update
+
+Backend `0.1.35-backend.34` is deployed after production migration `20260620165657_AddAdminRoleAssignmentPersistence`. Production contains `admin_users`, `admin_user_roles`, and `admin_role_assignment_events`; the first persistent owner-equivalent `super_admin` mapping exists; actor mapping resolves for the owner account; and cutover smoke passes with fallback enabled by default. No production fallback cutover has been performed, no fallback override is explicitly configured in production, and public release remains incomplete until controlled cutover/rollback rehearsal and fallback decision or exception are accepted.
+
 Review date: 2026-06-21.
 
 Scope: controlled tester/admin operational validation only. This runbook is not a broad public production cutover, does not authorize casual production use, and does not replace the separate first-owner bootstrap runbook.

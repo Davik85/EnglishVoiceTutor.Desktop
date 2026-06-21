@@ -1,5 +1,10 @@
 # Admin Role Assignment Persistence Plan
 
+
+## 2026-06-21 production status update
+
+Backend `0.1.35-backend.34` is deployed after production migration `20260620165657_AddAdminRoleAssignmentPersistence`. Production contains `admin_users`, `admin_user_roles`, and `admin_role_assignment_events`; the first persistent owner-equivalent `super_admin` mapping exists; actor mapping resolves for the owner account; and cutover smoke passes with fallback enabled by default. No production fallback cutover has been performed, no fallback override is explicitly configured in production, and public release remains incomplete until controlled cutover/rollback rehearsal and fallback decision or exception are accepted.
+
 Review date: 2026-06-21.
 
 Scope: planning/model design and staged foundation tracking. EF entities/migration, read-only role assignment query service, internal write service, guarded assign/revoke/disable-admin endpoints, controlled first-owner bootstrap endpoint, trusted actor-resolution seam, and mixed-mode `AdminPermission:*` authorization evaluation now exist, but this document does not add Admin UI role management, create-admin/invite endpoints, additional existing endpoint policy migrations, billing/Paddle changes, entitlement changes, Desktop changes, packaging changes, generated artifacts, or secrets.

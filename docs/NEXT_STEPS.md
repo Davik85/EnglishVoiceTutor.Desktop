@@ -1,6 +1,6 @@
 # Next Steps
 
-Review date: 2026-06-18.
+Review date: 2026-06-21.
 
 ## Source of truth for current versions
 
@@ -46,7 +46,7 @@ Current controlled tester/direct Windows releases continue to use the existing I
 
 ## Latest verified release summary
 
-Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy and UI policy tests passed; the desktop release gate passed; and backend `0.1.35-backend.33` is deployed and healthy. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, and Save draft + Publish changes are visible in newly started desktop lessons.
+Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy and UI policy tests passed; the desktop release gate passed; and backend `0.1.35-backend.34` is deployed and healthy after the Admin RBAC persistence migration. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, and Save draft + Publish changes are visible in newly started desktop lessons.
 
 ## Immediate next steps
 
@@ -57,15 +57,47 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 
 Do not move billing/Paddle production readiness into the immediate next step. Continue sandbox checkout/cancel-renewal validation and Desktop billing UI hardening first; production/live billing readiness remains deferred.
 
-## Production Admin RBAC release-hardening gate
+## Release-readiness roadmap
 
-- BootstrapAdmin is acceptable for controlled testing only.
-- A public release candidate requires production Admin RBAC or a documented owner-approved exception.
-- Endpoint-level permission enforcement is required before exposing support, content, or billing admin actions broadly; Admin UI awareness is not enough.
-- Audit logging must remain mandatory for dangerous actions such as manual Premium grant/revoke, free lesson reset, cancel-renewal, CMS publish, CMS restore/rollback, and role/permission changes.
-- The detailed planning/audit document is `docs/PRODUCTION_ADMIN_RBAC_READINESS.md`.
-- Role assignment persistence is planned in `docs/ADMIN_ROLE_ASSIGNMENT_PERSISTENCE_PLAN.md`, but it is not implemented yet; Production Admin RBAC remains incomplete.
-- Public RC requires endpoint-level permission enforcement, role assignment persistence, role-change audit logging, and owner-approved cutover or a documented owner-approved exception.
+### Phase 2. Production Admin RBAC
+
+- Current state: mostly implemented and production-deployed on backend `0.1.35-backend.34` with Admin RBAC persistence tables, first persistent `super_admin` owner-equivalent mapping, actor mapping, cutover status endpoint, read-only Admin UI cutover status, and release-gated static validation. BootstrapAdmin fallback is still enabled by default; no fallback config override is present in production.
+- Next safe step: controlled owner-approved fallback cutover rehearsal, not immediate permanent cutover.
+- Required before public RC: fallback decision or explicit owner-approved temporary exception, rollback drill for fallback re-enable, validation that non-owner roles behave correctly, and acceptance of the cutover/rollback rehearsal.
+
+### Phase 3. Rate limiting / abuse protection
+
+- Identify protected surfaces before implementation: auth login/register/password reset; lesson chat/reply; voice/TTS/transcription if applicable; free lesson start/usage; premium abuse controls; admin endpoints; and webhook endpoints.
+- Plan policy before implementation, including per-user/IP/provider limits, safe burst behavior, lockout/captcha/escalation decisions where appropriate, and bypass/monitoring rules for trusted operational paths.
+- Keep user experience acceptable so legitimate learners are not blocked by normal lesson, voice, or account flows.
+
+### Phase 4. Backups / restore / migration rollback drills
+
+- Document the production backup schedule and retention.
+- Document and run a restore drill using production-safe verification commands.
+- Document the pre-migration backup requirement for schema-dependent backend releases.
+- Document a migration rollback/remediation drill, including when to roll back code, when to apply targeted reviewed SQL, and how to verify `__EFMigrationsHistory`, required tables, ownership, and grants without exposing secrets.
+
+### Phase 5. Monitoring / logging / privacy hardening
+
+- Cover health checks, service logs, error visibility, and alerts.
+- Confirm PII/secrets redaction rules.
+- Avoid logging tokens, passwords, secrets, raw provider payloads, raw connection strings, or private keys.
+- Review EF/SQL logging level for production privacy before broad public release.
+
+### Phase 6. Paddle live readiness + legal/support blockers
+
+- Verify live Paddle product/price mapping, live webhook setup and verification, and live checkout flow.
+- Define cancellation/refund/support path, support contact, and operational runbook.
+- Complete terms, privacy, refund, and subscription disclosures.
+- Desktop/Admin UI must not call Paddle directly; the backend remains the source of truth for entitlements.
+
+### Phase 7. Microsoft Store + MSIX
+
+- Treat Store/MSIX as future public distribution work.
+- Before implementation, verify current official Microsoft Store/MSIX requirements.
+- Keep current Inno/direct tester distribution valid until the owner explicitly changes the release channel.
+- Do not replace the current installer flow in this task.
 
 ## Subscription base plan deployment note
 
@@ -79,11 +111,11 @@ Do not move billing/Paddle production readiness into the immediate next step. Co
 
 ## Current backend verification
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.33` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.34` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current.
 
-Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.27`. Backend `0.1.35-backend.33` contains the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields for Desktop Account billing UI decisions, and a cancel request path that must not directly revoke entitlements. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. EF migration `20260618090000_SeedBaseSubscriptionPlans` is recorded in production `__EFMigrationsHistory`.
+Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.33`. Backend `0.1.35-backend.34` contains the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields for Desktop Account billing UI decisions, and a cancel request path that must not directly revoke entitlements. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. EF migrations through `20260620165657_AddAdminRoleAssignmentPersistence` are recorded in production `__EFMigrationsHistory`.
 
-Deployed runtime status diagnostics are visible on backend `0.1.35-backend.33` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
+Deployed runtime status diagnostics are visible on backend `0.1.35-backend.34` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
 
 ## CMS connection readiness and controlled release preparation
 
@@ -158,7 +190,7 @@ Next safe step: controlled tester handoff and feedback collection. CMS published
 - Production/live billing/Paddle readiness remains deferred; current billing work is controlled tester/sandbox validation only.
 - Desktop billing UI follow-ups remain: Premium-active free lesson label should show unlimited/no daily free limit, Buy/Cancel/Refresh and confirmation strings need full localization, cancellation result messages need clearer localized UX states, and cancel-renewal should be tested end-to-end against Paddle sandbox.
 - Referral/promo logic remains future work.
-- Production role management/RBAC and critical-change approval remain deferred.
+- Production Admin RBAC is advanced but not fully production-cutover; fallback remains enabled and controlled cutover rehearsal/rollback acceptance remains required. Critical-change approval remains deferred.
 - Code signing remains deferred for the controlled tester/direct release and is not a blocker for the already completed controlled tester handoff if unsigned distribution is accepted knowingly. Before a public release candidate or broad public distribution, require Windows installer signing or a documented owner-approved exception, and add signing verification to the release validation/upload gate.
 - Broader public release readiness remains deferred until after controlled tester feedback and operational hardening.
 
@@ -166,7 +198,7 @@ Next safe step: controlled tester handoff and feedback collection. CMS published
 
 The Admin CMS now exposes a read-only **Runtime content status** section and the protected endpoint `GET /api/admin/dev/cms/runtime-status`. Use it to confirm the effective learner content source, validation result, counts, published snapshot metadata, and fallback state without exposing content bodies or secrets.
 
-CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.33` with approved tutor-id validation for `david`, `elena`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
+CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.34` with approved tutor-id validation for `david`, `elena`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
 
 ## CMS-managed level profiles (A1-B2)
 
