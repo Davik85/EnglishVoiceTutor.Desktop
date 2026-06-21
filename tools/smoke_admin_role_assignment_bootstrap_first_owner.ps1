@@ -21,6 +21,7 @@ $AuthLoginPath = "/api/auth/login"
 $ActorPath = "/api/admin/role-assignments/actor"
 $BootstrapFirstOwnerPath = "/api/admin/role-assignments/bootstrap-first-owner"
 $DiagnosticsPath = "/api/admin/role-assignments/diagnostics"
+$HealthPath = "/health"
 $ProductionApiHost = "api.languagevoicetutor.com"
 
 if (-not $ConfirmCreateFirstOwner) {
@@ -43,6 +44,37 @@ if (-not $isLocalHost -and -not $AllowProductionUrl) {
 
 if ([string]::IsNullOrWhiteSpace($AdminEmail) -or [string]::IsNullOrWhiteSpace($AdminPassword)) {
     throw "AdminEmail and AdminPassword parameters are required for the existing local admin smoke-test login pattern. No credentials are embedded in this script."
+}
+
+
+function Get-BackendPrerequisiteMessage {
+    param([string]$TargetBaseUrl)
+
+    return @"
+Backend reachability preflight failed for '$TargetBaseUrl'.
+
+This first-owner bootstrap smoke is a special manual backend operation. The backend must already be running before this script logs in or calls the mutating bootstrap endpoint.
+
+For a local backend, configure connection string 'DefaultConnection' outside committed repository files before starting the backend, for example via user secrets, appsettings.Development.json, or environment variables according to the project convention.
+
+The normal desktop tester flow does not require running a local backend. If the local backend/database is intentionally not configured, do not run this bootstrap smoke.
+
+No secrets or connection strings were printed by this script.
+"@
+}
+
+function Test-BackendReachability {
+    param([string]$TargetBaseUrl)
+
+    $healthUrl = "$TargetBaseUrl$HealthPath"
+
+    try {
+        Invoke-WebRequest -Method $MethodGet -Uri $healthUrl -UseBasicParsing -TimeoutSec 10 | Out-Null
+        return
+    }
+    catch {
+        throw (Get-BackendPrerequisiteMessage -TargetBaseUrl $TargetBaseUrl)
+    }
 }
 
 function Write-Step {
@@ -156,6 +188,9 @@ function Invoke-ExpectStatusCode {
 Write-Host "WARNING: This manual smoke may create the first persistent AdminUser/SuperAdmin-equivalent mapping in the target database." -ForegroundColor Yellow
 Write-Host "WARNING: Use only against a known safe environment. Persistent roles are not globally active for authorization yet." -ForegroundColor Yellow
 Write-Host "Target BaseUrl: $BaseUrl"
+
+Write-Step "Preflight backend reachability without creating data"
+Test-BackendReachability -TargetBaseUrl $BaseUrl
 
 Write-Step "Login using the existing local admin smoke-test pattern"
 $login = Invoke-ExpectStatusCode -Method $MethodPost -Url "$BaseUrl$AuthLoginPath" -Headers $null -Body @{ email = $AdminEmail; password = $AdminPassword } -ExpectedStatusCodes @($StatusOk)

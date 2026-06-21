@@ -8,6 +8,20 @@ This runbook is for a controlled manual validation operation only. It is not par
 
 The operation must be run only against a known safe local or controlled test environment. Do not run it casually against production. Rollback or remediation must be handled carefully through database/audit-aware operations until full role management exists.
 
+## Prerequisites
+
+This runbook is not part of the normal desktop tester flow. The desktop tester flow is expected to use its configured release/test backend and does not require operators to run a local backend or local database.
+
+Before running this smoke script:
+
+- The target backend must already be running and reachable at the selected `-BaseUrl`.
+- For a local backend, connection string `DefaultConnection` must be configured outside committed repository files before startup, for example via user secrets, `appsettings.Development.json`, or environment variables according to the project convention.
+- If the local backend/database is intentionally not configured, do not run this smoke.
+- Do not use production casually. Use only a known safe local or controlled test environment that is explicitly approved for this one-time operation.
+- Do not commit local database connection strings, secrets, credentials, tokens, or real admin emails.
+- Expect that the operation may create the first persistent `AdminUser` and Owner/SuperAdmin-equivalent role mapping in the target database.
+
+
 ## Safety flags
 
 The script requires an explicit mutating confirmation flag:
@@ -43,6 +57,15 @@ The script performs this sequence after the confirmation and environment checks 
 4. Call `GET /api/admin/role-assignments/actor` after bootstrap.
 5. Call `GET /api/admin/role-assignments/diagnostics` after bootstrap.
 6. Print safe top-level result fields only.
+
+
+## Troubleshooting
+
+### `Connection string 'DefaultConnection' is required.`
+
+This error means the local backend was started without the required local database configuration. Configure `DefaultConnection` outside committed files, then restart the backend before running the smoke script.
+
+This does not mean the desktop app, the controlled tester release backend, or the Windows release package is broken. It only means the optional local backend used for this special manual bootstrap smoke is not configured.
 
 ## Current limitations
 

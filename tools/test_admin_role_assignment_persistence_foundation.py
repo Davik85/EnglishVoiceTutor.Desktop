@@ -176,6 +176,8 @@ def main() -> None:
     bootstrap_runbook = read(BOOTSTRAP_RUNBOOK)
 
 
+    if not BOOTSTRAP_SMOKE_SCRIPT.exists():
+        raise AssertionError("Bootstrap first-owner smoke script must still exist.")
     require(bootstrap_smoke_script, "ConfirmCreateFirstOwner", "explicit first-owner bootstrap smoke confirmation flag")
     require(bootstrap_smoke_script, "AllowProductionUrl", "explicit production/non-local URL override flag")
     require(bootstrap_smoke_script, "http://localhost:5000", "local-only default BaseUrl convention")
@@ -183,6 +185,18 @@ def main() -> None:
     require(bootstrap_smoke_script, "$ActorPath = \"/api/admin/role-assignments/actor\"", "actor smoke endpoint path")
     require(bootstrap_smoke_script, "$DiagnosticsPath = \"/api/admin/role-assignments/diagnostics\"", "diagnostics smoke endpoint path")
     require(bootstrap_smoke_script, "if (-not $ConfirmCreateFirstOwner)", "confirmation guard before HTTP calls")
+
+    require(bootstrap_smoke_script, '$HealthPath = "/health"', "harmless backend health endpoint preflight path")
+    require(bootstrap_smoke_script, "Test-BackendReachability", "backend reachability preflight helper")
+    require(bootstrap_smoke_script, "Preflight backend reachability without creating data", "preflight step before login/bootstrap flow")
+    require(bootstrap_smoke_script, "Invoke-WebRequest -Method $MethodGet -Uri $healthUrl", "safe GET reachability check")
+    require(bootstrap_smoke_script, "DefaultConnection", "DefaultConnection prerequisite message")
+    require(bootstrap_smoke_script, "The normal desktop tester flow does not require running a local backend", "desktop tester flow prerequisite message")
+    preflight_index = bootstrap_smoke_script.index("Test-BackendReachability -TargetBaseUrl $BaseUrl")
+    login_step_index = bootstrap_smoke_script.index('Write-Step "Login using the existing local admin smoke-test pattern"')
+    bootstrap_step_index = bootstrap_smoke_script.index('Write-Step "POST first-owner bootstrap with server-side authenticated identity"')
+    if not (preflight_index < login_step_index < bootstrap_step_index):
+        raise AssertionError("Bootstrap smoke preflight must run before login and before the mutating bootstrap flow.")
     first_http_call_index = min(index for index in [bootstrap_smoke_script.find("Invoke-RestMethod"), bootstrap_smoke_script.find("Invoke-WebRequest")] if index != -1)
     confirmation_guard_index = bootstrap_smoke_script.index("if (-not $ConfirmCreateFirstOwner)")
     if confirmation_guard_index > first_http_call_index:
@@ -191,7 +205,7 @@ def main() -> None:
         raise AssertionError("First-owner bootstrap smoke script must not be referenced by the desktop release gate.")
     if re.search(r"https://api\.languagevoicetutor\.com\s*['\"]?\s*(?:,|\)|$)", bootstrap_smoke_script):
         raise AssertionError("First-owner bootstrap smoke script must not target production by default.")
-    for unsafe_literal in ["PADDLE_API_KEY", "PADDLE_WEBHOOK_SECRET", "BEGIN PRIVATE KEY", "eyJhbGci", "sk-", "password123", "admin@", "owner@"]:
+    for unsafe_literal in ["PADDLE_API_KEY", "PADDLE_WEBHOOK_SECRET", "BEGIN PRIVATE KEY", "eyJhbGci", "sk-", "password123", "admin@", "owner@", "client_secret", "access_token="]:
         if unsafe_literal.lower() in bootstrap_smoke_script.lower() or unsafe_literal.lower() in bootstrap_runbook.lower():
             raise AssertionError(f"Bootstrap smoke/runbook must not contain secrets, tokens, or real admin email-like values: {unsafe_literal}")
     bootstrap_body_match = re.search(r"\$bootstrapBody\s*=\s*@\{(?P<body>[\s\S]*?)\n\}", bootstrap_smoke_script)
@@ -200,6 +214,9 @@ def main() -> None:
     bootstrap_body = bootstrap_body_match.group("body")
     for required_body_field in ["reason = $Reason", "safeMetadataJson = $SafeMetadataJson"]:
         require(bootstrap_body, required_body_field, f"bootstrap smoke request body field {required_body_field}")
+    bootstrap_body_keys = re.findall(r"^\s*([A-Za-z][A-Za-z0-9_]*)\s*=", bootstrap_body, flags=re.MULTILINE)
+    if set(bootstrap_body_keys) != {"reason", "safeMetadataJson"}:
+        raise AssertionError(f"Bootstrap smoke request body must send only reason and safeMetadataJson. Found: {bootstrap_body_keys}")
     for forbidden_body_field in ["appUserId", "normalizedEmail", "email", "targetAdminUserId", "actorAdminUserId", "actorRoleIds", "roleId"]:
         if re.search(rf"(^|[^A-Za-z]){forbidden_body_field}\s*=", bootstrap_body, flags=re.IGNORECASE):
             raise AssertionError(f"Bootstrap smoke request body must not send {forbidden_body_field}.")
@@ -211,6 +228,15 @@ def main() -> None:
         "AdminPermissionAuthorizationHandler still does not use persistent role read, safety, audit, write, actor, or bootstrap services",
         "Admin UI role management still does not exist",
         "database/audit-aware operations",
+        "This runbook is not part of the normal desktop tester flow",
+        "The target backend must already be running",
+        "DefaultConnection` must be configured outside committed repository files",
+        "If the local backend/database is intentionally not configured, do not run this smoke",
+        "Do not commit local database connection strings, secrets, credentials, tokens, or real admin emails",
+        "known safe local or controlled test environment",
+        "may create the first persistent `AdminUser` and Owner/SuperAdmin-equivalent role mapping",
+        "This error means the local backend was started without the required local database configuration",
+        "does not mean the desktop app, the controlled tester release backend, or the Windows release package is broken",
     ]:
         require(bootstrap_runbook, runbook_phrase, f"bootstrap runbook phrase: {runbook_phrase}")
 
