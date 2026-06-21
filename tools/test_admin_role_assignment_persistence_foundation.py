@@ -762,7 +762,7 @@ def main() -> None:
         admin_endpoints,
         flags=re.MULTILINE,
     )
-    permission_migrated = {(method.upper(), route, policy) for method, route, policy in endpoint_authorizations if policy.endswith("PermissionPolicyName") and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute", "AdminRoleAssignmentAssignRoute", "AdminRoleAssignmentDisableAdminRoute", "AdminRoleAssignmentEnableAdminRoute", "AdminRoleAssignmentProvisionAdminUserRoute", "AdminRoleAssignmentBootstrapFirstOwnerRoute"}}
+    permission_migrated = {(method.upper(), route, policy) for method, route, policy in endpoint_authorizations if policy.endswith("PermissionPolicyName") and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute", "AdminRoleAssignmentAssignRoute", "AdminRoleAssignmentDisableAdminRoute", "AdminRoleAssignmentEnableAdminRoute", "AdminRoleAssignmentProvisionAdminUserRoute", "AdminRoleAssignmentBootstrapFirstOwnerRoute", "AdminRbacCutoverStatusRoute"}}
     if {policy for _, _, policy in permission_migrated} != MIGRATED_POLICY_CONSTANTS or len(permission_migrated) != 35:
         raise AssertionError(f"Exactly thirty-five existing Admin endpoints must remain permission-policy migrated after user-impacting Admin action endpoint migration. Found: {sorted(permission_migrated)}")
     if ("GET", "AdminDevCmsRuntimeStatusRoute", "CmsRuntimeStatusReadPermissionPolicyName") not in permission_migrated:

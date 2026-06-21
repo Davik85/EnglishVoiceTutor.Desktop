@@ -21,6 +21,7 @@ SAFE_ENDPOINTS = {
     "/api/admin/dev/cms/runtime-status",
     "/api/admin/role-assignments/actor",
     "/api/admin/role-assignments/diagnostics",
+    "/api/admin/rbac/cutover-status",
 }
 
 FORBIDDEN_SCRIPT_ENDPOINT_PARTS = [
@@ -75,6 +76,9 @@ def main() -> None:
     require(script, "Refusing to run against a production-looking URL without -AllowProductionUrl", "production-looking URL refusal")
     require(script, "$HealthPath = \"/health\"", "health reachability check")
     require(script, "$AuthLoginPath = \"/api/auth/login\"", "existing auth login endpoint")
+    require(script, "$RbacCutoverStatusPath = \"/api/admin/rbac/cutover-status\"", "RBAC cutover status endpoint")
+    require(script, "bootstrapAdminFallbackForAdminPermissionPoliciesEnabled", "fallback status comparison field")
+    require(script, "ExpectedFallbackEnabled.Value", "ExpectedFallbackEnabled is compared with backend status")
 
     endpoints = set(re.findall(r'"(/[A-Za-z0-9_./{}?-]+)"', script))
     unexpected = sorted(endpoint for endpoint in endpoints if endpoint.startswith("/") and endpoint not in SAFE_ENDPOINTS)

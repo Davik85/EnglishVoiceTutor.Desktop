@@ -33,6 +33,9 @@ public static class AdminEndpoints
         app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)
             .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
 
+        app.MapGet(ApiConstants.AdminRbacCutoverStatusRoute, GetAdminRbacCutoverStatus)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+
         app.MapGet(ApiConstants.AdminRoleAssignmentActorRoute, GetAdminRoleAssignmentActorAsync)
             .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
 
@@ -208,6 +211,11 @@ public static class AdminEndpoints
         CancellationToken cancellationToken)
     {
         return Results.Ok(await adminRoleAssignmentDiagnosticsService.GetDiagnosticsAsync(cancellationToken));
+    }
+
+    private static IResult GetAdminRbacCutoverStatus(IConfiguration configuration)
+    {
+        return Results.Ok(AdminRbacCutoverStatusReader.GetStatus(configuration));
     }
 
     private static async Task<IResult> GetAdminRoleAssignmentActorAsync(

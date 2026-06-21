@@ -59,8 +59,8 @@ public sealed class AdminPermissionAuthorizationHandler(
 
     private bool IsBootstrapAdminFallbackEnabled()
     {
-        return _configuration.GetValue<bool?>(
-            AdminAuthorizationConstants.EnableBootstrapAdminFallbackForAdminPermissionPoliciesConfigurationPath) ?? true;
+        // Shares AdminAuthorizationConstants.EnableBootstrapAdminFallbackForAdminPermissionPoliciesConfigurationPath via AdminRbacCutoverStatusReader, which uses GetValue<bool?> to preserve missing-setting default behavior (?? true).
+        return AdminRbacCutoverStatusReader.IsBootstrapAdminFallbackEnabled(_configuration);
     }
 
     private async Task<bool> HasPersistentRolePermissionAsync(
