@@ -418,6 +418,7 @@ def main() -> None:
     require(admin_role_safety_interface, "ValidateAssignRoleAsync", "assign-role safety method")
     require(admin_role_safety_interface, "ValidateRevokeRoleAsync", "revoke-role safety method")
     require(admin_role_safety_interface, "ValidateDisableAdminAsync", "disable-admin safety method")
+    require(admin_role_safety_interface, "ValidateEnableAdminAsync", "enable-admin safety method")
     require(admin_role_safety_request, "public sealed record AdminRoleAssignmentSafetyCheckRequest", "safety request record")
     require(admin_role_safety_request, "Guid ActorAdminUserId", "safety request actor admin id")
     require(admin_role_safety_request, "Guid TargetAdminUserId", "safety request target admin id")
@@ -438,6 +439,19 @@ def main() -> None:
     require(admin_role_safety_service, "Cannot disable the last active SuperAdmin.", "safety validates last super-admin disable protection")
     require(admin_role_safety_service, "Cannot assign a role to a disabled admin user.", "safety validates disabled target protection")
     require(admin_role_safety_service, "Target admin user does not exist.", "safety validates unknown target protection")
+    for required in [
+        "ValidateEnableAdminAsync",
+        "request.ActorAdminUserId == Guid.Empty",
+        "request.ActorRoleIds is null || request.ActorRoleIds.Count == 0",
+        "Only Owner or SuperAdmin actors may manage Admin roles.",
+        "request.TargetAdminUserId == Guid.Empty",
+        "A non-empty human-readable reason is required.",
+        "Target admin user does not exist.",
+        "Target admin user is already active.",
+        "Target admin user must have a linked app user id or normalized email before it can be enabled.",
+        "admin_role_assignment_enable_denied",
+    ]:
+        require(admin_role_safety_service, required, f"enable-admin safety check {required}")
     require(admin_role_safety_service, "_dbContext.AdminUsers", "safety reads AdminUsers")
     require(admin_role_safety_service, "_dbContext.AdminUserRoles", "safety reads AdminUserRoles")
     require(admin_role_safety_service, ".AsNoTracking()", "safety no-tracking reads")
@@ -502,7 +516,7 @@ def main() -> None:
 
 
     require(admin_role_write_interface, "public interface IAdminRoleAssignmentWriteService", "write service interface")
-    for method in ["AssignRoleAsync", "RevokeRoleAsync", "DisableAdminAsync"]:
+    for method in ["AssignRoleAsync", "RevokeRoleAsync", "DisableAdminAsync", "EnableAdminAsync"]:
         require(admin_role_write_interface, method, f"write interface method {method}")
         require(admin_role_write_service, method, f"write service method {method}")
     require(admin_role_write_request, "public sealed record AdminRoleAssignmentWriteRequest", "write request record")
@@ -533,6 +547,7 @@ def main() -> None:
     require(admin_role_write_service, "ValidateAssignRoleAsync", "write service validates before assign mutation")
     require(admin_role_write_service, "ValidateRevokeRoleAsync", "write service validates before revoke mutation")
     require(admin_role_write_service, "ValidateDisableAdminAsync", "write service validates before disable mutation")
+    require(admin_role_write_service, "ValidateEnableAdminAsync", "write service validates before enable mutation")
     require(admin_role_write_service, "AppendAuditEventAsync", "write service appends audit events through audit service")
     require(admin_role_write_service, "BeginTransactionAsync", "write service uses EF transactions")
     require(admin_role_write_service, "CommitAsync", "write service commits successful operations")
@@ -543,6 +558,9 @@ def main() -> None:
     require(admin_role_write_service, "RevokeReason = request.Reason!.Trim()", "write service records revoke reason")
     require(admin_role_write_service, "target.Status = \"disabled\"", "write service disables admin using status")
     require(admin_role_write_service, "target.DisabledAtUtc = occurredAtUtc", "write service records disabled timestamp")
+    require(admin_role_write_service, "AdminRoleAssignmentAuditConstants.ActionTypes.EnableAdmin", "write service audits enable-admin action")
+    require(admin_role_write_service, "target.Status = ActiveStatus", "write service re-enables admin using active status")
+    require(admin_role_write_service, "target.DisabledAtUtc = null", "write service clears disabled timestamp")
     require(admin_role_write_service, "AdminRoleAssignmentAuditConstants.Results.Succeeded", "write service audits successes")
     require(admin_role_write_service, "AdminRoleAssignmentAuditConstants.Results.FailedValidation", "write service audits safety denials")
     require(admin_role_write_service, "AdminRoleAssignmentAuditConstants.Results.FailedConflict", "write service audits conflicts")
@@ -553,6 +571,29 @@ def main() -> None:
         raise AssertionError("RevokeRoleAsync must call safety validation before revoking roles.")
     if admin_role_write_service.index("ValidateDisableAdminAsync") > admin_role_write_service.index("target.Status = \"disabled\""):
         raise AssertionError("DisableAdminAsync must call safety validation before disabling admins.")
+    if admin_role_write_service.index("ValidateEnableAdminAsync") > admin_role_write_service.index("target.Status = ActiveStatus"):
+        raise AssertionError("EnableAdminAsync must call safety validation before enabling admins.")
+    enable_method = admin_role_write_service[
+        admin_role_write_service.index("public async Task<AdminRoleAssignmentWriteResult> EnableAdminAsync"):
+        admin_role_write_service.index("private static AdminRoleAssignmentSafetyCheckRequest ToSafetyRequest")
+    ]
+    for required in [
+        "request.ActorAdminUserId",
+        "request.TargetAdminUserId",
+        "request.Reason",
+        "BeginTransactionAsync",
+        "AppendAuditEventAsync",
+        "AdminRoleAssignmentAuditConstants.ActionTypes.EnableAdmin",
+        "AdminRoleAssignmentAuditConstants.Results.Succeeded",
+    ]:
+        require(enable_method, required, f"enable-admin write method requirement {required}")
+    for forbidden in [
+        "new AdminUserEntity", "new AdminUserRoleEntity", "AdminUserRoles.Add", "AdminUserRoles.AddAsync",
+        "AssignRoleAsync", "RevokeRoleAsync", "DisableAdminAsync", "Subscriptions", "Entitlements",
+        "Lessons", "Cms", "Paddle", "Billing", "Payment", "Desktop",
+    ]:
+        if forbidden in enable_method:
+            raise AssertionError(f"EnableAdminAsync must not assign/revoke roles, create users, or touch unrelated state: {forbidden}")
     for forbidden in [
         "new AdminUserEntity", "CreateAdminUser", "Invite", "Remove(", "RemoveRange(", "ExecuteDelete",
         "Subscriptions", "Entitlements", "Lessons", "Cms", "Paddle", "Billing", "Payment",
@@ -690,7 +731,7 @@ def main() -> None:
         if forbidden in admin_role_read_service:
             raise AssertionError(f"AdminRoleAssignmentReadService must stay read-only and must not use: {forbidden}")
 
-    for forbidden in ["IAdminRoleAssignmentReadService", "AdminRoleAssignmentReadService", "IAdminRoleAssignmentActorResolver", "AdminRoleAssignmentActorResolver", "IAdminRoleAssignmentSafetyService", "AdminRoleAssignmentSafetyService", "IAdminRoleAssignmentAuditService", "AdminRoleAssignmentAuditService", "IAdminRoleAssignmentWriteService", "AdminRoleAssignmentWriteService", "IAdminRoleAssignmentBootstrapService", "AdminRoleAssignmentBootstrapService", "AdminRoleAssignmentBootstrap", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
+    for forbidden in ["IAdminRoleAssignmentReadService", "AdminRoleAssignmentReadService", "IAdminRoleAssignmentActorResolver", "AdminRoleAssignmentActorResolver", "IAdminRoleAssignmentSafetyService", "AdminRoleAssignmentSafetyService", "IAdminRoleAssignmentAuditService", "AdminRoleAssignmentAuditService", "IAdminRoleAssignmentWriteService", "AdminRoleAssignmentWriteService", "IAdminRoleAssignmentBootstrapService", "AdminRoleAssignmentBootstrapService", "AdminRoleAssignmentBootstrap", "IAdminRoleAssignmentAdminUserProvisioningService", "AdminRoleAssignmentAdminUserProvisioningService", "EnableAdminAsync", "ValidateEnableAdminAsync", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
         if forbidden in admin_handler:
             raise AssertionError("AdminPermissionAuthorizationHandler must not read persistent admin role assignment tables yet.")
 

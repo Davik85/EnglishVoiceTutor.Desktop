@@ -13,4 +13,8 @@ public interface IAdminRoleAssignmentWriteService
     Task<AdminRoleAssignmentWriteResult> DisableAdminAsync(
         AdminRoleAssignmentWriteRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<AdminRoleAssignmentWriteResult> EnableAdminAsync(
+        AdminRoleAssignmentWriteRequest request,
+        CancellationToken cancellationToken = default);
 }
