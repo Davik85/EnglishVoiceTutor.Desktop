@@ -164,7 +164,8 @@ def main() -> None:
     migrated_permission_authorizations = re.findall(r"RequireAuthorization\(AdminAuthorizationConstants\.(\w+PermissionPolicyName)\)", admin_endpoints)
     expected_permission_authorizations = [
         "AdminSelfReadPermissionPolicyName", "AdminCapabilitiesReadPermissionPolicyName", "ProductStatisticsReadPermissionPolicyName",
-        "UserLookupPermissionPolicyName", "UserOverviewPermissionPolicyName", "AuditLogViewPermissionPolicyName",
+        "UserLookupPermissionPolicyName", "UserOverviewPermissionPolicyName", "ManualPremiumGrantPermissionPolicyName", "ManualPremiumRevokePermissionPolicyName", "AuditLogViewPermissionPolicyName",
+        "FreeLessonResetPermissionPolicyName", "BillingCancelRenewalPermissionPolicyName",
         "CmsContentReadPermissionPolicyName", "CmsRuntimeStatusReadPermissionPolicyName", "CmsRuntimeStatusReadPermissionPolicyName",
         "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName",
         "CmsDraftSavePermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName",
@@ -179,7 +180,7 @@ def main() -> None:
         if policy != "AdminRoleManagementPermissionPolicyName"
     ]
     if existing_endpoint_authorizations != expected_permission_authorizations:
-        raise AssertionError(f"Exactly thirty-one existing endpoints may use permission policies after the controlled CMS authoring workflow endpoint batch migration. Got: {existing_endpoint_authorizations}")
+        raise AssertionError(f"Exactly thirty-five existing endpoints may use permission policies after the controlled user-impacting Admin action endpoint batch migration. Got: {existing_endpoint_authorizations}")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)", "new role assignment diagnostics endpoint")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "new role assignment diagnostics endpoint uses role-management permission")
     forbid(read("program"), "GetProductionRolePermissions()", "production role catalog endpoint enforcement")
