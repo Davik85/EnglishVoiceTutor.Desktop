@@ -88,6 +88,10 @@ Invoke-GateCommand "Admin UI role management policy" {
     python "tools/test_admin_ui_role_management_policy.py"
 }
 
+Invoke-GateCommand "Admin RBAC cutover validation pack" {
+    python "tools/test_admin_rbac_cutover_validation_pack.py"
+}
+
 Invoke-GateCommand "Admin roles permissions policy" {
     python "tools/test_admin_roles_permissions_policy.py"
 }

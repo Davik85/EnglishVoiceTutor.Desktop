@@ -4,7 +4,7 @@ This runbook is for owner-approved controlled validation only. It is not a broad
 
 ## Default state
 
-BootstrapAdmin fallback remains enabled by default for `AdminPermission:*` policies. The setting is:
+BootstrapAdmin fallback remains enabled by default for `AdminPermission:*` policies. The release gate now runs the Admin RBAC cutover validation static pack, which verifies cutover guardrails statically but does not perform a live cutover. The manual cutover smoke script remains opt-in and outside the release gate. The setting is:
 
 `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies`
 
@@ -27,7 +27,7 @@ If the setting is missing or set to `true`, fallback is enabled. If the setting 
 
 Complete all of the following before setting the fallback switch to `false`:
 
-1. The release gate passes.
+1. The release gate passes, including the Admin RBAC cutover validation static pack.
 2. A persistent first Owner/SuperAdmin exists.
 3. Actor mapping works for the operator account.
 4. Role-assignment diagnostics are healthy.
@@ -96,7 +96,7 @@ If validation fails or the owner cancels cutover:
 
 ## Warnings
 
-- Do not disable BootstrapAdmin fallback casually. Fallback remains enabled by default, and disabling it still requires an owner-approved configuration change plus backend reload/restart.
+- Do not disable BootstrapAdmin fallback casually. Fallback remains enabled by default, and disabling it still requires owner-approved controlled validation, rollback readiness, an owner-approved configuration change, and backend reload/restart.
 - Do not run mutation smoke scripts against production casually.
 - Do not expose credentials.
 - Do not paste tokens, cookies, passwords, raw claims, raw response bodies, connection strings, certificates, provider payloads, or `SafeMetadataJson` into logs.
