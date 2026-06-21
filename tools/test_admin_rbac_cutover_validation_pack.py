@@ -94,13 +94,36 @@ def main() -> None:
     require(script, "$AuthLoginPath = \"/api/auth/login\"", "existing auth login endpoint")
     require(script, "$RbacCutoverStatusPath = \"/api/admin/rbac/cutover-status\"", "RBAC cutover status endpoint")
     require(script, "bootstrapAdminFallbackForAdminPermissionPoliciesEnabled", "fallback status comparison field")
-    if re.search(r"ExpectedFallbackEnabled\.HasValue", script):
-        raise AssertionError("ExpectedFallbackEnabled must not use Nullable.HasValue; use an explicit provided-parameter check and normalization.")
-    require(script, "$PSBoundParameters.ContainsKey('ExpectedFallbackEnabled')", "robust ExpectedFallbackEnabled provided-value check")
-    require(script, "ConvertTo-OptionalBooleanParameter", "ExpectedFallbackEnabled normalization helper")
+    if ".HasValue" in script:
+        raise AssertionError("Cutover smoke script must not use Nullable.HasValue; use explicit PSBoundParameters presence checks.")
+    expected_value_member_pattern = re.compile(r"\$Expected[A-Za-z0-9_]+\.Value")
+    if expected_value_member_pattern.search(script):
+        raise AssertionError("Expected* parameters must not use nullable .Value; normalize explicit parameter values instead.")
+
+    expected_parameters = set(re.findall(r"\[object\]\$(Expected[A-Za-z0-9_]+)", script))
+    required_expected_parameters = {
+        "ExpectedFallbackEnabled",
+        "ExpectedActorMappingFound",
+        "ExpectedAdminPermissionEndpointStatus",
+        "ExpectedRoleManagementEndpointStatus",
+    }
+    if expected_parameters != required_expected_parameters:
+        raise AssertionError(f"Unexpected Expected* parameter set: {sorted(expected_parameters)}")
+
+    for parameter_name in sorted(required_expected_parameters):
+        require(script, f"$PSBoundParameters.ContainsKey('{parameter_name}')", f"robust {parameter_name} provided-value check")
+
+    require(script, "ConvertTo-OptionalBooleanParameter", "boolean Expected* normalization helper")
+    for boolean_parameter in ["ExpectedFallbackEnabled", "ExpectedActorMappingFound"]:
+        require(script, f'ConvertTo-OptionalBooleanParameter -ParameterName "{boolean_parameter}"', f"{boolean_parameter} boolean normalization")
     for supported_value in ['"true"', '"false"', '"1"', '"0"']:
-        require(script, supported_value, f"ExpectedFallbackEnabled supported value {supported_value}")
+        require(script, supported_value, f"boolean Expected* supported value {supported_value}")
+    require(script, "ConvertTo-ExpectedHttpStatusParameter", "HTTP status Expected* normalization helper")
+    for status_parameter in ["ExpectedAdminPermissionEndpointStatus", "ExpectedRoleManagementEndpointStatus"]:
+        require(script, f'ConvertTo-ExpectedHttpStatusParameter -ParameterName "{status_parameter}"', f"{status_parameter} HTTP status normalization")
     require(script, "expectedFallbackEnabledValue", "ExpectedFallbackEnabled normalized value is compared with backend status")
+    require(script, "expectedActorMappingFoundValue", "ExpectedActorMappingFound normalized value is compared with backend status")
+    require(script, "isActorMappingFound", "backend-reported actor mapping state is read safely")
 
     endpoints = set(re.findall(r'"(/[A-Za-z0-9_./{}?-]+)"', script))
     unexpected = sorted(endpoint for endpoint in endpoints if endpoint.startswith("/") and endpoint not in SAFE_ENDPOINTS)

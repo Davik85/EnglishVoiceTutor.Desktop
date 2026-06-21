@@ -27,9 +27,9 @@ param(
     [string]$AdminEmail,
     [string]$AdminPassword,
     [object]$ExpectedFallbackEnabled = $null,
-    [Nullable[bool]]$ExpectedActorMappingFound = $null,
-    [int]$ExpectedAdminPermissionEndpointStatus = 200,
-    [int]$ExpectedRoleManagementEndpointStatus = 200,
+    [object]$ExpectedActorMappingFound = $null,
+    [object]$ExpectedAdminPermissionEndpointStatus = 200,
+    [object]$ExpectedRoleManagementEndpointStatus = 200,
     [switch]$AllowProductionUrl,
     [switch]$ConfirmRbacCutoverValidation
 )
@@ -88,6 +88,45 @@ function ConvertTo-OptionalBooleanParameter {
     }
 
     throw "Parameter '$ParameterName' has an unsupported value. Use true, false, 1, or 0."
+}
+
+
+function ConvertTo-ExpectedHttpStatusParameter {
+    param(
+        [string]$ParameterName,
+        $Value
+    )
+
+    if ($null -eq $Value) {
+        throw "Parameter '$ParameterName' was provided without a value. Use an HTTP status code from 100 through 599."
+    }
+
+    $text = [string]$Value
+    $status = 0
+    if (-not [int]::TryParse($text.Trim(), [ref]$status) -or $status -lt 100 -or $status -gt 599) {
+        throw "Parameter '$ParameterName' has an unsupported value. Use an HTTP status code from 100 through 599."
+    }
+
+    return $status
+}
+
+function Invoke-ActorMappingStatus {
+    param(
+        [string]$Url,
+        [hashtable]$Headers
+    )
+
+    try {
+        return Invoke-RestMethod -Method $MethodGet -Uri $Url -Headers $Headers
+    }
+    catch {
+        if ($_.Exception.Response -and $_.Exception.Response.StatusCode) {
+            $statusCode = [int]$_.Exception.Response.StatusCode.value__
+            throw "Actor mapping status request failed with HTTP status $statusCode. Response body was not printed."
+        }
+
+        throw "Actor mapping status request failed before a status code was returned. Response body was not printed."
+    }
 }
 
 function Write-Step {
@@ -244,6 +283,10 @@ Assert-LoginInputs
 Write-Host "Admin RBAC cutover validation target: $BaseUrl"
 Write-Host "Fallback setting under validation: $FallbackSettingPath"
 $expectedFallbackEnabledProvided = $PSBoundParameters.ContainsKey('ExpectedFallbackEnabled')
+$expectedActorMappingFoundProvided = $PSBoundParameters.ContainsKey('ExpectedActorMappingFound')
+$expectedAdminPermissionEndpointStatusProvided = $PSBoundParameters.ContainsKey('ExpectedAdminPermissionEndpointStatus')
+$expectedRoleManagementEndpointStatusProvided = $PSBoundParameters.ContainsKey('ExpectedRoleManagementEndpointStatus')
+
 $expectedFallbackEnabledValue = $null
 if ($expectedFallbackEnabledProvided) {
     $expectedFallbackEnabledValue = ConvertTo-OptionalBooleanParameter -ParameterName "ExpectedFallbackEnabled" -Value $ExpectedFallbackEnabled
@@ -253,6 +296,20 @@ else {
     Write-Host "Expected fallback enabled: not asserted by this run"
 }
 
+$expectedActorMappingFoundValue = $null
+if ($expectedActorMappingFoundProvided) {
+    $expectedActorMappingFoundValue = ConvertTo-OptionalBooleanParameter -ParameterName "ExpectedActorMappingFound" -Value $ExpectedActorMappingFound
+    Write-Host ("Expected actor mapping found: {0}" -f $expectedActorMappingFoundValue)
+}
+else {
+    Write-Host "Expected actor mapping found: not asserted by this run"
+}
+
+$expectedAdminPermissionEndpointStatusValue = ConvertTo-ExpectedHttpStatusParameter -ParameterName "ExpectedAdminPermissionEndpointStatus" -Value $ExpectedAdminPermissionEndpointStatus
+$expectedRoleManagementEndpointStatusValue = ConvertTo-ExpectedHttpStatusParameter -ParameterName "ExpectedRoleManagementEndpointStatus" -Value $ExpectedRoleManagementEndpointStatus
+Write-Host ("Expected AdminPermission endpoint status: {0}{1}" -f $expectedAdminPermissionEndpointStatusValue, $(if ($expectedAdminPermissionEndpointStatusProvided) { "" } else { " (default)" }))
+Write-Host ("Expected role-management endpoint status: {0}{1}" -f $expectedRoleManagementEndpointStatusValue, $(if ($expectedRoleManagementEndpointStatusProvided) { "" } else { " (default)" }))
+
 Write-Step "Login using the existing admin smoke-test auth endpoint"
 $headers = Invoke-Login -Url "$BaseUrl$AuthLoginPath"
 
@@ -260,14 +317,14 @@ $failures = 0
 
 foreach ($endpoint in $AdminPermissionReadEndpoints) {
     $status = Invoke-StatusOnlyRequest -Method $MethodGet -Url "$BaseUrl$($endpoint.Path)" -Headers $headers -Body $null
-    $passed = $status -eq $ExpectedAdminPermissionEndpointStatus
+    $passed = $status -eq $expectedAdminPermissionEndpointStatusValue
     Write-SafeSummary -Label $endpoint.Label -StatusCode $status -Passed $passed
     if (-not $passed) { $failures++ }
 }
 
 foreach ($endpoint in $RoleManagementReadEndpoints) {
     $status = Invoke-StatusOnlyRequest -Method $MethodGet -Url "$BaseUrl$($endpoint.Path)" -Headers $headers -Body $null
-    $passed = $status -eq $ExpectedRoleManagementEndpointStatus
+    $passed = $status -eq $expectedRoleManagementEndpointStatusValue
     Write-SafeSummary -Label $endpoint.Label -StatusCode $status -Passed $passed
     if (-not $passed) { $failures++ }
 }
@@ -288,8 +345,17 @@ if ($expectedFallbackEnabledProvided) {
     if (-not $passed) { $failures++ }
 }
 
-if ($ExpectedActorMappingFound.HasValue) {
-    Write-Host ("[INFO] Expected actor mapping found: {0}. Verify this against backend diagnostics or Admin UI without pasting raw responses into logs." -f $ExpectedActorMappingFound.Value)
+Write-Step "Read safe backend-reported actor mapping status"
+$actorMappingStatus = Invoke-ActorMappingStatus -Url "$BaseUrl/api/admin/role-assignments/actor" -Headers $headers
+$actorMappingFound = [bool](Get-RequiredPropertyValue -Source $actorMappingStatus -PropertyName "isActorMappingFound")
+$actorMappingGeneratedAtUtc = Get-RequiredPropertyValue -Source $actorMappingStatus -PropertyName "generatedAtUtc"
+Write-Host ("[INFO] Actor mapping status: isActorMappingFound={0}; generatedAtUtc={1}" -f $actorMappingFound, $actorMappingGeneratedAtUtc)
+
+if ($expectedActorMappingFoundProvided) {
+    $passed = $actorMappingFound -eq $expectedActorMappingFoundValue
+    $result = if ($passed) { "PASS" } else { "FAIL" }
+    Write-Host ("[RESULT] Actor mapping found match: expected={0}; actual={1}; result={2}" -f $expectedActorMappingFoundValue, $actorMappingFound, $result)
+    if (-not $passed) { $failures++ }
 }
 
 if ($failures -gt 0) {
