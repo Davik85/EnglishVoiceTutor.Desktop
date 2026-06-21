@@ -274,6 +274,17 @@ def main() -> None:
     require(bootstrap_smoke_script, "$ActorPath = \"/api/admin/role-assignments/actor\"", "actor smoke endpoint path")
     require(bootstrap_smoke_script, "$DiagnosticsPath = \"/api/admin/role-assignments/diagnostics\"", "diagnostics smoke endpoint path")
     require(bootstrap_smoke_script, "if (-not $ConfirmCreateFirstOwner)", "confirmation guard before HTTP calls")
+    if "$Label:" in bootstrap_smoke_script:
+        raise AssertionError('Bootstrap smoke script must not contain fragile "$Label:" interpolation; use "${Label}:" or -f formatting.')
+    fragile_colon_interpolations = re.findall(
+        r'"[^"\r\n]*(?<!`)(\$[A-Za-z_][A-Za-z0-9_]*:)[^"\r\n]*"',
+        bootstrap_smoke_script,
+    )
+    if fragile_colon_interpolations:
+        raise AssertionError(
+            "Bootstrap smoke script must not contain double-quoted $<variable>: interpolation. "
+            f"Found: {fragile_colon_interpolations}"
+        )
 
     require(bootstrap_smoke_script, '$HealthPath = "/health"', "harmless backend health endpoint preflight path")
     require(bootstrap_smoke_script, "Test-BackendReachability", "backend reachability preflight helper")

@@ -89,7 +89,7 @@ function Write-SafeResult {
     )
 
     if ($null -eq $Body) {
-        Write-Host "[RESULT] $Label: no response body"
+        Write-Host "[RESULT] ${Label}: no response body"
         return
     }
 
@@ -116,7 +116,7 @@ function Write-SafeResult {
         }
     }
 
-    Write-Host "[RESULT] $Label:"
+    Write-Host "[RESULT] ${Label}:"
     $safe | ConvertTo-Json -Depth 5 | Write-Host
 }
 
