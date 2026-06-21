@@ -164,6 +164,56 @@ public sealed class AdminRoleAssignmentWriteService(
         return Success(request with { RoleId = null }, auditResult, "Admin user disabled.");
     }
 
+    public async Task<AdminRoleAssignmentWriteResult> EnableAdminAsync(
+        AdminRoleAssignmentWriteRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var safetyResult = await _safetyService.ValidateEnableAdminAsync(ToSafetyRequest(request with { RoleId = null }), cancellationToken);
+        if (!safetyResult.IsAllowed)
+        {
+            return await ReturnDeniedAsync(request with { RoleId = null }, AdminRoleAssignmentAuditConstants.ActionTypes.EnableAdmin, safetyResult, cancellationToken);
+        }
+
+        var target = await _dbContext.AdminUsers.SingleOrDefaultAsync(adminUser => adminUser.Id == request.TargetAdminUserId, cancellationToken);
+        if (target is null)
+        {
+            return await ReturnConflictAsync(request with { RoleId = null }, AdminRoleAssignmentAuditConstants.ActionTypes.EnableAdmin, "admin_role_assignment_target_not_found", "Target admin user does not exist.", cancellationToken);
+        }
+
+        if (!target.DisabledAtUtc.HasValue && string.Equals(target.Status, ActiveStatus, StringComparison.Ordinal))
+        {
+            return await ReturnConflictAsync(request with { RoleId = null }, AdminRoleAssignmentAuditConstants.ActionTypes.EnableAdmin, "admin_role_assignment_target_already_active", "Target admin user is already active.", cancellationToken);
+        }
+
+        if (!target.UserId.HasValue && string.IsNullOrWhiteSpace(target.NormalizedEmail))
+        {
+            return await ReturnConflictAsync(request with { RoleId = null }, AdminRoleAssignmentAuditConstants.ActionTypes.EnableAdmin, "admin_role_assignment_target_identity_insufficient", "Target admin user must have a linked app user id or normalized email before it can be enabled.", cancellationToken);
+        }
+
+        var occurredAtUtc = DateTimeOffset.UtcNow;
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        target.Status = ActiveStatus;
+        target.DisabledAtUtc = null;
+        target.UpdatedAtUtc = occurredAtUtc;
+
+        var auditResult = await _auditService.AppendAuditEventAsync(new AdminRoleAssignmentAuditRequest(
+            request.ActorAdminUserId,
+            request.TargetAdminUserId,
+            AdminRoleAssignmentAuditConstants.ActionTypes.EnableAdmin,
+            null,
+            request.Reason,
+            null,
+            null,
+            AdminRoleAssignmentAuditConstants.Results.Succeeded,
+            request.SafeMetadataJson), cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+        return Success(request with { RoleId = null }, auditResult, "Admin user enabled.");
+    }
+
     private static AdminRoleAssignmentSafetyCheckRequest ToSafetyRequest(AdminRoleAssignmentWriteRequest request) => new(
         request.ActorAdminUserId,
         request.TargetAdminUserId,

@@ -71,6 +71,39 @@ public sealed class AdminRoleAssignmentSafetyService(
         return BuildResult(violations, "admin_role_assignment_disable_denied", "Admin role assignment safety check denied disabling the admin user.");
     }
 
+    public async Task<AdminRoleAssignmentSafetyCheckResult> ValidateEnableAdminAsync(
+        AdminRoleAssignmentSafetyCheckRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var violations = ValidateSharedActorAndReasonRequirements(request);
+
+        if (request.TargetAdminUserId == Guid.Empty)
+        {
+            violations = AppendViolation(violations, "Target admin user id must not be empty.");
+        }
+
+        var target = await GetAdminUserSafetyStateAsync(request.TargetAdminUserId, cancellationToken);
+
+        if (target is null)
+        {
+            violations = AppendViolation(violations, "Target admin user does not exist.");
+        }
+        else
+        {
+            if (!target.IsDisabled)
+            {
+                violations = AppendViolation(violations, "Target admin user is already active.");
+            }
+
+            if (!target.HasSufficientIdentity)
+            {
+                violations = AppendViolation(violations, "Target admin user must have a linked app user id or normalized email before it can be enabled.");
+            }
+        }
+
+        return BuildResult(violations, "admin_role_assignment_enable_denied", "Admin role assignment safety check denied enabling the admin user.");
+    }
+
     private IReadOnlyList<string> ValidateSharedRoleChangeRequirements(
         AdminRoleAssignmentSafetyCheckRequest request,
         bool requireKnownRole)
@@ -99,6 +132,16 @@ public sealed class AdminRoleAssignmentSafetyService(
             violations = AppendViolation(violations, "A non-empty human-readable reason is required.");
         }
 
+        if (request.ActorAdminUserId == Guid.Empty)
+        {
+            violations = AppendViolation(violations, "Actor admin user id must not be empty.");
+        }
+
+        if (request.ActorRoleIds is null || request.ActorRoleIds.Count == 0)
+        {
+            violations = AppendViolation(violations, "Actor role ids must not be empty.");
+        }
+
         if (!CanManageRoles(request.ActorRoleIds))
         {
             violations = AppendViolation(violations, "Only Owner or SuperAdmin actors may manage Admin roles.");
@@ -119,8 +162,13 @@ public sealed class AdminRoleAssignmentSafetyService(
             .ContainsKey(roleId.Trim());
     }
 
-    private static bool CanManageRoles(IReadOnlyList<string> actorRoleIds)
+    private static bool CanManageRoles(IReadOnlyList<string>? actorRoleIds)
     {
+        if (actorRoleIds is null)
+        {
+            return false;
+        }
+
         return actorRoleIds.Any(roleId =>
             string.Equals(roleId, AdminRoleConstants.SuperAdmin, StringComparison.Ordinal) ||
             string.Equals(roleId, OwnerRoleId, StringComparison.OrdinalIgnoreCase));
@@ -146,6 +194,7 @@ public sealed class AdminRoleAssignmentSafetyService(
             .Select(adminUser => new AdminUserSafetyState(
                 adminUser.Id,
                 adminUser.DisabledAtUtc.HasValue || adminUser.Status != ActiveStatus,
+                adminUser.UserId.HasValue || !string.IsNullOrWhiteSpace(adminUser.NormalizedEmail),
                 adminUser.RoleAssignments.Any(role =>
                     role.RoleId == AdminRoleConstants.SuperAdmin &&
                     role.RevokedAtUtc == null)))
@@ -186,5 +235,6 @@ public sealed class AdminRoleAssignmentSafetyService(
     private sealed record AdminUserSafetyState(
         Guid AdminUserId,
         bool IsDisabled,
+        bool HasSufficientIdentity,
         bool HasActiveSuperAdminRole);
 }

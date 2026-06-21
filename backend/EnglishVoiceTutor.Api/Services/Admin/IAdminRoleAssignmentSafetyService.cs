@@ -13,4 +13,8 @@ public interface IAdminRoleAssignmentSafetyService
     Task<AdminRoleAssignmentSafetyCheckResult> ValidateDisableAdminAsync(
         AdminRoleAssignmentSafetyCheckRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<AdminRoleAssignmentSafetyCheckResult> ValidateEnableAdminAsync(
+        AdminRoleAssignmentSafetyCheckRequest request,
+        CancellationToken cancellationToken = default);
 }
