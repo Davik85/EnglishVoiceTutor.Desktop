@@ -16,7 +16,6 @@ public static class AdminEndpoints
     private const string EmailRequiredError = "Email query parameter is required.";
     private const string UserIdRouteKey = "userId";
     private const string EntitlementIdRouteKey = "entitlementId";
-    private const string RoleAssignmentActorMappingUnavailableErrorCode = "admin_role_assignment_actor_mapping_unavailable";
 
     public static void MapAdminEndpoints(this WebApplication app)
     {
@@ -197,16 +196,18 @@ public static class AdminEndpoints
     private static async Task<IResult> RevokeAdminRoleAssignmentAsync(
         [FromBody] AdminRoleAssignmentRevokeRequest request,
         ClaimsPrincipal principal,
+        IAdminRoleAssignmentActorResolver adminRoleAssignmentActorResolver,
         IAdminRoleAssignmentWriteService adminRoleAssignmentWriteService,
         CancellationToken cancellationToken)
     {
-        if (!TryResolvePersistentActor(principal, out var actorAdminUserId, out var actorRoleIds))
+        var actorResolution = await adminRoleAssignmentActorResolver.ResolveActorAsync(principal, cancellationToken);
+        if (!actorResolution.IsActorMappingFound || !actorResolution.ActorAdminUserId.HasValue)
         {
             return Results.Conflict(new AdminRoleAssignmentRevokeResponse
             {
                 Success = false,
-                ErrorCode = RoleAssignmentActorMappingUnavailableErrorCode,
-                Message = "Persistent Admin actor mapping is not available yet, so role assignment revocation is disabled until safe actor identity and actor role resolution are completed.",
+                ErrorCode = actorResolution.ErrorCode ?? AdminRoleAssignmentActorResolver.ActorMappingUnavailableErrorCode,
+                Message = actorResolution.Message ?? "Persistent Admin actor mapping is not available for the authenticated principal, so role assignment revocation is disabled until safe actor identity and actor role resolution are available.",
                 AuditEventId = null,
                 TargetAdminUserId = request.TargetAdminUserId,
                 RoleId = request.RoleId,
@@ -215,31 +216,15 @@ public static class AdminEndpoints
         }
 
         var writeResult = await adminRoleAssignmentWriteService.RevokeRoleAsync(new AdminRoleAssignmentWriteRequest(
-            actorAdminUserId,
+            actorResolution.ActorAdminUserId.Value,
             request.TargetAdminUserId,
             request.RoleId,
-            actorRoleIds,
+            actorResolution.ActorRoleIds,
             request.Reason,
             request.SafeMetadataJson), cancellationToken);
 
         var response = ToAdminRoleAssignmentRevokeResponse(writeResult);
         return writeResult.IsSuccess ? Results.Ok(response) : Results.Conflict(response);
-    }
-
-    private static bool TryResolvePersistentActor(
-        ClaimsPrincipal principal,
-        out Guid actorAdminUserId,
-        out IReadOnlyList<string> actorRoleIds)
-    {
-        _ = principal;
-        actorAdminUserId = Guid.Empty;
-        actorRoleIds = [];
-
-        // Persistent Admin role assignments are intentionally not active in runtime authorization yet.
-        // Until a trusted mapping from the authenticated admin principal to persistent AdminUser and
-        // persistent actor roles exists, the external revoke endpoint fails closed instead of trusting
-        // client-supplied actorAdminUserId or actorRoleIds.
-        return false;
     }
 
     private static AdminRoleAssignmentRevokeResponse ToAdminRoleAssignmentRevokeResponse(AdminRoleAssignmentWriteResult result) => new()

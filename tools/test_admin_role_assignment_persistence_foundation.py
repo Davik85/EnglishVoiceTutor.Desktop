@@ -17,6 +17,9 @@ PROGRAM = ROOT / "backend/EnglishVoiceTutor.Api/Program.cs"
 ADMIN_ROLE_READ_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentReadService.cs"
 ADMIN_ROLE_READ_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentReadService.cs"
 ADMIN_ROLE_READ_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentReadResult.cs"
+ADMIN_ROLE_ACTOR_RESOLVER = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentActorResolver.cs"
+ADMIN_ROLE_ACTOR_RESOLVER_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentActorResolver.cs"
+ADMIN_ROLE_ACTOR_RESOLUTION_RESULT = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentActorResolutionResult.cs"
 ADMIN_ROLE_SAFETY_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentSafetyService.cs"
 ADMIN_ROLE_SAFETY_INTERFACE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/IAdminRoleAssignmentSafetyService.cs"
 ADMIN_ROLE_SAFETY_REQUEST = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminRoleAssignmentSafetyCheckRequest.cs"
@@ -128,6 +131,9 @@ def main() -> None:
     admin_role_read_service = read(ADMIN_ROLE_READ_SERVICE)
     admin_role_read_interface = read(ADMIN_ROLE_READ_INTERFACE)
     admin_role_read_result = read(ADMIN_ROLE_READ_RESULT)
+    admin_role_actor_resolver = read(ADMIN_ROLE_ACTOR_RESOLVER)
+    admin_role_actor_resolver_interface = read(ADMIN_ROLE_ACTOR_RESOLVER_INTERFACE)
+    admin_role_actor_resolution_result = read(ADMIN_ROLE_ACTOR_RESOLUTION_RESULT)
     admin_role_safety_service = read(ADMIN_ROLE_SAFETY_SERVICE)
     admin_role_safety_interface = read(ADMIN_ROLE_SAFETY_INTERFACE)
     admin_role_safety_request = read(ADMIN_ROLE_SAFETY_REQUEST)
@@ -223,6 +229,25 @@ def main() -> None:
 
 
 
+
+
+    require(admin_role_actor_resolver_interface, "public interface IAdminRoleAssignmentActorResolver", "actor resolver interface")
+    require(admin_role_actor_resolver_interface, "ResolveActorAsync", "actor resolver method")
+    require(admin_role_actor_resolver_interface, "ClaimsPrincipal principal", "actor resolver trusted principal input")
+    require(admin_role_actor_resolution_result, "public sealed record AdminRoleAssignmentActorResolutionResult", "actor resolution result record")
+    for field in ["Guid? ActorAdminUserId", "IReadOnlyList<string> ActorRoleIds", "bool IsActorMappingFound", "string? ErrorCode", "string? Message"]:
+        require(admin_role_actor_resolution_result, field, f"actor resolution result field {field}")
+    require(admin_role_actor_resolver, "public sealed class AdminRoleAssignmentActorResolver", "actor resolver implementation")
+    require(admin_role_actor_resolver, "IAdminRoleAssignmentReadService adminRoleAssignmentReadService", "actor resolver read service dependency")
+    require(admin_role_actor_resolver, "ClaimsUserAccessor.TryGetUserId(principal)", "actor resolver reads trusted user id claim")
+    require(admin_role_actor_resolver, "ClaimsUserAccessor.TryGetUserEmail(principal)", "actor resolver reads trusted email claim")
+    require(admin_role_actor_resolver, "GetEffectiveRolesByUserIdAsync", "actor resolver uses user-id read path")
+    require(admin_role_actor_resolver, "GetEffectiveRolesByNormalizedEmailAsync", "actor resolver uses normalized-email read path")
+    require(admin_role_actor_resolver, "admin_role_assignment_actor_mapping_unavailable", "actor resolver stable fail-closed error code")
+    require(program, "AddScoped<IAdminRoleAssignmentActorResolver, AdminRoleAssignmentActorResolver>()", "actor resolver DI registration")
+    for forbidden in ["AdminRoleAssignmentRevokeRequest", "ActorAdminUserId", "ActorRoleIds", "[FromBody]", "Request.Body", ".Add(", ".AddAsync(", ".Attach(", ".Update(", ".Remove(", "SaveChanges", "ExecuteUpdate", "ExecuteDelete"]:
+        if forbidden in admin_role_actor_resolver:
+            raise AssertionError(f"AdminRoleAssignmentActorResolver must use trusted server-side principal/read service only and stay read-only: {forbidden}")
 
     require(admin_role_safety_interface, "public interface IAdminRoleAssignmentSafetyService", "safety service interface")
     require(admin_role_safety_interface, "ValidateAssignRoleAsync", "assign-role safety method")
@@ -423,7 +448,7 @@ def main() -> None:
         if forbidden in admin_role_read_service:
             raise AssertionError(f"AdminRoleAssignmentReadService must stay read-only and must not use: {forbidden}")
 
-    for forbidden in ["IAdminRoleAssignmentReadService", "AdminRoleAssignmentReadService", "IAdminRoleAssignmentSafetyService", "AdminRoleAssignmentSafetyService", "IAdminRoleAssignmentAuditService", "AdminRoleAssignmentAuditService", "IAdminRoleAssignmentWriteService", "AdminRoleAssignmentWriteService", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
+    for forbidden in ["IAdminRoleAssignmentReadService", "AdminRoleAssignmentReadService", "IAdminRoleAssignmentActorResolver", "AdminRoleAssignmentActorResolver", "IAdminRoleAssignmentSafetyService", "AdminRoleAssignmentSafetyService", "IAdminRoleAssignmentAuditService", "AdminRoleAssignmentAuditService", "IAdminRoleAssignmentWriteService", "AdminRoleAssignmentWriteService", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
         if forbidden in admin_handler:
             raise AssertionError("AdminPermissionAuthorizationHandler must not read persistent admin role assignment tables yet.")
 
@@ -454,10 +479,13 @@ def main() -> None:
     revoke_handler_start = admin_endpoints.index("private static async Task<IResult> RevokeAdminRoleAssignmentAsync")
     revoke_handler_end = admin_endpoints.index("private static async Task<IResult> GetAdminUserByEmailAsync")
     revoke_handler = admin_endpoints[revoke_handler_start:revoke_handler_end]
+    require(revoke_handler, "IAdminRoleAssignmentActorResolver adminRoleAssignmentActorResolver", "revoke endpoint actor resolver dependency")
     require(revoke_handler, "IAdminRoleAssignmentWriteService adminRoleAssignmentWriteService", "revoke endpoint write service dependency")
+    require(revoke_handler, "adminRoleAssignmentActorResolver.ResolveActorAsync(principal, cancellationToken)", "revoke endpoint calls actor resolver")
+    require(revoke_handler, "AdminRoleAssignmentActorResolver.ActorMappingUnavailableErrorCode", "revoke endpoint stable fail-closed actor mapping error")
+    require(revoke_handler, "actorResolution.ActorAdminUserId.Value", "revoke endpoint passes resolver actor id to write service")
+    require(revoke_handler, "actorResolution.ActorRoleIds", "revoke endpoint passes resolver actor roles to write service")
     require(revoke_handler, "adminRoleAssignmentWriteService.RevokeRoleAsync", "revoke endpoint calls write service revoke")
-    require(revoke_handler, "TryResolvePersistentActor(principal, out var actorAdminUserId, out var actorRoleIds)", "revoke endpoint derives actor server-side")
-    require(revoke_handler, "return false;", "revoke endpoint fails closed until actor mapping exists")
     require(admin_role_revoke_request, "public sealed class AdminRoleAssignmentRevokeRequest", "revoke endpoint request contract")
     for field in ["Guid TargetAdminUserId", "string? RoleId", "string? Reason", "string? SafeMetadataJson"]:
         require(admin_role_revoke_request, field, f"revoke request field {field}")
