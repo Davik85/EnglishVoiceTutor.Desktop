@@ -24,6 +24,7 @@ PRODUCTION_PERMISSION_POLICIES = {
     "AdminCapabilitiesReadPermissionPolicyName": ("AdminCapabilitiesRead", "admin.capabilities.read"),
     "ProductStatisticsReadPermissionPolicyName": ("ProductStatisticsRead", "product_statistics.read"),
     "CmsRuntimeStatusReadPermissionPolicyName": ("CmsRuntimeStatusRead", "cms.runtime_status.read"),
+    "CmsContentReadPermissionPolicyName": ("CmsContentRead", "cms.content.read"),
     "CmsDraftSavePermissionPolicyName": ("CmsContentWriteDraft", "cms.content.write_draft"),
     "CmsPublishPermissionPolicyName": ("CmsContentPublish", "cms.content.publish"),
     "CmsRestorePermissionPolicyName": ("CmsContentRestore", "cms.content.restore"),
@@ -69,6 +70,13 @@ MIGRATED_ENDPOINTS = [
         "route_constant": "AdminDevCmsRuntimeStatusRoute",
         "permission_constant": "CmsRuntimeStatusRead",
         "policy_constant": "CmsRuntimeStatusReadPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.cms.content_packs.list",
+        "method": "GET",
+        "route_constant": "AdminDevCmsContentPacksRoute",
+        "permission_constant": "CmsContentRead",
+        "policy_constant": "CmsContentReadPermissionPolicyName",
     },
 ]
 
@@ -268,8 +276,8 @@ def main() -> None:
     ]
     if migrated_authorizations != expected_migrations:
         raise AssertionError(
-            "Exactly four Admin endpoints must use AdminPermission:* policies, and they must be "
-            f"the admin identity, capabilities, product statistics overview, and CMS runtime status endpoints. Got: {migrated_authorizations}"
+            "Exactly five Admin endpoints must use AdminPermission:* policies, and they must be "
+            f"the admin identity, capabilities, product statistics overview, CMS runtime status, and CMS content-packs list endpoints. Got: {migrated_authorizations}"
         )
 
     for method, route, policy in endpoint_authorizations:
@@ -298,6 +306,11 @@ def main() -> None:
     cms_runtime_authorization = ("GET", "AdminDevCmsRuntimeStatusRoute", "CmsRuntimeStatusReadPermissionPolicyName")
     if cms_runtime_authorization not in migrated_authorizations:
         raise AssertionError("CMS runtime status endpoint must be migrated as GET-only to CmsRuntimeStatusReadPermissionPolicyName")
+    cms_content_authorization = ("GET", "AdminDevCmsContentPacksRoute", "CmsContentReadPermissionPolicyName")
+    if cms_content_authorization not in migrated_authorizations:
+        raise AssertionError("CMS content-packs list endpoint must be migrated as GET-only to CmsContentReadPermissionPolicyName")
+    if ("GET", "AdminDevCmsContentPacksRoute", "BootstrapAdminPolicyName") in endpoint_authorizations:
+        raise AssertionError("CMS content-packs list endpoint must not use BootstrapAdminPolicyName after migration")
     forbidden_cms_migrated_routes = {
         "AdminDevCmsStaticContentImportRoute", "AdminDevCmsStaticJsonV1InitializeRoute",
         "AdminDevCmsPublishedContentStatusRoute", "AdminDevCmsRuntimeContentStatusRoute",
@@ -329,6 +342,7 @@ def main() -> None:
     require(catalog_service, "AdminPermissionConstants.AdminCapabilitiesRead", "BootstrapAdmin catalog includes admin.capabilities.read")
     require(catalog_service, "AdminPermissionConstants.ProductStatisticsRead", "BootstrapAdmin catalog includes product_statistics.read")
     require(catalog_service, "AdminPermissionConstants.CmsRuntimeStatusRead", "BootstrapAdmin catalog includes cms.runtime_status.read")
+    require(catalog_service, "AdminPermissionConstants.CmsContentRead", "BootstrapAdmin catalog includes cms.content.read")
 
     dangerous_or_deferred_policies = set(DANGEROUS_POLICY_CONSTANTS) | {
         "CmsDraftSavePermissionPolicyName",

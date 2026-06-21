@@ -91,7 +91,7 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.CmsRuntimeStatusReadPermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminDevCmsContentPacksRoute, ListCmsContentPacksAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminDevCmsContentPackRoute, GetCmsContentPackSummaryAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
