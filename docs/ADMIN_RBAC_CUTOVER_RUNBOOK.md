@@ -78,8 +78,11 @@ Use placeholder accounts such as `<admin-email>` in notes. Do not paste real cre
 8. Test role-management read endpoints through the smoke script:
    - `GET /api/admin/role-assignments/actor`
    - `GET /api/admin/role-assignments/diagnostics`
-9. Confirm BootstrapAdmin-only CMS import/init endpoints are still intentionally separate and remain BootstrapAdmin-protected. Do not call CMS import/init as part of this cutover smoke.
-10. Record only safe status summaries and owner approval metadata. Do not record raw response bodies, raw claims, tokens, cookies, passwords, `SafeMetadataJson`, or secrets.
+   - `GET /api/admin/rbac/cutover-status` (safe read-only status: effective fallback enabled, default enabled, config key, config-value-present summary, persistent role authorization enabled, and generated timestamp)
+9. Confirm the smoke script compares `-ExpectedFallbackEnabled` with the backend-reported `GET /api/admin/rbac/cutover-status` value when that parameter is provided. The script still does not change backend configuration.
+10. Confirm the Admin UI Role Management page displays the RBAC cutover status read-only and does not expose a fallback toggle or disable control.
+11. Confirm BootstrapAdmin-only CMS import/init endpoints are still intentionally separate and remain BootstrapAdmin-protected. Do not call CMS import/init as part of this cutover smoke.
+12. Record only safe status summaries and owner approval metadata. Do not record raw response bodies, raw claims, tokens, cookies, passwords, `SafeMetadataJson`, or secrets.
 
 ## Rollback
 
@@ -93,7 +96,7 @@ If validation fails or the owner cancels cutover:
 
 ## Warnings
 
-- Do not disable BootstrapAdmin fallback casually.
+- Do not disable BootstrapAdmin fallback casually. Fallback remains enabled by default, and disabling it still requires an owner-approved configuration change plus backend reload/restart.
 - Do not run mutation smoke scripts against production casually.
 - Do not expose credentials.
 - Do not paste tokens, cookies, passwords, raw claims, raw response bodies, connection strings, certificates, provider payloads, or `SafeMetadataJson` into logs.

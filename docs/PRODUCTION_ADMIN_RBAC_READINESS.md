@@ -434,3 +434,12 @@ When the switch is enabled, persistent active Admin role assignments are evaluat
 This switch affects only `AdminPermission:*` policy fallback behavior. BootstrapAdmin-only endpoints, including CMS import/init endpoints, remain BootstrapAdmin-protected. Role-assignment management endpoints remain protected by `AdminRoleManagementPermissionPolicyName`.
 
 Do not disable the fallback until persistent Owner/SuperAdmin mapping, actor resolution, diagnostics, and the expected critical role assignments have been validated in the target environment. Production Admin RBAC remains incomplete until operational validation, fallback cutover execution, rollback procedures, and final production checks are completed.
+
+
+## Safe RBAC cutover status surface
+
+A safe read-only backend status endpoint now exists at `GET /api/admin/rbac/cutover-status` behind `AdminRoleManagementPermissionPolicyName`. It reports only safe cutover fields, including the effective BootstrapAdmin fallback setting for `AdminPermission:*` policies, the default-enabled behavior, whether the configuration value is present, persistent role authorization status, mode text, and `generatedAtUtc`.
+
+The Admin UI Role Management page displays this cutover status read-only. There is no Admin UI toggle or control to disable fallback. The cutover smoke validates `-ExpectedFallbackEnabled` against the backend-reported status when the parameter is provided.
+
+Fallback remains enabled by default. Disabling fallback still requires an owner-approved config change to `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies=false` and backend reload/restart through the documented operational process. Production Admin RBAC remains incomplete until controlled cutover and rollback validation are completed.

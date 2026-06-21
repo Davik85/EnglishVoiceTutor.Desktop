@@ -89,6 +89,7 @@ public static class ApiConstants
     public const string AdminCapabilitiesRoute = "/api/admin/capabilities";
     public const string AdminStatisticsOverviewRoute = "/api/admin/statistics/overview";
     public const string AdminRoleAssignmentDiagnosticsRoute = "/api/admin/role-assignments/diagnostics";
+    public const string AdminRbacCutoverStatusRoute = "/api/admin/rbac/cutover-status";
     public const string AdminRoleAssignmentActorRoute = "/api/admin/role-assignments/actor";
     public const string AdminRoleAssignmentRevokeRoute = "/api/admin/role-assignments/revoke";
     public const string AdminRoleAssignmentAssignRoute = "/api/admin/role-assignments/assign";

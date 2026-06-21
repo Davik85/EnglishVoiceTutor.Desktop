@@ -487,7 +487,7 @@ def main() -> None:
     migrated_authorizations = [
         (method.upper(), route, policy)
         for method, route, policy in endpoint_authorizations
-        if policy in permission_policy_constants and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute", "AdminRoleAssignmentAssignRoute", "AdminRoleAssignmentBootstrapFirstOwnerRoute", "AdminRoleAssignmentDisableAdminRoute", "AdminRoleAssignmentProvisionAdminUserRoute", "AdminRoleAssignmentEnableAdminRoute"}
+        if policy in permission_policy_constants and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute", "AdminRoleAssignmentAssignRoute", "AdminRoleAssignmentBootstrapFirstOwnerRoute", "AdminRoleAssignmentDisableAdminRoute", "AdminRoleAssignmentProvisionAdminUserRoute", "AdminRoleAssignmentEnableAdminRoute", "AdminRbacCutoverStatusRoute"}
     ]
     expected_migrations = [
         (
@@ -506,6 +506,8 @@ def main() -> None:
         if (method.upper(), route, policy) in expected_migrations:
             continue
         if route == "AdminRoleAssignmentDiagnosticsRoute" and method.upper() == "GET" and policy == "AdminRoleManagementPermissionPolicyName":
+            continue
+        if route == "AdminRbacCutoverStatusRoute" and method.upper() == "GET" and policy == "AdminRoleManagementPermissionPolicyName":
             continue
         if route == "AdminRoleAssignmentActorRoute" and method.upper() == "GET" and policy == "AdminRoleManagementPermissionPolicyName":
             continue

@@ -54,8 +54,11 @@ $AdminPermissionReadEndpoints = @(
 
 $RoleManagementReadEndpoints = @(
     @{ Label = "role assignment actor mapping"; Path = "/api/admin/role-assignments/actor" },
-    @{ Label = "role assignment diagnostics"; Path = "/api/admin/role-assignments/diagnostics" }
+    @{ Label = "role assignment diagnostics"; Path = "/api/admin/role-assignments/diagnostics" },
+    @{ Label = "RBAC cutover status"; Path = "/api/admin/rbac/cutover-status" }
 )
+
+$RbacCutoverStatusPath = "/api/admin/rbac/cutover-status"
 
 function Write-Step {
     param([string]$Message)
@@ -142,6 +145,38 @@ function Invoke-StatusOnlyRequest {
     }
 }
 
+function Invoke-RbacCutoverStatus {
+    param(
+        [string]$Url,
+        [hashtable]$Headers
+    )
+
+    try {
+        return Invoke-RestMethod -Method $MethodGet -Uri $Url -Headers $Headers
+    }
+    catch {
+        if ($_.Exception.Response -and $_.Exception.Response.StatusCode) {
+            $statusCode = [int]$_.Exception.Response.StatusCode.value__
+            throw "RBAC cutover status request failed with HTTP status $statusCode. Response body was not printed."
+        }
+
+        throw "RBAC cutover status request failed before a status code was returned. Response body was not printed."
+    }
+}
+
+function Get-RequiredPropertyValue {
+    param(
+        $Source,
+        [string]$PropertyName
+    )
+
+    if ($null -eq $Source -or -not ($Source.PSObject.Properties.Name -contains $PropertyName)) {
+        throw "RBAC cutover status response did not include required property '$PropertyName'."
+    }
+
+    return $Source.$PropertyName
+}
+
 function Invoke-Login {
     param([string]$Url)
 
@@ -201,6 +236,22 @@ foreach ($endpoint in $RoleManagementReadEndpoints) {
     $status = Invoke-StatusOnlyRequest -Method $MethodGet -Url "$BaseUrl$($endpoint.Path)" -Headers $headers -Body $null
     $passed = $status -eq $ExpectedRoleManagementEndpointStatus
     Write-SafeSummary -Label $endpoint.Label -StatusCode $status -Passed $passed
+    if (-not $passed) { $failures++ }
+}
+
+Write-Step "Read safe backend-reported RBAC cutover status"
+$cutoverStatus = Invoke-RbacCutoverStatus -Url "$BaseUrl$RbacCutoverStatusPath" -Headers $headers
+$effectiveFallbackEnabled = [bool](Get-RequiredPropertyValue -Source $cutoverStatus -PropertyName "bootstrapAdminFallbackForAdminPermissionPoliciesEnabled")
+$defaultFallbackEnabled = [bool](Get-RequiredPropertyValue -Source $cutoverStatus -PropertyName "bootstrapAdminFallbackDefaultEnabled")
+$configValuePresent = [bool](Get-RequiredPropertyValue -Source $cutoverStatus -PropertyName "bootstrapAdminFallbackConfigurationValuePresent")
+$persistentRoleAuthorizationEnabled = [bool](Get-RequiredPropertyValue -Source $cutoverStatus -PropertyName "persistentRoleAuthorizationEnabled")
+$generatedAtUtc = Get-RequiredPropertyValue -Source $cutoverStatus -PropertyName "generatedAtUtc"
+Write-Host ("[INFO] RBAC cutover status: fallbackEnabled={0}; defaultFallbackEnabled={1}; configValuePresent={2}; persistentRoleAuthorizationEnabled={3}; generatedAtUtc={4}" -f $effectiveFallbackEnabled, $defaultFallbackEnabled, $configValuePresent, $persistentRoleAuthorizationEnabled, $generatedAtUtc)
+
+if ($ExpectedFallbackEnabled.HasValue) {
+    $passed = $effectiveFallbackEnabled -eq $ExpectedFallbackEnabled.Value
+    $result = if ($passed) { "PASS" } else { "FAIL" }
+    Write-Host ("[RESULT] RBAC cutover status fallback match: expected={0}; actual={1}; result={2}" -f $ExpectedFallbackEnabled.Value, $effectiveFallbackEnabled, $result)
     if (-not $passed) { $failures++ }
 }
 

@@ -32,6 +32,7 @@
         cmsRuntimeStatus: "/api/admin/dev/cms/runtime-status",
         roleAssignmentActor: "/api/admin/role-assignments/actor",
         roleAssignmentDiagnostics: "/api/admin/role-assignments/diagnostics",
+        rbacCutoverStatus: "/api/admin/rbac/cutover-status",
         roleAssignmentProvisionAdminUser: "/api/admin/role-assignments/provision-admin-user",
         roleAssignmentAssign: "/api/admin/role-assignments/assign",
         roleAssignmentRevoke: "/api/admin/role-assignments/revoke",
@@ -164,6 +165,7 @@
     const roleManagementWarningElement = document.getElementById("role-management-warning");
     const roleManagementActorElement = document.getElementById("role-management-actor");
     const roleManagementDiagnosticsElement = document.getElementById("role-management-diagnostics");
+    const roleManagementCutoverStatusElement = document.getElementById("role-management-cutover-status");
     const roleManagementUsersElement = document.getElementById("role-management-users");
     const roleManagementForms = Array.from(document.querySelectorAll(".role-management-form"));
     let roleManagementActorMappingFound = false;
@@ -2340,16 +2342,29 @@
         ], Array.isArray(users) ? users : [], "No AdminUsers are exposed by diagnostics.");
     }
 
+    function renderRoleManagementCutoverStatus(status) {
+        appendDefinitionRows(roleManagementCutoverStatusElement, [
+            ["Fallback enabled", getResponseValue(status, "bootstrapAdminFallbackForAdminPermissionPoliciesEnabled", false) ? "Yes" : "No"],
+            ["Default fallback enabled", getResponseValue(status, "bootstrapAdminFallbackDefaultEnabled", false) ? "Yes" : "No"],
+            ["Config key", getResponseValue(status, "bootstrapAdminFallbackConfigurationKey", "-")],
+            ["Config value present", getResponseValue(status, "bootstrapAdminFallbackConfigurationValuePresent", false) ? "Yes" : "No"],
+            ["Persistent role authorization enabled", getResponseValue(status, "persistentRoleAuthorizationEnabled", false) ? "Yes" : "No"],
+            ["Generated at (UTC)", getResponseValue(status, "generatedAtUtc", "-")]
+        ]);
+    }
+
     async function loadRoleManagementData() {
         roleManagementErrorElement.textContent = "";
         setRoleManagementLoading(true);
         try {
-            const [actor, diagnostics] = await Promise.all([
+            const [actor, diagnostics, cutoverStatus] = await Promise.all([
                 adminFetch(ApiPaths.roleAssignmentActor),
-                adminFetch(ApiPaths.roleAssignmentDiagnostics)
+                adminFetch(ApiPaths.roleAssignmentDiagnostics),
+                adminFetch(ApiPaths.rbacCutoverStatus)
             ]);
             renderRoleManagementActor(actor);
             renderRoleManagementDiagnostics(diagnostics);
+            renderRoleManagementCutoverStatus(cutoverStatus);
         } catch (_) {
             roleManagementErrorElement.textContent = ErrorMessages.roleManagementLoadFailed;
         } finally {
