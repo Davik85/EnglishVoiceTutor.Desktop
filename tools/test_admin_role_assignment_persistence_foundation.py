@@ -48,6 +48,9 @@ ADMIN_ROLE_REVOKE_RESPONSE = ROOT / "backend/EnglishVoiceTutor.Api/Contracts/Adm
 API_CONSTANTS = ROOT / "backend/EnglishVoiceTutor.Api/Constants/ApiConstants.cs"
 ADMIN_ENDPOINT_PERMISSION_CATALOG = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminEndpointPermissionCatalog.cs"
 ADMIN_ENDPOINTS = ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs"
+RELEASE_GATE = ROOT / "tools/run_desktop_release_gate.ps1"
+BOOTSTRAP_SMOKE_SCRIPT = ROOT / "tools/smoke_admin_role_assignment_bootstrap_first_owner.ps1"
+BOOTSTRAP_RUNBOOK = ROOT / "docs/ADMIN_ROLE_ASSIGNMENT_BOOTSTRAP_RUNBOOK.md"
 DESKTOP_ROOT = ROOT
 ADMIN_UI_ROOT = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin"
 
@@ -168,6 +171,48 @@ def main() -> None:
     admin_role_revoke_response = read(ADMIN_ROLE_REVOKE_RESPONSE)
     api_constants = read(API_CONSTANTS)
     endpoint_permission_catalog = read(ADMIN_ENDPOINT_PERMISSION_CATALOG)
+    release_gate = read(RELEASE_GATE)
+    bootstrap_smoke_script = read(BOOTSTRAP_SMOKE_SCRIPT)
+    bootstrap_runbook = read(BOOTSTRAP_RUNBOOK)
+
+
+    require(bootstrap_smoke_script, "ConfirmCreateFirstOwner", "explicit first-owner bootstrap smoke confirmation flag")
+    require(bootstrap_smoke_script, "AllowProductionUrl", "explicit production/non-local URL override flag")
+    require(bootstrap_smoke_script, "http://localhost:5000", "local-only default BaseUrl convention")
+    require(bootstrap_smoke_script, "$BootstrapFirstOwnerPath = \"/api/admin/role-assignments/bootstrap-first-owner\"", "bootstrap smoke endpoint path")
+    require(bootstrap_smoke_script, "$ActorPath = \"/api/admin/role-assignments/actor\"", "actor smoke endpoint path")
+    require(bootstrap_smoke_script, "$DiagnosticsPath = \"/api/admin/role-assignments/diagnostics\"", "diagnostics smoke endpoint path")
+    require(bootstrap_smoke_script, "if (-not $ConfirmCreateFirstOwner)", "confirmation guard before HTTP calls")
+    first_http_call_index = min(index for index in [bootstrap_smoke_script.find("Invoke-RestMethod"), bootstrap_smoke_script.find("Invoke-WebRequest")] if index != -1)
+    confirmation_guard_index = bootstrap_smoke_script.index("if (-not $ConfirmCreateFirstOwner)")
+    if confirmation_guard_index > first_http_call_index:
+        raise AssertionError("Bootstrap smoke confirmation guard must appear before any HTTP call helper invocation.")
+    if "smoke_admin_role_assignment_bootstrap_first_owner.ps1" in release_gate:
+        raise AssertionError("First-owner bootstrap smoke script must not be referenced by the desktop release gate.")
+    if re.search(r"https://api\.languagevoicetutor\.com\s*['\"]?\s*(?:,|\)|$)", bootstrap_smoke_script):
+        raise AssertionError("First-owner bootstrap smoke script must not target production by default.")
+    for unsafe_literal in ["PADDLE_API_KEY", "PADDLE_WEBHOOK_SECRET", "BEGIN PRIVATE KEY", "eyJhbGci", "sk-", "password123", "admin@", "owner@"]:
+        if unsafe_literal.lower() in bootstrap_smoke_script.lower() or unsafe_literal.lower() in bootstrap_runbook.lower():
+            raise AssertionError(f"Bootstrap smoke/runbook must not contain secrets, tokens, or real admin email-like values: {unsafe_literal}")
+    bootstrap_body_match = re.search(r"\$bootstrapBody\s*=\s*@\{(?P<body>[\s\S]*?)\n\}", bootstrap_smoke_script)
+    if not bootstrap_body_match:
+        raise AssertionError("Bootstrap smoke script must build an explicit bootstrap request body hashtable.")
+    bootstrap_body = bootstrap_body_match.group("body")
+    for required_body_field in ["reason = $Reason", "safeMetadataJson = $SafeMetadataJson"]:
+        require(bootstrap_body, required_body_field, f"bootstrap smoke request body field {required_body_field}")
+    for forbidden_body_field in ["appUserId", "normalizedEmail", "email", "targetAdminUserId", "actorAdminUserId", "actorRoleIds", "roleId"]:
+        if re.search(rf"(^|[^A-Za-z]){forbidden_body_field}\s*=", bootstrap_body, flags=re.IGNORECASE):
+            raise AssertionError(f"Bootstrap smoke request body must not send {forbidden_body_field}.")
+    for runbook_phrase in [
+        "controlled manual validation operation only",
+        "creates only the first persistent Owner/SuperAdmin-equivalent mapping",
+        "server-side authenticated claims",
+        "Persistent roles are still not active in global authorization",
+        "AdminPermissionAuthorizationHandler still does not use persistent role read, safety, audit, write, actor, or bootstrap services",
+        "Admin UI role management still does not exist",
+        "database/audit-aware operations",
+    ]:
+        require(bootstrap_runbook, runbook_phrase, f"bootstrap runbook phrase: {runbook_phrase}")
 
     migration_id = migration_path.name.removesuffix(".cs")
     require(migration_designer, f'[Migration("{migration_id}")]', "matching EF migration metadata id")
