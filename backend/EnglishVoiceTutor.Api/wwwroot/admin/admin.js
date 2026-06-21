@@ -29,7 +29,14 @@
         cmsRestoreTemplate: "/api/admin/dev/cms/content-packs/{slug}/versions/{versionNumber}/restore",
         cmsAuditEntriesTemplate: "/api/admin/dev/cms/content-packs/{slug}/audit-entries",
         cmsStaticJsonV1Initialize: "/api/admin/dev/cms/content-packs/static-json-v1/initialize-from-static-json",
-        cmsRuntimeStatus: "/api/admin/dev/cms/runtime-status"
+        cmsRuntimeStatus: "/api/admin/dev/cms/runtime-status",
+        roleAssignmentActor: "/api/admin/role-assignments/actor",
+        roleAssignmentDiagnostics: "/api/admin/role-assignments/diagnostics",
+        roleAssignmentProvisionAdminUser: "/api/admin/role-assignments/provision-admin-user",
+        roleAssignmentAssign: "/api/admin/role-assignments/assign",
+        roleAssignmentRevoke: "/api/admin/role-assignments/revoke",
+        roleAssignmentDisableAdmin: "/api/admin/role-assignments/disable-admin",
+        roleAssignmentEnableAdmin: "/api/admin/role-assignments/enable-admin"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
@@ -57,7 +64,11 @@
         statisticsLoadFailed: "Unable to load product statistics.",
         billingCancelInvalid: "Cancel paid renewal reason is required.",
         billingCancelNotFound: "Selected user was not found.",
-        billingCancelFailed: "Unable to cancel paid renewal."
+        billingCancelFailed: "Unable to cancel paid renewal.",
+        roleManagementLoadFailed: "Unable to load role management data.",
+        roleManagementMutationFailed: "Unable to update persistent admin access.",
+        roleManagementReasonRequired: "Reason is required.",
+        roleManagementConfirmationRequired: "Confirm that this action changes persistent admin access."
     };
 
     const SummaryFields = ["userId", "email", "status", "createdAt", "lastLoginAt"];
@@ -67,7 +78,7 @@
     const DailyUsageColumns = ["usageDate", "studyLanguage", "lessonsStarted", "lessonsCompleted", "chatReplyCount", "hintsUsed", "feedbackRequests", "transcriptionSeconds", "ttsSeconds", "estimatedCost", "updatedAt"];
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
-    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", system: "system" });
+    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", roleManagement: "role-management", system: "system" });
     const AdminPermissionIds = Object.freeze({
         usersRead: "users.read",
         usersDiagnosticsRead: "users.diagnostics.read",
@@ -80,7 +91,8 @@
         cmsContentPublish: "cms.content.publish",
         cmsContentRestore: "cms.content.restore",
         cmsRuntimeStatusRead: "cms.runtime_status.read",
-        productStatisticsRead: "product_statistics.read"
+        productStatisticsRead: "product_statistics.read",
+        adminRolesManage: "admin.roles.manage"
     });
     const WorkflowAvailabilityDefinitions = Object.freeze([
         { label: "User Lookup", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.usersRead, AdminPermissionIds.usersDiagnosticsRead] },
@@ -93,7 +105,8 @@
         { label: "CMS Publish", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsContentPublish] },
         { label: "CMS Restore", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsContentRestore] },
         { label: "Runtime Status", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsRuntimeStatusRead] },
-        { label: "Product Statistics", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.productStatisticsRead] }
+        { label: "Product Statistics", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.productStatisticsRead] },
+        { label: "Persistent Admin Roles", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.adminRolesManage] }
     ]);
 
     const CmsSubTabs = Object.freeze({ overview: "overview", topics: "topics", scenarios: "scenarios", levels: "levels", prompts: "prompts", tutors: "tutors", validationPreview: "validation-preview", versionsPublish: "versions-publish", audit: "audit" });
@@ -145,6 +158,15 @@
     const rolesPermissionsRolesElement = document.getElementById("roles-permissions-roles");
     const rolesPermissionsListElement = document.getElementById("roles-permissions-list");
     const systemProductionRolesAvailableElement = document.getElementById("system-production-roles-available");
+    const roleManagementRefreshButton = document.getElementById("role-management-refresh-button");
+    const roleManagementLoadingElement = document.getElementById("role-management-loading");
+    const roleManagementErrorElement = document.getElementById("role-management-error");
+    const roleManagementWarningElement = document.getElementById("role-management-warning");
+    const roleManagementActorElement = document.getElementById("role-management-actor");
+    const roleManagementDiagnosticsElement = document.getElementById("role-management-diagnostics");
+    const roleManagementUsersElement = document.getElementById("role-management-users");
+    const roleManagementForms = Array.from(document.querySelectorAll(".role-management-form"));
+    let roleManagementActorMappingFound = false;
     const refreshStatisticsButton = document.getElementById("refresh-statistics-button");
     const statisticsLoadingElement = document.getElementById("statistics-loading");
     const statisticsErrorElement = document.getElementById("statistics-error");
@@ -2254,6 +2276,131 @@
 
 
 
+
+    function getResponseValue(source, camelKey, fallbackValue = undefined) {
+        if (!source || typeof source !== "object") { return fallbackValue; }
+        if (Object.prototype.hasOwnProperty.call(source, camelKey)) { return source[camelKey]; }
+        const pascalKey = camelKey.charAt(0).toUpperCase() + camelKey.slice(1);
+        if (Object.prototype.hasOwnProperty.call(source, pascalKey)) { return source[pascalKey]; }
+        const expectedKey = camelKey.toLowerCase();
+        const matchingKey = Object.keys(source).find((key) => key.toLowerCase() === expectedKey);
+        return matchingKey ? source[matchingKey] : fallbackValue;
+    }
+
+    function appendDefinitionRows(container, rows) {
+        container.textContent = "";
+        rows.forEach(([label, value]) => {
+            const term = document.createElement("dt");
+            term.textContent = label;
+            const description = document.createElement("dd");
+            description.textContent = formatValue(value);
+            container.append(term, description);
+        });
+    }
+
+    function setRoleManagementLoading(isLoading) {
+        roleManagementLoadingElement.classList.toggle("hidden", !isLoading);
+        roleManagementRefreshButton.disabled = isLoading;
+        roleManagementForms.forEach((form) => Array.from(form.elements).forEach((element) => { element.disabled = isLoading || !roleManagementActorMappingFound; }));
+    }
+
+    function renderRoleManagementActor(actor) {
+        roleManagementActorMappingFound = Boolean(getResponseValue(actor, "isActorMappingFound", false));
+        const roleIds = getResponseValue(actor, "roleIds", []);
+        appendDefinitionRows(roleManagementActorElement, [
+            ["Persistent actor mapping found", roleManagementActorMappingFound ? "Yes" : "No"],
+            ["Actor admin user id", getResponseValue(actor, "actorAdminUserId", "-")],
+            ["Active role ids", Array.isArray(roleIds) && roleIds.length ? roleIds.join(", ") : "-"],
+            ["Message", getResponseValue(actor, "message", getResponseValue(actor, "errorCode", "-"))],
+            ["Generated at (UTC)", getResponseValue(actor, "generatedAtUtc", "-")]
+        ]);
+        roleManagementWarningElement.textContent = roleManagementActorMappingFound ? "" : "Persistent actor mapping is required for role-management mutations. Viewing may still be available through BootstrapAdmin fallback.";
+    }
+
+    function renderRoleManagementDiagnostics(diagnostics) {
+        appendDefinitionRows(roleManagementDiagnosticsElement, [
+            ["Total AdminUsers", getResponseValue(diagnostics, "totalAdminUsers", "-")],
+            ["Active AdminUsers", getResponseValue(diagnostics, "activeAdminUsers", "-")],
+            ["Disabled AdminUsers", getResponseValue(diagnostics, "disabledAdminUsers", "-")],
+            ["Active role assignments", getResponseValue(diagnostics, "activeRoleAssignments", "-")],
+            ["Revoked role assignments", getResponseValue(diagnostics, "revokedRoleAssignments", "-")],
+            ["Roles in use", (getResponseValue(diagnostics, "rolesInUse", []) || []).join(", ") || "-"],
+            ["Generated at (UTC)", getResponseValue(diagnostics, "generatedAtUtc", "-")]
+        ]);
+        const users = getResponseValue(diagnostics, "adminUsers", []);
+        roleManagementUsersElement.textContent = "";
+        appendCmsSimpleTable(roleManagementUsersElement, [
+            { key: "adminUserId", label: "AdminUser ID" },
+            { key: "linkedUserId", label: "Linked app user ID" },
+            { key: "status", label: "Status" },
+            { key: "roleIds", label: "Role IDs", value: (row) => (getResponseValue(row, "roleIds", []) || []).join(", ") || "-" },
+            { key: "activeRoleCount", label: "Active roles" },
+            { key: "disabledAtUtc", label: "Disabled at (UTC)" },
+            { key: "createdAtUtc", label: "Created at (UTC)" }
+        ], Array.isArray(users) ? users : [], "No AdminUsers are exposed by diagnostics.");
+    }
+
+    async function loadRoleManagementData() {
+        roleManagementErrorElement.textContent = "";
+        setRoleManagementLoading(true);
+        try {
+            const [actor, diagnostics] = await Promise.all([
+                adminFetch(ApiPaths.roleAssignmentActor),
+                adminFetch(ApiPaths.roleAssignmentDiagnostics)
+            ]);
+            renderRoleManagementActor(actor);
+            renderRoleManagementDiagnostics(diagnostics);
+        } catch (_) {
+            roleManagementErrorElement.textContent = ErrorMessages.roleManagementLoadFailed;
+        } finally {
+            setRoleManagementLoading(false);
+        }
+    }
+
+    function getRoleManagementPayload(form) {
+        const data = new FormData(form);
+        const reason = String(data.get("reason") || "").trim();
+        if (!reason) { throw new Error(ErrorMessages.roleManagementReasonRequired); }
+        if (data.get("confirmChange") !== "on") { throw new Error(ErrorMessages.roleManagementConfirmationRequired); }
+        const payload = { reason };
+        const targetAppUserId = String(data.get("targetAppUserId") || "").trim();
+        const targetAdminUserId = String(data.get("targetAdminUserId") || "").trim();
+        const roleId = String(data.get("roleId") || "").trim();
+        const safeMetadataJson = String(data.get("safeMetadataJson") || "").trim();
+        if (targetAppUserId) { payload.targetAppUserId = targetAppUserId; }
+        if (targetAdminUserId) { payload.targetAdminUserId = targetAdminUserId; }
+        if (roleId) { payload.roleId = roleId; }
+        if (safeMetadataJson) { payload.safeMetadataJson = safeMetadataJson; }
+        return payload;
+    }
+
+    function getRoleManagementMutationPath(action) {
+        if (action === "provision-admin-user") { return ApiPaths.roleAssignmentProvisionAdminUser; }
+        if (action === "assign") { return ApiPaths.roleAssignmentAssign; }
+        if (action === "revoke") { return ApiPaths.roleAssignmentRevoke; }
+        if (action === "disable-admin") { return ApiPaths.roleAssignmentDisableAdmin; }
+        if (action === "enable-admin") { return ApiPaths.roleAssignmentEnableAdmin; }
+        throw new Error(ErrorMessages.roleManagementMutationFailed);
+    }
+
+    async function submitRoleManagementMutation(form) {
+        const messageElement = form.querySelector(".success");
+        if (messageElement) { messageElement.textContent = ""; messageElement.className = "success"; }
+        roleManagementErrorElement.textContent = "";
+        if (!roleManagementActorMappingFound) { roleManagementErrorElement.textContent = "Persistent actor mapping is required for role-management mutations."; return; }
+        try {
+            const payload = getRoleManagementPayload(form);
+            const result = await adminFetch(getRoleManagementMutationPath(form.dataset.roleManagementMutation), { method: "POST", body: JSON.stringify(payload) });
+            if (messageElement) { messageElement.textContent = getResponseValue(result, "message", "Role management action completed."); }
+            form.reset();
+            await loadRoleManagementData();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : ErrorMessages.roleManagementMutationFailed;
+            if (messageElement) { messageElement.className = "error"; messageElement.textContent = message; }
+            else { roleManagementErrorElement.textContent = message; }
+        }
+    }
+
     function setStatisticsLoading(isLoading) {
         statisticsLoadingElement.classList.toggle("hidden", !isLoading);
         refreshStatisticsButton.disabled = isLoading;
@@ -2361,6 +2508,7 @@
         updateUserRequiredEmptyStates();
         await restoreSelectedUserFromHash();
         if (selectedTabId === Tabs.cmsContent && !cmsHasLoadedOnce) { await loadCmsContentPacks(); }
+        if (selectedTabId === Tabs.roleManagement) { await loadRoleManagementData(); }
         if (selectedTabId === Tabs.overview) { await loadProductStatistics(); }
     }
 
@@ -2401,6 +2549,8 @@
     freeLessonResetForm.addEventListener("submit", async (event) => { event.preventDefault(); await resetFreeLessonAllowanceForSelectedUser(); });
     loadAuditButton.addEventListener("click", async () => { await loadAuditLogForSelectedUser(); });
     refreshStatisticsButton.addEventListener("click", async () => { await loadProductStatistics(); });
+    roleManagementRefreshButton.addEventListener("click", async () => { await loadRoleManagementData(); });
+    roleManagementForms.forEach((form) => form.addEventListener("submit", async (event) => { event.preventDefault(); await submitRoleManagementMutation(form); }));
     logoutButton.addEventListener("click", () => { logoutAdminSession(); });
     initializeTabs();
     updateSelectedUserHeader();

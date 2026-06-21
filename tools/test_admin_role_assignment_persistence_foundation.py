@@ -1008,10 +1008,22 @@ def main() -> None:
 
     desktop_text = "\n".join(read(path) for path in list_source_files(DESKTOP_ROOT) if "backend/EnglishVoiceTutor.Api" not in path.as_posix())
     admin_ui_text = "\n".join(read(path) for path in list_source_files(ADMIN_UI_ROOT))
-    require(admin_ui_text, "Production role management is not enabled yet", "Admin UI role management disabled copy")
-    for forbidden_admin_ui in ["assignRole", "revokeRole", "AdminRoleAssignment", "/api/admin/role", "/api/admin/roles"]:
+    require(admin_ui_text, "Persistent Admin Roles", "Admin UI role management MVP page")
+    role_assignment_routes = set(re.findall(r'"(/api/admin/role-assignments/[^"#?]+)"', admin_ui_text))
+    expected_role_assignment_routes = {
+        "/api/admin/role-assignments/diagnostics",
+        "/api/admin/role-assignments/actor",
+        "/api/admin/role-assignments/provision-admin-user",
+        "/api/admin/role-assignments/assign",
+        "/api/admin/role-assignments/revoke",
+        "/api/admin/role-assignments/disable-admin",
+        "/api/admin/role-assignments/enable-admin",
+    }
+    if role_assignment_routes != expected_role_assignment_routes:
+        raise AssertionError(f"Admin UI role management must reference only allowed role-assignment routes: {sorted(role_assignment_routes)}")
+    for forbidden_admin_ui in ["bootstrap-first-owner", "/api/admin/roles"]:
         if forbidden_admin_ui in admin_ui_text:
-            raise AssertionError(f"Admin UI role management must not exist yet: {forbidden_admin_ui}")
+            raise AssertionError(f"Admin UI role management must not expose forbidden route: {forbidden_admin_ui}")
     for label, text in [("Desktop", desktop_text), ("Admin UI", admin_ui_text)]:
         for forbidden in ["api.paddle.com", "Paddle.Api", "PADDLE_API_KEY", "PADDLE_WEBHOOK_SECRET"]:
             if forbidden in text:
