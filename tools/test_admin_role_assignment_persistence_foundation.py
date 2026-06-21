@@ -85,14 +85,13 @@ MIGRATED_POLICY_CONSTANTS = {
     "AdminSelfReadPermissionPolicyName",
     "AdminCapabilitiesReadPermissionPolicyName",
     "ProductStatisticsReadPermissionPolicyName",
+    "UserLookupPermissionPolicyName",
+    "UserOverviewPermissionPolicyName",
     "CmsRuntimeStatusReadPermissionPolicyName",
     "CmsContentReadPermissionPolicyName",
     "AuditLogViewPermissionPolicyName",
 }
 BOOTSTRAP_REQUIRED_ROUTES = {
-    "AdminUserByEmailRoute",
-    "AdminUserByIdRoute",
-    "AdminUserAuditActionsRoute",
     "AdminUserPremiumGrantsRoute",
     "AdminUserPremiumGrantRevokeRoute",
     "AdminUserFreeLessonAllowanceResetRoute",
@@ -761,12 +760,19 @@ def main() -> None:
         flags=re.MULTILINE,
     )
     permission_migrated = {(method.upper(), route, policy) for method, route, policy in endpoint_authorizations if policy.endswith("PermissionPolicyName") and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute", "AdminRoleAssignmentAssignRoute", "AdminRoleAssignmentDisableAdminRoute", "AdminRoleAssignmentEnableAdminRoute", "AdminRoleAssignmentProvisionAdminUserRoute", "AdminRoleAssignmentBootstrapFirstOwnerRoute"}}
-    if {policy for _, _, policy in permission_migrated} != MIGRATED_POLICY_CONSTANTS or len(permission_migrated) != 20:
-        raise AssertionError(f"Exactly twenty safe read-only Admin endpoints must remain permission-policy migrated. Found: {sorted(permission_migrated)}")
+    if {policy for _, _, policy in permission_migrated} != MIGRATED_POLICY_CONSTANTS or len(permission_migrated) != 23:
+        raise AssertionError(f"Exactly twenty-three safe read-only Admin endpoints must remain permission-policy migrated. Found: {sorted(permission_migrated)}")
     if ("GET", "AdminDevCmsRuntimeStatusRoute", "CmsRuntimeStatusReadPermissionPolicyName") not in permission_migrated:
         raise AssertionError("CMS runtime status must remain a GET-only AdminPermission migration.")
     if ("GET", "AdminDevCmsContentPacksRoute", "CmsContentReadPermissionPolicyName") not in permission_migrated:
         raise AssertionError("CMS content-packs list must remain a GET-only AdminPermission migration.")
+    for expected_user_read_migration in [
+        ("GET", "AdminUserByEmailRoute", "UserLookupPermissionPolicyName"),
+        ("GET", "AdminUserByIdRoute", "UserOverviewPermissionPolicyName"),
+        ("GET", "AdminUserAuditActionsRoute", "AuditLogViewPermissionPolicyName"),
+    ]:
+        if expected_user_read_migration not in permission_migrated:
+            raise AssertionError(f"User lookup/overview/audit endpoint must remain a GET-only narrow AdminPermission migration: {expected_user_read_migration}")
 
     route_to_policy = {route: policy for _, route, policy in endpoint_authorizations}
     diagnostics_endpoint_count = len(re.findall(r"MapGet\(ApiConstants\.AdminRoleAssignmentDiagnosticsRoute", admin_endpoints))

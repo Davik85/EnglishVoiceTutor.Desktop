@@ -55,10 +55,10 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminUserByEmailRoute, GetAdminUserByEmailAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.UserLookupPermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminUserByIdRoute, GetAdminUserByIdAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.UserOverviewPermissionPolicyName);
 
         app.MapPost(ApiConstants.AdminUserPremiumGrantsRoute, GrantManualPremiumAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
@@ -67,7 +67,7 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
         app.MapGet(ApiConstants.AdminUserAuditActionsRoute, GetTargetUserAuditActionsAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName);
 
         app.MapPost(ApiConstants.AdminUserFreeLessonAllowanceResetRoute, ResetFreeLessonAllowanceAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
