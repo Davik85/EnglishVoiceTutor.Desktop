@@ -309,7 +309,7 @@ def main() -> None:
         "creates only the first persistent Owner/SuperAdmin-equivalent mapping",
         "server-side authenticated claims",
         "Persistent roles are still not active in global authorization",
-        "AdminPermissionAuthorizationHandler still does not use persistent role read, safety, audit, write, actor, or bootstrap services",
+        "AdminPermissionAuthorizationHandler uses persistent read service only for AdminPermission:* policy evaluation and still avoids safety, audit, write, actor, bootstrap, and provisioning services",
         "Admin UI role management still does not exist",
         "database/audit-aware operations",
         "This runbook is not part of the normal desktop tester flow",
@@ -737,9 +737,20 @@ def main() -> None:
         if forbidden in admin_role_read_service:
             raise AssertionError(f"AdminRoleAssignmentReadService must stay read-only and must not use: {forbidden}")
 
-    for forbidden in ["IAdminRoleAssignmentReadService", "AdminRoleAssignmentReadService", "IAdminRoleAssignmentActorResolver", "AdminRoleAssignmentActorResolver", "IAdminRoleAssignmentSafetyService", "AdminRoleAssignmentSafetyService", "IAdminRoleAssignmentAuditService", "AdminRoleAssignmentAuditService", "IAdminRoleAssignmentWriteService", "AdminRoleAssignmentWriteService", "IAdminRoleAssignmentBootstrapService", "AdminRoleAssignmentBootstrapService", "AdminRoleAssignmentBootstrap", "IAdminRoleAssignmentAdminUserProvisioningService", "AdminRoleAssignmentAdminUserProvisioningService", "EnableAdminAsync", "ValidateEnableAdminAsync", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events"]:
+    require(admin_handler, "IAdminRoleAssignmentReadService adminRoleAssignmentReadService", "AdminPermissionAuthorizationHandler persistent read-service dependency")
+    require(admin_handler, "IAdminRolePermissionCatalogService adminRolePermissionCatalogService", "AdminPermissionAuthorizationHandler role permission catalog dependency")
+    require(admin_handler, "ClaimsUserAccessor.TryGetUserId(context.User)", "AdminPermissionAuthorizationHandler trusted user id claim identity")
+    require(admin_handler, "ClaimsUserAccessor.TryGetUserEmail(context.User)", "AdminPermissionAuthorizationHandler trusted email claim fallback")
+    require(admin_handler, "GetEffectiveRolesByUserIdAsync", "AdminPermissionAuthorizationHandler persistent role lookup by user id")
+    require(admin_handler, "GetEffectiveRolesByNormalizedEmailAsync", "AdminPermissionAuthorizationHandler existing normalized-email lookup path")
+    require(admin_handler, "GetProductionRolePermissions()", "AdminPermissionAuthorizationHandler static role permission catalog lookup")
+    require(admin_handler, "permissions.Contains(permissionName, StringComparer.Ordinal)", "AdminPermissionAuthorizationHandler exact permission check")
+    require(admin_handler, "_bootstrapAdminAccessService.IsBootstrapAdmin(context.User)", "AdminPermissionAuthorizationHandler BootstrapAdmin fallback")
+    require(admin_handler, "GetBootstrapAdminPermissions()", "AdminPermissionAuthorizationHandler BootstrapAdmin fallback permission catalog")
+    require(admin_handler, "return false;", "AdminPermissionAuthorizationHandler persistent authorization fail-closed path")
+    for forbidden in ["IAdminRoleAssignmentActorResolver", "AdminRoleAssignmentActorResolver", "IAdminRoleAssignmentSafetyService", "AdminRoleAssignmentSafetyService", "IAdminRoleAssignmentAuditService", "AdminRoleAssignmentAuditService", "IAdminRoleAssignmentWriteService", "AdminRoleAssignmentWriteService", "IAdminRoleAssignmentBootstrapService", "AdminRoleAssignmentBootstrapService", "AdminRoleAssignmentBootstrap", "IAdminRoleAssignmentAdminUserProvisioningService", "AdminRoleAssignmentAdminUserProvisioningService", "EnableAdminAsync", "ValidateEnableAdminAsync", "AdminUsers", "AdminUserRoles", "AdminRoleAssignmentEvents", "admin_users", "admin_user_roles", "admin_role_assignment_events", "[FromBody]", "Request.Query", "actorAdminUserId", "actorRoleIds", "Paddle", "Billing", "Subscription", "Entitlement", "Lesson", "Cms"]:
         if forbidden in admin_handler:
-            raise AssertionError("AdminPermissionAuthorizationHandler must not read persistent admin role assignment tables yet.")
+            raise AssertionError(f"AdminPermissionAuthorizationHandler must not use forbidden dependency, table, endpoint, or untrusted identity source: {forbidden}")
 
     endpoint_authorizations = re.findall(
         r"app\.Map(Get|Post|Put|Delete)\(ApiConstants\.(Admin\w+Route),\s*[^)]*\)\s*\.RequireAuthorization\(AdminAuthorizationConstants\.(\w+)\)",

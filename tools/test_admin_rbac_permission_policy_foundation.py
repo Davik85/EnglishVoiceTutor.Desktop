@@ -216,8 +216,26 @@ def main() -> None:
     require(permission_handler, "context.User.Identity?.IsAuthenticated != true", "permission handler authenticated-user fail closed check")
     require(permission_handler, "_bootstrapAdminAccessService.IsBootstrapAdmin(context.User)", "permission handler reuses BootstrapAdmin access path")
     require(permission_handler, "GetBootstrapAdminPermissions()", "permission handler checks BootstrapAdmin permission catalog")
-    require(program, "AddSingleton<IAuthorizationHandler, AdminPermissionAuthorizationHandler>()", "permission authorization handler registration")
+    require(program, "AddScoped<IAuthorizationHandler, AdminPermissionAuthorizationHandler>()", "permission authorization handler scoped registration for persistent role reads")
     require(program, "static void AddAdminPermissionPolicy", "central admin permission policy registration helper")
+
+    require(permission_handler, "IAdminRoleAssignmentReadService adminRoleAssignmentReadService", "permission handler persistent role read-service dependency")
+    require(permission_handler, "GetEffectiveRolesByUserIdAsync", "permission handler reads persistent roles by trusted user id claim")
+    require(permission_handler, "ClaimsUserAccessor.TryGetUserId(context.User)", "permission handler uses trusted app user id claim")
+    require(permission_handler, "ClaimsUserAccessor.TryGetUserEmail(context.User)", "permission handler uses trusted authenticated email fallback")
+    require(permission_handler, "GetEffectiveRolesByNormalizedEmailAsync", "permission handler uses existing normalized-email read path")
+    require(permission_handler, "GetProductionRolePermissions()", "permission handler checks static production role permission catalog")
+    require(permission_handler, "permissions.Contains(permissionName, StringComparer.Ordinal)", "permission handler evaluates exact required permission")
+    require(permission_handler, "return false;", "permission handler fails closed when persistent roles do not authorize")
+    require(permission_handler, "_bootstrapAdminAccessService.IsBootstrapAdmin(context.User)", "permission handler preserves BootstrapAdmin fallback")
+    for forbidden_dependency in [
+        "IAdminRoleAssignmentWriteService", "IAdminRoleAssignmentSafetyService", "IAdminRoleAssignmentAuditService",
+        "IAdminRoleAssignmentActorResolver", "IAdminRoleAssignmentBootstrapService",
+        "IAdminRoleAssignmentAdminUserProvisioningService", "AdminEndpoints", "Paddle", "Billing",
+        "Subscription", "Entitlement", "Lesson", "Cms", "actorAdminUserId", "actorRoleIds",
+        "[FromBody]", "Request.Query", "AdminUsers", "AdminUserRoles", "SaveChanges"
+    ]:
+        forbid(permission_handler, forbidden_dependency, "forbidden AdminPermissionAuthorizationHandler dependency or untrusted identity source")
 
     for policy_constant in DANGEROUS_POLICY_CONSTANTS:
         require(authorization_constants, policy_constant, f"explicit dangerous action policy {policy_constant}")

@@ -118,7 +118,7 @@ builder.Services
 
 builder.Services.AddSingleton<IBootstrapAdminAccessService, BootstrapAdminAccessService>();
 builder.Services.AddSingleton<IAuthorizationHandler, BootstrapAdminAuthorizationHandler>();
-builder.Services.AddSingleton<IAuthorizationHandler, AdminPermissionAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, AdminPermissionAuthorizationHandler>();
 
 builder.Services.AddAuthorization(options =>
 {
