@@ -13,6 +13,7 @@ public static class AdminRoleAssignmentAuditConstants
         public const string LastOwnerBlocked = "last_owner_blocked";
         public const string SelfEscalationBlocked = "self_escalation_blocked";
         public const string ValidationDenied = "validation_denied";
+        public const string FirstOwnerBootstrap = "first_owner_bootstrap";
     }
 
     public static class Results

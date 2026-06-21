@@ -24,7 +24,8 @@ public sealed class AdminRoleAssignmentAuditService(
         AdminRoleAssignmentAuditConstants.ActionTypes.InviteRevoked,
         AdminRoleAssignmentAuditConstants.ActionTypes.LastOwnerBlocked,
         AdminRoleAssignmentAuditConstants.ActionTypes.SelfEscalationBlocked,
-        AdminRoleAssignmentAuditConstants.ActionTypes.ValidationDenied
+        AdminRoleAssignmentAuditConstants.ActionTypes.ValidationDenied,
+        AdminRoleAssignmentAuditConstants.ActionTypes.FirstOwnerBootstrap
     };
 
     private static readonly IReadOnlySet<string> KnownResults = new HashSet<string>(StringComparer.Ordinal)
@@ -43,7 +44,8 @@ public sealed class AdminRoleAssignmentAuditService(
         AdminRoleAssignmentAuditConstants.ActionTypes.EnableAdmin,
         AdminRoleAssignmentAuditConstants.ActionTypes.LastOwnerBlocked,
         AdminRoleAssignmentAuditConstants.ActionTypes.SelfEscalationBlocked,
-        AdminRoleAssignmentAuditConstants.ActionTypes.ValidationDenied
+        AdminRoleAssignmentAuditConstants.ActionTypes.ValidationDenied,
+        AdminRoleAssignmentAuditConstants.ActionTypes.FirstOwnerBootstrap
     };
 
     private static readonly string[] ForbiddenSafeMetadataFragments =
