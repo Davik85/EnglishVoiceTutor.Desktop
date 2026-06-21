@@ -50,7 +50,7 @@ Use placeholder accounts such as `<admin-email>` in notes. Do not paste real cre
      -BaseUrl "<controlled-backend-url>" `
      -AdminEmail "<admin-email>" `
      -AdminPassword "<admin-password>" `
-     -ExpectedFallbackEnabled $true `
+     -ExpectedFallbackEnabled true `
      -ConfirmRbacCutoverValidation
    ```
 
@@ -63,7 +63,7 @@ Use placeholder accounts such as `<admin-email>` in notes. Do not paste real cre
      -BaseUrl "<controlled-backend-url>" `
      -AdminEmail "<admin-email>" `
      -AdminPassword "<admin-password>" `
-     -ExpectedFallbackEnabled $false `
+     -ExpectedFallbackEnabled false `
      -ExpectedAdminPermissionEndpointStatus 200 `
      -ExpectedRoleManagementEndpointStatus 200 `
      -ConfirmRbacCutoverValidation `
