@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-06-18.
+Review date: 2026-06-21.
 
 ## Source of truth for current versions
 
@@ -45,13 +45,23 @@ Clean-machine smoke must verify registration/login/lesson/history/progress/updat
 
 ## Current production backend state
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.33`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.34`, and `/opt/languagevoicetutor/backend/current` points to that release. Verify the live value with the server symlink command before calling it current.
 
-Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.27`.
+Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.33`.
 
-Completed: backend `0.1.35-backend.33` is deployed and includes the latest billing/subscription foundation work: current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, current-user subscription status fields needed by the Desktop Account billing UI, and a cancel request path that must not directly revoke `EntitlementEntity`. It also retains the Admin CMS Validation & Preview readable UI fix and `/admin` static asset cache busting/no-cache behavior from earlier backend releases.
+Completed: backend `0.1.35-backend.34` is deployed and includes the latest Admin RBAC persistence/cutover validation work plus the billing/subscription foundation work: current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, current-user subscription status fields needed by the Desktop Account billing UI, and a cancel request path that must not directly revoke `EntitlementEntity`. It also retains the Admin CMS Validation & Preview readable UI fix and `/admin` static asset cache busting/no-cache behavior from earlier backend releases.
 
-Completed: health and database health are green after deploy. `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. The build is green, the Admin shell audit is green, the EF model check reports no pending model changes, and `20260618090000_SeedBaseSubscriptionPlans` is recorded in production `__EFMigrationsHistory`. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
+Completed: health and database health are green after deploy. `https://api.languagevoicetutor.com/health` returns `200 OK`, and `https://api.languagevoicetutor.com/api/health/database` returns `200 OK`. The build is green, the Admin shell audit is green, the EF model check reports no pending model changes, and `20260620165657_AddAdminRoleAssignmentPersistence` is recorded in production `__EFMigrationsHistory`. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
+
+## Production Admin RBAC current state
+
+Current state: backend production deploy `0.1.35-backend.34` is complete, `/opt/languagevoicetutor/backend/current` points to that release at last verification, and `0.1.35-backend.33` remains available for rollback. Production migration `20260620165657_AddAdminRoleAssignmentPersistence` has been applied. Production now has the Admin RBAC persistence tables `admin_users`, `admin_user_roles`, and `admin_role_assignment_events`.
+
+Completed: the first persistent owner-equivalent Admin mapping exists, the current admin actor mapping resolves, and the active persistent production admin role is `super_admin`. Role-assignment diagnostics reported `totalAdminUsers=1`, `activeAdminUsers=1`, `totalRoleAssignments=1`, `activeRoleAssignments=1`, and `rolesInUse` includes `super_admin`.
+
+Completed: Admin RBAC cutover smoke passes against production with `fallbackEnabled=true`, `defaultFallbackEnabled=true`, `configValuePresent=false`, `persistentRoleAuthorizationEnabled=true`, and actor mapping found. This means BootstrapAdmin fallback remains enabled by default because no fallback config override is explicitly configured in production. No production cutover disabling fallback has been performed.
+
+Public release is still not complete. Production Admin RBAC remains incomplete until an owner-approved controlled fallback cutover rehearsal, rollback drill, non-owner role validation, and final fallback decision or explicit owner-approved temporary exception are accepted.
 
 ## Subscription base plan reference data
 
@@ -79,7 +89,7 @@ Completed: CMS scenario edits are visible in the desktop app after the operator 
 
 Completed: CMS-managed A1, A2, B1, and B2 level behavior profiles are active and affect lesson behavior. A1 and B2 lessons differ as expected, and additional level polishing will continue later based on tester feedback.
 
-Fallback to packaged static JSON remains available for rollback/safety, but fallback should not be active during normal runtime status. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, and no warnings. Production role management/RBAC and critical-change approval remain future work.
+Fallback to packaged static JSON remains available for rollback/safety, but fallback should not be active during normal runtime status. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, and no warnings. Production Admin RBAC is advanced but not fully cut over; fallback remains enabled by default, and critical-change approval remains future work.
 
 ## Admin roles/permissions foundation
 
@@ -87,7 +97,7 @@ Current state: stable admin role constants exist for `super_admin`, `support`, `
 
 Admin Shell roles/permissions UI-awareness is completed. The Admin Shell loads `/api/admin/me` and `/api/admin/capabilities`; Overview shows admin source, environment, checked timestamp, Bootstrap admin status, role badges, permission count, and a Roles and permissions card. Available workflows are rendered from permissions informationally only. Tabs, buttons, and backend calls are not blocked by the client-side permission view. The System tab shows `productionRolesAvailable=false` and keeps Billing/Paddle unavailable/deferred.
 
-`/api/admin/me` now exposes `roles`, `permissions`, and `isBootstrapAdmin`. `/api/admin/capabilities` now exposes roles and permissions. `ProductionRolesAvailable` remains `false`. This is a foundation/UI-awareness milestone only: current behavior remains BootstrapAdmin-based, production role management is not enabled, endpoint-level per-role/per-permission enforcement is not implemented, and no UI role management exists yet. Do not claim production role management/RBAC is complete. See `docs/ADMIN_ROLES_PERMISSIONS_FOUNDATION.md`.
+`/api/admin/me` exposes `roles`, `permissions`, and `isBootstrapAdmin`. `/api/admin/capabilities` exposes roles and permissions. Production Admin RBAC persistence and role-management validation now exist, 35 existing Admin endpoint registrations are protected by `AdminPermission:*` policies, and the first persistent `super_admin` owner-equivalent mapping exists. BootstrapAdmin fallback still authorizes `AdminPermission:*` endpoints by default because no production fallback override is configured. Do not claim production Admin RBAC cutover is complete until the controlled fallback cutover rehearsal, rollback drill, non-owner role validation, and final fallback decision or explicit owner-approved temporary exception are accepted. See `docs/PRODUCTION_ADMIN_RBAC_READINESS.md`.
 
 ## Settings sync, device tracking, and product statistics
 
@@ -159,7 +169,7 @@ Current verified tester/release summary:
 - CMS scenario edits and level profile edits are visible in newly started desktop lessons after **Save draft** plus **Publish**;
 - smaller Windows tablet / small-screen visual smoke passed for Welcome/start, primary actions, Settings, and lesson flow;
 - Russian and French Welcome/start header text no longer truncates or clips after the localized layout fix;
-- admin roles/permissions policy and UI policy tests passed, the desktop release gate passed, and backend `0.1.35-backend.33` is deployed and healthy.
+- admin roles/permissions policy and UI policy tests passed, the desktop release gate passed, and backend `0.1.35-backend.34` is deployed and healthy with Admin RBAC persistence migration applied.
 
 Remaining realistic readiness items:
 
@@ -180,7 +190,7 @@ Completed: the backend has an admin-only, read-only CMS runtime content status d
 
 
 
-Current runtime-status result on deployed backend `0.1.35-backend.33` is clean: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. Learner runtime now uses the CMS published snapshot. The prior runtime-validation root cause was an obsolete hardcoded exact tutor behavior profile count of 2. Static JSON, CMS static import/draft construction, and desktop tutor avatar options all define the approved tutor ids `david`, `elena`, and `nelli`; the third profile is legitimate product content, not a smoke/test artifact. Runtime validation now derives the required tutor ids from the approved desktop avatar definitions and reports expected, actual, missing, unknown/extra, and duplicate tutor ids without exposing tutor instruction bodies. The `tools/smoke_cms_runtime_status.ps1` and `tools/validate_cms_published_snapshot_runtime.ps1` scripts default to the server-only backend `https://api.languagevoicetutor.com`; localhost must be passed explicitly only for approved local developer runs.
+Current runtime-status result on deployed backend `0.1.35-backend.34` is clean: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. Learner runtime now uses the CMS published snapshot. The prior runtime-validation root cause was an obsolete hardcoded exact tutor behavior profile count of 2. Static JSON, CMS static import/draft construction, and desktop tutor avatar options all define the approved tutor ids `david`, `elena`, and `nelli`; the third profile is legitimate product content, not a smoke/test artifact. Runtime validation now derives the required tutor ids from the approved desktop avatar definitions and reports expected, actual, missing, unknown/extra, and duplicate tutor ids without exposing tutor instruction bodies. The `tools/smoke_cms_runtime_status.ps1` and `tools/validate_cms_published_snapshot_runtime.ps1` scripts default to the server-only backend `https://api.languagevoicetutor.com`; localhost must be passed explicitly only for approved local developer runs.
 
 This diagnostic confirms the current runtime content source. Static JSON fallback remains available for safety and rollback, but it should not be active in normal runtime status now that CMS published snapshot runtime is active.
 

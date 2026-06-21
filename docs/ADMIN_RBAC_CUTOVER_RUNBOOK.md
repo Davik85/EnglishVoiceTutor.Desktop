@@ -2,9 +2,11 @@
 
 This runbook is for owner-approved controlled validation only. It is not a broad public-production release checklist and must not be used to disable BootstrapAdmin fallback casually.
 
-## Default state
+## Current production state
 
-BootstrapAdmin fallback remains enabled by default for `AdminPermission:*` policies. The release gate now runs the Admin RBAC cutover validation static pack, which verifies cutover guardrails statically but does not perform a live cutover. The manual cutover smoke script remains opt-in and outside the release gate. The setting is:
+First owner bootstrap has been completed in production. Actor mapping now resolves for the owner account, the active persistent role is `super_admin`, and the cutover status endpoint reports fallback enabled by default: `fallbackEnabled=true`, `defaultFallbackEnabled=true`, `configValuePresent=false`, and `persistentRoleAuthorizationEnabled=true`. Backend `0.1.35-backend.34` is deployed after production migration `20260620165657_AddAdminRoleAssignmentPersistence`, and `0.1.35-backend.33` remains available for rollback.
+
+BootstrapAdmin fallback remains enabled by default for `AdminPermission:*` policies. The release gate runs the Admin RBAC cutover validation static pack, which verifies cutover guardrails statically but does not perform a live cutover. The manual cutover smoke script remains opt-in and outside the release gate. The setting is:
 
 `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies`
 
@@ -23,19 +25,21 @@ If the setting is missing or set to `true`, fallback is enabled. If the setting 
 - Role-assignment management endpoints protected by `AdminRoleManagementPermissionPolicyName` remain separate from this fallback switch.
 - BootstrapAdmin-only endpoints, including CMS import/init endpoints, remain intentionally separate and are not controlled by this switch.
 
-## Preconditions before disabling fallback
+## Next action: controlled cutover rehearsal plan
 
-Complete all of the following before setting the fallback switch to `false`:
+The next action is not to disable fallback immediately. The next action is to prepare and run a short owner-approved controlled cutover rehearsal with a documented rollback path. Complete all of the following before setting the fallback switch to `false`:
 
 1. The release gate passes, including the Admin RBAC cutover validation static pack.
-2. A persistent first Owner/SuperAdmin exists.
-3. Actor mapping works for the operator account.
-4. Role-assignment diagnostics are healthy.
-5. Required production Admin roles are assigned.
-6. Admin UI Role Management works for controlled validation.
-7. `tools/smoke_admin_role_management_flow.ps1` has been validated in a safe environment.
-8. `tools/smoke_admin_rbac_cutover_validation.ps1` passes in fallback-enabled mode first.
-9. Rollback owner, rollback timing, and backend restart/reload process are agreed before cutover.
+2. Production health is green (`/health`, `/api/health/database`, and Admin endpoints).
+3. A persistent first Owner/SuperAdmin exists; this is already completed for the owner-equivalent account.
+4. Actor mapping works for the operator account; this now resolves in production.
+5. Role-assignment diagnostics are healthy and confirm the active `super_admin` role.
+6. Required production Admin roles are assigned for the rehearsal scope.
+7. Admin UI Role Management works for controlled validation.
+8. `tools/smoke_admin_role_management_flow.ps1` has been validated in a safe environment.
+9. `tools/smoke_admin_rbac_cutover_validation.ps1` passes in fallback-enabled mode first.
+10. Prepare the exact placeholder-safe config change for disabling fallback, the exact placeholder-safe rollback command/config restoration for re-enabling fallback, and the backend restart/reload command.
+11. Rollback owner, rollback timing, and backend restart/reload process are agreed before cutover.
 
 Use placeholder accounts such as `<admin-email>` in notes. Do not paste real credentials, tokens, cookies, connection strings, certificates, or provider secrets into documents, chat, tickets, or logs.
 
@@ -55,7 +59,7 @@ Use placeholder accounts such as `<admin-email>` in notes. Do not paste real cre
      -ConfirmRbacCutoverValidation
    ```
 
-4. Set `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies` to `false` only for the owner-approved controlled validation environment.
+4. During the owner-approved short cutover window only, set `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies` to `false` using the pre-reviewed placeholder-safe production configuration procedure.
 5. Restart or reload the backend using the project’s documented deployment/service process.
 6. Run cutover validation smoke again with expected statuses for the account under test:
 
@@ -72,7 +76,7 @@ Use placeholder accounts such as `<admin-email>` in notes. Do not paste real cre
      -AllowProductionUrl
    ```
 
-7. Test representative `AdminPermission:*` read endpoints through the smoke script:
+7. Verify AdminPermission endpoints still work through persistent roles. Test representative `AdminPermission:*` read endpoints through the smoke script:
    - `GET /api/admin/me`
    - `GET /api/admin/capabilities`
    - `GET /api/admin/statistics/overview`
@@ -88,7 +92,7 @@ Use placeholder accounts such as `<admin-email>` in notes. Do not paste real cre
 
 ## Rollback
 
-If validation fails or the owner cancels cutover:
+If validation fails, if any unexpected issue appears, or if the owner cancels cutover:
 
 1. Set `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies` back to `true`, or remove the setting so the default enabled behavior applies.
 2. Restart or reload the backend using the project’s documented deployment/service process.

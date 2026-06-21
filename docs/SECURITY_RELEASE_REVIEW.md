@@ -4,9 +4,15 @@ Review date: 2026-06-20.
 
 Scope: documentation and source review only. No application behavior, billing logic, entitlement logic, Paddle integration behavior, database schema, migrations, deployment scripts, generated artifacts, or secrets were changed by this review.
 
+## 2026-06-21 Admin RBAC and roadmap update
+
+Admin RBAC is advanced but not fully production-cutover. Backend `0.1.35-backend.34` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, the persistent owner-equivalent mapping exists, and the active persistent production admin role is `super_admin`. Cutover smoke passes with BootstrapAdmin fallback enabled by default; no explicit production fallback override is present and no production fallback-disabling cutover has been performed.
+
+Public release still requires a controlled fallback cutover rehearsal and rollback drill, or an explicit owner-approved temporary exception. Rate limiting/abuse protection, backups/restore and migration rollback drills, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, and Microsoft Store/MSIX readiness remain blockers or pending readiness tracks.
+
 ## Current verified release context
 
-- Production backend: `0.1.35-backend.33` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.33` through the `/opt/languagevoicetutor/backend/current` symlink.
+- Production backend: `0.1.35-backend.34` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.34` through the `/opt/languagevoicetutor/backend/current` symlink.
 - Production backend health: `/health` returns `200 OK` and `/api/health/database` returns `200 OK`.
 - Windows direct tester release: `0.1.36-tester.24`, installer `LanguageVoiceTutorSetup-0.1.36-tester.24.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `updateMode=manual-confirmation`.
 - This remains a controlled tester/direct Windows release, not broad public production readiness.

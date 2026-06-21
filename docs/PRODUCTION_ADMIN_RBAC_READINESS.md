@@ -4,9 +4,36 @@ Review date: 2026-06-20.
 
 Scope: planning/documentation only. This document audits the current Admin / BootstrapAdmin / authorization state and defines the minimum production Admin RBAC target before support, content, billing, or auditor workflows are exposed broadly. It does not implement runtime RBAC, endpoint behavior changes, database schema changes, EF migrations, Admin UI behavior changes, billing/Paddle changes, entitlement changes, Desktop changes, secrets, or test credentials.
 
+## 2026-06-21 production status update
+
+Production Admin RBAC is advanced but not fully production-cutover. Backend `0.1.35-backend.34` is deployed to production, `/opt/languagevoicetutor/backend/current` points to that release at last verification, and `0.1.35-backend.33` remains available for rollback. Production migration `20260620165657_AddAdminRoleAssignmentPersistence` has been applied, and production contains `admin_users`, `admin_user_roles`, and `admin_role_assignment_events`.
+
+Completed as of this update:
+
+- AdminPermission endpoint migration foundation is complete for the currently migrated scope.
+- 35 existing Admin endpoint registrations are protected by `AdminPermission:*` policies.
+- The RBAC cutover status endpoint exists.
+- The Admin UI displays cutover status read-only and does not provide a fallback-disable toggle.
+- The Admin RBAC cutover validation static pack is part of the release gate.
+- Production DB has Admin RBAC persistence tables: `admin_users`, `admin_user_roles`, and `admin_role_assignment_events`.
+- The first persistent `super_admin` owner-equivalent mapping has been created.
+- Actor mapping now resolves for the owner account.
+- Cutover smoke passes with fallback enabled. Reported production status included `fallbackEnabled=true`, `defaultFallbackEnabled=true`, `configValuePresent=false`, `persistentRoleAuthorizationEnabled=true`, and actor mapping found.
+
+Still pending before Production Admin RBAC can be accepted for public RC:
+
+- Owner-approved controlled fallback cutover rehearsal.
+- Rollback drill for fallback re-enable.
+- Validation that non-owner roles behave correctly.
+- Optional creation of at least one additional owner/super_admin backup account before disabling fallback.
+- Final decision: disable fallback for public RC or document an explicit owner-approved temporary exception.
+- Production Admin RBAC remains incomplete until the cutover/rollback rehearsal is done and accepted.
+
+BootstrapAdmin fallback remains enabled by default. No production fallback cutover has been performed, and no fallback setting has been explicitly configured in production. Public release is still not complete.
+
 ## Executive status
 
-The current Admin foundation is acceptable for controlled tester/direct Windows operations where a very small trusted operator set is configured through BootstrapAdmin and audit logs are reviewed. It is not suitable as the final public-production Admin model because BootstrapAdmin maps every configured admin email to the full `super_admin` permission set, the Admin Shell roles/permissions display is UI-awareness only, and backend endpoints do not yet enforce separate least-privilege permissions per role.
+The current Admin foundation is acceptable for controlled tester/direct Windows operations where a very small trusted operator set is configured through BootstrapAdmin and audit logs are reviewed. It is not suitable as the final public-production Admin model until the controlled fallback cutover rehearsal, rollback drill, non-owner role validation, and final fallback decision/exception are accepted. BootstrapAdmin fallback is still enabled by default for production, and UI hiding or UI awareness alone must never be treated as authorization.
 
 Public release candidate readiness requires production Admin RBAC with endpoint-level permission enforcement, or a documented owner-approved exception that explicitly accepts the BootstrapAdmin risk for a narrow time window. UI hiding or UI awareness alone must never be treated as authorization.
 
