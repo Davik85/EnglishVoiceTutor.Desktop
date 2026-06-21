@@ -61,19 +61,19 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.UserOverviewPermissionPolicyName);
 
         app.MapPost(ApiConstants.AdminUserPremiumGrantsRoute, GrantManualPremiumAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.ManualPremiumGrantPermissionPolicyName);
 
         app.MapPost(ApiConstants.AdminUserPremiumGrantRevokeRoute, RevokeManualPremiumAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.ManualPremiumRevokePermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminUserAuditActionsRoute, GetTargetUserAuditActionsAsync)
             .RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName);
 
         app.MapPost(ApiConstants.AdminUserFreeLessonAllowanceResetRoute, ResetFreeLessonAllowanceAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.FreeLessonResetPermissionPolicyName);
 
         app.MapPost(ApiConstants.AdminUserBillingCancelRenewalRoute, CancelUserBillingRenewalAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+            .RequireAuthorization(AdminAuthorizationConstants.BillingCancelRenewalPermissionPolicyName);
 
         app.MapPost(ApiConstants.AdminDevCmsStaticContentImportRoute, ImportStaticCmsContentAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);

@@ -86,6 +86,34 @@ MIGRATED_ENDPOINTS = [
         "policy_constant": "AuditLogViewPermissionPolicyName",
     },
     {
+        "action_key": "admin.premium.grant",
+        "method": "POST",
+        "route_constant": "AdminUserPremiumGrantsRoute",
+        "permission_constant": "PremiumGrant",
+        "policy_constant": "ManualPremiumGrantPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.premium.revoke",
+        "method": "POST",
+        "route_constant": "AdminUserPremiumGrantRevokeRoute",
+        "permission_constant": "PremiumRevoke",
+        "policy_constant": "ManualPremiumRevokePermissionPolicyName",
+    },
+    {
+        "action_key": "admin.free_lesson_allowance.reset",
+        "method": "POST",
+        "route_constant": "AdminUserFreeLessonAllowanceResetRoute",
+        "permission_constant": "FreeLessonAllowanceReset",
+        "policy_constant": "FreeLessonResetPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.billing.cancel_renewal",
+        "method": "POST",
+        "route_constant": "AdminUserBillingCancelRenewalRoute",
+        "permission_constant": "BillingCancelRenewal",
+        "policy_constant": "BillingCancelRenewalPermissionPolicyName",
+    },
+    {
         "action_key": "admin.cms.published_status.read",
         "method": "GET",
         "route_constant": "AdminDevCmsPublishedContentStatusRoute",
@@ -456,9 +484,9 @@ def main() -> None:
         )
         for migrated_endpoint in MIGRATED_ENDPOINTS
     ]
-    if len(migrated_authorizations) != 31 or set(migrated_authorizations) != set(expected_migrations):
+    if len(migrated_authorizations) != 35 or set(migrated_authorizations) != set(expected_migrations):
         raise AssertionError(
-            f"Exactly thirty-one existing Admin endpoints must use AdminPermission:* policies after the controlled CMS authoring workflow endpoint batch migration. Got: {migrated_authorizations}"
+            f"Exactly thirty-five existing Admin endpoints must use AdminPermission:* policies after the controlled user-impacting Admin action endpoint batch migration. Got: {migrated_authorizations}"
         )
 
     for method, route, policy in endpoint_authorizations:
@@ -532,6 +560,10 @@ def main() -> None:
         "SystemDiagnosticsPermissionPolicyName",
     }
     dangerous_or_deferred_policies.discard("AdminRoleManagementPermissionPolicyName")
+    dangerous_or_deferred_policies.discard("ManualPremiumGrantPermissionPolicyName")
+    dangerous_or_deferred_policies.discard("ManualPremiumRevokePermissionPolicyName")
+    dangerous_or_deferred_policies.discard("FreeLessonResetPermissionPolicyName")
+    dangerous_or_deferred_policies.discard("BillingCancelRenewalPermissionPolicyName")
     dangerous_or_deferred_policies.discard("CmsPublishPermissionPolicyName")
     dangerous_or_deferred_policies.discard("CmsRestorePermissionPolicyName")
     for policy_constant in dangerous_or_deferred_policies:
