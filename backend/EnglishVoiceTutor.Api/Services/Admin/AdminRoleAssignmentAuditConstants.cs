@@ -14,6 +14,8 @@ public static class AdminRoleAssignmentAuditConstants
         public const string SelfEscalationBlocked = "self_escalation_blocked";
         public const string ValidationDenied = "validation_denied";
         public const string FirstOwnerBootstrap = "first_owner_bootstrap";
+        public const string AdminUserProvisioned = "admin_user_provisioned";
+        public const string AdminUserProvisioningDenied = "admin_user_provisioning_denied";
     }
 
     public static class Results
