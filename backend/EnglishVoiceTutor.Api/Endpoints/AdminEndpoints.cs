@@ -16,6 +16,7 @@ public static class AdminEndpoints
     private const string EmailRequiredError = "Email query parameter is required.";
     private const string UserIdRouteKey = "userId";
     private const string EntitlementIdRouteKey = "entitlementId";
+    private const string RoleAssignmentActorMappingUnavailableErrorCode = "admin_role_assignment_actor_mapping_unavailable";
 
     public static void MapAdminEndpoints(this WebApplication app)
     {
@@ -31,6 +32,9 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.ProductStatisticsReadPermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+
+        app.MapPost(ApiConstants.AdminRoleAssignmentRevokeRoute, RevokeAdminRoleAssignmentAsync)
             .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
 
         app.MapGet(ApiConstants.AdminUserByEmailRoute, GetAdminUserByEmailAsync)
@@ -188,6 +192,66 @@ public static class AdminEndpoints
     {
         return Results.Ok(await adminRoleAssignmentDiagnosticsService.GetDiagnosticsAsync(cancellationToken));
     }
+
+
+    private static async Task<IResult> RevokeAdminRoleAssignmentAsync(
+        [FromBody] AdminRoleAssignmentRevokeRequest request,
+        ClaimsPrincipal principal,
+        IAdminRoleAssignmentWriteService adminRoleAssignmentWriteService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryResolvePersistentActor(principal, out var actorAdminUserId, out var actorRoleIds))
+        {
+            return Results.Conflict(new AdminRoleAssignmentRevokeResponse
+            {
+                Success = false,
+                ErrorCode = RoleAssignmentActorMappingUnavailableErrorCode,
+                Message = "Persistent Admin actor mapping is not available yet, so role assignment revocation is disabled until safe actor identity and actor role resolution are completed.",
+                AuditEventId = null,
+                TargetAdminUserId = request.TargetAdminUserId,
+                RoleId = request.RoleId,
+                OccurredAtUtc = DateTimeOffset.UtcNow
+            });
+        }
+
+        var writeResult = await adminRoleAssignmentWriteService.RevokeRoleAsync(new AdminRoleAssignmentWriteRequest(
+            actorAdminUserId,
+            request.TargetAdminUserId,
+            request.RoleId,
+            actorRoleIds,
+            request.Reason,
+            request.SafeMetadataJson), cancellationToken);
+
+        var response = ToAdminRoleAssignmentRevokeResponse(writeResult);
+        return writeResult.IsSuccess ? Results.Ok(response) : Results.Conflict(response);
+    }
+
+    private static bool TryResolvePersistentActor(
+        ClaimsPrincipal principal,
+        out Guid actorAdminUserId,
+        out IReadOnlyList<string> actorRoleIds)
+    {
+        _ = principal;
+        actorAdminUserId = Guid.Empty;
+        actorRoleIds = [];
+
+        // Persistent Admin role assignments are intentionally not active in runtime authorization yet.
+        // Until a trusted mapping from the authenticated admin principal to persistent AdminUser and
+        // persistent actor roles exists, the external revoke endpoint fails closed instead of trusting
+        // client-supplied actorAdminUserId or actorRoleIds.
+        return false;
+    }
+
+    private static AdminRoleAssignmentRevokeResponse ToAdminRoleAssignmentRevokeResponse(AdminRoleAssignmentWriteResult result) => new()
+    {
+        Success = result.IsSuccess,
+        ErrorCode = result.ErrorCode,
+        Message = result.Message,
+        AuditEventId = result.AuditEventId,
+        TargetAdminUserId = result.TargetAdminUserId,
+        RoleId = result.RoleId,
+        OccurredAtUtc = result.OccurredAtUtc
+    };
 
     private static async Task<IResult> GetAdminUserByEmailAsync(
         [AsParameters] AdminUserLookupQuery query,
