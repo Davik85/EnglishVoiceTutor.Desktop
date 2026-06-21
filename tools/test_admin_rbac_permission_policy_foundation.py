@@ -65,6 +65,27 @@ MIGRATED_ENDPOINTS = [
         "policy_constant": "ProductStatisticsReadPermissionPolicyName",
     },
     {
+        "action_key": "admin.users.lookup_by_email",
+        "method": "GET",
+        "route_constant": "AdminUserByEmailRoute",
+        "permission_constant": "UserLookupRead",
+        "policy_constant": "UserLookupPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.users.overview.read",
+        "method": "GET",
+        "route_constant": "AdminUserByIdRoute",
+        "permission_constant": "UserOverviewRead",
+        "policy_constant": "UserOverviewPermissionPolicyName",
+    },
+    {
+        "action_key": "admin.users.audit.read",
+        "method": "GET",
+        "route_constant": "AdminUserAuditActionsRoute",
+        "permission_constant": "AuditRead",
+        "policy_constant": "AuditLogViewPermissionPolicyName",
+    },
+    {
         "action_key": "admin.cms.published_status.read",
         "method": "GET",
         "route_constant": "AdminDevCmsPublishedContentStatusRoute",
@@ -381,7 +402,7 @@ def main() -> None:
     ]
     if migrated_authorizations != expected_migrations:
         raise AssertionError(
-            f"Exactly twenty existing Admin endpoints must use AdminPermission:* policies after the controlled CMS read-only batch migration. Got: {migrated_authorizations}"
+            f"Exactly twenty-three existing Admin endpoints must use AdminPermission:* policies after the controlled read-only Admin endpoint batch migration. Got: {migrated_authorizations}"
         )
 
     for method, route, policy in endpoint_authorizations:
@@ -446,11 +467,12 @@ def main() -> None:
     require(catalog_service, "AdminPermissionConstants.ProductStatisticsRead", "BootstrapAdmin catalog includes product_statistics.read")
     require(catalog_service, "AdminPermissionConstants.CmsRuntimeStatusRead", "BootstrapAdmin catalog includes cms.runtime_status.read")
     require(catalog_service, "AdminPermissionConstants.CmsContentRead", "BootstrapAdmin catalog includes cms.content.read")
+    require(catalog_service, "AdminPermissionConstants.UserLookupRead", "BootstrapAdmin catalog includes users.lookup.read")
+    require(catalog_service, "AdminPermissionConstants.UserOverviewRead", "BootstrapAdmin catalog includes users.overview.read")
+    require(catalog_service, "AdminPermissionConstants.AuditRead", "BootstrapAdmin catalog includes audit.read")
 
     dangerous_or_deferred_policies = set(DANGEROUS_POLICY_CONSTANTS) | {
         "CmsDraftSavePermissionPolicyName",
-        "UserLookupPermissionPolicyName",
-        "UserOverviewPermissionPolicyName",
         "LessonHistoryDiagnosticsPermissionPolicyName",
         "PremiumDiagnosticsPermissionPolicyName",
         "BillingEventDiagnosticsPermissionPolicyName",
