@@ -15,6 +15,10 @@ public static class RateLimitingConstants
     public const string AdminReadMessage = "Too many admin requests. Please wait and try again.";
     public const string AdminWriteMessage = "Too many admin changes. Please wait and try again.";
     public const string AdminRoleManagementMessage = "Too many role-management attempts. Please wait and try again.";
+    public const string BillingCheckoutMessage = "Too many checkout requests. Please wait and try again.";
+    public const string BillingCancelRenewalMessage = "Too many subscription requests. Please wait and try again.";
+    public const string PaddleCheckoutLaunchMessage = "Too many checkout launch requests. Please wait and try again.";
+    public const string PaddleWebhookMessage = "Too many provider requests.";
 
     public const string RetryAfterHeaderName = "Retry-After";
 
@@ -31,6 +35,10 @@ public static class RateLimitingConstants
     public const string AdminReadPolicyName = "admin-read";
     public const string AdminWritePolicyName = "admin-write";
     public const string AdminRoleManagementPolicyName = "admin-role-management";
+    public const string BillingCheckoutPolicyName = "billing-checkout";
+    public const string BillingCancelRenewalPolicyName = "billing-cancel-renewal";
+    public const string PaddleCheckoutLaunchPolicyName = "paddle-checkout-launch";
+    public const string PaddleWebhookPolicyName = "paddle-webhook";
 
     public const string AuthEndpointGroup = "auth";
     public const string LessonChatEndpointGroup = "lesson-chat";
@@ -40,5 +48,9 @@ public static class RateLimitingConstants
     public const string AdminReadEndpointGroup = "admin-read";
     public const string AdminWriteEndpointGroup = "admin-write";
     public const string AdminRoleManagementEndpointGroup = "admin-role-management";
+    public const string BillingCheckoutEndpointGroup = "billing-checkout";
+    public const string BillingCancelRenewalEndpointGroup = "billing-cancel-renewal";
+    public const string PaddleCheckoutLaunchEndpointGroup = "paddle-checkout-launch";
+    public const string PaddleWebhookEndpointGroup = "paddle-webhook";
     public const string UnknownEndpointGroup = "unknown";
 }

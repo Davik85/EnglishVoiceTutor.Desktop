@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using EnglishVoiceTutor.Api.Constants;
+using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Billing;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EnglishVoiceTutor.Api.Endpoints;
 
@@ -9,9 +11,17 @@ public static class BillingSubscriptionEndpoints
 {
     public static void MapBillingSubscriptionEndpoints(this WebApplication app)
     {
-        app.MapPost(ApiConstants.MeBillingSubscriptionCancelRoute, CancelSubscriptionRenewalAsync)
+        var cancelRenewalEndpoint = app.MapPost(ApiConstants.MeBillingSubscriptionCancelRoute, CancelSubscriptionRenewalAsync)
             .RequireAuthorization();
+
+        if (IsRateLimitingEnabled(app))
+        {
+            cancelRenewalEndpoint.RequireRateLimiting(RateLimitingConstants.BillingCancelRenewalPolicyName);
+        }
     }
+
+    private static bool IsRateLimitingEnabled(WebApplication app) =>
+        app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true;
 
     private static async Task<IResult> CancelSubscriptionRenewalAsync(
         ClaimsPrincipal principal,

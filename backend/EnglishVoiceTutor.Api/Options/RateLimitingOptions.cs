@@ -16,6 +16,7 @@ public sealed class RateLimitingOptions
     public AudioRateLimitingOptions Audio { get; set; } = new();
     public TranslationRateLimitingOptions Translation { get; set; } = new();
     public AdminRateLimitingOptions Admin { get; set; } = new();
+    public BillingRateLimitingOptions Billing { get; set; } = new();
 }
 
 public sealed class AuthRateLimitingOptions
@@ -97,4 +98,21 @@ public sealed class AdminRateLimitingOptions
     public int WritePerAdminLimit { get; set; } = DefaultWritePerAdminLimit;
     public int RoleManagementPerAdminLimit { get; set; } = DefaultRoleManagementPerAdminLimit;
     public int WindowMinutes { get; set; } = DefaultWindowMinutes;
+}
+
+public sealed class BillingRateLimitingOptions
+{
+    public const int DefaultCheckoutPerUserLimit = 10;
+    public const int DefaultCancelPerUserLimit = 10;
+    public const int DefaultPaddleCheckoutLaunchPerIpLimit = 30;
+    public const int DefaultPaddleWebhookPerIpLimit = 300;
+    public const int DefaultWindowMinutes = 10;
+    public const int DefaultWebhookWindowMinutes = 5;
+
+    public int CheckoutPerUserLimit { get; set; } = DefaultCheckoutPerUserLimit;
+    public int CancelPerUserLimit { get; set; } = DefaultCancelPerUserLimit;
+    public int PaddleCheckoutLaunchPerIpLimit { get; set; } = DefaultPaddleCheckoutLaunchPerIpLimit;
+    public int PaddleWebhookPerIpLimit { get; set; } = DefaultPaddleWebhookPerIpLimit;
+    public int WindowMinutes { get; set; } = DefaultWindowMinutes;
+    public int WebhookWindowMinutes { get; set; } = DefaultWebhookWindowMinutes;
 }

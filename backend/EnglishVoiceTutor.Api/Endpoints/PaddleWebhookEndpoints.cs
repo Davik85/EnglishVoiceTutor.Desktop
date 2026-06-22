@@ -2,6 +2,7 @@ using System.Text;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Billing;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 
 namespace EnglishVoiceTutor.Api.Endpoints;
@@ -12,9 +13,17 @@ public static class PaddleWebhookEndpoints
 
     public static void MapPaddleWebhookEndpoints(this WebApplication app)
     {
-        app.MapPost(ApiConstants.PaddleBillingWebhookRoute, ReceivePaddleWebhookAsync)
+        var webhookEndpoint = app.MapPost(ApiConstants.PaddleBillingWebhookRoute, ReceivePaddleWebhookAsync)
             .AllowAnonymous();
+
+        if (IsRateLimitingEnabled(app))
+        {
+            webhookEndpoint.RequireRateLimiting(RateLimitingConstants.PaddleWebhookPolicyName);
+        }
     }
+
+    private static bool IsRateLimitingEnabled(WebApplication app) =>
+        app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true;
 
     private static async Task<IResult> ReceivePaddleWebhookAsync(
         HttpContext httpContext,
