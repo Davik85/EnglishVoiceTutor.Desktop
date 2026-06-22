@@ -241,3 +241,8 @@ Admin RBAC fallback remains disabled in production and was not changed by the ra
 Phase 3 slice 3 is implemented in code for backend Admin endpoints and Admin role-management throttling. `RateLimiting:Enabled` remains the global switch. Admin read endpoints, Admin write endpoints, and Admin role-management mutation endpoints now have separate named technical throttle policies and safe `429` responses.
 
 Admin RBAC authorization behavior was not changed. BootstrapAdmin fallback remains disabled. Desktop, Admin UI, CMS learner content behavior, billing/Paddle/webhooks, Premium/free usage counters, and database schema were not changed. Billing/Paddle/webhook throttling remains future work. Backups/restore drills and monitoring/privacy hardening remain future work. Broad public-production readiness is still not claimed.
+
+
+## Phase 3 rate limiting slice 4
+
+Completed on 2026-06-22: backend billing/checkout/provider abuse protection was added for current-user checkout-session creation, current-user cancel-renewal, Paddle checkout launch, and Paddle webhook requests, controlled by the existing `RateLimiting:Enabled` switch. Billing semantics were not changed. Paddle webhook signature verification and provider-event handling were not changed. Admin RBAC authorization behavior was not changed, and BootstrapAdmin fallback remains disabled. Backups/restore drills remain future work, monitoring/privacy hardening remains future work, and broad public-production readiness is still not claimed.

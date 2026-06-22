@@ -1,8 +1,10 @@
+using System.Security.Claims;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Billing;
+using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Billing;
-using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EnglishVoiceTutor.Api.Endpoints;
 
@@ -10,9 +12,17 @@ public static class BillingCheckoutEndpoints
 {
     public static void MapBillingCheckoutEndpoints(this WebApplication app)
     {
-        app.MapPost(ApiConstants.MeBillingCheckoutSessionRoute, CreateCheckoutSessionAsync)
+        var checkoutEndpoint = app.MapPost(ApiConstants.MeBillingCheckoutSessionRoute, CreateCheckoutSessionAsync)
             .RequireAuthorization();
+
+        if (IsRateLimitingEnabled(app))
+        {
+            checkoutEndpoint.RequireRateLimiting(RateLimitingConstants.BillingCheckoutPolicyName);
+        }
     }
+
+    private static bool IsRateLimitingEnabled(WebApplication app) =>
+        app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true;
 
     private static async Task<IResult> CreateCheckoutSessionAsync(
         ClaimsPrincipal principal,

@@ -59,6 +59,22 @@ public static class RateLimitingServiceCollectionExtensions
                 context,
                 GetOptions(context).Admin.RoleManagementPerAdminLimit,
                 GetOptions(context).Admin.WindowMinutes));
+            options.AddPolicy(RateLimitingConstants.BillingCheckoutPolicyName, context => CreateUserOrIpPartition(
+                context,
+                GetOptions(context).Billing.CheckoutPerUserLimit,
+                GetOptions(context).Billing.WindowMinutes));
+            options.AddPolicy(RateLimitingConstants.BillingCancelRenewalPolicyName, context => CreateUserOrIpPartition(
+                context,
+                GetOptions(context).Billing.CancelPerUserLimit,
+                GetOptions(context).Billing.WindowMinutes));
+            options.AddPolicy(RateLimitingConstants.PaddleCheckoutLaunchPolicyName, context => CreateUserOrIpPartition(
+                context,
+                GetOptions(context).Billing.PaddleCheckoutLaunchPerIpLimit,
+                GetOptions(context).Billing.WindowMinutes));
+            options.AddPolicy(RateLimitingConstants.PaddleWebhookPolicyName, context => CreateFixedWindowPartition(
+                GetIpPartitionKey(context),
+                GetOptions(context).Billing.PaddleWebhookPerIpLimit,
+                GetOptions(context).Billing.WebhookWindowMinutes));
         });
 
         return services;
@@ -185,6 +201,10 @@ public static class RateLimitingServiceCollectionExtensions
         ApiConstants.AudioSpeechStreamRoute => RateLimitingConstants.AudioSpeechStreamPolicyName,
         ApiConstants.TranslationRoute => RateLimitingConstants.TranslationPolicyName,
         ApiConstants.RealtimeVoiceRoute => RateLimitingConstants.RealtimeVoicePolicyName,
+        ApiConstants.MeBillingCheckoutSessionRoute => RateLimitingConstants.BillingCheckoutPolicyName,
+        ApiConstants.MeBillingSubscriptionCancelRoute => RateLimitingConstants.BillingCancelRenewalPolicyName,
+        ApiConstants.PaddleCheckoutLaunchRoute => RateLimitingConstants.PaddleCheckoutLaunchPolicyName,
+        ApiConstants.PaddleBillingWebhookRoute => RateLimitingConstants.PaddleWebhookPolicyName,
         _ when IsAdminRoleManagementRequest(context) && !HttpMethods.IsGet(context.Request.Method) => RateLimitingConstants.AdminRoleManagementPolicyName,
         _ when IsAdminRequest(context) && HttpMethods.IsGet(context.Request.Method) => RateLimitingConstants.AdminReadPolicyName,
         _ when IsAdminRequest(context) => RateLimitingConstants.AdminWritePolicyName,
@@ -206,6 +226,10 @@ public static class RateLimitingServiceCollectionExtensions
         RateLimitingConstants.AdminReadPolicyName => RateLimitingConstants.AdminReadEndpointGroup,
         RateLimitingConstants.AdminWritePolicyName => RateLimitingConstants.AdminWriteEndpointGroup,
         RateLimitingConstants.AdminRoleManagementPolicyName => RateLimitingConstants.AdminRoleManagementEndpointGroup,
+        RateLimitingConstants.BillingCheckoutPolicyName => RateLimitingConstants.BillingCheckoutEndpointGroup,
+        RateLimitingConstants.BillingCancelRenewalPolicyName => RateLimitingConstants.BillingCancelRenewalEndpointGroup,
+        RateLimitingConstants.PaddleCheckoutLaunchPolicyName => RateLimitingConstants.PaddleCheckoutLaunchEndpointGroup,
+        RateLimitingConstants.PaddleWebhookPolicyName => RateLimitingConstants.PaddleWebhookEndpointGroup,
         RateLimitingConstants.AuthLoginPolicyName or RateLimitingConstants.AuthRegisterPolicyName or RateLimitingConstants.AuthPasswordResetRequestPolicyName or RateLimitingConstants.AuthPasswordResetConfirmPolicyName => RateLimitingConstants.AuthEndpointGroup,
         _ => RateLimitingConstants.UnknownEndpointGroup
     };
@@ -223,6 +247,10 @@ public static class RateLimitingServiceCollectionExtensions
         RateLimitingConstants.AdminReadPolicyName => RateLimitingConstants.AdminReadMessage,
         RateLimitingConstants.AdminWritePolicyName => RateLimitingConstants.AdminWriteMessage,
         RateLimitingConstants.AdminRoleManagementPolicyName => RateLimitingConstants.AdminRoleManagementMessage,
+        RateLimitingConstants.BillingCheckoutPolicyName => RateLimitingConstants.BillingCheckoutMessage,
+        RateLimitingConstants.BillingCancelRenewalPolicyName => RateLimitingConstants.BillingCancelRenewalMessage,
+        RateLimitingConstants.PaddleCheckoutLaunchPolicyName => RateLimitingConstants.PaddleCheckoutLaunchMessage,
+        RateLimitingConstants.PaddleWebhookPolicyName => RateLimitingConstants.PaddleWebhookMessage,
         _ => RateLimitingConstants.DefaultMessage
     };
 }

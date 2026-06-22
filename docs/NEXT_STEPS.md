@@ -240,3 +240,8 @@ Still deferred: true concurrent realtime voice connection caps, Admin endpoint t
 Phase 3 slice 3 is implemented for Admin read/write endpoint throttling and Admin role-management mutation throttling. Validate with production-safe one-request Admin read smoke checks first; run intentional throttling only against localhost or an approved test environment with low test limits and explicit confirmation.
 
 Still deferred: true concurrent realtime voice connection caps, billing endpoint throttling, Paddle webhook throttling, backups/restore drills, and monitoring/privacy hardening. Admin RBAC authorization behavior must remain unchanged, BootstrapAdmin fallback remains disabled, and broad public-production readiness is still not claimed.
+
+
+## Phase 3 slice 4 follow-up state
+
+Billing/checkout/provider abuse protection for current-user checkout-session creation, current-user cancel-renewal, Paddle checkout launch, and Paddle webhook requests is implemented behind `RateLimiting:Enabled`. Do not treat this as a billing semantics change: webhook signature verification and provider-event handling remain unchanged, Admin RBAC authorization behavior remains unchanged, and BootstrapAdmin fallback remains disabled. Still deferred: backups/restore drills, monitoring/privacy hardening, broader production readiness claims, true realtime voice concurrent connection caps, lesson hint/feedback limits, persisted lesson-message protections, and any distributed limiter design needed for future multi-instance deployment.

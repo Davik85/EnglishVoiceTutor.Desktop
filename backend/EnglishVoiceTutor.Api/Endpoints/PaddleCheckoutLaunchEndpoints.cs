@@ -2,6 +2,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Options;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 
 namespace EnglishVoiceTutor.Api.Endpoints;
@@ -10,8 +11,16 @@ public static class PaddleCheckoutLaunchEndpoints
 {
     public static void MapPaddleCheckoutLaunchEndpoints(this WebApplication app)
     {
-        app.MapGet(ApiConstants.PaddleCheckoutLaunchRoute, HandlePaddleCheckoutLaunch);
+        var checkoutLaunchEndpoint = app.MapGet(ApiConstants.PaddleCheckoutLaunchRoute, HandlePaddleCheckoutLaunch);
+
+        if (IsRateLimitingEnabled(app))
+        {
+            checkoutLaunchEndpoint.RequireRateLimiting(RateLimitingConstants.PaddleCheckoutLaunchPolicyName);
+        }
     }
+
+    private static bool IsRateLimitingEnabled(WebApplication app) =>
+        app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true;
 
     private static IResult HandlePaddleCheckoutLaunch(
         HttpRequest request,
