@@ -6,11 +6,11 @@ public sealed class RateLimitingOptions
 
     public const bool DefaultEnabled = false;
     public const bool DefaultLogThrottledRequests = true;
-    public const int DefaultRetryAfterSeconds = 60;
+    public const int DefaultRetryAfterSecondsValue = 60;
 
     public bool Enabled { get; set; } = DefaultEnabled;
     public bool LogThrottledRequests { get; set; } = DefaultLogThrottledRequests;
-    public int DefaultRetryAfterSeconds { get; set; } = DefaultRetryAfterSeconds;
+    public int DefaultRetryAfterSeconds { get; set; } = DefaultRetryAfterSecondsValue;
     public AuthRateLimitingOptions Auth { get; set; } = new();
     public LessonRateLimitingOptions Lessons { get; set; } = new();
 }
