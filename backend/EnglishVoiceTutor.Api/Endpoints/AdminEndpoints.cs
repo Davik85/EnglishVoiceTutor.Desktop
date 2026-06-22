@@ -1,11 +1,13 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Admin;
 using EnglishVoiceTutor.Api.Contracts.Cms;
+using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Cms;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace EnglishVoiceTutor.Api.Endpoints;
@@ -19,145 +21,261 @@ public static class AdminEndpoints
 
     public static void MapAdminEndpoints(this WebApplication app)
     {
-        app.MapGet(ApiConstants.AdminMeRoute, GetAdminMe)
-            .RequireAuthorization(AdminAuthorizationConstants.AdminSelfReadPermissionPolicyName);
+        var rateLimitingEnabled = app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true;
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminMeRoute, GetAdminMe)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminSelfReadPermissionPolicyName),
+            rateLimitingEnabled);
 
         app.MapDelete(ApiConstants.AdminSessionRoute, DeleteAdminSessionAsync);
 
-        app.MapGet(ApiConstants.AdminCapabilitiesRoute, GetAdminCapabilities)
-            .RequireAuthorization(AdminAuthorizationConstants.AdminCapabilitiesReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminCapabilitiesRoute, GetAdminCapabilities)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminCapabilitiesReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminStatisticsOverviewRoute, GetProductStatisticsOverviewAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.ProductStatisticsReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminStatisticsOverviewRoute, GetProductStatisticsOverviewAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.ProductStatisticsReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminRbacCutoverStatusRoute, GetAdminRbacCutoverStatus)
-            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminRbacCutoverStatusRoute, GetAdminRbacCutoverStatus)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminRoleAssignmentActorRoute, GetAdminRoleAssignmentActorAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminRoleAssignmentActorRoute, GetAdminRoleAssignmentActorAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminRoleAssignmentRevokeRoute, RevokeAdminRoleAssignmentAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+        ApplyAdminRoleManagementRateLimiting(
+            app.MapPost(ApiConstants.AdminRoleAssignmentRevokeRoute, RevokeAdminRoleAssignmentAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminRoleAssignmentAssignRoute, AssignAdminRoleAssignmentAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+        ApplyAdminRoleManagementRateLimiting(
+            app.MapPost(ApiConstants.AdminRoleAssignmentAssignRoute, AssignAdminRoleAssignmentAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminRoleAssignmentDisableAdminRoute, DisableAdminRoleAssignmentAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+        ApplyAdminRoleManagementRateLimiting(
+            app.MapPost(ApiConstants.AdminRoleAssignmentDisableAdminRoute, DisableAdminRoleAssignmentAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminRoleAssignmentEnableAdminRoute, EnableAdminRoleAssignmentAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+        ApplyAdminRoleManagementRateLimiting(
+            app.MapPost(ApiConstants.AdminRoleAssignmentEnableAdminRoute, EnableAdminRoleAssignmentAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminRoleAssignmentProvisionAdminUserRoute, ProvisionAdminUserRoleAssignmentAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+        ApplyAdminRoleManagementRateLimiting(
+            app.MapPost(ApiConstants.AdminRoleAssignmentProvisionAdminUserRoute, ProvisionAdminUserRoleAssignmentAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminRoleAssignmentBootstrapFirstOwnerRoute, BootstrapFirstOwnerAdminRoleAssignmentAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName);
+        ApplyAdminRoleManagementRateLimiting(
+            app.MapPost(ApiConstants.AdminRoleAssignmentBootstrapFirstOwnerRoute, BootstrapFirstOwnerAdminRoleAssignmentAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminUserByEmailRoute, GetAdminUserByEmailAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.UserLookupPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminUserByEmailRoute, GetAdminUserByEmailAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.UserLookupPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminUserByIdRoute, GetAdminUserByIdAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.UserOverviewPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminUserByIdRoute, GetAdminUserByIdAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.UserOverviewPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminUserPremiumGrantsRoute, GrantManualPremiumAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.ManualPremiumGrantPermissionPolicyName);
+        ApplyAdminWriteRateLimiting(
+            app.MapPost(ApiConstants.AdminUserPremiumGrantsRoute, GrantManualPremiumAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.ManualPremiumGrantPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminUserPremiumGrantRevokeRoute, RevokeManualPremiumAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.ManualPremiumRevokePermissionPolicyName);
+        ApplyAdminWriteRateLimiting(
+            app.MapPost(ApiConstants.AdminUserPremiumGrantRevokeRoute, RevokeManualPremiumAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.ManualPremiumRevokePermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminUserAuditActionsRoute, GetTargetUserAuditActionsAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminUserAuditActionsRoute, GetTargetUserAuditActionsAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminUserFreeLessonAllowanceResetRoute, ResetFreeLessonAllowanceAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.FreeLessonResetPermissionPolicyName);
+        ApplyAdminWriteRateLimiting(
+            app.MapPost(ApiConstants.AdminUserFreeLessonAllowanceResetRoute, ResetFreeLessonAllowanceAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.FreeLessonResetPermissionPolicyName),
+            rateLimitingEnabled);
 
         app.MapPost(ApiConstants.AdminUserBillingCancelRenewalRoute, CancelUserBillingRenewalAsync)
             .RequireAuthorization(AdminAuthorizationConstants.BillingCancelRenewalPermissionPolicyName);
 
-        app.MapPost(ApiConstants.AdminDevCmsStaticContentImportRoute, ImportStaticCmsContentAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+        ApplyAdminWriteRateLimiting(
+            app.MapPost(ApiConstants.AdminDevCmsStaticContentImportRoute, ImportStaticCmsContentAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminDevCmsStaticJsonV1InitializeRoute, InitializeStaticJsonV1CmsContentPackAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+        ApplyAdminWriteRateLimiting(
+            app.MapPost(ApiConstants.AdminDevCmsStaticJsonV1InitializeRoute, InitializeStaticJsonV1CmsContentPackAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsPublishedContentStatusRoute, GetPublishedCmsContentStatusAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsPublishedContentStatusRoute, GetPublishedCmsContentStatusAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsRuntimeContentStatusRoute, GetRuntimeCmsContentStatusAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsRuntimeStatusReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsRuntimeContentStatusRoute, GetRuntimeCmsContentStatusAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsRuntimeStatusReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsRuntimeStatusRoute, GetRuntimeCmsContentStatusAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsRuntimeStatusReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsRuntimeStatusRoute, GetRuntimeCmsContentStatusAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsRuntimeStatusReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPacksRoute, ListCmsContentPacksAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPacksRoute, ListCmsContentPacksAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackRoute, GetCmsContentPackSummaryAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackRoute, GetCmsContentPackSummaryAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackTopicsRoute, ListCmsTopicsAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackTopicsRoute, ListCmsTopicsAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackTopicRoute, GetCmsTopicAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackTopicRoute, GetCmsTopicAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPut(ApiConstants.AdminDevCmsContentPackTopicRoute, UpdateCmsTopicAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName);
+        ApplyAdminWriteRateLimiting(
+            app.MapPut(ApiConstants.AdminDevCmsContentPackTopicRoute, UpdateCmsTopicAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackScenariosRoute, ListCmsScenariosAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackScenariosRoute, ListCmsScenariosAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackScenarioRoute, GetCmsScenarioAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackScenarioRoute, GetCmsScenarioAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPut(ApiConstants.AdminDevCmsContentPackScenarioRoute, UpdateCmsScenarioAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName);
+        ApplyAdminWriteRateLimiting(
+            app.MapPut(ApiConstants.AdminDevCmsContentPackScenarioRoute, UpdateCmsScenarioAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackPromptTemplatesRoute, ListCmsPromptTemplatesAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackPromptTemplatesRoute, ListCmsPromptTemplatesAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackPromptTemplateRoute, GetCmsPromptTemplateAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackPromptTemplateRoute, GetCmsPromptTemplateAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPut(ApiConstants.AdminDevCmsContentPackPromptTemplateRoute, UpdateCmsPromptTemplateAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName);
+        ApplyAdminWriteRateLimiting(
+            app.MapPut(ApiConstants.AdminDevCmsContentPackPromptTemplateRoute, UpdateCmsPromptTemplateAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackTutorBehaviorProfilesRoute, ListCmsTutorBehaviorProfilesAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackTutorBehaviorProfilesRoute, ListCmsTutorBehaviorProfilesAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackTutorBehaviorProfileRoute, GetCmsTutorBehaviorProfileAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackTutorBehaviorProfileRoute, GetCmsTutorBehaviorProfileAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPut(ApiConstants.AdminDevCmsContentPackTutorBehaviorProfileRoute, UpdateCmsTutorBehaviorProfileAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName);
+        ApplyAdminWriteRateLimiting(
+            app.MapPut(ApiConstants.AdminDevCmsContentPackTutorBehaviorProfileRoute, UpdateCmsTutorBehaviorProfileAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsAuditEntriesRoute, ListCmsAuditEntriesAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsAuditEntriesRoute, ListCmsAuditEntriesAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackAuditEntriesRoute, ListCmsContentPackAuditEntriesAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackAuditEntriesRoute, ListCmsContentPackAuditEntriesAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminDevCmsContentPackValidateRoute, ValidateCmsContentPackAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminWriteRateLimiting(
+            app.MapPost(ApiConstants.AdminDevCmsContentPackValidateRoute, ValidateCmsContentPackAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackPreviewSummaryRoute, GetCmsPreviewSummaryAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackPreviewSummaryRoute, GetCmsPreviewSummaryAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackVersionsRoute, ListCmsContentVersionsAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackVersionsRoute, ListCmsContentVersionsAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapGet(ApiConstants.AdminDevCmsContentPackVersionRoute, GetCmsContentVersionAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName);
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminDevCmsContentPackVersionRoute, GetCmsContentVersionAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminDevCmsContentPackPublishRoute, PublishCmsContentPackAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsPublishPermissionPolicyName);
+        ApplyAdminWriteRateLimiting(
+            app.MapPost(ApiConstants.AdminDevCmsContentPackPublishRoute, PublishCmsContentPackAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsPublishPermissionPolicyName),
+            rateLimitingEnabled);
 
-        app.MapPost(ApiConstants.AdminDevCmsContentPackVersionRestoreRoute, RestoreCmsContentVersionAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsRestorePermissionPolicyName);
+        ApplyAdminWriteRateLimiting(
+            app.MapPost(ApiConstants.AdminDevCmsContentPackVersionRestoreRoute, RestoreCmsContentVersionAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsRestorePermissionPolicyName),
+            rateLimitingEnabled);
+    }
+
+
+    private static void ApplyAdminReadRateLimiting(RouteHandlerBuilder builder, bool rateLimitingEnabled)
+    {
+        if (rateLimitingEnabled)
+        {
+            builder.RequireRateLimiting(RateLimitingConstants.AdminReadPolicyName);
+        }
+    }
+
+    private static void ApplyAdminWriteRateLimiting(RouteHandlerBuilder builder, bool rateLimitingEnabled)
+    {
+        if (rateLimitingEnabled)
+        {
+            builder.RequireRateLimiting(RateLimitingConstants.AdminWritePolicyName);
+        }
+    }
+
+    private static void ApplyAdminRoleManagementRateLimiting(RouteHandlerBuilder builder, bool rateLimitingEnabled)
+    {
+        if (rateLimitingEnabled)
+        {
+            builder.RequireRateLimiting(RateLimitingConstants.AdminRoleManagementPolicyName);
+        }
     }
 
     private static async Task DeleteAdminSessionAsync(HttpContext httpContext)

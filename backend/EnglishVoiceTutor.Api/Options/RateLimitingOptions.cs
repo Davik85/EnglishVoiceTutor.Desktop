@@ -15,6 +15,7 @@ public sealed class RateLimitingOptions
     public LessonRateLimitingOptions Lessons { get; set; } = new();
     public AudioRateLimitingOptions Audio { get; set; } = new();
     public TranslationRateLimitingOptions Translation { get; set; } = new();
+    public AdminRateLimitingOptions Admin { get; set; } = new();
 }
 
 public sealed class AuthRateLimitingOptions
@@ -82,5 +83,18 @@ public sealed class TranslationRateLimitingOptions
     public const int DefaultWindowMinutes = 10;
 
     public int PerUserLimit { get; set; } = DefaultPerUserLimit;
+    public int WindowMinutes { get; set; } = DefaultWindowMinutes;
+}
+
+public sealed class AdminRateLimitingOptions
+{
+    public const int DefaultReadPerAdminLimit = 120;
+    public const int DefaultWritePerAdminLimit = 30;
+    public const int DefaultRoleManagementPerAdminLimit = 10;
+    public const int DefaultWindowMinutes = 10;
+
+    public int ReadPerAdminLimit { get; set; } = DefaultReadPerAdminLimit;
+    public int WritePerAdminLimit { get; set; } = DefaultWritePerAdminLimit;
+    public int RoleManagementPerAdminLimit { get; set; } = DefaultRoleManagementPerAdminLimit;
     public int WindowMinutes { get; set; } = DefaultWindowMinutes;
 }

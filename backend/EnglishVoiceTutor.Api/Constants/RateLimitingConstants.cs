@@ -12,6 +12,9 @@ public static class RateLimitingConstants
     public const string AudioTtsMessage = "Voice playback is being requested too quickly. Please wait a moment and try again.";
     public const string TranslationMessage = "Too many translation requests. Please wait a moment and try again.";
     public const string RealtimeVoiceMessage = "Too many voice sessions. Please close another session or wait a moment.";
+    public const string AdminReadMessage = "Too many admin requests. Please wait and try again.";
+    public const string AdminWriteMessage = "Too many admin changes. Please wait and try again.";
+    public const string AdminRoleManagementMessage = "Too many role-management attempts. Please wait and try again.";
 
     public const string RetryAfterHeaderName = "Retry-After";
 
@@ -25,11 +28,17 @@ public static class RateLimitingConstants
     public const string AudioSpeechStreamPolicyName = "audio-speech-stream";
     public const string TranslationPolicyName = "translation";
     public const string RealtimeVoicePolicyName = "realtime-voice";
+    public const string AdminReadPolicyName = "admin-read";
+    public const string AdminWritePolicyName = "admin-write";
+    public const string AdminRoleManagementPolicyName = "admin-role-management";
 
     public const string AuthEndpointGroup = "auth";
     public const string LessonChatEndpointGroup = "lesson-chat";
     public const string AudioEndpointGroup = "audio";
     public const string TranslationEndpointGroup = "translation";
     public const string RealtimeVoiceEndpointGroup = "realtime-voice";
+    public const string AdminReadEndpointGroup = "admin-read";
+    public const string AdminWriteEndpointGroup = "admin-write";
+    public const string AdminRoleManagementEndpointGroup = "admin-role-management";
     public const string UnknownEndpointGroup = "unknown";
 }
