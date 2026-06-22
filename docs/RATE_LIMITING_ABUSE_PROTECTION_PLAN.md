@@ -295,3 +295,26 @@ Useful existing documentation to reference while implementing:
 Recommended next Codex task:
 
 > Implement the first Phase 3 slice only: add configurable in-memory rate limiting for `POST /api/auth/login`, `POST /api/auth/register`, `POST /api/auth/password-reset/request`, `POST /api/auth/password-reset/confirm`, and `POST /api/lesson-chat/reply`. Keep `RateLimiting:Enabled` default `false`, preserve existing endpoint behavior when disabled, return a simple `429` JSON response with retry guidance when enabled and exceeded, add focused tests/smoke documentation, do not change Admin RBAC behavior, do not add migrations, do not change Desktop/Admin UI/billing/Paddle/CMS behavior, and do not add packages unless the current framework lacks built-in rate limiting.
+
+
+## Phase 3 first slice implementation status - 2026-06-22
+
+Implemented in this repository as a backend-only, disabled-by-default first slice. `RateLimiting:Enabled` defaults to `false`; no production deployment or server configuration change happened in this task. The new in-memory named policies are scoped only to `POST /api/auth/login`, `POST /api/auth/register`, `POST /api/auth/password-reset/request`, `POST /api/auth/password-reset/confirm`, and `POST /api/lesson-chat/reply`.
+
+The slice uses ASP.NET Core built-in fixed-window rate limiting and returns safe `429` JSON responses with `error`, `message`, and `retryAfterSeconds`, plus `Retry-After` when throttled. Safe throttling logs include policy, endpoint group, status code, retry-after seconds, authenticated user id when available, and request path only. They do not log passwords, reset tokens, cookies, request bodies, provider payloads, or lesson message text.
+
+Implementation compromise: built-in named partition policies select one synchronous partition key per request. For this first slice, auth endpoints partition by IP and lesson chat partitions by authenticated user when available, falling back to IP. The configured per-email and per-session option values are present for compatibility with the plan, but body-derived email/session partitioning remains deferred to a future slice that can safely inspect request bodies without risking token/password/message logging or over-engineering this pass.
+
+No Admin RBAC behavior was changed. Paddle/live billing was not changed. CMS was not changed. Desktop was not changed. Free/Premium product usage and entitlement logic was not changed. Future slices still need audio/TTS/STT, admin-sensitive actions, billing/checkout, Paddle webhook, realtime voice, hint/feedback/translation, and persisted lesson message protection.
+
+### Local manual smoke for first slice
+
+A helper script is available at `tools/smoke_rate_limiting_first_slice.ps1`. Use only against local or approved test environments. It defaults to `http://localhost:5000`, refuses production-looking URLs unless `-AllowProductionUrl` is supplied, requires `-ConfirmThrottleTest`, and avoids printing passwords, tokens, cookies, or raw response bodies.
+
+Example local flow:
+
+1. Set low local limits and `RateLimiting:Enabled=true` via local configuration or environment variables.
+2. Start the backend locally.
+3. Run: `pwsh tools/smoke_rate_limiting_first_slice.ps1 -BaseUrl http://localhost:5000 -ConfirmThrottleTest -Attempts 12`.
+4. Optionally add `-CheckLessonChatReply` only when provider work is safe/stubbed locally.
+5. Restore `RateLimiting:Enabled=false` unless intentionally continuing local throttle testing.
