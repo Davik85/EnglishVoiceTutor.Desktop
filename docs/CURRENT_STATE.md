@@ -246,3 +246,11 @@ Admin RBAC authorization behavior was not changed. BootstrapAdmin fallback remai
 ## Phase 3 rate limiting slice 4
 
 Completed on 2026-06-22: backend billing/checkout/provider abuse protection was added for current-user checkout-session creation, current-user cancel-renewal, Paddle checkout launch, and Paddle webhook requests, controlled by the existing `RateLimiting:Enabled` switch. Billing semantics were not changed. Paddle webhook signature verification and provider-event handling were not changed. Admin RBAC authorization behavior was not changed, and BootstrapAdmin fallback remains disabled. Backups/restore drills remain future work, monitoring/privacy hardening remains future work, and broad public-production readiness is still not claimed.
+
+## Phase 3 final rate limiting slice — 2026-06-22
+
+Phase 3 rate limiting slices 1 through the final learner/session slice are implemented. `RateLimiting__Enabled=true` is the current production setting after prior deploys. The final slice covers current auth/session endpoints, authenticated lesson start, lesson hint, lesson feedback, authenticated persisted lesson-message creation, and authenticated learner subscription/access/trial status surfaces without changing product/free-usage semantics or Premium/free entitlement semantics.
+
+Admin RBAC authorization behavior was not changed, BootstrapAdmin fallback remains disabled, billing/Paddle semantics were not changed, CMS runtime content behavior was not changed, and no database migrations were added. Product/free-usage exhaustion remains separate from technical `RateLimitExceeded` throttles.
+
+Future work remains: true distributed limiter storage, true concurrent realtime voice WebSocket connection caps if still not implemented, backups/restore drills, monitoring/privacy hardening, and broad public-production readiness. Broad public-production readiness is still not claimed.

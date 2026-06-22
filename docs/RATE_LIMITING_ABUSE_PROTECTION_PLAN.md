@@ -349,3 +349,13 @@ Admin RBAC authorization behavior was not changed. Admin permission policies, ro
 ## Phase 3 slice 4 implementation status
 
 Implemented on 2026-06-22: billing/checkout/provider abuse protection now covers current-user checkout-session creation, current-user cancel-renewal, Paddle checkout launch, and Paddle webhook requests behind the existing global `RateLimiting:Enabled` switch. Billing semantics were not changed. Paddle webhook signature verification, provider-event ingestion/idempotency, event normalization, subscription snapshot handling, payment persistence, reconciliation decisions, and entitlement activation semantics were not changed. Admin RBAC authorization behavior was not changed, and BootstrapAdmin fallback remains disabled. Backups/restore drills remain future work, monitoring/privacy hardening remains future work, and broad public-production readiness is still not claimed.
+
+## Phase 3 final slice status — implemented 2026-06-22
+
+Phase 3 slices 1 through the final learner/session slice are now implemented in code. The final slice adds technical abuse protection for current auth/session endpoints, authenticated lesson start, lesson hint, lesson feedback, authenticated persisted lesson-message creation, and authenticated learner status/access/trial-claim surfaces behind the existing global `RateLimiting:Enabled` switch. Prior production deploys already set `RateLimiting__Enabled=true`.
+
+Free-usage/product semantics were reviewed and intentionally left unchanged: product limits remain separate from technical rate limits, free-usage exhaustion may still return the existing product-level `429`, and technical limiter rejections use the `RateLimitExceeded` response shape with `retryAfterSeconds`. Premium/free entitlement semantics were not changed; Premium continues to bypass free product limits only where the existing product code already allowed it, and Premium does not bypass the technical safety caps added for expensive endpoints such as lesson chat reply, hint, feedback, transcription, TTS, translation, and realtime voice start.
+
+This slice did not change Admin RBAC authorization behavior, did not re-enable BootstrapAdmin fallback, did not change billing/Paddle semantics, did not change CMS runtime content behavior, did not add database migrations, and did not add distributed storage. BootstrapAdmin fallback remains disabled.
+
+Still future work: true distributed limiter storage for multi-instance deployments, true concurrent realtime voice WebSocket connection caps if not otherwise implemented, backups/restore drills, monitoring/privacy hardening, and broader public-production readiness work. Broad public-production readiness is still not claimed.

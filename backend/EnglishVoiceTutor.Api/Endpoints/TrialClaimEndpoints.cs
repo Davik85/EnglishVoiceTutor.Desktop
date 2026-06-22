@@ -1,7 +1,9 @@
 using EnglishVoiceTutor.Api.Constants;
+using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
 using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EnglishVoiceTutor.Api.Endpoints;
 
@@ -11,9 +13,16 @@ public static class TrialClaimEndpoints
 
     public static void MapTrialClaimEndpoints(this WebApplication app)
     {
-        app.MapPost(ApiConstants.MeTrialClaimRoute, ClaimTrialAsync)
+        var claimTrialEndpoint = app.MapPost(ApiConstants.MeTrialClaimRoute, ClaimTrialAsync)
             .RequireAuthorization();
+        if (IsRateLimitingEnabled(app))
+        {
+            claimTrialEndpoint.RequireRateLimiting(RateLimitingConstants.LessonStatusPolicyName);
+        }
     }
+
+    private static bool IsRateLimitingEnabled(WebApplication app) =>
+        app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true;
 
     private static async Task<IResult> ClaimTrialAsync(
         ClaimsPrincipal principal,

@@ -7,7 +7,13 @@ public static class RateLimitingConstants
     public const string LoginMessage = "Too many login attempts. Please wait a few minutes and try again.";
     public const string RegisterMessage = "Too many registration attempts. Please wait and try again.";
     public const string PasswordResetMessage = "Too many password reset requests. Please wait before trying again.";
+    public const string AuthSessionMessage = "Too many session requests. Please wait and try again.";
     public const string LessonChatReplyMessage = "You are sending messages too quickly. Please wait a moment and continue the lesson.";
+    public const string LessonStartMessage = "Too many lesson start attempts. Please wait a moment and try again.";
+    public const string LessonHintMessage = "Too many hint requests. Please wait a moment and try again.";
+    public const string LessonFeedbackMessage = "Too many feedback requests. Please wait a moment and try again.";
+    public const string LessonPersistedMessageMessage = "Too many lesson messages. Please wait a moment and try again.";
+    public const string LessonStatusMessage = "Too many status requests. Please wait and try again.";
     public const string AudioTranscriptionMessage = "Too many recordings. Please wait a moment before recording again.";
     public const string AudioTtsMessage = "Voice playback is being requested too quickly. Please wait a moment and try again.";
     public const string TranslationMessage = "Too many translation requests. Please wait a moment and try again.";
@@ -26,7 +32,13 @@ public static class RateLimitingConstants
     public const string AuthRegisterPolicyName = "auth-register";
     public const string AuthPasswordResetRequestPolicyName = "auth-password-reset-request";
     public const string AuthPasswordResetConfirmPolicyName = "auth-password-reset-confirm";
+    public const string AuthSessionPolicyName = "auth-session";
     public const string LessonChatReplyPolicyName = "lesson-chat-reply";
+    public const string LessonStartPolicyName = "lesson-start";
+    public const string LessonHintPolicyName = "lesson-hint";
+    public const string LessonFeedbackPolicyName = "lesson-feedback";
+    public const string LessonPersistedMessagePolicyName = "lesson-persisted-message";
+    public const string LessonStatusPolicyName = "lesson-status";
     public const string AudioTranscriptionPolicyName = "audio-transcription";
     public const string AudioSpeechPolicyName = "audio-speech";
     public const string AudioSpeechStreamPolicyName = "audio-speech-stream";
@@ -42,6 +54,11 @@ public static class RateLimitingConstants
 
     public const string AuthEndpointGroup = "auth";
     public const string LessonChatEndpointGroup = "lesson-chat";
+    public const string LessonStartEndpointGroup = "lesson-start";
+    public const string LessonHintEndpointGroup = "lesson-hint";
+    public const string LessonFeedbackEndpointGroup = "lesson-feedback";
+    public const string LessonPersistedMessageEndpointGroup = "lesson-persisted-message";
+    public const string LessonStatusEndpointGroup = "lesson-status";
     public const string AudioEndpointGroup = "audio";
     public const string TranslationEndpointGroup = "translation";
     public const string RealtimeVoiceEndpointGroup = "realtime-voice";

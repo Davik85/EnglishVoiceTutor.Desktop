@@ -1,8 +1,10 @@
 using EnglishVoiceTutor.Api.Constants;
+using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Subscriptions;
 using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EnglishVoiceTutor.Api.Endpoints;
 
@@ -13,7 +15,11 @@ public static class SubscriptionStatusEndpoints
 
     public static void MapSubscriptionStatusEndpoints(this WebApplication app)
     {
-        app.MapGet(ApiConstants.MeSubscriptionStatusRoute, GetAuthenticatedStatusAsync).RequireAuthorization();
+        var authenticatedEndpoint = app.MapGet(ApiConstants.MeSubscriptionStatusRoute, GetAuthenticatedStatusAsync).RequireAuthorization();
+        if (IsRateLimitingEnabled(app))
+        {
+            authenticatedEndpoint.RequireRateLimiting(RateLimitingConstants.LessonStatusPolicyName);
+        }
 
         app.MapGet(ApiConstants.DevSubscriptionStatusRoute, GetDevStatusAsync)
             .AddEndpointFilter(async (context, next) =>
@@ -27,6 +33,9 @@ public static class SubscriptionStatusEndpoints
                 return await next(context);
             });
     }
+
+    private static bool IsRateLimitingEnabled(WebApplication app) =>
+        app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true;
 
     private static async Task<IResult> GetAuthenticatedStatusAsync(
         ClaimsPrincipal principal,

@@ -32,7 +32,31 @@ public static class RateLimitingServiceCollectionExtensions
                 GetIpPartitionKey(context),
                 GetOptions(context).Auth.PasswordResetConfirmPerIpLimit,
                 GetOptions(context).Auth.PasswordResetConfirmWindowMinutes));
+            options.AddPolicy(RateLimitingConstants.AuthSessionPolicyName, context => CreateUserOrIpPartition(
+                context,
+                GetOptions(context).Auth.SessionPerUserLimit,
+                GetOptions(context).Auth.SessionWindowMinutes));
             options.AddPolicy(RateLimitingConstants.LessonChatReplyPolicyName, context => CreateLessonChatPartition(context));
+            options.AddPolicy(RateLimitingConstants.LessonStartPolicyName, context => CreateUserOrIpPartition(
+                context,
+                GetOptions(context).Lessons.StartPerUserLimit,
+                GetOptions(context).Lessons.LessonWindowMinutes));
+            options.AddPolicy(RateLimitingConstants.LessonHintPolicyName, context => CreateUserOrIpPartition(
+                context,
+                GetOptions(context).Lessons.HintPerUserLimit,
+                GetOptions(context).Lessons.LessonWindowMinutes));
+            options.AddPolicy(RateLimitingConstants.LessonFeedbackPolicyName, context => CreateUserOrIpPartition(
+                context,
+                GetOptions(context).Lessons.FeedbackPerUserLimit,
+                GetOptions(context).Lessons.LessonWindowMinutes));
+            options.AddPolicy(RateLimitingConstants.LessonPersistedMessagePolicyName, context => CreateLessonSessionPartition(
+                context,
+                GetOptions(context).Lessons.PersistedMessagePerSessionLimit,
+                GetOptions(context).Lessons.LessonWindowMinutes));
+            options.AddPolicy(RateLimitingConstants.LessonStatusPolicyName, context => CreateUserOrIpPartition(
+                context,
+                GetOptions(context).Lessons.StatusPerUserLimit,
+                GetOptions(context).Lessons.StatusWindowMinutes));
             options.AddPolicy(RateLimitingConstants.AudioTranscriptionPolicyName, context => CreateUserOrIpPartition(
                 context,
                 GetOptions(context).Audio.TranscriptionPerUserLimit,
@@ -93,6 +117,17 @@ public static class RateLimitingServiceCollectionExtensions
         // This first slice therefore uses authenticated user when available, otherwise IP fallback;
         // per-session chat throttling is documented for a future slice that can safely inspect the body.
         return CreateFixedWindowPartition(GetIpPartitionKey(context), options.ChatReplyPerIpFallbackLimit, options.ChatReplyWindowMinutes);
+    }
+
+    private static RateLimitPartition<string> CreateLessonSessionPartition(HttpContext context, int permitLimit, int windowMinutes)
+    {
+        var sessionId = context.Request.RouteValues.TryGetValue("sessionId", out var value) ? value?.ToString() : null;
+        if (!string.IsNullOrWhiteSpace(sessionId))
+        {
+            return CreateFixedWindowPartition($"lesson-session:{sessionId}", permitLimit, windowMinutes);
+        }
+
+        return CreateUserOrIpPartition(context, permitLimit, windowMinutes);
     }
 
     private static RateLimitPartition<string> CreateAudioTtsPartition(HttpContext context)
@@ -158,14 +193,16 @@ public static class RateLimitingServiceCollectionExtensions
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("RateLimiting");
             var adminUserId = context.HttpContext.User.FindFirstValue(AuthClaimTypes.AdminUserId);
             var userId = context.HttpContext.User.FindFirstValue(AuthClaimTypes.UserId) ?? context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var lessonSessionId = context.HttpContext.Request.RouteValues.TryGetValue("sessionId", out var routeSessionId) ? routeSessionId?.ToString() : null;
             logger.LogWarning(
-                "Request throttled. Policy={PolicyName}; EndpointGroup={EndpointGroup}; StatusCode={StatusCode}; RetryAfterSeconds={RetryAfterSeconds}; AdminUserId={AdminUserId}; UserId={UserId}; Path={Path}; Method={Method}; RemoteIp={RemoteIp}.",
+                "Request throttled. Policy={PolicyName}; EndpointGroup={EndpointGroup}; StatusCode={StatusCode}; RetryAfterSeconds={RetryAfterSeconds}; AdminUserId={AdminUserId}; UserId={UserId}; LessonSessionId={LessonSessionId}; Path={Path}; Method={Method}; RemoteIp={RemoteIp}.",
                 policyName,
                 GetEndpointGroup(policyName),
                 StatusCodes.Status429TooManyRequests,
                 retryAfterSeconds,
                 string.IsNullOrWhiteSpace(adminUserId) ? null : adminUserId,
                 string.IsNullOrWhiteSpace(userId) ? null : userId,
+                string.IsNullOrWhiteSpace(lessonSessionId) ? null : lessonSessionId,
                 context.HttpContext.Request.Path.Value,
                 context.HttpContext.Request.Method,
                 context.HttpContext.Connection.RemoteIpAddress?.ToString());
@@ -195,7 +232,13 @@ public static class RateLimitingServiceCollectionExtensions
         ApiConstants.AuthRegisterRoute => RateLimitingConstants.AuthRegisterPolicyName,
         ApiConstants.AuthPasswordResetRequestRoute => RateLimitingConstants.AuthPasswordResetRequestPolicyName,
         ApiConstants.AuthPasswordResetConfirmRoute => RateLimitingConstants.AuthPasswordResetConfirmPolicyName,
+        ApiConstants.AuthRefreshRoute or ApiConstants.AuthRevokeRoute or ApiConstants.AuthMeRoute or ApiConstants.AuthChangePasswordRoute => RateLimitingConstants.AuthSessionPolicyName,
         ApiConstants.LessonChatReplyRoute => RateLimitingConstants.LessonChatReplyPolicyName,
+        ApiConstants.LessonChatHintRoute => RateLimitingConstants.LessonHintPolicyName,
+        ApiConstants.LessonChatFeedbackRoute => RateLimitingConstants.LessonFeedbackPolicyName,
+        ApiConstants.MeLessonSessionsRoute when HttpMethods.IsPost(context.Request.Method) => RateLimitingConstants.LessonStartPolicyName,
+        ApiConstants.MeSubscriptionStatusRoute or ApiConstants.MeLessonAccessRoute or ApiConstants.MeTrialClaimRoute => RateLimitingConstants.LessonStatusPolicyName,
+        _ when IsAuthenticatedLessonMessageCreateRequest(context) => RateLimitingConstants.LessonPersistedMessagePolicyName,
         ApiConstants.AudioTranscriptionRoute => RateLimitingConstants.AudioTranscriptionPolicyName,
         ApiConstants.AudioSpeechRoute => RateLimitingConstants.AudioSpeechPolicyName,
         ApiConstants.AudioSpeechStreamRoute => RateLimitingConstants.AudioSpeechStreamPolicyName,
@@ -211,6 +254,11 @@ public static class RateLimitingServiceCollectionExtensions
         _ => "unknown"
     };
 
+    private static bool IsAuthenticatedLessonMessageCreateRequest(HttpContext context) =>
+        HttpMethods.IsPost(context.Request.Method)
+        && context.Request.Path.Value?.StartsWith("/api/me/lesson-sessions/", StringComparison.OrdinalIgnoreCase) == true
+        && context.Request.Path.Value.EndsWith("/messages", StringComparison.OrdinalIgnoreCase);
+
     private static bool IsAdminRequest(HttpContext context) =>
         context.Request.Path.Value?.StartsWith("/api/admin", StringComparison.OrdinalIgnoreCase) == true;
 
@@ -220,6 +268,11 @@ public static class RateLimitingServiceCollectionExtensions
     private static string GetEndpointGroup(string policyName) => policyName switch
     {
         RateLimitingConstants.LessonChatReplyPolicyName => RateLimitingConstants.LessonChatEndpointGroup,
+        RateLimitingConstants.LessonStartPolicyName => RateLimitingConstants.LessonStartEndpointGroup,
+        RateLimitingConstants.LessonHintPolicyName => RateLimitingConstants.LessonHintEndpointGroup,
+        RateLimitingConstants.LessonFeedbackPolicyName => RateLimitingConstants.LessonFeedbackEndpointGroup,
+        RateLimitingConstants.LessonPersistedMessagePolicyName => RateLimitingConstants.LessonPersistedMessageEndpointGroup,
+        RateLimitingConstants.LessonStatusPolicyName => RateLimitingConstants.LessonStatusEndpointGroup,
         RateLimitingConstants.AudioTranscriptionPolicyName or RateLimitingConstants.AudioSpeechPolicyName or RateLimitingConstants.AudioSpeechStreamPolicyName => RateLimitingConstants.AudioEndpointGroup,
         RateLimitingConstants.TranslationPolicyName => RateLimitingConstants.TranslationEndpointGroup,
         RateLimitingConstants.RealtimeVoicePolicyName => RateLimitingConstants.RealtimeVoiceEndpointGroup,
@@ -230,7 +283,7 @@ public static class RateLimitingServiceCollectionExtensions
         RateLimitingConstants.BillingCancelRenewalPolicyName => RateLimitingConstants.BillingCancelRenewalEndpointGroup,
         RateLimitingConstants.PaddleCheckoutLaunchPolicyName => RateLimitingConstants.PaddleCheckoutLaunchEndpointGroup,
         RateLimitingConstants.PaddleWebhookPolicyName => RateLimitingConstants.PaddleWebhookEndpointGroup,
-        RateLimitingConstants.AuthLoginPolicyName or RateLimitingConstants.AuthRegisterPolicyName or RateLimitingConstants.AuthPasswordResetRequestPolicyName or RateLimitingConstants.AuthPasswordResetConfirmPolicyName => RateLimitingConstants.AuthEndpointGroup,
+        RateLimitingConstants.AuthLoginPolicyName or RateLimitingConstants.AuthRegisterPolicyName or RateLimitingConstants.AuthPasswordResetRequestPolicyName or RateLimitingConstants.AuthPasswordResetConfirmPolicyName or RateLimitingConstants.AuthSessionPolicyName => RateLimitingConstants.AuthEndpointGroup,
         _ => RateLimitingConstants.UnknownEndpointGroup
     };
 
@@ -239,7 +292,13 @@ public static class RateLimitingServiceCollectionExtensions
         RateLimitingConstants.AuthLoginPolicyName => RateLimitingConstants.LoginMessage,
         RateLimitingConstants.AuthRegisterPolicyName => RateLimitingConstants.RegisterMessage,
         RateLimitingConstants.AuthPasswordResetRequestPolicyName or RateLimitingConstants.AuthPasswordResetConfirmPolicyName => RateLimitingConstants.PasswordResetMessage,
+        RateLimitingConstants.AuthSessionPolicyName => RateLimitingConstants.AuthSessionMessage,
         RateLimitingConstants.LessonChatReplyPolicyName => RateLimitingConstants.LessonChatReplyMessage,
+        RateLimitingConstants.LessonStartPolicyName => RateLimitingConstants.LessonStartMessage,
+        RateLimitingConstants.LessonHintPolicyName => RateLimitingConstants.LessonHintMessage,
+        RateLimitingConstants.LessonFeedbackPolicyName => RateLimitingConstants.LessonFeedbackMessage,
+        RateLimitingConstants.LessonPersistedMessagePolicyName => RateLimitingConstants.LessonPersistedMessageMessage,
+        RateLimitingConstants.LessonStatusPolicyName => RateLimitingConstants.LessonStatusMessage,
         RateLimitingConstants.AudioTranscriptionPolicyName => RateLimitingConstants.AudioTranscriptionMessage,
         RateLimitingConstants.AudioSpeechPolicyName or RateLimitingConstants.AudioSpeechStreamPolicyName => RateLimitingConstants.AudioTtsMessage,
         RateLimitingConstants.TranslationPolicyName => RateLimitingConstants.TranslationMessage,
