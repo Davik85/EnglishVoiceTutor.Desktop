@@ -2,7 +2,7 @@
 
 Review date: 2026-06-22.
 
-This is an implementation-ready plan only. Rate limiting is not implemented by this document. Do not change Admin RBAC behavior as part of Phase 3. The current Production Admin RBAC fallback state remains unchanged: BootstrapAdmin fallback is explicitly enabled through production `backend.env` after the successful 2026-06-22 controlled rehearsal.
+This is an implementation-ready plan only. Rate limiting is not implemented by this document. Do not change Admin RBAC behavior as part of Phase 3. Current Production Admin RBAC final state: after the successful 2026-06-22 controlled rehearsal, the later permanent fallback disable also passed on 2026-06-22. BootstrapAdmin fallback for `AdminPermission:*` policies is explicitly disabled through production `backend.env`, persistent role authorization is enabled and verified, two persistent `super_admin` accounts are verified, and both approved accounts passed validation after permanent fallback disable. Phase 3 rate limiting work must not change that Admin RBAC behavior; rollback remains an operational fallback action by setting `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=true` and restarting the backend.
 
 ## 1. Current state
 
