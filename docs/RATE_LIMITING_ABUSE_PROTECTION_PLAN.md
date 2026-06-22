@@ -318,3 +318,19 @@ Example local flow:
 3. Run: `pwsh tools/smoke_rate_limiting_first_slice.ps1 -BaseUrl http://localhost:5000 -ConfirmThrottleTest -Attempts 12`.
 4. Optionally add `-CheckLessonChatReply` only when provider work is safe/stubbed locally.
 5. Restore `RateLimiting:Enabled=false` unless intentionally continuing local throttle testing.
+
+## 2026-06-22 implementation update: Phase 3 slice 2
+
+Phase 3 rate limiting slice 2 is implemented after the production-enabled first slice. The existing global `RateLimiting:Enabled` switch still controls technical throttling, and the first-slice auth/login/register/password-reset/lesson-chat behavior is preserved.
+
+Slice 2 adds named technical throttling policies for:
+
+- `POST /api/audio/transcribe`
+- `POST /api/audio/speech`
+- `POST /api/audio/speech-stream`
+- `POST /api/translate`
+- WebSocket start attempts on `/api/realtime-voice`
+
+The slice uses authenticated user id partitioning where available and IP fallback otherwise. Realtime voice uses IP-based start-rate protection in this slice. A configured concurrent voice-session option is present for future work, but true concurrent WebSocket connection caps remain deferred because this implementation intentionally avoids distributed locks, database counters, and larger connection-lifecycle plumbing.
+
+Production enablement of slice 2 requires the normal backend deploy and configuration verification. Admin/billing/webhook throttling remains future work. Admin RBAC behavior was not changed. Product/free usage entitlement logic was not changed.

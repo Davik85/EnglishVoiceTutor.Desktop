@@ -226,4 +226,12 @@ Known billing follow-ups: continue sandbox/live-separation checks, provider diag
 
 The first backend-only Phase 3 rate limiting slice is implemented for auth login, registration, password reset request, password reset confirmation, and lesson chat reply. The default remains `RateLimiting:Enabled=false`, so existing auth, lesson chat, and product/free-limit behavior is preserved unless an operator intentionally enables the new limiter. No production deployment or server configuration change happened in this task.
 
-Admin RBAC behavior was not changed. Paddle/live billing was not changed. CMS was not changed. Desktop was not changed. Free/Premium entitlement and usage-counter behavior was not changed. Future abuse-protection slices still need audio/TTS/STT, admin-sensitive endpoints, billing/checkout, Paddle webhooks, realtime voice, hint/feedback/translation, and persisted lesson-message protections.
+Admin RBAC behavior was not changed. Paddle/live billing was not changed. CMS was not changed. Desktop was not changed. Free/Premium entitlement and usage-counter behavior was not changed. Future abuse-protection slices still need admin-sensitive endpoints, billing/checkout, Paddle webhooks, lesson hint/feedback, persisted lesson-message protections, and true realtime voice concurrent connection caps.
+
+## Phase 3 rate limiting state
+
+Phase 3 rate limiting slice 1 is implemented, deployed, and enabled in production for auth login, auth register, password reset request/confirm, and lesson chat reply. `RateLimiting__Enabled=true` is active in production.
+
+Phase 3 slice 2 has now been implemented in code for high-cost learner/provider surfaces: audio transcription, TTS speech, TTS speech stream, translation, and realtime voice WebSocket start attempts. Production activation of slice 2 requires the normal deploy/config verification path before it should be treated as live. Realtime voice has start-rate protection in this slice; true concurrent WebSocket connection caps remain future work.
+
+Admin RBAC fallback remains disabled in production and was not changed by the rate-limiting work. Product/free usage entitlement behavior was not changed. Admin endpoint throttling, billing endpoint throttling, and Paddle webhook throttling remain future work.

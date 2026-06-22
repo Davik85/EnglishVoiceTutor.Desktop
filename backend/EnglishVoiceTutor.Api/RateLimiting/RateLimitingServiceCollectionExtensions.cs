@@ -33,6 +33,20 @@ public static class RateLimitingServiceCollectionExtensions
                 GetOptions(context).Auth.PasswordResetConfirmPerIpLimit,
                 GetOptions(context).Auth.PasswordResetConfirmWindowMinutes));
             options.AddPolicy(RateLimitingConstants.LessonChatReplyPolicyName, context => CreateLessonChatPartition(context));
+            options.AddPolicy(RateLimitingConstants.AudioTranscriptionPolicyName, context => CreateUserOrIpPartition(
+                context,
+                GetOptions(context).Audio.TranscriptionPerUserLimit,
+                GetOptions(context).Audio.AudioWindowMinutes));
+            options.AddPolicy(RateLimitingConstants.AudioSpeechPolicyName, context => CreateAudioTtsPartition(context));
+            options.AddPolicy(RateLimitingConstants.AudioSpeechStreamPolicyName, context => CreateAudioTtsPartition(context));
+            options.AddPolicy(RateLimitingConstants.TranslationPolicyName, context => CreateUserOrIpPartition(
+                context,
+                GetOptions(context).Translation.PerUserLimit,
+                GetOptions(context).Translation.WindowMinutes));
+            options.AddPolicy(RateLimitingConstants.RealtimeVoicePolicyName, context => CreateFixedWindowPartition(
+                GetIpPartitionKey(context),
+                GetOptions(context).Audio.RealtimeVoiceStartPerIpLimit,
+                GetOptions(context).Audio.RealtimeVoiceWindowMinutes));
         });
 
         return services;
@@ -51,6 +65,23 @@ public static class RateLimitingServiceCollectionExtensions
         // This first slice therefore uses authenticated user when available, otherwise IP fallback;
         // per-session chat throttling is documented for a future slice that can safely inspect the body.
         return CreateFixedWindowPartition(GetIpPartitionKey(context), options.ChatReplyPerIpFallbackLimit, options.ChatReplyWindowMinutes);
+    }
+
+    private static RateLimitPartition<string> CreateAudioTtsPartition(HttpContext context)
+    {
+        var options = GetOptions(context).Audio;
+        return CreateUserOrIpPartition(context, options.TtsPerUserLimit, options.AudioWindowMinutes);
+    }
+
+    private static RateLimitPartition<string> CreateUserOrIpPartition(HttpContext context, int permitLimit, int windowMinutes)
+    {
+        var userId = context.User.FindFirstValue(AuthClaimTypes.UserId) ?? context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            return CreateFixedWindowPartition($"user:{userId}", permitLimit, windowMinutes);
+        }
+
+        return CreateFixedWindowPartition(GetIpPartitionKey(context), permitLimit, windowMinutes);
     }
 
     private static RateLimitPartition<string> CreateFixedWindowPartition(string key, int permitLimit, int windowMinutes)
@@ -122,12 +153,20 @@ public static class RateLimitingServiceCollectionExtensions
         ApiConstants.AuthPasswordResetRequestRoute => RateLimitingConstants.AuthPasswordResetRequestPolicyName,
         ApiConstants.AuthPasswordResetConfirmRoute => RateLimitingConstants.AuthPasswordResetConfirmPolicyName,
         ApiConstants.LessonChatReplyRoute => RateLimitingConstants.LessonChatReplyPolicyName,
+        ApiConstants.AudioTranscriptionRoute => RateLimitingConstants.AudioTranscriptionPolicyName,
+        ApiConstants.AudioSpeechRoute => RateLimitingConstants.AudioSpeechPolicyName,
+        ApiConstants.AudioSpeechStreamRoute => RateLimitingConstants.AudioSpeechStreamPolicyName,
+        ApiConstants.TranslationRoute => RateLimitingConstants.TranslationPolicyName,
+        ApiConstants.RealtimeVoiceRoute => RateLimitingConstants.RealtimeVoicePolicyName,
         _ => "unknown"
     };
 
     private static string GetEndpointGroup(string policyName) => policyName switch
     {
         RateLimitingConstants.LessonChatReplyPolicyName => RateLimitingConstants.LessonChatEndpointGroup,
+        RateLimitingConstants.AudioTranscriptionPolicyName or RateLimitingConstants.AudioSpeechPolicyName or RateLimitingConstants.AudioSpeechStreamPolicyName => RateLimitingConstants.AudioEndpointGroup,
+        RateLimitingConstants.TranslationPolicyName => RateLimitingConstants.TranslationEndpointGroup,
+        RateLimitingConstants.RealtimeVoicePolicyName => RateLimitingConstants.RealtimeVoiceEndpointGroup,
         RateLimitingConstants.AuthLoginPolicyName or RateLimitingConstants.AuthRegisterPolicyName or RateLimitingConstants.AuthPasswordResetRequestPolicyName or RateLimitingConstants.AuthPasswordResetConfirmPolicyName => RateLimitingConstants.AuthEndpointGroup,
         _ => RateLimitingConstants.UnknownEndpointGroup
     };
@@ -138,6 +177,10 @@ public static class RateLimitingServiceCollectionExtensions
         RateLimitingConstants.AuthRegisterPolicyName => RateLimitingConstants.RegisterMessage,
         RateLimitingConstants.AuthPasswordResetRequestPolicyName or RateLimitingConstants.AuthPasswordResetConfirmPolicyName => RateLimitingConstants.PasswordResetMessage,
         RateLimitingConstants.LessonChatReplyPolicyName => RateLimitingConstants.LessonChatReplyMessage,
+        RateLimitingConstants.AudioTranscriptionPolicyName => RateLimitingConstants.AudioTranscriptionMessage,
+        RateLimitingConstants.AudioSpeechPolicyName or RateLimitingConstants.AudioSpeechStreamPolicyName => RateLimitingConstants.AudioTtsMessage,
+        RateLimitingConstants.TranslationPolicyName => RateLimitingConstants.TranslationMessage,
+        RateLimitingConstants.RealtimeVoicePolicyName => RateLimitingConstants.RealtimeVoiceMessage,
         _ => RateLimitingConstants.DefaultMessage
     };
 }
