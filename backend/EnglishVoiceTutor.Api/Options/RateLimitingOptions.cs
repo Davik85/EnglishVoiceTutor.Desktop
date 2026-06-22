@@ -13,6 +13,8 @@ public sealed class RateLimitingOptions
     public int DefaultRetryAfterSeconds { get; set; } = DefaultRetryAfterSecondsValue;
     public AuthRateLimitingOptions Auth { get; set; } = new();
     public LessonRateLimitingOptions Lessons { get; set; } = new();
+    public AudioRateLimitingOptions Audio { get; set; } = new();
+    public TranslationRateLimitingOptions Translation { get; set; } = new();
 }
 
 public sealed class AuthRateLimitingOptions
@@ -55,4 +57,30 @@ public sealed class LessonRateLimitingOptions
     public int ChatReplyPerSessionLimit { get; set; } = DefaultChatReplyPerSessionLimit;
     public int ChatReplyPerIpFallbackLimit { get; set; } = DefaultChatReplyPerIpFallbackLimit;
     public int ChatReplyWindowMinutes { get; set; } = DefaultChatReplyWindowMinutes;
+}
+
+public sealed class AudioRateLimitingOptions
+{
+    public const int DefaultTranscriptionPerUserLimit = 20;
+    public const int DefaultTtsPerUserLimit = 60;
+    public const int DefaultAudioWindowMinutes = 10;
+    public const int DefaultRealtimeVoiceConcurrentPerIpLimit = 3;
+    public const int DefaultRealtimeVoiceStartPerIpLimit = 10;
+    public const int DefaultRealtimeVoiceWindowMinutes = 10;
+
+    public int TranscriptionPerUserLimit { get; set; } = DefaultTranscriptionPerUserLimit;
+    public int TtsPerUserLimit { get; set; } = DefaultTtsPerUserLimit;
+    public int AudioWindowMinutes { get; set; } = DefaultAudioWindowMinutes;
+    public int RealtimeVoiceConcurrentPerIpLimit { get; set; } = DefaultRealtimeVoiceConcurrentPerIpLimit;
+    public int RealtimeVoiceStartPerIpLimit { get; set; } = DefaultRealtimeVoiceStartPerIpLimit;
+    public int RealtimeVoiceWindowMinutes { get; set; } = DefaultRealtimeVoiceWindowMinutes;
+}
+
+public sealed class TranslationRateLimitingOptions
+{
+    public const int DefaultPerUserLimit = 30;
+    public const int DefaultWindowMinutes = 10;
+
+    public int PerUserLimit { get; set; } = DefaultPerUserLimit;
+    public int WindowMinutes { get; set; } = DefaultWindowMinutes;
 }

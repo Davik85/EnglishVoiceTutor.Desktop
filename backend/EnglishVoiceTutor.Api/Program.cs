@@ -312,18 +312,23 @@ app.MapGet(ApiConstants.BackendConfigStatusRoute, (OpenAiOptionsProvider options
     });
 });
 
+var rateLimitingEnabled = app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true;
 var lessonChatReplyEndpoint = app.MapPost(ApiConstants.LessonChatReplyRoute, HandleLessonChatReplyAsync);
-if (app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true)
-{
-    lessonChatReplyEndpoint.RequireRateLimiting(RateLimitingConstants.LessonChatReplyPolicyName);
-}
 app.MapPost(ApiConstants.LessonChatMockReplyRoute, HandleMockLessonChatReplyAsync);
 app.MapPost(ApiConstants.LessonChatHintRoute, HandleLessonChatHintAsync);
 app.MapPost(ApiConstants.LessonChatFeedbackRoute, HandleLessonChatFeedbackAsync);
-app.MapPost(ApiConstants.AudioTranscriptionRoute, HandleAudioTranscriptionAsync);
-app.MapPost(ApiConstants.TranslationRoute, HandleTranslationAsync);
-app.MapPost(ApiConstants.AudioSpeechRoute, HandleAudioSpeechAsync);
-app.MapPost(ApiConstants.AudioSpeechStreamRoute, HandleAudioSpeechStreamAsync);
+var audioTranscriptionEndpoint = app.MapPost(ApiConstants.AudioTranscriptionRoute, HandleAudioTranscriptionAsync);
+var translationEndpoint = app.MapPost(ApiConstants.TranslationRoute, HandleTranslationAsync);
+var audioSpeechEndpoint = app.MapPost(ApiConstants.AudioSpeechRoute, HandleAudioSpeechAsync);
+var audioSpeechStreamEndpoint = app.MapPost(ApiConstants.AudioSpeechStreamRoute, HandleAudioSpeechStreamAsync);
+if (rateLimitingEnabled)
+{
+    lessonChatReplyEndpoint.RequireRateLimiting(RateLimitingConstants.LessonChatReplyPolicyName);
+    audioTranscriptionEndpoint.RequireRateLimiting(RateLimitingConstants.AudioTranscriptionPolicyName);
+    translationEndpoint.RequireRateLimiting(RateLimitingConstants.TranslationPolicyName);
+    audioSpeechEndpoint.RequireRateLimiting(RateLimitingConstants.AudioSpeechPolicyName);
+    audioSpeechStreamEndpoint.RequireRateLimiting(RateLimitingConstants.AudioSpeechStreamPolicyName);
+}
 app.MapGet(ApiConstants.DevUserSettingsRoute, HandleGetDevUserSettingsAsync);
 app.MapPut(ApiConstants.DevUserSettingsRoute, HandleUpdateDevUserSettingsAsync);
 app.MapGet(ApiConstants.MeUserSettingsRoute, HandleGetAuthenticatedUserSettingsAsync).RequireAuthorization();
@@ -358,7 +363,11 @@ app.MapGet(ApiConstants.DevUsageEventsRoute, HandleGetDevUsageEventsAsync);
 app.MapGet(ApiConstants.DevDailyUsageCountersRoute, HandleGetDevDailyUsageCountersAsync);
 app.MapGet(ApiConstants.DevFreeLimitStatusRoute, HandleGetDevFreeLimitStatusAsync);
 app.MapGet(ApiConstants.DevFeedbackResultsRoute, HandleGetDevFeedbackResultsAsync);
-app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
+var realtimeVoiceEndpoint = app.Map(ApiConstants.RealtimeVoiceRoute, HandleRealtimeVoiceAsync);
+if (rateLimitingEnabled)
+{
+    realtimeVoiceEndpoint.RequireRateLimiting(RateLimitingConstants.RealtimeVoicePolicyName);
+}
 app.MapAuthEndpoints();
 app.MapDeviceEndpoints();
 app.MapSubscriptionStatusEndpoints();

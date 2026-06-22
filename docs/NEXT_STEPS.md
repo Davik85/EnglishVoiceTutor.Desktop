@@ -225,4 +225,12 @@ When changing a tutor Display name in Admin CMS, use Save draft + Publish and th
 
 The backend now contains a disabled-by-default in-memory first slice for auth login/register/password reset and lesson chat reply. Before enabling outside local testing, choose production limits, decide whether body-derived per-email and per-session partitioning is needed beyond the current IP/user partition compromise, and perform an approved environment smoke. No production deployment or server configuration change happened in the implementation task.
 
-Still future work: audio/TTS/STT protection, admin-sensitive endpoint throttles, billing/checkout throttles, Paddle webhook abuse protection, realtime voice limits, hint/feedback/translation limits, persisted lesson-message protections, and any long-term distributed limiter design if a multi-instance backend requires it. Admin RBAC, Paddle/live billing, CMS, Desktop, and product/free-limit behavior were intentionally unchanged.
+Still future work: admin-sensitive endpoint throttles, billing/checkout throttles, Paddle webhook abuse protection, lesson hint/feedback limits, persisted lesson-message protections, true realtime voice concurrent connection caps, and any long-term distributed limiter design if a multi-instance backend requires it. Admin RBAC, Paddle/live billing, CMS, Desktop, and product/free-limit behavior were intentionally unchanged.
+
+## Phase 3 rate limiting next steps
+
+Phase 3 slice 2 is implemented after slice 1 for audio transcription, audio/TTS speech, audio/TTS speech stream, translation, and realtime voice WebSocket start-rate protection. Before calling it production-enabled, complete the normal backend deploy and configuration verification with `RateLimiting__Enabled=true` and the intended audio/translation limits.
+
+Do production-safe validation first: health checks, one-request smoke checks, and log review for safe throttle summaries. Do not run intentional throttling or stress tests against production unless there is an approved test window and explicit confirmation.
+
+Still deferred: true concurrent realtime voice connection caps, Admin endpoint throttling, Admin role-management throttling, billing throttling, and Paddle webhook throttling. Admin RBAC fallback behavior and product/free usage entitlement logic must remain unchanged while continuing Phase 3.
