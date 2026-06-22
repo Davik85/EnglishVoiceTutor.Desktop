@@ -33,6 +33,8 @@ public sealed class AuthRateLimitingOptions
     public const int DefaultPasswordResetConfirmPerIpLimit = 10;
     public const int DefaultPasswordResetConfirmPerEmailLimit = 5;
     public const int DefaultPasswordResetConfirmWindowMinutes = 15;
+    public const int DefaultSessionPerUserLimit = 60;
+    public const int DefaultSessionWindowMinutes = 5;
 
     public int LoginPerIpLimit { get; set; } = DefaultLoginPerIpLimit;
     public int LoginPerEmailLimit { get; set; } = DefaultLoginPerEmailLimit;
@@ -46,6 +48,8 @@ public sealed class AuthRateLimitingOptions
     public int PasswordResetConfirmPerIpLimit { get; set; } = DefaultPasswordResetConfirmPerIpLimit;
     public int PasswordResetConfirmPerEmailLimit { get; set; } = DefaultPasswordResetConfirmPerEmailLimit;
     public int PasswordResetConfirmWindowMinutes { get; set; } = DefaultPasswordResetConfirmWindowMinutes;
+    public int SessionPerUserLimit { get; set; } = DefaultSessionPerUserLimit;
+    public int SessionWindowMinutes { get; set; } = DefaultSessionWindowMinutes;
 }
 
 public sealed class LessonRateLimitingOptions
@@ -54,11 +58,25 @@ public sealed class LessonRateLimitingOptions
     public const int DefaultChatReplyPerSessionLimit = 20;
     public const int DefaultChatReplyPerIpFallbackLimit = 30;
     public const int DefaultChatReplyWindowMinutes = 10;
+    public const int DefaultStartPerUserLimit = 10;
+    public const int DefaultHintPerUserLimit = 20;
+    public const int DefaultFeedbackPerUserLimit = 20;
+    public const int DefaultPersistedMessagePerSessionLimit = 40;
+    public const int DefaultStatusPerUserLimit = 120;
+    public const int DefaultLessonWindowMinutes = 10;
+    public const int DefaultStatusWindowMinutes = 5;
 
     public int ChatReplyPerUserLimit { get; set; } = DefaultChatReplyPerUserLimit;
     public int ChatReplyPerSessionLimit { get; set; } = DefaultChatReplyPerSessionLimit;
     public int ChatReplyPerIpFallbackLimit { get; set; } = DefaultChatReplyPerIpFallbackLimit;
     public int ChatReplyWindowMinutes { get; set; } = DefaultChatReplyWindowMinutes;
+    public int StartPerUserLimit { get; set; } = DefaultStartPerUserLimit;
+    public int HintPerUserLimit { get; set; } = DefaultHintPerUserLimit;
+    public int FeedbackPerUserLimit { get; set; } = DefaultFeedbackPerUserLimit;
+    public int PersistedMessagePerSessionLimit { get; set; } = DefaultPersistedMessagePerSessionLimit;
+    public int StatusPerUserLimit { get; set; } = DefaultStatusPerUserLimit;
+    public int LessonWindowMinutes { get; set; } = DefaultLessonWindowMinutes;
+    public int StatusWindowMinutes { get; set; } = DefaultStatusWindowMinutes;
 }
 
 public sealed class AudioRateLimitingOptions

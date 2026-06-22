@@ -245,3 +245,9 @@ Still deferred: true concurrent realtime voice connection caps, billing endpoint
 ## Phase 3 slice 4 follow-up state
 
 Billing/checkout/provider abuse protection for current-user checkout-session creation, current-user cancel-renewal, Paddle checkout launch, and Paddle webhook requests is implemented behind `RateLimiting:Enabled`. Do not treat this as a billing semantics change: webhook signature verification and provider-event handling remain unchanged, Admin RBAC authorization behavior remains unchanged, and BootstrapAdmin fallback remains disabled. Still deferred: backups/restore drills, monitoring/privacy hardening, broader production readiness claims, true realtime voice concurrent connection caps, lesson hint/feedback limits, persisted lesson-message protections, and any distributed limiter design needed for future multi-instance deployment.
+
+## After Phase 3 final rate limiting slice — 2026-06-22
+
+Phase 3 slices 1 through the final learner/session slice are implemented, and prior production deploys have `RateLimiting__Enabled=true`. No Desktop, Admin UI, Admin RBAC authorization, BootstrapAdmin fallback, billing/Paddle, CMS runtime content, product/free-usage counter, Premium/free entitlement, deployment-script, or database-migration change is included in the final slice.
+
+Remaining work should focus on production operations rather than additional Phase 3 endpoint coverage: design true distributed limiter storage before multi-instance scale-out, add true concurrent realtime voice WebSocket connection caps if still not implemented, complete backups/restore drills, improve monitoring/privacy hardening, and avoid claiming broad public-production readiness until those operational items are done.

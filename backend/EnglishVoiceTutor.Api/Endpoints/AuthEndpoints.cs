@@ -4,6 +4,7 @@ using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Auth;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 
 namespace EnglishVoiceTutor.Api.Endpoints;
@@ -21,10 +22,17 @@ public static class AuthEndpoints
             registerEndpoint.RequireRateLimiting(RateLimitingConstants.AuthRegisterPolicyName);
             loginEndpoint.RequireRateLimiting(RateLimitingConstants.AuthLoginPolicyName);
         }
-        app.MapPost(ApiConstants.AuthRefreshRoute, RefreshAsync);
-        app.MapPost(ApiConstants.AuthRevokeRoute, RevokeAsync);
-        app.MapGet(ApiConstants.AuthMeRoute, GetMeAsync).RequireAuthorization();
-        app.MapPost(ApiConstants.AuthChangePasswordRoute, ChangePasswordAsync).RequireAuthorization();
+        var refreshEndpoint = app.MapPost(ApiConstants.AuthRefreshRoute, RefreshAsync);
+        var revokeEndpoint = app.MapPost(ApiConstants.AuthRevokeRoute, RevokeAsync);
+        var meEndpoint = app.MapGet(ApiConstants.AuthMeRoute, GetMeAsync).RequireAuthorization();
+        var changePasswordEndpoint = app.MapPost(ApiConstants.AuthChangePasswordRoute, ChangePasswordAsync).RequireAuthorization();
+        if (rateLimitingEnabled)
+        {
+            refreshEndpoint.RequireRateLimiting(RateLimitingConstants.AuthSessionPolicyName);
+            revokeEndpoint.RequireRateLimiting(RateLimitingConstants.AuthSessionPolicyName);
+            meEndpoint.RequireRateLimiting(RateLimitingConstants.AuthSessionPolicyName);
+            changePasswordEndpoint.RequireRateLimiting(RateLimitingConstants.AuthSessionPolicyName);
+        }
         var passwordResetRequestEndpoint = app.MapPost(ApiConstants.AuthPasswordResetRequestRoute, RequestPasswordResetAsync);
         var passwordResetConfirmEndpoint = app.MapPost(ApiConstants.AuthPasswordResetConfirmRoute, ConfirmPasswordResetAsync);
         if (rateLimitingEnabled)

@@ -27,6 +27,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using EnglishVoiceTutor.Desktop.Models;
@@ -315,8 +316,8 @@ app.MapGet(ApiConstants.BackendConfigStatusRoute, (OpenAiOptionsProvider options
 var rateLimitingEnabled = app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true;
 var lessonChatReplyEndpoint = app.MapPost(ApiConstants.LessonChatReplyRoute, HandleLessonChatReplyAsync);
 app.MapPost(ApiConstants.LessonChatMockReplyRoute, HandleMockLessonChatReplyAsync);
-app.MapPost(ApiConstants.LessonChatHintRoute, HandleLessonChatHintAsync);
-app.MapPost(ApiConstants.LessonChatFeedbackRoute, HandleLessonChatFeedbackAsync);
+var lessonChatHintEndpoint = app.MapPost(ApiConstants.LessonChatHintRoute, HandleLessonChatHintAsync);
+var lessonChatFeedbackEndpoint = app.MapPost(ApiConstants.LessonChatFeedbackRoute, HandleLessonChatFeedbackAsync);
 var audioTranscriptionEndpoint = app.MapPost(ApiConstants.AudioTranscriptionRoute, HandleAudioTranscriptionAsync);
 var translationEndpoint = app.MapPost(ApiConstants.TranslationRoute, HandleTranslationAsync);
 var audioSpeechEndpoint = app.MapPost(ApiConstants.AudioSpeechRoute, HandleAudioSpeechAsync);
@@ -328,6 +329,8 @@ if (rateLimitingEnabled)
     translationEndpoint.RequireRateLimiting(RateLimitingConstants.TranslationPolicyName);
     audioSpeechEndpoint.RequireRateLimiting(RateLimitingConstants.AudioSpeechPolicyName);
     audioSpeechStreamEndpoint.RequireRateLimiting(RateLimitingConstants.AudioSpeechStreamPolicyName);
+    lessonChatHintEndpoint.RequireRateLimiting(RateLimitingConstants.LessonHintPolicyName);
+    lessonChatFeedbackEndpoint.RequireRateLimiting(RateLimitingConstants.LessonFeedbackPolicyName);
 }
 app.MapGet(ApiConstants.DevUserSettingsRoute, HandleGetDevUserSettingsAsync);
 app.MapPut(ApiConstants.DevUserSettingsRoute, HandleUpdateDevUserSettingsAsync);
@@ -344,7 +347,7 @@ app.MapGet(ApiConstants.RuntimeTutorOptionsRoute, HandleGetRuntimeTutorOptionsAs
 app.MapGet(ApiConstants.DevLessonSessionByIdRoute, HandleGetLessonSessionByIdAsync);
 app.MapPost(ApiConstants.DevLessonSessionMessagesRoute, HandleCreateLessonMessageAsync);
 app.MapGet(ApiConstants.DevLessonSessionMessagesRoute, HandleGetLessonMessagesAsync);
-app.MapPost(ApiConstants.MeLessonSessionsRoute, HandleCreateDevLessonSessionAsync).RequireAuthorization();
+var authenticatedLessonStartEndpoint = app.MapPost(ApiConstants.MeLessonSessionsRoute, HandleCreateDevLessonSessionAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonContentScenarioRoute, HandleGetRuntimeLessonScenarioAsync).RequireAuthorization();
 app.MapPut(ApiConstants.MeLessonSessionFinishRoute, HandleFinishLessonSessionAsync).RequireAuthorization();
 app.MapPost(ApiConstants.LessonSessionHeartbeatRoute, HandleLessonSessionHeartbeatAsync).RequireAuthorization();
@@ -352,8 +355,13 @@ app.MapPost(ApiConstants.LessonSessionAbandonRoute, HandleAbandonLessonSessionAs
 app.MapPost(ApiConstants.ActiveLessonSessionAbandonRoute, HandleAbandonActiveLessonSessionAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonSessionsRoute, HandleGetDevLessonSessionsAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonSessionByIdRoute, HandleGetLessonSessionByIdAsync).RequireAuthorization();
-app.MapPost(ApiConstants.MeLessonSessionMessagesRoute, HandleCreateLessonMessageAsync).RequireAuthorization();
+var authenticatedLessonMessageEndpoint = app.MapPost(ApiConstants.MeLessonSessionMessagesRoute, HandleCreateLessonMessageAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonSessionMessagesRoute, HandleGetLessonMessagesAsync).RequireAuthorization();
+if (rateLimitingEnabled)
+{
+    authenticatedLessonStartEndpoint.RequireRateLimiting(RateLimitingConstants.LessonStartPolicyName);
+    authenticatedLessonMessageEndpoint.RequireRateLimiting(RateLimitingConstants.LessonPersistedMessagePolicyName);
+}
 app.MapPut(ApiConstants.DevLessonSessionSummaryRoute, HandleUpsertDevLessonSummaryAsync);
 app.MapGet(ApiConstants.DevLessonSessionSummaryRoute, HandleGetDevLessonSummaryAsync);
 app.MapGet(ApiConstants.DevLessonSummariesRoute, HandleGetDevLessonSummariesAsync);
