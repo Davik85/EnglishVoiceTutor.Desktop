@@ -74,10 +74,10 @@ Do not move billing/Paddle production readiness into the immediate next step. Co
 
 ### Phase 4. Backups / restore / migration rollback drills
 
-- Document the production backup schedule and retention.
-- Document and run a restore drill using production-safe verification commands.
-- Document the pre-migration backup requirement for schema-dependent backend releases.
-- Document a migration rollback/remediation drill, including when to roll back code, when to apply targeted reviewed SQL, and how to verify `__EFMigrationsHistory`, required tables, ownership, and grants without exposing secrets.
+- Phase 4A operator documentation and command-printing helper are in `docs/BACKUP_RESTORE_DRILL_RUNBOOK.md` and `tools/db_backup_restore_drill_commands.ps1`.
+- Before any future schema-dependent backend release, operators must create a fresh PostgreSQL custom-format production backup, verify it with `pg_restore --list`, and run/record a separate drill-database restore when migration risk warrants it.
+- Restore drills must never target the production database, and backend package/upload scripts still do not run EF migrations automatically.
+- Keep production secrets, connection strings, `.env` contents, SQL dumps, backup files, and raw user data out of chat, docs, terminal transcripts intended for sharing, and git.
 
 ### Phase 5. Monitoring / logging / privacy hardening
 
