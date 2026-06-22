@@ -75,7 +75,7 @@ function ConvertTo-OptionalBooleanParameter {
         return [bool]$Value
     }
 
-    if ($Value -is [int] -or $Value -is [long] -or $Value -is [short] -or $Value -is [byte]) {
+    if ($Value -is [int] -or $Value -is [long] -or $Value -is [int16] -or $Value -is [byte]) {
         if ([int64]$Value -eq 1) { return $true }
         if ([int64]$Value -eq 0) { return $false }
     }
