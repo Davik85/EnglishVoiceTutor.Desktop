@@ -4,9 +4,19 @@ This runbook is for owner-approved controlled validation only. It is not a broad
 
 ## Current production state
 
-First owner bootstrap has been completed in production. Actor mapping now resolves for the owner account, the active persistent role is `super_admin`, and the cutover status endpoint reports fallback enabled by default: `fallbackEnabled=true`, `defaultFallbackEnabled=true`, `configValuePresent=false`, and `persistentRoleAuthorizationEnabled=true`. Backend `0.1.35-backend.34` is deployed after production migration `20260620165657_AddAdminRoleAssignmentPersistence`, and `0.1.35-backend.33` remains available for rollback.
+The controlled Production Admin RBAC cutover rehearsal was completed successfully on 2026-06-22. It was a rehearsal, not permanent fallback removal. The active production backend during the rehearsal was `/opt/languagevoicetutor/backend/releases/0.1.35-backend.34`; `/health` and `/api/health/database` returned `200 OK`, and the production database was healthy.
 
-BootstrapAdmin fallback remains enabled by default for `AdminPermission:*` policies. The release gate runs the Admin RBAC cutover validation static pack, which verifies cutover guardrails statically but does not perform a live cutover. The manual cutover smoke script remains opt-in and outside the release gate. The setting is:
+Persistent Admin RBAC state is stronger than before the rehearsal. A second backup `super_admin` account was created through the existing Admin Role Management UI. Final diagnostics after backup admin setup reported `totalAdminUsers=2`, `activeAdminUsers=2`, `activeRoleAssignments=2`, and `rolesInUse=super_admin`. Both approved admin accounts could log in to `/admin`. Both approved accounts passed `tools/smoke_admin_rbac_cutover_validation.ps1` while fallback was enabled.
+
+Pre-rehearsal validation passed for both approved `super_admin` accounts against `https://api.languagevoicetutor.com` with `ExpectedFallbackEnabled true` and `ExpectedActorMappingFound true`. AdminPermission read endpoints and role-management read endpoints returned `200`. RBAC status showed `fallbackEnabled=True`, `defaultFallbackEnabled=True`, `configValuePresent=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
+
+During the controlled rehearsal, a timestamped backup of `/etc/languagevoicetutor/backend.env` was created, `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies` was temporarily set to `false`, and `languagevoicetutor-backend.service` was restarted. Both approved `super_admin` accounts passed validation while fallback was disabled, with `ExpectedFallbackEnabled false` and `ExpectedActorMappingFound true`. AdminPermission read endpoints and role-management read endpoints returned `200`. RBAC status showed `fallbackEnabled=False`, `defaultFallbackEnabled=True`, `configValuePresent=True`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
+
+Rollback/restoration also passed. `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies` was set back to `true`, `languagevoicetutor-backend.service` was restarted, and final validation passed with `ExpectedFallbackEnabled true`. Final RBAC status showed `fallbackEnabled=True`, `defaultFallbackEnabled=True`, `configValuePresent=True`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
+
+Current final state: BootstrapAdmin fallback is currently enabled explicitly through production `backend.env`. The remaining owner decision is whether to keep BootstrapAdmin fallback enabled as a documented temporary exception or schedule a separate owner-approved permanent fallback-disable window.
+
+The release gate runs the Admin RBAC cutover validation static pack, which verifies cutover guardrails statically but does not perform live cutover. The manual cutover smoke script remains opt-in and outside the release gate. The setting is:
 
 `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies`
 
@@ -25,13 +35,13 @@ If the setting is missing or set to `true`, fallback is enabled. If the setting 
 - Role-assignment management endpoints protected by `AdminRoleManagementPermissionPolicyName` remain separate from this fallback switch.
 - BootstrapAdmin-only endpoints, including CMS import/init endpoints, remain intentionally separate and are not controlled by this switch.
 
-## Next action: controlled cutover rehearsal plan
+## Completed rehearsal pattern and future permanent-disable plan
 
-The next action is not to disable fallback immediately. The next action is to prepare and run a short owner-approved controlled cutover rehearsal with a documented rollback path. Complete all of the following before setting the fallback switch to `false`:
+The 2026-06-22 rehearsal completed this pattern successfully. Use the same safeguards for any future owner-approved permanent fallback-disable window. Complete all of the following before setting the fallback switch to `false` again:
 
 1. The release gate passes, including the Admin RBAC cutover validation static pack.
 2. Production health is green (`/health`, `/api/health/database`, and Admin endpoints).
-3. A persistent first Owner/SuperAdmin exists; this is already completed for the owner-equivalent account.
+3. Two persistent approved `super_admin` accounts exist; this is completed as of 2026-06-22.
 4. Actor mapping works for the operator account; this now resolves in production.
 5. Role-assignment diagnostics are healthy and confirm the active `super_admin` role.
 6. Required production Admin roles are assigned for the rehearsal scope.
@@ -102,7 +112,7 @@ If validation fails, if any unexpected issue appears, or if the owner cancels cu
 
 ## Warnings
 
-- Do not disable BootstrapAdmin fallback casually. Fallback remains enabled by default, and disabling it still requires owner-approved controlled validation, rollback readiness, an owner-approved configuration change, and backend reload/restart.
+- Do not disable BootstrapAdmin fallback casually. Fallback is currently enabled explicitly in production, and disabling it again requires owner-approved controlled validation, rollback readiness, an owner-approved configuration change, and backend reload/restart.
 - Do not run mutation smoke scripts against production casually.
 - Do not expose credentials.
 - Do not paste tokens, cookies, passwords, raw claims, raw response bodies, connection strings, certificates, provider payloads, or `SafeMetadataJson` into logs.

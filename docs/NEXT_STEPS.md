@@ -1,6 +1,6 @@
 # Next Steps
 
-Review date: 2026-06-21.
+Review date: 2026-06-22.
 
 ## Source of truth for current versions
 
@@ -61,9 +61,10 @@ Do not move billing/Paddle production readiness into the immediate next step. Co
 
 ### Phase 2. Production Admin RBAC
 
-- Current state: mostly implemented and production-deployed on backend `0.1.35-backend.34` with Admin RBAC persistence tables, first persistent `super_admin` owner-equivalent mapping, actor mapping, cutover status endpoint, read-only Admin UI cutover status, and release-gated static validation. BootstrapAdmin fallback is still enabled by default; no fallback config override is present in production.
-- Next safe step: controlled owner-approved fallback cutover rehearsal, not immediate permanent cutover.
-- Required before public RC: fallback decision or explicit owner-approved temporary exception, rollback drill for fallback re-enable, validation that non-owner roles behave correctly, and acceptance of the cutover/rollback rehearsal.
+- Current state: mostly implemented and production-deployed on backend `0.1.35-backend.34` with Admin RBAC persistence tables, two verified persistent `super_admin` accounts, actor mapping, cutover status endpoint, read-only Admin UI cutover status, and release-gated static validation.
+- Completed on 2026-06-22: controlled fallback cutover rehearsal and rollback/restoration drill. Both approved `super_admin` accounts passed `tools/smoke_admin_rbac_cutover_validation.ps1` with fallback enabled, then with fallback temporarily disabled, then again after fallback was restored. AdminPermission read endpoints and role-management read endpoints returned `200` in the enabled and disabled phases.
+- Current final state: BootstrapAdmin fallback is enabled explicitly through production `backend.env`; this was a rehearsal, not permanent fallback removal.
+- Required before public RC: owner decision to keep fallback enabled as a documented temporary exception or schedule a separate permanent fallback-disable window, plus validation that non-owner roles behave correctly.
 
 ### Phase 3. Rate limiting / abuse protection
 
@@ -190,7 +191,7 @@ Next safe step: controlled tester handoff and feedback collection. CMS published
 - Production/live billing/Paddle readiness remains deferred; current billing work is controlled tester/sandbox validation only.
 - Desktop billing UI follow-ups remain: Premium-active free lesson label should show unlimited/no daily free limit, Buy/Cancel/Refresh and confirmation strings need full localization, cancellation result messages need clearer localized UX states, and cancel-renewal should be tested end-to-end against Paddle sandbox.
 - Referral/promo logic remains future work.
-- Production Admin RBAC is advanced but not fully production-cutover; fallback remains enabled and controlled cutover rehearsal/rollback acceptance remains required. Critical-change approval remains deferred.
+- Production Admin RBAC cutover rehearsal and rollback/restoration passed on 2026-06-22, but fallback remains enabled explicitly. The remaining owner decision is a documented temporary fallback exception or a separate permanent fallback-disable window. Non-owner role validation and critical-change approval remain deferred.
 - Code signing remains deferred for the controlled tester/direct release and is not a blocker for the already completed controlled tester handoff if unsigned distribution is accepted knowingly. Before a public release candidate or broad public distribution, require Windows installer signing or a documented owner-approved exception, and add signing verification to the release validation/upload gate.
 - Broader public release readiness remains deferred until after controlled tester feedback and operational hardening.
 

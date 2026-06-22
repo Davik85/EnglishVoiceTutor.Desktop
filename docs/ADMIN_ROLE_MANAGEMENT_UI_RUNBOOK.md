@@ -1,11 +1,13 @@
 # Admin Role Management UI Runbook
 
 
-## 2026-06-21 production status update
+## 2026-06-22 production status update
 
-Backend `0.1.35-backend.34` is deployed after production migration `20260620165657_AddAdminRoleAssignmentPersistence`. Production contains `admin_users`, `admin_user_roles`, and `admin_role_assignment_events`; the first persistent owner-equivalent `super_admin` mapping exists; actor mapping resolves for the owner account; and cutover smoke passes with fallback enabled by default. No production fallback cutover has been performed, no fallback override is explicitly configured in production, and public release remains incomplete until controlled cutover/rollback rehearsal and fallback decision or exception are accepted.
+Backend `0.1.35-backend.34` is deployed after production migration `20260620165657_AddAdminRoleAssignmentPersistence`. Production contains `admin_users`, `admin_user_roles`, and `admin_role_assignment_events`. A second backup `super_admin` account was created through the existing Admin Role Management UI. Final diagnostics after backup admin setup reported `totalAdminUsers=2`, `activeAdminUsers=2`, `activeRoleAssignments=2`, and `rolesInUse=super_admin`. Both approved admin accounts can log in to `/admin`.
 
-Review date: 2026-06-21.
+The controlled Production Admin RBAC cutover rehearsal passed on 2026-06-22. Both approved `super_admin` accounts passed `tools/smoke_admin_rbac_cutover_validation.ps1` with fallback enabled, then with fallback temporarily disabled, and then after fallback was restored. Production fallback is currently enabled explicitly through `backend.env`; this was a rehearsal, not permanent fallback removal. The remaining owner decision is whether to keep BootstrapAdmin fallback enabled as a documented temporary exception or schedule a separate owner-approved permanent fallback-disable window. Public release remains incomplete.
+
+Review date: 2026-06-22.
 
 Scope: controlled tester/admin operational validation only. This runbook is not a broad public production cutover, does not authorize casual production use, and does not replace the separate first-owner bootstrap runbook.
 
@@ -15,7 +17,7 @@ Scope: controlled tester/admin operational validation only. This runbook is not 
 - The UI uses only the existing guarded role-assignment backend endpoints.
 - The UI does not add backend endpoints, does not add EF migrations, and does not change Desktop, packaging, billing, Paddle, entitlement, lesson, CMS write, or release behavior.
 - `POST /api/admin/role-assignments/bootstrap-first-owner` remains manual/runbook-controlled and is not exposed in the Admin UI.
-- BootstrapAdmin fallback still exists during controlled rollout. Production Admin RBAC is not complete.
+- BootstrapAdmin fallback still exists and is currently enabled explicitly after the successful 2026-06-22 rehearsal. Production Admin RBAC is stronger than before, but the owner fallback decision is still pending.
 
 ## Required preconditions
 
@@ -120,17 +122,17 @@ The smoke script must not call `POST /api/admin/role-assignments/bootstrap-first
 ## Known limitations
 
 - Admin UI role management is an MVP for controlled tester/admin validation.
-- BootstrapAdmin fallback still exists.
-- Production Admin RBAC is not complete.
-- Remaining endpoint migration is still pending.
-- Owner-approved BootstrapAdmin fallback narrowing/removal is still pending.
-- Final rollback procedures for public production operations are still pending.
+- BootstrapAdmin fallback still exists and is currently enabled explicitly.
+- The 2026-06-22 controlled fallback cutover rehearsal and rollback/restoration passed.
+- Production Admin RBAC is not fully complete because the owner must still choose a documented temporary exception or a separate permanent fallback-disable window.
+- Remaining endpoint migration and non-owner role validation are still pending.
+- Critical-change approval remains future work.
 
 ## AdminPermission BootstrapAdmin fallback cutover note
 
 The `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies` setting controls only the BootstrapAdmin fallback path for `AdminPermission:*` policies. Missing configuration or `true` keeps the fallback enabled. `false` disables the fallback for `AdminPermission:*` policies and requires persistent active Admin role assignments to grant each required permission.
 
-Safe controlled cutover procedure:
+Safe controlled cutover procedure for any future permanent-disable window:
 
 1. Verify the release gate passes.
 2. Verify a persistent first Owner/SuperAdmin exists in the target environment.
