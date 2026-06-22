@@ -219,3 +219,10 @@ When changing a tutor Display name in Admin CMS, use Save draft + Publish and th
 - Continue validating the desktop Buy Premium and cancel-renewal flows against the sandbox backend.
 - Verify webhook-driven entitlement activation, paid Premium scheduling after trial, future-start `premiumActive=false` behavior until `StartsAtUtc`, and cancel-at-period-end subscription snapshots before any production/live Paddle launch decision.
 - Do not add refund/reversal handling or Paddle customer portal flows until those backend-owned lifecycle policies are explicitly designed.
+
+
+## Rate limiting next steps after first slice - 2026-06-22
+
+The backend now contains a disabled-by-default in-memory first slice for auth login/register/password reset and lesson chat reply. Before enabling outside local testing, choose production limits, decide whether body-derived per-email and per-session partitioning is needed beyond the current IP/user partition compromise, and perform an approved environment smoke. No production deployment or server configuration change happened in the implementation task.
+
+Still future work: audio/TTS/STT protection, admin-sensitive endpoint throttles, billing/checkout throttles, Paddle webhook abuse protection, realtime voice limits, hint/feedback/translation limits, persisted lesson-message protections, and any long-term distributed limiter design if a multi-instance backend requires it. Admin RBAC, Paddle/live billing, CMS, Desktop, and product/free-limit behavior were intentionally unchanged.

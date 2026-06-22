@@ -1,5 +1,6 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Auth;
+using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Auth;
 using Microsoft.AspNetCore.Authentication;
@@ -11,14 +12,26 @@ public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this WebApplication app)
     {
-        app.MapPost(ApiConstants.AuthRegisterRoute, RegisterAsync);
-        app.MapPost(ApiConstants.AuthLoginRoute, LoginAsync);
+        var rateLimitingEnabled = app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true;
+
+        var registerEndpoint = app.MapPost(ApiConstants.AuthRegisterRoute, RegisterAsync);
+        var loginEndpoint = app.MapPost(ApiConstants.AuthLoginRoute, LoginAsync);
+        if (rateLimitingEnabled)
+        {
+            registerEndpoint.RequireRateLimiting(RateLimitingConstants.AuthRegisterPolicyName);
+            loginEndpoint.RequireRateLimiting(RateLimitingConstants.AuthLoginPolicyName);
+        }
         app.MapPost(ApiConstants.AuthRefreshRoute, RefreshAsync);
         app.MapPost(ApiConstants.AuthRevokeRoute, RevokeAsync);
         app.MapGet(ApiConstants.AuthMeRoute, GetMeAsync).RequireAuthorization();
         app.MapPost(ApiConstants.AuthChangePasswordRoute, ChangePasswordAsync).RequireAuthorization();
-        app.MapPost(ApiConstants.AuthPasswordResetRequestRoute, RequestPasswordResetAsync);
-        app.MapPost(ApiConstants.AuthPasswordResetConfirmRoute, ConfirmPasswordResetAsync);
+        var passwordResetRequestEndpoint = app.MapPost(ApiConstants.AuthPasswordResetRequestRoute, RequestPasswordResetAsync);
+        var passwordResetConfirmEndpoint = app.MapPost(ApiConstants.AuthPasswordResetConfirmRoute, ConfirmPasswordResetAsync);
+        if (rateLimitingEnabled)
+        {
+            passwordResetRequestEndpoint.RequireRateLimiting(RateLimitingConstants.AuthPasswordResetRequestPolicyName);
+            passwordResetConfirmEndpoint.RequireRateLimiting(RateLimitingConstants.AuthPasswordResetConfirmPolicyName);
+        }
     }
 
     private static async Task<IResult> RegisterAsync(

@@ -12,6 +12,7 @@ using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services;
 using EnglishVoiceTutor.Api.Services.Usage;
+using EnglishVoiceTutor.Api.RateLimiting;
 using EnglishVoiceTutor.Api.Contracts.Usage;
 using EnglishVoiceTutor.Api.Endpoints;
 using EnglishVoiceTutor.Api.Services.Auth;
@@ -67,6 +68,7 @@ builder.Services.Configure<PasswordResetOptions>(
     builder.Configuration.GetSection(PasswordResetOptions.SectionName));
 builder.Services.Configure<SmtpEmailOptions>(
     builder.Configuration.GetSection(SmtpEmailOptions.SectionName));
+builder.Services.AddEnglishVoiceTutorRateLimiting(builder.Configuration);
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt configuration section is required.");
@@ -272,6 +274,10 @@ var app = builder.Build();
 
 app.UseWebSockets();
 app.UseAuthentication();
+if (app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true)
+{
+    app.UseRateLimiter();
+}
 app.UseAuthorization();
 app.UseDefaultFiles();
 app.UseStaticFiles(new StaticFileOptions
@@ -306,7 +312,11 @@ app.MapGet(ApiConstants.BackendConfigStatusRoute, (OpenAiOptionsProvider options
     });
 });
 
-app.MapPost(ApiConstants.LessonChatReplyRoute, HandleLessonChatReplyAsync);
+var lessonChatReplyEndpoint = app.MapPost(ApiConstants.LessonChatReplyRoute, HandleLessonChatReplyAsync);
+if (app.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()?.Enabled == true)
+{
+    lessonChatReplyEndpoint.RequireRateLimiting(RateLimitingConstants.LessonChatReplyPolicyName);
+}
 app.MapPost(ApiConstants.LessonChatMockReplyRoute, HandleMockLessonChatReplyAsync);
 app.MapPost(ApiConstants.LessonChatHintRoute, HandleLessonChatHintAsync);
 app.MapPost(ApiConstants.LessonChatFeedbackRoute, HandleLessonChatFeedbackAsync);
