@@ -5,7 +5,7 @@
 
 Backend `0.1.35-backend.34` is deployed after production migration `20260620165657_AddAdminRoleAssignmentPersistence`. Production contains `admin_users`, `admin_user_roles`, and `admin_role_assignment_events`. A second backup `super_admin` account was created through the existing Admin Role Management UI. Final diagnostics after backup admin setup reported `totalAdminUsers=2`, `activeAdminUsers=2`, `activeRoleAssignments=2`, and `rolesInUse=super_admin`. Both approved admin accounts can log in to `/admin`.
 
-The controlled Production Admin RBAC cutover rehearsal passed on 2026-06-22. Both approved `super_admin` accounts passed `tools/smoke_admin_rbac_cutover_validation.ps1` with fallback enabled, then with fallback temporarily disabled, and then after fallback was restored. Production fallback is currently enabled explicitly through `backend.env`; this was a rehearsal, not permanent fallback removal. The remaining owner decision is whether to keep BootstrapAdmin fallback enabled as a documented temporary exception or schedule a separate owner-approved permanent fallback-disable window. Public release remains incomplete.
+The controlled Production Admin RBAC cutover rehearsal passed on 2026-06-22. Both approved `super_admin` accounts passed `tools/smoke_admin_rbac_cutover_validation.ps1` with fallback enabled, then with fallback temporarily disabled, and then after fallback was restored. The later permanent production fallback disable also passed on 2026-06-22: production `backend.env` now sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`, the backend service was restarted successfully, health/database health returned `200 OK`, persistent role authorization is enabled and verified, two persistent `super_admin` accounts are verified, and both approved accounts passed validation with fallback disabled. Rollback remains available by setting the fallback flag to `true` and restarting the backend. Public release remains incomplete.
 
 Review date: 2026-06-22.
 
@@ -17,7 +17,7 @@ Scope: controlled tester/admin operational validation only. This runbook is not 
 - The UI uses only the existing guarded role-assignment backend endpoints.
 - The UI does not add backend endpoints, does not add EF migrations, and does not change Desktop, packaging, billing, Paddle, entitlement, lesson, CMS write, or release behavior.
 - `POST /api/admin/role-assignments/bootstrap-first-owner` remains manual/runbook-controlled and is not exposed in the Admin UI.
-- BootstrapAdmin fallback still exists and is currently enabled explicitly after the successful 2026-06-22 rehearsal. Production Admin RBAC is stronger than before, but the owner fallback decision is still pending.
+- BootstrapAdmin fallback still exists as a rollback mechanism, but it is currently disabled explicitly after the successful 2026-06-22 permanent disable. Production Admin RBAC is stronger than before, but non-owner role validation and critical-change approval are still pending.
 
 ## Required preconditions
 
@@ -122,9 +122,10 @@ The smoke script must not call `POST /api/admin/role-assignments/bootstrap-first
 ## Known limitations
 
 - Admin UI role management is an MVP for controlled tester/admin validation.
-- BootstrapAdmin fallback still exists and is currently enabled explicitly.
+- BootstrapAdmin fallback still exists as a rollback mechanism, but it is currently disabled explicitly.
 - The 2026-06-22 controlled fallback cutover rehearsal and rollback/restoration passed.
-- Production Admin RBAC is not fully complete because the owner must still choose a documented temporary exception or a separate permanent fallback-disable window.
+- The later 2026-06-22 permanent production fallback disable also passed for both approved persistent `super_admin` accounts.
+- Production Admin RBAC is not fully complete because non-owner role validation and critical-change approval remain pending.
 - Remaining endpoint migration and non-owner role validation are still pending.
 - Critical-change approval remains future work.
 
