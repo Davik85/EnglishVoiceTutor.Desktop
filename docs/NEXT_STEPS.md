@@ -234,3 +234,9 @@ Phase 3 slice 2 is implemented after slice 1 for audio transcription, audio/TTS 
 Do production-safe validation first: health checks, one-request smoke checks, and log review for safe throttle summaries. Do not run intentional throttling or stress tests against production unless there is an approved test window and explicit confirmation.
 
 Still deferred: true concurrent realtime voice connection caps, Admin endpoint throttling, Admin role-management throttling, billing throttling, and Paddle webhook throttling. Admin RBAC fallback behavior and product/free usage entitlement logic must remain unchanged while continuing Phase 3.
+
+## Phase 3 rate limiting next steps after slice 3
+
+Phase 3 slice 3 is implemented for Admin read/write endpoint throttling and Admin role-management mutation throttling. Validate with production-safe one-request Admin read smoke checks first; run intentional throttling only against localhost or an approved test environment with low test limits and explicit confirmation.
+
+Still deferred: true concurrent realtime voice connection caps, billing endpoint throttling, Paddle webhook throttling, backups/restore drills, and monitoring/privacy hardening. Admin RBAC authorization behavior must remain unchanged, BootstrapAdmin fallback remains disabled, and broad public-production readiness is still not claimed.

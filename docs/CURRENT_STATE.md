@@ -235,3 +235,9 @@ Phase 3 rate limiting slice 1 is implemented, deployed, and enabled in productio
 Phase 3 slice 2 has now been implemented in code for high-cost learner/provider surfaces: audio transcription, TTS speech, TTS speech stream, translation, and realtime voice WebSocket start attempts. Production activation of slice 2 requires the normal deploy/config verification path before it should be treated as live. Realtime voice has start-rate protection in this slice; true concurrent WebSocket connection caps remain future work.
 
 Admin RBAC fallback remains disabled in production and was not changed by the rate-limiting work. Product/free usage entitlement behavior was not changed. Admin endpoint throttling, billing endpoint throttling, and Paddle webhook throttling remain future work.
+
+## Rate limiting / abuse protection slice 3 - 2026-06-22
+
+Phase 3 slice 3 is implemented in code for backend Admin endpoints and Admin role-management throttling. `RateLimiting:Enabled` remains the global switch. Admin read endpoints, Admin write endpoints, and Admin role-management mutation endpoints now have separate named technical throttle policies and safe `429` responses.
+
+Admin RBAC authorization behavior was not changed. BootstrapAdmin fallback remains disabled. Desktop, Admin UI, CMS learner content behavior, billing/Paddle/webhooks, Premium/free usage counters, and database schema were not changed. Billing/Paddle/webhook throttling remains future work. Backups/restore drills and monitoring/privacy hardening remain future work. Broad public-production readiness is still not claimed.

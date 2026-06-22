@@ -47,6 +47,18 @@ public static class RateLimitingServiceCollectionExtensions
                 GetIpPartitionKey(context),
                 GetOptions(context).Audio.RealtimeVoiceStartPerIpLimit,
                 GetOptions(context).Audio.RealtimeVoiceWindowMinutes));
+            options.AddPolicy(RateLimitingConstants.AdminReadPolicyName, context => CreateAdminPartition(
+                context,
+                GetOptions(context).Admin.ReadPerAdminLimit,
+                GetOptions(context).Admin.WindowMinutes));
+            options.AddPolicy(RateLimitingConstants.AdminWritePolicyName, context => CreateAdminPartition(
+                context,
+                GetOptions(context).Admin.WritePerAdminLimit,
+                GetOptions(context).Admin.WindowMinutes));
+            options.AddPolicy(RateLimitingConstants.AdminRoleManagementPolicyName, context => CreateAdminPartition(
+                context,
+                GetOptions(context).Admin.RoleManagementPerAdminLimit,
+                GetOptions(context).Admin.WindowMinutes));
         });
 
         return services;
@@ -71,6 +83,17 @@ public static class RateLimitingServiceCollectionExtensions
     {
         var options = GetOptions(context).Audio;
         return CreateUserOrIpPartition(context, options.TtsPerUserLimit, options.AudioWindowMinutes);
+    }
+
+    private static RateLimitPartition<string> CreateAdminPartition(HttpContext context, int permitLimit, int windowMinutes)
+    {
+        var adminUserId = context.User.FindFirstValue(AuthClaimTypes.AdminUserId);
+        if (!string.IsNullOrWhiteSpace(adminUserId))
+        {
+            return CreateFixedWindowPartition($"admin:{adminUserId}", permitLimit, windowMinutes);
+        }
+
+        return CreateUserOrIpPartition(context, permitLimit, windowMinutes);
     }
 
     private static RateLimitPartition<string> CreateUserOrIpPartition(HttpContext context, int permitLimit, int windowMinutes)
@@ -117,15 +140,19 @@ public static class RateLimitingServiceCollectionExtensions
         if (options.LogThrottledRequests)
         {
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("RateLimiting");
-            var userId = context.HttpContext.User.FindFirstValue(AuthClaimTypes.UserId);
+            var adminUserId = context.HttpContext.User.FindFirstValue(AuthClaimTypes.AdminUserId);
+            var userId = context.HttpContext.User.FindFirstValue(AuthClaimTypes.UserId) ?? context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
             logger.LogWarning(
-                "Request throttled. Policy={PolicyName}; EndpointGroup={EndpointGroup}; StatusCode={StatusCode}; RetryAfterSeconds={RetryAfterSeconds}; UserId={UserId}; Path={Path}.",
+                "Request throttled. Policy={PolicyName}; EndpointGroup={EndpointGroup}; StatusCode={StatusCode}; RetryAfterSeconds={RetryAfterSeconds}; AdminUserId={AdminUserId}; UserId={UserId}; Path={Path}; Method={Method}; RemoteIp={RemoteIp}.",
                 policyName,
                 GetEndpointGroup(policyName),
                 StatusCodes.Status429TooManyRequests,
                 retryAfterSeconds,
+                string.IsNullOrWhiteSpace(adminUserId) ? null : adminUserId,
                 string.IsNullOrWhiteSpace(userId) ? null : userId,
-                context.HttpContext.Request.Path.Value);
+                context.HttpContext.Request.Path.Value,
+                context.HttpContext.Request.Method,
+                context.HttpContext.Connection.RemoteIpAddress?.ToString());
         }
 
         await context.HttpContext.Response.WriteAsJsonAsync(new
@@ -158,8 +185,17 @@ public static class RateLimitingServiceCollectionExtensions
         ApiConstants.AudioSpeechStreamRoute => RateLimitingConstants.AudioSpeechStreamPolicyName,
         ApiConstants.TranslationRoute => RateLimitingConstants.TranslationPolicyName,
         ApiConstants.RealtimeVoiceRoute => RateLimitingConstants.RealtimeVoicePolicyName,
+        _ when IsAdminRoleManagementRequest(context) && !HttpMethods.IsGet(context.Request.Method) => RateLimitingConstants.AdminRoleManagementPolicyName,
+        _ when IsAdminRequest(context) && HttpMethods.IsGet(context.Request.Method) => RateLimitingConstants.AdminReadPolicyName,
+        _ when IsAdminRequest(context) => RateLimitingConstants.AdminWritePolicyName,
         _ => "unknown"
     };
+
+    private static bool IsAdminRequest(HttpContext context) =>
+        context.Request.Path.Value?.StartsWith("/api/admin", StringComparison.OrdinalIgnoreCase) == true;
+
+    private static bool IsAdminRoleManagementRequest(HttpContext context) =>
+        context.Request.Path.Value?.StartsWith("/api/admin/role-assignments", StringComparison.OrdinalIgnoreCase) == true;
 
     private static string GetEndpointGroup(string policyName) => policyName switch
     {
@@ -167,6 +203,9 @@ public static class RateLimitingServiceCollectionExtensions
         RateLimitingConstants.AudioTranscriptionPolicyName or RateLimitingConstants.AudioSpeechPolicyName or RateLimitingConstants.AudioSpeechStreamPolicyName => RateLimitingConstants.AudioEndpointGroup,
         RateLimitingConstants.TranslationPolicyName => RateLimitingConstants.TranslationEndpointGroup,
         RateLimitingConstants.RealtimeVoicePolicyName => RateLimitingConstants.RealtimeVoiceEndpointGroup,
+        RateLimitingConstants.AdminReadPolicyName => RateLimitingConstants.AdminReadEndpointGroup,
+        RateLimitingConstants.AdminWritePolicyName => RateLimitingConstants.AdminWriteEndpointGroup,
+        RateLimitingConstants.AdminRoleManagementPolicyName => RateLimitingConstants.AdminRoleManagementEndpointGroup,
         RateLimitingConstants.AuthLoginPolicyName or RateLimitingConstants.AuthRegisterPolicyName or RateLimitingConstants.AuthPasswordResetRequestPolicyName or RateLimitingConstants.AuthPasswordResetConfirmPolicyName => RateLimitingConstants.AuthEndpointGroup,
         _ => RateLimitingConstants.UnknownEndpointGroup
     };
@@ -181,6 +220,9 @@ public static class RateLimitingServiceCollectionExtensions
         RateLimitingConstants.AudioSpeechPolicyName or RateLimitingConstants.AudioSpeechStreamPolicyName => RateLimitingConstants.AudioTtsMessage,
         RateLimitingConstants.TranslationPolicyName => RateLimitingConstants.TranslationMessage,
         RateLimitingConstants.RealtimeVoicePolicyName => RateLimitingConstants.RealtimeVoiceMessage,
+        RateLimitingConstants.AdminReadPolicyName => RateLimitingConstants.AdminReadMessage,
+        RateLimitingConstants.AdminWritePolicyName => RateLimitingConstants.AdminWriteMessage,
+        RateLimitingConstants.AdminRoleManagementPolicyName => RateLimitingConstants.AdminRoleManagementMessage,
         _ => RateLimitingConstants.DefaultMessage
     };
 }

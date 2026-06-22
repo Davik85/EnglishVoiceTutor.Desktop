@@ -334,3 +334,13 @@ Slice 2 adds named technical throttling policies for:
 The slice uses authenticated user id partitioning where available and IP fallback otherwise. Realtime voice uses IP-based start-rate protection in this slice. A configured concurrent voice-session option is present for future work, but true concurrent WebSocket connection caps remain deferred because this implementation intentionally avoids distributed locks, database counters, and larger connection-lifecycle plumbing.
 
 Production enablement of slice 2 requires the normal backend deploy and configuration verification. Admin/billing/webhook throttling remains future work. Admin RBAC behavior was not changed. Product/free usage entitlement logic was not changed.
+
+## 2026-06-22 implementation update: Phase 3 slice 3
+
+Phase 3 rate limiting slice 3 is implemented for Admin endpoint throttling and Admin role-management mutation throttling. The existing global `RateLimiting:Enabled` switch still controls all technical throttling, and slice 1 and slice 2 behavior is preserved.
+
+Slice 3 adds named policies for Admin read endpoints, Admin write endpoints, and Admin role-management mutation endpoints. The defaults are `Admin:ReadPerAdminLimit=120`, `Admin:WritePerAdminLimit=30`, `Admin:RoleManagementPerAdminLimit=10`, and `Admin:WindowMinutes=10`. Throttled responses keep the existing `429` JSON shape with `error`, `message`, and `retryAfterSeconds`, plus the `Retry-After` header.
+
+Admin throttling uses an Admin user id partition when a future/authenticated principal provides one, then authenticated app user id, then IP fallback. Throttle logs remain safe summaries only: policy, endpoint group, status code, retry-after seconds, non-secret user identifiers when present, path, method, and remote IP in the same plain address style already used by the limiter. They do not log passwords, tokens, cookies, request bodies, raw CMS JSON, role-change reason text, provider payloads, connection strings, private keys, or secrets.
+
+Admin RBAC authorization behavior was not changed. Admin permission policies, role catalog, role assignments, persistent Admin authorization logic, role-management safety rules, critical-change behavior, and Admin UI permissions display were not changed. BootstrapAdmin fallback remains disabled. Billing/Paddle/webhook throttling remains future work, backups/restore drills remain future work, monitoring/privacy hardening remains future work, and broad public-production readiness is still not claimed.
