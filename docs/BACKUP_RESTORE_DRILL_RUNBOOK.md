@@ -439,3 +439,14 @@ Prefer EF-generated migration SQL reviewed by a human. Avoid manually invented p
 - Do not keep drill databases longer than needed.
 - Do not use production drill commands against an unknown SSH host.
 - Do not apply unreviewed broad SQL to production.
+
+
+## Phase 4C migration rollback/remediation rehearsal assets
+
+Phase 4C documentation and dry-run command-printer assets now exist in `docs/MIGRATION_ROLLBACK_REMEDIATION_RUNBOOK.md` and `tools/migration_rollback_remediation_commands.ps1`. They are operator-readiness assets only: no production mutation, EF migration execution, SQL remediation, restore-over-production, backend runtime change, Desktop change, Admin UI change, CMS change, billing/Paddle change, or deployment/package behavior change has happened as part of adding them.
+
+The Phase 4C runbook keeps code rollback and database remediation separate. A backend symlink rollback can be the safest first response for a bad backend release, but it does not revert schema, migration history, reference data, or user/provider records. Any SQL remediation must be targeted, reviewed separately, and supported by fresh readable PostgreSQL backup evidence. Broad unreviewed SQL remains forbidden.
+
+Current operational baseline remains: Phase 4A backup/readability/separate-drill-restore is completed; Phase 4B local PostgreSQL backup scheduling is active on production via `languagevoicetutor-postgres-backup.timer`; the latest known local backup readability check returned `245` `pg_restore --list` lines; and Contabo VPS Auto Backup is enabled as an additional provider/VPS-level safety layer. Contabo Auto Backup does not replace PostgreSQL `pg_dump`/`pg_restore` backups or restore validation.
+
+Still deferred: off-server encrypted backups, permission-fidelity restore drill, execution of a migration rollback/remediation rehearsal on an approved drill target, production/live Paddle readiness, and broad public production readiness.
