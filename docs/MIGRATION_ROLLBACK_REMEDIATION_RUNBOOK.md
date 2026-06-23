@@ -119,11 +119,31 @@ Do not include secrets, passwords, connection strings, `.env` contents, SQL dump
 - If production data was corrupted, do not improvise. Preserve logs/evidence, confirm backups, decide on downtime/user communication, and use an owner-approved incident plan.
 - If a restore is required, rehearse against a separate database first when time allows; restoring over production is not part of Phase 4C rehearsal.
 
+## Phase 4C completed dry-run rehearsal evidence (2026-06-23)
+
+Completed on 2026-06-23: the Phase 4C migration rollback/remediation dry-run rehearsal was performed successfully as a read-only production verification. No production database mutation occurred, no EF migrations were run, no SQL remediation was applied, no restore-over-production was attempted, and no backend runtime behavior changed. Desktop, Admin, CMS, billing, and Paddle behavior were unchanged.
+
+Verified production evidence:
+
+- Backend `current` symlink target: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`.
+- Previous rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.38`.
+- `https://api.languagevoicetutor.com/health` returned `200 OK`.
+- `https://api.languagevoicetutor.com/api/health/database` returned `200 OK`.
+- Latest local PostgreSQL backups were listed successfully.
+- Latest readable backup: `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260623_153008Z.dump`.
+- `pg_restore --list` readability line count for that backup: `245`.
+- Latest EF migration confirmed from production: `20260620165657_AddAdminRoleAssignmentPersistence`.
+- Required key tables check passed with `OK` for `__EFMigrationsHistory`, `users`, `subscriptions`, `entitlements`, `plans`, `admin_users`, `admin_user_roles`, and `admin_role_assignment_events`.
+- `languagevoicetutor-backend.service` was active and enabled.
+- `languagevoicetutor-postgres-backup.timer` was enabled and active; next observed run was `2026-06-24 03:15 CEST`.
+- Contabo VPS Auto Backup was manually confirmed as enabled in the provider control panel as a provider/VPS-level safety layer. It is not a substitute for PostgreSQL `pg_dump`/`pg_restore` backup validation.
+
+This rehearsal confirms operator readiness evidence only. It does not claim broad public production readiness, and production/live Paddle readiness remains deferred.
+
 ## Deferred work
 
 - Off-server encrypted PostgreSQL backup strategy.
 - Permission-fidelity restore drill that validates production-like ownership/grants rather than only `--no-owner --no-acl` readability and separate restore.
-- Executed migration rollback/remediation rehearsal on a non-production or explicitly approved drill target.
 - Broader incident-response automation and monitoring dashboards.
 - Production/live Paddle readiness.
 - Broad public production readiness.

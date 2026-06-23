@@ -122,7 +122,11 @@ def main() -> int:
     )
     assert_not_regex(combined_main, r"off-server encrypted backups[^\n]*(?:complete|completed|done|active)", "off-server encrypted backups complete claim")
     assert_not_regex(combined_main, r"permission-fidelity[^\n]*(?:complete|completed|done|passed)", "permission-fidelity restore drill complete claim")
-    assert_not_regex(combined_main, r"migration rollback/remediation[^\n]*(?:complete|completed|done|passed)", "migration rollback/remediation rehearsal complete claim")
+    assert_regex(
+        combined_main,
+        r"Phase 4C[^\n]*migration rollback/remediation[^\n]*(?:completed|complete|passed)|migration rollback/remediation[^\n]*dry-run rehearsal[^\n]*(?:completed|complete|passed)",
+        "Phase 4C migration rollback/remediation dry-run rehearsal completed wording",
+    )
 
     for item in DEFERRED_ITEMS:
         assert_contains(combined_main, item, f"deferred item: {item}")
