@@ -50,8 +50,8 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 
 ## Immediate next steps
 
-1. Start Phase 5 with a small production logging/privacy audit; verify logs and shared operational evidence do not expose secrets, tokens, raw user data, provider payloads, connection strings, private keys, or full terminal transcripts.
-2. Keep the audit lightweight: review existing production log categories, redaction expectations, and retention/support notes before introducing any heavy monitoring infrastructure.
+1. Phase 5A lightweight production logging/privacy audit is complete and documented in `docs/LOGGING_PRIVACY_AUDIT.md`; keep using its redaction rules for chat, GitHub, docs, and support evidence.
+2. Perform the smallest next hardening step: a bounded production log sampling/redaction checklist around health, auth failure, lesson, password reset, and Paddle sandbox webhook events without pasting raw logs.
 3. Continue controlled tester/direct Windows handoff planning only after verifying live `latest.json`; keep it clearly labeled as controlled tester/sandbox billing validation, not broad production/live billing readiness.
 4. Keep production/live Paddle readiness deferred; continue sandbox checkout/cancel-renewal validation and Desktop billing UI hardening separately.
 
@@ -84,10 +84,10 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 
 ### Phase 5. Monitoring / logging / privacy hardening
 
-- First step: perform a production logging/privacy audit.
-- Verify logs do not expose secrets, tokens, raw user data, provider payloads, connection strings, private keys, `.env` contents, Paddle signatures, or full terminal transcripts.
-- Confirm PII/secrets redaction expectations and EF/SQL logging levels for production privacy.
-- Keep this step documentation/operator focused; do not introduce heavy monitoring infrastructure yet.
+- Phase 5A lightweight production logging/privacy audit is complete in `docs/LOGGING_PRIVACY_AUDIT.md`.
+- Current result: documentation/audit only; no code/runtime changes were needed, no heavy monitoring infrastructure was introduced, and no external services were added.
+- Keep the Phase 5A operator rule active: paste only bounded non-secret operational evidence, and redact secrets, tokens, connection strings, raw provider payloads, raw lesson/STT/TTS/OpenAI content, SQL dumps, backup contents, and full unfiltered terminal transcripts.
+- Next smallest hardening step: run a bounded production log sampling/redaction checklist without copying raw logs.
 
 ### Phase 6. Paddle live readiness + legal/support blockers
 
