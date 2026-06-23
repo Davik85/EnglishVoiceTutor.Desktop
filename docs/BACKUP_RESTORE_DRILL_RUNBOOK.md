@@ -1,10 +1,10 @@
-# Phase 4A Backup and Restore Drill Runbook
+# Phase 4A/4B Backup and Restore Drill Runbook
 
 Review date: 2026-06-23.
 
 This runbook is for production-safe PostgreSQL backup creation, backup readability verification, and restore drills for the Language Voice Tutor / English Voice Tutor backend database. It is written for operators who connect from Windows PowerShell 7 to the Ubuntu server over SSH.
 
-> Status note: Phase 4A's initial production-safe backup/readability/separate-drill-restore was completed on 2026-06-23. This records backup readability, separate restore, key schema/table presence, latest migration confirmation, cleanup, and green health checks only. It is not a full disaster recovery plan, not a production overwrite restore, and not full production permission-fidelity validation.
+> Status note: Phase 4A's initial production-safe backup/readability/separate-drill-restore was completed on 2026-06-23. Phase 4B adds repository-managed assets for daily local backup scheduling and local retention automation, but those files do not prove the schedule is installed or active on production. Operators must install and verify the systemd timer manually on the server. This is not a full disaster recovery plan, not encrypted off-server backup replication, not a production overwrite restore, and not full production permission-fidelity validation.
 
 ## Safety rules
 
@@ -31,6 +31,20 @@ Phase 4A provides an operator toolkit for:
 7. Following a pre-migration backup checklist before future schema-dependent backend releases.
 8. Following a migration rollback/remediation checklist if a schema-dependent deployment fails.
 
+
+## What Phase 4B adds
+
+Phase 4B adds repository-managed operator assets for local daily backup scheduling and local retention automation:
+
+- `ops/postgres/backup_lvt_postgres.sh`: a server-side Bash script that creates a timestamped PostgreSQL custom-format backup, verifies the file is non-zero, checks archive readability with `pg_restore --list`, and applies local retention only to safe matching backup filenames.
+- `ops/systemd/languagevoicetutor-postgres-backup.service`: a systemd one-shot service template that runs the installed backup script as the `postgres` service account.
+- `ops/systemd/languagevoicetutor-postgres-backup.timer`: a daily timer template scheduled for 03:15 server time with `Persistent=true`.
+- `tools/install_postgres_backup_schedule_commands.ps1`: a PowerShell command printer for uploading, installing, verifying, disabling, and rolling back the scheduled backup assets.
+
+The schedule must be installed manually by an operator. Repository files alone do not prove the timer exists, is enabled, has run, or is healthy on production.
+
+Phase 4B retention is local-server retention only. It is not disaster recovery, not encrypted off-server backup replication, not immutable backup storage, and not a replacement for monitoring or restore drills.
+
 ## What Phase 4A does not cover
 
 Phase 4A does not:
@@ -38,9 +52,11 @@ Phase 4A does not:
 - Change backend runtime behavior.
 - Add or run EF migrations.
 - Change Desktop, Admin UI, billing, Paddle, CMS runtime behavior, or deployment/package behavior.
-- Replace production monitoring, alerting, off-server backup replication, disaster recovery planning, or formal retention policy.
+- Replace production monitoring, alerting, encrypted off-server backup replication, disaster recovery planning, immutable backup storage, or formal retention policy.
 - Authorize restoring data into production as part of a drill.
 - Authorize sharing secrets or raw production data.
+- Prove production permission/grant fidelity when `pg_restore --no-owner --no-acl` is used.
+- Complete migration rollback/remediation rehearsal; that remains future work.
 
 ## Completed Phase 4A drill record: 2026-06-23
 
@@ -124,6 +140,87 @@ powershell -ExecutionPolicy Bypass -File .\tools\db_backup_restore_drill_command
   -DrillDatabase lvt_app_db_restore_drill_20260622 `
   -IncludeDropDrillDatabaseCommand `
   -ConfirmDropDrillDatabase
+```
+
+
+## Phase 4B scheduled local backup install helper
+
+The repository includes a PowerShell helper that prints installation and verification commands for the daily local backup schedule. It prints commands only; it does not execute SSH/SCP/systemctl commands and does not read secrets:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\install_postgres_backup_schedule_commands.ps1
+```
+
+The printed command sequence covers:
+
+1. Uploading `ops/postgres/backup_lvt_postgres.sh` and the systemd unit/timer templates.
+2. Setting root-owned script/unit permissions and creating the postgres-owned backup directory.
+3. Running the backup script once with `--dry-run` to preview retention cleanup.
+4. Running one immediate real backup.
+5. Enabling and starting `languagevoicetutor-postgres-backup.timer`.
+6. Checking timer status, listing the next scheduled run, and checking recent service logs.
+7. Verifying the latest backup with `pg_restore --list` without printing dump contents.
+8. Disabling the timer or rolling back installed schedule assets if needed.
+
+The helper warns that backup files remain on the server and must not be copied into git, chat, tickets, screenshots, or unapproved storage.
+
+## Phase 4B systemd schedule
+
+The intended installed paths are:
+
+```text
+/opt/languagevoicetutor/ops/postgres/backup_lvt_postgres.sh
+/etc/systemd/system/languagevoicetutor-postgres-backup.service
+/etc/systemd/system/languagevoicetutor-postgres-backup.timer
+```
+
+The timer runs daily at 03:15 server time and uses `Persistent=true`, so systemd can run a missed backup after boot. The unit files do not include secrets, do not include application connection strings, and do not read `/etc/languagevoicetutor/backend.env`.
+
+Verify the installed timer and next scheduled run with:
+
+```powershell
+ssh lvt-server "systemctl status languagevoicetutor-postgres-backup.timer --no-pager"
+ssh lvt-server "systemctl list-timers languagevoicetutor-postgres-backup.timer --no-pager"
+```
+
+Inspect recent backup service logs safely with:
+
+```powershell
+ssh lvt-server "journalctl -u languagevoicetutor-postgres-backup.service -n 80 --no-pager"
+```
+
+The service output is designed to print only the backup path, byte size, `pg_restore --list` line count, and retention summary. Do not paste large logs into public places if they include operational paths or other sensitive context.
+
+Run an immediate one-off backup safely with:
+
+```powershell
+ssh lvt-server "sudo -u postgres /opt/languagevoicetutor/ops/postgres/backup_lvt_postgres.sh"
+```
+
+Preview retention cleanup without deleting old local backup files with:
+
+```powershell
+ssh lvt-server "sudo -u postgres /opt/languagevoicetutor/ops/postgres/backup_lvt_postgres.sh --dry-run"
+```
+
+Disable the schedule without deleting existing backup files with:
+
+```powershell
+ssh lvt-server "sudo systemctl disable --now languagevoicetutor-postgres-backup.timer"
+```
+
+Rollback installed schedule assets with:
+
+```powershell
+ssh lvt-server "sudo systemctl disable --now languagevoicetutor-postgres-backup.timer || true; sudo rm -f /etc/systemd/system/languagevoicetutor-postgres-backup.timer /etc/systemd/system/languagevoicetutor-postgres-backup.service; sudo systemctl daemon-reload; sudo rm -f /opt/languagevoicetutor/ops/postgres/backup_lvt_postgres.sh"
+```
+
+Rollback removes installed script/unit/timer assets only. Existing backup files remain on the server for operator-controlled retention or secure deletion.
+
+Verify a created backup with `pg_restore --list` without printing dump contents:
+
+```powershell
+ssh lvt-server "sudo -u postgres pg_restore --list /var/backups/languagevoicetutor/postgres/<backup-file>.dump >/tmp/lvt_pg_restore_list.txt && wc -l /tmp/lvt_pg_restore_list.txt && rm -f /tmp/lvt_pg_restore_list.txt"
 ```
 
 ## Production backup creation
