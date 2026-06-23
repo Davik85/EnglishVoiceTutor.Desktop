@@ -22,7 +22,7 @@ This plan reflects the current post-fix stabilization status. It favors document
 
 - Status: improved, but still needs broader smoke testing across topics.
 - Current behavior: setup/context selection does not count; valid turns count after active roleplay starts; final message leads to Awaiting Finish.
-- Remaining work: verify across all five MVP topics and both typed/chained/realtime paths.
+- Remaining work: verify across all five product topics and both typed/chained/realtime paths.
 - Acceptance criteria: documented state table matches behavior; final state disables new lesson input while preserving review actions.
 
 ## Stage 2: exact manual Play voice
@@ -74,9 +74,9 @@ This plan reflects the current post-fix stabilization status. It favors document
 - Priority D — Small architecture extractions after behavior is pinned.
 - Priority E — UI polish only after lesson behavior is stable.
 
-## Current priority: regression smoke-test and MVP infrastructure
+## Current priority: regression smoke-test and product infrastructure
 
-The immediate next step is a short regression smoke-test after the documentation update. Developer-only usage/cost logs should still be reviewed before pricing or model decisions, but the default MVP Conversation Mode path is now the stable TTS provider rather than Realtime.
+The immediate next step is a short regression smoke-test after the documentation update. Developer-only usage/cost logs should still be reviewed before pricing or model decisions, but the default product Conversation Mode path is now the stable TTS provider rather than Realtime.
 
 ## 2026-05-15 stabilization addendum
 
@@ -90,10 +90,10 @@ The immediate next step is a short regression smoke-test after the documentation
 This pass is a baseline-hardening checkpoint, not a methodology rewrite. The current working assumptions are:
 
 - 26 lesson JSON files pass the lesson content audit.
-- Normal Lesson Chat, normal TTS with `tts-1`, and normal voice transcription with `gpt-4o-mini-transcribe` remain intended MVP routes.
+- Normal Lesson Chat, normal TTS with `tts-1`, and normal voice transcription with `gpt-4o-mini-transcribe` remain intended product routes.
 - Conversation Mode uses the stable TTS provider by default: microphone recording -> audio transcription -> lesson chat reply -> `gpt-4o-mini-tts` playback.
 - Conversation Mode TTS uses `voice=coral`, `purpose=conversation_mode_tts`, speed `1.0`, and calm speech instructions.
-- Realtime remains in the repository for future provider-switch testing, but it is not the default MVP Conversation Mode path.
+- Realtime remains in the repository for future provider-switch testing, but it is not the default product Conversation Mode path.
 - Usage/cost instrumentation, transcript validation, English-only output locking, and lightweight hang diagnostics are protected behavior.
 
-Next stabilization work should focus on the regression smoke-test, then MVP infrastructure: local/user data, accounts, usage limits, payment/subscription planning, packaging/installer, error reporting/log export, and release preparation. Methodology/prompt, feedback, and summary quality polishing remain ongoing.
+Next stabilization work should focus on the regression smoke-test, then product infrastructure: local/user data, accounts, usage limits, payment/subscription planning, packaging/installer, error reporting/log export, and release preparation. Methodology/prompt, feedback, and summary quality polishing remain ongoing.

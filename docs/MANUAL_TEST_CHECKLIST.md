@@ -95,7 +95,7 @@ dotnet build
 
 ## Backend log checks
 
-Confirm backend/developer logs show the MVP voice routing:
+Confirm backend/developer logs show the product voice routing:
 
 - [ ] Normal Lesson Chat TTS uses `tts-1`.
 - [ ] Normal Lesson Chat TTS uses `purpose=lesson_chat_tts`.
@@ -105,7 +105,7 @@ Confirm backend/developer logs show the MVP voice routing:
 - [ ] Conversation Mode TTS uses speed `1.0`.
 - [ ] Conversation Mode TTS has `HasInstructions=True`.
 - [ ] No Realtime WebSocket opens by default.
-- [ ] No default MVP Conversation Mode request uses Realtime-generated replies.
+- [ ] No default product Conversation Mode request uses Realtime-generated replies.
 
 ## Documentation-relevant policy tests
 

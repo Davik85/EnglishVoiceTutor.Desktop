@@ -52,7 +52,7 @@
 
 ## Recommended next tasks
 
-1. Run the full smoke-test across all MVP topics.
+1. Run the full smoke-test across all product topics.
 2. Create a scenario QA report for all 26 lesson JSON files.
 3. Polish methodology and prompt behavior by level.
 4. Improve feedback and summary quality from real lesson transcripts.

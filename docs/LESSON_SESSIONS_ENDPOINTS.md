@@ -6,7 +6,7 @@ Review date: 2026-05-23.
 
 - **Implemented + Validated:** create/finish/read session endpoints.
 - **Development-only:** current routes are under `/api/dev/*`.
-- **Transitional MVP behavior:** request identity is auth-aware in Development.
+- **Transitional product behavior:** request identity is auth-aware in Development.
 
 ## Routes
 
@@ -37,7 +37,7 @@ Common responses:
 ## Known limitations / future hardening
 
 - Dev endpoints remain available for local diagnostics.
-- Login exists but is not required for Lesson Chat in MVP.
+- Login exists but is not required for Lesson Chat in product.
 - Production auth enforcement is not enabled for all runtime endpoints yet.
 - Future production API naming should move away from `/api/dev` for authenticated user-facing session APIs.
 - Subscription/payment enforcement is not implemented.

@@ -6,7 +6,7 @@ Review date: 2026-05-23.
 
 - **Implemented + Validated:** lesson history list/detail endpoints.
 - **Development-only:** current route namespace remains `/api/dev/*` for local diagnostics.
-- **Transitional MVP behavior:** runtime identity is auth-aware even on dev endpoints.
+- **Transitional product behavior:** runtime identity is auth-aware even on dev endpoints.
 
 ## Endpoints
 

@@ -57,13 +57,13 @@ ContextSelection messages should not be treated as active roleplay answers. They
 
 ## Conversation Mode flow
 
-Current MVP voice decision:
+Current product voice decision:
 
 Conversation Mode uses the stable TTS provider by default:
 
 `microphone recording -> audio transcription -> lesson chat reply -> gpt-4o-mini-tts playback`
 
-Realtime remains in the codebase for future testing, but it is not the default MVP path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
+Realtime remains in the codebase for future testing, but it is not the default product path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
 
 Conversation Mode uses the same lesson methodology and the same chat reply flow as normal Lesson Chat:
 

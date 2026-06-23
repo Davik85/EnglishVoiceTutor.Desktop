@@ -1,6 +1,6 @@
 # Language Voice Tutor Desktop
 
-Language Voice Tutor Desktop is a WPF desktop MVP for guided English speaking practice. The current MVP lesson flow is stabilized for local Windows testing: learners choose a level, topic, subtopic, and scenario, then practice in Lesson Chat by typing or recording speech.
+Language Voice Tutor Desktop is a WPF desktop product for guided English speaking practice. The current product lesson flow is stabilized for local Windows testing: learners choose a level, topic, subtopic, and scenario, then practice in Lesson Chat by typing or recording speech.
 
 ## Run the desktop app
 
@@ -30,7 +30,7 @@ Local development builds default the desktop Backend URL to `http://localhost:50
 - `POST /api/lesson-chat/mock-reply` stays available for local compatibility and testing.
 - Normal audio transcription uses `POST /api/audio/transcribe`.
 - Speech playback uses `POST /api/audio/speech`.
-- Realtime code remains in the repository for future testing, but it is not the default MVP Conversation Mode path.
+- Realtime code remains in the repository for future testing, but it is not the default product Conversation Mode path.
 
 ## Backend OpenAI configuration
 
@@ -105,17 +105,17 @@ Generated backend publish/package files are written under `artifacts/` and must 
 
 OpenAI API keys are backend-only. `OPENAI_API_KEY` is needed only for real AI/TTS/STT testing, must never be stored in the desktop app, must never be committed to source control, and must never be sent to testers. The desktop app must call backend APIs only; installed tester/release builds use the fixed production backend and do not expose Backend URL editing to normal users.
 
-## Current MVP voice decision
+## Current product voice decision
 
 Conversation Mode uses the stable TTS provider by default:
 
 `microphone recording -> audio transcription -> lesson chat reply -> gpt-4o-mini-tts playback`
 
-Realtime remains in the codebase for future testing, but it is not the default MVP path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
+Realtime remains in the codebase for future testing, but it is not the default product path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
 
-## Current MVP status
+## Current product status
 
-The current MVP baseline is documentation-first and behavior-stable:
+The current product baseline is documentation-first and behavior-stable:
 
 - Lesson content audit passes with 26 lesson JSON files.
 - Desktop builds successfully in Debug and Release on Windows.
@@ -241,7 +241,7 @@ Step 5B-3d completed a full learner-facing desktop UI localization pass for the 
 
 Step 5B-3e completed Subtopics/Situations display localization for those release-ready Interface languages. Lesson JSON remains unchanged; runtime English fallback remains a safety mechanism only, Native/Explanation languages remain broad, and Study languages were not expanded.
 
-Step 5B-4 added a desktop release smoke gate in `docs/desktop-release-smoke-gate.md` and the safe local helper `tools/run_desktop_release_gate.ps1`. The recommended Windows direct-download installer track is Inno Setup: run the smoke gate, then create the installer with `powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.36-tester.24`; the expected local artifact is `artifacts\installers\windows\LanguageVoiceTutorSetup-0.1.36-tester.24.exe`, which is not public/live until upload and HTTPS manifest verification. Velopack is deprecated/rejected because its one-click installer does not match the desired release-like wizard UX. ZIP packaging remains only an emergency/developer fallback through `scripts/package-tester-release.ps1`. Core Lesson Chat / Conversation Mode / TTS / transcription / translation / hints / feedback / summary are accepted, and the single active lesson guard plus remote active lesson release stop the old device/session. `tools/smoke_single_active_lesson_guard.ps1` covers heartbeat stale protection, remote release, old-session invalidation, and old heartbeat/message rejection. Localization is considered closed for the current phase. Future Interface languages should be added only 1-2 at a time after full localization QA, production billing remains deferred, CMS/Admin content MVP is advanced enough to pause, backend production deployment last-known snapshot is `0.1.35-backend.39` and must be verified from the server symlink, clean-machine/update tester validation and external tester feedback are next, and public release is not declared ready.
+Step 5B-4 added a desktop release smoke gate in `docs/desktop-release-smoke-gate.md` and the safe local helper `tools/run_desktop_release_gate.ps1`. The recommended Windows direct-download installer track is Inno Setup: run the smoke gate, then create the installer with `powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.ps1 -Version 0.1.36-tester.24`; the expected local artifact is `artifacts\installers\windows\LanguageVoiceTutorSetup-0.1.36-tester.24.exe`, which is not public/live until upload and HTTPS manifest verification. Velopack is deprecated/rejected because its one-click installer does not match the desired release-like wizard UX. ZIP packaging remains only an emergency/developer fallback through `scripts/package-tester-release.ps1`. Core Lesson Chat / Conversation Mode / TTS / transcription / translation / hints / feedback / summary are accepted, and the single active lesson guard plus remote active lesson release stop the old device/session. `tools/smoke_single_active_lesson_guard.ps1` covers heartbeat stale protection, remote release, old-session invalidation, and old heartbeat/message rejection. Localization is considered closed for the current phase. Future Interface languages should be added only 1-2 at a time after full localization QA, production billing remains deferred, CMS/Admin content foundation is advanced enough to pause, backend production deployment last-known snapshot is `0.1.35-backend.39` and must be verified from the server symlink, clean-machine/update tester validation and external tester feedback are next, and public release is not declared ready.
 
 Structured scenario editor update: the Admin CMS Scenarios subtab now includes a safer structured editor for common scenario content (title/subtopic, description, setup message, first bot message guidance, context option titles, valid context keywords, custom context rules, invalid context redirect, goal text, can-do statements, opening/first-user-task/follow-up guidance, AI tutor instructions, wrap-up/final message guidance, hint example, and wrap/final turn counters). `DefinitionJson` remains the canonical stored scenario definition; no per-field scenario database columns or EF migration were added. Structured edits parse the current `DefinitionJson`, update only known JSON paths, and write the merged valid JSON back to `DefinitionJson`, preserving unknown fields and advanced configuration in place. Advanced JSON remains available with `Format JSON` and `Validate JSON` for rare technical changes. Save draft remains explicit; invalid Advanced JSON or invalid structured numeric/required data is rejected before saving, and backend scenario validation still rejects invalid JSON, missing required fields, or accidental stable id/title/setup mismatches. CMS draft-save audit logging still records successful scenario saves with changed field names and before/after hashes without storing full scenario JSON bodies. Runtime learner behavior now uses the CMS published snapshot for controlled tester lessons; Save draft + Publish is required for app-visible changes, and static JSON fallback remains available.
 

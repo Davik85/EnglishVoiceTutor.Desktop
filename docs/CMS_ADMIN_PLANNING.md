@@ -4,9 +4,9 @@ Review date: 2026-06-13.
 
 ## Current product decision
 
-CMS/Admin content MVP is now the next focus **before external tester handoff**. The desktop hardening block is stable enough to pause tester delivery and build a content editing foundation first, so future tester feedback about lessons, scenarios, prompts, and tutor behavior can be fixed through CMS instead of code or JSON changes.
+CMS/Admin content foundation is now the next focus **before external tester handoff**. The desktop hardening block is stable enough to pause tester delivery and build a content editing foundation first, so future tester feedback about lessons, scenarios, prompts, and tutor behavior can be fixed through CMS instead of code or JSON changes.
 
-This changes the previous "not built now" decision only for the **content-focused CMS MVP**. Full production Admin and production billing operations remain deferred.
+This changes the previous "not built now" decision only for the **content-focused CMS foundation**. Full production Admin and production billing operations remain deferred.
 
 ## Current foundation
 
@@ -37,17 +37,17 @@ Local runtime CMS read was confirmed only under explicit development configurati
 
 CMS/Admin is connected, and `static-json-v1` is initialized as Draft/admin content for the last verified tester release snapshot. This is still not full production RBAC readiness, not critical-change approval readiness, and not broad public release readiness. Learner runtime now uses the CMS published snapshot; static JSON fallback remains available but should not be active in normal runtime status. Production billing remains deferred. Production RBAC and critical-change approval come later.
 
-## CMS/Admin content MVP goal
+## CMS/Admin content foundation goal
 
 Create a safe backend-owned CMS/Admin foundation for editing lesson and prompt content before external testers begin content QA.
 
-The MVP must allow content edits without changing desktop runtime code or packaged lesson JSON after the migration is implemented and approved. It must protect users by serving only published content and falling back to current static JSON if CMS content is unavailable.
+The product must allow content edits without changing desktop runtime code or packaged lesson JSON after the migration is implemented and approved. It must protect users by serving only published content and falling back to current static JSON if CMS content is unavailable.
 
 Detailed plan: `docs/cms-content-mvp-plan.md`.
 
-## MVP scope
+## Product scope
 
-CMS content MVP should focus on:
+CMS content foundation should focus on:
 
 - lesson topics;
 - subtopics/situations/scenarios;
@@ -64,7 +64,7 @@ CMS content MVP should focus on:
 - rollback/restore previous version;
 - audit trail for content changes.
 
-## Explicit non-goals for the MVP
+## Explicit non-goals for the product
 
 Do not include:
 
@@ -113,7 +113,7 @@ Release-ready Interface languages must remain exactly:
 - `hr`
 - `bg`
 
-Native/Explanation languages remain broad. CMS MVP must not expand or narrow these catalogs.
+Native/Explanation languages remain broad. CMS foundation must not expand or narrow these catalogs.
 
 ## Content workflow requirements
 
@@ -147,7 +147,7 @@ Server-side validation must check at minimum:
 
 ## Proposed rollout sequence
 
-1. Document CMS MVP scope and data model. This planning task.
+1. Document CMS foundation scope and data model. This planning task.
 2. Add backend CMS content models and EF migration after plan approval.
 3. Import current JSON content into CMS draft/published seed or migration path without changing lesson JSON.
 4. Add backend read path for latest published CMS content with fallback to current static JSON.
@@ -158,21 +158,21 @@ Server-side validation must check at minimum:
 9. Add CMS draft-save audit logging. **Next recommended CMS implementation step.** Audit each draft edit with actor, timestamp, content pack, entity type, stable key/id, changed fields, old/new values or hashes, source, and request/correlation id.
 10. Add critical-change approval workflow after production roles/RBAC exist. **Later governance step.**
 11. Run desktop regression and release gate.
-12. Then send controlled tester package to external testers after CMS/Admin content MVP is ready enough for practical content changes without code edits.
+12. Then send controlled tester package to external testers after CMS/Admin content foundation is ready enough for practical content changes without code edits.
 
 ## Risks
 
 - Broken draft content could disrupt lessons if runtime reads drafts. Mitigation: runtime reads immutable published snapshots only.
 - Prompt edits could weaken safety. Mitigation: keep backend safety rules code-owned and validate prompt templates.
 - CMS migration could block testers. Mitigation: keep current static JSON fallback until CMS is proven.
-- Scope creep could pull billing/Admin operations into CMS MVP. Mitigation: keep billing, Paddle, subscription, entitlement, and broad user management deferred.
+- Scope creep could pull billing/Admin operations into CMS foundation. Mitigation: keep billing, Paddle, subscription, entitlement, and broad user management deferred.
 - Secrets could be entered into prompt fields. Mitigation: validate and audit content fields; never store provider secrets in CMS.
 - Admin refresh/session behavior could accidentally persist sensitive drafts. Mitigation: keep JWT memory-only, use only the existing admin-only HTTP-only cookie for refresh auth, store only safe URL hash identifiers, avoid Web Storage, and never persist unsaved CMS content in browser storage.
 
 ## Acceptance criteria for this planning step
 
-- Documentation reflects CMS/Admin content MVP as the next focus before external tester handoff.
-- Documentation clearly separates CMS content MVP from full production Admin.
+- Documentation reflects CMS/Admin content foundation as the next focus before external tester handoff.
+- Documentation clearly separates CMS content foundation from full production Admin.
 - Production billing remains deferred.
 - Public release remains not ready.
 - Editable content and non-goals are defined.

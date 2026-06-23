@@ -19,18 +19,18 @@ This audit remains useful as the Step 5A baseline, but the following release-har
 - The tester ZIP was verified on another Windows device after extraction, including app start, Diagnostics hidden by default, backend connection, account login, backend history, accepted lesson flow, active lesson guard, and remote active lesson release.
 - Backend-enforced single active lesson protection is heartbeat-based, uses a 2-minute freshness window, supports remote release, marks the old session `Abandoned`, and rejects old heartbeat/message actions with `lesson_session_ended_elsewhere`.
 - Prompt/dialogue/scenario/bot-behavior quality polishing is intentionally deferred to CMS/Admin.
-- Public release is still not declared ready; production billing remains deferred, and CMS/Admin content MVP work is now underway before external tester handoff but is not production-ready.
+- Public release is still not declared ready; production billing remains deferred, and CMS/Admin content foundation work is now underway before external tester handoff but is not production-ready.
 
 ## Executive summary
 
-Language Voice Tutor Desktop is close enough for focused internal validation, but it is not ready for external MVP users without a short release-hardening pass.
+Language Voice Tutor Desktop is close enough for focused internal validation, but it is not ready for external product users without a short release-hardening pass.
 
 What is close to release-ready:
 - The core desktop learning path exists: first launch, level/topic/situation selection, Lesson Chat, text messages, hints, translation, TTS playback, voice recording/transcription, Conversation Mode, lesson finish, summary, and history.
 - Backend-backed account/auth, settings sync, lesson session persistence, lesson access checks, free usage limits, and subscription status are implemented.
 - The desktop upgrade/paywall path correctly depends on backend access and subscription state rather than local Premium decisions.
 - Settings is now organized into learning, account, audio, progress, and diagnostics sections, and diagnostics is already wired to be hideable.
-- Lesson content has enough breadth for controlled MVP testing: 26 lesson JSON files across everyday, travel, work/business, job interview, restaurant/cafe, and free conversation scenarios.
+- Lesson content has enough breadth for controlled release testing: 26 lesson JSON files across everyday, travel, work/business, job interview, restaurant/cafe, and free conversation scenarios.
 
 What is not ready:
 - Release packaging and production configuration are not yet complete. The app still defaults to a localhost backend URL, and there is no signed installer or auto-update/download plan.
@@ -71,7 +71,7 @@ The current confirmed baseline, based on repository docs and release-relevant co
 
 **Needs focused fixes**
 
-Rationale: the main desktop learning experience and tester ZIP path are accepted for controlled validation, but release readiness still depends on hosted backend configuration, final security/privacy review, clean-machine packaging discipline, installer/signing/update planning, and final P0/P1 triage. If the target is only a tightly controlled internal tester release, this is closer to **Almost ready** after manual acceptance. For external MVP users, it remains **Needs focused fixes**.
+Rationale: the main desktop learning experience and tester ZIP path are accepted for controlled validation, but release readiness still depends on hosted backend configuration, final security/privacy review, clean-machine packaging discipline, installer/signing/update planning, and final P0/P1 triage. If the target is only a tightly controlled internal tester release, this is closer to **Almost ready** after manual acceptance. For external product users, it remains **Needs focused fixes**.
 
 ## P0 blockers
 
@@ -83,12 +83,12 @@ P0 means the issue blocks app launch, lesson start, account access, data safety,
 
 ## P1 blockers
 
-P1 means the issue blocks MVP user experience or causes major confusion.
+P1 means the issue blocks product user experience or causes major confusion.
 
 - Backend unavailable/wrong URL/timeout/401/403/500 states need end-to-end manual acceptance for Register, Login, Settings sync, lesson access preflight, Lesson Chat, Hint, Translate, TTS, transcription, checkout launch, and status refresh.
 - Sign-in-required and free-limit-used states exist, but the complete new-user path should be manually validated so users understand they must create an account before starting normal lessons.
 - Voice recording/transcription must be tested on clean machines with no microphone, changed default microphone, unavailable saved microphone, poor input, and backend transcription failure.
-- Conversation Mode needs MVP acceptance for entry/exit, recording UX, auto-send behavior, bot voice auto-play behavior, avatar framing, and small/medium window layout.
+- Conversation Mode needs product acceptance for entry/exit, recording UX, auto-send behavior, bot voice auto-play behavior, avatar framing, and small/medium window layout.
 - Lesson Chat has many commands and state transitions; text input, send button, hint, translate, play voice, finish, back, and lesson-complete states need a focused UI pass to remove confusing disabled states or unclear status messages.
 - Release packaging is limited to a tester zip script. There is no signed installer, signing plan, update plan, or documented public download path.
 - CMS/Admin is not ready for public operations. Admin CMS Content now exists for development/admin content editing with refresh resilience, unsaved-change protection, Step 5D-6e Scenarios editor usability refinement (local **Jump to** navigation, collapsible/visually separated structured sections, helper text, recommended structured-field editing, and visually separated Advanced JSON technical fallback), draft-save audit logging, smoke/test audit filtering, required publish summary validation, immutable published versions/restore-as-new-version behavior, and a locally verified published-snapshot runtime read path. Production RBAC and approval workflow remain future work. Desktop/runtime content still uses static JSON by default with CMS reads disabled unless configured and static JSON fallback available.
@@ -105,12 +105,12 @@ P2 means useful improvements that can wait until after first controlled test use
 - Reduce developer-oriented status indicators in Lesson Chat if they distract normal learners.
 - Improve account status wording for trial, Premium, free lesson remaining, enforcement, past due, canceled, and paused states.
 
-## Later / post-MVP
+## Later / post-release
 
 These should not block the first controlled test release:
 
 - Production Paddle rollout and production billing operations automation.
-- Production CMS hardening: roles/RBAC, critical-change approval, external tester handoff readiness, and public-release operations after the development/admin CMS MVP and later governance work are accepted.
+- Production CMS hardening: roles/RBAC, critical-change approval, external tester handoff readiness, and public-release operations after the development/admin CMS foundation and later governance work are accepted.
 - Mobile entitlement bridge for Apple App Store / Google Play.
 - Automatic update infrastructure.
 - Rich analytics dashboards.
@@ -134,7 +134,7 @@ These should not block the first controlled test release:
 - Empty/error/loading states are present in several places but have not been accepted as learner-friendly.
 
 **Release recommendation**
-- Keep the current navigation model for MVP, but manually test the first-run path as a brand-new user.
+- Keep the current navigation model for product, but manually test the first-run path as a brand-new user.
 - Make sure any development-only status surfaces are hidden or acceptable in Release.
 
 **Suggested next task**
@@ -145,7 +145,7 @@ These should not block the first controlled test release:
 **Current status**
 - Settings is organized into separate Learning, Account, Audio, Progress, and Diagnostics sections.
 - Diagnostics has an `IsDiagnosticsTabVisible` gate in the view, so it is designed to be hideable.
-- Account, learning preferences, audio input, progress/statistics, backend URL, and diagnostics are separated enough for MVP.
+- Account, learning preferences, audio input, progress/statistics, backend URL, and diagnostics are separated enough for product.
 - Recent fixes indicate Settings no longer crashes.
 
 **Risks**
@@ -155,7 +155,7 @@ These should not block the first controlled test release:
 
 **Release recommendation**
 - Settings is good enough for controlled testers if Diagnostics remains visible by plan.
-- For public MVP, hide Diagnostics and backend URL editing by default, or make it available only through an explicit support/debug path.
+- For public product, hide Diagnostics and backend URL editing by default, or make it available only through an explicit support/debug path.
 
 **Suggested next task**
 - Step 5B-2: Settings final visual/manual acceptance and Diagnostics Release visibility decision.
@@ -196,7 +196,7 @@ These should not block the first controlled test release:
 - 401/403/500 handling should be accepted in each client path, not assumed from one mapping function.
 
 **Release recommendation**
-- Add a manual backend-unavailable test matrix before MVP.
+- Add a manual backend-unavailable test matrix before product.
 - Decide whether public builds hardcode a production backend URL or use a packaged configuration file that contains no secrets.
 
 **Suggested next task**
@@ -289,7 +289,7 @@ These should not block the first controlled test release:
 **Current status**
 - Lesson Chat has an entry point into Conversation Mode.
 - Conversation Mode presents the selected avatar, latest user/bot text overlays, Hint, record button, and return-to-chat action.
-- The current MVP path can use stable TTS; realtime code remains present as future capability but is not the default MVP path.
+- The current product path can use stable TTS; realtime code remains present as future capability but is not the default product path.
 - Recording and bot voice states are integrated with Conversation Mode state.
 
 **Risks**
@@ -299,10 +299,10 @@ These should not block the first controlled test release:
 - Return/back flow must reliably stop recording/audio and preserve the lesson state.
 
 **Release recommendation**
-- Treat Conversation Mode as MVP-conditional: include it if the acceptance checklist passes; otherwise hide or label it as beta for controlled testers.
+- Treat Conversation Mode as product-conditional: include it if the acceptance checklist passes; otherwise hide or label it as beta for controlled testers.
 
 **Suggested next task**
-- Step 5B-9: Conversation Mode MVP acceptance or beta/hide decision.
+- Step 5B-9: Conversation Mode product acceptance or beta/hide decision.
 
 ### 10. Avatar behavior
 
@@ -315,10 +315,10 @@ These should not block the first controlled test release:
 **Risks**
 - Avatar image/framing may vary between chat and Conversation Mode layouts.
 - The profile details are useful, but too much personality may distract from lesson goals if prompt compliance is not manually reviewed.
-- Only two avatars are available; this is acceptable for MVP but should not be overmarketed.
+- Only two avatars are available; this is acceptable for product but should not be overmarketed.
 
 **Release recommendation**
-- Elena and Nelli are enough for MVP if framing and prompt/personality behavior pass manual review.
+- Elena and Nelli are enough for product if framing and prompt/personality behavior pass manual review.
 - More avatars can wait.
 
 **Suggested next task**
@@ -338,7 +338,7 @@ These should not block the first controlled test release:
 - shouldEndLesson behavior needs manual validation for typed turns, voice turns, invalid transcript retries, and Conversation Mode turns.
 
 **Release recommendation**
-- Keep current behavior for controlled MVP after manual testing. Consider adding clearer copy later for early exit and completed-awaiting-finish states.
+- Keep current behavior for controlled release after manual testing. Consider adding clearer copy later for early exit and completed-awaiting-finish states.
 
 **Suggested next task**
 - Step 5B-11: Lesson completion, early exit, summary, and progress manual test.
@@ -426,7 +426,7 @@ These should not block the first controlled test release:
 
 **Release recommendation**
 - A zip is acceptable only for a controlled tester release.
-- Public MVP should have a signed installer or a clearly accepted distribution alternative.
+- Public product should have a signed installer or a clearly accepted distribution alternative.
 
 **Suggested next task**
 - Step 5B-15: Installer/signing/clean-machine release package checklist.
@@ -443,10 +443,10 @@ These should not block the first controlled test release:
 **Risks**
 - Passing JSON validation does not guarantee teaching quality, scenario naturalness, level accuracy, or full multilingual quality.
 - Free Conversation needs careful safety and topic-boundary behavior review.
-- Lesson runtime remains static JSON by default. Admin CMS Content can now edit draft topics, scenarios through recommended structured sections or visually separated Advanced JSON fallback, prompt templates, and tutor behavior profiles for development/admin use, but tester handoff remains paused until the CMS/Admin content MVP is ready enough for practical content changes without code edits.
+- Lesson runtime remains static JSON by default. Admin CMS Content can now edit draft topics, scenarios through recommended structured sections or visually separated Advanced JSON fallback, prompt templates, and tutor behavior profiles for development/admin use, but tester handoff remains paused until the CMS/Admin content foundation is ready enough for practical content changes without code edits.
 
 **Release recommendation**
-- Content is good enough for controlled MVP if a human samples each topic/language combination most likely to be used.
+- Content is good enough for controlled release if a human samples each topic/language combination most likely to be used.
 - Deeper methodology review and CMS-based content operations can wait.
 
 **Suggested next task**
@@ -461,10 +461,10 @@ These should not block the first controlled test release:
 
 **Risks**
 - Public release without mature Admin tooling creates support risk: account lookup, entitlement correction, refund/chargeback workflows, content hotfixes, and audit trail.
-- Manual/JSON content fixes are acceptable for controlled MVP but slow for public operations.
+- Manual/JSON content fixes are acceptable for controlled release but slow for public operations.
 
 **Release recommendation**
-- Desktop controlled MVP can proceed without CMS if support volume is intentionally limited.
+- Desktop controlled release can proceed without CMS if support volume is intentionally limited.
 - Before public release, add production RBAC, later add critical-change approval after production roles exist, and run a separate CMS/Admin v1 audit focused on support/content operations.
 
 **Suggested next task**
@@ -505,7 +505,7 @@ These should not block the first controlled test release:
 
 **Release recommendation**
 - Keep scripts unchanged for this audit.
-- Add a human desktop release checklist run before any controlled MVP package is shared.
+- Add a human desktop release checklist run before any controlled release package is shared.
 
 **Suggested next task**
 - Step 5B-19: Run and record manual desktop release checklist results.
@@ -543,7 +543,7 @@ These should not block the first controlled test release:
    - Review initial bot message, command states, disabled controls, status messages, Hint, Translate, Play voice, Finish, and Back.
 5. **Voice/recording reliability**
    - Test microphone selection, unavailable device, permission denial, start/stop, transcription failure, and auto-send voice.
-6. **Conversation Mode MVP acceptance**
+6. **Conversation Mode product acceptance**
    - Test avatar layout, record UX, auto-send, auto-play, Hint, return/back, and small/medium window sizes.
 7. **Release diagnostics/config cleanup**
    - Hide/default-off Diagnostics for normal Release users.
@@ -630,13 +630,13 @@ Use `docs/desktop-release-work-plan.md` as the controlling consolidated plan for
    - Implemented for Windows with DPAPI-protected `auth-session.json` payloads; keep final security/privacy review before broad public release.
 5. **Step 5B-5: Lesson selection and access-state QA**
    - Validate signed-out, free available, free used, trial, Premium, past due, canceled/paused, checkout unavailable, and unknown/error states.
-6. **Step 5B-6: Lesson Chat MVP polish**
+6. **Step 5B-6: Lesson Chat product polish**
    - Review command states, status messages, initial bot text, Hint, Translate, Play voice, Finish, Back, and completed-awaiting-finish UX.
 7. **Step 5B-7: Voice recording/transcription reliability pass**
    - Test microphone selection, missing devices, permission failures, start/stop recording, transcription failure, and auto-send voice.
 8. **Step 5B-8: Bot voice/TTS loading, failure, and avatar-state acceptance**
    - Validate TTS loading/failure/retry states and avatar-state behavior.
-9. **Step 5B-9: Conversation Mode MVP acceptance or beta/hide decision**
+9. **Step 5B-9: Conversation Mode product acceptance or beta/hide decision**
    - Validate avatar layout, record UX, auto-send, auto-play, return/back, and layout on common window sizes.
 10. **Step 5B-10: Avatar framing/profile/prompt acceptance pass**
     - Defer prompt/dialogue/scenario/bot-behavior quality polishing to CMS/Admin; keep only blocking avatar/framing defects in desktop hardening. Do not claim production CMS readiness until production RBAC and approval workflow are addressed.

@@ -2,7 +2,7 @@
 
 Review date: 2026-06-06.
 
-This is a technical MVP retention policy draft (not a legal policy).
+This is a technical product retention policy draft (not a legal policy).
 
 ## Implemented persistence scope
 
@@ -19,7 +19,7 @@ Backend persistence foundation (PostgreSQL + EF Core) is implemented for:
 - `feedback_results`
 - subscription, entitlement, Paddle webhook event, subscription snapshot, and payment persistence tables from the confirmed EF migrations
 
-## Stored now (MVP)
+## Stored now (product)
 
 - Lesson messages/transcript text may be stored as learning history.
 - Lesson summaries may be stored as learning history.
@@ -44,7 +44,7 @@ Backend persistence foundation (PostgreSQL + EF Core) is implemented for:
 - The key must never be sent to testers.
 - Desktop only needs a Backend URL and must call backend APIs only.
 
-## Not stored now (MVP)
+## Not stored now (product)
 
 - Raw audio is not intentionally persisted as backend learning history.
 - Full prompts are not persisted as lesson history.
