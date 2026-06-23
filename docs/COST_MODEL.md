@@ -2,7 +2,7 @@
 
 Review date: 2026-05-17.
 
-This document describes the current MVP model usage and the developer-only usage/cost instrumentation. Pricing and cost estimates remain approximate where pricing constants are missing or incomplete.
+This document describes the current product model usage and the developer-only usage/cost instrumentation. Pricing and cost estimates remain approximate where pricing constants are missing or incomplete.
 
 ## Current model usage
 
@@ -11,15 +11,15 @@ This document describes the current MVP model usage and the developer-only usage
 - Transcription: `gpt-4o-mini-transcribe`.
 - Normal Lesson Chat TTS: `tts-1` with `purpose=lesson_chat_tts`.
 - Conversation Mode TTS: `gpt-4o-mini-tts` with `purpose=conversation_mode_tts`.
-- Realtime: `gpt-realtime` is not default for MVP; keep for future cost review if/when Realtime is re-enabled as a provider option.
+- Realtime: `gpt-realtime` is not default for product; keep for future cost review if/when Realtime is re-enabled as a provider option.
 
-## Current MVP voice decision
+## Current product voice decision
 
 Conversation Mode uses the stable TTS provider by default:
 
 `microphone recording -> audio transcription -> lesson chat reply -> gpt-4o-mini-tts playback`
 
-Realtime remains in the codebase for future testing, but it is not the default MVP path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
+Realtime remains in the codebase for future testing, but it is not the default product path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
 
 ## What is measured
 
@@ -37,7 +37,7 @@ Developer logs and usage records are intended to capture:
 - Exact pricing is approximate or missing where pricing constants are not configured.
 - Audio duration may be estimated from byte counts and sample rates.
 - TTS duration may be approximate because compressed/container formats do not always map cleanly to duration.
-- Realtime cost comparison is deferred because Realtime is not the default MVP path.
+- Realtime cost comparison is deferred because Realtime is not the default product path.
 - Monthly and unit economics should be recalculated later from real usage logs.
 
 ## Conversation Mode cost note

@@ -1,4 +1,4 @@
-# CMS/Admin Content MVP Plan
+# CMS/Admin Content Product Plan
 
 Review date: 2026-06-13.
 
@@ -40,12 +40,12 @@ This is an audit and implementation plan. Step 5D-1 added the backend CMS conten
 
 ## Product decision
 
-- CMS/Admin content MVP now starts **before** external tester handoff.
+- CMS/Admin content foundation now starts **before** external tester handoff.
 - External tester handoff is paused until the content editing foundation is ready enough for controlled content fixes.
 - Desktop hardening is stable enough to pause tester delivery and start CMS content foundation work.
 - Production billing remains deferred.
 - Public release remains not ready.
-- This MVP is content-focused only; it is not full production Admin or operational support tooling.
+- This product is content-focused only; it is not full production Admin or operational support tooling.
 
 ## Current content architecture audit
 
@@ -87,21 +87,21 @@ A `LessonScenario` currently includes:
 
 The audit found the following content-related areas are currently hardcoded or file/static based:
 
-| Area | Current source | CMS MVP disposition |
+| Area | Current source | CMS foundation disposition |
 | --- | --- | --- |
-| Study languages | `Shared/StudyLanguages/StudyLanguageCatalog.cs` and `Content/StudyLanguages/study_languages.json` | Keep static for MVP. Must remain English, French, German, Portuguese, Spanish, Italian. |
+| Study languages | `Shared/StudyLanguages/StudyLanguageCatalog.cs` and `Content/StudyLanguages/study_languages.json` | Keep static for product. Must remain English, French, German, Portuguese, Spanish, Italian. |
 | Interface languages | Localization files/catalogs | Keep static. Release-ready list must remain `en`, `es`, `fr`, `de`, `it`, `pt`, `ru`, `pl`, `ar`, `ja`, `ko`, `sr`, `hr`, `bg`. |
 | Topic list/cards | `HomeViewModel.CreateTopics` plus localized display text | Make content-backed later through published CMS read path, but do not change desktop runtime in this planning step. |
 | Subtopic/situation list | `SubtopicsViewModel.CreateSubtopicsForTopic` plus localized display text | Make content-backed later through published CMS read path, with JSON/static fallback. |
-| Lesson scenarios | `Content/Lessons/*/*.json` | Primary CMS MVP content import target. Do not rewrite JSON in this step. |
-| Starter/setup messages | `lessonSetup.setupMessage`, `conversationFlow.opening`, `conversationFlow.defaultOpeningExample`, localized setup helpers | Editable in CMS MVP with preview and validation. |
+| Lesson scenarios | `Content/Lessons/*/*.json` | Primary CMS foundation content import target. Do not rewrite JSON in this step. |
+| Starter/setup messages | `lessonSetup.setupMessage`, `conversationFlow.opening`, `conversationFlow.defaultOpeningExample`, localized setup helpers | Editable in CMS foundation with preview and validation. |
 | Tutor/avatar behavior | `Content/Tutors/*.json`, `TutorAvatarProfileProvider`, prompt builder identity rules | Editable only as bounded `TutorBehaviorProfile` text/rules for approved tutor IDs; avatar assets and broad identity catalog remain static for now. |
 | Base lesson prompt rules | `Content/Prompts/*.txt` and `LessonPromptBuilder` canonical policies | Editable as controlled prompt templates where variables are validated; critical safety/runtime policies remain code-owned until explicitly approved. |
 | Hint prompt/input | `OpenAiLessonHintService`, `OpenAiConstants.LessonHintSystemInstructions`, `LessonPromptBuilder.BuildHintInput`, JSON `hintRules` | Editable configuration for hint style/example/levels and optional CMS prompt template. |
 | Feedback prompt/config | `LessonPromptBuilder`, lesson JSON `feedbackRules`, backend structured output schema | Editable feedback style/rules; schema and persistence remain code-owned. |
 | Summary generation | Desktop `LessonChatViewModel` builds summary input and backend stores summaries; final summary behavior is runtime logic | Keep completion/storage logic static; allow summary prompt/config only if a backend generation path uses it in a later implementation. |
-| Translation prompt | `TranslationService` uses `OpenAiConstants.TranslationSystemInstructions` and a code input template | Keep static for MVP unless a narrow prompt-template edit is explicitly approved; translation safety and language behavior should remain backend-owned. |
-| Safety/boundary instructions | `LessonPromptBuilder`, `OpenAiConstants`, language/output guards, tutor identity guard | Mostly code-owned in MVP. CMS may add bounded content-level safety notes but cannot remove required backend safety rules. |
+| Translation prompt | `TranslationService` uses `OpenAiConstants.TranslationSystemInstructions` and a code input template | Keep static for product unless a narrow prompt-template edit is explicitly approved; translation safety and language behavior should remain backend-owned. |
+| Safety/boundary instructions | `LessonPromptBuilder`, `OpenAiConstants`, language/output guards, tutor identity guard | Mostly code-owned in product. CMS may add bounded content-level safety notes but cannot remove required backend safety rules. |
 | Free conversation behavior | `Content/Lessons/FreeConversation/open_conversation.json`, hardcoded Free Conversation topic/subtopic, prompt builder free-conversation policies | Editable scenario/prompt content only; code-owned safety/boundary rules stay static. |
 | Lesson completion/summary turn logic | JSON turn thresholds plus `LessonLimitHelper`/`LessonChatViewModel` phase logic | Turn thresholds can be content fields with validation; completion mechanics remain code-owned. |
 
@@ -119,9 +119,9 @@ This foundation now includes a bootstrap-admin Admin CMS Content workspace for c
 
 As of the 2026-06-12 documentation snapshot, CMS/Admin is connected and `static-json-v1` is initialized as Draft/admin content. Static JSON stays the learner runtime default unless the CMS published snapshot runtime flag is explicitly enabled after validation. The private tester/direct Windows release must be verified from live `latest.json`; local build artifacts alone are not public/live, but broad public release readiness still depends on clean-machine smoke, controlled tester feedback, operational hardening, production RBAC/approval, and deferred billing work.
 
-## MVP scope: editable content
+## Product scope: editable content
 
-The CMS content MVP should allow authenticated admins/content managers to edit only content needed to respond to tester feedback:
+The CMS content foundation should allow authenticated admins/content managers to edit only content needed to respond to tester feedback:
 
 1. Lesson topic metadata:
    - stable topic ID/slug;
@@ -170,9 +170,9 @@ The CMS content MVP should allow authenticated admins/content managers to edit o
    - rollback/restore;
    - audit trail.
 
-## Non-goals for CMS MVP
+## Non-goals for CMS foundation
 
-Do **not** include the following in CMS MVP:
+Do **not** include the following in CMS foundation:
 
 - production billing controls;
 - Paddle management;
@@ -263,7 +263,7 @@ Recommended fields:
 - `FinalMessageAtUserTurn`;
 - `IsActive`.
 
-Use typed owned entities where practical, but JSON columns are acceptable for an MVP if validation is strict and the published snapshot remains deterministic.
+Use typed owned entities where practical, but JSON columns are acceptable for a product if validation is strict and the published snapshot remains deterministic.
 
 ### `PromptTemplate`
 
@@ -397,7 +397,7 @@ Admin UI preview should work without publishing:
 7. Show validation warnings alongside preview.
 8. Make it clear that preview uses draft content and has no effect on learners until publish.
 
-Preview should not require sending content to OpenAI in the first MVP. A later optional preview can run a real model call through the backend only, never from desktop and never with keys in the browser.
+Preview should not require sending content to OpenAI in the first product. A later optional preview can run a real model call through the backend only, never from desktop and never with keys in the browser.
 
 ## Versioning and rollback workflow
 
@@ -473,7 +473,7 @@ Minimum UI:
 
 ## Implementation phases
 
-1. Document CMS MVP scope and data model. **Implemented in Step 5D-0.**
+1. Document CMS foundation scope and data model. **Implemented in Step 5D-0.**
 2. Add backend CMS content models and EF migration after approval. **Implemented in Step 5D-1 as schema foundation only.**
 3. Import current JSON content into CMS draft/published seed or migration path without changing current JSON. **Implemented in Step 5D-2 as a bootstrap-admin static import foundation.**
    - The importer reads `Content/Lessons`, `Content/Prompts`, `Content/Tutors`, and the static study-language reference file.
@@ -511,7 +511,7 @@ Minimum UI:
    - Each content edit should record actor identity, timestamp UTC, content pack, entity type, stable key/id, changed fields, old/new values or hashes for large values, source, and request/correlation id.
 9. Add critical-change approval workflow after production roles/RBAC exist. **Later governance step.**
 10. Run desktop regression, release gate, content audits, and active lesson guard smoke where relevant. **Future phase.**
-11. Then prepare controlled external tester handoff after CMS/Admin content MVP is ready enough for controlled content fixes. **Future phase.**
+11. Then prepare controlled external tester handoff after CMS/Admin content foundation is ready enough for controlled content fixes. **Future phase.**
 
 ## Risks and mitigations
 
@@ -520,7 +520,7 @@ Minimum UI:
 - **Risk:** Half migration blocks testers. **Mitigation:** keep static JSON fallback until CMS is proven.
 - **Risk:** Content stores secrets. **Mitigation:** secret scanning validation and audit trail.
 - **Risk:** Admin foundation is mistaken for production CMS. **Mitigation:** document that current Admin shell is development/support foundation only.
-- **Risk:** Billing/admin scope creep. **Mitigation:** keep billing/Paddle/subscription/entitlement operations deferred and outside this MVP.
+- **Risk:** Billing/admin scope creep. **Mitigation:** keep billing/Paddle/subscription/entitlement operations deferred and outside this product.
 
 ## Future CMS governance requirements
 
@@ -562,7 +562,7 @@ Future roles may include:
 
 Draft editing and approval should be separated when roles exist. For now, keep the existing development-only admin flow and confirmation dialogs for publish/restore.
 
-## Acceptance criteria for CMS content MVP implementation
+## Acceptance criteria for CMS content foundation implementation
 
 - Authenticated admin/content-manager can edit draft content for topics, scenarios, starter messages, prompt templates, tutor behavior rules, and hint/feedback/summary configuration where applicable.
 - Draft changes do not affect learners.
@@ -574,7 +574,7 @@ Draft editing and approval should be separated when roles exist. For now, keep t
 - CMS draft-save audit logging records edits with actor, timestamp, entity type, stable key/id, changed fields, old/new values or hashes, and request/correlation id; publish and rollback audit coverage remains required before production operations.
 - Backend runtime uses published content only and falls back to static JSON if CMS content is unavailable.
 - Existing accepted desktop Lesson Chat, Conversation Mode, TTS, STT, translation, hints, feedback, summary, active lesson guard, and tester package flow remain working.
-- No billing, Paddle, subscription, entitlement, payment, study-language, Interface-language, Native/Explanation-language, desktop key handling, or public release scope is changed by CMS content MVP.
+- No billing, Paddle, subscription, entitlement, payment, study-language, Interface-language, Native/Explanation-language, desktop key handling, or public release scope is changed by CMS content foundation.
 
 
 Implemented CMS draft-save audit logging details: successful Topic, Scenario (bounded fields, structured scenario fields, and full scenario JSON), Prompt Template, and Tutor Behavior Profile Save draft operations write `DraftSaved` rows to `cms_content_audit_logs`. Rows capture audit id, `createdAtUtc`, actor user id, actor email when available, content pack id and slug, entity type, entity id, stable key (`stableTopicKey`, `stableScenarioKey`, `templateKey`, or `tutorId`), changed field names, before/after SHA-256 hashes, source `AdminCms`, status, and request id when available. Audit rows intentionally do not store or display full before/after JSON snapshots, prompt/tutor source text snapshots, passwords, tokens, provider secrets, OpenAI API keys, Paddle API keys/webhook secrets, or admin bearer tokens. Large edited values are represented by hashes. No-op Save draft requests avoid noisy draft-save audit rows. Admins can read recent CMS audit entries through bootstrap-admin-protected audit endpoints and the CMS Content Audit subtab, which is aligned to the selected content pack (`static-json-v1` by default) and supports entity type, stable key text, limit, Refresh audit controls, and a **Show smoke/test entries** debugging checkbox. Smoke/test entries are hidden by default while normal manual Admin CMS UI changes remain visible. Runtime learner behavior now uses CMS published snapshot; static JSON fallback remains available for rollback/safety. Production RBAC and critical-change approval remain future work.
@@ -604,11 +604,11 @@ The next recommended implementation step is another CMS/admin improvement, not b
 
 ## First production initialization foundation
 
-The CMS MVP includes an admin-only **Initialize from static JSON** foundation for `static-json-v1`. For the current last verified private tester/direct Windows state, `static-json-v1` has been initialized as Draft/admin content; the same action remains the documented first-setup path for future clean environments when the Admin CMS database has no initialized draft/content pack yet. The action imports the current packaged static JSON lesson topics, scenarios, prompt templates, tutor profiles, and available study-language metadata references into the current CMS draft/admin model where supported.
+The CMS foundation includes an admin-only **Initialize from static JSON** foundation for `static-json-v1`. For the current last verified private tester/direct Windows state, `static-json-v1` has been initialized as Draft/admin content; the same action remains the documented first-setup path for future clean environments when the Admin CMS database has no initialized draft/content pack yet. The action imports the current packaged static JSON lesson topics, scenarios, prompt templates, tutor profiles, and available study-language metadata references into the current CMS draft/admin model where supported.
 
 The action is idempotent and safe: it creates the missing content pack, preserves existing draft content instead of blindly overwriting it, does not publish automatically, and does not switch runtime. Runtime remains static JSON until `CmsContent__UsePublishedSnapshotForRuntime=true` is intentionally enabled after separate validation and publishing.
 
-## 2026-06-13 update — latest CMS MVP refinements
+## 2026-06-13 update — latest CMS foundation refinements
 
 ### Completed
 
@@ -619,7 +619,7 @@ The action is idempotent and safe: it creates the missing content pack, preserve
 - No EF migration was required for this refinement.
 - CMS published-snapshot runtime is now active for controlled tester lessons. Static JSON fallback remains available for rollback/safety.
 
-## Next CMS MVP milestone — Prepare CMS for controlled runtime connection
+## Next CMS foundation milestone — Prepare CMS for controlled runtime connection
 
 ### Current state
 

@@ -13,7 +13,7 @@ Scope: controlled tester/admin operational validation only. This runbook is not 
 
 ## Current status
 
-- The Admin UI Role Management MVP exists as the **Persistent Admin Roles / Role Assignments** surface.
+- The Admin UI Role Management controlled-validation surface exists as the **Persistent Admin Roles / Role Assignments** surface.
 - The UI uses only the existing guarded role-assignment backend endpoints.
 - The UI does not add backend endpoints, does not add EF migrations, and does not change Desktop, packaging, billing, Paddle, entitlement, lesson, CMS write, or release behavior.
 - `POST /api/admin/role-assignments/bootstrap-first-owner` remains manual/runbook-controlled and is not exposed in the Admin UI.
@@ -21,7 +21,7 @@ Scope: controlled tester/admin operational validation only. This runbook is not 
 
 ## Required preconditions
 
-Before using the Admin UI Role Management MVP or the optional smoke script:
+Before using the Admin UI Role Management controlled-validation surface or the optional smoke script:
 
 1. Backend is running in a known safe local or controlled tester/admin environment.
 2. An admin login is available through the normal backend auth flow.
@@ -121,7 +121,7 @@ The smoke script must not call `POST /api/admin/role-assignments/bootstrap-first
 
 ## Known limitations
 
-- Admin UI role management is an MVP for controlled tester/admin validation.
+- Admin UI role management is a product for controlled tester/admin validation.
 - BootstrapAdmin fallback still exists as a rollback mechanism, but it is currently disabled explicitly.
 - The 2026-06-22 controlled fallback cutover rehearsal and rollback/restoration passed.
 - The later 2026-06-22 permanent production fallback disable also passed for both approved persistent `super_admin` accounts.

@@ -21,7 +21,7 @@ Review date: 2026-06-15.
   1. authenticated JWT user
   2. Development dev-user fallback when no token
 
-## Dev read endpoints (current MVP)
+## Dev read endpoints (current product)
 
 **Implemented + Development-only**
 - `GET /api/dev/lesson-history`
@@ -58,7 +58,7 @@ Dev endpoints remain available for local diagnostics.
 - Secrets/API keys are not persisted.
 - JWT tokens are not persisted in backend tables.
 - Passwords are not persisted as plain text.
-- `auth-session.json` is desktop-local MVP token storage and is not backend persistence.
+- `auth-session.json` is desktop-local product token storage and is not backend persistence.
 
 ## Future work
 

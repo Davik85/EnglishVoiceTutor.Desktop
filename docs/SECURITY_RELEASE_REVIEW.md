@@ -8,7 +8,7 @@ Scope: documentation and source review only. No application behavior, billing lo
 
 Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.39` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
 
-Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus completed local backup schedule activation plus remaining off-server backup/permission-fidelity work after the completed Phase 4C migration rollback/remediation dry-run rehearsal, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
+Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus completed local backup schedule activation plus completed Phase 4 backup/restore/migration rollback drills plus optional off-server backup hardening, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
 
 ## Current verified release context
 
@@ -98,7 +98,7 @@ Public release still requires remaining operational readiness work: the complete
 - The required `free`, `trial`, and `premium` plan reference rows are data/reference prerequisites. Trial is required for current learner tariff display and trial entitlement reference behavior.
 - Generated release artifacts under `artifacts/`, installers, backend ZIPs, generated release folders, temporary deployment scripts, SQL outputs, `.env` files, and secrets must not be committed.
 - Rollback after schema/data migrations requires migration-specific planning; code rollback alone may not undo data/reference changes.
-- Production DB ownership, least-privilege permissions, permission-fidelity restore checks, and migration rollback drills remain to be verified outside this documentation-only review. The 2026-06-23 Phase 4A drill used `pg_restore --no-owner --no-acl`, so it confirmed backup readability and separate schema restore but not production permission-fidelity.
+- Production DB ownership and least-privilege permissions now have Phase 4D permission-fidelity drill evidence for the current release-readiness level. The earlier Phase 4A drill used `pg_restore --no-owner --no-acl`, while Phase 4D restored an owner/ACL-aware backup into a separate drill database and confirmed checked owners/grants matched the production baseline.
 
 ## F. Logging and privacy
 
@@ -125,7 +125,7 @@ This is not legal advice. Before broad public launch, separately review and publ
 - Production RBAC/admin role management with endpoint-level authorization beyond BootstrapAdmin.
 - Production/live Paddle readiness, including live credentials, live webhook destination verification, refund/chargeback/customer portal policy, monitoring, and reconciliation.
 - Rate limiting/abuse protection verification or implementation for auth, password reset, checkout, admin, and webhook surfaces.
-- Local backup schedule/retention automation is active as of 2026-06-23 via `languagevoicetutor-postgres-backup.timer`; off-server encrypted backups and optional permission-fidelity restore checks remain; Phase 4C migration rollback/remediation dry-run rehearsal completed on 2026-06-23.
+- Local backup schedule/retention automation is active as of 2026-06-23 via `languagevoicetutor-postgres-backup.timer`; Phase 4C migration rollback/remediation dry-run and Phase 4D permission-fidelity restore drill completed on 2026-06-23; off-server encrypted backups remain optional future hardening.
 - The initial production-safe Phase 4A backup/readability/separate-drill-restore was completed on 2026-06-23 without restoring over production, and Phase 4B latest backup readability was verified with `pg_restore --list` at `245` lines.
 
 ### Medium priority
@@ -146,6 +146,12 @@ This is not legal advice. Before broad public launch, separately review and publ
 
 Phase 4C migration rollback/remediation dry-run rehearsal completed successfully on 2026-06-23, supported by the runbook and dry-run command-printer helper. The rehearsal and assets are intentionally non-mutating: they do not read backend environment secrets, do not print connection strings/passwords, do not dump raw table data, do not print SQL dumps or backup contents, do not call provider APIs, do not apply SQL, do not run EF migrations, do not restore over production, and do not change backend runtime behavior.
 
-Security posture remains that SQL remediation must be targeted and separately reviewed, broad unreviewed SQL is forbidden, and production restore-over is not part of rehearsal. Contabo VPS Auto Backup is an additional provider-level recovery layer only; it does not replace PostgreSQL custom-format backups and `pg_restore` readability validation. Off-server encrypted backups and permission-fidelity restore validation remain future work. Production/live Paddle readiness remains deferred, and broad public production readiness is not claimed.
+Security posture remains that SQL remediation must be targeted and separately reviewed, broad unreviewed SQL is forbidden, and production restore-over is not part of rehearsal. Contabo VPS Auto Backup is an additional provider-level recovery layer only; it does not replace PostgreSQL custom-format backups and `pg_restore` readability validation. Off-server encrypted backups remain optional future infrastructure hardening, not an immediate release blocker. Production/live Paddle readiness remains deferred, and broad public production readiness is not claimed.
 
 Phase 4C verified backend current `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`, previous `/opt/languagevoicetutor/backend/releases/0.1.35-backend.38`, health/database health `200 OK`, latest readable backup `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260623_153008Z.dump` with `245` `pg_restore --list` lines, latest EF migration `20260620165657_AddAdminRoleAssignmentPersistence`, required key tables `OK`, backend service active/enabled, backup timer enabled/active with next observed run `2026-06-24 03:15 CEST`, and Contabo VPS Auto Backup enabled as provider/VPS-level protection rather than a PostgreSQL validation substitute. No production DB mutation, EF migration, SQL remediation, restore-over-production, or backend runtime change occurred.
+
+## 2026-06-23 Phase 4D permission-fidelity restore security note
+
+Phase 4D completed on 2026-06-23 without production mutation. An owner/ACL-aware backup of `lvt_app_db` restored into separate drill database `lvt_app_db_owner_acl_drill_20260623_161611Z`; key table ownership and `lvt_app` grants matched the production baseline; the drill database was dropped; and production backend `0.1.35-backend.39` stayed healthy with `/health` and `/api/health/database` returning `200 OK`. No EF migrations, SQL remediation, restore-over-production, runtime behavior, Desktop, Admin UI, CMS, billing, Paddle, package, upload, or deployment changes occurred.
+
+Phase 4 backup/restore/migration rollback drills are complete for the current release-readiness level. Off-server encrypted backups remain optional future infrastructure hardening. Production/live Paddle readiness remains deferred, Microsoft Store/MSIX remains later release-channel work, and broad public production readiness is not claimed.

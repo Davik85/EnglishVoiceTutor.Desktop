@@ -112,21 +112,22 @@ def main() -> int:
     )
     assert_regex(
         combined_main,
-        r"Phase 4B[^\n]*(?:assets|repository-managed)[^\n]*(?:manually install|manual operator|production timer must be manually installed|repository files alone do not prove scheduled backups are active)",
-        "Phase 4B assets exist but production activation requires manual verification wording",
-    )
-    assert_not_regex(
-        combined_main,
-        r"(?:backup schedule|scheduled backups|systemd timer)[^\n]*(?:active|enabled|running)[^\n]*(?!.*(?:must|manual|not prove|requires|before it can be called active))",
-        "unverified active backup schedule claim",
+        r"Phase 4B[^\n]*(?:local PostgreSQL backup scheduling|local scheduled PostgreSQL backups)[^\n]*(?:active|activated|installed)",
+        "Phase 4B local scheduled PostgreSQL backups active wording",
     )
     assert_not_regex(combined_main, r"off-server encrypted backups[^\n]*(?:complete|completed|done|active)", "off-server encrypted backups complete claim")
-    assert_not_regex(combined_main, r"permission-fidelity[^\n]*(?:complete|completed|done|passed)", "permission-fidelity restore drill complete claim")
+    assert_regex(
+        combined_main,
+        r"Phase 4D[^\n]*permission-fidelity restore drill[^\n]*(?:completed|complete|passed)|permission-fidelity restore drill[^\n]*(?:completed|complete|passed)",
+        "Phase 4D permission-fidelity restore drill completed wording",
+    )
     assert_regex(
         combined_main,
         r"Phase 4C[^\n]*migration rollback/remediation[^\n]*(?:completed|complete|passed)|migration rollback/remediation[^\n]*dry-run rehearsal[^\n]*(?:completed|complete|passed)",
         "Phase 4C migration rollback/remediation dry-run rehearsal completed wording",
     )
+    assert_contains(combined_main, "Phase 4 is complete for the current release-readiness level", "Phase 4 current release-readiness completion wording")
+    assert_contains(combined_main, "Off-server encrypted backups remain optional future infrastructure hardening", "off-server encrypted backups optional future hardening wording")
 
     for item in DEFERRED_ITEMS:
         assert_contains(combined_main, item, f"deferred item: {item}")

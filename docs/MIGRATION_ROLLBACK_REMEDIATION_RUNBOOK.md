@@ -19,6 +19,7 @@ Last known production baseline at the time this Phase 4C asset was added:
 - Contabo VPS Auto Backup is enabled at provider/VPS level as an additional safety layer.
 - Production/live Paddle readiness remains deferred.
 - Broad public production readiness is not claimed.
+- Phase 4D permission-fidelity restore drill is completed for the current release-readiness level.
 
 Treat these as a historical snapshot. Always verify live state before a future schema-dependent release or incident response.
 
@@ -138,12 +139,16 @@ Verified production evidence:
 - `languagevoicetutor-postgres-backup.timer` was enabled and active; next observed run was `2026-06-24 03:15 CEST`.
 - Contabo VPS Auto Backup was manually confirmed as enabled in the provider control panel as a provider/VPS-level safety layer. It is not a substitute for PostgreSQL `pg_dump`/`pg_restore` backup validation.
 
-This rehearsal confirms operator readiness evidence only. It does not claim broad public production readiness, and production/live Paddle readiness remains deferred.
+This rehearsal confirms operator readiness evidence only. It does not claim broad public production readiness, and production/live Paddle readiness remains deferred. Phase 4D later confirmed permission-fidelity restore behavior for the current release-readiness level.
 
 ## Deferred work
 
-- Off-server encrypted PostgreSQL backup strategy.
-- Permission-fidelity restore drill that validates production-like ownership/grants rather than only `--no-owner --no-acl` readability and separate restore.
+- Optional off-server encrypted PostgreSQL backup strategy as future infrastructure hardening, not an immediate release blocker.
+- Repeat permission-fidelity restore drills for future material schema/security changes when risk warrants them.
 - Broader incident-response automation and monitoring dashboards.
 - Production/live Paddle readiness.
 - Broad public production readiness.
+
+## Phase 4 current release-readiness completion note
+
+As of 2026-06-23, Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate restore drill completed; Phase 4B local scheduled PostgreSQL backups active; Phase 4C migration rollback/remediation dry-run completed; and Phase 4D permission-fidelity restore drill completed. The Phase 4D owner/ACL-aware backup restored into a separate drill database, checked key table owners/grants against the production baseline, cleaned up the drill database, and left production backend `0.1.35-backend.39` healthy. Off-server encrypted backups remain optional future infrastructure hardening.

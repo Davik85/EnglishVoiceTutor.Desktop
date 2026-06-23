@@ -12,7 +12,7 @@ Review date: 2026-06-06.
 
 ## Current conclusion
 
-The desktop product has completed a large release-hardening block and is suitable for continued controlled tester validation, but public release is not declared ready. The Inno Setup installer foundation, emergency/developer ZIP fallback, accepted Welcome screen polish, Lesson Chat window auto-sizing, core Lesson Chat/voice/TTS flow, Release Diagnostics gate, protected auth session storage, and backend-enforced single active lesson guard are accepted for continued smoke work. External tester handoff is still paused so CMS/Admin content MVP can continue before testers review content. Production billing remains deferred.
+The desktop product has completed a large release-hardening block and is suitable for continued controlled tester validation, but public release is not declared ready. The Inno Setup installer foundation, emergency/developer ZIP fallback, accepted Welcome screen polish, Lesson Chat window auto-sizing, core Lesson Chat/voice/TTS flow, Release Diagnostics gate, protected auth session storage, and backend-enforced single active lesson guard are accepted for continued smoke work. External tester handoff is still paused so CMS/Admin content foundation can continue before testers review content. Production billing remains deferred.
 
 ## Source documents reviewed
 
@@ -42,7 +42,7 @@ The desktop product has completed a large release-hardening block and is suitabl
 
 ### Phase 5B — Desktop release hardening (stable enough to pause tester handoff)
 
-Desktop hardening is accepted enough to pause tester handoff and start CMS/Admin content MVP first. The canonical tester package flow remains the later handoff path after CMS content foundation is ready:
+Desktop hardening is accepted enough to pause tester handoff and start CMS/Admin content foundation first. The canonical tester package flow remains the later handoff path after CMS content foundation is ready:
 
 ```powershell
 cd C:\dev\EnglishVoiceTutor.Desktop
@@ -57,21 +57,21 @@ artifacts\packages\LanguageVoiceTutor.Desktop-win-x64-self-contained.zip
 
 Manual `dotnet publish` is only a lower-level developer/troubleshooting path.
 
-### Phase 5D — CMS/Admin content MVP (current focus before tester handoff)
+### Phase 5D — CMS/Admin content foundation (current focus before tester handoff)
 
-CMS/Admin content MVP now starts before external tester handoff because desktop hardening is stable enough to pause delivery. Development/admin Admin CMS Content now covers content pack overview, topic/scenario/prompt template/tutor behavior profile editing, Step 5D-6e Scenarios editor usability refinement (compact local Jump to navigation, collapsible/visually separated structured sections, helper text, structured fields as the normal path, and Advanced JSON as a technical fallback), validation/preview summary, versions/publish/restore flow with immutable published history, refresh resilience, unsaved-change warnings, required publish summary validation, draft-save publish discoverability, audit filtering, and the controlled local runtime published-snapshot read path. The next recommended CMS implementation step is another CMS/admin improvement, not billing: Validation & Preview/content QA workflow ergonomics. Full production Admin, production RBAC, critical-change approval, and operational support scope remain deferred.
+CMS/Admin content foundation now starts before external tester handoff because desktop hardening is stable enough to pause delivery. Development/admin Admin CMS Content now covers content pack overview, topic/scenario/prompt template/tutor behavior profile editing, Step 5D-6e Scenarios editor usability refinement (compact local Jump to navigation, collapsible/visually separated structured sections, helper text, structured fields as the normal path, and Advanced JSON as a technical fallback), validation/preview summary, versions/publish/restore flow with immutable published history, refresh resilience, unsaved-change warnings, required publish summary validation, draft-save publish discoverability, audit filtering, and the controlled local runtime published-snapshot read path. The next recommended CMS implementation step is another CMS/admin improvement, not billing: Validation & Preview/content QA workflow ergonomics. Full production Admin, production RBAC, critical-change approval, and operational support scope remain deferred.
 
 ### Phase 5C — Production billing readiness (deferred)
 
-Keep production Paddle rollout after CMS/Admin content MVP and controlled tester-handoff decisions. Production billing must not be treated as enabled until production webhook delivery, checkout configuration, provider credentials, product/price mapping, environment separation, and manual smoke verification are completed safely outside tracked files and without committing secrets.
+Keep production Paddle rollout after CMS/Admin content foundation and controlled tester-handoff decisions. Production billing must not be treated as enabled until production webhook delivery, checkout configuration, provider credentials, product/price mapping, environment separation, and manual smoke verification are completed safely outside tracked files and without committing secrets.
 
 ## Current priority change: CMS before tester handoff
 
-The desktop hardening block is stable enough to pause external tester handoff and start CMS/Admin content MVP first. The accepted desktop state remains valid, but the next external tester package should wait until the CMS/Admin content editing foundation is ready enough to handle tester-driven content, prompt, scenario, and tutor-behavior fixes without code or lesson JSON changes.
+The desktop hardening block is stable enough to pause external tester handoff and start CMS/Admin content foundation first. The accepted desktop state remains valid, but the next external tester package should wait until the CMS/Admin content editing foundation is ready enough to handle tester-driven content, prompt, scenario, and tutor-behavior fixes without code or lesson JSON changes.
 
 This priority change does not make public release ready. It does not move production billing forward. Production billing, Paddle production operations, payment editing, entitlement editing, broad user management, mobile-specific CMS, and full production Admin remain deferred.
 
-CMS content MVP planning lives in `docs/CMS_ADMIN_PLANNING.md` and `docs/cms-content-mvp-plan.md`. Admin CMS publish UX note: `Save draft` remains draft-only and shows **Go to Publish** after successful saves; changed-content publishing still happens only from **Versions & Publish**, requires a short change summary, and displays a clear local validation error when the summary is missing; backend validation details still display on failure. Old published versions are immutable, and restore creates a new published version rather than mutating history. Learner runtime is unchanged by default, CMS runtime reads only published snapshots when explicitly enabled, and static JSON remains default. The latest local runtime check confirmed the published-snapshot path with `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`, with `Source=CmsPublishedSnapshot`, version 34, expected content counts, validation passed, and no fallback. The clean-machine checklist and package flow below remain required later before actual external tester delivery.
+CMS content foundation planning lives in `docs/CMS_ADMIN_PLANNING.md` and `docs/cms-content-mvp-plan.md`. Admin CMS publish UX note: `Save draft` remains draft-only and shows **Go to Publish** after successful saves; changed-content publishing still happens only from **Versions & Publish**, requires a short change summary, and displays a clear local validation error when the summary is missing; backend validation details still display on failure. Old published versions are immutable, and restore creates a new published version rather than mutating history. Learner runtime is unchanged by default, CMS runtime reads only published snapshots when explicitly enabled, and static JSON remains default. The latest local runtime check confirmed the published-snapshot path with `CmsContent__UsePublishedSnapshotForRuntime=true`, `CmsContent__ReadPublishedSnapshotEnabled=true`, `CmsContent__ContentPackSlug=static-json-v1`, and `CmsContent__FallbackToStaticJson=true`, with `Source=CmsPublishedSnapshot`, version 34, expected content counts, validation passed, and no fallback. The clean-machine checklist and package flow below remain required later before actual external tester delivery.
 
 ## Completed or accepted Phase 5B items
 
@@ -169,7 +169,7 @@ Keep this list separate from completed/accepted work:
 5. Installer/signing/update/download plan for public release.
 6. Security/privacy release checklist review.
 7. Final P0/P1 triage.
-8. CMS/Admin content MVP foundation before external tester handoff; Step 5D-6e scenario editor usability refinement, draft-save audit logging, required publish summary validation, audit filtering, immutable published-version restore behavior, and the local runtime published-snapshot read path are complete for development/admin MVP scope. The next refinement is another CMS/admin improvement: Validation & Preview/content QA workflow ergonomics. Full production Admin/RBAC/approval readiness remains later.
+8. CMS/Admin content foundation foundation before external tester handoff; Step 5D-6e scenario editor usability refinement, draft-save audit logging, required publish summary validation, audit filtering, immutable published-version restore behavior, and the local runtime published-snapshot read path are complete for development/admin product scope. The next refinement is another CMS/admin improvement: Validation & Preview/content QA workflow ergonomics. Full production Admin/RBAC/approval readiness remains later.
 
 ## Current validation commands
 
@@ -181,7 +181,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-windows-inno-release.
 
 ## Public release status
 
-Public release is not declared ready. This work plan supports continued controlled desktop hardening and tester packaging only. External tester handoff is paused until CMS/Admin content MVP foundation is ready enough for practical content changes without code edits; the clean-machine checklist remains later before actual external tester delivery.
+Public release is not declared ready. This work plan supports continued controlled desktop hardening and tester packaging only. External tester handoff is paused until CMS/Admin content foundation foundation is ready enough for practical content changes without code edits; the clean-machine checklist remains later before actual external tester delivery.
 
 
 ## CMS runtime gate before tester handoff

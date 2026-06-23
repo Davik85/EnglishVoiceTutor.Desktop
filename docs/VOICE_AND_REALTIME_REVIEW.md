@@ -2,15 +2,15 @@
 
 Review date: 2026-05-17.
 
-This document records the current MVP voice architecture. It intentionally reflects the stable MVP path after recent Conversation Mode stabilization.
+This document records the current product voice architecture. It intentionally reflects the stable product path after recent Conversation Mode stabilization.
 
-## Current MVP voice decision
+## Current product voice decision
 
 Conversation Mode uses the stable TTS provider by default:
 
 `microphone recording -> audio transcription -> lesson chat reply -> gpt-4o-mini-tts playback`
 
-Realtime remains in the codebase for future testing, but it is not the default MVP path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
+Realtime remains in the codebase for future testing, but it is not the default product path. The learner must hear exactly the same text that is displayed, so Conversation Mode does not shorten, summarize, rewrite, or chunk spoken text.
 
 ## Normal Lesson Chat voice path
 
@@ -33,7 +33,7 @@ Normal Lesson Chat TTS should continue to speak the visible bot message text.
 
 ## Conversation Mode voice path
 
-Default MVP Conversation Mode uses the stable TTS provider, not Realtime:
+Default product Conversation Mode uses the stable TTS provider, not Realtime:
 
 1. The learner enters Conversation Mode from Lesson Chat.
 2. The overlay shows the full avatar mode with the red record button, exit/back button, latest user phrase bubble, latest bot phrase bubble, and bottom-left Hint button.
@@ -55,15 +55,15 @@ Conversation Mode TTS settings:
 
 The visible text and spoken text must match exactly. Conversation Mode must not use spoken-only shortening, summarization, rewriting, or chunking.
 
-## Why the MVP uses the TTS provider
+## Why the product uses the TTS provider
 
-Realtime was too unstable for the MVP lifecycle. The TTS provider path is more stable because it reuses the already-working transcription, lesson chat reply, and speech playback endpoints. Switching Conversation Mode speech to `gpt-4o-mini-tts` also improved speech calmness because the request can include speech instructions.
+Realtime was too unstable for the product lifecycle. The TTS provider path is more stable because it reuses the already-working transcription, lesson chat reply, and speech playback endpoints. Switching Conversation Mode speech to `gpt-4o-mini-tts` also improved speech calmness because the request can include speech instructions.
 
-This decision prioritizes predictable MVP testing over lower-latency future experiments.
+This decision prioritizes predictable product testing over lower-latency future experiments.
 
 ## Realtime status
 
-Realtime is implemented/partially stabilized and remains in the repository for future work. It should be treated as a provider-switch/future option, not the default MVP Conversation Mode provider.
+Realtime is implemented/partially stabilized and remains in the repository for future work. It should be treated as a provider-switch/future option, not the default product Conversation Mode provider.
 
 Realtime assets that remain useful for future testing include:
 
@@ -74,7 +74,7 @@ Realtime assets that remain useful for future testing include:
 - fallback/recovery policy tests;
 - overlay policy coverage.
 
-Default MVP Conversation Mode should not open `/api/realtime-voice` or create an OpenAI Realtime session.
+Default product Conversation Mode should not open `/api/realtime-voice` or create an OpenAI Realtime session.
 
 ## Feedback, hint, and transcript behavior in voice flows
 
@@ -91,7 +91,7 @@ Backend logs should make the current voice routing visible:
 - normal Lesson Chat speech requests use `Model=tts-1` and `Purpose=lesson_chat_tts`;
 - Conversation Mode speech requests use `Model=gpt-4o-mini-tts` and `Purpose=conversation_mode_tts`;
 - Conversation Mode speech requests include `HasInstructions=True`;
-- no Realtime WebSocket opens by default in the MVP path.
+- no Realtime WebSocket opens by default in the product path.
 
 Exact pricing remains approximate until real usage logs are collected and pricing constants are completed.
 

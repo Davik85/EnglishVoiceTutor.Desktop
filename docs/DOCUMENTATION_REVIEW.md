@@ -26,7 +26,7 @@ Docs were synchronized to record the current accepted state:
 - `scripts/validate-windows-direct-release.ps1` validates local release artifacts, and `scripts/upload-windows-direct-release.ps1` supports dry-run/future SCP upload without hardcoded server secrets.
 - Velopack is rejected/deprecated. ZIP packaging through `scripts/package-tester-release.ps1` remains only an emergency/developer fallback.
 - Packaged Release hides Diagnostics by default and uses local `EVT_DESKTOP_DIAGNOSTICS=1` only for support/testing.
-- Core Lesson Chat, Conversation Mode, TTS, transcription, translation, hints, feedback, and summary are accepted for the current controlled desktop MVP.
+- Core Lesson Chat, Conversation Mode, TTS, transcription, translation, hints, feedback, and summary are accepted for the current controlled desktop product.
 - Desktop auth session storage uses a Windows DPAPI-protected local `auth-session.json` payload, not raw plaintext token JSON.
 - Active lesson protection is backend-enforced, heartbeat-based, supports remote release, marks old sessions `Abandoned`, and rejects old heartbeat/message actions.
 - Latest confirmed EF migration is `20260604121000_AddCmsDraftSaveAuditMetadata`.

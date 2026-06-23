@@ -6,7 +6,7 @@ Review date: 2026-05-23.
 
 - **Implemented + Validated:** summary upsert/read/list persistence.
 - **Development-only:** current route namespace is `/api/dev/*`.
-- **Transitional MVP behavior:** runtime identity is auth-aware in Development.
+- **Transitional product behavior:** runtime identity is auth-aware in Development.
 
 ## Endpoints
 

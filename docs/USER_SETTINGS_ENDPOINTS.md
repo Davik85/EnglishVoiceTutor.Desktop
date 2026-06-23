@@ -31,7 +31,7 @@ Review date: 2026-06-15.
 ## Auth behavior
 
 - `GET /api/me/settings` and `PUT /api/me/settings` return `401` without a valid token.
-- Dev settings endpoint remains available in Development for local MVP testing.
+- Dev settings endpoint remains available in Development for local product testing.
 - Desktop stores the signed-in session in a local `auth-session.json` file, but current Windows storage writes a DPAPI-protected Base64 payload, not raw plaintext token JSON.
 
 ## Language ownership and desktop mapping

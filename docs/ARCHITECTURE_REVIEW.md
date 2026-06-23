@@ -132,7 +132,7 @@ Extract one boundary at a time after the manual smoke checklist and policy tests
 - Do not rewrite the whole `LessonChatViewModel`.
 - Do not redesign Realtime transport before long-session and latency measurements.
 - Do not change OpenAI model choices during the documentation update.
-- Do not make Realtime the default MVP Conversation Mode provider.
+- Do not make Realtime the default product Conversation Mode provider.
 - Do not hardcode Elena or any tutor identity in lesson JSON.
 - Do not put A1-only rules directly into each scenario JSON unless documenting current `levelProfiles` behavior.
 - Do not add subscriptions, avatar expansion, broad UI polish, or all-lesson JSON migration until smoke tests are reliable.
@@ -144,7 +144,7 @@ Extract one boundary at a time after the manual smoke checklist and policy tests
 - Lesson phase and button state are coupled but not fully represented as a formal state machine.
 - Realtime and default TTS-provider Conversation Mode share some UI flags but use different lifecycles.
 - Exact spoken text is protected by code/logging, but voice playback coordination remains in the ViewModel.
-- Realtime is non-default for MVP and still needs future long-session/provider-switch testing before it can be reconsidered.
+- Realtime is non-default for product and still needs future long-session/provider-switch testing before it can be reconsidered.
 - Mock fallback services are present and useful for degraded operation, but must be clearly distinguished from production OpenAI paths.
 
 ## 2026-05-16 codebase inventory
@@ -161,4 +161,4 @@ Extract one boundary at a time after the manual smoke checklist and policy tests
 - `tools/`: static policy tests and lesson audit scripts. Stable; tests assert current GA Realtime, routing, language-lock, feedback/summary, usage/cost, avatar, and diagnostics policies.
 - `docs/`: stabilization, architecture, flow, voice, cost, release, and checklist documentation. Refreshed to describe the current working baseline and remaining limitations.
 
-Larger extraction opportunities should remain queued until the full manual smoke-test matrix passes across MVP topics.
+Larger extraction opportunities should remain queued until the full manual smoke-test matrix passes across product topics.

@@ -203,4 +203,4 @@ The following production billing/operations scope is deferred and not implemente
 - Full reconciliation/background job not implemented.
 - Automatic polling after checkout not implemented.
 - Mobile Apple/Google entitlement bridge not implemented.
-- Production RBAC/admin not implemented. Development/admin Admin CMS Content exists, and CMS draft-save audit logging, smoke/test audit filtering, structured scenario editing, required publish summary validation, and local runtime published-snapshot read verification are complete for development/admin MVP scope; critical-change approval remains future work.
+- Production RBAC/admin not implemented. Development/admin Admin CMS Content exists, and CMS draft-save audit logging, smoke/test audit filtering, structured scenario editing, required publish summary validation, and local runtime published-snapshot read verification are complete for development/admin product scope; critical-change approval remains future work.

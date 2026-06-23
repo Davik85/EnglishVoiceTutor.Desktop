@@ -83,7 +83,7 @@ Boundaries for this completed drill:
 - No backend code or runtime behavior changed.
 - No Desktop, Admin UI, CMS runtime, billing, Paddle, migration, package-script, deployment-script, or tool behavior changed.
 
-Ownership/grants nuance: the drill used `pg_restore --no-owner --no-acl`. As expected for this safe drill style, ownership/grant inspection in the restored drill database showed postgres-only ownership/grants. This confirms the restored schema was accessible to the restore operator, but it does not prove production ownership/grant fidelity. That limitation is acceptable for the Phase 4A backup readability/schema restore drill. A permission-fidelity restore drill remains optional future work if needed.
+Ownership/grants nuance: the drill used `pg_restore --no-owner --no-acl`. As expected for this safe drill style, ownership/grant inspection in the restored drill database showed postgres-only ownership/grants. This confirms the restored schema was accessible to the restore operator, but it does not prove production ownership/grant fidelity. That limitation is acceptable for the Phase 4A backup readability/schema restore drill. Phase 4D later completed that permission-fidelity restore check for the current release-readiness level.
 
 
 ## Completed Phase 4B schedule activation record: 2026-06-23
@@ -104,7 +104,7 @@ The Phase 4B local PostgreSQL backup schedule was installed and activated on pro
 - Production backend remained healthy on `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`; `/opt/languagevoicetutor/backend/current` pointed to that release, `/health` returned `200 OK`, and `/api/health/database` returned `200 OK`.
 - The systemd service sets `WorkingDirectory=/tmp` to avoid `postgres` working-directory warnings or failures when manual/sudo checks originate from a deploy user's home directory.
 
-Remaining future work is unchanged: encrypted off-server backups, a permission-fidelity restore drill and migration rollback/remediation rehearsal remain future work.
+Phase 4 backup/restore/migration rollback drills are complete for the current release-readiness level. Encrypted off-server backups remain optional future infrastructure hardening.
 
 ## Server paths and naming convention
 
@@ -345,7 +345,7 @@ Future schema-dependent releases must update the expected migration id in the re
 
 ### Ownership and grants
 
-Inspect table owners and grants without exposing passwords or row data. If the backup and restore were intentionally run with `--no-owner --no-acl`, expect drill ownership/grants to reflect the restore operator rather than production permissions; record that limitation instead of treating the check as permission-fidelity proof:
+Inspect table owners and grants without exposing passwords or row data. If the backup and restore were intentionally run with `--no-owner --no-acl`, expect drill ownership/grants to reflect the restore operator rather tha production permissions; record that limitation instead of treating the check as permission-fidelity proof:
 
 ```powershell
 ssh lvt-server "sudo -u postgres psql -d lvt_app_db_restore_drill_20260622 -v ON_ERROR_STOP=1 -c \"select schemaname, tablename, tableowner from pg_tables where schemaname = 'public' order by tablename;\""
@@ -449,10 +449,16 @@ The Phase 4C runbook keeps code rollback and database remediation separate. A ba
 
 Current operational baseline remains: Phase 4A backup/readability/separate-drill-restore is completed; Phase 4B local PostgreSQL backup scheduling is active on production via `languagevoicetutor-postgres-backup.timer`; the latest known local backup readability check returned `245` `pg_restore --list` lines; and Contabo VPS Auto Backup is enabled as an additional provider/VPS-level safety layer. Contabo Auto Backup does not replace PostgreSQL `pg_dump`/`pg_restore` backups or restore validation.
 
-Still deferred: off-server encrypted backups, permission-fidelity restore drill, production/live Paddle readiness, and broad public production readiness. Phase 4C migration rollback/remediation dry-run rehearsal is completed as of 2026-06-23.
+Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate restore drill completed, Phase 4B local scheduled PostgreSQL backups active, Phase 4C migration rollback/remediation dry-run completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening, not an immediate release blocker. Production/live Paddle readiness and broad public production readiness remain deferred.
 
 ## 2026-06-23 Phase 4C dry-run rehearsal related evidence
 
 Phase 4C migration rollback/remediation dry-run rehearsal was completed successfully on 2026-06-23 without production mutation. The verified backend release evidence was current `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39` and previous rollback reference `/opt/languagevoicetutor/backend/releases/0.1.35-backend.38`; `/health` and `/api/health/database` returned `200 OK`; latest readable backup was `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260623_153008Z.dump`; and `pg_restore --list` returned `245` lines. Latest EF migration was `20260620165657_AddAdminRoleAssignmentPersistence`, and required key tables checked `OK` for `__EFMigrationsHistory`, `users`, `subscriptions`, `entitlements`, `plans`, `admin_users`, `admin_user_roles`, and `admin_role_assignment_events`.
 
 `languagevoicetutor-backend.service` was active/enabled. `languagevoicetutor-postgres-backup.timer` was enabled/active with next observed run `2026-06-24 03:15 CEST`. Contabo VPS Auto Backup was manually confirmed enabled as an additional provider/VPS-level layer, but it does not replace PostgreSQL `pg_dump`/`pg_restore` validation. No production DB mutation, EF migration, SQL remediation, restore-over-production, or backend runtime change occurred.
+
+## 2026-06-23 Phase 4D permission-fidelity restore drill evidence
+
+Phase 4D completed successfully on 2026-06-23. An owner/ACL-aware backup of production database `lvt_app_db` was created at `/var/backups/languagevoicetutor/postgres/lvt_app_db_owner_acl_20260623_161611Z.dump`, confirmed non-empty at `3.4M`, and checked with `pg_restore --list` returning `245` lines. The backup was restored into separate drill database `lvt_app_db_owner_acl_drill_20260623_161611Z`; no production restore-over was attempted.
+
+Key production table owners and grants were baselined for `lvt_app`. In the drill database, key tables returned `OK`, latest migration was `20260620165657_AddAdminRoleAssignmentPersistence`, checked table owners were `lvt_app`, and checked `lvt_app` grants matched production. Drill cleanup completed with backend termination returning `0` rows, `dropdb` completing, and the final existence query returning no rows. Production backend remained `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`, and `/health` plus `/api/health/database` returned `200 OK`. No EF migrations, SQL remediation, runtime/deployment/package, Desktop, Admin UI, CMS, billing, or Paddle behavior changed.
