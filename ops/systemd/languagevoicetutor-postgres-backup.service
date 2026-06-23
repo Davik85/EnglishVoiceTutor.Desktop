@@ -1,0 +1,18 @@
+[Unit]
+Description=Language Voice Tutor PostgreSQL local backup
+Documentation=file:/opt/languagevoicetutor/docs/BACKUP_RESTORE_DRILL_RUNBOOK.md
+Wants=postgresql.service
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=postgres
+Group=postgres
+ExecStart=/opt/languagevoicetutor/ops/postgres/backup_lvt_postgres.sh
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/backups/languagevoicetutor/postgres /tmp

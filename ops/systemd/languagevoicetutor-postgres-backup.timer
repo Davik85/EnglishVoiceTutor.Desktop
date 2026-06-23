@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Language Voice Tutor PostgreSQL local backup daily
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+Unit=languagevoicetutor-postgres-backup.service
+
+[Install]
+WantedBy=timers.target
