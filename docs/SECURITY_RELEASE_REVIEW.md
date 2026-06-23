@@ -140,3 +140,10 @@ This is not legal advice. Before broad public launch, separately review and publ
 - Referral/promo logic.
 - Mobile entitlement bridges for Apple/Google.
 - Broader production support tooling and automation beyond controlled tester support.
+
+
+## 2026-06-23 Phase 4C migration rollback/remediation readiness note
+
+Phase 4C adds a runbook and dry-run command-printer helper for future migration rollback/remediation rehearsal preparation. The assets are intentionally non-mutating: they do not read backend environment secrets, do not print connection strings/passwords, do not dump raw table data, do not print SQL dumps or backup contents, do not call provider APIs, do not apply SQL, do not run EF migrations, do not restore over production, and do not change backend runtime behavior.
+
+Security posture remains that SQL remediation must be targeted and separately reviewed, broad unreviewed SQL is forbidden, and production restore-over is not part of rehearsal. Contabo VPS Auto Backup is an additional provider-level recovery layer only; it does not replace PostgreSQL custom-format backups and `pg_restore` readability validation. Off-server encrypted backups and permission-fidelity restore validation remain future work. Production/live Paddle readiness remains deferred, and broad public production readiness is not claimed.

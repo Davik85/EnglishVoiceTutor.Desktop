@@ -128,3 +128,10 @@ No new critical blockers were found in this documentation/source review, assumin
 - Full production Admin role management/RBAC and critical-change approval if not completed before MVP.
 - Additional content polishing for short/repeating scenarios and avatar dialogue quality.
 - Advanced monitoring dashboards and support automation beyond the controlled tester needs.
+
+
+## 2026-06-23 Phase 4C documentation/tooling update
+
+Phase 4C migration rollback/remediation rehearsal assets now exist as documentation and a dry-run operator command printer: `docs/MIGRATION_ROLLBACK_REMEDIATION_RUNBOOK.md` and `tools/migration_rollback_remediation_commands.ps1`. This update did not execute a production rehearsal, did not mutate production database state, did not run EF migrations, did not apply SQL, did not restore over production, and did not change backend runtime, Desktop, Admin UI, CMS, billing/Paddle, deployment, package, or upload behavior.
+
+Release-readiness status is therefore unchanged except for improved operator preparation. Phase 4A remains completed, Phase 4B local PostgreSQL backup scheduling is active on production and must continue to be manually verified, and Contabo VPS Auto Backup is an additional provider-level safety layer rather than a substitute for PostgreSQL `pg_dump`/`pg_restore` validation. Off-server encrypted backups, permission-fidelity restore drill, and an executed migration rollback/remediation rehearsal remain future work. Production/live Paddle readiness remains deferred, and broad public production readiness is not claimed.

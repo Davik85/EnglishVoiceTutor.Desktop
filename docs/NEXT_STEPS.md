@@ -229,3 +229,17 @@ When changing a tutor Display name in Admin CMS, use Save draft + Publish and th
 ## Phase 3 rate limiting completion state — 2026-06-23
 
 Phase 3 is implemented and production-verified on backend `0.1.35-backend.39` with `RateLimiting__Enabled=true`. Coverage includes the completed auth, learner/session, audio/voice/translation, Admin, billing, and Paddle webhook slices documented above. No Desktop, Admin UI, Admin RBAC authorization, BootstrapAdmin fallback, billing/Paddle semantics, CMS runtime content, product/free-usage counter, Premium/free entitlement, deployment-script, package-script, or database-migration change is included in Phase 3. Remaining work is operational: distributed/shared limiter storage before multi-instance scale-out, true concurrent realtime voice WebSocket connection caps if still not implemented, active local backup schedule/retention monitoring, off-server encrypted backups, optional permission-fidelity restore checks, migration rollback/remediation drills, monitoring/privacy hardening, Paddle live readiness, legal/support blockers, and Microsoft Store/MSIX. Broad public-production readiness is not claimed.
+
+
+## Phase 4C migration rollback/remediation readiness
+
+Completed as documentation/tooling assets only: add `docs/MIGRATION_ROLLBACK_REMEDIATION_RUNBOOK.md` and `tools/migration_rollback_remediation_commands.ps1` for safe dry-run operator preparation. These assets do not mutate production, do not run EF migrations, do not apply SQL, do not restore over production, and do not change backend runtime, Desktop, Admin UI, CMS, billing/Paddle, deployment, package, or upload behavior.
+
+Next operational work remains separate:
+
+1. Use the Phase 4C helper in a controlled window to print and review commands before any future schema-dependent backend release.
+2. Execute a migration rollback/remediation rehearsal only on an approved non-production or drill target, or under a separately approved production incident procedure.
+3. Add off-server encrypted PostgreSQL backups.
+4. Run an optional permission-fidelity restore drill that validates production-like ownership/grants.
+5. Keep production/live Paddle readiness deferred until live credentials, webhook destination, reconciliation, refund/chargeback/customer portal, legal/support, and monitoring work are complete.
+6. Do not claim broad public production readiness.
