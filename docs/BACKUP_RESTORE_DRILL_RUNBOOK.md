@@ -1,8 +1,10 @@
 # Phase 4A Backup and Restore Drill Runbook
 
-Review date: 2026-06-22.
+Review date: 2026-06-23.
 
 This runbook is for production-safe PostgreSQL backup creation, backup readability verification, and restore drills for the Language Voice Tutor / English Voice Tutor backend database. It is written for operators who connect from Windows PowerShell 7 to the Ubuntu server over SSH.
+
+> Status note: this Phase 4A toolkit/runbook is prepared operator tooling only. It does not prove that a production backup/restore drill has been executed. As of the post-Phase-3 documentation update, no production backup/restore drill is recorded here as completed. Phase 4A is the next operational phase after Phase 3 rate limiting / abuse-protection documentation is accurate.
 
 ## Safety rules
 

@@ -6,13 +6,13 @@ Scope: documentation and source review only. No application behavior, billing lo
 
 ## 2026-06-21 Admin RBAC and roadmap update
 
-Admin RBAC is advanced but not fully production-cutover. Backend `0.1.35-backend.34` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, the persistent owner-equivalent mapping exists, and the active persistent production admin role is `super_admin`. Cutover smoke passes with BootstrapAdmin fallback enabled by default; no explicit production fallback override is present and no production fallback-disabling cutover has been performed.
+Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.39` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
 
-Public release still requires a controlled fallback cutover rehearsal and rollback drill, or an explicit owner-approved temporary exception. Rate limiting/abuse protection, backups/restore and migration rollback drills, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, and Microsoft Store/MSIX readiness remain blockers or pending readiness tracks.
+Public release still requires remaining operational readiness work: backups/restore and migration rollback drills, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
 
 ## Current verified release context
 
-- Production backend: `0.1.35-backend.34` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.34` through the `/opt/languagevoicetutor/backend/current` symlink.
+- Production backend: `0.1.35-backend.39` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39` through the `/opt/languagevoicetutor/backend/current` symlink.
 - Production backend health: `/health` returns `200 OK` and `/api/health/database` returns `200 OK`.
 - Windows direct tester release: `0.1.36-tester.24`, installer `LanguageVoiceTutorSetup-0.1.36-tester.24.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `updateMode=manual-confirmation`.
 - This remains a controlled tester/direct Windows release, not broad public production readiness.
@@ -49,8 +49,8 @@ Public release still requires a controlled fallback cutover rehearsal and rollba
 
 ### Gaps / risks
 
-- Production role management/RBAC is not enabled. Bootstrap admins currently receive the full admin permission set; role/permission UI is awareness-only and does not replace endpoint authorization.
-- Rate limiting / abuse protection was not found as a completed production control in this review. Add or verify rate limiting for auth, password reset, checkout creation, admin login/admin actions, and webhook endpoints before broad public launch.
+- Production Admin RBAC fallback disable is complete for the owner-equivalent path, with persistent `super_admin` mappings verified and BootstrapAdmin fallback disabled for `AdminPermission:*` policies. Non-owner role validation and critical-change approval remain future work.
+- Phase 3 rate limiting / abuse protection is a completed production control at the single-instance/in-memory level for auth, learner, Admin, billing, and webhook surfaces; distributed/shared limiter storage remains future work before multi-instance scale-out.
 - CORS/reverse-proxy hardening must be verified in the production host configuration, including allowed origins, forwarded headers, HTTPS enforcement, request size limits, and secure headers.
 - Public health/database health endpoints should remain coarse and should be monitored for abuse/noise.
 
@@ -58,8 +58,8 @@ Public release still requires a controlled fallback cutover rehearsal and rollba
 
 ### Confirmed safeguards
 
-- Admin shell access is BootstrapAdmin-based in the current controlled tester foundation.
-- `/api/admin/me` and `/api/admin/capabilities` expose roles/permissions for UI awareness; `productionRolesAvailable=false` remains the current state.
+- Admin shell access now relies on persistent Admin RBAC for `AdminPermission:*` policies in production because BootstrapAdmin fallback is explicitly disabled; BootstrapAdmin remains only a rollback mechanism if the setting is changed intentionally.
+- `/api/admin/me` and `/api/admin/capabilities` expose roles/permissions for UI awareness; persistent role authorization is enabled in production.
 - Admin action audit logging exists for support operations such as Premium grants/revokes, free lesson allowance reset, and billing cancel-renewal actions.
 - CMS supports Save draft, Publish current draft, Restore, and runtime published-snapshot reads. Draft edits do not affect learner runtime until published.
 - Runtime CMS diagnostics expose safe metadata and bounded validation details, not lesson bodies, prompt bodies, tutor instruction bodies, secrets, tokens, API keys, connection strings, or auth headers.

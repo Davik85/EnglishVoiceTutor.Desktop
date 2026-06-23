@@ -4,7 +4,7 @@ This runbook records the completed owner-approved controlled validation and perm
 
 ## Current production state
 
-The controlled Production Admin RBAC cutover rehearsal was completed successfully on 2026-06-22. It was followed by a separate permanent production fallback disable on 2026-06-22. The active production backend during the rehearsal was `/opt/languagevoicetutor/backend/releases/0.1.35-backend.34`; `/health` and `/api/health/database` returned `200 OK`, and the production database was healthy.
+The controlled Production Admin RBAC cutover rehearsal was completed successfully on 2026-06-22. It was followed by a separate permanent production fallback disable on 2026-06-22. The active production backend during the rehearsal was `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`; `/health` and `/api/health/database` returned `200 OK`, and the production database was healthy.
 
 Persistent Admin RBAC state is stronger than before the rehearsal. A second backup `super_admin` account was created through the existing Admin Role Management UI. Final diagnostics after backup admin setup reported `totalAdminUsers=2`, `activeAdminUsers=2`, `activeRoleAssignments=2`, and `rolesInUse=super_admin`. Both approved admin accounts could log in to `/admin`. Both approved accounts passed `tools/smoke_admin_rbac_cutover_validation.ps1` while fallback was enabled.
 
