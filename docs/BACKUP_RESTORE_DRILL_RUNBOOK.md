@@ -4,7 +4,7 @@ Review date: 2026-06-23.
 
 This runbook is for production-safe PostgreSQL backup creation, backup readability verification, and restore drills for the Language Voice Tutor / English Voice Tutor backend database. It is written for operators who connect from Windows PowerShell 7 to the Ubuntu server over SSH.
 
-> Status note: this Phase 4A toolkit/runbook is prepared operator tooling only. It does not prove that a production backup/restore drill has been executed. As of the post-Phase-3 documentation update, no production backup/restore drill is recorded here as completed. Phase 4A is the next operational phase after Phase 3 rate limiting / abuse-protection documentation is accurate.
+> Status note: Phase 4A's initial production-safe backup/readability/separate-drill-restore was completed on 2026-06-23. This records backup readability, separate restore, key schema/table presence, latest migration confirmation, cleanup, and green health checks only. It is not a full disaster recovery plan, not a production overwrite restore, and not full production permission-fidelity validation.
 
 ## Safety rules
 
@@ -26,7 +26,7 @@ Phase 4A provides an operator toolkit for:
 2. Confirming the backup file exists and has non-zero size.
 3. Verifying the backup archive is readable with `pg_restore --list`.
 4. Restoring the backup into a separate local/server-side drill database.
-5. Checking restored schema objects, EF migration history, required tables, ownership, and grants without exposing secrets.
+5. Checking restored schema objects, EF migration history, and required tables without exposing secrets.
 6. Cleaning up the drill database after verification.
 7. Following a pre-migration backup checklist before future schema-dependent backend releases.
 8. Following a migration rollback/remediation checklist if a schema-dependent deployment fails.
@@ -41,6 +41,31 @@ Phase 4A does not:
 - Replace production monitoring, alerting, off-server backup replication, disaster recovery planning, or formal retention policy.
 - Authorize restoring data into production as part of a drill.
 - Authorize sharing secrets or raw production data.
+
+## Completed Phase 4A drill record: 2026-06-23
+
+The initial production-safe Phase 4A drill was completed on 2026-06-23 with these verified results:
+
+- Active backend before and after the drill: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`.
+- `/health` returned `200 OK` before and after the drill.
+- `/api/health/database` returned `200 OK` before and after the drill.
+- A production PostgreSQL custom-format backup was created successfully at `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260623_045111Z.dump`.
+- The backup size shown by `ls` was `3.4M`.
+- `pg_restore --list` successfully read the backup, and the restore list count was `245` lines.
+- The restore was performed into the separate drill database `lvt_app_db_restore_drill_20260623_045111Z`, not into the production database.
+- Required restored table checks passed with `OK` for `__EFMigrationsHistory`, `users`, `subscriptions`, `entitlements`, `plans`, `admin_users`, `admin_user_roles`, and `admin_role_assignment_events`.
+- Latest EF migration check confirmed `20260620165657_AddAdminRoleAssignmentPersistence`.
+- Drill database cleanup completed, and the final cleanup check returned no rows for `lvt_app_db_restore_drill_20260623_045111Z`.
+
+Boundaries for this completed drill:
+
+- No restore was performed over the production database.
+- No production data dump, backup binary contents, SQL dump, secrets, connection strings, `.env` contents, provider payloads, Paddle signatures, or raw user data were committed or pasted into documentation.
+- No database migrations were run.
+- No backend code or runtime behavior changed.
+- No Desktop, Admin UI, CMS runtime, billing, Paddle, migration, package-script, deployment-script, or tool behavior changed.
+
+Ownership/grants nuance: the drill used `pg_restore --no-owner --no-acl`. As expected for this safe drill style, ownership/grant inspection in the restored drill database showed postgres-only ownership/grants. This confirms the restored schema was accessible to the restore operator, but it does not prove production ownership/grant fidelity. That limitation is acceptable for the Phase 4A backup readability/schema restore drill. A permission-fidelity restore drill remains optional future work if needed.
 
 ## Server paths and naming convention
 
@@ -200,14 +225,14 @@ Future schema-dependent releases must update the expected migration id in the re
 
 ### Ownership and grants
 
-Inspect table owners and grants without exposing passwords or row data:
+Inspect table owners and grants without exposing passwords or row data. If the backup and restore were intentionally run with `--no-owner --no-acl`, expect drill ownership/grants to reflect the restore operator rather than production permissions; record that limitation instead of treating the check as permission-fidelity proof:
 
 ```powershell
 ssh lvt-server "sudo -u postgres psql -d lvt_app_db_restore_drill_20260622 -v ON_ERROR_STOP=1 -c \"select schemaname, tablename, tableowner from pg_tables where schemaname = 'public' order by tablename;\""
 ssh lvt-server "sudo -u postgres psql -d lvt_app_db_restore_drill_20260622 -v ON_ERROR_STOP=1 -c \"select grantee, table_schema, table_name, privilege_type from information_schema.role_table_grants where table_schema = 'public' and table_name in ('users','subscriptions','entitlements','plans','admin_users','admin_user_roles','admin_role_assignment_events') order by table_name, grantee, privilege_type;\""
 ```
 
-Do not paste full grant output into public places if role names are considered sensitive. Redact as needed.
+Do not paste full grant output into public places if role names are considered sensitive. Redact as needed. A future permission-fidelity drill can omit `--no-owner --no-acl` only under an approved, carefully scoped procedure that protects production roles and secrets.
 
 ## Drill database cleanup
 
@@ -243,7 +268,7 @@ Before any future schema-dependent backend release:
 4. Confirm the backup file exists and has non-zero size.
 5. Run `pg_restore --list` against the backup.
 6. Run a restore drill into a separate drill database when the release materially depends on schema/data changes or when the migration risk is not trivial.
-7. Verify required tables, `__EFMigrationsHistory`, latest expected migration, ownership, and grants in the restored drill database.
+7. Verify required tables, `__EFMigrationsHistory`, and latest expected migration in the restored drill database. Record ownership/grants only with the correct caveat when `--no-owner --no-acl` is used.
 8. Review generated migration SQL before applying it to production.
 9. Confirm rollback code version and compatibility before switching `current`.
 10. Record only redacted command results in the release notes.

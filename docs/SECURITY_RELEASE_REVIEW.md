@@ -8,7 +8,7 @@ Scope: documentation and source review only. No application behavior, billing lo
 
 Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.39` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
 
-Public release still requires remaining operational readiness work: backups/restore and migration rollback drills, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
+Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus remaining backup automation/off-server backup/permission-fidelity/migration rollback work, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
 
 ## Current verified release context
 
@@ -98,7 +98,7 @@ Public release still requires remaining operational readiness work: backups/rest
 - The required `free`, `trial`, and `premium` plan reference rows are data/reference prerequisites. Trial is required for current learner tariff display and trial entitlement reference behavior.
 - Generated release artifacts under `artifacts/`, installers, backend ZIPs, generated release folders, temporary deployment scripts, SQL outputs, `.env` files, and secrets must not be committed.
 - Rollback after schema/data migrations requires migration-specific planning; code rollback alone may not undo data/reference changes.
-- Production DB ownership, least-privilege permissions, backup/restore drills, and migration rollback drills must be verified outside this documentation-only review.
+- Production DB ownership, least-privilege permissions, permission-fidelity restore checks, and migration rollback drills remain to be verified outside this documentation-only review. The 2026-06-23 Phase 4A drill used `pg_restore --no-owner --no-acl`, so it confirmed backup readability and separate schema restore but not production permission-fidelity.
 
 ## F. Logging and privacy
 
@@ -125,7 +125,7 @@ This is not legal advice. Before broad public launch, separately review and publ
 - Production RBAC/admin role management with endpoint-level authorization beyond BootstrapAdmin.
 - Production/live Paddle readiness, including live credentials, live webhook destination verification, refund/chargeback/customer portal policy, monitoring, and reconciliation.
 - Rate limiting/abuse protection verification or implementation for auth, password reset, checkout, admin, and webhook surfaces.
-- Production backup/restore and migration rollback drills.
+- Formal backup schedule/retention automation, off-server encrypted backups, optional permission-fidelity restore checks, and migration rollback/remediation drills. The initial production-safe Phase 4A backup/readability/separate-drill-restore was completed on 2026-06-23 without restoring over production.
 
 ### Medium priority
 
