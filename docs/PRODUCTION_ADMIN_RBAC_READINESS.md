@@ -6,7 +6,7 @@ Scope: planning/documentation only. This document audits the current Admin / Boo
 
 ## 2026-06-22 production status update
 
-Production Admin RBAC is advanced, the controlled fallback cutover rehearsal has been completed successfully, and the later permanent fallback disable has also been completed successfully. Backend `0.1.35-backend.34` was the active production backend at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.34` during the rehearsal. `/health` and `/api/health/database` returned `200 OK`, and the production database was healthy.
+Production Admin RBAC is advanced, the controlled fallback cutover rehearsal has been completed successfully, and the later permanent fallback disable has also been completed successfully. Backend `0.1.35-backend.39` was the active production backend at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39` during the rehearsal. `/health` and `/api/health/database` returned `200 OK`, and the production database was healthy.
 
 Completed as of this update:
 

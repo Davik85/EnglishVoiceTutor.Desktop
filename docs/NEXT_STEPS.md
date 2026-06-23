@@ -46,7 +46,7 @@ Current controlled tester/direct Windows releases continue to use the existing I
 
 ## Latest verified release summary
 
-Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy and UI policy tests passed; the desktop release gate passed; and backend `0.1.35-backend.34` is deployed and healthy after the Admin RBAC persistence migration. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, and Save draft + Publish changes are visible in newly started desktop lessons.
+Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy and UI policy tests passed; the desktop release gate passed; and backend `0.1.35-backend.39` is deployed and healthy after the Admin RBAC persistence migration. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, and Save draft + Publish changes are visible in newly started desktop lessons.
 
 ## Immediate next steps
 
@@ -61,16 +61,19 @@ Do not move billing/Paddle production readiness into the immediate next step. Co
 
 ### Phase 2. Production Admin RBAC
 
-- Current state: mostly implemented and production-deployed on backend `0.1.35-backend.34` with Admin RBAC persistence tables, two verified persistent `super_admin` accounts, actor mapping, cutover status endpoint, read-only Admin UI cutover status, and release-gated static validation.
+- Current state: implemented and production-deployed on backend `0.1.35-backend.39` with Admin RBAC persistence tables, two verified persistent `super_admin` accounts, actor mapping, cutover status endpoint, read-only Admin UI cutover status, and release-gated static validation.
 - Completed on 2026-06-22: controlled fallback cutover rehearsal and rollback/restoration drill. Both approved `super_admin` accounts passed `tools/smoke_admin_rbac_cutover_validation.ps1` with fallback enabled, then with fallback temporarily disabled, then again after fallback was restored. AdminPermission read endpoints and role-management read endpoints returned `200` in the enabled and disabled phases.
 - Completed on 2026-06-22: permanent production fallback disable. Production `backend.env` now sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`, the backend service was restarted successfully, health/database health returned `200 OK`, persistent role authorization is enabled and verified, two persistent `super_admin` accounts are verified, and both approved accounts passed validation with fallback disabled. Rollback remains available by setting the fallback flag to `true` and restarting the backend.
 - Required before public RC: validation that non-owner roles behave correctly, critical-change approval, and the other release blockers listed below.
 
 ### Phase 3. Rate limiting / abuse protection
 
-- Identify protected surfaces before implementation: auth login/register/password reset; lesson chat/reply; voice/TTS/transcription if applicable; free lesson start/usage; premium abuse controls; admin endpoints; and webhook endpoints.
-- Plan policy before implementation, including per-user/IP/provider limits, safe burst behavior, lockout/captcha/escalation decisions where appropriate, and bypass/monitoring rules for trusted operational paths.
-- Keep user experience acceptable so legitimate learners are not blocked by normal lesson, voice, or account flows.
+- Completed and production-verified on backend `0.1.35-backend.39` with `RateLimiting__Enabled=true`.
+- Coverage includes all Phase 3 slices: auth login/register/password reset; audio/STT, TTS speech and speech stream, translation, and realtime voice start-rate protection; Admin read/write/role-management throttling; billing checkout/cancel-renewal, Paddle checkout launch, and Paddle webhook throttling; plus auth refresh/revoke/current-user/password-change, authenticated lesson start, lesson hint/feedback, authenticated persisted lesson messages, and learner/subscription/status/trial/access-style endpoints where implemented by the final slice.
+- Current limiter storage is single-instance/in-memory. True distributed/shared limiter storage remains future work before multi-instance scale-out, and true concurrent realtime voice WebSocket connection caps remain future work if not implemented.
+- Phase 3 did not change Admin RBAC authorization behavior, product/free usage semantics, Premium entitlement semantics, billing/Paddle semantics, Paddle webhook signature verification, provider-event handling, Desktop behavior, Admin UI behavior, CMS runtime behavior, deployment scripts, or EF migrations.
+- Production still has `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`; Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
+- No database migrations were added or run for Phase 3, and backend package/upload scripts still do not run EF migrations automatically.
 
 ### Phase 4. Backups / restore / migration rollback drills
 
@@ -112,11 +115,11 @@ Do not move billing/Paddle production readiness into the immediate next step. Co
 
 ## Current backend verification
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.34` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current.
 
-Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.33`. Backend `0.1.35-backend.34` contains the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields for Desktop Account billing UI decisions, and a cancel request path that must not directly revoke entitlements. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. EF migrations through `20260620165657_AddAdminRoleAssignmentPersistence` are recorded in production `__EFMigrationsHistory`.
+Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.38`. Backend `0.1.35-backend.39` contains the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields for Desktop Account billing UI decisions, and a cancel request path that must not directly revoke entitlements. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. EF migrations through `20260620165657_AddAdminRoleAssignmentPersistence` are recorded in production `__EFMigrationsHistory`.
 
-Deployed runtime status diagnostics are visible on backend `0.1.35-backend.34` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
+Deployed runtime status diagnostics are visible on backend `0.1.35-backend.39` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
 
 ## CMS connection readiness and controlled release preparation
 
@@ -199,7 +202,7 @@ Next safe step: controlled tester handoff and feedback collection. CMS published
 
 The Admin CMS now exposes a read-only **Runtime content status** section and the protected endpoint `GET /api/admin/dev/cms/runtime-status`. Use it to confirm the effective learner content source, validation result, counts, published snapshot metadata, and fallback state without exposing content bodies or secrets.
 
-CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.34` with approved tutor-id validation for `david`, `elena`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
+CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.39` with approved tutor-id validation for `david`, `elena`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
 
 ## CMS-managed level profiles (A1-B2)
 
@@ -221,33 +224,6 @@ When changing a tutor Display name in Admin CMS, use Save draft + Publish and th
 - Do not add refund/reversal handling or Paddle customer portal flows until those backend-owned lifecycle policies are explicitly designed.
 
 
-## Rate limiting next steps after first slice - 2026-06-22
+## Phase 3 rate limiting completion state — 2026-06-23
 
-The backend now contains a disabled-by-default in-memory first slice for auth login/register/password reset and lesson chat reply. Before enabling outside local testing, choose production limits, decide whether body-derived per-email and per-session partitioning is needed beyond the current IP/user partition compromise, and perform an approved environment smoke. No production deployment or server configuration change happened in the implementation task.
-
-Still future work: admin-sensitive endpoint throttles, billing/checkout throttles, Paddle webhook abuse protection, lesson hint/feedback limits, persisted lesson-message protections, true realtime voice concurrent connection caps, and any long-term distributed limiter design if a multi-instance backend requires it. Admin RBAC, Paddle/live billing, CMS, Desktop, and product/free-limit behavior were intentionally unchanged.
-
-## Phase 3 rate limiting next steps
-
-Phase 3 slice 2 is implemented after slice 1 for audio transcription, audio/TTS speech, audio/TTS speech stream, translation, and realtime voice WebSocket start-rate protection. Before calling it production-enabled, complete the normal backend deploy and configuration verification with `RateLimiting__Enabled=true` and the intended audio/translation limits.
-
-Do production-safe validation first: health checks, one-request smoke checks, and log review for safe throttle summaries. Do not run intentional throttling or stress tests against production unless there is an approved test window and explicit confirmation.
-
-Still deferred: true concurrent realtime voice connection caps, Admin endpoint throttling, Admin role-management throttling, billing throttling, and Paddle webhook throttling. Admin RBAC fallback behavior and product/free usage entitlement logic must remain unchanged while continuing Phase 3.
-
-## Phase 3 rate limiting next steps after slice 3
-
-Phase 3 slice 3 is implemented for Admin read/write endpoint throttling and Admin role-management mutation throttling. Validate with production-safe one-request Admin read smoke checks first; run intentional throttling only against localhost or an approved test environment with low test limits and explicit confirmation.
-
-Still deferred: true concurrent realtime voice connection caps, billing endpoint throttling, Paddle webhook throttling, backups/restore drills, and monitoring/privacy hardening. Admin RBAC authorization behavior must remain unchanged, BootstrapAdmin fallback remains disabled, and broad public-production readiness is still not claimed.
-
-
-## Phase 3 slice 4 follow-up state
-
-Billing/checkout/provider abuse protection for current-user checkout-session creation, current-user cancel-renewal, Paddle checkout launch, and Paddle webhook requests is implemented behind `RateLimiting:Enabled`. Do not treat this as a billing semantics change: webhook signature verification and provider-event handling remain unchanged, Admin RBAC authorization behavior remains unchanged, and BootstrapAdmin fallback remains disabled. Still deferred: backups/restore drills, monitoring/privacy hardening, broader production readiness claims, true realtime voice concurrent connection caps, lesson hint/feedback limits, persisted lesson-message protections, and any distributed limiter design needed for future multi-instance deployment.
-
-## After Phase 3 final rate limiting slice — 2026-06-22
-
-Phase 3 slices 1 through the final learner/session slice are implemented, and prior production deploys have `RateLimiting__Enabled=true`. No Desktop, Admin UI, Admin RBAC authorization, BootstrapAdmin fallback, billing/Paddle, CMS runtime content, product/free-usage counter, Premium/free entitlement, deployment-script, or database-migration change is included in the final slice.
-
-Remaining work should focus on production operations rather than additional Phase 3 endpoint coverage: design true distributed limiter storage before multi-instance scale-out, add true concurrent realtime voice WebSocket connection caps if still not implemented, complete backups/restore drills, improve monitoring/privacy hardening, and avoid claiming broad public-production readiness until those operational items are done.
+Phase 3 is implemented and production-verified on backend `0.1.35-backend.39` with `RateLimiting__Enabled=true`. Coverage includes the completed auth, learner/session, audio/voice/translation, Admin, billing, and Paddle webhook slices documented above. No Desktop, Admin UI, Admin RBAC authorization, BootstrapAdmin fallback, billing/Paddle semantics, CMS runtime content, product/free-usage counter, Premium/free entitlement, deployment-script, package-script, or database-migration change is included in Phase 3. Remaining work is operational: distributed/shared limiter storage before multi-instance scale-out, true concurrent realtime voice WebSocket connection caps if still not implemented, backups/restore/migration rollback drills, monitoring/privacy hardening, Paddle live readiness, legal/support blockers, and Microsoft Store/MSIX. Broad public-production readiness is not claimed.

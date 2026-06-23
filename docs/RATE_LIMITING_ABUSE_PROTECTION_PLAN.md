@@ -1,8 +1,21 @@
-# Phase 3: Rate Limiting / Abuse Protection Plan
+# Phase 3: Rate Limiting / Abuse Protection Completion Record
 
-Review date: 2026-06-22.
+Review date: 2026-06-23.
 
-This is an implementation-ready plan only. Rate limiting is not implemented by this document. Do not change Admin RBAC behavior as part of Phase 3. Current Production Admin RBAC final state: after the successful 2026-06-22 controlled rehearsal, the later permanent fallback disable also passed on 2026-06-22. BootstrapAdmin fallback for `AdminPermission:*` policies is explicitly disabled through production `backend.env`, persistent role authorization is enabled and verified, two persistent `super_admin` accounts are verified, and both approved accounts passed validation after permanent fallback disable. Phase 3 rate limiting work must not change that Admin RBAC behavior; rollback remains an operational fallback action by setting `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=true` and restarting the backend.
+This document started as the Phase 3 implementation plan and now records the completed post-Phase-3 production state. Phase 3 rate limiting / abuse protection is implemented and production-verified on backend `0.1.35-backend.39` with `RateLimiting__Enabled=true`. Do not change Admin RBAC behavior as part of Phase 3. Current Production Admin RBAC final state: after the successful 2026-06-22 controlled rehearsal, the later permanent fallback disable also passed on 2026-06-22. BootstrapAdmin fallback for `AdminPermission:*` policies is explicitly disabled through production `backend.env`, persistent role authorization is enabled and verified, two persistent `super_admin` accounts are verified, and both approved accounts passed validation after permanent fallback disable. Phase 3 rate limiting work must not change that Admin RBAC behavior; rollback remains an operational fallback action by setting `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=true` and restarting the backend.
+
+## Production completion summary — 2026-06-23
+
+Phase 3 is complete at the single-instance/in-memory limiter level. The verified active backend is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`, `/opt/languagevoicetutor/backend/current` points to `0.1.35-backend.39`, and the previous rollback reference is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.38`. Production has `RateLimiting__Enabled=true` and `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`.
+
+Production checks passed: `/health` returned `200 OK`, `/api/health/database` returned `200 OK`, Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`, Admin UI manual check passed, Desktop app manual check passed, and Billing UI manual check passed. Paid users still see the payment action inactive; non-premium users still see payment action active.
+
+Implemented slices cover auth login/register/password reset; audio transcription/STT, TTS speech and speech stream, translation, realtime voice start-rate protection; Admin read/write/role-management throttling; billing checkout/cancel-renewal, Paddle checkout launch, Paddle webhook throttling; and final-slice auth refresh/revoke/current-user/password-change, authenticated lesson start, lesson hint, lesson feedback, authenticated persisted lesson messages, and learner/subscription/status/trial/access-style endpoints where implemented.
+
+Phase 3 did not change Admin RBAC authorization behavior, product/free usage semantics, Premium entitlement semantics, billing/Paddle semantics, Paddle webhook signature verification, provider-event handling, Desktop behavior, Admin UI behavior, CMS runtime behavior, package/upload scripts, deployment scripts, or EF migrations. No database migrations were added or run for Phase 3.
+
+Deferred after Phase 3: true distributed/shared rate limiter storage, true concurrent realtime voice WebSocket connection caps if not implemented, backups/restore/migration rollback drills as Phase 4, monitoring/logging/privacy hardening, Paddle live readiness/legal/support blockers, Microsoft Store/MSIX, and broad public-production readiness.
+
 
 ## 1. Current state
 
@@ -21,15 +34,13 @@ This is an implementation-ready plan only. Rate limiting is not implemented by t
 - Paddle webhook handling requires the webhook feature to be enabled, requires a configured secret key, requires the `Paddle-Signature` header, verifies the signature, records duplicate events, and logs provider event IDs rather than raw payloads.
 - Existing logging mostly uses structured summaries: route names, operation names, result labels, IDs, counts, lengths, status, and safe exception metadata.
 
-### What is still missing
+### What remains after Phase 3
 
-- There is no general technical request rate limiter for auth, lesson chat/reply, audio upload/transcription, TTS, admin, billing, or webhook endpoints.
-- There is no per-IP or per-email throttling for repeated login, registration, or password reset attempts.
-- There is no per-user technical burst limiter for authenticated learner actions.
-- There is no WebSocket connection throttle for `/api/realtime-voice`.
-- There is no explicit request-size abuse policy in this plan beyond existing request/form validation and hosting defaults.
-- There is no shared rate-limit storage for multi-instance deployments.
-- There is no documented `Retry-After` behavior for technical throttling.
+- True distributed/shared rate-limit storage remains future work for multi-instance deployments.
+- True concurrent realtime voice WebSocket connection caps remain future work if not implemented; Phase 3 verified start-rate protection.
+- Backups/restore/migration rollback drills are Phase 4 operational work, not Phase 3.
+- Monitoring/logging/privacy hardening, Paddle live readiness/legal/support blockers, Microsoft Store/MSIX, and broad public-production readiness remain deferred.
+- Request-size abuse policy beyond existing request/form validation and hosting defaults remains a future hardening topic.
 
 ### Product limits are not technical rate limits
 
@@ -146,7 +157,7 @@ Later multi-instance/server scale change:
 
 ## 6. Configuration
 
-Add configuration under a new `RateLimiting` section when implementation begins. Keep all values adjustable through `appsettings.json` and environment variables. Do not include secrets.
+Configuration now lives under the `RateLimiting` section. Keep all values adjustable through `appsettings.json` and environment variables. Do not include secrets.
 
 Suggested names and defaults:
 
@@ -195,7 +206,7 @@ Suggested names and defaults:
 }
 ```
 
-Implementation note: keep `Enabled` defaulting to `false` until the first slice is tested locally and in controlled staging/tester conditions. A later deployment task can enable specific policies intentionally.
+Production note: production now intentionally has `RateLimiting__Enabled=true` after Phase 3 verification. Local/development defaults may remain disabled unless a developer intentionally enables throttle testing.
 
 Environment variable examples for later deployment:
 
@@ -290,72 +301,18 @@ Useful existing documentation to reference while implementing:
 - `docs/DESKTOP_BACKEND_ROUTE_SMOKE.md` and `docs/MANUAL_TEST_CHECKLIST.md` for smoke patterns.
 - `docs/PRODUCTION_ADMIN_RBAC_READINESS.md` and `docs/ADMIN_RBAC_CUTOVER_RUNBOOK.md` for Admin RBAC context that must not be changed by this phase.
 
-## 10. Next Codex task
+## 10. Post-Phase-3 next work
 
-Recommended next Codex task:
+Phase 3 endpoint coverage is complete and production-verified for the current single-instance deployment. Do not open more Phase 3 endpoint-coverage tasks unless a new uncovered route is explicitly identified.
 
-> Implement the first Phase 3 slice only: add configurable in-memory rate limiting for `POST /api/auth/login`, `POST /api/auth/register`, `POST /api/auth/password-reset/request`, `POST /api/auth/password-reset/confirm`, and `POST /api/lesson-chat/reply`. Keep `RateLimiting:Enabled` default `false`, preserve existing endpoint behavior when disabled, return a simple `429` JSON response with retry guidance when enabled and exceeded, add focused tests/smoke documentation, do not change Admin RBAC behavior, do not add migrations, do not change Desktop/Admin UI/billing/Paddle/CMS behavior, and do not add packages unless the current framework lacks built-in rate limiting.
+Next work is Phase 4 operational readiness:
 
+1. Run and record a production-safe backup/readability/restore drill using `docs/BACKUP_RESTORE_DRILL_RUNBOOK.md` and `tools/db_backup_restore_drill_commands.ps1`.
+2. Keep generated backup files, SQL dumps, connection strings, `.env` contents, secrets, provider payloads, Paddle signatures, and raw user data out of git and shared transcripts.
+3. Design distributed/shared rate limiter storage before any multi-instance backend scale-out.
+4. Add true concurrent realtime voice WebSocket connection caps if the current backend only protects start rate.
+5. Continue monitoring/logging/privacy hardening, Paddle live readiness/legal/support work, and Microsoft Store/MSIX work before any broad public-production readiness claim.
 
-## Phase 3 first slice implementation status - 2026-06-22
+## Historical implementation note
 
-Implemented in this repository as a backend-only, disabled-by-default first slice. `RateLimiting:Enabled` defaults to `false`; no production deployment or server configuration change happened in this task. The new in-memory named policies are scoped only to `POST /api/auth/login`, `POST /api/auth/register`, `POST /api/auth/password-reset/request`, `POST /api/auth/password-reset/confirm`, and `POST /api/lesson-chat/reply`.
-
-The slice uses ASP.NET Core built-in fixed-window rate limiting and returns safe `429` JSON responses with `error`, `message`, and `retryAfterSeconds`, plus `Retry-After` when throttled. Safe throttling logs include policy, endpoint group, status code, retry-after seconds, authenticated user id when available, and request path only. They do not log passwords, reset tokens, cookies, request bodies, provider payloads, or lesson message text.
-
-Implementation compromise: built-in named partition policies select one synchronous partition key per request. For this first slice, auth endpoints partition by IP and lesson chat partitions by authenticated user when available, falling back to IP. The configured per-email and per-session option values are present for compatibility with the plan, but body-derived email/session partitioning remains deferred to a future slice that can safely inspect request bodies without risking token/password/message logging or over-engineering this pass.
-
-No Admin RBAC behavior was changed. Paddle/live billing was not changed. CMS was not changed. Desktop was not changed. Free/Premium product usage and entitlement logic was not changed. Future slices still need audio/TTS/STT, admin-sensitive actions, billing/checkout, Paddle webhook, realtime voice, hint/feedback/translation, and persisted lesson message protection.
-
-### Local manual smoke for first slice
-
-A helper script is available at `tools/smoke_rate_limiting_first_slice.ps1`. Use only against local or approved test environments. It defaults to `http://localhost:5000`, refuses production-looking URLs unless `-AllowProductionUrl` is supplied, requires `-ConfirmThrottleTest`, and avoids printing passwords, tokens, cookies, or raw response bodies.
-
-Example local flow:
-
-1. Set low local limits and `RateLimiting:Enabled=true` via local configuration or environment variables.
-2. Start the backend locally.
-3. Run: `pwsh tools/smoke_rate_limiting_first_slice.ps1 -BaseUrl http://localhost:5000 -ConfirmThrottleTest -Attempts 12`.
-4. Optionally add `-CheckLessonChatReply` only when provider work is safe/stubbed locally.
-5. Restore `RateLimiting:Enabled=false` unless intentionally continuing local throttle testing.
-
-## 2026-06-22 implementation update: Phase 3 slice 2
-
-Phase 3 rate limiting slice 2 is implemented after the production-enabled first slice. The existing global `RateLimiting:Enabled` switch still controls technical throttling, and the first-slice auth/login/register/password-reset/lesson-chat behavior is preserved.
-
-Slice 2 adds named technical throttling policies for:
-
-- `POST /api/audio/transcribe`
-- `POST /api/audio/speech`
-- `POST /api/audio/speech-stream`
-- `POST /api/translate`
-- WebSocket start attempts on `/api/realtime-voice`
-
-The slice uses authenticated user id partitioning where available and IP fallback otherwise. Realtime voice uses IP-based start-rate protection in this slice. A configured concurrent voice-session option is present for future work, but true concurrent WebSocket connection caps remain deferred because this implementation intentionally avoids distributed locks, database counters, and larger connection-lifecycle plumbing.
-
-Production enablement of slice 2 requires the normal backend deploy and configuration verification. Admin/billing/webhook throttling remains future work. Admin RBAC behavior was not changed. Product/free usage entitlement logic was not changed.
-
-## 2026-06-22 implementation update: Phase 3 slice 3
-
-Phase 3 rate limiting slice 3 is implemented for Admin endpoint throttling and Admin role-management mutation throttling. The existing global `RateLimiting:Enabled` switch still controls all technical throttling, and slice 1 and slice 2 behavior is preserved.
-
-Slice 3 adds named policies for Admin read endpoints, Admin write endpoints, and Admin role-management mutation endpoints. The defaults are `Admin:ReadPerAdminLimit=120`, `Admin:WritePerAdminLimit=30`, `Admin:RoleManagementPerAdminLimit=10`, and `Admin:WindowMinutes=10`. Throttled responses keep the existing `429` JSON shape with `error`, `message`, and `retryAfterSeconds`, plus the `Retry-After` header.
-
-Admin throttling uses an Admin user id partition when a future/authenticated principal provides one, then authenticated app user id, then IP fallback. Throttle logs remain safe summaries only: policy, endpoint group, status code, retry-after seconds, non-secret user identifiers when present, path, method, and remote IP in the same plain address style already used by the limiter. They do not log passwords, tokens, cookies, request bodies, raw CMS JSON, role-change reason text, provider payloads, connection strings, private keys, or secrets.
-
-Admin RBAC authorization behavior was not changed. Admin permission policies, role catalog, role assignments, persistent Admin authorization logic, role-management safety rules, critical-change behavior, and Admin UI permissions display were not changed. BootstrapAdmin fallback remains disabled. Billing/Paddle/webhook throttling remains future work, backups/restore drills remain future work, monitoring/privacy hardening remains future work, and broad public-production readiness is still not claimed.
-
-
-## Phase 3 slice 4 implementation status
-
-Implemented on 2026-06-22: billing/checkout/provider abuse protection now covers current-user checkout-session creation, current-user cancel-renewal, Paddle checkout launch, and Paddle webhook requests behind the existing global `RateLimiting:Enabled` switch. Billing semantics were not changed. Paddle webhook signature verification, provider-event ingestion/idempotency, event normalization, subscription snapshot handling, payment persistence, reconciliation decisions, and entitlement activation semantics were not changed. Admin RBAC authorization behavior was not changed, and BootstrapAdmin fallback remains disabled. Backups/restore drills remain future work, monitoring/privacy hardening remains future work, and broad public-production readiness is still not claimed.
-
-## Phase 3 final slice status — implemented 2026-06-22
-
-Phase 3 slices 1 through the final learner/session slice are now implemented in code. The final slice adds technical abuse protection for current auth/session endpoints, authenticated lesson start, lesson hint, lesson feedback, authenticated persisted lesson-message creation, and authenticated learner status/access/trial-claim surfaces behind the existing global `RateLimiting:Enabled` switch. Prior production deploys already set `RateLimiting__Enabled=true`.
-
-Free-usage/product semantics were reviewed and intentionally left unchanged: product limits remain separate from technical rate limits, free-usage exhaustion may still return the existing product-level `429`, and technical limiter rejections use the `RateLimitExceeded` response shape with `retryAfterSeconds`. Premium/free entitlement semantics were not changed; Premium continues to bypass free product limits only where the existing product code already allowed it, and Premium does not bypass the technical safety caps added for expensive endpoints such as lesson chat reply, hint, feedback, transcription, TTS, translation, and realtime voice start.
-
-This slice did not change Admin RBAC authorization behavior, did not re-enable BootstrapAdmin fallback, did not change billing/Paddle semantics, did not change CMS runtime content behavior, did not add database migrations, and did not add distributed storage. BootstrapAdmin fallback remains disabled.
-
-Still future work: true distributed limiter storage for multi-instance deployments, true concurrent realtime voice WebSocket connection caps if not otherwise implemented, backups/restore drills, monitoring/privacy hardening, and broader public-production readiness work. Broad public-production readiness is still not claimed.
+This document preserves the original planning tables above for policy context, but the current state is no longer “first slice only.” Backend `0.1.35-backend.39` is active in production with `RateLimiting__Enabled=true`, all Phase 3 slices listed in the completion summary are implemented, and no Phase 3 database migrations were added or run. Admin RBAC authorization behavior, product/free usage semantics, Premium entitlement semantics, billing/Paddle semantics, Paddle webhook signature verification, provider-event handling, Desktop behavior, Admin UI behavior, CMS runtime behavior, package/upload scripts, and deployment scripts remain unchanged by Phase 3.

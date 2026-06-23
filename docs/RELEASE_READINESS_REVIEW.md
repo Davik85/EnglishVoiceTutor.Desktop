@@ -6,13 +6,13 @@ Scope: controlled tester/direct Windows release readiness and broader public-rel
 
 ## 2026-06-21 Admin RBAC and roadmap update
 
-Admin RBAC is advanced but not fully production-cutover. Backend `0.1.35-backend.34` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, the persistent owner-equivalent mapping exists, and the active persistent production admin role is `super_admin`. Cutover smoke passes with BootstrapAdmin fallback enabled by default; no explicit production fallback override is present and no production fallback-disabling cutover has been performed.
+Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.39` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
 
-Public release still requires a controlled fallback cutover rehearsal and rollback drill, or an explicit owner-approved temporary exception. Rate limiting/abuse protection, backups/restore and migration rollback drills, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, and Microsoft Store/MSIX readiness remain blockers or pending readiness tracks.
+Public release still requires remaining operational readiness work: backups/restore and migration rollback drills, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
 
 ## Current verified state recorded for release planning
 
-- Backend `0.1.35-backend.34` is deployed at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.34` and production `/health` plus `/api/health/database` return `200 OK`.
+- Backend `0.1.35-backend.39` is deployed at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39` and production `/health` plus `/api/health/database` return `200 OK`.
 - Windows direct tester `0.1.36-tester.24` is live as `LanguageVoiceTutorSetup-0.1.36-tester.24.exe` with `backendBaseUrl=https://api.languagevoicetutor.com` and `updateMode=manual-confirmation`.
 - Trial reference plan is seeded/required. Trial is displayed as a first-class tariff/reference plan, while Trial access remains entitlement-owned.
 - Learner Account subscription UI is simplified to Current tariff, Free lessons remaining, Premium, and Auto-renewal.
@@ -27,7 +27,7 @@ Public release still requires a controlled fallback cutover rehearsal and rollba
 No new critical blockers were found in this documentation/source review, assuming the following handoff checks are performed immediately before inviting testers:
 
 - Verify live Windows `latest.json` over HTTPS still points to `0.1.36-tester.24`, `LanguageVoiceTutorSetup-0.1.36-tester.24.exe`, `https://api.languagevoicetutor.com`, and `manual-confirmation`.
-- Verify backend symlink still resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.34` and `/health` plus `/api/health/database` are green.
+- Verify backend symlink still resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39` and `/health` plus `/api/health/database` are green.
 - Perform one installed-build smoke: registration/login, auth restore, lesson start, at least one lesson completion path, TTS/bot voice, Conversation Mode, Lesson History, Progress, Account view, Buy Premium sandbox path, Refresh status, and Cancel subscription sandbox path where applicable.
 - Confirm generated artifacts, installers, backend ZIPs, generated release folders, temp deploy scripts, SQL outputs, `.env` files, and secrets are not committed.
 - Prepare tester feedback intake: tester group, feedback template, severity labels, known-issue list, and rollback/contact instructions.
@@ -44,7 +44,7 @@ No new critical blockers were found in this documentation/source review, assumin
 
 - Keep DPAPI-protected local auth session storage and no raw password storage.
 - Verify refresh-token expiration/revocation behavior under production support scenarios.
-- Add/verify rate limiting for login, registration, password reset, refresh, and admin-sensitive actions.
+- Keep Phase 3 rate limiting enabled and monitor/tune login, registration, password reset, refresh, learner, admin-sensitive, billing, and webhook throttles without changing product or entitlement semantics.
 
 ### Lesson start and completion
 

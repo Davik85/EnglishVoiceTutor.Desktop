@@ -2,13 +2,13 @@
 
 This document describes the prepared deployment foundation for the Language Voice Tutor backend on Ubuntu 24.04. It is a manual backend-only deployment workflow. It does not upload Windows release files, run EF migrations, publish CMS runtime content, enable production billing, or make the product broadly public production-ready.
 
-Review date: 2026-06-18.
+Review date: 2026-06-23.
 
-## Current server verification for 0.1.35-backend.34
+## Current server verification for 0.1.35-backend.39
 
-The production backend active release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.34`, and `/opt/languagevoicetutor/backend/current` points to that release at last verification.
+The production backend active release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`, and `/opt/languagevoicetutor/backend/current` points to that release at last verification.
 
-Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.33`. Backend `0.1.35-backend.34` includes the Admin RBAC persistence/cutover validation work and retains the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields needed by the Desktop billing UI, and a cancel request path that must not directly revoke entitlements. EF migration `20260620165657_AddAdminRoleAssignmentPersistence` has been applied and is recorded in production `__EFMigrationsHistory`. The deployment used the existing package/upload helper flow and did not write secrets; database migration remained a separate explicit operator step.
+Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.38`. Backend `0.1.35-backend.39` includes the Admin RBAC persistence/cutover validation work and retains the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields needed by the Desktop billing UI, and a cancel request path that must not directly revoke entitlements. EF migration `20260620165657_AddAdminRoleAssignmentPersistence` has been applied and is recorded in production `__EFMigrationsHistory`. The deployment used the existing package/upload helper flow and did not write secrets; database migration remained a separate explicit operator step.
 
 The production backend is reachable at `https://api.languagevoicetutor.com`. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. The service `languagevoicetutor-backend.service` is active/running after deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, translation, hints, bot voice/TTS, Conversation Mode, Lesson History updates, Progress updates, and CMS Save draft + Publish visibility in newly started lessons.
 
@@ -16,11 +16,11 @@ Do not copy server secrets, passwords, API keys, private keys, tokens, private e
 
 ## Current production backend snapshot
 
-Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.34` is active via `/opt/languagevoicetutor/backend/current`. Verify the live value with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` before calling any backend version current.
+Last known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39` is active via `/opt/languagevoicetutor/backend/current`. Verify the live value with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` before calling any backend version current.
 
-Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.27`.
+Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.38`.
 
-Backend `0.1.35-backend.34` requires the Admin RBAC persistence migration `20260620165657_AddAdminRoleAssignmentPersistence`, now recorded in production `__EFMigrationsHistory`, in addition to earlier subscription reference-data migrations. Production backend health and database health are healthy at the documented HTTPS health endpoints. Backend deploys remain separate from EF database migrations; do not run migrations automatically from the upload/deploy flow. Backend deploys also remain separate from Windows release upload; no Windows installer upload is performed by the backend helper.
+Backend `0.1.35-backend.39` includes Phase 3 rate limiting / abuse protection and requires the earlier Admin RBAC persistence migration `20260620165657_AddAdminRoleAssignmentPersistence`, now recorded in production `__EFMigrationsHistory`, in addition to earlier subscription reference-data migrations. Production backend health and database health are healthy at the documented HTTPS health endpoints. Backend deploys remain separate from EF database migrations; do not run migrations automatically from the upload/deploy flow. Backend deploys also remain separate from Windows release upload; no Windows installer upload is performed by the backend helper.
 
 ## Scope
 
@@ -75,14 +75,14 @@ CORS is not currently configured in the backend. Nginx should reverse-proxy API 
 Run from the repository root on the local Windows development machine:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.34
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.39
 ```
 
 This publishes `backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj` in Release mode for `linux-x64` as a self-contained deployment and writes:
 
 ```text
 artifacts\publish\backend-linux-x64
-artifacts\packages\backend\LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.34.zip
+artifacts\packages\backend\LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.39.zip
 ```
 
 The production server does not need a git checkout, `dotnet` SDK, or `dotnet` runtime for this self-contained package. Generated files under `artifacts/` must not be committed. Do not rebuild or replace desktop release artifacts as part of backend deployment.
@@ -93,7 +93,7 @@ Dry-run can build the archive locally, then print the SSH/SCP/systemd commands w
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-backend.34 `
+  -Version 0.1.35-backend.39 `
   -PackageFirst `
   -DryRun
 ```
@@ -102,11 +102,11 @@ The script defaults to SSH host `lvt-server`, user `deploy`, and remote path `/o
 
 ## Upload and restart
 
-For a reviewed backend-only deployment, run from Windows. Keep EF migrations as separate explicit operations; `0.1.35-backend.34` pairs with the separately applied `20260620165657_AddAdminRoleAssignmentPersistence` migration:
+For a reviewed backend-only deployment, run from Windows. Keep EF migrations as separate explicit operations; no database migrations were added or run for Phase 3, and `0.1.35-backend.39` still pairs with the separately applied `20260620165657_AddAdminRoleAssignmentPersistence` migration:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 `
-  -Version 0.1.35-backend.34 `
+  -Version 0.1.35-backend.39 `
   -PackageFirst
 ```
 
@@ -252,7 +252,7 @@ Do not echo `ConnectionStrings__DefaultConnection`, `PGPASSWORD`, or database UR
 
 ## Operational lesson: schema-dependent backend deploys
 
-Backend deploy scripts package/upload/switch releases; they do not apply EF migrations automatically. The `0.1.35-backend.34` deployment exposed this risk: switching the backend before applying production migration `20260620165657_AddAdminRoleAssignmentPersistence` caused Admin endpoints to return `500` because relation `admin_users` did not exist. The safe resolution was to roll `current` back to `0.1.35-backend.33`, apply a reviewed targeted migration script from `20260620090000_SeedTrialSubscriptionPlan` to `20260620165657_AddAdminRoleAssignmentPersistence`, verify `__EFMigrationsHistory`, required tables, ownership, and grants, then switch `current` back to `0.1.35-backend.34`.
+Backend deploy scripts package/upload/switch releases; they do not apply EF migrations automatically. The `0.1.35-backend.39` deployment exposed this risk: switching the backend before applying production migration `20260620165657_AddAdminRoleAssignmentPersistence` caused Admin endpoints to return `500` because relation `admin_users` did not exist. The safe resolution was to roll `current` back to `0.1.35-backend.38`, apply a reviewed targeted migration script from `20260620090000_SeedTrialSubscriptionPlan` to `20260620165657_AddAdminRoleAssignmentPersistence`, verify `__EFMigrationsHistory`, required tables, ownership, and grants, then switch `current` back to `0.1.35-backend.39`.
 
 For future schema-dependent releases, apply and verify the production migration before switching `current` to the new backend. If a deploy exposes missing relation/table errors, roll back `current` to the previous compatible release, apply reviewed targeted migration SQL, verify tables/history/grants, then switch `current` again. Prefer targeted reviewed migration scripts over unreviewed broad SQL scripts in production. Never print or commit production credentials, raw connection strings, generated SQL artifacts, or secrets.
 
