@@ -1,7 +1,8 @@
 param(
     [string]$ServerHost = "lvt-server",
     [string]$LocalOpsDirectory = "ops",
-    [string]$RemoteRoot = "/opt/languagevoicetutor",
+    [string]$RemoteOpsRoot = "/opt/languagevoicetutor-ops",
+    [string]$RemoteDocsRoot = "/opt/languagevoicetutor/docs",
     [string]$BackupDirectory = "/var/backups/languagevoicetutor/postgres",
     [string]$ServiceName = "languagevoicetutor-postgres-backup.service",
     [string]$TimerName = "languagevoicetutor-postgres-backup.timer"
@@ -35,18 +36,21 @@ function Write-CommandBlock {
 
 Test-SafeValue -Value $ServerHost -Label "ServerHost"
 Test-SafeValue -Value $LocalOpsDirectory -Label "LocalOpsDirectory"
-Test-SafeValue -Value $RemoteRoot -Label "RemoteRoot"
+Test-SafeValue -Value $RemoteOpsRoot -Label "RemoteOpsRoot"
+Test-SafeValue -Value $RemoteDocsRoot -Label "RemoteDocsRoot"
 Test-SafeValue -Value $BackupDirectory -Label "BackupDirectory"
 Test-SafeValue -Value $ServiceName -Label "ServiceName"
 Test-SafeValue -Value $TimerName -Label "TimerName"
 
-$remoteOps = "$RemoteRoot/ops"
+$remoteOps = $RemoteOpsRoot
 $remoteScript = "$remoteOps/postgres/backup_lvt_postgres.sh"
 $remoteSystemd = "$remoteOps/systemd"
+$remoteRunbook = "$RemoteDocsRoot/BACKUP_RESTORE_DRILL_RUNBOOK.md"
 
 Write-Host "Phase 4B PostgreSQL local backup schedule command printer"
 Write-Host "This helper prints commands only. It does not execute SSH, SCP, systemctl, pg_dump, or pg_restore."
 Write-Host "It does not read or print backend.env, passwords, connection strings, SQL dumps, backup contents, or raw user data."
+Write-Host "It installs operator assets under $RemoteOpsRoot so the postgres service account can traverse the script path without access to the backend release/config tree."
 Write-Host "WARNING: Backup files remain on the server under $BackupDirectory. Do not copy backup files into git, chat, tickets, screenshots, or unapproved storage."
 
 Write-CommandBlock -Title "Upload repository-managed operator assets" -Commands @(
@@ -54,11 +58,20 @@ Write-CommandBlock -Title "Upload repository-managed operator assets" -Commands 
     ('scp {0}/postgres/backup_lvt_postgres.sh {1}:/tmp/backup_lvt_postgres.sh' -f $LocalOpsDirectory, $ServerHost),
     ('scp {0}/systemd/{1} {2}:/tmp/{1}' -f $LocalOpsDirectory, $ServiceName, $ServerHost),
     ('scp {0}/systemd/{1} {2}:/tmp/{1}' -f $LocalOpsDirectory, $TimerName, $ServerHost),
-    ('ssh {0} "sudo install -o root -g root -m 0755 /tmp/backup_lvt_postgres.sh {1} && sudo install -o root -g root -m 0644 /tmp/{2} /etc/systemd/system/{2} && sudo install -o root -g root -m 0644 /tmp/{3} /etc/systemd/system/{3} && sudo rm -f /tmp/backup_lvt_postgres.sh /tmp/{2} /tmp/{3}"' -f $ServerHost, $remoteScript, $ServiceName, $TimerName)
+    ('ssh {0} "sudo sed -i ''s/\r$//'' /tmp/backup_lvt_postgres.sh /tmp/{2} /tmp/{3} && sudo install -o root -g root -m 0755 /tmp/backup_lvt_postgres.sh {1} && sudo install -o root -g root -m 0644 /tmp/{2} /etc/systemd/system/{2} && sudo install -o root -g root -m 0644 /tmp/{3} /etc/systemd/system/{3} && sudo rm -f /tmp/backup_lvt_postgres.sh /tmp/{2} /tmp/{3}"' -f $ServerHost, $remoteScript, $ServiceName, $TimerName)
+)
+
+Write-CommandBlock -Title "Optionally install the runbook under the application docs tree" -Commands @(
+    ('scp docs/BACKUP_RESTORE_DRILL_RUNBOOK.md {0}:/tmp/BACKUP_RESTORE_DRILL_RUNBOOK.md' -f $ServerHost),
+    ('ssh {0} "sudo install -d -o root -g root -m 0755 {1} && sudo sed -i ''s/\r$//'' /tmp/BACKUP_RESTORE_DRILL_RUNBOOK.md && sudo install -o root -g root -m 0644 /tmp/BACKUP_RESTORE_DRILL_RUNBOOK.md {2} && sudo rm -f /tmp/BACKUP_RESTORE_DRILL_RUNBOOK.md"' -f $ServerHost, $RemoteDocsRoot, $remoteRunbook)
 )
 
 Write-CommandBlock -Title "Prepare backup directory" -Commands @(
     ('ssh {0} "sudo install -d -o postgres -g postgres -m 0750 {1}"' -f $ServerHost, $BackupDirectory)
+)
+
+Write-CommandBlock -Title "Verify installed assets before running backups" -Commands @(
+    ('ssh {0} "sudo bash -n {1} && sudo -u postgres test -x {1} && sudo systemctl daemon-reload"' -f $ServerHost, $remoteScript)
 )
 
 Write-CommandBlock -Title "Run backup script once in dry-run retention mode" -Commands @(
@@ -69,8 +82,12 @@ Write-CommandBlock -Title "Run one immediate backup for real" -Commands @(
     ('ssh {0} "sudo -u postgres {1}"' -f $ServerHost, $remoteScript)
 )
 
+Write-CommandBlock -Title "Run one immediate backup through systemd and verify service metadata" -Commands @(
+    ('ssh {0} "sudo systemctl daemon-reload && sudo systemctl start {1} && systemctl show {1} -p Result -p ExecMainStatus -p ExecMainCode"' -f $ServerHost, $ServiceName)
+)
+
 Write-CommandBlock -Title "Enable and start the daily systemd timer" -Commands @(
-    ('ssh {0} "sudo systemctl daemon-reload && sudo systemctl enable --now {1}"' -f $ServerHost, $TimerName)
+    ('ssh {0} "sudo systemctl enable --now {1}"' -f $ServerHost, $TimerName)
 )
 
 Write-CommandBlock -Title "Verify timer and schedule" -Commands @(
@@ -79,12 +96,12 @@ Write-CommandBlock -Title "Verify timer and schedule" -Commands @(
     ('ssh {0} "systemctl status {1} --no-pager"' -f $ServerHost, $ServiceName)
 )
 
-Write-CommandBlock -Title "Inspect recent logs safely" -Commands @(
-    ('ssh {0} "journalctl -u {1} -n 80 --no-pager"' -f $ServerHost, $ServiceName)
+Write-CommandBlock -Title "Inspect recent service log metadata safely" -Commands @(
+    ('ssh {0} "journalctl -u {1} -n 80 --no-pager | sed -n ''/Backup file:/p;/Backup size bytes:/p;/pg_restore list line count:/p;/Retention action:/p;/Succeeded/p''"' -f $ServerHost, $ServiceName)
 )
 
 Write-CommandBlock -Title "Verify latest backup readability without printing dump contents" -Commands @(
-    ('ssh {0} "set -euo pipefail; latest=$(sudo -u postgres find {1} -maxdepth 1 -type f -name ''lvt_app_db_*.dump'' -printf ''%T@ %p\n'' | sort -n | tail -1 | cut -d'' '' -f2-); test -n \"$latest\"; sudo -u postgres test -s \"$latest\"; tmp=$(mktemp /tmp/lvt_pg_restore_list.XXXXXX); sudo -u postgres pg_restore --list \"$latest\" >\"$tmp\"; wc -l \"$tmp\"; rm -f \"$tmp\"; printf ''Latest backup verified: %s\n'' \"$latest\""' -f $ServerHost, $BackupDirectory)
+    ('ssh {0} "cd /tmp && set -euo pipefail; latest=$(sudo -u postgres find {1} -maxdepth 1 -type f -name ''lvt_app_db_*.dump'' -printf ''%T@ %p\n'' | sort -n | tail -1 | cut -d'' '' -f2-); test -n \"$latest\"; sudo -u postgres test -s \"$latest\"; tmp=$(mktemp /tmp/lvt_pg_restore_list.XXXXXX); sudo -u postgres pg_restore --list \"$latest\" >\"$tmp\"; wc -l \"$tmp\"; rm -f \"$tmp\"; printf ''Latest backup verified: %s\n'' \"$latest\""' -f $ServerHost, $BackupDirectory)
 )
 
 Write-CommandBlock -Title "Disable scheduled backups without deleting existing backup files" -Commands @(
@@ -96,4 +113,5 @@ Write-CommandBlock -Title "Rollback/remove installed schedule assets" -Commands 
 )
 
 Write-Host ""
+Write-Host "Note: run latest backup readability checks from /tmp to avoid postgres/deploy working-directory warnings during sudo/manual checks."
 Write-Host "Rollback note: the rollback command removes installed script/unit/timer assets only. Existing backup files under $BackupDirectory are intentionally left in place for operator-controlled retention or secure deletion."

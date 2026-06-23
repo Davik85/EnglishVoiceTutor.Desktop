@@ -1,0 +1,8 @@
+# Normalize Linux/server-executed assets to LF so they are safe to copy to Ubuntu hosts.
+*.sh text eol=lf
+ops/postgres/*.sh text eol=lf
+ops/systemd/*.service text eol=lf
+ops/systemd/*.timer text eol=lf
+
+# Keep PowerShell scripts CRLF-friendly for Windows operators.
+*.ps1 text eol=crlf

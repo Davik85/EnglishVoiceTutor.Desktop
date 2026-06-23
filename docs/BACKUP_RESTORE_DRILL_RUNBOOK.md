@@ -4,7 +4,7 @@ Review date: 2026-06-23.
 
 This runbook is for production-safe PostgreSQL backup creation, backup readability verification, and restore drills for the Language Voice Tutor / English Voice Tutor backend database. It is written for operators who connect from Windows PowerShell 7 to the Ubuntu server over SSH.
 
-> Status note: Phase 4A's initial production-safe backup/readability/separate-drill-restore was completed on 2026-06-23. Phase 4B adds repository-managed assets for daily local backup scheduling and local retention automation, but those files do not prove the schedule is installed or active on production. Operators must install and verify the systemd timer manually on the server. This is not a full disaster recovery plan, not encrypted off-server backup replication, not a production overwrite restore, and not full production permission-fidelity validation.
+> Status note: Phase 4A's initial production-safe backup/readability/separate-drill-restore was completed on 2026-06-23. Phase 4B local PostgreSQL backup scheduling was installed and activated on production on 2026-06-23 with `languagevoicetutor-postgres-backup.timer` enabled and active. This is not a full disaster recovery plan, not encrypted off-server backup replication, not a production overwrite restore, and not full production permission-fidelity validation.
 
 ## Safety rules
 
@@ -41,7 +41,9 @@ Phase 4B adds repository-managed operator assets for local daily backup scheduli
 - `ops/systemd/languagevoicetutor-postgres-backup.timer`: a daily timer template scheduled for 03:15 server time with `Persistent=true`.
 - `tools/install_postgres_backup_schedule_commands.ps1`: a PowerShell command printer for uploading, installing, verifying, disabling, and rolling back the scheduled backup assets.
 
-The schedule must be installed manually by an operator. Repository files alone do not prove the timer exists, is enabled, has run, or is healthy on production.
+The schedule must be installed manually by an operator. As of 2026-06-23, production activation has been completed and recorded below; future hosts or rebuilt hosts still require manual operator installation and verification.
+
+Linux shell and systemd assets must use LF line endings. `.gitattributes` enforces LF for server-executed Bash and systemd files because CRLF copied from Windows caused Bash syntax errors on Ubuntu during production installation feedback.
 
 Phase 4B retention is local-server retention only. It is not disaster recovery, not encrypted off-server backup replication, not immutable backup storage, and not a replacement for monitoring or restore drills.
 
@@ -82,6 +84,27 @@ Boundaries for this completed drill:
 - No Desktop, Admin UI, CMS runtime, billing, Paddle, migration, package-script, deployment-script, or tool behavior changed.
 
 Ownership/grants nuance: the drill used `pg_restore --no-owner --no-acl`. As expected for this safe drill style, ownership/grant inspection in the restored drill database showed postgres-only ownership/grants. This confirms the restored schema was accessible to the restore operator, but it does not prove production ownership/grant fidelity. That limitation is acceptable for the Phase 4A backup readability/schema restore drill. A permission-fidelity restore drill remains optional future work if needed.
+
+
+## Completed Phase 4B schedule activation record: 2026-06-23
+
+The Phase 4B local PostgreSQL backup schedule was installed and activated on production on 2026-06-23 with these verified results:
+
+- Installed script path: `/opt/languagevoicetutor-ops/postgres/backup_lvt_postgres.sh`. This path is used because the `postgres` account must be able to traverse the script path without gaining access to the backend release/config tree under `/opt/languagevoicetutor`.
+- The script was converted from CRLF to LF on the server after Bash reported a CRLF syntax error; repository `.gitattributes` now enforces LF for Linux shell/systemd assets.
+- `bash -n` passed after line-ending correction.
+- `sudo -u postgres test -x /opt/languagevoicetutor-ops/postgres/backup_lvt_postgres.sh` passed.
+- Manual dry-run backup succeeded with backup file `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260623_150447Z.dump`, backup size `3476326` bytes, and `pg_restore --list` line count `245`.
+- Manual systemd service run succeeded with `Result=success`, `ExecMainCode=0`, and `ExecMainStatus=0`.
+- Service log metadata confirmed backup file `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260623_150541Z.dump`, backup size `3476326` bytes, `pg_restore --list` line count `245`, and retention action `removed 0 old local backup file(s) older than 14 day(s)`.
+- Latest backup readability check succeeded with `245` lines from `pg_restore --list`.
+- Latest verified backup: `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260623_150541Z.dump`.
+- Active timer: `languagevoicetutor-postgres-backup.timer`; it is enabled and `active (waiting)`.
+- Next observed trigger: `2026-06-24 03:15 CEST`.
+- Production backend remained healthy on `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`; `/opt/languagevoicetutor/backend/current` pointed to that release, `/health` returned `200 OK`, and `/api/health/database` returned `200 OK`.
+- The systemd service sets `WorkingDirectory=/tmp` to avoid `postgres` working-directory warnings or failures when manual/sudo checks originate from a deploy user's home directory.
+
+Remaining future work is unchanged: encrypted off-server backups, a permission-fidelity restore drill and migration rollback/remediation rehearsal remain future work.
 
 ## Server paths and naming convention
 
@@ -169,7 +192,7 @@ The helper warns that backup files remain on the server and must not be copied i
 The intended installed paths are:
 
 ```text
-/opt/languagevoicetutor/ops/postgres/backup_lvt_postgres.sh
+/opt/languagevoicetutor-ops/postgres/backup_lvt_postgres.sh
 /etc/systemd/system/languagevoicetutor-postgres-backup.service
 /etc/systemd/system/languagevoicetutor-postgres-backup.timer
 ```
@@ -194,13 +217,13 @@ The service output is designed to print only the backup path, byte size, `pg_res
 Run an immediate one-off backup safely with:
 
 ```powershell
-ssh lvt-server "sudo -u postgres /opt/languagevoicetutor/ops/postgres/backup_lvt_postgres.sh"
+ssh lvt-server "sudo -u postgres /opt/languagevoicetutor-ops/postgres/backup_lvt_postgres.sh"
 ```
 
 Preview retention cleanup without deleting old local backup files with:
 
 ```powershell
-ssh lvt-server "sudo -u postgres /opt/languagevoicetutor/ops/postgres/backup_lvt_postgres.sh --dry-run"
+ssh lvt-server "sudo -u postgres /opt/languagevoicetutor-ops/postgres/backup_lvt_postgres.sh --dry-run"
 ```
 
 Disable the schedule without deleting existing backup files with:
@@ -212,7 +235,7 @@ ssh lvt-server "sudo systemctl disable --now languagevoicetutor-postgres-backup.
 Rollback installed schedule assets with:
 
 ```powershell
-ssh lvt-server "sudo systemctl disable --now languagevoicetutor-postgres-backup.timer || true; sudo rm -f /etc/systemd/system/languagevoicetutor-postgres-backup.timer /etc/systemd/system/languagevoicetutor-postgres-backup.service; sudo systemctl daemon-reload; sudo rm -f /opt/languagevoicetutor/ops/postgres/backup_lvt_postgres.sh"
+ssh lvt-server "sudo systemctl disable --now languagevoicetutor-postgres-backup.timer || true; sudo rm -f /etc/systemd/system/languagevoicetutor-postgres-backup.timer /etc/systemd/system/languagevoicetutor-postgres-backup.service; sudo systemctl daemon-reload; sudo rm -f /opt/languagevoicetutor-ops/postgres/backup_lvt_postgres.sh"
 ```
 
 Rollback removes installed script/unit/timer assets only. Existing backup files remain on the server for operator-controlled retention or secure deletion.
@@ -220,7 +243,7 @@ Rollback removes installed script/unit/timer assets only. Existing backup files 
 Verify a created backup with `pg_restore --list` without printing dump contents:
 
 ```powershell
-ssh lvt-server "sudo -u postgres pg_restore --list /var/backups/languagevoicetutor/postgres/<backup-file>.dump >/tmp/lvt_pg_restore_list.txt && wc -l /tmp/lvt_pg_restore_list.txt && rm -f /tmp/lvt_pg_restore_list.txt"
+ssh lvt-server "cd /tmp && sudo -u postgres pg_restore --list /var/backups/languagevoicetutor/postgres/<backup-file>.dump >/tmp/lvt_pg_restore_list.txt && wc -l /tmp/lvt_pg_restore_list.txt && rm -f /tmp/lvt_pg_restore_list.txt"
 ```
 
 ## Production backup creation
