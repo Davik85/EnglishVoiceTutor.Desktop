@@ -23,8 +23,9 @@ BACKEND_SYMLINK_COMMAND = 'ssh lvt-server "readlink -f /opt/languagevoicetutor/b
 PROD_BACKEND_URL = "https://api.languagevoicetutor.com"
 CURRENT_TESTER_RELEASE = "0.1.36-tester.24"
 CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-0.1.36-tester.24.exe"
-CURRENT_BACKEND_RELEASE = "0.1.35-backend.33"
-PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.27"
+CURRENT_BACKEND_RELEASE = "0.1.35-backend.39"
+PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.38"
+STALE_BACKEND_RELEASES = ["0.1.35-backend.27", "0.1.35-backend.33", "0.1.35-backend.34"]
 STALE_TESTER_RELEASES = ["0.1.35-tester.1", "0.1.36-tester.2", "0.1.36-tester.3", "0.1.36-tester.17"]
 DEFERRED_ITEMS = [
     "Code signing remains deferred",
@@ -91,6 +92,38 @@ def main() -> int:
     assert_contains(combined_main, "not broad public production readiness", "no broad production readiness wording")
     assert_contains(combined_main, "Do not state that the product is fully public production-ready", "no fully public production-ready wording")
 
+    assert_contains(combined_main, "0.1.35-backend.39", "last verified active backend snapshot")
+    assert_contains(combined_main, "0.1.35-backend.38", "rollback backend reference")
+    assert_contains(combined_main, "RateLimiting__Enabled=true", "production rate limiting enabled flag")
+    assert_contains(
+        combined_main,
+        "AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false",
+        "production admin bootstrap fallback disabled flag",
+    )
+    assert_regex(
+        combined_main,
+        r"Phase 3[^\n]*(?:completed|implemented)[^\n]*production-verified|Completed and production-verified[^\n]*Phase 3",
+        "Phase 3 completed and production-verified wording",
+    )
+    assert_regex(
+        combined_main,
+        r"Phase 4A[^\n]*backup/readability/separate-drill-restore[^\n]*(?:completed|was completed)|Completed[^\n]*Phase 4A[^\n]*backup/readability/separate-drill-restore",
+        "Phase 4A backup/readability/separate-drill-restore completed wording",
+    )
+    assert_regex(
+        combined_main,
+        r"Phase 4B[^\n]*(?:assets|repository-managed)[^\n]*(?:manually install|manual operator|production timer must be manually installed|repository files alone do not prove scheduled backups are active)",
+        "Phase 4B assets exist but production activation requires manual verification wording",
+    )
+    assert_not_regex(
+        combined_main,
+        r"(?:backup schedule|scheduled backups|systemd timer)[^\n]*(?:active|enabled|running)[^\n]*(?!.*(?:must|manual|not prove|requires|before it can be called active))",
+        "unverified active backup schedule claim",
+    )
+    assert_not_regex(combined_main, r"off-server encrypted backups[^\n]*(?:complete|completed|done|active)", "off-server encrypted backups complete claim")
+    assert_not_regex(combined_main, r"permission-fidelity[^\n]*(?:complete|completed|done|passed)", "permission-fidelity restore drill complete claim")
+    assert_not_regex(combined_main, r"migration rollback/remediation[^\n]*(?:complete|completed|done|passed)", "migration rollback/remediation rehearsal complete claim")
+
     for item in DEFERRED_ITEMS:
         assert_contains(combined_main, item, f"deferred item: {item}")
 
@@ -105,16 +138,13 @@ def main() -> int:
             f"stale tester version used as current/live/public baseline: {stale_version}",
         )
 
-    for match in re.finditer(re.escape(PREVIOUS_BACKEND_ROLLBACK_RELEASE), combined_all):
-        line_start = combined_all.rfind("\n", 0, match.start()) + 1
-        line_end = combined_all.find("\n", match.end())
-        if line_end == -1:
-            line_end = len(combined_all)
-        line = combined_all[line_start:line_end].lower()
-        if "previous" not in line and "rollback" not in line:
-            raise AssertionError(
-                f"{PREVIOUS_BACKEND_ROLLBACK_RELEASE} must be clearly marked as previous/rollback reference: {combined_all[line_start:line_end]}"
-            )
+    assert_contains(combined_main, PREVIOUS_BACKEND_ROLLBACK_RELEASE, "current rollback backend release")
+    for stale_backend in STALE_BACKEND_RELEASES:
+        assert_not_regex(
+            combined_all,
+            rf"{stale_current_context}[^\n]*{re.escape(stale_backend)}(?![0-9])|{re.escape(stale_backend)}(?![0-9])[^\n]*(?:current|live|public|verified|baseline|snapshot|latest active|in place|active via|deployed and healthy)",
+            f"stale backend version used as current/live/public baseline: {stale_backend}",
+        )
     assert_not_regex(
         combined_all,
         r"artifacts[/\\][^\n.]*current public tester|current public tester[^\n.]*artifacts[/\\]",
