@@ -8,7 +8,7 @@ Scope: controlled tester/direct Windows release readiness and broader public-rel
 
 Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.39` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
 
-Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus remaining backup automation/off-server backup/permission-fidelity/migration rollback work, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
+Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus completed local backup schedule activation plus remaining off-server backup/permission-fidelity/migration rollback work, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
 
 ## Current verified state recorded for release planning
 
@@ -100,11 +100,11 @@ No new critical blockers were found in this documentation/source review, assumin
 
 ### Security review findings
 
-- Resolve high-priority items from `docs/SECURITY_RELEASE_REVIEW.md`: code signing, production RBAC, Paddle live readiness, rate limiting, completed Phase 4A backup/readability/separate-drill-restore, remaining backup automation/off-server backup/permission-fidelity restore checks, and migration rollback drills.
+- Resolve high-priority items from `docs/SECURITY_RELEASE_REVIEW.md`: code signing, production RBAC, Paddle live readiness, rate limiting, completed Phase 4A backup/readability/separate-drill-restore, completed Phase 4B local backup timer activation, remaining off-server backup/permission-fidelity restore checks, and migration rollback drills.
 
 ### Monitoring/logging/backups
 
-- Verify production metrics/log review, uptime alerts, DB backup schedule, retention policy, off-server encrypted backups, optional permission-fidelity restore checks, migration rollback drills, and incident response contacts.
+- Production local DB backup schedule is active as of 2026-06-23: `languagevoicetutor-postgres-backup.timer` is enabled and `active (waiting)`, next observed trigger `2026-06-24 03:15 CEST`, one-off service run `Result=success`/`ExecMainStatus=0`, and latest backup readability verified with `pg_restore --list` at `245` lines for `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260623_150541Z.dump`. Continue to verify production metrics/log review, uptime alerts, retention monitoring, off-server encrypted backups, optional permission-fidelity restore checks, migration rollback drills, and incident response contacts.
 - Ensure logs/audit records avoid tokens, secrets, raw provider payloads in broad views, connection strings, password reset codes, and full provider ids.
 
 ### Legal/compliance/policies
