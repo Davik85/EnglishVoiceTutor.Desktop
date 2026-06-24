@@ -101,7 +101,7 @@ def main() -> int:
     assert_contains(turn_policy, "BeginnerGuidedFinalTurn = 15", "A1/A2 guided final turn")
     assert_contains(turn_policy, "AdvancedGuidedFinalTurn = 25", "B1/B2 guided final turn")
     assert_contains(turn_policy, "FreeConversationFinalTurn = 30", "free conversation final turn")
-    assert_contains(turn_policy, "context.CurrentPhase == LessonTurnPhase.ActiveRoleplay", "setup messages do not count")
+    assert_contains(turn_policy, "context.CurrentPhase is LessonTurnPhase.ActiveRoleplay or LessonTurnPhase.WrapUp", "setup messages do not count")
     assert_contains(turn_policy, "isValidEnglishTranscript", "invalid transcript does not count")
 
     metadata = introductions["metadata"]

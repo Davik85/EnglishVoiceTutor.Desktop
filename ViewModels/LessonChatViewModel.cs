@@ -56,6 +56,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     private string selectedCustomContextTitle = string.Empty;
     private bool isTranscribingAudio;
     private bool hasFinishedLesson;
+    private bool hasTriggeredWrapUp;
     private bool isFinishLessonInProgress;
     private bool isFinishLessonConfirmationOpen;
     private Guid? backendLessonSessionId;
@@ -343,7 +344,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
 
     public bool IsLessonLimitReached => LearnerTurnCount >= GetFinalTurn();
 
-    public bool IsLessonWrappingUp => LearnerTurnCount >= GetSoftWrapUpTurn();
+    public bool IsLessonWrappingUp => CurrentLessonPhase == LessonPhase.WrapUp || LearnerTurnCount >= GetSoftWrapUpTurn();
 
     public bool IsLessonInputEnabled => CanAcceptLessonInput;
 
@@ -495,13 +496,13 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         !hasFinishedLesson
         && !IsCompletedAwaitingFinish
         && !IsLessonLimitReached
-        && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay);
+        && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay || CurrentLessonPhase == LessonPhase.WrapUp);
 
     private bool IsTtsConversationModeActive => CurrentConversationModeVoiceProvider == ConversationModeVoiceProvider.Tts1 && IsConversationModeEnabled;
 
     private bool IsRealtimeConversationProviderEnabled => CurrentConversationModeVoiceProvider == ConversationModeVoiceProvider.Realtime;
 
-    private bool IsRealtimeConversationActive => IsRealtimeConversationProviderEnabled && IsConversationModeEnabled && CurrentLessonPhase == LessonPhase.ActiveRoleplay;
+    private bool IsRealtimeConversationActive => IsRealtimeConversationProviderEnabled && IsConversationModeEnabled && (CurrentLessonPhase == LessonPhase.ActiveRoleplay || CurrentLessonPhase == LessonPhase.WrapUp);
 
     private bool CanStartRealtimeRecording => IsRealtimeConversationActive
         && CurrentConversationModeState == ConversationModeState.Ready
@@ -1412,7 +1413,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             && !IsSending
             && !IsRecording
             && !IsRealtimeSessionStarting
-            && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay);
+            && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay || CurrentLessonPhase == LessonPhase.WrapUp);
     }
 
     private async Task PlayRealtimePreStartOpeningAsync(CancellationToken cancellationToken)
@@ -2610,6 +2611,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 HideConversationHint();
             }
             LearnerTurnCount = nextLearnerTurnCount;
+            CurrentLessonPhase = LessonPhase.Final;
             LogFinalLimitReached(finalTurn);
             var finalMessage = GetFinalLessonMessage();
             var botMessage = AddMessage(TutorAvatarDisplayName, finalMessage, true);
@@ -2634,8 +2636,10 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         IsSending = true;
         RefreshAvatarState();
 
-        var shouldStartWrappingUp = nextLearnerTurnCount >= softWrapUpTurn;
-        var shouldEndLessonNow = nextLearnerTurnCount >= finalTurn;
+        var requestLessonPhase = MapTurnPhaseToLessonPhase(activeTurnPolicyPreview.PhaseAfter);
+        var hadTriggeredWrapUpBeforeRequest = hasTriggeredWrapUp;
+        var shouldStartWrappingUp = activeTurnPolicyPreview.IsFirstWrapUpTurn && !hadTriggeredWrapUpBeforeRequest;
+        var shouldEndLessonNow = requestLessonPhase == LessonPhase.Final;
 
         try
         {
@@ -2663,7 +2667,8 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 ShouldStartWrappingUp = shouldStartWrappingUp,
                 ShouldEndLessonNow = shouldEndLessonNow,
                 RecentMessages = GetRecentConversationMessages(),
-                LessonPhase = CurrentLessonPhase.ToString(),
+                LessonPhase = ToLessonPhaseContract(requestLessonPhase),
+                HasWrapUpStarted = hadTriggeredWrapUpBeforeRequest,
                 LessonScenarioId = lessonScenario.Id,
                 Level = SelectedLevel,
                 Topic = lessonScenario.Metadata.Topic,
@@ -2747,6 +2752,12 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             if (response.IsLessonComplete && !shouldEndLessonNow)
             {
                 Debug.WriteLine($"Ignoring early backend lesson completion: LearnerTurnCount={LearnerTurnCount}; NextLearnerTurnCount={nextLearnerTurnCount}; FinalTurn={finalTurn}; CurrentLessonPhase={CurrentLessonPhase}.");
+            }
+
+            CurrentLessonPhase = requestLessonPhase;
+            if (requestLessonPhase == LessonPhase.WrapUp)
+            {
+                hasTriggeredWrapUp = true;
             }
 
             if (shouldEndLessonNow)
@@ -2898,8 +2909,9 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             LessonScenarioId = lessonScenario.Id,
             LessonType = lessonScenario.Metadata.LessonType,
             LessonGoal = lessonScenario.LearningGoal.Goal,
-            LessonPhase = CurrentLessonPhase.ToString(),
-            CurrentPhase = CurrentLessonPhase.ToString(),
+            LessonPhase = ToLessonPhaseContract(CurrentLessonPhase),
+            CurrentPhase = ToLessonPhaseContract(CurrentLessonPhase),
+            HasWrapUpStarted = hasTriggeredWrapUp,
             TutorRole = lessonScenario.Roles.TutorRole,
             UserRole = lessonScenario.Roles.UserRole,
             Situation = lessonScenario.Situation.Description,
@@ -4054,6 +4066,8 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             CurrentLessonPhase switch
             {
                 LessonPhase.ActiveRoleplay => LessonTurnPhase.ActiveRoleplay,
+                LessonPhase.WrapUp => LessonTurnPhase.WrapUp,
+                LessonPhase.Final => LessonTurnPhase.Final,
                 LessonPhase.Completed => LessonTurnPhase.Completed,
                 _ => LessonTurnPhase.SetupContextSelection
             },
@@ -4061,6 +4075,31 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             activeLevelProfile.SoftWrapUpAfterUserTurn,
             activeLevelProfile.FinalMessageAtUserTurn,
             IsFreeConversationLesson() || selectedContextVariant is not null || !string.IsNullOrWhiteSpace(selectedCustomContextTitle));
+    }
+
+    private static LessonPhase MapTurnPhaseToLessonPhase(LessonTurnPhase phase)
+    {
+        return phase switch
+        {
+            LessonTurnPhase.ActiveRoleplay => LessonPhase.ActiveRoleplay,
+            LessonTurnPhase.WrapUp => LessonPhase.WrapUp,
+            LessonTurnPhase.Final => LessonPhase.Final,
+            LessonTurnPhase.Completed => LessonPhase.Completed,
+            _ => LessonPhase.SetupContextSelection
+        };
+    }
+
+    private static string ToLessonPhaseContract(LessonPhase phase)
+    {
+        return phase switch
+        {
+            LessonPhase.SetupContextSelection => "setup_context_selection",
+            LessonPhase.ActiveRoleplay => "active_roleplay",
+            LessonPhase.WrapUp => "wrap_up",
+            LessonPhase.Final => "final",
+            LessonPhase.Completed => "completed",
+            _ => "active_roleplay"
+        };
     }
 
     private bool IsFreeConversationLesson()
@@ -4447,7 +4486,8 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             ShouldStartWrappingUp = LearnerTurnCount >= softWrapUpTurn,
             ShouldEndLessonNow = LearnerTurnCount >= finalTurn,
             RecentMessages = GetRecentConversationMessages(),
-            LessonPhase = CurrentLessonPhase.ToString(),
+            LessonPhase = ToLessonPhaseContract(CurrentLessonPhase),
+            HasWrapUpStarted = hasTriggeredWrapUp,
             LessonScenarioId = lessonScenario.Id,
             Level = SelectedLevel,
             Topic = lessonScenario.Metadata.Topic,
@@ -4686,7 +4726,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         return !hasFinishedLesson
             && !IsCompletedAwaitingFinish
             && !IsLessonLimitReached
-            && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay);
+            && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay || CurrentLessonPhase == LessonPhase.WrapUp);
     }
 
     private bool ShowFinishLessonConfirmation()
@@ -4944,7 +4984,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             && !IsSending
             && !IsRecording
             && !IsRealtimeSessionStarting
-            && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay);
+            && (CurrentLessonPhase == LessonPhase.SetupContextSelection || CurrentLessonPhase == LessonPhase.ActiveRoleplay || CurrentLessonPhase == LessonPhase.WrapUp);
     }
 
     private IReadOnlyList<RecentConversationMessage> GetRecentConversationMessages()
