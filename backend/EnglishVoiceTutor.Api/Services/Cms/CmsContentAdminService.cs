@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using EnglishVoiceTutor.Api.Contracts.Cms;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities.Cms;
+using EnglishVoiceTutor.Desktop.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Services.Cms;
@@ -196,10 +197,14 @@ public sealed partial class CmsContentAdminService(
         var profiles = await dbContext.TutorBehaviorProfiles
             .AsNoTracking()
             .Where(profile => profile.ContentPackId == pack.Id)
-            .OrderBy(profile => profile.TutorId)
             .ToListAsync(cancellationToken);
 
-        return profiles.Select(MapTutorBehaviorProfile).ToList();
+        return profiles
+            .GroupBy(profile => TutorAvatarOptions.ToCanonicalId(profile.TutorId), StringComparer.Ordinal)
+            .Select(SelectCanonicalTutorBehaviorProfile)
+            .OrderBy(profile => TutorAvatarOptions.ToCanonicalId(profile.TutorId), StringComparer.Ordinal)
+            .Select(MapTutorBehaviorProfile)
+            .ToList();
     }
 
     public async Task<CmsTutorBehaviorProfileResponse?> GetTutorBehaviorProfileAsync(string slug, string profileIdOrTutorId, CancellationToken cancellationToken)
@@ -679,16 +684,32 @@ public sealed partial class CmsContentAdminService(
             return null;
         }
 
+        var value = NormalizeRouteValue(profileIdOrTutorId);
         var query = dbContext.TutorBehaviorProfiles.Where(profile => profile.ContentPackId == pack.Id);
-        if (asNoTracking)
+        if (Guid.TryParse(value, out var id))
         {
-            query = query.AsNoTracking();
+            if (asNoTracking)
+            {
+                query = query.AsNoTracking();
+            }
+
+            return await query.SingleOrDefaultAsync(profile => profile.Id == id, cancellationToken);
         }
 
-        var value = NormalizeRouteValue(profileIdOrTutorId);
-        return Guid.TryParse(value, out var id)
-            ? await query.SingleOrDefaultAsync(profile => profile.Id == id, cancellationToken)
-            : await query.SingleOrDefaultAsync(profile => profile.TutorId == value, cancellationToken);
+        var canonicalTutorId = TutorAvatarOptions.ToCanonicalId(value);
+        var profiles = await query.ToListAsync(cancellationToken);
+        var profile = profiles
+            .Where(profile => string.Equals(TutorAvatarOptions.ToCanonicalId(profile.TutorId), canonicalTutorId, StringComparison.Ordinal))
+            .OrderByDescending(profile => string.Equals(profile.TutorId, canonicalTutorId, StringComparison.Ordinal))
+            .ThenBy(profile => profile.TutorId, StringComparer.Ordinal)
+            .FirstOrDefault();
+
+        if (profile is not null && asNoTracking)
+        {
+            dbContext.Entry(profile).State = EntityState.Detached;
+        }
+
+        return profile;
     }
 
     private static IQueryable<CmsLessonTopicEntity> MatchTopic(IQueryable<CmsLessonTopicEntity> query, string topicIdOrKey)
@@ -800,7 +821,7 @@ public sealed partial class CmsContentAdminService(
         {
             Id = profile.Id,
             ContentPackId = profile.ContentPackId,
-            TutorId = profile.TutorId,
+            TutorId = TutorAvatarOptions.ToCanonicalId(profile.TutorId),
             DisplayName = profile.DisplayName,
             CommunicationStyleJson = profile.CommunicationStyleJson,
             SafetyNotesJson = profile.SafetyNotesJson,
@@ -808,6 +829,14 @@ public sealed partial class CmsContentAdminService(
             CreatedAtUtc = profile.CreatedAtUtc,
             UpdatedAtUtc = profile.UpdatedAtUtc
         };
+    }
+
+    private static TutorBehaviorProfileEntity SelectCanonicalTutorBehaviorProfile(IGrouping<string, TutorBehaviorProfileEntity> profiles)
+    {
+        return profiles
+            .OrderByDescending(profile => string.Equals(profile.TutorId, profiles.Key, StringComparison.Ordinal))
+            .ThenBy(profile => profile.TutorId, StringComparer.Ordinal)
+            .First();
     }
 
     private static string FormatScenarioDefinitionJsonForResponse(CmsLessonScenarioEntity scenario)

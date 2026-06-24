@@ -1,6 +1,7 @@
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities.Cms;
+using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using Microsoft.EntityFrameworkCore;
 
@@ -59,7 +60,9 @@ internal static class CmsContentSnapshotBuilder
     {
         var baseScenarios = baseContent?.Scenarios.ToDictionary(scenario => scenario.StableScenarioKey, StringComparer.Ordinal)
             ?? new Dictionary<string, CmsPublishedLessonScenario>(StringComparer.Ordinal);
-        var baseTutorProfiles = baseContent?.TutorBehaviorProfiles.ToDictionary(profile => profile.TutorId, StringComparer.Ordinal)
+        var baseTutorProfiles = baseContent?.TutorBehaviorProfiles
+            .GroupBy(profile => TutorAvatarOptions.ToCanonicalId(profile.TutorId), StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal)
             ?? new Dictionary<string, CmsPublishedTutorBehaviorProfile>(StringComparer.Ordinal);
         var levelProfiles = ResolveLevelProfiles(promptTemplates);
 
@@ -98,12 +101,16 @@ internal static class CmsContentSnapshotBuilder
                 template.IsActive,
                 template.Body
             }),
-            TutorBehaviorProfiles = tutorProfiles.OrderBy(tutor => tutor.TutorId, StringComparer.Ordinal).Select(tutor => new
+            TutorBehaviorProfiles = tutorProfiles
+                .GroupBy(tutor => TutorAvatarOptions.ToCanonicalId(tutor.TutorId), StringComparer.Ordinal)
+                .Select(SelectCanonicalTutorBehaviorProfile)
+                .OrderBy(tutor => TutorAvatarOptions.ToCanonicalId(tutor.TutorId), StringComparer.Ordinal)
+                .Select(tutor => new
             {
-                tutor.TutorId,
+                TutorId = TutorAvatarOptions.ToCanonicalId(tutor.TutorId),
                 tutor.DisplayName,
                 tutor.IsActive,
-                TutorProfile = BuildTutorProfile(tutor, baseTutorProfiles.TryGetValue(tutor.TutorId, out var baseTutor) ? baseTutor.TutorProfile : null)
+                TutorProfile = BuildTutorProfile(tutor, baseTutorProfiles.TryGetValue(TutorAvatarOptions.ToCanonicalId(tutor.TutorId), out var baseTutor) ? baseTutor.TutorProfile : null)
             }),
             LevelProfiles = levelProfiles.OrderBy(level => level.SortOrder).ThenBy(level => level.StableLevelKey, StringComparer.Ordinal)
         });
@@ -160,8 +167,9 @@ internal static class CmsContentSnapshotBuilder
         using var communicationStyleDocument = JsonDocument.Parse(profile.CommunicationStyleJson);
         using var safetyNotesDocument = JsonDocument.Parse(profile.SafetyNotesJson);
 
-        var tutorProfile = baseProfile ?? new TutorProfile { Id = profile.TutorId };
-        tutorProfile.Id = string.IsNullOrWhiteSpace(tutorProfile.Id) ? profile.TutorId : tutorProfile.Id;
+        var canonicalTutorId = TutorAvatarOptions.ToCanonicalId(profile.TutorId);
+        var tutorProfile = baseProfile ?? new TutorProfile { Id = canonicalTutorId };
+        tutorProfile.Id = canonicalTutorId;
         tutorProfile.DisplayName = profile.DisplayName;
         tutorProfile.CommunicationStyle = DeserializeProperty<List<string>>(communicationStyleDocument.RootElement, "communicationStyle")
             ?? DeserializeProperty<List<string>>(communicationStyleDocument.RootElement, "CommunicationStyle")
@@ -173,6 +181,14 @@ internal static class CmsContentSnapshotBuilder
             ?? DeserializeProperty<List<string>>(safetyNotesDocument.RootElement, "IdentityRules")
             ?? [];
         return tutorProfile;
+    }
+
+    private static TutorBehaviorProfileEntity SelectCanonicalTutorBehaviorProfile(IGrouping<string, TutorBehaviorProfileEntity> profiles)
+    {
+        return profiles
+            .OrderByDescending(profile => string.Equals(profile.TutorId, profiles.Key, StringComparison.Ordinal))
+            .ThenBy(profile => profile.TutorId, StringComparer.Ordinal)
+            .First();
     }
 
     private static T Deserialize<T>(string json)
