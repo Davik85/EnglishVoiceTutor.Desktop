@@ -23,6 +23,8 @@ public sealed record RealtimeVoiceSessionStartRequest
     public string LessonType { get; init; } = string.Empty;
     public string LessonGoal { get; init; } = string.Empty;
     public string LessonPhase { get; init; } = string.Empty;
+
+    public bool HasWrapUpStarted { get; init; }
     public string CurrentPhase { get; init; } = string.Empty;
     public string TutorRole { get; init; } = string.Empty;
     public string UserRole { get; init; } = string.Empty;

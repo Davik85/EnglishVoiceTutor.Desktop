@@ -4,6 +4,8 @@ public enum LessonTurnPhase
 {
     SetupContextSelection,
     ActiveRoleplay,
+    WrapUp,
+    Final,
     Completed
 }
 
@@ -25,6 +27,7 @@ public sealed record LessonTurnResult(
     bool ShouldStartWrappingUp,
     bool ShouldUseFinalMessage,
     bool ShouldCompleteAfterAssistantMessage,
+    bool IsFirstWrapUpTurn,
     LessonTurnPhase PhaseBefore,
     LessonTurnPhase PhaseAfter);
 
@@ -43,20 +46,47 @@ public static class LessonTurnPolicy
     {
         var softWrapUpTurn = ResolveSoftWrapUpTurn(context);
         var finalTurn = ResolveFinalTurn(context);
-        var canCount = isValidEnglishTranscript && context.CurrentPhase == LessonTurnPhase.ActiveRoleplay;
+        var canCount = isValidEnglishTranscript && context.CurrentPhase is LessonTurnPhase.ActiveRoleplay or LessonTurnPhase.WrapUp;
         var after = canCount ? Math.Min(context.CurrentLearnerTurnCount + 1, finalTurn) : context.CurrentLearnerTurnCount;
-        var shouldUseFinalMessage = canCount && after >= finalTurn;
+        var phaseAfter = DerivePhase(after, softWrapUpTurn, finalTurn, context.CurrentPhase);
+        var shouldUseFinalMessage = canCount && phaseAfter == LessonTurnPhase.Final;
         return new LessonTurnResult(
             canCount,
             context.CurrentLearnerTurnCount,
             after,
             softWrapUpTurn,
             finalTurn,
-            canCount && after >= softWrapUpTurn && after < finalTurn,
+            canCount && phaseAfter == LessonTurnPhase.WrapUp,
             shouldUseFinalMessage,
             shouldUseFinalMessage,
+            canCount && context.CurrentPhase != LessonTurnPhase.WrapUp && phaseAfter == LessonTurnPhase.WrapUp,
             context.CurrentPhase,
-            shouldUseFinalMessage ? LessonTurnPhase.Completed : context.CurrentPhase);
+            phaseAfter);
+    }
+
+    public static LessonTurnPhase DerivePhase(int activeRoleplayUserTurnCount, int softWrapUpTurn, int finalTurn, LessonTurnPhase currentPhase = LessonTurnPhase.ActiveRoleplay)
+    {
+        if (currentPhase == LessonTurnPhase.Completed)
+        {
+            return LessonTurnPhase.Completed;
+        }
+
+        if (currentPhase == LessonTurnPhase.SetupContextSelection)
+        {
+            return LessonTurnPhase.SetupContextSelection;
+        }
+
+        if (activeRoleplayUserTurnCount >= finalTurn)
+        {
+            return LessonTurnPhase.Final;
+        }
+
+        if (activeRoleplayUserTurnCount >= softWrapUpTurn)
+        {
+            return LessonTurnPhase.WrapUp;
+        }
+
+        return LessonTurnPhase.ActiveRoleplay;
     }
 
     public static int ResolveSoftWrapUpTurn(LessonTurnPolicyContext context)
