@@ -86,6 +86,7 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
 .cms-sub-tab-button.active, .cms-sub-tab-button[aria-selected="true"] { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
 .cms-sub-panel.hidden { display: none; }
 .cms-warning-card { border-left: 5px solid #f59e0b; }
+.cms-inline-warning { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; color: #92400e; font-weight: 600; margin: 12px 0; padding: 10px 12px; }
 .cms-warning-card h3, .cms-compact-card h3 { margin-top: 0; }
 .cms-compact-card { padding-top: 16px; }
 .cms-workspace-grid { align-items: start; display: grid; gap: 16px; grid-template-columns: minmax(360px, 1.15fr) minmax(320px, .85fr); }

@@ -97,16 +97,31 @@ public sealed class CmsRuntimeLessonContentStatusResponse
             ValidationPassed = validationPassed,
             ValidationSuccess = validationPassed,
             Errors = result.Errors.Take(MaxDiagnosticMessages).ToList(),
-            Warnings = result.Warnings.Take(MaxDiagnosticMessages).ToList(),
+            Warnings = CreateWarnings(result),
             Message = CreateMessage(result)
         };
+    }
+
+    private static List<string> CreateWarnings(CmsRuntimeLessonContentReadResult result)
+    {
+        var warnings = result.Warnings.Take(MaxDiagnosticMessages).ToList();
+        if (result.FallbackUsed)
+        {
+            const string fallbackWarning = "Static JSON emergency fallback is active; CMS draft or published edits may not affect learner lessons until the CMS published snapshot is enabled, valid, and effectively active.";
+            if (!warnings.Contains(fallbackWarning, StringComparer.Ordinal))
+            {
+                warnings.Insert(0, fallbackWarning);
+            }
+        }
+
+        return warnings.Take(MaxDiagnosticMessages).ToList();
     }
 
     private static string CreateMessage(CmsRuntimeLessonContentReadResult result)
     {
         if (result.FallbackUsed)
         {
-            return "Fallback to static JSON is active; learner runtime is using packaged static JSON because CMS published-snapshot content was unavailable or invalid.";
+            return "Static JSON emergency fallback is active; learner runtime is using packaged static JSON, so CMS draft or published edits may not affect learner lessons until the CMS published snapshot is enabled, valid, and effectively active.";
         }
 
         if (string.Equals(result.Source, EnglishVoiceTutor.Api.Data.CmsContentConstants.Sources.CmsPublishedSnapshot, StringComparison.Ordinal))
