@@ -676,3 +676,11 @@ CMS published snapshot is now the active runtime content source. Runtime status 
 CMS-managed A1/A2/B1/B2 level profiles are active and affect lesson behavior. A1 and B2 lessons differ as expected. Further level polishing is deferred until tester feedback is collected. Static JSON fallback remains available for rollback/safety, but normal runtime status should not use fallback.
 
 The next phase is controlled tester handoff: verify the installed tester build from the public site, perform a short smoke test, prepare tester handoff instructions, and collect feedback on lesson quality, level behavior, voice, UI, and CMS-controlled content. Billing/Paddle production work remains deferred, and broad public production release is not the current step.
+
+### Runtime source visibility policy (current)
+
+CMS published snapshot is the intended primary learner runtime source. Static JSON is an emergency fallback and initialization source. The packaged static JSON files remain valuable for bootstrap, import, rollback, and safety, but they are not the intended steady-state learner runtime source after CMS published-snapshot runtime is enabled and validated.
+
+Admin CMS runtime status must make the effective learner runtime source explicit. The green/OK state is reserved for `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, and `fallbackUsed=false` with the published-snapshot runtime flags enabled. Static JSON fallback must be visible in Admin CMS and treated as an operator attention state, not as a silent normal state. When `fallbackUsed=true` or the effective source is static JSON, Admin CMS must warn that CMS draft or published edits may not affect learner lessons until the CMS published snapshot is enabled, valid, and effectively active.
+
+CMS edits affect learner runtime only when published snapshot runtime is enabled, the published snapshot read path is enabled, the selected content pack has a valid published snapshot, validation passes, and the effective source is CMS published snapshot with no fallback. If CMS published runtime is configured but unavailable or invalid, static JSON fallback may still protect learners when `CmsContent:FallbackToStaticJson=true`, but that fallback is an emergency state that requires visible diagnostics and operator follow-up.

@@ -1366,23 +1366,36 @@
         cmsRuntimeStatusElement.textContent = "";
         cmsRuntimeStatusElement.className = "cms-result-panel cms-readable-result-panel";
         const effectiveSource = String(getCmsResponseValue(status, "effectiveSource", getCmsResponseValue(status, "source", "")) || "");
-        const flagsEnabled = Boolean(getCmsResponseValue(status, "usePublishedSnapshotForRuntime", false)) && Boolean(getCmsResponseValue(status, "readPublishedSnapshotEnabled", false));
+        const usePublishedSnapshot = Boolean(getCmsResponseValue(status, "usePublishedSnapshotForRuntime", false));
+        const readPublishedSnapshot = Boolean(getCmsResponseValue(status, "readPublishedSnapshotEnabled", false));
+        const flagsEnabled = usePublishedSnapshot && readPublishedSnapshot;
         const fallbackUsed = Boolean(getCmsResponseValue(status, "fallbackUsed", false));
-        let headline = "Learner runtime still uses static JSON by default";
-        let positive = !flagsEnabled || effectiveSource === "StaticJson";
-        if (fallbackUsed) { headline = "Fallback to static JSON is active"; positive = true; }
-        else if (flagsEnabled && effectiveSource === "CmsPublishedSnapshot") { headline = "CMS published snapshot is active"; positive = true; }
+        const validationSuccess = Boolean(getCmsResponseValue(status, "validationSuccess", false));
+        const cmsSnapshotActive = flagsEnabled && effectiveSource === "CmsPublishedSnapshot" && validationSuccess && !fallbackUsed;
+        let headline = "Learner runtime needs attention";
+        let statusLabel = "Needs attention";
+        let positive = false;
+        if (cmsSnapshotActive) { headline = "CMS published snapshot is active"; statusLabel = "OK"; positive = true; }
+        else if (fallbackUsed || effectiveSource === "StaticJson") { headline = "Static JSON emergency fallback is active"; statusLabel = "Fallback active"; }
+        else if (usePublishedSnapshot && !readPublishedSnapshot) { headline = "CMS runtime is configured but snapshot reads are disabled"; }
+        else if (flagsEnabled && !validationSuccess) { headline = "CMS published snapshot is unavailable or invalid"; }
         const titleRow = document.createElement("div");
         titleRow.className = "cms-result-title-row cms-status-row";
         const title = document.createElement("h4");
         title.textContent = headline;
         titleRow.appendChild(title);
-        appendCmsStatusBadge(titleRow, getCmsResponseValue(status, "validationSuccess", false) ? "Validated" : "Needs attention", positive);
+        appendCmsStatusBadge(titleRow, statusLabel, positive);
         cmsRuntimeStatusElement.appendChild(titleRow);
         const message = document.createElement("p");
         message.className = "muted";
         message.textContent = getCmsResponseValue(status, "message", "Runtime status loaded. No content bodies are displayed.");
         cmsRuntimeStatusElement.appendChild(message);
+        if (!cmsSnapshotActive) {
+            const warning = document.createElement("p");
+            warning.className = "cms-inline-warning";
+            warning.textContent = "CMS edits affect learner lessons only when the CMS published snapshot is enabled, valid, and effectively active. While static JSON fallback is active, CMS draft or published edits may not affect learner runtime.";
+            cmsRuntimeStatusElement.appendChild(warning);
+        }
         appendCmsDefinitionList(cmsRuntimeStatusElement, [
             { label: "Checked at (UTC)", value: getCmsResponseValue(status, "checkedAtUtc") },
             { label: "Content pack slug", value: getCmsResponseValue(status, "contentPackSlug") },
