@@ -12,7 +12,7 @@ public static class AvatarConstants
     private const string AvatarFilePrefix = "avatar-";
     private const string AvatarFileExtension = ".gif";
 
-    public const string ElenaAvatarId = TutorAvatarOptions.DefaultAvatarId;
+    public const string LanaAvatarId = TutorAvatarOptions.DefaultAvatarId;
 
     public const string IdleStateName = "idle";
     public const string ListeningStateName = "listening";
@@ -44,10 +44,10 @@ public static class AvatarConstants
             return selectedAvatarPath;
         }
 
-        var elenaPath = BuildNestedAvatarPath(ElenaAvatarId, stateName);
-        if (ResourceExists(elenaPath))
+        var lanaPath = BuildNestedAvatarPath(LanaAvatarId, stateName);
+        if (ResourceExists(lanaPath))
         {
-            return elenaPath;
+            return lanaPath;
         }
 
         var legacyPath = GetLegacyAnimationPath(state);

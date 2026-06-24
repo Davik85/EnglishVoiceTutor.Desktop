@@ -354,7 +354,7 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
     private static void ValidateTutorProfileIds(IEnumerable<string> tutorIds, string label, CmsContentValidationResult result)
     {
         var actualIds = tutorIds
-            .Select(id => id?.Trim() ?? string.Empty)
+            .Select(TutorAvatarOptions.ToCanonicalId)
             .Where(id => !string.IsNullOrWhiteSpace(id))
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();

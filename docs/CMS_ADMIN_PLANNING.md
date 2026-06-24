@@ -237,7 +237,7 @@ Controlled server validation comes first; localhost is only an explicit develope
 
 ### Runtime tutor profile validation note
 
-The runtime validator must treat desktop tutor avatar definitions as the approved tutor-id source of truth. The currently approved tutor ids are `david`, `elena`, and `nelli`, matching packaged `Content/Tutors/*.json` and CMS static import/draft construction. The previous exact count of 2 was outdated; future diagnostics should report expected, actual, missing, unknown/extra, and duplicate ids while never exposing prompt or tutor instruction bodies.
+The runtime validator must treat desktop tutor avatar definitions as the approved tutor-id source of truth. The currently approved tutor ids are `david`, `lana`, and `nelli`, matching packaged `Content/Tutors/*.json` and CMS static import/draft construction. The previous exact count of 2 was outdated; future diagnostics should report expected, actual, missing, unknown/extra, and duplicate ids while never exposing prompt or tutor instruction bodies.
 
 ## 2026-06-13 update — Controlled published-snapshot runtime validation tooling
 

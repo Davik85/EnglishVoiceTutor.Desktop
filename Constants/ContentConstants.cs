@@ -40,8 +40,8 @@ public static class ContentConstants
     public const string HandlingAWrongOrderFileName = "handling_a_wrong_order.json";
     public const string PayingTheBillFileName = "paying_the_bill.json";
     public const string OpenConversationFileName = "open_conversation.json";
-    public const string ElenaTutorId = "elena";
-    public const string ElenaTutorFileName = "elena.json";
+    public const string LanaTutorId = "lana";
+    public const string LanaTutorFileName = "lana.json";
 
     public const string LessonTutorBasePromptFileName = "lesson_tutor_base_prompt.txt";
     public const string LessonSetupRulesPromptFileName = "lesson_setup_rules.txt";

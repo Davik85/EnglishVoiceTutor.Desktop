@@ -2,7 +2,7 @@
 
 ## Supported avatars
 
-- `elena` (default)
+- `lana` (default)
 - `nelli`
 - `david`
 
@@ -10,8 +10,8 @@ Tutor identity is loaded from `Content/Tutors/*.json` and remains separate from 
 
 ## Avatar profiles
 
-### Elena (`elena`)
-- Display name: Elena
+### Lana (`lana`)
+- Display name: Lana
 - Age: 22
 - Role: fashion design student
 - Interests: padel, art
@@ -51,7 +51,7 @@ Each avatar can provide these files:
 
 Preferred per-avatar structure:
 
-- `Assets/Avatars/elena/`
+- `Assets/Avatars/lana/`
 - `Assets/Avatars/nelli/`
 - `Assets/Avatars/david/`
 
@@ -76,7 +76,7 @@ Full expected Nelli paths:
 For each avatar state, desktop resolves animation in this order:
 
 1. selected avatar nested path (`Assets/Avatars/{avatarId}/avatar-{state}.gif`)
-2. Elena nested path (`Assets/Avatars/elena/avatar-{state}.gif`)
+2. Lana nested path (`Assets/Avatars/lana/avatar-{state}.gif`)
 3. legacy flat path (`Assets/Avatars/avatar-{state}.gif`)
 4. safe app fallback (no crash; animated source can be empty when assets are unavailable)
 

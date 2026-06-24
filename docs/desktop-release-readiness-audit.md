@@ -114,7 +114,7 @@ These should not block the first controlled test release:
 - Mobile entitlement bridge for Apple App Store / Google Play.
 - Automatic update infrastructure.
 - Rich analytics dashboards.
-- Full multi-avatar expansion beyond Elena and Nelli.
+- Full multi-avatar expansion beyond Lana and Nelli.
 - Larger lesson catalog and advanced placement testing.
 - Fully automated UI tests for all desktop states.
 
@@ -307,7 +307,7 @@ These should not block the first controlled test release:
 ### 10. Avatar behavior
 
 **Current status**
-- Two tutor avatars exist: Elena and Nelli.
+- Two tutor avatars exist: Lana and Nelli.
 - Settings supports avatar selection and profile display.
 - Tutor profile JSON constrains identity, style, speaking rules, and personal details.
 - Lesson Chat and Conversation Mode use avatar image/animation assets and speaking state.
@@ -318,7 +318,7 @@ These should not block the first controlled test release:
 - Only two avatars are available; this is acceptable for product but should not be overmarketed.
 
 **Release recommendation**
-- Elena and Nelli are enough for product if framing and prompt/personality behavior pass manual review.
+- Lana and Nelli are enough for product if framing and prompt/personality behavior pass manual review.
 - More avatars can wait.
 
 **Suggested next task**

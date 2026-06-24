@@ -135,6 +135,7 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
                 TutorBehaviorProfiles = publishedResult.Content.TutorBehaviorProfiles,
                 LevelProfiles = publishedResult.Content.LevelProfiles.Count > 0 ? publishedResult.Content.LevelProfiles : CmsLevelProfiles.Defaults.ToList()
             };
+        NormalizeTutorIds(content);
 
         return new CmsRuntimeLessonContentReadResult
         {
@@ -204,6 +205,20 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
         }
     }
 
+    private static void NormalizeTutorIds(CmsRuntimeLessonContent? content)
+    {
+        if (content is null)
+        {
+            return;
+        }
+
+        foreach (var tutor in content.TutorBehaviorProfiles)
+        {
+            tutor.TutorId = TutorAvatarOptions.ToCanonicalId(tutor.TutorId);
+            tutor.TutorProfile.Id = TutorAvatarOptions.ToCanonicalId(tutor.TutorProfile.Id);
+        }
+    }
+
     private static void ValidateRuntimeContent(CmsRuntimeLessonContentReadResult result)
     {
         if (result.Content is null)
@@ -266,7 +281,7 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
         }
 
         var actualIds = result.Content.TutorBehaviorProfiles
-            .Select(profile => profile.TutorId.Trim())
+            .Select(profile => TutorAvatarOptions.ToCanonicalId(profile.TutorId))
             .Where(id => !string.IsNullOrWhiteSpace(id))
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
@@ -360,6 +375,7 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
         foreach (var tutorPath in Directory.EnumerateFiles(tutorsRoot, "*.json", SearchOption.TopDirectoryOnly).OrderBy(path => path, StringComparer.Ordinal))
         {
             var tutor = await ReadJsonFileAsync<TutorProfile>(tutorPath, cancellationToken);
+            tutor.Id = TutorAvatarOptions.ToCanonicalId(tutor.Id);
             content.TutorBehaviorProfiles.Add(new CmsPublishedTutorBehaviorProfile
             {
                 TutorId = tutor.Id.Trim(),

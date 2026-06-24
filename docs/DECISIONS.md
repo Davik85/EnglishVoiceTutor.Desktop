@@ -13,7 +13,7 @@ Review date: 2026-05-17.
 - Conversation Mode spoken text must match the visible bot text exactly; do not shorten, summarize, rewrite, or chunk spoken text.
 - Realtime remains implemented/partially stabilized in the repository for future provider-switch testing, but it is not the default product Conversation Mode provider.
 - Default product Conversation Mode should not open a Realtime WebSocket.
-- Scenario JSON remains avatar-neutral and must not hardcode Elena or another tutor identity.
+- Scenario JSON remains avatar-neutral and must not hardcode Lana or another tutor identity.
 - Tutor identity comes from `TutorProfile` / tutor avatar profile data.
 - A1/A2/B1/B2 complexity belongs to level rules/policy such as `levelProfiles` and prompt policy metadata.
 - Lesson scenario, context variation, level adapter/rules, and tutor profile are combined at runtime and should stay separate in documentation and future tasks.

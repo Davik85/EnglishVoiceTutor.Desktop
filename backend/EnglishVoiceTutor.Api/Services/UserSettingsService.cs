@@ -2,6 +2,7 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.UserSettings;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
+using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Shared.NativeLanguages;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,7 +20,7 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
     private const string DefaultDisplayName = "User";
     private const string DefaultNativeLanguage = NativeLanguageCatalog.DefaultLanguageId;
     private const string DefaultCurrentLevel = "A1";
-    private const string DefaultSelectedTutorId = "elena";
+    private const string DefaultSelectedTutorId = "lana";
     private const string DefaultTimezone = "UTC";
     private const string DefaultExplanationLanguage = NativeLanguageCatalog.DefaultLanguageId;
     private const string DefaultSpeechVoice = OpenAiConstants.DefaultSpeechVoice;
@@ -109,6 +110,15 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
             };
 
             dbContext.UserProfiles.Add(user.Profile);
+        }
+        else
+        {
+            var canonicalSelectedTutorId = TutorAvatarOptions.GetById(user.Profile.SelectedTutorId).Id;
+            if (!string.Equals(user.Profile.SelectedTutorId, canonicalSelectedTutorId, StringComparison.Ordinal))
+            {
+                user.Profile.SelectedTutorId = canonicalSelectedTutorId;
+                user.Profile.UpdatedAt = now;
+            }
         }
 
         if (user.Settings is null)
