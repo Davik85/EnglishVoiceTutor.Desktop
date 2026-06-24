@@ -105,14 +105,14 @@ def main() -> int:
         (tester_release, "tester release"),
     ]:
         assert_contains(text, "CMS/Admin", f"{label} CMS/Admin status")
-        assert_contains(text, "static JSON", f"{label} static JSON default")
+        assert_contains(text, "static JSON", f"{label} static JSON fallback")
         assert_contains(text, "Public release", f"{label} public release blocker")
 
     for needle in [
         "AdminBootstrap__Enabled=true",
         "AdminBootstrap__AdminEmails__0=admin@example.com",
         "CmsContent__ReadPublishedSnapshotEnabled=true",
-        "CmsContent__UsePublishedSnapshotForRuntime=false",
+        "CmsContent__UsePublishedSnapshotForRuntime=true",
         "CmsContent__ContentPackSlug=static-json-v1",
         "CmsContent__FallbackToStaticJson=true",
         "sudo systemctl restart languagevoicetutor-backend",

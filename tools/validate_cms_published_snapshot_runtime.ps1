@@ -5,7 +5,7 @@
 .DESCRIPTION
     Default mode is read-only. It calls the protected Admin CMS runtime status
     diagnostic on the server backend and verifies that normal learner runtime is
-    still using StaticJson by default.
+    using the CMS published snapshot when enabled, valid, and active, with fallback inactive.
 
     With -GenerateServerValidationPlan, the script does not change production
     configuration. It prints the explicit, temporary flags and a reversible
@@ -24,7 +24,7 @@
     does not call server endpoints and does not change configuration.
 
 .NOTES
-    This script does not enable CMS runtime.
+    This script does not change CMS runtime configuration.
     This script does not edit production config files.
     This script does not restart services.
     This script prints safe metadata only and must not print content bodies,
@@ -41,7 +41,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $RuntimeStatusPath = "/api/admin/dev/cms/runtime-status"
-$ExpectedDefaultSource = "StaticJson"
+$ExpectedDefaultSource = "CmsPublishedSnapshot"
 $ExpectedContentPackSlug = "static-json-v1"
 $ExpectedPublishedSource = "CmsPublishedSnapshot"
 $ExpectedCounts = [ordered]@{
@@ -76,7 +76,7 @@ function Write-ServerValidationPlan {
 - This plan mode is offline: it does not call backend endpoints and does not require admin authentication.
 - Apply these flags only in an explicitly approved controlled window.
 - Remove the flags and restart the backend immediately after validation.
-- Do not make CMS published-snapshot runtime the learner default until this validation passes and a separate approval is made.
+- CMS published-snapshot runtime is the intended primary learner source; use this plan to verify it remains valid and reversible.
 "@
 
     Write-Host "Temporary environment variables/config flags required:" -ForegroundColor Cyan
@@ -102,9 +102,9 @@ function Write-ServerValidationPlan {
   8. Confirm validationSuccess=true.
   9. Confirm counts: topics=$($ExpectedCounts.topics), scenarios=$($ExpectedCounts.scenarios), promptTemplates=$($ExpectedCounts.promptTemplates), tutorBehaviorProfiles=$($ExpectedCounts.tutorBehaviorProfiles).
  10. Run a short installed-app lesson smoke only if approved for the controlled window.
- 11. Remove/disable the temporary CMS runtime flags.
- 12. Restart backend.
- 13. Confirm effectiveSource=$ExpectedDefaultSource again.
+ 11. Keep the CMS runtime flags enabled for normal operation if validation passes.
+ 12. If emergency rollback is required, keep fallback enabled or temporarily disable CMS runtime and restart backend.
+ 13. Confirm fallback is visible in Admin CMS if rollback occurs.
 "@
 
     Write-Host "Expected validation results:" -ForegroundColor Cyan
@@ -119,10 +119,11 @@ function Write-ServerValidationPlan {
 
     Write-Host "Rollback/disable steps (do not paste secrets into docs or chat):" -ForegroundColor Cyan
     Write-Output @"
-  # Remove or set false in the approved server configuration mechanism:
+  # Emergency-only rollback option in the approved server configuration mechanism:
   CmsContent__UsePublishedSnapshotForRuntime=false
   CmsContent__ReadPublishedSnapshotEnabled=false
-  # Keep or remove non-secret slug/fallback entries according to operator policy.
+  CmsContent__FallbackToStaticJson=true
+  # Keep non-secret slug/fallback entries according to operator policy and treat fallback as visible attention state.
   # Restart the backend with the approved service command, then rerun the read-only status check.
 "@
 }
@@ -170,24 +171,24 @@ $errorCount = Get-SafeCount $status.errors
 $warningCount = Get-SafeCount $status.warnings
 
 if ($effectiveSource -ne $ExpectedDefaultSource) {
-    throw "Expected default effectiveSource=$ExpectedDefaultSource, but runtime-status returned '$effectiveSource'. This read-only script made no changes."
+    throw "Expected effectiveSource=$ExpectedDefaultSource, but runtime-status returned '$effectiveSource'. This read-only script made no changes."
 }
 if (-not $validationSuccess) {
-    throw "Expected validationSuccess=true for default static JSON runtime status."
+    throw "Expected validationSuccess=true for CMS published snapshot runtime status."
 }
-if ($usePublishedSnapshotForRuntime) {
-    throw "Expected usePublishedSnapshotForRuntime=false in default learner runtime state."
+if (-not $usePublishedSnapshotForRuntime) {
+    throw "Expected usePublishedSnapshotForRuntime=true for the intended CMS published-snapshot learner runtime source."
 }
-if ($readPublishedSnapshotEnabled -and $effectiveSource -eq $ExpectedPublishedSource) {
-    throw "Learner runtime appears to be using CMS published snapshot. Expected static JSON default."
+if (-not $readPublishedSnapshotEnabled) {
+    throw "Expected readPublishedSnapshotEnabled=true for the intended CMS published-snapshot learner runtime source."
 }
 
-Write-Host "[SUMMARY] CMS runtime status default validation" -ForegroundColor Cyan
+Write-Host "[SUMMARY] CMS published-snapshot runtime validation" -ForegroundColor Cyan
 Write-Host "  effectiveSource: $effectiveSource"
 Write-Host "  validationSuccess: $validationSuccess"
 Write-Host "  usePublishedSnapshotForRuntime: $usePublishedSnapshotForRuntime"
 Write-Host "  readPublishedSnapshotEnabled: $readPublishedSnapshotEnabled"
-Write-Host "  learner runtime using CMS snapshot: False"
+Write-Host "  learner runtime using CMS snapshot: True"
 Write-Host "  contentPackSlug: $($status.contentPackSlug)"
 Write-Host "  topics: $($status.topicCount)"
 Write-Host "  scenarios: $($status.scenarioCount)"
@@ -195,4 +196,4 @@ Write-Host "  promptTemplates: $($status.promptTemplateCount)"
 Write-Host "  tutorBehaviorProfiles: $($status.tutorBehaviorProfileCount)"
 Write-Host "  errors count: $errorCount"
 Write-Host "  warnings count: $warningCount"
-Write-Host "[PASS] StaticJson default is validated and no server configuration was changed." -ForegroundColor Green
+Write-Host "[PASS] CMS published snapshot is active, valid, and no server configuration was changed." -ForegroundColor Green

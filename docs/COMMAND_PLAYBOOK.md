@@ -275,7 +275,7 @@ CMS runtime tutor profile validation policy check:
 python .\tools\test_cms_runtime_tutor_profile_validation_policy.py
 ```
 
-The runtime status endpoint is read-only and does not enable CMS runtime content. Static JSON remains default unless the controlled runtime validation environment explicitly sets `CmsContent:UsePublishedSnapshotForRuntime=true`, `CmsContent:ReadPublishedSnapshotEnabled=true`, `CmsContent:ContentPackSlug=static-json-v1`, and `CmsContent:FallbackToStaticJson=true`. Rollback is to remove/disable those explicit CMS runtime flags so the effective source returns to static JSON.
+The runtime status endpoint is read-only and does not change CMS runtime content. CMS published snapshot is the intended primary source when `CmsContent:UsePublishedSnapshotForRuntime=true`, `CmsContent:ReadPublishedSnapshotEnabled=true`, `CmsContent:ContentPackSlug=static-json-v1`, and `CmsContent:FallbackToStaticJson=true` are configured and the snapshot validates. Emergency rollback can disable CMS runtime flags so the effective source returns to static JSON fallback, which must be treated as an attention state.
 
 ## Controlled CMS published-snapshot runtime validation
 

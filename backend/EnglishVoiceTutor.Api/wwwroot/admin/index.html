@@ -189,8 +189,8 @@
                     <div id="tab-panel-cms-content" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-cms-content">
                         <article class="card cms-hero" aria-labelledby="cms-content-heading">
                             <h2 id="cms-content-heading">CMS Content</h2>
-                            <p class="muted">Development-only/admin-only content editing shell. Runtime still uses static JSON by default.</p>
-                            <p class="muted">Bounded draft edits use existing backend CMS Admin APIs. Publishing and restore actions require confirmation and do not change learner runtime defaults.</p>
+                            <p class="muted">Admin-only CMS content control plane. Learner runtime is expected to use the CMS published snapshot when enabled, valid, and active.</p>
+                            <p class="muted">Bounded draft edits use existing backend CMS Admin APIs. Draft edits affect learner runtime only after publish and only when the published snapshot is enabled, valid, and effectively active.</p>
                             <p id="cms-loading" class="lookup-loading hidden" role="status">Loading CMS content...</p>
                             <p id="cms-error" class="error" role="alert"></p>
                             <p id="cms-success" class="success" role="status"></p>
@@ -211,7 +211,7 @@
                         <section id="cms-sub-panel-overview" class="cms-sub-panel" role="tabpanel" aria-labelledby="cms-sub-tab-button-overview" data-cms-sub-panel="overview">
                             <article class="card cms-warning-card">
                                 <h3>Development-only CMS workspace</h3>
-                                <p class="muted">Use this admin-only area for bounded draft edits. Runtime learner behavior still uses static JSON by default, the CMS read path remains disabled by default, and static JSON fallback remains available.</p>
+                                <p class="muted">Use this admin-only area for bounded draft edits. CMS published snapshot is the intended primary learner runtime source; packaged static JSON is reserved for initialization and emergency fallback.</p>
                             </article>
                             <article class="card cms-compact-card" aria-labelledby="cms-summary-heading">
                                 <div class="cms-toolbar">
@@ -225,7 +225,7 @@
                                 </div>
                                 <div id="cms-static-json-initialize-panel" class="cms-warning-card cms-static-json-initialize-panel hidden" role="status">
                                     <p><strong>Content pack static-json-v1 has not been initialized in CMS yet.</strong></p>
-                                    <p class="muted">Use Initialize from static JSON to create CMS draft/admin content from the packaged static JSON. This does not publish automatically and does not change learner runtime; runtime stays on static JSON by default.</p>
+                                    <p class="muted">Use Initialize from static JSON to create CMS draft/admin content from the packaged static JSON. This does not publish automatically and does not change learner runtime. Static JSON initializes CMS draft content and remains available only as an emergency fallback.</p>
                                 </div>
                                 <h3 id="cms-summary-heading">Content pack summary</h3>
                                 <dl id="cms-content-pack-summary" class="meta cms-summary-meta">
@@ -431,7 +431,7 @@
                             <article class="card cms-warning-card cms-validation-preview-notice" aria-labelledby="cms-validation-preview-notice-heading">
                                 <h3 id="cms-validation-preview-notice-heading">Draft validation and preview only</h3>
                                 <p class="muted">Run these checks before publishing to review the current CMS draft. This validation and preview flow does not publish content, does not enable CMS content for learners, and does not change learner runtime behavior.</p>
-                                <p class="muted">Learner runtime still uses packaged static JSON by default. Publishing remains isolated in the Versions &amp; Publish sub-tab.</p>
+                                <p class="muted">Learner runtime changes only after publish and only when the CMS published snapshot is enabled, valid, and effectively active. If static JSON fallback is active, treat it as an attention state.</p>
                             </article>
                             <div class="cms-grid-two">
                                 <article class="card" aria-labelledby="cms-validation-heading">
@@ -471,7 +471,7 @@
                             <article id="cms-publish-section" class="card" aria-labelledby="cms-lifecycle-heading" tabindex="-1">
                                 <h3 id="cms-lifecycle-heading">Versions &amp; Publish</h3>
                                 <div id="cms-unpublished-draft-notice" class="cms-publish-notice" role="status">Draft changes are saved but not visible to runtime until published.</div>
-                                <p class="muted"><strong>Development-only:</strong> old versions are not mutated, runtime still uses static JSON by default, and publish/restore actions require confirmation.</p>
+                                <p class="muted"><strong>Admin-only:</strong> old versions are not mutated, draft changes are not runtime changes until published, and publish/restore actions require confirmation.</p>
                                 <p id="cms-publish-instructions" class="cms-publish-instructions">1. Enter a short change summary. 2. Click Publish current draft. 3. Confirm publishing.</p>
                                 <div id="cms-publish-error-details" class="cms-publish-error-details hidden" role="alert" data-cms-publish-error-details="true"></div>
                                 <div class="cms-lifecycle-actions">

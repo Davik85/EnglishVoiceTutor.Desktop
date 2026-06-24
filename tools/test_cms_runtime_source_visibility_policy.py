@@ -4,6 +4,9 @@ import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 ADMIN_JS = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js"
+ADMIN_INDEX = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/index.html"
+APPSETTINGS = ROOT / "backend/EnglishVoiceTutor.Api/appsettings.json"
+OPTIONS = ROOT / "backend/EnglishVoiceTutor.Api/Options/CmsContentOptions.cs"
 MODELS = ROOT / "backend/EnglishVoiceTutor.Api/Services/Cms/CmsRuntimeContentModels.cs"
 DOC = ROOT / "docs/cms-content-mvp-plan.md"
 
@@ -23,6 +26,9 @@ def forbid(text: str, needle: str, label: str) -> None:
 
 
 admin_js = read(ADMIN_JS)
+admin_index = read(ADMIN_INDEX)
+appsettings = read(APPSETTINGS)
+options = read(OPTIONS)
 models = read(MODELS)
 doc = read(DOC)
 
@@ -31,6 +37,17 @@ require(admin_js, 'headline = "Static JSON emergency fallback is active"', "fall
 require(admin_js, 'statusLabel = "Fallback active"', "fallback badge")
 require(admin_js, 'positive = false', "default non-green state")
 forbid(admin_js, 'if (fallbackUsed) { headline = "Fallback to static JSON is active"; positive = true; }', "old green fallback status")
+for stale in [
+    "Runtime still uses static JSON by default",
+    "runtime still uses static JSON by default",
+    "Runtime learner behavior still remains static JSON by default",
+    "Runtime learner behavior still uses static JSON by default",
+    "Learner runtime still uses static JSON by default",
+    "static JSON remains the default",
+    "do not change learner runtime defaults",
+]:
+    forbid(admin_js, stale, "stale Admin JS normal-state copy")
+    forbid(admin_index, stale, "stale Admin overview normal-state copy")
 require(admin_js, 'CMS edits affect learner lessons only when the CMS published snapshot is enabled, valid, and effectively active.', "operator warning copy")
 require(admin_js, 'While static JSON fallback is active, CMS draft or published edits may not affect learner runtime.', "fallback impact copy")
 
@@ -42,3 +59,10 @@ require(doc, 'CMS published snapshot is the intended primary learner runtime sou
 require(doc, 'Static JSON is an emergency fallback and initialization source.', "static JSON fallback docs")
 require(doc, 'Static JSON fallback must be visible in Admin CMS', "fallback visibility docs")
 print("CMS runtime source visibility policy passed.")
+
+require(appsettings, '"ReadPublishedSnapshotEnabled": true', "appsettings CMS read default")
+require(appsettings, '"UsePublishedSnapshotForRuntime": true', "appsettings CMS runtime default")
+require(appsettings, '"FallbackToStaticJson": true', "appsettings fallback retained")
+require(options, 'public bool ReadPublishedSnapshotEnabled { get; set; } = true;', "options CMS read default")
+require(options, 'public bool UsePublishedSnapshotForRuntime { get; set; } = true;', "options CMS runtime default")
+require(options, 'public bool FallbackToStaticJson { get; set; } = true;', "options fallback retained")
