@@ -137,7 +137,7 @@ Current state: CMS practical readiness has passed the runtime connection milesto
 
 ### B. Prepare full CMS content workflow
 
-1. Initialize or verify `static-json-v1` draft content.
+1. Use **Initialize from static JSON** or verify existing `static-json-v1` draft content. This initializes from packaged static JSON for first setup/recovery, does not publish automatically, and does not switch runtime; normal learner runtime should remain CMS published snapshot when `CmsContent__UsePublishedSnapshotForRuntime=true` and a valid published snapshot is active.
 2. Validate the draft.
 3. Preview sample topics and scenarios.
 4. Save a safe draft edit.
@@ -184,6 +184,7 @@ Clean-machine smoke must verify:
 - Welcome cover image uses cover-style fill/crop with no gray bars;
 - Release Settings do not show Diagnostics or Backend URL editing;
 - **Check for updates** asks before download/install, verifies SHA-256, and does not silently auto-update.
+- Update version rules remain: same installed version: ask the user to confirm reinstall; older installed version: allow the guided update flow; newer installed version: warn and block; never auto-update during an active lesson.
 
 ## CMS/Admin follow-up
 
