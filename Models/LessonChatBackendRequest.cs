@@ -46,6 +46,8 @@ public sealed class LessonChatBackendRequest
 
     public string LessonPhase { get; init; } = string.Empty;
 
+    public bool HasWrapUpStarted { get; init; }
+
     public string LessonScenarioId { get; init; } = string.Empty;
 
     public string Level { get; init; } = string.Empty;

@@ -113,7 +113,7 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine($"Target-language lesson lock: speak {ResolveTargetLanguage(chatRequest).LanguageLockName} only, even if the learner asks for Finnish, Russian, Spanish, English, or another language.");
         prompt.AppendLine("Produce assistant audio and a matching assistant transcript from this same Realtime response.");
         prompt.AppendLine($"Current counted learner turn: {chatRequest.LearnerTurnCount} of {LessonLimitHelper.GetHardLearnerTurnLimit(chatRequest)}.");
-        if (LessonLimitHelper.ShouldEndLessonNow(chatRequest))
+        if (LessonLimitHelper.GetRuntimePhase(chatRequest) == LessonRuntimePhase.Final)
         {
             prompt.AppendLine("This is the final turn. Say the final lesson message first. Do not ask another question.");
             if (!string.IsNullOrWhiteSpace(chatRequest.ConversationFinalMessage))
@@ -121,9 +121,11 @@ public sealed class LessonPromptBuilder
                 prompt.AppendLine($"Exact final message from lesson JSON: {chatRequest.ConversationFinalMessage.Trim()}");
             }
         }
-        else if (LessonLimitHelper.ShouldStartWrappingUp(chatRequest))
+        else if (LessonLimitHelper.GetRuntimePhase(chatRequest) == LessonRuntimePhase.WrapUp)
         {
-            prompt.AppendLine("Start or continue a polite wrap-up while staying in scenario.");
+            prompt.AppendLine(LessonLimitHelper.IsFirstWrapUpInstruction(chatRequest)
+                ? "Start closing the current scenario now. Do not restart the greeting or scenario setup."
+                : "Continue closing the current scenario. Do not repeat the first wrap-up transition, restart the greeting, or reset the scenario.");
             if (!string.IsNullOrWhiteSpace(chatRequest.ConversationWrapUpMessage))
             {
                 prompt.AppendLine($"Wrap-up direction from lesson JSON: {chatRequest.ConversationWrapUpMessage.Trim()}");
@@ -195,7 +197,9 @@ public sealed class LessonPromptBuilder
         }
         else if (LessonLimitHelper.ShouldStartWrappingUp(request))
         {
-            prompt.AppendLine("The lesson is in wrap-up. Continue the selected scenario, but gently guide the learner toward finishing within the remaining turns.");
+            prompt.AppendLine(LessonLimitHelper.IsFirstWrapUpInstruction(request)
+                ? "The lesson has just reached wrap-up. Start closing the current selected scenario; do not restart it."
+                : "The lesson is already in wrap-up. Continue closing the current selected scenario; do not repeat the first wrap-up transition or restart it.");
             if (!string.IsNullOrWhiteSpace(request.ConversationWrapUpMessage))
             {
                 prompt.AppendLine($"Prefer this wrap-up direction from lesson JSON: {request.ConversationWrapUpMessage.Trim()}");
@@ -232,7 +236,9 @@ public sealed class LessonPromptBuilder
         }
         else if (LessonLimitHelper.ShouldStartWrappingUp(request))
         {
-            prompt.AppendLine("The conversation is in wrap-up. Gently guide the learner toward finishing within the remaining turns.");
+            prompt.AppendLine(LessonLimitHelper.IsFirstWrapUpInstruction(request)
+                ? "The conversation has just reached wrap-up. Start closing the current conversation."
+                : "The conversation is already in wrap-up. Continue closing; do not repeat the first wrap-up transition.");
             prompt.AppendLine("Ask at most one natural follow-up question if it helps the wrap-up.");
             if (!string.IsNullOrWhiteSpace(request.ConversationWrapUpMessage))
             {
@@ -527,7 +533,7 @@ public sealed class LessonPromptBuilder
 
         if (!string.IsNullOrWhiteSpace(request.LessonPhase))
         {
-            prompt.AppendLine($"- Lesson phase: {request.LessonPhase}");
+            prompt.AppendLine($"- Lesson phase: {LessonLimitHelper.ToContractValue(LessonLimitHelper.GetRuntimePhase(request))}");
         }
 
         if (!string.IsNullOrWhiteSpace(request.LessonType))
@@ -648,10 +654,13 @@ public sealed class LessonPromptBuilder
         }
         AppendOptionalLine(prompt, "- Variation or complication", request.ConversationVariationOrComplication);
         AppendOptionalLine(prompt, "- Correction moment", request.ConversationCorrectionMoment);
-        AppendOptionalLine(prompt, "- Wrap-up message from lesson JSON", request.ConversationWrapUpMessage);
-        AppendOptionalLine(prompt, "- Final message from lesson JSON", request.ConversationFinalMessage);
-        AppendOptionalLine(prompt, "- Wrap-up intent", request.ConversationWrapUpIntent);
-        AppendOptionalLine(prompt, "- Final message intent", request.ConversationFinalMessageIntent);
+        if (LessonLimitHelper.GetRuntimePhase(request) != LessonRuntimePhase.ActiveRoleplay)
+        {
+            AppendOptionalLine(prompt, "- Wrap-up message from lesson JSON", request.ConversationWrapUpMessage);
+            AppendOptionalLine(prompt, "- Final message from lesson JSON", request.ConversationFinalMessage);
+            AppendOptionalLine(prompt, "- Wrap-up intent", request.ConversationWrapUpIntent);
+            AppendOptionalLine(prompt, "- Final message intent", request.ConversationFinalMessageIntent);
+        }
         if (request.ExpectedScenarioProgression.Count > 0)
         {
             prompt.AppendLine("- Expected scenario progression:");
@@ -801,7 +810,9 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine($"- Hard learner turn limit: {LessonLimitHelper.GetHardLearnerTurnLimit(request)}");
         prompt.AppendLine("- Setup/context selection is already complete and did not count as a lesson turn.");
         prompt.AppendLine($"- Remaining learner turns after latest message: {LessonLimitHelper.GetRemainingLearnerTurns(request)}");
+        prompt.AppendLine($"- Runtime phase: {LessonLimitHelper.ToContractValue(LessonLimitHelper.GetRuntimePhase(request))}");
         prompt.AppendLine($"- shouldStartWrappingUp: {LessonLimitHelper.ShouldStartWrappingUp(request)}");
+        prompt.AppendLine($"- isFirstWrapUpInstruction: {LessonLimitHelper.IsFirstWrapUpInstruction(request)}");
         prompt.AppendLine($"- shouldEndLessonNow: {LessonLimitHelper.ShouldEndLessonNow(request)}");
         prompt.AppendLine();
     }
@@ -963,6 +974,7 @@ public sealed class LessonPromptBuilder
             HardLearnerTurnLimit = levelTurnLimits.FinalMessageAtUserTurn,
             RecentMessages = request.RecentMessages.Select(message => new RecentConversationMessage { Sender = message.Sender, Text = message.Text }).ToArray(),
             LessonPhase = ChooseFirstNonEmpty(request.CurrentPhase, request.LessonPhase),
+            HasWrapUpStarted = request.HasWrapUpStarted,
             LessonScenarioId = request.LessonScenarioId,
             Level = request.SelectedLevel,
             Topic = request.Topic,

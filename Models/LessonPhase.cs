@@ -4,5 +4,7 @@ public enum LessonPhase
 {
     SetupContextSelection,
     ActiveRoleplay,
+    WrapUp,
+    Final,
     Completed
 }

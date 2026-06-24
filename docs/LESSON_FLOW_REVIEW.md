@@ -129,3 +129,11 @@ Conversation Mode uses the same lesson methodology and the same chat reply flow 
 ## Study-language lesson flow note
 
 The lesson flow uses one shared set of lesson JSON scenarios for all study languages, including the user-facing Daily Life topic whose legacy `Content/Lessons/EverydayEnglish` folder and `everyday_english_*` IDs remain internal compatibility details. The selected Settings study language is passed as runtime context so tutor replies, roleplay, hints, feedback, generated summary content, transcription, and Conversation Mode speech adapt to English, French, German, Portuguese, Spanish, or Italian without duplicating scenario trees. English remains the default.
+
+## Runtime lesson turn phase model
+
+Level profiles are the single source of truth for soft wrap-up and final-message turn thresholds. Runtime phase is derived from counted active-roleplay learner turns and those level-profile thresholds; setup/context-selection messages do not increment the active lesson turn count, and legacy scenario metadata turn-limit fields are ignored for threshold selection.
+
+The explicit runtime phase contract is `setup_context_selection`, `active_roleplay`, `wrap_up`, `final`, and `completed`. Before the wrap threshold, active roleplay prompts must not tell the tutor to wrap up early. At the wrap threshold, the desktop sends a one-time first wrap-up transition and remembers that wrap-up has started for the current lesson session. Later wrap-up turns continue closing the same selected scenario without repeating the first transition, greeting again, or asking the learner to choose a scenario. At the final threshold, runtime produces or requests the final closing response and then moves to completed/awaiting-finish so normal active dialogue cannot continue.
+
+Prompt wording is therefore a reflection of runtime phase, not the only enforcement mechanism for wrap-up/final behavior. Backend prompt construction still derives a safe phase from turn count and level profile limits for older clients that do not send the phase fields.

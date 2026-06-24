@@ -80,7 +80,7 @@ def resolve_wrap(lesson_type: str, level: str, content_wrap: int | None = None) 
 def evaluate_turn(phase: str, current_count: int, valid: bool, lesson_type: str = "guided_roleplay", level: str = "A1 Beginner", content_wrap: int | None = None, content_final: int | None = None) -> dict[str, object]:
     final = resolve_final(lesson_type, level, content_final)
     wrap = resolve_wrap(lesson_type, level, content_wrap)
-    counted = valid and phase == "ActiveRoleplay"
+    counted = valid and phase in {"ActiveRoleplay", "WrapUp"}
     after = min(current_count + 1, final) if counted else current_count
     return {
         "counted": counted,
@@ -117,8 +117,16 @@ def main() -> int:
     if valid_turn["after"] != 4 or not valid_turn["counted"]:
         raise AssertionError("Valid transcript did not increment exactly once.")
 
+    before_wrap = evaluate_turn("ActiveRoleplay", 8, True)
+    if before_wrap["wrapping"]:
+        raise AssertionError("Phase before wrap threshold must remain ActiveRoleplay.")
+
     if not evaluate_turn("ActiveRoleplay", 9, True)["wrapping"]:
-        raise AssertionError("A1/A2 guided lesson does not enter wrap-up after turn 10.")
+        raise AssertionError("A1/A2 guided lesson enters WrapUp at turn 10.")
+
+    continued_wrap = evaluate_turn("WrapUp", 10, True)
+    if continued_wrap["after"] != 11 or not continued_wrap["wrapping"]:
+        raise AssertionError("Wrap-up turns must continue counting without re-entering setup.")
 
     final_a1 = evaluate_turn("ActiveRoleplay", 14, True)
     if final_a1["final"] != 15 or not final_a1["final_message"]:
@@ -156,6 +164,9 @@ def main() -> int:
         raise AssertionError("Scenario final message should come from lesson JSON.")
 
     assert_contains(prompt, "Scenario conversation flow from lesson JSON", "scenario flow prompt")
+    assert_contains(prompt, "isFirstWrapUpInstruction", "one-time wrap-up prompt state")
+    assert_contains(prompt, "Continue closing the current selected scenario; do not repeat the first wrap-up transition", "repeat wrap-up guard")
+    assert_contains(prompt, "GetRuntimePhase", "backend phase derivation")
     assert_contains(prompt, "Exact final message from lesson JSON", "realtime final JSON prompt")
     assert_contains(prompt, "A1 introductions/new-neighbor rules", "A1 introductions flow guard")
     assert_contains(prompt, "Nice to meet you, David. Where are you from?", "A1 first-turn example")
