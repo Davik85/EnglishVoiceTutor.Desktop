@@ -6,13 +6,13 @@ Scope: controlled tester/direct Windows release readiness and broader public-rel
 
 ## 2026-06-21 Admin RBAC and roadmap update
 
-Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.39` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
+Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.40` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
 
 Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus completed local backup schedule activation plus completed Phase 4 backup/restore/migration rollback drills plus optional off-server backup hardening, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
 
 ## Current verified state recorded for release planning
 
-- Backend `0.1.35-backend.39` is deployed at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39` and production `/health` plus `/api/health/database` return `200 OK`.
+- Backend `0.1.35-backend.40` is deployed at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.40` and production `/health` plus `/api/health/database` return `200 OK`.
 - Windows direct tester `0.1.36-tester.24` is live as `LanguageVoiceTutorSetup-0.1.36-tester.24.exe` with `backendBaseUrl=https://api.languagevoicetutor.com` and `updateMode=manual-confirmation`.
 - Trial reference plan is seeded/required. Trial is displayed as a first-class tariff/reference plan, while Trial access remains entitlement-owned.
 - Learner Account subscription UI is simplified to Current tariff, Free lessons remaining, Premium, and Auto-renewal.
@@ -27,7 +27,7 @@ Public release still requires remaining operational readiness work: the complete
 No new critical blockers were found in this documentation/source review, assuming the following handoff checks are performed immediately before inviting testers:
 
 - Verify live Windows `latest.json` over HTTPS still points to `0.1.36-tester.24`, `LanguageVoiceTutorSetup-0.1.36-tester.24.exe`, `https://api.languagevoicetutor.com`, and `manual-confirmation`.
-- Verify backend symlink still resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39` and `/health` plus `/api/health/database` are green.
+- Verify backend symlink still resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.40` and `/health` plus `/api/health/database` are green.
 - Perform one installed-build smoke: registration/login, auth restore, lesson start, at least one lesson completion path, TTS/bot voice, Conversation Mode, Lesson History, Progress, Account view, Buy Premium sandbox path, Refresh status, and Cancel subscription sandbox path where applicable.
 - Confirm generated artifacts, installers, backend ZIPs, generated release folders, temp deploy scripts, SQL outputs, `.env` files, and secrets are not committed.
 - Prepare tester feedback intake: tester group, feedback template, severity labels, known-issue list, and rollback/contact instructions.
@@ -154,4 +154,4 @@ The current logging/privacy posture remains controlled-tester appropriate when o
 
 Phase 5B bounded production log sampling found over-verbose EF Core `Microsoft.EntityFrameworkCore.Database.Command[20101]` entries at `Information` level with SQL command text. The sampled output redacted parameter values as `?` and did not show raw passwords, bearer tokens, refresh-token values, connection strings, OpenAI API keys, raw Paddle payload contents, raw SQL dumps, or raw secrets, so this is not treated as a data breach. It is a release-readiness issue because SQL text can expose sensitive schema/field names and unnecessary health-check/CMS noise.
 
-Phase 5C hardens Production config by suppressing normal EF command, EF infrastructure, and ordinary `System.Net.Http.HttpClient` logs below `Warning`. Application warnings/errors should remain visible, including billing/Paddle warning and error paths. After deploy, operators must verify normal production logs no longer show EF SQL command text. Production/live Paddle readiness remains deferred, and broad public production readiness is still not claimed.
+Phase 5C production logging hardening is deployed and production-verified on backend `0.1.35-backend.40`. `/opt/languagevoicetutor/backend/current` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.40`, `/opt/languagevoicetutor/backend/previous` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`, `/health` returned `200 OK`, `/api/health/database` returned `200 OK`, and a repeat database-health check also returned `200 OK`. `languagevoicetutor-backend.service` is active and enabled. Post-deploy journal sampling over the recent verification window returned 0 lines for the bounded sensitive/EF SQL grep set: `Microsoft.EntityFrameworkCore.Database.Command`, `SELECT`, `INSERT`, `UPDATE`, `PasswordHash`, `TokenHash`, `RawPayload`, and `SignatureHeader`. No EF migrations were run for this config-only backend release, and no production database schema or data changed. Production/live Paddle readiness remains deferred, and broad public production readiness is still not claimed.
