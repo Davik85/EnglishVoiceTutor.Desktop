@@ -9,7 +9,7 @@ Public release is still not ready. This runbook prepares the production/server C
 - `/admin/` is the static Admin shell and may be reachable publicly as a web page.
 - Every `/api/admin/...` endpoint must require authentication and bootstrap-admin authorization.
 - CMS Content Admin endpoints currently keep their historical `/api/admin/dev/cms/...` paths for compatibility with the existing Admin shell, but they are bootstrap-admin protected and are available for server verification when `AdminBootstrap` is intentionally enabled.
-- Runtime lesson content remains static JSON by default. The server must not serve CMS published snapshots at runtime unless `CmsContent__UsePublishedSnapshotForRuntime=true` is intentionally set.
+- Runtime lesson content is intended to use the CMS published snapshot when it is enabled, valid, and effectively active. Static JSON remains an emergency fallback and initialization source; if fallback is active in Admin CMS, treat it as an attention state.
 - The public diagnostic endpoint `/api/cms/runtime-content/source-status` is non-secret and reports only environment/source flags and the configured content pack slug. It must not expose prompts, lesson content, user data, tokens, emails, database strings, SMTP settings, OpenAI keys, Paddle keys, or any other secret.
 
 ## Server environment variables to add or verify
@@ -25,14 +25,14 @@ sudo tee -a /etc/languagevoicetutor/backend.env >/dev/null <<'ENV'
 AdminBootstrap__Enabled=true
 AdminBootstrap__AdminEmails__0=admin@example.com
 CmsContent__ReadPublishedSnapshotEnabled=true
-CmsContent__UsePublishedSnapshotForRuntime=false
+CmsContent__UsePublishedSnapshotForRuntime=true
 CmsContent__ContentPackSlug=static-json-v1
 CmsContent__FallbackToStaticJson=true
 ENV
 sudo chmod 600 /etc/languagevoicetutor/backend.env
 ```
 
-Replace `admin@example.com` with the registered server account that should be allowed into Admin. Keep `CmsContent__UsePublishedSnapshotForRuntime=false` during initial verification so static JSON remains the safe runtime source.
+Replace `admin@example.com` with the registered server account that should be allowed into Admin. Keep `CmsContent__UsePublishedSnapshotForRuntime=true` and `CmsContent__ReadPublishedSnapshotEnabled=true` during verification so the CMS published snapshot is the primary runtime source; static JSON fallback remains available for emergency safety.
 
 Also verify existing non-CMS production keys remain present and unchanged, including the database connection string, JWT signing key, OpenAI settings, password-reset SMTP settings, and any existing billing/Paddle keys. Do not paste those values into tickets, docs, scripts, or commits.
 
@@ -50,14 +50,14 @@ curl -fsS https://api.languagevoicetutor.com/api/health/database
 curl -fsS https://api.languagevoicetutor.com/api/cms/runtime-content/source-status | jq .
 ```
 
-Expected source-status baseline while static JSON is still the runtime source:
+Expected source-status baseline when CMS published snapshot is active:
 
 ```json
 {
   "environmentName": "Production",
-  "runtimeSource": "StaticJson",
+  "runtimeSource": "CmsPublishedSnapshot",
   "readPublishedSnapshotEnabled": true,
-  "usePublishedSnapshotForRuntime": false,
+  "usePublishedSnapshotForRuntime": true,
   "fallbackToStaticJson": true,
   "contentPackSlug": "static-json-v1"
 }
@@ -98,7 +98,7 @@ curl -fsS -H "Authorization: Bearer $EVT_ADMIN_BEARER_TOKEN" https://api.languag
 curl -fsS -H "Authorization: Bearer $EVT_ADMIN_BEARER_TOKEN" https://api.languagevoicetutor.com/api/admin/dev/cms/runtime-content/status | jq .
 ```
 
-Expected: HTTP `200` for the admin identity, capabilities, CMS content packs, and runtime status. The runtime status should report `source=StaticJson` while `CmsContent__UsePublishedSnapshotForRuntime=false`.
+Expected: HTTP `200` for the admin identity, capabilities, CMS content packs, and runtime status. The runtime status should report `source=CmsPublishedSnapshot`, `validationSuccess=true`, and `fallbackUsed=false` when the published snapshot is valid. If static JSON fallback is active, treat it as an attention state.
 
 Optional helper script from a workstation:
 
@@ -124,7 +124,7 @@ Use `/admin/` with the configured bootstrap admin account.
    - click **Save draft**;
    - verify the UI reports success;
    - verify Audit shows the draft save;
-   - verify runtime status still reports `StaticJson` and the desktop still reads packaged static JSON unless runtime CMS is explicitly enabled.
+   - verify saved draft changes are not runtime-visible until publishing, and runtime status remains `CmsPublishedSnapshot` with `fallbackUsed=false` if the current published snapshot is valid.
 7. Validation test:
    - run Validation & Preview;
    - verify validation passes and preview counts are plausible for `static-json-v1`.
@@ -139,16 +139,17 @@ Use `/admin/` with the configured bootstrap admin account.
    - verify restore creates a new published version instead of editing the old immutable version;
    - verify audit records the restore/publish action.
 10. Runtime snapshot safety test:
-    - keep `CmsContent__UsePublishedSnapshotForRuntime=false` for normal server operation during verification;
-    - confirm `/api/cms/runtime-content/source-status` reports `StaticJson`;
-    - confirm `/api/admin/dev/cms/runtime-content/status` reports static JSON unless the runtime flag is explicitly enabled.
+    - keep `CmsContent__UsePublishedSnapshotForRuntime=true` for normal server operation during verification;
+    - confirm `/api/cms/runtime-content/source-status` reports `CmsPublishedSnapshot`;
+    - confirm `/api/admin/dev/cms/runtime-content/status` reports `CmsPublishedSnapshot`, validation success, and `fallbackUsed=false`.
 
-## Intentionally enabling CMS published snapshots for runtime
+## Verifying CMS published snapshots for runtime
 
-Only after the published snapshot has been validated and a rollback owner is available, change the runtime flag:
+After the published snapshot has been validated and a rollback owner is available, verify the runtime flags are enabled:
 
 ```bash
 sudo sed -i 's/^CmsContent__UsePublishedSnapshotForRuntime=.*/CmsContent__UsePublishedSnapshotForRuntime=true/' /etc/languagevoicetutor/backend.env
+sudo sed -i 's/^CmsContent__ReadPublishedSnapshotEnabled=.*/CmsContent__ReadPublishedSnapshotEnabled=true/' /etc/languagevoicetutor/backend.env
 sudo systemctl restart languagevoicetutor-backend
 curl -fsS https://api.languagevoicetutor.com/api/cms/runtime-content/source-status | jq .
 curl -fsS -H "Authorization: Bearer $EVT_ADMIN_BEARER_TOKEN" https://api.languagevoicetutor.com/api/admin/dev/cms/runtime-content/status | jq .
@@ -166,12 +167,13 @@ If CMS runtime content has any issue, immediately restore static JSON runtime:
 
 ```bash
 sudo sed -i 's/^CmsContent__UsePublishedSnapshotForRuntime=.*/CmsContent__UsePublishedSnapshotForRuntime=false/' /etc/languagevoicetutor/backend.env
+sudo sed -i 's/^CmsContent__ReadPublishedSnapshotEnabled=.*/CmsContent__ReadPublishedSnapshotEnabled=false/' /etc/languagevoicetutor/backend.env
 sudo sed -i 's/^CmsContent__FallbackToStaticJson=.*/CmsContent__FallbackToStaticJson=true/' /etc/languagevoicetutor/backend.env
 sudo systemctl restart languagevoicetutor-backend
 curl -fsS https://api.languagevoicetutor.com/api/cms/runtime-content/source-status | jq .
 ```
 
-Expected rollback result: `runtimeSource=StaticJson`, `usePublishedSnapshotForRuntime=false`, and `fallbackToStaticJson=true`.
+Expected rollback result: `runtimeSource=StaticJson`, `usePublishedSnapshotForRuntime=false`, and `fallbackToStaticJson=true`; Admin CMS must show static JSON fallback as an attention state.
 
 ## EF migration status
 
@@ -189,7 +191,7 @@ Deploy the backend build using the existing server deployment process. Do not up
 
 ## First production CMS content-pack initialization
 
-Production CMS/Admin login works when `AdminBootstrap__Enabled=true` and the signed-in account is in `AdminBootstrap__AdminEmails`. On a first production setup, the Admin CMS database may not yet contain the `static-json-v1` content pack/draft even though learner runtime is correctly reporting `runtimeSource=StaticJson`.
+Production CMS/Admin login works when `AdminBootstrap__Enabled=true` and the signed-in account is in `AdminBootstrap__AdminEmails`. On a first production setup, the Admin CMS database may not yet contain the `static-json-v1` content pack/draft. Until a valid published snapshot exists, static JSON fallback may protect learners and must be treated as an attention state.
 
 If the CMS Content overview says **"Content pack static-json-v1 has not been initialized in CMS yet."**, use the admin-only **Initialize from static JSON** action. It calls:
 
@@ -206,4 +208,4 @@ Expected behavior:
 - it does not publish automatically;
 - it does not switch runtime.
 
-Runtime remains `StaticJson` until `CmsContent__UsePublishedSnapshotForRuntime=true` is intentionally enabled after separate validation/publishing. Keep `CmsContent__UsePublishedSnapshotForRuntime=false` as the safe default during production verification. No EF schema change is required for this initialization foundation.
+Runtime should use `CmsPublishedSnapshot` after validation/publishing with `CmsContent__UsePublishedSnapshotForRuntime=true` and `CmsContent__ReadPublishedSnapshotEnabled=true`. Static JSON remains the emergency fallback and initialization source. No EF schema change is required for this initialization foundation.

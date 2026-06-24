@@ -225,7 +225,7 @@ public sealed class CmsContentImportService(
             result.Messages.Add("CMS draft content initialized from static JSON.");
         }
 
-        result.Messages.Add("Learner runtime was not changed; static JSON remains the default until CmsContent__UsePublishedSnapshotForRuntime=true is intentionally enabled.");
+        result.Messages.Add("Learner runtime was not changed. Static JSON initialized CMS draft content only; publish a valid snapshot and keep CMS runtime enabled for learner runtime to use it.");
         result.PublishedSnapshotCreated = false;
         result.Counts.AuditLogEntriesCreated = auditEntries.Count;
         dbContext.ContentAuditLogs.AddRange(auditEntries);

@@ -123,7 +123,7 @@ Deployed runtime status diagnostics are visible on backend `0.1.35-backend.40` f
 
 ## CMS connection readiness and controlled release preparation
 
-Current state: CMS practical readiness has passed the runtime connection milestone. CMS published snapshot is now the active runtime content source for controlled tester lessons. Do not start broad public release from this state.
+Current state: CMS practical readiness has passed the runtime connection milestone. CMS published snapshot is now the active runtime content source for controlled tester lessons. Do not start broad Public release from this state.
 
 ### A. Verify deployed Admin CMS manually
 

@@ -129,6 +129,6 @@ public sealed class CmsRuntimeLessonContentStatusResponse
             return "CMS published snapshot is active for learner runtime because both CMS runtime flags are enabled and the published snapshot validated.";
         }
 
-        return "Learner runtime still uses static JSON by default; CMS published-snapshot runtime is not active.";
+        return "CMS published snapshot is not effectively active for learner runtime. Treat packaged static JSON usage as an attention state unless this is an intentional emergency fallback or initialization step.";
     }
 }

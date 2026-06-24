@@ -2096,13 +2096,13 @@
             cmsPublishChangeSummaryInput.focus();
             return;
         }
-        if (!confirm("Publish current CMS draft content? Runtime learner behavior still remains static JSON by default.")) { return; }
+        if (!confirm("Publish current CMS draft content? Learner runtime uses the published snapshot only when CMS runtime is enabled, valid, and effectively active; otherwise static JSON fallback may remain active.")) { return; }
         setCmsError(""); setCmsSuccess("Publishing CMS draft...");
         try {
             const payload = await adminFetch(cmsPath(ApiPaths.cmsPublishTemplate, { slug: getSelectedCmsSlug() }), { method: "POST", body: JSON.stringify({ changeSummary: summary }) });
             clearCmsPublishErrorDetails();
             hideCmsPublishDiscovery({ clearDraftSaved: true });
-            setCmsSuccess(payload.noChanges ? "Publish completed with no draft changes to publish." : "Draft published. Runtime CMS mode will use the new published snapshot when enabled.");
+            setCmsSuccess(payload.noChanges ? "Publish completed with no draft changes to publish." : "Draft published. Learner runtime will use the new published snapshot when CMS runtime is enabled, valid, and effectively active.");
             await refreshCmsContentPack(); await runCmsValidation(); await loadCmsPreviewSummary();
         } catch (error) { renderCmsPublishErrorDetails(error); handleCmsError(error); }
     }

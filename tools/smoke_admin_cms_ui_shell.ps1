@@ -28,7 +28,7 @@ if ($errors.Count -eq 0) {
         'tab-button-cms-content',
         'tab-panel-cms-content',
         'CMS Content',
-        'Development-only/admin-only content editing shell. Runtime still uses static JSON by default.',
+        'Admin-only CMS content control plane. Learner runtime is expected to use the CMS published snapshot when enabled, valid, and active.',
         'cms-content-pack-select',
         'cms-sub-tab-button-overview',
         'cms-sub-tab-button-topics',
