@@ -1,6 +1,6 @@
 # Admin RBAC Cutover Runbook
 
-This runbook records the completed owner-approved controlled validation and permanent fallback disable. It is not a broad public-production release checklist and must not be used to change BootstrapAdmin fallback casually.
+This runbook records the completed owner-approved controlled validation and permanent fallback disable. It is for owner-approved controlled validation only; it is not a broad public-production release checklist and must not be used to change BootstrapAdmin fallback casually.
 
 ## Current production state
 
@@ -20,7 +20,7 @@ The release gate runs the Admin RBAC cutover validation static pack, which verif
 
 `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies`
 
-If the setting is missing or set to `true`, fallback is enabled. If the setting is set to `false`, fallback is disabled only for `AdminPermission:*` policies.
+If the setting is missing or set to `true`, fallback is enabled; fallback remains enabled by default. If the setting is set to `false`, fallback is disabled only for `AdminPermission:*` policies.
 
 ## What fallback enabled means
 
