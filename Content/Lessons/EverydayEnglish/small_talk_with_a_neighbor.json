@@ -10,8 +10,6 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
-    "softWrapUpAfterUserTurn": 10,
-    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -126,8 +124,9 @@
       "conversationDepth": "Stay very shallow: greet, answer how you are, mention weather, say goodbye.",
       "exampleGoodAnswer": "Hi. I'm good, thanks.",
       "exampleStretchAnswer": "Hi. I'm good, thanks. Nice weather today. Have a nice day.",
-      "softWrapUpAfterUserTurn": 10,
-      "finalMessageAtUserTurn": 15
+      "softWrapUpAfterUserTurn": 14,
+      "finalMessageAtUserTurn": 15,
+      "wrapUpAfterUserTurn": 14
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -237,9 +236,7 @@
     "exampleTutorLine": "Great! Now ask me one simple question.",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
-    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You're doing well. Let's do one final short neighbor chat. Say hello, answer one question, and end politely.",
-    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced greeting a neighbor, answering simple small talk questions, and ending politely. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

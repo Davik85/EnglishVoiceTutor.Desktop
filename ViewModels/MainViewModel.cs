@@ -687,7 +687,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             if (runtimeScenario is not null && IsRuntimeLessonScenarioValid(runtimeScenario))
             {
-                Debug.WriteLine($"Using backend runtime lesson scenario from CMS/static runtime source. ScenarioId={runtimeScenario.Id}; SetupMessageLength={runtimeScenario.LessonSetup.SetupMessage.Length}.");
+                Debug.WriteLine($"Using backend runtime lesson scenario. ScenarioId={runtimeScenario.Id}; Source={runtimeScenario.RuntimeContent.Source}; EffectiveSource={runtimeScenario.RuntimeContent.EffectiveSource}; ContentPackSlug={runtimeScenario.RuntimeContent.ContentPackSlug}; Version={runtimeScenario.RuntimeContent.VersionNumber?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty}; SnapshotHash={runtimeScenario.RuntimeContent.SnapshotHash}; FallbackUsed={runtimeScenario.RuntimeContent.FallbackUsed}; SetupMessageLength={runtimeScenario.LessonSetup.SetupMessage.Length}.");
                 return runtimeScenario;
             }
 

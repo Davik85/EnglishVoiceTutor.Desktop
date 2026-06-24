@@ -18,7 +18,7 @@ def test_cms_level_profiles_are_named_and_required() -> None:
     text = LEVELS.read_text(encoding="utf-8")
     for key in ('"a1"', '"a2"', '"b1"', '"b2"'):
         require(text, key, f"required level key {key}")
-    for const in ("A1FinalMessageAtUserTurn = 15", "B2FinalMessageAtUserTurn = 32", "RequiredLevelCount = 4", "SortOrder = 1", "SortOrder = 4"):
+    for const in ("A1WrapUpAfterUserTurn = 14", "A1FinalMessageAtUserTurn = 15", "B2FinalMessageAtUserTurn = 32", "RequiredLevelCount = 4", "SortOrder = 1", "SortOrder = 4"):
         require(text, const, f"named level constant {const}")
     require(text, "AddMissingRequiredDefaults", "safe repair helper for existing packs")
     require(text, "finalMessageAtUserTurn must be greater than wrapUpAfterUserTurn", "turn validation")
@@ -28,9 +28,9 @@ def test_cms_level_profiles_are_named_and_required() -> None:
 def test_backend_level_settings_drive_lesson_behavior() -> None:
     limits = LIMITS.read_text(encoding="utf-8")
     runtime = RUNTIME.read_text(encoding="utf-8")
-    require(limits, "CmsLevelProfiles.Resolve", "level source in lesson limit helper")
-    if "request.SoftWrapUpAfterUserTurn" in limits or "request.FinalMessageAtUserTurn" in limits or "request.SoftLearnerTurnLimit > 0" in limits or "request.HardLearnerTurnLimit > 0" in limits:
-        raise AssertionError("LessonLimitHelper must ignore request/scenario turn-limit overrides and resolve limits from level profiles only.")
+    require(limits, "CmsLevelProfiles.Resolve", "static level fallback in lesson limit helper")
+    require(limits, "request.SoftWrapUpAfterUserTurn > 0", "resolved desktop level-profile wrap threshold honored")
+    require(limits, "request.FinalMessageAtUserTurn > 0", "resolved desktop level-profile final threshold honored")
     require(runtime, "ApplyCmsLevelProfiles", "runtime applies CMS levels into lesson scenarios")
     require(runtime, "SoftWrapUpAfterUserTurn = profile.WrapUpAfterUserTurn", "level wrap-up propagated")
     require(runtime, "FinalMessageAtUserTurn = profile.FinalMessageAtUserTurn", "level final turn propagated")

@@ -10,8 +10,6 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
-    "softWrapUpAfterUserTurn": 10,
-    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -145,8 +143,9 @@
       "conversationDepth": "Stay very shallow: day feeling, one morning action, one work/school action, one evening action.",
       "exampleGoodAnswer": "My day is good. I wake up at seven.",
       "exampleStretchAnswer": "My day is busy. I wake up at seven, go to work, and relax in the evening.",
-      "softWrapUpAfterUserTurn": 10,
-      "finalMessageAtUserTurn": 15
+      "softWrapUpAfterUserTurn": 14,
+      "finalMessageAtUserTurn": 15,
+      "wrapUpAfterUserTurn": 14
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -257,9 +256,7 @@
     "exampleTutorLine": "Nice! Now ask me one simple question about my day.",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
-    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You're doing well. Let's do one final answer. Tell me about your morning, your day, and your evening in three short sentences.",
-    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced talking about your day, your routine, and simple daily activities. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

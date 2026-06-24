@@ -10,8 +10,6 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
-    "softWrapUpAfterUserTurn": 10,
-    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -131,8 +129,9 @@
       "conversationDepth": "Keep the roleplay shallow and practical with one short staff question at a time.",
       "exampleGoodAnswer": "Excuse me. This is not my order.",
       "exampleStretchAnswer": "Excuse me. I ordered soup. This is cold.",
-      "softWrapUpAfterUserTurn": 10,
-      "finalMessageAtUserTurn": 15
+      "softWrapUpAfterUserTurn": 14,
+      "finalMessageAtUserTurn": 15,
+      "wrapUpAfterUserTurn": 14
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -240,9 +239,7 @@
     "exampleTutorLine": "Is everything okay with your order?",
     "correctionMoment": "Tutor gives one short correction when useful and keeps the customer roleplay moving.",
     "correctionStyle": "soft, short, encouraging, and appropriate for the selected level.",
-    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final wrong-order question. Explain the problem and ask me to check or replace it.",
-    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced explaining an order problem politely and asking for a correction. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

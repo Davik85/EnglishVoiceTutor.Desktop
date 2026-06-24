@@ -10,8 +10,6 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
-    "softWrapUpAfterUserTurn": 10,
-    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -127,8 +125,9 @@
       "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
       "exampleGoodAnswer": "The deadline is Friday.",
       "exampleStretchAnswer": "The deadline is Friday. I need more time.",
-      "softWrapUpAfterUserTurn": 10,
-      "finalMessageAtUserTurn": 15
+      "softWrapUpAfterUserTurn": 14,
+      "finalMessageAtUserTurn": 15,
+      "wrapUpAfterUserTurn": 14
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -246,9 +245,7 @@
     "exampleTutorLine": "Can we talk about the deadline for this task?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
-    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final deadline task. Confirm the deadline and agree on a next step.",
-    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced deadline questions, timing, and polite next-step language. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {
