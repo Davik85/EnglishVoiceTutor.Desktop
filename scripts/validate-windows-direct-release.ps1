@@ -66,6 +66,14 @@ function Assert-PresentString {
     }
 }
 
+
+function Test-FileStartsWithUtf8Bom {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    return $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+}
+
 function Read-JsonManifest {
     param([Parameter(Mandatory = $true)][string]$Path)
 
@@ -126,6 +134,12 @@ foreach ($fileName in $requiredManifestFiles) {
 
     if (Test-Path $path -PathType Leaf) {
         Write-ValidationPass "$fileName exists."
+        if (Test-FileStartsWithUtf8Bom -Path $path) {
+            Write-ValidationFail "$fileName must be UTF-8 without BOM, but starts with UTF-8 BOM bytes."
+        }
+        else {
+            Write-ValidationPass "$fileName does not start with UTF-8 BOM bytes."
+        }
     }
     else {
         Write-ValidationFail "$fileName is missing."
