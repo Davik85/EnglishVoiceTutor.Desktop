@@ -493,9 +493,10 @@ static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
 
 static int ResolveTutorOptionSortOrder(string tutorId)
 {
+    var canonicalTutorId = TutorAvatarOptions.ToCanonicalId(tutorId);
     for (var index = 0; index < TutorAvatarOptions.All.Count; index++)
     {
-        if (string.Equals(TutorAvatarOptions.All[index].Id, tutorId, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(TutorAvatarOptions.All[index].Id, canonicalTutorId, StringComparison.OrdinalIgnoreCase))
         {
             return index;
         }
@@ -513,12 +514,12 @@ static async Task<IResult> HandleGetRuntimeTutorOptionsAsync(
     if (result.Success && result.Content is not null)
     {
         var runtimeOptions = result.Content.TutorBehaviorProfiles
-            .Where(profile => localOptionsById.ContainsKey(profile.TutorId.Trim()))
+            .Where(profile => localOptionsById.ContainsKey(TutorAvatarOptions.ToCanonicalId(profile.TutorId)))
             .OrderBy(profile => ResolveTutorOptionSortOrder(profile.TutorId))
             .Select(profile => new
             {
-                tutorId = profile.TutorId.Trim(),
-                displayName = string.IsNullOrWhiteSpace(profile.DisplayName) ? localOptionsById[profile.TutorId.Trim()].DisplayName : profile.DisplayName.Trim(),
+                tutorId = TutorAvatarOptions.ToCanonicalId(profile.TutorId),
+                displayName = string.IsNullOrWhiteSpace(profile.DisplayName) ? localOptionsById[TutorAvatarOptions.ToCanonicalId(profile.TutorId)].DisplayName : profile.DisplayName.Trim(),
                 isActive = profile.IsActive
             })
             .ToList();

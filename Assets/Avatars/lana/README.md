@@ -1,6 +1,6 @@
-# Elena avatar GIFs
+# Lana avatar GIFs
 
-Place Elena state GIF files in this folder:
+Place Lana state GIF files in this folder:
 
 - `avatar-idle.gif`
 - `avatar-listening.gif`

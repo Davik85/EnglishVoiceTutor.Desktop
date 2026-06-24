@@ -9,7 +9,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 PROMPT_BUILDER = ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "LessonPromptBuilder.cs"
 REALTIME_SERVICE = ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "RealtimeVoiceSessionService.cs"
 DESKTOP_VM = ROOT / "ViewModels" / "LessonChatViewModel.cs"
-ELENA_PROFILE = ROOT / "Content" / "Tutors" / "elena.json"
+LANA_PROFILE = ROOT / "Content" / "Tutors" / "lana.json"
 
 
 def read(path: pathlib.Path) -> str:
@@ -26,13 +26,13 @@ def main() -> int:
     realtime_service = read(REALTIME_SERVICE)
     tutor_guard = read(ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "TutorIdentityGuard.cs")
     desktop_vm = read(DESKTOP_VM)
-    elena = json.loads(read(ELENA_PROFILE))
+    lana = json.loads(read(LANA_PROFILE))
 
-    assert elena["displayName"] == "Elena"
-    assert elena["homeCity"] == "London"
-    assert elena["studies"] == "fashion design"
-    assert "padel" in elena["hobbies"]
-    assert "art" in elena["hobbies"]
+    assert lana["displayName"] == "Lana"
+    assert lana["homeCity"] == "London"
+    assert lana["studies"] == "fashion design"
+    assert "padel" in lana["hobbies"]
+    assert "art" in lana["hobbies"]
 
     for needle in [
         "You are {avatarProfile.DisplayName}",
@@ -40,7 +40,7 @@ def main() -> int:
         "Studies {avatarProfile.Studies}",
         "FormatNaturalList(avatarProfile.Hobbies)",
     ]:
-        assert_contains(prompt_builder, needle, "realtime Elena identity prompt construction")
+        assert_contains(prompt_builder, needle, "realtime Lana identity prompt construction")
 
     for needle in [
         "ResolveScenarioPlaceholders",

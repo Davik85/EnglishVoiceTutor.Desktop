@@ -8,4 +8,4 @@ David is a selectable tutor avatar and prefers the Onyx voice by default. Drop D
 - `avatar-thinking.gif`
 - `avatar-transcribing.gif`
 
-The desktop project includes `Assets/Avatars/**/*.gif` as WPF resources, so correctly named David GIF files in this folder are included in the app output automatically. Until these files are added, the desktop app falls back to Elena's available GIF resources.
+The desktop project includes `Assets/Avatars/**/*.gif` as WPF resources, so correctly named David GIF files in this folder are included in the app output automatically. Until these files are added, the desktop app falls back to Lana's available GIF resources.

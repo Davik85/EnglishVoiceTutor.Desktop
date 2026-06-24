@@ -1,11 +1,12 @@
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Models;
+using EnglishVoiceTutor.Desktop.Models;
 
 namespace EnglishVoiceTutor.Api.Services;
 
 public sealed class TutorAvatarProfileProvider
 {
-    private const string DefaultAvatarId = "elena";
+    private const string DefaultAvatarId = "lana";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         PropertyNameCaseInsensitive = true
@@ -25,7 +26,7 @@ public sealed class TutorAvatarProfileProvider
 
     public TutorAvatarProfile GetById(string? avatarId)
     {
-        var normalizedAvatarId = string.IsNullOrWhiteSpace(avatarId) ? DefaultAvatarId : avatarId.Trim();
+        var normalizedAvatarId = TutorAvatarOptions.ToCanonicalId(avatarId);
         var profilePath = ResolveProfilePath(normalizedAvatarId);
 
         if (profilePath is null)
@@ -72,7 +73,7 @@ public sealed class TutorAvatarProfileProvider
         return new TutorAvatarProfile
         {
             Id = string.IsNullOrWhiteSpace(requestedAvatarId) ? DefaultAvatarId : requestedAvatarId,
-            DisplayName = "Elena",
+            DisplayName = "Lana",
             Age = 22,
             HomeCity = "London",
             CountryOrRegion = "United Kingdom",
@@ -88,7 +89,7 @@ public sealed class TutorAvatarProfileProvider
             },
             IdentityRules =
             [
-                "Always introduce yourself as Elena when asked your name.",
+                "Always introduce yourself as Lana when asked your name.",
                 "Do not claim to be from another city or country.",
                 "Do not invent a different job, age, hobby, or background.",
                 "In roleplay, adapt to the role, but keep the avatar identity when personal questions arise."

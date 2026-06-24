@@ -2286,7 +2286,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     private void SaveCurrentSettingsLocally()
     {
-        var selectedAvatar = SelectedTutorAvatarOption ?? TutorAvatarOptions.Elena;
+        var selectedAvatar = SelectedTutorAvatarOption ?? TutorAvatarOptions.Lana;
         var selectedAudioInputDeviceId = SelectedAudioInputDeviceOption?.Id ?? AudioConstants.DefaultAudioInputDeviceId;
         saveSettings(SelectedInterfaceLanguageId, SelectedNativeLanguageOption.Id, SelectedStudyLanguage.Id, selectedAvatar.Id, SelectedSpeechVoiceOption.Id, UserDisplayName, LearningGoal, BackendBaseUrl, selectedAudioInputDeviceId);
     }

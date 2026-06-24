@@ -55,7 +55,7 @@ Current lesson and prompt content is loaded from files packaged with the desktop
 
 - `Content/Lessons/` contains topic folders and lesson scenario JSON files.
 - `Content/Prompts/` contains `lesson_tutor_base_prompt.txt`, `lesson_setup_rules.txt`, and `lesson_response_rules.txt`.
-- `Content/Tutors/` contains tutor avatar/personality JSON files such as Elena and Nelli.
+- `Content/Tutors/` contains tutor avatar/personality JSON files such as Lana and Nelli.
 - `Content/StudyLanguages/study_languages.json` mirrors the shared study language catalog.
 
 `Services/LessonContentService.cs` reads those files from `AppContext.BaseDirectory/Content`, deserializes lesson JSON into `Models/LessonContent/*`, and exposes loader methods for scenarios, tutor profiles, and prompt text. The current accepted desktop package therefore carries static content with the app.
@@ -290,7 +290,7 @@ Recommended fields:
 
 - `Id`;
 - `ContentPackId`;
-- `TutorId` (`elena`, `nelli`, etc. only if already supported);
+- `TutorId` (`lana`, `nelli`, etc. only if already supported);
 - `DisplayName` read-only or tightly controlled;
 - `CommunicationStyleJson`;
 - `SpeakingRulesJson`;
@@ -646,11 +646,11 @@ Do not enable CMS published-snapshot runtime for learner traffic by default duri
 
 Step 5D-7 prepared the published-snapshot runtime read path for controlled validation before the runtime milestone. The existing runtime service can choose static JSON when `CmsContent:UsePublishedSnapshotForRuntime` is false, reads immutable published snapshots when enabled, and falls back to static JSON when configured.
 
-The Admin CMS now includes a read-only **Runtime content status** panel backed by `GET /api/admin/dev/cms/runtime-status`. The response is restricted to safe metadata and bounded diagnostics; it does not expose scenario definitions, prompt bodies, tutor instruction bodies, secrets, tokens, API keys, connection strings, or auth headers. CMS published snapshot is now the active controlled tester runtime source. Localhost is only an explicit developer override for local backend work. The local root cause of the previous validation mismatch was an obsolete exact count of 2 tutor behavior profiles; product content legitimately has approved tutor ids `david`, `elena`, and `nelli`. Runtime validation now checks those ids and reports expected, actual, missing, unknown/extra, and duplicate tutor ids. Runtime status is green on backend `0.1.35-backend.11`; normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, and no warnings.
+The Admin CMS now includes a read-only **Runtime content status** panel backed by `GET /api/admin/dev/cms/runtime-status`. The response is restricted to safe metadata and bounded diagnostics; it does not expose scenario definitions, prompt bodies, tutor instruction bodies, secrets, tokens, API keys, connection strings, or auth headers. CMS published snapshot is now the active controlled tester runtime source. Localhost is only an explicit developer override for local backend work. The local root cause of the previous validation mismatch was an obsolete exact count of 2 tutor behavior profiles; product content legitimately has approved tutor ids `david`, `lana`, and `nelli`. Runtime validation now checks those ids and reports expected, actual, missing, unknown/extra, and duplicate tutor ids. Runtime status is green on backend `0.1.35-backend.11`; normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, and no warnings.
 
 ## Step 5D-8 update — Operator-safe CMS published-snapshot runtime validation
 
-Backend `0.1.35-backend.11` has clean runtime status diagnostics in the deployed Admin path: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and 3 tutor behavior profiles for the approved tutor ids `david`, `elena`, and `nelli`. CMS published snapshot is the active controlled tester runtime source.
+Backend `0.1.35-backend.11` has clean runtime status diagnostics in the deployed Admin path: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=Yes`, `fallbackUsed=No`, no errors, no warnings, and 3 tutor behavior profiles for the approved tutor ids `david`, `lana`, and `nelli`. CMS published snapshot is the active controlled tester runtime source.
 
 `tools/validate_cms_published_snapshot_runtime.ps1` remains available for runtime-status checks. Its default mode is read-only, calls `https://api.languagevoicetutor.com/api/admin/dev/cms/runtime-status` with an admin access token or other approved admin auth method, and should now confirm the active CMS published snapshot source. The script does not change configuration.
 

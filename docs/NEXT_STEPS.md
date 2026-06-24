@@ -119,7 +119,7 @@ Current state: last known production backend snapshot is `/opt/languagevoicetuto
 
 Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`. Backend `0.1.35-backend.40` contains the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields for Desktop Account billing UI decisions, and a cancel request path that must not directly revoke entitlements. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. EF migrations through `20260620165657_AddAdminRoleAssignmentPersistence` are recorded in production `__EFMigrationsHistory`.
 
-Deployed runtime status diagnostics are visible on backend `0.1.35-backend.40` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `elena`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
+Deployed runtime status diagnostics are visible on backend `0.1.35-backend.40` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `lana`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
 
 ## CMS connection readiness and controlled release preparation
 
@@ -202,7 +202,7 @@ Next safe step: controlled tester handoff and feedback collection. CMS published
 
 The Admin CMS now exposes a read-only **Runtime content status** section and the protected endpoint `GET /api/admin/dev/cms/runtime-status`. Use it to confirm the effective learner content source, validation result, counts, published snapshot metadata, and fallback state without exposing content bodies or secrets.
 
-CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.40` with approved tutor-id validation for `david`, `elena`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
+CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status is clean on backend `0.1.35-backend.40` with approved tutor-id validation for `david`, `lana`, and `nelli`. Normal status should show `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
 
 ## CMS-managed level profiles (A1-B2)
 
@@ -215,7 +215,7 @@ CMS published snapshot is the active runtime source. The diagnostic confirms run
 
 ## CMS tutor display name verification
 
-When changing a tutor Display name in Admin CMS, use Save draft + Publish and then start a new desktop lesson to verify the lesson chat bubble uses the CMS-published display name. Keep the stable tutor/avatar IDs (`elena`, `nelli`, `david`) unchanged because avatar image selection continues to use those IDs rather than display names.
+When changing a tutor Display name in Admin CMS, use Save draft + Publish and then start a new desktop lesson to verify the lesson chat bubble uses the CMS-published display name. Keep the stable tutor/avatar IDs (`lana`, `nelli`, `david`) unchanged because avatar image selection continues to use those IDs rather than display names.
 
 ## Premium billing follow-up
 

@@ -337,8 +337,8 @@ def check_everyday_english_scenario_separation(parsed: dict[Path, Any], report: 
         return
 
     dumped = json.dumps(data)
-    if "Elena" in dumped:
-        report.error(f"{rel(introductions_path)} must not hardcode tutor profile name Elena")
+    if "Lana" in dumped:
+        report.error(f"{rel(introductions_path)} must not hardcode tutor profile name Lana")
 
     forbidden_fields = ["levelSpecificTurnPlans", "forbiddenByLevel", "A1-only", "A1 forbidden"]
     for forbidden in forbidden_fields:

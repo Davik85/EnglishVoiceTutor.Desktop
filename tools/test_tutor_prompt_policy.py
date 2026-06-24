@@ -83,7 +83,7 @@ def main() -> int:
         assert_not_contains(runtime, generic, "generic guided assistant phrase")
 
     dumped_introductions = json.dumps(introductions)
-    assert_not_contains(dumped_introductions, "Elena", "avatar-specific scenario content")
+    assert_not_contains(dumped_introductions, "Lana", "avatar-specific scenario content")
     assert_not_contains(dumped_introductions, "Alex", "stale scenario tutor name")
     assert_not_contains(dumped_introductions, "levelSpecificTurnPlans", "new duplicated level-specific turn plan field")
     assert_not_contains(dumped_introductions, "forbiddenByLevel", "new duplicated level-specific forbidden field")

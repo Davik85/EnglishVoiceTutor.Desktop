@@ -2,7 +2,7 @@
 
 ## Tutor avatars
 
-The desktop tutor catalog includes Elena, Nelli, and David. David remains selectable and prefers the Onyx voice by default.
+The desktop tutor catalog includes Lana, Nelli, and David. David remains selectable and prefers the Onyx voice by default.
 
 David's expected GIF folder is `Assets/Avatars/david/` with these per-state filenames:
 
@@ -12,7 +12,7 @@ David's expected GIF folder is `Assets/Avatars/david/` with these per-state file
 - `avatar-thinking.gif`
 - `avatar-transcribing.gif`
 
-The WPF project includes `Assets/Avatars/**/*.gif` as resources, so correctly named David GIF files in that folder are included automatically. If David GIF files are missing, the existing avatar resolver falls back to Elena's available resources.
+The WPF project includes `Assets/Avatars/**/*.gif` as resources, so correctly named David GIF files in that folder are included automatically. If David GIF files are missing, the existing avatar resolver falls back to Lana's available resources.
 
 ## Voice choices
 
@@ -32,4 +32,4 @@ These labels are style hints for learners and must not be presented as guarantee
 
 ## Conversation Mode framing
 
-Conversation Mode uses a smaller, start-screen-sized app window instead of the larger normal Lesson Chat window. The Conversation Mode avatar frame is smaller than the previous full-overlay frame and uses `UniformToFill` GIF rendering so Elena, Nelli, and David fill the visible frame without gray side bars. Conversation Mode also removes the global dimming overlay from the avatar frame so the GIF stays closer to its source brightness; readability is handled by localized semi-transparent message bubbles instead of darkening the whole image.
+Conversation Mode uses a smaller, start-screen-sized app window instead of the larger normal Lesson Chat window. The Conversation Mode avatar frame is smaller than the previous full-overlay frame and uses `UniformToFill` GIF rendering so Lana, Nelli, and David fill the visible frame without gray side bars. Conversation Mode also removes the global dimming overlay from the avatar frame so the GIF stays closer to its source brightness; readability is handled by localized semi-transparent message bubbles instead of darkening the whole image.

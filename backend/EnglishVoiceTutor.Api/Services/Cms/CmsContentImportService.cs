@@ -1,6 +1,7 @@
 using System.Text.Json;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities.Cms;
+using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
 using Microsoft.EntityFrameworkCore;
 
@@ -326,6 +327,7 @@ public sealed class CmsContentImportService(
         foreach (var tutorPath in Directory.EnumerateFiles(tutorsRoot, "*.json", SearchOption.TopDirectoryOnly).OrderBy(path => path, StringComparer.Ordinal))
         {
             var tutor = await ReadJsonFileAsync<TutorProfile>(tutorPath, cancellationToken);
+            tutor.Id = TutorAvatarOptions.ToCanonicalId(tutor.Id);
             draft.TutorBehaviorProfiles.Add(new CmsStaticTutorProfileDraft
             {
                 TutorId = tutor.Id.Trim(),

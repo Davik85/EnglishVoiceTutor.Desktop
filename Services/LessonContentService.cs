@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
+using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Desktop.Models.LessonContent;
 
 namespace EnglishVoiceTutor.Desktop.Services;
@@ -82,19 +83,20 @@ public sealed class LessonContentService
         return LoadJsonFile<LessonScenario>(lessonScenarioPath, "lesson scenario");
     }
 
-    public TutorProfile LoadElenaTutorProfile()
+    public TutorProfile LoadLanaTutorProfile()
     {
-        return LoadTutorProfile(ContentConstants.ElenaTutorId);
+        return LoadTutorProfile(ContentConstants.LanaTutorId);
     }
 
     public TutorProfile LoadTutorProfile(string tutorId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tutorId);
+        var canonicalTutorId = TutorAvatarOptions.ToCanonicalId(tutorId);
 
         var tutorPath = Path.Combine(
             contentRootPath,
             ContentConstants.TutorsFolder,
-            $"{tutorId}.json");
+            $"{canonicalTutorId}.json");
 
         return LoadJsonFile<TutorProfile>(tutorPath, "tutor profile");
     }

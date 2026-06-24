@@ -12,7 +12,7 @@ Important desktop directories:
 
 - `Constants/`: app, audio, backend, avatar, content, and storage constants.
 - `Content/Lessons/`: JSON lesson catalog and scenario/methodology metadata.
-- `Content/Tutors/`: tutor profile JSON such as Elena.
+- `Content/Tutors/`: tutor profile JSON such as Lana.
 - `Models/`: desktop DTOs and UI/domain models.
 - `Models/LessonContent/`: strongly typed lesson JSON schema models.
 - `Services/`: local storage, content loading, HTTP backend, audio recording/playback.
@@ -133,7 +133,7 @@ Extract one boundary at a time after the manual smoke checklist and policy tests
 - Do not redesign Realtime transport before long-session and latency measurements.
 - Do not change OpenAI model choices during the documentation update.
 - Do not make Realtime the default product Conversation Mode provider.
-- Do not hardcode Elena or any tutor identity in lesson JSON.
+- Do not hardcode Lana or any tutor identity in lesson JSON.
 - Do not put A1-only rules directly into each scenario JSON unless documenting current `levelProfiles` behavior.
 - Do not add subscriptions, avatar expansion, broad UI polish, or all-lesson JSON migration until smoke tests are reliable.
 

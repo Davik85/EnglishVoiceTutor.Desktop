@@ -148,7 +148,7 @@ def main() -> int:
     neighbor = next(variant for variant in introductions["controlledVariation"]["contextVariants"] if variant["id"] == "new_neighbor")
     if neighbor["openingLine"] != expected_opening:
         raise AssertionError("New-neighbor opening must self-introduce with the tutorName placeholder.")
-    if "Elena" in neighbor["openingLine"]:
+    if "Lana" in neighbor["openingLine"]:
         raise AssertionError("New-neighbor opening must not hardcode the active tutor profile name.")
 
     final_json = introductions["conversationFlow"]["finalMessage"]
