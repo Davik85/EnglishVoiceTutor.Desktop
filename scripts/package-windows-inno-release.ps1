@@ -152,6 +152,20 @@ function Assert-PublishOutputIsSafe {
     }
 }
 
+function Write-Utf8NoBomFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
+        [string]$Value
+    )
+
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($Path, $Value, $utf8NoBom)
+}
+
 function Write-JsonFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -162,7 +176,7 @@ function Write-JsonFile {
     )
 
     $json = $Value | ConvertTo-Json -Depth 8
-    Set-Content -Path $Path -Value $json -Encoding utf8
+    Write-Utf8NoBomFile -Path $Path -Value $json
 }
 
 if (-not (Test-Path $projectPath -PathType Leaf)) {
@@ -284,7 +298,7 @@ $knownIssuesManifest = [ordered]@{
 Write-JsonFile -Path (Join-Path $releaseDirectory "latest.json") -Value $latestManifest
 Write-JsonFile -Path (Join-Path $releaseDirectory "changelog.json") -Value $changelogManifest
 Write-JsonFile -Path (Join-Path $releaseDirectory "known-issues.json") -Value $knownIssuesManifest
-Set-Content -Path (Join-Path $releaseDirectory "checksums.sha256") -Value ("$installerHash  $installerBaseName") -Encoding ascii
+Write-Utf8NoBomFile -Path (Join-Path $releaseDirectory "checksums.sha256") -Value ("$installerHash  $installerBaseName")
 
 Write-Host "Inno Setup installer created successfully."
 Write-Host "Publish output: $publishDirectory"
