@@ -82,6 +82,20 @@ public sealed class LessonChatBackendRequest
     /// <summary>Legacy request field retained for compatibility only. Backend resolves runtime final-turn timing from level profiles.</summary>
     public int FinalMessageAtUserTurn { get; init; }
 
+    public string EffectiveRuntimeSource { get; init; } = string.Empty;
+
+    public string ContentPackSlug { get; init; } = string.Empty;
+
+    public int? RuntimeContentVersionNumber { get; init; }
+
+    public string RuntimeContentSnapshotHash { get; init; } = string.Empty;
+
+    public bool RuntimeContentFallbackUsed { get; init; }
+
+    public string RuntimeContentScenarioKey { get; init; } = string.Empty;
+
+    public string ResolvedLevelId { get; init; } = string.Empty;
+
     public string LevelBotLanguageComplexityGuidance { get; init; } = string.Empty;
 
     public string LevelCorrectionGuidance { get; init; } = string.Empty;

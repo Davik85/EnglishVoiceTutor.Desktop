@@ -68,6 +68,13 @@ public sealed record VoiceSessionStartRequest
     public int LearnerTurnCount { get; init; }
     public int SoftLearnerTurnLimit { get; init; }
     public int HardLearnerTurnLimit { get; init; }
+    public string EffectiveRuntimeSource { get; init; } = string.Empty;
+    public string ContentPackSlug { get; init; } = string.Empty;
+    public int? RuntimeContentVersionNumber { get; init; }
+    public string RuntimeContentSnapshotHash { get; init; } = string.Empty;
+    public bool RuntimeContentFallbackUsed { get; init; }
+    public string RuntimeContentScenarioKey { get; init; } = string.Empty;
+    public string ResolvedLevelId { get; init; } = string.Empty;
     public string LevelBotLanguageComplexityGuidance { get; init; } = string.Empty;
     public string LevelCorrectionGuidance { get; init; } = string.Empty;
     public string LevelAnswerLengthGuidance { get; init; } = string.Empty;

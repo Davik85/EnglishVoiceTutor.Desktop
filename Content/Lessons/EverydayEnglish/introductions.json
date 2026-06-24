@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -124,9 +126,8 @@
       "conversationDepth": "Stay very shallow: name, where from, where live, nice to meet you.",
       "exampleGoodAnswer": "My name is Ana. I'm from Brazil.",
       "exampleStretchAnswer": "My name is Ana. I'm from Brazil, and I live in Madrid. Nice to meet you.",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 15,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -237,7 +238,9 @@
     "exampleTutorLine": "Great! Now ask me one question.",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You're doing well. Let's do one final introduction. Please introduce yourself with your name, city, and one thing you like.",
+    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced introducing yourself, saying where you are from, and asking simple questions. Please click Finish lesson to see your summary.",
     "wrapUpIntent": "Tutor starts a gentle wrap-up near the configured soft wrap-up turn while staying in the selected introduction scenario.",
     "finalMessageIntent": "Tutor ends the active roleplay at the configured final turn and tells the learner to click Finish lesson."

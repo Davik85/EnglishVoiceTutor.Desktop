@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -132,9 +134,8 @@
       "conversationDepth": "Keep the interview practical: one role, one task, and optionally one learning.",
       "exampleGoodAnswer": "I worked as an assistant. I helped customers.",
       "exampleStretchAnswer": "I worked as an assistant and helped customers every day.",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 15,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -245,7 +246,9 @@
     "exampleTutorLine": "What were your main responsibilities?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging, and professional.",
+    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final answer about your experience and one result.",
+    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced describing work experience, responsibilities, and results. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

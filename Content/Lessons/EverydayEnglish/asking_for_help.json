@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -126,9 +128,8 @@
       "conversationDepth": "Stay very shallow: get attention, ask for help, ask where/repeat, say thank you.",
       "exampleGoodAnswer": "Excuse me, can you help me?",
       "exampleStretchAnswer": "Excuse me, can you help me? Where is the station? Thank you.",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 15,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -239,7 +240,9 @@
     "exampleTutorLine": "Sure. It's over there, near the door.",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You're doing well. Let's do one final help request. Ask politely, explain the problem, and say thank you.",
+    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced asking for help politely, asking someone to repeat, and saying thank you. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

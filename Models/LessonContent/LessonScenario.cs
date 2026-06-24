@@ -47,10 +47,16 @@ public sealed class RuntimeContentDiagnostics
 {
     public string Source { get; set; } = string.Empty;
     public string EffectiveSource { get; set; } = string.Empty;
+    public string EffectiveRuntimeSource { get; set; } = string.Empty;
     public string ContentPackSlug { get; set; } = string.Empty;
     public int? VersionNumber { get; set; }
     public int? PublishedVersionNumber { get; set; }
     public string SnapshotHash { get; set; } = string.Empty;
     public bool FallbackUsed { get; set; }
+    public string ScenarioKey { get; set; } = string.Empty;
+    public string ResolvedLevelId { get; set; } = string.Empty;
+    public int SoftWrapUpAfterUserTurn { get; set; }
+    public int FinalMessageAtUserTurn { get; set; }
+    public string LessonPhase { get; set; } = string.Empty;
+    public bool HasWrapUpStarted { get; set; }
 }
-

@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -123,9 +125,8 @@
       "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
       "exampleGoodAnswer": "Here is my passport. I have one bag.",
       "exampleStretchAnswer": "Here is my passport. I have one bag. Where is the gate?",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 15,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -242,7 +243,9 @@
     "exampleTutorLine": "Do you have any bags to check in?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final check-in question. Ask me about your gate or boarding time.",
+    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced airport check-in, baggage questions, seat requests, and gate questions. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

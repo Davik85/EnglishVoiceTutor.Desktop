@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -128,9 +130,8 @@
       "conversationDepth": "Keep the interview introduction short and focused on professional background and role interest.",
       "exampleGoodAnswer": "My name is David. I’m a designer. I’m interested in this job.",
       "exampleStretchAnswer": "My name is David. I studied design, and I’m interested in this job.",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 15,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -241,7 +242,9 @@
     "exampleTutorLine": "Could you tell me a little about yourself?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging, and professional.",
+    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final self-introduction answer for this interview.",
+    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced answering “Tell me about yourself” with relevant interview information. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

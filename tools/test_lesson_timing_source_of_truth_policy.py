@@ -22,6 +22,7 @@ FORBIDDEN_NUMERIC_TIMING = re.compile(
 )
 
 ALLOWED_JSON_PATH_PARTS = {"levelProfiles"}
+DEPRECATED_METADATA_TIMING_FIELDS = {"softWrapUpAfterUserTurn", "finalMessageAtUserTurn"}
 
 
 def assert_true(condition: bool, message: str) -> None:
@@ -69,7 +70,9 @@ def scan_lesson_content() -> None:
             if any(part in ALLOWED_JSON_PATH_PARTS for part in object_path):
                 continue
             for key in ("softWrapUpAfterUserTurn", "finalMessageAtUserTurn", "wrapUpAfterUserTurn"):
-                assert_true(key not in obj, f"Scenario content must not define independent timing outside levelProfiles in {path}:{'.'.join(object_path)}: {key}")
+                if object_path in (("metadata",), ("conversationFlow",)) and key in DEPRECATED_METADATA_TIMING_FIELDS | {"wrapUpAfterUserTurn"}:
+                    continue
+                assert_true(key not in obj, f"Scenario content must not define independent timing outside levelProfiles or deprecated metadata compatibility fields in {path}:{'.'.join(object_path)}: {key}")
         for json_path, text in walk_json(data):
             if any(part in ALLOWED_JSON_PATH_PARTS for part in json_path):
                 continue
@@ -89,10 +92,15 @@ def scan_runtime_code() -> None:
     assert_true("request.HardLearnerTurnLimit > 0" in prompt, "Realtime prompt construction must preserve desktop resolved final threshold.")
     assert_true("request.SoftWrapUpAfterUserTurn > 0" in limits, "Backend normal chat must honor resolved level-profile soft wrap threshold from the request.")
     assert_true("request.FinalMessageAtUserTurn > 0" in limits, "Backend normal chat must honor resolved level-profile final threshold from the request.")
-    assert_true("lesson.Metadata.SoftWrapUpAfterUserTurn = 0" in snapshot, "Published snapshot builder must clear legacy scenario soft wrap metadata.")
-    assert_true("lesson.Metadata.FinalMessageAtUserTurn = 0" in snapshot, "Published snapshot builder must clear legacy scenario final metadata.")
-    assert_true("softWrapUpAfterUserTurn = (int?)null" in definition, "Fallback definition JSON must not emit scenario soft wrap timing.")
-    assert_true("Prompt templates" in doc and "must not contain independent numeric" in doc, "Timing source-of-truth documentation is missing prompt guidance.")
+    assert_true("ApplyPublishedSnapshotLevelProfiles(result.Content)" in (ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "Cms" / "CmsRuntimeLessonContentService.cs").read_text(encoding="utf-8"), "CMS published snapshots must apply level profiles from the published snapshot only.")
+    runtime = (ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "Cms" / "CmsRuntimeLessonContentService.cs").read_text(encoding="utf-8")
+    assert_true("LevelProfiles = publishedResult.Content.LevelProfiles" in runtime, "CMS runtime must not replace missing published level profiles with static defaults.")
+    assert_true("ApplyPublishedSnapshotLevelProfiles(result.Content);" in runtime, "CMS runtime must apply published level profiles to published scenarios.")
+    read_static_body = runtime.split("private async Task<CmsRuntimeLessonContentReadResult> ReadStaticJsonAsync", 1)[1].split("private static CmsRuntimeLessonContentReadResult MapPublishedResult", 1)[0]
+    assert_true("ApplyPublishedSnapshotLevelProfiles" not in read_static_body, "Static JSON fallback must not be overwritten by CMS default level profiles.")
+    for needle in ("effectiveRuntimeSource", "contentPackSlug", "fallbackUsed", "scenarioKey", "resolvedLevelId"):
+        assert_true(needle in prompt, f"Backend prompt diagnostics missing {needle}.")
+    assert_true("Prompt templates" in doc and "must not define independent numeric timing" in doc, "Timing source-of-truth documentation is missing prompt guidance.")
 
 
 if __name__ == "__main__":

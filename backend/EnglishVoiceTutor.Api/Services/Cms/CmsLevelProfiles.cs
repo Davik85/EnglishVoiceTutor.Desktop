@@ -6,7 +6,7 @@ namespace EnglishVoiceTutor.Api.Services.Cms;
 public static class CmsLevelProfiles
 {
     public const int RequiredLevelCount = 4;
-    public const int A1WrapUpAfterUserTurn = 14;
+    public const int A1WrapUpAfterUserTurn = 10;
     public const int A1FinalMessageAtUserTurn = 15;
     public const int A2WrapUpAfterUserTurn = 14;
     public const int A2FinalMessageAtUserTurn = 20;

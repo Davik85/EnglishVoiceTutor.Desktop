@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -123,9 +125,8 @@
       "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
       "exampleGoodAnswer": "Hi, I'm David. I work as a designer.",
       "exampleStretchAnswer": "Hi, I'm David. I work as a designer, and I'm new here.",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 15,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -243,7 +244,9 @@
     "exampleTutorLine": "Could you introduce yourself?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final first-meeting question. Please introduce yourself and ask me about my role.",
+    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced introducing yourself, saying your role, and asking a professional question. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

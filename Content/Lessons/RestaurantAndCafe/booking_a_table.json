@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -132,9 +134,8 @@
       "conversationDepth": "Keep the roleplay shallow and practical with one short booking question at a time.",
       "exampleGoodAnswer": "A table for two, please.",
       "exampleStretchAnswer": "A table for two at seven, under the name Anna.",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 15,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -242,7 +243,9 @@
     "exampleTutorLine": "How many people is the table for?",
     "correctionMoment": "Tutor gives one short correction when useful and keeps the customer roleplay moving.",
     "correctionStyle": "soft, short, encouraging, and appropriate for the selected level.",
+    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final reservation question. Confirm the time, name, or seating preference.",
+    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced booking a table, giving details, and confirming a reservation. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

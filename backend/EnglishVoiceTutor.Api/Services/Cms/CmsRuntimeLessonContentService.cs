@@ -59,7 +59,7 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
         if (publishedResult.Success && publishedResult.Content is not null)
         {
             result = MapPublishedResult(publishedResult);
-            ApplyCmsLevelProfiles(result.Content);
+            ApplyPublishedSnapshotLevelProfiles(result.Content);
             ValidateRuntimeContent(result);
             if (result.Errors.Count == 0)
             {
@@ -116,7 +116,6 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
             Content = content,
             Summary = CreateSummary(content, hashValid: true)
         };
-        ApplyCmsLevelProfiles(result.Content);
         ValidateRuntimeContent(result);
         result.Success = result.Errors.Count == 0;
         result.Summary.ValidationPassed = result.Success;
@@ -133,7 +132,7 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
                 Scenarios = publishedResult.Content.Scenarios,
                 PromptTemplates = publishedResult.Content.PromptTemplates,
                 TutorBehaviorProfiles = publishedResult.Content.TutorBehaviorProfiles,
-                LevelProfiles = publishedResult.Content.LevelProfiles.Count > 0 ? publishedResult.Content.LevelProfiles : CmsLevelProfiles.Defaults.ToList()
+                LevelProfiles = publishedResult.Content.LevelProfiles
             };
         NormalizeTutorIds(content);
 
@@ -177,14 +176,19 @@ public sealed class CmsRuntimeLessonContentService : ICmsRuntimeLessonContentSer
         };
     }
 
-    private static void ApplyCmsLevelProfiles(CmsRuntimeLessonContent? content)
+    private static void ApplyPublishedSnapshotLevelProfiles(CmsRuntimeLessonContent? content)
     {
         if (content is null)
         {
             return;
         }
 
-        var profiles = content.LevelProfiles.Count > 0 ? content.LevelProfiles : CmsLevelProfiles.Defaults;
+        if (content.LevelProfiles.Count == 0)
+        {
+            return;
+        }
+
+        var profiles = content.LevelProfiles;
         foreach (var scenario in content.Scenarios)
         {
             foreach (var profile in profiles.Where(profile => profile.IsActive))

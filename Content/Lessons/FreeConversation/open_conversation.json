@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 25,
+    "finalMessageAtUserTurn": 30,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -103,9 +105,8 @@
       "conversationDepth": "Simple personal preferences and daily-life topics.",
       "exampleGoodAnswer": "I want to talk about music.",
       "exampleStretchAnswer": "I want to talk about music because I like pop songs.",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 30,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 25,
+      "finalMessageAtUserTurn": 30
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -217,7 +218,9 @@
     "exampleTutorLine": "That sounds interesting. What do you like most about it?",
     "correctionMoment": "Tutor gives brief natural corrections when useful and keeps the conversation moving.",
     "correctionStyle": "light, friendly, concise, and level-aware.",
+    "wrapUpAfterUserTurn": 25,
     "wrapUpMessage": "We’re near the end, so let’s finish with one final thought. What is one useful phrase from our conversation that you want to remember?",
+    "finalMessageAtUserTurn": 30,
     "finalMessage": "Great work today! You practiced open English conversation while keeping it safe and respectful. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {
