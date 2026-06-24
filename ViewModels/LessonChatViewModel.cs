@@ -4058,8 +4058,8 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 _ => LessonTurnPhase.SetupContextSelection
             },
             LearnerTurnCount,
-            activeLevelProfile.SoftWrapUpAfterUserTurn > 0 ? activeLevelProfile.SoftWrapUpAfterUserTurn : lessonScenario.Metadata.SoftWrapUpAfterUserTurn,
-            activeLevelProfile.FinalMessageAtUserTurn > 0 ? activeLevelProfile.FinalMessageAtUserTurn : lessonScenario.Metadata.FinalMessageAtUserTurn,
+            activeLevelProfile.SoftWrapUpAfterUserTurn,
+            activeLevelProfile.FinalMessageAtUserTurn,
             IsFreeConversationLesson() || selectedContextVariant is not null || !string.IsNullOrWhiteSpace(selectedCustomContextTitle));
     }
 

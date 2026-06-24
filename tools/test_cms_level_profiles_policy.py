@@ -28,7 +28,9 @@ def test_cms_level_profiles_are_named_and_required() -> None:
 def test_backend_level_settings_drive_lesson_behavior() -> None:
     limits = LIMITS.read_text(encoding="utf-8")
     runtime = RUNTIME.read_text(encoding="utf-8")
-    require(limits, "CmsLevelProfiles.Resolve", "level fallback in lesson limit helper")
+    require(limits, "CmsLevelProfiles.Resolve", "level source in lesson limit helper")
+    if "request.SoftWrapUpAfterUserTurn" in limits or "request.FinalMessageAtUserTurn" in limits or "request.SoftLearnerTurnLimit > 0" in limits or "request.HardLearnerTurnLimit > 0" in limits:
+        raise AssertionError("LessonLimitHelper must ignore request/scenario turn-limit overrides and resolve limits from level profiles only.")
     require(runtime, "ApplyCmsLevelProfiles", "runtime applies CMS levels into lesson scenarios")
     require(runtime, "SoftWrapUpAfterUserTurn = profile.WrapUpAfterUserTurn", "level wrap-up propagated")
     require(runtime, "FinalMessageAtUserTurn = profile.FinalMessageAtUserTurn", "level final turn propagated")
@@ -40,6 +42,9 @@ def test_admin_has_levels_tab_and_validation() -> None:
     validation = VALIDATION.read_text(encoding="utf-8")
     require(html, 'data-cms-sub-tab-id="levels"', "levels CMS sub-tab")
     require(html, "cms-level-final-turn", "level final turn editor")
+    if "cms-scenario-soft-wrap-turn" in html or "cms-scenario-final-message-turn" in html:
+        raise AssertionError("Scenario editor must not expose scenario metadata turn-limit fields as normal controls.")
+    require(html, "runtime ignores them", "legacy scenario turn-limit warning")
     require(html, "cms-level-initialize-button", "default level initialization button")
     require(html, "Save draft only persists CMS draft data", "publish explanation for levels")
     require(js, "level_profiles", "level profiles template binding")
@@ -48,6 +53,7 @@ def test_admin_has_levels_tab_and_validation() -> None:
     require(js, 'template?.id || "level_profiles"', "save path for missing level_profiles template")
     require(js, "Admin CMS UI level profile draft edit", "level save draft reason")
     require(validation, "ValidateLevelProfiles", "draft level validation")
+    require(validation, "Legacy scenario metadata turn-limit fields are tolerated", "legacy scenario metadata import compatibility")
 
 if __name__ == "__main__":
     test_cms_level_profiles_are_named_and_required()

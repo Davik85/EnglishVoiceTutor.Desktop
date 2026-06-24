@@ -12,8 +12,10 @@ public sealed class LessonMetadata
 
     public List<string> SupportedLevels { get; set; } = [];
 
+    /// <summary>Legacy scenario metadata field retained for JSON compatibility only. Runtime lesson length is owned by level profiles.</summary>
     public int SoftWrapUpAfterUserTurn { get; set; }
 
+    /// <summary>Legacy scenario metadata field retained for JSON compatibility only. Runtime final-turn timing is owned by level profiles.</summary>
     public int FinalMessageAtUserTurn { get; set; }
 
     public bool SetupAndContextChoiceCountAsLessonTurns { get; set; }

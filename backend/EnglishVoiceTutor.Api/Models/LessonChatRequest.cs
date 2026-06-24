@@ -58,8 +58,10 @@ public sealed class LessonChatRequest
 
     public int UserTurnNumber { get; init; }
 
+    /// <summary>Legacy request field retained for compatibility only. Backend resolves runtime lesson length from level profiles.</summary>
     public int SoftWrapUpAfterUserTurn { get; init; }
 
+    /// <summary>Legacy request field retained for compatibility only. Backend resolves runtime final-turn timing from level profiles.</summary>
     public int FinalMessageAtUserTurn { get; init; }
 
     public string LevelBotLanguageComplexityGuidance { get; init; } = string.Empty;
