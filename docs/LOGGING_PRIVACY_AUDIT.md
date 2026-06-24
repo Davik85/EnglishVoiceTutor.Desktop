@@ -59,3 +59,11 @@ Phase 5A is documentation/audit only. No code changes were made because this pas
 - Production/live Paddle readiness and live billing operations.
 - Log retention policy implementation beyond the operator guidance above.
 - Any backend runtime behavior change, Desktop behavior change, billing/Paddle semantic change, or EF migration.
+
+## 2026-06-24 Phase 5B sampling and Phase 5C production logging hardening
+
+Phase 5B bounded production log sampling found a real release-readiness logging issue: normal production journal output included `Microsoft.EntityFrameworkCore.Database.Command[20101]` entries at `Information` level with full SQL command text. Sampled SQL parameters were redacted as `?`, and no raw passwords, bearer tokens, refresh-token values, connection strings, OpenAI API keys, raw Paddle payload contents, raw SQL dumps, or raw Paddle secrets were observed. This is therefore not a data breach based on the sampled evidence, but SQL command text exposed sensitive schema/field names such as password/token hash columns, webhook payload/signature columns, large CMS JSON selections, and repeated health-check `SELECT 1` noise.
+
+Phase 5C hardens tracked Production logging configuration by setting `Microsoft.EntityFrameworkCore.Database.Command`, `Microsoft.EntityFrameworkCore.Infrastructure`, and `System.Net.Http.HttpClient` to `Warning` in `backend/EnglishVoiceTutor.Api/appsettings.Production.json`. This is a configuration-level hardening only: it does not change runtime behavior, billing/Paddle semantics, database schema, Desktop behavior, Admin UI behavior, CMS behavior, deployment scripts, package scripts, or EF migrations.
+
+After deploy, operators must verify that normal production logs no longer contain `Microsoft.EntityFrameworkCore.Database.Command` SQL command text during routine health checks and ordinary product use. Application-level warnings and errors, including billing/Paddle warnings or failures, should remain visible. Production/live Paddle readiness remains deferred, and broad public production readiness is still not claimed.

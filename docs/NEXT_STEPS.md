@@ -241,3 +241,9 @@ Next operational work remains separate:
 4. Repeat permission-fidelity restore drills only for future material schema/security changes when risk warrants them.
 5. Keep production/live Paddle readiness deferred until live credentials, webhook destination, reconciliation, refund/chargeback/customer portal, legal/support, and monitoring work are complete.
 6. Do not claim broad public production readiness.
+
+## 2026-06-24 Phase 5C follow-up
+
+Phase 5B production log sampling found over-verbose EF Core SQL command logging at `Information` level. Phase 5C hardens tracked Production logging levels so ordinary EF SQL command text and ordinary `HttpClient` request logs are suppressed below `Warning`. This was not a data breach in the sampled output because parameter values were redacted and no raw secrets, tokens, connection strings, raw Paddle payload contents, or SQL dumps were observed.
+
+Next operator step after deploying the hardened backend configuration: run a bounded verification sample around `/health`, `/api/health/database`, normal login/lesson activity, and any sandbox billing check in use, and confirm `Microsoft.EntityFrameworkCore.Database.Command` SQL command text no longer appears in normal production logs while application warnings/errors remain visible. Production/live Paddle readiness remains deferred, and broad public production readiness is still not claimed.
