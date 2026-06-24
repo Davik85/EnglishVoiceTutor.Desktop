@@ -468,6 +468,17 @@ static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
         return Results.NotFound(new { error = "Scenario was not found in runtime lesson content." });
     }
 
+    scenario.Lesson.RuntimeContent = new RuntimeContentDiagnostics
+    {
+        Source = result.Source,
+        EffectiveSource = result.EffectiveSource,
+        ContentPackSlug = result.ContentPackSlug,
+        VersionNumber = result.VersionNumber,
+        PublishedVersionNumber = result.PublishedVersionNumber,
+        SnapshotHash = result.SnapshotHash ?? string.Empty,
+        FallbackUsed = result.FallbackUsed
+    };
+
     scenario.Lesson.TutorProfiles = result.Content.TutorBehaviorProfiles
         .Where(profile => profile.IsActive)
         .OrderBy(profile => profile.TutorId, StringComparer.Ordinal)
@@ -479,14 +490,16 @@ static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
         .ToList();
 
     loggerFactory.CreateLogger("RuntimeLessonContentEndpoint").LogInformation(
-        "Runtime lesson scenario served. ScenarioKey={ScenarioKey}; Source={Source}; FallbackUsed={FallbackUsed}; VersionNumber={VersionNumber}; ContentPackSlug={ContentPackSlug}; SetupMessageLength={SetupMessageLength}; FirstBotRuleCount={FirstBotRuleCount}.",
+        "Runtime lesson scenario served. ScenarioKey={ScenarioKey}; Source={Source}; FallbackUsed={FallbackUsed}; VersionNumber={VersionNumber}; ContentPackSlug={ContentPackSlug}; SetupMessageLength={SetupMessageLength}; FirstBotRuleCount={FirstBotRuleCount}; EffectiveSource={EffectiveSource}; SnapshotHash={SnapshotHash}.",
         scenario.StableScenarioKey,
         result.Source,
         result.FallbackUsed,
         result.VersionNumber,
         result.ContentPackSlug,
         scenario.Lesson.LessonSetup.SetupMessage.Length,
-        scenario.Lesson.LessonSetup.FirstBotMessageShouldExplain.Count);
+        scenario.Lesson.LessonSetup.FirstBotMessageShouldExplain.Count,
+        result.EffectiveSource,
+        result.SnapshotHash ?? string.Empty);
 
     return Results.Ok(scenario.Lesson);
 }

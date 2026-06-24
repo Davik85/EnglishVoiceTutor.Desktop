@@ -179,8 +179,8 @@ internal static class CmsScenarioDefinitionJson
                 subtopic = scenario.Title,
                 lessonType = scenario.LessonType,
                 supportedLevels = ParseJsonElementOrNull(scenario.SupportedLevelIdsJson),
-                softWrapUpAfterUserTurn = scenario.SoftWrapUpAfterUserTurn,
-                finalMessageAtUserTurn = scenario.FinalMessageAtUserTurn,
+                softWrapUpAfterUserTurn = (int?)null,
+                finalMessageAtUserTurn = (int?)null,
                 cmsDefinitionJsonFallback = true
             },
             lessonSetup = new

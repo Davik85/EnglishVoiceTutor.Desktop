@@ -10,8 +10,6 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
-    "softWrapUpAfterUserTurn": 10,
-    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -134,8 +132,9 @@
       "conversationDepth": "Keep the ending practical: one useful question and one polite closing phrase.",
       "exampleGoodAnswer": "What are the next steps?",
       "exampleStretchAnswer": "Thank you for your time. What are the next steps?",
-      "softWrapUpAfterUserTurn": 10,
-      "finalMessageAtUserTurn": 15
+      "softWrapUpAfterUserTurn": 14,
+      "finalMessageAtUserTurn": 15,
+      "wrapUpAfterUserTurn": 14
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -246,9 +245,7 @@
     "exampleTutorLine": "Do you have any questions about the role?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging, and professional.",
-    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final polite question and closing phrase.",
-    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced asking useful questions at the end of a job interview. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

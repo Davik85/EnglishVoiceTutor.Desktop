@@ -39,4 +39,18 @@ public sealed class LessonScenario
     public List<string> AiTutorPromptInstructions { get; set; } = [];
 
     public List<TutorRuntimeMetadata> TutorProfiles { get; set; } = [];
+
+    public RuntimeContentDiagnostics RuntimeContent { get; set; } = new();
 }
+
+public sealed class RuntimeContentDiagnostics
+{
+    public string Source { get; set; } = string.Empty;
+    public string EffectiveSource { get; set; } = string.Empty;
+    public string ContentPackSlug { get; set; } = string.Empty;
+    public int? VersionNumber { get; set; }
+    public int? PublishedVersionNumber { get; set; }
+    public string SnapshotHash { get; set; } = string.Empty;
+    public bool FallbackUsed { get; set; }
+}
+

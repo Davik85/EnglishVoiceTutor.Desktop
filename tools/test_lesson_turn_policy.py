@@ -117,20 +117,20 @@ def main() -> int:
     if valid_turn["after"] != 4 or not valid_turn["counted"]:
         raise AssertionError("Valid transcript did not increment exactly once.")
 
-    before_wrap = evaluate_turn("ActiveRoleplay", 8, True)
+    before_wrap = evaluate_turn("ActiveRoleplay", 12, True, content_wrap=14, content_final=15)
     if before_wrap["wrapping"]:
-        raise AssertionError("Phase before wrap threshold must remain ActiveRoleplay.")
+        raise AssertionError("Phase before resolved level-profile wrap threshold must remain ActiveRoleplay.")
 
-    if not evaluate_turn("ActiveRoleplay", 9, True)["wrapping"]:
-        raise AssertionError("A1/A2 guided lesson enters WrapUp at turn 10.")
+    if not evaluate_turn("ActiveRoleplay", 13, True, content_wrap=14, content_final=15)["wrapping"]:
+        raise AssertionError("A1 guided lesson enters WrapUp at the resolved level-profile threshold.")
 
-    continued_wrap = evaluate_turn("WrapUp", 10, True)
-    if continued_wrap["after"] != 11 or not continued_wrap["wrapping"]:
-        raise AssertionError("Wrap-up turns must continue counting without re-entering setup.")
+    continued_wrap = evaluate_turn("WrapUp", 14, True, content_wrap=14, content_final=15)
+    if continued_wrap["after"] != 15 or not continued_wrap["final_message"]:
+        raise AssertionError("Wrap-up turns must continue counting into the resolved final threshold without re-entering setup.")
 
-    final_a1 = evaluate_turn("ActiveRoleplay", 14, True)
+    final_a1 = evaluate_turn("ActiveRoleplay", 14, True, content_wrap=14, content_final=15)
     if final_a1["final"] != 15 or not final_a1["final_message"]:
-        raise AssertionError("A1/A2 final message is not at turn 15.")
+        raise AssertionError("A1 final message is not at the resolved level-profile final threshold.")
 
     if resolve_final("guided_roleplay", "B1 Intermediate") != 25:
         raise AssertionError("B1/B2 guided lesson final turn should be 25.")

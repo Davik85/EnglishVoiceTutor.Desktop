@@ -952,7 +952,13 @@ public sealed class LessonPromptBuilder
 
     private static LessonChatRequest CreateLessonChatRequest(RealtimeVoiceSessionStartRequest request)
     {
-        var levelTurnLimits = CmsLevelProfiles.Resolve(request.SelectedLevel);
+        var fallbackLevelTurnLimits = CmsLevelProfiles.Resolve(request.SelectedLevel);
+        var resolvedSoftWrapTurn = request.SoftLearnerTurnLimit > 0
+            ? request.SoftLearnerTurnLimit
+            : fallbackLevelTurnLimits.WrapUpAfterUserTurn;
+        var resolvedFinalTurn = request.HardLearnerTurnLimit > 0
+            ? request.HardLearnerTurnLimit
+            : fallbackLevelTurnLimits.FinalMessageAtUserTurn;
 
         return new LessonChatRequest
         {
@@ -970,8 +976,8 @@ public sealed class LessonPromptBuilder
             UserDisplayName = request.UserDisplayName,
             LearningGoal = request.LearningGoal,
             LearnerTurnCount = request.LearnerTurnCount,
-            SoftLearnerTurnLimit = levelTurnLimits.WrapUpAfterUserTurn,
-            HardLearnerTurnLimit = levelTurnLimits.FinalMessageAtUserTurn,
+            SoftLearnerTurnLimit = resolvedSoftWrapTurn,
+            HardLearnerTurnLimit = resolvedFinalTurn,
             RecentMessages = request.RecentMessages.Select(message => new RecentConversationMessage { Sender = message.Sender, Text = message.Text }).ToArray(),
             LessonPhase = ChooseFirstNonEmpty(request.CurrentPhase, request.LessonPhase),
             HasWrapUpStarted = request.HasWrapUpStarted,
@@ -989,8 +995,8 @@ public sealed class LessonPromptBuilder
             SelectedContextConfirmationLine = request.SelectedContextConfirmationLine,
             SelectedContextOpeningIntent = request.SelectedContextOpeningIntent,
             UserTurnNumber = request.LearnerTurnCount,
-            SoftWrapUpAfterUserTurn = levelTurnLimits.WrapUpAfterUserTurn,
-            FinalMessageAtUserTurn = levelTurnLimits.FinalMessageAtUserTurn,
+            SoftWrapUpAfterUserTurn = resolvedSoftWrapTurn,
+            FinalMessageAtUserTurn = resolvedFinalTurn,
             LevelBotLanguageComplexityGuidance = request.LevelBotLanguageComplexityGuidance,
             LevelCorrectionGuidance = request.LevelCorrectionGuidance,
             LevelAnswerLengthGuidance = request.LevelAnswerLengthGuidance,

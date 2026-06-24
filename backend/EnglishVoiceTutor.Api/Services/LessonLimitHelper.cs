@@ -26,7 +26,31 @@ public static class LessonLimitHelper
 
     private static CmsLevelProfile ResolveLevelTurnLimits(LessonChatRequest request)
     {
-        return CmsLevelProfiles.Resolve(string.IsNullOrWhiteSpace(request.SelectedLevel) ? request.Level : request.SelectedLevel);
+        var profile = CmsLevelProfiles.Resolve(string.IsNullOrWhiteSpace(request.SelectedLevel) ? request.Level : request.SelectedLevel);
+        var resolvedWrapTurn = request.SoftWrapUpAfterUserTurn > 0
+            ? request.SoftWrapUpAfterUserTurn
+            : request.SoftLearnerTurnLimit > 0
+                ? request.SoftLearnerTurnLimit
+                : profile.WrapUpAfterUserTurn;
+        var resolvedFinalTurn = request.FinalMessageAtUserTurn > 0
+            ? request.FinalMessageAtUserTurn
+            : request.HardLearnerTurnLimit > 0
+                ? request.HardLearnerTurnLimit
+                : profile.FinalMessageAtUserTurn;
+
+        return new CmsLevelProfile
+        {
+            StableLevelKey = profile.StableLevelKey,
+            DisplayName = profile.DisplayName,
+            IsActive = profile.IsActive,
+            SortOrder = profile.SortOrder,
+            WrapUpAfterUserTurn = resolvedWrapTurn,
+            FinalMessageAtUserTurn = resolvedFinalTurn,
+            BotLanguageComplexityGuidance = profile.BotLanguageComplexityGuidance,
+            CorrectionGuidance = profile.CorrectionGuidance,
+            AnswerLengthGuidance = profile.AnswerLengthGuidance,
+            AdminNotes = profile.AdminNotes
+        };
     }
 
     public static int GetActiveRoleplayUserTurnCount(LessonChatRequest request)

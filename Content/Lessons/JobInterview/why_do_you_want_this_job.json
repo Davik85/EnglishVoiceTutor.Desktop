@@ -10,8 +10,6 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
-    "softWrapUpAfterUserTurn": 10,
-    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -133,8 +131,9 @@
       "conversationDepth": "Keep the answer short and job-related: interest, one reason, and optional learning.",
       "exampleGoodAnswer": "I’m interested in this job because I like design.",
       "exampleStretchAnswer": "I’m interested in this job because I like design and want to learn.",
-      "softWrapUpAfterUserTurn": 10,
-      "finalMessageAtUserTurn": 15
+      "softWrapUpAfterUserTurn": 14,
+      "finalMessageAtUserTurn": 15,
+      "wrapUpAfterUserTurn": 14
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -245,9 +244,7 @@
     "exampleTutorLine": "Why do you think this role is a good fit for you?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging, and professional.",
-    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final motivation answer with a reason and a skill connection.",
-    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced explaining why you want a job and connecting motivation to skills. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

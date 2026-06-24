@@ -140,8 +140,11 @@ internal static class CmsContentSnapshotBuilder
         lesson.Metadata.Topic = string.IsNullOrWhiteSpace(lesson.Metadata.Topic) ? scenario.Topic.StableTopicKey : lesson.Metadata.Topic;
         lesson.Metadata.LessonType = scenario.LessonType;
         lesson.Metadata.SupportedLevels = Deserialize<List<string>>(scenario.SupportedLevelIdsJson);
-        lesson.Metadata.SoftWrapUpAfterUserTurn = scenario.SoftWrapUpAfterUserTurn ?? 0;
-        lesson.Metadata.FinalMessageAtUserTurn = scenario.FinalMessageAtUserTurn ?? 0;
+        // Legacy scenario timing fields are retained on draft rows for import/edit compatibility only.
+        // Published runtime scenarios must not carry independent turn thresholds; ApplyCmsLevelProfiles
+        // injects the level-profile-owned thresholds below.
+        lesson.Metadata.SoftWrapUpAfterUserTurn = 0;
+        lesson.Metadata.FinalMessageAtUserTurn = 0;
         lesson.LessonSetup.SetupMessage = scenario.SetupMessage;
         lesson.LessonSetup.ContextSelection = Deserialize<LessonContextSelection>(scenario.ContextSelectionJson);
         lesson.LearningGoal = Deserialize<LearningGoal>(scenario.LearningGoalJson);

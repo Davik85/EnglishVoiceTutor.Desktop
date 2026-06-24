@@ -10,8 +10,6 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
-    "softWrapUpAfterUserTurn": 10,
-    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -125,8 +123,9 @@
       "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
       "exampleGoodAnswer": "Hello, this is David. I'm calling about the meeting.",
       "exampleStretchAnswer": "Hello, this is David. I'm calling about the meeting tomorrow.",
-      "softWrapUpAfterUserTurn": 10,
-      "finalMessageAtUserTurn": 15
+      "softWrapUpAfterUserTurn": 14,
+      "finalMessageAtUserTurn": 15,
+      "wrapUpAfterUserTurn": 14
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -244,9 +243,7 @@
     "exampleTutorLine": "Hello, this is Maria speaking. What do you need?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
-    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final client-call task. Confirm one detail and close the call politely.",
-    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced client phone greetings, clear requests, and polite call closing. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

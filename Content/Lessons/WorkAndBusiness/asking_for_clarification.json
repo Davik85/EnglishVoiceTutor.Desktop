@@ -10,8 +10,6 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
-    "softWrapUpAfterUserTurn": 10,
-    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -126,8 +124,9 @@
       "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
       "exampleGoodAnswer": "Sorry, can you repeat that?",
       "exampleStretchAnswer": "Sorry, can you repeat that, please? I don't understand.",
-      "softWrapUpAfterUserTurn": 10,
-      "finalMessageAtUserTurn": 15
+      "softWrapUpAfterUserTurn": 14,
+      "finalMessageAtUserTurn": 15,
+      "wrapUpAfterUserTurn": 14
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -245,9 +244,7 @@
     "exampleTutorLine": "Which part should I repeat?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
-    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final clarification request. Ask me to explain one work detail politely.",
-    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced polite clarification, repetition requests, and checking understanding. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {
