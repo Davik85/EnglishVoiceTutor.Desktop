@@ -65,7 +65,7 @@ Current lesson and prompt content is loaded from files packaged with the desktop
 A `LessonScenario` currently includes:
 
 - `id`;
-- `metadata` with topic, subtopic, lesson type, supported levels, wrap-up/final turn thresholds, and setup-turn behavior;
+- `metadata` with topic, subtopic, lesson type, supported levels, supported levels and setup-turn behavior; lesson length and wrap-up/final turn timing live in level profiles;
 - `lessonSetup` with setup message, context choices, and setup instructions;
 - `learningGoal`;
 - `situation`;
@@ -259,8 +259,8 @@ Recommended fields:
 - `HintRulesJson`;
 - `RepetitionLogicJson`;
 - `AiTutorPromptInstructionsJson`;
-- `SoftWrapUpAfterUserTurn`;
-- `FinalMessageAtUserTurn`;
+- Legacy `SoftWrapUpAfterUserTurn` (accepted for import compatibility only; ignored by runtime);
+- Legacy `FinalMessageAtUserTurn` (accepted for import compatibility only; ignored by runtime);
 - `IsActive`.
 
 Use typed owned entities where practical, but JSON columns are acceptable for a product if validation is strict and the published snapshot remains deterministic.
@@ -457,7 +457,7 @@ Minimum UI:
    - list, edit title/description/order/active state;
    - show scenario counts and validation state.
 3. Scenarios/Situations:
-   - edit setup message, situation, context choices, openings, level profiles, roleplay beats, wrap-up/final behavior, hint/feedback rules.
+   - edit setup message, situation, context choices, openings, level profiles, roleplay beats, wrap-up/final message copy, hint/feedback rules.
 4. Prompt templates:
    - edit controlled templates;
    - show placeholders and validation.
@@ -579,7 +579,7 @@ Draft editing and approval should be separated when roles exist. For now, keep t
 
 Implemented CMS draft-save audit logging details: successful Topic, Scenario (bounded fields, structured scenario fields, and full scenario JSON), Prompt Template, and Tutor Behavior Profile Save draft operations write `DraftSaved` rows to `cms_content_audit_logs`. Rows capture audit id, `createdAtUtc`, actor user id, actor email when available, content pack id and slug, entity type, entity id, stable key (`stableTopicKey`, `stableScenarioKey`, `templateKey`, or `tutorId`), changed field names, before/after SHA-256 hashes, source `AdminCms`, status, and request id when available. Audit rows intentionally do not store or display full before/after JSON snapshots, prompt/tutor source text snapshots, passwords, tokens, provider secrets, OpenAI API keys, Paddle API keys/webhook secrets, or admin bearer tokens. Large edited values are represented by hashes. No-op Save draft requests avoid noisy draft-save audit rows. Admins can read recent CMS audit entries through bootstrap-admin-protected audit endpoints and the CMS Content Audit subtab, which is aligned to the selected content pack (`static-json-v1` by default) and supports entity type, stable key text, limit, Refresh audit controls, and a **Show smoke/test entries** debugging checkbox. Smoke/test entries are hidden by default while normal manual Admin CMS UI changes remain visible. Runtime learner behavior now uses CMS published snapshot; static JSON fallback remains available for rollback/safety. Production RBAC and critical-change approval remain future work.
 
-Step 5D-6e scenario editor usability refinement is complete. The Admin CMS Scenarios subtab now includes a safer structured editor for common scenario content (title/subtopic, description, setup message, first bot message guidance, context option titles, valid context keywords, custom context rules, invalid context redirect, goal text, can-do statements, opening/first-user-task/follow-up guidance, AI tutor instructions, wrap-up/final message guidance, hint example, and wrap/final turn counters), with compact local **Jump to** navigation, collapsible/visually separated Basic fields, Lesson setup, Context selection / choices, Conversation flow / response guidance, Wrap-up / summary guidance, and Advanced JSON sections, and concise helper text for normal content editors. `DefinitionJson` remains the canonical stored scenario definition; no per-field scenario database columns or EF migration were added. Structured edits parse the current `DefinitionJson`, update only known JSON paths, and write the merged valid JSON back to `DefinitionJson`, preserving unknown fields and advanced configuration in place. Structured fields remain the recommended normal editing path. Advanced JSON remains available as a visually separated technical fallback with `Format JSON` and `Validate JSON` for rare full-JSON changes. Save draft remains explicit and draft-only; invalid Advanced JSON or invalid structured numeric/required data is rejected before saving, and backend scenario validation still rejects invalid JSON, missing required fields, or accidental stable id/title/setup mismatches. CMS draft-save audit logging still records successful scenario saves with changed field names and before/after hashes without storing full scenario JSON bodies. Runtime learner behavior now targets the CMS published snapshot when enabled, valid, and effectively active; static JSON fallback remains available for emergency safety.
+Step 5D-6e scenario editor usability refinement is complete. The Admin CMS Scenarios subtab now includes a safer structured editor for common scenario content (title/subtopic, description, setup message, first bot message guidance, context option titles, valid context keywords, custom context rules, invalid context redirect, goal text, can-do statements, opening/first-user-task/follow-up guidance, AI tutor instructions, wrap-up/final message guidance, hint example, and level-profile-owned lesson length guidance (scenario turn counters are not normal controls)), with compact local **Jump to** navigation, collapsible/visually separated Basic fields, Lesson setup, Context selection / choices, Conversation flow / response guidance, Wrap-up / summary guidance, and Advanced JSON sections, and concise helper text for normal content editors. `DefinitionJson` remains the canonical stored scenario definition; no per-field scenario database columns or EF migration were added. Structured edits parse the current `DefinitionJson`, update only known JSON paths, and write the merged valid JSON back to `DefinitionJson`, preserving unknown fields and advanced configuration in place. Structured fields remain the recommended normal editing path. Advanced JSON remains available as a visually separated technical fallback with `Format JSON` and `Validate JSON` for rare full-JSON changes. Save draft remains explicit and draft-only; invalid Advanced JSON or invalid structured numeric/required data is rejected before saving, and backend scenario validation still rejects invalid JSON, missing required fields, or accidental stable id/title/setup mismatches. CMS draft-save audit logging still records successful scenario saves with changed field names and before/after hashes without storing full scenario JSON bodies. Runtime learner behavior now targets the CMS published snapshot when enabled, valid, and effectively active; static JSON fallback remains available for emergency safety.
 
 
 ## Save draft publish guidance

@@ -2,6 +2,7 @@ using System.Text;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Models.RealtimeVoice;
+using EnglishVoiceTutor.Api.Services.Cms;
 using EnglishVoiceTutor.Shared.StudyLanguages;
 
 namespace EnglishVoiceTutor.Api.Services;
@@ -111,7 +112,7 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("Follow the canonical lesson teaching policy from the session instructions.");
         prompt.AppendLine($"Target-language lesson lock: speak {ResolveTargetLanguage(chatRequest).LanguageLockName} only, even if the learner asks for Finnish, Russian, Spanish, English, or another language.");
         prompt.AppendLine("Produce assistant audio and a matching assistant transcript from this same Realtime response.");
-        prompt.AppendLine($"Current counted learner turn: {chatRequest.LearnerTurnCount} of {chatRequest.HardLearnerTurnLimit}.");
+        prompt.AppendLine($"Current counted learner turn: {chatRequest.LearnerTurnCount} of {LessonLimitHelper.GetHardLearnerTurnLimit(chatRequest)}.");
         if (LessonLimitHelper.ShouldEndLessonNow(chatRequest))
         {
             prompt.AppendLine("This is the final turn. Say the final lesson message first. Do not ask another question.");
@@ -940,6 +941,8 @@ public sealed class LessonPromptBuilder
 
     private static LessonChatRequest CreateLessonChatRequest(RealtimeVoiceSessionStartRequest request)
     {
+        var levelTurnLimits = CmsLevelProfiles.Resolve(request.SelectedLevel);
+
         return new LessonChatRequest
         {
             SelectedLevel = request.SelectedLevel,
@@ -956,8 +959,8 @@ public sealed class LessonPromptBuilder
             UserDisplayName = request.UserDisplayName,
             LearningGoal = request.LearningGoal,
             LearnerTurnCount = request.LearnerTurnCount,
-            SoftLearnerTurnLimit = request.SoftLearnerTurnLimit,
-            HardLearnerTurnLimit = request.HardLearnerTurnLimit,
+            SoftLearnerTurnLimit = levelTurnLimits.WrapUpAfterUserTurn,
+            HardLearnerTurnLimit = levelTurnLimits.FinalMessageAtUserTurn,
             RecentMessages = request.RecentMessages.Select(message => new RecentConversationMessage { Sender = message.Sender, Text = message.Text }).ToArray(),
             LessonPhase = ChooseFirstNonEmpty(request.CurrentPhase, request.LessonPhase),
             LessonScenarioId = request.LessonScenarioId,
@@ -974,8 +977,8 @@ public sealed class LessonPromptBuilder
             SelectedContextConfirmationLine = request.SelectedContextConfirmationLine,
             SelectedContextOpeningIntent = request.SelectedContextOpeningIntent,
             UserTurnNumber = request.LearnerTurnCount,
-            SoftWrapUpAfterUserTurn = request.SoftLearnerTurnLimit,
-            FinalMessageAtUserTurn = request.HardLearnerTurnLimit,
+            SoftWrapUpAfterUserTurn = levelTurnLimits.WrapUpAfterUserTurn,
+            FinalMessageAtUserTurn = levelTurnLimits.FinalMessageAtUserTurn,
             LevelBotLanguageComplexityGuidance = request.LevelBotLanguageComplexityGuidance,
             LevelCorrectionGuidance = request.LevelCorrectionGuidance,
             LevelAnswerLengthGuidance = request.LevelAnswerLengthGuidance,

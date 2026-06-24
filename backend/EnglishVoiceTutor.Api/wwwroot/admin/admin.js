@@ -303,8 +303,6 @@
     const cmsScenarioIsActiveInput = document.getElementById("cms-scenario-is-active");
     const cmsScenarioDefinitionJsonInput = document.getElementById("cms-scenario-definition-json");
     const cmsScenarioFirstBotMessageLinesInput = document.getElementById("cms-scenario-first-bot-message-lines");
-    const cmsScenarioSoftWrapTurnInput = document.getElementById("cms-scenario-soft-wrap-turn");
-    const cmsScenarioFinalMessageTurnInput = document.getElementById("cms-scenario-final-message-turn");
     const cmsScenarioContextOptionLinesInput = document.getElementById("cms-scenario-context-option-lines");
     const cmsScenarioValidContextKeywordsLinesInput = document.getElementById("cms-scenario-valid-context-keywords-lines");
     const cmsScenarioCustomContextRulesLinesInput = document.getElementById("cms-scenario-custom-context-rules-lines");
@@ -454,8 +452,7 @@
     const UnsavedChangesMessage = "You have unsaved changes. Save draft before leaving, or discard changes.";
     const cmsScenarioStructuredInputs = [
         cmsScenarioTitleInput, cmsScenarioDescriptionInput, cmsScenarioSetupMessageInput, cmsScenarioIsActiveInput,
-        cmsScenarioFirstBotMessageLinesInput, cmsScenarioSoftWrapTurnInput, cmsScenarioFinalMessageTurnInput,
-        cmsScenarioContextOptionLinesInput, cmsScenarioValidContextKeywordsLinesInput, cmsScenarioCustomContextRulesLinesInput,
+        cmsScenarioFirstBotMessageLinesInput, cmsScenarioContextOptionLinesInput, cmsScenarioValidContextKeywordsLinesInput, cmsScenarioCustomContextRulesLinesInput,
         cmsScenarioInvalidContextRedirectInput, cmsScenarioGoalTextInput, cmsScenarioCanDoLinesInput, cmsScenarioOpeningTextInput,
         cmsScenarioFirstUserTaskInput, cmsScenarioGuidedFollowUpLinesInput, cmsScenarioAiInstructionLinesInput,
         cmsScenarioWrapUpMessageInput, cmsScenarioFinalMessageInput, cmsScenarioHintExampleInput
@@ -1471,12 +1468,9 @@
     function setCmsArrayField(root, keys, value) { const parent = getCmsNestedObject(root, keys.slice(0, -1)); parent[keys[keys.length - 1]] = splitCmsLines(value); }
     function getCmsStringField(root, keys) { let current = root; for (const key of keys) { if (!current || typeof current !== "object") { return ""; } current = current[key]; } return typeof current === "string" || typeof current === "number" ? String(current) : ""; }
     function getCmsArrayField(root, keys) { let current = root; for (const key of keys) { if (!current || typeof current !== "object") { return ""; } current = current[key]; } return joinCmsLines(current); }
-    function parseCmsOptionalTurn(value, fieldName) { const text = String(value || "").trim(); if (!text) { return null; } const parsed = Number(text); if (!Number.isInteger(parsed) || parsed < 0) { throw new Error(`${fieldName} must be a blank or a whole number greater than or equal to 0.`); } return parsed; }
     function getCmsStructuredScenarioSnapshot() {
         return {
             firstBotMessageShouldExplain: cmsScenarioFirstBotMessageLinesInput.value,
-            softWrapUpAfterUserTurn: cmsScenarioSoftWrapTurnInput.value,
-            finalMessageAtUserTurn: cmsScenarioFinalMessageTurnInput.value,
             contextOptions: cmsScenarioContextOptionLinesInput.value,
             validContextKeywords: cmsScenarioValidContextKeywordsLinesInput.value,
             customContextRules: cmsScenarioCustomContextRulesLinesInput.value,
@@ -1506,8 +1500,6 @@
         }
         const root = parsed.value;
         cmsScenarioFirstBotMessageLinesInput.value = getCmsArrayField(root, ["lessonSetup", "firstBotMessageShouldExplain"]);
-        cmsScenarioSoftWrapTurnInput.value = getCmsStringField(root, ["metadata", "softWrapUpAfterUserTurn"]);
-        cmsScenarioFinalMessageTurnInput.value = getCmsStringField(root, ["metadata", "finalMessageAtUserTurn"]);
         const variants = root.controlledVariation && Array.isArray(root.controlledVariation.contextVariants) ? root.controlledVariation.contextVariants : [];
         cmsScenarioContextOptionLinesInput.value = variants.map((variant) => variant && typeof variant === "object" && typeof variant.title === "string" ? variant.title : "").filter(Boolean).join("\n");
         cmsScenarioValidContextKeywordsLinesInput.value = getCmsArrayField(root, ["lessonSetup", "contextSelection", "validCustomContextKeywords"]);
@@ -1530,10 +1522,6 @@
         setCmsStringField(root, ["metadata", "subtopic"], cmsScenarioTitleInput.value);
         setCmsStringField(root, ["lessonSetup", "setupMessage"], cmsScenarioSetupMessageInput.value);
         setCmsArrayField(root, ["lessonSetup", "firstBotMessageShouldExplain"], cmsScenarioFirstBotMessageLinesInput.value);
-        const softWrapTurn = parseCmsOptionalTurn(cmsScenarioSoftWrapTurnInput.value, "Wrap-up after user turn");
-        const finalTurn = parseCmsOptionalTurn(cmsScenarioFinalMessageTurnInput.value, "Final message at user turn");
-        if (softWrapTurn !== null) { getCmsObject(root, "metadata").softWrapUpAfterUserTurn = softWrapTurn; getCmsObject(root, "conversationFlow").wrapUpAfterUserTurn = softWrapTurn; }
-        if (finalTurn !== null) { getCmsObject(root, "metadata").finalMessageAtUserTurn = finalTurn; getCmsObject(root, "conversationFlow").finalMessageAtUserTurn = finalTurn; }
         const titles = splitCmsLines(cmsScenarioContextOptionLinesInput.value);
         const controlledVariation = getCmsObject(root, "controlledVariation");
         const existingVariants = Array.isArray(controlledVariation.contextVariants) ? controlledVariation.contextVariants : [];

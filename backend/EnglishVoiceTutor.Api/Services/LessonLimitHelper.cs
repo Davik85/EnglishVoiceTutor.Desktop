@@ -8,31 +8,11 @@ public static class LessonLimitHelper
 {
     public static int GetSoftLearnerTurnLimit(LessonChatRequest request)
     {
-        if (request.SoftWrapUpAfterUserTurn > 0)
-        {
-            return request.SoftWrapUpAfterUserTurn;
-        }
-
-        if (request.SoftLearnerTurnLimit > 0)
-        {
-            return request.SoftLearnerTurnLimit;
-        }
-
         return ResolveLevelTurnLimits(request).WrapUpAfterUserTurn;
     }
 
     public static int GetHardLearnerTurnLimit(LessonChatRequest request)
     {
-        if (request.FinalMessageAtUserTurn > 0)
-        {
-            return request.FinalMessageAtUserTurn;
-        }
-
-        if (request.HardLearnerTurnLimit > 0)
-        {
-            return request.HardLearnerTurnLimit;
-        }
-
         return ResolveLevelTurnLimits(request).FinalMessageAtUserTurn;
     }
 

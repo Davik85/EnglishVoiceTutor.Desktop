@@ -169,20 +169,8 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
                 result.Errors.Add($"Scenario '{scenarioDraft.StableScenarioKey}' has no supported levels.");
             }
 
-            if (scenario.Metadata.SoftWrapUpAfterUserTurn <= 0)
-            {
-                result.Errors.Add($"Scenario '{scenarioDraft.StableScenarioKey}' has an invalid soft wrap-up turn value.");
-            }
-
-            if (scenario.Metadata.FinalMessageAtUserTurn <= 0)
-            {
-                result.Errors.Add($"Scenario '{scenarioDraft.StableScenarioKey}' has an invalid final-message turn value.");
-            }
-
-            if (scenario.Metadata.FinalMessageAtUserTurn < scenario.Metadata.SoftWrapUpAfterUserTurn)
-            {
-                result.Errors.Add($"Scenario '{scenarioDraft.StableScenarioKey}' final-message turn must be greater than the soft wrap-up turn.");
-            }
+            // Legacy scenario metadata turn-limit fields are tolerated for import compatibility,
+            // but level profiles are the only validated source of lesson length behavior.
         }
     }
 
@@ -312,22 +300,7 @@ public sealed partial class CmsContentValidationService(AppDbContext dbContext) 
                 result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' references missing topic '{scenario.TopicId}'.");
             }
 
-            if (scenario.SoftWrapUpAfterUserTurn is <= 0)
-            {
-                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' has an invalid optional soft wrap-up override value.");
-            }
-
-            if (scenario.FinalMessageAtUserTurn is <= 0)
-            {
-                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' has an invalid optional final-message override value.");
-            }
-
-            if (scenario.SoftWrapUpAfterUserTurn.HasValue &&
-                scenario.FinalMessageAtUserTurn.HasValue &&
-                scenario.FinalMessageAtUserTurn.Value <= scenario.SoftWrapUpAfterUserTurn.Value)
-            {
-                result.Errors.Add($"Draft scenario '{scenario.StableScenarioKey}' final-message turn must be greater than the soft wrap-up turn.");
-            }
+            // Legacy draft scenario turn-limit columns are ignored by runtime and are not normal behavior controls.
         }
     }
 

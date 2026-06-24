@@ -8,7 +8,7 @@ This document records the current lesson flow contract for guided roleplay, Conv
 
 Keep these layers separate:
 
-1. Lesson scenario: topic, subtopic, learning goal, roles, target language, scenario flow, roleplay beats, wrap-up/final behavior.
+1. Lesson scenario: topic, subtopic, learning goal, roles, target language, scenario flow, roleplay beats, and wrap-up/final message guidance. Level profiles own lesson length and wrap-up/final turn timing.
 2. Context selection: the learner chooses or supplies safe small details for the scenario.
 3. Level rules: A1/A2/B1/B2 complexity, grammar depth, sentence length, conversation depth, and feedback strictness.
 4. Tutor profile: tutor identity, personality, tone, and safe background details.
@@ -30,9 +30,9 @@ Active roleplay remains guided by the selected level, topic, subtopic, and scena
    - Typed messages and valid voice transcripts can count.
    - Empty, placeholder, invalid, or non-English transcripts do not count.
 4. Soft wrap-up.
-   - When `LearnerTurnCount >= softWrapUpAfterUserTurn`, backend/tutor should start wrapping up naturally while staying in the scenario.
+   - When `LearnerTurnCount >= the active level profile softWrapUpAfterUserTurn`, backend/tutor should start wrapping up naturally while staying in the scenario.
 5. Final message.
-   - At `finalMessageAtUserTurn`, the app shows the final tutor message once.
+   - At `the active level profile finalMessageAtUserTurn`, the app shows the final tutor message once.
    - The final message should not ask a new question or invite continuation.
 6. Awaiting Finish.
    - New lesson input is disabled.

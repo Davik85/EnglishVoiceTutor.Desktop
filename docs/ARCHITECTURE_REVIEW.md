@@ -61,7 +61,7 @@ RealtimeMicrophoneCaptureService -> RealtimeVoiceConversationEngine
 
 - Navigation: `MainViewModel` owns screen navigation and constructs child ViewModels.
 - Lesson catalog/content loading: `LessonContentService` owns JSON loading; audit rules live in `tools/`.
-- Lesson scenario data: lesson JSON owns topic, subtopic, goal, target language, controlled context variants, scenario flow, roleplay beats, wrap-up, and final behavior.
+- Lesson scenario data: lesson JSON owns topic, subtopic, goal, target language, controlled context variants, scenario flow, roleplay beats, and scenario-specific wrap-up/final message guidance; level profiles own lesson length and wrap-up/final turn timing.
 - Level rules: lesson `levelProfiles` and prompt/turn metadata own A1/A2/B1/B2 complexity, sentence length, depth, and feedback strictness.
 - Tutor identity: `TutorProfile`/`TutorAvatarProfileProvider` owns tutor name, personality, background, voice/tone, and identity details. Lesson JSON must remain avatar-neutral.
 - Prompt policy: `LessonPromptBuilder` owns the shared canonical tutor policy for normal Lesson Chat and Realtime.
