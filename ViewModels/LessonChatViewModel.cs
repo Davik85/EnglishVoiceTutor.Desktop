@@ -2693,6 +2693,13 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 UserTurnNumber = nextLearnerTurnCount,
                 SoftWrapUpAfterUserTurn = softWrapUpTurn,
                 FinalMessageAtUserTurn = finalTurn,
+                EffectiveRuntimeSource = GetEffectiveRuntimeSource(),
+                ContentPackSlug = lessonScenario.RuntimeContent.ContentPackSlug,
+                RuntimeContentVersionNumber = lessonScenario.RuntimeContent.VersionNumber,
+                RuntimeContentSnapshotHash = lessonScenario.RuntimeContent.SnapshotHash,
+                RuntimeContentFallbackUsed = lessonScenario.RuntimeContent.FallbackUsed,
+                RuntimeContentScenarioKey = lessonScenario.RuntimeContent.ScenarioKey,
+                ResolvedLevelId = SelectedLevel,
                 LevelBotLanguageComplexityGuidance = activeLevelProfile.TutorLanguageStyle,
                 LevelCorrectionGuidance = activeLevelProfile.FeedbackStrictness,
                 LevelAnswerLengthGuidance = activeLevelProfile.ConversationDepth,
@@ -2940,6 +2947,13 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             LearnerTurnCount = LearnerTurnCount,
             SoftLearnerTurnLimit = GetSoftWrapUpTurn(),
             HardLearnerTurnLimit = GetFinalTurn(),
+            EffectiveRuntimeSource = GetEffectiveRuntimeSource(),
+            ContentPackSlug = lessonScenario.RuntimeContent.ContentPackSlug,
+            RuntimeContentVersionNumber = lessonScenario.RuntimeContent.VersionNumber,
+            RuntimeContentSnapshotHash = lessonScenario.RuntimeContent.SnapshotHash,
+            RuntimeContentFallbackUsed = lessonScenario.RuntimeContent.FallbackUsed,
+            RuntimeContentScenarioKey = lessonScenario.RuntimeContent.ScenarioKey,
+            ResolvedLevelId = SelectedLevel,
             LevelBotLanguageComplexityGuidance = activeLevelProfile.TutorLanguageStyle,
             LevelCorrectionGuidance = activeLevelProfile.FeedbackStrictness,
             LevelAnswerLengthGuidance = activeLevelProfile.ConversationDepth,
@@ -4064,6 +4078,13 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     private int GetFinalTurn()
     {
         return LessonTurnPolicy.ResolveFinalTurn(BuildTurnPolicyContext());
+    }
+
+    private string GetEffectiveRuntimeSource()
+    {
+        return string.IsNullOrWhiteSpace(lessonScenario.RuntimeContent.EffectiveRuntimeSource)
+            ? lessonScenario.RuntimeContent.EffectiveSource
+            : lessonScenario.RuntimeContent.EffectiveRuntimeSource;
     }
 
     private LessonTurnPolicyContext BuildTurnPolicyContext()

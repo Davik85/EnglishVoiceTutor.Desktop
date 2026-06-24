@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -121,9 +123,8 @@
       "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
       "exampleGoodAnswer": "I have a reservation. My name is David.",
       "exampleStretchAnswer": "I have a reservation. My name is David. What time is breakfast?",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 15,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -240,7 +241,9 @@
     "exampleTutorLine": "Do you have a reservation?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final hotel question. Ask me about breakfast, Wi-Fi, or check-out.",
+    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced hotel check-in, reservation details, and polite hotel questions. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

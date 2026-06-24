@@ -814,6 +814,13 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine($"- shouldStartWrappingUp: {LessonLimitHelper.ShouldStartWrappingUp(request)}");
         prompt.AppendLine($"- isFirstWrapUpInstruction: {LessonLimitHelper.IsFirstWrapUpInstruction(request)}");
         prompt.AppendLine($"- shouldEndLessonNow: {LessonLimitHelper.ShouldEndLessonNow(request)}");
+        prompt.AppendLine($"- effectiveRuntimeSource: {request.EffectiveRuntimeSource}");
+        prompt.AppendLine($"- contentPackSlug: {request.ContentPackSlug}");
+        prompt.AppendLine($"- versionNumber: {request.RuntimeContentVersionNumber?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty}");
+        prompt.AppendLine($"- snapshotHash: {request.RuntimeContentSnapshotHash}");
+        prompt.AppendLine($"- fallbackUsed: {request.RuntimeContentFallbackUsed}");
+        prompt.AppendLine($"- scenarioKey: {request.RuntimeContentScenarioKey}");
+        prompt.AppendLine($"- resolvedLevelId: {request.ResolvedLevelId}");
         prompt.AppendLine();
     }
 
@@ -997,6 +1004,13 @@ public sealed class LessonPromptBuilder
             UserTurnNumber = request.LearnerTurnCount,
             SoftWrapUpAfterUserTurn = resolvedSoftWrapTurn,
             FinalMessageAtUserTurn = resolvedFinalTurn,
+            EffectiveRuntimeSource = request.EffectiveRuntimeSource,
+            ContentPackSlug = request.ContentPackSlug,
+            RuntimeContentVersionNumber = request.RuntimeContentVersionNumber,
+            RuntimeContentSnapshotHash = request.RuntimeContentSnapshotHash,
+            RuntimeContentFallbackUsed = request.RuntimeContentFallbackUsed,
+            RuntimeContentScenarioKey = request.RuntimeContentScenarioKey,
+            ResolvedLevelId = request.ResolvedLevelId,
             LevelBotLanguageComplexityGuidance = request.LevelBotLanguageComplexityGuidance,
             LevelCorrectionGuidance = request.LevelCorrectionGuidance,
             LevelAnswerLengthGuidance = request.LevelAnswerLengthGuidance,

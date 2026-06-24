@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -139,9 +141,8 @@
       "conversationDepth": "Stay very shallow: suggest plan, ask free/time/place, agree, close.",
       "exampleGoodAnswer": "Let's have coffee.",
       "exampleStretchAnswer": "Let's have coffee. Are you free at five? See you then.",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 15,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -253,7 +254,9 @@
     "exampleTutorLine": "Tomorrow is good. What time should we meet?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You're doing well. Let's do one final plan. Suggest an activity, choose a time, and agree on a place.",
+    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced suggesting a plan, choosing a time and place, and responding politely. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

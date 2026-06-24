@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -125,9 +127,8 @@
       "conversationDepth": "Keep the scenario shallow and practical with one short exchange at a time.",
       "exampleGoodAnswer": "Excuse me. Where is the station?",
       "exampleStretchAnswer": "Excuse me. Where is the station? Thank you.",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 15,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -244,7 +245,9 @@
     "exampleTutorLine": "Go straight, then turn left. Can you repeat that?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging.",
+    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final directions question. Ask me how to get to one place.",
+    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced asking for directions and understanding simple direction words. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

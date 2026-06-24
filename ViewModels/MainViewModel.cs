@@ -673,6 +673,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (string.IsNullOrWhiteSpace(localScenario.Id))
         {
             Debug.WriteLine("Using packaged local lesson scenario fallback. Reason=missing_local_scenario_id.");
+            ApplyPackagedStaticRuntimeDiagnostics(localScenario);
             return localScenario;
         }
 
@@ -699,7 +700,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
 
         Debug.WriteLine($"Using packaged local lesson scenario fallback. ScenarioId={localScenario.Id}; SetupMessageLength={localScenario.LessonSetup.SetupMessage.Length}.");
+        ApplyPackagedStaticRuntimeDiagnostics(localScenario);
         return localScenario;
+    }
+
+    private static void ApplyPackagedStaticRuntimeDiagnostics(LessonScenario scenario)
+    {
+        scenario.RuntimeContent.Source = "StaticJsonFallback";
+        scenario.RuntimeContent.EffectiveSource = "StaticJsonFallback";
+        scenario.RuntimeContent.EffectiveRuntimeSource = "StaticJsonFallback";
+        scenario.RuntimeContent.ContentPackSlug = "packaged-desktop-static-json";
+        scenario.RuntimeContent.FallbackUsed = true;
+        scenario.RuntimeContent.ScenarioKey = scenario.Id;
     }
 
     private static bool IsRuntimeLessonScenarioValid(LessonScenario? runtimeScenario)

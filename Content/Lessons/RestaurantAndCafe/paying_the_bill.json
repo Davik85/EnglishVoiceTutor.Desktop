@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -130,9 +132,8 @@
       "conversationDepth": "Keep the roleplay shallow and practical with one short payment question at a time.",
       "exampleGoodAnswer": "The bill, please.",
       "exampleStretchAnswer": "The bill, please. Card, please.",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 15,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -240,7 +241,9 @@
     "exampleTutorLine": "How would you like to pay?",
     "correctionMoment": "Tutor gives one short correction when useful and keeps the customer roleplay moving.",
     "correctionStyle": "soft, short, encouraging, and appropriate for the selected level.",
+    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final payment question. Ask about card, receipt, service charge, or splitting the bill.",
+    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced asking for the bill, confirming payment, and closing politely. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

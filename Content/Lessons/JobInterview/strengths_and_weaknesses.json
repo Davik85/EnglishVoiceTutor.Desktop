@@ -10,6 +10,8 @@
       "B1 Intermediate",
       "B2 Upper-Intermediate"
     ],
+    "softWrapUpAfterUserTurn": 10,
+    "finalMessageAtUserTurn": 15,
     "setupAndContextChoiceCountAsLessonTurns": false
   },
   "lessonSetup": {
@@ -128,9 +130,8 @@
       "conversationDepth": "Keep the answer short, honest, and professional: one strength and one improvement action.",
       "exampleGoodAnswer": "My strength is teamwork. I want to improve my time management.",
       "exampleStretchAnswer": "I’m good at teamwork, and I’m learning to plan my time.",
-      "softWrapUpAfterUserTurn": 14,
-      "finalMessageAtUserTurn": 15,
-      "wrapUpAfterUserTurn": 14
+      "softWrapUpAfterUserTurn": 10,
+      "finalMessageAtUserTurn": 15
     },
     "A2 Elementary": {
       "level": "A2 Elementary",
@@ -241,7 +242,9 @@
     "exampleTutorLine": "What is one area you would like to improve?",
     "correctionMoment": "Tutor gives one short correction when useful.",
     "correctionStyle": "soft, short, encouraging, and professional.",
+    "wrapUpAfterUserTurn": 10,
     "wrapUpMessage": "You are doing well. Let's do one final balanced answer about a strength and an improvement area.",
+    "finalMessageAtUserTurn": 15,
     "finalMessage": "Great work today! You practiced strengths, weaknesses, and professional self-awareness. Please click Finish lesson to see your summary."
   },
   "controlledVariation": {

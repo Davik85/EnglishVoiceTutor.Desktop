@@ -472,11 +472,13 @@ static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
     {
         Source = result.Source,
         EffectiveSource = result.EffectiveSource,
+        EffectiveRuntimeSource = result.EffectiveSource,
         ContentPackSlug = result.ContentPackSlug,
         VersionNumber = result.VersionNumber,
         PublishedVersionNumber = result.PublishedVersionNumber,
         SnapshotHash = result.SnapshotHash ?? string.Empty,
-        FallbackUsed = result.FallbackUsed
+        FallbackUsed = result.FallbackUsed,
+        ScenarioKey = scenario.StableScenarioKey
     };
 
     scenario.Lesson.TutorProfiles = result.Content.TutorBehaviorProfiles
