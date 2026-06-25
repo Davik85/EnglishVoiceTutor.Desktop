@@ -96,10 +96,12 @@ def main() -> None:
     package_script = read("scripts/package-backend-linux-release.ps1")
     upload_script = read("scripts/upload-backend-linux-release.ps1")
     migration_script = read("scripts/generate-backend-refresh-token-migration-sql.ps1")
+    website_cms_migration_script = read("scripts/generate-backend-website-cms-migration-sql.ps1")
     docs = read("docs/BACKEND_SERVER_DEPLOYMENT.md")
 
     assert_no_bash_escaped_quotes_in_powershell_strings(upload_script)
     assert_powershell_parser_accepts("scripts/upload-backend-linux-release.ps1")
+    assert_powershell_parser_accepts("scripts/generate-backend-website-cms-migration-sql.ps1")
 
     for needle in ["-r", "linux-x64", "--self-contained", "true", "PublishSingleFile=false"]:
         assert_contains(package_script, needle, "self-contained linux-x64 package publish")
@@ -178,6 +180,40 @@ def main() -> None:
         "does not connect to production and does not read or print database secrets",
     ]:
         assert_contains(migration_script, needle, "local migration SQL generation")
+
+
+    for needle in [
+        "20260625090000_AddWebsiteCmsLegalContentFoundation",
+        "20260620165657_AddAdminRoleAssignmentPersistence",
+        "website_cms_sections",
+        "dotnet",
+        "ef",
+        "migrations",
+        "script",
+        "artifacts/sql/backend",
+        "does not apply SQL to any database",
+        "does not connect to production",
+        "does not read or print database secrets",
+    ]:
+        assert_contains(website_cms_migration_script, needle, "Website CMS local migration SQL generation")
+
+    for forbidden in [
+        "dotnet ef database update",
+        "database update",
+        "psql",
+        "PGPASSWORD",
+        "ConnectionStrings__DefaultConnection",
+        "Database=",
+        "Password=",
+        "Host=",
+        "Username=",
+        "Paddle__",
+        "OpenAI",
+        "Jwt",
+        "JWT",
+        "webhook secret",
+    ]:
+        assert_not_contains(website_cms_migration_script, forbidden, "Website CMS SQL generator database apply command, connection string, or secret")
 
     for needle in [
         "The production server does not need a git checkout",
