@@ -149,6 +149,10 @@ Avoid publishing claims that are not yet operationally or legally approved, incl
 6. Add a static-site smoke check that verifies public legal/pricing/support links exist and do not point to missing anchors.
 7. Run a final owner/legal/support review before any live Paddle domain submission or public paid launch claims.
 
+## Static-site smoke test
+
+Run `python3 tools/test_static_site_paddle_review_pages.py` before uploading the public site. The check verifies the Paddle review-readiness pages and links under `site/public/`, required owner/legal placeholders, absence of live checkout wiring, absence of obvious secret-like identifiers, and absence of paid-production/mobile-availability claims.
+
 ## Secret and production-change confirmation
 
 This audit document intentionally contains no real Paddle API keys, price IDs, client-side tokens, webhook secrets, customer IDs, transaction IDs, raw payloads, signatures, OpenAI keys, JWT keys, connection strings, or other secrets.
