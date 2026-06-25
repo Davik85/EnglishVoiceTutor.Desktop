@@ -174,6 +174,10 @@ Avoid publishing claims that are not yet operationally or legally approved, incl
 
 Run `python3 tools/test_static_site_paddle_review_pages.py` before uploading the public site. The check verifies the Paddle review-readiness pages and links under `site/public/`, required owner/legal placeholders, absence of live checkout wiring, absence of obvious secret-like identifiers, and absence of paid-production/mobile-availability claims.
 
+## Future CMS-managed website content planning
+
+Future planning for managing public website legal, seller, support, policy, and pricing display copy through Admin CMS is documented in `docs/WEBSITE_CMS_LEGAL_CONTENT_PLAN.md`. That plan is documentation-only and should be treated as the future source for CMS-managed legal/site content planning; it does not change the current static `site/public/` review-readiness pages or enable production Paddle.
+
 ## Secret and production-change confirmation
 
 This audit document intentionally contains no real Paddle API keys, price IDs, client-side tokens, webhook secrets, customer IDs, transaction IDs, raw payloads, signatures, OpenAI keys, JWT keys, connection strings, or other secrets.
