@@ -6,7 +6,7 @@ Scope: documentation and source review only. No application behavior, billing lo
 
 ## 2026-06-21 Admin RBAC and roadmap update
 
-Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.49` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
+Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.50` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
 
 Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus completed local backup schedule activation plus completed Phase 4 backup/restore/migration rollback drills plus optional off-server backup hardening, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
 
@@ -20,11 +20,11 @@ Public release still requires remaining operational readiness work: the complete
 
 ## Current verified release context
 
-- Production backend: `0.1.35-backend.49` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.49` through the `/opt/languagevoicetutor/backend/current` symlink.
+- Production backend: `0.1.35-backend.50` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.50` through the `/opt/languagevoicetutor/backend/current` symlink.
 - Production backend health: `/health` returns `200 OK` and `/api/health/database` returns `200 OK`.
 - Windows direct tester release: `0.1.36-tester.24`, installer `LanguageVoiceTutorSetup-0.1.36-tester.24.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `updateMode=manual-confirmation`.
 - This remains a controlled tester/direct Windows release, not broad public production readiness.
-- Billing remains controlled sandbox/tester validation. Paddle production/live readiness remains deferred.
+- Billing remains controlled sandbox/tester validation. Admin Product Statistics now shows internal successful payment totals/current-month metrics separately from active Premium entitlement state. Paddle production/live readiness remains deferred.
 
 ## A. Desktop security
 
@@ -174,7 +174,7 @@ The current logging/privacy posture remains controlled-tester appropriate when o
 
 Phase 5B bounded production log sampling found over-verbose EF Core SQL command text in normal production logs via `Microsoft.EntityFrameworkCore.Database.Command[20101]` at `Information` level. Sampled parameter values were redacted as `?`, and no raw passwords, bearer tokens, refresh-token values, connection strings, OpenAI API keys, raw Paddle payload contents, raw SQL dumps, or raw secrets were observed. This is not classified as a data breach from the sampled evidence, but it is too verbose for release-ready production logging because SQL text can expose sensitive schema and field names.
 
-Phase 5C production logging hardening was first deployed on backend `0.1.35-backend.40` and is retained, deployed, and production-verified on current backend `0.1.35-backend.49`. `/opt/languagevoicetutor/backend/current` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.49`, `/opt/languagevoicetutor/backend/previous` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.48`, `/health` returned `200 OK`, `/api/health/database` returned `200 OK`, and a repeat database-health check also returned `200 OK`. `languagevoicetutor-backend.service` is active and enabled. Post-deploy journal sampling over the recent verification window returned 0 lines for the bounded sensitive/EF SQL grep set: `Microsoft.EntityFrameworkCore.Database.Command`, `SELECT`, `INSERT`, `UPDATE`, `PasswordHash`, `TokenHash`, `RawPayload`, and `SignatureHeader`. No EF migrations were run for this config-only backend release, and no production database schema or data changed. No secrets, tokens, connection strings, SQL dumps, Paddle payloads, signatures, private keys, or raw user data were added to tracked docs. Production/live Paddle readiness remains deferred, and broad public production readiness is still not claimed.
+Phase 5C production logging hardening was first deployed on backend `0.1.35-backend.40` and is retained, deployed, and production-verified on current backend `0.1.35-backend.50`. `/opt/languagevoicetutor/backend/current` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.50`, `/opt/languagevoicetutor/backend/previous` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.49`, `/health` returned `200 OK`, `/api/health/database` returned `200 OK`, and a repeat database-health check also returned `200 OK`. `languagevoicetutor-backend.service` is active and enabled. Post-deploy journal sampling over the recent verification window returned 0 lines for the bounded sensitive/EF SQL grep set: `Microsoft.EntityFrameworkCore.Database.Command`, `SELECT`, `INSERT`, `UPDATE`, `PasswordHash`, `TokenHash`, `RawPayload`, and `SignatureHeader`. No EF migrations were run for this config-only backend release, and no production database schema or data changed. No secrets, tokens, connection strings, SQL dumps, Paddle payloads, signatures, private keys, or raw user data were added to tracked docs. Production/live Paddle readiness remains deferred, and broad public production readiness is still not claimed.
 
 ## 2026-06-25 Admin payment-event statistics security note
 
