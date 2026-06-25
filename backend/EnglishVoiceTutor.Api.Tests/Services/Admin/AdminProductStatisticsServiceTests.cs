@@ -52,6 +52,73 @@ public sealed class AdminProductStatisticsServiceTests
         Assert.Equal(1, overview.ActiveTrialsNow);
     }
 
+    [Fact]
+    public async Task SuccessfulPaymentsCountCompletedPaymentEventsByUtcMonth()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = await AddUserAsync(dbContext, "payer@example.test");
+        var now = DateTimeOffset.UtcNow;
+        var currentMonthPaymentAt = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero).AddDays(1);
+        var previousMonthPaymentAt = currentMonthPaymentAt.AddDays(-2);
+        await AddPaymentAsync(dbContext, userId, SubscriptionConstants.PaymentStatuses.Completed, SubscriptionConstants.BillingEventTypes.TransactionCompleted, currentMonthPaymentAt);
+        await AddPaymentAsync(dbContext, userId, SubscriptionConstants.PaymentStatuses.Completed, SubscriptionConstants.BillingEventTypes.TransactionCompleted, previousMonthPaymentAt);
+
+        var overview = await new AdminProductStatisticsService(dbContext).GetOverviewAsync(CancellationToken.None);
+
+        Assert.Equal(2, overview.SuccessfulPaymentsTotal);
+        Assert.Equal(1, overview.SuccessfulPaymentsCurrentMonth);
+    }
+
+    [Fact]
+    public async Task NonSuccessfulPaymentAndSubscriptionSnapshotEventsDoNotCountAsSuccessfulPayments()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = await AddUserAsync(dbContext, "non-successful@example.test");
+        var now = DateTimeOffset.UtcNow;
+        await AddPaymentAsync(dbContext, userId, SubscriptionConstants.PaymentStatuses.Failed, SubscriptionConstants.BillingEventTypes.TransactionPaymentFailed, now);
+        await AddPaymentAsync(dbContext, userId, SubscriptionConstants.PaymentStatuses.Pending, SubscriptionConstants.BillingEventTypes.TransactionCompleted, now);
+        await AddPaymentAsync(dbContext, userId, SubscriptionConstants.PaymentStatuses.Completed, SubscriptionConstants.BillingEventTypes.SubscriptionUpdated, now);
+        await AddBillingEventAsync(dbContext, SubscriptionConstants.BillingEventStatuses.ReconciliationBlocked, SubscriptionConstants.BillingEventTypes.TransactionCompleted);
+        await AddBillingEventAsync(dbContext, SubscriptionConstants.BillingEventStatuses.Ignored, SubscriptionConstants.BillingEventTypes.SubscriptionUpdated);
+
+        var overview = await new AdminProductStatisticsService(dbContext).GetOverviewAsync(CancellationToken.None);
+
+        Assert.Equal(0, overview.SuccessfulPaymentsTotal);
+        Assert.Equal(0, overview.SuccessfulPaymentsCurrentMonth);
+    }
+
+    [Fact]
+    public async Task TrialUserWithDeferredPremiumEntitlementStillCountsSuccessfulPaymentEvent()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = await AddUserAsync(dbContext, "trial-payer@example.test");
+        var now = DateTimeOffset.UtcNow;
+        await AddActiveTrialGrantAsync(dbContext, userId);
+        await AddFuturePremiumEntitlementAsync(dbContext, userId);
+        await AddPaymentAsync(dbContext, userId, SubscriptionConstants.PaymentStatuses.Completed, SubscriptionConstants.BillingEventTypes.TransactionCompleted, now);
+
+        var overview = await new AdminProductStatisticsService(dbContext).GetOverviewAsync(CancellationToken.None);
+
+        Assert.Equal(1, overview.ActiveTrialsNow);
+        Assert.Equal(0, overview.ActivePremiumUsersNow);
+        Assert.Equal(1, overview.SuccessfulPaymentsTotal);
+        Assert.Equal(1, overview.SuccessfulPaymentsCurrentMonth);
+    }
+
+    [Fact]
+    public async Task ActivePremiumEntitlementsAloneDoNotCountAsSuccessfulPayments()
+    {
+        await using var dbContext = CreateDbContext();
+        var userId = await AddUserAsync(dbContext, "entitlement-only@example.test");
+        await AddPremiumEntitlementAsync(dbContext, userId);
+
+        var overview = await new AdminProductStatisticsService(dbContext).GetOverviewAsync(CancellationToken.None);
+
+        Assert.Equal(1, overview.ActivePremiumUsersNow);
+        Assert.Equal(0, overview.SuccessfulPaymentsTotal);
+        Assert.Equal(0, overview.SuccessfulPaymentsCurrentMonth);
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -108,6 +175,69 @@ public sealed class AdminProductStatisticsServiceTests
             SourcePlatform = "desktop",
             Status = SubscriptionConstants.Entitlements.StatusActive,
             CreatedAt = now
+        });
+        await dbContext.SaveChangesAsync();
+    }
+
+
+    private static async Task AddFuturePremiumEntitlementAsync(AppDbContext dbContext, Guid userId)
+    {
+        var now = DateTimeOffset.UtcNow;
+        dbContext.Entitlements.Add(new EntitlementEntity
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            PlanId = SubscriptionConstants.Plans.PremiumPlanId,
+            EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType,
+            Source = SubscriptionConstants.Entitlements.SourceProviderEvent,
+            Status = SubscriptionConstants.Entitlements.StatusActive,
+            StartsAtUtc = now.AddDays(7),
+            ExpiresAtUtc = now.AddDays(37),
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        await dbContext.SaveChangesAsync();
+    }
+
+    private static async Task AddPaymentAsync(
+        AppDbContext dbContext,
+        Guid userId,
+        string status,
+        string providerEventType,
+        DateTimeOffset completedAtUtc)
+    {
+        var now = DateTimeOffset.UtcNow;
+        dbContext.Payments.Add(new PaymentEntity
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            InternalPlanId = SubscriptionConstants.Plans.PremiumPlanId,
+            Amount = 10m,
+            AmountMinor = 1000,
+            Currency = "USD",
+            Status = status,
+            Provider = SubscriptionConstants.BillingProviders.Paddle,
+            ProviderPaymentId = Guid.NewGuid().ToString("N"),
+            ProviderEventId = Guid.NewGuid().ToString("N"),
+            ProviderEventType = providerEventType,
+            ProviderEventOccurredAtUtc = completedAtUtc,
+            CreatedAt = now,
+            UpdatedAt = now,
+            CompletedAt = completedAtUtc
+        });
+        await dbContext.SaveChangesAsync();
+    }
+
+    private static async Task AddBillingEventAsync(AppDbContext dbContext, string status, string eventType)
+    {
+        dbContext.BillingEvents.Add(new BillingEventEntity
+        {
+            Id = Guid.NewGuid(),
+            BillingProvider = SubscriptionConstants.BillingProviders.Paddle,
+            EventType = eventType,
+            ProviderEventId = Guid.NewGuid().ToString("N"),
+            ReceivedAtUtc = DateTimeOffset.UtcNow,
+            Status = status
         });
         await dbContext.SaveChangesAsync();
     }
