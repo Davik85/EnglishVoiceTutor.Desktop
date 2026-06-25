@@ -81,7 +81,7 @@ Invoke-GateCommand "Tutor prompt policy" {
 }
 
 Invoke-GateCommand "Lesson behavior CMS ownership policy" {
-    python -m pytest "tests/test_lesson_behavior_policy.py"
+    python "tools/test_lesson_behavior_policy.py"
 }
 
 Invoke-GateCommand "Admin RBAC permission policy foundation" {
