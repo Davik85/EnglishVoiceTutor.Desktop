@@ -4,7 +4,7 @@ Review date: 2026-06-25.
 
 ## Purpose
 
-Define a small, safe future Admin CMS feature for managing public website legal, seller, support, policy, and pricing display content without code changes after implementation. This is a documentation-only plan. It does not implement the feature, does not change public website rendering, and does not provide final legal advice.
+Define a small, safe Admin CMS feature foundation and future workflow for managing public website legal, seller, support, policy, and pricing display content without code changes after implementation. This plan now has a first backend foundation slice implemented. It still does not change public website rendering and does not provide final legal advice.
 
 All legal/policy copy managed through this future CMS must be treated as owner/legal review draft content until approved by the product owner and qualified legal reviewer.
 
@@ -15,7 +15,7 @@ This plan must not be used to:
 - change `site/public/` HTML, CSS, JavaScript, assets, or routes in this task;
 - deploy the public site;
 - enable production/live Paddle;
-- change billing, subscriptions, entitlements, Desktop behavior, backend runtime behavior, database migrations, deployment scripts, or production configuration in this task;
+- change billing, subscriptions, entitlements, Desktop behavior, public website runtime behavior, deployment scripts, or production configuration in this task;
 - store or operate Paddle configuration, checkout wiring, webhooks, payment actions, refunds, chargebacks, tax settings, or customer billing records;
 - replace legal review or publish final legal advice;
 - let public website draft content affect users before an explicit future rendering implementation is approved.
@@ -186,8 +186,12 @@ That slice should only introduce safe storage/read views and admin navigation pl
 
 ## Implementation status
 
-- Read-only Admin CMS Website tab skeleton added.
-- No editable storage/publish/public rendering yet.
+- Read-only Admin CMS Website tab skeleton exists.
+- First backend foundation added: a dedicated `website_cms_sections` persistence model for section key, draft body, optional published body, review status, effective date, internal notes, change reason, and updated/published timestamps.
+- Secret-like Website CMS content guard added to block obvious Paddle secrets, webhook secrets/signatures, API keys, JWT keys, connection strings, raw provider payload markers, customer IDs, transaction IDs, and subscription IDs before future save/publish flows persist content.
+- Public rendering is still not connected. `site/public/` remains static and unchanged by this foundation.
+- Live Paddle is still not enabled. No checkout buttons, checkout links, Paddle client tokens, live price IDs, webhook secrets, or public payment behavior were added.
+- No full editing UI, publish-to-public-site behavior, unauthenticated Website CMS endpoint, billing behavior, entitlement behavior, Desktop behavior, deployment script, backend environment variable, or production configuration change is included in this slice.
 
 ## Risks and guardrails
 
@@ -202,6 +206,6 @@ That slice should only introduce safe storage/read views and admin navigation pl
 | Audit logs capture too much sensitive content. | Store changed field names and hashes/bounded summaries rather than full sensitive bodies when practical. |
 | CMS scope expands into billing operations. | Keep payment operations, refunds, chargebacks, secrets, webhook handling, and entitlements outside Website CMS. |
 
-## Documentation-only confirmation
+## Current-slice confirmation
 
-This plan is documentation only. It does not change runtime behavior, public static pages, billing behavior, entitlement behavior, Desktop behavior, database migrations, deployment scripts, production configuration, backend environment variables, or Paddle configuration.
+This plan now records a backend foundation slice. It does not change public rendering, public static pages, billing behavior, entitlement behavior, Desktop behavior, deployment scripts, production configuration, backend environment variables, or Paddle configuration. The added migration is scoped to Website CMS section storage only and does not alter existing lesson/content/runtime behavior.

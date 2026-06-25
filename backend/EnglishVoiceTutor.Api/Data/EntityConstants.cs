@@ -37,6 +37,7 @@ public static class EntityConstants
         public const string ContentVersions = "cms_content_versions";
         public const string PublishedContentSnapshots = "cms_published_content_snapshots";
         public const string ContentAuditLogs = "cms_content_audit_logs";
+        public const string WebsiteCmsSections = "website_cms_sections";
     }
 
     public static class Lengths
@@ -96,6 +97,7 @@ public static class EntityConstants
         public const int CmsTemplateKeyMaxLength = 80;
         public const int CmsReasonMaxLength = 2000;
         public const int CmsStableKeyMaxLength = 160;
+        public const int WebsiteCmsSectionKeyMaxLength = 80;
     }
 
     public static class Precision
