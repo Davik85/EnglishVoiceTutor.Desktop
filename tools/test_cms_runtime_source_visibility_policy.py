@@ -68,8 +68,8 @@ require(doc, 'Static JSON fallback must be visible in Admin CMS', "fallback visi
 require(admin_guide, "The name may describe the original seed source; it does **not** mean learners are currently using static JSON.", "content pack identity docs")
 require(admin_guide, "**Emergency static JSON fallback enabled: Yes**", "fallback enabled docs")
 require(admin_guide, "**Currently using static JSON fallback: No**", "fallback used docs")
-require(admin_guide, "`Effective source = CmsPublishedSnapshot`", "healthy effective source docs")
-require(admin_guide, "`Fallback used = No`", "healthy fallback docs")
+require(admin_guide, "`Actual learner runtime source = CmsPublishedSnapshot`", "healthy effective source docs")
+require(admin_guide, "`Currently using static JSON fallback = No`", "healthy fallback docs")
 print("CMS runtime source visibility policy passed.")
 
 require(appsettings, '"ReadPublishedSnapshotEnabled": true', "appsettings CMS read default")

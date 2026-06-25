@@ -2,6 +2,9 @@
 
 Review date: 2026-05-17.
 
+- Admin/tester behavior feedback is triaged through the CMS behavior tuning playbook: choose one CMS area, make a draft edit with paste-ready wording, validate/preview, publish, start a new lesson, and restore the previous published version if worse.
+- `static-json-v1` / `Static JSON Baseline` is a CMS pack/seed identity; the decisive active runtime fields are `Actual learner runtime source` and `Currently using static JSON fallback`.
+
 ## Current product decisions
 
 - Normal Lesson Chat uses CMS published prompt/scenario/tutor/level content for editable teaching behavior, with `LessonPromptBuilder` responsible for assembly and backend-owned guardrails in the backend lesson chat flow.

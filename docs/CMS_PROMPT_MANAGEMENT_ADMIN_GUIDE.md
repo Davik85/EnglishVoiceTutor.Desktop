@@ -6,6 +6,9 @@ This guide is for CMS admins who manage lesson prompts and tutor behavior. You d
 
 Use CMS for normal tutor behavior changes. Do not edit backend code or static JSON files for normal production tuning. The backend assembles the selected published content and protects required guardrails; CMS owns the normal wording and style that admins tune.
 
+
+For field-level, paste-ready behavior fixes based on tester feedback, use the practical [CMS behavior tuning playbook](CMS_BEHAVIOR_TUNING_PLAYBOOK.md).
+
 ## What CMS controls
 
 CMS controls editable lesson and tutor behavior:
@@ -46,17 +49,18 @@ CMS also does not own secrets, API keys, billing behavior, user permissions, dep
 
 ## How to read CMS Overview without guessing
 
-The **Overview** page separates four different ideas that can otherwise look similar:
+Backend `0.1.35-backend.48` serves the clarified Admin CMS Overview for this state. The **Overview** page separates five different ideas that can otherwise look similar:
 
 1. **CMS content pack / seed identity** shows the selected CMS pack slug and name, such as `static-json-v1` / `Static JSON Baseline`. This is the CMS content pack identity and seed lineage. The name may describe the original seed source; it does **not** mean learners are currently using static JSON.
 2. **Draft workspace status** shows whether the selected CMS workspace is editable draft content. `Draft` means admin edits are saved in the CMS draft workspace. Draft changes do not affect learner runtime until a CMS admin publishes them.
 3. **Published snapshot status** shows the active published version number, snapshot hash, and validation result. Learners can use this immutable published snapshot when runtime flags are enabled and validation succeeds.
-4. **Actual learner runtime source** shows the source learners are using right now. Healthy runtime shows `Effective source = CmsPublishedSnapshot`. Fallback runtime shows `Effective source = StaticJsonFallback` or static JSON wording and must be treated as an attention state unless an emergency rollback is intentional.
+4. **Emergency static JSON fallback enabled** shows whether the backend is allowed to use packaged static JSON if the CMS snapshot is missing or invalid. This is a safety setting, not proof that fallback is active.
+5. **Actual learner runtime source** shows the source learners are using right now. Healthy runtime shows `Effective source = CmsPublishedSnapshot`. Fallback runtime shows `Effective source = StaticJsonFallback` or static JSON wording and must be treated as an attention state unless an emergency rollback is intentional.
 
 A healthy Overview/runtime status is exactly:
 
-- `Effective source = CmsPublishedSnapshot`;
-- `Fallback used = No`;
+- `Actual learner runtime source = CmsPublishedSnapshot`;
+- `Currently using static JSON fallback = No`;
 - `Validation success = Yes`;
 - a published version exists;
 - the Overview runtime card says **Learner runtime is using CMS published snapshot**.

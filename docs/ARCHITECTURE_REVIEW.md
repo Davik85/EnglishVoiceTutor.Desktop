@@ -162,3 +162,8 @@ Extract one boundary at a time after the manual smoke checklist and policy tests
 - `docs/`: stabilization, architecture, flow, voice, cost, release, and checklist documentation. Refreshed to describe the current working baseline and remaining limitations.
 
 Larger extraction opportunities should remain queued until the full manual smoke-test matrix passes across product topics.
+
+
+## Admin CMS runtime-source clarity state
+
+Backend `0.1.35-backend.48` serves the clarified Admin CMS Overview. The architecture separates CMS content pack/seed identity from active learner runtime source: `static-json-v1` / `Static JSON Baseline` names the CMS content pack lineage, not active fallback. Healthy learner runtime is identified by `Actual learner runtime source = CmsPublishedSnapshot`, `Validation success = Yes`, `Currently using static JSON fallback = No`, and an existing published version. Normal tutor behavior tuning remains CMS-first; static JSON is initialization/emergency fallback only, and backend prompt-builder code is not the normal wording/style tuning surface.

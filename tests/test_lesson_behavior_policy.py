@@ -112,3 +112,67 @@ def test_level_profile_timing_source_of_truth_is_preserved() -> None:
     assert "A1FinalMessageAtUserTurn = 15" in levels
     assert "Published runtime scenarios must not carry independent turn thresholds" in snapshot_builder
     assert "ApplyCmsLevelProfiles" in snapshot_builder
+
+
+def test_cms_behavior_tuning_playbook_is_discoverable_and_cms_first() -> None:
+    playbook = read("docs/CMS_BEHAVIOR_TUNING_PLAYBOOK.md")
+    admin_guide = read("docs/CMS_PROMPT_MANAGEMENT_ADMIN_GUIDE.md")
+    readme = read("README.md")
+
+    assert "CMS_BEHAVIOR_TUNING_PLAYBOOK.md" in admin_guide
+    assert "CMS_BEHAVIOR_TUNING_PLAYBOOK.md" in readme
+    assert "This playbook is for a non-developer CMS admin" in playbook
+    assert "Do not change static JSON for normal production behavior tuning" in playbook
+    assert "Do not ask a developer to change `LessonPromptBuilder.cs` for normal wording/style changes" in playbook
+    assert "Actual learner runtime source" in playbook
+    assert "Currently using static JSON fallback" in playbook
+    assert "static-json-v1` / `Static JSON Baseline`" in playbook
+
+
+def test_cms_behavior_tuning_playbook_field_action_matrix_covers_required_symptoms() -> None:
+    playbook = read("docs/CMS_BEHAVIOR_TUNING_PLAYBOOK.md")
+
+    required_phrases = [
+        "Tutor repeats the same acknowledgement too often",
+        "Tutor corrects acceptable answers too often",
+        "Tutor gives “You can say...” on almost every turn",
+        "Tutor repeats already answered questions",
+        "Tutor restarts the scenario after roleplay has begun",
+        "Tutor leaves the selected scenario",
+        "Tutor asks more than one question at a time",
+        "A1 language is too complex",
+        "A1 corrections are too strict",
+        "Tutor personality/style feels wrong",
+        "Scenario-specific wording is awkward",
+        "Wrap-up is too long",
+        "Final message continues active dialogue",
+        "Free conversation behaves like guided roleplay",
+    ]
+    for phrase in required_phrases:
+        assert phrase in playbook
+
+    required_examples = [
+        "Vary short acknowledgements",
+        "If the learner's answer is understandable and acceptable for the level",
+        "Do not ask again for information the learner already gave",
+        "Stay inside this scenario",
+        "For A1, use very short sentences",
+        "Keep the wrap-up brief",
+        "The final message must close the lesson",
+    ]
+    for phrase in required_examples:
+        assert phrase in playbook
+
+
+def test_cms_behavior_tuning_playbook_has_tester_feedback_template_and_rollback() -> None:
+    playbook = read("docs/CMS_BEHAVIOR_TUNING_PLAYBOOK.md")
+
+    assert "## How to answer tester feedback" in playbook
+    assert "**Symptom:**" in playbook
+    assert "**Behavior category:**" in playbook
+    assert "**CMS location:**" in playbook
+    assert "**Exact field:**" in playbook
+    assert "**Exact text to add/replace:**" in playbook
+    assert "Publish current draft" in playbook
+    assert "restore the previous published version" in playbook
+    assert "Do not add numeric wrap/final turn numbers to prompt templates" in playbook
