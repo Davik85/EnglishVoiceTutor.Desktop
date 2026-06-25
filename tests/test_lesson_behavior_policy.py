@@ -79,6 +79,31 @@ def test_docs_make_cms_first_behavior_tuning_clear() -> None:
     assert "Wrap/final wording" in guide
 
 
+def test_docs_protect_cms_first_prompt_management_policy() -> None:
+    behavior_guide = read("docs/LESSON_BEHAVIOR_TUNING_GUIDE.md")
+    admin_guide = read("docs/CMS_PROMPT_MANAGEMENT_ADMIN_GUIDE.md")
+    timing_guide = read("docs/LESSON_TIMING_SOURCE_OF_TRUTH.md")
+    readme = read("README.md")
+
+    combined = "\n".join([behavior_guide, admin_guide, timing_guide, readme])
+
+    assert "CMS published snapshot" in admin_guide
+    assert "Do not edit backend code or static JSON files for normal production tuning" in admin_guide
+    assert "Do not tune normal tutor behavior by editing LessonPromptBuilder.cs first" in behavior_guide
+    assert "Prompt templates must not define independent numeric timing" in timing_guide
+    assert "Fallback/static JSON" in admin_guide
+    assert "not the normal production tuning surface" in admin_guide
+    assert "CMS_PROMPT_MANAGEMENT_ADMIN_GUIDE.md" in readme
+
+    forbidden_claims = [
+        "Normal Lesson Chat uses the canonical teaching policy from `LessonPromptBuilder`",
+        "Prompt policy: `LessonPromptBuilder` owns the shared canonical tutor policy",
+        "static JSON is the normal active learner source",
+    ]
+    for claim in forbidden_claims:
+        assert claim not in combined
+
+
 def test_level_profile_timing_source_of_truth_is_preserved() -> None:
     levels = read("backend/EnglishVoiceTutor.Api/Services/Cms/CmsLevelProfiles.cs")
     snapshot_builder = read("backend/EnglishVoiceTutor.Api/Services/Cms/CmsContentSnapshotBuilder.cs")

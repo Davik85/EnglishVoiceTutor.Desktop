@@ -215,6 +215,8 @@ Recommended next work: update-over-existing-install validation if not already re
 
 ## Local admin shell and Admin CMS Content
 
+For non-developer prompt and tutor behavior editing, start with [`docs/CMS_PROMPT_MANAGEMENT_ADMIN_GUIDE.md`](docs/CMS_PROMPT_MANAGEMENT_ADMIN_GUIDE.md). Normal prompt/scenario/tutor behavior tuning belongs in CMS draft + publish workflows, not backend code or static JSON edits.
+
 - Local admin shell: http://localhost:5000/admin/
 - Requires running backend and a configured Development bootstrap admin.
 - The local admin shell supports capabilities view, read-only user lookup, read-only per-user audit log, manual Premium grant/revoke, free lesson allowance reset for selected users, and the development/admin-only `CMS Content` workspace with a read-only Recent CMS changes audit surface.
