@@ -46,6 +46,8 @@ public sealed class LessonChatRequest
 
     public IReadOnlyList<string> AiTutorPromptInstructions { get; init; } = [];
 
+    public IReadOnlyDictionary<string, string> PromptTemplates { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
     public string SelectedContextVariantId { get; init; } = string.Empty;
 
     public string SelectedContextTitle { get; init; } = string.Empty;

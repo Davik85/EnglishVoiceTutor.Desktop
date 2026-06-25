@@ -1,5 +1,6 @@
 using System.Text;
 using EnglishVoiceTutor.Api.Constants;
+using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Models.RealtimeVoice;
 using EnglishVoiceTutor.Api.Services.Cms;
@@ -40,6 +41,7 @@ public sealed class LessonPromptBuilder
 
         AppendLessonContext(prompt, request, avatarProfile);
         AppendTargetStudyLanguage(prompt, request);
+        AppendCmsPromptTemplates(prompt, request);
         AppendCanonicalTeachingPolicy(prompt, request, avatarProfile, NormalChatMode);
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, request);
@@ -85,6 +87,7 @@ public sealed class LessonPromptBuilder
 
         AppendLessonContext(prompt, chatRequest, avatarProfile);
         AppendTargetStudyLanguage(prompt, chatRequest);
+        AppendCmsPromptTemplates(prompt, chatRequest);
         AppendCanonicalTeachingPolicy(prompt, chatRequest, avatarProfile, RealtimeVoiceMode);
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, chatRequest);
@@ -186,8 +189,6 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("Do not ask for native language.");
         AppendTutorIdentityRules(prompt, avatarProfile);
         AppendGuidedRoleplayRetentionRules(prompt);
-        AppendNaturalRoleplayCorrectionPolicy(prompt);
-        AppendScenarioContinuityPolicy(prompt);
 
         if (LessonLimitHelper.ShouldEndLessonNow(request))
         {
@@ -296,6 +297,7 @@ public sealed class LessonPromptBuilder
         var avatarProfile = ResolveRequestTutorProfile(request, _avatarProfileProvider.GetById(request.TutorAvatarId));
 
         AppendLessonContext(prompt, request, avatarProfile, includeNativeLanguage: false);
+        AppendCmsPromptTemplates(prompt, request);
         AppendCanonicalTeachingPolicy(prompt, request, avatarProfile, NormalChatMode);
         AppendAvatarProfile(prompt, avatarProfile);
         AppendLearnerProfile(prompt, request);
@@ -408,9 +410,7 @@ public sealed class LessonPromptBuilder
             prompt.AppendLine("- Guided roleplay must not become generic AI chat or free conversation.");
             prompt.AppendLine("- Guided roleplay must not ask broad assistant-offer questions or open-topic selection questions.");
             prompt.AppendLine("- If the learner goes off-topic: briefly acknowledge, redirect to the selected lesson goal, and do not switch topic.");
-            AppendGuidedScenarioFlexibilityPolicy(prompt);
-            AppendNaturalRoleplayCorrectionPolicy(prompt);
-            AppendScenarioContinuityPolicy(prompt);
+            AppendGuidedScenarioGuardrails(prompt);
         }
 
         AppendTutorIdentityRules(prompt, avatarProfile);
@@ -467,36 +467,31 @@ public sealed class LessonPromptBuilder
     }
 
 
-    private static void AppendNaturalRoleplayCorrectionPolicy(StringBuilder prompt)
+    private static void AppendCmsPromptTemplates(StringBuilder prompt, LessonChatRequest request)
     {
-        prompt.AppendLine("Natural roleplay correction policy:");
-        prompt.AppendLine("- During active_roleplay, behave like a conversation partner first and a tutor second.");
-        prompt.AppendLine("- Do not give alternative phrasing, advice, or model sentences on every turn.");
-        prompt.AppendLine("- Use phrases like \"You can say...\" or \"You can also say...\" only when the learner made an error, the wording is unnatural for this level/scenario, the learner asks for help, or the current teaching mode explicitly requires a model phrase.");
-        prompt.AppendLine("- If the learner answer is acceptable or natural enough, briefly acknowledge it and continue with one natural scenario question.");
-        prompt.AppendLine("- Keep any needed correction short: correct one important issue, then continue the same scenario.");
+        AppendCmsPromptTemplate(prompt, request, CmsContentConstants.PromptTemplateKeys.LessonTutorBase, "CMS base tutor prompt");
+        AppendCmsPromptTemplate(prompt, request, CmsContentConstants.PromptTemplateKeys.LessonResponseRules, "CMS lesson response rules");
     }
 
-    private static void AppendScenarioContinuityPolicy(StringBuilder prompt)
+    private static void AppendCmsPromptTemplate(StringBuilder prompt, LessonChatRequest request, string templateKey, string header)
     {
-        prompt.AppendLine("Scenario continuity policy:");
-        prompt.AppendLine("- Track the recent conversation context included in this prompt and continue from the learner's latest answer.");
-        prompt.AppendLine("- Do not ask again for basic information already answered in recent turns, such as name, country, city, home, work, or business, unless clarification is needed.");
-        prompt.AppendLine("- Do not restart greetings, introductions, setup, context choice, or the opening line after roleplay has begun.");
-        prompt.AppendLine("- Stay in the selected scenario until the runtime phase says wrap_up or final.");
-        prompt.AppendLine("- Ask exactly one scenario-compatible question when continuing active roleplay.");
+        if (!request.PromptTemplates.TryGetValue(templateKey, out var body) || string.IsNullOrWhiteSpace(body))
+        {
+            return;
+        }
+
+        prompt.AppendLine(header + ":");
+        prompt.AppendLine(body.Trim());
+        prompt.AppendLine();
     }
 
-    private static void AppendGuidedScenarioFlexibilityPolicy(StringBuilder prompt)
+    private static void AppendGuidedScenarioGuardrails(StringBuilder prompt)
     {
-        prompt.AppendLine("Guided scenario flexibility:");
-        prompt.AppendLine("- Stay inside the selected guided scenario.");
-        prompt.AppendLine("- Answer natural learner questions that fit the scenario, including normal introduction and small-talk reciprocal questions.");
-        prompt.AppendLine("- Use the active tutor profile for simple personal answers such as name, home city, study/work, hobbies, and how you are.");
-        prompt.AppendLine("- After answering, ask one short scenario-compatible question back.");
-        prompt.AppendLine("- Do not refuse normal introduction/small-talk questions just because the tutor is in a role.");
-        prompt.AppendLine("- Do not say \"No, I'm your neighbor\" when asked whether you study or work.");
-        prompt.AppendLine("- For A1, answer with one short sentence plus one simple question.");
+        prompt.AppendLine("Guided scenario guardrails:");
+        prompt.AppendLine("- Guided roleplay must stay bound to the selected context, context variant id, role, situation, and learning goal supplied by runtime content.");
+        prompt.AppendLine("- Runtime phase controls whether to continue active roleplay, wrap up, or give the final message.");
+        prompt.AppendLine("- Do not continue active dialogue after the final phase message.");
+        prompt.AppendLine("- Do not ask the learner to choose a different topic, context, or situation during active guided roleplay.");
     }
 
     private static void AppendTutorIdentityRules(StringBuilder prompt, TutorAvatarProfile avatarProfile)
@@ -1020,6 +1015,7 @@ public sealed class LessonPromptBuilder
             LessonGoal = request.LessonGoal,
             LessonType = request.LessonType,
             AiTutorPromptInstructions = request.AiTutorPromptInstructions,
+            PromptTemplates = request.PromptTemplates,
             SelectedContextVariantId = request.SelectedContextVariantId,
             SelectedContextTitle = request.SelectedContextTitle,
             SelectedContextLocalizedTitle = request.SelectedContextLocalizedTitle,
