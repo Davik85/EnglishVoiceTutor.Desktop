@@ -26,6 +26,8 @@ def test_editable_behavior_text_lives_in_cms_prompt_seed_not_backend_policy() ->
     assert "Use alternative phrasing" in response_rules
     assert "only for an error, unnatural wording, learner help request, or explicit model-phrase teaching mode" in response_rules
     assert "If the learner answer is acceptable, acknowledge briefly and continue the scenario without correction advice." in response_rules
+    assert "Behave like a conversation partner first during active roleplay." in response_rules
+    assert "Do not repeat basic questions already answered in recent conversation unless clarification is needed." in response_rules
 
 
 def test_prompt_builder_assembles_cms_prompt_templates_from_runtime_request() -> None:

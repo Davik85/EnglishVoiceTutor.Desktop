@@ -12,6 +12,10 @@ PROMPT_BUILDER = ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "Less
 REALTIME_SERVICE = ROOT / "backend" / "EnglishVoiceTutor.Api" / "Services" / "RealtimeVoiceSessionService.cs"
 INTRODUCTIONS_JSON = ROOT / "Content" / "Lessons" / "EverydayEnglish" / "introductions.json"
 FREE_CONVERSATION_JSON = ROOT / "Content" / "Lessons" / "FreeConversation" / "open_conversation.json"
+LESSON_BASE_PROMPT = ROOT / "Content" / "Prompts" / "lesson_tutor_base_prompt.txt"
+LESSON_RESPONSE_RULES = ROOT / "Content" / "Prompts" / "lesson_response_rules.txt"
+LESSON_CHAT_REQUEST = ROOT / "backend" / "EnglishVoiceTutor.Api" / "Models" / "LessonChatRequest.cs"
+DESKTOP_LESSON_CHAT_REQUEST = ROOT / "Models" / "LessonChatBackendRequest.cs"
 RUNTIME_PATHS = [ROOT / "backend", ROOT / "Content"]
 
 
@@ -44,6 +48,10 @@ def main() -> int:
     runtime = runtime_text()
     introductions = json.loads(read(INTRODUCTIONS_JSON))
     free_conversation = read(FREE_CONVERSATION_JSON)
+    base_prompt = read(LESSON_BASE_PROMPT)
+    response_rules = read(LESSON_RESPONSE_RULES)
+    backend_request = read(LESSON_CHAT_REQUEST)
+    desktop_request = read(DESKTOP_LESSON_CHAT_REQUEST)
 
     for needle in [
         "A1 strict output rules",
@@ -57,18 +65,28 @@ def main() -> int:
     assert_contains(prompt_builder, "BuildRealtimeInstructions", "realtime adapter")
     assert_contains(prompt_builder, "BuildInput", "chat adapter")
     assert_contains(prompt_builder, "Tutor identity comes only from the selected TutorProfile", "tutor profile injection")
-    assert_contains(prompt_builder, "Guided roleplay must not become generic AI chat", "guided retention")
-    assert_contains(prompt_builder, "Guided scenario flexibility:", "shared guided scenario flexibility block")
-    assert_contains(prompt_builder, "Answer natural learner questions that fit the scenario", "natural reciprocal questions allowed")
-    assert_contains(prompt_builder, "Use the active tutor profile for simple personal answers", "active tutor profile simple personal answers")
-    assert_contains(prompt_builder, "No, I'm your neighbor", "forbidden neighbor study/work answer")
-    assert_contains(prompt_builder, "For A1, answer with one short sentence plus one simple question.", "A1 reciprocal answer shape")
-    assert_contains(prompt_builder, "AppendGuidedScenarioFlexibilityPolicy(prompt)", "shared flexibility method consumed by canonical policy")
+    assert_contains(prompt_builder, "Guided roleplay must not become generic AI chat", "guided retention guardrail")
+    assert_not_contains(prompt_builder, "Guided scenario flexibility:", "CMS-owned guided scenario flexibility heading in backend")
+    assert_not_contains(prompt_builder, "Answer natural learner questions that fit the scenario", "CMS-owned natural reciprocal question behavior in backend")
+    assert_not_contains(prompt_builder, "Use the active tutor profile for simple personal answers", "CMS-owned simple personal answer behavior in backend")
+    assert_not_contains(prompt_builder, "No, I'm your neighbor", "CMS-owned scenario-specific forbidden answer in backend")
+    assert_not_contains(prompt_builder, "For A1, answer with one short sentence plus one simple question.", "CMS-owned A1 reciprocal answer shape in backend")
+    assert_not_contains(prompt_builder, "AppendGuidedScenarioFlexibilityPolicy(prompt)", "removed hardcoded guided scenario flexibility method")
+    assert_contains(response_rules, "Behave like a conversation partner first during active roleplay.", "CMS-owned roleplay flexibility")
+    assert_contains(response_rules, "If the learner answer is acceptable, acknowledge briefly and continue the scenario without correction advice.", "CMS-owned scenario continuity")
+    assert_contains(response_rules, "Do not repeat basic questions already answered in recent conversation unless clarification is needed.", "CMS-owned scenario continuity repeat guard")
+    assert_contains(response_rules, "Do not restart greeting, setup, or introductions after roleplay has begun.", "CMS-owned scenario restart guard")
+    assert_contains(base_prompt, "Correct softly and only when needed during roleplay.", "CMS-owned correction style")
     assert_contains(prompt_builder, "AppendCanonicalTeachingPolicy(prompt, request, avatarProfile, NormalChatMode)", "normal chat uses canonical policy")
     assert_contains(prompt_builder, "AppendCanonicalTeachingPolicy(prompt, chatRequest, avatarProfile, RealtimeVoiceMode)", "realtime uses canonical policy")
     assert_contains(prompt_builder, "Free Conversation allows safe open topic selection", "free conversation open topic behavior")
     assert_contains(realtime_service, "lessonPromptBuilder.BuildRealtimeInstructions", "shared realtime session instructions")
     assert_contains(realtime_service, "lessonPromptBuilder.BuildRealtimeResponseInstructions", "shared realtime response instructions")
+    assert_contains(prompt_builder, "AppendCmsPromptTemplates(prompt, request)", "runtime CMS prompt template assembly")
+    assert_contains(prompt_builder, "CmsContentConstants.PromptTemplateKeys.LessonTutorBase", "CMS base prompt key assembly")
+    assert_contains(prompt_builder, "CmsContentConstants.PromptTemplateKeys.LessonResponseRules", "CMS response rules key assembly")
+    assert_contains(backend_request, "public IReadOnlyDictionary<string, string> PromptTemplates", "backend runtime prompt templates request")
+    assert_contains(desktop_request, "public IReadOnlyDictionary<string, string> PromptTemplates", "desktop runtime prompt templates request")
 
     for stale in ["I'm Alex", "I am Alex", "my name is Alex"]:
         assert_not_contains(runtime, stale, "stale tutor identity")
