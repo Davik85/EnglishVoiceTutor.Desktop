@@ -23,8 +23,8 @@ BACKEND_SYMLINK_COMMAND = 'ssh lvt-server "readlink -f /opt/languagevoicetutor/b
 PROD_BACKEND_URL = "https://api.languagevoicetutor.com"
 CURRENT_TESTER_RELEASE = "0.1.36-tester.24"
 CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-0.1.36-tester.24.exe"
-CURRENT_BACKEND_RELEASE = "0.1.35-backend.40"
-PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.39"
+CURRENT_BACKEND_RELEASE = "0.1.35-backend.49"
+PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.48"
 STALE_BACKEND_RELEASES = ["0.1.35-backend.27", "0.1.35-backend.33", "0.1.35-backend.34"]
 STALE_TESTER_RELEASES = ["0.1.35-tester.1", "0.1.36-tester.2", "0.1.36-tester.3", "0.1.36-tester.17"]
 DEFERRED_ITEMS = [
@@ -92,8 +92,12 @@ def main() -> int:
     assert_contains(combined_main, "not broad public production readiness", "no broad production readiness wording")
     assert_contains(combined_main, "Do not state that the product is fully public production-ready", "no fully public production-ready wording")
 
-    assert_contains(combined_main, "0.1.35-backend.40", "last verified active backend snapshot")
-    assert_contains(combined_main, "0.1.35-backend.39", "rollback backend reference")
+    assert_contains(combined_main, CURRENT_BACKEND_RELEASE, "last verified active backend snapshot")
+    assert_contains(combined_main, PREVIOUS_BACKEND_ROLLBACK_RELEASE, "rollback backend reference")
+    assert_contains(combined_main, "Tracked signed-in app/device records", "current Admin statistics device metric label")
+    assert_contains(combined_main, "DeviceEntity", "Admin statistics device metric source")
+    assert_contains(combined_main, "not raw installer downloads", "Admin statistics device metric excludes raw downloads")
+    assert_contains(combined_main, "successful payments current month", "planned payment statistics note")
     assert_contains(combined_main, "RateLimiting__Enabled=true", "production rate limiting enabled flag")
     assert_contains(
         combined_main,
