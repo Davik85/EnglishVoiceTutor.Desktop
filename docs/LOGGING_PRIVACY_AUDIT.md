@@ -1,12 +1,12 @@
 # Phase 5A Logging and Privacy Audit
 
-Review date: 2026-06-23.
+Review date: 2026-06-25.
 
 Scope: lightweight documentation/source audit only. No backend runtime behavior, Desktop behavior, billing/Paddle semantics, EF migrations, deployment scripts, external services, or heavy monitoring infrastructure were changed.
 
 ## Current production context
 
-- Production backend at last verification: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.40` through `/opt/languagevoicetutor/backend/current`.
+- Production backend at last verification: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.49` through `/opt/languagevoicetutor/backend/current`, with rollback reference `/opt/languagevoicetutor/backend/releases/0.1.35-backend.48`.
 - `/health` and `/api/health/database` are healthy at last verification.
 - Phase 4 backup/restore/migration rollback drills are complete for the current release-readiness level.
 - Broad public production readiness is not claimed.
@@ -49,9 +49,11 @@ Operators must redact or avoid pasting: `.env` contents, connection strings, pas
 
 Add a small production log sampling/redaction runbook/checklist: collect a short bounded journal/API sample around one health check, one login failure, one lesson request, one password-reset request, and one Paddle sandbox webhook attempt; confirm only safe metadata appears; record pass/fail without copying raw logs. Do this before adding any heavy monitoring stack.
 
-## Phase 5A status
+## Phase 5 status
 
-Phase 5A is documentation/audit only. No code changes were made because this pass did not find an obvious dangerous logging issue that was small and safe to fix immediately.
+Phase 5A logging/privacy audit is complete, Phase 5B bounded production log sampling is complete, and Phase 5C Production logging hardening is deployed/verified and retained in backend `0.1.35-backend.49`.
+
+Phase 5A was documentation/audit only. No code changes were made because this pass did not find an obvious dangerous logging issue that was small and safe to fix immediately.
 
 ## Intentionally deferred
 
@@ -66,4 +68,4 @@ Phase 5B bounded production log sampling found a real release-readiness logging 
 
 Phase 5C hardens tracked Production logging configuration by setting `Microsoft.EntityFrameworkCore.Database.Command`, `Microsoft.EntityFrameworkCore.Infrastructure`, and `System.Net.Http.HttpClient` to `Warning` in `backend/EnglishVoiceTutor.Api/appsettings.Production.json`. This is a configuration-level hardening only: it does not change runtime behavior, billing/Paddle semantics, database schema, Desktop behavior, Admin UI behavior, CMS behavior, deployment scripts, package scripts, or EF migrations.
 
-Backend `0.1.35-backend.40` was packaged, uploaded, deployed, restarted, and production-verified for Phase 5C. `/opt/languagevoicetutor/backend/current` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.40`, and `/opt/languagevoicetutor/backend/previous` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`. `/health`, `/api/health/database`, and a repeat `/api/health/database` check returned `200 OK`; `languagevoicetutor-backend.service` is active and enabled. Post-deploy journal sampling over the recent verification window returned 0 lines for the bounded sensitive/EF SQL grep set: `Microsoft.EntityFrameworkCore.Database.Command`, `SELECT`, `INSERT`, `UPDATE`, `PasswordHash`, `TokenHash`, `RawPayload`, and `SignatureHeader`. This confirms ordinary production logs no longer show normal EF SQL command text after the Production logging config hardening. No EF migrations were run for this config-only backend release; no production database schema or data changed; and no business logic, Desktop, Admin UI, CMS, billing/Paddle semantics, package script, or deployment script behavior changed. Application-level warnings and errors, including billing/Paddle warnings or failures, should remain visible. Production/live Paddle readiness remains deferred, and broad public production readiness is still not claimed.
+Backend `0.1.35-backend.49` retains the Phase 5C Production logging hardening first deployed in `0.1.35-backend.40` and was packaged, uploaded, deployed, restarted, and production-verified with that hardening still in place. `/opt/languagevoicetutor/backend/current` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.49`, and `/opt/languagevoicetutor/backend/previous` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.48`. `/health`, `/api/health/database`, and a repeat `/api/health/database` check returned `200 OK`; `languagevoicetutor-backend.service` is active and enabled. Post-deploy journal sampling over the recent verification window returned 0 lines for the bounded sensitive/EF SQL grep set: `Microsoft.EntityFrameworkCore.Database.Command`, `SELECT`, `INSERT`, `UPDATE`, `PasswordHash`, `TokenHash`, `RawPayload`, and `SignatureHeader`. This confirms ordinary production logs no longer show normal EF SQL command text after the Production logging config hardening. No EF migrations were run for this config-only backend release; no production database schema or data changed; and no business logic, Desktop, Admin UI, CMS, billing/Paddle semantics, package script, or deployment script behavior changed. Application-level warnings and errors, including billing/Paddle warnings or failures, should remain visible. Production/live Paddle readiness remains deferred, and broad public production readiness is still not claimed.
