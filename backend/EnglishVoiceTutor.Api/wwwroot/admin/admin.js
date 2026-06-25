@@ -2440,6 +2440,8 @@
             ["activeTrialsNow", "Active trials now", safePayload.activeTrialsNow],
             ["activeUsersLast30Days", "Active users (30 days)", safePayload.activeUsersLast30Days],
             ["activePremiumUsersNow", "Active Premium users now", safePayload.activePremiumUsersNow],
+            ["successfulPaymentsTotal", "Successful payments total", safePayload.successfulPaymentsTotal],
+            ["successfulPaymentsCurrentMonth", "Successful payments current month", safePayload.successfulPaymentsCurrentMonth],
             ["activeFreeUsersLast30Days", "Active Free users (30 days)", safePayload.activeFreeUsersLast30Days]
         ];
 

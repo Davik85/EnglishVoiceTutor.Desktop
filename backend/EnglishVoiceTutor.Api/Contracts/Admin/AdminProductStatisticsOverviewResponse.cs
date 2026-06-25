@@ -10,6 +10,8 @@ public sealed class AdminProductStatisticsOverviewResponse
     public int ActiveTrialsNow { get; init; }
     public int ActiveUsersLast30Days { get; init; }
     public int ActivePremiumUsersNow { get; init; }
+    public int SuccessfulPaymentsTotal { get; init; }
+    public int SuccessfulPaymentsCurrentMonth { get; init; }
     public int ActiveFreeUsersLast30Days { get; init; }
     public required IReadOnlyList<AdminLanguageDistributionItem> StudyLanguageDistribution { get; init; }
     public required IReadOnlyList<AdminLanguageDistributionItem> SelectedStudyLanguageDistribution { get; init; }

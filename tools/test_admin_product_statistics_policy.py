@@ -62,6 +62,11 @@ def main() -> None:
         "totalUsers == 0",
         "var totalInstallations = await dbContext.Devices.AsNoTracking().CountAsync(cancellationToken);",
         "Premium, Trial, subscription, billing, and access-status records are not counted.",
+        "[\"successfulPaymentsTotal\"]",
+        "[\"successfulPaymentsCurrentMonth\"]",
+        "payment.Status == SubscriptionConstants.PaymentStatuses.Completed",
+        "payment.ProviderEventType == SubscriptionConstants.BillingEventTypes.TransactionCompleted",
+        "payment.CompletedAt >= currentMonthStartUtc",
     ]:
         assert_contains(service, snippet, "EF-safe aggregate statistics pattern")
 
@@ -83,10 +88,13 @@ def main() -> None:
         "safePayload.explanationLanguageDistribution || []",
         "No language data available.",
         "Tracked signed-in app/device records",
+        "Successful payments total",
+        "Successful payments current month",
     ]:
         assert_contains(admin_js, snippet, "defensive admin statistics rendering")
 
     assert_contains(admin_html, "not raw installer downloads and not Premium or Trial access counts", "admin statistics boundary note")
+    assert_contains(admin_html, "payment/billing-event counts separate from active Premium access", "admin payment metric boundary note")
 
     print("Admin product statistics policy checks passed.")
 

@@ -21,6 +21,8 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         ["activeTrialsNow"] = "Distinct users with active trial grants at checkedAtUtc: active status, granted at or before checkedAtUtc, and expiring after checkedAtUtc.",
         ["activeUsersLast30Days"] = "Distinct users with a lesson session started or usage event created during the last 30 days.",
         ["activePremiumUsersNow"] = "Distinct users with active Premium access entitlements at checkedAtUtc: Premium plan/access type, active status, started, and not expired.",
+        ["successfulPaymentsTotal"] = "Successful payment/billing-event records from internal provider-agnostic PaymentEntity rows only: Premium plan, completed status, transaction.completed provider event, and a completed timestamp. This is separate from active Premium access and does not count failed, pending, blocked, duplicate, or subscription lifecycle snapshot events.",
+        ["successfulPaymentsCurrentMonth"] = "Successful payment/billing-event records from internal provider-agnostic PaymentEntity rows completed in the current UTC calendar month: first day inclusive through first day of next month exclusive. This is separate from active Premium access and counts payment events, not distinct users.",
         ["activeFreeUsersLast30Days"] = "Distinct users active in the last 30 days who do not currently have active Premium and do not currently have active Trial; this is an inferred free-user category.",
         ["studyLanguageDistribution"] = "Backward-compatible alias of selectedStudyLanguageDistribution.",
         ["selectedStudyLanguageDistribution"] = "Users grouped by current selected study language from user settings. Only supported study languages are displayed; unsupported values are grouped as Unknown and never displayed as supported languages.",
@@ -33,6 +35,8 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
     {
         var checkedAtUtc = DateTimeOffset.UtcNow;
         var windowStartUtc = checkedAtUtc.AddDays(-ActivityWindowDays);
+        var currentMonthStartUtc = new DateTimeOffset(checkedAtUtc.Year, checkedAtUtc.Month, 1, 0, 0, 0, TimeSpan.Zero);
+        var nextMonthStartUtc = currentMonthStartUtc.AddMonths(1);
 
         var activeTrialUserIds = dbContext.TrialGrants
             .AsNoTracking()
@@ -71,6 +75,17 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
         var activeTrialsNow = await activeTrialUserIds.CountAsync(cancellationToken);
         var activeUsersLast30Days = await activeUserIdsLast30Days.CountAsync(cancellationToken);
         var activePremiumUsersNow = await activePremiumUserIds.CountAsync(cancellationToken);
+        var successfulPayments = dbContext.Payments
+            .AsNoTracking()
+            .Where(payment => payment.InternalPlanId == SubscriptionConstants.Plans.PremiumPlanId
+                && payment.Status == SubscriptionConstants.PaymentStatuses.Completed
+                && payment.ProviderEventType == SubscriptionConstants.BillingEventTypes.TransactionCompleted
+                && payment.CompletedAt != null);
+        var successfulPaymentsTotal = await successfulPayments.CountAsync(cancellationToken);
+        var successfulPaymentsCurrentMonth = await successfulPayments
+            .Where(payment => payment.CompletedAt >= currentMonthStartUtc
+                && payment.CompletedAt < nextMonthStartUtc)
+            .CountAsync(cancellationToken);
         var activeFreeUsersLast30Days = await activeFreeUserIdsLast30Days.CountAsync(cancellationToken);
         var selectedStudyLanguageDistribution = await GetSelectedStudyLanguageDistributionAsync(cancellationToken);
         var practicedStudyLanguageDistributionLast30Days = await GetPracticedStudyLanguageDistributionLast30DaysAsync(windowStartUtc, cancellationToken);
@@ -87,6 +102,8 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
             ActiveTrialsNow = activeTrialsNow,
             ActiveUsersLast30Days = activeUsersLast30Days,
             ActivePremiumUsersNow = activePremiumUsersNow,
+            SuccessfulPaymentsTotal = successfulPaymentsTotal,
+            SuccessfulPaymentsCurrentMonth = successfulPaymentsCurrentMonth,
             ActiveFreeUsersLast30Days = activeFreeUsersLast30Days,
             StudyLanguageDistribution = selectedStudyLanguageDistribution,
             SelectedStudyLanguageDistribution = selectedStudyLanguageDistribution,
