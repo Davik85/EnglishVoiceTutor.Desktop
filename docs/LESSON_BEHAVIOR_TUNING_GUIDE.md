@@ -1,6 +1,6 @@
 # CMS-first lesson behavior tuning guide
 
-Normal behavior tuning should be done in CMS, not by editing backend code. In short: normal behavior tuning should be done in CMS, not by editing backend code. Do not tune normal tutor behavior by editing LessonPromptBuilder.cs first; the backend should assemble the active runtime content source and enforce runtime guardrails.
+Normal behavior tuning should be done in CMS, not by editing backend code. In short: normal behavior tuning should be done in CMS, not by editing backend code. Do not tune normal tutor behavior by editing LessonPromptBuilder.cs first; the backend should assemble the active runtime content source and enforce runtime guardrails. For non-developer CMS editing steps and examples, see [CMS prompt management admin guide](CMS_PROMPT_MANAGEMENT_ADMIN_GUIDE.md).
 
 ## Ownership map
 
@@ -30,7 +30,7 @@ CMS owns normal lesson behavior wording and tuning:
 - level-specific strictness;
 - tutor personality/style;
 - scenario-specific behavior;
-- wrap/final wording, while runtime phase still owns timing.
+- wrap/final wording, while runtime phase and level profiles still own timing.
 
 ### Static fallback/init content
 
@@ -52,7 +52,7 @@ Use the Admin CMS **Prompts** tab and edit `lesson_response_rules` for global co
 
 ### Level strictness
 
-Use the Admin CMS **Levels** tab. Level profiles control wrap/final turn timing, language complexity guidance, correction guidance, and answer length guidance. Prompt templates must not define numeric wrap-up or final-message turn thresholds.
+Use the Admin CMS **Levels** tab when available in the Admin CMS workspace. Level profiles control wrap/final turn timing, language complexity guidance, correction guidance, and answer length guidance. Prompt templates must not define numeric wrap-up or final-message turn thresholds.
 
 ### Tutor personality
 

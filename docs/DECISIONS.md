@@ -4,7 +4,7 @@ Review date: 2026-05-17.
 
 ## Current product decisions
 
-- Normal Lesson Chat uses the canonical teaching policy from `LessonPromptBuilder` and the backend lesson chat flow.
+- Normal Lesson Chat uses CMS published prompt/scenario/tutor/level content for editable teaching behavior, with `LessonPromptBuilder` responsible for assembly and backend-owned guardrails in the backend lesson chat flow.
 - Conversation Mode now uses the same lesson methodology and lesson chat reply flow as normal Lesson Chat.
 - Normal Lesson Chat TTS remains `tts-1` with `purpose=lesson_chat_tts`.
 - Normal voice transcription remains `gpt-4o-mini-transcribe`.
@@ -15,7 +15,7 @@ Review date: 2026-05-17.
 - Default product Conversation Mode should not open a Realtime WebSocket.
 - Scenario JSON remains avatar-neutral and must not hardcode Lana or another tutor identity.
 - Tutor identity comes from `TutorProfile` / tutor avatar profile data.
-- A1/A2/B1/B2 complexity belongs to level rules/policy such as `levelProfiles` and prompt policy metadata.
+- A1/A2/B1/B2 complexity, strictness guidance, and wrap/final timing belong to CMS level profiles when CMS runtime is active; prompt templates must not define numeric wrap/final timing.
 - Lesson scenario, context variation, level adapter/rules, and tutor profile are combined at runtime and should stay separate in documentation and future tasks.
 - Awaiting Finish disables new lesson input but not message review: feedback, translation, and Play voice for existing messages remain available until Finish lesson is clicked.
 - Pricing constants remain approximate placeholders until real pricing and measured sessions are reviewed.

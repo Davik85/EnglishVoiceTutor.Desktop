@@ -60,11 +60,11 @@ RealtimeMicrophoneCaptureService -> RealtimeVoiceConversationEngine
 ## Current ownership boundaries
 
 - Navigation: `MainViewModel` owns screen navigation and constructs child ViewModels.
-- Lesson catalog/content loading: `LessonContentService` owns JSON loading; audit rules live in `tools/`.
-- Lesson scenario data: lesson JSON owns topic, subtopic, goal, target language, controlled context variants, scenario flow, roleplay beats, and scenario-specific wrap-up/final message guidance; level profiles own lesson length and wrap-up/final turn timing.
-- Level rules: lesson `levelProfiles` and prompt/turn metadata own A1/A2/B1/B2 complexity, sentence length, depth, and feedback strictness.
-- Tutor identity: `TutorProfile`/`TutorAvatarProfileProvider` owns tutor name, personality, background, voice/tone, and identity details. Lesson JSON must remain avatar-neutral.
-- Prompt policy: `LessonPromptBuilder` owns the shared canonical tutor policy for normal Lesson Chat and Realtime.
+- Lesson catalog/content loading: runtime lesson content should come from the active coherent source. CMS published snapshot is the normal controlled tester learner source when active and valid; packaged static JSON is initialization/local-development/emergency fallback only. Audit rules live in `tools/`.
+- Lesson scenario data: CMS scenario content owns editable topic/subtopic wording, controlled context variants, scenario flow, roleplay beats, scenario-specific behavior, and scenario-specific wrap-up/final wording when CMS runtime is active. Static lesson JSON remains seed/fallback content. Level profiles own lesson length and wrap-up/final turn timing.
+- Level rules: CMS level profiles own A1/A2/B1/B2 complexity, sentence length, depth, feedback strictness, and wrap/final timing thresholds. Prompt templates must not define numeric wrap/final timing.
+- Tutor identity: approved desktop tutor avatar profiles and backend guardrails own source identity. CMS tutor behavior profiles own editable personality/style wording without changing the selected tutor identity. Scenarios must remain avatar-neutral.
+- Prompt ownership: CMS prompt templates and tutor/scenario/level content own normal editable tutor behavior. `LessonPromptBuilder` owns assembly order, runtime phase contract, source coherence, target-language lock, tutor identity guardrails, structured response format, final-state guardrails, diagnostics, and fallback/init mechanics.
 - Lesson state: mostly `LessonChatViewModel`, including phase, turn counts, setup context selection, completion, and button state.
 - Audio recording: `AudioRecordingService` owns file-based recording for chained voice; `RealtimeMicrophoneCaptureService` owns realtime PCM capture.
 - Bot voice playback: `LessonChatViewModel` orchestrates manual/auto-play; `LessonChatBackendService` requests speech; `AudioPlaybackService` saves/plays files; `AudioSpeechService` generates backend speech.
@@ -72,7 +72,7 @@ RealtimeMicrophoneCaptureService -> RealtimeVoiceConversationEngine
 
 ## Teaching policy vs audio transport
 
-Normal Lesson Chat and Realtime share teaching behavior through the canonical policy in `LessonPromptBuilder`. They differ in audio transport:
+Normal Lesson Chat and Realtime share CMS-first assembled lesson behavior plus backend guardrails. The backend assembles the active runtime content source and enforces non-editable protections; normal wording/style changes should be made in CMS. They differ in audio transport:
 
 - Normal Lesson Chat uses `/api/lesson-chat/reply` for text and `/api/audio/speech` for manual Play, auto-play, and chained TTS fallback. Normal TTS currently uses `tts-1`.
 - Realtime uses `/api/realtime-voice` and OpenAI Realtime with `gpt-realtime`. Realtime assistant audio and transcript must come from the same Realtime response and generated Realtime turns must not use `/api/audio/speech`.
@@ -125,7 +125,7 @@ Extract one boundary at a time after the manual smoke checklist and policy tests
 - `ChainedVoiceInputCoordinator`: own record/transcribe/validate/auto-send flow.
 - `ConversationModeVoiceCoordinator`: own default TTS-provider Conversation Mode state, transcript handling, exact visible-text playback, and cleanup; keep Realtime-specific coordination separate for future provider-switch work.
 - `LessonBackendRequestFactory`: build chat, hint, feedback, summary/recent-message, and realtime request DTOs from lesson state.
-- `LessonPromptPolicy` / `LevelRulePolicy`: only if the current prompt/level boundaries become hard to maintain in `LessonPromptBuilder`; do not duplicate policy in lesson JSON.
+- `LessonPromptPolicy` / `LevelRulePolicy`: only if backend-owned guardrails or assembly boundaries become hard to maintain in `LessonPromptBuilder`; do not move normal editable tutor behavior out of CMS or duplicate numeric timing in prompt templates.
 
 ## What should NOT be changed immediately
 
