@@ -17,6 +17,27 @@ Non-goals for this task:
 - Do not change billing behavior, entitlement behavior, Desktop behavior, database migrations, deployment scripts, or production configuration.
 - Do not provide final legal advice. Legal/policy page copy should be treated as owner/legal review draft material only.
 
+
+## Static website deployment path status
+
+Known source folder: public website source files live under `site/public/`. Do not modify `site/public` content as part of a deployment-path audit.
+
+Known upload helper: `scripts/upload-static-site.ps1` uploads only the top-level files from `site/public` to the caller-provided `-RemotePath`. The helper validates that `-RemotePath` looks like an absolute Linux path, creates that directory, and copies files there, but it does not discover nginx configuration and does not prove that the supplied path is the public HTTPS web root.
+
+Known Windows release path: Windows direct release files are a separate flow from the public website pages. Existing repository documentation records `/var/www/languagevoicetutor/releases/windows/direct` as the Windows direct release folder served through `/releases/windows/direct/`; do not mix installer/manifest uploads with website-page uploads.
+
+Known repository-documented public website path: `docs/COMMAND_PLAYBOOK.md` records `/var/www/languagevoicetutor/site` as the public website nginx root and explicitly warns not to upload website files to `/var/www/languagevoicetutor/`. Treat `/var/www/languagevoicetutor` as an unsafe guessed parent path for static website uploads.
+
+Unknown/needs verification: actual nginx web root for `languagevoicetutor.com` must be re-verified on the server before any future upload because repository notes can become stale and the upload helper accepts any syntactically valid absolute `-RemotePath`. Do not upload static site files to a guessed `-RemotePath`, including `/var/www/languagevoicetutor`, just because that directory exists or because a previous copy command succeeded.
+
+Recommended safe next manual verification command, to run manually only by an operator with server access before any upload:
+
+```powershell
+ssh lvt-server "sudo nginx -T 2>/dev/null | sed -n '/server_name languagevoicetutor.com/,/server_name/p' | grep -E 'server_name|^[[:space:]]*root |^[[:space:]]*alias '"
+```
+
+This command is read-only and is intended to print only nginx `server_name`, `root`, and `alias` lines for the public site context; it must be reviewed before choosing any `scripts/upload-static-site.ps1 -RemotePath` value.
+
 ## Current website files/routes found in the repo
 
 The public website appears to be maintained as static files under `site/public/`:
