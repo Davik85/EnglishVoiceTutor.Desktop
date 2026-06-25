@@ -43,6 +43,31 @@ CMS also does not own secrets, API keys, billing behavior, user permissions, dep
 3. Normal lesson testing should show the published CMS snapshot as the effective source, validation passing, and fallback not used.
 4. If runtime status shows static JSON fallback, CMS edits may not appear in lessons until the published CMS snapshot is active again.
 
+
+## How to read CMS Overview without guessing
+
+The **Overview** page separates four different ideas that can otherwise look similar:
+
+1. **CMS content pack / seed identity** shows the selected CMS pack slug and name, such as `static-json-v1` / `Static JSON Baseline`. This is the CMS content pack identity and seed lineage. The name may describe the original seed source; it does **not** mean learners are currently using static JSON.
+2. **Draft workspace status** shows whether the selected CMS workspace is editable draft content. `Draft` means admin edits are saved in the CMS draft workspace. Draft changes do not affect learner runtime until a CMS admin publishes them.
+3. **Published snapshot status** shows the active published version number, snapshot hash, and validation result. Learners can use this immutable published snapshot when runtime flags are enabled and validation succeeds.
+4. **Actual learner runtime source** shows the source learners are using right now. Healthy runtime shows `Effective source = CmsPublishedSnapshot`. Fallback runtime shows `Effective source = StaticJsonFallback` or static JSON wording and must be treated as an attention state unless an emergency rollback is intentional.
+
+A healthy Overview/runtime status is exactly:
+
+- `Effective source = CmsPublishedSnapshot`;
+- `Fallback used = No`;
+- `Validation success = Yes`;
+- a published version exists;
+- the Overview runtime card says **Learner runtime is using CMS published snapshot**.
+
+The fallback labels have separate meanings:
+
+- **Emergency static JSON fallback enabled: Yes** means the backend is allowed to protect learners by falling back to packaged static JSON if the CMS snapshot is missing or invalid. This is configuration, not proof that fallback is active.
+- **Currently using static JSON fallback: No** means learners are not currently using static JSON fallback. This is the active runtime result.
+
+If the selected content pack is `static-json-v1`, read it as CMS seed identity unless **Actual learner runtime source** or **Currently using static JSON fallback** says fallback is active.
+
 ## Where to edit common behavior
 
 | Desired change | CMS area to use | Notes |

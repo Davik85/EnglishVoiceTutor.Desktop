@@ -217,7 +217,7 @@
                                 <div class="cms-toolbar">
                                     <button id="cms-load-content-packs-button" type="button">Load content packs</button>
                                     <div class="field cms-pack-select-field">
-                                        <label for="cms-content-pack-select">Content pack</label>
+                                        <label for="cms-content-pack-select">CMS content pack / seed identity</label>
                                         <select id="cms-content-pack-select" name="cms-content-pack-select"><option value="static-json-v1" selected>static-json-v1</option></select>
                                     </div>
                                     <button id="cms-refresh-button" type="button">Refresh selected pack</button>
@@ -227,17 +227,29 @@
                                     <p><strong>Content pack static-json-v1 has not been initialized in CMS yet.</strong></p>
                                     <p class="muted">Use Initialize from static JSON to create CMS draft/admin content from the packaged static JSON. This does not publish automatically and does not change learner runtime. Static JSON initializes CMS draft content and remains available only as an emergency fallback.</p>
                                 </div>
-                                <h3 id="cms-summary-heading">Content pack summary</h3>
+                                <h3 id="cms-summary-heading">CMS content pack / seed identity summary</h3>
                                 <dl id="cms-content-pack-summary" class="meta cms-summary-meta">
                                     <dt>Slug</dt><dd id="cms-summary-slug">-</dd>
                                     <dt>Name</dt><dd id="cms-summary-name">-</dd>
-                                    <dt>Status</dt><dd id="cms-summary-status">-</dd>
+                                    <dt>Name note</dt><dd>This is the CMS content pack name. It may indicate the original seed source, not the current learner runtime source.</dd>
+                                    <dt>Draft workspace status</dt><dd id="cms-summary-status">-</dd>
+                                    <dt>Status note</dt><dd>Draft means editable CMS workspace state. Learners use the latest active published snapshot.</dd>
                                     <dt>Topics</dt><dd id="cms-summary-topic-count">-</dd>
                                     <dt>Scenarios</dt><dd id="cms-summary-scenario-count">-</dd>
                                     <dt>Prompt templates</dt><dd id="cms-summary-prompt-template-count">-</dd>
                                     <dt>Tutor profiles</dt><dd id="cms-summary-tutor-profile-count">-</dd>
                                     <dt>Published version</dt><dd id="cms-summary-published-version">-</dd>
                                 </dl>
+                            </article>
+                            <article class="card cms-compact-card" aria-labelledby="cms-overview-runtime-heading">
+                                <div class="cms-section-header">
+                                    <div>
+                                        <h3 id="cms-overview-runtime-heading">Actual learner runtime source</h3>
+                                        <p class="muted">This separates active learner runtime content from CMS content pack identity and draft workspace state.</p>
+                                    </div>
+                                    <button id="cms-overview-load-runtime-status-button" type="button">Load runtime status</button>
+                                </div>
+                                <div id="cms-overview-runtime-status" class="cms-result-panel" aria-live="polite"></div>
                             </article>
                         </section>
 
