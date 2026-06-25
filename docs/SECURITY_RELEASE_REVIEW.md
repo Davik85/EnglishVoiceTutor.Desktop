@@ -10,6 +10,14 @@ Admin RBAC fallback disable is production-complete for the owner-equivalent path
 
 Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus completed local backup schedule activation plus completed Phase 4 backup/restore/migration rollback drills plus optional off-server backup hardening, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
 
+
+## Admin/CMS statistics boundary fix (2026-06-25)
+
+- Admin/CMS release analytics now treat Premium and Trial users as access categories, not installs/devices.
+- The app/device metric is a count of signed-in backend `DeviceEntity` app/device records only; it is not raw installer downloads and must not include Premium entitlements, Trial grants, subscription snapshots, billing events, or users solely because they currently have Premium access.
+- Registered users remain derived from backend `UserEntity` rows, active trials from active Trial grants, active Premium users from active Premium entitlements, active/free user categories from recent activity and current access state, and language statistics from user settings/profile or lesson/usage activity as appropriate.
+- This is a release analytics correctness fix before Paddle live readiness. Production/live Paddle readiness remains deferred, and broad public production readiness is still not claimed.
+
 ## Current verified release context
 
 - Production backend: `0.1.35-backend.40` at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.40` through the `/opt/languagevoicetutor/backend/current` symlink.

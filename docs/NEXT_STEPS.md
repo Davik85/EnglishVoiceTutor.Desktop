@@ -33,6 +33,14 @@ Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBas
 
 Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS.
 
+
+## Admin/CMS statistics boundary fix (2026-06-25)
+
+- Admin/CMS release analytics now treat Premium and Trial users as access categories, not installs/devices.
+- The app/device metric is a count of signed-in backend `DeviceEntity` app/device records only; it is not raw installer downloads and must not include Premium entitlements, Trial grants, subscription snapshots, billing events, or users solely because they currently have Premium access.
+- Registered users remain derived from backend `UserEntity` rows, active trials from active Trial grants, active Premium users from active Premium entitlements, active/free user categories from recent activity and current access state, and language statistics from user settings/profile or lesson/usage activity as appropriate.
+- This is a release analytics correctness fix before Paddle live readiness. Production/live Paddle readiness remains deferred, and broad public production readiness is still not claimed.
+
 ## Current release baseline
 
 The live public tester manifest baseline must be checked from `latest.json`, not from this document. Latest built/manual-check snapshot: `v0.1.36-tester.24` installer was built and manually checked for controlled sandbox billing validation. The live public tester manifest baseline must still be checked from `latest.json` before handoff because the website manifest remains the public source of truth; current verified uploaded tester release snapshot: `0.1.36-tester.24`.
