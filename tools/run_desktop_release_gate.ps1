@@ -76,6 +76,14 @@ Invoke-GateCommand "Desktop backend boundary audit" {
     & "tools/audit_desktop_backend_boundary.ps1"
 }
 
+Invoke-GateCommand "Tutor prompt policy" {
+    python "tools/test_tutor_prompt_policy.py"
+}
+
+Invoke-GateCommand "Lesson behavior CMS ownership policy" {
+    python -m pytest "tests/test_lesson_behavior_policy.py"
+}
+
 Invoke-GateCommand "Admin RBAC permission policy foundation" {
     python "tools/test_admin_rbac_permission_policy_foundation.py"
 }
