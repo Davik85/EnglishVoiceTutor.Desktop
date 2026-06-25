@@ -186,7 +186,7 @@ That slice should only introduce safe storage/read views and admin navigation pl
 
 ## Implementation status
 
-- Read-only Admin CMS Website tab skeleton exists.
+- Read-only Website UI skeleton exists as a top-level Admin Shell tab, separate from the CMS Content sub-tabs.
 - First backend foundation added: a dedicated `website_cms_sections` persistence model for section key, draft body, optional published body, review status, effective date, internal notes, change reason, and updated/published timestamps.
 - Secret-like Website CMS content guard added to block obvious Paddle secrets, webhook secrets/signatures, API keys, JWT keys, connection strings, raw provider payload markers, customer IDs, transaction IDs, and subscription IDs before future save/publish flows persist content.
 - Public rendering is still not connected. `site/public/` remains static and unchanged by this foundation.

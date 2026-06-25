@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Policy checks for the read-only Admin CMS Website skeleton.
+"""Policy checks for the read-only top-level Admin Website skeleton.
 
 Uses only the Python standard library. The checks intentionally inspect static
 Admin files and the current git diff; they do not contact services, enable
@@ -53,7 +53,10 @@ def changed_files() -> list[str]:
 
 def test_admin_shell_contains_website_tab_and_status_copy() -> None:
     html = ADMIN_HTML.read_text(encoding="utf-8")
-    require(html, 'data-cms-sub-tab-id="website"', "Website CMS sub-tab")
+    require(html, 'data-tab-id="website"', "top-level Website Admin tab")
+    require(html, 'id="tab-panel-website"', "top-level Website Admin panel")
+    if 'data-cms-sub-tab-id="website"' in html or 'id="cms-sub-panel-website"' in html:
+        raise AssertionError("Website must not appear as a CMS Content sub-tab or CMS sub-panel.")
     require(html, "Website CMS planning status", "read-only Website status panel")
     require(html, "Current public website source is still static files under", "static site source status")
     require(html, "temporary Paddle review-readiness shells", "temporary Paddle review-readiness status")

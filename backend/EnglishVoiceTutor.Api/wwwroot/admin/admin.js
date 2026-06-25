@@ -79,7 +79,7 @@
     const DailyUsageColumns = ["usageDate", "studyLanguage", "lessonsStarted", "lessonsCompleted", "chatReplyCount", "hintsUsed", "feedbackRequests", "transcriptionSeconds", "ttsSeconds", "estimatedCost", "updatedAt"];
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
-    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", roleManagement: "role-management", system: "system" });
+    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", website: "website", roleManagement: "role-management", system: "system" });
     const AdminPermissionIds = Object.freeze({
         usersRead: "users.read",
         usersDiagnosticsRead: "users.diagnostics.read",
@@ -425,7 +425,7 @@
         const existing = getHashParameters();
         const parameters = new URLSearchParams();
         parameters.set("adminTab", selectedTabId);
-        if (selectedTabId === Tabs.cmsContent || selectedCmsSubTabId !== CmsSubTabs.overview) { parameters.set("cmsSubTab", selectedCmsSubTabId); }
+        if (selectedTabId === Tabs.cmsContent) { parameters.set("cmsSubTab", selectedCmsSubTabId); }
         ["selectedUserId", "contentPackSlug", "topicKey", "scenarioKey", "promptTemplateKey", "tutorId"].forEach((key) => {
             const value = Object.prototype.hasOwnProperty.call(changes, key) ? changes[key] : existing.get(key);
             if (value) { parameters.set(key, value); }
