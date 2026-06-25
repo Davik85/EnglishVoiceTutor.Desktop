@@ -82,6 +82,8 @@ public sealed record RealtimeVoiceSessionStartRequest
     public IReadOnlyList<string> ExpectedScenarioProgression { get; init; } = [];
     public string FeedbackRulesSummary { get; init; } = string.Empty;
     public IReadOnlyList<string> AiTutorPromptInstructions { get; init; } = [];
+
+    public IReadOnlyDictionary<string, string> PromptTemplates { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     public RealtimeLevelProfile ActiveLevelProfile { get; init; } = new();
     public IReadOnlyList<RealtimeRecentConversationMessage> RecentMessages { get; init; } = [];
 }

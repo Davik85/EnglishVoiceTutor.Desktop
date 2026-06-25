@@ -104,6 +104,7 @@ public sealed record VoiceSessionStartRequest
     public IReadOnlyList<string> ExpectedScenarioProgression { get; init; } = [];
     public string FeedbackRulesSummary { get; init; } = string.Empty;
     public IReadOnlyList<string> AiTutorPromptInstructions { get; init; } = [];
+    public IReadOnlyDictionary<string, string> PromptTemplates { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     public LevelProfile ActiveLevelProfile { get; init; } = new();
     public IReadOnlyList<RecentConversationMessage> RecentMessages { get; init; } = [];
 }

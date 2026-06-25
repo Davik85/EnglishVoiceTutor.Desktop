@@ -491,6 +491,11 @@ static async Task<IResult> HandleGetRuntimeLessonScenarioAsync(
         })
         .ToList();
 
+    scenario.Lesson.PromptTemplates = result.Content.PromptTemplates
+        .Where(template => template.IsActive && !string.IsNullOrWhiteSpace(template.TemplateKey))
+        .GroupBy(template => template.TemplateKey.Trim(), StringComparer.OrdinalIgnoreCase)
+        .ToDictionary(group => group.Key, group => group.First().Body.Trim(), StringComparer.OrdinalIgnoreCase);
+
     loggerFactory.CreateLogger("RuntimeLessonContentEndpoint").LogInformation(
         "Runtime lesson scenario served. ScenarioKey={ScenarioKey}; Source={Source}; FallbackUsed={FallbackUsed}; VersionNumber={VersionNumber}; ContentPackSlug={ContentPackSlug}; SetupMessageLength={SetupMessageLength}; FirstBotRuleCount={FirstBotRuleCount}; EffectiveSource={EffectiveSource}; SnapshotHash={SnapshotHash}.",
         scenario.StableScenarioKey,

@@ -2684,6 +2684,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
                 LessonGoal = lessonScenario.LearningGoal.Goal,
                 LessonType = lessonScenario.Metadata.LessonType,
                 AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
+                PromptTemplates = lessonScenario.PromptTemplates,
                 SelectedContextVariantId = selectedContextVariant?.Id ?? string.Empty,
                 SelectedContextTitle = GetSelectedContextTitle(),
                 SelectedContextLocalizedTitle = GetSelectedLocalizedContextTitle(),
@@ -2976,6 +2977,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
             ExpectedScenarioProgression = lessonScenario.ExpectedScenarioProgression,
             FeedbackRulesSummary = BuildFeedbackRulesSummary(),
             AiTutorPromptInstructions = lessonScenario.AiTutorPromptInstructions,
+            PromptTemplates = lessonScenario.PromptTemplates,
             ActiveLevelProfile = activeLevelProfile,
             RecentMessages = GetRecentConversationMessages()
         };

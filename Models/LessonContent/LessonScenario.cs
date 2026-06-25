@@ -40,6 +40,8 @@ public sealed class LessonScenario
 
     public List<TutorRuntimeMetadata> TutorProfiles { get; set; } = [];
 
+    public Dictionary<string, string> PromptTemplates { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
     public RuntimeContentDiagnostics RuntimeContent { get; set; } = new();
 }
 

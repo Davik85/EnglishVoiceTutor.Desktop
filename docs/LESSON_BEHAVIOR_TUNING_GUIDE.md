@@ -1,61 +1,75 @@
-# Lesson Behavior Tuning Guide
+# CMS-first lesson behavior tuning guide
 
-This guide maps the prompt and behavior sources that control lesson tutor behavior after the technical source-of-truth cleanup.
+Normal behavior tuning should be done in CMS, not by editing backend code. In short: normal behavior tuning should be done in CMS, not by editing backend code. Do not tune normal tutor behavior by editing LessonPromptBuilder.cs first; the backend should assemble the active runtime content source and enforce runtime guardrails.
 
-## Source map
+## Ownership map
 
-| Behavior area | Primary source | Notes |
-| --- | --- | --- |
-| Roleplay behavior | `backend/EnglishVoiceTutor.Api/Services/LessonPromptBuilder.cs` canonical teaching policy and guided-roleplay task | Centralized runtime instructions for normal chat and realtime. Prefer changing this before editing many lesson JSON files. |
-| Correction behavior | `LessonPromptBuilder.cs` natural roleplay correction policy; `Content/Prompts/lesson_response_rules.txt`; `Content/Prompts/lesson_tutor_base_prompt.txt`; scenario `feedbackRules` | Code/template policy prevents correction advice on every acceptable answer. Scenario/CMS feedback rules should only add local nuance. |
-| Level-specific strictness | CMS level profiles in `backend/EnglishVoiceTutor.Api/Services/Cms/CmsLevelProfiles.cs` plus scenario `levelProfiles` | Level profiles own lesson timing and broad strictness. Scenario level profiles should not redefine timing. |
-| Scenario continuity | `LessonPromptBuilder.cs` scenario continuity policy; recent conversation block; scenario `conversationFlow`, `roleplayBeats`, and `expectedScenarioProgression` | The prompt tells the tutor to track recent turns, avoid repeated basic questions, and never restart setup after roleplay begins. |
-| Wrap/final behavior | Runtime phase from `LessonLimitHelper` and level profile timing; `LessonPromptBuilder.cs` wrap/final branches; scenario wrap/final messages | Prompt templates must not define turn numbers. Runtime phase decides active roleplay vs wrap-up vs final. |
-| Tutor identity/personality | Tutor avatar profiles and `LessonPromptBuilder.cs` tutor identity rules | Do not change avatar identities in behavior tuning. Tune style/personality through tutor profiles. |
-| CMS prompt/template models | CMS prompt templates and scenario JSON fields imported by CMS services | CMS should own content wording and local scenario intent; code/templates should own global safety and behavioral guardrails. |
+### Code-owned guardrails
 
-## Conflicts found
+Backend code owns only non-editable runtime protections:
 
-- The previous A1 default correction guidance said to correct one important mistake and give a short model answer, which could be read as requiring a model answer even when the learner answer was acceptable.
-- The global response rules did not explicitly say that acceptable answers may be acknowledged without correction.
-- Scenario continuity rules existed in pieces, but did not explicitly prohibit repeating already answered basic questions from recent chat history.
-- The prompt already warned not to restart setup, but the rule was spread across sections rather than stated as a central continuity policy.
+- prompt assembly order;
+- target study-language lock;
+- tutor identity/source-coherence enforcement;
+- structured lesson-chat response format;
+- runtime phase contract (`active_roleplay`, `wrap_up`, `final`);
+- final-turn completion enforcement and no active dialogue after final;
+- setup/context selection not counting as lesson turns;
+- diagnostics for runtime content source, content pack, version, snapshot hash, and fallback state;
+- static JSON fallback/init mechanics.
 
-## What to change where
+### CMS-owned editable behavior
 
-### More or less correction
+CMS owns normal lesson behavior wording and tuning:
 
-- Change global correction policy in `LessonPromptBuilder.cs` when the behavior should apply to all guided roleplay turns.
-- Change `Content/Prompts/lesson_response_rules.txt` or `lesson_tutor_base_prompt.txt` for short global template wording.
-- Change CMS level profile `CorrectionGuidance` for broad A1/A2/B1/B2 strictness.
-- Change scenario `feedbackRules` only for a scenario-specific correction need.
+- base tutor prompt wording;
+- lesson response rules;
+- roleplay behavior;
+- correction frequency and correction style;
+- scenario continuity wording;
+- level-specific strictness;
+- tutor personality/style;
+- scenario-specific behavior;
+- wrap/final wording, while runtime phase still owns timing.
 
-### More natural roleplay
+### Static fallback/init content
 
-- Prefer `LessonPromptBuilder.cs` guided-roleplay task and natural roleplay correction policy.
-- Use scenario `conversationFlow`, `roleplayBeats`, and `expectedScenarioProgression` to describe what should happen next in a specific scenario.
-- Avoid adding advice-heavy instructions to individual scenarios unless the lesson is explicitly a teaching/model-phrase mode.
+`Content/Prompts/*`, `Content/Lessons/*`, and `Content/Tutors/*` are baseline seed content for CMS initialization and emergency static fallback. They are not the preferred long-term behavior tuning surface after CMS published runtime content is active.
 
-### Stricter A1 behavior
+## Where to change behavior
 
-- Prefer CMS level profile fields for A1 language complexity, correction guidance, and answer length.
-- Use `AppendA1StrictRules` in `LessonPromptBuilder.cs` only for global A1 rules that must apply in normal chat and realtime.
-- Keep A1 corrections short and conditional: correct only when needed, then continue with one simple question.
+### Correction frequency
+
+Use the Admin CMS **Prompts** tab and edit `lesson_response_rules` for global correction frequency, such as when to give model phrasing or when to continue without correction. Use the **Levels** tab for level-specific correction strictness through each level profile's correction guidance and related level fields.
+
+### Natural roleplay behavior
+
+Use the Admin CMS **Prompts** tab and edit `lesson_tutor_base` or `lesson_response_rules` for global roleplay tone. Use the **Scenarios** tab for scenario-specific roleplay instructions, roleplay beats, expected scenario progression, and AI tutor prompt instructions.
+
+### Scenario continuity
+
+Use the Admin CMS **Prompts** tab and edit `lesson_response_rules` for global continuity rules. Use the **Scenarios** tab for selected-context wording, conversation flow, reciprocal question handling, expected scenario progression, wrap-up intent, and final-message intent.
+
+### Level strictness
+
+Use the Admin CMS **Levels** tab. Level profiles control wrap/final turn timing, language complexity guidance, correction guidance, and answer length guidance. Prompt templates must not define numeric wrap-up or final-message turn thresholds.
 
 ### Tutor personality
 
-- Tune tutor avatar profile fields, communication style, and speaking rules.
-- Do not override avatar identity from scenario content.
-- Keep self-introductions aligned with the selected tutor profile.
+Use the Admin CMS **Tutors** tab for tutor behavior profiles. Tutor profiles own editable communication style, speaking rules, and profile-specific behavior while the backend keeps identity coherence with the selected tutor avatar.
 
-### Wrap/final behavior
+### Wrap/final wording
 
-- Timing belongs to CMS level profiles and runtime phase logic.
-- Scenario wrap/final messages should describe the closing intent, not turn numbers.
-- Prompt templates must continue to defer to runtime phase for wrap-up and final-message behavior.
+Use the Admin CMS **Scenarios** tab for scenario wrap-up and final message wording and intent. Runtime phase still decides when wrap-up and final are used; CMS edits should not add separate numeric turn thresholds outside level profiles.
 
-## CMS later vs code/templates now
+## Runtime source coherence
 
-Change in code/templates now when the rule is a global product behavior guardrail, such as no correction advice on every acceptable turn, one question at a time, no scenario restart, and no repeated answered basic questions.
+The prompt builder composes prompts from the same active runtime content source as the scenario and level data:
 
-Change in CMS later when the wording is lesson-specific: scenario setup, roleplay beats, expected progression, local feedback rules, hint rules, and tutor profile style.
+- when the effective source is `CmsPublishedSnapshot`, scenario, level, tutor, and prompt sections are served from that published snapshot;
+- when the effective source is `StaticJsonFallback`, scenario, level, tutor, and prompt sections are served from packaged static fallback content;
+- CMS prompt sections must not be mixed with static scenario or level data, and static prompt sections must not be mixed with CMS scenario or level data.
+
+## Backend change checklist
+
+Change backend code only when the desired behavior is a non-negotiable runtime guardrail, source-coherence rule, assembly rule, structured response requirement, fallback/init mechanic, or diagnostic. If a change is about tutor tone, correction style, roleplay wording, continuity wording, level strictness, scenario behavior, or personality, make it in CMS content instead.
