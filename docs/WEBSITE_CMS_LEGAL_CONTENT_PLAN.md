@@ -192,6 +192,9 @@ That slice should only introduce safe storage/read views and admin navigation pl
 - Public rendering is still not connected. `site/public/` remains static and unchanged by this foundation.
 - Live Paddle is still not enabled. No checkout buttons, checkout links, Paddle client tokens, live price IDs, webhook secrets, or public payment behavior were added.
 - No full editing UI, publish-to-public-site behavior, unauthenticated Website CMS endpoint, billing behavior, entitlement behavior, Desktop behavior, deployment script, backend environment variable, or production configuration change is included in this slice.
+- Safe SQL generation script added for the pending `20260625090000_AddWebsiteCmsLegalContentFoundation` migration; it writes reviewable SQL under `artifacts/sql/backend` and does not apply the migration.
+- The Website CMS migration still must be reviewed and applied separately by an operator after backups/environment checks.
+- Public rendering and live Paddle remain disconnected: no public Website CMS rendering path, checkout button/link, or live-payment behavior is enabled by this status update.
 
 ## Risks and guardrails
 
