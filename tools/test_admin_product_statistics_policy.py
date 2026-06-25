@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminProductStatisticsService.cs"
 DEVICE_SERVICE = ROOT / "backend/EnglishVoiceTutor.Api/Services/Devices/DeviceRegistrationService.cs"
 ADMIN_JS = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js"
+ADMIN_HTML = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/index.html"
 
 
 def read(path: Path) -> str:
@@ -30,6 +31,7 @@ def main() -> None:
     service = read(SERVICE)
     device_service = read(DEVICE_SERVICE)
     admin_js = read(ADMIN_JS)
+    admin_html = read(ADMIN_HTML)
 
 
     for snippet in [
@@ -58,6 +60,8 @@ def main() -> None:
         "? StudyLanguageConstants.ToCanonicalValue(normalizedStudyLanguage)\n            : UnknownLanguage",
         "GetExplanationLanguageDistributionAsync(CancellationToken cancellationToken)",
         "totalUsers == 0",
+        "var totalInstallations = await dbContext.Devices.AsNoTracking().CountAsync(cancellationToken);",
+        "Premium, Trial, subscription, billing, and access-status records are not counted.",
     ]:
         assert_contains(service, snippet, "EF-safe aggregate statistics pattern")
 
@@ -78,8 +82,11 @@ def main() -> None:
         "safePayload.selectedStudyLanguageDistribution || safePayload.studyLanguageDistribution || []",
         "safePayload.explanationLanguageDistribution || []",
         "No language data available.",
+        "Tracked signed-in app/device records",
     ]:
         assert_contains(admin_js, snippet, "defensive admin statistics rendering")
+
+    assert_contains(admin_html, "not raw installer downloads and not Premium or Trial access counts", "admin statistics boundary note")
 
     print("Admin product statistics policy checks passed.")
 

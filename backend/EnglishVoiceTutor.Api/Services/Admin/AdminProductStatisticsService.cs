@@ -16,7 +16,7 @@ public sealed class AdminProductStatisticsService(AppDbContext dbContext) : IAdm
 
     private static readonly IReadOnlyDictionary<string, string> MetricDefinitions = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["totalInstallations"] = "Tracked authenticated app/device records from backend DeviceEntity rows, upserted by user plus coarse platform and display device name. App version is stored for the latest seen app version and is not part of the tracked device identity. This is not a raw installer download count.",
+        ["totalInstallations"] = "Tracked signed-in app/device records from backend DeviceEntity rows only. Premium, Trial, subscription, billing, and access-status records are not counted. App version is stored for the latest seen app version and is not part of the tracked device identity. This is not raw installer downloads or total installations.",
         ["registeredUsersTotal"] = "Total backend account records from UserEntity rows. No emails or personal data are returned.",
         ["activeTrialsNow"] = "Distinct users with active trial grants at checkedAtUtc: active status, granted at or before checkedAtUtc, and expiring after checkedAtUtc.",
         ["activeUsersLast30Days"] = "Distinct users with a lesson session started or usage event created during the last 30 days.",
