@@ -68,12 +68,35 @@ public sealed class WebsiteCmsSafetyTests
 
     private static string LocateRepoRoot()
     {
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
-        while (current is not null && !File.Exists(Path.Combine(current.FullName, "EnglishVoiceTutor.Desktop.sln")))
+        var candidates = new[]
         {
-            current = current.Parent;
+            AppContext.BaseDirectory,
+            Directory.GetCurrentDirectory()
+        };
+
+        foreach (var candidate in candidates)
+        {
+            var current = new DirectoryInfo(candidate);
+            while (current is not null)
+            {
+                if (IsRepoRoot(current.FullName))
+                {
+                    return current.FullName;
+                }
+
+                current = current.Parent;
+            }
         }
 
-        return current?.FullName ?? throw new InvalidOperationException("Could not locate repository root.");
+        throw new InvalidOperationException("Could not locate repository root.");
+    }
+
+    private static bool IsRepoRoot(string directory)
+    {
+        return Directory.Exists(Path.Combine(directory, ".git"))
+            && (File.Exists(Path.Combine(directory, "EnglishVoiceTutor.Desktop.sln"))
+                || File.Exists(Path.Combine(directory, "EnglishVoiceTutor.Desktop.slnx")))
+            && Directory.Exists(Path.Combine(directory, "backend/EnglishVoiceTutor.Api"))
+            && Directory.Exists(Path.Combine(directory, "site/public"));
     }
 }

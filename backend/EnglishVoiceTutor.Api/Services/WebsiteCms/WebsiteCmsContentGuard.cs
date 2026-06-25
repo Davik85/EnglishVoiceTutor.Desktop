@@ -57,7 +57,7 @@ public static partial class WebsiteCmsContentGuard
     [GeneratedRegex(@"(?i)\b(api[_-]?key|openai[_-]?api[_-]?key|sk-[a-z0-9_-]{12,})\b", RegexOptions.CultureInvariant)]
     private static partial Regex ApiKeyRegex();
 
-    [GeneratedRegex(@"(?i)\b(jwt[_-]?(signing)?[_-]?(key|secret)|bearer\s+[a-z0-9._-]{20,})\b", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"(?i)\b(jwt(?:[_-]?|\s+)(?:(?:signing|token)(?:[_-]?|\s+))?(?:key|secret)|signing(?:[_-]?|\s+)key|bearer\s+[a-z0-9._-]{20,})\b", RegexOptions.CultureInvariant)]
     private static partial Regex JwtSecretRegex();
 
     [GeneratedRegex(@"(?i)\b(host=|server=|user\s*id=|password=|connection\s*string|DefaultConnection)\b", RegexOptions.CultureInvariant)]
