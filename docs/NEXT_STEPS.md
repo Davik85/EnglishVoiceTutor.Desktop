@@ -99,8 +99,10 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 
 ### Phase 6. Paddle live readiness + legal/support blockers
 
-- Verify live Paddle product/price mapping, live webhook setup and verification, and live checkout flow.
-- Define cancellation/refund/support path, support contact, and operational runbook.
+- Current review: `docs/PADDLE_LIVE_READINESS_REVIEW.md` documents that sandbox checkout, backend checkout-session, backend-hosted checkout launch, `transaction.completed` handling, Premium entitlement activation, Desktop Refresh status, Premium lesson access, and payment statistics are ready for the current sandbox/controlled path.
+- Do not turn on live Paddle immediately. The next concrete step is an owner-led live Paddle dashboard and legal/support readiness pass that produces only placeholders and decisions: confirm live product/price/client-side token/webhook destination can be prepared, choose the public support contact/refund/cancellation disclosure path, then run `pwsh -NoProfile -ExecutionPolicy Bypass -File tools/smoke_paddle_production_config_guard.ps1 -Strict -AssumeProduction` against a secret-safe staged environment.
+- Live blockers remain: live Paddle API key, live Premium price id, live client-side token, live webhook/notification destination secret, live notification destination URL, production backend env flags, unsigned webhook sanity check returning `401`, and acceptable legal/support materials.
+- Define cancellation/refund/support path, support contact, and operational runbook before public paid launch.
 - Complete terms, privacy, refund, and subscription disclosures.
 - Desktop/Admin UI must not call Paddle directly; the backend remains the source of truth for entitlements.
 

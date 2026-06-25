@@ -24,7 +24,7 @@ Public release still requires remaining operational readiness work: the complete
 - Production backend health: `/health` returns `200 OK` and `/api/health/database` returns `200 OK`.
 - Windows direct tester release: `0.1.36-tester.24`, installer `LanguageVoiceTutorSetup-0.1.36-tester.24.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `updateMode=manual-confirmation`.
 - This remains a controlled tester/direct Windows release, not broad public production readiness.
-- Billing remains controlled sandbox/tester validation. Paddle production/live readiness remains deferred.
+- Billing remains controlled sandbox/tester validation. Admin Product Statistics now shows internal successful payment totals/current-month metrics separately from active Premium entitlement state. Paddle production/live readiness remains deferred.
 
 ## A. Desktop security
 
