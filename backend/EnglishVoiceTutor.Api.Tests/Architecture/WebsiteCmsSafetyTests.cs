@@ -42,6 +42,30 @@ public sealed class WebsiteCmsSafetyTests
         Assert.DoesNotContain("pdl_live", combined, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void EfCoreMigrations_HaveDesignerFilesUnlessExplicitlyLegacyManualMigrations()
+    {
+        var migrationsRoot = Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/Migrations");
+        var legacyManualMigrations = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "20260601120000_AddPasswordResetFoundation",
+            "20260603120000_AddCmsContentFoundation",
+            "20260604120000_AddCmsScenarioDefinitionJson",
+            "20260604121000_AddCmsDraftSaveAuditMetadata"
+        };
+
+        var missingDesignerFiles = Directory
+            .EnumerateFiles(migrationsRoot, "*.cs", SearchOption.TopDirectoryOnly)
+            .Where(path => !path.EndsWith(".Designer.cs", StringComparison.Ordinal))
+            .Where(path => !string.Equals(Path.GetFileName(path), "AppDbContextModelSnapshot.cs", StringComparison.Ordinal))
+            .Select(Path.GetFileNameWithoutExtension)
+            .Where(name => name is not null && !legacyManualMigrations.Contains(name))
+            .Where(name => !File.Exists(Path.Combine(migrationsRoot, $"{name}.Designer.cs")))
+            .ToArray();
+
+        Assert.Empty(missingDesignerFiles);
+    }
+
     private static string LocateRepoRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
