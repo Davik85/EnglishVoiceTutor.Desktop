@@ -186,6 +186,8 @@ public sealed class LessonPromptBuilder
         prompt.AppendLine("Do not ask for native language.");
         AppendTutorIdentityRules(prompt, avatarProfile);
         AppendGuidedRoleplayRetentionRules(prompt);
+        AppendNaturalRoleplayCorrectionPolicy(prompt);
+        AppendScenarioContinuityPolicy(prompt);
 
         if (LessonLimitHelper.ShouldEndLessonNow(request))
         {
@@ -407,6 +409,8 @@ public sealed class LessonPromptBuilder
             prompt.AppendLine("- Guided roleplay must not ask broad assistant-offer questions or open-topic selection questions.");
             prompt.AppendLine("- If the learner goes off-topic: briefly acknowledge, redirect to the selected lesson goal, and do not switch topic.");
             AppendGuidedScenarioFlexibilityPolicy(prompt);
+            AppendNaturalRoleplayCorrectionPolicy(prompt);
+            AppendScenarioContinuityPolicy(prompt);
         }
 
         AppendTutorIdentityRules(prompt, avatarProfile);
@@ -460,6 +464,27 @@ public sealed class LessonPromptBuilder
         }
 
         prompt.AppendLine();
+    }
+
+
+    private static void AppendNaturalRoleplayCorrectionPolicy(StringBuilder prompt)
+    {
+        prompt.AppendLine("Natural roleplay correction policy:");
+        prompt.AppendLine("- During active_roleplay, behave like a conversation partner first and a tutor second.");
+        prompt.AppendLine("- Do not give alternative phrasing, advice, or model sentences on every turn.");
+        prompt.AppendLine("- Use phrases like \"You can say...\" or \"You can also say...\" only when the learner made an error, the wording is unnatural for this level/scenario, the learner asks for help, or the current teaching mode explicitly requires a model phrase.");
+        prompt.AppendLine("- If the learner answer is acceptable or natural enough, briefly acknowledge it and continue with one natural scenario question.");
+        prompt.AppendLine("- Keep any needed correction short: correct one important issue, then continue the same scenario.");
+    }
+
+    private static void AppendScenarioContinuityPolicy(StringBuilder prompt)
+    {
+        prompt.AppendLine("Scenario continuity policy:");
+        prompt.AppendLine("- Track the recent conversation context included in this prompt and continue from the learner's latest answer.");
+        prompt.AppendLine("- Do not ask again for basic information already answered in recent turns, such as name, country, city, home, work, or business, unless clarification is needed.");
+        prompt.AppendLine("- Do not restart greetings, introductions, setup, context choice, or the opening line after roleplay has begun.");
+        prompt.AppendLine("- Stay in the selected scenario until the runtime phase says wrap_up or final.");
+        prompt.AppendLine("- Ask exactly one scenario-compatible question when continuing active roleplay.");
     }
 
     private static void AppendGuidedScenarioFlexibilityPolicy(StringBuilder prompt)
