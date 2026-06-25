@@ -184,6 +184,11 @@ Recommended first implementation slice after this documentation:
 
 That slice should only introduce safe storage/read views and admin navigation placeholders. It should not edit `site/public/`, should not expose unauthenticated public rendering, should not enable Paddle live mode, and should not alter billing, entitlement, Desktop, deployment, or production environment behavior.
 
+## Implementation status
+
+- Read-only Admin CMS Website tab skeleton added.
+- No editable storage/publish/public rendering yet.
+
 ## Risks and guardrails
 
 | Risk | Guardrail |
