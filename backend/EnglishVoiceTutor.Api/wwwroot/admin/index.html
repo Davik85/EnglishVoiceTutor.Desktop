@@ -36,6 +36,7 @@
                     <button id="tab-button-free-lesson" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-free-lesson" aria-selected="false" data-tab-id="free-lesson">Free Lesson</button>
                     <button id="tab-button-audit-log" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-audit-log" aria-selected="false" data-tab-id="audit-log">Audit Log</button>
                     <button id="tab-button-cms-content" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-cms-content" aria-selected="false" data-tab-id="cms-content">CMS Content</button>
+                    <button id="tab-button-website" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-website" aria-selected="false" data-tab-id="website">Website</button>
                     <button id="tab-button-role-management" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-role-management" aria-selected="false" data-tab-id="role-management">Role Assignments</button>
                     <button id="tab-button-system" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-system" aria-selected="false" data-tab-id="system">System</button>
                 </nav>
@@ -206,7 +207,6 @@
                             <button id="cms-sub-tab-button-validation-preview" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-validation-preview" aria-selected="false" data-cms-sub-tab-id="validation-preview">Validation &amp; Preview</button>
                             <button id="cms-sub-tab-button-versions-publish" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-versions-publish" aria-selected="false" data-cms-sub-tab-id="versions-publish">Versions &amp; Publish</button>
                             <button id="cms-sub-tab-button-audit" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-audit" aria-selected="false" data-cms-sub-tab-id="audit">Audit</button>
-                            <button id="cms-sub-tab-button-website" class="cms-sub-tab-button" type="button" role="tab" aria-controls="cms-sub-panel-website" aria-selected="false" data-cms-sub-tab-id="website">Website</button>
                         </nav>
 
                         <section id="cms-sub-panel-overview" class="cms-sub-panel" role="tabpanel" aria-labelledby="cms-sub-tab-button-overview" data-cms-sub-panel="overview">
@@ -500,32 +500,6 @@
                         </section>
 
 
-                        <section id="cms-sub-panel-website" class="cms-sub-panel hidden" role="tabpanel" aria-labelledby="cms-sub-tab-button-website" data-cms-sub-panel="website">
-                            <article class="card cms-warning-card" aria-labelledby="cms-website-heading">
-                                <h3 id="cms-website-heading">Website CMS planning status</h3>
-                                <p class="muted"><strong>Read-only skeleton only.</strong> This panel is a planning/status placeholder for future CMS-managed public website content. It does not save drafts, publish content, or change public rendering.</p>
-                                <ul class="placeholder-list">
-                                    <li><span>Current public website source is still static files under <code>site/public/</code>.</span><span class="badge unavailable">Not connected</span></li>
-                                    <li><span>Current public pages are temporary Paddle review-readiness shells.</span><span class="badge unavailable">Temporary</span></li>
-                                    <li><span>Future CMS-managed content will include Seller/Company, Support, Pricing, Terms, Privacy, Refunds, Cancellation, AI/data disclosures, and Platform availability wording.</span><span class="badge unavailable">Future</span></li>
-                                    <li><span>Draft content must not be public.</span><span class="badge unavailable">Guarded</span></li>
-                                    <li><span>Public site rendering is not connected to CMS yet.</span><span class="badge unavailable">No runtime impact</span></li>
-                                    <li><span>No live Paddle billing is enabled from this tab.</span><span class="badge unavailable">No billing action</span></li>
-                                </ul>
-                            </article>
-                            <article class="card cms-compact-card" aria-labelledby="cms-website-guardrails-heading">
-                                <h3 id="cms-website-guardrails-heading">Website CMS guardrails</h3>
-                                <p class="cms-inline-warning">Do not paste private billing, identity, provider, authentication, or diagnostic values into future public copy.</p>
-                                <ul>
-                                    <li>Do not paste Paddle secrets.</li>
-                                    <li>Do not paste webhook secrets.</li>
-                                    <li>Do not paste API keys.</li>
-                                    <li>Do not paste JWT keys.</li>
-                                    <li>Do not paste raw provider payloads.</li>
-                                    <li>Do not paste customer IDs, transaction IDs, or subscription IDs into public copy.</li>
-                                </ul>
-                            </article>
-                        </section>
 
                         <section id="cms-sub-panel-audit" class="cms-sub-panel hidden" role="tabpanel" aria-labelledby="cms-sub-tab-button-audit" data-cms-sub-panel="audit">
                             <article class="card" aria-labelledby="cms-audit-heading">
@@ -544,6 +518,34 @@
                                 <div id="cms-audit-list" class="table-wrap cms-wide-table-wrap" data-cms-audit-list="true"></div>
                             </article>
                         </section>
+                    </div>
+
+
+                    <div id="tab-panel-website" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-website">
+                        <article class="card cms-warning-card" aria-labelledby="cms-website-heading">
+                            <h3 id="cms-website-heading">Website CMS planning status</h3>
+                            <p class="muted"><strong>Read-only skeleton only.</strong> This panel is a planning/status placeholder for future CMS-managed public website content. It does not save drafts, publish content, or change public rendering.</p>
+                            <ul class="placeholder-list">
+                                <li><span>Current public website source is still static files under <code>site/public/</code>.</span><span class="badge unavailable">Not connected</span></li>
+                                <li><span>Current public pages are temporary Paddle review-readiness shells.</span><span class="badge unavailable">Temporary</span></li>
+                                <li><span>Future CMS-managed content will include Seller/Company, Support, Pricing, Terms, Privacy, Refunds, Cancellation, AI/data disclosures, and Platform availability wording.</span><span class="badge unavailable">Future</span></li>
+                                <li><span>Draft content must not be public.</span><span class="badge unavailable">Guarded</span></li>
+                                <li><span>Public site rendering is not connected to CMS yet.</span><span class="badge unavailable">No runtime impact</span></li>
+                                <li><span>No live Paddle billing is enabled from this tab.</span><span class="badge unavailable">No billing action</span></li>
+                            </ul>
+                        </article>
+                        <article class="card cms-compact-card" aria-labelledby="cms-website-guardrails-heading">
+                            <h3 id="cms-website-guardrails-heading">Website CMS guardrails</h3>
+                            <p class="cms-inline-warning">Do not paste private billing, identity, provider, authentication, or diagnostic values into future public copy.</p>
+                            <ul>
+                                <li>Do not paste Paddle secrets.</li>
+                                <li>Do not paste webhook secrets.</li>
+                                <li>Do not paste API keys.</li>
+                                <li>Do not paste JWT keys.</li>
+                                <li>Do not paste raw provider payloads.</li>
+                                <li>Do not paste customer IDs, transaction IDs, or subscription IDs into public copy.</li>
+                            </ul>
+                        </article>
                     </div>
 
 
