@@ -366,7 +366,9 @@
     const cmsLoadPreviewButton = document.getElementById("cms-load-preview-button");
     const cmsPreviewSummaryElement = document.getElementById("cms-preview-summary");
     const cmsLoadRuntimeStatusButton = document.getElementById("cms-load-runtime-status-button");
+    const cmsOverviewLoadRuntimeStatusButton = document.getElementById("cms-overview-load-runtime-status-button");
     const cmsRuntimeStatusElement = document.getElementById("cms-runtime-status");
+    const cmsOverviewRuntimeStatusElement = document.getElementById("cms-overview-runtime-status");
     const cmsLoadVersionsButton = document.getElementById("cms-load-versions-button");
     const cmsPublishChangeSummaryInput = document.getElementById("cms-publish-change-summary");
     const cmsPublishErrorDetailsElement = document.getElementById("cms-publish-error-details");
@@ -1359,9 +1361,10 @@
         appendCmsRawJsonDetails(cmsValidationResultElement, "Show raw validation JSON", validation);
     }
 
-    function renderCmsRuntimeStatus(status) {
-        cmsRuntimeStatusElement.textContent = "";
-        cmsRuntimeStatusElement.className = "cms-result-panel cms-readable-result-panel";
+    function renderCmsRuntimeStatusPanel(targetElement, status) {
+        if (!targetElement) { return; }
+        targetElement.textContent = "";
+        targetElement.className = "cms-result-panel cms-readable-result-panel";
         const effectiveSource = String(getCmsResponseValue(status, "effectiveSource", getCmsResponseValue(status, "source", "")) || "");
         const usePublishedSnapshot = Boolean(getCmsResponseValue(status, "usePublishedSnapshotForRuntime", false));
         const readPublishedSnapshot = Boolean(getCmsResponseValue(status, "readPublishedSnapshotEnabled", false));
@@ -1372,8 +1375,8 @@
         let headline = "Learner runtime needs attention";
         let statusLabel = "Needs attention";
         let positive = false;
-        if (cmsSnapshotActive) { headline = "CMS published snapshot is active"; statusLabel = "OK"; positive = true; }
-        else if (fallbackUsed || effectiveSource === "StaticJson") { headline = "Static JSON emergency fallback is active"; statusLabel = "Fallback active"; }
+        if (cmsSnapshotActive) { headline = "Learner runtime is using CMS published snapshot"; statusLabel = "OK"; positive = true; }
+        else if (fallbackUsed || effectiveSource === "StaticJson" || effectiveSource === "StaticJsonFallback") { headline = "Learner runtime is using static JSON fallback"; statusLabel = "Fallback active"; }
         else if (usePublishedSnapshot && !readPublishedSnapshot) { headline = "CMS runtime is configured but snapshot reads are disabled"; }
         else if (flagsEnabled && !validationSuccess) { headline = "CMS published snapshot is unavailable or invalid"; }
         const titleRow = document.createElement("div");
@@ -1382,24 +1385,24 @@
         title.textContent = headline;
         titleRow.appendChild(title);
         appendCmsStatusBadge(titleRow, statusLabel, positive);
-        cmsRuntimeStatusElement.appendChild(titleRow);
+        targetElement.appendChild(titleRow);
         const message = document.createElement("p");
         message.className = "muted";
         message.textContent = getCmsResponseValue(status, "message", "Runtime status loaded. No content bodies are displayed.");
-        cmsRuntimeStatusElement.appendChild(message);
+        targetElement.appendChild(message);
         if (!cmsSnapshotActive) {
             const warning = document.createElement("p");
             warning.className = "cms-inline-warning";
-            warning.textContent = "CMS edits affect learner lessons only when the CMS published snapshot is enabled, valid, and effectively active. While static JSON fallback is active, CMS draft or published edits may not affect learner runtime.";
-            cmsRuntimeStatusElement.appendChild(warning);
+            warning.textContent = "CMS published snapshot is not active/effective for learner runtime. CMS edits affect learner lessons only when the CMS published snapshot is enabled, valid, and effectively active. While static JSON fallback is active, CMS draft or published edits may not affect learner runtime.";
+            targetElement.appendChild(warning);
         }
-        appendCmsDefinitionList(cmsRuntimeStatusElement, [
+        appendCmsDefinitionList(targetElement, [
             { label: "Checked at (UTC)", value: getCmsResponseValue(status, "checkedAtUtc") },
             { label: "Content pack slug", value: getCmsResponseValue(status, "contentPackSlug") },
             { label: "Use published snapshot for runtime", value: getCmsResponseValue(status, "usePublishedSnapshotForRuntime") },
             { label: "Read published snapshot enabled", value: getCmsResponseValue(status, "readPublishedSnapshotEnabled") },
-            { label: "Fallback to static JSON", value: getCmsResponseValue(status, "fallbackToStaticJson") },
-            { label: "Effective source", value: effectiveSource },
+            { label: "Emergency static JSON fallback enabled", value: getCmsResponseValue(status, "fallbackToStaticJson") },
+            { label: "Actual learner runtime source", value: effectiveSource },
             { label: "Published version number", value: getCmsResponseValue(status, "publishedVersionNumber") },
             { label: "Snapshot hash", value: getCmsResponseValue(status, "snapshotHash") },
             { label: "Topics", value: getCmsResponseValue(status, "topicCount") },
@@ -1407,10 +1410,15 @@
             { label: "Prompt templates", value: getCmsResponseValue(status, "promptTemplateCount") },
             { label: "Tutor behavior profiles", value: getCmsResponseValue(status, "tutorBehaviorProfileCount") },
             { label: "Validation success", value: getCmsResponseValue(status, "validationSuccess") },
-            { label: "Fallback used", value: fallbackUsed }
+            { label: "Currently using static JSON fallback", value: fallbackUsed }
         ]);
-        appendCmsMessageList(cmsRuntimeStatusElement, "Errors", getCmsResponseArray(status, "errors"), "No errors", true);
-        appendCmsMessageList(cmsRuntimeStatusElement, "Warnings", getCmsResponseArray(status, "warnings"), "No warnings");
+        appendCmsMessageList(targetElement, "Errors", getCmsResponseArray(status, "errors"), "No errors", true);
+        appendCmsMessageList(targetElement, "Warnings", getCmsResponseArray(status, "warnings"), "No warnings");
+    }
+
+    function renderCmsRuntimeStatus(status) {
+        renderCmsRuntimeStatusPanel(cmsRuntimeStatusElement, status);
+        renderCmsRuntimeStatusPanel(cmsOverviewRuntimeStatusElement, status);
     }
 
     function renderCmsPreviewSummary(preview) {
@@ -2147,6 +2155,7 @@
     cmsRunValidationButton.addEventListener("click", async () => { await runCmsValidation(); });
     cmsLoadPreviewButton.addEventListener("click", async () => { await loadCmsPreviewSummary(); });
     cmsLoadRuntimeStatusButton.addEventListener("click", async () => { await loadCmsRuntimeStatus(); });
+    cmsOverviewLoadRuntimeStatusButton.addEventListener("click", async () => { await loadCmsRuntimeStatus(); });
     cmsLoadVersionsButton.addEventListener("click", async () => { try { await loadCmsVersions(); setCmsSuccess("CMS versions loaded."); } catch (error) { handleCmsError(error); } });
     cmsPublishChangeSummaryInput.addEventListener("input", () => { clearCmsPublishErrorDetails(); setCmsError(""); });
     cmsLoadAuditButton.addEventListener("click", async () => { await loadCmsAuditEntries(); });
