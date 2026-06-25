@@ -154,3 +154,9 @@ Avoid publishing claims that are not yet operationally or legally approved, incl
 This audit document intentionally contains no real Paddle API keys, price IDs, client-side tokens, webhook secrets, customer IDs, transaction IDs, raw payloads, signatures, OpenAI keys, JWT keys, connection strings, or other secrets.
 
 This task did not enable production/live Paddle, did not change backend environment variables, and did not change billing behavior, entitlement behavior, Desktop behavior, database migrations, deployment scripts, or production configuration.
+
+## Static legal/support shell added
+
+A minimal static website shell has been added under `site/public/` for Paddle review readiness: `pricing.html`, `terms.html`, `privacy.html`, `refunds.html`, `cancellation.html`, and `support.html`. The landing and download pages now link to these static pages.
+
+Remaining owner/legal placeholders still require review before treating the copy as final policy or enabling paid production billing: `<LEGAL_SELLER_NAME>`, `<SUPPORT_PHONE_OR_OWNER_DECISION>`, and `<PREMIUM_PRICE_AND_BILLING_PERIOD>`. The shell does not add Paddle keys, Paddle identifiers, checkout buttons, backend configuration, deployment changes, or production billing behavior.

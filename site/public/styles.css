@@ -430,3 +430,63 @@ dd {
         gap: 4px;
     }
 }
+
+.notice-note {
+    border: 1px solid var(--warning-border);
+    border-radius: 12px;
+    margin-bottom: 0;
+    padding: 12px 14px;
+    background: var(--warning-background);
+    color: #624917;
+}
+
+.legal-page .hero-card,
+.legal-page .details-card,
+.legal-page .support-card {
+    margin-bottom: 20px;
+}
+
+.legal-section p:last-child,
+.legal-bullets:last-child {
+    margin-bottom: 0;
+}
+
+.legal-list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+}
+
+.legal-list div {
+    display: grid;
+    grid-template-columns: minmax(140px, 220px) 1fr;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.legal-list div:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.legal-bullets {
+    padding-left: 1.25rem;
+}
+
+.legal-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+}
+
+.support-card .legal-nav {
+    margin-top: 14px;
+}
+
+@media (max-width: 640px) {
+    .legal-list div {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+}
