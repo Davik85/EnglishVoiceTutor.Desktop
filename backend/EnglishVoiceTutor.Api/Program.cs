@@ -21,6 +21,7 @@ using EnglishVoiceTutor.Api.Services.Subscriptions;
 using EnglishVoiceTutor.Api.Services.Billing;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Cms;
+using EnglishVoiceTutor.Api.Services.WebsiteCms;
 using EnglishVoiceTutor.Api.Services.Devices;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -259,6 +260,7 @@ builder.Services.AddScoped<ICmsPublishedContentService, CmsPublishedContentServi
 builder.Services.AddScoped<ICmsRuntimeLessonContentService, CmsRuntimeLessonContentService>();
 builder.Services.AddScoped<ICmsContentAdminService, CmsContentAdminService>();
 builder.Services.AddScoped<ICmsContentPublishingService, CmsContentPublishingService>();
+builder.Services.AddScoped<IWebsiteCmsAdminReadService, WebsiteCmsAdminReadService>();
 
 static void AddAdminPermissionPolicy(AuthorizationOptions options, string policyName, string permissionName)
 {

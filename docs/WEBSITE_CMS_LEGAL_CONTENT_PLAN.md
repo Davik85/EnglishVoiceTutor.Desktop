@@ -190,8 +190,8 @@ That slice should only introduce safe storage/read views and admin navigation pl
 
 ## Current status after 2026-06-25 Website CMS foundation rollout
 
-- Read-only Website UI skeleton exists as a top-level Admin Shell tab, separate from the `CMS Content` sub-tabs. `CMS Content` remains focused on learner/runtime content packs.
-- The Website tab is planning/status only: it does not save drafts, publish content, change public rendering, or change `site/public/`.
+- Read-only Website UI exists as a top-level Admin Shell tab, separate from the `CMS Content` sub-tabs. `CMS Content` remains focused on learner/runtime content packs.
+- The Website tab now loads an admin-only metadata overview for expected Website CMS sections from `/api/admin/website-cms/sections/overview`; it still does not expose bodies, save drafts, publish content, change public rendering, or change `site/public/`.
 - First backend foundation exists: the `website_cms_sections` table stores section key, draft body, optional published body, review status, effective date, internal notes, change reason, and updated/published timestamps.
 - Production DB migration `20260625090000_AddWebsiteCmsLegalContentFoundation` has been applied manually from reviewed SQL. Production `__EFMigrationsHistory` contains that migration, and the `website_cms_sections` table plus `IX_website_cms_sections_ReviewStatus`, `IX_website_cms_sections_SectionKey`, and `PK_website_cms_sections` exist.
 - Backend release `0.1.35-backend.52` is deployed. The production symlink points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.52`, and post-deploy health checks returned `200 Healthy` for `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database`.
@@ -209,7 +209,7 @@ That slice should only introduce safe storage/read views and admin navigation pl
 ## Next safe steps
 
 1. Prepare owner/legal-approved public legal, seller, support, refund, cancellation, privacy, terms, and pricing copy outside code.
-2. Implement Website CMS admin read/draft endpoints later, with validation and audit reviewed before writes are accepted.
+2. Implement Website CMS admin detail/draft endpoints later, with validation and audit reviewed before writes are accepted; the current admin-only read slice is metadata-only.
 3. Add Website edit UI only after the validation/audit model is reviewed.
 4. Keep public rendering static until a separately approved rendering integration implements published-only snapshot rules; no draft content may be served publicly.
 5. Keep live Paddle enablement as a separate readiness step after legal/support disclosures, live dashboard configuration, webhook setup, reconciliation, monitoring, and operational runbooks are approved.

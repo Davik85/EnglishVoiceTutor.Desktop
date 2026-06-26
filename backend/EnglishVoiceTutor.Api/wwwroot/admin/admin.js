@@ -37,7 +37,8 @@
         roleAssignmentAssign: "/api/admin/role-assignments/assign",
         roleAssignmentRevoke: "/api/admin/role-assignments/revoke",
         roleAssignmentDisableAdmin: "/api/admin/role-assignments/disable-admin",
-        roleAssignmentEnableAdmin: "/api/admin/role-assignments/enable-admin"
+        roleAssignmentEnableAdmin: "/api/admin/role-assignments/enable-admin",
+        websiteCmsSectionOverview: "/api/admin/website-cms/sections/overview"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
@@ -69,7 +70,8 @@
         roleManagementLoadFailed: "Unable to load role management data.",
         roleManagementMutationFailed: "Unable to update persistent admin access.",
         roleManagementReasonRequired: "Reason is required.",
-        roleManagementConfirmationRequired: "Confirm that this action changes persistent admin access."
+        roleManagementConfirmationRequired: "Confirm that this action changes persistent admin access.",
+        websiteCmsLoadFailed: "Unable to load Website CMS metadata."
     };
 
     const SummaryFields = ["userId", "email", "status", "createdAt", "lastLoginAt"];
@@ -117,6 +119,7 @@
     let selectedUserEmail = null;
     let selectedUserLookupPayload = null;
     let cmsHasLoadedOnce = false;
+    let websiteCmsHasLoadedOnce = false;
     let cmsSelectedTopic = null;
     let cmsSelectedScenario = null;
     let cmsSelectedPromptTemplate = null;
@@ -174,6 +177,10 @@
     const statisticsErrorElement = document.getElementById("statistics-error");
     const statisticsCardsElement = document.getElementById("statistics-cards");
     const statisticsCheckedAtElement = document.getElementById("statistics-checked-at");
+    const websiteCmsLoadingElement = document.getElementById("website-cms-loading");
+    const websiteCmsErrorElement = document.getElementById("website-cms-error");
+    const websiteCmsSectionOverviewElement = document.getElementById("website-cms-section-overview");
+    const websiteCmsCheckedAtElement = document.getElementById("website-cms-checked-at");
     const studyLanguageDistributionElement = document.getElementById("study-language-distribution");
     const nativeLanguageDistributionElement = document.getElementById("native-language-distribution");
     const explanationLanguageDistributionElement = document.getElementById("explanation-language-distribution");
@@ -523,7 +530,36 @@
                 if (!cmsHasLoadedOnce) { await loadCmsContentPacks(); }
             }
             if (tabId === Tabs.overview) { await loadProductStatistics(); }
+            if (tabId === Tabs.website && !websiteCmsHasLoadedOnce) { await loadWebsiteCmsSectionOverview(); }
         }));
+    }
+
+    function setWebsiteCmsLoading(isLoading) { if (websiteCmsLoadingElement) { websiteCmsLoadingElement.classList.toggle("hidden", !isLoading); } }
+    function formatWebsiteCmsValue(value) { return value === null || value === undefined || value === "" ? "-" : String(value); }
+    function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[character])); }
+    function renderWebsiteCmsSectionOverview(payload) {
+        if (!websiteCmsSectionOverviewElement) { return; }
+        const sections = Array.isArray(payload?.sections) ? payload.sections : [];
+        if (sections.length === 0) {
+            websiteCmsSectionOverviewElement.innerHTML = '<p class="muted">No Website CMS section metadata was returned.</p>';
+            return;
+        }
+        const rows = sections.map((section) => `<tr><td><code>${escapeHtml(section.sectionKey)}</code></td><td>${escapeHtml(section.displayName)}</td><td>${escapeHtml(section.reviewStatus || "Not stored")}</td><td>${section.storedRowExists ? "Stored" : "Not stored"}</td><td>${section.draftBodyExists ? "Yes" : "No"}</td><td>${section.publishedBodyExists ? "Yes" : "No"}</td><td>${escapeHtml(formatWebsiteCmsValue(section.effectiveDate))}</td><td>${escapeHtml(formatWebsiteCmsValue(section.updatedAtUtc))}</td><td>${escapeHtml(formatWebsiteCmsValue(section.publishedAtUtc))}</td></tr>`).join("");
+        websiteCmsSectionOverviewElement.innerHTML = `<table><thead><tr><th>Section key</th><th>Display name</th><th>Review status</th><th>Stored</th><th>Draft exists</th><th>Published exists</th><th>Effective date</th><th>Updated</th><th>Published</th></tr></thead><tbody>${rows}</tbody></table>`;
+        if (websiteCmsCheckedAtElement) { websiteCmsCheckedAtElement.textContent = payload?.checkedAtUtc ? `Metadata checked at ${payload.checkedAtUtc}.` : ""; }
+    }
+    async function loadWebsiteCmsSectionOverview() {
+        if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = ""; }
+        setWebsiteCmsLoading(true);
+        try {
+            const payload = await adminFetch(ApiPaths.websiteCmsSectionOverview, { method: "GET" });
+            renderWebsiteCmsSectionOverview(payload);
+            websiteCmsHasLoadedOnce = true;
+        } catch (error) {
+            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : ErrorMessages.websiteCmsLoadFailed; }
+        } finally {
+            setWebsiteCmsLoading(false);
+        }
     }
 
     function updateSelectedUserHeader() {
@@ -2537,6 +2573,7 @@
         if (selectedTabId === Tabs.cmsContent && !cmsHasLoadedOnce) { await loadCmsContentPacks(); }
         if (selectedTabId === Tabs.roleManagement) { await loadRoleManagementData(); }
         if (selectedTabId === Tabs.overview) { await loadProductStatistics(); }
+        if (selectedTabId === Tabs.website && !websiteCmsHasLoadedOnce) { await loadWebsiteCmsSectionOverview(); }
     }
 
     async function restoreAdminSessionFromCookie() {
