@@ -4,7 +4,7 @@ Review date: 2026-06-25.
 
 ## Purpose
 
-Define a small, safe Admin CMS feature foundation and future workflow for managing public website legal, seller, support, policy, and pricing display content without code changes after implementation. This plan now has a first backend foundation slice implemented. It still does not change public website rendering and does not provide final legal advice.
+Define a small, safe Admin Website CMS feature foundation and future workflow for managing public website legal, seller, support, policy, and pricing display content without code changes after implementation. The first backend foundation slice, production database rollout, read-only Admin shell skeleton, deployment, scripts, and tests are now complete. This still does not change public website rendering and does not provide final legal advice.
 
 All legal/policy copy managed through this future CMS must be treated as owner/legal review draft content until approved by the product owner and qualified legal reviewer.
 
@@ -22,7 +22,9 @@ This plan must not be used to:
 
 ## Current static-site status
 
-The public website is currently maintained as static files under `site/public/`. Temporary Paddle review-readiness pages already exist:
+The public website is currently maintained as static files under `site/public/`. The confirmed production public website root is `/var/www/languagevoicetutor/site`; do not upload public website files to the parent `/var/www/languagevoicetutor/`. The prior accidental parent-directory upload was moved into `/var/www/languagevoicetutor/_mistaken_static_upload_20260625`.
+
+Temporary Paddle review-readiness pages already exist and were deployed as static pages:
 
 - `pricing.html`
 - `terms.html`
@@ -33,7 +35,7 @@ The public website is currently maintained as static files under `site/public/`.
 
 Those files are suitable as temporary static review-readiness shells, but future updates to legal/support/pricing copy should be planned for a controlled Admin CMS workflow after separate legal and owner review.
 
-The existing Admin shell has a `CMS Content` workspace for lesson/prompt/tutor content with draft saves, validation/preview, versions/publish, and audit concepts. The website CMS should be a separate future area so public website policy content is not mixed with learner lesson content.
+The existing Admin shell has a `CMS Content` workspace for learner/runtime lesson, prompt, scenario, topic, tutor, validation, version, publish, and audit workflows. Website policy content must stay separate from learner/runtime content packs. The Website area is now a **top-level Admin Shell tab** in the left navigation, not a `CMS Content` sub-tab.
 
 ## Target Admin CMS tab
 
@@ -42,6 +44,8 @@ Preferred tab name: **Website**.
 Acceptable alternate tab name: **Public Site**.
 
 The tab should be clearly labeled as public website content management and should show a warning that legal and policy content remains draft/review content until explicitly approved and published.
+
+Current tab behavior is intentionally read-only planning/status only. It does not save drafts, publish content, change `site/public/`, change public rendering, or enable Paddle.
 
 ## Editable sections
 
@@ -184,17 +188,31 @@ Recommended first implementation slice after this documentation:
 
 That slice should only introduce safe storage/read views and admin navigation placeholders. It should not edit `site/public/`, should not expose unauthenticated public rendering, should not enable Paddle live mode, and should not alter billing, entitlement, Desktop, deployment, or production environment behavior.
 
-## Implementation status
+## Current status after 2026-06-25 Website CMS foundation rollout
 
-- Read-only Website UI skeleton exists as a top-level Admin Shell tab, separate from the CMS Content sub-tabs.
-- First backend foundation added: a dedicated `website_cms_sections` persistence model for section key, draft body, optional published body, review status, effective date, internal notes, change reason, and updated/published timestamps.
-- Secret-like Website CMS content guard added to block obvious Paddle secrets, webhook secrets/signatures, API keys, JWT keys, connection strings, raw provider payload markers, customer IDs, transaction IDs, and subscription IDs before future save/publish flows persist content.
-- Public rendering is still not connected. `site/public/` remains static and unchanged by this foundation.
+- Read-only Website UI skeleton exists as a top-level Admin Shell tab, separate from the `CMS Content` sub-tabs. `CMS Content` remains focused on learner/runtime content packs.
+- The Website tab is planning/status only: it does not save drafts, publish content, change public rendering, or change `site/public/`.
+- First backend foundation exists: the `website_cms_sections` table stores section key, draft body, optional published body, review status, effective date, internal notes, change reason, and updated/published timestamps.
+- Production DB migration `20260625090000_AddWebsiteCmsLegalContentFoundation` has been applied manually from reviewed SQL. Production `__EFMigrationsHistory` contains that migration, and the `website_cms_sections` table plus `IX_website_cms_sections_ReviewStatus`, `IX_website_cms_sections_SectionKey`, and `PK_website_cms_sections` exist.
+- Backend release `0.1.35-backend.52` is deployed. The production symlink points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.52`, and post-deploy health checks returned `200 Healthy` for `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database`.
+- Secret-like Website CMS content guard blocks obvious Paddle secrets, webhook secrets/signatures, API keys, JWT keys/signing keys, connection strings, raw provider payload markers, customer IDs, transaction IDs, and subscription IDs before future save/publish flows persist content.
+- Public rendering is still not connected. The deployed static public website remains the actual public rendering source, and `site/public/` remains the source for static public pages.
 - Live Paddle is still not enabled. No checkout buttons, checkout links, Paddle client tokens, live price IDs, webhook secrets, or public payment behavior were added.
-- No full editing UI, publish-to-public-site behavior, unauthenticated Website CMS endpoint, billing behavior, entitlement behavior, Desktop behavior, deployment script, backend environment variable, or production configuration change is included in this slice.
-- Safe SQL generation script added for the pending `20260625090000_AddWebsiteCmsLegalContentFoundation` migration; it writes reviewable SQL under `artifacts/sql/backend` and does not apply the migration.
-- The Website CMS migration still must be reviewed and applied separately by an operator after backups/environment checks.
-- Public rendering and live Paddle remain disconnected: no public Website CMS rendering path, checkout button/link, or live-payment behavior is enabled by this status update.
+- Legal, seller, support, refund, cancellation, privacy, terms, and pricing final values still require owner/legal approval before paid public launch claims.
+
+## Scripts and tests added for this rollout
+
+- `scripts/generate-backend-website-cms-migration-sql.ps1` generates reviewable SQL from `20260620165657_AddAdminRoleAssignmentPersistence` to `20260625090000_AddWebsiteCmsLegalContentFoundation` at `artifacts/sql/backend/20260625090000_AddWebsiteCmsLegalContentFoundation.from-20260620165657.sql`. It uses `dotnet ef migrations script` only; it does not apply SQL and does not read or print database secrets.
+- `scripts/package-backend-linux-release.ps1` and `scripts/upload-backend-linux-release.ps1` are the accepted backend package/upload scripts used for release `0.1.35-backend.52`. They do not run EF migrations or apply SQL; schema rollout remains a separate reviewed operator step.
+- Coverage includes `tools/test_admin_website_cms_skeleton_policy.py`, `tools/test_backend_linux_deployment_policy.py`, `tools/test_static_site_paddle_review_pages.py`, `tools/test_documentation_source_of_truth_policy.py`, and backend API tests for `WebsiteCmsContentGuard` plus `WebsiteCmsSafetyTests`.
+
+## Next safe steps
+
+1. Prepare owner/legal-approved public legal, seller, support, refund, cancellation, privacy, terms, and pricing copy outside code.
+2. Implement Website CMS admin read/draft endpoints later, with validation and audit reviewed before writes are accepted.
+3. Add Website edit UI only after the validation/audit model is reviewed.
+4. Keep public rendering static until a separately approved rendering integration implements published-only snapshot rules; no draft content may be served publicly.
+5. Keep live Paddle enablement as a separate readiness step after legal/support disclosures, live dashboard configuration, webhook setup, reconciliation, monitoring, and operational runbooks are approved.
 
 ## Risks and guardrails
 

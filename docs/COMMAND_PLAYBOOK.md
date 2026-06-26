@@ -150,10 +150,10 @@ Upload Windows direct release files only to `/var/www/languagevoicetutor/release
 
 ## Backend-only deployment commands
 
-Example package command for the current backend snapshot (`0.1.35-backend.24` as last verified; use the server `current` symlink as source of truth):
+Example package command for the current backend snapshot (`0.1.35-backend.52` as last verified after the Website CMS foundation rollout; use the server `current` symlink as source of truth):
 
 ```powershell
-$BackendVersion = "0.1.35-backend.24"
+$BackendVersion = "0.1.35-backend.52"
 powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version $BackendVersion
 ```
 
@@ -165,9 +165,26 @@ powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.
   -PackageFirst
 ```
 
-Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.24`, no EF migration was needed and no Windows installer upload was performed. Backend deploys do not upload Windows installer files and do not change `latest.json`.
+Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.52`, the backend package/upload deploy was performed after the Website CMS SQL had already been reviewed and applied manually. Backend deploys do not upload Windows installer files and do not change `latest.json`.
 
-Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23`.
+Previous backend release for rollback reference should be verified from the server before rollback; `0.1.35-backend.52` was the active release after the Website CMS foundation rollout.
+
+
+### Website CMS migration SQL generation
+
+Use this only to generate reviewable SQL for the Website CMS foundation migration; it does not apply SQL, does not run `dotnet ef database update`, and must not print database secrets:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\generate-backend-website-cms-migration-sql.ps1
+```
+
+Expected output path:
+
+```text
+artifacts/sql/backend/20260625090000_AddWebsiteCmsLegalContentFoundation.from-20260620165657.sql
+```
+
+Production rollout for `20260625090000_AddWebsiteCmsLegalContentFoundation` was completed manually from reviewed SQL on 2026-06-25. Future schema work must keep this separation: generate/review SQL, back up/verify the target, apply manually through an approved operator path, then deploy/restart backend if needed. The backend package/upload scripts do not run migrations.
 
 ## Downloaded update installer cleanup
 

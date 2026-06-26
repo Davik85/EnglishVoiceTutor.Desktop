@@ -54,7 +54,7 @@ Current controlled tester/direct Windows releases continue to use the existing I
 
 ## Latest verified release summary
 
-Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy and UI policy tests passed; the desktop release gate passed; and backend `0.1.35-backend.50` is deployed and healthy after the Admin RBAC persistence migration. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, Save draft + Publish changes are visible in newly started desktop lessons, and Admin Product Statistics now shows `Tracked signed-in app/device records`, `Successful payments total`, and `Successful payments current month` from the live Admin UI.
+Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy and UI policy tests passed; the desktop release gate passed; and backend `0.1.35-backend.52` is deployed and healthy after the Website CMS foundation migration rollout. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, Save draft + Publish changes are visible in newly started desktop lessons, and Admin Product Statistics now shows `Tracked signed-in app/device records`, `Successful payments total`, and `Successful payments current month` from the live Admin UI.
 
 ## Immediate next steps
 
@@ -62,6 +62,20 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 2. Continue controlled tester/direct Windows handoff planning only after verifying live `latest.json`; keep it clearly labeled as controlled tester validation, not broad production/live billing readiness.
 3. Keep production/live Paddle readiness deferred until the Phase 6 checklist is complete, and do not claim broad public production readiness.
 4. Treat additional Admin statistics work as follow-up only if a new product question appears; the current successful-payment statistics deployment is complete and verified.
+
+
+
+## Website CMS next safe steps after 2026-06-25 rollout
+
+Current status: Website is a top-level read-only Admin Shell tab, Website CMS persistence exists, production migration `20260625090000_AddWebsiteCmsLegalContentFoundation` has been applied, backend `0.1.35-backend.52` is deployed and healthy, and static public pages remain the public rendering source. Public rendering is not connected to Website CMS, and live Paddle remains disabled.
+
+Next safe steps:
+
+1. Prepare owner/legal-approved public legal, seller, support, refund, cancellation, privacy, terms, and pricing copy outside code.
+2. Implement Website CMS admin read/draft endpoints later; validate and audit the model before accepting writes.
+3. Add Website edit UI only after validation/audit behavior is reviewed.
+4. Connect public rendering only after published-only public snapshot rules are implemented and draft content is impossible to serve publicly.
+5. Keep live Paddle enablement as a separate readiness step after legal/support disclosures and Paddle operations are approved.
 
 ## Release-readiness roadmap
 
@@ -95,7 +109,7 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 - Phase 5A lightweight production logging/privacy audit is complete in `docs/LOGGING_PRIVACY_AUDIT.md`.
 - Current result: documentation/audit only; no code/runtime changes were needed, no heavy monitoring infrastructure was introduced, and no external services were added.
 - Keep the Phase 5A operator rule active: paste only bounded non-secret operational evidence, and redact secrets, tokens, connection strings, raw provider payloads, raw lesson/STT/TTS/OpenAI content, SQL dumps, backup contents, and full unfiltered terminal transcripts.
-- Phase 5A logging/privacy audit is complete, Phase 5B bounded production log sampling is complete, and Phase 5C Production logging hardening is deployed/verified and retained in backend `0.1.35-backend.50`.
+- Phase 5A logging/privacy audit is complete, Phase 5B bounded production log sampling is complete, and Phase 5C Production logging hardening is deployed/verified and retained in backend `0.1.35-backend.52`.
 
 ### Phase 6. Paddle live readiness + legal/support blockers
 
@@ -125,11 +139,11 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 
 ## Current backend verification
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.50` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.52` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current.
 
-Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.49`. Backend `0.1.35-backend.40` contains the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields for Desktop Account billing UI decisions, and a cancel request path that must not directly revoke entitlements. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. EF migrations through `20260620165657_AddAdminRoleAssignmentPersistence` are recorded in production `__EFMigrationsHistory`.
+Previous backend release for rollback reference must be verified from `/opt/languagevoicetutor/backend/previous` before rollback. Backend `0.1.35-backend.40` contains the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields for Desktop Account billing UI decisions, and a cancel request path that must not directly revoke entitlements. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. EF migrations through `20260625090000_AddWebsiteCmsLegalContentFoundation` are recorded in production `__EFMigrationsHistory`.
 
-Deployed runtime status diagnostics and the clarified Admin CMS Overview are retained on backend `0.1.35-backend.50` after first being verified on `0.1.35-backend.48` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `Actual learner runtime source = CmsPublishedSnapshot`, `Validation success = Yes`, `Currently using static JSON fallback = No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `lana`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
+Deployed runtime status diagnostics and the clarified Admin CMS Overview are retained on backend `0.1.35-backend.52` after first being verified on `0.1.35-backend.48` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `Actual learner runtime source = CmsPublishedSnapshot`, `Validation success = Yes`, `Currently using static JSON fallback = No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `lana`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
 
 ## CMS connection readiness and controlled release preparation
 
@@ -217,7 +231,7 @@ Completed Admin statistics work: `Successful payments total` and `Successful pay
 
 The Admin CMS now exposes a read-only **Runtime content status** section and the protected endpoint `GET /api/admin/dev/cms/runtime-status`. Use it to confirm the effective learner content source, validation result, counts, published snapshot metadata, and fallback state without exposing content bodies or secrets.
 
-CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status remains clean on backend `0.1.35-backend.50`; this CMS-first/runtime status was previously verified on `0.1.35-backend.48` with approved tutor-id validation for `david`, `lana`, and `nelli`. Normal status should show `Actual learner runtime source = CmsPublishedSnapshot`, `Validation success = Yes`, `Currently using static JSON fallback = No`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
+CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status remains clean on backend `0.1.35-backend.52`; this CMS-first/runtime status was previously verified on `0.1.35-backend.48` with approved tutor-id validation for `david`, `lana`, and `nelli`. Normal status should show `Actual learner runtime source = CmsPublishedSnapshot`, `Validation success = Yes`, `Currently using static JSON fallback = No`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
 
 ## CMS-managed level profiles (A1-B2)
 
