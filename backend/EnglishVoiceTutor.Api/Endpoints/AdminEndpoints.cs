@@ -45,6 +45,11 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
             rateLimitingEnabled);
 
+        ApplyAdminWriteRateLimiting(
+            app.MapPost(ApiConstants.AdminWebsiteCmsSectionInitializeMissingRoute, InitializeMissingWebsiteCmsSectionsAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
+            rateLimitingEnabled);
+
         ApplyAdminReadRateLimiting(
             app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)
             .RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName),
@@ -328,6 +333,13 @@ public static class AdminEndpoints
         CancellationToken cancellationToken)
     {
         return Results.Ok(await websiteCmsAdminReadService.GetSectionOverviewAsync(cancellationToken));
+    }
+
+    private static async Task<IResult> InitializeMissingWebsiteCmsSectionsAsync(
+        IWebsiteCmsAdminMutationService websiteCmsAdminMutationService,
+        CancellationToken cancellationToken)
+    {
+        return Results.Ok(await websiteCmsAdminMutationService.InitializeMissingSectionsAsync(cancellationToken));
     }
 
     private static async Task<IResult> GetProductStatisticsOverviewAsync(

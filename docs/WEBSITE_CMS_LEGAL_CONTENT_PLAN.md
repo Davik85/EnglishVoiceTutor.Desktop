@@ -192,6 +192,7 @@ That slice should only introduce safe storage/read views and admin navigation pl
 
 - Read-only Website UI exists as a top-level Admin Shell tab, separate from the `CMS Content` sub-tabs. `CMS Content` remains focused on learner/runtime content packs.
 - The Website tab now loads an admin-only metadata overview for expected Website CMS sections from `/api/admin/website-cms/sections/overview`; it still does not expose bodies, save drafts, publish content, change public rendering, or change `site/public/`.
+- The Website tab now also has an admin-only initialization action at `POST /api/admin/website-cms/sections/initialize-missing`. It creates missing expected `website_cms_sections` rows with empty metadata only, never overwrites existing rows, and does not add editing, save-draft body functionality, publish, or public rendering.
 - First backend foundation exists: the `website_cms_sections` table stores section key, draft body, optional published body, review status, effective date, internal notes, change reason, and updated/published timestamps.
 - Production DB migration `20260625090000_AddWebsiteCmsLegalContentFoundation` has been applied manually from reviewed SQL. Production `__EFMigrationsHistory` contains that migration, and the `website_cms_sections` table plus `IX_website_cms_sections_ReviewStatus`, `IX_website_cms_sections_SectionKey`, and `PK_website_cms_sections` exist.
 - Rollout note: the production table grant for `website_cms_sections` was manually corrected for runtime role `lvt_app`; Admin Website metadata now loads successfully. Future manual SQL rollouts must verify runtime DB grants after creating tables.
@@ -210,7 +211,7 @@ That slice should only introduce safe storage/read views and admin navigation pl
 ## Next safe steps
 
 1. Prepare owner/legal-approved public legal, seller, support, refund, cancellation, privacy, terms, and pricing copy outside code.
-2. Implement Website CMS admin detail/draft endpoints later, with validation and audit reviewed before writes are accepted; the current admin-only read slice is metadata-only.
+2. Implement Website CMS admin detail/draft endpoints later, with validation and audit reviewed before writes are accepted; the current admin-only slice is metadata overview plus missing-row initialization only.
 3. Add Website edit UI only after the validation/audit model is reviewed.
 4. Keep public rendering static until a separately approved rendering integration implements published-only snapshot rules; no draft content may be served publicly.
 5. Keep live Paddle enablement as a separate readiness step after legal/support disclosures, live dashboard configuration, webhook setup, reconciliation, monitoring, and operational runbooks are approved.
@@ -230,4 +231,4 @@ That slice should only introduce safe storage/read views and admin navigation pl
 
 ## Current-slice confirmation
 
-This plan now records a backend foundation slice. It does not change public rendering, public static pages, billing behavior, entitlement behavior, Desktop behavior, deployment scripts, production configuration, backend environment variables, or Paddle configuration. The added migration is scoped to Website CMS section storage only and does not alter existing lesson/content/runtime behavior.
+This plan now records a backend foundation slice and admin-only missing-section initialization action. It does not change public rendering, public static pages, billing behavior, entitlement behavior, Desktop behavior, deployment scripts, production configuration, backend environment variables, or Paddle configuration. The added migration is scoped to Website CMS section storage only and does not alter existing lesson/content/runtime behavior.
