@@ -524,7 +524,7 @@
                     <div id="tab-panel-website" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-website">
                         <article class="card cms-warning-card" aria-labelledby="cms-website-heading">
                             <h3 id="cms-website-heading">Website CMS planning status</h3>
-                            <p class="muted"><strong>Read-only skeleton only.</strong> This panel is a planning/status placeholder for future CMS-managed public website content. It does not save drafts, publish content, or change public rendering.</p>
+                            <p class="muted"><strong>Read-only metadata view.</strong> This panel loads admin-only Website CMS section metadata. Editing and publish are not implemented yet, and public site still renders static <code>site/public</code> files.</p>
                             <ul class="placeholder-list">
                                 <li><span>Current public website source is still static files under <code>site/public/</code>.</span><span class="badge unavailable">Not connected</span></li>
                                 <li><span>Current public pages are temporary Paddle review-readiness shells.</span><span class="badge unavailable">Temporary</span></li>
@@ -533,6 +533,11 @@
                                 <li><span>Public site rendering is not connected to CMS yet.</span><span class="badge unavailable">No runtime impact</span></li>
                                 <li><span>No live Paddle billing is enabled from this tab.</span><span class="badge unavailable">No billing action</span></li>
                             </ul>
+                            <div class="cms-readonly-notice" role="note">Read-only metadata view. Editing, save draft, and publish are not implemented yet. Public site still renders static <code>site/public</code> files.</div>
+                            <p id="website-cms-loading" class="lookup-loading hidden" role="status">Loading Website CMS metadata...</p>
+                            <p id="website-cms-error" class="error" role="alert"></p>
+                            <div id="website-cms-section-overview" class="table-wrap cms-wide-table-wrap" data-website-cms-section-overview="true"></div>
+                            <p id="website-cms-checked-at" class="muted" role="status"></p>
                         </article>
                         <article class="card cms-compact-card" aria-labelledby="cms-website-guardrails-heading">
                             <h3 id="cms-website-guardrails-heading">Website CMS guardrails</h3>

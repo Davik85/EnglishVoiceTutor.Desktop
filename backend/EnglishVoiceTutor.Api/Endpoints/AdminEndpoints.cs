@@ -5,6 +5,7 @@ using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Cms;
+using EnglishVoiceTutor.Api.Services.WebsiteCms;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -37,6 +38,11 @@ public static class AdminEndpoints
         ApplyAdminReadRateLimiting(
             app.MapGet(ApiConstants.AdminStatisticsOverviewRoute, GetProductStatisticsOverviewAsync)
             .RequireAuthorization(AdminAuthorizationConstants.ProductStatisticsReadPermissionPolicyName),
+            rateLimitingEnabled);
+
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminWebsiteCmsSectionOverviewRoute, GetWebsiteCmsSectionOverviewAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
             rateLimitingEnabled);
 
         ApplyAdminReadRateLimiting(
@@ -315,6 +321,13 @@ public static class AdminEndpoints
     private static IResult GetAdminCapabilities(IAdminCapabilitiesService adminCapabilitiesService)
     {
         return Results.Ok(adminCapabilitiesService.GetCapabilities());
+    }
+
+    private static async Task<IResult> GetWebsiteCmsSectionOverviewAsync(
+        IWebsiteCmsAdminReadService websiteCmsAdminReadService,
+        CancellationToken cancellationToken)
+    {
+        return Results.Ok(await websiteCmsAdminReadService.GetSectionOverviewAsync(cancellationToken));
     }
 
     private static async Task<IResult> GetProductStatisticsOverviewAsync(
