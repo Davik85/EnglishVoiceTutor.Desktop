@@ -12,7 +12,7 @@ public sealed class WebsiteCmsAdminReadServiceTests
     {
         await using var dbContext = CreateDbContext();
 
-        var response = await new WebsiteCmsAdminReadService(dbContext).GetSectionOverviewAsync(CancellationToken.None);
+        var response = await new WebsiteCmsAdminReadService(dbContext).GetSectionOverviewAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(9, response.Sections.Count);
         Assert.Contains(response.Sections, section => section.SectionKey == "seller_company" && !section.StoredRowExists);
@@ -37,10 +37,10 @@ public sealed class WebsiteCmsAdminReadServiceTests
             UpdatedAtUtc = updatedAt,
             PublishedAtUtc = publishedAt
         });
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var response = await new WebsiteCmsAdminReadService(dbContext).GetSectionOverviewAsync(CancellationToken.None);
-        var privacy = Assert.Single(response.Sections.Where(section => section.SectionKey == "privacy"));
+        var response = await new WebsiteCmsAdminReadService(dbContext).GetSectionOverviewAsync(TestContext.Current.CancellationToken);
+        var privacy = Assert.Single(response.Sections, section => section.SectionKey == "privacy");
 
         Assert.True(privacy.StoredRowExists);
         Assert.Equal("approved", privacy.ReviewStatus);
