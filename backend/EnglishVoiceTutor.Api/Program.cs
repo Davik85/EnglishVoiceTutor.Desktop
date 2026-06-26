@@ -261,6 +261,7 @@ builder.Services.AddScoped<ICmsRuntimeLessonContentService, CmsRuntimeLessonCont
 builder.Services.AddScoped<ICmsContentAdminService, CmsContentAdminService>();
 builder.Services.AddScoped<ICmsContentPublishingService, CmsContentPublishingService>();
 builder.Services.AddScoped<IWebsiteCmsAdminReadService, WebsiteCmsAdminReadService>();
+builder.Services.AddScoped<IWebsiteCmsAdminMutationService, WebsiteCmsAdminMutationService>();
 
 static void AddAdminPermissionPolicy(AuthorizationOptions options, string policyName, string permissionName)
 {

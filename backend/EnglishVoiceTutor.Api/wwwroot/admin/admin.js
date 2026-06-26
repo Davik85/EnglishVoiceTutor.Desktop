@@ -38,7 +38,8 @@
         roleAssignmentRevoke: "/api/admin/role-assignments/revoke",
         roleAssignmentDisableAdmin: "/api/admin/role-assignments/disable-admin",
         roleAssignmentEnableAdmin: "/api/admin/role-assignments/enable-admin",
-        websiteCmsSectionOverview: "/api/admin/website-cms/sections/overview"
+        websiteCmsSectionOverview: "/api/admin/website-cms/sections/overview",
+        websiteCmsInitializeMissing: "/api/admin/website-cms/sections/initialize-missing"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
@@ -181,6 +182,8 @@
     const websiteCmsErrorElement = document.getElementById("website-cms-error");
     const websiteCmsSectionOverviewElement = document.getElementById("website-cms-section-overview");
     const websiteCmsCheckedAtElement = document.getElementById("website-cms-checked-at");
+    const websiteCmsInitializeMissingButton = document.getElementById("website-cms-initialize-missing-button");
+    const websiteCmsInitializeResultElement = document.getElementById("website-cms-initialize-result");
     const studyLanguageDistributionElement = document.getElementById("study-language-distribution");
     const nativeLanguageDistributionElement = document.getElementById("native-language-distribution");
     const explanationLanguageDistributionElement = document.getElementById("explanation-language-distribution");
@@ -548,6 +551,22 @@
         websiteCmsSectionOverviewElement.innerHTML = `<table><thead><tr><th>Section key</th><th>Display name</th><th>Review status</th><th>Stored</th><th>Draft exists</th><th>Published exists</th><th>Effective date</th><th>Updated</th><th>Published</th></tr></thead><tbody>${rows}</tbody></table>`;
         if (websiteCmsCheckedAtElement) { websiteCmsCheckedAtElement.textContent = payload?.checkedAtUtc ? `Metadata checked at ${payload.checkedAtUtc}.` : ""; }
     }
+    async function initializeMissingWebsiteCmsSections() {
+        if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = ""; }
+        if (websiteCmsInitializeResultElement) { websiteCmsInitializeResultElement.textContent = "Initializing missing Website CMS metadata rows..."; }
+        if (websiteCmsInitializeMissingButton) { websiteCmsInitializeMissingButton.disabled = true; }
+        try {
+            const payload = await adminFetch(ApiPaths.websiteCmsInitializeMissing, { method: "POST" });
+            if (websiteCmsInitializeResultElement) { websiteCmsInitializeResultElement.textContent = `Initialization complete: ${payload.createdCount} created, ${payload.existingCount} existing, ${payload.totalExpectedCount} expected. Empty metadata rows only; no editing, publish, or public rendering was added.`; }
+            await loadWebsiteCmsSectionOverview();
+        } catch (error) {
+            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to initialize Website CMS metadata."; }
+            if (websiteCmsInitializeResultElement) { websiteCmsInitializeResultElement.textContent = ""; }
+        } finally {
+            if (websiteCmsInitializeMissingButton) { websiteCmsInitializeMissingButton.disabled = false; }
+        }
+    }
+
     async function loadWebsiteCmsSectionOverview() {
         if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = ""; }
         setWebsiteCmsLoading(true);
@@ -561,6 +580,8 @@
             setWebsiteCmsLoading(false);
         }
     }
+
+    if (websiteCmsInitializeMissingButton) { websiteCmsInitializeMissingButton.addEventListener("click", initializeMissingWebsiteCmsSections); }
 
     function updateSelectedUserHeader() {
         selectedUserSummaryElement.textContent = selectedUserEmail ? `Selected user: ${selectedUserEmail}` : "Selected user: -";
