@@ -9,10 +9,38 @@ public sealed class WebsiteCmsSafetyTests
     {
         var apiConstants = File.ReadAllText(Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/Constants/ApiConstants.cs"));
 
+        Assert.Contains("/api/admin/website-cms/sections/overview", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/api/website", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/api/public", apiConstants, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("/api/website-cms", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/legal", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/pricing", apiConstants, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void WebsiteCmsOverviewEndpoint_UsesAdminReadRouteAndCmsReadAuthorization()
+    {
+        var adminEndpoints = File.ReadAllText(Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs"));
+        var apiConstants = File.ReadAllText(Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/Constants/ApiConstants.cs"));
+
+        Assert.Contains("AdminWebsiteCmsSectionOverviewRoute = \"/api/admin/website-cms/sections/overview\"", apiConstants, StringComparison.Ordinal);
+        Assert.Contains("app.MapGet(ApiConstants.AdminWebsiteCmsSectionOverviewRoute, GetWebsiteCmsSectionOverviewAsync)", adminEndpoints, StringComparison.Ordinal);
+        Assert.Contains("RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName)", adminEndpoints, StringComparison.Ordinal);
+        Assert.DoesNotContain("MapPost(ApiConstants.AdminWebsiteCmsSectionOverviewRoute", adminEndpoints, StringComparison.Ordinal);
+        Assert.DoesNotContain("MapPut(ApiConstants.AdminWebsiteCmsSectionOverviewRoute", adminEndpoints, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AdminWebsiteTab_IsTopLevelAndDisplaysReadOnlyMetadataWording()
+    {
+        var adminIndex = File.ReadAllText(Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/wwwroot/admin/index.html"));
+        var adminScript = File.ReadAllText(Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js"));
+
+        Assert.Contains("data-tab-id=\"website\"", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("Read-only metadata view", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("Editing, save draft, and publish are not implemented yet", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("Public site still renders static", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("/api/admin/website-cms/sections/overview", adminScript, StringComparison.Ordinal);
     }
 
     [Fact]

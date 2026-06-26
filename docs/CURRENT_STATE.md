@@ -54,7 +54,7 @@ Clean-machine smoke must verify registration/login/lesson/history/progress/updat
 
 ## Website CMS foundation current state (2026-06-25)
 
-Website is now a top-level Admin Shell tab, not a `CMS Content` sub-tab. The tab is a read-only planning/status skeleton and does not save drafts, publish content, change public website rendering, or modify `site/public/`. `CMS Content` remains focused on learner/runtime content packs.
+Website is now a top-level Admin Shell tab, not a `CMS Content` sub-tab. The tab loads an admin-only read-only metadata overview for expected Website CMS sections and does not expose body content, save drafts, publish content, change public website rendering, or modify `site/public/`. `CMS Content` remains focused on learner/runtime content packs.
 
 The Website CMS backend foundation exists through the `website_cms_sections` table and migration `20260625090000_AddWebsiteCmsLegalContentFoundation`. Production DB rollout was applied manually from reviewed SQL; production `__EFMigrationsHistory` contains the migration, and indexes `IX_website_cms_sections_ReviewStatus` and `IX_website_cms_sections_SectionKey` plus `PK_website_cms_sections` exist.
 
