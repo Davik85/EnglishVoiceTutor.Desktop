@@ -98,6 +98,7 @@ def main() -> None:
     migration_script = read("scripts/generate-backend-refresh-token-migration-sql.ps1")
     website_cms_migration_script = read("scripts/generate-backend-website-cms-migration-sql.ps1")
     docs = read("docs/BACKEND_SERVER_DEPLOYMENT.md")
+    command_playbook = read("docs/COMMAND_PLAYBOOK.md")
 
     assert_no_bash_escaped_quotes_in_powershell_strings(upload_script)
     assert_powershell_parser_accepts("scripts/upload-backend-linux-release.ps1")
@@ -231,6 +232,14 @@ def main() -> None:
         "https://api.languagevoicetutor.com",
     ]:
         assert_contains(docs, needle, "deployment documentation")
+
+    for needle in [
+        "runtime DB role grant check",
+        "runtime app DB role is `lvt_app`",
+        "\\dp public.<table_name>",
+        "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.<table_name> TO lvt_app;",
+    ]:
+        assert_contains(command_playbook, needle, "command playbook runtime DB grants documentation")
 
     print("Backend Linux deployment policy checks passed.")
 

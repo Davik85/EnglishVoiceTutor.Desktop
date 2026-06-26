@@ -186,6 +186,20 @@ artifacts/sql/backend/20260625090000_AddWebsiteCmsLegalContentFoundation.from-20
 
 Production rollout for `20260625090000_AddWebsiteCmsLegalContentFoundation` was completed manually from reviewed SQL on 2026-06-25. Future schema work must keep this separation: generate/review SQL, back up/verify the target, apply manually through an approved operator path, then deploy/restart backend if needed. The backend package/upload scripts do not run migrations.
 
+When a manual SQL migration creates a new table, include a runtime DB role grant check after the reviewed SQL is applied. For the current production setup, the runtime app DB role is `lvt_app`. After creating a new table through `postgres`-owned reviewed SQL, inspect privileges without pasting database passwords or connection strings into docs or commands:
+
+```sql
+\dp public.<table_name>
+```
+
+Grant expected runtime privileges intentionally when required, for example:
+
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.<table_name> TO lvt_app;
+```
+
+This grant check does not replace SQL review. Review migration SQL first, then verify and grant runtime table privileges as an explicit rollout step.
+
 ## Downloaded update installer cleanup
 
 The desktop app stores verified installers downloaded by **Check for updates** under the current user's local update cache:
