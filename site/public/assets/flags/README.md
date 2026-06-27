@@ -1,12 +1,23 @@
 # Flag assets
 
-Place real flag SVG files here when they are available:
+Put PNG flags at:
 
-- `gb.svg` -> `/assets/flags/gb.svg`
-- `fr.svg` -> `/assets/flags/fr.svg`
-- `de.svg` -> `/assets/flags/de.svg`
-- `es.svg` -> `/assets/flags/es.svg`
-- `it.svg` -> `/assets/flags/it.svg`
-- `pt.svg` -> `/assets/flags/pt.svg`
+- `gb.png`
+- `fr.png`
+- `de.png`
+- `es.png`
+- `it.png`
+- `pt.png`
 
-Do not add low-quality generated flag images. The homepage header keeps emoji/text fallbacks visible when these SVG files are missing.
+Production server path: `/var/www/languagevoicetutor/site/assets/flags/`
+
+Public URLs:
+
+- `/assets/flags/gb.png`
+- `/assets/flags/fr.png`
+- `/assets/flags/de.png`
+- `/assets/flags/es.png`
+- `/assets/flags/it.png`
+- `/assets/flags/pt.png`
+
+Do not commit binary flags unless explicitly approved.
