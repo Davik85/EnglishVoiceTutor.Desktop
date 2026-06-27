@@ -71,7 +71,7 @@ public sealed class WebsiteCmsAdminMutationServiceTests
 
         var response = await new WebsiteCmsAdminMutationService(dbContext).InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(8, response.CreatedCount);
+        Assert.Equal(11, response.CreatedCount);
         Assert.Equal(1, response.ExistingCount);
         var privacy = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "legal_privacy", TestContext.Current.CancellationToken);
         Assert.Equal("Existing draft", privacy.DraftBody);
