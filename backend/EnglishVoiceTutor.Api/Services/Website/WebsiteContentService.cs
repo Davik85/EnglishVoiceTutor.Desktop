@@ -170,39 +170,39 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         var d = c.Design;
         var cardFontStyle = d.CardTextStyle.Contains("italic", StringComparison.OrdinalIgnoreCase) ? "italic" : "normal";
         var bodyClass = landing ? "landing-page" : string.Empty;
-        return $"""
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{title}</title>
-    <meta name="description" content="{description}">
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        :root {{ --footer-background: {d.FooterBackgroundColor}; --footer-text: {d.HeaderTextColor}; --text: {d.MainTextColor}; font-size: {d.BaseFontSizePx}px; }}
-        body {{ font-family: {d.MainFontFamily}; }}
-        .download-button, .app-panel__cue {{ border-radius: {d.ButtonBorderRadiusPx}px; }}
-        .site-header {{ background: {d.HeaderBackgroundColor}; color: {d.HeaderTextColor}; font-weight: {d.HeaderFontWeight}; }}
-        .landing-page .app-panel__content {{ font-style: {cardFontStyle}; }}
-    </style>
-</head>
-<body class="{bodyClass}">
-    <header class="site-header">
-        <div class="site-header__logo">{Logo(h)}</div>
-        <div class="site-header__copy">
-            <p class="site-header__headline">{E(h["topHeaderText"])}</p>
-            <p class="site-header__languages">{E(h["supportedLanguageLine"])}</p>
-        </div>
-    </header>
-    {main}
-    <footer class="site-footer">
-        <p>{E(h["footerCopyrightText"])}</p>
-        {NavLinks(h)}
-    </footer>
-</body>
-</html>
-""";
+        var html = new StringBuilder();
+        html.AppendLine("<!doctype html>");
+        html.AppendLine("<html lang=\"en\">");
+        html.AppendLine("<head>");
+        html.AppendLine("    <meta charset=\"utf-8\">");
+        html.AppendLine("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+        html.AppendLine($"    <title>{title}</title>");
+        html.AppendLine($"    <meta name=\"description\" content=\"{description}\">");
+        html.AppendLine("    <link rel=\"stylesheet\" href=\"styles.css\">");
+        html.AppendLine("    <style>");
+        html.AppendLine($"        :root {{ --footer-background: {d.FooterBackgroundColor}; --footer-text: {d.HeaderTextColor}; --text: {d.MainTextColor}; font-size: {d.BaseFontSizePx}px; }}");
+        html.AppendLine($"        body {{ font-family: {d.MainFontFamily}; }}");
+        html.AppendLine($"        .download-button, .app-panel__cue {{ border-radius: {d.ButtonBorderRadiusPx}px; }}");
+        html.AppendLine($"        .site-header {{ background: {d.HeaderBackgroundColor}; color: {d.HeaderTextColor}; font-weight: {d.HeaderFontWeight}; }}");
+        html.AppendLine($"        .landing-page .app-panel__content {{ font-style: {cardFontStyle}; }}");
+        html.AppendLine("    </style>");
+        html.AppendLine("</head>");
+        html.AppendLine($"<body class=\"{bodyClass}\">");
+        html.AppendLine("    <header class=\"site-header\">");
+        html.AppendLine($"        <div class=\"site-header__logo\">{Logo(h)}</div>");
+        html.AppendLine("        <div class=\"site-header__copy\">");
+        html.AppendLine($"            <p class=\"site-header__headline\">{E(h["topHeaderText"])}</p>");
+        html.AppendLine($"            <p class=\"site-header__languages\">{E(h["supportedLanguageLine"])}</p>");
+        html.AppendLine("        </div>");
+        html.AppendLine("    </header>");
+        html.AppendLine(main);
+        html.AppendLine("    <footer class=\"site-footer\">");
+        html.AppendLine($"        <p>{E(h["footerCopyrightText"])}</p>");
+        html.AppendLine($"        {NavLinks(h)}");
+        html.AppendLine("    </footer>");
+        html.AppendLine("</body>");
+        html.AppendLine("</html>");
+        return html.ToString();
     }
 
     private static string Logo(Dictionary<string, string> h) => string.IsNullOrWhiteSpace(h["logoPath"])
