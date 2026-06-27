@@ -150,10 +150,10 @@ Upload Windows direct release files only to `/var/www/languagevoicetutor/release
 
 ## Backend-only deployment commands
 
-Example package command for the current backend snapshot (`0.1.35-backend.54` as last verified after the Website CMS initialization rollout; use the server `current` symlink as source of truth):
+Example package command for the current backend snapshot (`0.1.35-backend.55` as last verified after the Website CMS draft-save rollout; use the server `current` symlink as source of truth):
 
 ```powershell
-$BackendVersion = "0.1.35-backend.54"
+$BackendVersion = "0.1.35-backend.55"
 powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version $BackendVersion
 ```
 
@@ -165,9 +165,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.
   -PackageFirst
 ```
 
-Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.54`, the backend package/upload deploy was performed after the Website CMS SQL had already been reviewed and applied manually; the missing-section initialization was a separate admin-only action. Backend deploys do not upload Windows installer files and do not change `latest.json`.
+Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.55`, the backend package/upload deploy was performed after the Website CMS SQL had already been reviewed and applied manually; the missing-section initialization and draft-save smoke were separate admin-only actions. Backend deploys do not upload Windows installer files and do not change `latest.json`.
 
-Previous backend release for rollback reference should be verified from the server before rollback; `0.1.35-backend.54` was the active release after the Website CMS initialization rollout.
+Previous backend release for rollback reference should be verified from the server before rollback; `0.1.35-backend.55` was the active release after the Website CMS draft-save rollout.
 
 
 ### Website CMS migration SQL generation
