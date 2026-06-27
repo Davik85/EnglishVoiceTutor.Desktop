@@ -54,7 +54,7 @@ Current controlled tester/direct Windows releases continue to use the existing I
 
 ## Latest verified release summary
 
-Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy and UI policy tests passed; the desktop release gate passed; and backend `0.1.35-backend.56` is deployed and healthy after the Website CMS validation/preview/review rollout. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, Save draft + Publish changes are visible in newly started desktop lessons, and Admin Product Statistics now shows `Tracked signed-in app/device records`, `Successful payments total`, and `Successful payments current month` from the live Admin UI.
+Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy and UI policy tests passed; the desktop release gate passed; and backend `0.1.35-backend.57` is deployed and healthy after the Website CMS admin-only publish rollout. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, Save draft + Publish changes are visible in newly started desktop lessons, and Admin Product Statistics now shows `Tracked signed-in app/device records`, `Successful payments total`, and `Successful payments current month` from the live Admin UI.
 
 ## Immediate next steps
 
@@ -65,17 +65,17 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 
 
 
-## Website CMS next safe steps after 2026-06-27 validation/preview/review rollout
+## Website CMS next safe steps after 2026-06-27 admin-only publish rollout
 
-Current status: Website is a top-level Admin Shell tab, Website CMS persistence exists, production migration `20260625090000_AddWebsiteCmsLegalContentFoundation` has been applied, backend `0.1.35-backend.56` is deployed and healthy, and static public pages remain the public rendering source. The Admin Website tab supports metadata overview, section selection/detail loading, draft body, internal notes, effective date, review status, required change reason, admin-only Save draft, stored-draft validation, admin-only simple-text preview, and safe non-published review-status updates. Production smoke on `platform_status` verified draft save, valid validation result, admin-only preview, review-status change to `owner_review_needed`, cleanup, and restoration to `ReviewStatus=not_started`; after cleanup all 9 rows are back to `ReviewStatus=not_started`, empty draft bodies, and no published bodies.
+Current status: Website is a top-level Admin Shell tab, Website CMS persistence exists, production migration `20260625090000_AddWebsiteCmsLegalContentFoundation` has been applied, backend `0.1.35-backend.57` is deployed and healthy, and static public pages remain the public rendering source. The Admin Website tab supports metadata overview, section selection/detail loading, draft body, internal notes, effective date, review status, required change reason, admin-only Save draft, stored-draft validation, admin-only simple-text preview, safe review-status updates, and explicit admin-only publish to Website CMS `PublishedBody`. Production smoke on `platform_status` verified draft save, review status set to `legal_approved`, validation, admin-only preview, publish copy from `DraftBody` into `PublishedBody`, and `PublishedAtUtc` population; public rendering did not change. Smoke data was manually cleaned up because rollback/unpublish is not implemented yet. After cleanup all 9 rows are back to `ReviewStatus=not_started`, empty draft bodies, and `PublishedBody` null / `has_published=false`.
 
 Safe next steps:
 
 1. Prepare owner/legal-approved public legal, seller, support, refund, cancellation, privacy, terms, and pricing copy outside code. Final legal/seller/support/pricing copy still requires owner/legal approval.
-2. Next functional Website CMS implementation step: **Implement admin-only Website CMS publish workflow without public rendering**. The implementation must define authorization, audit, owner/legal sign-off, rollback, and published-snapshot rules, and it must not connect Website CMS content to public routes or static site output.
+2. Next functional Website CMS step should be **publish rollback/unpublish design** or owner/legal copy preparation outside code. The current publish workflow is internal-only and must not connect Website CMS content to public routes or static site output.
 3. Keep `WebsiteCmsContentGuard` and draft validation conservative; secret-like values and private/provider identifiers must remain blocked before persistence or review.
-4. Keep public rendering integration deferred as a later separate step after the admin-only publish workflow exists. Do not connect Website CMS to public routes, do not change static `site/public/`, and do not serve drafts publicly.
-5. Keep live Paddle as a separate readiness step. Do not add checkout links/buttons, live Paddle enablement, or billing behavior changes in the Website CMS validation/preview/review slice.
+4. Keep public rendering integration deferred until published-only rendering rules are separately approved and tested. Do not connect Website CMS to public routes, do not change static `site/public/`, and do not serve drafts publicly.
+5. Keep live Paddle as a separate readiness step. Do not add checkout links/buttons, live Paddle enablement, or billing behavior changes as part of Website CMS work.
 
 ## Release-readiness roadmap
 
@@ -109,7 +109,7 @@ Safe next steps:
 - Phase 5A lightweight production logging/privacy audit is complete in `docs/LOGGING_PRIVACY_AUDIT.md`.
 - Current result: documentation/audit only; no code/runtime changes were needed, no heavy monitoring infrastructure was introduced, and no external services were added.
 - Keep the Phase 5A operator rule active: paste only bounded non-secret operational evidence, and redact secrets, tokens, connection strings, raw provider payloads, raw lesson/STT/TTS/OpenAI content, SQL dumps, backup contents, and full unfiltered terminal transcripts.
-- Phase 5A logging/privacy audit is complete, Phase 5B bounded production log sampling is complete, and Phase 5C Production logging hardening is deployed/verified and retained in backend `0.1.35-backend.56`.
+- Phase 5A logging/privacy audit is complete, Phase 5B bounded production log sampling is complete, and Phase 5C Production logging hardening is deployed/verified and retained in backend `0.1.35-backend.57`.
 
 ### Phase 6. Paddle live readiness + legal/support blockers
 
@@ -139,7 +139,7 @@ Safe next steps:
 
 ## Current backend verification
 
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.56` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current.
+Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.57` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current.
 
 Previous backend release for rollback reference must be verified from `/opt/languagevoicetutor/backend/previous` before rollback. Backend `0.1.35-backend.40` contains the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields for Desktop Account billing UI decisions, and a cancel request path that must not directly revoke entitlements. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. EF migrations through `20260625090000_AddWebsiteCmsLegalContentFoundation` are recorded in production `__EFMigrationsHistory`.
 
