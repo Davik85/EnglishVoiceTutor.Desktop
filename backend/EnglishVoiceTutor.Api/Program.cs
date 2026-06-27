@@ -21,6 +21,7 @@ using EnglishVoiceTutor.Api.Services.Subscriptions;
 using EnglishVoiceTutor.Api.Services.Billing;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Cms;
+using EnglishVoiceTutor.Api.Services.Website;
 using EnglishVoiceTutor.Api.Services.Devices;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -54,6 +55,7 @@ builder.Services.Configure<SubscriptionEnforcementOptions>(
     builder.Configuration.GetSection(SubscriptionEnforcementOptions.SectionName));
 builder.Services.Configure<CmsContentOptions>(
     builder.Configuration.GetSection(CmsContentOptions.SectionName));
+builder.Services.Configure<WebsiteContentOptions>(builder.Configuration.GetSection(WebsiteContentOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<DevelopmentTestAccountOptions>(
     builder.Configuration.GetSection(DevelopmentTestAccountOptions.SectionName));
@@ -259,6 +261,7 @@ builder.Services.AddScoped<ICmsPublishedContentService, CmsPublishedContentServi
 builder.Services.AddScoped<ICmsRuntimeLessonContentService, CmsRuntimeLessonContentService>();
 builder.Services.AddScoped<ICmsContentAdminService, CmsContentAdminService>();
 builder.Services.AddScoped<ICmsContentPublishingService, CmsContentPublishingService>();
+builder.Services.AddScoped<IWebsiteContentService, WebsiteContentService>();
 
 static void AddAdminPermissionPolicy(AuthorizationOptions options, string policyName, string permissionName)
 {
@@ -387,6 +390,7 @@ app.MapBillingSubscriptionEndpoints();
 app.MapPaddleCheckoutLaunchEndpoints();
 app.MapPaddleWebhookEndpoints();
 app.MapAdminEndpoints();
+app.MapWebsiteAdminEndpoints();
 app.MapCmsDiagnosticsEndpoints();
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",

@@ -34,6 +34,55 @@ body.landing-page {
     overflow-x: hidden;
 }
 
+
+.landing-page .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: var(--site-header-padding-block, 18px) clamp(20px, 5vw, var(--site-header-padding-inline, 64px));
+    background: var(--site-header-bg, var(--footer-background));
+    color: var(--site-header-text, var(--footer-text));
+    font-family: var(--site-header-font-family, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    font-size: var(--site-header-font-size, 18px);
+    font-weight: var(--site-header-font-weight, 700);
+}
+
+.landing-page .site-header__logo {
+    display: inline-flex;
+    min-width: max-content;
+    align-items: center;
+}
+
+.landing-page .site-header__logo-text {
+    font-weight: 800;
+    letter-spacing: 0.01em;
+}
+
+.landing-page .site-header__logo-image {
+    display: block;
+    max-width: 210px;
+    max-height: 52px;
+    object-fit: contain;
+}
+
+.landing-page .site-header__copy {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px 12px;
+    text-align: right;
+}
+
+.landing-page .site-header__headline,
+.landing-page .site-header__languages {
+    margin: 0;
+}
+
+.landing-page .site-header__languages {
+    color: #ffffff;
+}
+
 .landing-page .landing-shell {
     display: grid;
     width: 100%;
@@ -398,7 +447,17 @@ dd {
 }
 
 @media (max-width: 760px) {
-    .landing-page .landing-shell {
+    .landing-page .site-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .landing-page .site-header__copy {
+        justify-content: flex-start;
+        text-align: left;
+    }
+
+.landing-page .landing-shell {
         grid-template-columns: 1fr;
         min-height: auto;
     }

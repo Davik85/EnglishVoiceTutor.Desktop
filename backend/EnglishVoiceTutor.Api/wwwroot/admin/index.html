@@ -36,6 +36,7 @@
                     <button id="tab-button-free-lesson" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-free-lesson" aria-selected="false" data-tab-id="free-lesson">Free Lesson</button>
                     <button id="tab-button-audit-log" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-audit-log" aria-selected="false" data-tab-id="audit-log">Audit Log</button>
                     <button id="tab-button-cms-content" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-cms-content" aria-selected="false" data-tab-id="cms-content">CMS Content</button>
+                    <button id="tab-button-website" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-website" aria-selected="false" data-tab-id="website">Website</button>
                     <button id="tab-button-role-management" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-role-management" aria-selected="false" data-tab-id="role-management">Role Assignments</button>
                     <button id="tab-button-system" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-system" aria-selected="false" data-tab-id="system">System</button>
                 </nav>
@@ -517,6 +518,40 @@
                         </section>
                     </div>
 
+
+
+                    <div id="tab-panel-website" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-website">
+                        <article class="card">
+                            <h2>Website</h2>
+                            <p class="muted">Super Admin-only JSON/file-based editor for the public homepage header. Publishing updates the static homepage HTML.</p>
+                        </article>
+                        <section class="card">
+                            <h3>Home header</h3>
+                            <form id="website-header-form" class="website-editor-form">
+                                <div class="grid">
+                                    <div class="field"><label for="website-logo-path">Logo image path or HTTPS URL</label><input id="website-logo-path" type="text" /></div>
+                                    <div class="field"><label for="website-logo-alt">Logo alt text</label><input id="website-logo-alt" type="text" /></div>
+                                    <label class="checkbox-field"><input id="website-show-logo" type="checkbox" /> Show logo image</label>
+                                    <div class="field"><label for="website-fallback-logo-text">Fallback logo text</label><input id="website-fallback-logo-text" type="text" /></div>
+                                    <div class="field"><label for="website-header-text">Header text</label><input id="website-header-text" type="text" /></div>
+                                    <div class="field"><label for="website-language-line">Language display line</label><input id="website-language-line" type="text" /></div>
+                                    <div class="field"><label for="website-font-family">Font family</label><input id="website-font-family" type="text" /></div>
+                                    <div class="field"><label for="website-font-size">Font size (12-48px)</label><input id="website-font-size" type="number" min="12" max="48" /></div>
+                                    <div class="field"><label for="website-font-weight">Font weight</label><select id="website-font-weight"><option>400</option><option>500</option><option>600</option><option selected>700</option><option>800</option></select></div>
+                                    <div class="field"><label for="website-text-color">Text color</label><input id="website-text-color" type="text" pattern="#[0-9a-fA-F]{6}" /></div>
+                                    <div class="field"><label for="website-background-color">Header background color</label><input id="website-background-color" type="text" pattern="#[0-9a-fA-F]{6}" /></div>
+                                    <div class="field"><label for="website-padding-block">Vertical padding (8-48px)</label><input id="website-padding-block" type="number" min="8" max="48" /></div>
+                                    <div class="field"><label for="website-padding-inline">Horizontal padding (16-96px)</label><input id="website-padding-inline" type="number" min="16" max="96" /></div>
+                                </div>
+                                <div class="cms-button-row">
+                                    <button id="website-save-draft-button" type="button">Save draft</button>
+                                    <button id="website-publish-button" type="button">Publish / Make active</button>
+                                </div>
+                                <p id="website-message" class="success"></p>
+                                <p id="website-error" class="error" role="alert"></p>
+                            </form>
+                        </section>
+                    </div>
 
                     <div id="tab-panel-role-management" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-role-management">
                         <article class="card role-management-hero" aria-labelledby="role-management-heading">

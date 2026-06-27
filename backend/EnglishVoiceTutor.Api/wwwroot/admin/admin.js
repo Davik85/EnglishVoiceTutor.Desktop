@@ -37,7 +37,10 @@
         roleAssignmentAssign: "/api/admin/role-assignments/assign",
         roleAssignmentRevoke: "/api/admin/role-assignments/revoke",
         roleAssignmentDisableAdmin: "/api/admin/role-assignments/disable-admin",
-        roleAssignmentEnableAdmin: "/api/admin/role-assignments/enable-admin"
+        roleAssignmentEnableAdmin: "/api/admin/role-assignments/enable-admin",
+        websiteHomeHeader: "/api/admin/website/home-header",
+        websiteHomeHeaderDraft: "/api/admin/website/home-header/draft",
+        websiteHomeHeaderPublish: "/api/admin/website/home-header/publish"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
@@ -79,7 +82,7 @@
     const DailyUsageColumns = ["usageDate", "studyLanguage", "lessonsStarted", "lessonsCompleted", "chatReplyCount", "hintsUsed", "feedbackRequests", "transcriptionSeconds", "ttsSeconds", "estimatedCost", "updatedAt"];
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
-    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", roleManagement: "role-management", system: "system" });
+    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", website: "website", roleManagement: "role-management", system: "system" });
     const AdminPermissionIds = Object.freeze({
         usersRead: "users.read",
         usersDiagnosticsRead: "users.diagnostics.read",
@@ -117,6 +120,7 @@
     let selectedUserEmail = null;
     let selectedUserLookupPayload = null;
     let cmsHasLoadedOnce = false;
+    let websiteHasLoadedOnce = false;
     let cmsSelectedTopic = null;
     let cmsSelectedScenario = null;
     let cmsSelectedPromptTemplate = null;
@@ -159,6 +163,8 @@
     const rolesPermissionsRolesElement = document.getElementById("roles-permissions-roles");
     const rolesPermissionsListElement = document.getElementById("roles-permissions-list");
     const systemProductionRolesAvailableElement = document.getElementById("system-production-roles-available");
+    const websiteTabButton = document.getElementById("tab-button-website");
+    const websiteTabPanel = document.getElementById("tab-panel-website");
     const roleManagementRefreshButton = document.getElementById("role-management-refresh-button");
     const roleManagementLoadingElement = document.getElementById("role-management-loading");
     const roleManagementErrorElement = document.getElementById("role-management-error");
@@ -522,6 +528,7 @@
                 selectCmsSubTab(getHashCmsSubTab());
                 if (!cmsHasLoadedOnce) { await loadCmsContentPacks(); }
             }
+            if (tabId === Tabs.website && !websiteHasLoadedOnce) { await loadWebsiteHeader(); }
             if (tabId === Tabs.overview) { await loadProductStatistics(); }
         }));
     }
@@ -813,6 +820,100 @@
 
     const renderAuditLog = (payload) => renderTable(auditResultElement, payload && Array.isArray(payload.items) ? payload.items : [], AuditColumns, "No audit actions.");
     const getSelectedAuditLimit = () => [10, 25, 50, 100].includes(Number.parseInt(auditLimitElement.value, 10)) ? Number.parseInt(auditLimitElement.value, 10) : 10;
+
+
+
+    const websiteFields = {
+        logoPath: document.getElementById("website-logo-path"),
+        logoAltText: document.getElementById("website-logo-alt"),
+        showLogo: document.getElementById("website-show-logo"),
+        fallbackLogoText: document.getElementById("website-fallback-logo-text"),
+        headerText: document.getElementById("website-header-text"),
+        languageLine: document.getElementById("website-language-line"),
+        fontFamily: document.getElementById("website-font-family"),
+        fontSizePx: document.getElementById("website-font-size"),
+        fontWeight: document.getElementById("website-font-weight"),
+        textColor: document.getElementById("website-text-color"),
+        headerBackgroundColor: document.getElementById("website-background-color"),
+        paddingBlockPx: document.getElementById("website-padding-block"),
+        paddingInlinePx: document.getElementById("website-padding-inline")
+    };
+    const websiteMessageElement = document.getElementById("website-message");
+    const websiteErrorElement = document.getElementById("website-error");
+    const websiteSaveDraftButton = document.getElementById("website-save-draft-button");
+    const websitePublishButton = document.getElementById("website-publish-button");
+
+    function setWebsiteMessage(message) { websiteMessageElement.textContent = message || ""; }
+    function setWebsiteError(message) { websiteErrorElement.textContent = message || ""; }
+    function fillWebsiteForm(header) {
+        const h = header || {};
+        websiteFields.logoPath.value = h.logoPath || "";
+        websiteFields.logoAltText.value = h.logoAltText || "";
+        websiteFields.showLogo.checked = Boolean(h.showLogo);
+        websiteFields.fallbackLogoText.value = h.fallbackLogoText || "";
+        websiteFields.headerText.value = h.headerText || "";
+        websiteFields.languageLine.value = h.languageLine || "";
+        websiteFields.fontFamily.value = h.fontFamily || "";
+        websiteFields.fontSizePx.value = h.fontSizePx || 18;
+        websiteFields.fontWeight.value = String(h.fontWeight || 700);
+        websiteFields.textColor.value = h.textColor || "#dce9f7";
+        websiteFields.headerBackgroundColor.value = h.headerBackgroundColor || "#0d2b4c";
+        websiteFields.paddingBlockPx.value = h.paddingBlockPx || 18;
+        websiteFields.paddingInlinePx.value = h.paddingInlinePx || 64;
+    }
+    function collectWebsiteHeader() {
+        return {
+            logoPath: websiteFields.logoPath.value.trim(),
+            logoAltText: websiteFields.logoAltText.value.trim(),
+            showLogo: websiteFields.showLogo.checked,
+            fallbackLogoText: websiteFields.fallbackLogoText.value.trim(),
+            headerText: websiteFields.headerText.value.trim(),
+            languageLine: websiteFields.languageLine.value.trim(),
+            fontFamily: websiteFields.fontFamily.value.trim(),
+            fontSizePx: Number.parseInt(websiteFields.fontSizePx.value, 10),
+            fontWeight: Number.parseInt(websiteFields.fontWeight.value, 10),
+            textColor: websiteFields.textColor.value.trim(),
+            headerBackgroundColor: websiteFields.headerBackgroundColor.value.trim(),
+            paddingBlockPx: Number.parseInt(websiteFields.paddingBlockPx.value, 10),
+            paddingInlinePx: Number.parseInt(websiteFields.paddingInlinePx.value, 10)
+        };
+    }
+    async function readWebsiteResponse(response, fallbackMessage) {
+        if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+        if (!response.ok) {
+            let detail = fallbackMessage;
+            try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { }
+            throw new Error(detail);
+        }
+        return response.json();
+    }
+    async function loadWebsiteHeader() {
+        setWebsiteError(""); setWebsiteMessage("Loading Website header...");
+        try {
+            const response = await fetch(ApiPaths.websiteHomeHeader, { method: "GET", headers: getAdminHeaders() });
+            const payload = await readWebsiteResponse(response, "Unable to load Website header.");
+            fillWebsiteForm(payload.draftHomeHeader || payload.activeHomeHeader);
+            websiteHasLoadedOnce = true; setWebsiteMessage("Draft loaded.");
+        } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to load Website header."); }
+    }
+    async function saveWebsiteDraft() {
+        setWebsiteError(""); setWebsiteMessage("Saving draft..."); websiteSaveDraftButton.disabled = true;
+        try {
+            const response = await fetch(ApiPaths.websiteHomeHeaderDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(collectWebsiteHeader()) });
+            const payload = await readWebsiteResponse(response, "Unable to save Website draft.");
+            fillWebsiteForm(payload.draftHomeHeader); setWebsiteMessage("Draft saved.");
+        } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to save Website draft."); }
+        finally { websiteSaveDraftButton.disabled = false; }
+    }
+    async function publishWebsiteHeader() {
+        setWebsiteError(""); setWebsiteMessage("Publishing static homepage..."); websitePublishButton.disabled = true;
+        try {
+            const response = await fetch(ApiPaths.websiteHomeHeaderPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(collectWebsiteHeader()) });
+            const payload = await readWebsiteResponse(response, "Unable to publish Website header.");
+            fillWebsiteForm(payload.activeHomeHeader); setWebsiteMessage(`Published static homepage: ${payload.publishedIndexPath || "index.html"}`);
+        } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to publish Website header."); }
+        finally { websitePublishButton.disabled = false; }
+    }
 
     function resetDashboard() {
         adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" }; adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; bootstrapAdminStatusElement.textContent = "-"; adminPermissionCountElement.textContent = "-"; capabilitiesListElement.textContent = ""; renderBadges(adminRolesBadgesElement, []); renderBadges(rolesPermissionsRolesElement, []); renderPermissionList(rolesPermissionsListElement, []); workflowAvailabilityListElement.textContent = ""; systemProductionRolesAvailableElement.textContent = "false"; systemProductionRolesAvailableElement.className = "badge unavailable";
@@ -2239,6 +2340,11 @@
         renderWorkflowAvailability();
         systemProductionRolesAvailableElement.textContent = String(Boolean(adminAccessSnapshot.productionRolesAvailable));
         systemProductionRolesAvailableElement.className = `badge ${adminAccessSnapshot.productionRolesAvailable ? "available" : "unavailable"}`;
+        const canUseWebsiteEditor = Boolean(adminAccessSnapshot.isBootstrapAdmin);
+        websiteTabButton.classList.toggle("hidden", !canUseWebsiteEditor);
+        websiteTabButton.setAttribute("aria-hidden", canUseWebsiteEditor ? "false" : "true");
+        websiteTabPanel.classList.toggle("hidden", !canUseWebsiteEditor || websiteTabButton.getAttribute("aria-selected") !== "true");
+        if (!canUseWebsiteEditor && getCurrentActiveTab() === Tabs.website) { activateTab(Tabs.overview); }
     }
 
     async function loadAdminAccessSnapshot() {
@@ -2535,6 +2641,7 @@
         updateUserRequiredEmptyStates();
         await restoreSelectedUserFromHash();
         if (selectedTabId === Tabs.cmsContent && !cmsHasLoadedOnce) { await loadCmsContentPacks(); }
+        if (selectedTabId === Tabs.website && adminAccessSnapshot.isBootstrapAdmin && !websiteHasLoadedOnce) { await loadWebsiteHeader(); }
         if (selectedTabId === Tabs.roleManagement) { await loadRoleManagementData(); }
         if (selectedTabId === Tabs.overview) { await loadProductStatistics(); }
     }
@@ -2577,6 +2684,8 @@
     loadAuditButton.addEventListener("click", async () => { await loadAuditLogForSelectedUser(); });
     refreshStatisticsButton.addEventListener("click", async () => { await loadProductStatistics(); });
     roleManagementRefreshButton.addEventListener("click", async () => { await loadRoleManagementData(); });
+    websiteSaveDraftButton.addEventListener("click", async () => { await saveWebsiteDraft(); });
+    websitePublishButton.addEventListener("click", async () => { await publishWebsiteHeader(); });
     roleManagementForms.forEach((form) => form.addEventListener("submit", async (event) => { event.preventDefault(); await submitRoleManagementMutation(form); }));
     logoutButton.addEventListener("click", () => { logoutAdminSession(); });
     initializeTabs();

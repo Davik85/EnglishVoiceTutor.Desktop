@@ -265,3 +265,5 @@ textarea[readonly] { background: #f8fafc; color: #374151; }
   .meta dd { margin: 0 0 8px; }
   .capability-list li, .placeholder-list li { align-items: flex-start; flex-direction: column; gap: 6px; }
 }
+.website-editor-form .grid { align-items: start; }
+.website-editor-form input[type="text"], .website-editor-form input[type="number"], .website-editor-form select { width: 100%; }
