@@ -525,8 +525,8 @@
                         <article class="card cms-warning-card" aria-labelledby="cms-website-heading">
                             <h3 id="cms-website-heading">Website text manager</h3>
                             <p class="muted"><strong>Simple admin website text storage.</strong> Use this tab to manage public website text drafts for legal, home, desktop, and mobile/coming-soon pages without editing code.</p>
-                            <div class="cms-readonly-notice" role="note">Saved website text is stored in CMS. Public website rendering is still a separate step.</div>
-                            <div class="cms-readonly-notice" role="note">Saving text here does not update public rendering, does not modify <code>site/public</code>, does not enable live Paddle, and does not change billing, entitlement, or Desktop behavior.</div>
+                            <div class="cms-readonly-notice" role="note">Website CMS now manages active public website text. Static site text remains the fallback.</div>
+                            <div class="cms-readonly-notice" role="note">Saving text here becomes active for public rendering through the Website CMS API. It does not modify <code>site/public</code>, enable live Paddle, or change billing, entitlement, or Desktop behavior.</div>
                             <div class="website-cms-simple-sections" aria-label="Website text sections">
                                 <section class="cms-readonly-notice" aria-labelledby="website-cms-legal-heading">
                                     <h4 id="website-cms-legal-heading">Legal pages</h4>
@@ -549,7 +549,7 @@
                                     <div id="website-cms-mobile-page" class="cms-button-row" data-website-cms-group="mobile"></div>
                                 </section>
                             </div>
-                            <div class="cms-button-row"><button id="website-cms-initialize-missing-button" type="button">Initialize missing Website CMS sections</button></div>
+                            <div class="cms-button-row"><button id="website-cms-initialize-missing-button" type="button">Load current website texts</button></div>
                             <p id="website-cms-initialize-result" class="muted" role="status"></p>
                             <p id="website-cms-loading" class="lookup-loading hidden" role="status">Loading Website CMS metadata...</p>
                             <p id="website-cms-error" class="error" role="alert"></p>
