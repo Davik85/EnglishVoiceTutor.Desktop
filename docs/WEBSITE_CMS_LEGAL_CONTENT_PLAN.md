@@ -119,11 +119,42 @@ Publish effects:
 - Publish must be audited as attempted, succeeded, or failed with actor, timestamp, section key, prior/new published hashes or bounded summaries, validation result, approval marker, change reason, source, request/correlation id, and published version/snapshot id. Audit rows should avoid full sensitive payloads when hashes or bounded summaries are enough.
 - All publish actions, rollback actions, approval-marker changes, and review-status changes must remain admin-only.
 
-Rollback design:
+## Rollback and unpublish design
 
-- Rollback should restore a previous published version by copying that prior published body into a new draft or by creating a new published snapshot from the prior version through the same validation, approval, change-reason, and audit gates.
-- Rollback must not mutate historical published/audit records in place.
-- Rollback must not modify `site/public/` and must not change public rendering unless a later separately approved published-only rendering integration exists.
+Rollback and unpublish are not implemented. The production smoke test for the admin-only publish rollout required manual SQL cleanup because there is currently no safe Website CMS workflow to remove or restore published content.
+
+### Definitions
+
+- **Rollback** means restoring a previous `PublishedBody` / `PublishedAtUtc` from a prior published revision or history entry. A safe rollback should either copy the prior published body into a new draft for review or create a new published snapshot from that prior revision through the same validation, approval, change-reason, and audit gates. Rollback must not mutate historical published/audit records in place.
+- **Unpublish** means clearing the current `PublishedBody` / `PublishedAtUtc` or marking the section unpublished so no current published website content is available for that section. Unpublish is not the same as restoring earlier content.
+
+### Current storage limitation
+
+`website_cms_sections` currently has only one `PublishedBody` value per section and does not store published revision history. True rollback to previous published content may require a future revision/history table or an audit snapshot that preserves prior published content safely. Without that history, the system can only unpublish current content or manually restore content from an external approved copy; it cannot reliably reconstruct an earlier published revision.
+
+### Future implementation options
+
+1. **Option A: simple unpublish only.** Add an admin-only operation that clears `PublishedBody` / `PublishedAtUtc` or otherwise removes the current published state, with no previous revision restoration. This is the smallest safety foundation but does not solve accidental overwrite recovery.
+2. **Option B: published revision history.** Add Website CMS published revision/history storage with immutable published snapshots, actor, timestamp, hash/version, approval marker, and change reason. Rollback can then restore a selected prior revision through a new audited publish action.
+3. **Option C: soft-unpublish status.** Add a published/unpublished flag or status while preserving `PublishedBody`. This supports hiding content without losing the last published body, but public renderers must honor the status and never serve unpublished sections.
+
+Recommended path: for legal/policy content, implement published revision history before connecting Website CMS to public rendering. This gives operators a safe recovery path for approved terms, privacy, refund, cancellation, seller, support, and pricing copy before unauthenticated users can see CMS-managed content.
+
+### Safety requirements
+
+- Rollback and unpublish must be admin-only and protected by a high-permission Admin policy.
+- Every rollback or unpublish request must require a non-empty `ChangeReason`.
+- Rollback must re-run validation before publishing restored content and must audit the source revision/snapshot id where history exists.
+- Unpublish must audit the previous published hash or bounded summary before clearing or hiding content.
+- Neither workflow may expose `DraftBody` publicly.
+- Neither workflow may expose `InternalNotes` publicly.
+- Neither workflow may modify `site/public/`.
+- Neither workflow may enable live Paddle.
+- Neither workflow may add checkout links or checkout buttons.
+
+### Public rendering boundary
+
+Public rendering integration must not happen until rollback/unpublish rules are implemented or the missing rollback/unpublish risk is explicitly accepted in a separate reviewed decision. If a public renderer is later added, it must read only current published content or a safe published snapshot, must honor any unpublished status, and must never read draft content or internal notes.
 
 ## Review status rules
 
@@ -193,15 +224,25 @@ If any blocked value is detected, validation should block save/publish and requi
 
 ## Future implementation testing requirements
 
-When publish is implemented, tests should prove that:
+Publish tests should prove that:
 
 - publish requires a passing validation result from `WebsiteCmsContentGuard`;
 - publish requires an allowed review state;
 - publish requires a non-empty change reason/publish summary;
 - publish copies `DraftBody` to `PublishedBody` and sets `PublishedAtUtc` without modifying `site/public/`;
 - review-status-only approval changes do not update `PublishedBody` or `PublishedAtUtc`;
-- a public endpoint, if later added, returns published content only;
-- rollback restores previous published content through a new audited version/snapshot;
+- a public endpoint, if later added, returns published content only.
+
+Rollback/unpublish tests should prove that:
+
+- unpublish clears or marks published content safely;
+- rollback restores a previous published revision if revision/history storage exists;
+- rollback and unpublish require `ChangeReason`;
+- rollback and unpublish reject unknown sections;
+- rollback and unpublish do not change `DraftBody`;
+- rollback and unpublish do not alter `site/public/`;
+- there are no public unauthenticated rollback or unpublish routes;
+- public rendering never reads draft content;
 - draft content never appears in public rendering, public endpoints, static exports, logs, audit summaries, or unauthenticated responses.
 
 ## Public rendering options

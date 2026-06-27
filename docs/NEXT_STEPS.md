@@ -71,10 +71,10 @@ Current status: Website is a top-level Admin Shell tab, Website CMS persistence 
 
 Safe next steps:
 
-1. Prepare owner/legal-approved public legal, seller, support, refund, cancellation, privacy, terms, and pricing copy outside code. Final legal/seller/support/pricing copy still requires owner/legal approval.
-2. Next functional Website CMS step should be **publish rollback/unpublish design** or owner/legal copy preparation outside code. The current publish workflow is internal-only and must not connect Website CMS content to public routes or static site output.
-3. Keep `WebsiteCmsContentGuard` and draft validation conservative; secret-like values and private/provider identifiers must remain blocked before persistence or review.
-4. Keep public rendering integration deferred until published-only rendering rules are separately approved and tested. Do not connect Website CMS to public routes, do not change static `site/public/`, and do not serve drafts publicly.
+1. Next functional Website CMS implementation should be an **admin-only rollback/unpublish foundation**, not public rendering. At minimum, define and implement safe unpublish behavior; for legal/policy pages, prefer published revision history before any public Website CMS rendering integration.
+2. Prepare owner/legal-approved public legal, seller, support, refund, cancellation, privacy, terms, and pricing copy outside code in parallel. Final legal/seller/support/pricing copy still requires owner/legal approval.
+3. Keep `WebsiteCmsContentGuard` and draft validation conservative; secret-like values and private/provider identifiers must remain blocked before persistence, review, publish, rollback, or unpublish.
+4. Keep public rendering integration deferred until rollback/unpublish rules are implemented or the risk is explicitly accepted in a separate reviewed decision. Do not connect Website CMS to public routes, do not change static `site/public/`, and do not serve drafts publicly.
 5. Keep live Paddle as a separate readiness step. Do not add checkout links/buttons, live Paddle enablement, or billing behavior changes as part of Website CMS work.
 
 ## Release-readiness roadmap
