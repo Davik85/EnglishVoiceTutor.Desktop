@@ -59,6 +59,24 @@ public sealed class AdminWebsiteCmsSectionPublishRequest
     public string ChangeReason { get; set; } = string.Empty;
 }
 
+public sealed class AdminWebsiteCmsSectionUnpublishRequest
+{
+    public string ChangeReason { get; set; } = string.Empty;
+}
+
+public sealed class AdminWebsiteCmsSectionUnpublishResponse
+{
+    public string SectionKey { get; set; } = string.Empty;
+    public string ReviewStatus { get; set; } = string.Empty;
+    public bool DraftBodyExists { get; set; }
+    public bool PublishedBodyExists { get; set; }
+    public DateTimeOffset? PublishedAtUtc { get; set; }
+    public DateTimeOffset UpdatedAtUtc { get; set; }
+    public DateTimeOffset CheckedAtUtc { get; set; }
+    public DateTimeOffset UnpublishedCheckedAtUtc { get; set; }
+    public string Message { get; set; } = string.Empty;
+}
+
 public sealed class AdminWebsiteCmsSectionPublishResponse
 {
     public string SectionKey { get; set; } = string.Empty;

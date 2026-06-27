@@ -121,7 +121,7 @@ Publish effects:
 
 ## Rollback and unpublish design
 
-Rollback and unpublish are not implemented. The production smoke test for the admin-only publish rollout required manual SQL cleanup because there is currently no safe Website CMS workflow to remove or restore published content.
+Simple admin-only unpublish is implemented for current `website_cms_sections` rows. It clears only internal `PublishedBody` / `PublishedAtUtc`, requires `ChangeReason`, runs `WebsiteCmsContentGuard` on the reason, leaves `DraftBody` unchanged, and does not change public rendering or `site/public/`. Revision-history rollback is still deferred; the production smoke test for the admin-only publish rollout previously required manual SQL cleanup before this unpublish foundation existed.
 
 ### Definitions
 
@@ -276,11 +276,11 @@ That slice should only introduce safe storage/read views and admin navigation pl
 - Rollout note: the production table grant for `website_cms_sections` was manually corrected for runtime role `lvt_app`; future manual SQL rollouts must verify runtime DB grants after creating tables.
 - Production contains the 9 expected Website CMS rows: `seller_company`, `support`, `pricing`, `terms`, `privacy`, `refunds`, `cancellation`, `ai_data_disclosures`, and `platform_status`.
 - Production smoke test on `platform_status` passed: a temporary draft was saved, review status was set to `legal_approved`, validation and admin-only preview worked, publish copied `DraftBody` into `PublishedBody`, and `PublishedAtUtc` was set. Public rendering did not change.
-- Smoke data was manually cleaned up because rollback/unpublish is not implemented yet.
+- Smoke data was manually cleaned up before the simple admin-only unpublish foundation existed.
 - Production DB verification after cleanup confirmed 9 rows in `website_cms_sections`, `ReviewStatus=not_started` for all rows, `DraftBody` length `0` for all rows, and `PublishedBody` null / `has_published=false` for all rows.
 - Fresh service logs after smoke test showed no new `website-cms` errors, permission-denied errors, exceptions, failures, or `500` responses.
 - Public rendering is still not connected. The deployed static public website remains the actual public rendering source, and `site/public/` remains the source for static public pages.
-- Rollback/unpublish is not implemented.
+- Simple admin-only unpublish is implemented for internal `PublishedBody` only; revision-history rollback is not implemented.
 - Live Paddle is still not enabled. No checkout buttons, checkout links, Paddle client tokens, live price IDs, webhook secrets, or public payment behavior were added.
 - Legal, seller, support, refund, cancellation, privacy, terms, and pricing final values still require owner/legal approval before paid public launch claims.
 
