@@ -56,7 +56,7 @@ Clean-machine smoke must verify registration/login/lesson/history/progress/updat
 
 Website is a top-level Admin Shell tab, not a `CMS Content` sub-tab. The visible Website tab now provides simple management for Legal pages, Home page, Desktop page, and Mobile page / Coming soon website texts. The main admin can select a section, edit website text, enter a simple Change note, and Save.
 
-The visible UI is intentionally not a legal workflow engine: validation, preview, review-status changes, publish/unpublish buttons, owner/legal approval controls, rollback, and revision-history workflow controls are not shown in the main Website text manager. The tab clearly states: “Saved website text is stored in CMS. Public website rendering is still a separate step.”
+The visible UI is intentionally not a legal workflow engine: validation, preview, review-status changes, publish/unpublish buttons, owner/legal approval controls, rollback, and revision-history workflow controls are not shown in the main Website text manager. The tab clearly states: “Website CMS now manages active public website text; static site text remains the fallback.”
 
 The Website CMS backend foundation still uses the existing `website_cms_sections` storage. No public rendering was connected in this simplification, no public unauthenticated Website CMS endpoint was added, no `site/public/` file was changed, no live Paddle behavior was enabled, and no billing, entitlement, Desktop behavior, deployment script, production configuration, backend environment variable, secret, or database migration was changed.
 
@@ -306,6 +306,14 @@ Completed and production-verified on backend `0.1.35-backend.56`: Admin Product 
 
 ## Website tab simplified website text manager current state (2026-06-27)
 
-Website is a top-level Admin Shell tab with simple website text management for Legal pages, Home page, Desktop page, and Mobile page / Coming soon. The visible UI provides section selection, website text editing, a Change note field, and Save. It clearly states that saved website text is stored in CMS and public website rendering is still a separate step.
+Website is a top-level Admin Shell tab with simple website text management for Legal pages, Home page, Desktop page, and Mobile page / Coming soon. The visible UI provides section selection, website text editing, a Change note field, and Save. It clearly states that saved Website CMS text becomes active for public rendering through the public Website CMS API while static site text remains the fallback.
 
-The visible UI is intentionally not a legal workflow engine. It does not show validation, preview, review-status changes, publish/unpublish buttons, owner/legal approval controls, rollback, or revision-history workflow controls. Public rendering remains static `site/public`; no public unauthenticated Website CMS route, live Paddle enablement, billing change, entitlement change, Desktop behavior change, migration, deployment script change, production config change, backend environment variable change, or secret was added.
+The visible UI is intentionally not a legal workflow engine. It does not show validation, preview, review-status changes, publish/unpublish buttons, owner/legal approval controls, rollback, or revision-history workflow controls. Public rendering can now read `GET /api/website/texts`; no live Paddle enablement, billing change, entitlement change, Desktop behavior change, migration, deployment script change, production config change, backend environment variable change, or secret was added.
+
+
+## Website CMS public text integration (2026-06-27)
+- Website CMS now manages editable public website text for the simplified section keys: home, desktop, mobile, legal_terms, legal_privacy, legal_refunds, legal_cancellation, legal_support, legal_pricing, legal_seller_company, legal_ai_data_disclosures, and legal_platform_status.
+- The current static `site/public` text is used as the CMS seed and remains the static fallback when CMS content is missing or the backend is unavailable.
+- Public pages can read admin-saved CMS text from `GET /api/website/texts`; the endpoint returns only public section text and omits internal notes, change reasons, admin metadata, secrets, provider values, billing IDs, and raw payloads.
+- Saving in Admin → Website makes the text active for public rendering; no visible publish/unpublish/review/rollback path is required for this simplified stage.
+- Live Paddle, checkout links, billing behavior, entitlement behavior, Desktop behavior, production configuration, environment variables, secrets, migrations, and deployment remain separate and unchanged.

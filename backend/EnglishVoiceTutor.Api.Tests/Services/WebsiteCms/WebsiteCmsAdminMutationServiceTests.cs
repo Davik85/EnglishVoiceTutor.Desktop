@@ -8,7 +8,7 @@ namespace EnglishVoiceTutor.Api.Tests.Services.WebsiteCms;
 public sealed class WebsiteCmsAdminMutationServiceTests
 {
     [Fact]
-    public async Task InitializeMissingSectionsAsync_EmptyDatabaseCreatesAllExpectedSections()
+    public async Task InitializeMissingSectionsAsync_EmptyDatabaseCreatesAllExpectedSectionsWithDefaultTexts()
     {
         await using var dbContext = CreateDbContext();
 
@@ -22,12 +22,12 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         Assert.Equal(12, rows.Count);
         Assert.All(rows, row =>
         {
-            Assert.Equal(string.Empty, row.DraftBody);
+            Assert.False(string.IsNullOrWhiteSpace(row.DraftBody));
             Assert.Null(row.PublishedBody);
             Assert.Equal("not_started", row.ReviewStatus);
             Assert.Null(row.EffectiveDate);
             Assert.Null(row.InternalNotes);
-            Assert.Equal("Initialize Website CMS section metadata", row.ChangeReason);
+            Assert.Equal("Load current website texts", row.ChangeReason);
             Assert.Null(row.PublishedAtUtc);
         });
     }
@@ -227,11 +227,12 @@ public sealed class WebsiteCmsAdminMutationServiceTests
     }
 
     [Fact]
-    public async Task PublishSectionAsync_RejectsEmptyDraft()
+    public async Task PublishSectionAsync_RejectsEmptyDraftAfterAdminClearsSeededText()
     {
         await using var dbContext = CreateDbContext();
         await new WebsiteCmsAdminMutationService(dbContext).InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
         var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "legal_privacy", TestContext.Current.CancellationToken);
+        row.DraftBody = string.Empty;
         row.ReviewStatus = "legal_approved";
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 

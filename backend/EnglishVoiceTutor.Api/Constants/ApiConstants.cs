@@ -88,6 +88,7 @@ public static class ApiConstants
     public const string AdminSessionRoute = "/api/admin/session";
     public const string AdminCapabilitiesRoute = "/api/admin/capabilities";
     public const string AdminStatisticsOverviewRoute = "/api/admin/statistics/overview";
+    public const string WebsiteTextsRoute = "/api/website/texts";
     public const string AdminWebsiteCmsSectionOverviewRoute = "/api/admin/website-cms/sections/overview";
     public const string AdminWebsiteCmsSectionDetailRoute = "/api/admin/website-cms/sections/{sectionKey}";
     public const string AdminWebsiteCmsSectionDraftRoute = "/api/admin/website-cms/sections/{sectionKey}/draft";
