@@ -293,3 +293,10 @@ Phase 5B bounded production log sampling found over-verbose EF Core SQL command 
 
 Completed and production-verified on backend `0.1.35-backend.56`: Admin Product Statistics now distinguishes access-state metrics from payment-event metrics. Live server verification of `wwwroot/admin/admin.js` showed `successfulPaymentsTotal`, `successfulPaymentsCurrentMonth`, and `Tracked signed-in app/device records`. `Active Premium users now` remains an entitlement/access-state metric based on currently active Premium access and does not change the paid-entitlement start semantics for users who purchase during an active Trial. Separate `Successful payments total` and `Successful payments current month` metrics count successful payment records from the internal provider-agnostic payments table, using completed Premium `transaction.completed` records with completed timestamps rather than active entitlements, subscription snapshots, raw Paddle webhook payloads, or distinct-user inference. The current-month boundary is UTC calendar month start inclusive to next UTC month start exclusive. These aggregate payment metrics do not expose emails, user IDs, Paddle customer IDs, transaction IDs, raw provider payloads, signatures, or other personal data in the Admin UI. Production/live Paddle readiness remains deferred, and broad public production readiness is not claimed.
 
+
+## Website CMS home header
+
+- The Website admin area is separate from learner CMS Content and is restricted to the strongest existing Super Admin/bootstrap admin guard.
+- Website CMS content is JSON/file based at `site/content/website-content.json`; no database tables or EF Core migrations are used.
+- Local publishing targets `site/public` and rewrites `site/public/index.html` with SEO-visible static HTML.
+- Production publishing should configure `WebsiteContent:PublicSiteRoot` to `/var/www/languagevoicetutor/site`, the verified public site root for `languagevoicetutor.com`.

@@ -324,3 +324,7 @@ test -x /opt/languagevoicetutor/backend/releases/<version>/EnglishVoiceTutor.Api
 The upload script applies `chmod 755` to the main backend executable and does not swallow chmod/test failures. If the executable is missing or not executable, deployment fails loudly and must not be treated as successful. The script still does not write secrets and does not run EF migrations.
 
 Password reset SMTP values, including credentials, must remain server-only in `/etc/languagevoicetutor/backend.env`. The production Zoho-style settings may use `SmtpEmail__Username` and `SmtpEmail__UseSsl`; no SMTP password or raw reset token should be logged or committed.
+
+## Website CMS publishing paths
+
+The Website CMS home header is file-based, not database-based. Configure `WebsiteContent:StorageJsonPath` for the JSON content document and `WebsiteContent:PublicSiteRoot` for the static public site root. In production the verified public site root is `/var/www/languagevoicetutor/site`. Publishing updates `index.html` in that configured root and does not create EF migrations or database tables.
