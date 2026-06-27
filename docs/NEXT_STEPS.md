@@ -72,9 +72,9 @@ Current status: Website is a top-level Admin Shell tab, Website CMS persistence 
 Safe next steps:
 
 1. Prepare owner/legal-approved public legal, seller, support, refund, cancellation, privacy, terms, and pricing copy outside code. Final legal/seller/support/pricing copy still requires owner/legal approval.
-2. Next safe code step is publish design only, not implementation: define authorization, audit, owner/legal sign-off, rollback, and public-rendering handoff requirements before any publish code exists. Alternatively, continue owner/legal copy preparation outside code.
+2. Next functional Website CMS implementation step: **Implement admin-only Website CMS publish workflow without public rendering**. The implementation must define authorization, audit, owner/legal sign-off, rollback, and published-snapshot rules, and it must not connect Website CMS content to public routes or static site output.
 3. Keep `WebsiteCmsContentGuard` and draft validation conservative; secret-like values and private/provider identifiers must remain blocked before persistence or review.
-4. Keep public rendering deferred until publish/public snapshot rules are approved. Do not connect Website CMS to public routes, do not change static `site/public/`, and do not serve drafts publicly.
+4. Keep public rendering integration deferred as a later separate step after the admin-only publish workflow exists. Do not connect Website CMS to public routes, do not change static `site/public/`, and do not serve drafts publicly.
 5. Keep live Paddle as a separate readiness step. Do not add checkout links/buttons, live Paddle enablement, or billing behavior changes in the Website CMS validation/preview/review slice.
 
 ## Release-readiness roadmap
@@ -283,4 +283,4 @@ Admin Product Statistics now separates access-state metrics from payment-event m
 
 ### After admin-only Website CMS draft save
 
-The next safe Website CMS step is validation/preview/review workflow design for owner/legal review, including clearer field validation and non-public preview semantics. Do not move directly to public rendering or publishing until review workflow, approvals, rollback behavior, and legal ownership are explicitly defined and tested.
+The next functional Website CMS implementation step is admin-only publish workflow without public rendering. Public rendering integration remains a later separate step, and static `site/public/` remains the production public rendering source until a published-only integration is separately approved, implemented, and tested.
