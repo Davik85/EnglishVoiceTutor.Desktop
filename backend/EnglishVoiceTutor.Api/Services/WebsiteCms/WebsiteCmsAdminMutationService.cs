@@ -230,4 +230,49 @@ public sealed class WebsiteCmsAdminMutationService(AppDbContext dbContext) : IWe
         };
     }
 
+    public async Task<AdminWebsiteCmsSectionUnpublishResponse?> UnpublishSectionAsync(string sectionKey, AdminWebsiteCmsSectionUnpublishRequest request, CancellationToken cancellationToken)
+    {
+        var expected = WebsiteCmsExpectedSections.All.SingleOrDefault(section => string.Equals(section.SectionKey, sectionKey, StringComparison.Ordinal));
+        if (expected is null)
+        {
+            return null;
+        }
+
+        var changeReason = request.ChangeReason?.Trim();
+        if (string.IsNullOrWhiteSpace(changeReason))
+        {
+            throw new InvalidOperationException("Change reason is required.");
+        }
+
+        WebsiteCmsContentGuard.ThrowIfBlocked(changeReason);
+
+        var row = await _dbContext.WebsiteCmsSections.SingleOrDefaultAsync(section => section.SectionKey == sectionKey, cancellationToken);
+        if (row is null)
+        {
+            return null;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        row.PublishedBody = null;
+        row.PublishedAtUtc = null;
+        row.ReviewStatus = string.IsNullOrWhiteSpace(row.DraftBody) ? "not_started" : "draft";
+        row.ChangeReason = changeReason;
+        row.UpdatedAtUtc = now;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new AdminWebsiteCmsSectionUnpublishResponse
+        {
+            SectionKey = expected.SectionKey,
+            ReviewStatus = row.ReviewStatus,
+            DraftBodyExists = !string.IsNullOrWhiteSpace(row.DraftBody),
+            PublishedBodyExists = !string.IsNullOrWhiteSpace(row.PublishedBody),
+            PublishedAtUtc = row.PublishedAtUtc,
+            UpdatedAtUtc = row.UpdatedAtUtc,
+            CheckedAtUtc = now,
+            UnpublishedCheckedAtUtc = now,
+            Message = "Unpublished from internal Website CMS PublishedBody only. Public website rendering was not changed, site/public was not modified, and live Paddle was not enabled."
+        };
+    }
+
 }
