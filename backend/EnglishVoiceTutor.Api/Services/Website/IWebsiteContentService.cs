@@ -6,5 +6,6 @@ public interface IWebsiteContentService
 {
     Task<WebsiteContentResponse> GetAsync(CancellationToken cancellationToken);
     Task<WebsiteContentResponse> SaveDraftAsync(WebsiteContentSet draft, CancellationToken cancellationToken);
-    Task<WebsitePublishResponse> PublishAsync(WebsiteContentSet content, CancellationToken cancellationToken);
+    Task<WebsitePreviewResponse> PreviewAsync(WebsitePreviewRequest request, CancellationToken cancellationToken);
+    Task<WebsitePublishResponse> PublishAsync(CancellationToken cancellationToken);
 }
