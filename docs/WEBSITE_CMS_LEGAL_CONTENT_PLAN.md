@@ -97,32 +97,63 @@ Keep the first version small and structured. Suggested editable sections:
    - Android/iOS wording must remain “planned” or “in development” until actually released.
    - Avoid paid-production availability claims until live billing and operations are approved.
 
-## Draft/published workflow
+## Future admin-only publish workflow design (not implemented)
 
-The website CMS should follow a conservative content lifecycle:
+The next functional implementation step should be an **admin-only Website CMS publish workflow without public rendering**. Publishing must create or update a Website CMS published snapshot only; it must not edit `site/public/`, deploy the public site, add checkout links/buttons, enable live Paddle, or connect Website CMS data to unauthenticated public rendering.
 
-1. Admin edits a draft section.
-2. Admin saves draft with a required change reason.
-3. Draft content is not public and does not affect `site/public/` rendering.
-4. Validation runs before publish.
-5. Publish requires an explicit change summary.
-6. Publishing creates an immutable published website-content version.
-7. Public rendering changes only after a separately approved rendering integration reads the published version.
-8. Previous published versions can be viewed and restored by copying them into a new draft/version, not by mutating old versions.
+Required publish gates:
 
-## Owner/legal review status fields
+1. **Allowed source state**: publish may use only the current stored `DraftBody` for one initialized Website CMS section. Empty drafts must not be publishable for required public pages. Internal notes, validation diagnostics, raw provider data, and audit payloads are never publish source content.
+2. **Validation result**: `WebsiteCmsContentGuard` must run immediately before publish against the exact draft being published. Publish must be blocked if validation fails or if secret-like/provider/private identifiers are detected.
+3. **Review status**: publish is allowed only from a configured approved review state. For legal/policy pages, the required state should be `legal_approved`; for non-legal operational copy, the required state may be `owner_approved` when legal review is not required by policy. `owner_approved` and `legal_approved` are internal review markers only and never publish by themselves.
+4. **Change reason**: publish requires a non-empty admin change reason/publish summary distinct enough to explain what changed and why.
+5. **Owner/legal approval marker**: publish must record which approval marker authorized the publish, the approving actor or internal reviewer reference where available, and the UTC approval/publish timestamp. Final legal, seller, support, refund, cancellation, privacy, terms, and pricing copy still requires owner/legal approval outside code before publish.
 
-Each legal/support/pricing section should carry review metadata:
+Publish effects:
 
-- `draft`, `owner_review_needed`, `owner_approved`, `legal_review_needed`, `legal_approved`, `published`, or `retired` status;
-- reviewer name or internal user id where appropriate;
-- reviewed timestamp in UTC;
-- effective date shown publicly, when applicable;
-- next review date, optional;
-- owner/legal notes that are internal-only and never rendered publicly;
-- publish change summary.
+- Publish copies the validated `DraftBody` into `PublishedBody` for that section and sets `PublishedAtUtc` to the publish time in UTC.
+- Publish must not transform the draft in a way that changes legal meaning. Any sanitization or formatting used for public display should be deterministic and separately tested.
+- Publish may update publish metadata such as publish actor, publish change summary, approval marker, published hash/version, and review status if a future `published` state is added. It must not erase `DraftBody` automatically and must not expose `InternalNotes`.
+- Publish must be audited as attempted, succeeded, or failed with actor, timestamp, section key, prior/new published hashes or bounded summaries, validation result, approval marker, change reason, source, request/correlation id, and published version/snapshot id. Audit rows should avoid full sensitive payloads when hashes or bounded summaries are enough.
+- All publish actions, rollback actions, approval-marker changes, and review-status changes must remain admin-only.
 
-Legal sections should not be publishable as “final” unless the configured owner/legal approval fields are satisfied.
+Rollback design:
+
+- Rollback should restore a previous published version by copying that prior published body into a new draft or by creating a new published snapshot from the prior version through the same validation, approval, change-reason, and audit gates.
+- Rollback must not mutate historical published/audit records in place.
+- Rollback must not modify `site/public/` and must not change public rendering unless a later separately approved published-only rendering integration exists.
+
+## Review status rules
+
+Website CMS status values should have narrow meanings:
+
+| Status | Meaning | Publish effect |
+| --- | --- | --- |
+| `not_started` | Section exists but no usable draft has been prepared. | Not publishable. |
+| `draft` | Admin draft is being edited internally. | Not publishable. |
+| `owner_review_needed` | Draft is ready for product-owner review. | Not publishable. |
+| `legal_review_needed` | Draft is ready for qualified legal review. | Not publishable. |
+| `owner_approved` | Product owner has approved the current draft as an internal marker. | Does not publish by itself; may be an allowed publish gate only for sections that do not require legal approval. |
+| `legal_approved` | Legal reviewer has approved the current draft as an internal marker. | Does not publish by itself; should be the normal allowed publish gate for legal/policy/pricing/seller copy. |
+| `published` | Optional future state meaning the current draft/published snapshot has completed the publish action. | May be set only by the publish workflow; not by review-status-only endpoints. |
+
+Review-status-only changes must never update `PublishedBody` or `PublishedAtUtc`. Approval statuses are not public-facing legal advice and do not imply live Paddle readiness, billing readiness, or public rendering integration.
+
+## Public rendering integration boundaries
+
+Public rendering must remain separate from publish:
+
+- The public site must never read or serve `DraftBody`.
+- Public rendering may only read a published snapshot/body after a separately approved implementation is designed, reviewed, tested, and deployed.
+- Public rendering integration is a later separate task after the admin-only publish workflow exists.
+- Static `site/public/` files remain the production public rendering source until that later published-only integration is approved and completed.
+- Admin preview remains admin-only and must not be treated as public rendering.
+
+## Paddle/legal readiness boundaries
+
+- Live Paddle enablement remains separate from Website CMS publish.
+- The Website CMS publish workflow must not introduce checkout links, checkout buttons, Paddle client-side tokens, live price IDs, webhook secrets, billing behavior changes, entitlement behavior changes, or payment operations.
+- Final legal, seller, support, pricing, refund, cancellation, privacy, and terms copy requires owner/legal approval outside code before it is published.
 
 ## Audit requirements
 
@@ -133,46 +164,43 @@ Audit every meaningful website CMS action:
 - validation run;
 - publish attempted/succeeded/failed;
 - previous version restored into a new draft;
+- rollback attempted/succeeded/failed;
 - section retired/reactivated.
 
-Audit records should include actor, timestamp, section key, changed fields, old/new hashes or bounded summaries, source, request/correlation id, validation result, and publish version. Do not store full sensitive payloads in audit rows when hashes or bounded summaries are enough.
+Audit records should include actor, timestamp, section key, changed fields, old/new hashes or bounded summaries, source, request/correlation id, validation result, approval marker, change reason, and publish version. Do not store full sensitive payloads in audit rows when hashes or bounded summaries are enough.
 
-## Validation rules
+## Safety and validation requirements
 
 Validate content before save and publish:
 
+- `WebsiteCmsContentGuard` must run before publish against the exact `DraftBody` that would be copied to `PublishedBody`;
 - required fields are present for each section;
 - public support email is syntactically valid;
 - required legal pages have non-empty body copy before publish;
 - effective dates are valid dates and not accidentally missing;
 - pricing copy does not contain Paddle IDs or checkout secrets;
 - platform wording does not claim mobile availability before release;
-- no raw provider payloads, signatures, connection strings, API keys, JWT keys, or webhook secrets appear in any public copy;
-- no customer IDs, transaction IDs, subscription IDs, or private support-case identifiers appear inside public legal copy;
+- secret-like, provider, or private identifiers block publish;
+- publish must not expose internal notes;
+- publish must not expose raw provider payloads, customer IDs, transaction IDs, subscription IDs, API keys, JWT keys, Paddle secrets, webhook secrets, connection strings, bearer tokens, signatures, private support-case identifiers, or diagnostic identifiers;
 - content length is bounded;
 - public HTML/Markdown output is sanitized and link targets are allowlisted where practical;
 - draft content must not be returned by public unauthenticated endpoints.
 
-## Secret and identifier guardrails
+If any blocked value is detected, validation should block save/publish and require manual cleanup.
 
-The Website/Public Site CMS must not store or display the following in public legal/support/pricing copy:
+## Future implementation testing requirements
 
-- Paddle secrets;
-- Paddle webhook secrets;
-- Paddle API keys;
-- Paddle client-side tokens;
-- Paddle price IDs unless a future owner-approved display requirement explicitly allows non-secret public price references;
-- OpenAI keys or other provider API keys;
-- JWT keys or bearer tokens;
-- database connection strings;
-- raw provider webhook/API payloads;
-- signatures;
-- customer IDs;
-- transaction IDs;
-- subscription IDs;
-- private account, billing, support-case, or diagnostic identifiers.
+When publish is implemented, tests should prove that:
 
-If any such value is detected, validation should block save/publish and require manual cleanup.
+- publish requires a passing validation result from `WebsiteCmsContentGuard`;
+- publish requires an allowed review state;
+- publish requires a non-empty change reason/publish summary;
+- publish copies `DraftBody` to `PublishedBody` and sets `PublishedAtUtc` without modifying `site/public/`;
+- review-status-only approval changes do not update `PublishedBody` or `PublishedAtUtc`;
+- a public endpoint, if later added, returns published content only;
+- rollback restores previous published content through a new audited version/snapshot;
+- draft content never appears in public rendering, public endpoints, static exports, logs, audit summaries, or unauthenticated responses.
 
 ## Public rendering options
 
