@@ -4,7 +4,7 @@ namespace EnglishVoiceTutor.Api.Services.Website;
 
 public interface IWebsiteContentService
 {
-    Task<WebsiteHomeHeaderResponse> GetAsync(CancellationToken cancellationToken);
-    Task<WebsiteHomeHeaderResponse> SaveDraftAsync(WebsiteHomeHeaderContent draft, CancellationToken cancellationToken);
-    Task<WebsitePublishResponse> PublishAsync(WebsiteHomeHeaderContent content, CancellationToken cancellationToken);
+    Task<WebsiteContentResponse> GetAsync(CancellationToken cancellationToken);
+    Task<WebsiteContentResponse> SaveDraftAsync(WebsiteContentSet draft, CancellationToken cancellationToken);
+    Task<WebsitePublishResponse> PublishAsync(WebsiteContentSet content, CancellationToken cancellationToken);
 }

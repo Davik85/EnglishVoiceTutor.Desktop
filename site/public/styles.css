@@ -549,3 +549,21 @@ dd {
         gap: 4px;
     }
 }
+
+.site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 18px clamp(20px, 5vw, 64px);
+    background: var(--footer-background);
+    color: var(--footer-text);
+    font-weight: 700;
+}
+.site-header__logo { display: inline-flex; min-width: max-content; align-items: center; }
+.site-header__logo-text { font-weight: 800; letter-spacing: 0.01em; }
+.site-header__logo-image { display: block; max-width: 210px; max-height: 52px; object-fit: contain; }
+.site-header__copy { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 12px; text-align: right; }
+.site-header__headline, .site-header__languages { margin: 0; }
+.site-header__languages { color: #fff; }
+@media (max-width: 720px) { .site-header { align-items: flex-start; flex-direction: column; } .site-header__copy { justify-content: flex-start; text-align: left; } }
