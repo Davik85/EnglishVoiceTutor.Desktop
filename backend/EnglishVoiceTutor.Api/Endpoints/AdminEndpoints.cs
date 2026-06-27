@@ -76,6 +76,11 @@ public static class AdminEndpoints
             rateLimitingEnabled);
 
         ApplyAdminWriteRateLimiting(
+            app.MapPost(ApiConstants.AdminWebsiteCmsSectionUnpublishRoute, UnpublishWebsiteCmsSectionAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
+            rateLimitingEnabled);
+
+        ApplyAdminWriteRateLimiting(
             app.MapPost(ApiConstants.AdminWebsiteCmsSectionInitializeMissingRoute, InitializeMissingWebsiteCmsSectionsAsync)
             .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
             rateLimitingEnabled);
@@ -437,6 +442,23 @@ public static class AdminEndpoints
         try
         {
             var result = await websiteCmsAdminMutationService.PublishSectionAsync(sectionKey, request, cancellationToken);
+            return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+    }
+
+    private static async Task<IResult> UnpublishWebsiteCmsSectionAsync(
+        string sectionKey,
+        AdminWebsiteCmsSectionUnpublishRequest request,
+        IWebsiteCmsAdminMutationService websiteCmsAdminMutationService,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await websiteCmsAdminMutationService.UnpublishSectionAsync(sectionKey, request, cancellationToken);
             return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
         }
         catch (InvalidOperationException ex)

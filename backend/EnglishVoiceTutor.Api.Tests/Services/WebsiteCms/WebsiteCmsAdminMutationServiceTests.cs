@@ -295,6 +295,75 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         Assert.Contains("does not enable live Paddle", response.Message);
     }
 
+    [Fact]
+    public async Task UnpublishSectionAsync_RejectsUnknownKey()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var response = await new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("unknown", new() { ChangeReason = "Unpublish internal copy" }, TestContext.Current.CancellationToken);
+
+        Assert.Null(response);
+    }
+
+    [Fact]
+    public async Task UnpublishSectionAsync_RequiresChangeReason()
+    {
+        await using var dbContext = CreateDbContext();
+        SeedPublishedSection(dbContext, "privacy", "Draft remains");
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("privacy", new() { ChangeReason = " " }, TestContext.Current.CancellationToken));
+
+        Assert.Contains("Change reason is required", ex.Message);
+    }
+
+    [Fact]
+    public async Task UnpublishSectionAsync_BlocksSecretLikeChangeReason()
+    {
+        await using var dbContext = CreateDbContext();
+        SeedPublishedSection(dbContext, "privacy", "Draft remains");
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("privacy", new() { ChangeReason = "Bearer abcdefghijklmnopqrstuvwxyz123456" }, TestContext.Current.CancellationToken));
+
+        Assert.Contains("blocked secret-like marker", ex.Message);
+    }
+
+    [Fact]
+    public async Task UnpublishSectionAsync_ClearsPublishedFieldsDoesNotChangeDraftAndSetsDraftStatus()
+    {
+        await using var dbContext = CreateDbContext();
+        SeedPublishedSection(dbContext, "privacy", "Draft remains");
+
+        var response = await new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("privacy", new() { ChangeReason = "Remove internal published legal copy" }, TestContext.Current.CancellationToken);
+
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "privacy", TestContext.Current.CancellationToken);
+        Assert.NotNull(response);
+        Assert.Equal("Draft remains", row.DraftBody);
+        Assert.Null(row.PublishedBody);
+        Assert.Null(row.PublishedAtUtc);
+        Assert.Equal("draft", row.ReviewStatus);
+        Assert.True(response.DraftBodyExists);
+        Assert.False(response.PublishedBodyExists);
+        Assert.Null(response.PublishedAtUtc);
+        Assert.Contains("Public website rendering was not changed", response.Message);
+        Assert.Contains("site/public was not modified", response.Message);
+        Assert.Contains("live Paddle was not enabled", response.Message);
+    }
+
+    [Fact]
+    public async Task UnpublishSectionAsync_SetsNotStartedWhenDraftBodyIsEmpty()
+    {
+        await using var dbContext = CreateDbContext();
+        SeedPublishedSection(dbContext, "privacy", string.Empty);
+
+        var response = await new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("privacy", new() { ChangeReason = "Remove internal published legal copy" }, TestContext.Current.CancellationToken);
+
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "privacy", TestContext.Current.CancellationToken);
+        Assert.NotNull(response);
+        Assert.Equal("not_started", row.ReviewStatus);
+        Assert.Equal("not_started", response.ReviewStatus);
+        Assert.False(response.DraftBodyExists);
+    }
+
     private static void SeedPublishableSection(AppDbContext dbContext, string sectionKey, string draftBody, string reviewStatus)
     {
         var now = DateTimeOffset.Parse("2026-06-27T10:00:00Z");
@@ -309,6 +378,24 @@ public sealed class WebsiteCmsAdminMutationServiceTests
             CreatedAtUtc = now,
             UpdatedAtUtc = now,
             PublishedAtUtc = null
+        });
+        dbContext.SaveChanges();
+    }
+
+    private static void SeedPublishedSection(AppDbContext dbContext, string sectionKey, string draftBody)
+    {
+        var now = DateTimeOffset.Parse("2026-06-27T10:00:00Z");
+        dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
+        {
+            Id = Guid.NewGuid(),
+            SectionKey = sectionKey,
+            DraftBody = draftBody,
+            PublishedBody = "Published copy",
+            ReviewStatus = "legal_approved",
+            ChangeReason = "Seed",
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+            PublishedAtUtc = now
         });
         dbContext.SaveChanges();
     }
