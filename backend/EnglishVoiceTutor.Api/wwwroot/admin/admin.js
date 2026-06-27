@@ -549,29 +549,37 @@
     function setWebsiteCmsLoading(isLoading) { if (websiteCmsLoadingElement) { websiteCmsLoadingElement.classList.toggle("hidden", !isLoading); } }
     function formatWebsiteCmsValue(value) { return value === null || value === undefined || value === "" ? "-" : String(value); }
     function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[character])); }
+    function getWebsiteCmsSectionGroup(sectionKey) {
+        if (sectionKey === "home") { return "home"; }
+        if (sectionKey === "desktop") { return "desktop"; }
+        if (sectionKey === "mobile") { return "mobile"; }
+        return "legal";
+    }
+
     function renderWebsiteCmsSectionOverview(payload) {
         if (!websiteCmsSectionOverviewElement) { return; }
         const sections = Array.isArray(payload?.sections) ? payload.sections : [];
+        document.querySelectorAll("[data-website-cms-group]").forEach((container) => { container.innerHTML = ""; });
         if (sections.length === 0) {
             websiteCmsSectionOverviewElement.innerHTML = '<p class="muted">No Website CMS section metadata was returned.</p>';
             return;
         }
-        const rows = sections.map((section) => `<tr><td><button type="button" class="link-button" data-website-cms-section-key="${escapeHtml(section.sectionKey)}"><code>${escapeHtml(section.sectionKey)}</code></button></td><td>${escapeHtml(section.displayName)}</td><td>${escapeHtml(section.reviewStatus || "Not stored")}</td><td>${section.storedRowExists ? "Stored" : "Not stored"}</td><td>${section.draftBodyExists ? "Yes" : "No"}</td><td>${section.publishedBodyExists ? "Yes" : "No"}</td><td>${escapeHtml(formatWebsiteCmsValue(section.effectiveDate))}</td><td>${escapeHtml(formatWebsiteCmsValue(section.updatedAtUtc))}</td><td>${escapeHtml(formatWebsiteCmsValue(section.publishedAtUtc))}</td></tr>`).join("");
-        websiteCmsSectionOverviewElement.innerHTML = `<table><thead><tr><th>Section key</th><th>Display name</th><th>Review status</th><th>Stored</th><th>Draft exists</th><th>Published exists</th><th>Effective date</th><th>Updated</th><th>Published</th></tr></thead><tbody>${rows}</tbody></table>`;
+        sections.forEach((section) => {
+            const group = getWebsiteCmsSectionGroup(section.sectionKey);
+            const container = document.querySelector(`[data-website-cms-group="${group}"]`);
+            if (container) {
+                container.insertAdjacentHTML("beforeend", `<button type="button" class="link-button" data-website-cms-section-key="${escapeHtml(section.sectionKey)}">${escapeHtml(section.displayName)}</button>`);
+            }
+        });
+        const rows = sections.map((section) => `<tr><td><button type="button" class="link-button" data-website-cms-section-key="${escapeHtml(section.sectionKey)}"><code>${escapeHtml(section.sectionKey)}</code></button></td><td>${escapeHtml(section.displayName)}</td><td>${section.storedRowExists ? "Stored" : "Not stored"}</td><td>${section.draftBodyExists ? "Yes" : "No"}</td><td>${escapeHtml(formatWebsiteCmsValue(section.updatedAtUtc))}</td></tr>`).join("");
+        websiteCmsSectionOverviewElement.innerHTML = `<table><thead><tr><th>Section key</th><th>Display name</th><th>Stored</th><th>Text exists</th><th>Updated</th></tr></thead><tbody>${rows}</tbody></table>`;
         if (websiteCmsCheckedAtElement) { websiteCmsCheckedAtElement.textContent = payload?.checkedAtUtc ? `Metadata checked at ${payload.checkedAtUtc}.` : ""; }
     }
     function websiteCmsPath(template, sectionKey) { return template.replace("{sectionKey}", encodeURIComponent(sectionKey)); }
     function renderWebsiteCmsDetail(detail) {
         if (!websiteCmsDetailElement) { return; }
-        const statuses = ["not_started", "draft", "owner_review_needed", "legal_review_needed", "owner_approved", "legal_approved"];
-        const options = statuses.map((status) => `<option value="${status}" ${detail.reviewStatus === status ? "selected" : ""}>${status}</option>`).join("");
-        websiteCmsDetailElement.innerHTML = `<h4>Draft detail: <code>${escapeHtml(detail.sectionKey)}</code></h4><p class="muted">${escapeHtml(detail.displayName)} — ${escapeHtml(detail.description)}</p><p class="cms-inline-warning">Admin-only draft storage. Saving here does not publish, does not update public website rendering, and does not modify <code>site/public</code>. Draft copy is not final legal advice or legal approval. Validate, preview, and review status changes do not publish or update the public site.</p><div class="cms-button-row"><button id="website-cms-validate-draft-button" type="button">Validate draft</button><button id="website-cms-preview-draft-button" type="button">Preview draft</button></div><div id="website-cms-validation-result" class="muted" role="status"></div><div id="website-cms-preview-panel" class="cms-readonly-notice hidden" role="status"></div><form id="website-cms-draft-form"><input type="hidden" id="website-cms-detail-key" value="${escapeHtml(detail.sectionKey)}" /><div class="field"><label for="website-cms-draft-body">DraftBody</label><textarea id="website-cms-draft-body" rows="12">${escapeHtml(detail.draftBody || "")}</textarea></div><div class="field"><label for="website-cms-internal-notes">InternalNotes</label><textarea id="website-cms-internal-notes" rows="4">${escapeHtml(detail.internalNotes || "")}</textarea></div><div class="field"><label for="website-cms-effective-date">EffectiveDate</label><input id="website-cms-effective-date" type="date" value="${escapeHtml(detail.effectiveDate || "")}" /></div><div class="field"><label for="website-cms-review-status">ReviewStatus</label><select id="website-cms-review-status">${options}</select></div><div class="field"><label for="website-cms-change-reason">ChangeReason (required)</label><input id="website-cms-change-reason" type="text" required autocomplete="off" placeholder="Why is this draft changing?" /></div><p class="muted">Published body exists: ${detail.publishedBodyExists ? "Yes" : "No"}. Published timestamp: ${escapeHtml(formatWebsiteCmsValue(detail.publishedAtUtc))}. Saving a draft does not change either value.</p><div class="cms-button-row"><button id="website-cms-save-draft-button" type="submit">Save draft</button><button id="website-cms-review-status-button" type="button">Change review status only</button><button id="website-cms-publish-button" type="button">Publish section to Website CMS only</button><button id="website-cms-unpublish-button" type="button">Unpublish from Website CMS only</button></div><p class="cms-inline-warning">Admin-only Website CMS publish copies DraftBody to PublishedBody only. Unpublish from Website CMS only clears internal PublishedBody / PublishedAtUtc only. Unpublish does not update public site rendering, does not modify site/public, and does not enable live Paddle. ChangeReason is required.</p><p class="muted">owner_approved/legal_approved are internal review markers only; they are not automatic publish and are not final legal advice by themselves. Validate and preview remain available before publish.</p></form>`;
+        websiteCmsDetailElement.innerHTML = `<h4>Edit website text: ${escapeHtml(detail.displayName)}</h4><p class="muted"><code>${escapeHtml(detail.sectionKey)}</code> — ${escapeHtml(detail.description)}</p><p class="cms-inline-warning">Saved website text is stored in CMS. Public website rendering is still a separate step. This admin-only save does not publish public pages, does not modify <code>site/public</code>, and does not enable live Paddle.</p><form id="website-cms-draft-form"><input type="hidden" id="website-cms-detail-key" value="${escapeHtml(detail.sectionKey)}" /><div class="field"><label for="website-cms-draft-body">Website text</label><textarea id="website-cms-draft-body" rows="14">${escapeHtml(detail.draftBody || "")}</textarea></div><input id="website-cms-internal-notes" type="hidden" value="${escapeHtml(detail.internalNotes || "")}" /><input id="website-cms-effective-date" type="hidden" value="${escapeHtml(detail.effectiveDate || "")}" /><input id="website-cms-review-status" type="hidden" value="draft" /><div class="field"><label for="website-cms-change-reason">Change note</label><input id="website-cms-change-reason" type="text" required autocomplete="off" placeholder="What changed?" /></div><div class="cms-button-row"><button id="website-cms-save-draft-button" type="submit">Save</button></div></form>`;
         document.getElementById("website-cms-draft-form")?.addEventListener("submit", saveWebsiteCmsDraft);
-        document.getElementById("website-cms-validate-draft-button")?.addEventListener("click", validateWebsiteCmsDraft);
-        document.getElementById("website-cms-preview-draft-button")?.addEventListener("click", previewWebsiteCmsDraft);
-        document.getElementById("website-cms-review-status-button")?.addEventListener("click", updateWebsiteCmsReviewStatus);
-        document.getElementById("website-cms-publish-button")?.addEventListener("click", publishWebsiteCmsSection);
-        document.getElementById("website-cms-unpublish-button")?.addEventListener("click", unpublishWebsiteCmsSection);
     }
     async function loadWebsiteCmsSectionDetail(sectionKey) {
         if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = ""; }
@@ -588,10 +596,10 @@
             reviewStatus: document.getElementById("website-cms-review-status")?.value || "draft",
             changeReason: document.getElementById("website-cms-change-reason")?.value || ""
         };
-        if (!payload.changeReason.trim()) { if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = "ChangeReason is required."; } return; }
+        if (!payload.changeReason.trim()) { if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = "Change note is required."; } return; }
         try {
             const detail = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionDraftTemplate, sectionKey), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-            if (websiteCmsSaveResultElement) { websiteCmsSaveResultElement.textContent = `Draft saved for ${detail.sectionKey}. This did not publish or update public rendering.`; }
+            if (websiteCmsSaveResultElement) { websiteCmsSaveResultElement.textContent = `Saved website text for ${detail.sectionKey}. Public website rendering is still a separate step.`; }
             renderWebsiteCmsDetail(detail);
             await loadWebsiteCmsSectionOverview();
         } catch (error) {

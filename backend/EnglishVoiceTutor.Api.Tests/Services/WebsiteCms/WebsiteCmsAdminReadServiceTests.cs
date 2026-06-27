@@ -14,9 +14,9 @@ public sealed class WebsiteCmsAdminReadServiceTests
 
         var response = await new WebsiteCmsAdminReadService(dbContext).GetSectionOverviewAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(9, response.Sections.Count);
-        Assert.Contains(response.Sections, section => section.SectionKey == "seller_company" && !section.StoredRowExists);
-        Assert.Contains(response.Sections, section => section.SectionKey == "platform_status" && !section.DraftBodyExists && !section.PublishedBodyExists);
+        Assert.Equal(12, response.Sections.Count);
+        Assert.Contains(response.Sections, section => section.SectionKey == "legal_seller_company" && !section.StoredRowExists);
+        Assert.Contains(response.Sections, section => section.SectionKey == "legal_platform_status" && !section.DraftBodyExists && !section.PublishedBodyExists);
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public sealed class WebsiteCmsAdminReadServiceTests
         dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
         {
             Id = Guid.NewGuid(),
-            SectionKey = "privacy",
+            SectionKey = "legal_privacy",
             DraftBody = "Draft body must not be exposed.",
             PublishedBody = "Published body must not be exposed.",
             ReviewStatus = "approved",
@@ -40,7 +40,7 @@ public sealed class WebsiteCmsAdminReadServiceTests
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var response = await new WebsiteCmsAdminReadService(dbContext).GetSectionOverviewAsync(TestContext.Current.CancellationToken);
-        var privacy = Assert.Single(response.Sections, section => section.SectionKey == "privacy");
+        var privacy = Assert.Single(response.Sections, section => section.SectionKey == "legal_privacy");
 
         Assert.True(privacy.StoredRowExists);
         Assert.Equal("approved", privacy.ReviewStatus);
@@ -59,7 +59,7 @@ public sealed class WebsiteCmsAdminReadServiceTests
         dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
         {
             Id = Guid.NewGuid(),
-            SectionKey = "support",
+            SectionKey = "legal_support",
             DraftBody = "Support draft",
             PublishedBody = null,
             ReviewStatus = "draft",
@@ -73,11 +73,11 @@ public sealed class WebsiteCmsAdminReadServiceTests
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = new WebsiteCmsAdminReadService(dbContext);
-        var detail = await service.GetSectionDetailAsync("support", TestContext.Current.CancellationToken);
+        var detail = await service.GetSectionDetailAsync("legal_support", TestContext.Current.CancellationToken);
         var unknown = await service.GetSectionDetailAsync("unknown", TestContext.Current.CancellationToken);
 
         Assert.NotNull(detail);
-        Assert.Equal("support", detail.SectionKey);
+        Assert.Equal("legal_support", detail.SectionKey);
         Assert.Equal("Support draft", detail.DraftBody);
         Assert.False(detail.PublishedBodyExists);
         Assert.Null(unknown);
@@ -90,17 +90,17 @@ public sealed class WebsiteCmsAdminReadServiceTests
         dbContext.WebsiteCmsSections.AddRange(
             new WebsiteCmsSectionEntity
             {
-                Id = Guid.NewGuid(), SectionKey = "privacy", DraftBody = " ", PublishedBody = null, ReviewStatus = "not_started", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow
+                Id = Guid.NewGuid(), SectionKey = "legal_privacy", DraftBody = " ", PublishedBody = null, ReviewStatus = "not_started", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow
             },
             new WebsiteCmsSectionEntity
             {
-                Id = Guid.NewGuid(), SectionKey = "terms", DraftBody = "bearer abcdefghijklmnopqrstuvwxyz123456", PublishedBody = null, ReviewStatus = "draft", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow
+                Id = Guid.NewGuid(), SectionKey = "legal_terms", DraftBody = "bearer abcdefghijklmnopqrstuvwxyz123456", PublishedBody = null, ReviewStatus = "draft", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow
             });
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = new WebsiteCmsAdminReadService(dbContext);
-        var empty = await service.ValidateDraftAsync("privacy", TestContext.Current.CancellationToken);
-        var blocked = await service.ValidateDraftAsync("terms", TestContext.Current.CancellationToken);
+        var empty = await service.ValidateDraftAsync("legal_privacy", TestContext.Current.CancellationToken);
+        var blocked = await service.ValidateDraftAsync("legal_terms", TestContext.Current.CancellationToken);
 
         Assert.NotNull(empty);
         Assert.Equal("warning", empty.Status);
@@ -118,15 +118,15 @@ public sealed class WebsiteCmsAdminReadServiceTests
         var updatedAt = DateTimeOffset.Parse("2026-06-26T10:00:00Z");
         dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
         {
-            Id = Guid.NewGuid(), SectionKey = "support", DraftBody = "Support draft", PublishedBody = "Published", ReviewStatus = "owner_approved", EffectiveDate = new DateOnly(2026, 7, 1), InternalNotes = "Admin note", ChangeReason = "Existing", CreatedAtUtc = updatedAt.AddDays(-1), UpdatedAtUtc = updatedAt, PublishedAtUtc = updatedAt.AddHours(1)
+            Id = Guid.NewGuid(), SectionKey = "legal_support", DraftBody = "Support draft", PublishedBody = "Published", ReviewStatus = "owner_approved", EffectiveDate = new DateOnly(2026, 7, 1), InternalNotes = "Admin note", ChangeReason = "Existing", CreatedAtUtc = updatedAt.AddDays(-1), UpdatedAtUtc = updatedAt, PublishedAtUtc = updatedAt.AddHours(1)
         });
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var preview = await new WebsiteCmsAdminReadService(dbContext).GetDraftPreviewAsync("support", TestContext.Current.CancellationToken);
-        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "support", TestContext.Current.CancellationToken);
+        var preview = await new WebsiteCmsAdminReadService(dbContext).GetDraftPreviewAsync("legal_support", TestContext.Current.CancellationToken);
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "legal_support", TestContext.Current.CancellationToken);
 
         Assert.NotNull(preview);
-        Assert.Equal("support", preview.SectionKey);
+        Assert.Equal("legal_support", preview.SectionKey);
         Assert.Equal("Support draft", preview.DraftBody);
         Assert.Equal("owner_approved", preview.ReviewStatus);
         Assert.Equal("Admin note", preview.AdminOnlyInternalNotes);
