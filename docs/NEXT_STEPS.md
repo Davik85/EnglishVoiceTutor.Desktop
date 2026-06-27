@@ -65,17 +65,16 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 
 
 
-## Website CMS next safe steps after 2026-06-27 admin-only publish rollout
+## Website CMS next safe steps after 2026-06-27 simplification
 
-Current status: Website is a top-level Admin Shell tab, Website CMS persistence exists, production migration `20260625090000_AddWebsiteCmsLegalContentFoundation` has been applied, backend `0.1.35-backend.57` is deployed and healthy, and static public pages remain the public rendering source. The Admin Website tab supports metadata overview, section selection/detail loading, draft body, internal notes, effective date, review status, required change reason, admin-only Save draft, stored-draft validation, admin-only simple-text preview, safe review-status updates, explicit admin-only publish to Website CMS `PublishedBody`, and simple admin-only unpublish that clears internal `PublishedBody` / `PublishedAtUtc` only. Production smoke on `platform_status` verified draft save, review status set to `legal_approved`, validation, admin-only preview, publish copy from `DraftBody` into `PublishedBody`, and `PublishedAtUtc` population; public rendering did not change. Smoke data was manually cleaned up before the simple admin-only unpublish foundation existed. After cleanup all 9 rows are back to `ReviewStatus=not_started`, empty draft bodies, and `PublishedBody` null / `has_published=false`.
+Current status: Website is a top-level Admin Shell tab with simple website text management for Legal pages, Home page, Desktop page, and Mobile page / Coming soon. The visible UI is no longer a complex legal/publish workflow; it provides section selection, website text editing, Change note, and Save. Saved website text is stored in CMS, while public website rendering remains static and separate.
 
 Safe next steps:
 
-1. Next functional Website CMS implementation should be **revision history design/implementation** or owner/legal copy preparation outside code, not public rendering. Simple admin-only unpublish now exists, but for legal/policy pages, prefer published revision history before any public Website CMS rendering integration.
-2. Prepare owner/legal-approved public legal, seller, support, refund, cancellation, privacy, terms, and pricing copy outside code in parallel. Final legal/seller/support/pricing copy still requires owner/legal approval.
-3. Keep `WebsiteCmsContentGuard` and draft validation conservative; secret-like values and private/provider identifiers must remain blocked before persistence, review, publish, rollback, or unpublish.
-4. Keep public rendering integration deferred until rollback/unpublish rules are implemented or the risk is explicitly accepted in a separate reviewed decision. Do not connect Website CMS to public routes, do not change static `site/public/`, and do not serve drafts publicly.
-5. Keep live Paddle as a separate readiness step. Do not add checkout links/buttons, live Paddle enablement, or billing behavior changes as part of Website CMS work.
+1. Prepare real website/legal copy outside code for Terms, Privacy Policy, Refund Policy, Cancellation Policy, Support, Pricing, Seller / Company details, AI / data disclosure, Platform availability, Home, Desktop, and Mobile / Coming soon text.
+2. After copy is ready, connect public rendering to approved CMS text in a separate controlled task with explicit safety review. That later task must ensure public rendering reads only approved/published text and never exposes drafts or internal notes.
+3. Keep `site/public/` unchanged until that separate rendering task is approved.
+4. Keep live Paddle, checkout links/buttons, billing behavior, entitlement behavior, Desktop behavior, migrations, deployment scripts, production config, backend environment variables, and secrets out of Website CMS text-management work.
 
 ## Release-readiness roadmap
 

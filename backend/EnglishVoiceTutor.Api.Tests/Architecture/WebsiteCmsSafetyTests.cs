@@ -49,37 +49,37 @@ public sealed class WebsiteCmsSafetyTests
     }
 
     [Fact]
-    public void AdminWebsiteTab_IsTopLevelAndDisplaysDraftSaveGuardrailWording()
+    public void AdminWebsiteTab_IsTopLevelAndDisplaysSimpleWebsiteTextManager()
     {
         var adminIndex = File.ReadAllText(Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/wwwroot/admin/index.html"));
         var adminScript = File.ReadAllText(Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js"));
 
-        Assert.Contains("data-tab-id=\"website\"", adminIndex, StringComparison.Ordinal);
-        Assert.Contains("Initialize missing Website CMS sections", adminIndex, StringComparison.Ordinal);
-        Assert.Contains("empty Website CMS metadata rows only", adminIndex, StringComparison.Ordinal);
-        Assert.Contains("DraftBody", adminScript, StringComparison.Ordinal);
-        Assert.Contains("InternalNotes", adminScript, StringComparison.Ordinal);
-        Assert.Contains("ChangeReason (required)", adminScript, StringComparison.Ordinal);
-        Assert.Contains("Save draft", adminScript, StringComparison.Ordinal);
-        Assert.Contains("Validate draft", adminScript, StringComparison.Ordinal);
-        Assert.Contains("Preview draft", adminScript, StringComparison.Ordinal);
-        Assert.Contains("owner_approved/legal_approved are internal review markers only", adminScript, StringComparison.Ordinal);
-        Assert.Contains("Publish section to Website CMS only", adminScript, StringComparison.Ordinal);
-        Assert.Contains("Unpublish from Website CMS only", adminScript, StringComparison.Ordinal);
-        Assert.Contains("Admin-only Website CMS publish copies DraftBody to PublishedBody only", adminScript, StringComparison.Ordinal);
-        Assert.Contains("clears internal PublishedBody / PublishedAtUtc only", adminScript, StringComparison.Ordinal);
-        Assert.Contains("does not update public site rendering", adminScript, StringComparison.Ordinal);
-        Assert.Contains("does not modify site/public", adminScript, StringComparison.Ordinal);
-        Assert.Contains("does not enable live Paddle", adminScript, StringComparison.Ordinal);
-        Assert.Contains("Admin-only draft storage", adminIndex, StringComparison.Ordinal);
-        Assert.Contains("Saving drafts does not publish", adminIndex, StringComparison.Ordinal);
-        Assert.Contains("Public site still renders static", adminIndex, StringComparison.Ordinal);
-        Assert.Contains("/api/admin/website-cms/sections/overview", adminScript, StringComparison.Ordinal);
-        Assert.Contains("/api/admin/website-cms/sections/initialize-missing", adminScript, StringComparison.Ordinal);
-        Assert.Contains("/api/admin/website-cms/sections/{sectionKey}", adminScript, StringComparison.Ordinal);
-        Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/draft", adminScript, StringComparison.Ordinal);
-        Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/publish", adminScript, StringComparison.Ordinal);
-        Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/unpublish", adminScript, StringComparison.Ordinal);
+        Assert.Contains(@"data-tab-id=""website""", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("Website text manager", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("Legal pages", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("Home page", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("Desktop page", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("Mobile page / Coming soon", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("Saved website text is stored in CMS. Public website rendering is still a separate step.", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("Website text", adminScript, StringComparison.Ordinal);
+        Assert.Contains("Change note", adminScript, StringComparison.Ordinal);
+        Assert.Contains(@"placeholder=""What changed?""", adminScript, StringComparison.Ordinal);
+        Assert.Contains(">Save</button>", adminScript, StringComparison.Ordinal);
+
+        var visibleDetailStart = adminScript.IndexOf("function renderWebsiteCmsDetail", StringComparison.Ordinal);
+        var visibleDetailEnd = adminScript.IndexOf("async function loadWebsiteCmsSectionDetail", visibleDetailStart, StringComparison.Ordinal);
+        var visibleDetail = adminScript[visibleDetailStart..visibleDetailEnd];
+
+        Assert.DoesNotContain("Validate draft", visibleDetail, StringComparison.Ordinal);
+        Assert.DoesNotContain("Preview draft", visibleDetail, StringComparison.Ordinal);
+        Assert.DoesNotContain("Change review status", visibleDetail, StringComparison.Ordinal);
+        Assert.DoesNotContain("Publish section to Website CMS only", visibleDetail, StringComparison.Ordinal);
+        Assert.DoesNotContain("Unpublish from Website CMS only", visibleDetail, StringComparison.Ordinal);
+        Assert.DoesNotContain("legal_approved", visibleDetail, StringComparison.Ordinal);
+        Assert.DoesNotContain("owner_approved", visibleDetail, StringComparison.Ordinal);
+        Assert.DoesNotContain("rollback", visibleDetail, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("does not modify <code>site/public</code>", visibleDetail, StringComparison.Ordinal);
+        Assert.Contains("does not enable live Paddle", visibleDetail, StringComparison.Ordinal);
     }
 
     [Fact]
