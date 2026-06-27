@@ -524,7 +524,7 @@
                     <div id="tab-panel-website" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-website">
                         <article class="card cms-warning-card" aria-labelledby="cms-website-heading">
                             <h3 id="cms-website-heading">Website CMS planning status</h3>
-                            <p class="muted"><strong>Read-only metadata view.</strong> This panel loads admin-only Website CMS section metadata. Editing and publish are not implemented yet, and public site still renders static <code>site/public</code> files.</p>
+                            <p class="muted"><strong>Admin-only draft storage.</strong> This panel loads Website CMS metadata and can save draft bodies for admin review. Publish is not implemented, and public site still renders static <code>site/public</code> files.</p>
                             <ul class="placeholder-list">
                                 <li><span>Current public website source is still static files under <code>site/public/</code>.</span><span class="badge unavailable">Not connected</span></li>
                                 <li><span>Current public pages are temporary Paddle review-readiness shells.</span><span class="badge unavailable">Temporary</span></li>
@@ -533,14 +533,16 @@
                                 <li><span>Public site rendering is not connected to CMS yet.</span><span class="badge unavailable">No runtime impact</span></li>
                                 <li><span>No live Paddle billing is enabled from this tab.</span><span class="badge unavailable">No billing action</span></li>
                             </ul>
-                            <div class="cms-readonly-notice" role="note">Read-only metadata view. Editing, save draft, and publish are not implemented yet. Public site still renders static <code>site/public</code> files.</div>
-                            <div class="cms-readonly-notice" role="note">Initialization creates empty Website CMS metadata rows only. It does not add legal text editing, body editing, save draft body controls, publish, or public rendering.</div>
+                            <div class="cms-readonly-notice" role="note">Admin-only draft storage is enabled for initialized sections. Saving drafts does not publish, does not approve legal copy, and does not affect public rendering. Public site still renders static <code>site/public</code> files.</div>
+                            <div class="cms-readonly-notice" role="note">Initialization creates empty Website CMS metadata rows only. Draft editing is admin-only storage; publish and public rendering remain unavailable.</div>
                             <div class="cms-button-row"><button id="website-cms-initialize-missing-button" type="button">Initialize missing Website CMS sections</button></div>
                             <p id="website-cms-initialize-result" class="muted" role="status"></p>
                             <p id="website-cms-loading" class="lookup-loading hidden" role="status">Loading Website CMS metadata...</p>
                             <p id="website-cms-error" class="error" role="alert"></p>
                             <div id="website-cms-section-overview" class="table-wrap cms-wide-table-wrap" data-website-cms-section-overview="true"></div>
                             <p id="website-cms-checked-at" class="muted" role="status"></p>
+                            <p id="website-cms-save-result" class="muted" role="status"></p>
+                            <div id="website-cms-section-detail" class="cms-detail-panel" data-website-cms-section-detail="true"><p class="muted">Select a section key to load admin-only draft detail and save controls.</p></div>
                         </article>
                         <article class="card cms-compact-card" aria-labelledby="cms-website-guardrails-heading">
                             <h3 id="cms-website-guardrails-heading">Website CMS guardrails</h3>

@@ -236,3 +236,9 @@ That slice should only introduce safe storage/read views and admin navigation pl
 ## Current-slice confirmation
 
 This plan now records a backend foundation slice and admin-only missing-section initialization action. It does not change public rendering, public static pages, billing behavior, entitlement behavior, Desktop behavior, deployment scripts, production configuration, backend environment variables, or Paddle configuration. The added migration is scoped to Website CMS section storage only and does not alter existing lesson/content/runtime behavior.
+
+## Draft detail/save slice added 2026-06-26
+
+The next small admin-only slice now adds initialized-section detail reads and draft-body saves for Admin Website CMS rows. Admins can load a section detail and save `DraftBody`, `ReviewStatus`, `EffectiveDate`, `InternalNotes`, and required `ChangeReason`; saves run the Website CMS content guard before persistence. This remains draft storage only: no publish workflow, no public website rendering, no static `site/public` changes, no live Paddle enablement, and no legal approval is implied.
+
+Publish, public preview/rendering, owner/legal review workflow, and final legal/seller approval remain deferred.

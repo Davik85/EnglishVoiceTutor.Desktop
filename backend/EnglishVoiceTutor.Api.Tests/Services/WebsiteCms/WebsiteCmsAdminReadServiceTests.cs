@@ -51,6 +51,38 @@ public sealed class WebsiteCmsAdminReadServiceTests
         Assert.True(privacy.PublishedBodyExists);
     }
 
+    [Fact]
+    public async Task GetSectionDetailAsync_ReturnsInitializedRowAndRejectsUnknownKey()
+    {
+        await using var dbContext = CreateDbContext();
+        var now = DateTimeOffset.Parse("2026-06-26T12:00:00Z");
+        dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
+        {
+            Id = Guid.NewGuid(),
+            SectionKey = "support",
+            DraftBody = "Support draft",
+            PublishedBody = null,
+            ReviewStatus = "draft",
+            EffectiveDate = new DateOnly(2026, 7, 1),
+            InternalNotes = "Internal",
+            ChangeReason = "Initial draft",
+            CreatedAtUtc = now.AddHours(-1),
+            UpdatedAtUtc = now,
+            PublishedAtUtc = null
+        });
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var service = new WebsiteCmsAdminReadService(dbContext);
+        var detail = await service.GetSectionDetailAsync("support", TestContext.Current.CancellationToken);
+        var unknown = await service.GetSectionDetailAsync("unknown", TestContext.Current.CancellationToken);
+
+        Assert.NotNull(detail);
+        Assert.Equal("support", detail.SectionKey);
+        Assert.Equal("Support draft", detail.DraftBody);
+        Assert.False(detail.PublishedBodyExists);
+        Assert.Null(unknown);
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

@@ -11,6 +11,8 @@ public sealed class WebsiteCmsSafetyTests
 
         Assert.Contains("/api/admin/website-cms/sections/overview", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("/api/admin/website-cms/sections/initialize-missing", apiConstants, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("/api/admin/website-cms/sections/{sectionKey}", apiConstants, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/draft", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/api/website", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/api/public", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/api/website-cms", apiConstants, StringComparison.OrdinalIgnoreCase);
@@ -19,7 +21,7 @@ public sealed class WebsiteCmsSafetyTests
     }
 
     [Fact]
-    public void WebsiteCmsOverviewAndInitializationEndpoints_UseAdminRoutesAndCmsAuthorization()
+    public void WebsiteCmsEndpoints_UseAdminRoutesAndCmsAuthorization()
     {
         var adminEndpoints = File.ReadAllText(Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs"));
         var apiConstants = File.ReadAllText(Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/Constants/ApiConstants.cs"));
@@ -30,11 +32,14 @@ public sealed class WebsiteCmsSafetyTests
         Assert.Contains("AdminWebsiteCmsSectionInitializeMissingRoute = \"/api/admin/website-cms/sections/initialize-missing\"", apiConstants, StringComparison.Ordinal);
         Assert.Contains("app.MapPost(ApiConstants.AdminWebsiteCmsSectionInitializeMissingRoute, InitializeMissingWebsiteCmsSectionsAsync)", adminEndpoints, StringComparison.Ordinal);
         Assert.Contains("RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName)", adminEndpoints, StringComparison.Ordinal);
+        Assert.Contains("app.MapGet(ApiConstants.AdminWebsiteCmsSectionDetailRoute, GetWebsiteCmsSectionDetailAsync)", adminEndpoints, StringComparison.Ordinal);
+        Assert.Contains("app.MapPut(ApiConstants.AdminWebsiteCmsSectionDraftRoute, SaveWebsiteCmsSectionDraftAsync)", adminEndpoints, StringComparison.Ordinal);
+        Assert.Contains("RequireRateLimiting(RateLimitingConstants.AdminWritePolicyName)", adminEndpoints, StringComparison.Ordinal);
         Assert.DoesNotContain("MapPut(ApiConstants.AdminWebsiteCmsSectionOverviewRoute", adminEndpoints, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void AdminWebsiteTab_IsTopLevelAndDisplaysReadOnlyMetadataWording()
+    public void AdminWebsiteTab_IsTopLevelAndDisplaysDraftSaveGuardrailWording()
     {
         var adminIndex = File.ReadAllText(Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/wwwroot/admin/index.html"));
         var adminScript = File.ReadAllText(Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js"));
@@ -42,12 +47,17 @@ public sealed class WebsiteCmsSafetyTests
         Assert.Contains("data-tab-id=\"website\"", adminIndex, StringComparison.Ordinal);
         Assert.Contains("Initialize missing Website CMS sections", adminIndex, StringComparison.Ordinal);
         Assert.Contains("empty Website CMS metadata rows only", adminIndex, StringComparison.Ordinal);
-        Assert.Contains("does not add legal text editing, body editing, save draft body controls, publish, or public rendering", adminIndex, StringComparison.Ordinal);
-        Assert.Contains("Read-only metadata view", adminIndex, StringComparison.Ordinal);
-        Assert.Contains("Editing, save draft, and publish are not implemented yet", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("DraftBody", adminScript, StringComparison.Ordinal);
+        Assert.Contains("InternalNotes", adminScript, StringComparison.Ordinal);
+        Assert.Contains("ChangeReason (required)", adminScript, StringComparison.Ordinal);
+        Assert.Contains("Save draft", adminScript, StringComparison.Ordinal);
+        Assert.Contains("Admin-only draft storage", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("Saving drafts does not publish", adminIndex, StringComparison.Ordinal);
         Assert.Contains("Public site still renders static", adminIndex, StringComparison.Ordinal);
         Assert.Contains("/api/admin/website-cms/sections/overview", adminScript, StringComparison.Ordinal);
         Assert.Contains("/api/admin/website-cms/sections/initialize-missing", adminScript, StringComparison.Ordinal);
+        Assert.Contains("/api/admin/website-cms/sections/{sectionKey}", adminScript, StringComparison.Ordinal);
+        Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/draft", adminScript, StringComparison.Ordinal);
         Assert.Contains("no editing, publish, or public rendering was added", adminScript, StringComparison.Ordinal);
     }
 

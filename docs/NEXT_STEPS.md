@@ -281,3 +281,7 @@ Completed: backend `0.1.35-backend.50` was packaged, uploaded, deployed, restart
 ## Admin payment-event statistics follow-up
 
 Admin Product Statistics now separates access-state metrics from payment-event metrics: `Active Premium users now` remains a current entitlement/access metric, while `Successful payments total` and `Successful payments current month` are aggregate successful payment-event counts from internal normalized payment records. Continue to validate billing flows in sandbox and keep production/live Paddle readiness deferred until live credentials, webhook destination, reconciliation, refund/chargeback/customer portal, legal/support, monitoring, and operational runbooks are complete. Do not claim broad public production readiness.
+
+### After admin-only Website CMS draft save
+
+The next safe Website CMS step is validation/preview/review workflow design for owner/legal review, including clearer field validation and non-public preview semantics. Do not move directly to public rendering or publishing until review workflow, approvals, rollback behavior, and legal ownership are explicitly defined and tested.

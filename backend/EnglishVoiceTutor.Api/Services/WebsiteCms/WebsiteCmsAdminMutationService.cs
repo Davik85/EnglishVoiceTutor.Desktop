@@ -9,6 +9,15 @@ public sealed class WebsiteCmsAdminMutationService(AppDbContext dbContext) : IWe
 {
     private const string InitialReviewStatus = "not_started";
     private const string InitializationChangeReason = "Initialize Website CMS section metadata";
+    private static readonly HashSet<string> AllowedReviewStatuses = new(StringComparer.Ordinal)
+    {
+        "not_started",
+        "draft",
+        "owner_review_needed",
+        "legal_review_needed",
+        "owner_approved",
+        "legal_approved"
+    };
 
     private readonly AppDbContext _dbContext = dbContext;
 
@@ -59,6 +68,61 @@ public sealed class WebsiteCmsAdminMutationService(AppDbContext dbContext) : IWe
             TotalExpectedCount = expectedSections.Count,
             Sections = results,
             CheckedAtUtc = now
+        };
+    }
+
+    public async Task<AdminWebsiteCmsSectionDetailResponse?> SaveDraftAsync(string sectionKey, AdminWebsiteCmsSectionDraftSaveRequest request, CancellationToken cancellationToken)
+    {
+        var expected = WebsiteCmsExpectedSections.All.SingleOrDefault(section => string.Equals(section.SectionKey, sectionKey, StringComparison.Ordinal));
+        if (expected is null)
+        {
+            return null;
+        }
+
+        var changeReason = request.ChangeReason?.Trim();
+        if (string.IsNullOrWhiteSpace(changeReason))
+        {
+            throw new InvalidOperationException("Change reason is required.");
+        }
+
+        var reviewStatus = string.IsNullOrWhiteSpace(request.ReviewStatus) ? "draft" : request.ReviewStatus.Trim();
+        if (!AllowedReviewStatuses.Contains(reviewStatus))
+        {
+            throw new InvalidOperationException($"Review status must be one of: {string.Join(", ", AllowedReviewStatuses)}.");
+        }
+
+        WebsiteCmsContentGuard.ThrowIfBlocked(request.DraftBody, request.InternalNotes, changeReason);
+
+        var row = await _dbContext.WebsiteCmsSections.SingleOrDefaultAsync(section => section.SectionKey == sectionKey, cancellationToken);
+        if (row is null)
+        {
+            return null;
+        }
+
+        row.DraftBody = request.DraftBody ?? string.Empty;
+        row.ReviewStatus = reviewStatus;
+        row.EffectiveDate = request.EffectiveDate;
+        row.InternalNotes = string.IsNullOrWhiteSpace(request.InternalNotes) ? null : request.InternalNotes.Trim();
+        row.ChangeReason = changeReason;
+        row.UpdatedAtUtc = DateTimeOffset.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new AdminWebsiteCmsSectionDetailResponse
+        {
+            SectionKey = expected.SectionKey,
+            DisplayName = expected.DisplayName,
+            Description = expected.Description,
+            ReviewStatus = row.ReviewStatus,
+            EffectiveDate = row.EffectiveDate,
+            DraftBody = row.DraftBody,
+            PublishedBodyExists = !string.IsNullOrWhiteSpace(row.PublishedBody),
+            PublishedAtUtc = row.PublishedAtUtc,
+            InternalNotes = row.InternalNotes,
+            ChangeReason = row.ChangeReason,
+            CreatedAtUtc = row.CreatedAtUtc,
+            UpdatedAtUtc = row.UpdatedAtUtc,
+            CheckedAtUtc = DateTimeOffset.UtcNow
         };
     }
 }
