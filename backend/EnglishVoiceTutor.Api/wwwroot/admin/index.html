@@ -36,7 +36,6 @@
                     <button id="tab-button-free-lesson" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-free-lesson" aria-selected="false" data-tab-id="free-lesson">Free Lesson</button>
                     <button id="tab-button-audit-log" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-audit-log" aria-selected="false" data-tab-id="audit-log">Audit Log</button>
                     <button id="tab-button-cms-content" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-cms-content" aria-selected="false" data-tab-id="cms-content">CMS Content</button>
-                    <button id="tab-button-website" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-website" aria-selected="false" data-tab-id="website">Website</button>
                     <button id="tab-button-role-management" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-role-management" aria-selected="false" data-tab-id="role-management">Role Assignments</button>
                     <button id="tab-button-system" class="admin-tab-button" type="button" role="tab" aria-controls="tab-panel-system" aria-selected="false" data-tab-id="system">System</button>
                 </nav>
@@ -499,8 +498,6 @@
                             </article>
                         </section>
 
-
-
                         <section id="cms-sub-panel-audit" class="cms-sub-panel hidden" role="tabpanel" aria-labelledby="cms-sub-tab-button-audit" data-cms-sub-panel="audit">
                             <article class="card" aria-labelledby="cms-audit-heading">
                                 <h3 id="cms-audit-heading">Recent CMS changes</h3>
@@ -518,58 +515,6 @@
                                 <div id="cms-audit-list" class="table-wrap cms-wide-table-wrap" data-cms-audit-list="true"></div>
                             </article>
                         </section>
-                    </div>
-
-
-                    <div id="tab-panel-website" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-website">
-                        <article class="card cms-warning-card" aria-labelledby="cms-website-heading">
-                            <h3 id="cms-website-heading">Website text manager</h3>
-                            <p class="muted"><strong>Simple admin website text storage.</strong> Use this tab to manage public website text drafts for legal, home, desktop, and mobile/coming-soon pages without editing code.</p>
-                            <div class="cms-readonly-notice" role="note">Website CMS now manages active public website text. Static site text remains the fallback.</div>
-                            <div class="cms-readonly-notice" role="note">Saving text here becomes active for public rendering through the Website CMS API. It does not modify <code>site/public</code>, enable live Paddle, or change billing, entitlement, or Desktop behavior.</div>
-                            <div class="website-cms-simple-sections" aria-label="Website text sections">
-                                <section class="cms-readonly-notice" aria-labelledby="website-cms-legal-heading">
-                                    <h4 id="website-cms-legal-heading">Legal pages</h4>
-                                    <p class="muted">Terms, Privacy Policy, Refund Policy, Cancellation Policy, Support, Pricing, Seller / Company details, AI / data disclosure, and Platform availability.</p>
-                                    <div id="website-cms-legal-pages" class="cms-button-row" data-website-cms-group="legal"></div>
-                                </section>
-                                <section class="cms-readonly-notice" aria-labelledby="website-cms-home-heading">
-                                    <h4 id="website-cms-home-heading">Home page</h4>
-                                    <p class="muted">Hero title, hero subtitle, short product description, tester / download copy, and footer/support copy.</p>
-                                    <div id="website-cms-home-page" class="cms-button-row" data-website-cms-group="home"></div>
-                                </section>
-                                <section class="cms-readonly-notice" aria-labelledby="website-cms-desktop-heading">
-                                    <h4 id="website-cms-desktop-heading">Desktop page</h4>
-                                    <p class="muted">Windows desktop app title, description, download/tester wording, and requirements / availability copy.</p>
-                                    <div id="website-cms-desktop-page" class="cms-button-row" data-website-cms-group="desktop"></div>
-                                </section>
-                                <section class="cms-readonly-notice" aria-labelledby="website-cms-mobile-heading">
-                                    <h4 id="website-cms-mobile-heading">Mobile page / Coming soon</h4>
-                                    <p class="muted">Mobile status, coming soon wording, and future availability wording.</p>
-                                    <div id="website-cms-mobile-page" class="cms-button-row" data-website-cms-group="mobile"></div>
-                                </section>
-                            </div>
-                            <div class="cms-button-row"><button id="website-cms-initialize-missing-button" type="button">Load current website texts</button></div>
-                            <p id="website-cms-initialize-result" class="muted" role="status"></p>
-                            <p id="website-cms-loading" class="lookup-loading hidden" role="status">Loading Website CMS metadata...</p>
-                            <p id="website-cms-error" class="error" role="alert"></p>
-                            <div id="website-cms-section-overview" class="table-wrap cms-wide-table-wrap" data-website-cms-section-overview="true"></div>
-                            <p id="website-cms-checked-at" class="muted" role="status"></p>
-                            <p id="website-cms-save-result" class="muted" role="status"></p>
-                            <div id="website-cms-section-detail" class="cms-detail-panel" data-website-cms-section-detail="true"><p class="muted">Select a Website section to edit its text.</p></div>
-                        </article>
-                        <article class="card cms-compact-card" aria-labelledby="cms-website-guardrails-heading">
-                            <h3 id="cms-website-guardrails-heading">Website CMS guardrails</h3>
-                            <p class="cms-inline-warning">Do not paste private billing, identity, provider, authentication, or diagnostic values into future public copy.</p>
-                            <ul>
-                                <li>Do not paste Paddle secrets.</li>
-                                <li>Do not paste webhook secrets.</li>
-                                <li>Do not paste API keys.</li>
-                                <li>Do not paste JWT keys.</li>
-                                <li>Do not paste raw provider payloads.</li>
-                                <li>Do not paste customer IDs, transaction IDs, or subscription IDs into public copy.</li>
-                            </ul>
-                        </article>
                     </div>
 
 

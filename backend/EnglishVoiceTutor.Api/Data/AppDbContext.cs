@@ -1,6 +1,5 @@
 using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Data.Entities.Cms;
-using EnglishVoiceTutor.Api.Data.Entities.WebsiteCms;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnglishVoiceTutor.Api.Data;
@@ -40,7 +39,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<ContentVersionEntity> ContentVersions => Set<ContentVersionEntity>();
     public DbSet<PublishedContentSnapshotEntity> PublishedContentSnapshots => Set<PublishedContentSnapshotEntity>();
     public DbSet<ContentAuditLogEntity> ContentAuditLogs => Set<ContentAuditLogEntity>();
-    public DbSet<WebsiteCmsSectionEntity> WebsiteCmsSections => Set<WebsiteCmsSectionEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -71,7 +69,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigurePasswordResetTokens(modelBuilder);
         ConfigureUserRefreshTokens(modelBuilder);
         ConfigureCmsContent(modelBuilder);
-        ConfigureWebsiteCmsContent(modelBuilder);
     }
 
     private static void ConfigureUsers(ModelBuilder modelBuilder)
@@ -610,23 +607,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureContentVersions(modelBuilder);
         ConfigurePublishedContentSnapshots(modelBuilder);
         ConfigureContentAuditLogs(modelBuilder);
-    }
-
-    private static void ConfigureWebsiteCmsContent(ModelBuilder modelBuilder)
-    {
-        var entity = modelBuilder.Entity<WebsiteCmsSectionEntity>();
-        entity.ToTable(EntityConstants.TableNames.WebsiteCmsSections);
-        entity.HasKey(section => section.Id);
-        entity.Property(section => section.SectionKey).IsRequired().HasMaxLength(EntityConstants.Lengths.WebsiteCmsSectionKeyMaxLength);
-        entity.Property(section => section.DraftBody).IsRequired();
-        entity.Property(section => section.PublishedBody);
-        entity.Property(section => section.ReviewStatus).IsRequired().HasMaxLength(EntityConstants.Lengths.CmsStatusMaxLength);
-        entity.Property(section => section.InternalNotes).HasMaxLength(EntityConstants.Lengths.CmsReasonMaxLength);
-        entity.Property(section => section.ChangeReason).HasMaxLength(EntityConstants.Lengths.CmsReasonMaxLength);
-        entity.Property(section => section.CreatedAtUtc).IsRequired();
-        entity.Property(section => section.UpdatedAtUtc).IsRequired();
-        entity.HasIndex(section => section.SectionKey).IsUnique();
-        entity.HasIndex(section => section.ReviewStatus);
     }
 
     private static void ConfigureContentPacks(ModelBuilder modelBuilder)

@@ -5,7 +5,6 @@ using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Auth;
 using EnglishVoiceTutor.Api.Services.Cms;
-using EnglishVoiceTutor.Api.Services.WebsiteCms;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -38,51 +37,6 @@ public static class AdminEndpoints
         ApplyAdminReadRateLimiting(
             app.MapGet(ApiConstants.AdminStatisticsOverviewRoute, GetProductStatisticsOverviewAsync)
             .RequireAuthorization(AdminAuthorizationConstants.ProductStatisticsReadPermissionPolicyName),
-            rateLimitingEnabled);
-
-        ApplyAdminReadRateLimiting(
-            app.MapGet(ApiConstants.AdminWebsiteCmsSectionOverviewRoute, GetWebsiteCmsSectionOverviewAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
-            rateLimitingEnabled);
-
-        ApplyAdminReadRateLimiting(
-            app.MapGet(ApiConstants.AdminWebsiteCmsSectionDetailRoute, GetWebsiteCmsSectionDetailAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
-            rateLimitingEnabled);
-
-        ApplyAdminWriteRateLimiting(
-            app.MapPut(ApiConstants.AdminWebsiteCmsSectionDraftRoute, SaveWebsiteCmsSectionDraftAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
-            rateLimitingEnabled);
-
-        ApplyAdminReadRateLimiting(
-            app.MapPost(ApiConstants.AdminWebsiteCmsSectionDraftValidateRoute, ValidateWebsiteCmsSectionDraftAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
-            rateLimitingEnabled);
-
-        ApplyAdminReadRateLimiting(
-            app.MapGet(ApiConstants.AdminWebsiteCmsSectionDraftPreviewRoute, PreviewWebsiteCmsSectionDraftAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
-            rateLimitingEnabled);
-
-        ApplyAdminWriteRateLimiting(
-            app.MapPut(ApiConstants.AdminWebsiteCmsSectionReviewStatusRoute, UpdateWebsiteCmsSectionReviewStatusAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
-            rateLimitingEnabled);
-
-        ApplyAdminWriteRateLimiting(
-            app.MapPost(ApiConstants.AdminWebsiteCmsSectionPublishRoute, PublishWebsiteCmsSectionAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
-            rateLimitingEnabled);
-
-        ApplyAdminWriteRateLimiting(
-            app.MapPost(ApiConstants.AdminWebsiteCmsSectionUnpublishRoute, UnpublishWebsiteCmsSectionAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
-            rateLimitingEnabled);
-
-        ApplyAdminWriteRateLimiting(
-            app.MapPost(ApiConstants.AdminWebsiteCmsSectionInitializeMissingRoute, InitializeMissingWebsiteCmsSectionsAsync)
-            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
             rateLimitingEnabled);
 
         ApplyAdminReadRateLimiting(
@@ -361,117 +315,6 @@ public static class AdminEndpoints
     private static IResult GetAdminCapabilities(IAdminCapabilitiesService adminCapabilitiesService)
     {
         return Results.Ok(adminCapabilitiesService.GetCapabilities());
-    }
-
-    private static async Task<IResult> GetWebsiteCmsSectionOverviewAsync(
-        IWebsiteCmsAdminReadService websiteCmsAdminReadService,
-        CancellationToken cancellationToken)
-    {
-        return Results.Ok(await websiteCmsAdminReadService.GetSectionOverviewAsync(cancellationToken));
-    }
-
-    private static async Task<IResult> GetWebsiteCmsSectionDetailAsync(
-        string sectionKey,
-        IWebsiteCmsAdminReadService websiteCmsAdminReadService,
-        CancellationToken cancellationToken)
-    {
-        var result = await websiteCmsAdminReadService.GetSectionDetailAsync(sectionKey, cancellationToken);
-        return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
-    }
-
-    private static async Task<IResult> SaveWebsiteCmsSectionDraftAsync(
-        string sectionKey,
-        AdminWebsiteCmsSectionDraftSaveRequest request,
-        IWebsiteCmsAdminMutationService websiteCmsAdminMutationService,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var result = await websiteCmsAdminMutationService.SaveDraftAsync(sectionKey, request, cancellationToken);
-            return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Results.BadRequest(new { error = ex.Message });
-        }
-    }
-
-
-    private static async Task<IResult> ValidateWebsiteCmsSectionDraftAsync(
-        string sectionKey,
-        IWebsiteCmsAdminReadService websiteCmsAdminReadService,
-        CancellationToken cancellationToken)
-    {
-        var result = await websiteCmsAdminReadService.ValidateDraftAsync(sectionKey, cancellationToken);
-        return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
-    }
-
-    private static async Task<IResult> PreviewWebsiteCmsSectionDraftAsync(
-        string sectionKey,
-        IWebsiteCmsAdminReadService websiteCmsAdminReadService,
-        CancellationToken cancellationToken)
-    {
-        var result = await websiteCmsAdminReadService.GetDraftPreviewAsync(sectionKey, cancellationToken);
-        return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
-    }
-
-    private static async Task<IResult> UpdateWebsiteCmsSectionReviewStatusAsync(
-        string sectionKey,
-        AdminWebsiteCmsSectionReviewStatusUpdateRequest request,
-        IWebsiteCmsAdminMutationService websiteCmsAdminMutationService,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var result = await websiteCmsAdminMutationService.UpdateReviewStatusAsync(sectionKey, request, cancellationToken);
-            return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Results.BadRequest(new { error = ex.Message });
-        }
-    }
-
-
-    private static async Task<IResult> PublishWebsiteCmsSectionAsync(
-        string sectionKey,
-        AdminWebsiteCmsSectionPublishRequest request,
-        IWebsiteCmsAdminMutationService websiteCmsAdminMutationService,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var result = await websiteCmsAdminMutationService.PublishSectionAsync(sectionKey, request, cancellationToken);
-            return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Results.BadRequest(new { error = ex.Message });
-        }
-    }
-
-    private static async Task<IResult> UnpublishWebsiteCmsSectionAsync(
-        string sectionKey,
-        AdminWebsiteCmsSectionUnpublishRequest request,
-        IWebsiteCmsAdminMutationService websiteCmsAdminMutationService,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var result = await websiteCmsAdminMutationService.UnpublishSectionAsync(sectionKey, request, cancellationToken);
-            return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Results.BadRequest(new { error = ex.Message });
-        }
-    }
-
-    private static async Task<IResult> InitializeMissingWebsiteCmsSectionsAsync(
-        IWebsiteCmsAdminMutationService websiteCmsAdminMutationService,
-        CancellationToken cancellationToken)
-    {
-        return Results.Ok(await websiteCmsAdminMutationService.InitializeMissingSectionsAsync(cancellationToken));
     }
 
     private static async Task<IResult> GetProductStatisticsOverviewAsync(

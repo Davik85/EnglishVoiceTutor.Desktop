@@ -150,7 +150,6 @@ Upload Windows direct release files only to `/var/www/languagevoicetutor/release
 
 ## Backend-only deployment commands
 
-Example package command for the current backend snapshot (`0.1.35-backend.57` as last verified after the Website CMS admin-only publish rollout; use the server `current` symlink as source of truth):
 
 ```powershell
 $BackendVersion = "0.1.35-backend.57"
@@ -165,26 +164,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.
   -PackageFirst
 ```
 
-Backend deploys are separate from EF migrations and Windows release upload. The backend upload flow does not run `dotnet ef database update`, does not apply SQL, does not upload Windows installer files, and does not change the public Windows `latest.json`. For `0.1.35-backend.57`, the backend package/upload deploy reused the already-applied Website CMS schema; the admin-only publish smoke was a separate Admin Website action and did not apply migrations, alter public rendering, or modify `site/public/`. Backend deploys do not upload Windows installer files and do not change `latest.json`.
-
-Previous backend release for rollback reference should be verified from the server before rollback; `0.1.35-backend.57` was the active release after the Website CMS admin-only publish rollout.
-
-
-### Website CMS migration SQL generation
-
-Use this only to generate reviewable SQL for the Website CMS foundation migration; it does not apply SQL, does not run `dotnet ef database update`, and must not print database secrets:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\generate-backend-website-cms-migration-sql.ps1
 ```
 
 Expected output path:
 
 ```text
-artifacts/sql/backend/20260625090000_AddWebsiteCmsLegalContentFoundation.from-20260620165657.sql
 ```
 
-Production rollout for `20260625090000_AddWebsiteCmsLegalContentFoundation` was completed manually from reviewed SQL on 2026-06-25. Future schema work must keep this separation: generate/review SQL, back up/verify the target, apply manually through an approved operator path, then deploy/restart backend if needed. The backend package/upload scripts do not run migrations.
 
 When a manual SQL migration creates a new table, include a runtime DB role grant check after the reviewed SQL is applied. For the current production setup, the runtime app DB role is `lvt_app`. After creating a new table through `postgres`-owned reviewed SQL, inspect privileges without pasting database passwords or connection strings into docs or commands:
 

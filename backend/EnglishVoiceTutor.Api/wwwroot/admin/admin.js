@@ -37,16 +37,7 @@
         roleAssignmentAssign: "/api/admin/role-assignments/assign",
         roleAssignmentRevoke: "/api/admin/role-assignments/revoke",
         roleAssignmentDisableAdmin: "/api/admin/role-assignments/disable-admin",
-        roleAssignmentEnableAdmin: "/api/admin/role-assignments/enable-admin",
-        websiteCmsSectionOverview: "/api/admin/website-cms/sections/overview",
-        websiteCmsSectionDetailTemplate: "/api/admin/website-cms/sections/{sectionKey}",
-        websiteCmsSectionDraftTemplate: "/api/admin/website-cms/sections/{sectionKey}/draft",
-        websiteCmsSectionDraftValidateTemplate: "/api/admin/website-cms/sections/{sectionKey}/draft/validate",
-        websiteCmsSectionDraftPreviewTemplate: "/api/admin/website-cms/sections/{sectionKey}/draft/preview",
-        websiteCmsSectionReviewStatusTemplate: "/api/admin/website-cms/sections/{sectionKey}/review-status",
-        websiteCmsSectionPublishTemplate: "/api/admin/website-cms/sections/{sectionKey}/publish",
-        websiteCmsSectionUnpublishTemplate: "/api/admin/website-cms/sections/{sectionKey}/unpublish",
-        websiteCmsInitializeMissing: "/api/admin/website-cms/sections/initialize-missing"
+        roleAssignmentEnableAdmin: "/api/admin/role-assignments/enable-admin"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
@@ -78,8 +69,7 @@
         roleManagementLoadFailed: "Unable to load role management data.",
         roleManagementMutationFailed: "Unable to update persistent admin access.",
         roleManagementReasonRequired: "Reason is required.",
-        roleManagementConfirmationRequired: "Confirm that this action changes persistent admin access.",
-        websiteCmsLoadFailed: "Unable to load Website CMS metadata."
+        roleManagementConfirmationRequired: "Confirm that this action changes persistent admin access."
     };
 
     const SummaryFields = ["userId", "email", "status", "createdAt", "lastLoginAt"];
@@ -89,7 +79,7 @@
     const DailyUsageColumns = ["usageDate", "studyLanguage", "lessonsStarted", "lessonsCompleted", "chatReplyCount", "hintsUsed", "feedbackRequests", "transcriptionSeconds", "ttsSeconds", "estimatedCost", "updatedAt"];
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
-    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", website: "website", roleManagement: "role-management", system: "system" });
+    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", roleManagement: "role-management", system: "system" });
     const AdminPermissionIds = Object.freeze({
         usersRead: "users.read",
         usersDiagnosticsRead: "users.diagnostics.read",
@@ -127,7 +117,6 @@
     let selectedUserEmail = null;
     let selectedUserLookupPayload = null;
     let cmsHasLoadedOnce = false;
-    let websiteCmsHasLoadedOnce = false;
     let cmsSelectedTopic = null;
     let cmsSelectedScenario = null;
     let cmsSelectedPromptTemplate = null;
@@ -185,14 +174,6 @@
     const statisticsErrorElement = document.getElementById("statistics-error");
     const statisticsCardsElement = document.getElementById("statistics-cards");
     const statisticsCheckedAtElement = document.getElementById("statistics-checked-at");
-    const websiteCmsLoadingElement = document.getElementById("website-cms-loading");
-    const websiteCmsErrorElement = document.getElementById("website-cms-error");
-    const websiteCmsSectionOverviewElement = document.getElementById("website-cms-section-overview");
-    const websiteCmsCheckedAtElement = document.getElementById("website-cms-checked-at");
-    const websiteCmsInitializeMissingButton = document.getElementById("website-cms-initialize-missing-button");
-    const websiteCmsInitializeResultElement = document.getElementById("website-cms-initialize-result");
-    const websiteCmsDetailElement = document.getElementById("website-cms-section-detail");
-    const websiteCmsSaveResultElement = document.getElementById("website-cms-save-result");
     const studyLanguageDistributionElement = document.getElementById("study-language-distribution");
     const nativeLanguageDistributionElement = document.getElementById("native-language-distribution");
     const explanationLanguageDistributionElement = document.getElementById("explanation-language-distribution");
@@ -444,7 +425,7 @@
         const existing = getHashParameters();
         const parameters = new URLSearchParams();
         parameters.set("adminTab", selectedTabId);
-        if (selectedTabId === Tabs.cmsContent) { parameters.set("cmsSubTab", selectedCmsSubTabId); }
+        if (selectedTabId === Tabs.cmsContent || selectedCmsSubTabId !== CmsSubTabs.overview) { parameters.set("cmsSubTab", selectedCmsSubTabId); }
         ["selectedUserId", "contentPackSlug", "topicKey", "scenarioKey", "promptTemplateKey", "tutorId"].forEach((key) => {
             const value = Object.prototype.hasOwnProperty.call(changes, key) ? changes[key] : existing.get(key);
             if (value) { parameters.set(key, value); }
@@ -542,172 +523,8 @@
                 if (!cmsHasLoadedOnce) { await loadCmsContentPacks(); }
             }
             if (tabId === Tabs.overview) { await loadProductStatistics(); }
-            if (tabId === Tabs.website && !websiteCmsHasLoadedOnce) { await loadWebsiteCmsSectionOverview(); }
         }));
     }
-
-    function setWebsiteCmsLoading(isLoading) { if (websiteCmsLoadingElement) { websiteCmsLoadingElement.classList.toggle("hidden", !isLoading); } }
-    function formatWebsiteCmsValue(value) { return value === null || value === undefined || value === "" ? "-" : String(value); }
-    function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[character])); }
-    function getWebsiteCmsSectionGroup(sectionKey) {
-        if (sectionKey === "home") { return "home"; }
-        if (sectionKey === "desktop") { return "desktop"; }
-        if (sectionKey === "mobile") { return "mobile"; }
-        return "legal";
-    }
-
-    function renderWebsiteCmsSectionOverview(payload) {
-        if (!websiteCmsSectionOverviewElement) { return; }
-        const sections = Array.isArray(payload?.sections) ? payload.sections : [];
-        document.querySelectorAll("[data-website-cms-group]").forEach((container) => { container.innerHTML = ""; });
-        if (sections.length === 0) {
-            websiteCmsSectionOverviewElement.innerHTML = '<p class="muted">No Website CMS section metadata was returned.</p>';
-            return;
-        }
-        sections.forEach((section) => {
-            const group = getWebsiteCmsSectionGroup(section.sectionKey);
-            const container = document.querySelector(`[data-website-cms-group="${group}"]`);
-            if (container) {
-                container.insertAdjacentHTML("beforeend", `<button type="button" class="link-button" data-website-cms-section-key="${escapeHtml(section.sectionKey)}">${escapeHtml(section.displayName)}</button>`);
-            }
-        });
-        const rows = sections.map((section) => `<tr><td><button type="button" class="link-button" data-website-cms-section-key="${escapeHtml(section.sectionKey)}"><code>${escapeHtml(section.sectionKey)}</code></button></td><td>${escapeHtml(section.displayName)}</td><td>${section.storedRowExists ? "Stored" : "Default available"}</td><td>${section.draftBodyExists ? "Yes" : "No"}</td><td>${escapeHtml(formatWebsiteCmsValue(section.updatedAtUtc))}</td></tr>`).join("");
-        websiteCmsSectionOverviewElement.innerHTML = `<table><thead><tr><th>Section key</th><th>Display name</th><th>Stored</th><th>Text exists</th><th>Updated</th></tr></thead><tbody>${rows}</tbody></table>`;
-        if (websiteCmsCheckedAtElement) { websiteCmsCheckedAtElement.textContent = payload?.checkedAtUtc ? `Metadata checked at ${payload.checkedAtUtc}.` : ""; }
-    }
-    function websiteCmsPath(template, sectionKey) { return template.replace("{sectionKey}", encodeURIComponent(sectionKey)); }
-    function renderWebsiteCmsDetail(detail) {
-        if (!websiteCmsDetailElement) { return; }
-        websiteCmsDetailElement.innerHTML = `<h4>Edit website text: ${escapeHtml(detail.displayName)}</h4><p class="muted"><code>${escapeHtml(detail.sectionKey)}</code> — ${escapeHtml(detail.description)}</p><p class="cms-inline-warning">Save makes this the active public website text when the public site can reach the CMS API. Static site text remains the fallback, and live Paddle is not enabled.</p><form id="website-cms-draft-form"><input type="hidden" id="website-cms-detail-key" value="${escapeHtml(detail.sectionKey)}" /><div class="field"><label for="website-cms-draft-body">Website text</label><textarea id="website-cms-draft-body" rows="14">${escapeHtml(detail.draftBody || "")}</textarea></div><input id="website-cms-internal-notes" type="hidden" value="${escapeHtml(detail.internalNotes || "")}" /><input id="website-cms-effective-date" type="hidden" value="${escapeHtml(detail.effectiveDate || "")}" /><input id="website-cms-review-status" type="hidden" value="draft" /><div class="field"><label for="website-cms-change-reason">Change note</label><input id="website-cms-change-reason" type="text" required autocomplete="off" placeholder="What changed?" /></div><div class="cms-button-row"><button id="website-cms-save-draft-button" type="submit">Save</button></div></form>`;
-        document.getElementById("website-cms-draft-form")?.addEventListener("submit", saveWebsiteCmsDraft);
-    }
-    async function loadWebsiteCmsSectionDetail(sectionKey) {
-        if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = ""; }
-        const detail = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionDetailTemplate, sectionKey), { method: "GET" });
-        renderWebsiteCmsDetail(detail);
-    }
-    async function saveWebsiteCmsDraft(event) {
-        event.preventDefault();
-        const sectionKey = document.getElementById("website-cms-detail-key")?.value || "";
-        const payload = {
-            draftBody: document.getElementById("website-cms-draft-body")?.value || "",
-            internalNotes: document.getElementById("website-cms-internal-notes")?.value || "",
-            effectiveDate: document.getElementById("website-cms-effective-date")?.value || null,
-            reviewStatus: document.getElementById("website-cms-review-status")?.value || "draft",
-            changeReason: document.getElementById("website-cms-change-reason")?.value || ""
-        };
-        if (!payload.changeReason.trim()) { if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = "Change note is required."; } return; }
-        try {
-            const detail = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionDraftTemplate, sectionKey), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-            if (websiteCmsSaveResultElement) { websiteCmsSaveResultElement.textContent = `Saved active website text for ${detail.sectionKey}.`; }
-            renderWebsiteCmsDetail(detail);
-            await loadWebsiteCmsSectionOverview();
-        } catch (error) {
-            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to save Website CMS draft."; }
-        }
-    }
-
-    async function validateWebsiteCmsDraft() {
-        const sectionKey = document.getElementById("website-cms-detail-key")?.value || "";
-        const resultElement = document.getElementById("website-cms-validation-result");
-        try {
-            const result = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionDraftValidateTemplate, sectionKey), { method: "POST" });
-            const errors = (result.errors || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-            const warnings = (result.warnings || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-            if (resultElement) { resultElement.innerHTML = `<strong>Validation ${escapeHtml(result.status)}</strong> at ${escapeHtml(result.checkedAtUtc)}. This did not publish or update public rendering.${errors ? `<h5>Errors</h5><ul>${errors}</ul>` : ""}${warnings ? `<h5>Warnings</h5><ul>${warnings}</ul>` : ""}`; }
-        } catch (error) {
-            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to validate Website CMS draft."; }
-        }
-    }
-
-    async function previewWebsiteCmsDraft() {
-        const sectionKey = document.getElementById("website-cms-detail-key")?.value || "";
-        const panel = document.getElementById("website-cms-preview-panel");
-        try {
-            const preview = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionDraftPreviewTemplate, sectionKey), { method: "GET" });
-            const paragraphs = String(preview.draftBody || "").split(/\n{2,}/).map((line) => line.trim()).filter(Boolean).map((line) => `<p>${escapeHtml(line).replace(/\n/g, "<br>")}</p>`).join("") || '<p class="muted">Empty draft.</p>';
-            const warnings = (preview.warnings || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-            if (panel) { panel.classList.remove("hidden"); panel.innerHTML = `<h4>Admin-only draft preview: ${escapeHtml(preview.displayName)}</h4><p class="muted">${escapeHtml(preview.description)}</p><p><strong>Review status:</strong> ${escapeHtml(preview.reviewStatus)} | <strong>Effective date:</strong> ${escapeHtml(formatWebsiteCmsValue(preview.effectiveDate))}</p><p class="cms-inline-warning">Admin-only preview. This is simple safe text display, not public rendering, and it does not publish or update the public site.</p>${warnings ? `<ul>${warnings}</ul>` : ""}<div>${paragraphs}</div>${preview.adminOnlyInternalNotes ? `<details><summary>Admin-only internal notes</summary><p>${escapeHtml(preview.adminOnlyInternalNotes)}</p></details>` : ""}<p class="muted">Checked at ${escapeHtml(preview.checkedAtUtc)}.</p>`; }
-        } catch (error) {
-            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to preview Website CMS draft."; }
-        }
-    }
-
-    async function updateWebsiteCmsReviewStatus() {
-        const sectionKey = document.getElementById("website-cms-detail-key")?.value || "";
-        const payload = { reviewStatus: document.getElementById("website-cms-review-status")?.value || "draft", changeReason: document.getElementById("website-cms-change-reason")?.value || "" };
-        if (!payload.changeReason.trim()) { if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = "ChangeReason is required for review status changes."; } return; }
-        try {
-            const detail = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionReviewStatusTemplate, sectionKey), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-            if (websiteCmsSaveResultElement) { websiteCmsSaveResultElement.textContent = `Review status changed to ${detail.reviewStatus}. This did not publish or update public rendering.`; }
-            renderWebsiteCmsDetail(detail);
-            await loadWebsiteCmsSectionOverview();
-        } catch (error) {
-            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to update Website CMS review status."; }
-        }
-    }
-
-
-    async function publishWebsiteCmsSection() {
-        const sectionKey = document.getElementById("website-cms-detail-key")?.value || "";
-        const payload = { changeReason: document.getElementById("website-cms-change-reason")?.value || "" };
-        if (!payload.changeReason.trim()) { if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = "ChangeReason is required for admin-only Website CMS publish."; } return; }
-        try {
-            const result = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionPublishTemplate, sectionKey), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-            if (websiteCmsSaveResultElement) { websiteCmsSaveResultElement.textContent = `${result.message} Section ${result.sectionKey} published at ${result.publishedAtUtc}.`; }
-            await loadWebsiteCmsSectionOverview();
-            await loadWebsiteCmsSectionDetail(sectionKey);
-        } catch (error) {
-            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to publish Website CMS section."; }
-        }
-    }
-
-    async function unpublishWebsiteCmsSection() {
-        const sectionKey = document.getElementById("website-cms-detail-key")?.value || "";
-        const payload = { changeReason: document.getElementById("website-cms-change-reason")?.value || "" };
-        if (!payload.changeReason.trim()) { if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = "ChangeReason is required for admin-only Website CMS unpublish."; } return; }
-        try {
-            const result = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionUnpublishTemplate, sectionKey), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-            if (websiteCmsSaveResultElement) { websiteCmsSaveResultElement.textContent = `${result.message} Section ${result.sectionKey} unpublished at ${result.unpublishedCheckedAtUtc}.`; }
-            await loadWebsiteCmsSectionOverview();
-            await loadWebsiteCmsSectionDetail(sectionKey);
-        } catch (error) {
-            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to unpublish Website CMS section."; }
-        }
-    }
-
-    async function initializeMissingWebsiteCmsSections() {
-        if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = ""; }
-        if (websiteCmsInitializeResultElement) { websiteCmsInitializeResultElement.textContent = "Loading current website texts..."; }
-        if (websiteCmsInitializeMissingButton) { websiteCmsInitializeMissingButton.disabled = true; }
-        try {
-            const payload = await adminFetch(ApiPaths.websiteCmsInitializeMissing, { method: "POST" });
-            if (websiteCmsInitializeResultElement) { websiteCmsInitializeResultElement.textContent = `Current website texts loaded: ${payload.createdCount} created, ${payload.existingCount} preserved or filled, ${payload.totalExpectedCount} expected. Existing admin text was not overwritten.`; }
-            await loadWebsiteCmsSectionOverview();
-        } catch (error) {
-            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to initialize Website CMS metadata."; }
-            if (websiteCmsInitializeResultElement) { websiteCmsInitializeResultElement.textContent = ""; }
-        } finally {
-            if (websiteCmsInitializeMissingButton) { websiteCmsInitializeMissingButton.disabled = false; }
-        }
-    }
-
-    async function loadWebsiteCmsSectionOverview() {
-        if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = ""; }
-        setWebsiteCmsLoading(true);
-        try {
-            const payload = await adminFetch(ApiPaths.websiteCmsSectionOverview, { method: "GET" });
-            renderWebsiteCmsSectionOverview(payload);
-            websiteCmsHasLoadedOnce = true;
-        } catch (error) {
-            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : ErrorMessages.websiteCmsLoadFailed; }
-        } finally {
-            setWebsiteCmsLoading(false);
-        }
-    }
-
-    if (websiteCmsInitializeMissingButton) { websiteCmsInitializeMissingButton.addEventListener("click", initializeMissingWebsiteCmsSections); }
-    if (websiteCmsSectionOverviewElement) { websiteCmsSectionOverviewElement.addEventListener("click", (event) => { const button = event.target.closest("[data-website-cms-section-key]"); if (button) { loadWebsiteCmsSectionDetail(button.dataset.websiteCmsSectionKey); } }); }
 
     function updateSelectedUserHeader() {
         selectedUserSummaryElement.textContent = selectedUserEmail ? `Selected user: ${selectedUserEmail}` : "Selected user: -";
@@ -2720,7 +2537,6 @@
         if (selectedTabId === Tabs.cmsContent && !cmsHasLoadedOnce) { await loadCmsContentPacks(); }
         if (selectedTabId === Tabs.roleManagement) { await loadRoleManagementData(); }
         if (selectedTabId === Tabs.overview) { await loadProductStatistics(); }
-        if (selectedTabId === Tabs.website && !websiteCmsHasLoadedOnce) { await loadWebsiteCmsSectionOverview(); }
     }
 
     async function restoreAdminSessionFromCookie() {
