@@ -120,6 +120,28 @@ The static page under `site/public/` is the private tester download page. It rea
 
 This page does not implement auto-update and does not replace the in-app manual update check. It must not include login, payment, pricing, account management, analytics, cookies, third-party fonts, external dependencies, or broad public marketing claims.
 
+
+## Static public site deployment boundary
+
+Windows desktop installer upload is separate from static public site deployment. The Windows direct-release upload publishes release files such as `latest.json`, `checksums.sha256`, and `LanguageVoiceTutorSetup-{version}.exe`; it does not deploy backend releases, does not apply database migrations, and is not the normal flow for uploading public static website HTML/CSS/assets.
+
+The public site root confirmed from nginx is:
+
+```text
+/var/www/languagevoicetutor/site
+```
+
+For normal static public site deployment, use the existing repository script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-static-site.ps1 `
+  -ServerHost "lvt-server" `
+  -ServerUser "deploy" `
+  -RemotePath "/var/www/languagevoicetutor/site"
+```
+
+Do not invent a separate `scp`, `tar`, or bash upload flow for normal static site deployment. Static site upload does not deploy the backend, does not apply EF/database migrations, and does not publish desktop installer releases.
+
 ## Manual update UX verification
 
 The desktop Settings UX has a single user-facing **Check for updates** button. The flow checks `latest.json`, validates manifest identity, compares versions, asks before download/install, verifies SHA-256 before launching the installer, and does not silently auto-update.

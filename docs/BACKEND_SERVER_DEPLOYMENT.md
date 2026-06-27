@@ -328,3 +328,24 @@ Password reset SMTP values, including credentials, must remain server-only in `/
 ## Website CMS publishing paths
 
 The Website CMS home header is file-based, not database-based. Configure `WebsiteContent:StorageJsonPath` for the JSON content document and `WebsiteContent:PublicSiteRoot` for the static public site root. In production the verified public site root is `/var/www/languagevoicetutor/site`. Publishing updates `index.html` in that configured root and does not create EF migrations or database tables.
+
+## Static public site deployment boundary
+
+Backend deployment is separate from static public site deployment. The backend packaging/upload scripts deploy the API under `/opt/languagevoicetutor/backend`; they do not upload `site/public`, do not change the public homepage header, do not publish static assets, and do not publish Windows desktop installer releases.
+
+The public site root confirmed from nginx is:
+
+```text
+/var/www/languagevoicetutor/site
+```
+
+For normal static public site deployment, use the existing repository script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-static-site.ps1 `
+  -ServerHost "lvt-server" `
+  -ServerUser "deploy" `
+  -RemotePath "/var/www/languagevoicetutor/site"
+```
+
+Do not invent a separate `scp`, `tar`, or bash upload flow for normal static site deployment. Static site upload does not deploy the backend and does not apply EF/database migrations. Database migrations remain a separate explicit operator action with reviewed SQL/backups/verification. Desktop installer upload is also separate from static site deployment and is handled by the Windows direct-release process; static site upload does not publish installer releases.
