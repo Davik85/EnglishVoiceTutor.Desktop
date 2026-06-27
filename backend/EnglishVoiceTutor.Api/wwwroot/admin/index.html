@@ -523,26 +523,13 @@
                     <div id="tab-panel-website" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-website">
                         <article class="card">
                             <h2>Website</h2>
-                            <p class="muted">Super Admin-only JSON/file-based editor for the public homepage header. Publishing updates the static homepage HTML.</p>
+                            <p class="muted">Super Admin-only file-based editor for public website pages. Choose a page below, save a draft, then publish to update static HTML.</p>
                         </article>
-                        <section class="card">
-                            <h3>Home header</h3>
-                            <form id="website-header-form" class="website-editor-form">
-                                <div class="grid">
-                                    <div class="field"><label for="website-logo-path">Logo image path or HTTPS URL</label><input id="website-logo-path" type="text" /></div>
-                                    <div class="field"><label for="website-logo-alt">Logo alt text</label><input id="website-logo-alt" type="text" /></div>
-                                    <label class="checkbox-field"><input id="website-show-logo" type="checkbox" /> Show logo image</label>
-                                    <div class="field"><label for="website-fallback-logo-text">Fallback logo text</label><input id="website-fallback-logo-text" type="text" /></div>
-                                    <div class="field"><label for="website-header-text">Header text</label><input id="website-header-text" type="text" /></div>
-                                    <div class="field"><label for="website-language-line">Language display line</label><input id="website-language-line" type="text" /></div>
-                                    <div class="field"><label for="website-font-family">Font family</label><input id="website-font-family" type="text" /></div>
-                                    <div class="field"><label for="website-font-size">Font size (12-48px)</label><input id="website-font-size" type="number" min="12" max="48" /></div>
-                                    <div class="field"><label for="website-font-weight">Font weight</label><select id="website-font-weight"><option>400</option><option>500</option><option>600</option><option selected>700</option><option>800</option></select></div>
-                                    <div class="field"><label for="website-text-color">Text color</label><input id="website-text-color" type="text" pattern="#[0-9a-fA-F]{6}" /></div>
-                                    <div class="field"><label for="website-background-color">Header background color</label><input id="website-background-color" type="text" pattern="#[0-9a-fA-F]{6}" /></div>
-                                    <div class="field"><label for="website-padding-block">Vertical padding (8-48px)</label><input id="website-padding-block" type="number" min="8" max="48" /></div>
-                                    <div class="field"><label for="website-padding-inline">Horizontal padding (16-96px)</label><input id="website-padding-inline" type="number" min="16" max="96" /></div>
-                                </div>
+                        <section class="card website-editor-card">
+                            <div id="website-section-tabs" class="website-section-tabs" role="tablist" aria-label="Website pages and sections"></div>
+                            <form id="website-editor-form" class="website-editor-form" novalidate>
+                                <h3 id="website-editor-heading">Home page</h3>
+                                <div id="website-editor-fields" class="grid"></div>
                                 <div class="cms-button-row">
                                     <button id="website-save-draft-button" type="button">Save draft</button>
                                     <button id="website-publish-button" type="button">Publish / Make active</button>
