@@ -87,9 +87,9 @@ public static class ApiConstants
     public const string AdminMeRoute = "/api/admin/me";
     public const string AdminSessionRoute = "/api/admin/session";
     public const string AdminCapabilitiesRoute = "/api/admin/capabilities";
-    public const string AdminWebsiteHomeHeaderRoute = "/api/admin/website/home-header";
-    public const string AdminWebsiteHomeHeaderDraftRoute = "/api/admin/website/home-header/draft";
-    public const string AdminWebsiteHomeHeaderPublishRoute = "/api/admin/website/home-header/publish";
+    public const string AdminWebsiteContentRoute = "/api/admin/website/content";
+    public const string AdminWebsiteContentDraftRoute = "/api/admin/website/content/draft";
+    public const string AdminWebsiteContentPublishRoute = "/api/admin/website/content/publish";
     public const string AdminStatisticsOverviewRoute = "/api/admin/statistics/overview";
     public const string AdminRoleAssignmentDiagnosticsRoute = "/api/admin/role-assignments/diagnostics";
     public const string AdminRbacCutoverStatusRoute = "/api/admin/rbac/cutover-status";
