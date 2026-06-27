@@ -82,7 +82,7 @@ public sealed class WebsiteCmsAdminReadService(AppDbContext dbContext) : IWebsit
             Description = expected.Description,
             ReviewStatus = stored.ReviewStatus,
             EffectiveDate = stored.EffectiveDate,
-            DraftBody = string.IsNullOrWhiteSpace(stored.DraftBody) && WebsiteCmsDefaultTexts.BySectionKey.TryGetValue(expected.SectionKey, out var defaultText) ? defaultText : stored.DraftBody,
+            DraftBody = string.IsNullOrWhiteSpace(stored.DraftBody) && WebsiteCmsDefaultTexts.BySectionKey.TryGetValue(expected.SectionKey, out var storedDefaultText) ? storedDefaultText : stored.DraftBody,
             PublishedBodyExists = !string.IsNullOrWhiteSpace(stored.PublishedBody),
             PublishedAtUtc = stored.PublishedAtUtc,
             InternalNotes = stored.InternalNotes,
