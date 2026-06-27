@@ -87,8 +87,7 @@ public sealed class WebsiteCmsSafetyTests
     {
         var publicRoot = Path.Combine(RepoRoot, "site/public");
         var websiteCmsScript = File.ReadAllText(Path.Combine(publicRoot, "website-cms.js"));
-        var combined = string.Join('
-', Directory.EnumerateFiles(publicRoot, "*.html", SearchOption.TopDirectoryOnly).Select(File.ReadAllText));
+        var combined = string.Join("\n", Directory.EnumerateFiles(publicRoot, "*.html", SearchOption.TopDirectoryOnly).Select(File.ReadAllText));
 
         Assert.Contains("https://api.languagevoicetutor.com/api/website/texts", websiteCmsScript, StringComparison.Ordinal);
         Assert.Contains("data-website-cms-section", combined, StringComparison.Ordinal);
