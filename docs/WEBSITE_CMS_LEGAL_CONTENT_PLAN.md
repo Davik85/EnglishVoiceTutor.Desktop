@@ -4,7 +4,7 @@ Review date: 2026-06-27.
 
 ## Purpose
 
-Define a small, safe Admin Website CMS feature foundation and future workflow for managing public website legal, seller, support, policy, and pricing display content without code changes after implementation. The first backend foundation slice, production database rollout, Admin shell skeleton, admin-only section detail/save-draft plus validation/preview/review-status rollout, deployment, scripts, and tests are now complete. This still does not change public website rendering and does not provide final legal advice.
+Define a small, safe Admin Website CMS feature foundation and future workflow for managing public website legal, seller, support, policy, and pricing display content without code changes after implementation. The backend foundation slice, production database rollout, Admin shell skeleton, admin-only section detail/save-draft, validation/preview/review-status, and admin-only publish rollout are complete. This still does not change public website rendering and does not provide final legal advice.
 
 All legal/policy copy managed through this future CMS must be treated as owner/legal review draft content until approved by the product owner and qualified legal reviewer.
 
@@ -45,7 +45,7 @@ Acceptable alternate tab name: **Public Site**.
 
 The tab should be clearly labeled as public website content management and should show a warning that legal and policy content remains draft/review content until explicitly approved and published.
 
-Current tab behavior is admin-only draft management for initialized Website CMS sections. It can load metadata and section detail, save drafts, validate stored drafts, show admin-only simple-text previews, and move safe internal review statuses, but it does not publish content, change `site/public/`, change public rendering, or enable Paddle.
+Current tab behavior is admin-only management for initialized Website CMS sections. It can load metadata and section detail, initialize missing sections, save drafts, validate stored drafts, show admin-only simple-text previews, move safe internal review statuses, and explicitly publish an approved draft into internal Website CMS `PublishedBody` storage. It does not change `site/public/`, change public rendering, enable live Paddle, or add checkout links/buttons.
 
 ## Validation/preview/review slice
 
@@ -97,9 +97,9 @@ Keep the first version small and structured. Suggested editable sections:
    - Android/iOS wording must remain “planned” or “in development” until actually released.
    - Avoid paid-production availability claims until live billing and operations are approved.
 
-## Future admin-only publish workflow design (not implemented)
+## Admin-only publish workflow
 
-The admin-only Website CMS publish workflow without public rendering is implemented. The next functional design step should be public rendering integration design only, after owner/legal copy preparation and approval. Publishing must create or update a Website CMS published snapshot only; it must not edit `site/public/`, deploy the public site, add checkout links/buttons, enable live Paddle, or connect Website CMS data to unauthenticated public rendering.
+The admin-only Website CMS publish workflow without public rendering is implemented. Publishing creates or updates a Website CMS published snapshot only; it does not edit `site/public/`, deploy the public site, add checkout links/buttons, enable live Paddle, or connect Website CMS data to unauthenticated public rendering. The next functional Website CMS step should be publish rollback/unpublish design, or owner/legal copy preparation outside code.
 
 Required publish gates:
 
@@ -222,37 +222,37 @@ Recommended first implementation slice after this documentation:
 
 That slice should only introduce safe storage/read views and admin navigation placeholders. It should not edit `site/public/`, should not expose unauthenticated public rendering, should not enable Paddle live mode, and should not alter billing, entitlement, Desktop, deployment, or production environment behavior.
 
-## Current status after 2026-06-27 Website CMS validation/preview/review rollout
+## Current status after 2026-06-27 Website CMS admin-only publish rollout
 
-- Backend release `0.1.35-backend.56` is deployed. The production backend symlink points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.56`.
+- Backend release `0.1.35-backend.57` is deployed. The production backend symlink points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.57`.
 - Post-deploy health checks returned `200 Healthy` for `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database`.
 - Website remains a top-level Admin Shell tab, separate from the `CMS Content` sub-tabs. `CMS Content` remains focused on learner/runtime content packs.
-- The Admin Website tab supports admin-only metadata overview, missing-section initialization, section detail, draft-body save, stored-draft validation, admin-only simple-text draft preview, and review-status changes with required `ChangeReason`.
-- Save draft and validation use `WebsiteCmsContentGuard` to block obvious secret-like/private/provider identifiers. Validation reports results for the stored `DraftBody` and does not write to the database.
-- Preview is an admin-only safe text display. It does not publish content, does not update public rendering, and does not modify `site/public/`.
-- Review-status changes are internal only and do not update `PublishedBody` or `PublishedAtUtc`.
+- The Admin Website tab supports admin-only metadata overview, missing-section initialization, section detail, draft-body save, stored-draft validation, admin-only simple-text draft preview, review-status changes with required `ChangeReason`, and explicit admin-only publish to Website CMS `PublishedBody`.
+- Publish requires a non-empty `DraftBody`, non-empty `ChangeReason`, `legal_approved` status, and `WebsiteCmsContentGuard`; it copies `DraftBody` to `PublishedBody`, sets `PublishedAtUtc`, and updates metadata.
+- Publish is internal-only. It does not update public website rendering, does not modify `site/public/`, does not enable live Paddle, and does not add checkout links/buttons.
 - First backend foundation exists: the `website_cms_sections` table stores section key, draft body, optional published body, review status, effective date, internal notes, change reason, and updated/published timestamps.
 - Production DB migration `20260625090000_AddWebsiteCmsLegalContentFoundation` has been applied manually from reviewed SQL. Production `__EFMigrationsHistory` contains that migration, and the `website_cms_sections` table plus `IX_website_cms_sections_ReviewStatus`, `IX_website_cms_sections_SectionKey`, and `PK_website_cms_sections` exist.
 - Rollout note: the production table grant for `website_cms_sections` was manually corrected for runtime role `lvt_app`; future manual SQL rollouts must verify runtime DB grants after creating tables.
 - Production contains the 9 expected Website CMS rows: `seller_company`, `support`, `pricing`, `terms`, `privacy`, `refunds`, `cancellation`, `ai_data_disclosures`, and `platform_status`.
-- Production smoke test on `platform_status` passed: a temporary draft was saved, validation returned valid, the admin-only preview displayed the draft, review status changed to `owner_review_needed`, smoke data was cleared, and `ReviewStatus` was restored to `not_started`.
+- Production smoke test on `platform_status` passed: a temporary draft was saved, review status was set to `legal_approved`, validation and admin-only preview worked, publish copied `DraftBody` into `PublishedBody`, and `PublishedAtUtc` was set. Public rendering did not change.
+- Smoke data was manually cleaned up because rollback/unpublish is not implemented yet.
 - Production DB verification after cleanup confirmed 9 rows in `website_cms_sections`, `ReviewStatus=not_started` for all rows, `DraftBody` length `0` for all rows, and `PublishedBody` null / `has_published=false` for all rows.
 - Fresh service logs after smoke test showed no new `website-cms` errors, permission-denied errors, exceptions, failures, or `500` responses.
 - Public rendering is still not connected. The deployed static public website remains the actual public rendering source, and `site/public/` remains the source for static public pages.
-- Publish workflow is not implemented.
+- Rollback/unpublish is not implemented.
 - Live Paddle is still not enabled. No checkout buttons, checkout links, Paddle client tokens, live price IDs, webhook secrets, or public payment behavior were added.
 - Legal, seller, support, refund, cancellation, privacy, terms, and pricing final values still require owner/legal approval before paid public launch claims.
 
 ## Scripts and tests added for this rollout
 
 - `scripts/generate-backend-website-cms-migration-sql.ps1` generates reviewable SQL from `20260620165657_AddAdminRoleAssignmentPersistence` to `20260625090000_AddWebsiteCmsLegalContentFoundation` at `artifacts/sql/backend/20260625090000_AddWebsiteCmsLegalContentFoundation.from-20260620165657.sql`. It uses `dotnet ef migrations script` only; it does not apply SQL and does not read or print database secrets.
-- `scripts/package-backend-linux-release.ps1` and `scripts/upload-backend-linux-release.ps1` are the accepted backend package/upload scripts used for release `0.1.35-backend.56`. They do not run EF migrations or apply SQL; schema rollout remains a separate reviewed operator step.
+- `scripts/package-backend-linux-release.ps1` and `scripts/upload-backend-linux-release.ps1` are the accepted backend package/upload scripts used for release `0.1.35-backend.57`. They do not run EF migrations or apply SQL; schema rollout remains a separate reviewed operator step.
 - Coverage includes `tools/test_admin_website_cms_skeleton_policy.py`, `tools/test_backend_linux_deployment_policy.py`, `tools/test_static_site_paddle_review_pages.py`, `tools/test_documentation_source_of_truth_policy.py`, and backend API tests for `WebsiteCmsContentGuard` plus `WebsiteCmsSafetyTests`.
 
 ## Next safe steps
 
 1. Prepare owner/legal-approved public legal, seller, support, refund, cancellation, privacy, terms, and pricing copy outside code; final legal/seller/support/pricing copy still requires owner/legal approval.
-2. Next Website CMS step should be publish workflow design/specification only, not implementation. Define authorization, audit, owner/legal sign-off, rollback, and public-snapshot rules before any publish code exists.
+2. Next functional Website CMS step should be publish rollback/unpublish design, or owner/legal copy preparation outside code. Do not connect Website CMS to public routes or static site output.
 3. Keep `WebsiteCmsContentGuard` and draft validation conservative; secret-like values and private identifiers must remain blocked before persistence or review.
 4. Keep requiring a change reason for every save or internal review-status change.
 5. Defer public rendering. The public website must continue rendering from static `site/public/` until publish/public snapshot rules are approved and a separately approved published-only rendering integration is designed, reviewed, and tested.
@@ -277,6 +277,6 @@ This plan now records a backend foundation slice, admin-only missing-section ini
 
 ## Draft validation/preview/review slice added 2026-06-27
 
-The completed admin-only slice adds initialized-section detail reads, draft-body saves, stored-draft validation, admin-only safe-text preview, and internal review-status changes for Admin Website CMS rows. Admins can load section detail; save `DraftBody`, `ReviewStatus`, `EffectiveDate`, `InternalNotes`, and required `ChangeReason`; validate the stored draft without database writes; preview the draft without publishing; and move internal review statuses with a required reason. This remains draft/internal workflow only: admin-only internal publish workflow only, no public website rendering, no static `site/public` changes, no live Paddle enablement, and no legal approval is implied.
+The completed admin-only slice adds initialized-section detail reads, draft-body saves, stored-draft validation, admin-only safe-text preview, and internal review-status changes for Admin Website CMS rows. Admins can load section detail; save `DraftBody`, `ReviewStatus`, `EffectiveDate`, `InternalNotes`, and required `ChangeReason`; validate the stored draft without database writes; preview the draft without publishing; and move internal review statuses with a required reason. This remains internal workflow only: admin-only internal publish to `PublishedBody`, no public website rendering, no static `site/public` changes, no live Paddle enablement, and no legal approval is implied.
 
-Publish workflow design, public preview/rendering, final owner/legal copy approval, and live Paddle readiness remain deferred.
+Publish rollback/unpublish design, public preview/rendering, final owner/legal copy approval, and live Paddle readiness remain deferred.
