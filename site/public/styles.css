@@ -639,7 +639,7 @@ dd {
     }
 }
 
-/* Final static homepage header override */
+/* Final static homepage header layout polish */
 .site-header {
     height: 88px;
     min-height: 88px;
@@ -649,75 +649,80 @@ dd {
     color: #ffffff;
     display: flex;
     align-items: center;
-    width: 100%;
-    box-sizing: border-box;
     overflow: hidden;
 }
 
 .site-header__inner {
     width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 8px clamp(20px, 5vw, 64px);
+    height: 88px;
     display: flex;
     align-items: center;
-    gap: 18px;
+    justify-content: flex-start;
+    gap: 22px;
+    padding: 0 72px;
     box-sizing: border-box;
 }
 
 .site-header__brand {
     flex: 0 0 auto;
-    max-width: 240px;
-    height: 72px;
+    height: 88px;
+    max-width: 200px;
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     overflow: hidden;
 }
 
 .site-header img.site-header__logo-image {
     display: block;
+    max-height: 76px;
+    max-width: 190px;
     width: auto;
     height: auto;
-    max-width: 220px;
-    max-height: 72px;
     object-fit: contain;
 }
 
 .site-header__conversation {
+    flex: 0 1 auto;
+    min-width: 0;
     display: flex;
     align-items: center;
-    gap: 12px;
-    min-width: 0;
-    flex: 1 1 auto;
+    justify-content: flex-start;
+    gap: 14px;
+    margin-left: 0;
 }
 
 .site-header__headline {
     margin: 0;
     color: #ffffff;
-    font-weight: 700;
+    font-weight: 800;
     white-space: nowrap;
+    line-height: 1;
 }
 
 .site-header__language-row {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 9px;
-    min-width: 0;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 8px;
     color: #ffffff;
+    min-width: 0;
 }
 
 .site-header__language {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     color: #ffffff;
     white-space: nowrap;
     line-height: 1;
-}
-
-.site-header__separator {
-    color: rgba(255, 255, 255, 0.75);
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: 0 !important;
+    padding: 0 !important;
 }
 
 .site-header img.site-header__flag {
@@ -727,44 +732,65 @@ dd {
     max-width: 30px;
     max-height: 20px;
     object-fit: contain;
-    border: 0;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: 0 !important;
+    padding: 0 !important;
     border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    filter: none;
     flex: 0 0 30px;
 }
 
-@media (max-width: 760px) {
+.site-header__separator {
+    color: rgba(255, 255, 255, 0.75);
+    background: transparent !important;
+}
+
+@media (max-width: 900px) {
     .site-header {
         height: auto;
         min-height: 88px;
         max-height: none;
+        background: var(--footer-background, #0d2b4c);
+        background-color: #0d2b4c;
     }
 
     .site-header__inner {
-        padding: 14px 20px;
+        height: auto;
+        min-height: 88px;
+        align-items: center;
         flex-wrap: wrap;
-        align-items: flex-start;
+        gap: 14px;
+        padding: 8px 24px;
     }
 
     .site-header__brand {
-        height: 52px;
+        height: 72px;
+        max-width: 190px;
     }
 
     .site-header img.site-header__logo-image {
-        max-height: 52px;
+        max-height: 68px;
+        max-width: 170px;
     }
 
     .site-header__conversation {
         flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 10px;
+    }
+
+    .site-header__language-row {
+        flex-wrap: wrap;
+        justify-content: flex-start;
     }
 
     .site-header img.site-header__flag {
-        width: 28px;
-        height: 18px;
-        max-width: 28px;
-        max-height: 18px;
-        flex-basis: 28px;
+        width: 30px;
+        height: 20px;
+        max-width: 30px;
+        max-height: 20px;
+        flex: 0 0 30px;
     }
 }
