@@ -19,4 +19,8 @@ public sealed record WebsiteContentDocument(WebsiteContentSet Active, WebsiteCon
 
 public sealed record WebsiteContentResponse(WebsiteContentSet Active, WebsiteContentSet Draft);
 
+public sealed record WebsitePreviewRequest(WebsiteContentSet Content, string PageKey);
+
+public sealed record WebsitePreviewResponse(string PageKey, string Html, DateTimeOffset PreviewedAtUtc);
+
 public sealed record WebsitePublishResponse(WebsiteContentSet Active, string PublicSiteRoot, IReadOnlyList<string> PublishedFiles, DateTimeOffset PublishedAtUtc);

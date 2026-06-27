@@ -28,9 +28,18 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         return new WebsiteContentResponse(document.Active, document.Draft);
     }
 
-    public async Task<WebsitePublishResponse> PublishAsync(WebsiteContentSet content, CancellationToken cancellationToken)
+    public Task<WebsitePreviewResponse> PreviewAsync(WebsitePreviewRequest request, CancellationToken cancellationToken)
     {
-        var active = Normalize(content);
+        var normalized = Normalize(request.Content);
+        var pageKey = NormalizePageKey(request.PageKey);
+        var html = RenderPage(normalized, pageKey);
+        return Task.FromResult(new WebsitePreviewResponse(pageKey, html, DateTimeOffset.UtcNow));
+    }
+
+    public async Task<WebsitePublishResponse> PublishAsync(CancellationToken cancellationToken)
+    {
+        var document = await ReadDocumentAsync(cancellationToken);
+        var active = Normalize(document.Draft);
         var publicRoot = ResolvePath(options.Value.PublicSiteRoot);
         if (!Directory.Exists(publicRoot)) { Directory.CreateDirectory(publicRoot); }
         var files = await RenderAllAsync(active, publicRoot, cancellationToken);
@@ -90,20 +99,52 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     {
         var files = new List<string>();
         async Task W(string file, string html) { var path = Path.Combine(root, file); await File.WriteAllTextAsync(path, html, ct); files.Add(path); }
-        await W("index.html", RenderHome(c));
-        await W("download.html", RenderSimple(c, "download", "download-title", [("Current version", "currentVersionLabel"), ("Safety and support", "safetySupportNote")], "Download for Windows"));
-        await W("mobile.html", RenderSimple(c, "mobile", "mobile-title", [("Android", "androidComingSoonText"), ("iOS", "iosComingSoonText"), ("Contact", "emailSupportCtaText")], null));
-        await W("pricing.html", RenderSimple(c, "pricing", "pricing-title", [("Free plan", "freePlanText"), ("Premium plan", "premiumPlanText"), ("Trial", "trialText"), ("Checkout status", "paddleLiveCheckoutDisclaimerText")], null));
-        await W("support.html", RenderSimple(c, "support", "support-title", [("Support email", "supportEmailText"), ("Response time", "responseTimeText"), ("Accounts and deletion", "accountDeletionSupportText"), ("Billing", "billingSupportText")], null));
-        await W("terms.html", RenderSimple(c, "terms", "terms-title", [("Effective date", "effectiveDate"), ("Accounts and use", "accountUseTerms"), ("AI and learning disclaimer", "aiLearningDisclaimer"), ("Billing and subscriptions", "billingSubscriptionTermsPlaceholder"), ("Contact", "contactSupportText")], null));
-        await W("privacy.html", RenderSimple(c, "privacy", "privacy-title", [("Effective date", "effectiveDate"), ("Data collected", "dataCollected"), ("Audio and transcription", "audioTranscriptionText"), ("AI processing", "aiProcessingText"), ("Account and payment data", "accountPaymentDataText"), ("Retention and deletion", "dataRetentionDeletionText"), ("Contact", "contactText")], null));
-        await W("refunds.html", RenderSimple(c, "refunds", "refunds-title", [("Effective date", "effectiveDate"), ("Refund eligibility", "refundEligibilityText"), ("How to request a refund", "howToRequestRefundText"), ("Payment provider note", "paddlePaymentProviderNote"), ("Contact", "contactText")], null));
-        await W("cancellation.html", RenderSimple(c, "cancellation", "cancellation-title", [("Effective date", "effectiveDate"), ("How to cancel", "howToCancelText"), ("Access until period end", "accessUntilPeriodEndText"), ("Support", "supportText")], null));
-        await W("seller.html", RenderSimple(c, "seller", "seller-title", [("Seller name / legal entity", "sellerNameLegalEntityPlaceholder"), ("Address", "addressPlaceholder"), ("Contact email", "contactEmail"), ("Tax, VAT, company registration", "taxVatCompanyRegistrationPlaceholder"), ("Paddle live review note", "paddleLiveReviewNote")], null));
-        await W("ai-data.html", RenderSimple(c, "aiData", "ai-data-title", [("AI tutor disclosure", "aiTutorDisclosureText"), ("Voice and transcription", "voiceTranscriptionDisclosureText"), ("Data processing", "dataProcessingText"), ("User control and deletion", "userControlDeletionText")], null));
-        await W("status.html", RenderSimple(c, "status", "status-title", [("Desktop availability", "desktopAvailabilityText"), ("Mobile", "mobileComingSoonText"), ("Service availability", "serviceAvailabilityDisclaimer"), ("Support", "supportContactText")], null));
+        foreach (var (pageKey, fileName) in PageFiles())
+        {
+            await W(fileName, RenderPage(c, pageKey));
+        }
         return files;
     }
+
+
+    private static string NormalizePageKey(string? pageKey)
+    {
+        var key = string.IsNullOrWhiteSpace(pageKey) ? "home" : pageKey.Trim();
+        return PageFiles().Any(page => page.PageKey == key) ? key : "home";
+    }
+
+    private static IReadOnlyList<(string PageKey, string FileName)> PageFiles() =>
+    [
+        ("home", "index.html"),
+        ("download", "download.html"),
+        ("mobile", "mobile.html"),
+        ("pricing", "pricing.html"),
+        ("support", "support.html"),
+        ("terms", "terms.html"),
+        ("privacy", "privacy.html"),
+        ("refunds", "refunds.html"),
+        ("cancellation", "cancellation.html"),
+        ("seller", "seller.html"),
+        ("aiData", "ai-data.html"),
+        ("status", "status.html")
+    ];
+
+    private static string RenderPage(WebsiteContentSet c, string pageKey) => pageKey switch
+    {
+        "home" => RenderHome(c),
+        "download" => RenderSimple(c, "download", "download-title", [("Current version", "currentVersionLabel"), ("Safety and support", "safetySupportNote")], "Download for Windows"),
+        "mobile" => RenderSimple(c, "mobile", "mobile-title", [("Android", "androidComingSoonText"), ("iOS", "iosComingSoonText"), ("Contact", "emailSupportCtaText")], null),
+        "pricing" => RenderSimple(c, "pricing", "pricing-title", [("Free plan", "freePlanText"), ("Premium plan", "premiumPlanText"), ("Trial", "trialText"), ("Checkout status", "paddleLiveCheckoutDisclaimerText")], null),
+        "support" => RenderSimple(c, "support", "support-title", [("Support email", "supportEmailText"), ("Response time", "responseTimeText"), ("Accounts and deletion", "accountDeletionSupportText"), ("Billing", "billingSupportText")], null),
+        "terms" => RenderSimple(c, "terms", "terms-title", [("Effective date", "effectiveDate"), ("Accounts and use", "accountUseTerms"), ("AI and learning disclaimer", "aiLearningDisclaimer"), ("Billing and subscriptions", "billingSubscriptionTermsPlaceholder"), ("Contact", "contactSupportText")], null),
+        "privacy" => RenderSimple(c, "privacy", "privacy-title", [("Effective date", "effectiveDate"), ("Data collected", "dataCollected"), ("Audio and transcription", "audioTranscriptionText"), ("AI processing", "aiProcessingText"), ("Account and payment data", "accountPaymentDataText"), ("Retention and deletion", "dataRetentionDeletionText"), ("Contact", "contactText")], null),
+        "refunds" => RenderSimple(c, "refunds", "refunds-title", [("Effective date", "effectiveDate"), ("Refund eligibility", "refundEligibilityText"), ("How to request a refund", "howToRequestRefundText"), ("Payment provider note", "paddlePaymentProviderNote"), ("Contact", "contactText")], null),
+        "cancellation" => RenderSimple(c, "cancellation", "cancellation-title", [("Effective date", "effectiveDate"), ("How to cancel", "howToCancelText"), ("Access until period end", "accessUntilPeriodEndText"), ("Support", "supportText")], null),
+        "seller" => RenderSimple(c, "seller", "seller-title", [("Seller name / legal entity", "sellerNameLegalEntityPlaceholder"), ("Address", "addressPlaceholder"), ("Contact email", "contactEmail"), ("Tax, VAT, company registration", "taxVatCompanyRegistrationPlaceholder"), ("Paddle live review note", "paddleLiveReviewNote")], null),
+        "aiData" => RenderSimple(c, "aiData", "ai-data-title", [("AI tutor disclosure", "aiTutorDisclosureText"), ("Voice and transcription", "voiceTranscriptionDisclosureText"), ("Data processing", "dataProcessingText"), ("User control and deletion", "userControlDeletionText")], null),
+        "status" => RenderSimple(c, "status", "status-title", [("Desktop availability", "desktopAvailabilityText"), ("Mobile", "mobileComingSoonText"), ("Service availability", "serviceAvailabilityDisclaimer"), ("Support", "supportContactText")], null),
+        _ => RenderHome(c)
+    };
 
     private static string RenderHome(WebsiteContentSet c)
     {
