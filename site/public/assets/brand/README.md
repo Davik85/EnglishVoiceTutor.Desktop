@@ -1,9 +1,8 @@
 # Brand assets
 
-Place the production logo here when it is available:
+Put the production logo at `site/public/assets/brand/lvt-logo.png` locally.
 
-- Local path: `site/public/assets/brand/lvt-logo.png`
+- Production server path: `/var/www/languagevoicetutor/site/assets/brand/lvt-logo.png`
 - Public URL: `/assets/brand/lvt-logo.png`
-- Production path: `/var/www/languagevoicetutor/site/assets/brand/lvt-logo.png`
 
-The homepage header is designed to fall back to the visible text "Language Voice Tutor" if the PNG logo is missing.
+Do not commit binary logo unless explicitly approved.
