@@ -38,9 +38,9 @@
         roleAssignmentRevoke: "/api/admin/role-assignments/revoke",
         roleAssignmentDisableAdmin: "/api/admin/role-assignments/disable-admin",
         roleAssignmentEnableAdmin: "/api/admin/role-assignments/enable-admin",
-        websiteHomeHeader: "/api/admin/website/home-header",
-        websiteHomeHeaderDraft: "/api/admin/website/home-header/draft",
-        websiteHomeHeaderPublish: "/api/admin/website/home-header/publish"
+        websiteContent: "/api/admin/website/content",
+        websiteContentDraft: "/api/admin/website/content/draft",
+        websiteContentPublish: "/api/admin/website/content/publish"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
@@ -528,7 +528,7 @@
                 selectCmsSubTab(getHashCmsSubTab());
                 if (!cmsHasLoadedOnce) { await loadCmsContentPacks(); }
             }
-            if (tabId === Tabs.website && !websiteHasLoadedOnce) { await loadWebsiteHeader(); }
+            if (tabId === Tabs.website && !websiteHasLoadedOnce) { await loadWebsiteContent(); }
             if (tabId === Tabs.overview) { await loadProductStatistics(); }
         }));
     }
@@ -823,97 +823,40 @@
 
 
 
-    const websiteFields = {
-        logoPath: document.getElementById("website-logo-path"),
-        logoAltText: document.getElementById("website-logo-alt"),
-        showLogo: document.getElementById("website-show-logo"),
-        fallbackLogoText: document.getElementById("website-fallback-logo-text"),
-        headerText: document.getElementById("website-header-text"),
-        languageLine: document.getElementById("website-language-line"),
-        fontFamily: document.getElementById("website-font-family"),
-        fontSizePx: document.getElementById("website-font-size"),
-        fontWeight: document.getElementById("website-font-weight"),
-        textColor: document.getElementById("website-text-color"),
-        headerBackgroundColor: document.getElementById("website-background-color"),
-        paddingBlockPx: document.getElementById("website-padding-block"),
-        paddingInlinePx: document.getElementById("website-padding-inline")
-    };
+    const websiteSectionTabs = document.getElementById("website-section-tabs");
+    const websiteEditorHeading = document.getElementById("website-editor-heading");
+    const websiteEditorFields = document.getElementById("website-editor-fields");
     const websiteMessageElement = document.getElementById("website-message");
     const websiteErrorElement = document.getElementById("website-error");
     const websiteSaveDraftButton = document.getElementById("website-save-draft-button");
     const websitePublishButton = document.getElementById("website-publish-button");
-
+    const websiteSections = [
+        ["home", "Home page", [["logoPath","Logo image path"],["logoAltText","Logo alt text"],["fallbackLogoText","Fallback logo text"],["topHeaderText","Top header text"],["supportedLanguageLine","Supported language line"],["windowsCardBadge","Windows card badge"],["windowsCardTitle","Windows card title"],["windowsCardDescription","Windows card description"],["windowsDownloadButtonText","Windows download button text"],["mobileCardBadge","Mobile card badge"],["mobileCardTitle","Mobile card title"],["mobileCardDescription","Mobile card description"],["mobileComingSoonButtonText","Mobile coming soon button text"],["footerCopyrightText","Footer copyright text"],["footerPrivacyLabel","Footer Privacy label"],["footerTermsLabel","Footer Terms label"],["footerRefundsLabel","Footer Refund label"],["footerCancellationLabel","Footer Cancellation label"],["footerSupportLabel","Footer Support label"],["footerPricingLabel","Footer Pricing label"]]],
+        ["download", "Desktop app / Download", [["pageTitle","Page title"],["introText","Intro text"],["downloadButtonText","Download button text"],["currentVersionLabel","Current version label text"],["safetySupportNote","Safety/support note text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
+        ["mobile", "Mobile app / Coming soon", [["pageTitle","Page title"],["introText","Intro text"],["androidComingSoonText","Android coming soon text"],["iosComingSoonText","iOS coming soon text"],["emailSupportCtaText","Email/support CTA text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
+        ["pricing", "Pricing", [["pageTitle","Page title"],["introText","Intro text"],["freePlanText","Free plan text"],["premiumPlanText","Premium plan text"],["trialText","Trial text"],["paddleLiveCheckoutDisclaimerText","Paddle/live checkout disclaimer text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
+        ["support", "Support", [["pageTitle","Page title"],["introText","Intro text"],["supportEmailText","Support email text"],["responseTimeText","Response time text"],["accountDeletionSupportText","Account/deletion support text"],["billingSupportText","Billing support text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
+        ["terms", "Legal - Terms", [["pageTitle","Page title"],["effectiveDate","Effective date"],["intro","Intro"],["accountUseTerms","Account/use terms"],["aiLearningDisclaimer","AI/learning disclaimer"],["billingSubscriptionTermsPlaceholder","Billing/subscription terms placeholder"],["contactSupportText","Contact/support text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
+        ["privacy", "Legal - Privacy Policy", [["pageTitle","Page title"],["effectiveDate","Effective date"],["intro","Intro"],["dataCollected","Data collected"],["audioTranscriptionText","Audio/transcription text"],["aiProcessingText","AI processing text"],["accountPaymentDataText","Account/payment data text"],["dataRetentionDeletionText","Data retention/deletion text"],["contactText","Contact text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
+        ["refunds", "Legal - Refund Policy", [["pageTitle","Page title"],["effectiveDate","Effective date"],["refundEligibilityText","Refund eligibility text"],["howToRequestRefundText","How to request refund text"],["paddlePaymentProviderNote","Paddle/payment provider note"],["contactText","Contact text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
+        ["cancellation", "Legal - Cancellation Policy", [["pageTitle","Page title"],["effectiveDate","Effective date"],["howToCancelText","How to cancel text"],["accessUntilPeriodEndText","Access until period end text"],["supportText","Support text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
+        ["seller", "Legal - Seller / Company details", [["pageTitle","Page title"],["sellerNameLegalEntityPlaceholder","Seller name/legal entity placeholder"],["addressPlaceholder","Address placeholder"],["contactEmail","Contact email"],["taxVatCompanyRegistrationPlaceholder","Tax/VAT/company registration placeholder"],["paddleLiveReviewNote","Important Paddle live review note"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
+        ["aiData", "Legal - AI / Data disclosure", [["pageTitle","Page title"],["aiTutorDisclosureText","AI tutor disclosure text"],["voiceTranscriptionDisclosureText","Voice/transcription disclosure text"],["dataProcessingText","Data processing text"],["userControlDeletionText","User control/deletion text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
+        ["status", "Legal - Platform availability / service status", [["pageTitle","Page title"],["desktopAvailabilityText","Desktop availability text"],["mobileComingSoonText","Mobile coming soon text"],["serviceAvailabilityDisclaimer","Service availability disclaimer"],["supportContactText","Support contact text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
+        ["design", "Design", [["headerBackgroundColor","Header background color"],["footerBackgroundColor","Footer background color"],["mainTextColor","Main text color"],["headerTextColor","Header text color"],["mainFontFamily","Main font family"],["baseFontSizePx","Base font size"],["headerFontWeight","Header font weight"],["buttonBorderRadiusPx","Button border radius"],["cardTextStyle","Card text style"]], true]
+    ].map(([key, label, fields, design]) => ({ key, label, fields, design: Boolean(design) }));
+    let websiteContentDraft = { pages: {}, design: {} };
+    let activeWebsiteSection = "home";
     function setWebsiteMessage(message) { websiteMessageElement.textContent = message || ""; }
     function setWebsiteError(message) { websiteErrorElement.textContent = message || ""; }
-    function fillWebsiteForm(header) {
-        const h = header || {};
-        websiteFields.logoPath.value = h.logoPath || "";
-        websiteFields.logoAltText.value = h.logoAltText || "";
-        websiteFields.showLogo.checked = Boolean(h.showLogo);
-        websiteFields.fallbackLogoText.value = h.fallbackLogoText || "";
-        websiteFields.headerText.value = h.headerText || "";
-        websiteFields.languageLine.value = h.languageLine || "";
-        websiteFields.fontFamily.value = h.fontFamily || "";
-        websiteFields.fontSizePx.value = h.fontSizePx || 18;
-        websiteFields.fontWeight.value = String(h.fontWeight || 700);
-        websiteFields.textColor.value = h.textColor || "#dce9f7";
-        websiteFields.headerBackgroundColor.value = h.headerBackgroundColor || "#0d2b4c";
-        websiteFields.paddingBlockPx.value = h.paddingBlockPx || 18;
-        websiteFields.paddingInlinePx.value = h.paddingInlinePx || 64;
-    }
-    function collectWebsiteHeader() {
-        return {
-            logoPath: websiteFields.logoPath.value.trim(),
-            logoAltText: websiteFields.logoAltText.value.trim(),
-            showLogo: websiteFields.showLogo.checked,
-            fallbackLogoText: websiteFields.fallbackLogoText.value.trim(),
-            headerText: websiteFields.headerText.value.trim(),
-            languageLine: websiteFields.languageLine.value.trim(),
-            fontFamily: websiteFields.fontFamily.value.trim(),
-            fontSizePx: Number.parseInt(websiteFields.fontSizePx.value, 10),
-            fontWeight: Number.parseInt(websiteFields.fontWeight.value, 10),
-            textColor: websiteFields.textColor.value.trim(),
-            headerBackgroundColor: websiteFields.headerBackgroundColor.value.trim(),
-            paddingBlockPx: Number.parseInt(websiteFields.paddingBlockPx.value, 10),
-            paddingInlinePx: Number.parseInt(websiteFields.paddingInlinePx.value, 10)
-        };
-    }
-    async function readWebsiteResponse(response, fallbackMessage) {
-        if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
-        if (!response.ok) {
-            let detail = fallbackMessage;
-            try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { }
-            throw new Error(detail);
-        }
-        return response.json();
-    }
-    async function loadWebsiteHeader() {
-        setWebsiteError(""); setWebsiteMessage("Loading Website header...");
-        try {
-            const response = await fetch(ApiPaths.websiteHomeHeader, { method: "GET", headers: getAdminHeaders() });
-            const payload = await readWebsiteResponse(response, "Unable to load Website header.");
-            fillWebsiteForm(payload.draftHomeHeader || payload.activeHomeHeader);
-            websiteHasLoadedOnce = true; setWebsiteMessage("Draft loaded.");
-        } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to load Website header."); }
-    }
-    async function saveWebsiteDraft() {
-        setWebsiteError(""); setWebsiteMessage("Saving draft..."); websiteSaveDraftButton.disabled = true;
-        try {
-            const response = await fetch(ApiPaths.websiteHomeHeaderDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(collectWebsiteHeader()) });
-            const payload = await readWebsiteResponse(response, "Unable to save Website draft.");
-            fillWebsiteForm(payload.draftHomeHeader); setWebsiteMessage("Draft saved.");
-        } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to save Website draft."); }
-        finally { websiteSaveDraftButton.disabled = false; }
-    }
-    async function publishWebsiteHeader() {
-        setWebsiteError(""); setWebsiteMessage("Publishing static homepage..."); websitePublishButton.disabled = true;
-        try {
-            const response = await fetch(ApiPaths.websiteHomeHeaderPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(collectWebsiteHeader()) });
-            const payload = await readWebsiteResponse(response, "Unable to publish Website header.");
-            fillWebsiteForm(payload.activeHomeHeader); setWebsiteMessage(`Published static homepage: ${payload.publishedIndexPath || "index.html"}`);
-        } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to publish Website header."); }
-        finally { websitePublishButton.disabled = false; }
-    }
+    function renderWebsiteTabs() { websiteSectionTabs.innerHTML = ""; websiteSections.forEach(section => { const button = document.createElement("button"); button.type = "button"; button.textContent = section.label; button.className = "website-section-tab"; button.setAttribute("aria-selected", section.key === activeWebsiteSection ? "true" : "false"); button.addEventListener("click", () => { collectCurrentWebsiteSection(); activeWebsiteSection = section.key; renderWebsiteEditor(); }); websiteSectionTabs.appendChild(button); }); }
+    function renderWebsiteEditor() { const section = websiteSections.find(x => x.key === activeWebsiteSection) || websiteSections[0]; websiteEditorHeading.textContent = section.label; websiteEditorFields.innerHTML = ""; renderWebsiteTabs(); const values = section.design ? (websiteContentDraft.design || {}) : ((websiteContentDraft.pages || {})[section.key] || {}); section.fields.forEach(([key, label]) => { const field = document.createElement("div"); field.className = "field"; const labelElement = document.createElement("label"); labelElement.htmlFor = `website-field-${key}`; labelElement.textContent = label; const isLong = /description|intro|text|terms|disclaimer|collected|processing|retention|note|placeholder/i.test(key); const input = document.createElement(isLong ? "textarea" : "input"); input.id = `website-field-${key}`; input.dataset.websiteKey = key; if (input.tagName === "TEXTAREA") { input.rows = 3; } else { input.type = /Px|Weight/.test(key) ? "number" : "text"; } input.value = values[key] ?? ""; field.append(labelElement, input); websiteEditorFields.appendChild(field); }); }
+    function collectCurrentWebsiteSection() { const section = websiteSections.find(x => x.key === activeWebsiteSection); if (!section) return; const target = section.design ? (websiteContentDraft.design ||= {}) : ((websiteContentDraft.pages ||= {})[section.key] ||= {}); websiteEditorFields.querySelectorAll("[data-website-key]").forEach(input => { const key = input.dataset.websiteKey; target[key] = /Px|Weight/.test(key) ? Number(input.value) : input.value; }); }
+    function fillWebsiteForm(content) { websiteContentDraft = JSON.parse(JSON.stringify(content || { pages: {}, design: {} })); renderWebsiteEditor(); }
+    async function readWebsiteResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
+    async function loadWebsiteContent() { setWebsiteError(""); setWebsiteMessage("Loading Website editor..."); try { const response = await fetch(ApiPaths.websiteContent, { method: "GET", headers: getAdminHeaders() }); const payload = await readWebsiteResponse(response, "Unable to load Website content."); fillWebsiteForm(payload.draft || payload.active); websiteHasLoadedOnce = true; setWebsiteMessage("Draft loaded."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to load Website content."); } }
+    async function saveWebsiteDraft() { collectCurrentWebsiteSection(); setWebsiteError(""); setWebsiteMessage("Saving draft..."); websiteSaveDraftButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(websiteContentDraft) }); const payload = await readWebsiteResponse(response, "Unable to save Website draft."); fillWebsiteForm(payload.draft); setWebsiteMessage("Draft saved."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to save Website draft."); } finally { websiteSaveDraftButton.disabled = false; } }
+    async function publishWebsiteContent() { collectCurrentWebsiteSection(); setWebsiteError(""); setWebsiteMessage("Publishing static website..."); websitePublishButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(websiteContentDraft) }); const payload = await readWebsiteResponse(response, "Unable to publish Website content."); fillWebsiteForm(payload.active); setWebsiteMessage(`Published ${Array.isArray(payload.publishedFiles) ? payload.publishedFiles.length : ""} static website files.`); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to publish Website content."); } finally { websitePublishButton.disabled = false; } }
 
     function resetDashboard() {
         adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" }; adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; bootstrapAdminStatusElement.textContent = "-"; adminPermissionCountElement.textContent = "-"; capabilitiesListElement.textContent = ""; renderBadges(adminRolesBadgesElement, []); renderBadges(rolesPermissionsRolesElement, []); renderPermissionList(rolesPermissionsListElement, []); workflowAvailabilityListElement.textContent = ""; systemProductionRolesAvailableElement.textContent = "false"; systemProductionRolesAvailableElement.className = "badge unavailable";
@@ -2641,7 +2584,7 @@
         updateUserRequiredEmptyStates();
         await restoreSelectedUserFromHash();
         if (selectedTabId === Tabs.cmsContent && !cmsHasLoadedOnce) { await loadCmsContentPacks(); }
-        if (selectedTabId === Tabs.website && adminAccessSnapshot.isBootstrapAdmin && !websiteHasLoadedOnce) { await loadWebsiteHeader(); }
+        if (selectedTabId === Tabs.website && adminAccessSnapshot.isBootstrapAdmin && !websiteHasLoadedOnce) { await loadWebsiteContent(); }
         if (selectedTabId === Tabs.roleManagement) { await loadRoleManagementData(); }
         if (selectedTabId === Tabs.overview) { await loadProductStatistics(); }
     }
@@ -2685,7 +2628,7 @@
     refreshStatisticsButton.addEventListener("click", async () => { await loadProductStatistics(); });
     roleManagementRefreshButton.addEventListener("click", async () => { await loadRoleManagementData(); });
     websiteSaveDraftButton.addEventListener("click", async () => { await saveWebsiteDraft(); });
-    websitePublishButton.addEventListener("click", async () => { await publishWebsiteHeader(); });
+    websitePublishButton.addEventListener("click", async () => { await publishWebsiteContent(); });
     roleManagementForms.forEach((form) => form.addEventListener("submit", async (event) => { event.preventDefault(); await submitRoleManagementMutation(form); }));
     logoutButton.addEventListener("click", () => { logoutAdminSession(); });
     initializeTabs();

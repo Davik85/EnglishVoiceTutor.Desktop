@@ -1,22 +1,22 @@
 namespace EnglishVoiceTutor.Api.Contracts.Website;
 
-public sealed record WebsiteHomeHeaderContent(
-    string LogoPath,
-    string LogoAltText,
-    bool ShowLogo,
-    string FallbackLogoText,
-    string HeaderText,
-    string LanguageLine,
-    string FontFamily,
-    int FontSizePx,
-    int FontWeight,
-    string TextColor,
+public sealed record WebsiteDesignContent(
     string HeaderBackgroundColor,
-    int PaddingBlockPx,
-    int PaddingInlinePx);
+    string FooterBackgroundColor,
+    string MainTextColor,
+    string HeaderTextColor,
+    string MainFontFamily,
+    int BaseFontSizePx,
+    int HeaderFontWeight,
+    int ButtonBorderRadiusPx,
+    string CardTextStyle);
 
-public sealed record WebsiteContentDocument(WebsiteHomeHeaderContent ActiveHomeHeader, WebsiteHomeHeaderContent DraftHomeHeader);
+public sealed record WebsiteContentSet(
+    Dictionary<string, Dictionary<string, string>> Pages,
+    WebsiteDesignContent Design);
 
-public sealed record WebsiteHomeHeaderResponse(WebsiteHomeHeaderContent ActiveHomeHeader, WebsiteHomeHeaderContent DraftHomeHeader);
+public sealed record WebsiteContentDocument(WebsiteContentSet Active, WebsiteContentSet Draft);
 
-public sealed record WebsitePublishResponse(WebsiteHomeHeaderContent ActiveHomeHeader, string PublishedIndexPath, DateTimeOffset PublishedAtUtc);
+public sealed record WebsiteContentResponse(WebsiteContentSet Active, WebsiteContentSet Draft);
+
+public sealed record WebsitePublishResponse(WebsiteContentSet Active, string PublicSiteRoot, IReadOnlyList<string> PublishedFiles, DateTimeOffset PublishedAtUtc);
