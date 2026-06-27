@@ -639,158 +639,176 @@ dd {
     }
 }
 
-/* Final static homepage header layout polish */
+/* Final static homepage header one-line layout */
 .site-header {
-    height: 88px;
-    min-height: 88px;
-    max-height: 88px;
-    background: var(--footer-background, #0d2b4c);
-    background-color: #0d2b4c;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
+  height: 88px !important;
+  min-height: 88px !important;
+  max-height: 88px !important;
+  background: var(--footer-background, #0d2b4c) !important;
+  background-color: #0d2b4c !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .site-header__inner {
-    width: 100%;
-    height: 88px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 22px;
-    padding: 0 72px;
-    box-sizing: border-box;
+  width: 100% !important;
+  height: 88px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 22px !important;
+  padding: 0 72px !important;
+  box-sizing: border-box !important;
 }
 
 .site-header__brand {
-    flex: 0 0 auto;
-    height: 88px;
-    max-width: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    overflow: hidden;
+  flex: 0 0 auto !important;
+  width: 120px !important;
+  max-width: 120px !important;
+  height: 88px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  overflow: hidden !important;
 }
 
 .site-header img.site-header__logo-image {
-    display: block;
-    max-height: 76px;
-    max-width: 190px;
-    width: auto;
-    height: auto;
-    object-fit: contain;
+  display: block !important;
+  max-height: 76px !important;
+  max-width: 112px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
 }
 
-.site-header__conversation {
-    flex: 0 1 auto;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 14px;
-    margin-left: 0;
+.site-header__conversation,
+.site-header__language-row {
+  display: contents !important;
+}
+
+.site-header__conversation-line {
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 .site-header__headline {
-    margin: 0;
-    color: #ffffff;
-    font-weight: 800;
-    white-space: nowrap;
-    line-height: 1;
-}
-
-.site-header__language-row {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    flex-wrap: nowrap;
-    gap: 8px;
-    color: #ffffff;
-    min-width: 0;
+  display: inline-flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 .site-header__language {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: #ffffff;
-    white-space: nowrap;
-    line-height: 1;
-    background: transparent !important;
-    background-color: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    outline: 0 !important;
-    padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #ffffff !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
 }
 
+/* Flag assets must have real transparent backgrounds; CSS does not add flag backgrounds. */
 .site-header img.site-header__flag {
-    display: inline-block;
-    width: 30px;
-    height: 20px;
-    max-width: 30px;
-    max-height: 20px;
-    object-fit: contain;
-    background: transparent !important;
-    background-color: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    outline: 0 !important;
-    padding: 0 !important;
-    border-radius: 0;
-    flex: 0 0 30px;
+  display: block !important;
+  width: 30px !important;
+  height: 20px !important;
+  max-width: 30px !important;
+  max-height: 20px !important;
+  min-width: 30px !important;
+  min-height: 20px !important;
+  object-fit: contain !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  border-radius: 0 !important;
 }
 
-.site-header__separator {
-    color: rgba(255, 255, 255, 0.75);
-    background: transparent !important;
+.site-header__separator,
+.site-header__language-name,
+.site-header__flag-fallback {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  padding: 0 !important;
 }
 
 @media (max-width: 900px) {
-    .site-header {
-        height: auto;
-        min-height: 88px;
-        max-height: none;
-        background: var(--footer-background, #0d2b4c);
-        background-color: #0d2b4c;
-    }
+  .site-header {
+    height: auto !important;
+    min-height: 88px !important;
+    max-height: none !important;
+    background: var(--footer-background, #0d2b4c) !important;
+    background-color: #0d2b4c !important;
+    overflow: visible !important;
+  }
 
-    .site-header__inner {
-        height: auto;
-        min-height: 88px;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 14px;
-        padding: 8px 24px;
-    }
+  .site-header__inner {
+    height: auto !important;
+    min-height: 88px !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 14px !important;
+    padding: 8px 24px !important;
+  }
 
-    .site-header__brand {
-        height: 72px;
-        max-width: 190px;
-    }
+  .site-header__brand {
+    height: 72px !important;
+    width: 112px !important;
+    max-width: 112px !important;
+  }
 
-    .site-header img.site-header__logo-image {
-        max-height: 68px;
-        max-width: 170px;
-    }
+  .site-header img.site-header__logo-image {
+    max-height: 68px !important;
+    max-width: 104px !important;
+  }
 
-    .site-header__conversation {
-        flex-wrap: wrap;
-        justify-content: flex-start;
-        gap: 10px;
-    }
+  .site-header__conversation-line {
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    white-space: normal !important;
+  }
 
-    .site-header__language-row {
-        flex-wrap: wrap;
-        justify-content: flex-start;
-    }
-
-    .site-header img.site-header__flag {
-        width: 30px;
-        height: 20px;
-        max-width: 30px;
-        max-height: 20px;
-        flex: 0 0 30px;
-    }
+  .site-header img.site-header__flag {
+    width: 30px !important;
+    height: 20px !important;
+    max-width: 30px !important;
+    max-height: 20px !important;
+    min-width: 30px !important;
+    min-height: 20px !important;
+  }
 }
