@@ -177,4 +177,57 @@ public sealed class WebsiteCmsAdminMutationService(AppDbContext dbContext) : IWe
         };
     }
 
+    public async Task<AdminWebsiteCmsSectionPublishResponse?> PublishSectionAsync(string sectionKey, AdminWebsiteCmsSectionPublishRequest request, CancellationToken cancellationToken)
+    {
+        var expected = WebsiteCmsExpectedSections.All.SingleOrDefault(section => string.Equals(section.SectionKey, sectionKey, StringComparison.Ordinal));
+        if (expected is null)
+        {
+            return null;
+        }
+
+        var changeReason = request.ChangeReason?.Trim();
+        if (string.IsNullOrWhiteSpace(changeReason))
+        {
+            throw new InvalidOperationException("Change reason is required.");
+        }
+
+        var row = await _dbContext.WebsiteCmsSections.SingleOrDefaultAsync(section => section.SectionKey == sectionKey, cancellationToken);
+        if (row is null)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(row.DraftBody))
+        {
+            throw new InvalidOperationException("DraftBody is required before Website CMS publish.");
+        }
+
+        if (!string.Equals(row.ReviewStatus, "legal_approved", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Website CMS publish requires legal_approved review status. owner_approved/legal_approved are not automatic publish and public rendering remains unchanged.");
+        }
+
+        WebsiteCmsContentGuard.ThrowIfBlocked(row.DraftBody, changeReason);
+
+        var now = DateTimeOffset.UtcNow;
+        row.PublishedBody = row.DraftBody;
+        row.PublishedAtUtc = now;
+        row.ChangeReason = changeReason;
+        row.UpdatedAtUtc = now;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new AdminWebsiteCmsSectionPublishResponse
+        {
+            SectionKey = expected.SectionKey,
+            ReviewStatus = row.ReviewStatus,
+            PublishedBodyExists = !string.IsNullOrWhiteSpace(row.PublishedBody),
+            PublishedAtUtc = row.PublishedAtUtc,
+            UpdatedAtUtc = row.UpdatedAtUtc,
+            CheckedAtUtc = now,
+            PublishedCheckedAtUtc = now,
+            Message = "Admin-only Website CMS publish stored DraftBody in PublishedBody only. This does not update public website rendering, does not modify site/public, and does not enable live Paddle."
+        };
+    }
+
 }

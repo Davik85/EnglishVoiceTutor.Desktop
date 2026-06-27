@@ -94,6 +94,7 @@ public static class ApiConstants
     public const string AdminWebsiteCmsSectionDraftValidateRoute = "/api/admin/website-cms/sections/{sectionKey}/draft/validate";
     public const string AdminWebsiteCmsSectionDraftPreviewRoute = "/api/admin/website-cms/sections/{sectionKey}/draft/preview";
     public const string AdminWebsiteCmsSectionReviewStatusRoute = "/api/admin/website-cms/sections/{sectionKey}/review-status";
+    public const string AdminWebsiteCmsSectionPublishRoute = "/api/admin/website-cms/sections/{sectionKey}/publish";
     public const string AdminWebsiteCmsSectionInitializeMissingRoute = "/api/admin/website-cms/sections/initialize-missing";
     public const string AdminRoleAssignmentDiagnosticsRoute = "/api/admin/role-assignments/diagnostics";
     public const string AdminRbacCutoverStatusRoute = "/api/admin/rbac/cutover-status";
