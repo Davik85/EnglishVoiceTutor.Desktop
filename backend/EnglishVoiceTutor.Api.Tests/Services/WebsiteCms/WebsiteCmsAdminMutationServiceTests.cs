@@ -14,12 +14,12 @@ public sealed class WebsiteCmsAdminMutationServiceTests
 
         var response = await new WebsiteCmsAdminMutationService(dbContext).InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(9, response.CreatedCount);
+        Assert.Equal(12, response.CreatedCount);
         Assert.Equal(0, response.ExistingCount);
-        Assert.Equal(9, response.TotalExpectedCount);
+        Assert.Equal(12, response.TotalExpectedCount);
         Assert.All(response.Sections, section => Assert.True(section.Created));
         var rows = await dbContext.WebsiteCmsSections.OrderBy(section => section.SectionKey).ToListAsync(TestContext.Current.CancellationToken);
-        Assert.Equal(9, rows.Count);
+        Assert.Equal(12, rows.Count);
         Assert.All(rows, row =>
         {
             Assert.Equal(string.Empty, row.DraftBody);
@@ -42,9 +42,9 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         var secondResponse = await service.InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(0, secondResponse.CreatedCount);
-        Assert.Equal(9, secondResponse.ExistingCount);
-        Assert.Equal(9, await dbContext.WebsiteCmsSections.CountAsync(TestContext.Current.CancellationToken));
-        Assert.Equal(9, await dbContext.WebsiteCmsSections.Select(section => section.SectionKey).Distinct().CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(12, secondResponse.ExistingCount);
+        Assert.Equal(12, await dbContext.WebsiteCmsSections.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(12, await dbContext.WebsiteCmsSections.Select(section => section.SectionKey).Distinct().CountAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
         {
             Id = Guid.NewGuid(),
-            SectionKey = "privacy",
+            SectionKey = "legal_privacy",
             DraftBody = "Existing draft",
             PublishedBody = "Existing published",
             ReviewStatus = "approved",
@@ -71,9 +71,9 @@ public sealed class WebsiteCmsAdminMutationServiceTests
 
         var response = await new WebsiteCmsAdminMutationService(dbContext).InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(8, response.CreatedCount);
+        Assert.Equal(11, response.CreatedCount);
         Assert.Equal(1, response.ExistingCount);
-        var privacy = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "privacy", TestContext.Current.CancellationToken);
+        var privacy = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "legal_privacy", TestContext.Current.CancellationToken);
         Assert.Equal("Existing draft", privacy.DraftBody);
         Assert.Equal("Existing published", privacy.PublishedBody);
         Assert.Equal("approved", privacy.ReviewStatus);
@@ -91,7 +91,7 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         await using var dbContext = CreateDbContext();
         await new WebsiteCmsAdminMutationService(dbContext).InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).SaveDraftAsync("privacy", new()
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).SaveDraftAsync("legal_privacy", new()
         {
             DraftBody = "Draft",
             ReviewStatus = "draft",
@@ -109,7 +109,7 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
         {
             Id = Guid.NewGuid(),
-            SectionKey = "terms",
+            SectionKey = "legal_terms",
             DraftBody = "Old draft",
             PublishedBody = "Published remains",
             ReviewStatus = "not_started",
@@ -119,7 +119,7 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         });
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var response = await new WebsiteCmsAdminMutationService(dbContext).SaveDraftAsync("terms", new()
+        var response = await new WebsiteCmsAdminMutationService(dbContext).SaveDraftAsync("legal_terms", new()
         {
             DraftBody = "New draft",
             InternalNotes = "Notes",
@@ -128,7 +128,7 @@ public sealed class WebsiteCmsAdminMutationServiceTests
             ChangeReason = "Owner review prep"
         }, TestContext.Current.CancellationToken);
 
-        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "terms", TestContext.Current.CancellationToken);
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "legal_terms", TestContext.Current.CancellationToken);
         Assert.NotNull(response);
         Assert.Equal("New draft", row.DraftBody);
         Assert.Equal("owner_review_needed", row.ReviewStatus);
@@ -145,7 +145,7 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         await using var dbContext = CreateDbContext();
         await new WebsiteCmsAdminMutationService(dbContext).InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).SaveDraftAsync("pricing", new()
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).SaveDraftAsync("legal_pricing", new()
         {
             DraftBody = "Do not save bearer abcdefghijklmnopqrstuvwxyz123456",
             ReviewStatus = "draft",
@@ -176,7 +176,7 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         await using var dbContext = CreateDbContext();
         await new WebsiteCmsAdminMutationService(dbContext).InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).UpdateReviewStatusAsync("privacy", new()
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).UpdateReviewStatusAsync("legal_privacy", new()
         {
             ReviewStatus = "owner_review_needed",
             ChangeReason = " "
@@ -194,17 +194,17 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         var now = DateTimeOffset.Parse("2026-06-26T10:00:00Z");
         dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
         {
-            Id = Guid.NewGuid(), SectionKey = "terms", DraftBody = "Draft remains", PublishedBody = null, ReviewStatus = "draft", EffectiveDate = new DateOnly(2026, 8, 1), InternalNotes = "Notes", ChangeReason = "Old", CreatedAtUtc = now, UpdatedAtUtc = now, PublishedAtUtc = null
+            Id = Guid.NewGuid(), SectionKey = "legal_terms", DraftBody = "Draft remains", PublishedBody = null, ReviewStatus = "draft", EffectiveDate = new DateOnly(2026, 8, 1), InternalNotes = "Notes", ChangeReason = "Old", CreatedAtUtc = now, UpdatedAtUtc = now, PublishedAtUtc = null
         });
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var response = await new WebsiteCmsAdminMutationService(dbContext).UpdateReviewStatusAsync("terms", new()
+        var response = await new WebsiteCmsAdminMutationService(dbContext).UpdateReviewStatusAsync("legal_terms", new()
         {
             ReviewStatus = reviewStatus,
             ChangeReason = "Internal review marker only"
         }, TestContext.Current.CancellationToken);
 
-        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "terms", TestContext.Current.CancellationToken);
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "legal_terms", TestContext.Current.CancellationToken);
         Assert.NotNull(response);
         Assert.Equal(reviewStatus, row.ReviewStatus);
         Assert.Equal("Internal review marker only", row.ChangeReason);
@@ -231,11 +231,11 @@ public sealed class WebsiteCmsAdminMutationServiceTests
     {
         await using var dbContext = CreateDbContext();
         await new WebsiteCmsAdminMutationService(dbContext).InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
-        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "privacy", TestContext.Current.CancellationToken);
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "legal_privacy", TestContext.Current.CancellationToken);
         row.ReviewStatus = "legal_approved";
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("privacy", new() { ChangeReason = "Publish approved copy" }, TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("legal_privacy", new() { ChangeReason = "Publish approved copy" }, TestContext.Current.CancellationToken));
 
         Assert.Contains("DraftBody is required", ex.Message);
     }
@@ -244,9 +244,9 @@ public sealed class WebsiteCmsAdminMutationServiceTests
     public async Task PublishSectionAsync_RejectsMissingChangeReason()
     {
         await using var dbContext = CreateDbContext();
-        SeedPublishableSection(dbContext, "terms", "Terms draft", "legal_approved");
+        SeedPublishableSection(dbContext, "legal_terms", "Terms draft", "legal_approved");
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("terms", new() { ChangeReason = " " }, TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("legal_terms", new() { ChangeReason = " " }, TestContext.Current.CancellationToken));
 
         Assert.Contains("Change reason is required", ex.Message);
     }
@@ -257,9 +257,9 @@ public sealed class WebsiteCmsAdminMutationServiceTests
     public async Task PublishSectionAsync_RejectsNonLegalApprovedReviewStatus(string reviewStatus)
     {
         await using var dbContext = CreateDbContext();
-        SeedPublishableSection(dbContext, "support", "Support draft", reviewStatus);
+        SeedPublishableSection(dbContext, "legal_support", "Support draft", reviewStatus);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("support", new() { ChangeReason = "Publish approved copy" }, TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("legal_support", new() { ChangeReason = "Publish approved copy" }, TestContext.Current.CancellationToken));
 
         Assert.Contains("requires legal_approved", ex.Message);
     }
@@ -268,9 +268,9 @@ public sealed class WebsiteCmsAdminMutationServiceTests
     public async Task PublishSectionAsync_BlocksSecretLikeDraftContent()
     {
         await using var dbContext = CreateDbContext();
-        SeedPublishableSection(dbContext, "pricing", "Do not publish bearer abcdefghijklmnopqrstuvwxyz123456", "legal_approved");
+        SeedPublishableSection(dbContext, "legal_pricing", "Do not publish bearer abcdefghijklmnopqrstuvwxyz123456", "legal_approved");
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("pricing", new() { ChangeReason = "Publish approved copy" }, TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("legal_pricing", new() { ChangeReason = "Publish approved copy" }, TestContext.Current.CancellationToken));
 
         Assert.Contains("blocked secret-like marker", ex.Message);
     }
@@ -279,11 +279,11 @@ public sealed class WebsiteCmsAdminMutationServiceTests
     public async Task PublishSectionAsync_CopiesDraftBodyToPublishedBodyAndSetsPublishedAtUtc()
     {
         await using var dbContext = CreateDbContext();
-        SeedPublishableSection(dbContext, "privacy", "Approved privacy draft", "legal_approved");
+        SeedPublishableSection(dbContext, "legal_privacy", "Approved privacy draft", "legal_approved");
 
-        var response = await new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("privacy", new() { ChangeReason = "Explicit legal-approved Website CMS publish" }, TestContext.Current.CancellationToken);
+        var response = await new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("legal_privacy", new() { ChangeReason = "Explicit legal-approved Website CMS publish" }, TestContext.Current.CancellationToken);
 
-        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "privacy", TestContext.Current.CancellationToken);
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "legal_privacy", TestContext.Current.CancellationToken);
         Assert.NotNull(response);
         Assert.Equal("Approved privacy draft", row.PublishedBody);
         Assert.NotNull(row.PublishedAtUtc);
@@ -309,9 +309,9 @@ public sealed class WebsiteCmsAdminMutationServiceTests
     public async Task UnpublishSectionAsync_RequiresChangeReason()
     {
         await using var dbContext = CreateDbContext();
-        SeedPublishedSection(dbContext, "privacy", "Draft remains");
+        SeedPublishedSection(dbContext, "legal_privacy", "Draft remains");
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("privacy", new() { ChangeReason = " " }, TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("legal_privacy", new() { ChangeReason = " " }, TestContext.Current.CancellationToken));
 
         Assert.Contains("Change reason is required", ex.Message);
     }
@@ -320,9 +320,9 @@ public sealed class WebsiteCmsAdminMutationServiceTests
     public async Task UnpublishSectionAsync_BlocksSecretLikeChangeReason()
     {
         await using var dbContext = CreateDbContext();
-        SeedPublishedSection(dbContext, "privacy", "Draft remains");
+        SeedPublishedSection(dbContext, "legal_privacy", "Draft remains");
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("privacy", new() { ChangeReason = "Bearer abcdefghijklmnopqrstuvwxyz123456" }, TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("legal_privacy", new() { ChangeReason = "Bearer abcdefghijklmnopqrstuvwxyz123456" }, TestContext.Current.CancellationToken));
 
         Assert.Contains("blocked secret-like marker", ex.Message);
     }
@@ -331,11 +331,11 @@ public sealed class WebsiteCmsAdminMutationServiceTests
     public async Task UnpublishSectionAsync_ClearsPublishedFieldsDoesNotChangeDraftAndSetsDraftStatus()
     {
         await using var dbContext = CreateDbContext();
-        SeedPublishedSection(dbContext, "privacy", "Draft remains");
+        SeedPublishedSection(dbContext, "legal_privacy", "Draft remains");
 
-        var response = await new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("privacy", new() { ChangeReason = "Remove internal published legal copy" }, TestContext.Current.CancellationToken);
+        var response = await new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("legal_privacy", new() { ChangeReason = "Remove internal published legal copy" }, TestContext.Current.CancellationToken);
 
-        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "privacy", TestContext.Current.CancellationToken);
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "legal_privacy", TestContext.Current.CancellationToken);
         Assert.NotNull(response);
         Assert.Equal("Draft remains", row.DraftBody);
         Assert.Null(row.PublishedBody);
@@ -353,11 +353,11 @@ public sealed class WebsiteCmsAdminMutationServiceTests
     public async Task UnpublishSectionAsync_SetsNotStartedWhenDraftBodyIsEmpty()
     {
         await using var dbContext = CreateDbContext();
-        SeedPublishedSection(dbContext, "privacy", string.Empty);
+        SeedPublishedSection(dbContext, "legal_privacy", string.Empty);
 
-        var response = await new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("privacy", new() { ChangeReason = "Remove internal published legal copy" }, TestContext.Current.CancellationToken);
+        var response = await new WebsiteCmsAdminMutationService(dbContext).UnpublishSectionAsync("legal_privacy", new() { ChangeReason = "Remove internal published legal copy" }, TestContext.Current.CancellationToken);
 
-        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "privacy", TestContext.Current.CancellationToken);
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "legal_privacy", TestContext.Current.CancellationToken);
         Assert.NotNull(response);
         Assert.Equal("not_started", row.ReviewStatus);
         Assert.Equal("not_started", response.ReviewStatus);

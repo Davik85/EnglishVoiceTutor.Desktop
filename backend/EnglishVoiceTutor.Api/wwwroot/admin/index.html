@@ -523,18 +523,32 @@
 
                     <div id="tab-panel-website" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-website">
                         <article class="card cms-warning-card" aria-labelledby="cms-website-heading">
-                            <h3 id="cms-website-heading">Website CMS planning status</h3>
-                            <p class="muted"><strong>Admin-only draft storage.</strong> This panel loads Website CMS metadata and can save draft bodies for admin review. Admin-only publish to internal PublishedBody is available after legal approval, but public site still renders static <code>site/public</code> files.</p>
-                            <ul class="placeholder-list">
-                                <li><span>Current public website source is still static files under <code>site/public/</code>.</span><span class="badge unavailable">Not connected</span></li>
-                                <li><span>Current public pages are temporary Paddle review-readiness shells.</span><span class="badge unavailable">Temporary</span></li>
-                                <li><span>Future CMS-managed content will include Seller/Company, Support, Pricing, Terms, Privacy, Refunds, Cancellation, AI/data disclosures, and Platform availability wording.</span><span class="badge unavailable">Future</span></li>
-                                <li><span>Draft content must not be public.</span><span class="badge unavailable">Guarded</span></li>
-                                <li><span>Public site rendering is not connected to CMS yet.</span><span class="badge unavailable">No runtime impact</span></li>
-                                <li><span>No live Paddle billing is enabled from this tab.</span><span class="badge unavailable">No billing action</span></li>
-                            </ul>
-                            <div class="cms-readonly-notice" role="note">Admin-only draft storage is enabled for initialized sections. Saving drafts does not publish, does not approve legal copy, and does not affect public rendering. Public site still renders static <code>site/public</code> files.</div>
-                            <div class="cms-readonly-notice" role="note">Initialization creates empty Website CMS metadata rows only. Draft editing and publish are admin-only Website CMS storage; publish copies DraftBody to PublishedBody only and public rendering remains unavailable.</div>
+                            <h3 id="cms-website-heading">Website text manager</h3>
+                            <p class="muted"><strong>Simple admin website text storage.</strong> Use this tab to manage public website text drafts for legal, home, desktop, and mobile/coming-soon pages without editing code.</p>
+                            <div class="cms-readonly-notice" role="note">Saved website text is stored in CMS. Public website rendering is still a separate step.</div>
+                            <div class="cms-readonly-notice" role="note">Saving text here does not update public rendering, does not modify <code>site/public</code>, does not enable live Paddle, and does not change billing, entitlement, or Desktop behavior.</div>
+                            <div class="website-cms-simple-sections" aria-label="Website text sections">
+                                <section class="cms-readonly-notice" aria-labelledby="website-cms-legal-heading">
+                                    <h4 id="website-cms-legal-heading">Legal pages</h4>
+                                    <p class="muted">Terms, Privacy Policy, Refund Policy, Cancellation Policy, Support, Pricing, Seller / Company details, AI / data disclosure, and Platform availability.</p>
+                                    <div id="website-cms-legal-pages" class="cms-button-row" data-website-cms-group="legal"></div>
+                                </section>
+                                <section class="cms-readonly-notice" aria-labelledby="website-cms-home-heading">
+                                    <h4 id="website-cms-home-heading">Home page</h4>
+                                    <p class="muted">Hero title, hero subtitle, short product description, tester / download copy, and footer/support copy.</p>
+                                    <div id="website-cms-home-page" class="cms-button-row" data-website-cms-group="home"></div>
+                                </section>
+                                <section class="cms-readonly-notice" aria-labelledby="website-cms-desktop-heading">
+                                    <h4 id="website-cms-desktop-heading">Desktop page</h4>
+                                    <p class="muted">Windows desktop app title, description, download/tester wording, and requirements / availability copy.</p>
+                                    <div id="website-cms-desktop-page" class="cms-button-row" data-website-cms-group="desktop"></div>
+                                </section>
+                                <section class="cms-readonly-notice" aria-labelledby="website-cms-mobile-heading">
+                                    <h4 id="website-cms-mobile-heading">Mobile page / Coming soon</h4>
+                                    <p class="muted">Mobile status, coming soon wording, and future availability wording.</p>
+                                    <div id="website-cms-mobile-page" class="cms-button-row" data-website-cms-group="mobile"></div>
+                                </section>
+                            </div>
                             <div class="cms-button-row"><button id="website-cms-initialize-missing-button" type="button">Initialize missing Website CMS sections</button></div>
                             <p id="website-cms-initialize-result" class="muted" role="status"></p>
                             <p id="website-cms-loading" class="lookup-loading hidden" role="status">Loading Website CMS metadata...</p>
@@ -542,7 +556,7 @@
                             <div id="website-cms-section-overview" class="table-wrap cms-wide-table-wrap" data-website-cms-section-overview="true"></div>
                             <p id="website-cms-checked-at" class="muted" role="status"></p>
                             <p id="website-cms-save-result" class="muted" role="status"></p>
-                            <div id="website-cms-section-detail" class="cms-detail-panel" data-website-cms-section-detail="true"><p class="muted">Select a section key to load admin-only draft detail and save controls.</p></div>
+                            <div id="website-cms-section-detail" class="cms-detail-panel" data-website-cms-section-detail="true"><p class="muted">Select a Website section to edit its text.</p></div>
                         </article>
                         <article class="card cms-compact-card" aria-labelledby="cms-website-guardrails-heading">
                             <h3 id="cms-website-guardrails-heading">Website CMS guardrails</h3>
