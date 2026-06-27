@@ -8,7 +8,7 @@ namespace EnglishVoiceTutor.Api.Services.WebsiteCms;
 public sealed class WebsiteCmsAdminMutationService(AppDbContext dbContext) : IWebsiteCmsAdminMutationService
 {
     private const string InitialReviewStatus = "not_started";
-    private const string InitializationChangeReason = "Initialize Website CMS section metadata";
+    private const string InitializationChangeReason = "Load current website texts";
     private static readonly HashSet<string> AllowedReviewStatuses = new(StringComparer.Ordinal)
     {
         "not_started",
@@ -25,27 +25,39 @@ public sealed class WebsiteCmsAdminMutationService(AppDbContext dbContext) : IWe
     {
         var expectedSections = WebsiteCmsExpectedSections.All;
         var expectedKeys = expectedSections.Select(section => section.SectionKey).ToArray();
-        var existingKeys = await _dbContext.WebsiteCmsSections
+        var existingRowList = await _dbContext.WebsiteCmsSections
             .Where(section => expectedKeys.Contains(section.SectionKey))
-            .Select(section => section.SectionKey)
             .ToListAsync(cancellationToken);
-        var existing = new HashSet<string>(existingKeys, StringComparer.Ordinal);
+        var existingRows = existingRowList.ToDictionary(section => section.SectionKey, StringComparer.Ordinal);
         var now = DateTimeOffset.UtcNow;
         var results = new List<AdminWebsiteCmsSectionInitializationResult>(expectedSections.Count);
 
         foreach (var expected in expectedSections)
         {
-            if (existing.Contains(expected.SectionKey))
+            WebsiteCmsDefaultTexts.BySectionKey.TryGetValue(expected.SectionKey, out var defaultText);
+            defaultText ??= string.Empty;
+
+            if (existingRows.TryGetValue(expected.SectionKey, out var existingRow))
             {
-                results.Add(new AdminWebsiteCmsSectionInitializationResult { SectionKey = expected.SectionKey, State = "existing", Created = false });
+                if (string.IsNullOrWhiteSpace(existingRow.DraftBody))
+                {
+                    existingRow.DraftBody = defaultText;
+                    existingRow.ChangeReason = InitializationChangeReason;
+                    existingRow.UpdatedAtUtc = now;
+                    results.Add(new AdminWebsiteCmsSectionInitializationResult { SectionKey = expected.SectionKey, State = "filled_default_text", Created = false });
+                }
+                else
+                {
+                    results.Add(new AdminWebsiteCmsSectionInitializationResult { SectionKey = expected.SectionKey, State = "existing_text_preserved", Created = false });
+                }
                 continue;
             }
 
-            _dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
+            var newRow = new WebsiteCmsSectionEntity
             {
                 Id = Guid.NewGuid(),
                 SectionKey = expected.SectionKey,
-                DraftBody = string.Empty,
+                DraftBody = defaultText,
                 PublishedBody = null,
                 ReviewStatus = InitialReviewStatus,
                 EffectiveDate = null,
@@ -54,9 +66,10 @@ public sealed class WebsiteCmsAdminMutationService(AppDbContext dbContext) : IWe
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now,
                 PublishedAtUtc = null
-            });
-            existing.Add(expected.SectionKey);
-            results.Add(new AdminWebsiteCmsSectionInitializationResult { SectionKey = expected.SectionKey, State = "created", Created = true });
+            };
+            _dbContext.WebsiteCmsSections.Add(newRow);
+            existingRows.Add(expected.SectionKey, newRow);
+            results.Add(new AdminWebsiteCmsSectionInitializationResult { SectionKey = expected.SectionKey, State = "created_with_default_text", Created = true });
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -96,7 +109,22 @@ public sealed class WebsiteCmsAdminMutationService(AppDbContext dbContext) : IWe
         var row = await _dbContext.WebsiteCmsSections.SingleOrDefaultAsync(section => section.SectionKey == sectionKey, cancellationToken);
         if (row is null)
         {
-            return null;
+            var now = DateTimeOffset.UtcNow;
+            row = new WebsiteCmsSectionEntity
+            {
+                Id = Guid.NewGuid(),
+                SectionKey = expected.SectionKey,
+                DraftBody = string.Empty,
+                PublishedBody = null,
+                ReviewStatus = InitialReviewStatus,
+                EffectiveDate = null,
+                InternalNotes = null,
+                ChangeReason = changeReason,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now,
+                PublishedAtUtc = null
+            };
+            _dbContext.WebsiteCmsSections.Add(row);
         }
 
         row.DraftBody = request.DraftBody ?? string.Empty;

@@ -288,3 +288,9 @@ The next functional Website CMS implementation step is admin-only publish workfl
 ## Website CMS next safe step after admin-only publish
 
 Admin-only Website CMS publish stores approved non-empty draft copy in internal `PublishedBody` only, and simple admin-only unpublish can clear internal `PublishedBody` / `PublishedAtUtc` only. The next safe work should be revision history design/implementation or owner/legal copy preparation and approval outside code, not public rendering. Do not implement public rendering, checkout links, live Paddle, billing behavior, entitlement behavior, or public unauthenticated Website CMS endpoints in this step.
+
+
+## Website CMS next steps (2026-06-27)
+- Review seeded website text in Admin → Website with the owner/legal reviewer and replace placeholders such as seller/company, support phone, and final pricing only after approval.
+- Keep static `site/public` fallback text current when public page structure changes so CMS initialization remains understandable.
+- Treat live Paddle enablement as a separate production readiness task; do not add checkout buttons or live billing from the Website CMS workstream.

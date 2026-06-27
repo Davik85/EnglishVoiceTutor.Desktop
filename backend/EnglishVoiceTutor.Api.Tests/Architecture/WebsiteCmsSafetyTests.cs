@@ -5,7 +5,7 @@ public sealed class WebsiteCmsSafetyTests
     private static readonly string RepoRoot = LocateRepoRoot();
 
     [Fact]
-    public void WebsiteCmsRoutes_AreAdminOnlyAndDoNotExposePublicEndpoints()
+    public void WebsiteCmsRoutes_ExposePublicReadOnlyTextsEndpointAndKeepAdminMutationRoutesProtected()
     {
         var apiConstants = File.ReadAllText(Path.Combine(RepoRoot, "backend/EnglishVoiceTutor.Api/Constants/ApiConstants.cs"));
 
@@ -18,7 +18,7 @@ public sealed class WebsiteCmsSafetyTests
         Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/review-status", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/publish", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/unpublish", apiConstants, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("/api/website", apiConstants, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("/api/website/texts", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/api/public", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/api/website-cms", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/legal", apiConstants, StringComparison.OrdinalIgnoreCase);
@@ -60,7 +60,7 @@ public sealed class WebsiteCmsSafetyTests
         Assert.Contains("Home page", adminIndex, StringComparison.Ordinal);
         Assert.Contains("Desktop page", adminIndex, StringComparison.Ordinal);
         Assert.Contains("Mobile page / Coming soon", adminIndex, StringComparison.Ordinal);
-        Assert.Contains("Saved website text is stored in CMS. Public website rendering is still a separate step.", adminIndex, StringComparison.Ordinal);
+        Assert.Contains("Load current website texts", adminIndex, StringComparison.Ordinal);
         Assert.Contains("Website text", adminScript, StringComparison.Ordinal);
         Assert.Contains("Change note", adminScript, StringComparison.Ordinal);
         Assert.Contains(@"placeholder=""What changed?""", adminScript, StringComparison.Ordinal);
@@ -78,23 +78,22 @@ public sealed class WebsiteCmsSafetyTests
         Assert.DoesNotContain("legal_approved", visibleDetail, StringComparison.Ordinal);
         Assert.DoesNotContain("owner_approved", visibleDetail, StringComparison.Ordinal);
         Assert.DoesNotContain("rollback", visibleDetail, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("does not modify <code>site/public</code>", visibleDetail, StringComparison.Ordinal);
+        Assert.Contains("Static site text remains the fallback", visibleDetail, StringComparison.Ordinal);
         Assert.Contains("does not enable live Paddle", visibleDetail, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void SitePublic_HasNoWorkingTreeChanges()
+    public void SitePublic_UsesCmsTextWithStaticFallbackAndNoCheckoutLinks()
     {
-        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "git",
-            ArgumentList = { "diff", "--quiet", "--", "site/public" },
-            WorkingDirectory = RepoRoot,
-            RedirectStandardError = true
-        }) ?? throw new InvalidOperationException("Could not start git diff.");
+        var publicRoot = Path.Combine(RepoRoot, "site/public");
+        var websiteCmsScript = File.ReadAllText(Path.Combine(publicRoot, "website-cms.js"));
+        var combined = string.Join("\n", Directory.EnumerateFiles(publicRoot, "*.html", SearchOption.TopDirectoryOnly).Select(File.ReadAllText));
 
-        process.WaitForExit(5000);
-        Assert.Equal(0, process.ExitCode);
+        Assert.Contains("https://api.languagevoicetutor.com/api/website/texts", websiteCmsScript, StringComparison.Ordinal);
+        Assert.Contains("data-website-cms-section", combined, StringComparison.Ordinal);
+        Assert.Contains("Static HTML remains visible when the CMS backend is unavailable", websiteCmsScript, StringComparison.Ordinal);
+        Assert.DoesNotContain("checkout.paddle.com", combined, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("data-paddle", combined, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
