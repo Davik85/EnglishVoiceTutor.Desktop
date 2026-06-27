@@ -176,15 +176,9 @@ Run `python3 tools/test_static_site_paddle_review_pages.py` before uploading the
 
 ## Future CMS-managed website content planning
 
-Future planning for managing public website legal, seller, support, policy, and pricing display copy through Admin CMS is documented in `docs/WEBSITE_CMS_LEGAL_CONTENT_PLAN.md`. That plan is documentation-only and should be treated as the future source for CMS-managed legal/site content planning; it does not change the current static `site/public/` review-readiness pages or enable production Paddle.
-
-
-## Current status after 2026-06-27 Website CMS admin-only publish rollout
 
 - Static review-readiness pages exist for `pricing.html`, `terms.html`, `privacy.html`, `refunds.html`, `cancellation.html`, and `support.html` and remain the actual public website rendering source.
 - Production public website root is confirmed as `/var/www/languagevoicetutor/site`. The accidental upload to `/var/www/languagevoicetutor/` was quarantined at `/var/www/languagevoicetutor/_mistaken_static_upload_20260625`.
-- The Admin Website tab is a top-level admin-only Website CMS workspace, not a `CMS Content` sub-tab. It supports metadata, missing-section initialization, section detail, draft save, validation, admin-only preview, review-status changes with required `ChangeReason`, and explicit admin-only publish to internal Website CMS `PublishedBody`.
-- The Website CMS backend/database foundation exists and production migration `20260625090000_AddWebsiteCmsLegalContentFoundation` has been applied, but public rendering is not connected to Website CMS; static `site/public/` remains the public rendering source.
 - Backend release `0.1.35-backend.57` is deployed, with `/health` and `/api/health/database` returning `200 Healthy` after deployment. Production smoke verified publish copies `DraftBody` to internal `PublishedBody` and sets `PublishedAtUtc`; smoke data was cleaned up, and rollback/unpublish is not implemented yet.
 - Live Paddle remains disabled. No checkout links, checkout buttons, live Paddle identifiers, Paddle client token, webhook secret, or paid production behavior are enabled.
 - Final public seller, legal, support, refund, cancellation, privacy, terms, and pricing values still require owner/legal approval.

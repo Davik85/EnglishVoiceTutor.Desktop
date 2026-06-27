@@ -54,7 +54,6 @@ Current controlled tester/direct Windows releases continue to use the existing I
 
 ## Latest verified release summary
 
-Clean-machine smoke passed; small screen/tablet visual smoke passed; the localized Welcome Russian/French fix passed; the admin roles/permissions policy and UI policy tests passed; the desktop release gate passed; and backend `0.1.35-backend.57` is deployed and healthy after the Website CMS admin-only publish rollout. CMS/Admin published snapshot runtime validation passed for controlled tester lessons, Save draft + Publish changes are visible in newly started desktop lessons, and Admin Product Statistics now shows `Tracked signed-in app/device records`, `Successful payments total`, and `Successful payments current month` from the live Admin UI.
 
 ## Immediate next steps
 
@@ -64,17 +63,11 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 4. Treat additional Admin statistics work as follow-up only if a new product question appears; the current successful-payment statistics deployment is complete and verified.
 
 
-
-## Website CMS next safe steps after 2026-06-27 simplification
-
-Current status: Website is a top-level Admin Shell tab with simple website text management for Legal pages, Home page, Desktop page, and Mobile page / Coming soon. The visible UI is no longer a complex legal/publish workflow; it provides section selection, website text editing, Change note, and Save. Saved website text is stored in CMS, while public website rendering remains static and separate.
-
 Safe next steps:
 
 1. Prepare real website/legal copy outside code for Terms, Privacy Policy, Refund Policy, Cancellation Policy, Support, Pricing, Seller / Company details, AI / data disclosure, Platform availability, Home, Desktop, and Mobile / Coming soon text.
 2. After copy is ready, connect public rendering to approved CMS text in a separate controlled task with explicit safety review. That later task must ensure public rendering reads only approved/published text and never exposes drafts or internal notes.
 3. Keep `site/public/` unchanged until that separate rendering task is approved.
-4. Keep live Paddle, checkout links/buttons, billing behavior, entitlement behavior, Desktop behavior, migrations, deployment scripts, production config, backend environment variables, and secrets out of Website CMS text-management work.
 
 ## Release-readiness roadmap
 
@@ -140,7 +133,6 @@ Safe next steps:
 
 Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.57` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current.
 
-Previous backend release for rollback reference must be verified from `/opt/languagevoicetutor/backend/previous` before rollback. Backend `0.1.35-backend.40` contains the current-user cancel-renewal endpoint, Paddle cancel-at-period-end adapter support, subscription status fields for Desktop Account billing UI decisions, and a cancel request path that must not directly revoke entitlements. `https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. EF migrations through `20260625090000_AddWebsiteCmsLegalContentFoundation` are recorded in production `__EFMigrationsHistory`.
 
 Deployed runtime status diagnostics and the clarified Admin CMS Overview are retained on backend `0.1.35-backend.56` after first being verified on `0.1.35-backend.48` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `Actual learner runtime source = CmsPublishedSnapshot`, `Validation success = Yes`, `Currently using static JSON fallback = No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `lana`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
 
@@ -280,17 +272,5 @@ Completed: backend `0.1.35-backend.50` was packaged, uploaded, deployed, restart
 
 Admin Product Statistics now separates access-state metrics from payment-event metrics: `Active Premium users now` remains a current entitlement/access metric, while `Successful payments total` and `Successful payments current month` are aggregate successful payment-event counts from internal normalized payment records. Continue to validate billing flows in sandbox and keep production/live Paddle readiness deferred until live credentials, webhook destination, reconciliation, refund/chargeback/customer portal, legal/support, monitoring, and operational runbooks are complete. Do not claim broad public production readiness.
 
-### After admin-only Website CMS draft save
 
-The next functional Website CMS implementation step is admin-only publish workflow without public rendering. Public rendering integration remains a later separate step, and static `site/public/` remains the production public rendering source until a published-only integration is separately approved, implemented, and tested.
-
-
-## Website CMS next safe step after admin-only publish
-
-Admin-only Website CMS publish stores approved non-empty draft copy in internal `PublishedBody` only, and simple admin-only unpublish can clear internal `PublishedBody` / `PublishedAtUtc` only. The next safe work should be revision history design/implementation or owner/legal copy preparation and approval outside code, not public rendering. Do not implement public rendering, checkout links, live Paddle, billing behavior, entitlement behavior, or public unauthenticated Website CMS endpoints in this step.
-
-
-## Website CMS next steps (2026-06-27)
-- Review seeded website text in Admin → Website with the owner/legal reviewer and replace placeholders such as seller/company, support phone, and final pricing only after approval.
 - Keep static `site/public` fallback text current when public page structure changes so CMS initialization remains understandable.
-- Treat live Paddle enablement as a separate production readiness task; do not add checkout buttons or live billing from the Website CMS workstream.
