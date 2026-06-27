@@ -39,6 +39,8 @@
         roleAssignmentDisableAdmin: "/api/admin/role-assignments/disable-admin",
         roleAssignmentEnableAdmin: "/api/admin/role-assignments/enable-admin",
         websiteCmsSectionOverview: "/api/admin/website-cms/sections/overview",
+        websiteCmsSectionDetailTemplate: "/api/admin/website-cms/sections/{sectionKey}",
+        websiteCmsSectionDraftTemplate: "/api/admin/website-cms/sections/{sectionKey}/draft",
         websiteCmsInitializeMissing: "/api/admin/website-cms/sections/initialize-missing"
     };
 
@@ -184,6 +186,8 @@
     const websiteCmsCheckedAtElement = document.getElementById("website-cms-checked-at");
     const websiteCmsInitializeMissingButton = document.getElementById("website-cms-initialize-missing-button");
     const websiteCmsInitializeResultElement = document.getElementById("website-cms-initialize-result");
+    const websiteCmsDetailElement = document.getElementById("website-cms-section-detail");
+    const websiteCmsSaveResultElement = document.getElementById("website-cms-save-result");
     const studyLanguageDistributionElement = document.getElementById("study-language-distribution");
     const nativeLanguageDistributionElement = document.getElementById("native-language-distribution");
     const explanationLanguageDistributionElement = document.getElementById("explanation-language-distribution");
@@ -547,10 +551,44 @@
             websiteCmsSectionOverviewElement.innerHTML = '<p class="muted">No Website CMS section metadata was returned.</p>';
             return;
         }
-        const rows = sections.map((section) => `<tr><td><code>${escapeHtml(section.sectionKey)}</code></td><td>${escapeHtml(section.displayName)}</td><td>${escapeHtml(section.reviewStatus || "Not stored")}</td><td>${section.storedRowExists ? "Stored" : "Not stored"}</td><td>${section.draftBodyExists ? "Yes" : "No"}</td><td>${section.publishedBodyExists ? "Yes" : "No"}</td><td>${escapeHtml(formatWebsiteCmsValue(section.effectiveDate))}</td><td>${escapeHtml(formatWebsiteCmsValue(section.updatedAtUtc))}</td><td>${escapeHtml(formatWebsiteCmsValue(section.publishedAtUtc))}</td></tr>`).join("");
+        const rows = sections.map((section) => `<tr><td><button type="button" class="link-button" data-website-cms-section-key="${escapeHtml(section.sectionKey)}"><code>${escapeHtml(section.sectionKey)}</code></button></td><td>${escapeHtml(section.displayName)}</td><td>${escapeHtml(section.reviewStatus || "Not stored")}</td><td>${section.storedRowExists ? "Stored" : "Not stored"}</td><td>${section.draftBodyExists ? "Yes" : "No"}</td><td>${section.publishedBodyExists ? "Yes" : "No"}</td><td>${escapeHtml(formatWebsiteCmsValue(section.effectiveDate))}</td><td>${escapeHtml(formatWebsiteCmsValue(section.updatedAtUtc))}</td><td>${escapeHtml(formatWebsiteCmsValue(section.publishedAtUtc))}</td></tr>`).join("");
         websiteCmsSectionOverviewElement.innerHTML = `<table><thead><tr><th>Section key</th><th>Display name</th><th>Review status</th><th>Stored</th><th>Draft exists</th><th>Published exists</th><th>Effective date</th><th>Updated</th><th>Published</th></tr></thead><tbody>${rows}</tbody></table>`;
         if (websiteCmsCheckedAtElement) { websiteCmsCheckedAtElement.textContent = payload?.checkedAtUtc ? `Metadata checked at ${payload.checkedAtUtc}.` : ""; }
     }
+    function websiteCmsPath(template, sectionKey) { return template.replace("{sectionKey}", encodeURIComponent(sectionKey)); }
+    function renderWebsiteCmsDetail(detail) {
+        if (!websiteCmsDetailElement) { return; }
+        const statuses = ["not_started", "draft", "owner_review_needed", "legal_review_needed", "owner_approved", "legal_approved"];
+        const options = statuses.map((status) => `<option value="${status}" ${detail.reviewStatus === status ? "selected" : ""}>${status}</option>`).join("");
+        websiteCmsDetailElement.innerHTML = `<h4>Draft detail: <code>${escapeHtml(detail.sectionKey)}</code></h4><p class="muted">${escapeHtml(detail.displayName)} — ${escapeHtml(detail.description)}</p><p class="cms-inline-warning">Admin-only draft storage. Saving here does not publish, does not update public website rendering, and does not modify <code>site/public</code>. Draft copy is not final legal advice or legal approval.</p><form id="website-cms-draft-form"><input type="hidden" id="website-cms-detail-key" value="${escapeHtml(detail.sectionKey)}" /><div class="field"><label for="website-cms-draft-body">DraftBody</label><textarea id="website-cms-draft-body" rows="12">${escapeHtml(detail.draftBody || "")}</textarea></div><div class="field"><label for="website-cms-internal-notes">InternalNotes</label><textarea id="website-cms-internal-notes" rows="4">${escapeHtml(detail.internalNotes || "")}</textarea></div><div class="field"><label for="website-cms-effective-date">EffectiveDate</label><input id="website-cms-effective-date" type="date" value="${escapeHtml(detail.effectiveDate || "")}" /></div><div class="field"><label for="website-cms-review-status">ReviewStatus</label><select id="website-cms-review-status">${options}</select></div><div class="field"><label for="website-cms-change-reason">ChangeReason (required)</label><input id="website-cms-change-reason" type="text" required autocomplete="off" placeholder="Why is this draft changing?" /></div><p class="muted">Published body exists: ${detail.publishedBodyExists ? "Yes" : "No"}. Published timestamp: ${escapeHtml(formatWebsiteCmsValue(detail.publishedAtUtc))}. Saving a draft does not change either value.</p><button id="website-cms-save-draft-button" type="submit">Save draft</button></form>`;
+        document.getElementById("website-cms-draft-form")?.addEventListener("submit", saveWebsiteCmsDraft);
+    }
+    async function loadWebsiteCmsSectionDetail(sectionKey) {
+        if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = ""; }
+        const detail = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionDetailTemplate, sectionKey), { method: "GET" });
+        renderWebsiteCmsDetail(detail);
+    }
+    async function saveWebsiteCmsDraft(event) {
+        event.preventDefault();
+        const sectionKey = document.getElementById("website-cms-detail-key")?.value || "";
+        const payload = {
+            draftBody: document.getElementById("website-cms-draft-body")?.value || "",
+            internalNotes: document.getElementById("website-cms-internal-notes")?.value || "",
+            effectiveDate: document.getElementById("website-cms-effective-date")?.value || null,
+            reviewStatus: document.getElementById("website-cms-review-status")?.value || "draft",
+            changeReason: document.getElementById("website-cms-change-reason")?.value || ""
+        };
+        if (!payload.changeReason.trim()) { if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = "ChangeReason is required."; } return; }
+        try {
+            const detail = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionDraftTemplate, sectionKey), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+            if (websiteCmsSaveResultElement) { websiteCmsSaveResultElement.textContent = `Draft saved for ${detail.sectionKey}. This did not publish or update public rendering.`; }
+            renderWebsiteCmsDetail(detail);
+            await loadWebsiteCmsSectionOverview();
+        } catch (error) {
+            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to save Website CMS draft."; }
+        }
+    }
+
     async function initializeMissingWebsiteCmsSections() {
         if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = ""; }
         if (websiteCmsInitializeResultElement) { websiteCmsInitializeResultElement.textContent = "Initializing missing Website CMS metadata rows..."; }
@@ -582,6 +620,7 @@
     }
 
     if (websiteCmsInitializeMissingButton) { websiteCmsInitializeMissingButton.addEventListener("click", initializeMissingWebsiteCmsSections); }
+    if (websiteCmsSectionOverviewElement) { websiteCmsSectionOverviewElement.addEventListener("click", (event) => { const button = event.target.closest("[data-website-cms-section-key]"); if (button) { loadWebsiteCmsSectionDetail(button.dataset.websiteCmsSectionKey); } }); }
 
     function updateSelectedUserHeader() {
         selectedUserSummaryElement.textContent = selectedUserEmail ? `Selected user: ${selectedUserEmail}` : "Selected user: -";

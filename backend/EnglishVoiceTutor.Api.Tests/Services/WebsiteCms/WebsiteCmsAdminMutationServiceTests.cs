@@ -85,6 +85,91 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         Assert.Equal(updatedAt, privacy.PublishedAtUtc);
     }
 
+    [Fact]
+    public async Task SaveDraftAsync_RequiresChangeReason()
+    {
+        await using var dbContext = CreateDbContext();
+        await new WebsiteCmsAdminMutationService(dbContext).InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).SaveDraftAsync("privacy", new()
+        {
+            DraftBody = "Draft",
+            ReviewStatus = "draft",
+            ChangeReason = " "
+        }, TestContext.Current.CancellationToken));
+
+        Assert.Contains("Change reason is required", ex.Message);
+    }
+
+    [Fact]
+    public async Task SaveDraftAsync_UpdatesDraftFieldsWithoutChangingPublishedFields()
+    {
+        await using var dbContext = CreateDbContext();
+        var now = DateTimeOffset.Parse("2026-06-26T10:00:00Z");
+        dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
+        {
+            Id = Guid.NewGuid(),
+            SectionKey = "terms",
+            DraftBody = "Old draft",
+            PublishedBody = "Published remains",
+            ReviewStatus = "not_started",
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+            PublishedAtUtc = now.AddHours(1)
+        });
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var response = await new WebsiteCmsAdminMutationService(dbContext).SaveDraftAsync("terms", new()
+        {
+            DraftBody = "New draft",
+            InternalNotes = "Notes",
+            EffectiveDate = new DateOnly(2026, 8, 1),
+            ReviewStatus = "owner_review_needed",
+            ChangeReason = "Owner review prep"
+        }, TestContext.Current.CancellationToken);
+
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "terms", TestContext.Current.CancellationToken);
+        Assert.NotNull(response);
+        Assert.Equal("New draft", row.DraftBody);
+        Assert.Equal("owner_review_needed", row.ReviewStatus);
+        Assert.Equal(new DateOnly(2026, 8, 1), row.EffectiveDate);
+        Assert.Equal("Notes", row.InternalNotes);
+        Assert.Equal("Owner review prep", row.ChangeReason);
+        Assert.Equal("Published remains", row.PublishedBody);
+        Assert.Equal(now.AddHours(1), row.PublishedAtUtc);
+    }
+
+    [Fact]
+    public async Task SaveDraftAsync_BlocksSecretLikeValues()
+    {
+        await using var dbContext = CreateDbContext();
+        await new WebsiteCmsAdminMutationService(dbContext).InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).SaveDraftAsync("pricing", new()
+        {
+            DraftBody = "Do not save bearer abcdefghijklmnopqrstuvwxyz123456",
+            ReviewStatus = "draft",
+            ChangeReason = "Test guard"
+        }, TestContext.Current.CancellationToken));
+
+        Assert.Contains("blocked secret-like marker", ex.Message);
+    }
+
+    [Fact]
+    public async Task SaveDraftAsync_RejectsUnknownKey()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var response = await new WebsiteCmsAdminMutationService(dbContext).SaveDraftAsync("unknown", new()
+        {
+            DraftBody = "Draft",
+            ReviewStatus = "draft",
+            ChangeReason = "Reason"
+        }, TestContext.Current.CancellationToken);
+
+        Assert.Null(response);
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
