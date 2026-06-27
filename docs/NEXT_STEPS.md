@@ -284,3 +284,8 @@ Admin Product Statistics now separates access-state metrics from payment-event m
 ### After admin-only Website CMS draft save
 
 The next functional Website CMS implementation step is admin-only publish workflow without public rendering. Public rendering integration remains a later separate step, and static `site/public/` remains the production public rendering source until a published-only integration is separately approved, implemented, and tested.
+
+
+## Website CMS next safe step after admin-only publish
+
+Admin-only Website CMS publish now stores approved non-empty draft copy in internal `PublishedBody` only. The next safe work should be owner/legal copy preparation and approval and/or public rendering integration design. Do not implement public rendering, checkout links, live Paddle, billing behavior, entitlement behavior, or public unauthenticated Website CMS endpoints in this step.

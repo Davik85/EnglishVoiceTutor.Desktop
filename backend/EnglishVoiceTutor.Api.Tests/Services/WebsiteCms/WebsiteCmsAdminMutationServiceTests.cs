@@ -215,6 +215,104 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         Assert.Equal("Notes", row.InternalNotes);
     }
 
+
+    [Fact]
+    public async Task PublishSectionAsync_RejectsUnknownKey()
+    {
+        await using var dbContext = CreateDbContext();
+
+        var response = await new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("unknown", new() { ChangeReason = "Publish approved copy" }, TestContext.Current.CancellationToken);
+
+        Assert.Null(response);
+    }
+
+    [Fact]
+    public async Task PublishSectionAsync_RejectsEmptyDraft()
+    {
+        await using var dbContext = CreateDbContext();
+        await new WebsiteCmsAdminMutationService(dbContext).InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "privacy", TestContext.Current.CancellationToken);
+        row.ReviewStatus = "legal_approved";
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("privacy", new() { ChangeReason = "Publish approved copy" }, TestContext.Current.CancellationToken));
+
+        Assert.Contains("DraftBody is required", ex.Message);
+    }
+
+    [Fact]
+    public async Task PublishSectionAsync_RejectsMissingChangeReason()
+    {
+        await using var dbContext = CreateDbContext();
+        SeedPublishableSection(dbContext, "terms", "Terms draft", "legal_approved");
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("terms", new() { ChangeReason = " " }, TestContext.Current.CancellationToken));
+
+        Assert.Contains("Change reason is required", ex.Message);
+    }
+
+    [Theory]
+    [InlineData("draft")]
+    [InlineData("owner_approved")]
+    public async Task PublishSectionAsync_RejectsNonLegalApprovedReviewStatus(string reviewStatus)
+    {
+        await using var dbContext = CreateDbContext();
+        SeedPublishableSection(dbContext, "support", "Support draft", reviewStatus);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("support", new() { ChangeReason = "Publish approved copy" }, TestContext.Current.CancellationToken));
+
+        Assert.Contains("requires legal_approved", ex.Message);
+    }
+
+    [Fact]
+    public async Task PublishSectionAsync_BlocksSecretLikeDraftContent()
+    {
+        await using var dbContext = CreateDbContext();
+        SeedPublishableSection(dbContext, "pricing", "Do not publish bearer abcdefghijklmnopqrstuvwxyz123456", "legal_approved");
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("pricing", new() { ChangeReason = "Publish approved copy" }, TestContext.Current.CancellationToken));
+
+        Assert.Contains("blocked secret-like marker", ex.Message);
+    }
+
+    [Fact]
+    public async Task PublishSectionAsync_CopiesDraftBodyToPublishedBodyAndSetsPublishedAtUtc()
+    {
+        await using var dbContext = CreateDbContext();
+        SeedPublishableSection(dbContext, "privacy", "Approved privacy draft", "legal_approved");
+
+        var response = await new WebsiteCmsAdminMutationService(dbContext).PublishSectionAsync("privacy", new() { ChangeReason = "Explicit legal-approved Website CMS publish" }, TestContext.Current.CancellationToken);
+
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "privacy", TestContext.Current.CancellationToken);
+        Assert.NotNull(response);
+        Assert.Equal("Approved privacy draft", row.PublishedBody);
+        Assert.NotNull(row.PublishedAtUtc);
+        Assert.True(response.PublishedBodyExists);
+        Assert.Equal(row.PublishedAtUtc, response.PublishedAtUtc);
+        Assert.Equal("legal_approved", response.ReviewStatus);
+        Assert.Contains("does not update public website rendering", response.Message);
+        Assert.Contains("does not modify site/public", response.Message);
+        Assert.Contains("does not enable live Paddle", response.Message);
+    }
+
+    private static void SeedPublishableSection(AppDbContext dbContext, string sectionKey, string draftBody, string reviewStatus)
+    {
+        var now = DateTimeOffset.Parse("2026-06-27T10:00:00Z");
+        dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
+        {
+            Id = Guid.NewGuid(),
+            SectionKey = sectionKey,
+            DraftBody = draftBody,
+            PublishedBody = null,
+            ReviewStatus = reviewStatus,
+            ChangeReason = "Seed",
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+            PublishedAtUtc = null
+        });
+        dbContext.SaveChanges();
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

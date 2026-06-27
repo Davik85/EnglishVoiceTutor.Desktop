@@ -524,7 +524,7 @@
                     <div id="tab-panel-website" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-website">
                         <article class="card cms-warning-card" aria-labelledby="cms-website-heading">
                             <h3 id="cms-website-heading">Website CMS planning status</h3>
-                            <p class="muted"><strong>Admin-only draft storage.</strong> This panel loads Website CMS metadata and can save draft bodies for admin review. Publish is not implemented, and public site still renders static <code>site/public</code> files.</p>
+                            <p class="muted"><strong>Admin-only draft storage.</strong> This panel loads Website CMS metadata and can save draft bodies for admin review. Admin-only publish to internal PublishedBody is available after legal approval, but public site still renders static <code>site/public</code> files.</p>
                             <ul class="placeholder-list">
                                 <li><span>Current public website source is still static files under <code>site/public/</code>.</span><span class="badge unavailable">Not connected</span></li>
                                 <li><span>Current public pages are temporary Paddle review-readiness shells.</span><span class="badge unavailable">Temporary</span></li>
@@ -534,7 +534,7 @@
                                 <li><span>No live Paddle billing is enabled from this tab.</span><span class="badge unavailable">No billing action</span></li>
                             </ul>
                             <div class="cms-readonly-notice" role="note">Admin-only draft storage is enabled for initialized sections. Saving drafts does not publish, does not approve legal copy, and does not affect public rendering. Public site still renders static <code>site/public</code> files.</div>
-                            <div class="cms-readonly-notice" role="note">Initialization creates empty Website CMS metadata rows only. Draft editing is admin-only storage; publish and public rendering remain unavailable.</div>
+                            <div class="cms-readonly-notice" role="note">Initialization creates empty Website CMS metadata rows only. Draft editing and publish are admin-only Website CMS storage; publish copies DraftBody to PublishedBody only and public rendering remains unavailable.</div>
                             <div class="cms-button-row"><button id="website-cms-initialize-missing-button" type="button">Initialize missing Website CMS sections</button></div>
                             <p id="website-cms-initialize-result" class="muted" role="status"></p>
                             <p id="website-cms-loading" class="lookup-loading hidden" role="status">Loading Website CMS metadata...</p>

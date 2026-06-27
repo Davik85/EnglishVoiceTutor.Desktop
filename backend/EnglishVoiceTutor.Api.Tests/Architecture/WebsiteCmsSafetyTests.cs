@@ -16,6 +16,7 @@ public sealed class WebsiteCmsSafetyTests
         Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/draft/validate", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/draft/preview", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/review-status", apiConstants, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/publish", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/api/website", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/api/public", apiConstants, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/api/website-cms", apiConstants, StringComparison.OrdinalIgnoreCase);
@@ -40,6 +41,7 @@ public sealed class WebsiteCmsSafetyTests
         Assert.Contains("app.MapPost(ApiConstants.AdminWebsiteCmsSectionDraftValidateRoute, ValidateWebsiteCmsSectionDraftAsync)", adminEndpoints, StringComparison.Ordinal);
         Assert.Contains("app.MapGet(ApiConstants.AdminWebsiteCmsSectionDraftPreviewRoute, PreviewWebsiteCmsSectionDraftAsync)", adminEndpoints, StringComparison.Ordinal);
         Assert.Contains("app.MapPut(ApiConstants.AdminWebsiteCmsSectionReviewStatusRoute, UpdateWebsiteCmsSectionReviewStatusAsync)", adminEndpoints, StringComparison.Ordinal);
+        Assert.Contains("app.MapPost(ApiConstants.AdminWebsiteCmsSectionPublishRoute, PublishWebsiteCmsSectionAsync)", adminEndpoints, StringComparison.Ordinal);
         Assert.Contains("RequireRateLimiting(RateLimitingConstants.AdminWritePolicyName)", adminEndpoints, StringComparison.Ordinal);
         Assert.DoesNotContain("MapPut(ApiConstants.AdminWebsiteCmsSectionOverviewRoute", adminEndpoints, StringComparison.Ordinal);
     }
@@ -60,6 +62,11 @@ public sealed class WebsiteCmsSafetyTests
         Assert.Contains("Validate draft", adminScript, StringComparison.Ordinal);
         Assert.Contains("Preview draft", adminScript, StringComparison.Ordinal);
         Assert.Contains("owner_approved/legal_approved are internal review markers only", adminScript, StringComparison.Ordinal);
+        Assert.Contains("Publish section to Website CMS only", adminScript, StringComparison.Ordinal);
+        Assert.Contains("Admin-only Website CMS publish copies DraftBody to PublishedBody only", adminScript, StringComparison.Ordinal);
+        Assert.Contains("does not update public site rendering", adminScript, StringComparison.Ordinal);
+        Assert.Contains("does not modify site/public", adminScript, StringComparison.Ordinal);
+        Assert.Contains("does not enable live Paddle", adminScript, StringComparison.Ordinal);
         Assert.Contains("Admin-only draft storage", adminIndex, StringComparison.Ordinal);
         Assert.Contains("Saving drafts does not publish", adminIndex, StringComparison.Ordinal);
         Assert.Contains("Public site still renders static", adminIndex, StringComparison.Ordinal);
@@ -67,7 +74,7 @@ public sealed class WebsiteCmsSafetyTests
         Assert.Contains("/api/admin/website-cms/sections/initialize-missing", adminScript, StringComparison.Ordinal);
         Assert.Contains("/api/admin/website-cms/sections/{sectionKey}", adminScript, StringComparison.Ordinal);
         Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/draft", adminScript, StringComparison.Ordinal);
-        Assert.Contains("no editing, publish, or public rendering was added", adminScript, StringComparison.Ordinal);
+        Assert.Contains("/api/admin/website-cms/sections/{sectionKey}/publish", adminScript, StringComparison.Ordinal);
     }
 
     [Fact]

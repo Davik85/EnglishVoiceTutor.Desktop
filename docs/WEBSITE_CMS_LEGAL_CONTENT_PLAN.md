@@ -49,7 +49,7 @@ Current tab behavior is admin-only draft management for initialized Website CMS 
 
 ## Validation/preview/review slice
 
-The added validation/preview/review slice is intentionally admin-only. Validation checks the current stored `DraftBody` with `WebsiteCmsContentGuard` and reports errors/warnings without database writes. Preview returns simple escaped/admin-only draft text with metadata and empty-draft warnings; it is not public rendering. Review status updates are limited to `not_started`, `draft`, `owner_review_needed`, `legal_review_needed`, `owner_approved`, and `legal_approved`, require `ChangeReason`, and never update `PublishedBody` or `PublishedAtUtc`. Publish and public rendering remain deferred design topics only.
+The added validation/preview/review slice is intentionally admin-only. Validation checks the current stored `DraftBody` with `WebsiteCmsContentGuard` and reports errors/warnings without database writes. Preview returns simple escaped/admin-only draft text with metadata and empty-draft warnings; it is not public rendering. Review status updates are limited to `not_started`, `draft`, `owner_review_needed`, `legal_review_needed`, `owner_approved`, and `legal_approved`, require `ChangeReason`, and never update `PublishedBody` or `PublishedAtUtc`. The admin-only publish workflow is now implemented for internal Website CMS storage only; public rendering remains deferred.
 
 ## Editable sections
 
@@ -99,7 +99,7 @@ Keep the first version small and structured. Suggested editable sections:
 
 ## Future admin-only publish workflow design (not implemented)
 
-The next functional implementation step should be an **admin-only Website CMS publish workflow without public rendering**. Publishing must create or update a Website CMS published snapshot only; it must not edit `site/public/`, deploy the public site, add checkout links/buttons, enable live Paddle, or connect Website CMS data to unauthenticated public rendering.
+The admin-only Website CMS publish workflow without public rendering is implemented. The next functional design step should be public rendering integration design only, after owner/legal copy preparation and approval. Publishing must create or update a Website CMS published snapshot only; it must not edit `site/public/`, deploy the public site, add checkout links/buttons, enable live Paddle, or connect Website CMS data to unauthenticated public rendering.
 
 Required publish gates:
 
@@ -108,6 +108,8 @@ Required publish gates:
 3. **Review status**: publish is allowed only from a configured approved review state. For legal/policy pages, the required state should be `legal_approved`; for non-legal operational copy, the required state may be `owner_approved` when legal review is not required by policy. `owner_approved` and `legal_approved` are internal review markers only and never publish by themselves.
 4. **Change reason**: publish requires a non-empty admin change reason/publish summary distinct enough to explain what changed and why.
 5. **Owner/legal approval marker**: publish must record which approval marker authorized the publish, the approving actor or internal reviewer reference where available, and the UTC approval/publish timestamp. Final legal, seller, support, refund, cancellation, privacy, terms, and pricing copy still requires owner/legal approval outside code before publish.
+
+Implementation note (2026-06-27): `POST /api/admin/website-cms/sections/{sectionKey}/publish` is admin-only, requires a non-empty `DraftBody`, non-empty `ChangeReason`, `WebsiteCmsContentGuard`, and `legal_approved`, and stores the snapshot only in internal Website CMS `PublishedBody`. It does not update public rendering, modify `site/public/`, or enable live Paddle.
 
 Publish effects:
 
@@ -271,10 +273,10 @@ That slice should only introduce safe storage/read views and admin navigation pl
 
 ## Current-slice confirmation
 
-This plan now records a backend foundation slice, admin-only missing-section initialization, section detail/save-draft support, stored-draft validation, admin-only preview, and internal review-status updates. It does not change public rendering, public static pages, billing behavior, entitlement behavior, Desktop behavior, deployment scripts, production configuration, backend environment variables, or Paddle configuration. The added migration is scoped to Website CMS section storage only and does not alter existing lesson/content/runtime behavior.
+This plan now records a backend foundation slice, admin-only missing-section initialization, section detail/save-draft support, stored-draft validation, admin-only preview, internal review-status updates, and explicit admin-only publish into internal PublishedBody storage. It does not change public rendering, public static pages, billing behavior, entitlement behavior, Desktop behavior, deployment scripts, production configuration, backend environment variables, or Paddle configuration. The added migration is scoped to Website CMS section storage only and does not alter existing lesson/content/runtime behavior.
 
 ## Draft validation/preview/review slice added 2026-06-27
 
-The completed admin-only slice adds initialized-section detail reads, draft-body saves, stored-draft validation, admin-only safe-text preview, and internal review-status changes for Admin Website CMS rows. Admins can load section detail; save `DraftBody`, `ReviewStatus`, `EffectiveDate`, `InternalNotes`, and required `ChangeReason`; validate the stored draft without database writes; preview the draft without publishing; and move internal review statuses with a required reason. This remains draft/internal workflow only: no publish workflow, no public website rendering, no static `site/public` changes, no live Paddle enablement, and no legal approval is implied.
+The completed admin-only slice adds initialized-section detail reads, draft-body saves, stored-draft validation, admin-only safe-text preview, and internal review-status changes for Admin Website CMS rows. Admins can load section detail; save `DraftBody`, `ReviewStatus`, `EffectiveDate`, `InternalNotes`, and required `ChangeReason`; validate the stored draft without database writes; preview the draft without publishing; and move internal review statuses with a required reason. This remains draft/internal workflow only: admin-only internal publish workflow only, no public website rendering, no static `site/public` changes, no live Paddle enablement, and no legal approval is implied.
 
 Publish workflow design, public preview/rendering, final owner/legal copy approval, and live Paddle readiness remain deferred.
