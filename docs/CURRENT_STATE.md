@@ -294,9 +294,38 @@ Phase 5B bounded production log sampling found over-verbose EF Core SQL command 
 Completed and production-verified on backend `0.1.35-backend.56`: Admin Product Statistics now distinguishes access-state metrics from payment-event metrics. Live server verification of `wwwroot/admin/admin.js` showed `successfulPaymentsTotal`, `successfulPaymentsCurrentMonth`, and `Tracked signed-in app/device records`. `Active Premium users now` remains an entitlement/access-state metric based on currently active Premium access and does not change the paid-entitlement start semantics for users who purchase during an active Trial. Separate `Successful payments total` and `Successful payments current month` metrics count successful payment records from the internal provider-agnostic payments table, using completed Premium `transaction.completed` records with completed timestamps rather than active entitlements, subscription snapshots, raw Paddle webhook payloads, or distinct-user inference. The current-month boundary is UTC calendar month start inclusive to next UTC month start exclusive. These aggregate payment metrics do not expose emails, user IDs, Paddle customer IDs, transaction IDs, raw provider payloads, signatures, or other personal data in the Admin UI. Production/live Paddle readiness remains deferred, and broad public production readiness is not claimed.
 
 
-## Website CMS home header
+## Public static website current state
+
+The public static homepage header polish is accepted. The homepage now uses a dark-blue header matching the footer color. On desktop, the header layout is: logo, `Practice real conversations in:`, then the language flags and language names. On mobile, the logo is centered, `Practice real conversations in:` appears below it, and the supported languages are arranged cleanly for mobile. Public site hero cards and the footer remain unchanged. The supported study-language display is English, French, German, Spanish, Italian, Portuguese.
+
+The verified nginx public site root for `languagevoicetutor.com` is:
+
+```text
+/var/www/languagevoicetutor/site
+```
+
+Accepted public static asset paths are:
+
+- Logo local repo path: `site/public/assets/brand/lvt-logo.png`; production server path: `/var/www/languagevoicetutor/site/assets/brand/lvt-logo.png`; public URL: `/assets/brand/lvt-logo.png`.
+- Flag local repo paths: `site/public/assets/flags/gb.webp`, `site/public/assets/flags/fr.webp`, `site/public/assets/flags/de.webp`, `site/public/assets/flags/es.webp`, `site/public/assets/flags/it.webp`, and `site/public/assets/flags/pt.webp`.
+- Flag production server folder: `/var/www/languagevoicetutor/site/assets/flags/`.
+- Flag public URLs: `/assets/flags/gb.webp`, `/assets/flags/fr.webp`, `/assets/flags/de.webp`, `/assets/flags/es.webp`, `/assets/flags/it.webp`, and `/assets/flags/pt.webp`.
+
+Upload the static site with the existing repository script only:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-static-site.ps1 `
+  -ServerHost "lvt-server" `
+  -ServerUser "deploy" `
+  -RemotePath "/var/www/languagevoicetutor/site"
+```
+
+Do not invent a separate `scp`, `tar`, or bash upload flow for normal static site deployment. Static site upload is separate from backend deployment, EF/database migrations, and Windows desktop installer release upload. Static site upload does not deploy the backend, does not apply database migrations, and does not publish desktop installer releases.
+
+## Website CMS home header and next focus
 
 - The Website admin area is separate from learner CMS Content and is restricted to the strongest existing Super Admin/bootstrap admin guard.
-- Website CMS content is JSON/file based at `site/content/website-content.json`; no database tables or EF Core migrations are used.
+- Website CMS content currently remains JSON/file based at `site/content/website-content.json`; the default approach for Website CMS remains simple JSON/file-based storage unless a real reason appears to use a database.
 - Local publishing targets `site/public` and rewrites `site/public/index.html` with SEO-visible static HTML.
 - Production publishing should configure `WebsiteContent:PublicSiteRoot` to `/var/www/languagevoicetutor/site`, the verified public site root for `languagevoicetutor.com`.
+- Website CMS is the next focus. CMS work may involve backend endpoints and Admin Shell UI, but it must be split into small tasks. Do not mix CMS implementation with static site visual changes, billing, desktop app, or database migrations unless a specific CMS storage decision requires it.
