@@ -76,4 +76,71 @@ public sealed class WebsiteCmsAdminReadService(AppDbContext dbContext) : IWebsit
             CheckedAtUtc = DateTimeOffset.UtcNow
         };
     }
+    public async Task<AdminWebsiteCmsDraftValidationResponse?> ValidateDraftAsync(string sectionKey, CancellationToken cancellationToken)
+    {
+        var expected = ExpectedSections.SingleOrDefault(section => string.Equals(section.SectionKey, sectionKey, StringComparison.Ordinal));
+        if (expected is null)
+        {
+            return null;
+        }
+
+        var stored = await _dbContext.WebsiteCmsSections
+            .AsNoTracking()
+            .SingleOrDefaultAsync(section => section.SectionKey == sectionKey, cancellationToken);
+
+        if (stored is null)
+        {
+            return null;
+        }
+
+        var errors = WebsiteCmsContentGuard.FindBlockedSecretLikeMarkers(stored.DraftBody)
+            .Select(marker => $"Draft contains blocked secret-like marker: {marker}.")
+            .ToArray();
+        var warnings = string.IsNullOrWhiteSpace(stored.DraftBody)
+            ? ["Draft body is empty; validate/preview/review do not publish or update public site rendering."]
+            : Array.Empty<string>();
+
+        return new AdminWebsiteCmsDraftValidationResponse
+        {
+            SectionKey = expected.SectionKey,
+            Status = errors.Length > 0 ? "blocked" : warnings.Length > 0 ? "warning" : "valid",
+            Errors = errors,
+            Warnings = warnings,
+            CheckedAtUtc = DateTimeOffset.UtcNow
+        };
+    }
+
+    public async Task<AdminWebsiteCmsDraftPreviewResponse?> GetDraftPreviewAsync(string sectionKey, CancellationToken cancellationToken)
+    {
+        var expected = ExpectedSections.SingleOrDefault(section => string.Equals(section.SectionKey, sectionKey, StringComparison.Ordinal));
+        if (expected is null)
+        {
+            return null;
+        }
+
+        var stored = await _dbContext.WebsiteCmsSections
+            .AsNoTracking()
+            .SingleOrDefaultAsync(section => section.SectionKey == sectionKey, cancellationToken);
+
+        if (stored is null)
+        {
+            return null;
+        }
+
+        return new AdminWebsiteCmsDraftPreviewResponse
+        {
+            SectionKey = expected.SectionKey,
+            DisplayName = expected.DisplayName,
+            Description = expected.Description,
+            ReviewStatus = stored.ReviewStatus,
+            EffectiveDate = stored.EffectiveDate,
+            DraftBody = stored.DraftBody,
+            Warnings = string.IsNullOrWhiteSpace(stored.DraftBody)
+                ? ["Draft body is empty; preview is admin-only and does not publish or update public site rendering."]
+                : [],
+            AdminOnlyInternalNotes = stored.InternalNotes,
+            CheckedAtUtc = DateTimeOffset.UtcNow
+        };
+    }
+
 }

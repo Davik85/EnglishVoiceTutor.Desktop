@@ -1,6 +1,6 @@
 # Next Steps
 
-Review date: 2026-06-25.
+Review date: 2026-06-27.
 
 ## Source of truth for current versions
 
@@ -67,12 +67,12 @@ Clean-machine smoke passed; small screen/tablet visual smoke passed; the localiz
 
 ## Website CMS next safe steps after 2026-06-27 draft-save rollout
 
-Current status: Website is a top-level Admin Shell tab, Website CMS persistence exists, production migration `20260625090000_AddWebsiteCmsLegalContentFoundation` has been applied, backend `0.1.35-backend.55` is deployed and healthy, and static public pages remain the public rendering source. The Admin Website tab supports metadata overview, section selection/detail loading, draft body, internal notes, effective date, review status, required change reason, and admin-only Save draft. Production smoke verified temporary draft save/cleanup on `platform_status`; after cleanup all 9 rows are back to `ReviewStatus=not_started`, empty draft bodies, and no published bodies.
+Current status: Website is a top-level Admin Shell tab, Website CMS persistence exists, production migration `20260625090000_AddWebsiteCmsLegalContentFoundation` has been applied, backend `0.1.35-backend.55` is deployed and healthy, and static public pages remain the public rendering source. The Admin Website tab supports metadata overview, section selection/detail loading, draft body, internal notes, effective date, review status, required change reason, admin-only Save draft, stored-draft validation, admin-only simple-text preview, and safe non-published review-status updates. Production smoke verified temporary draft save/cleanup on `platform_status`; after cleanup all 9 rows are back to `ReviewStatus=not_started`, empty draft bodies, and no published bodies.
 
 Safe next steps:
 
 1. Prepare owner/legal-approved public legal, seller, support, refund, cancellation, privacy, terms, and pricing copy outside code. Final legal/seller/support/pricing copy still requires owner/legal approval.
-2. Next functional slice: Website CMS validation/preview/review workflow for admin-only drafts. Include explicit non-public preview semantics, review-state clarity, and owner/legal approval gates.
+2. Next safe code step is publish design only, not implementation: define authorization, audit, owner/legal sign-off, rollback, and public-rendering handoff requirements before any publish code exists. Alternatively, continue owner/legal copy preparation outside code.
 3. Keep `WebsiteCmsContentGuard` and draft validation conservative; secret-like values and private/provider identifiers must remain blocked before persistence or review.
 4. Keep publish/public rendering deferred. Do not connect Website CMS to public routes, do not change static `site/public/`, and do not serve drafts publicly.
 5. Keep live Paddle as a separate readiness step. Do not add checkout links/buttons, live Paddle enablement, or billing behavior changes in the Website CMS validation/preview/review slice.

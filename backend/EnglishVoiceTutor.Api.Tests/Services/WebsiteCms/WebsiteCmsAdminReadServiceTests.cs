@@ -83,6 +83,58 @@ public sealed class WebsiteCmsAdminReadServiceTests
         Assert.Null(unknown);
     }
 
+    [Fact]
+    public async Task ValidateDraftAsync_ReturnsWarningForEmptyDraftAndBlocksSecretLikeDraft()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.WebsiteCmsSections.AddRange(
+            new WebsiteCmsSectionEntity
+            {
+                Id = Guid.NewGuid(), SectionKey = "privacy", DraftBody = " ", PublishedBody = null, ReviewStatus = "not_started", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow
+            },
+            new WebsiteCmsSectionEntity
+            {
+                Id = Guid.NewGuid(), SectionKey = "terms", DraftBody = "bearer abcdefghijklmnopqrstuvwxyz123456", PublishedBody = null, ReviewStatus = "draft", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow
+            });
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var service = new WebsiteCmsAdminReadService(dbContext);
+        var empty = await service.ValidateDraftAsync("privacy", TestContext.Current.CancellationToken);
+        var blocked = await service.ValidateDraftAsync("terms", TestContext.Current.CancellationToken);
+
+        Assert.NotNull(empty);
+        Assert.Equal("warning", empty.Status);
+        Assert.NotEmpty(empty.Warnings);
+        Assert.Empty(empty.Errors);
+        Assert.NotNull(blocked);
+        Assert.Equal("blocked", blocked.Status);
+        Assert.Contains(blocked.Errors, error => error.Contains("blocked secret-like marker", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task GetDraftPreviewAsync_ReturnsAdminOnlyDraftPreviewWithoutModifyingDatabase()
+    {
+        await using var dbContext = CreateDbContext();
+        var updatedAt = DateTimeOffset.Parse("2026-06-26T10:00:00Z");
+        dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
+        {
+            Id = Guid.NewGuid(), SectionKey = "support", DraftBody = "Support draft", PublishedBody = "Published", ReviewStatus = "owner_approved", EffectiveDate = new DateOnly(2026, 7, 1), InternalNotes = "Admin note", ChangeReason = "Existing", CreatedAtUtc = updatedAt.AddDays(-1), UpdatedAtUtc = updatedAt, PublishedAtUtc = updatedAt.AddHours(1)
+        });
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var preview = await new WebsiteCmsAdminReadService(dbContext).GetDraftPreviewAsync("support", TestContext.Current.CancellationToken);
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "support", TestContext.Current.CancellationToken);
+
+        Assert.NotNull(preview);
+        Assert.Equal("support", preview.SectionKey);
+        Assert.Equal("Support draft", preview.DraftBody);
+        Assert.Equal("owner_approved", preview.ReviewStatus);
+        Assert.Equal("Admin note", preview.AdminOnlyInternalNotes);
+        Assert.Equal("Published", row.PublishedBody);
+        Assert.Equal(updatedAt, row.UpdatedAtUtc);
+        Assert.Equal(updatedAt.AddHours(1), row.PublishedAtUtc);
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
