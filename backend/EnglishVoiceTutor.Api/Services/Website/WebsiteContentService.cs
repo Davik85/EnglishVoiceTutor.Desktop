@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -104,12 +105,114 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         return files;
     }
 
-    private static string RenderHome(WebsiteContentSet c) { var h = c.Pages["home"]; return Shell(c, E(h["seoTitle"]), E(h["seoDescription"]), $"<main class=\"landing-shell\" aria-label=\"Language Voice Tutor applications\"><a class=\"app-panel app-panel--windows\" href=\"download.html\"><img class=\"app-panel__image\" src=\"assets/images/landing/windows-desktop.webp\" alt=\"Preview image for the Language Voice Tutor desktop app\"><span class=\"app-panel__shade\"></span><section class=\"app-panel__content\"><p class=\"app-panel__eyebrow\">{E(h["windowsCardBadge"])}</p><h1>{E(h["windowsCardTitle"])}</h1><p>{E(h["windowsCardDescription"])}</p><span class=\"app-panel__cue\">{E(h["windowsDownloadButtonText"])}</span></section></a><section class=\"app-panel app-panel--mobile app-panel--inactive\"><img class=\"app-panel__image\" src=\"assets/images/landing/mobile.webp\" alt=\"Preview image for future Language Voice Tutor mobile apps\"><span class=\"app-panel__shade\"></span><div class=\"app-panel__content\"><span class=\"app-panel__badge\">{E(h["mobileCardBadge"])}</span><h2>{E(h["mobileCardTitle"])}</h2><p>{E(h["mobileCardDescription"])}</p><span class=\"app-panel__cue app-panel__cue--disabled\">{E(h["mobileComingSoonButtonText"])}</span></div></section></main>", true); }
-    private static string RenderSimple(WebsiteContentSet c, string page, string titleId, (string title, string key)[] sections, string? button) { var p = c.Pages[page]; var body = $"<main class=\"page-shell legal-page\"><section class=\"hero-card\"><h1 id=\"{titleId}\">{E(p["pageTitle"])}</h1><p class=\"description\">{E(p["introText"] is var intro ? intro : p.GetValueOrDefault("intro", ""))}</p>{(button is null ? "" : $"<a class=\"download-button\" href=\"#\" aria-disabled=\"true\">{E(p.GetValueOrDefault("downloadButtonText", button))}</a>")}</section>" + string.Concat(sections.Select(s => $"<section class=\"details-card legal-section\"><h2>{E(s.title)}</h2><p>{E(p[s.key])}</p></section>")) + Nav() + "</main>"; return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body, false); }
-    private static string Shell(WebsiteContentSet c, string title, string description, string main, bool landing) { var h=c.Pages["home"]; var d=c.Design; return $"<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>{title}</title><meta name=\"description\" content=\"{description}\"><link rel=\"stylesheet\" href=\"styles.css\"><style>:root{{--footer-background:{d.FooterBackgroundColor};--footer-text:{d.HeaderTextColor};--text:{d.MainTextColor};font-size:{d.BaseFontSizePx}px}}body{{font-family:{d.MainFontFamily}}.download-button,.app-panel__cue{{border-radius:{d.ButtonBorderRadiusPx}px}}.landing-page .site-header{{background:{d.HeaderBackgroundColor};color:{d.HeaderTextColor};font-weight:{d.HeaderFontWeight}}.landing-page .app-panel__content{{font-style:{(d.CardTextStyle.Contains("italic",StringComparison.OrdinalIgnoreCase)?"italic":"normal")}}}</style></head><body class=\"{(landing?"landing-page":"")}\"><header class=\"site-header\"><div class=\"site-header__logo\">{Logo(h)}</div><div class=\"site-header__copy\"><p class=\"site-header__headline\">{E(h["topHeaderText"])}</p><p class=\"site-header__languages\">{E(h["supportedLanguageLine"])}</p></div></header>{main}<footer class=\"site-footer\"><p>{E(h["footerCopyrightText"])}</p>{NavLinks(h)}</footer></body></html>"; }
-    private static string Logo(Dictionary<string,string> h) => string.IsNullOrWhiteSpace(h["logoPath"]) ? $"<span class=\"site-header__logo-text\">{E(h["fallbackLogoText"])}</span>" : $"<img class=\"site-header__logo-image\" src=\"{HtmlEncoder.Default.Encode(h["logoPath"])}\" alt=\"{E(h["logoAltText"])}\">";
+    private static string RenderHome(WebsiteContentSet c)
+    {
+        var h = c.Pages["home"];
+        var main = $"""
+<main class="landing-shell" aria-label="Language Voice Tutor applications">
+    <a class="app-panel app-panel--windows" href="download.html">
+        <img class="app-panel__image" src="assets/images/landing/windows-desktop.webp" alt="Preview image for the Language Voice Tutor desktop app">
+        <span class="app-panel__shade"></span>
+        <section class="app-panel__content">
+            <p class="app-panel__eyebrow">{E(h["windowsCardBadge"])}</p>
+            <h1>{E(h["windowsCardTitle"])}</h1>
+            <p>{E(h["windowsCardDescription"])}</p>
+            <span class="app-panel__cue">{E(h["windowsDownloadButtonText"])}</span>
+        </section>
+    </a>
+    <section class="app-panel app-panel--mobile app-panel--inactive">
+        <img class="app-panel__image" src="assets/images/landing/mobile.webp" alt="Preview image for future Language Voice Tutor mobile apps">
+        <span class="app-panel__shade"></span>
+        <div class="app-panel__content">
+            <span class="app-panel__badge">{E(h["mobileCardBadge"])}</span>
+            <h2>{E(h["mobileCardTitle"])}</h2>
+            <p>{E(h["mobileCardDescription"])}</p>
+            <span class="app-panel__cue app-panel__cue--disabled">{E(h["mobileComingSoonButtonText"])}</span>
+        </div>
+    </section>
+</main>
+""";
+        return Shell(c, E(h["seoTitle"]), E(h["seoDescription"]), main, true);
+    }
+
+    private static string RenderSimple(WebsiteContentSet c, string page, string titleId, (string title, string key)[] sections, string? button)
+    {
+        var p = c.Pages[page];
+        var body = new StringBuilder();
+        body.Append($"""
+<main class="page-shell legal-page">
+    <section class="hero-card">
+        <h1 id="{titleId}">{E(p["pageTitle"])}</h1>
+        <p class="description">{E(p.GetValueOrDefault("introText", p.GetValueOrDefault("intro", string.Empty)))}</p>
+""");
+        if (button is not null)
+        {
+            body.AppendLine($"        <a class=\"download-button\" href=\"#\" aria-disabled=\"true\">{E(p.GetValueOrDefault("downloadButtonText", button))}</a>");
+        }
+        body.AppendLine("    </section>");
+        foreach (var section in sections)
+        {
+            body.AppendLine($"""
+    <section class="details-card legal-section">
+        <h2>{E(section.title)}</h2>
+        <p>{E(p[section.key])}</p>
+    </section>
+""");
+        }
+        body.Append(Nav());
+        body.AppendLine("</main>");
+        return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false);
+    }
+
+    private static string Shell(WebsiteContentSet c, string title, string description, string main, bool landing)
+    {
+        var h = c.Pages["home"];
+        var d = c.Design;
+        var cardFontStyle = d.CardTextStyle.Contains("italic", StringComparison.OrdinalIgnoreCase) ? "italic" : "normal";
+        var bodyClass = landing ? "landing-page" : string.Empty;
+        return $"""
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{title}</title>
+    <meta name="description" content="{description}">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {{ --footer-background: {d.FooterBackgroundColor}; --footer-text: {d.HeaderTextColor}; --text: {d.MainTextColor}; font-size: {d.BaseFontSizePx}px; }}
+        body {{ font-family: {d.MainFontFamily}; }}
+        .download-button, .app-panel__cue {{ border-radius: {d.ButtonBorderRadiusPx}px; }}
+        .site-header {{ background: {d.HeaderBackgroundColor}; color: {d.HeaderTextColor}; font-weight: {d.HeaderFontWeight}; }}
+        .landing-page .app-panel__content {{ font-style: {cardFontStyle}; }}
+    </style>
+</head>
+<body class="{bodyClass}">
+    <header class="site-header">
+        <div class="site-header__logo">{Logo(h)}</div>
+        <div class="site-header__copy">
+            <p class="site-header__headline">{E(h["topHeaderText"])}</p>
+            <p class="site-header__languages">{E(h["supportedLanguageLine"])}</p>
+        </div>
+    </header>
+    {main}
+    <footer class="site-footer">
+        <p>{E(h["footerCopyrightText"])}</p>
+        {NavLinks(h)}
+    </footer>
+</body>
+</html>
+""";
+    }
+
+    private static string Logo(Dictionary<string, string> h) => string.IsNullOrWhiteSpace(h["logoPath"])
+        ? $"<span class=\"site-header__logo-text\">{E(h["fallbackLogoText"])}</span>"
+        : $"<img class=\"site-header__logo-image\" src=\"{HtmlEncoder.Default.Encode(h["logoPath"])}\" alt=\"{E(h["logoAltText"])}\">";
+
     private static string Nav() => "<section class=\"support-card legal-nav\"><a href=\"index.html\">Home</a><a href=\"download.html\">Download</a><a href=\"mobile.html\">Mobile</a><a href=\"pricing.html\">Pricing</a><a href=\"terms.html\">Terms</a><a href=\"privacy.html\">Privacy</a><a href=\"refunds.html\">Refunds</a><a href=\"cancellation.html\">Cancellation</a><a href=\"support.html\">Support</a></section>";
-    private static string NavLinks(Dictionary<string,string> h) => $"<nav class=\"site-footer__links\"><a href=\"privacy.html\">{E(h["footerPrivacyLabel"])}</a><a href=\"terms.html\">{E(h["footerTermsLabel"])}</a><a href=\"refunds.html\">{E(h["footerRefundsLabel"])}</a><a href=\"cancellation.html\">{E(h["footerCancellationLabel"])}</a><a href=\"support.html\">{E(h["footerSupportLabel"])}</a><a href=\"pricing.html\">{E(h["footerPricingLabel"])}</a></nav>";
+
+    private static string NavLinks(Dictionary<string, string> h) => $"<nav class=\"site-footer__links\"><a href=\"privacy.html\">{E(h["footerPrivacyLabel"])}</a><a href=\"terms.html\">{E(h["footerTermsLabel"])}</a><a href=\"refunds.html\">{E(h["footerRefundsLabel"])}</a><a href=\"cancellation.html\">{E(h["footerCancellationLabel"])}</a><a href=\"support.html\">{E(h["footerSupportLabel"])}</a><a href=\"pricing.html\">{E(h["footerPricingLabel"])}</a></nav>";
+
     private static string E(string? s) => WebUtility.HtmlEncode(s ?? string.Empty);
 
     private static WebsiteContentSet DefaultSet() => new(new()
