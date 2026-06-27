@@ -571,14 +571,14 @@
                 container.insertAdjacentHTML("beforeend", `<button type="button" class="link-button" data-website-cms-section-key="${escapeHtml(section.sectionKey)}">${escapeHtml(section.displayName)}</button>`);
             }
         });
-        const rows = sections.map((section) => `<tr><td><button type="button" class="link-button" data-website-cms-section-key="${escapeHtml(section.sectionKey)}"><code>${escapeHtml(section.sectionKey)}</code></button></td><td>${escapeHtml(section.displayName)}</td><td>${section.storedRowExists ? "Stored" : "Not stored"}</td><td>${section.draftBodyExists ? "Yes" : "No"}</td><td>${escapeHtml(formatWebsiteCmsValue(section.updatedAtUtc))}</td></tr>`).join("");
+        const rows = sections.map((section) => `<tr><td><button type="button" class="link-button" data-website-cms-section-key="${escapeHtml(section.sectionKey)}"><code>${escapeHtml(section.sectionKey)}</code></button></td><td>${escapeHtml(section.displayName)}</td><td>${section.storedRowExists ? "Stored" : "Default available"}</td><td>${section.draftBodyExists ? "Yes" : "No"}</td><td>${escapeHtml(formatWebsiteCmsValue(section.updatedAtUtc))}</td></tr>`).join("");
         websiteCmsSectionOverviewElement.innerHTML = `<table><thead><tr><th>Section key</th><th>Display name</th><th>Stored</th><th>Text exists</th><th>Updated</th></tr></thead><tbody>${rows}</tbody></table>`;
         if (websiteCmsCheckedAtElement) { websiteCmsCheckedAtElement.textContent = payload?.checkedAtUtc ? `Metadata checked at ${payload.checkedAtUtc}.` : ""; }
     }
     function websiteCmsPath(template, sectionKey) { return template.replace("{sectionKey}", encodeURIComponent(sectionKey)); }
     function renderWebsiteCmsDetail(detail) {
         if (!websiteCmsDetailElement) { return; }
-        websiteCmsDetailElement.innerHTML = `<h4>Edit website text: ${escapeHtml(detail.displayName)}</h4><p class="muted"><code>${escapeHtml(detail.sectionKey)}</code> — ${escapeHtml(detail.description)}</p><p class="cms-inline-warning">Saved website text is stored in CMS. Public website rendering is still a separate step. This admin-only save does not publish public pages, does not modify <code>site/public</code>, and does not enable live Paddle.</p><form id="website-cms-draft-form"><input type="hidden" id="website-cms-detail-key" value="${escapeHtml(detail.sectionKey)}" /><div class="field"><label for="website-cms-draft-body">Website text</label><textarea id="website-cms-draft-body" rows="14">${escapeHtml(detail.draftBody || "")}</textarea></div><input id="website-cms-internal-notes" type="hidden" value="${escapeHtml(detail.internalNotes || "")}" /><input id="website-cms-effective-date" type="hidden" value="${escapeHtml(detail.effectiveDate || "")}" /><input id="website-cms-review-status" type="hidden" value="draft" /><div class="field"><label for="website-cms-change-reason">Change note</label><input id="website-cms-change-reason" type="text" required autocomplete="off" placeholder="What changed?" /></div><div class="cms-button-row"><button id="website-cms-save-draft-button" type="submit">Save</button></div></form>`;
+        websiteCmsDetailElement.innerHTML = `<h4>Edit website text: ${escapeHtml(detail.displayName)}</h4><p class="muted"><code>${escapeHtml(detail.sectionKey)}</code> — ${escapeHtml(detail.description)}</p><p class="cms-inline-warning">Save makes this the active public website text when the public site can reach the CMS API. Static site text remains the fallback, and live Paddle is not enabled.</p><form id="website-cms-draft-form"><input type="hidden" id="website-cms-detail-key" value="${escapeHtml(detail.sectionKey)}" /><div class="field"><label for="website-cms-draft-body">Website text</label><textarea id="website-cms-draft-body" rows="14">${escapeHtml(detail.draftBody || "")}</textarea></div><input id="website-cms-internal-notes" type="hidden" value="${escapeHtml(detail.internalNotes || "")}" /><input id="website-cms-effective-date" type="hidden" value="${escapeHtml(detail.effectiveDate || "")}" /><input id="website-cms-review-status" type="hidden" value="draft" /><div class="field"><label for="website-cms-change-reason">Change note</label><input id="website-cms-change-reason" type="text" required autocomplete="off" placeholder="What changed?" /></div><div class="cms-button-row"><button id="website-cms-save-draft-button" type="submit">Save</button></div></form>`;
         document.getElementById("website-cms-draft-form")?.addEventListener("submit", saveWebsiteCmsDraft);
     }
     async function loadWebsiteCmsSectionDetail(sectionKey) {
@@ -599,7 +599,7 @@
         if (!payload.changeReason.trim()) { if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = "Change note is required."; } return; }
         try {
             const detail = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionDraftTemplate, sectionKey), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-            if (websiteCmsSaveResultElement) { websiteCmsSaveResultElement.textContent = `Saved website text for ${detail.sectionKey}. Public website rendering is still a separate step.`; }
+            if (websiteCmsSaveResultElement) { websiteCmsSaveResultElement.textContent = `Saved active website text for ${detail.sectionKey}.`; }
             renderWebsiteCmsDetail(detail);
             await loadWebsiteCmsSectionOverview();
         } catch (error) {
@@ -678,11 +678,11 @@
 
     async function initializeMissingWebsiteCmsSections() {
         if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = ""; }
-        if (websiteCmsInitializeResultElement) { websiteCmsInitializeResultElement.textContent = "Initializing missing Website CMS metadata rows..."; }
+        if (websiteCmsInitializeResultElement) { websiteCmsInitializeResultElement.textContent = "Loading current website texts..."; }
         if (websiteCmsInitializeMissingButton) { websiteCmsInitializeMissingButton.disabled = true; }
         try {
             const payload = await adminFetch(ApiPaths.websiteCmsInitializeMissing, { method: "POST" });
-            if (websiteCmsInitializeResultElement) { websiteCmsInitializeResultElement.textContent = `Initialization complete: ${payload.createdCount} created, ${payload.existingCount} existing, ${payload.totalExpectedCount} expected. Empty metadata rows only; no editing, publish, or public rendering was added.`; }
+            if (websiteCmsInitializeResultElement) { websiteCmsInitializeResultElement.textContent = `Current website texts loaded: ${payload.createdCount} created, ${payload.existingCount} preserved or filled, ${payload.totalExpectedCount} expected. Existing admin text was not overwritten.`; }
             await loadWebsiteCmsSectionOverview();
         } catch (error) {
             if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to initialize Website CMS metadata."; }

@@ -35,7 +35,7 @@ public sealed class WebsiteCmsAdminReadService(AppDbContext dbContext) : IWebsit
                     EffectiveDate = stored?.EffectiveDate,
                     UpdatedAtUtc = stored?.UpdatedAtUtc,
                     PublishedAtUtc = stored?.PublishedAtUtc,
-                    DraftBodyExists = !string.IsNullOrWhiteSpace(stored?.DraftBody),
+                    DraftBodyExists = !string.IsNullOrWhiteSpace(stored?.DraftBody) || WebsiteCmsDefaultTexts.BySectionKey.ContainsKey(expected.SectionKey),
                     PublishedBodyExists = !string.IsNullOrWhiteSpace(stored?.PublishedBody)
                 };
             }).ToArray()
@@ -56,7 +56,23 @@ public sealed class WebsiteCmsAdminReadService(AppDbContext dbContext) : IWebsit
 
         if (stored is null)
         {
-            return null;
+            WebsiteCmsDefaultTexts.BySectionKey.TryGetValue(expected.SectionKey, out var defaultText);
+            return new AdminWebsiteCmsSectionDetailResponse
+            {
+                SectionKey = expected.SectionKey,
+                DisplayName = expected.DisplayName,
+                Description = expected.Description,
+                ReviewStatus = "default_fallback",
+                EffectiveDate = null,
+                DraftBody = defaultText ?? string.Empty,
+                PublishedBodyExists = false,
+                PublishedAtUtc = null,
+                InternalNotes = null,
+                ChangeReason = null,
+                CreatedAtUtc = DateTimeOffset.MinValue,
+                UpdatedAtUtc = DateTimeOffset.MinValue,
+                CheckedAtUtc = DateTimeOffset.UtcNow
+            };
         }
 
         return new AdminWebsiteCmsSectionDetailResponse
@@ -66,7 +82,7 @@ public sealed class WebsiteCmsAdminReadService(AppDbContext dbContext) : IWebsit
             Description = expected.Description,
             ReviewStatus = stored.ReviewStatus,
             EffectiveDate = stored.EffectiveDate,
-            DraftBody = stored.DraftBody,
+            DraftBody = string.IsNullOrWhiteSpace(stored.DraftBody) && WebsiteCmsDefaultTexts.BySectionKey.TryGetValue(expected.SectionKey, out var storedDefaultText) ? storedDefaultText : stored.DraftBody,
             PublishedBodyExists = !string.IsNullOrWhiteSpace(stored.PublishedBody),
             PublishedAtUtc = stored.PublishedAtUtc,
             InternalNotes = stored.InternalNotes,

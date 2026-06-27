@@ -48,7 +48,7 @@ The Website tab is a top-level Admin Shell tab. The visible product UI is intent
 - editable website text for the selected section;
 - one visible **Save** button;
 - a simple **Change note** field with placeholder “What changed?”;
-- clear wording: “Saved website text is stored in CMS. Public website rendering is still a separate step.”
+- clear wording: “Website CMS now manages active public website text; static site text remains the fallback.”
 
 The visible Admin Website tab must not show a complex legal workflow engine. Validation, preview, review-status controls, internal legal/owner approval controls, publish/unpublish controls, rollback, and revision-history workflows are backend/internal or future concerns and should not be visible in the simplified main UI.
 
@@ -201,7 +201,7 @@ That slice should only introduce safe storage/read views and admin navigation pl
 - The visible Admin Website tab is simplified into website text management for Legal pages, Home page, Desktop page, and Mobile page / Coming soon.
 - The main admin can select a section, edit website text, enter a Change note, and Save.
 - The visible product UI is not a legal workflow engine and does not show validation, preview, review-status, publish, unpublish, owner/legal approval, rollback, or revision-history workflow controls.
-- Saved website text is stored in CMS. Public website rendering is still a separate step.
+- Website CMS now manages active public website text; static site text remains the fallback.
 - Public rendering is still not connected. The deployed static public website remains the actual public rendering source, and `site/public/` remains the source for static public pages.
 - Live Paddle is still not enabled. No checkout buttons, checkout links, Paddle client tokens, live price IDs, webhook secrets, or public payment behavior were added.
 - Legal, seller, support, refund, cancellation, privacy, terms, pricing, home, desktop, and mobile/coming-soon final copy still needs preparation and approval outside code before any public rendering task.
@@ -243,3 +243,11 @@ This plan now records a backend foundation slice, admin-only missing-section ini
 The completed admin-only slice adds initialized-section detail reads, draft-body saves, stored-draft validation, admin-only safe-text preview, and internal review-status changes for Admin Website CMS rows. Admins can load section detail; save `DraftBody`, `ReviewStatus`, `EffectiveDate`, `InternalNotes`, and required `ChangeReason`; validate the stored draft without database writes; preview the draft without publishing; and move internal review statuses with a required reason. This remains internal workflow only: admin-only internal publish to `PublishedBody`, no public website rendering, no static `site/public` changes, no live Paddle enablement, and no legal approval is implied.
 
 Publish rollback/unpublish design, public preview/rendering, final owner/legal copy approval, and live Paddle readiness remain deferred.
+
+
+## Simplified public website text manager update (2026-06-27)
+- The Website CMS is connected to public website text through `GET /api/website/texts`, a no-auth read-only endpoint that returns only safe public section text.
+- Admin → Website includes a simple “Load current website texts” action that creates missing rows and fills empty CMS text from the current static site defaults without overwriting non-empty admin text.
+- Public pages under `site/public` mark replaceable text with `data-website-cms-section` and load CMS text with safe plain-text rendering and line breaks. If the fetch fails or a key is empty, the original static HTML remains visible.
+- Save in the Website text manager updates the CMS text field used by public rendering. The visible product path does not require publish, unpublish, review, rollback, legal_approved, or owner_approved.
+- This plan still excludes live Paddle enablement, checkout links, billing behavior changes, entitlement behavior changes, secrets, environment changes, production config changes, migrations, and deployment.
