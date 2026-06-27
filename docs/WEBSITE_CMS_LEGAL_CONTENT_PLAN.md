@@ -4,7 +4,7 @@ Review date: 2026-06-27.
 
 ## Purpose
 
-Define a small, safe Admin Website CMS feature foundation and future workflow for managing public website legal, seller, support, policy, and pricing display content without code changes after implementation. The first backend foundation slice, production database rollout, Admin shell skeleton, admin-only section detail/save-draft rollout, deployment, scripts, and tests are now complete. This still does not change public website rendering and does not provide final legal advice.
+Define a small, safe Admin Website CMS feature foundation and future workflow for managing public website legal, seller, support, policy, and pricing display content without code changes after implementation. The first backend foundation slice, production database rollout, Admin shell skeleton, admin-only section detail/save-draft plus validation/preview/review-status rollout, deployment, scripts, and tests are now complete. This still does not change public website rendering and does not provide final legal advice.
 
 All legal/policy copy managed through this future CMS must be treated as owner/legal review draft content until approved by the product owner and qualified legal reviewer.
 
@@ -45,7 +45,11 @@ Acceptable alternate tab name: **Public Site**.
 
 The tab should be clearly labeled as public website content management and should show a warning that legal and policy content remains draft/review content until explicitly approved and published.
 
-Current tab behavior is admin-only draft management for initialized Website CMS sections. It can load metadata and section detail and save drafts, but it does not publish content, change `site/public/`, change public rendering, or enable Paddle.
+Current tab behavior is admin-only draft management for initialized Website CMS sections. It can load metadata and section detail, save drafts, validate stored drafts, show admin-only simple-text previews, and move safe internal review statuses, but it does not publish content, change `site/public/`, change public rendering, or enable Paddle.
+
+## Validation/preview/review slice
+
+The added validation/preview/review slice is intentionally admin-only. Validation checks the current stored `DraftBody` with `WebsiteCmsContentGuard` and reports errors/warnings without database writes. Preview returns simple escaped/admin-only draft text with metadata and empty-draft warnings; it is not public rendering. Review status updates are limited to `not_started`, `draft`, `owner_review_needed`, `legal_review_needed`, `owner_approved`, and `legal_approved`, require `ChangeReason`, and never update `PublishedBody` or `PublishedAtUtc`. Publish and public rendering remain deferred design topics only.
 
 ## Editable sections
 

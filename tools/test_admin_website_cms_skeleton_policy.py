@@ -61,6 +61,10 @@ def test_admin_shell_contains_website_tab_and_status_copy() -> None:
     require(html, "Admin-only draft storage", "admin-only draft storage copy")
     require(html, "Saving drafts does not publish", "no publish guardrail copy")
     require(html, "Save draft", "save draft UI")
+    js = (ROOT / "backend" / "EnglishVoiceTutor.Api" / "wwwroot" / "admin" / "admin.js").read_text(encoding="utf-8")
+    require(js, "Validate draft", "validate draft UI")
+    require(js, "Preview draft", "preview draft UI")
+    require(js, "Validate, preview, and review status changes do not publish", "validate/preview no-publish guardrail copy")
     require(html, "Current public website source is still static files under", "static site source status")
     require(html, "temporary Paddle review-readiness shells", "temporary Paddle review-readiness status")
     require(html, "Public site rendering is not connected to CMS yet", "no public rendering connection status")
@@ -79,6 +83,21 @@ def test_admin_shell_contains_required_guardrails() -> None:
     ):
         require(html, guardrail, f"guardrail wording {guardrail}")
 
+
+
+def test_admin_only_website_cms_routes_and_no_public_review_routes() -> None:
+    constants = (ROOT / "backend" / "EnglishVoiceTutor.Api" / "Constants" / "ApiConstants.cs").read_text(encoding="utf-8")
+    endpoints = (ROOT / "backend" / "EnglishVoiceTutor.Api" / "Endpoints" / "AdminEndpoints.cs").read_text(encoding="utf-8")
+    for route in ("/api/admin/website-cms/sections/{sectionKey}/draft/validate", "/api/admin/website-cms/sections/{sectionKey}/draft/preview", "/api/admin/website-cms/sections/{sectionKey}/review-status"):
+        require(constants, route, f"admin Website CMS route {route}")
+    forbidden_public = re.compile(r'"/api/(?!admin)[^"]*website-cms[^"]*(?:validate|preview|review-status)', re.IGNORECASE)
+    match = forbidden_public.search(constants + endpoints)
+    if match:
+        raise AssertionError(f"Website CMS validate/preview/review routes must remain admin-only: {match.group(0)!r}")
+    require(endpoints, "AdminWebsiteCmsSectionDraftValidateRoute", "validate endpoint mapping")
+    require(endpoints, "CmsContentReadPermissionPolicyName", "admin read authorization policy")
+    require(endpoints, "AdminWebsiteCmsSectionReviewStatusRoute", "review status endpoint mapping")
+    require(endpoints, "CmsDraftSavePermissionPolicyName", "admin write authorization policy")
 
 def test_no_site_public_files_changed_in_current_diff() -> None:
     changed_site_public = [name for name in changed_files() if name.startswith("site/public/")]
@@ -100,6 +119,7 @@ def test_no_checkout_or_secret_like_strings_in_admin_static_files() -> None:
 if __name__ == "__main__":
     test_admin_shell_contains_website_tab_and_status_copy()
     test_admin_shell_contains_required_guardrails()
+    test_admin_only_website_cms_routes_and_no_public_review_routes()
     test_no_site_public_files_changed_in_current_diff()
     test_no_checkout_or_secret_like_strings_in_admin_static_files()
     print("Admin Website CMS skeleton policy checks passed.")

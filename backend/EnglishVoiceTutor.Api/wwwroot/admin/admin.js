@@ -41,6 +41,9 @@
         websiteCmsSectionOverview: "/api/admin/website-cms/sections/overview",
         websiteCmsSectionDetailTemplate: "/api/admin/website-cms/sections/{sectionKey}",
         websiteCmsSectionDraftTemplate: "/api/admin/website-cms/sections/{sectionKey}/draft",
+        websiteCmsSectionDraftValidateTemplate: "/api/admin/website-cms/sections/{sectionKey}/draft/validate",
+        websiteCmsSectionDraftPreviewTemplate: "/api/admin/website-cms/sections/{sectionKey}/draft/preview",
+        websiteCmsSectionReviewStatusTemplate: "/api/admin/website-cms/sections/{sectionKey}/review-status",
         websiteCmsInitializeMissing: "/api/admin/website-cms/sections/initialize-missing"
     };
 
@@ -560,8 +563,11 @@
         if (!websiteCmsDetailElement) { return; }
         const statuses = ["not_started", "draft", "owner_review_needed", "legal_review_needed", "owner_approved", "legal_approved"];
         const options = statuses.map((status) => `<option value="${status}" ${detail.reviewStatus === status ? "selected" : ""}>${status}</option>`).join("");
-        websiteCmsDetailElement.innerHTML = `<h4>Draft detail: <code>${escapeHtml(detail.sectionKey)}</code></h4><p class="muted">${escapeHtml(detail.displayName)} — ${escapeHtml(detail.description)}</p><p class="cms-inline-warning">Admin-only draft storage. Saving here does not publish, does not update public website rendering, and does not modify <code>site/public</code>. Draft copy is not final legal advice or legal approval.</p><form id="website-cms-draft-form"><input type="hidden" id="website-cms-detail-key" value="${escapeHtml(detail.sectionKey)}" /><div class="field"><label for="website-cms-draft-body">DraftBody</label><textarea id="website-cms-draft-body" rows="12">${escapeHtml(detail.draftBody || "")}</textarea></div><div class="field"><label for="website-cms-internal-notes">InternalNotes</label><textarea id="website-cms-internal-notes" rows="4">${escapeHtml(detail.internalNotes || "")}</textarea></div><div class="field"><label for="website-cms-effective-date">EffectiveDate</label><input id="website-cms-effective-date" type="date" value="${escapeHtml(detail.effectiveDate || "")}" /></div><div class="field"><label for="website-cms-review-status">ReviewStatus</label><select id="website-cms-review-status">${options}</select></div><div class="field"><label for="website-cms-change-reason">ChangeReason (required)</label><input id="website-cms-change-reason" type="text" required autocomplete="off" placeholder="Why is this draft changing?" /></div><p class="muted">Published body exists: ${detail.publishedBodyExists ? "Yes" : "No"}. Published timestamp: ${escapeHtml(formatWebsiteCmsValue(detail.publishedAtUtc))}. Saving a draft does not change either value.</p><button id="website-cms-save-draft-button" type="submit">Save draft</button></form>`;
+        websiteCmsDetailElement.innerHTML = `<h4>Draft detail: <code>${escapeHtml(detail.sectionKey)}</code></h4><p class="muted">${escapeHtml(detail.displayName)} — ${escapeHtml(detail.description)}</p><p class="cms-inline-warning">Admin-only draft storage. Saving here does not publish, does not update public website rendering, and does not modify <code>site/public</code>. Draft copy is not final legal advice or legal approval. Validate, preview, and review status changes do not publish or update the public site.</p><div class="cms-button-row"><button id="website-cms-validate-draft-button" type="button">Validate draft</button><button id="website-cms-preview-draft-button" type="button">Preview draft</button></div><div id="website-cms-validation-result" class="muted" role="status"></div><div id="website-cms-preview-panel" class="cms-readonly-notice hidden" role="status"></div><form id="website-cms-draft-form"><input type="hidden" id="website-cms-detail-key" value="${escapeHtml(detail.sectionKey)}" /><div class="field"><label for="website-cms-draft-body">DraftBody</label><textarea id="website-cms-draft-body" rows="12">${escapeHtml(detail.draftBody || "")}</textarea></div><div class="field"><label for="website-cms-internal-notes">InternalNotes</label><textarea id="website-cms-internal-notes" rows="4">${escapeHtml(detail.internalNotes || "")}</textarea></div><div class="field"><label for="website-cms-effective-date">EffectiveDate</label><input id="website-cms-effective-date" type="date" value="${escapeHtml(detail.effectiveDate || "")}" /></div><div class="field"><label for="website-cms-review-status">ReviewStatus</label><select id="website-cms-review-status">${options}</select></div><div class="field"><label for="website-cms-change-reason">ChangeReason (required)</label><input id="website-cms-change-reason" type="text" required autocomplete="off" placeholder="Why is this draft changing?" /></div><p class="muted">Published body exists: ${detail.publishedBodyExists ? "Yes" : "No"}. Published timestamp: ${escapeHtml(formatWebsiteCmsValue(detail.publishedAtUtc))}. Saving a draft does not change either value.</p><div class="cms-button-row"><button id="website-cms-save-draft-button" type="submit">Save draft</button><button id="website-cms-review-status-button" type="button">Change review status only</button></div><p class="muted">owner_approved/legal_approved are internal review markers only; they are not public publish and are not final legal advice by themselves.</p></form>`;
         document.getElementById("website-cms-draft-form")?.addEventListener("submit", saveWebsiteCmsDraft);
+        document.getElementById("website-cms-validate-draft-button")?.addEventListener("click", validateWebsiteCmsDraft);
+        document.getElementById("website-cms-preview-draft-button")?.addEventListener("click", previewWebsiteCmsDraft);
+        document.getElementById("website-cms-review-status-button")?.addEventListener("click", updateWebsiteCmsReviewStatus);
     }
     async function loadWebsiteCmsSectionDetail(sectionKey) {
         if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = ""; }
@@ -586,6 +592,46 @@
             await loadWebsiteCmsSectionOverview();
         } catch (error) {
             if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to save Website CMS draft."; }
+        }
+    }
+
+    async function validateWebsiteCmsDraft() {
+        const sectionKey = document.getElementById("website-cms-detail-key")?.value || "";
+        const resultElement = document.getElementById("website-cms-validation-result");
+        try {
+            const result = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionDraftValidateTemplate, sectionKey), { method: "POST" });
+            const errors = (result.errors || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+            const warnings = (result.warnings || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+            if (resultElement) { resultElement.innerHTML = `<strong>Validation ${escapeHtml(result.status)}</strong> at ${escapeHtml(result.checkedAtUtc)}. This did not publish or update public rendering.${errors ? `<h5>Errors</h5><ul>${errors}</ul>` : ""}${warnings ? `<h5>Warnings</h5><ul>${warnings}</ul>` : ""}`; }
+        } catch (error) {
+            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to validate Website CMS draft."; }
+        }
+    }
+
+    async function previewWebsiteCmsDraft() {
+        const sectionKey = document.getElementById("website-cms-detail-key")?.value || "";
+        const panel = document.getElementById("website-cms-preview-panel");
+        try {
+            const preview = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionDraftPreviewTemplate, sectionKey), { method: "GET" });
+            const paragraphs = String(preview.draftBody || "").split(/\n{2,}/).map((line) => line.trim()).filter(Boolean).map((line) => `<p>${escapeHtml(line).replace(/\n/g, "<br>")}</p>`).join("") || '<p class="muted">Empty draft.</p>';
+            const warnings = (preview.warnings || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+            if (panel) { panel.classList.remove("hidden"); panel.innerHTML = `<h4>Admin-only draft preview: ${escapeHtml(preview.displayName)}</h4><p class="muted">${escapeHtml(preview.description)}</p><p><strong>Review status:</strong> ${escapeHtml(preview.reviewStatus)} | <strong>Effective date:</strong> ${escapeHtml(formatWebsiteCmsValue(preview.effectiveDate))}</p><p class="cms-inline-warning">Admin-only preview. This is simple safe text display, not public rendering, and it does not publish or update the public site.</p>${warnings ? `<ul>${warnings}</ul>` : ""}<div>${paragraphs}</div>${preview.adminOnlyInternalNotes ? `<details><summary>Admin-only internal notes</summary><p>${escapeHtml(preview.adminOnlyInternalNotes)}</p></details>` : ""}<p class="muted">Checked at ${escapeHtml(preview.checkedAtUtc)}.</p>`; }
+        } catch (error) {
+            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to preview Website CMS draft."; }
+        }
+    }
+
+    async function updateWebsiteCmsReviewStatus() {
+        const sectionKey = document.getElementById("website-cms-detail-key")?.value || "";
+        const payload = { reviewStatus: document.getElementById("website-cms-review-status")?.value || "draft", changeReason: document.getElementById("website-cms-change-reason")?.value || "" };
+        if (!payload.changeReason.trim()) { if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = "ChangeReason is required for review status changes."; } return; }
+        try {
+            const detail = await adminFetch(websiteCmsPath(ApiPaths.websiteCmsSectionReviewStatusTemplate, sectionKey), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+            if (websiteCmsSaveResultElement) { websiteCmsSaveResultElement.textContent = `Review status changed to ${detail.reviewStatus}. This did not publish or update public rendering.`; }
+            renderWebsiteCmsDetail(detail);
+            await loadWebsiteCmsSectionOverview();
+        } catch (error) {
+            if (websiteCmsErrorElement) { websiteCmsErrorElement.textContent = error instanceof Error ? error.message : "Unable to update Website CMS review status."; }
         }
     }
 

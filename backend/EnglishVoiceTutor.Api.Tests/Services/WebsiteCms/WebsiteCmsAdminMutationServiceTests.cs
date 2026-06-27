@@ -170,6 +170,51 @@ public sealed class WebsiteCmsAdminMutationServiceTests
         Assert.Null(response);
     }
 
+    [Fact]
+    public async Task UpdateReviewStatusAsync_RequiresChangeReason()
+    {
+        await using var dbContext = CreateDbContext();
+        await new WebsiteCmsAdminMutationService(dbContext).InitializeMissingSectionsAsync(TestContext.Current.CancellationToken);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => new WebsiteCmsAdminMutationService(dbContext).UpdateReviewStatusAsync("privacy", new()
+        {
+            ReviewStatus = "owner_review_needed",
+            ChangeReason = " "
+        }, TestContext.Current.CancellationToken));
+
+        Assert.Contains("Change reason is required", ex.Message);
+    }
+
+    [Theory]
+    [InlineData("owner_approved")]
+    [InlineData("legal_approved")]
+    public async Task UpdateReviewStatusAsync_UpdatesOnlyReviewMetadataAndNeverPublishes(string reviewStatus)
+    {
+        await using var dbContext = CreateDbContext();
+        var now = DateTimeOffset.Parse("2026-06-26T10:00:00Z");
+        dbContext.WebsiteCmsSections.Add(new WebsiteCmsSectionEntity
+        {
+            Id = Guid.NewGuid(), SectionKey = "terms", DraftBody = "Draft remains", PublishedBody = null, ReviewStatus = "draft", EffectiveDate = new DateOnly(2026, 8, 1), InternalNotes = "Notes", ChangeReason = "Old", CreatedAtUtc = now, UpdatedAtUtc = now, PublishedAtUtc = null
+        });
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var response = await new WebsiteCmsAdminMutationService(dbContext).UpdateReviewStatusAsync("terms", new()
+        {
+            ReviewStatus = reviewStatus,
+            ChangeReason = "Internal review marker only"
+        }, TestContext.Current.CancellationToken);
+
+        var row = await dbContext.WebsiteCmsSections.SingleAsync(section => section.SectionKey == "terms", TestContext.Current.CancellationToken);
+        Assert.NotNull(response);
+        Assert.Equal(reviewStatus, row.ReviewStatus);
+        Assert.Equal("Internal review marker only", row.ChangeReason);
+        Assert.Equal("Draft remains", row.DraftBody);
+        Assert.Null(row.PublishedBody);
+        Assert.Null(row.PublishedAtUtc);
+        Assert.Equal(new DateOnly(2026, 8, 1), row.EffectiveDate);
+        Assert.Equal("Notes", row.InternalNotes);
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

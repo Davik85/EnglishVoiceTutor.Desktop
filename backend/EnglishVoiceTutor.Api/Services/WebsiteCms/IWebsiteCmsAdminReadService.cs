@@ -6,4 +6,6 @@ public interface IWebsiteCmsAdminReadService
 {
     Task<AdminWebsiteCmsSectionOverviewResponse> GetSectionOverviewAsync(CancellationToken cancellationToken);
     Task<AdminWebsiteCmsSectionDetailResponse?> GetSectionDetailAsync(string sectionKey, CancellationToken cancellationToken);
+    Task<AdminWebsiteCmsDraftValidationResponse?> ValidateDraftAsync(string sectionKey, CancellationToken cancellationToken);
+    Task<AdminWebsiteCmsDraftPreviewResponse?> GetDraftPreviewAsync(string sectionKey, CancellationToken cancellationToken);
 }

@@ -125,4 +125,56 @@ public sealed class WebsiteCmsAdminMutationService(AppDbContext dbContext) : IWe
             CheckedAtUtc = DateTimeOffset.UtcNow
         };
     }
+    public async Task<AdminWebsiteCmsSectionDetailResponse?> UpdateReviewStatusAsync(string sectionKey, AdminWebsiteCmsSectionReviewStatusUpdateRequest request, CancellationToken cancellationToken)
+    {
+        var expected = WebsiteCmsExpectedSections.All.SingleOrDefault(section => string.Equals(section.SectionKey, sectionKey, StringComparison.Ordinal));
+        if (expected is null)
+        {
+            return null;
+        }
+
+        var changeReason = request.ChangeReason?.Trim();
+        if (string.IsNullOrWhiteSpace(changeReason))
+        {
+            throw new InvalidOperationException("Change reason is required.");
+        }
+
+        var reviewStatus = request.ReviewStatus?.Trim() ?? string.Empty;
+        if (!AllowedReviewStatuses.Contains(reviewStatus))
+        {
+            throw new InvalidOperationException($"Review status must be one of: {string.Join(", ", AllowedReviewStatuses)}. Owner/legal approved are internal review markers only; they do not publish content and are not final legal advice by themselves.");
+        }
+
+        WebsiteCmsContentGuard.ThrowIfBlocked(changeReason);
+
+        var row = await _dbContext.WebsiteCmsSections.SingleOrDefaultAsync(section => section.SectionKey == sectionKey, cancellationToken);
+        if (row is null)
+        {
+            return null;
+        }
+
+        row.ReviewStatus = reviewStatus;
+        row.ChangeReason = changeReason;
+        row.UpdatedAtUtc = DateTimeOffset.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new AdminWebsiteCmsSectionDetailResponse
+        {
+            SectionKey = expected.SectionKey,
+            DisplayName = expected.DisplayName,
+            Description = expected.Description,
+            ReviewStatus = row.ReviewStatus,
+            EffectiveDate = row.EffectiveDate,
+            DraftBody = row.DraftBody,
+            PublishedBodyExists = !string.IsNullOrWhiteSpace(row.PublishedBody),
+            PublishedAtUtc = row.PublishedAtUtc,
+            InternalNotes = row.InternalNotes,
+            ChangeReason = row.ChangeReason,
+            CreatedAtUtc = row.CreatedAtUtc,
+            UpdatedAtUtc = row.UpdatedAtUtc,
+            CheckedAtUtc = DateTimeOffset.UtcNow
+        };
+    }
+
 }

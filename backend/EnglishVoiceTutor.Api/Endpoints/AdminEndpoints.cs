@@ -55,6 +55,21 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
             rateLimitingEnabled);
 
+        ApplyAdminReadRateLimiting(
+            app.MapPost(ApiConstants.AdminWebsiteCmsSectionDraftValidateRoute, ValidateWebsiteCmsSectionDraftAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
+
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminWebsiteCmsSectionDraftPreviewRoute, PreviewWebsiteCmsSectionDraftAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsContentReadPermissionPolicyName),
+            rateLimitingEnabled);
+
+        ApplyAdminWriteRateLimiting(
+            app.MapPut(ApiConstants.AdminWebsiteCmsSectionReviewStatusRoute, UpdateWebsiteCmsSectionReviewStatusAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
+            rateLimitingEnabled);
+
         ApplyAdminWriteRateLimiting(
             app.MapPost(ApiConstants.AdminWebsiteCmsSectionInitializeMissingRoute, InitializeMissingWebsiteCmsSectionsAsync)
             .RequireAuthorization(AdminAuthorizationConstants.CmsDraftSavePermissionPolicyName),
@@ -363,6 +378,42 @@ public static class AdminEndpoints
         try
         {
             var result = await websiteCmsAdminMutationService.SaveDraftAsync(sectionKey, request, cancellationToken);
+            return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+    }
+
+
+    private static async Task<IResult> ValidateWebsiteCmsSectionDraftAsync(
+        string sectionKey,
+        IWebsiteCmsAdminReadService websiteCmsAdminReadService,
+        CancellationToken cancellationToken)
+    {
+        var result = await websiteCmsAdminReadService.ValidateDraftAsync(sectionKey, cancellationToken);
+        return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
+    }
+
+    private static async Task<IResult> PreviewWebsiteCmsSectionDraftAsync(
+        string sectionKey,
+        IWebsiteCmsAdminReadService websiteCmsAdminReadService,
+        CancellationToken cancellationToken)
+    {
+        var result = await websiteCmsAdminReadService.GetDraftPreviewAsync(sectionKey, cancellationToken);
+        return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
+    }
+
+    private static async Task<IResult> UpdateWebsiteCmsSectionReviewStatusAsync(
+        string sectionKey,
+        AdminWebsiteCmsSectionReviewStatusUpdateRequest request,
+        IWebsiteCmsAdminMutationService websiteCmsAdminMutationService,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await websiteCmsAdminMutationService.UpdateReviewStatusAsync(sectionKey, request, cancellationToken);
             return result is null ? Results.NotFound(new { error = "Unknown Website CMS section key." }) : Results.Ok(result);
         }
         catch (InvalidOperationException ex)
