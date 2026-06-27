@@ -36,52 +36,103 @@ body.landing-page {
 
 
 .landing-page .site-header {
+    --site-header-min-height: 92px;
+
     display: flex;
+    min-height: var(--site-header-min-height);
+    align-items: center;
+    background: var(--footer-background);
+    color: var(--footer-text);
+}
+
+.landing-page .site-header [hidden] {
+    display: none !important;
+}
+
+.landing-page .site-header__inner {
+    display: flex;
+    width: 100%;
     align-items: center;
     justify-content: space-between;
-    gap: 24px;
-    padding: var(--site-header-padding-block, 18px) clamp(20px, 5vw, var(--site-header-padding-inline, 64px));
-    background: var(--site-header-bg, var(--footer-background));
-    color: var(--site-header-text, var(--footer-text));
-    font-family: var(--site-header-font-family, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-    font-size: var(--site-header-font-size, 18px);
-    font-weight: var(--site-header-font-weight, 700);
+    gap: clamp(20px, 4vw, 56px);
+    padding: 18px clamp(20px, 5vw, 64px);
+}
+
+.landing-page .site-header__brand {
+    display: inline-flex;
+    flex: 0 0 auto;
+    min-width: max-content;
+    align-items: center;
+    color: #ffffff;
+    font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+    font-weight: 850;
+    letter-spacing: 0.01em;
+    text-decoration: none;
 }
 
 .landing-page .site-header__logo {
-    display: inline-flex;
-    min-width: max-content;
-    align-items: center;
-}
-
-.landing-page .site-header__logo-text {
-    font-weight: 800;
-    letter-spacing: 0.01em;
-}
-
-.landing-page .site-header__logo-image {
     display: block;
-    max-width: 210px;
-    max-height: 52px;
+    width: auto;
+    max-width: min(230px, 42vw);
+    max-height: 54px;
     object-fit: contain;
 }
 
-.landing-page .site-header__copy {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 6px 12px;
+.landing-page .site-header__logo-fallback {
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+}
+
+.landing-page .site-header__conversation {
+    display: grid;
+    flex: 1 1 auto;
+    justify-items: end;
+    gap: 8px;
     text-align: right;
 }
 
-.landing-page .site-header__headline,
-.landing-page .site-header__languages {
+.landing-page .site-header__headline {
     margin: 0;
+    color: var(--footer-text);
+    font-size: clamp(0.98rem, 1.4vw, 1.18rem);
+    font-weight: 750;
 }
 
-.landing-page .site-header__languages {
+.landing-page .site-header__language-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px 16px;
+    margin: 0;
+    padding: 0;
     color: #ffffff;
+    font-size: clamp(0.92rem, 1.2vw, 1.06rem);
+    font-weight: 700;
+    list-style: none;
 }
+
+.landing-page .site-header__language-list li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.landing-page .site-header__flag {
+    display: block;
+    width: 22px;
+    height: 16px;
+    border-radius: 2px;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.landing-page .site-header__flag-fallback {
+    font-size: 1rem;
+    line-height: 1;
+}
+
 
 .landing-page .landing-shell {
     display: grid;
@@ -89,7 +140,7 @@ body.landing-page {
     max-width: 100vw;
     flex: 1 0 auto;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    min-height: calc(100vh - 88px);
+    min-height: calc(100vh - 88px - var(--site-header-min-height, 92px));
     background: #07192c;
     overflow: hidden;
 }
@@ -98,7 +149,7 @@ body.landing-page {
     position: relative;
     display: flex;
     min-width: 0;
-    min-height: calc(100vh - 88px);
+    min-height: calc(100vh - 88px - var(--site-header-min-height, 92px));
     isolation: isolate;
     overflow: hidden;
     color: #ffffff;
@@ -447,17 +498,22 @@ dd {
 }
 
 @media (max-width: 760px) {
-    .landing-page .site-header {
+    .landing-page .site-header__inner {
         flex-direction: column;
         align-items: flex-start;
+        gap: 14px;
     }
 
-    .landing-page .site-header__copy {
-        justify-content: flex-start;
+    .landing-page .site-header__conversation {
+        justify-items: start;
         text-align: left;
     }
 
-.landing-page .landing-shell {
+    .landing-page .site-header__language-list {
+        justify-content: flex-start;
+    }
+
+    .landing-page .landing-shell {
         grid-template-columns: 1fr;
         min-height: auto;
     }
