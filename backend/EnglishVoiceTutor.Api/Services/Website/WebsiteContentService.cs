@@ -12,7 +12,17 @@ namespace EnglishVoiceTutor.Api.Services.Website;
 public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions> options, IWebHostEnvironment environment) : IWebsiteContentService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
+    private const string DefaultLogoPath = "assets/brand/lvt-logo.png";
     private const string RequiredLanguageLine = "🇬🇧 English · 🇫🇷 French · 🇩🇪 German · 🇪🇸 Spanish · 🇮🇹 Italian · 🇵🇹 Portuguese";
+    private static readonly IReadOnlyDictionary<string, string> DefaultLanguageFlagPaths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["English"] = "assets/flags/gb.webp",
+        ["French"] = "assets/flags/fr.webp",
+        ["German"] = "assets/flags/de.webp",
+        ["Spanish"] = "assets/flags/es.webp",
+        ["Italian"] = "assets/flags/it.webp",
+        ["Portuguese"] = "assets/flags/pt.webp"
+    };
 
     public async Task<WebsiteContentResponse> GetAsync(CancellationToken cancellationToken)
     {
@@ -23,7 +33,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     public async Task<WebsiteContentResponse> SaveDraftAsync(WebsiteContentSet draft, CancellationToken cancellationToken)
     {
         var document = await ReadDocumentAsync(cancellationToken);
-        document = document with { Draft = Normalize(draft) };
+        document = document with { Draft = MergeDraft(document.Draft, draft) };
         await WriteDocumentAsync(document, cancellationToken);
         return new WebsiteContentResponse(document.Active, document.Draft);
     }
@@ -63,6 +73,39 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         return new WebsiteContentDocument(Normalize(document.Active), Normalize(document.Draft));
     }
 
+
+    private static WebsiteContentSet MergeDraft(WebsiteContentSet? existingDraft, WebsiteContentSet? incomingDraft)
+    {
+        var merged = Normalize(existingDraft);
+        if (incomingDraft is null)
+        {
+            return merged;
+        }
+
+        var pages = merged.Pages.ToDictionary(k => k.Key, v => new Dictionary<string, string>(v.Value));
+        if (incomingDraft.Pages is not null)
+        {
+            foreach (var (page, fields) in incomingDraft.Pages)
+            {
+                if (!pages.TryGetValue(page, out var target) || fields is null)
+                {
+                    continue;
+                }
+
+                foreach (var (key, value) in fields)
+                {
+                    var fallback = target.GetValueOrDefault(key, string.Empty);
+                    target[key] = key == "logoPath"
+                        ? NormalizeLogoPath(value, fallback)
+                        : LimitText(value, TextLimitFor(key), fallback);
+                }
+            }
+        }
+
+        var design = incomingDraft.Design is null ? merged.Design : NormalizeDesign(incomingDraft.Design, merged.Design);
+        return Normalize(new WebsiteContentSet(pages, design));
+    }
+
     private async Task WriteDocumentAsync(WebsiteContentDocument document, CancellationToken cancellationToken)
     {
         var path = ResolvePath(options.Value.StorageJsonPath);
@@ -92,8 +135,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
             }
         }
         pages["home"]["supportedLanguageLine"] = RequiredLanguageLine;
-        var d = input?.Design ?? defaults.Design;
-        var design = new WebsiteDesignContent(NormalizeHex(d.HeaderBackgroundColor, defaults.Design.HeaderBackgroundColor), NormalizeHex(d.FooterBackgroundColor, defaults.Design.FooterBackgroundColor), NormalizeHex(d.MainTextColor, defaults.Design.MainTextColor), NormalizeHex(d.HeaderTextColor, defaults.Design.HeaderTextColor), NormalizeFontFamily(d.MainFontFamily, defaults.Design.MainFontFamily), Math.Clamp(d.BaseFontSizePx, 14, 22), AllowedFontWeights().Contains(d.HeaderFontWeight) ? d.HeaderFontWeight : defaults.Design.HeaderFontWeight, Math.Clamp(d.ButtonBorderRadiusPx, 0, 32), LimitText(d.CardTextStyle, 80, defaults.Design.CardTextStyle));
+        var design = NormalizeDesign(input?.Design, defaults.Design);
         return new WebsiteContentSet(pages, design);
     }
 
@@ -261,14 +303,27 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         return html.ToString();
     }
 
-    private static string Logo(Dictionary<string, string> h) => string.IsNullOrWhiteSpace(h["logoPath"])
-        ? $"<span class=\"site-header__logo-fallback\">{E(h["fallbackLogoText"])}</span>"
-        : $"<img class=\"site-header__logo-image\" src=\"{HtmlEncoder.Default.Encode(h["logoPath"])}\" alt=\"{E(h["logoAltText"])}\"><span class=\"site-header__logo-fallback\" hidden>{E(h["fallbackLogoText"])}</span>";
+    private static string Logo(Dictionary<string, string> h)
+    {
+        var logoPath = NormalizeLogoPath(h.GetValueOrDefault("logoPath"), DefaultLogoPath);
+        return $"<img class=\"site-header__logo-image\" src=\"{HtmlEncoder.Default.Encode(logoPath)}\" alt=\"{E(h.GetValueOrDefault("logoAltText", "Language Voice Tutor logo"))}\"><span class=\"site-header__logo-fallback\" hidden>{E(h.GetValueOrDefault("fallbackLogoText", "Language Voice Tutor"))}</span>";
+    }
 
     private static string RenderLanguageList(string languageLine)
     {
         var languages = languageLine.Split('·', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        return string.Join("<span class=\"site-header__separator\">·</span>", languages.Select(language => $"<span class=\"site-header__language\">{E(language)}</span>"));
+        return string.Join("<span class=\"site-header__separator\">·</span>", languages.Select(RenderLanguage));
+    }
+
+    private static string RenderLanguage(string language)
+    {
+        var label = LanguageLabelRegex().Replace(language, string.Empty).Trim();
+        if (DefaultLanguageFlagPaths.TryGetValue(label, out var flagPath))
+        {
+            return $"<span class=\"site-header__language\"><img class=\"site-header__flag\" src=\"{HtmlEncoder.Default.Encode(flagPath)}\" alt=\"\" aria-hidden=\"true\">{E(label)}</span>";
+        }
+
+        return $"<span class=\"site-header__language\">{E(language)}</span>";
     }
 
     private static string RenderPreviewBaseStyles() => """
@@ -284,6 +339,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         .site-header__conversation-line { display: flex; min-width: 0; align-items: center; flex-wrap: wrap; gap: 8px; }
         .site-header__headline { margin: 0; color: inherit; font-weight: 750; }
         .site-header__language { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .site-header__flag { display: inline-block; width: 22px; height: 15px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35); }
         .site-header__separator { opacity: 0.72; }
         .landing-page .landing-shell { display: grid; width: 100%; max-width: 100vw; flex: 1 0 auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: calc(100vh - 176px); background: #07192c; overflow: hidden; }
         .landing-page .app-panel { position: relative; display: flex; min-width: 0; min-height: calc(100vh - 176px); isolation: isolate; overflow: hidden; color: #ffffff; text-decoration: none; }
@@ -415,12 +471,14 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     private static string LimitText(string? value, int max, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim()[..Math.Min(value.Trim().Length, max)];
     private static string NormalizeHex(string? value, string fallback) => value is not null && HexColorRegex().IsMatch(value.Trim()) ? value.Trim() : fallback;
     private static string NormalizeFontFamily(string? value, string fallback) => value is not null && SafeFontRegex().IsMatch(value.Trim()) ? LimitText(value, 120, fallback) : fallback;
-    private static string NormalizeLogoPath(string? value) { var t = value?.Trim() ?? ""; if (t.Length == 0) return ""; if (Uri.TryCreate(t, UriKind.Absolute, out var uri)) return uri.Scheme == Uri.UriSchemeHttps ? t : ""; return SafeRelativePathRegex().IsMatch(t) && !t.Contains("..", StringComparison.Ordinal) ? t : ""; }
+    private static WebsiteDesignContent NormalizeDesign(WebsiteDesignContent? value, WebsiteDesignContent fallback) => value is null ? fallback : new WebsiteDesignContent(NormalizeHex(value.HeaderBackgroundColor, fallback.HeaderBackgroundColor), NormalizeHex(value.FooterBackgroundColor, fallback.FooterBackgroundColor), NormalizeHex(value.MainTextColor, fallback.MainTextColor), NormalizeHex(value.HeaderTextColor, fallback.HeaderTextColor), NormalizeFontFamily(value.MainFontFamily, fallback.MainFontFamily), Math.Clamp(value.BaseFontSizePx, 14, 22), AllowedFontWeights().Contains(value.HeaderFontWeight) ? value.HeaderFontWeight : fallback.HeaderFontWeight, Math.Clamp(value.ButtonBorderRadiusPx, 0, 32), LimitText(value.CardTextStyle, 80, fallback.CardTextStyle));
+    private static string NormalizeLogoPath(string? value, string fallback = "") { var t = value?.Trim() ?? ""; if (t.Length == 0) return fallback; if (Uri.TryCreate(t, UriKind.Absolute, out var uri)) return uri.Scheme == Uri.UriSchemeHttps ? t : fallback; return SafeRelativePathRegex().IsMatch(t) && !t.Contains("..", StringComparison.Ordinal) ? t : fallback; }
     private static HashSet<int> AllowedFontWeights() => [400, 500, 600, 700, 800];
     [GeneratedRegex("^#[0-9a-fA-F]{6}$")] private static partial Regex HexColorRegex();
     [GeneratedRegex("^[a-zA-Z0-9 ,\"-]+$")] private static partial Regex SafeFontRegex();
     [GeneratedRegex("^[a-zA-Z0-9_./%#?=&:+-]+$")] private static partial Regex SafeRelativePathRegex();
     [GeneratedRegex("^\\d+\\.\\s+")] private static partial Regex NumberedListRegex();
+    [GeneratedRegex("^[^\\p{L}]*")] private static partial Regex LanguageLabelRegex();
     [GeneratedRegex("\\[([^\\]]+)\\]\\(([^)]+)\\)")] private static partial Regex LinkRegex();
     [GeneratedRegex("\\*\\*([^*]+)\\*\\*")] private static partial Regex BoldRegex();
     [GeneratedRegex("(?<!_)_([^_]+)_(?!_)")] private static partial Regex ItalicRegex();
