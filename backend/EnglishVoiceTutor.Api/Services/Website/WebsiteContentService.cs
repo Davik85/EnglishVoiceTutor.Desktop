@@ -501,9 +501,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
             html.Append(InlineFormatting(E(text[index..match.Index])));
             var token = match.Value;
             var trailing = TrimTrailingLinkPunctuation(token, out var linkText);
-            var href = linkText.Contains('@', StringComparison.Ordinal) && !linkText.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-                ? $"mailto:{linkText}"
-                : linkText;
+            var href = AutoLinkHref(linkText);
             html.Append(Anchor(SafeHref(href)!, E(linkText))).Append(E(trailing));
             index = match.Index + match.Length;
         }
@@ -527,6 +525,18 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         }
         linkText = token[..end];
         return token[end..];
+    }
+
+    private static string AutoLinkHref(string linkText)
+    {
+        if (linkText.Contains('@', StringComparison.Ordinal) && !linkText.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"mailto:{linkText}";
+        }
+
+        return linkText.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || linkText.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            ? linkText
+            : $"https://{linkText}";
     }
 
     private static string? SafeHref(string href)
@@ -582,7 +592,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     [GeneratedRegex("^\\d+\\.\\s+")] private static partial Regex NumberedListRegex();
     [GeneratedRegex("^[^\\p{L}]*")] private static partial Regex LanguageLabelRegex();
     [GeneratedRegex("\\[([^\\]]+)\\]\\(([^)]+)\\)")] private static partial Regex LinkRegex();
-    [GeneratedRegex(@"(?<![\w@])(?:https?://[^\s<>()]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})(?![\w@])", RegexOptions.IgnoreCase)] private static partial Regex AutoLinkRegex();
+    [GeneratedRegex(@"(?<![\w@:/])(?:https?://[^\s<>()]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})(?![\w@-])", RegexOptions.IgnoreCase)] private static partial Regex AutoLinkRegex();
     [GeneratedRegex("\\*\\*([^*]+)\\*\\*")] private static partial Regex BoldRegex();
     [GeneratedRegex("(?<!_)_([^_]+)_(?!_)")] private static partial Regex ItalicRegex();
 }
