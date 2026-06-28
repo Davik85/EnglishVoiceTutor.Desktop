@@ -4,7 +4,6 @@ using EnglishVoiceTutor.Api.Services.Website;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 
 namespace EnglishVoiceTutor.Api.Tests.Services.Website;
 
@@ -16,7 +15,7 @@ public sealed class WebsiteContentServiceRenderingTests
         using var fixture = new WebsiteContentServiceFixture();
         var service = fixture.CreateService();
 
-        await service.PublishAsync(CancellationToken.None);
+        await service.PublishAsync(TestContext.Current.CancellationToken);
         var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"));
 
         Assert.Contains("assets/brand/lvt-logo.png", html);
@@ -37,7 +36,7 @@ public sealed class WebsiteContentServiceRenderingTests
         using var fixture = new WebsiteContentServiceFixture();
         var service = fixture.CreateService();
 
-        await service.PublishAsync(CancellationToken.None);
+        await service.PublishAsync(TestContext.Current.CancellationToken);
         var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"));
 
         Assert.Contains("<img class=\"site-header__logo-image\" src=\"assets/brand/lvt-logo.png\"", html);
@@ -51,7 +50,7 @@ public sealed class WebsiteContentServiceRenderingTests
         using var fixture = new WebsiteContentServiceFixture();
         var service = fixture.CreateService();
 
-        await service.PublishAsync(CancellationToken.None);
+        await service.PublishAsync(TestContext.Current.CancellationToken);
         var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"));
 
         Assert.Contains("/releases/windows/direct/latest.json", html);
@@ -77,9 +76,9 @@ public sealed class WebsiteContentServiceRenderingTests
     {
         using var fixture = new WebsiteContentServiceFixture();
         var service = fixture.CreateService();
-        var content = (await service.GetAsync(CancellationToken.None)).Draft;
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
 
-        var preview = await service.PreviewAsync(new WebsitePreviewRequest(content, "home"), CancellationToken.None);
+        var preview = await service.PreviewAsync(new WebsitePreviewRequest(content, "home"), TestContext.Current.CancellationToken);
 
         Assert.Contains("<base href=\"https://languagevoicetutor.com/\">", preview.Html);
         Assert.Contains("assets/images/landing/windows-desktop.webp", preview.Html);
@@ -93,7 +92,7 @@ public sealed class WebsiteContentServiceRenderingTests
         using var fixture = new WebsiteContentServiceFixture();
         var service = fixture.CreateService();
 
-        var response = await service.PublishAsync(CancellationToken.None);
+        var response = await service.PublishAsync(TestContext.Current.CancellationToken);
         var htmlFiles = Directory.GetFiles(fixture.PublicSiteRoot, "*.html");
 
         Assert.Contains(response.PublishedFiles, file => Path.GetFileName(file) == "seller.html");
@@ -124,9 +123,9 @@ public sealed class WebsiteContentServiceRenderingTests
     {
         using var fixture = new WebsiteContentServiceFixture();
         var service = fixture.CreateService();
-        var content = (await service.GetAsync(CancellationToken.None)).Draft;
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
 
-        var preview = await service.PreviewAsync(new WebsitePreviewRequest(content, "status"), CancellationToken.None);
+        var preview = await service.PreviewAsync(new WebsitePreviewRequest(content, "status"), TestContext.Current.CancellationToken);
 
         Assert.Equal("status", preview.PageKey);
         Assert.Contains("<base href=\"https://languagevoicetutor.com/\">", preview.Html);
@@ -140,7 +139,7 @@ public sealed class WebsiteContentServiceRenderingTests
         using var fixture = new WebsiteContentServiceFixture();
         var service = fixture.CreateService();
 
-        await service.PublishAsync(CancellationToken.None);
+        await service.PublishAsync(TestContext.Current.CancellationToken);
         var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"));
 
         Assert.Contains("assets/brand/lvt-logo.png", html);
@@ -158,10 +157,10 @@ public sealed class WebsiteContentServiceRenderingTests
     {
         using var fixture = new WebsiteContentServiceFixture();
         var service = fixture.CreateService();
-        var content = (await service.GetAsync(CancellationToken.None)).Draft;
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
         content.Pages["status"]["bodyMarkdown"] = "Visit https://example.com/docs. Email support@languagevoicetutor.com. [Contact](mailto:support@languagevoicetutor.com) [Bad](javascript:alert(1)) <script>alert(1)</script>";
 
-        var preview = await service.PreviewAsync(new WebsitePreviewRequest(content, "status"), CancellationToken.None);
+        var preview = await service.PreviewAsync(new WebsitePreviewRequest(content, "status"), TestContext.Current.CancellationToken);
 
         Assert.Contains("<a href=\"https://example.com/docs\" rel=\"noopener noreferrer\">https://example.com/docs</a>.", preview.Html);
         Assert.Contains("<a href=\"mailto:support@languagevoicetutor.com\">support@languagevoicetutor.com</a>", preview.Html);
@@ -202,7 +201,7 @@ public sealed class WebsiteContentServiceRenderingTests
 
         public WebsiteContentService CreateService()
         {
-            var options = Options.Create(new WebsiteContentOptions
+            var options = Microsoft.Extensions.Options.Options.Create(new WebsiteContentOptions
             {
                 StorageJsonPath = StorageJsonPath,
                 PublicSiteRoot = PublicSiteRoot
