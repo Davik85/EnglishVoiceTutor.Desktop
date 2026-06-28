@@ -177,7 +177,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     private static string RenderPage(WebsiteContentSet c, string pageKey, bool includePublicBaseHref = false) => pageKey switch
     {
         "home" => RenderHome(c, includePublicBaseHref),
-        "download" => RenderSimple(c, "download", "download-title", [("Current version", "currentVersionLabel"), ("Safety and support", "safetySupportNote")], "Download for Windows", includePublicBaseHref),
+        "download" => RenderDownload(c, includePublicBaseHref),
         "mobile" => RenderSimple(c, "mobile", "mobile-title", [("Android", "androidComingSoonText"), ("iOS", "iosComingSoonText"), ("Contact", "emailSupportCtaText")], null, includePublicBaseHref),
         "pricing" => RenderSimple(c, "pricing", "pricing-title", [("Free plan", "freePlanText"), ("Premium plan", "premiumPlanText"), ("Trial", "trialText"), ("Checkout status", "paddleLiveCheckoutDisclaimerText")], null, includePublicBaseHref),
         "support" => RenderSimple(c, "support", "support-title", [("Support email", "supportEmailText"), ("Response time", "responseTimeText"), ("Accounts and deletion", "accountDeletionSupportText"), ("Billing", "billingSupportText")], null, includePublicBaseHref),
@@ -221,6 +221,51 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         return Shell(c, E(h["seoTitle"]), E(h["seoDescription"]), main, true, includePublicBaseHref);
     }
 
+
+    private static string RenderDownload(WebsiteContentSet c, bool includePublicBaseHref)
+    {
+        var p = c.Pages["download"];
+        var body = new StringBuilder();
+        body.Append($"""
+<main class="page-shell legal-page">
+    <section class="hero-card" aria-labelledby="download-title">
+        <h1 id="download-title">{E(p["pageTitle"])}</h1>
+        <p class="description">{E(p.GetValueOrDefault("introText", p.GetValueOrDefault("intro", string.Empty)))}</p>
+""");
+        if (!string.IsNullOrWhiteSpace(p.GetValueOrDefault("bodyMarkdown")))
+        {
+            body.AppendLine("        <div class=\"markdown-content\">");
+            body.AppendLine(RenderMarkdown(p["bodyMarkdown"]));
+            body.AppendLine("        </div>");
+        }
+        body.Append($"""
+        <div class="download-panel" aria-label="Windows download" data-manifest-url="/releases/windows/direct/latest.json">
+            <p class="version-line">Current version: <strong id="current-version">Loading...</strong></p>
+            <a id="download-button" class="download-button is-disabled" aria-disabled="true">{E(p.GetValueOrDefault("downloadButtonText", "Download for Windows"))}</a>
+            <p id="manifest-status" class="status-note" role="status">Loading release details from /releases/windows/direct/latest.json...</p>
+            <p class="warning-note">{E(p.GetValueOrDefault("safetySupportNote", string.Empty))}</p>
+        </div>
+    </section>
+
+    <section class="details-card legal-section" aria-labelledby="release-details-title">
+        <h2 id="release-details-title">Current release details</h2>
+        <dl class="release-details">
+            <div><dt>Version</dt><dd id="detail-version">Unavailable</dd></div>
+            <div><dt>Installer filename</dt><dd id="detail-installer">Unavailable</dd></div>
+            <div><dt>Backend base URL</dt><dd id="detail-backend-base-url">Unavailable</dd></div>
+            <div><dt>Minimum supported version</dt><dd id="detail-minimum-supported-version">Unavailable</dd></div>
+            <div><dt>Update mode</dt><dd id="detail-update-mode">Unavailable</dd></div>
+            <div><dt>Channel</dt><dd id="detail-channel">Unavailable</dd></div>
+            <div><dt>Installer size</dt><dd id="detail-size">Unavailable</dd></div>
+            <div><dt>SHA-256</dt><dd id="detail-sha">Unavailable</dd></div>
+        </dl>
+    </section>
+""");
+        body.Append(Nav());
+        body.AppendLine("</main>");
+        return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref, "    <script src=\"download.js?v=manifest-download\" defer></script>");
+    }
+
     private static string RenderSimple(WebsiteContentSet c, string page, string titleId, (string title, string key)[] sections, string? button, bool includePublicBaseHref)
     {
         var p = c.Pages[page];
@@ -260,7 +305,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref);
     }
 
-    private static string Shell(WebsiteContentSet c, string title, string description, string main, bool landing, bool includePublicBaseHref)
+    private static string Shell(WebsiteContentSet c, string title, string description, string main, bool landing, bool includePublicBaseHref, string? extraBodyHtml = null)
     {
         var h = c.Pages["home"];
         var d = c.Design;
@@ -300,6 +345,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         html.AppendLine($"        <p>{E(h["footerCopyrightText"])}</p>");
         html.AppendLine($"        {NavLinks(h)}");
         html.AppendLine("    </footer>");
+        if (!string.IsNullOrWhiteSpace(extraBodyHtml)) { html.AppendLine(extraBodyHtml); }
         html.AppendLine("</body>");
         html.AppendLine("</html>");
         return html.ToString();

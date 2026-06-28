@@ -7,7 +7,7 @@ import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SITE_PUBLIC = ROOT / "site" / "public"
-INDEX = SITE_PUBLIC / "index.html"
+DOWNLOAD_HTML = SITE_PUBLIC / "download.html"
 DOWNLOAD_JS = SITE_PUBLIC / "download.js"
 STYLES = SITE_PUBLIC / "styles.css"
 UPLOAD_SCRIPT = ROOT / "scripts" / "upload-static-site.ps1"
@@ -52,21 +52,27 @@ def assert_no_hardcoded_installer_fallback(path: pathlib.Path) -> None:
 
 
 def main() -> int:
-    for path in [INDEX, DOWNLOAD_JS, STYLES, UPLOAD_SCRIPT]:
+    for path in [DOWNLOAD_HTML, DOWNLOAD_JS, STYLES, UPLOAD_SCRIPT]:
         if not path.exists():
             raise AssertionError(f"Missing required file: {path.relative_to(ROOT)}")
 
-    index = read(INDEX)
+    download_html = read(DOWNLOAD_HTML)
     download_js = read(DOWNLOAD_JS)
     upload_script = read(UPLOAD_SCRIPT)
 
-    assert_contains(index, 'href="styles.css"', "stylesheet reference")
-    assert_contains(index, 'src="download.js?v=', "cache-busted download script reference")
-    assert_contains(index, 'id="detail-installer"', "manifest installer filename display")
-    assert_contains(index, 'aria-disabled="true"', "initial disabled download button")
+    assert_contains(download_html, 'href="styles.css"', "stylesheet reference")
+    assert_contains(download_html, 'src="download.js?v=', "cache-busted download script reference")
+    assert_contains(download_html, 'id="detail-installer"', "manifest installer filename display")
+    assert_contains(download_html, 'id="detail-backend-base-url"', "manifest backendBaseUrl display")
+    assert_contains(download_html, 'id="detail-minimum-supported-version"', "manifest minimumSupportedVersion display")
+    assert_contains(download_html, 'id="detail-update-mode"', "manifest updateMode display")
+    assert_contains(download_html, 'aria-disabled="true"', "initial disabled download button")
     assert_contains(download_js, '"/releases/windows/direct/latest.json"', "release manifest URL")
     assert_contains(download_js, "installerRelativeUrl", "installerRelativeUrl usage")
     assert_contains(download_js, "installerFileName", "installerFileName usage")
+    assert_contains(download_js, "backendBaseUrl", "backendBaseUrl usage")
+    assert_contains(download_js, "minimumSupportedVersion", "minimumSupportedVersion usage")
+    assert_contains(download_js, "updateMode", "updateMode usage")
     assert_contains(download_js, "Date.now()", "latest.json cache busting")
     assert_contains(download_js, 'removeAttribute("href")', "disabled button removes href")
     assert_contains(download_js, "setDownloadEnabled(false)", "download disabled before manifest load")
@@ -77,7 +83,7 @@ def main() -> int:
     assert_contains(upload_script, "site\\public", "static site source folder")
     assert_contains(upload_script, "Release files: not touched. Backend deployment: not touched.", "deployment scope guard")
 
-    for path in [INDEX, DOWNLOAD_JS]:
+    for path in [DOWNLOAD_HTML, DOWNLOAD_JS]:
         assert_no_hardcoded_installer_fallback(path)
 
     for path in [*SITE_PUBLIC.iterdir(), UPLOAD_SCRIPT]:

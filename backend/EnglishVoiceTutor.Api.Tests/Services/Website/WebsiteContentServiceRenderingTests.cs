@@ -44,6 +44,34 @@ public sealed class WebsiteContentServiceRenderingTests
         Assert.DoesNotContain("<a class=\"site-header__brand\" href=\"index.html\" aria-label=\"Language Voice Tutor home\"><span class=\"site-header__logo-fallback\">", html);
     }
 
+
+    [Fact]
+    public async Task PublishedDownloadHtmlKeepsManifestDrivenReleaseHooks()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+
+        await service.PublishAsync(CancellationToken.None);
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"));
+
+        Assert.Contains("/releases/windows/direct/latest.json", html);
+        Assert.Contains("download.js?v=manifest-download", html);
+        Assert.Contains("id=\"current-version\"", html);
+        Assert.Contains("id=\"download-button\"", html);
+        Assert.Contains("aria-disabled=\"true\"", html);
+        Assert.Contains("id=\"manifest-status\"", html);
+        Assert.Contains("id=\"detail-version\"", html);
+        Assert.Contains("id=\"detail-installer\"", html);
+        Assert.Contains("id=\"detail-backend-base-url\"", html);
+        Assert.Contains("id=\"detail-minimum-supported-version\"", html);
+        Assert.Contains("id=\"detail-update-mode\"", html);
+        Assert.Contains("id=\"detail-size\"", html);
+        Assert.Contains("id=\"detail-sha\"", html);
+        Assert.Contains("Current version", html);
+        Assert.Contains("Installer filename", html);
+        Assert.Contains("Current release details", html);
+    }
+
     [Fact]
     public async Task PreviewHtmlIncludesPublicBaseHrefSoAboutBlankCanResolveRelativeAssets()
     {
