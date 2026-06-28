@@ -851,8 +851,65 @@
     let activeWebsiteSection = "home";
     function setWebsiteMessage(message) { websiteMessageElement.textContent = message || ""; }
     function setWebsiteError(message) { websiteErrorElement.textContent = message || ""; }
-    function renderWebsiteTabs() { websiteSectionTabs.innerHTML = ""; websiteSections.forEach(section => { const button = document.createElement("button"); button.type = "button"; button.textContent = section.label; button.className = "website-section-tab"; button.setAttribute("aria-selected", section.key === activeWebsiteSection ? "true" : "false"); button.addEventListener("click", () => { collectCurrentWebsiteSection(); activeWebsiteSection = section.key; renderWebsiteEditor(); }); websiteSectionTabs.appendChild(button); }); }
-    function renderWebsiteEditor() { const section = websiteSections.find(x => x.key === activeWebsiteSection) || websiteSections[0]; websiteEditorHeading.textContent = section.label; websiteEditorFields.innerHTML = ""; renderWebsiteTabs(); const values = section.design ? (websiteContentDraft.design || {}) : ((websiteContentDraft.pages || {})[section.key] || {}); section.fields.forEach(([key, label]) => { const field = document.createElement("div"); field.className = "field"; const labelElement = document.createElement("label"); labelElement.htmlFor = `website-field-${key}`; labelElement.textContent = label; const isLong = /description|intro|text|terms|disclaimer|collected|processing|retention|note|placeholder/i.test(key); const input = document.createElement(isLong ? "textarea" : "input"); input.id = `website-field-${key}`; input.dataset.websiteKey = key; if (input.tagName === "TEXTAREA") { input.rows = 3; } else { input.type = /Px|Weight/.test(key) ? "number" : "text"; } input.value = values[key] ?? ""; field.append(labelElement, input); websiteEditorFields.appendChild(field); }); }
+    const websiteSectionGroups = [
+        { label: "Main", keys: ["home", "download", "mobile"] },
+        { label: "Commercial", keys: ["pricing", "support"] },
+        { label: "Legal", keys: ["terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status"] },
+        { label: "Advanced", keys: ["design"], advanced: true }
+    ];
+    function renderWebsiteTabs() {
+        websiteSectionTabs.innerHTML = "";
+        const sectionsByKey = new Map(websiteSections.map(section => [section.key, section]));
+        websiteSectionGroups.forEach(group => {
+            const groupElement = document.createElement("section");
+            groupElement.className = `website-section-group${group.advanced ? " website-section-group-advanced" : ""}`;
+            const groupHeading = document.createElement("h4");
+            groupHeading.textContent = group.label;
+            groupElement.appendChild(groupHeading);
+            const groupButtons = document.createElement("div");
+            groupButtons.className = "website-section-group-buttons";
+            group.keys.forEach(key => {
+                const section = sectionsByKey.get(key);
+                if (!section) return;
+                const button = document.createElement("button");
+                button.type = "button";
+                button.textContent = section.label;
+                button.className = `website-section-tab${section.design ? " website-section-tab-advanced" : ""}`;
+                button.setAttribute("aria-selected", section.key === activeWebsiteSection ? "true" : "false");
+                button.addEventListener("click", () => { collectCurrentWebsiteSection(); activeWebsiteSection = section.key; renderWebsiteEditor(); });
+                groupButtons.appendChild(button);
+            });
+            groupElement.appendChild(groupButtons);
+            websiteSectionTabs.appendChild(groupElement);
+        });
+    }
+    function renderWebsiteEditor() {
+        const section = websiteSections.find(x => x.key === activeWebsiteSection) || websiteSections[0];
+        websiteEditorHeading.textContent = section.label;
+        websiteEditorFields.innerHTML = "";
+        websiteEditorFields.classList.toggle("website-design-fields", Boolean(section.design));
+        renderWebsiteTabs();
+        const values = section.design ? (websiteContentDraft.design || {}) : ((websiteContentDraft.pages || {})[section.key] || {});
+        section.fields.forEach(([key, label]) => {
+            const field = document.createElement("div");
+            const isLong = /description|intro|text|terms|disclaimer|collected|processing|retention|note|placeholder/i.test(key);
+            field.className = `field website-field${isLong ? " website-field-long" : " website-field-compact"}`;
+            const labelElement = document.createElement("label");
+            labelElement.htmlFor = `website-field-${key}`;
+            labelElement.textContent = label;
+            const input = document.createElement(isLong ? "textarea" : "input");
+            input.id = `website-field-${key}`;
+            input.dataset.websiteKey = key;
+            if (input.tagName === "TEXTAREA") {
+                input.rows = /terms|privacy|refund|cancel|support|pricing|disclosure|data|processing|retention|placeholder/i.test(`${activeWebsiteSection} ${key}`) ? 6 : 4;
+            } else {
+                input.type = /Px|Weight/.test(key) ? "number" : "text";
+            }
+            input.value = values[key] ?? "";
+            field.append(labelElement, input);
+            websiteEditorFields.appendChild(field);
+        });
+    }
     function collectCurrentWebsiteSection() { const section = websiteSections.find(x => x.key === activeWebsiteSection); if (!section) return; const target = section.design ? (websiteContentDraft.design ||= {}) : ((websiteContentDraft.pages ||= {})[section.key] ||= {}); websiteEditorFields.querySelectorAll("[data-website-key]").forEach(input => { const key = input.dataset.websiteKey; target[key] = /Px|Weight/.test(key) ? Number(input.value) : input.value; }); }
     function fillWebsiteForm(content) { websiteContentDraft = JSON.parse(JSON.stringify(content || { pages: {}, design: {} })); renderWebsiteEditor(); }
     async function readWebsiteResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
