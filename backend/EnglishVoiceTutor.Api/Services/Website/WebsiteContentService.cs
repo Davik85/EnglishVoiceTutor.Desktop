@@ -221,6 +221,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         html.AppendLine($"    <meta name=\"description\" content=\"{description}\">");
         html.AppendLine("    <link rel=\"stylesheet\" href=\"styles.css\">");
         html.AppendLine("    <style>");
+        html.Append(RenderPreviewBaseStyles());
         html.AppendLine($"        :root {{ --footer-background: {d.FooterBackgroundColor}; --footer-text: {d.HeaderTextColor}; --text: {d.MainTextColor}; font-size: {d.BaseFontSizePx}px; }}");
         html.AppendLine($"        body {{ font-family: {d.MainFontFamily}; }}");
         html.AppendLine($"        .download-button, .app-panel__cue {{ border-radius: {d.ButtonBorderRadiusPx}px; }}");
@@ -229,11 +230,13 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         html.AppendLine("    </style>");
         html.AppendLine("</head>");
         html.AppendLine($"<body class=\"{bodyClass}\">");
-        html.AppendLine("    <header class=\"site-header\">");
-        html.AppendLine($"        <div class=\"site-header__logo\">{Logo(h)}</div>");
-        html.AppendLine("        <div class=\"site-header__copy\">");
-        html.AppendLine($"            <p class=\"site-header__headline\">{E(h["topHeaderText"])}</p>");
-        html.AppendLine($"            <p class=\"site-header__languages\">{E(h["supportedLanguageLine"])}</p>");
+        html.AppendLine("    <header class=\"site-header\" aria-label=\"Language Voice Tutor site header\">");
+        html.AppendLine("        <div class=\"site-header__inner\">");
+        html.AppendLine($"            <a class=\"site-header__brand\" href=\"index.html\" aria-label=\"Language Voice Tutor home\">{Logo(h)}</a>");
+        html.AppendLine("            <div class=\"site-header__conversation-line\" aria-label=\"Supported study languages\">");
+        html.AppendLine($"                <span class=\"site-header__headline\">{E(h["topHeaderText"])}</span>");
+        html.AppendLine("                " + RenderLanguageList(h["supportedLanguageLine"]));
+        html.AppendLine("            </div>");
         html.AppendLine("        </div>");
         html.AppendLine("    </header>");
         html.AppendLine(main);
@@ -247,8 +250,63 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     }
 
     private static string Logo(Dictionary<string, string> h) => string.IsNullOrWhiteSpace(h["logoPath"])
-        ? $"<span class=\"site-header__logo-text\">{E(h["fallbackLogoText"])}</span>"
-        : $"<img class=\"site-header__logo-image\" src=\"{HtmlEncoder.Default.Encode(h["logoPath"])}\" alt=\"{E(h["logoAltText"])}\">";
+        ? $"<span class=\"site-header__logo-fallback\">{E(h["fallbackLogoText"])}</span>"
+        : $"<img class=\"site-header__logo-image\" src=\"{HtmlEncoder.Default.Encode(h["logoPath"])}\" alt=\"{E(h["logoAltText"])}\"><span class=\"site-header__logo-fallback\" hidden>{E(h["fallbackLogoText"])}</span>";
+
+    private static string RenderLanguageList(string languageLine)
+    {
+        var languages = languageLine.Split('·', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        return string.Join("<span class=\"site-header__separator\">·</span>", languages.Select(language => $"<span class=\"site-header__language\">{E(language)}</span>"));
+    }
+
+    private static string RenderPreviewBaseStyles() => """
+        :root { color-scheme: light; --background: #f6f2ea; --card: #fffaf2; --text: #24201b; --muted: #665f55; --accent: #2f6f5e; --accent-dark: #235648; --border: #ded2bf; --warning-background: #fff2cd; --warning-border: #e2b84f; --footer-background: #0d2b4c; --footer-text: #dce9f7; --footer-link: #ffffff; }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; background: var(--background); color: var(--text); line-height: 1.5; }
+        body.landing-page { display: flex; min-width: 0; flex-direction: column; overflow-x: hidden; }
+        .site-header { display: flex; min-height: 88px; align-items: center; overflow: hidden; width: 100%; }
+        .site-header__inner { display: flex; width: 100%; min-height: 88px; align-items: center; justify-content: flex-start; gap: 22px; padding: 12px clamp(20px, 5vw, 72px); }
+        .site-header__brand { display: inline-flex; flex: 0 0 auto; max-width: 220px; align-items: center; color: inherit; font-size: 1.2rem; font-weight: 850; text-decoration: none; }
+        .site-header__logo-image { display: block; width: auto; max-width: 180px; max-height: 72px; height: auto; object-fit: contain; }
+        .site-header__logo-fallback { display: inline-flex; align-items: center; min-height: 48px; }
+        .site-header__conversation-line { display: flex; min-width: 0; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .site-header__headline { margin: 0; color: inherit; font-weight: 750; }
+        .site-header__language { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .site-header__separator { opacity: 0.72; }
+        .landing-page .landing-shell { display: grid; width: 100%; max-width: 100vw; flex: 1 0 auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: calc(100vh - 176px); background: #07192c; overflow: hidden; }
+        .landing-page .app-panel { position: relative; display: flex; min-width: 0; min-height: calc(100vh - 176px); isolation: isolate; overflow: hidden; color: #ffffff; text-decoration: none; }
+        .landing-page .app-panel__image, .landing-page .app-panel__shade { position: absolute; inset: 0; }
+        .landing-page .app-panel__image { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(1.01); z-index: 0; }
+        .landing-page .app-panel__shade { background: linear-gradient(180deg, rgba(4, 18, 32, 0.28) 0%, rgba(4, 18, 32, 0.08) 45%, rgba(4, 18, 32, 0.3) 100%); z-index: 1; }
+        .landing-page .app-panel__content { position: relative; z-index: 2; display: flex; width: min(560px, calc(100% - 40px)); min-height: clamp(330px, 34vw, 430px); flex-direction: column; align-items: flex-start; margin: clamp(28px, 7vw, 72px) auto auto; padding: clamp(22px, 4vw, 36px); border: 1px solid rgba(255, 255, 255, 0.24); border-radius: 28px; background: rgba(5, 22, 38, 0.3); box-shadow: 0 22px 70px rgba(0, 0, 0, 0.22); backdrop-filter: blur(4px); }
+        .landing-page .app-panel__eyebrow, .landing-page .app-panel__badge { display: inline-flex; width: fit-content; margin: 0 0 16px; border-radius: 999px; font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+        .landing-page .app-panel__badge { padding: 8px 12px; background: rgba(255, 255, 255, 0.2); }
+        .landing-page .app-panel h1, .landing-page .app-panel h2 { margin: 0 0 18px; font-size: clamp(2.1rem, 5vw, 4.7rem); line-height: 0.98; text-wrap: balance; }
+        .landing-page .app-panel p { max-width: 32rem; margin: 0; color: rgba(255, 255, 255, 0.92); font-size: clamp(1rem, 1.6vw, 1.28rem); }
+        .landing-page .app-panel__cue { display: inline-flex; align-items: center; margin-top: auto; padding: 13px 18px; background: #ffffff; color: #0d2b4c; font-weight: 850; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2); }
+        .landing-page .app-panel__cue--disabled { cursor: not-allowed; background: rgba(255, 255, 255, 0.22); color: rgba(255, 255, 255, 0.76); box-shadow: none; }
+        .site-footer { display: flex; min-height: 88px; align-items: center; justify-content: space-between; gap: 20px; padding: 22px clamp(20px, 5vw, 64px); background: var(--footer-background); color: var(--footer-text); }
+        .site-footer p { margin: 0; }
+        .site-footer__links, .legal-nav { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+        .site-footer__links { gap: 14px 22px; }
+        .site-footer a { color: var(--footer-link); font-weight: 700; text-decoration-color: rgba(255, 255, 255, 0.45); text-underline-offset: 4px; }
+        .page-shell { width: min(920px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0; }
+        .hero-card, .details-card, .support-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 16px 45px rgba(64, 49, 30, 0.08); }
+        .hero-card { padding: clamp(28px, 5vw, 56px); }
+        h1, h2, p { margin-top: 0; }
+        .page-shell h1 { margin-bottom: 16px; font-size: clamp(2.3rem, 7vw, 4.5rem); line-height: 1; }
+        .page-shell h2 { margin-bottom: 18px; font-size: 1.35rem; }
+        .description { max-width: 680px; margin-bottom: 22px; color: var(--muted); font-size: 1.18rem; }
+        .download-button { display: inline-flex; width: fit-content; align-items: center; justify-content: center; min-height: 52px; padding: 0 24px; background: var(--accent); color: #ffffff; font-weight: 800; text-decoration: none; }
+        .download-button[aria-disabled="true"] { cursor: not-allowed; background: #8b958f; color: #f4f4f4; pointer-events: none; }
+        .details-card, .support-card { margin-top: 20px; padding: 24px; }
+        .legal-page .hero-card, .legal-page .details-card, .legal-page .support-card { margin-bottom: 20px; }
+        .legal-section p:last-child { margin-bottom: 0; }
+        .page-shell a { color: var(--accent-dark); }
+        @media (max-width: 760px) { .site-header__inner, .site-footer { align-items: flex-start; flex-direction: column; } .landing-page .landing-shell { grid-template-columns: 1fr; min-height: auto; } .landing-page .app-panel { min-height: 68vh; } }
+        @media (max-width: 640px) { .page-shell { width: min(100% - 20px, 920px); padding: 20px 0; } }
+
+""";
 
     private static string Nav() => "<section class=\"support-card legal-nav\"><a href=\"index.html\">Home</a><a href=\"download.html\">Download</a><a href=\"mobile.html\">Mobile</a><a href=\"pricing.html\">Pricing</a><a href=\"terms.html\">Terms</a><a href=\"privacy.html\">Privacy</a><a href=\"refunds.html\">Refunds</a><a href=\"cancellation.html\">Cancellation</a><a href=\"support.html\">Support</a></section>";
 
