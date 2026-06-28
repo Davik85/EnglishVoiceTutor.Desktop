@@ -63,13 +63,13 @@ Verify the live server state and public health endpoints after upload:
 ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"
 Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
-ssh lvt-server "sudo systemctl status languagevoicetutor-backend.service --no-pager"
+ssh -t lvt-server "sudo systemctl status languagevoicetutor-backend.service --no-pager"
 ```
 
 If the service status or health checks need investigation, inspect recent backend logs without printing secrets:
 
 ```powershell
-ssh lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 --no-pager"
+ssh -t lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 --no-pager"
 ```
 
 Do not paste production environment values, database connection strings, API keys, or provider secrets into documentation, tickets, chat, commits, or pull requests.
@@ -85,18 +85,18 @@ ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/previous"
 If `previous` resolves to the reviewed rollback release directory and the operator intentionally approves rollback, switch `current` back to that target and restart the backend service:
 
 ```powershell
-ssh lvt-server "set -e; previous=\$(readlink -f /opt/languagevoicetutor/backend/previous); test -n \"\$previous\"; test -d \"\$previous\"; current=\$(readlink -f /opt/languagevoicetutor/backend/current); sudo ln -sfn \"\$current\" /opt/languagevoicetutor/backend/rollback-from; sudo ln -sfn \"\$previous\" /opt/languagevoicetutor/backend/current"
-ssh lvt-server "sudo systemctl restart languagevoicetutor-backend.service"
+ssh -t lvt-server "set -e; previous=\$(readlink -f /opt/languagevoicetutor/backend/previous); test -n \"\$previous\"; test -d \"\$previous\"; current=\$(readlink -f /opt/languagevoicetutor/backend/current); sudo ln -sfn \"\$current\" /opt/languagevoicetutor/backend/rollback-from; sudo ln -sfn \"\$previous\" /opt/languagevoicetutor/backend/current"
+ssh -t lvt-server "sudo systemctl restart languagevoicetutor-backend.service"
 ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"
 Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
-ssh lvt-server "sudo systemctl status languagevoicetutor-backend.service --no-pager"
+ssh -t lvt-server "sudo systemctl status languagevoicetutor-backend.service --no-pager"
 ```
 
 If rollback health checks fail or the service does not stabilize, capture the last 100 backend log lines and follow the accepted incident procedure for the server:
 
 ```powershell
-ssh lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 --no-pager"
+ssh -t lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 --no-pager"
 ```
 
 ## Scope boundaries

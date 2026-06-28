@@ -59,7 +59,7 @@ Use the repository upload helper in dry-run mode first. The helper validates the
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 `
   -ServerHost lvt-server `
-  -ServerUser <ssh-user> `
+  -ServerUser deploy `
   -RemotePath /var/www/languagevoicetutor/releases/windows/direct `
   -DryRun
 ```
@@ -69,13 +69,13 @@ If the release files are in a non-default local directory, pass `-ReleaseDirecto
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 `
   -ServerHost lvt-server `
-  -ServerUser <ssh-user> `
+  -ServerUser deploy `
   -RemotePath /var/www/languagevoicetutor/releases/windows/direct `
   -ReleaseDirectory .\artifacts\releases\windows\direct `
   -DryRun
 ```
 
-`<ssh-user>` is an operator-specific SSH account value, not a secret placeholder to commit as a real value.
+The current deploy SSH user for these copy-ready commands is `deploy`. Use a different `-ServerUser` only for an intentionally reviewed non-default SSH account.
 
 ## Real upload
 
@@ -84,7 +84,7 @@ After the local release has been validated and the dry-run output is reviewed, r
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 `
   -ServerHost lvt-server `
-  -ServerUser <ssh-user> `
+  -ServerUser deploy `
   -RemotePath /var/www/languagevoicetutor/releases/windows/direct
 ```
 
