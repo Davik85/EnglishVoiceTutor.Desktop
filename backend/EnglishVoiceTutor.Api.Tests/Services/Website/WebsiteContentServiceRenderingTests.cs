@@ -87,6 +87,77 @@ public sealed class WebsiteContentServiceRenderingTests
         Assert.Contains("assets/flags/gb.webp", preview.Html);
     }
 
+    [Fact]
+    public async Task PublishedPagesIncludeFooterLinkToStatusPageAndPublishStatusHtml()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+
+        var response = await service.PublishAsync(CancellationToken.None);
+        var htmlFiles = Directory.GetFiles(fixture.PublicSiteRoot, "*.html");
+
+        Assert.Contains(response.PublishedFiles, file => Path.GetFileName(file) == "status.html");
+        foreach (var file in htmlFiles)
+        {
+            var html = await File.ReadAllTextAsync(file);
+            Assert.Contains("href=\"status.html\"", html);
+            Assert.Contains("Service Status", html);
+        }
+    }
+
+    [Fact]
+    public async Task PreviewStatusPageUsesPublicBaseHrefAndLegalPageShell()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var content = (await service.GetAsync(CancellationToken.None)).Draft;
+
+        var preview = await service.PreviewAsync(new WebsitePreviewRequest(content, "status"), CancellationToken.None);
+
+        Assert.Equal("status", preview.PageKey);
+        Assert.Contains("<base href=\"https://languagevoicetutor.com/\">", preview.Html);
+        Assert.Contains("<main class=\"page-shell legal-page\">", preview.Html);
+        Assert.Contains("Platform availability / service status", preview.Html);
+    }
+
+    [Fact]
+    public async Task PublishedHomeKeepsLandingAssetsAndResponsiveLayoutProtections()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+
+        await service.PublishAsync(CancellationToken.None);
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"));
+
+        Assert.Contains("assets/brand/lvt-logo.png", html);
+        Assert.Contains("assets/flags/gb.webp", html);
+        Assert.Contains("assets/images/landing/windows-desktop.webp", html);
+        Assert.Contains("assets/images/landing/mobile.webp", html);
+        Assert.Contains("100svh", html);
+        Assert.Contains("100dvh", html);
+        Assert.Contains("flex: 1 1 auto", html);
+        Assert.Contains("max-height: calc(100% - clamp", html);
+    }
+
+    [Fact]
+    public async Task MarkdownLinksSafeUrlsAndEmailsAndRejectsUnsafeSchemes()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var content = (await service.GetAsync(CancellationToken.None)).Draft;
+        content.Pages["status"]["bodyMarkdown"] = "Visit https://example.com/docs. Email support@languagevoicetutor.com. [Contact](mailto:support@languagevoicetutor.com) [Bad](javascript:alert(1)) <script>alert(1)</script>";
+
+        var preview = await service.PreviewAsync(new WebsitePreviewRequest(content, "status"), CancellationToken.None);
+
+        Assert.Contains("<a href=\"https://example.com/docs\" rel=\"noopener noreferrer\">https://example.com/docs</a>.", preview.Html);
+        Assert.Contains("<a href=\"mailto:support@languagevoicetutor.com\">support@languagevoicetutor.com</a>", preview.Html);
+        Assert.Contains("<a href=\"mailto:support@languagevoicetutor.com\">Contact</a>", preview.Html);
+        Assert.Contains("Bad", preview.Html);
+        Assert.DoesNotContain("href=\"javascript:", preview.Html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<script>", preview.Html, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("&lt;script&gt;alert(1)&lt;/script&gt;", preview.Html);
+    }
+
     private static int CountOccurrences(string value, string token)
     {
         var count = 0;

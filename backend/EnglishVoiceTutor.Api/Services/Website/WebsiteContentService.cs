@@ -389,12 +389,13 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         .site-header__language { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
         .site-header__flag { display: inline-block; width: 22px; height: 15px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35); }
         .site-header__separator { opacity: 0.72; }
-        .landing-page .landing-shell { display: grid; width: 100%; max-width: 100vw; flex: 1 0 auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: calc(100vh - 176px); background: #07192c; overflow: hidden; }
-        .landing-page .app-panel { position: relative; display: flex; min-width: 0; min-height: calc(100vh - 176px); isolation: isolate; overflow: hidden; color: #ffffff; text-decoration: none; }
+        .landing-page .landing-shell { display: grid; width: 100%; max-width: 100vw; flex: 1 1 auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: clamp(420px, calc(100svh - 176px), 760px); background: #07192c; overflow: hidden; }
+        @supports (height: 100dvh) { .landing-page .landing-shell { min-height: clamp(420px, calc(100dvh - 176px), 760px); } }
+        .landing-page .app-panel { position: relative; display: flex; min-width: 0; min-height: 100%; isolation: isolate; overflow: hidden; color: #ffffff; text-decoration: none; }
         .landing-page .app-panel__image, .landing-page .app-panel__shade { position: absolute; inset: 0; }
         .landing-page .app-panel__image { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(1.01); z-index: 0; }
         .landing-page .app-panel__shade { background: linear-gradient(180deg, rgba(4, 18, 32, 0.28) 0%, rgba(4, 18, 32, 0.08) 45%, rgba(4, 18, 32, 0.3) 100%); z-index: 1; }
-        .landing-page .app-panel__content { position: relative; z-index: 2; display: flex; width: min(560px, calc(100% - 40px)); min-height: clamp(330px, 34vw, 430px); flex-direction: column; align-items: flex-start; margin: clamp(28px, 7vw, 72px) auto auto; padding: clamp(22px, 4vw, 36px); border: 1px solid rgba(255, 255, 255, 0.24); border-radius: 28px; background: rgba(5, 22, 38, 0.3); box-shadow: 0 22px 70px rgba(0, 0, 0, 0.22); backdrop-filter: blur(4px); }
+        .landing-page .app-panel__content { position: relative; z-index: 2; display: flex; width: min(560px, calc(100% - 40px)); min-height: clamp(280px, 30svh, 390px); max-height: calc(100% - clamp(32px, 8svh, 96px)); flex-direction: column; align-items: flex-start; margin: clamp(16px, 4svh, 48px) auto; padding: clamp(20px, 3vw, 34px); border: 1px solid rgba(255, 255, 255, 0.24); border-radius: 28px; background: rgba(5, 22, 38, 0.3); box-shadow: 0 22px 70px rgba(0, 0, 0, 0.22); backdrop-filter: blur(4px); overflow: auto; }
         .landing-page .app-panel__eyebrow, .landing-page .app-panel__badge { display: inline-flex; width: fit-content; margin: 0 0 16px; border-radius: 999px; font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
         .landing-page .app-panel__badge { padding: 8px 12px; background: rgba(255, 255, 255, 0.2); }
         .landing-page .app-panel h1, .landing-page .app-panel h2 { margin: 0 0 18px; font-size: clamp(2.1rem, 5vw, 4.7rem); line-height: 0.98; text-wrap: balance; }
@@ -422,7 +423,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         .markdown-content hr { border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0; }
         .markdown-content li { margin-bottom: 0.45rem; }
         .page-shell a { color: var(--accent-dark); }
-        @media (max-width: 760px) { .site-header__inner, .site-footer { align-items: flex-start; flex-direction: column; } .landing-page .landing-shell { grid-template-columns: 1fr; min-height: auto; } .landing-page .app-panel { min-height: 68vh; } }
+        @media (max-width: 760px) { .site-header__inner, .site-footer { align-items: flex-start; flex-direction: column; } .landing-page .landing-shell { grid-template-columns: 1fr; min-height: auto; } .landing-page .app-panel { min-height: 68svh; } .landing-page .app-panel__content { max-height: none; overflow: visible; } }
         @media (max-width: 640px) { .page-shell { width: min(100% - 20px, 920px); padding: 20px 0; } }
 
 """;
@@ -476,25 +477,77 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
 
     private static string InlineMarkdown(string text)
     {
-        var encoded = E(text);
-        encoded = LinkRegex().Replace(encoded, match => $"<a href=\"{SafeHref(WebUtility.HtmlDecode(match.Groups[2].Value))}\">{match.Groups[1].Value}</a>");
+        var html = new StringBuilder();
+        var index = 0;
+        foreach (Match match in LinkRegex().Matches(text))
+        {
+            html.Append(InlineAutoLinks(text[index..match.Index]));
+            var label = InlineFormatting(E(match.Groups[1].Value));
+            var href = SafeHref(match.Groups[2].Value);
+            html.Append(href is null ? label : Anchor(href, label));
+            index = match.Index + match.Length;
+        }
+        html.Append(InlineAutoLinks(text[index..]));
+        return html.ToString();
+    }
+
+    private static string InlineAutoLinks(string text)
+    {
+        var html = new StringBuilder();
+        var index = 0;
+        foreach (Match match in AutoLinkRegex().Matches(text))
+        {
+            html.Append(InlineFormatting(E(text[index..match.Index])));
+            var token = match.Value;
+            var trailing = TrimTrailingLinkPunctuation(token, out var linkText);
+            var href = linkText.Contains('@', StringComparison.Ordinal) && !linkText.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                ? $"mailto:{linkText}"
+                : linkText;
+            html.Append(Anchor(SafeHref(href)!, E(linkText))).Append(E(trailing));
+            index = match.Index + match.Length;
+        }
+        html.Append(InlineFormatting(E(text[index..])));
+        return html.ToString();
+    }
+
+    private static string InlineFormatting(string encoded)
+    {
         encoded = BoldRegex().Replace(encoded, "<strong>$1</strong>");
         encoded = ItalicRegex().Replace(encoded, "<em>$1</em>");
         return encoded;
     }
 
-    private static string SafeHref(string href)
+    private static string TrimTrailingLinkPunctuation(string token, out string linkText)
     {
-        if (Uri.TryCreate(href, UriKind.Absolute, out var absolute) && (absolute.Scheme == Uri.UriSchemeHttps || absolute.Scheme == Uri.UriSchemeHttp || absolute.Scheme == Uri.UriSchemeMailto))
+        var end = token.Length;
+        while (end > 0 && ".,;:)!?".IndexOf(token[end - 1]) >= 0)
+        {
+            end--;
+        }
+        linkText = token[..end];
+        return token[end..];
+    }
+
+    private static string? SafeHref(string href)
+    {
+        if (Uri.TryCreate(href.Trim(), UriKind.Absolute, out var absolute) && (absolute.Scheme == Uri.UriSchemeHttps || absolute.Scheme == Uri.UriSchemeHttp || absolute.Scheme == Uri.UriSchemeMailto))
         {
             return E(absolute.ToString());
         }
-        return "#";
+        return null;
+    }
+
+    private static string Anchor(string href, string label)
+    {
+        var rel = href.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || href.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            ? " rel=\"noopener noreferrer\""
+            : string.Empty;
+        return $"<a href=\"{href}\"{rel}>{label}</a>";
     }
 
     private static string Nav() => "<section class=\"support-card legal-nav\"><a href=\"index.html\">Home</a><a href=\"download.html\">Download</a><a href=\"mobile.html\">Mobile</a><a href=\"pricing.html\">Pricing</a><a href=\"terms.html\">Terms</a><a href=\"privacy.html\">Privacy</a><a href=\"refunds.html\">Refunds</a><a href=\"cancellation.html\">Cancellation</a><a href=\"support.html\">Support</a></section>";
 
-    private static string NavLinks(Dictionary<string, string> h) => $"<nav class=\"site-footer__links\"><a href=\"privacy.html\">{E(h["footerPrivacyLabel"])}</a><a href=\"terms.html\">{E(h["footerTermsLabel"])}</a><a href=\"refunds.html\">{E(h["footerRefundsLabel"])}</a><a href=\"cancellation.html\">{E(h["footerCancellationLabel"])}</a><a href=\"support.html\">{E(h["footerSupportLabel"])}</a><a href=\"pricing.html\">{E(h["footerPricingLabel"])}</a></nav>";
+    private static string NavLinks(Dictionary<string, string> h) => $"<nav class=\"site-footer__links\"><a href=\"status.html\">Service Status</a><a href=\"privacy.html\">{E(h["footerPrivacyLabel"])}</a><a href=\"terms.html\">{E(h["footerTermsLabel"])}</a><a href=\"refunds.html\">{E(h["footerRefundsLabel"])}</a><a href=\"cancellation.html\">{E(h["footerCancellationLabel"])}</a><a href=\"support.html\">{E(h["footerSupportLabel"])}</a><a href=\"pricing.html\">{E(h["footerPricingLabel"])}</a></nav>";
 
     private static string E(string? s) => WebUtility.HtmlEncode(s ?? string.Empty);
 
@@ -528,6 +581,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     [GeneratedRegex("^\\d+\\.\\s+")] private static partial Regex NumberedListRegex();
     [GeneratedRegex("^[^\\p{L}]*")] private static partial Regex LanguageLabelRegex();
     [GeneratedRegex("\\[([^\\]]+)\\]\\(([^)]+)\\)")] private static partial Regex LinkRegex();
+    [GeneratedRegex(@"(?<![\w@])(?:https?://[^\s<>()]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})(?![\w@])", RegexOptions.IgnoreCase)] private static partial Regex AutoLinkRegex();
     [GeneratedRegex("\\*\\*([^*]+)\\*\\*")] private static partial Regex BoldRegex();
     [GeneratedRegex("(?<!_)_([^_]+)_(?!_)")] private static partial Regex ItalicRegex();
 }
