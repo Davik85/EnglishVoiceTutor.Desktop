@@ -1,21 +1,15 @@
 # Next Steps
 
-Review date: 2026-06-27.
+Review date: 2026-06-28.
 
 ## Source of truth for current versions
 
-These docs are a snapshot of the last known verified state. They can become stale and must not be used as the only source of truth for live versions. Always verify the live/public state before telling a tester that a version is current.
+These docs are a release-readiness handoff snapshot. Always verify live/public state before announcing versions.
 
 Check the public Windows direct tester release from the live website manifest:
 
 ```powershell
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
-```
-
-If a PowerShell path reads raw manifest text and `ConvertFrom-Json` fails because a UTF-8 BOM is present at the start of `latest.json`, strip the BOM before parsing:
-
-```powershell
-($raw -replace "^\uFEFF", "") | ConvertFrom-Json
 ```
 
 Check the production backend release from the server `current` symlink:
@@ -24,253 +18,84 @@ Check the production backend release from the server `current` symlink:
 ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"
 ```
 
-Check production backend health and database health:
+Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS. Generated artifacts must not be committed.
+
+## Release-readiness status
+
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.74`.
+- Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
+- Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
+- Windows installer: current public tester release is `0.1.36-tester.30`, installer `LanguageVoiceTutorSetup-0.1.36-tester.30.exe`.
+- Billing: Paddle live is not enabled yet; Production/live Paddle readiness remains deferred.
+- Legal: legal/support/seller/AI/status/download pages are ready for owner/legal final review as drafts, not final legal advice.
+
+Do not state that the product is fully public production-ready. This remains a controlled tester/direct Windows release, not a broad public production launch, and not broad public production readiness.
+
+## Remaining release steps
+
+1. Final manual website review in incognito.
+2. Final owner/legal text review.
+3. Final Windows installer smoke.
+4. Paddle live readiness checklist.
+5. Only after approval: production Paddle environment, token, webhook, and price setup.
+6. Microsoft Store preparation later; do not claim Microsoft Store, Android, or iOS availability as currently available.
+
+## Backend next-step guardrails
+
+Backend deployment uses `scripts/package-backend-linux-release.ps1` and `scripts/upload-backend-linux-release.ps1`. The upload flow uses `deploy-backend-release.sh` and `ssh -tt` for sudo restart/status when needed. Backend deploy is separate from Windows installer upload, static website publish, and database migrations. Backend upload/package scripts do not apply EF migrations automatically; database migrations remain a separate reviewed SQL process only when schema changes exist.
+
+Current health checks:
 
 ```powershell
 Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS.
+Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Admin permission fallback remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
 
+## Website/CMS next-step guardrails
 
-## Admin/CMS statistics boundary fix (2026-06-25)
+The Website CMS is under Admin Shell → Website. It is Super Admin / Bootstrap Admin protected, intentionally simple, informational only, JSON/file-based, and not a full CMS. Content lives in `site/content/website-content.json` with active and draft content; public output lives in `site/public`.
 
-- Admin/CMS release analytics now treat Premium and Trial users as access categories, not installs/devices.
-- The current live card label is `Tracked signed-in app/device records`. The app/device metric is a count of signed-in backend `DeviceEntity` app/device records only; it is not raw installer downloads and must not include Premium entitlements, Trial grants, subscription snapshots, billing events, or users solely because they currently have Premium access.
-- Registered users remain derived from backend `UserEntity` rows, active trials from active Trial grants, active Premium users from active Premium entitlements, active/free user categories from recent activity and current access state, and language statistics from user settings/profile or lesson/usage activity as appropriate.
-- This is a release analytics correctness fix before Paddle live readiness. Production/live Paddle readiness remains deferred, and broad public production readiness is still not claimed.
+Normal flow: load draft/active → Save draft → Preview selected page without publishing → Publish / Make active to promote content and render static pages. Publish creates `index.html`, `download.html`, `mobile.html`, `pricing.html`, `support.html`, `terms.html`, `privacy.html`, `refunds.html`, `cancellation.html`, `seller.html`, `ai-data.html`, and `status.html`.
 
-## Current release baseline
+Normal pages expose Page title, Body markdown, SEO title, and SEO description. Home remains structured for landing cards/assets. Design is not a normal Super Admin editing page. Markdown supports headings, emphasis, lists, markdown links, safe URL/email/domain autolinks such as `Paddle.com`, and must continue to reject/escape unsafe schemes including `javascript:`, `data:`, and `vbscript:`.
 
-The live public tester manifest baseline must be checked from `latest.json`, not from this document. Latest built/manual-check snapshot: `v0.1.36-tester.24` installer was built and manually checked for controlled sandbox billing validation. The live public tester manifest baseline must still be checked from `latest.json` before handoff because the website manifest remains the public source of truth; current verified uploaded tester release snapshot: `0.1.36-tester.24`.
+Admin Website CMS endpoints remain authenticated/authorized but no longer consume the normal admin read/write rate limit because legal text editing previously caused `RateLimitExceeded`.
 
-This is still a private tester/direct Windows release, not broad public production readiness.
+## Website/public review checklist
 
-## Public distribution direction
+- Home shows logo, study language flags, Windows desktop app card, and “Android and iOS apps are planned but are not currently available.”
+- Home does not say “Mobile version coming soon” and does not claim mobile apps are currently available.
+- Footer has primary links: Privacy Policy, Terms of Use, Refund Policy, Cancellation, Support, Pricing.
+- Footer has secondary links: Seller / Company Details, AI & Data Disclosure, Service Status.
+- `seller.html`, `ai-data.html`, and `status.html` exist and are linked from the footer.
+- Download page statically shows current release details when the manifest is available and remains supported by `download.js` and `/releases/windows/direct/latest.json`.
+- Download non-JS fallback text remains: “Current Windows tester release is available through the Download for Windows button.” and “If release details do not load automatically, please contact [support@languagevoicetutor.com](mailto:support@languagevoicetutor.com).”
 
-Current controlled tester/direct Windows releases continue to use the existing Inno Setup installer flow. The owner-preferred direction for an eventual full public release is Microsoft Store + MSIX, but that work is deferred until the project is fully release-ready. Do not change the current packaging scripts, upload scripts, `latest.json` format, or release validation behavior as part of this planning note. A later public-release planning pass should add a separate Microsoft Store/MSIX readiness checklist before any Store submission or MSIX packaging work begins.
+## Windows direct release next-step guardrails
 
+Current manifest: `https://languagevoicetutor.com/releases/windows/direct/latest.json`.
 
-## Latest verified release summary
+Expected current values:
 
+- `version`: `0.1.36-tester.30`
+- `installerFileName`: `LanguageVoiceTutorSetup-0.1.36-tester.30.exe`
+- `backendBaseUrl`: `https://api.languagevoicetutor.com`
+- `updateMode`: `manual-confirmation`
 
-## Immediate next steps
+Use:
 
-1. Start the next release-readiness phase: Paddle live readiness plus legal/support blockers review. Verify live Paddle product/price mapping, live webhook setup, live checkout flow, refund/chargeback/customer portal policy, support contact, subscription disclosures, monitoring, reconciliation, and operational runbooks before enabling live customer traffic.
-2. Continue controlled tester/direct Windows handoff planning only after verifying live `latest.json`; keep it clearly labeled as controlled tester validation, not broad production/live billing readiness.
-3. Keep production/live Paddle readiness deferred until the Phase 6 checklist is complete, and do not claim broad public production readiness.
-4. Treat additional Admin statistics work as follow-up only if a new product question appears; the current successful-payment statistics deployment is complete and verified.
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 0.1.36-tester.30
+```
 
+Do not manually `scp` installer files if the upload script exists. After upload, verify `latest.json`, installer filename, backend base URL, installer hash, and that the download page button downloads the same installer.
 
-Safe next steps:
+Code signing remains deferred. CMS published-snapshot runtime is active for controlled tester lessons. Backend deployment, database migrations, the download website, and update UI remain separate work.
 
-1. Prepare real website/legal copy outside code for Terms, Privacy Policy, Refund Policy, Cancellation Policy, Support, Pricing, Seller / Company details, AI / data disclosure, Platform availability, Home, Desktop, and Mobile / Coming soon text.
-2. After copy is ready, connect public rendering to approved CMS text in a separate controlled task with explicit safety review. That later task must ensure public rendering reads only approved/published text and never exposes drafts or internal notes.
-3. Keep `site/public/` unchanged until that separate rendering task is approved.
+## Paddle/live billing next-step guardrails
 
-## Release-readiness roadmap
+Production billing/Paddle/subscription payment lifecycle remains deferred. Live Paddle is not enabled yet. Do not change production Paddle environment values, add live checkout links, or commit secrets. Paddle stays behind the backend/provider adapter. Desktop does not call Paddle directly and does not decide Premium directly.
 
-### Phase 2. Production Admin RBAC
-
-- Current state: implemented and production-deployed on backend `0.1.35-backend.39` with Admin RBAC persistence tables, two verified persistent `super_admin` accounts, actor mapping, cutover status endpoint, read-only Admin UI cutover status, and release-gated static validation.
-- Completed on 2026-06-22: controlled fallback cutover rehearsal and rollback/restoration drill. Both approved `super_admin` accounts passed `tools/smoke_admin_rbac_cutover_validation.ps1` with fallback enabled, then with fallback temporarily disabled, then again after fallback was restored. AdminPermission read endpoints and role-management read endpoints returned `200` in the enabled and disabled phases.
-- Completed on 2026-06-22: permanent production fallback disable. Production `backend.env` now sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`, the backend service was restarted successfully, health/database health returned `200 OK`, persistent role authorization is enabled and verified, two persistent `super_admin` accounts are verified, and both approved accounts passed validation with fallback disabled. Rollback remains available by setting the fallback flag to `true` and restarting the backend.
-- Required before public RC: validation that non-owner roles behave correctly, critical-change approval, and the other release blockers listed below.
-
-### Phase 3. Rate limiting / abuse protection
-
-- Completed and production-verified on backend `0.1.35-backend.39` with `RateLimiting__Enabled=true`.
-- Coverage includes all Phase 3 slices: auth login/register/password reset; audio/STT, TTS speech and speech stream, translation, and realtime voice start-rate protection; Admin read/write/role-management throttling; billing checkout/cancel-renewal, Paddle checkout launch, and Paddle webhook throttling; plus auth refresh/revoke/current-user/password-change, authenticated lesson start, lesson hint/feedback, authenticated persisted lesson messages, and learner/subscription/status/trial/access-style endpoints where implemented by the final slice.
-- Current limiter storage is single-instance/in-memory. True distributed/shared limiter storage remains future work before multi-instance scale-out, and true concurrent realtime voice WebSocket connection caps remain future work if not implemented.
-- Phase 3 did not change Admin RBAC authorization behavior, product/free usage semantics, Premium entitlement semantics, billing/Paddle semantics, Paddle webhook signature verification, provider-event handling, Desktop behavior, Admin UI behavior, CMS runtime behavior, deployment scripts, or EF migrations.
-- Production still has `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`; Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
-- No database migrations were added or run for Phase 3, and backend package/upload scripts still do not run EF migrations automatically.
-
-### Phase 4. Backups / restore / migration rollback drills
-
-- Completed on 2026-06-23: initial Phase 4A production-safe backup/readability/separate-drill-restore. Backup `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260623_045111Z.dump` was created, `ls` showed `3.4M`, `pg_restore --list` succeeded with `245` lines, and the backup was restored into separate drill database `lvt_app_db_restore_drill_20260623_045111Z` rather than production. Required key tables were present, latest migration `20260620165657_AddAdminRoleAssignmentPersistence` was confirmed, drill DB cleanup completed, and production `/health` plus `/api/health/database` remained `200 OK`.
-- The completed drill did not restore over production, did not commit or paste production data dumps, did not run database migrations, did not change backend code/runtime behavior, and did not change deployment/package scripts.
-- The drill used `pg_restore --no-owner --no-acl`; restored drill DB ownership/grants are therefore not full production permission-fidelity proof, which is acceptable for Phase 4A.
-- Phase 4B repository-managed assets exist for local PostgreSQL backup scheduling; production activation happened on 2026-06-23, but rebuilt hosts still require manual operator installation and verification. Phase 4B local PostgreSQL backup scheduling was installed and activated on production on 2026-06-23. `languagevoicetutor-postgres-backup.timer` is enabled and `active (waiting)`, with next observed trigger `2026-06-24 03:15 CEST`. The one-off service run succeeded with `Result=success` and `ExecMainStatus=0`; latest backup readability was verified with `pg_restore --list` at `245` lines for `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260623_150541Z.dump`. The production-safe script path is `/opt/languagevoicetutor-ops/postgres/backup_lvt_postgres.sh` so `postgres` can traverse it without backend release/config tree access; Linux shell/systemd assets must stay LF via `.gitattributes`, and the service uses `WorkingDirectory=/tmp` to avoid postgres/deploy working-directory warnings. Completed on 2026-06-23: Phase 4C migration rollback/remediation dry-run rehearsal passed read-only against production evidence: backend current `/opt/languagevoicetutor/backend/releases/0.1.35-backend.39`, previous `/opt/languagevoicetutor/backend/releases/0.1.35-backend.38`, health/database health `200 OK`, latest readable backup `/var/backups/languagevoicetutor/postgres/lvt_app_db_20260623_153008Z.dump` with `245` `pg_restore --list` lines, latest EF migration `20260620165657_AddAdminRoleAssignmentPersistence`, required key tables `OK`, backend service active/enabled, backup timer enabled/active with next observed run `2026-06-24 03:15 CEST`, and Contabo VPS Auto Backup enabled as provider/VPS-level protection. The rehearsal was read-only: no production DB mutation, no EF migrations, no SQL remediation, no restore-over-production, and no backend runtime changes. Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate restore drill completed, Phase 4B local scheduled PostgreSQL backups active, Phase 4C migration rollback/remediation dry-run completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening, not an immediate release blocker.
-- Before any future schema-dependent backend release, operators must create a fresh PostgreSQL custom-format production backup, verify it with `pg_restore --list`, and run/record a separate drill-database restore when migration risk warrants it. Restore drills must never target the production database, and backend package/upload scripts still do not run EF migrations automatically.
-- Keep production secrets, connection strings, `.env` contents, SQL dumps, backup files, and raw user data out of chat, docs, terminal transcripts intended for sharing, and git.
-
-### Phase 5. Monitoring / logging / privacy hardening
-
-- Phase 5A lightweight production logging/privacy audit is complete in `docs/LOGGING_PRIVACY_AUDIT.md`.
-- Current result: documentation/audit only; no code/runtime changes were needed, no heavy monitoring infrastructure was introduced, and no external services were added.
-- Keep the Phase 5A operator rule active: paste only bounded non-secret operational evidence, and redact secrets, tokens, connection strings, raw provider payloads, raw lesson/STT/TTS/OpenAI content, SQL dumps, backup contents, and full unfiltered terminal transcripts.
-- Phase 5A logging/privacy audit is complete, Phase 5B bounded production log sampling is complete, and Phase 5C Production logging hardening is deployed/verified and retained in backend `0.1.35-backend.57`.
-
-### Phase 6. Paddle live readiness + legal/support blockers
-
-- Current review: `docs/PADDLE_LIVE_READINESS_REVIEW.md` documents that sandbox checkout, backend checkout-session, backend-hosted checkout launch, `transaction.completed` handling, Premium entitlement activation, Desktop Refresh status, Premium lesson access, and payment statistics are ready for the current sandbox/controlled path.
-- Do not turn on live Paddle immediately. The next concrete step is an owner-led live Paddle dashboard and legal/support readiness pass that produces only placeholders and decisions: confirm live product/price/client-side token/webhook destination can be prepared, choose the public support contact/refund/cancellation disclosure path, then run `pwsh -NoProfile -ExecutionPolicy Bypass -File tools/smoke_paddle_production_config_guard.ps1 -Strict -AssumeProduction` against a secret-safe staged environment.
-- Live blockers remain: live Paddle API key, live Premium price id, live client-side token, live webhook/notification destination secret, live notification destination URL, production backend env flags, unsigned webhook sanity check returning `401`, and acceptable legal/support materials.
-- Define cancellation/refund/support path, support contact, and operational runbook before public paid launch.
-- Complete terms, privacy, refund, and subscription disclosures.
-- Desktop/Admin UI must not call Paddle directly; the backend remains the source of truth for entitlements.
-
-### Phase 7. Microsoft Store + MSIX
-
-- Treat Store/MSIX as future public distribution work.
-- Before implementation, verify current official Microsoft Store/MSIX requirements.
-- Keep current Inno/direct tester distribution valid until the owner explicitly changes the release channel.
-- Do not replace the current installer flow in this task.
-
-## Subscription base plan deployment note
-
-- Treat active `free` and `premium` plan rows as required database reference data.
-- Missing plan rows break subscriptions and entitlements through FK constraints.
-- EF migration `20260618090000_SeedBaseSubscriptionPlans` idempotently seeds/upserts those rows and is now recorded in production `__EFMigrationsHistory`; operators should still apply future migrations explicitly during backend deployment validation.
-- Do not add manual SQL as a recurring deployment requirement.
-- Keep free/trial/Premium status backend-owned, with Premium determined by entitlements rather than Desktop local state or Paddle directly.
-- Provider-event paid Premium should continue to stack after active trial/Premium access; future-start provider-event Premium must not count as `premiumActive` until `StartsAtUtc`, and active trial should remain the current access source until trial expiry.
-- Production/live Paddle readiness remains deferred.
-
-## Current backend verification
-
-Current state: last known production backend snapshot is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.57` active via `/opt/languagevoicetutor/backend/current`; verify the live value from the server symlink before calling it current.
-
-
-Deployed runtime status diagnostics and the clarified Admin CMS Overview are retained on backend `0.1.35-backend.56` after first being verified on `0.1.35-backend.48` from the server `/admin` page and protected runtime-status endpoint. The current server diagnostic is clean and confirms learner runtime uses CMS published snapshot: `Actual learner runtime source = CmsPublishedSnapshot`, `Validation success = Yes`, `Currently using static JSON fallback = No`, no errors, no warnings, and `tutorBehaviorProfiles=3`. The tutor behavior profile mismatch was fixed by validating the approved tutor ids `david`, `lana`, and `nelli` instead of an obsolete exact count of 2. The next steps are intentionally small: collect controlled tester feedback, triage known non-blocking issues, and only then choose the next smallest safe CMS/Admin or scenario/avatar behavior step.
-
-## CMS connection readiness and controlled release preparation
-
-Current state: CMS practical readiness has passed the runtime connection milestone. CMS published snapshot is now the active runtime content source for controlled tester lessons. Do not start broad Public release from this state.
-
-### A. Verify deployed Admin CMS manually
-
-1. Login to `/admin`.
-2. Open **CMS Content**.
-3. Open `static-json-v1`.
-4. Run **Validation**.
-5. Load **Preview** summary.
-6. Confirm the Validation and Preview results are readable.
-7. Confirm raw JSON appears only inside collapsed details blocks.
-
-### B. Prepare full CMS content workflow
-
-1. Use **Initialize from static JSON** or verify existing `static-json-v1` draft content. This initializes from packaged static JSON for first setup/recovery, does not publish automatically, and does not switch runtime; normal learner runtime should remain CMS published snapshot when `CmsContent__UsePublishedSnapshotForRuntime=true` and a valid published snapshot is active.
-2. Validate the draft.
-3. Preview sample topics and scenarios.
-4. Save a safe draft edit.
-5. Confirm the audit entry.
-6. Publish with a clear change summary.
-7. Restore the previous published version.
-8. Confirm old versions are immutable.
-
-### C. Runtime milestone status
-
-1. Confirm runtime status remains `Actual learner runtime source = CmsPublishedSnapshot`, `Validation success = Yes`, `Currently using static JSON fallback = No`, with no errors and no warnings.
-2. Keep fallback to static JSON available for rollback, but treat any normal-runtime fallback as a condition to investigate.
-3. Remember that **Save draft** alone does not affect the app; **Publish** is required. Existing active lessons may keep old content until a new lesson starts.
-4. Keep broad public production release and production billing deferred.
-
-## Immediate tester-readiness work
-
-1. Verify the installed tester build from the public site and current `latest.json` before every handoff.
-2. Validate update-over-existing-install from a prior `EnglishVoiceTutor.Desktop.*` installed tester build if not already recorded for this exact handoff, and confirm old installed `EnglishVoiceTutor.Desktop.*` files are cleaned from the install folder, preserved auth/session data migrates to the current `LanguageVoiceTutor.Desktop` local-data path, and login, user settings, Lesson History, and Progress survive update/reinstall.
-3. Prepare the small external tester handoff group and instructions.
-4. Collect feedback on lesson quality, A1/A2/B1/B2 level behavior, voice, UI, CMS-controlled content, and smaller-screen/touch behavior.
-5. Keep known non-blocking follow-ups in triage: touch drag/hold can visually select multiple topic/subtopic items, some scenario/avatar dialogue can restart or repeat, short scenarios such as "Asking someone to repeat" may need prompt/content polishing, bot voice autoplay can sometimes not play even when enabled, and occasional server-error feedback should remain in triage unless reproduced consistently.
-
-## Release backend lock (server-only installed builds)
-
-Release/tester installed builds are server-only. The only backend for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`. Local backend URLs are DEBUG/developer-only and must not be present as normal user Settings options. Diagnostics and Backend URL editing are not part of user/release Settings. Stale AppData `settings.json` backend URL values from older installs are ignored by release builds and are not written back into user-editable settings.
-
-Clean-machine smoke must verify registration/login/lesson/history/progress/update from an installed build against the fixed production backend. The installed build connectivity signal is `GET https://api.languagevoicetutor.com/health`; registration calls `POST https://api.languagevoicetutor.com/api/auth/register`, login calls `POST https://api.languagevoicetutor.com/api/auth/login`, and auth restore calls `GET https://api.languagevoicetutor.com/api/auth/me`. Optional cloud settings or subscription/status endpoint failures must not block auth or lessons and must not be treated as the backend connectivity signal.
-
-## Smoke checklist additions
-
-Clean-machine smoke must verify:
-
-- public page downloads the installer named by `latest.json`;
-- registration/login work against `https://api.languagevoicetutor.com`;
-- trial is granted after registration;
-- lesson start, bot voice/TTS, Conversation Mode, Lesson History, and Progress work;
-- Daily Life / Introductions or another guided roleplay allows at least 7 user messages without showing a generic server error;
-- auth persists after app restart and Windows restart;
-- update/reinstall preserves login, settings, Lesson History, and Progress after migrating preserved auth/session data from legacy `EnglishVoiceTutor.Desktop` local-data paths;
-- raw passwords are not stored;
-- Welcome/start window clamps to the visible working area;
-- Welcome primary actions are visible without scrolling on smaller laptop screens;
-- Welcome cover image uses cover-style fill/crop with no gray bars;
-- Release Settings do not show Diagnostics or Backend URL editing;
-- **Check for updates** asks before download/install, verifies SHA-256, and does not silently auto-update.
-- Update version rules remain: same installed version: ask the user to confirm reinstall; older installed version: allow the guided update flow; newer installed version: warn and block; never auto-update during an active lesson.
-
-## CMS/Admin follow-up
-
-Next safe step: controlled tester handoff and feedback collection. CMS published snapshot runtime is active; verify Save draft + Publish changes in the desktop app, keep static JSON fallback available, and investigate if normal runtime status shows fallback active.
-
-## Completed Admin statistics improvement
-
-Completed Admin statistics work: `Successful payments total` and `Successful payments current month` are deployed and verified as payment/billing-event metrics from internal normalized payment records. They remain separate from `Active Premium users now`, which is an entitlement/access-state metric, and they must not be folded into the signed-in app/device `DeviceEntity` metric or treated as distinct paying-user counts unless code explicitly adds such a metric.
-
-## Deferred work
-
-- Production/live billing/Paddle readiness remains deferred; current billing work is controlled tester/sandbox validation only.
-- Desktop billing UI follow-ups remain: Premium-active free lesson label should show unlimited/no daily free limit, Buy/Cancel/Refresh and confirmation strings need full localization, cancellation result messages need clearer localized UX states, and cancel-renewal should be tested end-to-end against Paddle sandbox.
-- Referral/promo logic remains future work.
-- Production Admin RBAC cutover rehearsal and rollback/restoration passed on 2026-06-22, and the later permanent fallback disable also passed on 2026-06-22. BootstrapAdmin fallback for `AdminPermission:*` policies is now disabled in production; rollback remains setting the fallback flag to `true` and restarting the backend. Non-owner role validation and critical-change approval remain deferred.
-- Code signing remains deferred for the controlled tester/direct release and is not a blocker for the already completed controlled tester handoff if unsigned distribution is accepted knowingly. Before a public release candidate or broad public distribution, require Windows installer signing or a documented owner-approved exception, and add signing verification to the release validation/upload gate.
-- Broader public release readiness remains deferred until after controlled tester feedback and operational hardening.
-
-## CMS runtime status validation path
-
-The Admin CMS now exposes a read-only **Runtime content status** section and the protected endpoint `GET /api/admin/dev/cms/runtime-status`. Use it to confirm the effective learner content source, validation result, counts, published snapshot metadata, and fallback state without exposing content bodies or secrets.
-
-CMS published snapshot is the active runtime source. The diagnostic confirms runtime source and fallback state. Runtime status remains clean on backend `0.1.35-backend.56`; this CMS-first/runtime status was previously verified on `0.1.35-backend.48` with approved tutor-id validation for `david`, `lana`, and `nelli`. Normal status should show `Actual learner runtime source = CmsPublishedSnapshot`, `Validation success = Yes`, `Currently using static JSON fallback = No`, no errors, and no warnings. Rollback remains disabling CMS runtime flags and restarting backend so runtime returns to static JSON. Billing/Paddle is not involved.
-
-## CMS-managed level profiles (A1-B2)
-
-- CMS now manages A1, A2, B1, and B2 level behavior profiles through the CMS Content **Levels** tab.
-- Level profiles include stable level keys, display names, active flags, sort order, wrap-up turn, final-message turn, language complexity guidance, correction guidance, answer-length guidance, and admin notes.
-- Lesson length defaults come from the selected level profile: A1 is configured for a shorter lesson around 15 learner turns, while B2 supports a longer dialogue.
-- Scenario-specific lesson length values remain optional overrides when explicitly set and valid. Priority is: scenario override, then CMS level profile, then safe backend constants.
-- Backend runtime content remains the source of truth for lesson behavior. Desktop may keep its current level labels for display, but desktop and future mobile should use backend runtime behavior from the CMS published snapshot.
-- Static JSON fallback remains available; fallback runtime also receives safe default level profiles.
-
-## CMS tutor display name verification
-
-When changing a tutor Display name in Admin CMS, use Save draft + Publish and then start a new desktop lesson to verify the lesson chat bubble uses the CMS-published display name. Keep the stable tutor/avatar IDs (`lana`, `nelli`, `david`) unchanged because avatar image selection continues to use those IDs rather than display names.
-
-## Premium billing follow-up
-
-- Continue validating the desktop Buy Premium and cancel-renewal flows against the sandbox backend.
-- Verify webhook-driven entitlement activation, paid Premium scheduling after trial, future-start `premiumActive=false` behavior until `StartsAtUtc`, and cancel-at-period-end subscription snapshots before any production/live Paddle launch decision.
-- Do not add refund/reversal handling or Paddle customer portal flows until those backend-owned lifecycle policies are explicitly designed.
-
-
-## Phase 3 rate limiting completion state — 2026-06-23
-
-Phase 3 is implemented and production-verified on backend `0.1.35-backend.39` with `RateLimiting__Enabled=true`. Coverage includes the completed auth, learner/session, audio/voice/translation, Admin, billing, and Paddle webhook slices documented above. No Desktop, Admin UI, Admin RBAC authorization, BootstrapAdmin fallback, billing/Paddle semantics, CMS runtime content, product/free-usage counter, Premium/free entitlement, deployment-script, package-script, or database-migration change is included in Phase 3. Remaining work is operational: distributed/shared limiter storage before multi-instance scale-out, true concurrent realtime voice WebSocket connection caps if still not implemented, backup schedule/retention monitoring, optional off-server encrypted backup hardening, monitoring/privacy hardening, Paddle live readiness, legal/support blockers, and Microsoft Store/MSIX. Broad public-production readiness is not claimed.
-
-
-## Phase 4C migration rollback/remediation readiness
-
-Completed as documentation/tooling assets only: add `docs/MIGRATION_ROLLBACK_REMEDIATION_RUNBOOK.md` and `tools/migration_rollback_remediation_commands.ps1` for safe dry-run operator preparation. These assets do not mutate production, do not run EF migrations, do not apply SQL, do not restore over production, and do not change backend runtime, Desktop, Admin UI, CMS, billing/Paddle, deployment, package, or upload behavior.
-
-Next operational work remains separate:
-
-1. Use the Phase 4C helper in a controlled window to print and review commands before any future schema-dependent backend release.
-2. Execute a migration rollback/remediation rehearsal only on an approved non-production or drill target, or under a separately approved production incident procedure.
-3. Add off-server encrypted PostgreSQL backups.
-4. Repeat permission-fidelity restore drills only for future material schema/security changes when risk warrants them.
-5. Keep production/live Paddle readiness deferred until live credentials, webhook destination, reconciliation, refund/chargeback/customer portal, legal/support, and monitoring work are complete.
-6. Do not claim broad public production readiness.
-
-## 2026-06-24 Phase 5C follow-up
-
-Phase 5B production log sampling found over-verbose EF Core SQL command logging at `Information` level. Phase 5C hardens tracked Production logging levels so ordinary EF SQL command text and ordinary `HttpClient` request logs are suppressed below `Warning`. This was not a data breach in the sampled output because parameter values were redacted and no raw secrets, tokens, connection strings, raw Paddle payload contents, or SQL dumps were observed.
-
-Completed: backend `0.1.35-backend.50` was packaged, uploaded, deployed, restarted, and production-verified, retaining Phase 5C Production logging hardening first deployed in `0.1.35-backend.40` and adding the Admin statistics device metric wording/boundary fix plus successful payment statistics. `/opt/languagevoicetutor/backend/current` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.50`, and `/opt/languagevoicetutor/backend/previous` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.49`. `/health`, `/api/health/database`, and a repeat `/api/health/database` check returned `200 OK`; `languagevoicetutor-backend.service` is active and enabled. Post-deploy journal sampling over the recent verification window returned 0 lines for the bounded sensitive/EF SQL grep set: `Microsoft.EntityFrameworkCore.Database.Command`, `SELECT`, `INSERT`, `UPDATE`, `PasswordHash`, `TokenHash`, `RawPayload`, and `SignatureHeader`. No EF migrations were run for this config-only backend release; no production database schema or data changed; and no business logic, Desktop, Admin UI, CMS, billing/Paddle semantics, package script, or deployment script behavior changed. Production/live Paddle readiness remains deferred, and broad public production readiness is still not claimed.
-
-## Admin payment-event statistics follow-up
-
-Admin Product Statistics now separates access-state metrics from payment-event metrics: `Active Premium users now` remains a current entitlement/access metric, while `Successful payments total` and `Successful payments current month` are aggregate successful payment-event counts from internal normalized payment records. Continue to validate billing flows in sandbox and keep production/live Paddle readiness deferred until live credentials, webhook destination, reconciliation, refund/chargeback/customer portal, legal/support, monitoring, and operational runbooks are complete. Do not claim broad public production readiness.
-
-
-- Keep static `site/public` fallback text current when public page structure changes so CMS initialization remains understandable.
+Backend remains source of truth for plan, subscription, entitlement, usage, and limits. Entitlement is the source of Premium access; `PaymentEntity` is diagnostic payment history only. Desktop and future mobile clients share one backend account, one backend database, one subscription/entitlement state, and one lesson history/progress source. Paddle may be the first web/desktop provider, but Apple/Google must remain possible later for mobile. Do not add YooKassa or Russia-only billing assumptions.
