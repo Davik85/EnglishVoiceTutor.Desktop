@@ -8,6 +8,9 @@ const elements = {
     detailVersion: document.getElementById("detail-version"),
     detailChannel: document.getElementById("detail-channel"),
     detailInstaller: document.getElementById("detail-installer"),
+    detailBackendBaseUrl: document.getElementById("detail-backend-base-url"),
+    detailMinimumSupportedVersion: document.getElementById("detail-minimum-supported-version"),
+    detailUpdateMode: document.getElementById("detail-update-mode"),
     detailSize: document.getElementById("detail-size"),
     detailSha: document.getElementById("detail-sha"),
 };
@@ -96,6 +99,9 @@ function validateManifest(manifest) {
     return {
         version: manifest.version.trim(),
         channel: manifest.channel || "Unavailable",
+        backendBaseUrl: manifest.backendBaseUrl || "Unavailable",
+        minimumSupportedVersion: manifest.minimumSupportedVersion || "Unavailable",
+        updateMode: manifest.updateMode || "Unavailable",
         installerFileName,
         installerUrl: `${releaseBaseUrl}${installerRelativeUrl}`,
         installerSizeBytes: Number(manifest.installerSizeBytes),
@@ -111,6 +117,9 @@ function applyManifest(manifest) {
     setText(elements.detailVersion, release.version);
     setText(elements.detailChannel, release.channel);
     setText(elements.detailInstaller, release.installerFileName);
+    setText(elements.detailBackendBaseUrl, release.backendBaseUrl);
+    setText(elements.detailMinimumSupportedVersion, release.minimumSupportedVersion);
+    setText(elements.detailUpdateMode, release.updateMode);
     setText(elements.detailSize, formatBytes(release.installerSizeBytes));
     setText(elements.detailSha, release.installerSha256);
     setText(elements.manifestStatus, "Release manifest loaded. The download link matches the current version shown above.");
@@ -122,6 +131,9 @@ function applyManifestFailure(message) {
     setText(elements.detailVersion, "Unavailable");
     setText(elements.detailChannel, "Unavailable");
     setText(elements.detailInstaller, "Unavailable");
+    setText(elements.detailBackendBaseUrl, "Unavailable");
+    setText(elements.detailMinimumSupportedVersion, "Unavailable");
+    setText(elements.detailUpdateMode, "Unavailable");
     setText(elements.detailSize, "Unavailable");
     setText(elements.detailSha, "Unavailable");
     setText(elements.manifestStatus, message);

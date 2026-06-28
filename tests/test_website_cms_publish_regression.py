@@ -40,7 +40,7 @@ def test_home_stays_structured_and_simple_pages_keep_body_markdown_rendering():
     source = SERVICE.read_text(encoding="utf-8")
 
     assert '["home"] = new(){{"logoPath"' in source
-    assert 'private static string RenderHome(WebsiteContentSet c)' in source
+    assert 'private static string RenderHome(WebsiteContentSet c, bool includePublicBaseHref)' in source
     assert 'private static string RenderSimple' in source
     assert 'bodyMarkdown' in source
     assert 'RenderMarkdown(p["bodyMarkdown"])' in source
