@@ -13,6 +13,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
     private const string DefaultLogoPath = "assets/brand/lvt-logo.png";
+    private const string PreviewPublicBaseHref = "https://languagevoicetutor.com/";
     private const string RequiredLanguageLine = "🇬🇧 English · 🇫🇷 French · 🇩🇪 German · 🇪🇸 Spanish · 🇮🇹 Italian · 🇵🇹 Portuguese";
     private static readonly IReadOnlyDictionary<string, string> DefaultLanguageFlagPaths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -42,7 +43,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     {
         var normalized = Normalize(request.Content);
         var pageKey = NormalizePageKey(request.PageKey);
-        var html = RenderPage(normalized, pageKey);
+        var html = RenderPage(normalized, pageKey, includePublicBaseHref: true);
         return Task.FromResult(new WebsitePreviewResponse(pageKey, html, DateTimeOffset.UtcNow));
     }
 
@@ -173,24 +174,24 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         ("status", "status.html")
     ];
 
-    private static string RenderPage(WebsiteContentSet c, string pageKey) => pageKey switch
+    private static string RenderPage(WebsiteContentSet c, string pageKey, bool includePublicBaseHref = false) => pageKey switch
     {
-        "home" => RenderHome(c),
-        "download" => RenderSimple(c, "download", "download-title", [("Current version", "currentVersionLabel"), ("Safety and support", "safetySupportNote")], "Download for Windows"),
-        "mobile" => RenderSimple(c, "mobile", "mobile-title", [("Android", "androidComingSoonText"), ("iOS", "iosComingSoonText"), ("Contact", "emailSupportCtaText")], null),
-        "pricing" => RenderSimple(c, "pricing", "pricing-title", [("Free plan", "freePlanText"), ("Premium plan", "premiumPlanText"), ("Trial", "trialText"), ("Checkout status", "paddleLiveCheckoutDisclaimerText")], null),
-        "support" => RenderSimple(c, "support", "support-title", [("Support email", "supportEmailText"), ("Response time", "responseTimeText"), ("Accounts and deletion", "accountDeletionSupportText"), ("Billing", "billingSupportText")], null),
-        "terms" => RenderSimple(c, "terms", "terms-title", [("Effective date", "effectiveDate"), ("Accounts and use", "accountUseTerms"), ("AI and learning disclaimer", "aiLearningDisclaimer"), ("Billing and subscriptions", "billingSubscriptionTermsPlaceholder"), ("Contact", "contactSupportText")], null),
-        "privacy" => RenderSimple(c, "privacy", "privacy-title", [("Effective date", "effectiveDate"), ("Data collected", "dataCollected"), ("Audio and transcription", "audioTranscriptionText"), ("AI processing", "aiProcessingText"), ("Account and payment data", "accountPaymentDataText"), ("Retention and deletion", "dataRetentionDeletionText"), ("Contact", "contactText")], null),
-        "refunds" => RenderSimple(c, "refunds", "refunds-title", [("Effective date", "effectiveDate"), ("Refund eligibility", "refundEligibilityText"), ("How to request a refund", "howToRequestRefundText"), ("Payment provider note", "paddlePaymentProviderNote"), ("Contact", "contactText")], null),
-        "cancellation" => RenderSimple(c, "cancellation", "cancellation-title", [("Effective date", "effectiveDate"), ("How to cancel", "howToCancelText"), ("Access until period end", "accessUntilPeriodEndText"), ("Support", "supportText")], null),
-        "seller" => RenderSimple(c, "seller", "seller-title", [("Seller name / legal entity", "sellerNameLegalEntityPlaceholder"), ("Address", "addressPlaceholder"), ("Contact email", "contactEmail"), ("Tax, VAT, company registration", "taxVatCompanyRegistrationPlaceholder"), ("Paddle live review note", "paddleLiveReviewNote")], null),
-        "aiData" => RenderSimple(c, "aiData", "ai-data-title", [("AI tutor disclosure", "aiTutorDisclosureText"), ("Voice and transcription", "voiceTranscriptionDisclosureText"), ("Data processing", "dataProcessingText"), ("User control and deletion", "userControlDeletionText")], null),
-        "status" => RenderSimple(c, "status", "status-title", [("Desktop availability", "desktopAvailabilityText"), ("Mobile", "mobileComingSoonText"), ("Service availability", "serviceAvailabilityDisclaimer"), ("Support", "supportContactText")], null),
-        _ => RenderHome(c)
+        "home" => RenderHome(c, includePublicBaseHref),
+        "download" => RenderSimple(c, "download", "download-title", [("Current version", "currentVersionLabel"), ("Safety and support", "safetySupportNote")], "Download for Windows", includePublicBaseHref),
+        "mobile" => RenderSimple(c, "mobile", "mobile-title", [("Android", "androidComingSoonText"), ("iOS", "iosComingSoonText"), ("Contact", "emailSupportCtaText")], null, includePublicBaseHref),
+        "pricing" => RenderSimple(c, "pricing", "pricing-title", [("Free plan", "freePlanText"), ("Premium plan", "premiumPlanText"), ("Trial", "trialText"), ("Checkout status", "paddleLiveCheckoutDisclaimerText")], null, includePublicBaseHref),
+        "support" => RenderSimple(c, "support", "support-title", [("Support email", "supportEmailText"), ("Response time", "responseTimeText"), ("Accounts and deletion", "accountDeletionSupportText"), ("Billing", "billingSupportText")], null, includePublicBaseHref),
+        "terms" => RenderSimple(c, "terms", "terms-title", [("Effective date", "effectiveDate"), ("Accounts and use", "accountUseTerms"), ("AI and learning disclaimer", "aiLearningDisclaimer"), ("Billing and subscriptions", "billingSubscriptionTermsPlaceholder"), ("Contact", "contactSupportText")], null, includePublicBaseHref),
+        "privacy" => RenderSimple(c, "privacy", "privacy-title", [("Effective date", "effectiveDate"), ("Data collected", "dataCollected"), ("Audio and transcription", "audioTranscriptionText"), ("AI processing", "aiProcessingText"), ("Account and payment data", "accountPaymentDataText"), ("Retention and deletion", "dataRetentionDeletionText"), ("Contact", "contactText")], null, includePublicBaseHref),
+        "refunds" => RenderSimple(c, "refunds", "refunds-title", [("Effective date", "effectiveDate"), ("Refund eligibility", "refundEligibilityText"), ("How to request a refund", "howToRequestRefundText"), ("Payment provider note", "paddlePaymentProviderNote"), ("Contact", "contactText")], null, includePublicBaseHref),
+        "cancellation" => RenderSimple(c, "cancellation", "cancellation-title", [("Effective date", "effectiveDate"), ("How to cancel", "howToCancelText"), ("Access until period end", "accessUntilPeriodEndText"), ("Support", "supportText")], null, includePublicBaseHref),
+        "seller" => RenderSimple(c, "seller", "seller-title", [("Seller name / legal entity", "sellerNameLegalEntityPlaceholder"), ("Address", "addressPlaceholder"), ("Contact email", "contactEmail"), ("Tax, VAT, company registration", "taxVatCompanyRegistrationPlaceholder"), ("Paddle live review note", "paddleLiveReviewNote")], null, includePublicBaseHref),
+        "aiData" => RenderSimple(c, "aiData", "ai-data-title", [("AI tutor disclosure", "aiTutorDisclosureText"), ("Voice and transcription", "voiceTranscriptionDisclosureText"), ("Data processing", "dataProcessingText"), ("User control and deletion", "userControlDeletionText")], null, includePublicBaseHref),
+        "status" => RenderSimple(c, "status", "status-title", [("Desktop availability", "desktopAvailabilityText"), ("Mobile", "mobileComingSoonText"), ("Service availability", "serviceAvailabilityDisclaimer"), ("Support", "supportContactText")], null, includePublicBaseHref),
+        _ => RenderHome(c, includePublicBaseHref)
     };
 
-    private static string RenderHome(WebsiteContentSet c)
+    private static string RenderHome(WebsiteContentSet c, bool includePublicBaseHref)
     {
         var h = c.Pages["home"];
         var main = $"""
@@ -217,10 +218,10 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     </section>
 </main>
 """;
-        return Shell(c, E(h["seoTitle"]), E(h["seoDescription"]), main, true);
+        return Shell(c, E(h["seoTitle"]), E(h["seoDescription"]), main, true, includePublicBaseHref);
     }
 
-    private static string RenderSimple(WebsiteContentSet c, string page, string titleId, (string title, string key)[] sections, string? button)
+    private static string RenderSimple(WebsiteContentSet c, string page, string titleId, (string title, string key)[] sections, string? button, bool includePublicBaseHref)
     {
         var p = c.Pages[page];
         var body = new StringBuilder();
@@ -237,7 +238,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
             body.AppendLine("    </section>");
             body.Append(Nav());
             body.AppendLine("</main>");
-            return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false);
+            return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref);
         }
         body.AppendLine($"        <p class=\"description\">{E(p.GetValueOrDefault("introText", p.GetValueOrDefault("intro", string.Empty)))}</p>");
         if (button is not null)
@@ -256,10 +257,10 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         }
         body.Append(Nav());
         body.AppendLine("</main>");
-        return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false);
+        return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref);
     }
 
-    private static string Shell(WebsiteContentSet c, string title, string description, string main, bool landing)
+    private static string Shell(WebsiteContentSet c, string title, string description, string main, bool landing, bool includePublicBaseHref)
     {
         var h = c.Pages["home"];
         var d = c.Design;
@@ -271,6 +272,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         html.AppendLine("<head>");
         html.AppendLine("    <meta charset=\"utf-8\">");
         html.AppendLine("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+        if (includePublicBaseHref) { html.AppendLine($"    <base href=\"{PreviewPublicBaseHref}\">"); }
         html.AppendLine($"    <title>{title}</title>");
         html.AppendLine($"    <meta name=\"description\" content=\"{description}\">");
         html.AppendLine("    <link rel=\"stylesheet\" href=\"styles.css\">");
@@ -320,7 +322,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         var label = LanguageLabelRegex().Replace(language, string.Empty).Trim();
         if (DefaultLanguageFlagPaths.TryGetValue(label, out var flagPath))
         {
-            return $"<span class=\"site-header__language\"><img class=\"site-header__flag\" src=\"{HtmlEncoder.Default.Encode(flagPath)}\" alt=\"\" aria-hidden=\"true\">{E(label)}</span>";
+            return $"<span class=\"site-header__language\"><img class=\"site-header__flag\" src=\"{HtmlEncoder.Default.Encode(flagPath)}\" alt=\"{E(label)} flag\">{E(label)}</span>";
         }
 
         return $"<span class=\"site-header__language\">{E(language)}</span>";
