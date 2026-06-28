@@ -11,7 +11,9 @@ Production backend is deployed and healthy.
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
 
-Verify before announcing or rolling back:
+## Current backend pre-check
+
+Run these checks before announcing a backend state, packaging a replacement, deploying, or rolling back:
 
 ```powershell
 ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"
@@ -19,27 +21,93 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; `0.1.35-backend.49` remains a documented older rollback reference, not a substitute for checking the live symlink.
+Expected baseline for the current deployment is release `0.1.35-backend.74`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live.
 
-## Deployment commands
+Previous backend rollback reference must be verified from `/opt/languagevoicetutor/backend/previous`. `0.1.35-backend.49` remains a documented older rollback reference, not a substitute for checking the live `previous` symlink.
 
-Backend deployment uses the repository PowerShell helpers:
+## Package backend release
+
+Backend packaging uses the repository PowerShell helper and creates the linux-x64 backend archive under `artifacts/packages/backend/`:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.74
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.74
 ```
 
-The upload script creates/uploads a `deploy-backend-release.sh` helper and uses that helper for release extraction and symlink switching. It uses `ssh -tt` for sudo restart/status when needed. Do not document old fragile inline bash deployment paths as the current backend deployment flow.
+The package command does not upload, restart, run EF migrations, publish website files, upload Windows installers, or enable Paddle live.
+
+## Dry-run upload
+
+Use `-PackageFirst -DryRun` to print the upload, generated deploy-helper, symlink, and restart/status commands without changing the server:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.74 -PackageFirst -DryRun
+```
+
+The upload helper creates a temporary `deploy-backend-release.sh` helper and uses that helper for release extraction and symlink switching. It uses `ssh -tt` for sudo restart/status when restart is enabled. Do not document old fragile inline bash deployment paths as the current backend deployment flow.
+
+## Real upload
+
+After the pre-check and dry run are reviewed, run the backend upload helper without `-DryRun`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.74 -PackageFirst
+```
+
+By default, the helper uploads to `/opt/languagevoicetutor/backend`, switches `current`, updates `previous` when an older current release exists, restarts `languagevoicetutor-backend.service`, and prints service status. Use script parameters only for an intentionally reviewed non-default host, SSH port, user, or remote path.
+
+## Post-deploy checks
+
+Verify the live server state and public health endpoints after upload:
+
+```powershell
+ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"
+Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
+Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
+ssh lvt-server "sudo systemctl status languagevoicetutor-backend.service --no-pager"
+```
+
+If the service status or health checks need investigation, inspect recent backend logs without printing secrets:
+
+```powershell
+ssh lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 --no-pager"
+```
+
+Do not paste production environment values, database connection strings, API keys, or provider secrets into documentation, tickets, chat, commits, or pull requests.
+
+## Rollback
+
+Rollback is controlled by the server `previous` symlink. Verify it first and do not assume an older documented version is still the rollback target:
+
+```powershell
+ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/previous"
+```
+
+If `previous` resolves to the reviewed rollback release directory and the operator intentionally approves rollback, switch `current` back to that target and restart the backend service:
+
+```powershell
+ssh lvt-server "set -e; previous=\$(readlink -f /opt/languagevoicetutor/backend/previous); test -n \"\$previous\"; test -d \"\$previous\"; current=\$(readlink -f /opt/languagevoicetutor/backend/current); sudo ln -sfn \"\$current\" /opt/languagevoicetutor/backend/rollback-from; sudo ln -sfn \"\$previous\" /opt/languagevoicetutor/backend/current"
+ssh lvt-server "sudo systemctl restart languagevoicetutor-backend.service"
+ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"
+Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
+Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
+ssh lvt-server "sudo systemctl status languagevoicetutor-backend.service --no-pager"
+```
+
+If rollback health checks fail or the service does not stabilize, capture the last 100 backend log lines and follow the accepted incident procedure for the server:
+
+```powershell
+ssh lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 --no-pager"
+```
 
 ## Scope boundaries
 
 Backend deploy is backend-only. It does not:
 
-- upload Windows installer files;
-- publish static website HTML/CSS/JS;
 - run EF migrations;
 - apply reviewed SQL;
+- publish static website HTML/CSS/JS;
+- publish Website CMS content;
+- upload Windows installer files;
 - change production Paddle environment values;
 - enable live Paddle;
 - change Desktop app behavior.
