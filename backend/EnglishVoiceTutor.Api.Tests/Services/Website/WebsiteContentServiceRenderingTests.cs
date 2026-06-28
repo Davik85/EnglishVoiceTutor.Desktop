@@ -88,7 +88,7 @@ public sealed class WebsiteContentServiceRenderingTests
     }
 
     [Fact]
-    public async Task PublishedPagesIncludeFooterLinkToStatusPageAndPublishStatusHtml()
+    public async Task PublishedPagesIncludeGroupedFooterLinksAndPublishDisclosurePages()
     {
         using var fixture = new WebsiteContentServiceFixture();
         var service = fixture.CreateService();
@@ -96,10 +96,24 @@ public sealed class WebsiteContentServiceRenderingTests
         var response = await service.PublishAsync(CancellationToken.None);
         var htmlFiles = Directory.GetFiles(fixture.PublicSiteRoot, "*.html");
 
+        Assert.Contains(response.PublishedFiles, file => Path.GetFileName(file) == "seller.html");
+        Assert.Contains(response.PublishedFiles, file => Path.GetFileName(file) == "ai-data.html");
         Assert.Contains(response.PublishedFiles, file => Path.GetFileName(file) == "status.html");
         foreach (var file in htmlFiles)
         {
             var html = await File.ReadAllTextAsync(file);
+            Assert.Contains("site-footer__link-row site-footer__link-row--primary", html);
+            Assert.Contains("site-footer__link-row site-footer__link-row--secondary", html);
+            Assert.Contains("href=\"privacy.html\"", html);
+            Assert.Contains("href=\"terms.html\"", html);
+            Assert.Contains("href=\"refunds.html\"", html);
+            Assert.Contains("href=\"cancellation.html\"", html);
+            Assert.Contains("href=\"support.html\"", html);
+            Assert.Contains("href=\"pricing.html\"", html);
+            Assert.Contains("href=\"seller.html\"", html);
+            Assert.Contains("Seller / Company Details", html);
+            Assert.Contains("href=\"ai-data.html\"", html);
+            Assert.Contains("AI &amp; Data Disclosure", html);
             Assert.Contains("href=\"status.html\"", html);
             Assert.Contains("Service Status", html);
         }
