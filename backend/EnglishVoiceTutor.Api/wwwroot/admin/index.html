@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>English Voice Tutor Admin</title>
-    <link rel="stylesheet" href="/admin/admin.css?v=admin-cms-20260613-raw-json-fix" />
+    <link rel="stylesheet" href="/admin/admin.css?v=admin-website-ux-20260628" />
 </head>
 <body>
     <main class="layout" aria-live="polite">
@@ -528,15 +528,20 @@
                         <section class="card website-editor-card">
                             <div id="website-section-tabs" class="website-section-tabs" role="tablist" aria-label="Website pages and sections"></div>
                             <form id="website-editor-form" class="website-editor-form" novalidate>
-                                <h3 id="website-editor-heading">Home page</h3>
-                                <div id="website-editor-fields" class="grid"></div>
-                                <div class="cms-button-row">
+                                <div class="website-editor-title-row">
+                                    <div>
+                                        <h3 id="website-editor-heading">Home page</h3>
+                                        <p id="website-editor-helper" class="muted">Edit text, preview it, then publish when ready.</p>
+                                    </div>
+                                </div>
+                                <div class="website-action-bar" aria-label="Website draft actions">
                                     <button id="website-save-draft-button" type="button">Save draft</button>
-                                    <button id="website-preview-button" type="button">Preview</button>
-                                    <button id="website-publish-button" type="button">Publish / Make active</button>
+                                    <button id="website-preview-button" type="button" class="website-secondary-action">Preview</button>
+                                    <button id="website-publish-button" type="button" class="website-publish-action">Publish / Make active</button>
                                 </div>
                                 <p id="website-message" class="success"></p>
                                 <p id="website-error" class="error" role="alert"></p>
+                                <div id="website-editor-fields" class="grid website-editor-fields"></div>
                             </form>
                         </section>
                     </div>
