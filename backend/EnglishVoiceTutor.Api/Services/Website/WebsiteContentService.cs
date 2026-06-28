@@ -82,10 +82,12 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
             foreach (var (page, fields) in input.Pages)
             {
                 if (!pages.TryGetValue(page, out var target) || fields is null) { continue; }
-                foreach (var key in target.Keys.ToList())
+                foreach (var (key, value) in fields)
                 {
-                    if (!fields.TryGetValue(key, out var value)) { continue; }
-                    target[key] = key == "logoPath" ? NormalizeLogoPath(value) : LimitText(value, key.Contains("seo", StringComparison.OrdinalIgnoreCase) ? 180 : 900, target[key]);
+                    var fallback = target.GetValueOrDefault(key, string.Empty);
+                    target[key] = key == "logoPath"
+                        ? NormalizeLogoPath(value)
+                        : LimitText(value, TextLimitFor(key), fallback);
                 }
             }
         }
@@ -184,8 +186,18 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
 <main class="page-shell legal-page">
     <section class="hero-card">
         <h1 id="{titleId}">{E(p["pageTitle"])}</h1>
-        <p class="description">{E(p.GetValueOrDefault("introText", p.GetValueOrDefault("intro", string.Empty)))}</p>
 """);
+        if (!string.IsNullOrWhiteSpace(p.GetValueOrDefault("bodyMarkdown")))
+        {
+            body.AppendLine("    </section>");
+            body.AppendLine("    <section class=\"details-card legal-section markdown-content\">");
+            body.AppendLine(RenderMarkdown(p["bodyMarkdown"]));
+            body.AppendLine("    </section>");
+            body.Append(Nav());
+            body.AppendLine("</main>");
+            return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false);
+        }
+        body.AppendLine($"        <p class=\"description\">{E(p.GetValueOrDefault("introText", p.GetValueOrDefault("intro", string.Empty)))}</p>");
         if (button is not null)
         {
             body.AppendLine($"        <a class=\"download-button\" href=\"#\" aria-disabled=\"true\">{E(p.GetValueOrDefault("downloadButtonText", button))}</a>");
@@ -302,11 +314,79 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         .details-card, .support-card { margin-top: 20px; padding: 24px; }
         .legal-page .hero-card, .legal-page .details-card, .legal-page .support-card { margin-bottom: 20px; }
         .legal-section p:last-child { margin-bottom: 0; }
+        .markdown-content blockquote { border-left: 4px solid var(--accent); color: var(--muted); margin: 1rem 0; padding-left: 1rem; }
+        .markdown-content hr { border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+        .markdown-content li { margin-bottom: 0.45rem; }
         .page-shell a { color: var(--accent-dark); }
         @media (max-width: 760px) { .site-header__inner, .site-footer { align-items: flex-start; flex-direction: column; } .landing-page .landing-shell { grid-template-columns: 1fr; min-height: auto; } .landing-page .app-panel { min-height: 68vh; } }
         @media (max-width: 640px) { .page-shell { width: min(100% - 20px, 920px); padding: 20px 0; } }
 
 """;
+
+
+    private static string RenderMarkdown(string markdown)
+    {
+        var html = new StringBuilder();
+        var lines = markdown.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        string? listTag = null;
+        var paragraph = new List<string>();
+        void FlushParagraph()
+        {
+            if (paragraph.Count == 0) { return; }
+            html.Append("<p>").Append(InlineMarkdown(string.Join(" ", paragraph))).AppendLine("</p>");
+            paragraph.Clear();
+        }
+        void CloseList()
+        {
+            if (listTag is null) { return; }
+            html.Append("</").Append(listTag).AppendLine(">");
+            listTag = null;
+        }
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine.Trim();
+            if (line.Length == 0) { FlushParagraph(); CloseList(); continue; }
+            if (line == "---" || line == "***") { FlushParagraph(); CloseList(); html.AppendLine("<hr>"); continue; }
+            if (line.StartsWith("### ", StringComparison.Ordinal)) { FlushParagraph(); CloseList(); html.Append("<h3>").Append(InlineMarkdown(line[4..].Trim())).AppendLine("</h3>"); continue; }
+            if (line.StartsWith("## ", StringComparison.Ordinal)) { FlushParagraph(); CloseList(); html.Append("<h2>").Append(InlineMarkdown(line[3..].Trim())).AppendLine("</h2>"); continue; }
+            if (line.StartsWith("# ", StringComparison.Ordinal)) { FlushParagraph(); CloseList(); html.Append("<h1>").Append(InlineMarkdown(line[2..].Trim())).AppendLine("</h1>"); continue; }
+            if (line.StartsWith("> ", StringComparison.Ordinal)) { FlushParagraph(); CloseList(); html.Append("<blockquote>").Append(InlineMarkdown(line[2..].Trim())).AppendLine("</blockquote>"); continue; }
+            var bullet = line.StartsWith("- ", StringComparison.Ordinal) || line.StartsWith("* ", StringComparison.Ordinal);
+            var numbered = NumberedListRegex().IsMatch(line);
+            if (bullet || numbered)
+            {
+                FlushParagraph();
+                var desired = bullet ? "ul" : "ol";
+                if (listTag != desired) { CloseList(); html.Append('<').Append(desired).AppendLine(">"); listTag = desired; }
+                var item = bullet ? line[2..].Trim() : NumberedListRegex().Replace(line, string.Empty, 1).Trim();
+                html.Append("<li>").Append(InlineMarkdown(item)).AppendLine("</li>");
+                continue;
+            }
+            CloseList();
+            paragraph.Add(line);
+        }
+        FlushParagraph();
+        CloseList();
+        return html.ToString();
+    }
+
+    private static string InlineMarkdown(string text)
+    {
+        var encoded = E(text);
+        encoded = LinkRegex().Replace(encoded, match => $"<a href=\"{SafeHref(WebUtility.HtmlDecode(match.Groups[2].Value))}\">{match.Groups[1].Value}</a>");
+        encoded = BoldRegex().Replace(encoded, "<strong>$1</strong>");
+        encoded = ItalicRegex().Replace(encoded, "<em>$1</em>");
+        return encoded;
+    }
+
+    private static string SafeHref(string href)
+    {
+        if (Uri.TryCreate(href, UriKind.Absolute, out var absolute) && (absolute.Scheme == Uri.UriSchemeHttps || absolute.Scheme == Uri.UriSchemeHttp || absolute.Scheme == Uri.UriSchemeMailto))
+        {
+            return E(absolute.ToString());
+        }
+        return "#";
+    }
 
     private static string Nav() => "<section class=\"support-card legal-nav\"><a href=\"index.html\">Home</a><a href=\"download.html\">Download</a><a href=\"mobile.html\">Mobile</a><a href=\"pricing.html\">Pricing</a><a href=\"terms.html\">Terms</a><a href=\"privacy.html\">Privacy</a><a href=\"refunds.html\">Refunds</a><a href=\"cancellation.html\">Cancellation</a><a href=\"support.html\">Support</a></section>";
 
@@ -331,6 +411,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     }, new WebsiteDesignContent("#0d2b4c", "#0d2b4c", "#24201b", "#dce9f7", "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif", 16, 700, 999, "Normal"));
     private static Dictionary<string,string> Page(string title,string intro,Dictionary<string,string> extra){ extra["pageTitle"]=title; extra["introText"]=intro; extra["seoTitle"]=$"{title} | Language Voice Tutor"; extra["seoDescription"]=intro; return extra; }
     private static Dictionary<string,string> Legal(string title,string intro,Dictionary<string,string> extra){ var p=Page(title,intro,extra); p["effectiveDate"]="Effective date placeholder"; p["intro"]=intro; return p; }
+    private static int TextLimitFor(string key) => key == "bodyMarkdown" ? 12000 : key.Contains("seo", StringComparison.OrdinalIgnoreCase) ? 180 : 900;
     private static string LimitText(string? value, int max, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim()[..Math.Min(value.Trim().Length, max)];
     private static string NormalizeHex(string? value, string fallback) => value is not null && HexColorRegex().IsMatch(value.Trim()) ? value.Trim() : fallback;
     private static string NormalizeFontFamily(string? value, string fallback) => value is not null && SafeFontRegex().IsMatch(value.Trim()) ? LimitText(value, 120, fallback) : fallback;
@@ -339,4 +420,8 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     [GeneratedRegex("^#[0-9a-fA-F]{6}$")] private static partial Regex HexColorRegex();
     [GeneratedRegex("^[a-zA-Z0-9 ,\"-]+$")] private static partial Regex SafeFontRegex();
     [GeneratedRegex("^[a-zA-Z0-9_./%#?=&:+-]+$")] private static partial Regex SafeRelativePathRegex();
+    [GeneratedRegex("^\\d+\\.\\s+")] private static partial Regex NumberedListRegex();
+    [GeneratedRegex("\\[([^\\]]+)\\]\\(([^)]+)\\)")] private static partial Regex LinkRegex();
+    [GeneratedRegex("\\*\\*([^*]+)\\*\\*")] private static partial Regex BoldRegex();
+    [GeneratedRegex("(?<!_)_([^_]+)_(?!_)")] private static partial Regex ItalicRegex();
 }
