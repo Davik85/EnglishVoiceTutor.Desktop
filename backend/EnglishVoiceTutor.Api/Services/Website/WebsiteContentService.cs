@@ -228,15 +228,15 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     private static string RenderDownload(WebsiteContentSet c, bool includePublicBaseHref, StaticReleaseManifest? release)
     {
         var p = c.Pages["download"];
-        var hasRelease = release is not null;
+        var hasRelease = release is { } staticRelease;
         var currentVersion = hasRelease
-            ? release.Version
+            ? staticRelease.Version
             : "Current Windows tester release is available through the Download for Windows button.";
         var manifestStatus = hasRelease
             ? "Release details are shown from the published local manifest and will refresh automatically when JavaScript runs."
             : "If release details do not load automatically, please contact support@languagevoicetutor.com.";
         var downloadAttributes = hasRelease
-            ? $" href=\"{E(release.InstallerRelativeUrl)}\" download=\"{E(release.InstallerFileName)}\""
+            ? $" href=\"{E(staticRelease.InstallerRelativeUrl)}\" download=\"{E(staticRelease.InstallerFileName)}\""
             : string.Empty;
         var downloadClass = hasRelease ? "download-button" : "download-button is-disabled";
         var ariaDisabled = hasRelease ? "false" : "true";
