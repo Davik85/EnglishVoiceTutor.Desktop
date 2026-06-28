@@ -136,6 +136,8 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
             }
         }
         pages["home"]["supportedLanguageLine"] = RequiredLanguageLine;
+        pages["home"]["mobileCardDescription"] = "Android and iOS apps are planned but are not currently available.";
+        pages["home"]["mobileComingSoonButtonText"] = "Not currently available";
         var design = NormalizeDesign(input?.Design, defaults.Design);
         return new WebsiteContentSet(pages, design);
     }
@@ -144,9 +146,10 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     {
         var files = new List<string>();
         async Task W(string file, string html) { var path = Path.Combine(root, file); await File.WriteAllTextAsync(path, html, ct); files.Add(path); }
+        var release = ReadStaticReleaseManifest(root);
         foreach (var (pageKey, fileName) in PageFiles())
         {
-            await W(fileName, RenderPage(c, pageKey));
+            await W(fileName, RenderPage(c, pageKey, release: pageKey == "download" ? release : null));
         }
         return files;
     }
@@ -174,10 +177,10 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         ("status", "status.html")
     ];
 
-    private static string RenderPage(WebsiteContentSet c, string pageKey, bool includePublicBaseHref = false) => pageKey switch
+    private static string RenderPage(WebsiteContentSet c, string pageKey, bool includePublicBaseHref = false, StaticReleaseManifest? release = null) => pageKey switch
     {
         "home" => RenderHome(c, includePublicBaseHref),
-        "download" => RenderDownload(c, includePublicBaseHref),
+        "download" => RenderDownload(c, includePublicBaseHref, release),
         "mobile" => RenderSimple(c, "mobile", "mobile-title", [("Android", "androidComingSoonText"), ("iOS", "iosComingSoonText"), ("Contact", "emailSupportCtaText")], null, includePublicBaseHref),
         "pricing" => RenderSimple(c, "pricing", "pricing-title", [("Free plan", "freePlanText"), ("Premium plan", "premiumPlanText"), ("Trial", "trialText"), ("Checkout status", "paddleLiveCheckoutDisclaimerText")], null, includePublicBaseHref),
         "support" => RenderSimple(c, "support", "support-title", [("Support email", "supportEmailText"), ("Response time", "responseTimeText"), ("Accounts and deletion", "accountDeletionSupportText"), ("Billing", "billingSupportText")], null, includePublicBaseHref),
@@ -222,9 +225,22 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     }
 
 
-    private static string RenderDownload(WebsiteContentSet c, bool includePublicBaseHref)
+    private static string RenderDownload(WebsiteContentSet c, bool includePublicBaseHref, StaticReleaseManifest? release)
     {
         var p = c.Pages["download"];
+        var currentVersion = "Current Windows tester release is available through the Download for Windows button.";
+        var manifestStatus = "If release details do not load automatically, please contact support@languagevoicetutor.com.";
+        var downloadAttributes = string.Empty;
+        var downloadClass = "download-button is-disabled";
+        var ariaDisabled = "true";
+        if (release is not null)
+        {
+            currentVersion = release.Version;
+            manifestStatus = "Release details are shown from the published local manifest and will refresh automatically when JavaScript runs.";
+            downloadAttributes = $" href=\"{E(release.InstallerRelativeUrl)}\" download=\"{E(release.InstallerFileName)}\"";
+            downloadClass = "download-button";
+            ariaDisabled = "false";
+        }
         var body = new StringBuilder();
         body.Append($"""
 <main class="page-shell legal-page">
@@ -240,9 +256,10 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         }
         body.Append($"""
         <div class="download-panel" aria-label="Windows download" data-manifest-url="/releases/windows/direct/latest.json">
-            <p class="version-line">Current version: <strong id="current-version">Loading...</strong></p>
-            <a id="download-button" class="download-button is-disabled" aria-disabled="true">{E(p.GetValueOrDefault("downloadButtonText", "Download for Windows"))}</a>
-            <p id="manifest-status" class="status-note" role="status">Loading release details from /releases/windows/direct/latest.json...</p>
+            <p class="version-line">Current version: <strong id="current-version">{E(currentVersion)}</strong></p>
+            <a id="download-button" class="{downloadClass}" aria-disabled="{ariaDisabled}"{downloadAttributes}>{E(p.GetValueOrDefault("downloadButtonText", "Download for Windows"))}</a>
+            <p id="manifest-status" class="status-note" role="status">{E(manifestStatus)}</p>
+            <p class="status-note">If release details do not load automatically, please contact <a href="mailto:support@languagevoicetutor.com">support@languagevoicetutor.com</a>.</p>
             <p class="warning-note">{E(p.GetValueOrDefault("safetySupportNote", string.Empty))}</p>
         </div>
     </section>
@@ -250,14 +267,14 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     <section class="details-card legal-section" aria-labelledby="release-details-title">
         <h2 id="release-details-title">Current release details</h2>
         <dl class="release-details">
-            <div><dt>Version</dt><dd id="detail-version">Unavailable</dd></div>
-            <div><dt>Installer filename</dt><dd id="detail-installer">Unavailable</dd></div>
-            <div><dt>Backend base URL</dt><dd id="detail-backend-base-url">Unavailable</dd></div>
-            <div><dt>Minimum supported version</dt><dd id="detail-minimum-supported-version">Unavailable</dd></div>
-            <div><dt>Update mode</dt><dd id="detail-update-mode">Unavailable</dd></div>
-            <div><dt>Channel</dt><dd id="detail-channel">Unavailable</dd></div>
-            <div><dt>Installer size</dt><dd id="detail-size">Unavailable</dd></div>
-            <div><dt>SHA-256</dt><dd id="detail-sha">Unavailable</dd></div>
+            <div><dt>Version</dt><dd id="detail-version">{E(release?.Version ?? "Release details load from the public manifest.")}</dd></div>
+            <div><dt>Installer filename</dt><dd id="detail-installer">{E(release?.InstallerFileName ?? "Use the Download for Windows button or contact support.")}</dd></div>
+            <div><dt>Backend base URL</dt><dd id="detail-backend-base-url">{E(release?.BackendBaseUrl ?? "Release details load from the public manifest.")}</dd></div>
+            <div><dt>Minimum supported version</dt><dd id="detail-minimum-supported-version">{E(release?.MinimumSupportedVersion ?? "Release details load from the public manifest.")}</dd></div>
+            <div><dt>Update mode</dt><dd id="detail-update-mode">{E(release?.UpdateMode ?? "Release details load from the public manifest.")}</dd></div>
+            <div><dt>Channel</dt><dd id="detail-channel">{E(release?.Channel ?? "Release details load from the public manifest.")}</dd></div>
+            <div><dt>Installer size</dt><dd id="detail-size">{E(release?.InstallerSize ?? "Release details load from the public manifest.")}</dd></div>
+            <div><dt>SHA-256</dt><dd id="detail-sha">{E(release?.InstallerSha256 ?? "Release details load from the public manifest.")}</dd></div>
         </dl>
     </section>
 """);
@@ -562,9 +579,100 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
 
     private static string E(string? s) => WebUtility.HtmlEncode(s ?? string.Empty);
 
+    private static StaticReleaseManifest? ReadStaticReleaseManifest(string publicRoot)
+    {
+        var path = Path.Combine(publicRoot, "releases", "windows", "direct", "latest.json");
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            var root = document.RootElement;
+            var version = ReadRequiredString(root, "version");
+            var installerRelativeUrl = ReadRequiredString(root, "installerRelativeUrl");
+            var installerFileName = ReadOptionalString(root, "installerFileName") ?? installerRelativeUrl;
+            if (version is null
+                || installerRelativeUrl is null
+                || !SafeInstallerFileRegex().IsMatch(installerRelativeUrl)
+                || installerFileName != installerRelativeUrl)
+            {
+                return null;
+            }
+
+            return new StaticReleaseManifest(
+                version,
+                installerRelativeUrl,
+                installerFileName,
+                ReadOptionalString(root, "backendBaseUrl") ?? "Release details load from the public manifest.",
+                ReadOptionalString(root, "minimumSupportedVersion") ?? "Release details load from the public manifest.",
+                ReadOptionalString(root, "updateMode") ?? "Release details load from the public manifest.",
+                ReadOptionalString(root, "channel") ?? "Release details load from the public manifest.",
+                FormatInstallerSize(root),
+                ReadOptionalString(root, "installerSha256") ?? "Release details load from the public manifest.");
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    private static string? ReadRequiredString(JsonElement root, string propertyName) => ReadOptionalString(root, propertyName);
+
+    private static string? ReadOptionalString(JsonElement root, string propertyName)
+    {
+        if (!root.TryGetProperty(propertyName, out var property) || property.ValueKind != JsonValueKind.String)
+        {
+            return null;
+        }
+
+        var value = property.GetString()?.Trim();
+        return string.IsNullOrEmpty(value) ? null : value;
+    }
+
+    private static string FormatInstallerSize(JsonElement root)
+    {
+        if (!root.TryGetProperty("installerSizeBytes", out var property) || !property.TryGetInt64(out var bytes) || bytes <= 0)
+        {
+            return "Release details load from the public manifest.";
+        }
+
+        string[] units = ["bytes", "KB", "MB", "GB"];
+        var value = (double)bytes;
+        var unitIndex = 0;
+        while (value >= 1024 && unitIndex < units.Length - 1)
+        {
+            value /= 1024;
+            unitIndex++;
+        }
+
+        return unitIndex == 0 ? $"{bytes} bytes" : $"{value:0.0} {units[unitIndex]}";
+    }
+
+    private sealed record StaticReleaseManifest(
+        string Version,
+        string InstallerRelativeUrl,
+        string InstallerFileName,
+        string BackendBaseUrl,
+        string MinimumSupportedVersion,
+        string UpdateMode,
+        string Channel,
+        string InstallerSize,
+        string InstallerSha256);
+
     private static WebsiteContentSet DefaultSet() => new(new()
     {
-        ["home"] = new(){{"logoPath",""},{"logoAltText","Language Voice Tutor logo"},{"fallbackLogoText","Language Voice Tutor"},{"topHeaderText","Practice real conversations in:"},{"supportedLanguageLine",RequiredLanguageLine},{"windowsCardBadge","Available for testers"},{"windowsCardTitle","Application for Windows"},{"windowsCardDescription","Practice real-life language lessons by text or voice on your desktop."},{"windowsDownloadButtonText","Download desktop version"},{"mobileCardBadge","In development"},{"mobileCardTitle","Application for mobile devices"},{"mobileCardDescription","Android and iOS versions are planned."},{"mobileComingSoonButtonText","Mobile version coming soon"},{"footerCopyrightText","© Language Voice Tutor. All rights reserved."},{"footerPrivacyLabel","Privacy Policy"},{"footerTermsLabel","Terms of Use"},{"footerRefundsLabel","Refund Policy"},{"footerCancellationLabel","Cancellation"},{"footerSupportLabel","Support"},{"footerPricingLabel","Pricing"},{"seoTitle","Language Voice Tutor"},{"seoDescription","Language Voice Tutor helps you practice real-life language lessons by text or voice on desktop, with mobile apps planned."}},
+        ["home"] = new(){{"logoPath",""},{"logoAltText","Language Voice Tutor logo"},{"fallbackLogoText","Language Voice Tutor"},{"topHeaderText","Practice real conversations in:"},{"supportedLanguageLine",RequiredLanguageLine},{"windowsCardBadge","Available for testers"},{"windowsCardTitle","Application for Windows"},{"windowsCardDescription","Practice real-life language lessons by text or voice on your desktop."},{"windowsDownloadButtonText","Download desktop version"},{"mobileCardBadge","In development"},{"mobileCardTitle","Application for mobile devices"},{"mobileCardDescription","Android and iOS apps are planned but are not currently available."},{"mobileComingSoonButtonText","Not currently available"},{"footerCopyrightText","© Language Voice Tutor. All rights reserved."},{"footerPrivacyLabel","Privacy Policy"},{"footerTermsLabel","Terms of Use"},{"footerRefundsLabel","Refund Policy"},{"footerCancellationLabel","Cancellation"},{"footerSupportLabel","Support"},{"footerPricingLabel","Pricing"},{"seoTitle","Language Voice Tutor"},{"seoDescription","Language Voice Tutor helps you practice real-life language lessons by text or voice on desktop, with mobile apps planned."}},
         ["download"] = Page("Language Voice Tutor tester download","A Windows desktop app for practicing spoken languages with an AI tutor.", new(){{"downloadButtonText","Download for Windows"},{"currentVersionLabel","Current version details are loaded from the release manifest."},{"safetySupportNote","Windows may show a SmartScreen warning because code signing is deferred."}}),
         ["mobile"] = Page("Mobile app coming soon","Android and iOS versions are planned and not currently available.", new(){{"androidComingSoonText","Android app coming soon."},{"iosComingSoonText","iOS app coming soon."},{"emailSupportCtaText","Email support@languagevoicetutor.com for availability questions."}}),
         ["pricing"] = Page("Pricing","Language Voice Tutor is currently offered for Windows desktop tester access.", new(){{"freePlanText","Invited testers may be able to use free Windows desktop access during evaluation."},{"premiumPlanText","Premium subscription details are draft placeholders until paid billing is enabled by the owner."},{"trialText","Trial terms are not final and require owner/legal review."},{"paddleLiveCheckoutDisclaimerText","No live checkout button is provided and production Paddle billing is not enabled from this page."}}),
@@ -589,6 +697,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     [GeneratedRegex("^#[0-9a-fA-F]{6}$")] private static partial Regex HexColorRegex();
     [GeneratedRegex("^[a-zA-Z0-9 ,\"-]+$")] private static partial Regex SafeFontRegex();
     [GeneratedRegex("^[a-zA-Z0-9_./%#?=&:+-]+$")] private static partial Regex SafeRelativePathRegex();
+    [GeneratedRegex("^LanguageVoiceTutorSetup-[A-Za-z0-9._-]+\\.exe$")] private static partial Regex SafeInstallerFileRegex();
     [GeneratedRegex("^\\d+\\.\\s+")] private static partial Regex NumberedListRegex();
     [GeneratedRegex("^[^\\p{L}]*")] private static partial Regex LanguageLabelRegex();
     [GeneratedRegex("\\[([^\\]]+)\\]\\(([^)]+)\\)")] private static partial Regex LinkRegex();
