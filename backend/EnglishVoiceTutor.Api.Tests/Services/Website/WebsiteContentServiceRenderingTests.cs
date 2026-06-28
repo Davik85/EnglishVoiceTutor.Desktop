@@ -16,7 +16,7 @@ public sealed class WebsiteContentServiceRenderingTests
         var service = fixture.CreateService();
 
         await service.PublishAsync(TestContext.Current.CancellationToken);
-        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"));
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"), TestContext.Current.CancellationToken);
 
         Assert.Contains("assets/brand/lvt-logo.png", html);
         Assert.Contains("site-header__logo-image", html);
@@ -37,7 +37,7 @@ public sealed class WebsiteContentServiceRenderingTests
         var service = fixture.CreateService();
 
         await service.PublishAsync(TestContext.Current.CancellationToken);
-        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"));
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"), TestContext.Current.CancellationToken);
 
         Assert.Contains("<img class=\"site-header__logo-image\" src=\"assets/brand/lvt-logo.png\"", html);
         Assert.DoesNotContain("<a class=\"site-header__brand\" href=\"index.html\" aria-label=\"Language Voice Tutor home\"><span class=\"site-header__logo-fallback\">", html);
@@ -51,7 +51,7 @@ public sealed class WebsiteContentServiceRenderingTests
         var service = fixture.CreateService();
 
         await service.PublishAsync(TestContext.Current.CancellationToken);
-        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"));
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"), TestContext.Current.CancellationToken);
 
         Assert.Contains("/releases/windows/direct/latest.json", html);
         Assert.Contains("download.js?v=manifest-download", html);
@@ -100,7 +100,7 @@ public sealed class WebsiteContentServiceRenderingTests
         Assert.Contains(response.PublishedFiles, file => Path.GetFileName(file) == "status.html");
         foreach (var file in htmlFiles)
         {
-            var html = await File.ReadAllTextAsync(file);
+            var html = await File.ReadAllTextAsync(file, TestContext.Current.CancellationToken);
             Assert.Contains("site-footer__link-row site-footer__link-row--primary", html);
             Assert.Contains("site-footer__link-row site-footer__link-row--secondary", html);
             Assert.Contains("href=\"privacy.html\"", html);
@@ -140,7 +140,7 @@ public sealed class WebsiteContentServiceRenderingTests
         var service = fixture.CreateService();
 
         await service.PublishAsync(TestContext.Current.CancellationToken);
-        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"));
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "index.html"), TestContext.Current.CancellationToken);
 
         Assert.Contains("assets/brand/lvt-logo.png", html);
         Assert.Contains("assets/flags/gb.webp", html);
