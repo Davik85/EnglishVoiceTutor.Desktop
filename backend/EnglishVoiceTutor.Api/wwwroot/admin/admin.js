@@ -832,21 +832,34 @@
     const websiteSaveDraftButton = document.getElementById("website-save-draft-button");
     const websitePublishButton = document.getElementById("website-publish-button");
     const websitePreviewButton = document.getElementById("website-preview-button");
+    const simpleWebsitePageKeys = new Set(["download", "mobile", "pricing", "support", "terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status"]);
     const websiteSections = [
         ["home", "Home page", [["logoPath","Logo image path"],["logoAltText","Logo alt text"],["fallbackLogoText","Fallback logo text"],["topHeaderText","Top header text"],["supportedLanguageLine","Supported language line"],["windowsCardBadge","Windows card badge"],["windowsCardTitle","Windows card title"],["windowsCardDescription","Windows card description"],["windowsDownloadButtonText","Windows download button text"],["mobileCardBadge","Mobile card badge"],["mobileCardTitle","Mobile card title"],["mobileCardDescription","Mobile card description"],["mobileComingSoonButtonText","Mobile coming soon button text"],["footerCopyrightText","Footer copyright text"],["footerPrivacyLabel","Footer Privacy label"],["footerTermsLabel","Footer Terms label"],["footerRefundsLabel","Footer Refund label"],["footerCancellationLabel","Footer Cancellation label"],["footerSupportLabel","Footer Support label"],["footerPricingLabel","Footer Pricing label"]]],
-        ["download", "Desktop app / Download", [["pageTitle","Page title"],["introText","Intro text"],["downloadButtonText","Download button text"],["currentVersionLabel","Current version label text"],["safetySupportNote","Safety/support note text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
-        ["mobile", "Mobile app / Coming soon", [["pageTitle","Page title"],["introText","Intro text"],["androidComingSoonText","Android coming soon text"],["iosComingSoonText","iOS coming soon text"],["emailSupportCtaText","Email/support CTA text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
-        ["pricing", "Pricing", [["pageTitle","Page title"],["introText","Intro text"],["freePlanText","Free plan text"],["premiumPlanText","Premium plan text"],["trialText","Trial text"],["paddleLiveCheckoutDisclaimerText","Paddle/live checkout disclaimer text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
-        ["support", "Support", [["pageTitle","Page title"],["introText","Intro text"],["supportEmailText","Support email text"],["responseTimeText","Response time text"],["accountDeletionSupportText","Account/deletion support text"],["billingSupportText","Billing support text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
-        ["terms", "Legal - Terms", [["pageTitle","Page title"],["effectiveDate","Effective date"],["intro","Intro"],["accountUseTerms","Account/use terms"],["aiLearningDisclaimer","AI/learning disclaimer"],["billingSubscriptionTermsPlaceholder","Billing/subscription terms placeholder"],["contactSupportText","Contact/support text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
-        ["privacy", "Legal - Privacy Policy", [["pageTitle","Page title"],["effectiveDate","Effective date"],["intro","Intro"],["dataCollected","Data collected"],["audioTranscriptionText","Audio/transcription text"],["aiProcessingText","AI processing text"],["accountPaymentDataText","Account/payment data text"],["dataRetentionDeletionText","Data retention/deletion text"],["contactText","Contact text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
-        ["refunds", "Legal - Refund Policy", [["pageTitle","Page title"],["effectiveDate","Effective date"],["refundEligibilityText","Refund eligibility text"],["howToRequestRefundText","How to request refund text"],["paddlePaymentProviderNote","Paddle/payment provider note"],["contactText","Contact text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
-        ["cancellation", "Legal - Cancellation Policy", [["pageTitle","Page title"],["effectiveDate","Effective date"],["howToCancelText","How to cancel text"],["accessUntilPeriodEndText","Access until period end text"],["supportText","Support text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
-        ["seller", "Legal - Seller / Company details", [["pageTitle","Page title"],["sellerNameLegalEntityPlaceholder","Seller name/legal entity placeholder"],["addressPlaceholder","Address placeholder"],["contactEmail","Contact email"],["taxVatCompanyRegistrationPlaceholder","Tax/VAT/company registration placeholder"],["paddleLiveReviewNote","Important Paddle live review note"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
-        ["aiData", "Legal - AI / Data disclosure", [["pageTitle","Page title"],["aiTutorDisclosureText","AI tutor disclosure text"],["voiceTranscriptionDisclosureText","Voice/transcription disclosure text"],["dataProcessingText","Data processing text"],["userControlDeletionText","User control/deletion text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
-        ["status", "Legal - Platform availability / service status", [["pageTitle","Page title"],["desktopAvailabilityText","Desktop availability text"],["mobileComingSoonText","Mobile coming soon text"],["serviceAvailabilityDisclaimer","Service availability disclaimer"],["supportContactText","Support contact text"],["seoTitle","SEO title"],["seoDescription","SEO description"]]],
-        ["design", "Design", [["headerBackgroundColor","Header background color"],["footerBackgroundColor","Footer background color"],["mainTextColor","Main text color"],["headerTextColor","Header text color"],["mainFontFamily","Main font family"],["baseFontSizePx","Base font size"],["headerFontWeight","Header font weight"],["buttonBorderRadiusPx","Button border radius"],["cardTextStyle","Card text style"]], true]
-    ].map(([key, label, fields, design]) => ({ key, label, fields, design: Boolean(design) }));
+        ["download", "Desktop app / Download"],
+        ["mobile", "Mobile app / Coming soon"],
+        ["pricing", "Pricing"],
+        ["support", "Support"],
+        ["terms", "Legal - Terms"],
+        ["privacy", "Legal - Privacy Policy"],
+        ["refunds", "Legal - Refund Policy"],
+        ["cancellation", "Legal - Cancellation Policy"],
+        ["seller", "Legal - Seller / Company details"],
+        ["aiData", "Legal - AI / Data disclosure"],
+        ["status", "Legal - Platform availability / service status"]
+    ].map(([key, label, fields]) => ({ key, label, fields: fields || [["pageTitle", "Page title"], ["bodyMarkdown", "Body markdown"], ["seoTitle", "SEO title"], ["seoDescription", "SEO description"]], simple: simpleWebsitePageKeys.has(key) }));
+    const websiteLegacyBodyFields = {
+        download: [["introText"], ["currentVersionLabel", "Current version"], ["safetySupportNote", "Safety and support"]],
+        mobile: [["introText"], ["androidComingSoonText", "Android"], ["iosComingSoonText", "iOS"], ["emailSupportCtaText", "Contact"]],
+        pricing: [["introText"], ["freePlanText", "Free plan"], ["premiumPlanText", "Premium plan"], ["trialText", "Trial"], ["paddleLiveCheckoutDisclaimerText", "Checkout status"]],
+        support: [["introText"], ["supportEmailText", "Support email"], ["responseTimeText", "Response time"], ["accountDeletionSupportText", "Accounts and deletion"], ["billingSupportText", "Billing"]],
+        terms: [["effectiveDate", "Effective date"], ["intro"], ["accountUseTerms", "Accounts and use"], ["aiLearningDisclaimer", "AI and learning disclaimer"], ["billingSubscriptionTermsPlaceholder", "Billing and subscriptions"], ["contactSupportText", "Contact"]],
+        privacy: [["effectiveDate", "Effective date"], ["intro"], ["dataCollected", "Data collected"], ["audioTranscriptionText", "Audio and transcription"], ["aiProcessingText", "AI processing"], ["accountPaymentDataText", "Account and payment data"], ["dataRetentionDeletionText", "Retention and deletion"], ["contactText", "Contact"]],
+        refunds: [["effectiveDate", "Effective date"], ["refundEligibilityText", "Refund eligibility"], ["howToRequestRefundText", "How to request a refund"], ["paddlePaymentProviderNote", "Payment provider note"], ["contactText", "Contact"]],
+        cancellation: [["effectiveDate", "Effective date"], ["howToCancelText", "How to cancel"], ["accessUntilPeriodEndText", "Access until period end"], ["supportText", "Support"]],
+        seller: [["sellerNameLegalEntityPlaceholder", "Seller name / legal entity"], ["addressPlaceholder", "Address"], ["contactEmail", "Contact email"], ["taxVatCompanyRegistrationPlaceholder", "Tax, VAT, company registration"], ["paddleLiveReviewNote", "Paddle live review note"]],
+        aiData: [["aiTutorDisclosureText", "AI tutor disclosure"], ["voiceTranscriptionDisclosureText", "Voice and transcription"], ["dataProcessingText", "Data processing"], ["userControlDeletionText", "User control and deletion"]],
+        status: [["desktopAvailabilityText", "Desktop availability"], ["mobileComingSoonText", "Mobile"], ["serviceAvailabilityDisclaimer", "Service availability"], ["supportContactText", "Support"]]
+    };
     let websiteContentDraft = { pages: {}, design: {} };
     let activeWebsiteSection = "home";
     function setWebsiteMessage(message) { websiteMessageElement.textContent = message || ""; }
@@ -854,15 +867,14 @@
     const websiteSectionGroups = [
         { label: "Main", keys: ["home", "download", "mobile"] },
         { label: "Commercial", keys: ["pricing", "support"] },
-        { label: "Legal", keys: ["terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status"] },
-        { label: "Advanced", keys: ["design"], advanced: true }
+        { label: "Legal", keys: ["terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status"] }
     ];
     function renderWebsiteTabs() {
         websiteSectionTabs.innerHTML = "";
         const sectionsByKey = new Map(websiteSections.map(section => [section.key, section]));
         websiteSectionGroups.forEach(group => {
             const groupElement = document.createElement("section");
-            groupElement.className = `website-section-group${group.advanced ? " website-section-group-advanced" : ""}`;
+            groupElement.className = "website-section-group";
             const groupHeading = document.createElement("h4");
             groupHeading.textContent = group.label;
             groupElement.appendChild(groupHeading);
@@ -874,7 +886,7 @@
                 const button = document.createElement("button");
                 button.type = "button";
                 button.textContent = section.label;
-                button.className = `website-section-tab${section.design ? " website-section-tab-advanced" : ""}`;
+                button.className = "website-section-tab";
                 button.setAttribute("aria-selected", section.key === activeWebsiteSection ? "true" : "false");
                 button.addEventListener("click", () => { collectCurrentWebsiteSection(); activeWebsiteSection = section.key; renderWebsiteEditor(); });
                 groupButtons.appendChild(button);
@@ -883,34 +895,79 @@
             websiteSectionTabs.appendChild(groupElement);
         });
     }
+    function getLegacyWebsiteBodyMarkdown(pageKey, values) {
+        return (websiteLegacyBodyFields[pageKey] || []).map(([key, heading]) => {
+            const value = (values[key] || "").trim();
+            if (!value) return "";
+            return heading ? `## ${heading}\n\n${value}` : value;
+        }).filter(Boolean).join("\n\n");
+    }
+    function createWebsiteField(key, label, value, options = {}) {
+        const field = document.createElement("div");
+        field.className = `field website-field${options.long ? " website-field-long" : " website-field-compact"}`;
+        const labelElement = document.createElement("label");
+        labelElement.htmlFor = `website-field-${key}`;
+        labelElement.textContent = label;
+        const input = document.createElement(options.textarea ? "textarea" : "input");
+        input.id = `website-field-${key}`;
+        input.dataset.websiteKey = key;
+        if (options.textarea) input.rows = options.rows || 4; else input.type = options.number ? "number" : "text";
+        input.value = value ?? "";
+        field.append(labelElement, input);
+        return field;
+    }
+    function insertMarkdownAtCursor(textarea, before, after = "") {
+        const start = textarea.selectionStart || 0;
+        const end = textarea.selectionEnd || 0;
+        const selected = textarea.value.slice(start, end);
+        const insertion = `${before}${selected || "text"}${after}`;
+        textarea.setRangeText(insertion, start, end, "end");
+        textarea.focus();
+        textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    function createMarkdownToolbar(textarea) {
+        const toolbar = document.createElement("div");
+        toolbar.className = "website-markdown-toolbar";
+        [["Heading", "# ", ""], ["Subheading", "## ", ""], ["Bold", "**", "**"], ["Italic", "_", "_"], ["Bullet list", "- ", ""], ["Numbered list", "1. ", ""], ["Link", "[", "](https://example.com)"], ["Quote / Note", "> ", ""], ["Horizontal rule", "\n---\n", ""]].forEach(([label, before, after]) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = label;
+            button.addEventListener("click", () => label === "Horizontal rule" ? insertMarkdownAtCursor(textarea, before, "") : insertMarkdownAtCursor(textarea, before, after));
+            toolbar.appendChild(button);
+        });
+        return toolbar;
+    }
+    function renderSimpleWebsiteEditor(section, values) {
+        websiteEditorFields.classList.add("website-simple-editor-fields");
+        websiteEditorFields.appendChild(createWebsiteField("pageTitle", "Page title", values.pageTitle, { long: true }));
+        const bodyField = createWebsiteField("bodyMarkdown", "Body markdown", values.bodyMarkdown || getLegacyWebsiteBodyMarkdown(section.key, values), { long: true, textarea: true, rows: 18 });
+        const bodyTextarea = bodyField.querySelector("textarea");
+        bodyField.insertBefore(createMarkdownToolbar(bodyTextarea), bodyTextarea);
+        websiteEditorFields.appendChild(bodyField);
+        const seoSection = document.createElement("section");
+        seoSection.className = "website-seo-section website-field-long";
+        const heading = document.createElement("h4");
+        heading.textContent = "SEO";
+        const grid = document.createElement("div");
+        grid.className = "website-seo-grid";
+        grid.append(createWebsiteField("seoTitle", "SEO title", values.seoTitle), createWebsiteField("seoDescription", "SEO description", values.seoDescription, { textarea: true, rows: 3, long: true }));
+        seoSection.append(heading, grid);
+        websiteEditorFields.appendChild(seoSection);
+    }
     function renderWebsiteEditor() {
         const section = websiteSections.find(x => x.key === activeWebsiteSection) || websiteSections[0];
         websiteEditorHeading.textContent = section.label;
         websiteEditorFields.innerHTML = "";
-        websiteEditorFields.classList.toggle("website-design-fields", Boolean(section.design));
+        websiteEditorFields.className = "website-editor-fields";
         renderWebsiteTabs();
-        const values = section.design ? (websiteContentDraft.design || {}) : ((websiteContentDraft.pages || {})[section.key] || {});
+        const values = ((websiteContentDraft.pages || {})[section.key] || {});
+        if (section.simple) { renderSimpleWebsiteEditor(section, values); return; }
         section.fields.forEach(([key, label]) => {
-            const field = document.createElement("div");
             const isLong = /description|intro|text|terms|disclaimer|collected|processing|retention|note|placeholder/i.test(key);
-            field.className = `field website-field${isLong ? " website-field-long" : " website-field-compact"}`;
-            const labelElement = document.createElement("label");
-            labelElement.htmlFor = `website-field-${key}`;
-            labelElement.textContent = label;
-            const input = document.createElement(isLong ? "textarea" : "input");
-            input.id = `website-field-${key}`;
-            input.dataset.websiteKey = key;
-            if (input.tagName === "TEXTAREA") {
-                input.rows = /terms|privacy|refund|cancel|support|pricing|disclosure|data|processing|retention|placeholder/i.test(`${activeWebsiteSection} ${key}`) ? 6 : 4;
-            } else {
-                input.type = /Px|Weight/.test(key) ? "number" : "text";
-            }
-            input.value = values[key] ?? "";
-            field.append(labelElement, input);
-            websiteEditorFields.appendChild(field);
+            websiteEditorFields.appendChild(createWebsiteField(key, label, values[key], { long: isLong, textarea: isLong, rows: 4, number: /Px|Weight/.test(key) }));
         });
     }
-    function collectCurrentWebsiteSection() { const section = websiteSections.find(x => x.key === activeWebsiteSection); if (!section) return; const target = section.design ? (websiteContentDraft.design ||= {}) : ((websiteContentDraft.pages ||= {})[section.key] ||= {}); websiteEditorFields.querySelectorAll("[data-website-key]").forEach(input => { const key = input.dataset.websiteKey; target[key] = /Px|Weight/.test(key) ? Number(input.value) : input.value; }); }
+    function collectCurrentWebsiteSection() { const section = websiteSections.find(x => x.key === activeWebsiteSection); if (!section) return; const target = ((websiteContentDraft.pages ||= {})[section.key] ||= {}); websiteEditorFields.querySelectorAll("[data-website-key]").forEach(input => { const key = input.dataset.websiteKey; target[key] = /Px|Weight/.test(key) ? Number(input.value) : input.value; }); }
     function fillWebsiteForm(content) { websiteContentDraft = JSON.parse(JSON.stringify(content || { pages: {}, design: {} })); renderWebsiteEditor(); }
     async function readWebsiteResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
     async function loadWebsiteContent() { setWebsiteError(""); setWebsiteMessage("Loading Website editor..."); try { const response = await fetch(ApiPaths.websiteContent, { method: "GET", headers: getAdminHeaders() }); const payload = await readWebsiteResponse(response, "Unable to load Website content."); fillWebsiteForm(payload.draft || payload.active); websiteHasLoadedOnce = true; setWebsiteMessage("Draft loaded."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to load Website content."); } }
