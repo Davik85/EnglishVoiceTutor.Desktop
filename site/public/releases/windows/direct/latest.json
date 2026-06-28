@@ -1,0 +1,10 @@
+{
+  "version": "0.1.36-tester.30",
+  "channel": "tester",
+  "installerRelativeUrl": "LanguageVoiceTutorSetup-0.1.36-tester.30.exe",
+  "installerFileName": "LanguageVoiceTutorSetup-0.1.36-tester.30.exe",
+  "backendBaseUrl": "https://api.languagevoicetutor.com",
+  "minimumSupportedVersion": "0.1.36-tester.30",
+  "updateMode": "manual-confirmation",
+  "installerSha256": "Release details load from the public manifest."
+}
