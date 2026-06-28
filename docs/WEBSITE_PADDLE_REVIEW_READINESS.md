@@ -1,196 +1,119 @@
-# Website Paddle Review Readiness
+# Website Paddle review readiness
 
-Review date: 2026-06-25.
+Review date: 2026-06-28.
 
-Public website: `https://languagevoicetutor.com`.
-Production API reference only: `https://api.languagevoicetutor.com`.
+## Current public website status
 
-## Scope and non-goals
+Public site: `https://languagevoicetutor.com`.
 
-This is a documentation-only audit of the public website source currently present in the repository, focused on what should be visible before requesting or relying on Paddle domain review for paid subscription use.
+The current generated public website is Paddle-review-polished and ready for final owner/legal review. This is not final legal advice and does not enable live Paddle.
 
-Non-goals for this task:
+Public generated pages include:
 
-- Do not enable production/live Paddle.
-- Do not change backend environment variables or deployment configuration.
-- Do not add real Paddle API keys, price IDs, client-side tokens, webhook secrets, customer IDs, transaction IDs, raw payloads, signatures, OpenAI keys, JWT keys, connection strings, or other secrets.
-- Do not change billing behavior, entitlement behavior, Desktop behavior, database migrations, deployment scripts, or production configuration.
-- Do not provide final legal advice. Legal/policy page copy should be treated as owner/legal review draft material only.
+- `index.html`
+- `download.html`
+- `mobile.html`
+- `pricing.html`
+- `support.html`
+- `terms.html`
+- `privacy.html`
+- `refunds.html`
+- `cancellation.html`
+- `seller.html`
+- `ai-data.html`
+- `status.html`
 
+The home page shows the logo, supported study language flags, a Windows desktop app card, and safe mobile wording. It must not claim mobile apps are currently available and must not say “Mobile version coming soon”. The approved wording is: “Android and iOS apps are planned but are not currently available.”
 
-## Static website deployment path status
+The shared footer has two rows:
 
-Known source folder: public website source files live under `site/public/`. Do not modify `site/public` content as part of a deployment-path audit.
+- Primary: Privacy Policy, Terms of Use, Refund Policy, Cancellation, Support, Pricing.
+- Secondary: Seller / Company Details, AI & Data Disclosure, Service Status.
 
-Known upload helper: `scripts/upload-static-site.ps1` uploads only the top-level files from `site/public` to the caller-provided `-RemotePath`. The helper validates that `-RemotePath` looks like an absolute Linux path, creates that directory, and copies files there, but it does not discover nginx configuration and does not prove that the supplied path is the public HTTPS web root.
+`seller.html`, `ai-data.html`, and `status.html` are part of the public site and are linked from the footer.
 
-Known Windows release path: Windows direct release files are a separate flow from the public website pages. Existing repository documentation records `/var/www/languagevoicetutor/releases/windows/direct` as the Windows direct release folder served through `/releases/windows/direct/`; do not mix installer/manifest uploads with website-page uploads.
+## Website CMS source and flow
 
-Known repository-documented public website path: `docs/COMMAND_PLAYBOOK.md` records `/var/www/languagevoicetutor/site` as the public website nginx root and explicitly warns not to upload website files to `/var/www/languagevoicetutor/`. Treat `/var/www/languagevoicetutor` as an unsafe guessed parent path for static website uploads.
+The Website CMS exists in the Admin Shell under **Website**. It is intentionally simple and informational only, not a full CMS. It is Super Admin / Bootstrap Admin protected and JSON/file-based.
 
-Unknown/needs verification: actual nginx web root for `languagevoicetutor.com` must be re-verified on the server before any future upload because repository notes can become stale and the upload helper accepts any syntactically valid absolute `-RemotePath`. Do not upload static site files to a guessed `-RemotePath`, including `/var/www/languagevoicetutor`, just because that directory exists or because a previous copy command succeeded.
+- Content storage: `site/content/website-content.json`
+- Content model: active and draft content in the JSON document
+- Public static output: `site/public`
 
-Recommended safe next manual verification command, to run manually only by an operator with server access before any upload:
+Flow:
 
-```powershell
-ssh lvt-server "sudo nginx -T 2>/dev/null | sed -n '/server_name languagevoicetutor.com/,/server_name/p' | grep -E 'server_name|^[[:space:]]*root |^[[:space:]]*alias '"
+1. Admin Website tab loads draft/active content.
+2. **Save draft** writes draft content.
+3. **Preview** renders the selected page preview without publishing.
+4. **Publish / Make active** promotes draft/active content and renders static HTML files.
+
+The normal-page editor is simplified to Page title, Body markdown, SEO title, and SEO description. Home remains structured because it has landing cards/assets. Design is not treated as a normal Super Admin editing page.
+
+Markdown rendering supports headings, bold, italic, bullet lists, numbered lists, markdown links, plain safe URLs, plain emails, and bare domains such as `Paddle.com`. Unsafe schemes such as `javascript:`, `data:`, and `vbscript:` must remain rejected or escaped.
+
+Admin Website CMS endpoints remain authenticated/authorized but no longer consume the normal admin read/write rate limit because legal text editing previously caused `RateLimitExceeded`.
+
+## Download page readiness
+
+The Windows direct release manifest is:
+
+```text
+https://languagevoicetutor.com/releases/windows/direct/latest.json
 ```
 
-This command is read-only and is intended to print only nginx `server_name`, `root`, and `alias` lines for the public site context; it must be reviewed before choosing any `scripts/upload-static-site.ps1 -RemotePath` value.
+Current public tester release:
 
-## Current website files/routes found in the repo
+- `version`: `0.1.36-tester.30`
+- `installerFileName`: `LanguageVoiceTutorSetup-0.1.36-tester.30.exe`
+- `backendBaseUrl`: `https://api.languagevoicetutor.com`
+- `updateMode`: `manual-confirmation`
 
-The public website appears to be maintained as static files under `site/public/`:
+The download page is manifest-driven and also useful without JavaScript. When the local/public manifest is available, the static page shows current release details instead of only showing Loading or Unavailable. It keeps `download.js` and `/releases/windows/direct/latest.json` support.
 
-| Repo path | Externally expected route/path | Current purpose |
-| --- | --- | --- |
-| `site/public/index.html` | `/` | Landing page with Windows panel, planned mobile panel, footer links, and mail contact. |
-| `site/public/download.html` | `/download.html` | Private tester Windows download page with app description, release details, installer manifest loading, SmartScreen warning, and support email. |
-| `site/public/download.js` | `/download.js` | Loads `/releases/windows/direct/latest.json`, validates the installer filename/version metadata, and enables the Windows download link. |
-| `site/public/styles.css` | `/styles.css` | Landing/download page styling. |
-| `site/public/assets/images/landing/windows-desktop.webp` | `/assets/images/landing/windows-desktop.webp` | Landing image for Windows desktop app. |
-| `site/public/assets/images/landing/mobile.webp` | `/assets/images/landing/mobile.webp` | Landing image for planned mobile apps. |
-| `site/public/assets/images/landing/README.md` | not public page content | Image source/asset note. |
-| `scripts/upload-static-site.ps1` | deployment helper, not a route | Uploads files from `site/public` to a static website folder. |
+Required static fallback text:
 
-Related but not public marketing site source:
+- “Current Windows tester release is available through the Download for Windows button.”
+- “If release details do not load automatically, please contact [support@languagevoicetutor.com](mailto:support@languagevoicetutor.com).”
 
-- `backend/EnglishVoiceTutor.Api/wwwroot/admin/` contains backend Admin UI static files, not the public Paddle review site.
-- Existing Paddle/readiness planning docs include `docs/PADDLE_LIVE_READINESS_REVIEW.md` and `docs/paddle-production-readiness-checklist.md`, but those are internal planning documents rather than public website pages.
+Windows direct release upload is separate from backend deploy and static website publish. Use `scripts/upload-windows-direct-release.ps1`; do not manually `scp` installer files when the script exists. After upload, verify `latest.json`, `installerFileName`, `backendBaseUrl`, installer hash, and that the download page button downloads the same installer.
 
-## Currently implemented public website pages/sections
+## Paddle/legal readiness
 
-### `/` landing page
+Live Paddle is not enabled yet. Do not change production Paddle environment values during website review. Do not place real Paddle API keys, price IDs, client-side tokens, webhook secrets, raw payloads, signatures, customer IDs, transaction IDs, JWT secrets, database URLs, OpenAI keys, or other secrets in docs or public pages.
 
-Implemented sections/content:
+Paddle remains behind the backend/provider adapter. Desktop must not directly decide Premium and must not directly integrate with Paddle. Backend remains the source of truth for plan, subscription, entitlement, usage, and limits. Entitlement remains the source of Premium access; `PaymentEntity` is diagnostic payment history only.
 
-- Product name: Language Voice Tutor.
-- Windows app panel marked `Available for testers`.
-- Short product description: practice real-life language lessons by text or voice on desktop.
-- Mobile app panel marked `In development`, with Android/iOS planned.
-- Footer copyright.
-- Footer links labeled Privacy Policy and Terms of Use, but they point to in-page anchors (`#privacy-policy`, `#terms-of-use`) that do not currently exist in the page.
-- Footer contact link to `support@languagevoicetutor.com`.
+Website/legal pages prepared for review:
 
-### `/download.html` tester download page
+- Pricing / Subscription terms
+- Terms of Use
+- Privacy Policy
+- Refund Policy
+- Cancellation Policy
+- Support
+- Seller / Company Details
+- AI & Data Disclosure
+- Platform Availability / Service Status
+- Download page
 
-Implemented sections/content:
+Legal texts are product/legal drafts and must not be described as final legal advice. Seller details are public business details only; do not publish passport/private personal data. `Paddle.com` bare domains are clickable via markdown/autolink rendering. Download page, footer, and legal/support pages should be considered Paddle-review-ready pending final owner/legal review.
 
-- Private tester download label.
-- Product title and short Windows desktop/AI tutor description.
-- Tester-only note.
-- Current version/download button driven by manifest loading.
-- Release details: version, channel, installer filename, size, SHA-256.
-- SmartScreen warning because code signing is deferred.
-- Support email link to `support@languagevoicetutor.com`.
+## Release-readiness status
 
-### Release manifest/download path expected by JavaScript
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.74`.
+- Website: public pages generated and Paddle-review polish completed.
+- Download: current Windows tester release visible without JavaScript and manifest-driven with JavaScript.
+- Windows installer: current public tester release `0.1.36-tester.30`.
+- Billing: Paddle live not enabled yet.
+- Legal: legal/support/seller/AI/status pages ready for owner/legal final review.
 
-`download.js` expects:
+Remaining release steps:
 
-- `/releases/windows/direct/latest.json`
-- installer files under `/releases/windows/direct/`
+1. Final manual website review in incognito.
+2. Final owner/legal text review.
+3. Final Windows installer smoke.
+4. Paddle live readiness checklist.
+5. Only after approval: production Paddle environment, token, webhook, and price setup.
+6. Microsoft Store preparation later, not claimed as currently available.
 
-Those release files are expected externally but are not part of the static source files inspected for this documentation task.
-
-## Current externally expected pages/sections for Paddle review
-
-Paddle domain review commonly expects a public website to make the paid product, seller, support path, and customer terms understandable before customers pay. For this project, the public site should expose or link to owner/legal-reviewed drafts for:
-
-- Clear product/service description.
-- Pricing or subscription terms, including `<PREMIUM_PRICE_AND_BILLING_PERIOD>` once approved.
-- Key features/deliverables included with purchase.
-- Terms of Service / Terms and Conditions.
-- Privacy Policy.
-- Refund Policy.
-- Cancellation policy / how to cancel.
-- Support contact path, using `<SUPPORT_EMAIL>` and optionally `<SUPPORT_PHONE_OR_OWNER_DECISION>`.
-- Company/legal seller information placeholder, using `<LEGAL_SELLER_NAME>`.
-- Supported platforms.
-- AI/data/privacy disclosures.
-- Trial/free/premium explanation.
-
-## Gaps for Paddle review
-
-| Need | Current status | Gap |
-| --- | --- | --- |
-| Clear product/service description | Partial | Present as short marketing copy, but no fuller public explanation of how lessons, voice/text practice, accounts, or AI tutor behavior work. |
-| Pricing/subscription terms | Missing | No public price, renewal period, billing cadence, taxes, or subscription terms. Use `<PREMIUM_PRICE_AND_BILLING_PERIOD>` until owner-approved. |
-| Included features/deliverables | Partial | Windows download and AI tutor practice are described, but Premium deliverables and limitations are not listed. |
-| Terms of Service / Terms and Conditions | Missing | Footer has a `Terms of Use` anchor link, but no actual terms route/section exists. |
-| Privacy Policy | Missing | Footer has a `Privacy Policy` anchor link, but no actual privacy route/section exists. |
-| Refund Policy | Missing | No refund terms or support process are visible. |
-| Cancellation policy/how to cancel | Missing | No public explanation of subscription renewal cancellation or account/support flow. |
-| Support contact path | Partial | `support@languagevoicetutor.com` is visible, but no support page or billing-specific support expectations are published. |
-| Company/legal seller information | Missing | No seller/legal entity placeholder or address/owner-reviewed business information. |
-| Supported platforms | Partial | Windows available for testers and mobile planned are visible; no formal supported OS/version/platform statement. |
-| AI/data/privacy disclosures | Missing | The site mentions an AI tutor but does not explain AI processing, account data, voice/audio handling, retention boundaries, or third-party providers in owner/legal-reviewed terms. |
-| Trial/free/premium explanation | Missing | No public explanation of private tester access, free limits, trial behavior, Premium benefits, or what changes after purchase. |
-| Footer legal links | Broken/incomplete | Current `#privacy-policy` and `#terms-of-use` links do not target implemented sections. |
-
-## Recommended minimal page map
-
-Keep the first public review iteration small and static. Suggested minimum pages/routes:
-
-| Route | Purpose |
-| --- | --- |
-| `/` | Public overview with product description, core features, supported platforms, AI disclosure summary, clear links to pricing, download, legal, refund, cancellation, and support pages. |
-| `/pricing.html` | Premium subscription overview with `<PREMIUM_PRICE_AND_BILLING_PERIOD>`, renewal/cancellation summary, free/trial limits, and included deliverables. Owner/legal review required. |
-| `/download.html` | Tester or public Windows download page. If still private, keep `Private tester download` wording and avoid public paid-launch claims. |
-| `/terms.html` | Terms of Service / Terms and Conditions draft for owner/legal review. Include `<LEGAL_SELLER_NAME>`. |
-| `/privacy.html` | Privacy Policy draft for owner/legal review, including account data, lesson data, voice/audio processing, AI provider disclosure, payment processor disclosure, support data, retention/deletion contact path, and children/minors stance. |
-| `/refunds.html` | Refund Policy draft for owner/legal review, including how to request help through `<SUPPORT_EMAIL>`. |
-| `/cancellation.html` | Cancellation/how-to-cancel page explaining customer cancellation path, cancellation-at-period-end behavior if that remains the product decision, and support escalation through `<SUPPORT_EMAIL>`. |
-| `/support.html` | Support page with `<SUPPORT_EMAIL>`, `<SUPPORT_PHONE_OR_OWNER_DECISION>`, expected response window if owner-approved, and billing/account/download issue categories. |
-| `/company.html` or footer block | Seller/legal information with `<LEGAL_SELLER_NAME>` and any owner-approved address/tax/business registration details. |
-
-A single-page version may be acceptable for early review only if all legal/support/pricing sections are real, linkable, and visible. Separate pages are clearer and easier to review.
-
-## Unsafe claims to avoid
-
-Avoid publishing claims that are not yet operationally or legally approved, including:
-
-- `Paddle live payments are enabled` or `production billing is ready` before owner-approved live configuration and legal/support review.
-- `Available on iOS/Android` while mobile apps are only planned/in development.
-- `Certified`, `guaranteed fluency`, `guaranteed results`, or similar outcome guarantees.
-- `Unlimited` usage unless backend limits, costs, and abuse controls truly support it.
-- `No data is stored`, `audio is never processed by third parties`, or `100% private` unless verified and approved against actual backend, AI, logging, analytics, payment, and support flows.
-- `Refunds always granted`, `cancel anytime with immediate refund`, or other refund/cancellation promises unless owner/legal and operations approve them.
-- `Secure payment handled by us` wording that confuses Paddle/payment processor responsibilities.
-- Any exact pricing, tax, billing period, refund window, support SLA, legal entity, address, phone number, or compliance statement before owner approval.
-- Any secret-bearing examples, transaction IDs, customer IDs, webhook payloads, signatures, API keys, OpenAI keys, JWT keys, connection strings, or production environment values.
-
-## First implementation slices after this documentation task
-
-1. Add static legal/support placeholder pages without enabling Paddle: `terms.html`, `privacy.html`, `refunds.html`, `cancellation.html`, `support.html`, and optionally `pricing.html`/`company.html`.
-2. Fix footer links in `index.html` to point to real pages once those pages exist; mirror the legal/support links on `download.html`.
-3. Draft owner/legal-review copy using only placeholders: `<LEGAL_SELLER_NAME>`, `<SUPPORT_EMAIL>`, `<SUPPORT_PHONE_OR_OWNER_DECISION>`, and `<PREMIUM_PRICE_AND_BILLING_PERIOD>`.
-4. Add a concise pricing/free/trial/Premium section that does not contain live Paddle IDs or enable checkout.
-5. Add an AI/data disclosure summary that accurately describes desktop-to-backend-to-AI processing at a high level without exposing internal secrets or raw payloads.
-6. Add a static-site smoke check that verifies public legal/pricing/support links exist and do not point to missing anchors.
-7. Run a final owner/legal/support review before any live Paddle domain submission or public paid launch claims.
-
-## Static-site smoke test
-
-Run `python3 tools/test_static_site_paddle_review_pages.py` before uploading the public site. The check verifies the Paddle review-readiness pages and links under `site/public/`, required owner/legal placeholders, absence of live checkout wiring, absence of obvious secret-like identifiers, and absence of paid-production/mobile-availability claims.
-
-## Future CMS-managed website content planning
-
-
-- Static review-readiness pages exist for `pricing.html`, `terms.html`, `privacy.html`, `refunds.html`, `cancellation.html`, and `support.html` and remain the actual public website rendering source.
-- Production public website root is confirmed as `/var/www/languagevoicetutor/site`. The accidental upload to `/var/www/languagevoicetutor/` was quarantined at `/var/www/languagevoicetutor/_mistaken_static_upload_20260625`.
-- Backend release `0.1.35-backend.57` is deployed, with `/health` and `/api/health/database` returning `200 Healthy` after deployment. Production smoke verified publish copies `DraftBody` to internal `PublishedBody` and sets `PublishedAtUtc`; smoke data was cleaned up, and rollback/unpublish is not implemented yet.
-- Live Paddle remains disabled. No checkout links, checkout buttons, live Paddle identifiers, Paddle client token, webhook secret, or paid production behavior are enabled.
-- Final public seller, legal, support, refund, cancellation, privacy, terms, and pricing values still require owner/legal approval.
-
-## Secret and production-change confirmation
-
-This audit document intentionally contains no real Paddle API keys, price IDs, client-side tokens, webhook secrets, customer IDs, transaction IDs, raw payloads, signatures, OpenAI keys, JWT keys, connection strings, or other secrets.
-
-This task did not enable production/live Paddle, did not change backend environment variables, and did not change billing behavior, entitlement behavior, Desktop behavior, database migrations, deployment scripts, or production configuration.
-
-## Static legal/support shell added
-
-A minimal static website shell has been added under `site/public/` for Paddle review readiness: `pricing.html`, `terms.html`, `privacy.html`, `refunds.html`, `cancellation.html`, and `support.html`. The landing and download pages now link to these static pages.
-
-Remaining owner/legal placeholders still require review before treating the copy as final policy or enabling paid production billing: `<LEGAL_SELLER_NAME>`, `<SUPPORT_PHONE_OR_OWNER_DECISION>`, and `<PREMIUM_PRICE_AND_BILLING_PERIOD>`. The shell does not add Paddle keys, Paddle identifiers, checkout buttons, backend configuration, deployment changes, or production billing behavior.
+Do not state that the product is fully public production-ready. The current Windows release remains a controlled tester/direct Windows release, not a broad public production launch, and not broad public production readiness. Production/live Paddle readiness remains deferred.
