@@ -153,19 +153,28 @@ public sealed class WebsiteContentServiceRenderingTests
     }
 
     [Fact]
-    public async Task MarkdownLinksSafeUrlsAndEmailsAndRejectsUnsafeSchemes()
+    public async Task MarkdownLinksSafeUrlsEmailsAndBareDomainsAndRejectsUnsafeSchemes()
     {
         using var fixture = new WebsiteContentServiceFixture();
         var service = fixture.CreateService();
         var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
-        content.Pages["status"]["bodyMarkdown"] = "Visit https://example.com/docs. Email support@languagevoicetutor.com. [Contact](mailto:support@languagevoicetutor.com) [Bad](javascript:alert(1)) <script>alert(1)</script>";
+        content.Pages["status"]["bodyMarkdown"] = "Visit https://example.com/docs. Email support@languagevoicetutor.com. [Contact](mailto:support@languagevoicetutor.com) [Docs](https://example.com/help) Paddle.com www.paddle.com developer.paddle.com support.paddle.com Paddle.com. Paddle.com, Paddle.com) [Bad](javascript:alert(1)) javascript:alert(1) <script>alert(1)</script>";
 
         var preview = await service.PreviewAsync(new WebsitePreviewRequest(content, "status"), TestContext.Current.CancellationToken);
 
         Assert.Contains("<a href=\"https://example.com/docs\" rel=\"noopener noreferrer\">https://example.com/docs</a>.", preview.Html);
         Assert.Contains("<a href=\"mailto:support@languagevoicetutor.com\">support@languagevoicetutor.com</a>", preview.Html);
         Assert.Contains("<a href=\"mailto:support@languagevoicetutor.com\">Contact</a>", preview.Html);
+        Assert.Contains("<a href=\"https://example.com/help\" rel=\"noopener noreferrer\">Docs</a>", preview.Html);
+        Assert.Contains("<a href=\"https://paddle.com/\" rel=\"noopener noreferrer\">Paddle.com</a>", preview.Html);
+        Assert.Contains("<a href=\"https://www.paddle.com/\" rel=\"noopener noreferrer\">www.paddle.com</a>", preview.Html);
+        Assert.Contains("<a href=\"https://developer.paddle.com/\" rel=\"noopener noreferrer\">developer.paddle.com</a>", preview.Html);
+        Assert.Contains("<a href=\"https://support.paddle.com/\" rel=\"noopener noreferrer\">support.paddle.com</a>", preview.Html);
+        Assert.Contains("<a href=\"https://paddle.com/\" rel=\"noopener noreferrer\">Paddle.com</a>.", preview.Html);
+        Assert.Contains("<a href=\"https://paddle.com/\" rel=\"noopener noreferrer\">Paddle.com</a>,", preview.Html);
+        Assert.Contains("<a href=\"https://paddle.com/\" rel=\"noopener noreferrer\">Paddle.com</a>)", preview.Html);
         Assert.Contains("Bad", preview.Html);
+        Assert.Contains("javascript:alert(1)", preview.Html);
         Assert.DoesNotContain("href=\"javascript:", preview.Html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("<script>", preview.Html, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("&lt;script&gt;alert(1)&lt;/script&gt;", preview.Html);
