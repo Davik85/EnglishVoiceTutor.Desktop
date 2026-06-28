@@ -39,30 +39,70 @@ Release/tester installed builds are server-only. The production backend URL for 
 
 ## Upload scope
 
-Windows direct-release upload publishes static release files only. It does not deploy the backend, does not run EF migrations, does not upload secrets, does not publish public website HTML/CSS/JS, does not enable live Paddle, and does not make the product broadly public production-ready.
+Windows direct-release upload publishes static release files only. It does not deploy the backend, does not run EF migrations, does not upload secrets, does not publish public website HTML/CSS/JS, does not enable live Paddle, and does not make the product broadly public production-ready. It does not:
 
-Backend deployment, database migrations, static website publish, and Windows direct installer upload are separate flows.
+- deploy the backend;
+- run EF migrations;
+- apply reviewed SQL;
+- publish Website CMS content;
+- publish public website HTML/CSS/JS;
+- upload secrets;
+- enable live Paddle;
+- make the product broadly public production-ready.
 
-## Upload process
+Backend deployment, database migrations, Website CMS content, static website publish, and Windows direct installer upload are separate flows. Do not manually `scp` installer files when `scripts/upload-windows-direct-release.ps1` exists.
 
-Use the Windows direct-release upload helper:
+## Dry-run upload
+
+Use the repository upload helper in dry-run mode first. The helper validates the local direct-release folder, prints the SSH/SCP work it would perform, and does not upload files while `-DryRun` is present.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 0.1.36-tester.30
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 `
+  -ServerHost lvt-server `
+  -ServerUser <ssh-user> `
+  -RemotePath /var/www/languagevoicetutor/releases/windows/direct `
+  -DryRun
 ```
 
-Do not manually `scp` installer files when `scripts/upload-windows-direct-release.ps1` exists.
-
-After upload, verify from a client machine:
+If the release files are in a non-default local directory, pass `-ReleaseDirectory` explicitly:
 
 ```powershell
-$manifest = Invoke-RestMethod -Uri "https://languagevoicetutor.com/releases/windows/direct/latest.json?t=$(Get-Date -Format yyyyMMddHHmmss)"
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 `
+  -ServerHost lvt-server `
+  -ServerUser <ssh-user> `
+  -RemotePath /var/www/languagevoicetutor/releases/windows/direct `
+  -ReleaseDirectory .\artifacts\releases\windows\direct `
+  -DryRun
+```
+
+`<ssh-user>` is an operator-specific SSH account value, not a secret placeholder to commit as a real value.
+
+## Real upload
+
+After the local release has been validated and the dry-run output is reviewed, run the same helper without `-DryRun`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 `
+  -ServerHost lvt-server `
+  -ServerUser <ssh-user> `
+  -RemotePath /var/www/languagevoicetutor/releases/windows/direct
+```
+
+The helper uploads only `latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, and the installer file named by `latest.json` from the local Windows direct-release directory.
+
+## Manifest verification
+
+Verify the public manifest over HTTPS after upload:
+
+```powershell
+$manifest = Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
 $manifest.version
 $manifest.installerFileName
 $manifest.backendBaseUrl
 $manifest.updateMode
-Invoke-WebRequest -Uri "https://languagevoicetutor.com/releases/windows/direct/$($manifest.installerRelativeUrl)" -OutFile "$env:TEMP\$($manifest.installerFileName)"
-Get-FileHash -Path "$env:TEMP\$($manifest.installerFileName)" -Algorithm SHA256
+$manifest.installerRelativeUrl
+$manifest.installerSha256
+$manifest.checksums.sha256
 ```
 
 Confirm:
@@ -71,8 +111,46 @@ Confirm:
 - `installerFileName` is `LanguageVoiceTutorSetup-0.1.36-tester.30.exe` or the matching intended installer;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
 - `updateMode` is `manual-confirmation`;
-- the SHA-256 matches `installerSha256` and `checksums.sha256`;
-- the public download page button downloads the same installer named by the manifest.
+- `installerSha256` and `checksums.sha256` are present and agree with the uploaded installer hash.
+
+## Installer download verification
+
+Download the installer referenced by the manifest from the public site:
+
+```powershell
+$manifest = Invoke-RestMethod -Uri "https://languagevoicetutor.com/releases/windows/direct/latest.json?t=$(Get-Date -Format yyyyMMddHHmmss)"
+$installerPath = Join-Path $env:TEMP $manifest.installerFileName
+Invoke-WebRequest -Uri "https://languagevoicetutor.com/releases/windows/direct/$($manifest.installerRelativeUrl)" -OutFile $installerPath
+Get-Item $installerPath | Select-Object FullName, Length
+```
+
+The downloaded file name must match `installerFileName` in the manifest.
+
+## SHA-256 hash verification
+
+Compare the downloaded installer hash to the manifest and checksum file:
+
+```powershell
+$actualHash = (Get-FileHash -Path $installerPath -Algorithm SHA256).Hash.ToLowerInvariant()
+$expectedHash = ([string]$manifest.installerSha256).ToLowerInvariant()
+$expectedChecksumHash = ([string]$manifest.checksums.sha256).ToLowerInvariant()
+$actualHash
+$expectedHash
+$expectedChecksumHash
+if ($actualHash -ne $expectedHash -or $actualHash -ne $expectedChecksumHash) { throw "Installer SHA-256 does not match manifest values." }
+```
+
+If the hash does not match, do not share the download link. Re-check the local release folder, upload target, and manifest before retrying.
+
+## Download page button verification
+
+Verify the download page resolves and that the page button downloads the same installer named by the manifest:
+
+```powershell
+Invoke-WebRequest https://languagevoicetutor.com/download.html -UseBasicParsing
+```
+
+Then open `https://languagevoicetutor.com/download.html` in a browser, click **Download for Windows**, and confirm the downloaded file name is the same as `$manifest.installerFileName`. The page must keep working as a controlled tester/direct Windows release page, not as a broad public production launch announcement.
 
 ## Download page behavior
 
