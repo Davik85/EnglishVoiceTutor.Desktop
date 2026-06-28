@@ -405,7 +405,8 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         .site-footer { display: flex; min-height: 88px; align-items: center; justify-content: space-between; gap: 20px; padding: 22px clamp(20px, 5vw, 64px); background: var(--footer-background); color: var(--footer-text); }
         .site-footer p { margin: 0; }
         .site-footer__links, .legal-nav { display: flex; flex-wrap: wrap; gap: 10px 18px; }
-        .site-footer__links { gap: 14px 22px; }
+        .site-footer__links { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+        .site-footer__link-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px 18px; }
         .site-footer a { color: var(--footer-link); font-weight: 700; text-decoration-color: rgba(255, 255, 255, 0.45); text-underline-offset: 4px; }
         .page-shell { width: min(920px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0; }
         .hero-card, .details-card, .support-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 16px 45px rgba(64, 49, 30, 0.08); }
@@ -423,7 +424,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         .markdown-content hr { border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0; }
         .markdown-content li { margin-bottom: 0.45rem; }
         .page-shell a { color: var(--accent-dark); }
-        @media (max-width: 760px) { .site-header__inner, .site-footer { align-items: flex-start; flex-direction: column; } .landing-page .landing-shell { grid-template-columns: 1fr; min-height: auto; } .landing-page .app-panel { min-height: 68svh; } .landing-page .app-panel__content { max-height: none; overflow: visible; } }
+        @media (max-width: 760px) { .site-header__inner, .site-footer { align-items: flex-start; flex-direction: column; } .site-footer__links { align-items: flex-start; } .site-footer__link-row { justify-content: flex-start; } .landing-page .landing-shell { grid-template-columns: 1fr; min-height: auto; } .landing-page .app-panel { min-height: 68svh; } .landing-page .app-panel__content { max-height: none; overflow: visible; } }
         @media (max-width: 640px) { .page-shell { width: min(100% - 20px, 920px); padding: 20px 0; } }
 
 """;
@@ -547,7 +548,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
 
     private static string Nav() => "<section class=\"support-card legal-nav\"><a href=\"index.html\">Home</a><a href=\"download.html\">Download</a><a href=\"mobile.html\">Mobile</a><a href=\"pricing.html\">Pricing</a><a href=\"terms.html\">Terms</a><a href=\"privacy.html\">Privacy</a><a href=\"refunds.html\">Refunds</a><a href=\"cancellation.html\">Cancellation</a><a href=\"support.html\">Support</a></section>";
 
-    private static string NavLinks(Dictionary<string, string> h) => $"<nav class=\"site-footer__links\"><a href=\"status.html\">Service Status</a><a href=\"privacy.html\">{E(h["footerPrivacyLabel"])}</a><a href=\"terms.html\">{E(h["footerTermsLabel"])}</a><a href=\"refunds.html\">{E(h["footerRefundsLabel"])}</a><a href=\"cancellation.html\">{E(h["footerCancellationLabel"])}</a><a href=\"support.html\">{E(h["footerSupportLabel"])}</a><a href=\"pricing.html\">{E(h["footerPricingLabel"])}</a></nav>";
+    private static string NavLinks(Dictionary<string, string> h) => $"<nav class=\"site-footer__links\" aria-label=\"Legal and company links\"><div class=\"site-footer__link-row site-footer__link-row--primary\"><a href=\"privacy.html\">{E(h["footerPrivacyLabel"])}</a><a href=\"terms.html\">{E(h["footerTermsLabel"])}</a><a href=\"refunds.html\">{E(h["footerRefundsLabel"])}</a><a href=\"cancellation.html\">{E(h["footerCancellationLabel"])}</a><a href=\"support.html\">{E(h["footerSupportLabel"])}</a><a href=\"pricing.html\">{E(h["footerPricingLabel"])}</a></div><div class=\"site-footer__link-row site-footer__link-row--secondary\"><a href=\"seller.html\">Seller / Company Details</a><a href=\"ai-data.html\">AI &amp; Data Disclosure</a><a href=\"status.html\">Service Status</a></div></nav>";
 
     private static string E(string? s) => WebUtility.HtmlEncode(s ?? string.Empty);
 
