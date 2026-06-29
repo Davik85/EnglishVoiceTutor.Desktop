@@ -16,6 +16,7 @@ Rationale:
 - Preserve backend-owned account, subscription, entitlement, usage, and lesson history through backend sign-in rather than local token migration.
 - Keep existing direct Inno tester users unaffected.
 - Keep direct `latest.json` installer update behavior out of the Store/MSIX build.
+- Use the channel/update behavior plan in [`docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`](WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md) before the first MSIX prototype so Store local data stays isolated from direct updater cache/installer state.
 
 ## Current direct-install local data model
 

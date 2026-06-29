@@ -20,6 +20,20 @@ ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"
 
 Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS. Generated artifacts must not be committed.
 
+Release/tester installed builds are server-only and use `https://api.languagevoicetutor.com`. Local backend URLs are DEBUG/developer-only. Diagnostics and Backend URL editing are not part of user/release Settings. The packaged desktop path covers registration/login/lesson/history/progress/update through backend APIs rather than direct provider calls. Direct builds keep the simple user-facing **Check for updates** button backed by `latest.json`, SHA-256 verification, and a flow that does not silently auto-update; clean-machine smoke remains required before tester handoff.
+
+## Store / MSIX sequence
+
+Current Store/MSIX work remains planning-only. Use this order:
+
+1. Review `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md`.
+2. Complete/review `docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`.
+3. Implement the Store channel flag/update behavior so Store builds cannot use the direct `latest.json`/Inno installer update flow.
+4. Prototype MSIX packaging locally without changing the direct Inno installer flow.
+5. Add Windows App Certification Kit verification notes after the prototype exists.
+
+Do not add final MSIX commands, upload Store packages, or claim Store availability until the prototype and verification notes exist.
+
 ## Release-readiness status
 
 - Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.80`.
