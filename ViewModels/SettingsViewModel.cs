@@ -976,6 +976,12 @@ public partial class SettingsViewModel : ViewModelBase
 
         try
         {
+            if (!DesktopUpdatePolicy.CanUseDirectUpdateManifest)
+            {
+                ShowUpdateMessage(LocalizeUiText(DesktopUpdatePolicy.StoreManagedUpdatesMessage), MessageBoxImage.Information);
+                return;
+            }
+
             var result = await updateManifestClient.LoadLatestAsync();
             if (!result.IsSuccess || result.ValidationResult?.Manifest is null || result.ValidationResult.InstallerUri is null)
             {
@@ -1058,6 +1064,12 @@ public partial class SettingsViewModel : ViewModelBase
         IsDownloadingUpdate = true;
         try
         {
+            if (!DesktopUpdatePolicy.CanDownloadDirectInstaller)
+            {
+                ShowUpdateMessage(LocalizeUiText(DesktopUpdatePolicy.StoreManagedUpdatesMessage), MessageBoxImage.Information);
+                return;
+            }
+
             var result = await updateDownloadService.DownloadAndVerifyAsync(manifest, installerUri);
             if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.FilePath))
             {
