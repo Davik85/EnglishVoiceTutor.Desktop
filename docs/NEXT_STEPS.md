@@ -136,11 +136,11 @@ Compatibility diagnostics should be read as a matrix: `minimal_responses_text` c
 
 This is planned work only; the current Windows direct Inno installer flow remains the working release channel and must not be changed by Store preparation.
 
-1. Confirm current local storage paths and auth/session persistence behavior for the direct install.
-2. Add Store channel build planning constants/documentation only, without changing runtime behavior.
-3. Prototype MSIX packaging locally without changing `scripts/package-windows-inno-release.ps1`, `installer/windows/LanguageVoiceTutor.iss`, direct release artifacts, or `latest.json`.
+1. Finish/review the local data audit in `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md` and keep the migration decision pending until reviewed.
+2. Plan the Store channel build flag and update behavior so Store builds cannot use direct `latest.json`, without changing runtime behavior in the planning step.
+3. Then prototype MSIX packaging locally without changing `scripts/package-windows-inno-release.ps1`, `installer/windows/LanguageVoiceTutor.iss`, direct release artifacts, or `latest.json`.
 4. Add Windows App Certification Kit local verification notes only after a real MSIX prototype confirms the command/process.
 5. Prepare Store listing/legal/assets content and screenshots.
 6. Decide final Paddle/web checkout disclosure wording for Store listing and in-app upgrade flow after Partner Center policy review.
 
-Known gaps before prototype: no confirmed MSIX packaging project, Store package identity, Store version mapping, Store channel build flag, Store update behavior implementation, Store local-data migration strategy, WACK playbook command, Store screenshots/assets checklist, or Partner Center submission checklist. See `docs/WINDOWS_STORE_RELEASE_PLAN.md`.
+Known gaps before prototype: no confirmed MSIX packaging project, Store package identity, Store version mapping, Store channel build flag, Store update behavior implementation, reviewed Store local-data migration decision, WACK playbook command, Store screenshots/assets checklist, or Partner Center submission checklist. See `docs/WINDOWS_STORE_RELEASE_PLAN.md` and `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md`.
