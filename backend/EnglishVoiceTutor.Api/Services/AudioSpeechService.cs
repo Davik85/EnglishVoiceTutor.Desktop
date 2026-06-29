@@ -62,7 +62,7 @@ public sealed class AudioSpeechService
         var normalizedPurpose = NormalizePurpose(purpose);
         var resolvedSpeechSpeed = ResolveSpeechSpeed(normalizedPurpose, speechSpeed);
         var modelSettings = _aiModelSettingsService.GetActiveSettings();
-        var resolvedModel = ResolveSpeechModel(normalizedPurpose, model, modelSettings);
+        var resolvedModel = ResolveSpeechModel(normalizedPurpose, modelSettings);
         var resolvedInstructions = ResolveSpeechInstructions(resolvedModel, instructions);
 
         var request = new OpenAiAudioSpeechRequest
@@ -140,7 +140,7 @@ public sealed class AudioSpeechService
             : OpenAiConstants.DefaultSpeechSpeed;
     }
 
-    private static string ResolveSpeechModel(string purpose, string? requestedModel, AiModelSettings modelSettings)
+    private static string ResolveSpeechModel(string purpose, AiModelSettings modelSettings)
     {
         if (string.Equals(purpose, ConversationModeTtsPurpose, StringComparison.OrdinalIgnoreCase))
         {
