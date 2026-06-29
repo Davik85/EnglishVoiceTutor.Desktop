@@ -126,6 +126,75 @@ def extract_language_block(text: str, language_id: str) -> str:
     raise AssertionError(f"could not parse localization dictionary for {language_id}")
 
 
+
+def parse_settings_constructor_arguments(app_loc: str) -> list[str]:
+    marker = "var settings = new SettingsLocalizedText("
+    start = app_loc.find(marker)
+    require(start >= 0, "SettingsLocalizedText runtime constructor call missing")
+    index = start + len(marker)
+    depth = 1
+    current: list[str] = []
+    args: list[str] = []
+    in_string = False
+    escape = False
+    while index < len(app_loc):
+        char = app_loc[index]
+        if in_string:
+            current.append(char)
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == '"':
+                in_string = False
+        else:
+            if char == '"':
+                in_string = True
+                current.append(char)
+            elif char == '(':
+                depth += 1
+                current.append(char)
+            elif char == ')':
+                depth -= 1
+                if depth == 0:
+                    args.append("".join(current).strip())
+                    return args
+                current.append(char)
+            elif char == ',' and depth == 1:
+                args.append("".join(current).strip())
+                current = []
+            else:
+                current.append(char)
+        index += 1
+    raise AssertionError("could not parse SettingsLocalizedText runtime constructor arguments")
+
+
+def parse_settings_record_members(settings_text: str) -> list[str]:
+    start = settings_text.find("public sealed record SettingsLocalizedText(")
+    require(start >= 0, "SettingsLocalizedText record missing")
+    body = settings_text[settings_text.find("(", start) + 1:settings_text.rfind(");")]
+    return re.findall(r"\bstring\s+(\w+)\b", body)
+
+
+def runtime_settings_value(app_loc: str, language_id: str, member_name: str) -> str:
+    members = parse_settings_record_members(read("Localization/SettingsLocalizedText.cs"))
+    args = parse_settings_constructor_arguments(app_loc)
+    require(len(args) == len(members), f"SettingsLocalizedText constructor/member mismatch: {len(args)} args for {len(members)} members")
+    member_args = dict(zip(members, args))
+    expression = member_args[member_name]
+    localized_call = re.fullmatch(r'l\("(.*)"\)', expression)
+    literal = re.fullmatch(r'"(.*)"', expression)
+    if localized_call:
+        english = localized_call.group(1)
+        if language_id == "en":
+            return english
+        block = extract_language_block(app_loc, language_id)
+        match = re.search(rf'\["{re.escape(english)}"\]\s*=\s*"([^"]+)"', block)
+        return match.group(1) if match else english
+    if literal:
+        return literal.group(1)
+    raise AssertionError(f"unsupported runtime SettingsLocalizedText expression for {member_name}: {expression}")
+
 def main() -> None:
     settings_xaml = read("Views/SettingsView.xaml")
     settings_vm = read("ViewModels/SettingsViewModel.cs")
@@ -148,6 +217,16 @@ def main() -> None:
     for english in CONTACT_KEYS:
         require(f'l("{english}")' in app_loc, f"localized/fallback Contacts text not wired for {english}")
 
+    interface_change_start = settings_vm.index("partial void OnSelectedInterfaceLanguageOptionChanged")
+    interface_change_body = settings_vm[interface_change_start:settings_vm.index("partial void OnBackendBaseUrlChanged", interface_change_start)]
+    require("SettingsLocalization.GetSettingsText(value.Id)" in interface_change_body, "Settings screen must refresh Contacts from selected interface language")
+    require("SelectedStudyLanguage" not in interface_change_body.split("localizedText =", 1)[1].split("RefreshLocalizedText", 1)[0], "Settings localization must not use study language")
+
+    refresh_start = settings_vm.index("private void RefreshLocalizedText()")
+    refresh_body = settings_vm[refresh_start:settings_vm.index("private void RefreshAudioInputDevices", refresh_start)]
+    for token in ["ContactsTabHeader", "ContactsTitle", "ContactsHelperText", "SupportEmailLabel", "SupportEmailAddress", "WebsiteLabel", "WebsiteUrl"]:
+        require(f"OnPropertyChanged(nameof({token}))" in refresh_body, f"runtime interface-language refresh must notify Contacts binding: {token}")
+
     require('ContactsTabHeader = "Contacts"' in settings_text, "English Contacts tab label must stay English")
     require('ContactsTitle = "Contacts"' in settings_text, "English Contacts section title must stay English")
     require('ContactsHelperText = "For product support, billing questions, legal requests, or privacy questions, contact us by email or visit the website."' in settings_text, "English Contacts helper text must stay English")
@@ -169,6 +248,25 @@ def main() -> None:
             if language_id != "ru":
                 require(match.group(1) != RUSSIAN_HELPER_TEXT, f"{language_id} Contacts helper text must not use Russian fallback")
 
+    for language_id in ["en", "es", "pt", "pl", "hr", "ru"]:
+        runtime_values = {
+            "ContactsTabHeader": runtime_settings_value(app_loc, language_id, "ContactsTabHeader"),
+            "ContactsTitle": runtime_settings_value(app_loc, language_id, "ContactsTitle"),
+            "ContactsHelperText": runtime_settings_value(app_loc, language_id, "ContactsHelperText"),
+            "SupportEmailLabel": runtime_settings_value(app_loc, language_id, "SupportEmailLabel"),
+            "WebsiteLabel": runtime_settings_value(app_loc, language_id, "WebsiteLabel"),
+        }
+        expected = EXPECTED_CONTACT_TEXT[language_id]
+        require(runtime_values["ContactsTabHeader"] == expected["Contacts"], f"{language_id} runtime Contacts tab mismatch")
+        require(runtime_values["ContactsTitle"] == expected["Contacts"], f"{language_id} runtime Contacts title mismatch")
+        require(runtime_values["ContactsHelperText"] == expected["For product support, billing questions, legal requests, or privacy questions, contact us by email or visit the website."], f"{language_id} runtime Contacts helper mismatch")
+        require(runtime_values["SupportEmailLabel"] == expected["Support email"], f"{language_id} runtime support label mismatch")
+        require(runtime_values["WebsiteLabel"] == expected["Website"], f"{language_id} runtime website label mismatch")
+        if language_id != "ru":
+            require(runtime_values["ContactsHelperText"] != RUSSIAN_HELPER_TEXT, f"{language_id} runtime Contacts helper must not use Russian text")
+
+    require(runtime_settings_value(app_loc, "hr", "ContactsHelperText") != runtime_settings_value(app_loc, "ru", "ContactsHelperText"), "runtime Contacts lookup must distinguish interface language from Russian")
+
     ru_block = extract_language_block(app_loc, "ru")
     for russian in EXPECTED_CONTACT_TEXT["ru"].values():
         require(russian in ru_block, f"Russian Contacts text missing: {russian}")
@@ -178,7 +276,9 @@ def main() -> None:
 
     require("allowMailTo" in settings_vm, "external-link helper must explicitly gate mailto support")
     require("Uri.UriSchemeHttps" in settings_vm and "Uri.UriSchemeMailto" in settings_vm, "external-link helper must allow only safe https/mailto links")
-    require("uri.Scheme != Uri.UriSchemeHttp" in settings_vm, "contact links must not allow arbitrary schemes")
+    external_link_start = settings_vm.index("private static bool TryOpenExternalUrl")
+    external_link_body = settings_vm[external_link_start:settings_vm.index("private void ApplySignedOutSubscriptionStatus", external_link_start)]
+    require(re.search(r"uri\.Scheme\s*!=\s*Uri\.UriSchemeHttp(?!s)", external_link_body) is None, "contact links must not allow plain http")
 
     title_line = next(line for line in subtopics_xaml.splitlines() if 'Text="{Binding Title}"' in line)
     require('TextWrapping="Wrap"' in title_line and 'TextTrimming="None"' in title_line, "Subtopics title must wrap and not trim")

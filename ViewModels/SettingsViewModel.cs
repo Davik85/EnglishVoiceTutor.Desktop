@@ -1430,6 +1430,13 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(BuyPremiumButtonText));
         OnPropertyChanged(nameof(CancelSubscriptionButtonText));
         OnPropertyChanged(nameof(RefreshStatusButtonText));
+        OnPropertyChanged(nameof(ContactsTabHeader));
+        OnPropertyChanged(nameof(ContactsTitle));
+        OnPropertyChanged(nameof(ContactsHelperText));
+        OnPropertyChanged(nameof(SupportEmailLabel));
+        OnPropertyChanged(nameof(SupportEmailAddress));
+        OnPropertyChanged(nameof(WebsiteLabel));
+        OnPropertyChanged(nameof(WebsiteUrl));
         _ = RefreshSubscriptionStatusAsync();
     }
 
@@ -2237,7 +2244,7 @@ public partial class SettingsViewModel : ViewModelBase
     private static bool TryOpenExternalUrl(string url, bool allowMailTo = false)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
-            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps && !(allowMailTo && string.Equals(uri.Scheme, Uri.UriSchemeMailto, StringComparison.OrdinalIgnoreCase))))
+            || (uri.Scheme != Uri.UriSchemeHttps && !(allowMailTo && string.Equals(uri.Scheme, Uri.UriSchemeMailto, StringComparison.OrdinalIgnoreCase))))
         {
             return false;
         }
