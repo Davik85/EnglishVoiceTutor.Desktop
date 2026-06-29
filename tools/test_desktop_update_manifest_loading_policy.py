@@ -78,7 +78,7 @@ def main() -> None:
         "Failure category:",
         "HTTP status:",
         "Details:",
-        "BuildManualUpdateFailureMessage(result)",
+        "BuildManualUpdateFailureMessage(result, LocalizeUiText)",
     ]:
         assert_contains(settings_vm, expected, f"manual diagnostic message includes {expected}")
     assert_contains(settings_vm, "Could not check for updates right now. Please check your internet connection and try again.", "friendly manual fallback remains")
