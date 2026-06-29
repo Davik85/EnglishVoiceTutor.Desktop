@@ -154,7 +154,7 @@ Verify the download page resolves and that the page button downloads the same in
 Invoke-WebRequest https://languagevoicetutor.com/download.html -UseBasicParsing
 ```
 
-Then open `https://languagevoicetutor.com/download.html` in a browser, click **Download for Windows**, and confirm the downloaded file name is the same as `$manifest.installerFileName`. The page must keep working as a controlled tester/direct Windows release page, not as a broad public production launch announcement.
+Then open `https://languagevoicetutor.com/download.html` in a browser, click **Download for Windows**, and confirm the downloaded file name is the same as `$manifest.installerFileName`. The page must keep working as a controlled tester/direct Windows release page, not as a broad public production launch announcement. When Website CMS has been published with static release details available, `download.html` should show the current Windows installer details from `latest.json`. This verification is separate from Website CMS Publish and does not itself publish public website HTML/CSS/JS.
 
 ## Download page behavior
 
@@ -167,7 +167,7 @@ Required static fallback text:
 
 ## Release-readiness status and deferred items
 
-Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.74`. Website Paddle-review polish is completed separately from this upload flow. Paddle live is not enabled yet. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
+Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.77`. Website Paddle-review polish is completed separately from this upload flow. Paddle live is not enabled yet. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
 
 Do not state that the product is fully public production-ready. The current Windows release remains a controlled tester/direct Windows release, not a broad public production launch, and not broad public production readiness.
 
