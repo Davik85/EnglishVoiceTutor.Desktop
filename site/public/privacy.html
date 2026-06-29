@@ -50,6 +50,13 @@
             <p>Data retention and deletion periods require owner/legal approval. To request access, correction, deletion, or privacy help, contact <a href="mailto:support@languagevoicetutor.com">support@languagevoicetutor.com</a>. Children/minors stance placeholder: owner decision required before final publication.</p>
         </section>
 
+        <section class="details-card legal-section" aria-labelledby="cookies-title">
+            <h2 id="cookies-title">Optional analytics, advertising, and cookie choices</h2>
+            <p>Language Voice Tutor may use optional analytics cookies and optional advertising cookies on the public website if those features are enabled in the Website CMS and valid Google IDs are configured. If enabled, Google Analytics and Google Ads may help us understand site traffic, improve the product, measure marketing performance, and measure download button clicks.</p>
+            <p>Where consent is required, non-essential analytics and advertising storage is denied by default until you choose otherwise. The cookie banner may offer <strong>Accept all</strong>, <strong>Reject non-essential</strong>, and <strong>Manage choices</strong> controls for analytics cookies and advertising cookies. The site remains usable if you reject non-essential cookies.</p>
+            <p>You can change or withdraw your choices by using the choices interface when available, or by clearing this site's browser storage and cookies. This privacy policy is a product review draft and is not legal advice.</p>
+        </section>
+
         <section class="support-card legal-nav" aria-label="Related pages">
             <a href="index.html">Home</a>
             <a href="pricing.html">Pricing</a>
@@ -59,11 +66,25 @@
             <a href="support.html">Support</a>
         </section>
     </main>
-    <div class="consent-banner" id="consent-banner" hidden>
-      <p><strong>Optional cookies</strong>: analytics and advertising cookies help us understand safe traffic and improve release marketing. They are optional. <a href="privacy.html">Privacy Policy</a></p>
-      <div class="consent-choices" id="consent-manage" hidden><label><input type="checkbox" id="consent-analytics"> Analytics</label><label><input type="checkbox" id="consent-advertising"> Advertising</label></div>
-      <button type="button" data-consent-action="accept">Accept all</button><button type="button" data-consent-action="reject">Reject non-essential</button><button type="button" data-consent-action="manage">Manage choices</button><button type="button" data-consent-action="save" id="consent-save" hidden>Save choices</button>
-    </div>
+    <section class="consent-banner" id="consent-banner" role="dialog" aria-modal="false" aria-labelledby="consent-title" aria-describedby="consent-description" hidden>
+      <div class="consent-banner__content">
+        <div class="consent-banner__copy">
+          <p class="consent-banner__eyebrow" id="consent-title">Optional cookies</p>
+          <p id="consent-description">We may use analytics and advertising cookies, if enabled, to understand traffic, improve Language Voice Tutor, measure marketing performance, and count download clicks. You can accept all, reject non-essential cookies, or manage choices. <a class="consent-banner__link" href="privacy.html">Privacy Policy</a></p>
+        </div>
+        <div class="consent-choices" id="consent-manage" hidden>
+          <p class="consent-choices__title">Manage optional categories</p>
+          <label class="consent-choice"><input type="checkbox" id="consent-analytics"> <span><strong>Analytics cookies</strong><small>Help us measure site traffic and product improvement signals.</small></span></label>
+          <label class="consent-choice"><input type="checkbox" id="consent-advertising"> <span><strong>Advertising cookies</strong><small>Help us measure marketing performance and download conversions if Google Ads is enabled.</small></span></label>
+        </div>
+        <div class="consent-banner__actions" aria-label="Cookie consent actions">
+          <button class="consent-button consent-button--primary" type="button" data-consent-action="accept">Accept all</button>
+          <button class="consent-button consent-button--secondary" type="button" data-consent-action="reject">Reject non-essential</button>
+          <button class="consent-button consent-button--link" type="button" data-consent-action="manage">Manage choices</button>
+          <button class="consent-button consent-button--primary" type="button" data-consent-action="save" id="consent-save" hidden>Save choices</button>
+        </div>
+      </div>
+    </section>
     <script>window.lvtMarketing = { gaMeasurementId: '', googleAdsId: '', downloadConversionLabel: '' };</script>
     <script src="marketing-consent.js?v=marketing-seo" defer></script>
 </body>

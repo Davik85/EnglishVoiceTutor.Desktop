@@ -71,6 +71,7 @@ Admin Website CMS endpoints remain authenticated/authorized but no longer consum
 - Footer has secondary links: Seller / Company Details, AI & Data Disclosure, Service Status.
 - `seller.html`, `ai-data.html`, and `status.html` exist and are linked from the footer.
 - Download page statically shows current release details when the manifest is available and remains supported by `download.js` and `/releases/windows/direct/latest.json`.
+- Privacy Policy default/static content now includes optional analytics/advertising cookie disclosure. The polished consent banner is controlled by Website CMS Marketing / SEO, and Google Analytics/Ads IDs are optional public configuration values that must be left empty unless intentionally configured; never commit real Google IDs or secrets.
 - Download non-JS fallback text remains: “Current Windows tester release is available through the Download for Windows button.” and “If release details do not load automatically, please contact [support@languagevoicetutor.com](mailto:support@languagevoicetutor.com).”
 
 ## Windows direct release next-step guardrails
