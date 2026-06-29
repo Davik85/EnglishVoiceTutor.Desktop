@@ -245,6 +245,13 @@ public partial class SettingsViewModel : ViewModelBase
     public string LastCompletedLessonText => BuildLastCompletedLessonText(latestLesson, localizedText.NoCompletedLessonsText);
     public string LearningTabHeader => localizedText.LearningTabHeader;
     public string ProgressTabHeader => localizedText.ProgressTabHeader;
+    public string ContactsTabHeader => localizedText.ContactsTabHeader;
+    public string ContactsTitle => localizedText.ContactsTitle;
+    public string ContactsHelperText => localizedText.ContactsHelperText;
+    public string SupportEmailLabel => localizedText.SupportEmailLabel;
+    public string SupportEmailAddress => localizedText.SupportEmailAddress;
+    public string WebsiteLabel => localizedText.WebsiteLabel;
+    public string WebsiteUrl => localizedText.WebsiteUrl;
     public string AccountTitle => localizedText.AccountTitle;
     public string AccountSubtitle => localizedText.AccountSubtitle;
     public string AccountEmailLabel => localizedText.AccountEmailLabel;
@@ -457,6 +464,9 @@ public partial class SettingsViewModel : ViewModelBase
     private bool isProgressSectionSelected;
 
     [ObservableProperty]
+    private bool isContactsSectionSelected;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DiagnosticsMicrophoneText))]
     private AudioInputDeviceOption? selectedAudioInputDeviceOption;
 
@@ -550,14 +560,23 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
+    partial void OnIsContactsSectionSelectedChanged(bool value)
+    {
+        if (value)
+        {
+            ClearOtherSelectedSections(nameof(IsContactsSectionSelected));
+        }
+    }
+
     private void ApplyInitialSection(SettingsSection initialSection)
     {
         IsLearningSectionSelected = initialSection == SettingsSection.Learning;
         IsAccountSectionSelected = initialSection == SettingsSection.Account;
         IsAudioSectionSelected = initialSection == SettingsSection.Audio;
         IsProgressSectionSelected = initialSection == SettingsSection.Progress;
+        IsContactsSectionSelected = initialSection == SettingsSection.Contacts;
 
-        if (!IsLearningSectionSelected && !IsAccountSectionSelected && !IsAudioSectionSelected && !IsProgressSectionSelected)
+        if (!IsLearningSectionSelected && !IsAccountSectionSelected && !IsAudioSectionSelected && !IsProgressSectionSelected && !IsContactsSectionSelected)
         {
             IsLearningSectionSelected = true;
         }
@@ -583,6 +602,11 @@ public partial class SettingsViewModel : ViewModelBase
         if (selectedPropertyName != nameof(IsProgressSectionSelected))
         {
             IsProgressSectionSelected = false;
+        }
+
+        if (selectedPropertyName != nameof(IsContactsSectionSelected))
+        {
+            IsContactsSectionSelected = false;
         }
     }
 
@@ -2204,10 +2228,16 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private Task RefreshAccountStatusAsync() => RefreshSubscriptionStatusAsync();
 
-    private static bool TryOpenExternalUrl(string url)
+    [RelayCommand]
+    private void OpenContactLink(string url)
+    {
+        _ = TryOpenExternalUrl(url, allowMailTo: true);
+    }
+
+    private static bool TryOpenExternalUrl(string url, bool allowMailTo = false)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
-            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps && !(allowMailTo && string.Equals(uri.Scheme, Uri.UriSchemeMailto, StringComparison.OrdinalIgnoreCase))))
         {
             return false;
         }
@@ -2511,5 +2541,6 @@ public enum SettingsSection
     Learning,
     Account,
     Audio,
-    Progress
+    Progress,
+    Contacts
 }

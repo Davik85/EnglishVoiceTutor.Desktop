@@ -21,10 +21,10 @@
                     VerticalAlignment="Top"
                     Style="{StaticResource MainContentCardStyle}">
                 <StackPanel>
-                    <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" TextAlignment="Center" />
+                    <TextBlock Text="{Binding Title}" FontSize="30" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" TextAlignment="Center" TextWrapping="Wrap" TextTrimming="None" MaxWidth="696" HorizontalAlignment="Center" />
                     <TextBlock Margin="0,10,0,0" Text="{Binding Subtitle}" FontSize="15" Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" />
                     <TextBlock Margin="0,18,0,0" Text="{Binding CurrentLevelText}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" TextAlignment="Center" />
-                    <TextBlock Margin="0,6,0,0" Text="{Binding TopicText}" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center" />
+                    <TextBlock Margin="0,6,0,0" Text="{Binding TopicText}" FontSize="14" Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" TextTrimming="None" />
 
                     <ItemsControl Margin="0,22,0,0" ItemsSource="{Binding Subtopics}">
                         <ItemsControl.ItemTemplate>
@@ -40,7 +40,7 @@
                                         </MultiBinding>
                                     </Button.Tag>
                                     <StackPanel>
-                                        <TextBlock Text="{Binding DisplayTitle}" FontSize="16" FontWeight="SemiBold" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                        <TextBlock Text="{Binding DisplayTitle}" FontSize="16" FontWeight="SemiBold" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" TextWrapping="Wrap" TextTrimming="None" />
                                         <TextBlock Margin="0,4,0,0" Text="{Binding DisplayDescription}" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Button>
