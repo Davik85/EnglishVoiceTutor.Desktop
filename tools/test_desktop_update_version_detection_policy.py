@@ -76,7 +76,7 @@ def main() -> None:
 
     assert_contains(settings_vm, "appVersionText = DesktopAppVersionProvider.GetCurrentVersionText();", "manual flow uses shared current-version provider")
     assert_contains(settings_vm, "UpdateVersionComparer.Compare(appVersionText, latestUpdateManifest.Version)", "manual flow compares current provider version to manifest")
-    assert_contains(settings_vm, "Current: {appVersionText}. Latest: {latestUpdateManifest.Version}.", "manual latest-version message includes current and latest")
+    assert_contains(settings_vm, 'string.Format(LocalizeUiText("You are using the latest version. Current: {0}. Latest: {1}."), appVersionText, latestUpdateManifest.Version)', "manual latest-version message includes localized current and latest")
     assert_contains(startup_service, "DesktopAppVersionProvider.GetCurrentVersionText();", "background flow uses shared current-version provider")
     assert_contains(startup_service, "UpdateVersionComparer.Compare(currentVersion, manifest.Version) < 0", "background flow detects newer manifest")
     assert_not_contains(startup_service, "You are using the latest version", "background no-update path stays silent")
