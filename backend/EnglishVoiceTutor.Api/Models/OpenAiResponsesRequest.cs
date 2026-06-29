@@ -15,7 +15,8 @@ public sealed class OpenAiResponsesRequest
     public string Input { get; init; } = string.Empty;
 
     [JsonPropertyName("temperature")]
-    public double Temperature { get; init; } = 0.3;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? Temperature { get; init; }
 
     [JsonPropertyName("text")]
     public OpenAiTextOptions? Text { get; init; }

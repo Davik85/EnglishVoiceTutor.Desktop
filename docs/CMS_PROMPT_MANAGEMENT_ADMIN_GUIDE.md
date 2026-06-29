@@ -186,3 +186,9 @@ Edit scenario-specific behavior in **Scenarios** and, if needed, global roleplay
 Super Admins can review and edit backend AI model identifiers in **Admin → System → AI Models**. Use this section for model IDs only: lesson tutor chat, feedback/correction, lesson hint, translation, speech-to-text, lesson chat text-to-speech, Conversation Mode text-to-speech, and Realtime voice. Do not enter API keys, bearer tokens, organization IDs, or other secrets. OpenAI keys remain environment/server secrets.
 
 Recommended workflow: Save draft → Validate format → Test provider access → Publish → run a small real lesson. AI Models CMS has two checks: **Validate format** checks only that model IDs are non-empty, reasonably short, and limited to safe model-ID characters; **Test provider access** runs safe minimal provider checks for draft text model roles without publishing. Format validation does not prove provider access, so a syntactically valid but unavailable provider model can still break AI calls until corrected. If a new model breaks lessons, restore the previous known-good model such as `gpt-5.2` and inspect safe backend logs. API keys remain server environment secrets and are never stored in CMS.
+
+#### GPT-5.5 lesson tutor chat compatibility workflow
+
+`gpt-5.5` has failed lesson tutor chat with `invalid_request` / HTTP 400 under the current lesson chat Responses API request shape. Keep `gpt-5.5` unpublished for lesson tutor chat until compatibility diagnostics isolate whether the minimal request, structured output mode, or lesson runtime request shape is rejected, and then verify with a small real lesson.
+
+Recommended AI Models workflow: Save draft → Validate format → Test provider access → Run compatibility diagnostics for new model family if needed → Publish → small real lesson. API keys remain server environment secrets and must not be saved or exposed in CMS output.

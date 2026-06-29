@@ -221,7 +221,8 @@ public sealed class OpenAiLessonChatService : ILessonChatService
                     Strict = true,
                     Schema = LessonChatResponseSchema
                 }
-            }
+            },
+            Temperature = ResolveTemperature(options.Model)
         };
 
         var httpClient = _httpClientFactory.CreateClient();
@@ -236,8 +237,17 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
         if (!response.IsSuccessStatusCode)
         {
-            var safeCategory = OpenAiProviderErrorMapper.MapStatusCode(response.StatusCode);
-            throw new OpenAiProviderRequestException(OpenAiRequestFailedMessage, response.StatusCode, safeCategory, ToSafeProviderFailureMessage(safeCategory));
+            var responseJsonForError = await response.Content.ReadAsStringAsync(cancellationToken);
+            var details = OpenAiProviderErrorMapper.MapProviderError(response.StatusCode, responseJsonForError);
+            throw new OpenAiProviderRequestException(
+                OpenAiRequestFailedMessage,
+                response.StatusCode,
+                details.SafeCategory,
+                ToSafeProviderFailureMessage(details.SafeCategory),
+                details.ProviderErrorType,
+                details.ProviderErrorCode,
+                details.ProviderErrorParam,
+                details.SanitizedProviderMessage);
         }
 
         var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -262,19 +272,31 @@ public sealed class OpenAiLessonChatService : ILessonChatService
             ? requestException.SafeProviderMessage
             : exception.Message;
 
+        var providerErrorType = exception is OpenAiProviderRequestException typedException ? typedException.ProviderErrorType : null;
+        var providerErrorCode = exception is OpenAiProviderRequestException codedException ? codedException.ProviderErrorCode : null;
+        var providerErrorParam = exception is OpenAiProviderRequestException paramException ? paramException.ProviderErrorParam : null;
+        var sanitizedProviderMessage = exception is OpenAiProviderRequestException messageException ? messageException.SanitizedProviderMessage : null;
+
         _logger.LogError(
             exception,
-            "Lesson chat provider call failed. operation={Operation}; modelRole=lesson_tutor_chat; configuredModelId={ConfiguredModelId}; lessonScenarioId={LessonScenarioId}; targetLanguageId={TargetLanguageId}; tutorProfileId={TutorProfileId}; providerStatusCode={ProviderStatusCode}; safeProviderCategory={SafeProviderCategory}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
+            "Lesson chat provider call failed. operation={Operation}; modelRole=lesson_tutor_chat; configuredModelId={ConfiguredModelId}; providerStatusCode={ProviderStatusCode}; safeCategory={SafeCategory}; providerErrorType={ProviderErrorType}; providerErrorCode={ProviderErrorCode}; providerErrorParam={ProviderErrorParam}; sanitizedProviderMessage={SanitizedProviderMessage}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
             operation,
             configuredModelId,
-            request.LessonScenarioId,
-            request.TargetLanguageId,
-            request.TutorProfileId,
             statusCode,
             safeCategory,
+            providerErrorType,
+            providerErrorCode,
+            providerErrorParam,
+            sanitizedProviderMessage,
             exception.GetType().Name,
             safeMessage);
     }
+
+    internal static double? ResolveTemperature(string modelId) =>
+        IsGpt55Model(modelId) ? null : 0.3;
+
+    private static bool IsGpt55Model(string modelId) =>
+        modelId.Trim().StartsWith("gpt-5.5", StringComparison.OrdinalIgnoreCase);
 
     private static string ToSafeProviderFailureMessage(string category) => category switch
     {
