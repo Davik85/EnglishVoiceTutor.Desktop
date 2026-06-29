@@ -27,18 +27,21 @@ public sealed class AudioSpeechService
     private readonly ILogger<AudioSpeechService> _logger;
     private readonly IRequestUserResolver _requestUserResolver;
     private readonly IUsageEventService _usageEventService;
+    private readonly IAiModelSettingsService _aiModelSettingsService;
 
     public AudioSpeechService(
         OpenAiOptionsProvider optionsProvider,
         IHttpClientFactory httpClientFactory,
         IRequestUserResolver requestUserResolver,
         IUsageEventService usageEventService,
+        IAiModelSettingsService aiModelSettingsService,
         ILogger<AudioSpeechService> logger)
     {
         _optionsProvider = optionsProvider;
         _httpClientFactory = httpClientFactory;
         _requestUserResolver = requestUserResolver;
         _usageEventService = usageEventService;
+        _aiModelSettingsService = aiModelSettingsService;
         _logger = logger;
     }
 
@@ -58,7 +61,8 @@ public sealed class AudioSpeechService
 
         var normalizedPurpose = NormalizePurpose(purpose);
         var resolvedSpeechSpeed = ResolveSpeechSpeed(normalizedPurpose, speechSpeed);
-        var resolvedModel = ResolveSpeechModel(normalizedPurpose, model);
+        var modelSettings = _aiModelSettingsService.GetActiveSettings();
+        var resolvedModel = ResolveSpeechModel(normalizedPurpose, modelSettings);
         var resolvedInstructions = ResolveSpeechInstructions(resolvedModel, instructions);
 
         var request = new OpenAiAudioSpeechRequest
@@ -97,7 +101,7 @@ public sealed class AudioSpeechService
 
         var request = new OpenAiAudioSpeechRequest
         {
-            Model = OpenAiConstants.DefaultBotVoiceSpeechModel,
+            Model = _aiModelSettingsService.GetActiveSettings().LessonChatTextToSpeechModel,
             Input = text.Trim(),
             Voice = OpenAiConstants.DefaultSpeechVoice,
             Speed = OpenAiConstants.DefaultSpeechSpeed,
@@ -136,14 +140,14 @@ public sealed class AudioSpeechService
             : OpenAiConstants.DefaultSpeechSpeed;
     }
 
-    private static string ResolveSpeechModel(string purpose, string? requestedModel)
+    private static string ResolveSpeechModel(string purpose, AiModelSettings modelSettings)
     {
         if (string.Equals(purpose, ConversationModeTtsPurpose, StringComparison.OrdinalIgnoreCase))
         {
-            return OpenAiConstants.ConversationModeTtsModel;
+            return modelSettings.ConversationModeTextToSpeechModel;
         }
 
-        return OpenAiConstants.NormalChatTtsModel;
+        return modelSettings.LessonChatTextToSpeechModel;
     }
 
     private static string? ResolveSpeechInstructions(string model, string? instructions)
@@ -158,7 +162,7 @@ public sealed class AudioSpeechService
 
     private static bool SpeechModelSupportsInstructions(string model)
     {
-        return string.Equals(model, OpenAiConstants.ConversationModeTtsModel, StringComparison.Ordinal);
+        return string.Equals(model, AiModelSettings.Defaults.ConversationModeTextToSpeechModel, StringComparison.Ordinal) || model.Contains("tts", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ResolveSpeechVoice(string? requestedSpeechVoice)

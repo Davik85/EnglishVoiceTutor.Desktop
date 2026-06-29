@@ -262,6 +262,7 @@ builder.Services.AddScoped<ICmsRuntimeLessonContentService, CmsRuntimeLessonCont
 builder.Services.AddScoped<ICmsContentAdminService, CmsContentAdminService>();
 builder.Services.AddScoped<ICmsContentPublishingService, CmsContentPublishingService>();
 builder.Services.AddScoped<IWebsiteContentService, WebsiteContentService>();
+builder.Services.AddSingleton<IAiModelSettingsService, AiModelSettingsService>();
 
 static void AddAdminPermissionPolicy(AuthorizationOptions options, string policyName, string permissionName)
 {
@@ -391,6 +392,7 @@ app.MapPaddleCheckoutLaunchEndpoints();
 app.MapPaddleWebhookEndpoints();
 app.MapAdminEndpoints();
 app.MapWebsiteAdminEndpoints();
+app.MapAiModelSettingsAdminEndpoints();
 app.MapCmsDiagnosticsEndpoints();
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",

@@ -91,6 +91,11 @@ public static class ApiConstants
     public const string AdminWebsiteContentDraftRoute = "/api/admin/website/content/draft";
     public const string AdminWebsiteContentPublishRoute = "/api/admin/website/content/publish";
     public const string AdminWebsiteContentPreviewRoute = "/api/admin/website/content/preview";
+    public const string AdminAiModelSettingsRoute = "/api/admin/system/ai-models";
+    public const string AdminAiModelSettingsDraftRoute = "/api/admin/system/ai-models/draft";
+    public const string AdminAiModelSettingsValidateRoute = "/api/admin/system/ai-models/validate";
+    public const string AdminAiModelSettingsPublishRoute = "/api/admin/system/ai-models/publish";
+    public const string AdminAiModelSettingsResetDraftRoute = "/api/admin/system/ai-models/reset-draft";
     public const string AdminStatisticsOverviewRoute = "/api/admin/statistics/overview";
     public const string AdminRoleAssignmentDiagnosticsRoute = "/api/admin/role-assignments/diagnostics";
     public const string AdminRbacCutoverStatusRoute = "/api/admin/rbac/cutover-status";

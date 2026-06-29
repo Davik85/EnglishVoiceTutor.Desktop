@@ -106,11 +106,11 @@ public static class BackendConstants
     public const string LessonChatModelName = "configured OpenAI Responses model";
     public const string FeedbackModelName = LessonChatModelName;
     public const string SummaryModelName = "desktop summary generator";
-    public const string TranscriptionModelName = "gpt-4o-mini-transcribe";
-    public const string LessonChatTtsModel = "tts-1";
-    public const string ConversationModeTtsModel = "gpt-4o-mini-tts";
+    public const string TranscriptionModelName = "backend-configured transcription model";
+    public const string LessonChatTtsModel = "backend-configured lesson chat TTS model";
+    public const string ConversationModeTtsModel = "backend-configured conversation TTS model";
     public const string TtsModelName = LessonChatTtsModel;
-    public const string RealtimeModelName = "gpt-realtime";
+    public const string RealtimeModelName = "backend-configured realtime model";
     public const string LessonChatTtsPurpose = "lesson_chat_tts";
     public const string RealtimePreStartOpeningSpeechPurpose = "realtime_pre_start_opening";
     public const string ConversationModeTtsPurpose = "conversation_mode_tts";

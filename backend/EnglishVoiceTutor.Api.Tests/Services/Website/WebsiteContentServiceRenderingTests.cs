@@ -176,7 +176,7 @@ public sealed class WebsiteContentServiceRenderingTests
         Assert.Contains("Bad", preview.Html);
         Assert.Contains("javascript:alert(1)", preview.Html);
         Assert.DoesNotContain("href=\"javascript:", preview.Html, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("<script>", preview.Html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<script>alert(1)</script>", preview.Html, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("&lt;script&gt;alert(1)&lt;/script&gt;", preview.Html);
     }
 

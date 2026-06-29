@@ -119,3 +119,9 @@ Code signing remains deferred. CMS published-snapshot runtime is active for cont
 Production billing/Paddle/subscription payment lifecycle remains deferred. Live Paddle is not enabled yet. Do not change production Paddle environment values, add live checkout links, or commit secrets. Paddle stays behind the backend/provider adapter. Desktop does not call Paddle directly and does not decide Premium directly.
 
 Backend remains source of truth for plan, subscription, entitlement, usage, and limits. Entitlement is the source of Premium access; `PaymentEntity` is diagnostic payment history only. Desktop and future mobile clients share one backend account, one backend database, one subscription/entitlement state, and one lesson history/progress source. Paddle may be the first web/desktop provider, but Apple/Google must remain possible later for mobile. Do not add YooKassa or Russia-only billing assumptions.
+
+## AI model CMS operations
+
+AI model IDs are now editable by Super Admin in **Admin → System → AI Models** through JSON/file-based CMS settings. API keys remain environment/server secrets and are not CMS content. Model changes should require only CMS publish for backend runtime to use them on new AI requests; no desktop release is required because the desktop does not decide model IDs or call OpenAI directly.
+
+Operational next steps before changing production models: validate the draft, publish only intentionally selected model IDs, then run a new lesson smoke test for tutor chat, correction/feedback behavior, summary-related text flow where applicable, speech-to-text, and text-to-speech. If active CMS model settings are missing or invalid, backend falls back to the current safe defaults and logs a warning without secrets.
