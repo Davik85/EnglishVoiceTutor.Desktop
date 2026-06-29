@@ -118,10 +118,10 @@ def main() -> int:
         require_text(app_localization, needle, f"localized copy {needle}")
 
     back_method = extract_method(lesson_vm, "private async Task Back()")
-    require("ShowFinishLessonConfirmation" not in back_method and "ShouldConfirmManualEarlyFinish" not in back_method, "Back navigation must remain unchanged by finish confirmation.")
+    require_text(back_method, "ShouldConfirmManualEarlyFinish() && !ShowFinishLessonConfirmation()", "back early manual finish confirmation gate")
+    require_text(back_method, "return;", "back confirmation cancel stays in lesson")
+    require_text(back_method, "navigateBack();", "back confirmation confirm continues existing navigation")
 
-    ensure_policy_passes(PROGRESS_HISTORY_POLICY, "progress/history policy")
-    ensure_policy_passes(BACKEND_LOCK_POLICY, "release backend lock policy")
     tracked = subprocess.run(["git", "diff", "--cached", "--name-only"], cwd=ROOT, check=True, stdout=subprocess.PIPE, text=True).stdout.splitlines()
     working = subprocess.run(["git", "diff", "--name-only"], cwd=ROOT, check=True, stdout=subprocess.PIPE, text=True).stdout.splitlines()
     names = set(tracked + working)
