@@ -356,7 +356,7 @@ Next commands/checks are tester-handoff oriented only: verify the installed test
 
 This section is intentionally a placeholder for future Store work. Microsoft Store distribution is planned as a separate MSIX channel, while the existing direct Windows Inno installer commands above remain the current working direct release flow.
 
-No Store/MSIX package command, Windows App Certification Kit command, Partner Center submission command, Store package identity, Store version mapping, Store channel build flag, or Store local-data migration process is confirmed yet. Do not invent or run final Store commands from this playbook until a real local MSIX prototype confirms them and `docs/WINDOWS_STORE_RELEASE_PLAN.md` is updated.
+No Store/MSIX package command, Windows App Certification Kit command, Partner Center submission command, Store package identity, Store version mapping, Store channel build flag, or Store local-data migration process is confirmed yet. Review `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md` before the first MSIX prototype, keep the local-data migration decision pending until reviewed, and do not invent or run final Store commands from this playbook until a real local MSIX prototype confirms them and `docs/WINDOWS_STORE_RELEASE_PLAN.md` is updated.
 
 Store builds must not use the direct `/releases/windows/direct/latest.json` installer update flow. Direct installer upload, backend deployment, database migrations, Website CMS/static site publish, and future Store/MSIX submission remain separate flows.
 

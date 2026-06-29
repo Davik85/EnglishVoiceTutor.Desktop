@@ -122,7 +122,7 @@ The Store build should rely on Microsoft Store update behavior. It should not ch
 
 ## Store app data and session migration risks
 
-MSIX package identity can change local app-data behavior. Before prototype, audit direct-install storage and decide whether Store install should share, import, or isolate local data.
+MSIX package identity can change local app-data behavior. The current audit is documented in [`docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md`](WINDOWS_STORE_LOCAL_DATA_AUDIT.md). Keep the local-data migration decision pending until that audit is reviewed and the first Store-channel update-behavior boundary is planned.
 
 Risks to test:
 
@@ -132,7 +132,7 @@ Risks to test:
 - Store and direct installs isolating data could sign users out or appear to lose local settings.
 - Import-on-first-run could duplicate stale auth/session data if not designed carefully.
 
-Initial planning preference: isolate Store data unless a tested import flow is explicitly designed. Backend-owned account, entitlement, usage, and lesson history should remain the recovery source where possible.
+Audit recommendation for first prototype: start isolated from direct local data, do not manually copy access/refresh tokens, require fresh login if necessary, and rely on backend-owned account, entitlement, usage, and lesson history after sign-in. Final local-data migration remains pending until review.
 
 ## Store listing, legal, and asset checklist
 
@@ -181,7 +181,7 @@ Public submission should happen only after:
 - WACK passes or failures are triaged.
 - Store listing/legal/assets are complete.
 - Paddle/web checkout disclosure wording is reviewed against Store policy.
-- Direct and Store channel coexistence/data strategy is decided.
+- Direct and Store channel coexistence/data strategy is decided after reviewing `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md`.
 - Rollback/fallback plan is documented.
 - Direct Windows release channel remains independently usable.
 
@@ -200,15 +200,15 @@ Public submission should happen only after:
 - No confirmed Store version mapping yet.
 - No confirmed Store channel build flag yet.
 - No confirmed Store update behavior implementation yet.
-- No confirmed Store local-data migration strategy yet.
+- No confirmed Store local-data migration strategy yet; `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md` recommends isolated first prototype behavior pending review.
 - No Windows App Certification Kit command/process in the playbook yet.
 - No Store screenshots/assets checklist completed yet.
 - No Partner Center submission checklist completed yet.
 
 ## Next safe Codex tasks
 
-- Task A: confirm current local storage paths and auth/session persistence behavior for direct install.
-- Task B: add Store channel build planning constants/documentation only.
+- Task A: review `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md` and confirm the first-prototype local-data decision.
+- Task B: plan Store channel build flag and update behavior so Store builds cannot use direct `latest.json`.
 - Task C: prototype MSIX packaging locally without changing direct Inno installer.
 - Task D: add Windows App Certification Kit local verification notes after the prototype.
 - Task E: prepare Store listing/legal/assets content.
