@@ -73,7 +73,7 @@ public sealed partial class AiModelSettingsService(IWebHostEnvironment environme
         ValidateRequiredModel(settings.RealtimeVoiceModel, "Realtime voice model", errors);
 
         var warnings = errors.Count == 0
-            ? new[] { "Model IDs are syntactically valid only; publish after a small test lesson because nonexistent provider model names can break AI calls." }
+            ? new[] { "Model IDs are format/syntax valid only. Format validation does not prove provider access. Use Test provider access before publishing a new model." }
             : Array.Empty<string>();
         return new AiModelSettingsValidationResponse(errors.Count == 0, errors, warnings);
     }

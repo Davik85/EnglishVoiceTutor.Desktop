@@ -263,6 +263,7 @@ builder.Services.AddScoped<ICmsContentAdminService, CmsContentAdminService>();
 builder.Services.AddScoped<ICmsContentPublishingService, CmsContentPublishingService>();
 builder.Services.AddScoped<IWebsiteContentService, WebsiteContentService>();
 builder.Services.AddSingleton<IAiModelSettingsService, AiModelSettingsService>();
+builder.Services.AddScoped<AiModelProviderAccessTestService>();
 
 static void AddAdminPermissionPolicy(AuthorizationOptions options, string policyName, string permissionName)
 {

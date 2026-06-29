@@ -119,7 +119,17 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
         for (var attempt = 1; attempt <= LessonChatProviderMaxAttempts; attempt++)
         {
-            var openAiResponse = await SendResponsesApiRequestAsync(request, options, validationReason, cancellationToken);
+            OpenAiResponsesResponse openAiResponse;
+            try
+            {
+                openAiResponse = await SendResponsesApiRequestAsync(request, options, validationReason, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                LogProviderCallFailure(ex, operation, request, options.Model);
+                throw;
+            }
+
             await TryRecordUsageAsync(operation, request, options.Model, openAiResponse, cancellationToken);
             LogResponsesUsage(operation, request, options.Model, openAiResponse);
 
@@ -226,7 +236,8 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException(OpenAiRequestFailedMessage);
+            var safeCategory = OpenAiProviderErrorMapper.MapStatusCode(response.StatusCode);
+            throw new OpenAiProviderRequestException(OpenAiRequestFailedMessage, response.StatusCode, safeCategory, ToSafeProviderFailureMessage(safeCategory));
         }
 
         var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -239,6 +250,42 @@ public sealed class OpenAiLessonChatService : ILessonChatService
 
         return parsedResponse;
     }
+
+
+    private void LogProviderCallFailure(Exception exception, string operation, LessonChatRequest request, string configuredModelId)
+    {
+        var statusCode = exception is OpenAiProviderRequestException providerException ? (int?)providerException.StatusCode : null;
+        var safeCategory = exception is OpenAiProviderRequestException providerRequestException
+            ? providerRequestException.SafeCategory
+            : OpenAiProviderErrorMapper.MapException(exception);
+        var safeMessage = exception is OpenAiProviderRequestException requestException
+            ? requestException.SafeProviderMessage
+            : exception.Message;
+
+        _logger.LogError(
+            exception,
+            "Lesson chat provider call failed. operation={Operation}; modelRole=lesson_tutor_chat; configuredModelId={ConfiguredModelId}; lessonScenarioId={LessonScenarioId}; targetLanguageId={TargetLanguageId}; tutorProfileId={TutorProfileId}; providerStatusCode={ProviderStatusCode}; safeProviderCategory={SafeProviderCategory}; exceptionType={ExceptionType}; safeMessage={SafeMessage}.",
+            operation,
+            configuredModelId,
+            request.LessonScenarioId,
+            request.TargetLanguageId,
+            request.TutorProfileId,
+            statusCode,
+            safeCategory,
+            exception.GetType().Name,
+            safeMessage);
+    }
+
+    private static string ToSafeProviderFailureMessage(string category) => category switch
+    {
+        AiModelProviderTestCategories.UnauthorizedOrForbidden => "OpenAI rejected credentials or project access.",
+        AiModelProviderTestCategories.UnavailableOrNotFound => "OpenAI model is unavailable or not found for this project.",
+        AiModelProviderTestCategories.RateLimited => "OpenAI rate limited the request.",
+        AiModelProviderTestCategories.QuotaOrBilling => "OpenAI quota or billing is unavailable.",
+        AiModelProviderTestCategories.InvalidRequest => "OpenAI rejected the model/request shape.",
+        AiModelProviderTestCategories.ProviderError => "OpenAI returned a provider error.",
+        _ => OpenAiRequestFailedMessage
+    };
 
     private void LogResponsesUsage(string operation, LessonChatRequest request, string model, OpenAiResponsesResponse response)
     {

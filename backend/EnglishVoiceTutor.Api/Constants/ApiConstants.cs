@@ -94,6 +94,7 @@ public static class ApiConstants
     public const string AdminAiModelSettingsRoute = "/api/admin/system/ai-models";
     public const string AdminAiModelSettingsDraftRoute = "/api/admin/system/ai-models/draft";
     public const string AdminAiModelSettingsValidateRoute = "/api/admin/system/ai-models/validate";
+    public const string AdminAiModelSettingsProviderTestRoute = "/api/admin/system/ai-models/test-provider-access";
     public const string AdminAiModelSettingsPublishRoute = "/api/admin/system/ai-models/publish";
     public const string AdminAiModelSettingsResetDraftRoute = "/api/admin/system/ai-models/reset-draft";
     public const string AdminStatisticsOverviewRoute = "/api/admin/statistics/overview";
