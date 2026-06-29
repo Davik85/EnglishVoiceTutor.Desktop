@@ -157,6 +157,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         await W("robots.txt", RenderRobotsTxt());
         await W("sitemap.xml", RenderSitemapXml(DateTimeOffset.UtcNow));
         if (IsEnabled(c.Marketing, "enableLlmsTxt")) { await W("llms.txt", RenderLlmsTxt()); }
+        await W("marketing-consent.js", RenderMarketingConsentJs());
         return files;
     }
 
@@ -227,7 +228,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     </section>
 </main>
 """;
-        return Shell(c, E(h["seoTitle"]), E(h["seoDescription"]), main, true, includePublicBaseHref, pageFileName: "index.html", jsonLd: RenderHomeJsonLd(c));
+        return Shell(c, E(h["seoTitle"]), E(h["seoDescription"]), main, true, includePublicBaseHref, pageFileName: "index.html", jsonLd: RenderSoftwareApplicationJsonLd(null));
     }
 
 
@@ -286,7 +287,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
 """);
         body.Append(Nav());
         body.AppendLine("</main>");
-        return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref, "    <script src=\"download.js?v=manifest-download\" defer></script>");
+        return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref, "    <script src=\"download.js?v=manifest-download\" defer></script>", pageFileName: "download.html", jsonLd: RenderSoftwareApplicationJsonLd(release));
     }
 
     private static string RenderSimple(WebsiteContentSet c, string page, string titleId, (string title, string key)[] sections, string? button, bool includePublicBaseHref)
@@ -422,9 +423,9 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         var ga = IsEnabled(m, "enableAnalytics") ? SafeGaId(MarketingValue(m, "googleAnalyticsMeasurementId")) : string.Empty;
         var ads = IsEnabled(m, "enableAdsTracking") ? SafeAdsId(MarketingValue(m, "googleAdsId")) : string.Empty;
         var downloadLabel = SafeConversionLabel(MarketingValue(m, "googleAdsDownloadConversionLabel"));
-        return $"""
+        return $$"""
     <script>
-      window.lvtMarketing = {{ gaMeasurementId: '{E(ga)}', googleAdsId: '{E(ads)}', downloadConversionLabel: '{E(downloadLabel)}' }};
+      window.lvtMarketing = { gaMeasurementId: '{{E(ga)}}', googleAdsId: '{{E(ads)}}', downloadConversionLabel: '{{E(downloadLabel)}}' };
     </script>
     <script src="marketing-consent.js?v=marketing-seo" defer></script>
 """;
@@ -438,8 +439,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     </div>
 """;
 
-    private static string RenderHomeJsonLd(WebsiteContentSet c) => "    <script type=\"application/ld+json\">" + JsonSerializer.Serialize(new Dictionary<string, object?> { ["@context"] = "https://schema.org", ["@type"] = "WebSite", ["name"] = "Language Voice Tutor", ["url"] = PublicSiteBaseUrl + "/" }) + "</script>";
-    private static string RenderSoftwareApplicationJsonLd(StaticReleaseManifest? r) => "    <script type=\"application/ld+json\">" + JsonSerializer.Serialize(new Dictionary<string, object?> { ["@context"]="https://schema.org", ["@type"]="SoftwareApplication", ["name"]="Language Voice Tutor", ["operatingSystem"]="Windows", ["applicationCategory"]="EducationalApplication", ["url"]=PublicSiteBaseUrl + "/download.html", ["downloadUrl"]=PublicSiteBaseUrl + "/download.html", ["softwareVersion"]=r?.Version ?? "0.1.36-tester.31" }) + "</script>";
+    private static string RenderSoftwareApplicationJsonLd(StaticReleaseManifest? r) => "    <script type=\"application/ld+json\">" + JsonSerializer.Serialize(new Dictionary<string, object?> { ["@context"]="https://schema.org", ["@type"]="SoftwareApplication", ["name"]="Language Voice Tutor", ["operatingSystem"]="Windows", ["applicationCategory"]="EducationalApplication", ["url"]=PublicSiteBaseUrl + "/download.html", ["downloadUrl"]=PublicSiteBaseUrl + "/download.html", ["softwareVersion"]=r?.Version ?? string.Empty }) + "</script>";
 
     private static string RenderRobotsTxt() => """
 User-agent: *
@@ -470,6 +470,54 @@ Windows desktop tester/direct release is available. Android and iOS apps are pla
 - Seller / Company Details: https://languagevoicetutor.com/seller.html
 - AI & Data Disclosure: https://languagevoicetutor.com/ai-data.html
 - Service Status: https://languagevoicetutor.com/status.html
+""";
+
+    private static string RenderMarketingConsentJs() => """
+const consentKey = "lvt_marketing_consent_v1";
+const deniedConsent = { analytics_storage: "denied", ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" };
+function hasGtag() { return typeof window.gtag === "function"; }
+function readConsent() { try { return JSON.parse(localStorage.getItem(consentKey) || "null"); } catch { return null; } }
+function writeConsent(choice) { localStorage.setItem(consentKey, JSON.stringify({ ...choice, savedAt: new Date().toISOString() })); }
+function consentUpdate(choice) {
+    const update = {
+        analytics_storage: choice?.analytics ? "granted" : "denied",
+        ad_storage: choice?.advertising ? "granted" : "denied",
+        ad_user_data: choice?.advertising ? "granted" : "denied",
+        ad_personalization: choice?.advertising ? "granted" : "denied"
+    };
+    if (hasGtag()) { window.gtag("consent", "update", update); }
+}
+function trackDownloadClick() {
+    const config = window.lvtMarketing || {};
+    const choice = readConsent();
+    if (hasGtag() && config.gaMeasurementId && choice?.analytics) {
+        window.gtag("event", "download_windows_click", { platform: "windows" });
+    }
+    if (hasGtag() && config.googleAdsId && config.downloadConversionLabel && choice?.advertising) {
+        window.gtag("event", "conversion", { send_to: `${config.googleAdsId}/${config.downloadConversionLabel}`, event_callback: () => {} });
+    }
+}
+window.addEventListener("DOMContentLoaded", () => {
+    const existing = readConsent();
+    if (existing) { consentUpdate(existing); }
+    const banner = document.getElementById("consent-banner");
+    if (!banner) return;
+    const manage = document.getElementById("consent-manage");
+    const save = document.getElementById("consent-save");
+    const analytics = document.getElementById("consent-analytics");
+    const advertising = document.getElementById("consent-advertising");
+    if (existing) { return; }
+    banner.hidden = false;
+    banner.addEventListener("click", event => {
+        const action = event.target?.dataset?.consentAction;
+        if (!action) return;
+        if (action === "manage") { manage.hidden = false; save.hidden = false; return; }
+        const choice = action === "accept" ? { analytics: true, advertising: true } : action === "save" ? { analytics: !!analytics.checked, advertising: !!advertising.checked } : { analytics: false, advertising: false };
+        writeConsent(choice); consentUpdate(choice); banner.hidden = true;
+    });
+    document.getElementById("download-button")?.addEventListener("click", trackDownloadClick);
+});
+if (hasGtag()) { window.gtag("consent", "default", deniedConsent); }
 """;
 
     private static string Logo(Dictionary<string, string> h)
