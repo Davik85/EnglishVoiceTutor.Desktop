@@ -4991,6 +4991,21 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
     [RelayCommand(CanExecute = nameof(CanGoBack))]
     private async Task Back()
     {
+        if (isFinishLessonInProgress || isFinishLessonConfirmationOpen)
+        {
+            RefreshAllCommandStates();
+            return;
+        }
+
+        if (ShouldConfirmManualEarlyFinish() && !ShowFinishLessonConfirmation())
+        {
+            RefreshAllCommandStates();
+            return;
+        }
+
+        isFinishLessonInProgress = true;
+        RefreshAllCommandStates();
+
         var operationStopwatch = StartUiOperationDiagnostics(
             "lesson_back_navigation",
             UiOperationWarningThresholdMilliseconds,
@@ -5007,6 +5022,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
         }
         finally
         {
+            isFinishLessonInProgress = false;
             CompleteUiOperationDiagnostics(
                 operationStopwatch,
                 "lesson_back_navigation",

@@ -76,4 +76,11 @@ public sealed record SettingsLocalizedText(
     string ChangePasswordTitle = "Change password",
     string ChangePasswordSubtitle = "Update the password for the signed-in account.",
     string CurrentPasswordLabel = "Current password",
-    string ChangePasswordButtonText = "Change password");
+    string ChangePasswordButtonText = "Change password",
+    string ContactsTabHeader = "Contacts",
+    string ContactsTitle = "Contacts",
+    string ContactsHelperText = "For product support, billing questions, legal requests, or privacy questions, contact us by email or visit the website.",
+    string SupportEmailLabel = "Support email",
+    string SupportEmailAddress = "support@languagevoicetutor.com",
+    string WebsiteLabel = "Website",
+    string WebsiteUrl = "https://languagevoicetutor.com");

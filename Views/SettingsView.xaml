@@ -271,6 +271,11 @@
                                  GroupName="SettingsSections"
                                  IsChecked="{Binding IsProgressSectionSelected, Mode=TwoWay}"
                                  Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
+                    <RadioButton x:Name="ContactsSectionNav"
+                                 Content="{Binding ContactsTabHeader}"
+                                 GroupName="SettingsSections"
+                                 IsChecked="{Binding IsContactsSectionSelected, Mode=TwoWay}"
+                                 Style="{StaticResource SettingsSectionNavigationButtonStyle}" />
                 </StackPanel>
 
                 <ScrollViewer x:Name="LearningSection" Grid.Column="1" Style="{StaticResource SettingsSectionScrollViewerStyle}" Visibility="{Binding IsChecked, ElementName=LearningSectionNav, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -693,6 +698,48 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
+                </ScrollViewer>
+
+
+                <ScrollViewer x:Name="ContactsSection" Grid.Column="1" Style="{StaticResource SettingsSectionScrollViewerStyle}" Visibility="{Binding IsChecked, ElementName=ContactsSectionNav, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel Style="{StaticResource SettingsSectionStackStyle}">
+                        <Border Style="{StaticResource SettingsSectionCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding ContactsTitle}" Style="{StaticResource SettingsSectionTitleStyle}" />
+                                <TextBlock Text="{Binding ContactsHelperText}" Style="{StaticResource SettingsSectionSubtitleStyle}" />
+
+                                <TextBlock Text="{Binding SupportEmailLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                <Button Margin="0,6,0,0"
+                                        Padding="0"
+                                        HorizontalAlignment="Left"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Command="{Binding OpenContactLinkCommand}"
+                                        CommandParameter="mailto:support@languagevoicetutor.com">
+                                    <TextBlock Text="{Binding SupportEmailAddress}"
+                                               FontSize="14"
+                                               Foreground="{StaticResource AccentBrush}"
+                                               TextDecorations="Underline"
+                                               TextWrapping="Wrap" />
+                                </Button>
+
+                                <TextBlock Text="{Binding WebsiteLabel}" Style="{StaticResource SettingsFieldLabelStyle}" />
+                                <Button Margin="0,6,0,0"
+                                        Padding="0"
+                                        HorizontalAlignment="Left"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Command="{Binding OpenContactLinkCommand}"
+                                        CommandParameter="{Binding WebsiteUrl}">
+                                    <TextBlock Text="{Binding WebsiteUrl}"
+                                               FontSize="14"
+                                               Foreground="{StaticResource AccentBrush}"
+                                               TextDecorations="Underline"
+                                               TextWrapping="Wrap" />
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                 </ScrollViewer>
 
                 <ScrollViewer x:Name="ProgressSection" Grid.Column="1" Style="{StaticResource SettingsSectionScrollViewerStyle}" Visibility="{Binding IsChecked, ElementName=ProgressSectionNav, Converter={StaticResource BooleanToVisibilityConverter}}">

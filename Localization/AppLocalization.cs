@@ -129,7 +129,14 @@ public static class AppLocalization
             l("Change password"),
             l("Update the password for the signed-in account."),
             l("Current password"),
-            l("Change password"));
+            l("Change password"),
+            l("Contacts"),
+            l("Contacts"),
+            l("For product support, billing questions, legal requests, or privacy questions, contact us by email or visit the website."),
+            l("Support email"),
+            "support@languagevoicetutor.com",
+            l("Website"),
+            "https://languagevoicetutor.com");
 
         return new AppLocalizedText(
             languageId, settings,
