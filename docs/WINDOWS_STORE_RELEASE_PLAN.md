@@ -36,7 +36,7 @@ This channel remains current and working. It must not be removed, renamed, repur
 
 1. Microsoft Store distribution should use **MSIX** as the preferred first path.
 2. The existing direct Inno installer channel remains a parallel release channel.
-3. Store builds must not use the direct `latest.json` auto/manual installer update flow. The channel/update behavior plan is documented in [`docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`](WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md) and remains pending implementation.
+3. Store builds must not use the direct `latest.json` auto/manual installer update flow. The first channel/update runtime guard is implemented with `DesktopDistributionChannel=Direct|Store`; details are documented in [`docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`](WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md).
 4. Store build updates should be managed by Microsoft Store.
 5. Paddle/web checkout is the planned payment path for the PC non-game Store build, pending final Partner Center disclosure and policy review.
 6. Microsoft Store payment/IAP integration is **not** being implemented in this step.

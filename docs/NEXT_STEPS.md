@@ -28,7 +28,7 @@ Current Store/MSIX work remains planning-only. Use this order:
 
 1. Review `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md`.
 2. Complete/review `docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`.
-3. Implement the Store channel flag/update behavior so Store builds cannot use the direct `latest.json`/Inno installer update flow.
+3. Use the implemented Store channel flag (`dotnet build -c Release -p:DesktopDistributionChannel=Store`) for pre-MSIX behavior checks; Direct remains the default.
 4. Prototype MSIX packaging locally without changing the direct Inno installer flow.
 5. Add Windows App Certification Kit verification notes after the prototype exists.
 

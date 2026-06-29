@@ -282,3 +282,24 @@ The first Store/MSIX prototype should follow `docs/WINDOWS_STORE_LOCAL_DATA_AUDI
 ## Recommended follow-up task
 
 Implement the Store channel flag/update behavior boundary without adding MSIX packaging yet. The follow-up should add the channel model, block direct updater execution for Store builds, preserve Direct updater behavior, and add policy tests before any MSIX packaging prototype is introduced.
+
+## Implemented first channel flag/update boundary (2026-06-29)
+
+The first Store channel runtime guard is now implemented without adding MSIX packaging.
+
+- Build property: `DesktopDistributionChannel`.
+- Default: `Direct` when the property is omitted.
+- Store selection example: `dotnet build -c Release -p:DesktopDistributionChannel=Store`.
+- Valid values: `Direct` and `Store`.
+- Invalid values fail the MSBuild validation target and are also guarded by runtime channel parsing.
+
+Implemented behavior:
+
+- Direct remains the default and continues using `https://languagevoicetutor.com/releases/windows/direct/latest.json` for startup and manual update checks.
+- Store builds skip the startup direct manifest update check before `UpdateManifestClient.LoadLatestAsync()` can be reached.
+- Store builds make the manual **Check for updates** command show `Updates are managed by Microsoft Store.` instead of loading direct `latest.json`.
+- Store builds are blocked from direct installer download and direct installer launch by `DesktopUpdatePolicy` checks in `UpdateDownloadService`.
+- Non-Debug/release builds remain locked to `https://api.languagevoicetutor.com`.
+- No MSIX packaging, Store submission, direct Inno installer changes, payment changes, backend changes, database migrations, deployments, uploads, or Website CMS publish were added by this implementation.
+
+Future defense-in-depth can add MSIX package identity detection after package identity details exist, but it is not the first source of truth for this implementation.
