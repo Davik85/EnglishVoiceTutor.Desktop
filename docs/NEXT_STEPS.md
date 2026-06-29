@@ -24,15 +24,15 @@ Release/tester installed builds are server-only and use `https://api.languagevoi
 
 ## Store / MSIX sequence
 
-Current Store/MSIX work remains planning-only. Use this order:
+Current Store/MSIX work now includes a local prototype scaffold, but remains unsubmitted and unpublished. Use this order:
 
 1. Review `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md`.
 2. Complete/review `docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`.
 3. Use the implemented Store channel flag (`dotnet build -c Release -p:DesktopDistributionChannel=Store`) for pre-MSIX behavior checks; Direct remains the default.
-4. Prototype MSIX packaging locally without changing the direct Inno installer flow.
-5. Add Windows App Certification Kit verification notes after the prototype exists.
+4. Verify the local MSIX packaging scaffold in `packaging/windows-msix/` on Windows/Visual Studio without changing the direct Inno installer flow.
+5. Add Windows App Certification Kit verification notes only after WACK is actually run.
 
-Do not add final MSIX commands, upload Store packages, or claim Store availability until the prototype and verification notes exist.
+Do not upload Store packages, submit to Partner Center, or claim Store availability. The current prototype commands are local-only and documented in `docs/WINDOWS_STORE_MSIX_PROTOTYPE.md`.
 
 ## Release-readiness status
 
@@ -157,4 +157,4 @@ This is planned work only; the current Windows direct Inno installer flow remain
 5. Prepare Store listing/legal/assets content and screenshots.
 6. Decide final Paddle/web checkout disclosure wording for Store listing and in-app upgrade flow after Partner Center policy review.
 
-Known gaps before prototype: no confirmed MSIX packaging project, Store package identity, Store version mapping, Store channel build flag, Store update behavior implementation, reviewed Store local-data migration decision, WACK playbook command, Store screenshots/assets checklist, or Partner Center submission checklist. See `docs/WINDOWS_STORE_RELEASE_PLAN.md` and `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md`.
+Known gaps before submission: no final Partner Center package identity, final Store version mapping, WACK pass, production Store screenshots/assets checklist, Partner Center disclosure review, or Store submission checklist. A local prototype project and temporary identity now exist, but they do not imply Store availability. See `docs/WINDOWS_STORE_RELEASE_PLAN.md` and `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md`.

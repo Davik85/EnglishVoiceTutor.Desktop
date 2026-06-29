@@ -135,6 +135,20 @@ Re-run the public verification commands after rollback.
 
 A landing page update was initially uploaded to `/var/www/languagevoicetutor/`, but nginx serves the public website from `/var/www/languagevoicetutor/site`. Because the files were in the wrong parent directory, the live homepage did not update and public requests for `download.html` plus landing assets returned 404. Diagnostics confirmed the real nginx root, confirmed `/releases/windows/direct/` is a separate alias to `/var/www/languagevoicetutor/releases/windows/direct/`, and confirmed that Windows release files should not be mixed with website files. The accidental files were removed from the wrong parent directory, then `index.html`, `download.html`, `styles.css`, `download.js`, the landing images, and the landing README were uploaded to `/var/www/languagevoicetutor/site`. Public verification then returned `200 OK` for the homepage, `download.html`, and both landing images, while `latest.json` remained valid.
 
+
+## Local Store/MSIX prototype commands
+
+These commands are local-only prototype checks. They do not upload packages, do not submit to Microsoft Store, and do not replace the Windows direct Inno release flow. Use Windows with Visual Studio/MSBuild packaging components for the MSIX packaging command.
+
+```powershell
+dotnet build .\EnglishVoiceTutor.Desktop.csproj -c Release -p:DesktopDistributionChannel=Store
+powershell -ExecutionPolicy Bypass -File .\scripts\generate-store-msix-placeholder-assets.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\test-store-msix-prototype-policy.ps1
+msbuild .\packaging\windows-msix\LanguageVoiceTutor.StorePrototype.wapproj /restore /p:Configuration=Release /p:Platform=x64 /p:AppxPackageSigningEnabled=false
+```
+
+The asset generator creates local placeholder PNG files under `packaging/windows-msix/Assets/`; those PNG outputs are intentionally ignored by git. If signing is needed for sideload testing, create a local test certificate outside git. Do not commit `.pfx`, `.pvk`, `.snk`, local `.cer`, private keys, passwords, generated PNG assets, generated packages, or Store submission artifacts. WACK remains a follow-up until it is actually run.
+
 ## Windows direct release upload commands
 
 Canonical Windows direct release flow is separate from backend deployment:
