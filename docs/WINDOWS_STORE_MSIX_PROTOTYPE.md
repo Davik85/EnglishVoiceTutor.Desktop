@@ -36,10 +36,10 @@ The packaging project is separate from `EnglishVoiceTutor.Desktop.csproj`. It pa
 The packaging project references the desktop app project with:
 
 ```xml
-<ProjectReference Include="..\..\EnglishVoiceTutor.Desktop.csproj" AdditionalProperties="DesktopDistributionChannel=Store" />
+<ProjectReference Include="..\..\EnglishVoiceTutor.Desktop.csproj" AdditionalProperties="DesktopDistributionChannel=Store;RuntimeIdentifier=win-x64" />
 ```
 
-This keeps `Direct` as the default for normal desktop builds while making this MSIX prototype a Store-channel build. The direct Inno release command remains separate and unchanged.
+This keeps `Direct` as the default for normal desktop builds while making this MSIX prototype a Store-channel build. The `RuntimeIdentifier=win-x64` project-reference property is intentionally scoped to the MSIX prototype so restore creates the required `net10.0-windows/win-x64` assets for Desktop Bridge packaging without changing normal Direct builds. The direct Inno release command remains separate and unchanged.
 
 Manual pre-package behavior check:
 
@@ -105,10 +105,14 @@ powershell -ExecutionPolicy Bypass -File .\scripts\generate-store-msix-placehold
 powershell -ExecutionPolicy Bypass -File .\scripts\test-store-msix-prototype-policy.ps1
 
 # 4. Build the local MSIX prototype project from a Visual Studio Developer PowerShell.
-msbuild .\packaging\windows-msix\LanguageVoiceTutor.StorePrototype.wapproj /restore /p:Configuration=Release /p:Platform=x64 /p:AppxPackageSigningEnabled=false
+msbuild .\packaging\windows-msix\LanguageVoiceTutor.StorePrototype.wapproj /restore /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:AppxPackageSigningEnabled=false
 ```
 
 If local sideload installation requires signing, create/use a local test certificate outside git, then build with local certificate properties or sign the generated package with `signtool` using the local certificate. Do not commit the certificate private key or generated package.
+
+## Current packaging warnings to review later
+
+NuGet compatibility warnings such as `NU1701` or `NU1702` may still appear during local packaging restore/build. Treat those as follow-up compatibility review items unless they become blocking errors after the `net10.0-windows/win-x64` restore target is present. They are not the primary failure addressed by this prototype fix.
 
 ## Install/uninstall test plan
 
