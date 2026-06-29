@@ -351,3 +351,11 @@ Verify CMS runtime status through the Admin runtime-status diagnostic. Normal ru
 When checking CMS content changes, remember: **Save draft** alone does not affect the app, **Publish current draft** is required, and existing active lessons may keep old content until a new lesson starts. Start a new lesson before confirming scenario edits or A1/A2/B1/B2 behavior changes in the desktop app.
 
 Next commands/checks are tester-handoff oriented only: verify the installed tester build from the public site, perform a short smoke test, prepare tester handoff, and collect feedback on lesson quality, level behavior, voice, UI, and CMS-controlled content. Do not touch billing/Paddle in this phase and do not start broad public release yet.
+
+## Planned Microsoft Store / MSIX commands — not yet implemented
+
+This section is intentionally a placeholder for future Store work. Microsoft Store distribution is planned as a separate MSIX channel, while the existing direct Windows Inno installer commands above remain the current working direct release flow.
+
+No Store/MSIX package command, Windows App Certification Kit command, Partner Center submission command, Store package identity, Store version mapping, Store channel build flag, or Store local-data migration process is confirmed yet. Do not invent or run final Store commands from this playbook until a real local MSIX prototype confirms them and `docs/WINDOWS_STORE_RELEASE_PLAN.md` is updated.
+
+Store builds must not use the direct `/releases/windows/direct/latest.json` installer update flow. Direct installer upload, backend deployment, database migrations, Website CMS/static site publish, and future Store/MSIX submission remain separate flows.

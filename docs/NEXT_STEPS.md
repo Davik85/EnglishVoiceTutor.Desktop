@@ -131,3 +131,16 @@ Operational workflow before changing production models: Load AI Models → Edit 
 The `gpt-5.5` lesson tutor chat root cause was unsupported `temperature`, not provider unavailability. Minimal Responses API text passed, minimal structured output passed, and lesson runtime shape without user content passed after `temperature` was omitted. Keep the backend rule that `gpt-5.5` lesson tutor chat requests omit `temperature`; keep existing `gpt-5.2` behavior with `temperature: 0.3` where configured. Do not assume every newer model accepts parameters accepted by older models.
 
 Compatibility diagnostics should be read as a matrix: `minimal_responses_text` checks model availability / Responses API access; `current_provider_test_shape` checks the older provider-test shape including `temperature` if present; `minimal_structured_output` checks strict structured output; and `lesson_chat_runtime_shape_without_user_content` checks lesson runtime request options/schema with safe dummy input. If a new model breaks lessons, inspect safe backend logs for operation, model role, configured model ID, provider status/category, and safe provider error type/code/param/message, then restore a previous known-good model if needed. Logs and Admin UI must not expose secrets, raw provider bodies, raw request bodies, full prompts, private user lesson text, env values, or connection strings.
+
+## Future Microsoft Store / MSIX channel next steps
+
+This is planned work only; the current Windows direct Inno installer flow remains the working release channel and must not be changed by Store preparation.
+
+1. Confirm current local storage paths and auth/session persistence behavior for the direct install.
+2. Add Store channel build planning constants/documentation only, without changing runtime behavior.
+3. Prototype MSIX packaging locally without changing `scripts/package-windows-inno-release.ps1`, `installer/windows/LanguageVoiceTutor.iss`, direct release artifacts, or `latest.json`.
+4. Add Windows App Certification Kit local verification notes only after a real MSIX prototype confirms the command/process.
+5. Prepare Store listing/legal/assets content and screenshots.
+6. Decide final Paddle/web checkout disclosure wording for Store listing and in-app upgrade flow after Partner Center policy review.
+
+Known gaps before prototype: no confirmed MSIX packaging project, Store package identity, Store version mapping, Store channel build flag, Store update behavior implementation, Store local-data migration strategy, WACK playbook command, Store screenshots/assets checklist, or Partner Center submission checklist. See `docs/WINDOWS_STORE_RELEASE_PLAN.md`.
