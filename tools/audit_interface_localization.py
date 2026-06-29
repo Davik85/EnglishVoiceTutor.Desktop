@@ -26,6 +26,12 @@ EXPECTED_UPDATE_KEYS = {
     "The installer could not be started. Please try again, or restart the app and check for updates again.",
 }
 
+APPROVED_IDENTICAL_TRANSLATIONS = {
+    # Some approved UI translations are intentionally identical to English cognates or product wording.
+    "fr": {"Contacts"},
+    "de": {"Website"},
+}
+
 REQUIRED_NORMAL_UI_KEYS = {
     "Forgot password?",
     "Change password",
@@ -127,7 +133,8 @@ def main() -> None:
         missing_required = sorted(required_dictionary_keys - set(blocks[lang]))
         if missing_required:
             raise SystemExit(f"{lang} is missing required normal UI keys: {missing_required}")
-        english_fallback = sorted(k for k in used_keys if blocks[lang].get(k) == k)
+        approved_identical = APPROVED_IDENTICAL_TRANSLATIONS.get(lang, set())
+        english_fallback = sorted(k for k in used_keys if blocks[lang].get(k) == k and k not in approved_identical)
         if english_fallback:
             raise SystemExit(f"{lang} still uses English fallback values: {english_fallback[:10]}")
 
