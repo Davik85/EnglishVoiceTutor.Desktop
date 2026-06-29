@@ -33,7 +33,7 @@ def test_save_draft_merges_into_existing_draft_instead_of_replacing_all_content(
     assert "var pages = merged.Pages.ToDictionary" in source
     assert "incomingDraft.Pages" in source
     assert "incomingDraft.Design is null ? merged.Design" in source
-    assert "Normalize(new WebsiteContentSet(pages, design))" in source
+    assert "Normalize(new WebsiteContentSet(pages, design, marketing))" in source
 
 
 def test_home_stays_structured_and_simple_pages_keep_body_markdown_rendering():

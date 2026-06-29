@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /releases/windows/direct/*.exe
+
+Sitemap: https://languagevoicetutor.com/sitemap.xml
