@@ -114,7 +114,7 @@ Legal texts are product/legal drafts and must not be described as final legal ad
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.77`.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.80`.
 - Website: public pages generated and Paddle-review polish completed.
 - Download: current Windows tester release visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public tester release `0.1.36-tester.31`.

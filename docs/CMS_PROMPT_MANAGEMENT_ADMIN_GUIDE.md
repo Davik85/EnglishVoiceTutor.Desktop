@@ -183,12 +183,44 @@ Edit scenario-specific behavior in **Scenarios** and, if needed, global roleplay
 
 ## Admin → System → AI Models
 
-Super Admins can review and edit backend AI model identifiers in **Admin → System → AI Models**. Use this section for model IDs only: lesson tutor chat, feedback/correction, lesson hint, translation, speech-to-text, lesson chat text-to-speech, Conversation Mode text-to-speech, and Realtime voice. Do not enter API keys, bearer tokens, organization IDs, or other secrets. OpenAI keys remain environment/server secrets.
+Super Admins and Bootstrap Admins can review and edit backend runtime AI model identifiers in **Admin → System → AI Models**. Backend runtime remains the source of truth for model selection: the Desktop app calls backend APIs and does not decide OpenAI model IDs. Use this section for model IDs only: lesson tutor chat, feedback/correction, lesson hint, translation, speech-to-text, lesson chat text-to-speech, Conversation Mode text-to-speech, and Realtime voice. Do not enter API keys, bearer tokens, organization IDs, or other secrets. OpenAI keys remain environment/server secrets and are not stored in CMS. AI model settings are JSON/file-based; no database table, schema change, or EF migration is required.
 
-Recommended workflow: Save draft → Validate format → Test provider access → Publish → run a small real lesson. AI Models CMS has two checks: **Validate format** checks only that model IDs are non-empty, reasonably short, and limited to safe model-ID characters; **Test provider access** runs safe minimal provider checks for draft text model roles without publishing. Format validation does not prove provider access, so a syntactically valid but unavailable provider model can still break AI calls until corrected. If a new model breaks lessons, restore the previous known-good model such as `gpt-5.2` and inspect safe backend logs. API keys remain server environment secrets and are never stored in CMS.
+Current known-good AI model configuration:
 
-#### GPT-5.5 lesson tutor chat compatibility workflow
+| Runtime role | Model |
+| --- | --- |
+| Lesson tutor chat | `gpt-5.5` |
+| Feedback / correction | `gpt-5.2` |
+| Lesson hint | `gpt-5.2` |
+| Translation | `gpt-5.2` |
+| Speech-to-text | `gpt-4o-mini-transcribe` |
+| Lesson chat text-to-speech | `tts-1` |
+| Conversation Mode text-to-speech | `gpt-4o-mini-tts` |
+| Realtime voice | `gpt-realtime` |
 
-`gpt-5.5` has failed lesson tutor chat with `invalid_request` / HTTP 400 under the current lesson chat Responses API request shape. Keep `gpt-5.5` unpublished for lesson tutor chat until compatibility diagnostics isolate whether the minimal request, structured output mode, or lesson runtime request shape is rejected, and then verify with a small real lesson.
+Recommended Super Admin workflow: Load AI Models → Edit draft → Save draft → Validate format → Test provider access → Review compatibility diagnostics → Publish / Make active only if relevant runtime diagnostics pass → run a small real lesson after publishing. **Validate format** checks syntax only: non-empty model IDs, reasonable length, and safe model-ID characters. It does not prove provider access. **Test provider access** performs provider-level checks against draft settings, does not publish settings, and uses safe dummy input rather than real lesson or user text. Audio and realtime roles may be reported as `not_tested` when not covered by lightweight provider tests.
 
-Recommended AI Models workflow: Save draft → Validate format → Test provider access → Run compatibility diagnostics for new model family if needed → Publish → small real lesson. API keys remain server environment secrets and must not be saved or exposed in CMS output.
+#### GPT-5.5 lesson tutor chat compatibility result
+
+`gpt-5.5` is available to the deployed OpenAI API key/project and now works for lesson tutor chat when the backend omits `temperature`. The observed failure was not model unavailability. The provider rejected the request parameter `temperature` and returned safe diagnostics with `statusCode: 400`, `safeCategory: invalid_request`, `providerErrorType: invalid_request_error`, `providerErrorParam: temperature`, and `sanitizedProviderMessage: Unsupported parameter: 'temperature' is not supported with this model.`
+
+The investigation confirmed that a minimal Responses API text request with `gpt-5.5` passed, minimal structured output with `gpt-5.5` passed, and the lesson runtime request shape without user content passed after `temperature` was omitted. Therefore `gpt-5.5` can be used for lesson tutor chat when the backend does not send `temperature`.
+
+Backend compatibility rule: for `gpt-5.5` lesson tutor chat runtime requests, omit `temperature`. For `gpt-5.2`, preserve existing behavior and continue sending `temperature: 0.3` where currently configured. Do not reintroduce `temperature` for `gpt-5.5` unless provider compatibility changes and is retested. Do not assume a newer model accepts every parameter accepted by older models. New model families must be tested with provider access diagnostics before publish.
+
+#### Compatibility diagnostics matrix
+
+| Diagnostic | What it verifies |
+| --- | --- |
+| `minimal_responses_text` | Basic model availability and Responses API access. |
+| `current_provider_test_shape` | The older provider-test shape, including `temperature` if present. |
+| `minimal_structured_output` | Strict structured output support using a tiny safe schema. |
+| `lesson_chat_runtime_shape_without_user_content` | Lesson runtime request options/schema using safe dummy input. |
+
+Interpret diagnostics in order. If `minimal_responses_text` fails, the model may be unavailable to the project/key or the alias may require different usage. If `minimal_responses_text` passes but `current_provider_test_shape` fails, inspect the added parameter; in the `gpt-5.5` case, the failure was `temperature`. If `minimal_structured_output` fails, structured output / `text.format` / schema compatibility is the issue. If `minimal_structured_output` passes but `lesson_chat_runtime_shape_without_user_content` fails, the lesson schema or runtime request shape is the issue. If `lesson_chat_runtime_shape_without_user_content` passes, the model is safe to try in a small real lesson.
+
+#### Safe diagnostics and logging
+
+Provider errors are mapped to safe categories before display. Super Admin sees only safe provider fields: `statusCode`, `safeCategory`, `providerErrorType`, `providerErrorCode`, `providerErrorParam`, and `sanitizedProviderMessage`. Logs may include safe runtime fields such as `operation`, `modelRole`, `configuredModelId`, provider status/category, and provider error type/code/param/message where available.
+
+Logs and Admin UI must not expose API keys, Authorization headers, raw provider response bodies, raw request bodies, full prompts, private user lesson text, environment values, or connection strings.

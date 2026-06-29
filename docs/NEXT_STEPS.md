@@ -22,7 +22,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.77`.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.80`.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
@@ -122,6 +122,12 @@ Backend remains source of truth for plan, subscription, entitlement, usage, and 
 
 ## AI model CMS operations
 
-AI model IDs are now editable by Super Admin in **Admin → System → AI Models** through JSON/file-based CMS settings. API keys remain environment/server secrets and are not CMS content. Model changes should require only CMS publish for backend runtime to use them on new AI requests; no desktop release is required because the desktop does not decide model IDs or call OpenAI directly.
+AI model IDs are editable by Super Admin / Bootstrap Admin in **Admin → System → AI Models** through JSON/file-based CMS settings. API keys remain environment/server secrets and are not CMS content. Backend runtime remains the source of truth for AI model selection; model changes should require only CMS publish for backend runtime to use them on new AI requests. No desktop release is required because the desktop does not decide model IDs or call OpenAI directly. No DB migration was added.
 
-Operational next steps before changing production models: Save draft → Validate format → Test provider access → Publish → run a small real lesson for tutor chat, correction/feedback behavior, summary-related text flow where applicable, speech-to-text, and text-to-speech. AI Models CMS now has two checks: format validation (syntax only) and provider access testing (safe minimal Responses API calls for text roles against the current draft, without publishing). If a new model breaks lessons, restore the previous known-good model such as `gpt-5.2` and inspect safe backend logs for model role, configured model ID, provider status code, and safe category. If active CMS model settings are missing or invalid, backend falls back to the current safe defaults and logs a warning without secrets.
+Current known-good model configuration: lesson tutor chat `gpt-5.5`; feedback/correction `gpt-5.2`; lesson hint `gpt-5.2`; translation `gpt-5.2`; speech-to-text `gpt-4o-mini-transcribe`; lesson chat TTS `tts-1`; Conversation Mode TTS `gpt-4o-mini-tts`; Realtime voice `gpt-realtime`.
+
+Operational workflow before changing production models: Load AI Models → Edit draft → Save draft → Validate format → Test provider access → Review compatibility diagnostics → Publish / Make active only if relevant runtime diagnostics pass → run a small real lesson. Validate format checks syntax only and does not prove provider access. Test provider access performs provider-level checks using draft settings, does not publish, and uses safe dummy input rather than real lesson/user text. Audio and realtime roles may be marked `not_tested` if not covered by lightweight checks.
+
+The `gpt-5.5` lesson tutor chat root cause was unsupported `temperature`, not provider unavailability. Minimal Responses API text passed, minimal structured output passed, and lesson runtime shape without user content passed after `temperature` was omitted. Keep the backend rule that `gpt-5.5` lesson tutor chat requests omit `temperature`; keep existing `gpt-5.2` behavior with `temperature: 0.3` where configured. Do not assume every newer model accepts parameters accepted by older models.
+
+Compatibility diagnostics should be read as a matrix: `minimal_responses_text` checks model availability / Responses API access; `current_provider_test_shape` checks the older provider-test shape including `temperature` if present; `minimal_structured_output` checks strict structured output; and `lesson_chat_runtime_shape_without_user_content` checks lesson runtime request options/schema with safe dummy input. If a new model breaks lessons, inspect safe backend logs for operation, model role, configured model ID, provider status/category, and safe provider error type/code/param/message, then restore a previous known-good model if needed. Logs and Admin UI must not expose secrets, raw provider bodies, raw request bodies, full prompts, private user lesson text, env values, or connection strings.

@@ -35,7 +35,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.77`.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.80`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows tester release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
@@ -62,13 +62,13 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.77`. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
+Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.80`. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
 
 Backend deployment uses:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.77
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.77
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.80
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.80
 ```
 
 The backend upload flow uses the uploaded `deploy-backend-release.sh` helper and `ssh -tt` for sudo restart/status when needed. Do not document old fragile inline bash deployment paths as the current flow.
@@ -182,7 +182,7 @@ Current public tester values:
 - `updateMode`: `manual-confirmation`
 - `minimumSupportedVersion`: `0.1.36-tester.31`
 
-The `0.1.36-tester.31` Windows direct tester release has been built, uploaded, and verified. The user confirmed the newly uploaded build works and that the manual-confirmation update flow works on other devices. Backend deployment was not part of this desktop polish release; production backend remains healthy at `0.1.35-backend.77`, and no database migrations were added or run.
+The `0.1.36-tester.31` Windows direct tester release has been built, uploaded, and verified. The user confirmed the newly uploaded build works and that the manual-confirmation update flow works on other devices. Backend deployment was not part of this desktop polish release; production backend remains healthy at `0.1.35-backend.80`, and no database migrations were added or run.
 
 Release-relevant desktop polish included in `0.1.36-tester.31`:
 
@@ -219,14 +219,16 @@ Website/legal pages prepared for review include Pricing / Subscription terms, Te
 
 ## AI model settings in Super Admin CMS
 
-AI model identifiers for backend runtime are now managed through the Super Admin-only **Admin → System → AI Models** CMS endpoint set. The active and draft values are stored in JSON/file-based CMS storage at `site/content/ai-model-settings.json` when an admin saves or publishes settings; no database table or EF migration is required.
+AI model identifiers for backend runtime are managed through the Super Admin / Bootstrap Admin controlled **Admin → System → AI Models** CMS endpoint set. Backend runtime remains the source of truth for AI model selection: the Desktop app calls backend endpoints and does not choose OpenAI model IDs. The active and draft values are stored in JSON/file-based CMS storage at `site/content/ai-model-settings.json` when an admin saves or publishes settings; API keys are not stored in CMS, no database table is used, and no EF migration was added. OpenAI API keys remain server environment secrets, especially `OPENAI_API_KEY`.
 
-Current fallback defaults preserve the pre-CMS runtime behavior: lesson tutor chat, feedback/correction, lesson hints, and translation use the OpenAI Responses chat fallback (`gpt-5.2`); speech-to-text uses `gpt-4o-mini-transcribe`; normal lesson chat TTS uses `tts-1`; Conversation Mode TTS uses `gpt-4o-mini-tts`; Realtime voice uses `gpt-realtime`. These are model IDs only. OpenAI API keys remain server environment secrets, especially `OPENAI_API_KEY`, and must never be saved in CMS JSON.
+Current known-good AI model configuration: lesson tutor chat uses `gpt-5.5`; feedback/correction, lesson hints, and translation use `gpt-5.2`; speech-to-text uses `gpt-4o-mini-transcribe`; normal lesson chat TTS uses `tts-1`; Conversation Mode TTS uses `gpt-4o-mini-tts`; and Realtime voice uses `gpt-realtime`. These are model IDs only and do not include provider credentials.
 
-Publishing AI model settings affects new backend AI requests without a desktop release because the desktop continues to call backend endpoints and does not choose OpenAI model IDs. AI Models CMS exposes two checks before publish: format validation (syntax only) and provider access testing for current draft text roles without publishing or storing secrets. Recommended production workflow is Save draft → Validate format → Test provider access → Publish → run a small real lesson. If a new model breaks lessons, restore the previous known-good model such as `gpt-5.2` and inspect safe backend logs. If the CMS file is missing, unreadable, or contains invalid active values, backend runtime logs a safe warning and falls back to the current safe defaults so lessons are not broken by CMS storage problems.
+Publishing AI model settings affects new backend AI requests without a desktop release because the desktop continues to call backend endpoints and does not choose OpenAI model IDs. The Super Admin workflow is: Load AI Models → Edit draft → Save draft → Validate format → Test provider access → Review compatibility diagnostics → Publish / Make active only if relevant runtime diagnostics pass → run a small real lesson after publishing. Validate format checks syntax only and does not prove provider access. Test provider access performs provider-level checks using draft settings, does not publish settings, and uses safe dummy input rather than real lesson/user text. Audio and realtime roles may be `not_tested` when not covered by lightweight provider tests.
 
-### GPT-5.5 lesson tutor chat compatibility diagnostics
+The `gpt-5.5` lesson tutor chat investigation found that `gpt-5.5` was available to the deployed OpenAI API key/project. The root cause was the request parameter `temperature`, not model unavailability. Safe provider diagnostics recorded `statusCode: 400`, `safeCategory: invalid_request`, `providerErrorType: invalid_request_error`, `providerErrorParam: temperature`, and `sanitizedProviderMessage: Unsupported parameter: 'temperature' is not supported with this model.` Minimal Responses API text, minimal structured output, and the lesson runtime shape without user content passed after `temperature` was omitted. Therefore `gpt-5.5` can be used for lesson tutor chat when backend runtime requests omit `temperature`.
 
-Production observed `gpt-5.5` failing lesson tutor chat with `invalid_request` / HTTP 400 under the current lesson chat Responses API request shape, while `gpt-5.2` continues to work. Do not publish `gpt-5.5` for lesson tutor chat until the Admin AI Models compatibility diagnostics identify the failing field and a small real lesson succeeds.
+Backend request-shape rule: for `gpt-5.5` lesson tutor chat runtime requests, omit `temperature`; for `gpt-5.2`, preserve existing behavior and still send `temperature: 0.3` where currently configured. Do not reintroduce `temperature` for `gpt-5.5` unless provider compatibility changes and is retested, and do not assume newer model families accept every parameter accepted by older models. New model families must be tested with provider access diagnostics before publish.
 
-AI Models workflow: Save draft → Validate format → Test provider access → Run compatibility diagnostics for a new model family if needed → Publish → small real lesson. Diagnostics use draft settings only, never publish settings, and use safe dummy inputs rather than real lesson/user text. API keys remain environment/server secrets.
+Compatibility diagnostics are interpreted as follows: `minimal_responses_text` verifies basic model availability and Responses API access; `current_provider_test_shape` verifies the older provider-test shape including `temperature` if present; `minimal_structured_output` verifies strict structured output support using a tiny safe schema; and `lesson_chat_runtime_shape_without_user_content` verifies lesson runtime request options/schema with safe dummy input. If the minimal text check fails, suspect project/key availability or alias usage. If minimal text passes but the current provider-test shape fails, inspect the added parameter. If structured output fails, schema/text-format compatibility is the issue. If structured output passes but lesson runtime shape fails, the lesson schema or runtime request shape is the issue. If the lesson runtime shape passes, the model is safe to try in a small real lesson.
+
+Provider errors are mapped to safe categories. Super Admin sees only safe provider fields: `statusCode`, `safeCategory`, `providerErrorType`, `providerErrorCode`, `providerErrorParam`, and `sanitizedProviderMessage`. Logs may include safe runtime fields such as `operation`, `modelRole`, `configuredModelId`, provider status/category, and provider error type/code/param/message where available. Logs and Admin UI must not expose API keys, Authorization headers, raw provider response bodies, raw request bodies, full prompts, private user lesson text, environment values, or connection strings.
