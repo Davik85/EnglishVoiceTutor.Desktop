@@ -183,7 +183,7 @@ Edit scenario-specific behavior in **Scenarios** and, if needed, global roleplay
 
 ## Admin → System → AI Models
 
-Super Admins and Bootstrap Admins can review and edit backend runtime AI model identifiers in **Admin → System → AI Models**. Backend runtime remains the source of truth for model selection: the Desktop app calls backend APIs and does not decide OpenAI model IDs. Use this section for model IDs only: lesson tutor chat, feedback/correction, lesson hint, translation, speech-to-text, lesson chat text-to-speech, Conversation Mode text-to-speech, and Realtime voice. Do not enter API keys, bearer tokens, organization IDs, or other secrets. OpenAI keys remain environment/server secrets and are not stored in CMS. AI model settings are JSON/file-based; no database table, schema change, or EF migration is required.
+Super Admins and Bootstrap Admins can review and edit backend runtime AI model identifiers in **Admin → System → AI Models**. Backend runtime remains the source of truth for model selection: the Desktop app calls backend APIs and does not decide OpenAI model IDs. Use this section for model IDs only: lesson tutor chat, feedback/correction, lesson hint, translation, speech-to-text, lesson chat text-to-speech, Conversation Mode text-to-speech, and Realtime voice. Do not enter API keys, bearer tokens, organization IDs, or other secrets. OpenAI keys remain environment/server secrets and are not stored in CMS. AI model settings are JSON/file-based persistent server data. In production the `site/content/ai-model-settings.json` setting is resolved outside versioned backend release folders, so active/draft runtime settings survive `/opt/languagevoicetutor/backend/current` symlink changes, backend deploys, and service restarts. Packaged defaults are fallback/seed data only and must not overwrite an existing published active file. No database table, schema change, or EF migration is required.
 
 Current known-good AI model configuration:
 
@@ -197,6 +197,9 @@ Current known-good AI model configuration:
 | Lesson chat text-to-speech | `tts-1` |
 | Conversation Mode text-to-speech | `gpt-4o-mini-tts` |
 | Realtime voice | `gpt-realtime` |
+
+
+Post-deploy verification: after any backend deploy, a Super Admin should open **Admin CMS → System → AI Models → Load AI Models** and confirm lesson tutor chat remains `gpt-5.5`, while feedback/correction, lesson hint, and translation remain `gpt-5.2`. Run **Validate format**. Run **Test provider access** only if model settings changed. Do not publish unless the loaded draft changes are intentional.
 
 Recommended Super Admin workflow: Load AI Models → Edit draft → Save draft → Validate format → Test provider access → Review compatibility diagnostics → Publish / Make active only if relevant runtime diagnostics pass → run a small real lesson after publishing. **Validate format** checks syntax only: non-empty model IDs, reasonable length, and safe model-ID characters. It does not prove provider access. **Test provider access** performs provider-level checks against draft settings, does not publish settings, and uses safe dummy input rather than real lesson or user text. Audio and realtime roles may be reported as `not_tested` when not covered by lightweight provider tests.
 

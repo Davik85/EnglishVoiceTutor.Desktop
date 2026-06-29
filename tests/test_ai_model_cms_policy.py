@@ -19,7 +19,9 @@ def test_admin_ai_model_endpoints_are_bootstrap_admin_only():
 
 def test_ai_model_settings_validation_rejects_injection_and_uses_json_file_storage():
     service = read('backend/EnglishVoiceTutor.Api/Services/AiModelSettingsService.cs')
-    assert 'site", "content", "ai-model-settings.json"' in service
+    assert 'IOptions<AiModelSettingsOptions>' in service
+    assert 'Path.Combine(environment.ContentRootPath, "..", "..", configuredPath)' in service
+    assert 'ImportLegacyContentRootSettingsIfNeeded' in service
     assert 'GeneratedRegex("^[A-Za-z0-9._:-]+$"' in service
     assert 'is required' in service
     assert 'fallback default model settings are being used' in service
@@ -76,3 +78,12 @@ def test_desktop_does_not_hardcode_ai_model_ids():
     forbidden = ['gpt-5.2', 'gpt-4o-mini-transcribe', 'gpt-4o-mini-tts', 'tts-1', 'gpt-realtime']
     for model in forbidden:
         assert model not in desktop_constants
+
+
+def test_ai_model_settings_persistence_regression_tests_exist():
+    tests = read('backend/EnglishVoiceTutor.Api.Tests/Services/AiModelSettingsServiceTests.cs')
+    assert 'PublishPersistsActiveSettingsOutsideReleaseContentRoot' in tests
+    assert 'ExistingPersistentActiveSettingsAreNotOverwrittenByPackagedDefaults' in tests
+    assert 'ReleaseFolderChangeLoadsPreviouslyPublishedActiveSettings' in tests
+    assert 'MissingPersistentSettingsImportLegacyReleaseSettingsOnce' in tests
+    assert 'ApiKey' not in tests

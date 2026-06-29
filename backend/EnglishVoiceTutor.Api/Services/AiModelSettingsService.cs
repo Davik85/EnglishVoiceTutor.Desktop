@@ -2,10 +2,12 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
+using EnglishVoiceTutor.Api.Options;
+using Microsoft.Extensions.Options;
 
 namespace EnglishVoiceTutor.Api.Services;
 
-public sealed partial class AiModelSettingsService(IWebHostEnvironment environment, ILogger<AiModelSettingsService> logger) : IAiModelSettingsService
+public sealed partial class AiModelSettingsService(IOptions<AiModelSettingsOptions> options, IWebHostEnvironment environment, ILogger<AiModelSettingsService> logger) : IAiModelSettingsService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
     private static readonly Regex SafeModelIdRegex = SafeModelId();
@@ -117,6 +119,7 @@ public sealed partial class AiModelSettingsService(IWebHostEnvironment environme
         lock (_sync)
         {
             var path = GetPath();
+            ImportLegacyContentRootSettingsIfNeeded(path);
             if (!File.Exists(path))
             {
                 var defaults = AiModelSettings.Defaults;
@@ -147,7 +150,33 @@ public sealed partial class AiModelSettingsService(IWebHostEnvironment environme
         await JsonSerializer.SerializeAsync(stream, document, JsonOptions, cancellationToken);
     }
 
-    private string GetPath() => Path.Combine(environment.ContentRootPath, "site", "content", "ai-model-settings.json");
+    private string GetPath() => ResolvePath(options.Value.StorageJsonPath);
+
+    private string GetLegacyContentRootPath() => Path.Combine(environment.ContentRootPath, "site", "content", "ai-model-settings.json");
+
+    private string ResolvePath(string configuredPath) => Path.IsPathRooted(configuredPath)
+        ? configuredPath
+        : Path.GetFullPath(Path.Combine(environment.ContentRootPath, "..", "..", configuredPath));
+
+    private void ImportLegacyContentRootSettingsIfNeeded(string persistentPath)
+    {
+        var legacyPath = GetLegacyContentRootPath();
+        if (File.Exists(persistentPath) || !File.Exists(legacyPath) || string.Equals(Path.GetFullPath(persistentPath), Path.GetFullPath(legacyPath), StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(persistentPath)!);
+            File.Copy(legacyPath, persistentPath, overwrite: false);
+            logger.LogInformation("Imported legacy AI model CMS settings from release content root into persistent server data storage.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            logger.LogWarning(ex, "AI model CMS settings legacy import failed; fallback default model settings may be used if persistent settings are missing.");
+        }
+    }
 
     private static AiModelSettingsResponse ToResponse(AiModelSettingsDocument document) =>
         new(document.Active, document.Draft, document.UpdatedAtUtc, document.UpdatedBy, document.Revision, []);

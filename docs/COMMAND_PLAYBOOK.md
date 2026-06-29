@@ -359,3 +359,8 @@ This section is intentionally a placeholder for future Store work. Microsoft Sto
 No Store/MSIX package command, Windows App Certification Kit command, Partner Center submission command, Store package identity, Store version mapping, Store channel build flag, or Store local-data migration process is confirmed yet. Do not invent or run final Store commands from this playbook until a real local MSIX prototype confirms them and `docs/WINDOWS_STORE_RELEASE_PLAN.md` is updated.
 
 Store builds must not use the direct `/releases/windows/direct/latest.json` installer update flow. Direct installer upload, backend deployment, database migrations, Website CMS/static site publish, and future Store/MSIX submission remain separate flows.
+
+
+## AI Models CMS post-deploy verification
+
+After a backend deploy, open **Admin CMS → System → AI Models → Load AI Models** as Super Admin. Confirm lesson tutor chat remains `gpt-5.5`; confirm feedback/correction, lesson hint, and translation remain `gpt-5.2`; run **Validate format**; run **Test provider access** only if model settings changed; and do not publish unless the changes are intentional. AI Models CMS JSON is persistent server data at `site/content/ai-model-settings.json` resolved outside versioned backend release folders, not a packaged release artifact.
