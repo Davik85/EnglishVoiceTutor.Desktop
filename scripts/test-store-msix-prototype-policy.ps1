@@ -15,13 +15,20 @@ if (-not (Test-Path $AssetGenerator)) { throw "Missing local MSIX placeholder as
 $WapContent = Get-Content $WapProj -Raw
 if ($WapContent -notmatch 'DesktopDistributionChannel=Store') { throw 'MSIX prototype project must pass DesktopDistributionChannel=Store to the desktop app project.' }
 if ($WapContent -notmatch 'RuntimeIdentifier=win-x64') { throw 'MSIX prototype project must pass RuntimeIdentifier=win-x64 so restore includes net10.0-windows/win-x64 assets.' }
+if ($WapContent -notmatch [regex]::Escape('Assets\Square310x310Logo.png')) { throw 'MSIX prototype project must package Assets\Square310x310Logo.png.' }
 
 $ManifestContent = Get-Content $Manifest -Raw
 if ($ManifestContent -notmatch 'LanguageVoiceTutor\.Desktop\.StorePrototype') { throw 'MSIX prototype manifest must use the local prototype identity.' }
 if ($ManifestContent -notmatch 'Version="\d+\.\d+\.\d+\.\d+"') { throw 'MSIX package version must be four numeric components.' }
-foreach ($AssetPath in @('Assets\Square44x44Logo.png', 'Assets\Square150x150Logo.png', 'Assets\Wide310x150Logo.png', 'Assets\StoreLogo.png', 'Assets\SplashScreen.png')) {
+if ($ManifestContent -notmatch 'Square310x310Logo="Assets\\Square310x310Logo\.png"') { throw 'MSIX manifest Square310x310Logo must reference Assets\Square310x310Logo.png.' }
+if ($ManifestContent -match 'Square310x310Logo="Assets\\Square150x150Logo\.png"') { throw 'MSIX manifest Square310x310Logo must not reuse the 150x150 asset.' }
+
+foreach ($AssetPath in @('Assets\Square44x44Logo.png', 'Assets\Square150x150Logo.png', 'Assets\Square310x310Logo.png', 'Assets\Wide310x150Logo.png', 'Assets\StoreLogo.png', 'Assets\SplashScreen.png')) {
     if ($ManifestContent -notmatch [regex]::Escape($AssetPath)) { throw "MSIX manifest must reference generated asset path: $AssetPath" }
 }
+
+$AssetGeneratorContent = Get-Content $AssetGenerator -Raw
+if ($AssetGeneratorContent -notmatch "Name\s*=\s*'Square310x310Logo\.png';\s*Width\s*=\s*310;\s*Height\s*=\s*310") { throw 'MSIX placeholder asset generator must create Square310x310Logo.png as 310x310.' }
 
 $TrackedGeneratedArtifacts = git -C $Root ls-files -- '*.pfx' '*.pvk' '*.snk' '*.cer' 'packaging/windows-msix/Assets/*.png' 'packaging/windows-msix/AppPackages/*'
 if ($TrackedGeneratedArtifacts) { throw "Tracked generated/signing artifacts are forbidden:`n$TrackedGeneratedArtifacts" }

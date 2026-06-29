@@ -26,7 +26,7 @@ Deployment impact classification:
 - Packaging project: `packaging/windows-msix/LanguageVoiceTutor.StorePrototype.wapproj`.
 - Package manifest: `packaging/windows-msix/Package.appxmanifest`.
 - Local placeholder MSIX visual asset generator: `scripts/generate-store-msix-placeholder-assets.ps1`.
-- Generated local placeholder MSIX visual assets output to `packaging/windows-msix/Assets/*.png` and are intentionally ignored by git.
+- Generated local placeholder MSIX visual assets output to `packaging/windows-msix/Assets/*.png` and are intentionally ignored by git. The local prototype set includes `Square44x44Logo.png` (44x44), `Square150x150Logo.png` (150x150), `Square310x310Logo.png` (310x310), `Wide310x150Logo.png` (310x150), `StoreLogo.png` (50x50), and `SplashScreen.png` (620x300).
 - Static policy check: `scripts/test-store-msix-prototype-policy.ps1`.
 
 The packaging project is separate from `EnglishVoiceTutor.Desktop.csproj`. It packages the existing WPF/Win32 desktop app through Desktop Bridge style MSIX packaging and does not convert the app to UWP, WinUI, MAUI, or Windows App SDK.

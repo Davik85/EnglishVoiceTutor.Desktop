@@ -16,6 +16,7 @@ if (-not (Test-Path $OutputDirectory)) {
 $assets = @(
     @{ Name = 'Square44x44Logo.png'; Width = 44; Height = 44; FontSize = 13 },
     @{ Name = 'Square150x150Logo.png'; Width = 150; Height = 150; FontSize = 42 },
+    @{ Name = 'Square310x310Logo.png'; Width = 310; Height = 310; FontSize = 86 },
     @{ Name = 'Wide310x150Logo.png'; Width = 310; Height = 150; FontSize = 42 },
     @{ Name = 'StoreLogo.png'; Width = 50; Height = 50; FontSize = 15 },
     @{ Name = 'SplashScreen.png'; Width = 620; Height = 300; FontSize = 72 }
@@ -38,6 +39,10 @@ foreach ($asset in $assets) {
         $graphics.DrawString('LVT', $font, $brush, $rectangle, $format)
 
         $path = Join-Path $OutputDirectory $asset.Name
+        if (Test-Path -LiteralPath $path) {
+            Remove-Item -LiteralPath $path -Force
+        }
+
         $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
         Write-Host "Generated $path"
     }
