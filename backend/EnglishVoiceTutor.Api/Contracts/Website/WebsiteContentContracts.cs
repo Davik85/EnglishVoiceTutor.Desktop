@@ -13,7 +13,8 @@ public sealed record WebsiteDesignContent(
 
 public sealed record WebsiteContentSet(
     Dictionary<string, Dictionary<string, string>> Pages,
-    WebsiteDesignContent Design);
+    WebsiteDesignContent Design,
+    Dictionary<string, string>? Marketing = null);
 
 public sealed record WebsiteContentDocument(WebsiteContentSet Active, WebsiteContentSet Draft);
 

@@ -1,0 +1,18 @@
+# Language Voice Tutor
+
+Language Voice Tutor is a Windows desktop application for practicing real-life spoken language lessons with AI-assisted conversation scenarios.
+
+Windows desktop tester/direct release is available. Android and iOS apps are planned but not currently available. Live paid subscriptions are not enabled until Paddle live setup is completed.
+
+## Important links
+- Home: https://languagevoicetutor.com/
+- Download: https://languagevoicetutor.com/download.html
+- Pricing: https://languagevoicetutor.com/pricing.html
+- Terms: https://languagevoicetutor.com/terms.html
+- Privacy: https://languagevoicetutor.com/privacy.html
+- Refund Policy: https://languagevoicetutor.com/refunds.html
+- Cancellation Policy: https://languagevoicetutor.com/cancellation.html
+- Support: https://languagevoicetutor.com/support.html
+- Seller / Company Details: https://languagevoicetutor.com/seller.html
+- AI & Data Disclosure: https://languagevoicetutor.com/ai-data.html
+- Service Status: https://languagevoicetutor.com/status.html

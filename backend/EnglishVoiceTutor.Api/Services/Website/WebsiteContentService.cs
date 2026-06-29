@@ -14,6 +14,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
     private const string DefaultLogoPath = "assets/brand/lvt-logo.png";
     private const string PreviewPublicBaseHref = "https://languagevoicetutor.com/";
+    private const string PublicSiteBaseUrl = "https://languagevoicetutor.com";
     private const string RequiredLanguageLine = "🇬🇧 English · 🇫🇷 French · 🇩🇪 German · 🇪🇸 Spanish · 🇮🇹 Italian · 🇵🇹 Portuguese";
     private static readonly IReadOnlyDictionary<string, string> DefaultLanguageFlagPaths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -104,7 +105,8 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         }
 
         var design = incomingDraft.Design is null ? merged.Design : NormalizeDesign(incomingDraft.Design, merged.Design);
-        return Normalize(new WebsiteContentSet(pages, design));
+        var marketing = MergeMarketing(merged.Marketing, incomingDraft.Marketing);
+        return Normalize(new WebsiteContentSet(pages, design, marketing));
     }
 
     private async Task WriteDocumentAsync(WebsiteContentDocument document, CancellationToken cancellationToken)
@@ -139,7 +141,8 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         pages["home"]["mobileCardDescription"] = "Android and iOS apps are planned but are not currently available.";
         pages["home"]["mobileComingSoonButtonText"] = "Not currently available";
         var design = NormalizeDesign(input?.Design, defaults.Design);
-        return new WebsiteContentSet(pages, design);
+        var marketing = NormalizeMarketing(input?.Marketing, defaults.Marketing);
+        return new WebsiteContentSet(pages, design, marketing);
     }
 
     private async Task<IReadOnlyList<string>> RenderAllAsync(WebsiteContentSet c, string root, CancellationToken ct)
@@ -151,6 +154,9 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         {
             await W(fileName, RenderPage(c, pageKey, release: pageKey == "download" ? release : null));
         }
+        await W("robots.txt", RenderRobotsTxt());
+        await W("sitemap.xml", RenderSitemapXml(DateTimeOffset.UtcNow));
+        if (IsEnabled(c.Marketing, "enableLlmsTxt")) { await W("llms.txt", RenderLlmsTxt()); }
         return files;
     }
 
@@ -221,7 +227,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     </section>
 </main>
 """;
-        return Shell(c, E(h["seoTitle"]), E(h["seoDescription"]), main, true, includePublicBaseHref);
+        return Shell(c, E(h["seoTitle"]), E(h["seoDescription"]), main, true, includePublicBaseHref, pageFileName: "index.html", jsonLd: RenderHomeJsonLd(c));
     }
 
 
@@ -300,7 +306,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
             body.AppendLine("    </section>");
             body.Append(Nav());
             body.AppendLine("</main>");
-            return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref);
+            return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref, pageFileName: PageFileName(page), jsonLd: page == "pricing" ? RenderSoftwareApplicationJsonLd(null) : null);
         }
         body.AppendLine($"        <p class=\"description\">{E(p.GetValueOrDefault("introText", p.GetValueOrDefault("intro", string.Empty)))}</p>");
         if (button is not null)
@@ -319,10 +325,10 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         }
         body.Append(Nav());
         body.AppendLine("</main>");
-        return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref);
+        return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref, pageFileName: PageFileName(page), jsonLd: page == "pricing" ? RenderSoftwareApplicationJsonLd(null) : null);
     }
 
-    private static string Shell(WebsiteContentSet c, string title, string description, string main, bool landing, bool includePublicBaseHref, string? extraBodyHtml = null)
+    private static string Shell(WebsiteContentSet c, string title, string description, string main, bool landing, bool includePublicBaseHref, string? extraBodyHtml = null, string pageFileName = "index.html", string? jsonLd = null)
     {
         var h = c.Pages["home"];
         var d = c.Design;
@@ -335,8 +341,22 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         html.AppendLine("    <meta charset=\"utf-8\">");
         html.AppendLine("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
         if (includePublicBaseHref) { html.AppendLine($"    <base href=\"{PreviewPublicBaseHref}\">"); }
+        var canonicalUrl = CanonicalUrl(pageFileName);
         html.AppendLine($"    <title>{title}</title>");
         html.AppendLine($"    <meta name=\"description\" content=\"{description}\">");
+        html.AppendLine("    <meta name=\"robots\" content=\"index,follow\">");
+        html.AppendLine($"    <link rel=\"canonical\" href=\"{canonicalUrl}\">");
+        html.AppendLine("    <link rel=\"icon\" href=\"assets/brand/lvt-logo.png\">");
+        html.AppendLine($"    <meta property=\"og:title\" content=\"{title}\">");
+        html.AppendLine($"    <meta property=\"og:description\" content=\"{description}\">");
+        html.AppendLine($"    <meta property=\"og:url\" content=\"{canonicalUrl}\">");
+        html.AppendLine("    <meta property=\"og:type\" content=\"website\">");
+        html.AppendLine("    <meta name=\"twitter:card\" content=\"summary\">");
+        html.AppendLine($"    <meta name=\"twitter:title\" content=\"{title}\">");
+        html.AppendLine($"    <meta name=\"twitter:description\" content=\"{description}\">");
+        AppendSearchConsoleVerification(html, c.Marketing);
+        AppendGoogleTags(html, c.Marketing);
+        if (!string.IsNullOrWhiteSpace(jsonLd)) { html.AppendLine(jsonLd); }
         html.AppendLine("    <link rel=\"stylesheet\" href=\"styles.css\">");
         html.AppendLine("    <style>");
         html.Append(RenderPreviewBaseStyles());
@@ -362,11 +382,95 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         html.AppendLine($"        <p>{E(h["footerCopyrightText"])}</p>");
         html.AppendLine($"        {NavLinks(h)}");
         html.AppendLine("    </footer>");
+        if (IsEnabled(c.Marketing, "enableConsentBanner")) { html.AppendLine(RenderConsentBanner(c.Marketing)); }
         if (!string.IsNullOrWhiteSpace(extraBodyHtml)) { html.AppendLine(extraBodyHtml); }
+        html.AppendLine(RenderMarketingRuntime(c.Marketing));
         html.AppendLine("</body>");
         html.AppendLine("</html>");
         return html.ToString();
     }
+
+
+    private static string MarketingValue(Dictionary<string, string>? m, string key) => m is not null && m.TryGetValue(key, out var value) ? value : string.Empty;
+    private static string PageFileName(string pageKey) => PageFiles().FirstOrDefault(p => p.PageKey == pageKey).FileName ?? "index.html";
+    private static string CanonicalUrl(string fileName) => fileName == "index.html" ? PublicSiteBaseUrl + "/" : PublicSiteBaseUrl + "/" + fileName;
+
+    private static void AppendSearchConsoleVerification(StringBuilder html, Dictionary<string, string>? m)
+    {
+        var token = SafeSearchConsoleToken(MarketingValue(m, "googleSearchConsoleVerificationToken"));
+        if (!string.IsNullOrEmpty(token)) { html.AppendLine($"    <meta name=\"google-site-verification\" content=\"{E(token)}\">"); }
+    }
+
+    private static void AppendGoogleTags(StringBuilder html, Dictionary<string, string>? m)
+    {
+        var ga = IsEnabled(m, "enableAnalytics") ? SafeGaId(MarketingValue(m, "googleAnalyticsMeasurementId")) : null;
+        var ads = IsEnabled(m, "enableAdsTracking") ? SafeAdsId(MarketingValue(m, "googleAdsId")) : null;
+        var tagId = ga ?? ads;
+        if (string.IsNullOrEmpty(tagId)) { return; }
+        html.AppendLine($"    <script async src=\"https://www.googletagmanager.com/gtag/js?id={E(tagId)}\"></script>");
+        html.AppendLine("    <script>");
+        html.AppendLine("      window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);}");
+        html.AppendLine("      gtag('consent', 'default', {analytics_storage:'denied', ad_storage:'denied', ad_user_data:'denied', ad_personalization:'denied'});");
+        html.AppendLine("      gtag('js', new Date());");
+        if (!string.IsNullOrEmpty(ga)) { html.AppendLine($"      gtag('config', '{E(ga)}');"); }
+        if (!string.IsNullOrEmpty(ads)) { html.AppendLine($"      gtag('config', '{E(ads)}');"); }
+        html.AppendLine("    </script>");
+    }
+
+    private static string RenderMarketingRuntime(Dictionary<string, string>? m)
+    {
+        var ga = IsEnabled(m, "enableAnalytics") ? SafeGaId(MarketingValue(m, "googleAnalyticsMeasurementId")) : string.Empty;
+        var ads = IsEnabled(m, "enableAdsTracking") ? SafeAdsId(MarketingValue(m, "googleAdsId")) : string.Empty;
+        var downloadLabel = SafeConversionLabel(MarketingValue(m, "googleAdsDownloadConversionLabel"));
+        return $"""
+    <script>
+      window.lvtMarketing = {{ gaMeasurementId: '{E(ga)}', googleAdsId: '{E(ads)}', downloadConversionLabel: '{E(downloadLabel)}' }};
+    </script>
+    <script src="marketing-consent.js?v=marketing-seo" defer></script>
+""";
+    }
+
+    private static string RenderConsentBanner(Dictionary<string, string>? m) => """
+    <div class="consent-banner" id="consent-banner" hidden>
+      <p><strong>Optional cookies</strong>: analytics and advertising cookies help us understand safe traffic and improve release marketing. They are optional. <a href="privacy.html">Privacy Policy</a></p>
+      <div class="consent-choices" id="consent-manage" hidden><label><input type="checkbox" id="consent-analytics"> Analytics</label><label><input type="checkbox" id="consent-advertising"> Advertising</label></div>
+      <button type="button" data-consent-action="accept">Accept all</button><button type="button" data-consent-action="reject">Reject non-essential</button><button type="button" data-consent-action="manage">Manage choices</button><button type="button" data-consent-action="save" id="consent-save" hidden>Save choices</button>
+    </div>
+""";
+
+    private static string RenderHomeJsonLd(WebsiteContentSet c) => "    <script type=\"application/ld+json\">" + JsonSerializer.Serialize(new Dictionary<string, object?> { ["@context"] = "https://schema.org", ["@type"] = "WebSite", ["name"] = "Language Voice Tutor", ["url"] = PublicSiteBaseUrl + "/" }) + "</script>";
+    private static string RenderSoftwareApplicationJsonLd(StaticReleaseManifest? r) => "    <script type=\"application/ld+json\">" + JsonSerializer.Serialize(new Dictionary<string, object?> { ["@context"]="https://schema.org", ["@type"]="SoftwareApplication", ["name"]="Language Voice Tutor", ["operatingSystem"]="Windows", ["applicationCategory"]="EducationalApplication", ["url"]=PublicSiteBaseUrl + "/download.html", ["downloadUrl"]=PublicSiteBaseUrl + "/download.html", ["softwareVersion"]=r?.Version ?? "0.1.36-tester.31" }) + "</script>";
+
+    private static string RenderRobotsTxt() => """
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /releases/windows/direct/*.exe
+
+Sitemap: https://languagevoicetutor.com/sitemap.xml
+""";
+    private static string RenderSitemapXml(DateTimeOffset generatedAt) { var lastmod = generatedAt.ToString("yyyy-MM-dd"); var urls = new[] { "/", "/index.html", "/download.html", "/mobile.html", "/pricing.html", "/support.html", "/terms.html", "/privacy.html", "/refunds.html", "/cancellation.html", "/seller.html", "/ai-data.html", "/status.html" }; return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + string.Join("", urls.Select(u => $"  <url><loc>{PublicSiteBaseUrl}{u}</loc><lastmod>{lastmod}</lastmod></url>\n")) + "</urlset>\n"; }
+    private static string RenderLlmsTxt() => """
+# Language Voice Tutor
+
+Language Voice Tutor is a Windows desktop application for practicing real-life spoken language lessons with AI-assisted conversation scenarios.
+
+Windows desktop tester/direct release is available. Android and iOS apps are planned but not currently available. Live paid subscriptions are not enabled until Paddle live setup is completed.
+
+## Important links
+- Home: https://languagevoicetutor.com/
+- Download: https://languagevoicetutor.com/download.html
+- Pricing: https://languagevoicetutor.com/pricing.html
+- Terms: https://languagevoicetutor.com/terms.html
+- Privacy: https://languagevoicetutor.com/privacy.html
+- Refund Policy: https://languagevoicetutor.com/refunds.html
+- Cancellation Policy: https://languagevoicetutor.com/cancellation.html
+- Support: https://languagevoicetutor.com/support.html
+- Seller / Company Details: https://languagevoicetutor.com/seller.html
+- AI & Data Disclosure: https://languagevoicetutor.com/ai-data.html
+- Service Status: https://languagevoicetutor.com/status.html
+""";
 
     private static string Logo(Dictionary<string, string> h)
     {
@@ -684,9 +788,18 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         ["seller"] = Page("Seller / Company details","Seller and company details placeholders must be completed before Paddle live review.", new(){{"sellerNameLegalEntityPlaceholder","<LEGAL_SELLER_NAME>"},{"addressPlaceholder","<SELLER_ADDRESS>"},{"contactEmail","support@languagevoicetutor.com"},{"taxVatCompanyRegistrationPlaceholder","<TAX_VAT_COMPANY_REGISTRATION>"},{"paddleLiveReviewNote","Complete these placeholders before Paddle live review."}}),
         ["aiData"] = Page("AI / Data disclosure","Language Voice Tutor uses AI tutor features for language practice.", new(){{"aiTutorDisclosureText","The AI tutor generates practice responses and may be inaccurate."},{"voiceTranscriptionDisclosureText","Voice input may be transcribed for tutor interactions."},{"dataProcessingText","Practice data may be processed to provide lessons and feedback."},{"userControlDeletionText","Contact support for account and deletion requests."}}),
         ["status"] = Page("Platform availability / service status","Current platform availability and service status information.", new(){{"desktopAvailabilityText","Windows desktop is the current supported tester platform."},{"mobileComingSoonText","Android and iOS are coming soon."},{"serviceAvailabilityDisclaimer","Service availability may vary during testing and maintenance."},{"supportContactText","Contact support@languagevoicetutor.com for help."}})
-    }, new WebsiteDesignContent("#0d2b4c", "#0d2b4c", "#24201b", "#dce9f7", "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif", 16, 700, 999, "Normal"));
+    }, new WebsiteDesignContent("#0d2b4c", "#0d2b4c", "#24201b", "#dce9f7", "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif", 16, 700, 999, "Normal"), DefaultMarketing());
     private static Dictionary<string,string> Page(string title,string intro,Dictionary<string,string> extra){ extra["pageTitle"]=title; extra["introText"]=intro; extra["seoTitle"]=$"{title} | Language Voice Tutor"; extra["seoDescription"]=intro; return extra; }
     private static Dictionary<string,string> Legal(string title,string intro,Dictionary<string,string> extra){ var p=Page(title,intro,extra); p["effectiveDate"]="Effective date placeholder"; p["intro"]=intro; return p; }
+    private static Dictionary<string, string> DefaultMarketing() => new(StringComparer.OrdinalIgnoreCase) { ["enableAnalytics"] = "false", ["googleAnalyticsMeasurementId"] = "", ["enableAdsTracking"] = "false", ["googleAdsId"] = "", ["googleAdsDownloadConversionLabel"] = "", ["googleSearchConsoleVerificationToken"] = "", ["enableConsentBanner"] = "true", ["enableLlmsTxt"] = "true", ["defaultSocialImageUrl"] = "" };
+    private static Dictionary<string, string> MergeMarketing(Dictionary<string, string>? existing, Dictionary<string, string>? incoming) { var merged = NormalizeMarketing(existing, DefaultMarketing()); if (incoming is not null) foreach (var kv in incoming) merged[kv.Key] = kv.Value; return NormalizeMarketing(merged, DefaultMarketing()); }
+    private static Dictionary<string, string> NormalizeMarketing(Dictionary<string, string>? value, Dictionary<string, string>? fallback) { var result = new Dictionary<string, string>(fallback ?? DefaultMarketing(), StringComparer.OrdinalIgnoreCase); if (value is null) return result; foreach (var (key, raw) in value) result[key] = key switch { "googleAnalyticsMeasurementId" => SafeGaId(raw), "googleAdsId" => SafeAdsId(raw), "googleAdsDownloadConversionLabel" => SafeConversionLabel(raw), "googleSearchConsoleVerificationToken" => SafeSearchConsoleToken(raw), "enableAnalytics" or "enableAdsTracking" or "enableConsentBanner" or "enableLlmsTxt" => IsTruthy(raw) ? "true" : "false", "defaultSocialImageUrl" => NormalizeLogoPath(raw), _ => LimitText(raw, 120, string.Empty) }; return result; }
+    private static bool IsEnabled(Dictionary<string, string>? m, string key) => m is not null && m.TryGetValue(key, out var value) && IsTruthy(value);
+    private static bool IsTruthy(string? value) => string.Equals(value?.Trim(), "true", StringComparison.OrdinalIgnoreCase);
+    private static string SafeGaId(string? value) => value is not null && GaIdRegex().IsMatch(value.Trim()) ? value.Trim() : string.Empty;
+    private static string SafeAdsId(string? value) => value is not null && AdsIdRegex().IsMatch(value.Trim()) ? value.Trim() : string.Empty;
+    private static string SafeConversionLabel(string? value) => value is not null && ConversionLabelRegex().IsMatch(value.Trim()) ? value.Trim() : string.Empty;
+    private static string SafeSearchConsoleToken(string? value) => value is not null && SearchConsoleTokenRegex().IsMatch(value.Trim()) ? value.Trim() : string.Empty;
     private static int TextLimitFor(string key) => key == "bodyMarkdown" ? 12000 : key.Contains("seo", StringComparison.OrdinalIgnoreCase) ? 180 : 900;
     private static string LimitText(string? value, int max, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim()[..Math.Min(value.Trim().Length, max)];
     private static string NormalizeHex(string? value, string fallback) => value is not null && HexColorRegex().IsMatch(value.Trim()) ? value.Trim() : fallback;
@@ -695,6 +808,10 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     private static string NormalizeLogoPath(string? value, string fallback = "") { var t = value?.Trim() ?? ""; if (t.Length == 0) return fallback; if (Uri.TryCreate(t, UriKind.Absolute, out var uri)) return uri.Scheme == Uri.UriSchemeHttps ? t : fallback; return SafeRelativePathRegex().IsMatch(t) && !t.Contains("..", StringComparison.Ordinal) ? t : fallback; }
     private static HashSet<int> AllowedFontWeights() => [400, 500, 600, 700, 800];
     [GeneratedRegex("^#[0-9a-fA-F]{6}$")] private static partial Regex HexColorRegex();
+    [GeneratedRegex("^G-[A-Z0-9]{6,16}$")] private static partial Regex GaIdRegex();
+    [GeneratedRegex("^AW-[0-9]{6,16}$")] private static partial Regex AdsIdRegex();
+    [GeneratedRegex("^[A-Za-z0-9_-]{4,80}$")] private static partial Regex ConversionLabelRegex();
+    [GeneratedRegex("^[A-Za-z0-9_-]{8,120}$")] private static partial Regex SearchConsoleTokenRegex();
     [GeneratedRegex("^[a-zA-Z0-9 ,\"-]+$")] private static partial Regex SafeFontRegex();
     [GeneratedRegex("^[a-zA-Z0-9_./%#?=&:+-]+$")] private static partial Regex SafeRelativePathRegex();
     [GeneratedRegex("^LanguageVoiceTutorSetup-[A-Za-z0-9._-]+\\.exe$")] private static partial Regex SafeInstallerFileRegex();
