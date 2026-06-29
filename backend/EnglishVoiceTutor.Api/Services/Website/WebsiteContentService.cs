@@ -356,7 +356,6 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         html.AppendLine($"    <meta name=\"twitter:title\" content=\"{title}\">");
         html.AppendLine($"    <meta name=\"twitter:description\" content=\"{description}\">");
         AppendSearchConsoleVerification(html, c.Marketing);
-        AppendGoogleTags(html, c.Marketing);
         if (!string.IsNullOrWhiteSpace(jsonLd)) { html.AppendLine(jsonLd); }
         html.AppendLine("    <link rel=\"stylesheet\" href=\"styles.css\">");
         html.AppendLine("    <style>");
@@ -402,22 +401,6 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         if (!string.IsNullOrEmpty(token)) { html.AppendLine($"    <meta name=\"google-site-verification\" content=\"{E(token)}\">"); }
     }
 
-    private static void AppendGoogleTags(StringBuilder html, Dictionary<string, string>? m)
-    {
-        var ga = IsEnabled(m, "enableAnalytics") ? SafeGaId(MarketingValue(m, "googleAnalyticsMeasurementId")) : null;
-        var ads = IsEnabled(m, "enableAdsTracking") ? SafeAdsId(MarketingValue(m, "googleAdsId")) : null;
-        var tagId = ga ?? ads;
-        if (string.IsNullOrEmpty(tagId)) { return; }
-        html.AppendLine($"    <script async src=\"https://www.googletagmanager.com/gtag/js?id={E(tagId)}\"></script>");
-        html.AppendLine("    <script>");
-        html.AppendLine("      window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);}");
-        html.AppendLine("      gtag('consent', 'default', {analytics_storage:'denied', ad_storage:'denied', ad_user_data:'denied', ad_personalization:'denied'});");
-        html.AppendLine("      gtag('js', new Date());");
-        if (!string.IsNullOrEmpty(ga)) { html.AppendLine($"      gtag('config', '{E(ga)}');"); }
-        if (!string.IsNullOrEmpty(ads)) { html.AppendLine($"      gtag('config', '{E(ads)}');"); }
-        html.AppendLine("    </script>");
-    }
-
     private static string RenderMarketingRuntime(Dictionary<string, string>? m)
     {
         var ga = IsEnabled(m, "enableAnalytics") ? SafeGaId(MarketingValue(m, "googleAnalyticsMeasurementId")) : string.Empty;
@@ -432,11 +415,25 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     }
 
     private static string RenderConsentBanner(Dictionary<string, string>? m) => """
-    <div class="consent-banner" id="consent-banner" hidden>
-      <p><strong>Optional cookies</strong>: analytics and advertising cookies help us understand safe traffic and improve release marketing. They are optional. <a href="privacy.html">Privacy Policy</a></p>
-      <div class="consent-choices" id="consent-manage" hidden><label><input type="checkbox" id="consent-analytics"> Analytics</label><label><input type="checkbox" id="consent-advertising"> Advertising</label></div>
-      <button type="button" data-consent-action="accept">Accept all</button><button type="button" data-consent-action="reject">Reject non-essential</button><button type="button" data-consent-action="manage">Manage choices</button><button type="button" data-consent-action="save" id="consent-save" hidden>Save choices</button>
-    </div>
+    <section class="consent-banner" id="consent-banner" role="dialog" aria-modal="false" aria-labelledby="consent-title" aria-describedby="consent-description" hidden>
+      <div class="consent-banner__content">
+        <div class="consent-banner__copy">
+          <p class="consent-banner__eyebrow" id="consent-title">Optional cookies</p>
+          <p id="consent-description">We may use analytics and advertising cookies, if enabled, to understand traffic, improve Language Voice Tutor, measure marketing performance, and count download clicks. You can accept all, reject non-essential cookies, or manage choices. <a class="consent-banner__link" href="privacy.html">Privacy Policy</a></p>
+        </div>
+        <div class="consent-choices" id="consent-manage" hidden>
+          <p class="consent-choices__title">Manage optional categories</p>
+          <label class="consent-choice"><input type="checkbox" id="consent-analytics"> <span><strong>Analytics cookies</strong><small>Help us measure site traffic and product improvement signals.</small></span></label>
+          <label class="consent-choice"><input type="checkbox" id="consent-advertising"> <span><strong>Advertising cookies</strong><small>Help us measure marketing performance and download conversions if Google Ads is enabled.</small></span></label>
+        </div>
+        <div class="consent-banner__actions" aria-label="Cookie consent actions">
+          <button class="consent-button consent-button--primary" type="button" data-consent-action="accept">Accept all</button>
+          <button class="consent-button consent-button--secondary" type="button" data-consent-action="reject">Reject non-essential</button>
+          <button class="consent-button consent-button--link" type="button" data-consent-action="manage">Manage choices</button>
+          <button class="consent-button consent-button--primary" type="button" data-consent-action="save" id="consent-save" hidden>Save choices</button>
+        </div>
+      </div>
+    </section>
 """;
 
     private static string RenderSoftwareApplicationJsonLd(StaticReleaseManifest? r) => "    <script type=\"application/ld+json\">" + JsonSerializer.Serialize(new Dictionary<string, object?> { ["@context"]="https://schema.org", ["@type"]="SoftwareApplication", ["name"]="Language Voice Tutor", ["operatingSystem"]="Windows", ["applicationCategory"]="EducationalApplication", ["url"]=PublicSiteBaseUrl + "/download.html", ["downloadUrl"]=PublicSiteBaseUrl + "/download.html", ["softwareVersion"]=r?.Version ?? string.Empty }) + "</script>";
@@ -478,6 +475,7 @@ const deniedConsent = { analytics_storage: "denied", ad_storage: "denied", ad_us
 function hasGtag() { return typeof window.gtag === "function"; }
 function readConsent() { try { return JSON.parse(localStorage.getItem(consentKey) || "null"); } catch { return null; } }
 function writeConsent(choice) { localStorage.setItem(consentKey, JSON.stringify({ ...choice, savedAt: new Date().toISOString() })); }
+function ensureDataLayer() { window.dataLayer = window.dataLayer || []; if (!hasGtag()) { window.gtag = function(){ window.dataLayer.push(arguments); }; } }
 function consentUpdate(choice) {
     const update = {
         analytics_storage: choice?.analytics ? "granted" : "denied",
@@ -485,39 +483,48 @@ function consentUpdate(choice) {
         ad_user_data: choice?.advertising ? "granted" : "denied",
         ad_personalization: choice?.advertising ? "granted" : "denied"
     };
-    if (hasGtag()) { window.gtag("consent", "update", update); }
+    ensureDataLayer(); window.gtag("consent", "update", update);
 }
+function loadGoogleTags(choice) {
+    const config = window.lvtMarketing || {};
+    const tagId = choice?.analytics && config.gaMeasurementId ? config.gaMeasurementId : choice?.advertising && config.googleAdsId ? config.googleAdsId : "";
+    if (!tagId || document.querySelector("script[data-lvt-google-tag]")) return;
+    ensureDataLayer(); window.gtag('consent', 'default', deniedConsent); window.gtag("js", new Date());
+    if (choice?.analytics && config.gaMeasurementId) { window.gtag("config", config.gaMeasurementId); }
+    if (choice?.advertising && config.googleAdsId) { window.gtag("config", config.googleAdsId); }
+    const script = document.createElement("script"); script.async = true; script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(tagId)}`; script.dataset.lvtGoogleTag = "true"; document.head.appendChild(script);
+}
+function applyConsent(choice) { consentUpdate(choice); loadGoogleTags(choice); }
 function trackDownloadClick() {
     const config = window.lvtMarketing || {};
     const choice = readConsent();
     if (hasGtag() && config.gaMeasurementId && choice?.analytics) {
-        window.gtag("event", "download_windows_click", { platform: "windows" });
+        window.gtag("event", "download_windows_click", { platform: "windows", transport_type: "beacon" });
     }
     if (hasGtag() && config.googleAdsId && config.downloadConversionLabel && choice?.advertising) {
-        window.gtag("event", "conversion", { send_to: `${config.googleAdsId}/${config.downloadConversionLabel}`, event_callback: () => {} });
+        window.gtag("event", "conversion", { send_to: `${config.googleAdsId}/${config.downloadConversionLabel}`, transport_type: "beacon" });
     }
 }
+ensureDataLayer(); window.gtag('consent', 'default', deniedConsent);
 window.addEventListener("DOMContentLoaded", () => {
     const existing = readConsent();
-    if (existing) { consentUpdate(existing); }
+    if (existing) { applyConsent(existing); }
+    document.getElementById("download-button")?.addEventListener("click", trackDownloadClick);
     const banner = document.getElementById("consent-banner");
-    if (!banner) return;
+    if (!banner || existing) return;
     const manage = document.getElementById("consent-manage");
     const save = document.getElementById("consent-save");
     const analytics = document.getElementById("consent-analytics");
     const advertising = document.getElementById("consent-advertising");
-    if (existing) { return; }
     banner.hidden = false;
     banner.addEventListener("click", event => {
-        const action = event.target?.dataset?.consentAction;
+        const action = event.target?.closest("button")?.dataset?.consentAction;
         if (!action) return;
         if (action === "manage") { manage.hidden = false; save.hidden = false; return; }
         const choice = action === "accept" ? { analytics: true, advertising: true } : action === "save" ? { analytics: !!analytics.checked, advertising: !!advertising.checked } : { analytics: false, advertising: false };
-        writeConsent(choice); consentUpdate(choice); banner.hidden = true;
+        writeConsent(choice); applyConsent(choice); banner.hidden = true;
     });
-    document.getElementById("download-button")?.addEventListener("click", trackDownloadClick);
 });
-if (hasGtag()) { window.gtag("consent", "default", deniedConsent); }
 """;
 
     private static string Logo(Dictionary<string, string> h)
@@ -593,6 +600,23 @@ if (hasGtag()) { window.gtag("consent", "default", deniedConsent); }
         .markdown-content hr { border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0; }
         .markdown-content li { margin-bottom: 0.45rem; }
         .page-shell a { color: var(--accent-dark); }
+        .consent-banner { position: fixed; z-index: 50; inset: auto clamp(12px, 4vw, 32px) clamp(12px, 4vw, 28px); max-width: 960px; margin: 0 auto; border: 1px solid rgba(220, 233, 247, 0.38); border-radius: 24px; background: linear-gradient(135deg, #0d2b4c 0%, #123a66 100%); color: #ffffff; box-shadow: 0 24px 70px rgba(7, 25, 44, 0.32); }
+        .consent-banner[hidden] { display: none; }
+        .consent-banner__content { display: grid; gap: 16px; padding: clamp(18px, 3vw, 26px); }
+        .consent-banner__copy p { margin: 0; }
+        .consent-banner__eyebrow { margin-bottom: 6px !important; font-size: 0.82rem; font-weight: 850; letter-spacing: 0.08em; text-transform: uppercase; color: #dce9f7; }
+        .consent-banner__link { color: #ffffff; font-weight: 800; text-decoration-color: rgba(255, 255, 255, 0.65); text-underline-offset: 4px; }
+        .consent-banner__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+        .consent-button { min-height: 42px; border: 1px solid transparent; border-radius: 999px; padding: 0 16px; cursor: pointer; font: inherit; font-weight: 800; }
+        .consent-button:focus-visible, .consent-choice input:focus-visible { outline: 3px solid #dce9f7; outline-offset: 3px; }
+        .consent-button--primary { background: #ffffff; color: #0d2b4c; }
+        .consent-button--secondary { background: rgba(255, 255, 255, 0.12); color: #ffffff; border-color: rgba(255, 255, 255, 0.42); }
+        .consent-button--link { background: transparent; color: #ffffff; text-decoration: underline; text-underline-offset: 4px; }
+        .consent-choices { display: grid; gap: 10px; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 18px; background: rgba(255, 255, 255, 0.08); }
+        .consent-choices__title { margin: 0; font-weight: 850; }
+        .consent-choice { display: flex; gap: 10px; align-items: flex-start; }
+        .consent-choice input { margin-top: 4px; }
+        .consent-choice small { display: block; color: #dce9f7; }
         @media (max-width: 760px) { .site-header__inner, .site-footer { align-items: flex-start; flex-direction: column; } .site-footer__links { align-items: flex-start; } .site-footer__link-row { justify-content: flex-start; } .landing-page .landing-shell { grid-template-columns: 1fr; min-height: auto; } .landing-page .app-panel { min-height: 68svh; } .landing-page .app-panel__content { max-height: none; overflow: visible; } }
         @media (max-width: 640px) { .page-shell { width: min(100% - 20px, 920px); padding: 20px 0; } }
 
@@ -830,7 +854,13 @@ if (hasGtag()) { window.gtag("consent", "default", deniedConsent); }
         ["pricing"] = Page("Pricing","Language Voice Tutor is currently offered for Windows desktop tester access.", new(){{"freePlanText","Invited testers may be able to use free Windows desktop access during evaluation."},{"premiumPlanText","Premium subscription details are draft placeholders until paid billing is enabled by the owner."},{"trialText","Trial terms are not final and require owner/legal review."},{"paddleLiveCheckoutDisclaimerText","No live checkout button is provided and production Paddle billing is not enabled from this page."}}),
         ["support"] = Page("Contact support","For Language Voice Tutor help, contact support@languagevoicetutor.com.", new(){{"supportEmailText","support@languagevoicetutor.com"},{"responseTimeText","Response times may vary during tester access."},{"accountDeletionSupportText","Contact support for account or deletion requests."},{"billingSupportText","Billing support applies only if paid billing is enabled."}}),
         ["terms"] = Legal("Terms of Use", "These draft terms describe use of Language Voice Tutor and require owner/legal review before final publication.", new(){{"accountUseTerms","Use the service lawfully and keep account credentials secure."},{"aiLearningDisclaimer","The AI tutor may be inaccurate and is for educational practice, not professional advice."},{"billingSubscriptionTermsPlaceholder","Premium subscription terms are placeholders until owner/legal approval."},{"contactSupportText","Contact support@languagevoicetutor.com for help."}}),
-        ["privacy"] = Legal("Privacy Policy", "This draft explains high-level data handling and requires owner/legal review.", new(){{"dataCollected","We may process account, settings, support, product usage, lesson, prompt, answer, and conversation data."},{"audioTranscriptionText","Voice features may capture audio for transcription and tutor responses."},{"aiProcessingText","Lesson content and context may be sent to AI providers to generate tutor feedback."},{"accountPaymentDataText","If paid billing is enabled, payment data may be processed by Paddle."},{"dataRetentionDeletionText","Retention and deletion periods require owner/legal approval."},{"contactText","Contact support@languagevoicetutor.com for privacy help."}}),
+        ["privacy"] = Legal("Privacy Policy", "This draft explains high-level data handling and requires owner/legal review.", new(){{"dataCollected","We may process account, settings, support, product usage, lesson, prompt, answer, and conversation data."},{"audioTranscriptionText","Voice features may capture audio for transcription and tutor responses."},{"aiProcessingText","Lesson content and context may be sent to AI providers to generate tutor feedback."},{"accountPaymentDataText","If paid billing is enabled, payment data may be processed by Paddle."},{"dataRetentionDeletionText","Retention and deletion periods require owner/legal approval."},{"contactText","Contact support@languagevoicetutor.com for privacy help."},{"bodyMarkdown","## Optional analytics, advertising, and cookie choices
+
+Language Voice Tutor may use optional analytics cookies and optional advertising cookies on the public website if those features are enabled in the Website CMS and valid Google IDs are configured. If enabled, Google Analytics and Google Ads may help us understand site traffic, improve the product, measure marketing performance, and measure download button clicks.
+
+Where consent is required, non-essential analytics and advertising storage is denied by default until you choose otherwise. The cookie banner may offer **Accept all**, **Reject non-essential**, and **Manage choices** controls for analytics cookies and advertising cookies. The site remains usable if you reject non-essential cookies.
+
+You can change or withdraw your choices by using the choices interface when available, or by clearing this site's browser storage and cookies. This privacy policy is a product review draft and is not legal advice."}}),
         ["refunds"] = Legal("Refund Policy", "This draft refund page is provided for review readiness.", new(){{"refundEligibilityText","Refund eligibility is a placeholder pending owner/legal approval."},{"howToRequestRefundText","Contact support@languagevoicetutor.com with your account email and a short explanation."},{"paddlePaymentProviderNote","When paid billing is enabled, refund handling may require Paddle coordination."},{"contactText","Contact support@languagevoicetutor.com."}}),
         ["cancellation"] = Legal("Cancellation Policy", "This draft explains cancellation support paths for a future or enabled Premium subscription.", new(){{"howToCancelText","If paid billing is enabled, cancel through the billing flow or contact support."},{"accessUntilPeriodEndText","Access may continue until the end of the current billing period unless final policy says otherwise."},{"supportText","Contact support@languagevoicetutor.com for cancellation help."}}),
         ["seller"] = Page("Seller / Company details","Seller and company details placeholders must be completed before Paddle live review.", new(){{"sellerNameLegalEntityPlaceholder","<LEGAL_SELLER_NAME>"},{"addressPlaceholder","<SELLER_ADDRESS>"},{"contactEmail","support@languagevoicetutor.com"},{"taxVatCompanyRegistrationPlaceholder","<TAX_VAT_COMPANY_REGISTRATION>"},{"paddleLiveReviewNote","Complete these placeholders before Paddle live review."}}),
