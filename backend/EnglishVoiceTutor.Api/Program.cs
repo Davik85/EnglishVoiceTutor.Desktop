@@ -56,6 +56,7 @@ builder.Services.Configure<SubscriptionEnforcementOptions>(
 builder.Services.Configure<CmsContentOptions>(
     builder.Configuration.GetSection(CmsContentOptions.SectionName));
 builder.Services.Configure<WebsiteContentOptions>(builder.Configuration.GetSection(WebsiteContentOptions.SectionName));
+builder.Services.Configure<AiModelSettingsOptions>(builder.Configuration.GetSection(AiModelSettingsOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<DevelopmentTestAccountOptions>(
     builder.Configuration.GetSection(DevelopmentTestAccountOptions.SectionName));

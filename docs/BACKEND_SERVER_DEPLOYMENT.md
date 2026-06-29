@@ -74,6 +74,12 @@ ssh -t lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 
 
 Do not paste production environment values, database connection strings, API keys, or provider secrets into documentation, tickets, chat, commits, or pull requests.
 
+## Persistent AI Models CMS settings
+
+AI Models CMS active/draft runtime settings are persistent server data, not release artifacts. The configured `AiModelSettings:StorageJsonPath` defaults to `site/content/ai-model-settings.json` and is resolved outside the versioned release content root, so production stores it under the persistent backend data tree (for example `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`) rather than `/opt/languagevoicetutor/backend/current/site/content/` or `/opt/languagevoicetutor/backend/releases/<version>/site/content/`. Backend startup/deploy must not overwrite an existing active settings file with packaged defaults. If the persistent file is missing but a legacy release-content file exists, the backend imports that file once; otherwise defaults seed the in-memory draft/active values until an admin saves or publishes.
+
+After backend deploy, Super Admin should verify **Admin CMS → System → AI Models → Load AI Models**: lesson tutor chat remains `gpt-5.5`; feedback/correction, lesson hint, and translation remain `gpt-5.2`; then run **Validate format**. Test provider access only if settings changed, and do not publish unless changes are intentional. API keys remain environment secrets and are never stored in AI Models CMS JSON.
+
 ## Rollback
 
 Rollback is controlled by the server `previous` symlink. Verify it first and do not assume an older documented version is still the rollback target:
