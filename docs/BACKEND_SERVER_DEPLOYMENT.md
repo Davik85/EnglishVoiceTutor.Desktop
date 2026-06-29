@@ -121,7 +121,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 - Backend: production healthy, current release `0.1.35-backend.74`.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
-- Windows installer: current public tester release is `0.1.36-tester.30`, installer `LanguageVoiceTutorSetup-0.1.36-tester.30.exe`.
+- Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
 - Billing: Paddle live is not enabled yet. Production/live Paddle readiness remains deferred.
 - Legal: website legal/support/seller/AI/status pages are ready for owner/legal final review as drafts, not final legal advice.
 

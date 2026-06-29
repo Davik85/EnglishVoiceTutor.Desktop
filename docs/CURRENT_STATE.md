@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-06-28.
+Review date: 2026-06-29.
 
 ## Source of truth for current versions
 
@@ -38,7 +38,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 - Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.74`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows tester release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
-- Windows installer: current public tester release is `0.1.36-tester.30`, installer `LanguageVoiceTutorSetup-0.1.36-tester.30.exe`.
+- Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
 - Billing: Paddle live is not enabled yet. Production/live Paddle readiness remains deferred until owner approval and live configuration.
 - Legal: pricing, subscription terms, terms, privacy, refunds, cancellation, support, seller/company details, AI/data disclosure, platform availability/status, and download pages are ready for owner/legal final review as product/legal drafts, not final legal advice.
 
@@ -62,7 +62,7 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.74`. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback.
+Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.74`. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
 
 Backend deployment uses:
 
@@ -122,15 +122,31 @@ Manifest: `https://languagevoicetutor.com/releases/windows/direct/latest.json`.
 
 Current public tester values:
 
-- `version`: `0.1.36-tester.30`
-- `installerFileName`: `LanguageVoiceTutorSetup-0.1.36-tester.30.exe`
+- `version`: `0.1.36-tester.31`
+- `installerFileName`: `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`
 - `backendBaseUrl`: `https://api.languagevoicetutor.com`
 - `updateMode`: `manual-confirmation`
+- `minimumSupportedVersion`: `0.1.36-tester.31`
+
+The `0.1.36-tester.31` Windows direct tester release has been built, uploaded, and verified. The user confirmed the newly uploaded build works and that the manual-confirmation update flow works on other devices. Backend deployment was not part of this desktop polish release; production backend remains healthy at `0.1.35-backend.74`, and no database migrations were added or run.
+
+Release-relevant desktop polish included in `0.1.36-tester.31`:
+
+- Settings now includes a Contacts tab with `support@languagevoicetutor.com` and `https://languagevoicetutor.com`.
+- Contacts is localized for all release-ready UI languages: `en`, `es`, `fr`, `de`, `it`, `pt`, `ru`, `pl`, `ar`, `ja`, `ko`, `sr`, `hr`, and `bg`.
+- Contacts uses the selected interface language, not the study language. The stale WPF binding state after interface-language changes was fixed by notifying Contacts bindings during interface-language refresh, so Russian Contacts text appears only for Russian UI and non-Russian UIs no longer show Russian Contacts text.
+- Contact links are restricted to safe `https` and `mailto` handling.
+- Situation/subtopic selection allows long localized topic names to wrap instead of clipping, and scenario card title/description wrapping remains protected by policy tests.
+- Back during an unfinished active lesson now uses the same confirmation guard as Finish/End lesson: Cancel keeps the user in the lesson, Confirm continues the existing exit/end/navigation flow, and the guard does not apply before a lesson starts or after a lesson is already finalized.
+
+Recent relevant implementation commits for this handoff state: `52b5c1a` (Polish desktop release localization and lesson guard), `c704ec3` (Fix contacts localization coverage), and `d2a1202` (Fix Contacts localization refresh).
+
+Final local validation before/around this release included clean `git status`, `git diff --check`, `dotnet restore`, Debug and Release `dotnet build`, `python .\tools\test_desktop_release_polish_policy.py`, `python .\tools\test_finish_lesson_confirmation_policy.py`, `powershell -ExecutionPolicy Bypass -File .\tools\run_desktop_release_gate.ps1`, and `powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1`. The desktop release gate passed restore, Debug build, Release build, backend build, lesson content audit, interface localization audit, desktop backend boundary audit, tutor prompt policy, lesson behavior CMS ownership policy, admin/RBAC static policy checks, and desktop release smoke gate automated checks; EF checks were skipped because there were no schema-affecting backend changes. Windows direct release validation passed release directory/file presence, no UTF-8 BOM, JSON parsing, required manifest fields, production backend URL, manual-confirmation update mode, installer presence, installer SHA-256 agreement with `latest.json` and `checksums.sha256`, and matching `0.1.36-tester.31` changelog/known-issues versions.
 
 Use the Windows direct-release upload helper:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 0.1.36-tester.30
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 0.1.36-tester.31
 ```
 
 Do not manually `scp` installer files when the script exists. Windows direct release upload is separate from backend deploy and static website publish. After upload, verify `latest.json`, `installerFileName`, `backendBaseUrl`, installer hash, and that the download page button downloads the same installer named by the manifest.

@@ -6,7 +6,7 @@ Scope: Language Voice Tutor / English Voice Tutor Desktop release path. This is 
 
 ## Current verified production state used for this review
 
-- Backend current: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.50`.
+- Backend current: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.74`.
 - Previous rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.49`.
 - `/health` is `200 OK`.
 - `/api/health/database` is `200 OK`.

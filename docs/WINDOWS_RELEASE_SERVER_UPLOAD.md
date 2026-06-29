@@ -1,6 +1,6 @@
 # Windows release server upload
 
-Review date: 2026-06-28.
+Review date: 2026-06-29.
 
 ## Source of truth for current versions
 
@@ -29,11 +29,14 @@ https://languagevoicetutor.com/releases/windows/direct/latest.json
 Current public tester values:
 
 ```text
-version: 0.1.36-tester.30
-installerFileName: LanguageVoiceTutorSetup-0.1.36-tester.30.exe
+version: 0.1.36-tester.31
+installerFileName: LanguageVoiceTutorSetup-0.1.36-tester.31.exe
 backendBaseUrl: https://api.languagevoicetutor.com
 updateMode: manual-confirmation
+minimumSupportedVersion: 0.1.36-tester.31
 ```
+
+This release has been built, uploaded, and verified. The user confirmed the newly uploaded build works and that manual-confirmation update flow works on other devices.
 
 Release/tester installed builds are server-only. The production backend URL for packaged non-Debug Windows builds is `https://api.languagevoicetutor.com`.
 
@@ -107,10 +110,11 @@ $manifest.checksums.sha256
 
 Confirm:
 
-- `version` is `0.1.36-tester.30` or the intended newly uploaded tester version;
-- `installerFileName` is `LanguageVoiceTutorSetup-0.1.36-tester.30.exe` or the matching intended installer;
+- `version` is `0.1.36-tester.31` or the intended newly uploaded tester version;
+- `installerFileName` is `LanguageVoiceTutorSetup-0.1.36-tester.31.exe` or the matching intended installer;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
 - `updateMode` is `manual-confirmation`;
+- `minimumSupportedVersion` is `0.1.36-tester.31` for this uploaded tester release;
 - `installerSha256` and `checksums.sha256` are present and agree with the uploaded installer hash.
 
 ## Installer download verification
