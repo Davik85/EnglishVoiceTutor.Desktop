@@ -845,7 +845,8 @@
         ["cancellation", "Legal - Cancellation Policy"],
         ["seller", "Legal - Seller / Company details"],
         ["aiData", "Legal - AI / Data disclosure"],
-        ["status", "Legal - Platform availability / service status"]
+        ["status", "Legal - Platform availability / service status"],
+        ["marketingSeo", "Marketing / SEO", []]
     ].map(([key, label, fields]) => ({ key, label, fields: fields || [["pageTitle", "Page title"], ["bodyMarkdown", "Body markdown"], ["seoTitle", "SEO title"], ["seoDescription", "SEO description"]], simple: simpleWebsitePageKeys.has(key) }));
     const websiteLegacyBodyFields = {
         download: [["introText"], ["currentVersionLabel", "Current version"], ["safetySupportNote", "Safety and support"]],
@@ -867,7 +868,8 @@
     const websiteSectionGroups = [
         { label: "Main", keys: ["home", "download", "mobile"] },
         { label: "Commercial", keys: ["pricing", "support"] },
-        { label: "Legal", keys: ["terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status"] }
+        { label: "Legal", keys: ["terms", "privacy", "refunds", "cancellation", "seller", "aiData", "status"] },
+        { label: "Marketing / SEO", keys: ["marketingSeo"] }
     ];
     function renderWebsiteTabs() {
         websiteSectionTabs.innerHTML = "";
@@ -911,9 +913,11 @@
         const input = document.createElement(options.textarea ? "textarea" : "input");
         input.id = `website-field-${key}`;
         input.dataset.websiteKey = key;
-        if (options.textarea) input.rows = options.rows || 4; else input.type = options.number ? "number" : "text";
-        input.value = value ?? "";
+        if (options.marketing) input.dataset.websiteMarketingKey = key;
+        if (options.textarea) input.rows = options.rows || 4; else input.type = options.checkbox ? "checkbox" : options.number ? "number" : "text";
+        if (options.checkbox) input.checked = value === true || String(value || "").toLowerCase() === "true"; else input.value = value ?? "";
         field.append(labelElement, input);
+        if (options.help) { const helper = document.createElement("p"); helper.className = "muted website-field-help"; helper.textContent = options.help; field.appendChild(helper); }
         return field;
     }
     function insertMarkdownAtCursor(textarea, before, after = "") {
@@ -954,12 +958,40 @@
         seoSection.append(heading, grid);
         websiteEditorFields.appendChild(seoSection);
     }
+
+    const websiteMarketingFields = [
+        ["enableConsentBanner", "Enable consent banner", "checkbox", "Shows the optional cookies banner with Accept all, Reject non-essential, and Manage choices."],
+        ["enableAnalytics", "Enable analytics", "checkbox", "Loads Google Analytics only when a valid Measurement ID is also set."],
+        ["googleAnalyticsMeasurementId", "Google Analytics Measurement ID", "text", "Optional public ID like G-XXXXXXXXXX. Leave empty to omit GA scripts."],
+        ["enableAdsTracking", "Enable ads tracking", "checkbox", "Loads Google Ads only when a valid Ads ID is also set."],
+        ["googleAdsId", "Google Ads ID", "text", "Optional public ID like AW-123456789. Leave empty to omit Ads scripts."],
+        ["googleAdsDownloadConversionLabel", "Google Ads download conversion label", "text", "Optional public conversion label. Download tracking stays consent-gated."],
+        ["googleSearchConsoleVerificationToken", "Google Search Console verification token", "text", "Optional public Search Console token for the meta verification tag."],
+        ["enableLlmsTxt", "Enable llms.txt", "checkbox", "Publishes llms.txt for AI crawlers when enabled."]
+    ];
+    function renderMarketingSeoEditor() {
+        websiteEditorFields.classList.add("website-simple-editor-fields");
+        const section = document.createElement("section");
+        section.className = "website-seo-section website-field-long";
+        const heading = document.createElement("h4");
+        heading.textContent = "Marketing / SEO";
+        const helper = document.createElement("p");
+        helper.className = "muted";
+        helper.textContent = "Optional public marketing settings. Do not enter secrets; leave IDs empty to keep Google scripts out of generated pages.";
+        const grid = document.createElement("div");
+        grid.className = "website-seo-grid";
+        const marketing = websiteContentDraft.marketing || {};
+        websiteMarketingFields.forEach(([key, label, type, help]) => grid.appendChild(createWebsiteField(key, label, marketing[key], { marketing: true, checkbox: type === "checkbox", long: type !== "checkbox", help })));
+        section.append(heading, helper, grid);
+        websiteEditorFields.appendChild(section);
+    }
     function renderWebsiteEditor() {
         const section = websiteSections.find(x => x.key === activeWebsiteSection) || websiteSections[0];
         websiteEditorHeading.textContent = section.label;
         websiteEditorFields.innerHTML = "";
         websiteEditorFields.className = "website-editor-fields";
         renderWebsiteTabs();
+        if (section.key === "marketingSeo") { renderMarketingSeoEditor(); return; }
         const values = ((websiteContentDraft.pages || {})[section.key] || {});
         if (section.simple) { renderSimpleWebsiteEditor(section, values); return; }
         section.fields.forEach(([key, label]) => {
@@ -967,12 +999,12 @@
             websiteEditorFields.appendChild(createWebsiteField(key, label, values[key], { long: isLong, textarea: isLong, rows: 4, number: /Px|Weight/.test(key) }));
         });
     }
-    function collectCurrentWebsiteSection() { const section = websiteSections.find(x => x.key === activeWebsiteSection); if (!section) return; const target = ((websiteContentDraft.pages ||= {})[section.key] ||= {}); websiteEditorFields.querySelectorAll("[data-website-key]").forEach(input => { const key = input.dataset.websiteKey; target[key] = /Px|Weight/.test(key) ? Number(input.value) : input.value; }); }
-    function fillWebsiteForm(content) { websiteContentDraft = JSON.parse(JSON.stringify(content || { pages: {}, design: {} })); renderWebsiteEditor(); }
+    function collectCurrentWebsiteSection() { const section = websiteSections.find(x => x.key === activeWebsiteSection); if (!section) return; if (section.key === "marketingSeo") { const marketing = (websiteContentDraft.marketing ||= {}); websiteEditorFields.querySelectorAll("[data-website-marketing-key]").forEach(input => { const key = input.dataset.websiteMarketingKey; marketing[key] = input.type === "checkbox" ? String(input.checked) : input.value; }); return; } const target = ((websiteContentDraft.pages ||= {})[section.key] ||= {}); websiteEditorFields.querySelectorAll("[data-website-key]").forEach(input => { const key = input.dataset.websiteKey; target[key] = /Px|Weight/.test(key) ? Number(input.value) : input.value; }); }
+    function fillWebsiteForm(content) { websiteContentDraft = JSON.parse(JSON.stringify(content || { pages: {}, design: {}, marketing: {} })); websiteContentDraft.marketing ||= {}; renderWebsiteEditor(); }
     async function readWebsiteResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
     async function loadWebsiteContent() { setWebsiteError(""); setWebsiteMessage("Loading Website editor..."); try { const response = await fetch(ApiPaths.websiteContent, { method: "GET", headers: getAdminHeaders() }); const payload = await readWebsiteResponse(response, "Unable to load Website content."); fillWebsiteForm(payload.draft || payload.active); websiteHasLoadedOnce = true; setWebsiteMessage("Draft loaded."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to load Website content."); } }
     async function saveWebsiteDraft() { collectCurrentWebsiteSection(); setWebsiteError(""); setWebsiteMessage("Saving draft..."); websiteSaveDraftButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(websiteContentDraft) }); const payload = await readWebsiteResponse(response, "Unable to save Website draft."); fillWebsiteForm(payload.draft); setWebsiteMessage("Draft saved."); return true; } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to save Website draft."); return false; } finally { websiteSaveDraftButton.disabled = false; } }
-    async function previewWebsiteContent() { collectCurrentWebsiteSection(); setWebsiteError(""); setWebsiteMessage("Rendering Website preview..."); websitePreviewButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentPreview, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ content: websiteContentDraft, pageKey: activeWebsiteSection }) }); const payload = await readWebsiteResponse(response, "Unable to preview Website content."); const previewWindow = window.open("about:blank", "_blank"); if (!previewWindow) { throw new Error("Preview popup was blocked. Allow popups for this admin site and try again."); } previewWindow.opener = null; previewWindow.document.open(); previewWindow.document.write(payload.html || ""); previewWindow.document.close(); setWebsiteMessage("Preview opened in a new tab. Nothing was saved or published."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to preview Website content."); } finally { websitePreviewButton.disabled = false; } }
+    async function previewWebsiteContent() { collectCurrentWebsiteSection(); setWebsiteError(""); setWebsiteMessage("Rendering Website preview..."); websitePreviewButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentPreview, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ content: websiteContentDraft, pageKey: activeWebsiteSection === "marketingSeo" ? "home" : activeWebsiteSection }) }); const payload = await readWebsiteResponse(response, "Unable to preview Website content."); const previewWindow = window.open("about:blank", "_blank"); if (!previewWindow) { throw new Error("Preview popup was blocked. Allow popups for this admin site and try again."); } previewWindow.opener = null; previewWindow.document.open(); previewWindow.document.write(payload.html || ""); previewWindow.document.close(); setWebsiteMessage("Preview opened in a new tab. Nothing was saved or published."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to preview Website content."); } finally { websitePreviewButton.disabled = false; } }
     async function publishWebsiteContent() { collectCurrentWebsiteSection(); setWebsiteError(""); setWebsiteMessage("Saving draft before publish..."); websitePublishButton.disabled = true; try { const saved = await saveWebsiteDraft(); if (!saved) { return; } setWebsiteMessage("Publishing saved draft to static website..."); const response = await fetch(ApiPaths.websiteContentPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readWebsiteResponse(response, "Unable to publish Website content."); fillWebsiteForm(payload.active); setWebsiteMessage(`Published saved draft to ${Array.isArray(payload.publishedFiles) ? payload.publishedFiles.length : ""} static website files.`); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to publish Website content."); } finally { websitePublishButton.disabled = false; } }
 
     function resetDashboard() {
