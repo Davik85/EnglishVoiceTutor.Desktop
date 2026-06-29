@@ -34,7 +34,7 @@ Inno Setup is the primary Windows direct-download installer track for Language V
 
 ## Current validated release
 
-The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.36-tester.24.exe` with `version` set to `0.1.36-tester.24`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.36-tester.24`, and `updateMode` set to `manual-confirmation`. Treat this as a controlled tester/direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
+The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.36-tester.31.exe` with `version` set to `0.1.36-tester.31`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.36-tester.31`, and `updateMode` set to `manual-confirmation`. Treat this as a controlled tester/direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
 
 This is a private tester/direct Windows release, not broad public production readiness. Code signing remains deferred, so SmartScreen warnings are still expected for controlled testers.
 

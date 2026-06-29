@@ -4,7 +4,7 @@ This playbook is for a non-developer CMS admin who receives lesson feedback from
 
 ## Current runtime state after Admin CMS Overview clarification
 
-Backend `0.1.35-backend.48` serves the clarified Admin CMS Overview. Windows direct tester `0.1.36-tester.30` is the published tester build for this handoff state.
+Backend `0.1.35-backend.48` serves the clarified Admin CMS Overview. Windows direct tester `0.1.36-tester.31` is the published tester build for this handoff state.
 
 The Overview now separates:
 

@@ -1,6 +1,6 @@
 # Next Steps
 
-Review date: 2026-06-28.
+Review date: 2026-06-29.
 
 ## Source of truth for current versions
 
@@ -25,7 +25,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 - Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.74`.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
-- Windows installer: current public tester release is `0.1.36-tester.30`, installer `LanguageVoiceTutorSetup-0.1.36-tester.30.exe`.
+- Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
 - Billing: Paddle live is not enabled yet; Production/live Paddle readiness remains deferred.
 - Legal: legal/support/seller/AI/status/download pages are ready for owner/legal final review as drafts, not final legal advice.
 
@@ -79,15 +79,20 @@ Current manifest: `https://languagevoicetutor.com/releases/windows/direct/latest
 
 Expected current values:
 
-- `version`: `0.1.36-tester.30`
-- `installerFileName`: `LanguageVoiceTutorSetup-0.1.36-tester.30.exe`
+- `version`: `0.1.36-tester.31`
+- `installerFileName`: `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`
 - `backendBaseUrl`: `https://api.languagevoicetutor.com`
 - `updateMode`: `manual-confirmation`
+- `minimumSupportedVersion`: `0.1.36-tester.31`
+
+`0.1.36-tester.31` has already been built, uploaded, and verified for controlled direct testers. The user confirmed the newly uploaded build works and that the update flow works on other devices. Do not re-upload or repackage it as a next step unless a new release is intentionally prepared.
+
+Desktop release polish already included Contacts in Settings, Contacts localization for all release-ready UI languages, safe `https`/`mailto` contact links, fixed runtime Contacts localization refresh after interface-language changes, wrapping for long localized situation/subtopic and scenario card text, and the unfinished active-lesson Back confirmation guard matching Finish/End lesson behavior.
 
 Use:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 0.1.36-tester.30
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 0.1.36-tester.31
 ```
 
 Do not manually `scp` installer files if the upload script exists. After upload, verify `latest.json`, installer filename, backend base URL, installer hash, and that the download page button downloads the same installer.
