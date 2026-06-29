@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\EnglishVoiceTutor.Desktop.csproj" AdditionalProperties="DesktopDistributionChannel=Store" />
+    <ProjectReference Include="..\..\EnglishVoiceTutor.Desktop.csproj" AdditionalProperties="DesktopDistributionChannel=Store;RuntimeIdentifier=win-x64" />
   </ItemGroup>
 
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\Microsoft.DesktopBridge.props" />

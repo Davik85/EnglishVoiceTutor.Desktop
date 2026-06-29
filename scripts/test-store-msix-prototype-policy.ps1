@@ -14,6 +14,7 @@ if (-not (Test-Path $AssetGenerator)) { throw "Missing local MSIX placeholder as
 
 $WapContent = Get-Content $WapProj -Raw
 if ($WapContent -notmatch 'DesktopDistributionChannel=Store') { throw 'MSIX prototype project must pass DesktopDistributionChannel=Store to the desktop app project.' }
+if ($WapContent -notmatch 'RuntimeIdentifier=win-x64') { throw 'MSIX prototype project must pass RuntimeIdentifier=win-x64 so restore includes net10.0-windows/win-x64 assets.' }
 
 $ManifestContent = Get-Content $Manifest -Raw
 if ($ManifestContent -notmatch 'LanguageVoiceTutor\.Desktop\.StorePrototype') { throw 'MSIX prototype manifest must use the local prototype identity.' }
