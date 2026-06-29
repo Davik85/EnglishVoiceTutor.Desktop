@@ -35,7 +35,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.74`.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.77`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows tester release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
@@ -62,13 +62,13 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.74`. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
+Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.77`. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
 
 Backend deployment uses:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.74
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.74
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.77
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.77
 ```
 
 The backend upload flow uses the uploaded `deploy-backend-release.sh` helper and `ssh -tt` for sudo restart/status when needed. Do not document old fragile inline bash deployment paths as the current flow.
@@ -100,6 +100,60 @@ The Website CMS editor is simplified for normal pages: Page title, Body markdown
 
 Markdown rendering supports headings, bold, italic, bullet lists, numbered lists, markdown links, plain safe URLs, plain emails, and bare domains such as `Paddle.com`. Unsafe schemes such as `javascript:`, `data:`, and `vbscript:` must remain rejected or escaped.
 
+## Website CMS Marketing / SEO and public crawler readiness
+
+The Website CMS now includes a visible **Marketing / SEO** section. These settings are stored through the existing JSON/file-based Website CMS model; no database table, schema change, migration, backend secret, environment variable, or committed example JSON value is required for Google setup. Google Analytics, Google Ads, and Search Console values are optional public website configuration and must be entered only in Admin Website CMS when real owner-approved values exist. Do not put real Google IDs, conversion labels, Search Console tokens, script snippets, GTM container IDs, secrets, or placeholder example values into code, docs, env files, or committed JSON examples.
+
+Marketing / SEO fields:
+
+- Enable consent banner
+- Enable analytics
+- Google Analytics Measurement ID
+- Enable ads tracking
+- Google Ads ID
+- Google Ads download conversion label
+- Google Search Console verification token
+- Enable llms.txt
+
+Current safe CMS values before real Google setup:
+
+- Enable consent banner: ON
+- Enable llms.txt: ON
+- Enable analytics: OFF until a real GA4 Measurement ID is available
+- Google Analytics Measurement ID: empty until available
+- Enable ads tracking: OFF until real Google Ads values are available
+- Google Ads ID: empty until available
+- Google Ads download conversion label: empty until available
+- Google Search Console verification token: empty until Search Console property verification is started
+
+Operator field guide:
+
+- Google Analytics Measurement ID: Google Analytics → Admin → Data streams → Web stream for `languagevoicetutor.com` → Measurement ID. Expected format: `G-XXXXXXXXXX`. Do not paste the example placeholder into CMS.
+- Google Ads ID: Google Ads → Goals / Conversions → selected website conversion action → Tag setup. Expected format: `AW-123456789`. Do not paste the example placeholder into CMS.
+- Google Ads download conversion label: same Google Ads conversion action setup; the label is specific to the download conversion action.
+- Google Search Console verification token: Search Console → add property for `https://languagevoicetutor.com/` → HTML tag verification. Copy only the value inside `content="..."`, not the full meta tag.
+- Do not paste whole Google script snippets into any of these fields.
+- Do not use GTM container IDs in the GA Measurement ID field unless the website code explicitly supports GTM later.
+
+Website Publish now emits or maintains public HTML pages, `robots.txt`, `sitemap.xml`, `llms.txt` when enabled, and `marketing-consent.js`. Public generated pages include canonical URLs, meta descriptions, Open Graph tags, Twitter card tags, JSON-LD where appropriate, and SoftwareApplication JSON-LD for the Windows desktop app only. Public pages must not claim Android/iOS availability and must not claim Microsoft Store, Google Play, or App Store availability.
+
+Consent and privacy readiness:
+
+- The consent banner is controlled from Website CMS.
+- Consent mode defaults to denied before user choice: `analytics_storage`, `ad_storage`, `ad_user_data`, and `ad_personalization` are denied.
+- The banner supports Accept all, Reject non-essential, Manage choices, and a Privacy Policy link.
+- Privacy Policy includes optional analytics, advertising, and cookie consent disclosure.
+- The website remains usable when non-essential cookies are rejected.
+- Google Analytics / Google Ads scripts must not be emitted when IDs are empty or tracking is disabled.
+
+Final verification caveats:
+
+- Public pages must not contain placeholder GA IDs such as `G-XXXXXXXXXX`.
+- Public pages must not contain placeholder Ads IDs such as `AW-123456789`.
+- Public pages must not include `googletagmanager.com/gtag/js` while IDs are empty.
+- `download.html` should show current Windows installer details from `latest.json` when static release details are available.
+- `robots.txt`, `sitemap.xml`, `llms.txt`, and `marketing-consent.js` should return `200`.
+
 ## Current public website readiness
 
 The home page shows the logo, supported study language flags, a Windows desktop app card, and safe mobile wording. Home must not claim mobile apps are currently available and must not say “Mobile version coming soon”. The approved wording is: “Android and iOS apps are planned but are not currently available.”
@@ -128,7 +182,7 @@ Current public tester values:
 - `updateMode`: `manual-confirmation`
 - `minimumSupportedVersion`: `0.1.36-tester.31`
 
-The `0.1.36-tester.31` Windows direct tester release has been built, uploaded, and verified. The user confirmed the newly uploaded build works and that the manual-confirmation update flow works on other devices. Backend deployment was not part of this desktop polish release; production backend remains healthy at `0.1.35-backend.74`, and no database migrations were added or run.
+The `0.1.36-tester.31` Windows direct tester release has been built, uploaded, and verified. The user confirmed the newly uploaded build works and that the manual-confirmation update flow works on other devices. Backend deployment was not part of this desktop polish release; production backend remains healthy at `0.1.35-backend.77`, and no database migrations were added or run.
 
 Release-relevant desktop polish included in `0.1.36-tester.31`:
 
