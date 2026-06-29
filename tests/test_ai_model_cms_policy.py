@@ -39,13 +39,18 @@ def test_admin_ui_explains_validate_is_format_only_and_has_provider_test():
 def test_provider_access_result_is_safe_and_uses_draft_request():
     models = read('backend/EnglishVoiceTutor.Api/Models/AiModelProviderTestModels.cs')
     service = read('backend/EnglishVoiceTutor.Api/Services/AiModelProviderAccessTestService.cs')
-    for field in ['RoleId', 'RoleLabel', 'ModelId', 'SyntaxValid', 'ProviderTested', 'ProviderOk', 'SafeCategory', 'SafeMessage', 'StatusCode', 'DurationMs']:
+    for field in ['RoleId', 'RoleLabel', 'ModelId', 'SyntaxValid', 'ProviderTested', 'ProviderOk', 'SafeCategory', 'SafeMessage', 'StatusCode', 'DurationMs', 'ProviderErrorType', 'ProviderErrorCode', 'ProviderErrorParam', 'SanitizedProviderMessage']:
         assert field in models
     for category in ['unavailable_or_not_found', 'unauthorized_or_forbidden', 'rate_limited', 'quota_or_billing', 'invalid_request', 'provider_error', 'timeout', 'unknown']:
         assert category in models
     assert 'TestDraftAsync(AiModelSettings draft' in service
     assert 'SaveDraftAsync' not in service and 'PublishAsync' not in service
-    assert 'ReadAsStringAsync' not in service
+    assert 'ReadAsStringAsync' in service
+    assert 'minimal_responses_text' in service
+    assert 'current_provider_test_shape' in service
+    assert 'minimal_structured_output' in service
+    assert 'lesson_chat_runtime_shape_without_user_content' in service
+    assert 'Safe diagnostic lesson input. No user lesson content is included.' in service
     assert 'Authorization' in service
     assert 'ApiKey' not in models
 
@@ -55,7 +60,11 @@ def test_runtime_failure_logs_safe_model_diagnostics():
     assert 'modelRole=lesson_tutor_chat' in chat
     assert 'configuredModelId={ConfiguredModelId}' in chat
     assert 'providerStatusCode={ProviderStatusCode}' in chat
-    assert 'safeProviderCategory={SafeProviderCategory}' in chat
+    assert 'safeCategory={SafeCategory}' in chat
+    assert 'providerErrorType={ProviderErrorType}' in chat
+    assert 'providerErrorCode={ProviderErrorCode}' in chat
+    assert 'providerErrorParam={ProviderErrorParam}' in chat
+    assert 'sanitizedProviderMessage={SanitizedProviderMessage}' in chat
     assert 'OpenAiProviderRequestException' in chat
     assert 'httpRequest.Headers.Authorization' in chat
     assert 'requestJson' in chat

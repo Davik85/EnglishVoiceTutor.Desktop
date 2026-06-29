@@ -2,7 +2,8 @@ namespace EnglishVoiceTutor.Api.Models;
 
 public sealed record AiModelProviderTestResponse(
     string OverallStatus,
-    IReadOnlyList<AiModelProviderTestResult> Results);
+    IReadOnlyList<AiModelProviderTestResult> Results,
+    IReadOnlyList<AiModelProviderCompatibilityDiagnosticResult>? LessonTutorChatCompatibilityDiagnostics = null);
 
 public sealed record AiModelProviderTestResult(
     string RoleId,
@@ -14,7 +15,22 @@ public sealed record AiModelProviderTestResult(
     string SafeCategory,
     string SafeMessage,
     int? StatusCode,
-    long? DurationMs);
+    long? DurationMs,
+    string? ProviderErrorType = null,
+    string? ProviderErrorCode = null,
+    string? ProviderErrorParam = null,
+    string? SanitizedProviderMessage = null);
+
+public sealed record AiModelProviderCompatibilityDiagnosticResult(
+    string TestName,
+    bool ProviderOk,
+    int? StatusCode,
+    string SafeCategory,
+    string? ProviderErrorType,
+    string? ProviderErrorCode,
+    string? ProviderErrorParam,
+    string? SanitizedProviderMessage,
+    long DurationMs);
 
 public static class AiModelProviderTestCategories
 {
