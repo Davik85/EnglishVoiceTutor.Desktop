@@ -2,11 +2,11 @@
 
 Review date: 2026-06-29.
 
-Scope: documentation-only audit and implementation plan before the first Microsoft Store/MSIX prototype. This document does not implement runtime behavior changes, does not add MSIX packaging, does not change backend code, does not add migrations, does not change deployment or installer scripts, does not publish Website CMS/static site content, does not upload installers, and does not deploy anything.
+Scope: channel/update behavior audit plus packaging notes for the first local Microsoft Store/MSIX prototype. This document does not change backend code, does not add migrations, does not change deployment or installer scripts, does not publish Website CMS/static site content, does not upload installers, and does not deploy anything.
 
 ## Executive recommendation
 
-For the first local MSIX prototype, add a later follow-up implementation using an explicit **Store** channel flag controlled by build configuration/MSBuild property. The Store channel should be a hard boundary around update behavior:
+For the first local MSIX prototype, use the implemented explicit **Store** channel flag controlled by build configuration/MSBuild property. The Store channel should be a hard boundary around update behavior:
 
 - Direct builds keep the current Inno installer and public `latest.json` update flow.
 - Store builds must not call the direct `latest.json` manifest, download `.exe` installers, cache direct update installers, or launch direct installer helpers.
@@ -192,7 +192,7 @@ Cons/risks:
 
 ## Recommended first implementation for MSIX prototype
 
-Use **Option A first**: an explicit Store channel flag controlled by MSBuild/build configuration, with Direct as the default. Add strict validation so only known channel values are accepted. Gate update behavior through a single channel-aware service or policy method so Store builds cannot call `UpdateManifestClient.LoadLatestAsync`, `UpdateDownloadService.DownloadAndVerifyAsync`, or `TryStartVerifiedInstallerAfterAppShutdown`.
+Use **Option A first**: an explicit Store channel flag controlled by MSBuild/build configuration, with Direct as the default. The local MSIX prototype project passes `DesktopDistributionChannel=Store` through its project reference. Add strict validation so only known channel values are accepted. Gate update behavior through a single channel-aware service or policy method so Store builds cannot call `UpdateManifestClient.LoadLatestAsync`, `UpdateDownloadService.DownloadAndVerifyAsync`, or `TryStartVerifiedInstallerAfterAppShutdown`.
 
 After the first MSIX package identity is known, consider **Option D** by adding package identity detection as a secondary assertion/diagnostic only. Do not rely on package identity detection alone for the first prototype.
 
@@ -303,3 +303,8 @@ Implemented behavior:
 - No MSIX packaging, Store submission, direct Inno installer changes, payment changes, backend changes, database migrations, deployments, uploads, or Website CMS publish were added by this implementation.
 
 Future defense-in-depth can add MSIX package identity detection after package identity details exist, but it is not the first source of truth for this implementation.
+
+
+## Local MSIX prototype packaging note (2026-06-29)
+
+The local packaging scaffold is `packaging/windows-msix/LanguageVoiceTutor.StorePrototype.wapproj`; it passes `DesktopDistributionChannel=Store` to `EnglishVoiceTutor.Desktop.csproj`. The prototype is documented in `docs/WINDOWS_STORE_MSIX_PROTOTYPE.md`. It is not a Store submission, WACK has not passed, and direct Inno update behavior remains the current public/tester channel.

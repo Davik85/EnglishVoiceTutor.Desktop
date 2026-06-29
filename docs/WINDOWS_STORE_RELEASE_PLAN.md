@@ -2,7 +2,7 @@
 
 Review date: 2026-06-29.
 
-Scope: documentation-only planning for a future Microsoft Store distribution channel. This document does not implement MSIX packaging, does not create a Store submission, does not change the existing Inno Setup direct-download flow, does not change backend deployment, does not run migrations, does not publish Website CMS/static site content, and does not change billing/payment code.
+Scope: Microsoft Store/MSIX planning plus the first local MSIX packaging prototype. This document does not create a Store submission, does not upload packages, does not change the existing Inno Setup direct-download flow, does not change backend deployment, does not run migrations, does not publish Website CMS/static site content, and does not change billing/payment code.
 
 ## Official Microsoft references
 
@@ -118,7 +118,7 @@ Open question: whether tester suffix numbers like `tester.31` map to the fourth 
 
 ## Store-specific update behavior
 
-The detailed audit and implementation plan is [`docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`](WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md). The Store build should rely on Microsoft Store update behavior. It should not check, download, cache, or launch the direct Inno installer from `latest.json`. The app may still display its human product version for support, but Store update availability should be owned by Store infrastructure rather than the direct website manifest. This behavior is not implemented yet; the recommended first follow-up is an explicit Store channel flag controlled by MSBuild/build configuration while keeping Direct as the default for the existing Inno flow.
+The detailed audit and implementation plan is [`docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`](WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md). The Store build should rely on Microsoft Store update behavior. It should not check, download, cache, or launch the direct Inno installer from `latest.json`. The app may still display its human product version for support, but Store update availability should be owned by Store infrastructure rather than the direct website manifest. This behavior is guarded by the explicit Store channel flag controlled by MSBuild/build configuration while keeping Direct as the default for the existing Inno flow; the local MSIX prototype passes that flag during packaging.
 
 ## Store app data and session migration risks
 
@@ -165,7 +165,7 @@ After an actual MSIX prototype exists, run Windows App Certification Kit locally
 
 ## Private/internal Store testing plan
 
-1. Create a local MSIX prototype without touching the direct Inno installer.
+1. Local MSIX prototype scaffold exists at `packaging/windows-msix/LanguageVoiceTutor.StorePrototype.wapproj` without touching the direct Inno installer.
 2. Confirm package identity and version mapping.
 3. Install on a clean Windows VM/test account.
 4. Verify launch, sign-in, auth/session persistence, microphone permissions, TTS/STT flows, lesson start/finish, Settings, Account, and backend-only AI boundary.
@@ -193,14 +193,14 @@ Public submission should happen only after:
 - Do not attempt to repair a Store failure by changing direct `latest.json` or direct Inno update behavior.
 - Backend rollback, database migration remediation, Website CMS/static site publish rollback, and direct installer rollback remain separate operational procedures.
 
-## Gaps before MSIX prototype
+## Gaps before Store submission
 
-- No confirmed MSIX packaging project yet.
-- No confirmed Store package identity yet.
-- No confirmed Store version mapping yet.
-- Store channel/update behavior is planned in `docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`, but no Store channel build flag is implemented yet.
-- No confirmed Store update behavior implementation yet.
-- No confirmed Store local-data migration strategy yet; `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md` recommends isolated first prototype behavior pending review.
+- Local MSIX packaging project exists for prototype verification only; no final Store package project/identity has been approved yet.
+- No final Partner Center Store package identity yet; the local prototype uses `LanguageVoiceTutor.Desktop.StorePrototype` only.
+- No final Store version mapping yet; the prototype demonstrates numeric MSIX version `0.1.36.0` as a candidate mapping from the direct `0.1.36` product line.
+- Store channel/update behavior uses the implemented `DesktopDistributionChannel=Store` build flag; Direct remains the default channel.
+- Store channel update behavior must remain guarded so Store builds do not use direct `latest.json`, direct installer download, or direct installer launch.
+- First prototype local-data behavior is Option A: isolated Store/MSIX data with fresh login acceptable; no manual token copying.
 - No Windows App Certification Kit command/process in the playbook yet.
 - No Store screenshots/assets checklist completed yet.
 - No Partner Center submission checklist completed yet.
@@ -210,7 +210,7 @@ Public submission should happen only after:
 - Task A: review `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md` and confirm the first-prototype local-data decision.
 - Task B: complete/review the Store channel/update behavior plan so Store builds cannot use direct `latest.json`.
 - Task C: implement the Store channel flag/update behavior without changing direct Inno installer.
-- Task D: prototype MSIX packaging locally without changing direct Inno installer.
+- Task D: continue local MSIX prototype verification from `docs/WINDOWS_STORE_MSIX_PROTOTYPE.md` without changing direct Inno installer.
 - Task E: add Windows App Certification Kit local verification notes after the prototype.
 - Task F: prepare Store listing/legal/assets content.
 - Task G: decide final Paddle disclosure wording for Store listing and in-app upgrade flow.
@@ -227,3 +227,8 @@ Public submission should happen only after:
 - Do not implement payment changes or Microsoft Store IAP.
 - Do not claim the app is already available in Microsoft Store.
 - Do not claim MSIX packaging is implemented until a real package/prototype exists.
+
+
+## Local MSIX prototype status (2026-06-29)
+
+A local MSIX packaging scaffold has been added under `packaging/windows-msix/` and is documented in [`docs/WINDOWS_STORE_MSIX_PROTOTYPE.md`](WINDOWS_STORE_MSIX_PROTOTYPE.md). It uses the Store channel build property and a temporary local identity only. Microsoft Store availability is not claimed, Partner Center submission has not happened, WACK has not passed, and the direct Inno release remains the current public/tester channel.
