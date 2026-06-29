@@ -423,9 +423,9 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         var ga = IsEnabled(m, "enableAnalytics") ? SafeGaId(MarketingValue(m, "googleAnalyticsMeasurementId")) : string.Empty;
         var ads = IsEnabled(m, "enableAdsTracking") ? SafeAdsId(MarketingValue(m, "googleAdsId")) : string.Empty;
         var downloadLabel = SafeConversionLabel(MarketingValue(m, "googleAdsDownloadConversionLabel"));
-        return $"""
+        return $$"""
     <script>
-      window.lvtMarketing = {{ gaMeasurementId: '{E(ga)}', googleAdsId: '{E(ads)}', downloadConversionLabel: '{E(downloadLabel)}' }};
+      window.lvtMarketing = { gaMeasurementId: '{{E(ga)}}', googleAdsId: '{{E(ads)}}', downloadConversionLabel: '{{E(downloadLabel)}}' };
     </script>
     <script src="marketing-consent.js?v=marketing-seo" defer></script>
 """;
