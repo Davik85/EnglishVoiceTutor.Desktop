@@ -45,6 +45,7 @@
         aiModelSettings: "/api/admin/system/ai-models",
         aiModelSettingsDraft: "/api/admin/system/ai-models/draft",
         aiModelSettingsValidate: "/api/admin/system/ai-models/validate",
+        aiModelSettingsProviderTest: "/api/admin/system/ai-models/test-provider-access",
         aiModelSettingsPublish: "/api/admin/system/ai-models/publish",
         aiModelSettingsResetDraft: "/api/admin/system/ai-models/reset-draft"
     };
@@ -838,6 +839,8 @@
     const aiModelsLoadButton = document.getElementById("ai-models-load-button");
     const aiModelsSaveDraftButton = document.getElementById("ai-models-save-draft-button");
     const aiModelsValidateButton = document.getElementById("ai-models-validate-button");
+    const aiModelsProviderTestButton = document.getElementById("ai-models-provider-test-button");
+    const aiModelsProviderTestResultsElement = document.getElementById("ai-models-provider-test-results");
     const aiModelsResetDraftButton = document.getElementById("ai-models-reset-draft-button");
     const aiModelsPublishButton = document.getElementById("ai-models-publish-button");
     const aiModelFields = [
@@ -871,7 +874,7 @@
             input.dataset.aiModelKey = key;
             const help = document.createElement("p");
             help.className = "help-text";
-            help.textContent = "Use provider model ID characters only: letters, numbers, dot, dash, underscore, and colon. Invalid/nonexistent models can break AI calls.";
+            help.textContent = "Validate checks format/syntax only: letters, numbers, dot, dash, underscore, and colon. Format validation does not prove provider access.";
             wrapper.append(labelElement, input, help);
             aiModelsFieldsElement.appendChild(wrapper);
         });
@@ -883,7 +886,8 @@
     async function readAiModelsResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
     async function loadAiModelSettings() { setAiModelsError(""); setAiModelsMessage("Loading AI model settings..."); try { const response = await fetch(ApiPaths.aiModelSettings, { method: "GET", headers: getAdminHeaders() }); const payload = await readAiModelsResponse(response, "Unable to load AI model settings."); aiModelDraft = payload.draft || payload.active || {}; renderAiModelFields(); aiModelsHaveLoadedOnce = true; setAiModelsMessage("AI model draft loaded."); } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to load AI model settings."); } }
     async function saveAiModelDraft() { collectAiModelDraft(); setAiModelsError(""); setAiModelsMessage("Saving AI model draft..."); try { const response = await fetch(ApiPaths.aiModelSettingsDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(aiModelDraft) }); const payload = await readAiModelsResponse(response, "Unable to save AI model draft."); aiModelDraft = payload.draft || aiModelDraft; renderAiModelFields(); setAiModelsMessage("AI model draft saved."); return true; } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to save AI model draft."); return false; } }
-    async function validateAiModelDraft() { collectAiModelDraft(); setAiModelsError(""); setAiModelsMessage("Validating AI model draft..."); try { const response = await fetch(ApiPaths.aiModelSettingsValidate, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(aiModelDraft) }); const payload = await readAiModelsResponse(response, "Unable to validate AI model draft."); if (!payload.isValid) { setAiModelsMessage(""); setAiModelsError((payload.errors || []).join(" ") || "AI model draft is invalid."); return false; } setAiModelsMessage((payload.warnings || []).join(" ") || "AI model draft is valid."); return true; } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to validate AI model draft."); return false; } }
+    async function validateAiModelDraft() { collectAiModelDraft(); setAiModelsError(""); setAiModelsMessage("Validating AI model draft format/syntax only..."); try { const response = await fetch(ApiPaths.aiModelSettingsValidate, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(aiModelDraft) }); const payload = await readAiModelsResponse(response, "Unable to validate AI model draft."); if (!payload.isValid) { setAiModelsMessage(""); setAiModelsError((payload.errors || []).join(" ") || "AI model draft is invalid."); return false; } setAiModelsMessage((payload.warnings || []).join(" ") || "AI model draft format/syntax is valid. Format validation does not prove provider access. Use Test provider access before publishing a new model."); return true; } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to validate AI model draft."); return false; } }
+    async function testAiModelProviderAccess() { collectAiModelDraft(); setAiModelsError(""); setAiModelsMessage("Testing AI model provider access for the current draft without publishing..."); if (aiModelsProviderTestResultsElement) { aiModelsProviderTestResultsElement.textContent = ""; } try { const response = await fetch(ApiPaths.aiModelSettingsProviderTest, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(aiModelDraft) }); const payload = await readAiModelsResponse(response, "Unable to test AI model provider access."); if (aiModelsProviderTestResultsElement) { aiModelsProviderTestResultsElement.textContent = JSON.stringify(payload, null, 2); } setAiModelsMessage(`Provider access test ${payload.overallStatus || "completed"}. Draft was not published.`); return payload.overallStatus === "success" || payload.overallStatus === "partial"; } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to test AI model provider access."); return false; } }
     async function publishAiModelDraft() { const saved = await saveAiModelDraft(); if (!saved) { return; } setAiModelsMessage("Publishing AI model settings..."); try { const response = await fetch(ApiPaths.aiModelSettingsPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readAiModelsResponse(response, "Unable to publish AI model settings."); aiModelDraft = payload.draft || payload.active || aiModelDraft; renderAiModelFields(); setAiModelsMessage("AI model settings published. Run a new lesson smoke test."); } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to publish AI model settings."); } }
     async function resetAiModelDraft() { setAiModelsError(""); setAiModelsMessage("Resetting AI model draft from active..."); try { const response = await fetch(ApiPaths.aiModelSettingsResetDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readAiModelsResponse(response, "Unable to reset AI model draft."); aiModelDraft = payload.draft || payload.active || {}; renderAiModelFields(); setAiModelsMessage("AI model draft reset from active."); } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to reset AI model draft."); } }
 
@@ -2845,6 +2849,7 @@
     aiModelsLoadButton?.addEventListener("click", async () => { await loadAiModelSettings(); });
     aiModelsSaveDraftButton?.addEventListener("click", async () => { await saveAiModelDraft(); });
     aiModelsValidateButton?.addEventListener("click", async () => { await validateAiModelDraft(); });
+    aiModelsProviderTestButton?.addEventListener("click", async () => { await testAiModelProviderAccess(); });
     aiModelsResetDraftButton?.addEventListener("click", async () => { await resetAiModelDraft(); });
     aiModelsPublishButton?.addEventListener("click", async () => { await publishAiModelDraft(); });
     roleManagementForms.forEach((form) => form.addEventListener("submit", async (event) => { event.preventDefault(); await submitRoleManagementMutation(form); }));

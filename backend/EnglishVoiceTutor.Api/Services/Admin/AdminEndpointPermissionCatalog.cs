@@ -35,6 +35,7 @@ public static class AdminEndpointPermissionCatalog
         new("admin.system.ai_models.read", "GET", ApiConstants.AdminAiModelSettingsRoute, AdminPermissionConstants.SystemDiagnosticsRead, "Read Super Admin AI model CMS settings."),
         new("admin.system.ai_models.draft_save", "POST", ApiConstants.AdminAiModelSettingsDraftRoute, AdminPermissionConstants.SystemDiagnosticsRead, "Save Super Admin AI model CMS draft settings."),
         new("admin.system.ai_models.validate", "POST", ApiConstants.AdminAiModelSettingsValidateRoute, AdminPermissionConstants.SystemDiagnosticsRead, "Validate Super Admin AI model CMS draft settings."),
+        new("admin.system.ai_models.provider_test", "POST", ApiConstants.AdminAiModelSettingsProviderTestRoute, AdminPermissionConstants.SystemDiagnosticsRead, "Test Super Admin AI model provider access for draft settings."),
         new("admin.system.ai_models.publish", "POST", ApiConstants.AdminAiModelSettingsPublishRoute, AdminPermissionConstants.SystemDiagnosticsRead, "Publish Super Admin AI model CMS settings."),
         new("admin.system.ai_models.reset_draft", "POST", ApiConstants.AdminAiModelSettingsResetDraftRoute, AdminPermissionConstants.SystemDiagnosticsRead, "Reset Super Admin AI model CMS draft settings from active."),
         new("admin.cms.static_content.import", "POST", ApiConstants.AdminDevCmsStaticContentImportRoute, AdminPermissionConstants.CmsContentWriteDraft, "Import static CMS content into the draft CMS store."),

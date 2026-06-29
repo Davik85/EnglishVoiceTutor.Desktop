@@ -20,6 +20,10 @@ public static class AiModelSettingsAdminEndpoints
         app.MapPost(ApiConstants.AdminAiModelSettingsValidateRoute, (AiModelSettings request, IAiModelSettingsService service) => Results.Ok(service.Validate(request)))
             .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
 
+        app.MapPost(ApiConstants.AdminAiModelSettingsProviderTestRoute, async (AiModelSettings request, AiModelProviderAccessTestService service, CancellationToken cancellationToken) =>
+            Results.Ok(await service.TestDraftAsync(request, cancellationToken)))
+            .RequireAuthorization(AdminAuthorizationConstants.BootstrapAdminPolicyName);
+
         app.MapPost(ApiConstants.AdminAiModelSettingsPublishRoute, async (HttpContext httpContext, IAiModelSettingsService service, CancellationToken cancellationToken) =>
         {
             try { return Results.Ok(await service.PublishAsync(ResolveUpdatedBy(httpContext), cancellationToken)); }

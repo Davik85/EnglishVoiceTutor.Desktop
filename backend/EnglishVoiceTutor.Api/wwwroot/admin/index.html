@@ -575,16 +575,19 @@
                         <article class="card"><h2>Capabilities Check</h2><ul id="capabilities-list" class="capability-list"></ul></article>
                         <article class="card" aria-labelledby="ai-models-heading">
                             <h2 id="ai-models-heading">AI Models</h2>
-                            <p class="muted">Super Admin-only runtime model settings. API keys are not stored here and remain server environment secrets. Save a draft, validate it, then publish after a small test lesson plan.</p>
+                            <p class="muted">Super Admin-only runtime model settings. API keys are not stored here and remain server environment secrets. Save a draft, Validate format, Test provider access, then publish and run a small real lesson. Format validation does not prove provider access. Use Test provider access before publishing a new model.</p>
                             <div class="website-action-bar" aria-label="AI model actions">
                                 <button id="ai-models-load-button" type="button">Load AI Models</button>
                                 <button id="ai-models-save-draft-button" type="button">Save draft</button>
-                                <button id="ai-models-validate-button" type="button" class="website-secondary-action">Validate</button>
+                                <button id="ai-models-validate-button" type="button" class="website-secondary-action" title="Checks model ID format/syntax only; it does not prove OpenAI provider access.">Validate format</button>
+                                <button id="ai-models-provider-test-button" type="button" class="website-secondary-action">Test provider access</button>
                                 <button id="ai-models-reset-draft-button" type="button" class="website-secondary-action">Reset draft from active</button>
                                 <button id="ai-models-publish-button" type="button" class="website-publish-action">Publish / Make active</button>
                             </div>
                             <p id="ai-models-message" class="success"></p>
                             <p id="ai-models-error" class="error" role="alert"></p>
+                            <p class="muted">Validate checks model ID format/syntax only. Format validation does not prove provider access. Use Test provider access before publishing a new model.</p>
+                            <pre id="ai-models-provider-test-results" class="website-json-preview" aria-live="polite"></pre>
                             <div id="ai-models-fields" class="grid website-editor-fields"></div>
                         </article>
                         <article class="card"><h2>Future Sections / Deferred Scope</h2><ul class="placeholder-list"><li>productionRolesAvailable <span id="system-production-roles-available" class="badge unavailable">false</span></li><li>Billing / Paddle <span class="badge unavailable">unavailable / disabled</span></li><li>Production RBAC <span class="badge unavailable">deferred</span></li><li>Mobile Store Bridge <span class="badge unavailable">disabled</span></li></ul></article>
