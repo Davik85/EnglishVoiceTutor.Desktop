@@ -24,5 +24,6 @@ public static class AdminPermissionConstants
     public const string BillingDiagnosticsRead = "billing.diagnostics.read";
     public const string ProductStatisticsRead = "product_statistics.read";
     public const string SystemDiagnosticsRead = "system.diagnostics.read";
+    public const string SystemAiModelSettingsManage = "system.ai_model_settings.manage";
     public const string AdminRolesManage = "admin.roles.manage";
 }
