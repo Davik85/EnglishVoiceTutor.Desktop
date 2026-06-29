@@ -154,6 +154,7 @@ builder.Services.AddAuthorization(options =>
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.BillingEventDiagnosticsPermissionPolicyName, AdminPermissionConstants.BillingDiagnosticsRead);
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.AuditLogViewPermissionPolicyName, AdminPermissionConstants.AuditRead);
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.SystemDiagnosticsPermissionPolicyName, AdminPermissionConstants.SystemDiagnosticsRead);
+    AddAdminPermissionPolicy(options, AdminAuthorizationConstants.SystemAiModelSettingsManagePermissionPolicyName, AdminPermissionConstants.SystemAiModelSettingsManage);
     AddAdminPermissionPolicy(options, AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName, AdminPermissionConstants.AdminRolesManage);
 });
 builder.Services.AddHttpContextAccessor();

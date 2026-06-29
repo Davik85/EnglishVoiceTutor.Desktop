@@ -33,6 +33,7 @@ public sealed class AdminRolePermissionCatalogService : IAdminRolePermissionCata
         AdminPermissionConstants.BillingDiagnosticsRead,
         AdminPermissionConstants.ProductStatisticsRead,
         AdminPermissionConstants.SystemDiagnosticsRead,
+        AdminPermissionConstants.SystemAiModelSettingsManage,
         AdminPermissionConstants.AdminRolesManage
     ];
 

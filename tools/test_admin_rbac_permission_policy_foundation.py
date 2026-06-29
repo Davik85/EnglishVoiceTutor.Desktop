@@ -15,6 +15,7 @@ FILES = {
     "permission_handler": ROOT / "backend/EnglishVoiceTutor.Api/Services/Admin/AdminPermissionAuthorizationHandler.cs",
     "program": ROOT / "backend/EnglishVoiceTutor.Api/Program.cs",
     "admin_endpoints": ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs",
+    "ai_model_settings_admin_endpoints": ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AiModelSettingsAdminEndpoints.cs",
     "admin_js": ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js",
     "admin_index": ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/index.html",
 }
@@ -39,6 +40,7 @@ PRODUCTION_PERMISSION_POLICIES = {
     "BillingEventDiagnosticsPermissionPolicyName": ("BillingDiagnosticsRead", "billing.diagnostics.read"),
     "AuditLogViewPermissionPolicyName": ("AuditRead", "audit.read"),
     "SystemDiagnosticsPermissionPolicyName": ("SystemDiagnosticsRead", "system.diagnostics.read"),
+    "SystemAiModelSettingsManagePermissionPolicyName": ("SystemAiModelSettingsManage", "system.ai_model_settings.manage"),
     "AdminRoleManagementPermissionPolicyName": ("AdminRolesManage", "admin.roles.manage"),
 }
 
@@ -298,6 +300,10 @@ DANGEROUS_ENDPOINT_MAPPINGS = {
     "admin.cms.publish": "CmsContentPublish",
     "admin.cms.restore": "CmsContentRestore",
     "admin.roles.manage": "AdminRolesManage",
+    "admin.system.ai_models.draft_save": "SystemAiModelSettingsManage",
+    "admin.system.ai_models.provider_test": "SystemAiModelSettingsManage",
+    "admin.system.ai_models.publish": "SystemAiModelSettingsManage",
+    "admin.system.ai_models.reset_draft": "SystemAiModelSettingsManage",
 }
 
 FUTURE_ONLY_ENDPOINT_PERMISSIONS = {
@@ -371,7 +377,7 @@ def main() -> None:
     permission_handler = read("permission_handler")
     endpoint_catalog = read("endpoint_catalog")
     program = read("program")
-    admin_endpoints = read("admin_endpoints")
+    admin_endpoints = read("admin_endpoints") + "\n" + read("ai_model_settings_admin_endpoints")
     admin_ui = read("admin_js") + "\n" + read("admin_index")
 
     policy_values = extract_constant_values(authorization_constants, "PermissionPolicyName")
@@ -573,6 +579,7 @@ def main() -> None:
         "PremiumDiagnosticsPermissionPolicyName",
         "BillingEventDiagnosticsPermissionPolicyName",
         "SystemDiagnosticsPermissionPolicyName",
+        "SystemAiModelSettingsManagePermissionPolicyName",
     }
     dangerous_or_deferred_policies.discard("AdminRoleManagementPermissionPolicyName")
     dangerous_or_deferred_policies.discard("ManualPremiumGrantPermissionPolicyName")

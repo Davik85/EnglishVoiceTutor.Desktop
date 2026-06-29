@@ -22,6 +22,7 @@ public static class AdminAuthorizationConstants
     public const string BillingEventDiagnosticsPermissionPolicyName = "AdminPermission:billing.diagnostics.read";
     public const string AuditLogViewPermissionPolicyName = "AdminPermission:audit.read";
     public const string SystemDiagnosticsPermissionPolicyName = "AdminPermission:system.diagnostics.read";
+    public const string SystemAiModelSettingsManagePermissionPolicyName = "AdminPermission:system.ai_model_settings.manage";
     public const string AdminRoleManagementPermissionPolicyName = "AdminPermission:admin.roles.manage";
     public const string AdminCookieAuthenticationScheme = "AdminShellCookie";
     public const string AdminCookieName = "evt_admin_session";
