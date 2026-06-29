@@ -56,9 +56,9 @@ def test_public_website_polish_regressions_are_locked():
     assert "Current Windows tester release is available through the Download for Windows button." in source
     assert "If release details do not load automatically, please contact" in download_html
     assert "Version</dt>\n                    <dd id=\"detail-version\">Unavailable</dd>" not in download_html
-    assert "0.1.36-tester.30" in manifest
-    assert "0.1.36-tester.30" in download_html
-    assert "LanguageVoiceTutorSetup-0.1.36-tester.30.exe" in download_html
+    assert "0.1.36-tester.31" in manifest
+    assert "0.1.36-tester.31" in download_html
+    assert "LanguageVoiceTutorSetup-0.1.36-tester.31.exe" in download_html
     assert 'src="download.js?v=' in download_html
 
     assert "Mobile version coming soon" not in source
