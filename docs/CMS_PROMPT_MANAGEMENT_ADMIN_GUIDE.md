@@ -180,3 +180,9 @@ Edit scenario-specific behavior in **Scenarios** and, if needed, global roleplay
 - **Runtime phase:** The current lesson stage, such as active roleplay, wrap-up, or final.
 - **Wrap-up:** The lesson stage where the tutor starts closing the scenario and summarizing briefly.
 - **Final message:** The last tutor message for the lesson; active dialogue must not continue after it.
+
+## Admin → System → AI Models
+
+Super Admins can review and edit backend AI model identifiers in **Admin → System → AI Models**. Use this section for model IDs only: lesson tutor chat, feedback/correction, lesson hint, translation, speech-to-text, lesson chat text-to-speech, Conversation Mode text-to-speech, and Realtime voice. Do not enter API keys, bearer tokens, organization IDs, or other secrets. OpenAI keys remain environment/server secrets.
+
+Recommended workflow: save a draft, validate it, publish it, then run a small new lesson smoke test. Validation checks that model IDs are non-empty, reasonably short, and limited to safe model-ID characters. It does not call OpenAI, so a syntactically valid but nonexistent provider model can still break AI calls until corrected or until fallback is needed because the active CMS file is invalid/unreadable.

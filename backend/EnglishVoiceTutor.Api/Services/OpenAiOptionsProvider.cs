@@ -5,25 +5,18 @@ namespace EnglishVoiceTutor.Api.Services;
 
 public sealed class OpenAiOptionsProvider
 {
-    private const string ModelKey = "Model";
-    private readonly IConfiguration _configuration;
+    private readonly IAiModelSettingsService _aiModelSettingsService;
 
-    public OpenAiOptionsProvider(IConfiguration configuration)
+    public OpenAiOptionsProvider(IAiModelSettingsService aiModelSettingsService)
     {
-        _configuration = configuration;
+        _aiModelSettingsService = aiModelSettingsService;
     }
 
     public OpenAiOptions GetOptions()
     {
         var apiKey = Environment.GetEnvironmentVariable(OpenAiConstants.ApiKeyEnvironmentVariableName) ?? string.Empty;
 
-        var configuredModel = _configuration
-            .GetSection(OpenAiConstants.SectionName)
-            .GetValue<string>(ModelKey);
-
-        var model = string.IsNullOrWhiteSpace(configuredModel)
-            ? OpenAiConstants.DefaultModel
-            : configuredModel;
+        var model = _aiModelSettingsService.GetActiveSettings().LessonTutorChatModel;
 
         return new OpenAiOptions
         {

@@ -22,18 +22,21 @@ public sealed class AudioTranscriptionService
     private readonly ILogger<AudioTranscriptionService> _logger;
     private readonly IRequestUserResolver _requestUserResolver;
     private readonly IUsageEventService _usageEventService;
+    private readonly IAiModelSettingsService _aiModelSettingsService;
 
     public AudioTranscriptionService(
         OpenAiOptionsProvider optionsProvider,
         IHttpClientFactory httpClientFactory,
         IRequestUserResolver requestUserResolver,
         IUsageEventService usageEventService,
+        IAiModelSettingsService aiModelSettingsService,
         ILogger<AudioTranscriptionService> logger)
     {
         _optionsProvider = optionsProvider;
         _httpClientFactory = httpClientFactory;
         _requestUserResolver = requestUserResolver;
         _usageEventService = usageEventService;
+        _aiModelSettingsService = aiModelSettingsService;
         _logger = logger;
     }
 
@@ -45,6 +48,7 @@ public sealed class AudioTranscriptionService
     {
         var options = _optionsProvider.GetOptions();
         var resolvedTargetLanguage = targetLanguage ?? StudyLanguageCatalog.English;
+        var transcriptionModel = _aiModelSettingsService.GetActiveSettings().SpeechToTextModel;
 
         if (string.IsNullOrWhiteSpace(options.ApiKey))
         {
@@ -54,14 +58,14 @@ public sealed class AudioTranscriptionService
             };
         }
 
-        var openAiResponse = await SendAudioTranscriptionRequestAsync(audioFile, options.ApiKey, resolvedTargetLanguage, transcriptionContext, cancellationToken);
+        var openAiResponse = await SendAudioTranscriptionRequestAsync(audioFile, options.ApiKey, transcriptionModel, resolvedTargetLanguage, transcriptionContext, cancellationToken);
         var transcriptText = openAiResponse.Text.Trim();
         var durationSeconds = EstimatePcmWavDurationSeconds(audioFile.Length);
         await _usageEventService.TryRecordAsync(new UsageEventRecord
         {
             UserId = _requestUserResolver.ResolveCurrentUser().UserId,
             Operation = UsageConstants.Operations.AudioTranscription,
-            Model = OpenAiConstants.DefaultTranscriptionModel,
+            Model = transcriptionModel,
             StudyLanguage = resolvedTargetLanguage.Id,
             Status = UsageConstants.Statuses.Success,
             EstimatedCost = 0m,
@@ -78,7 +82,7 @@ public sealed class AudioTranscriptionService
                 transcriptText.Length);
         }
 
-        _logger.LogInformation("Developer usage summary: Operation=audio_transcription; Model={Model}; Language={Language}; InputAudioBytes={InputAudioBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; TranscriptCharacters={TranscriptCharacters}; Status=success; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", OpenAiConstants.DefaultTranscriptionModel, resolvedTargetLanguage.TranscriptionLanguageCode, audioFile.Length, durationSeconds, transcriptText.Length, PricingConstants.OpenAi.TranscriptionPerMinuteUsd == 0m ? "transcription_pricing" : string.Empty);
+        _logger.LogInformation("Developer usage summary: Operation=audio_transcription; Model={Model}; Language={Language}; InputAudioBytes={InputAudioBytes}; EstimatedDurationSeconds={EstimatedDurationSeconds}; TranscriptCharacters={TranscriptCharacters}; Status=success; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", transcriptionModel, resolvedTargetLanguage.TranscriptionLanguageCode, audioFile.Length, durationSeconds, transcriptText.Length, PricingConstants.OpenAi.TranscriptionPerMinuteUsd == 0m ? "transcription_pricing" : string.Empty);
 
         return new AudioTranscriptionResponse
         {
@@ -89,6 +93,7 @@ public sealed class AudioTranscriptionService
     private async Task<OpenAiAudioTranscriptionResponse> SendAudioTranscriptionRequestAsync(
         IFormFile audioFile,
         string apiKey,
+        string transcriptionModel,
         StudyLanguageDefinition targetLanguage,
         string? transcriptionContext,
         CancellationToken cancellationToken)
@@ -105,7 +110,7 @@ public sealed class AudioTranscriptionService
             OpenAiConstants.MultipartFileFieldName,
             audioFile.FileName);
         formContent.Add(
-            new StringContent(OpenAiConstants.DefaultTranscriptionModel),
+            new StringContent(transcriptionModel),
             OpenAiConstants.MultipartModelFieldName);
         formContent.Add(
             new StringContent(targetLanguage.TranscriptionLanguageCode),
