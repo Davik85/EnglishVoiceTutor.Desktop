@@ -36,7 +36,7 @@ This channel remains current and working. It must not be removed, renamed, repur
 
 1. Microsoft Store distribution should use **MSIX** as the preferred first path.
 2. The existing direct Inno installer channel remains a parallel release channel.
-3. Store builds must not use the direct `latest.json` auto/manual installer update flow.
+3. Store builds must not use the direct `latest.json` auto/manual installer update flow. The channel/update behavior plan is documented in [`docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`](WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md) and remains pending implementation.
 4. Store build updates should be managed by Microsoft Store.
 5. Paddle/web checkout is the planned payment path for the PC non-game Store build, pending final Partner Center disclosure and policy review.
 6. Microsoft Store payment/IAP integration is **not** being implemented in this step.
@@ -118,7 +118,7 @@ Open question: whether tester suffix numbers like `tester.31` map to the fourth 
 
 ## Store-specific update behavior
 
-The Store build should rely on Microsoft Store update behavior. It should not check, download, cache, or launch the direct Inno installer from `latest.json`. The app may still display its human product version for support, but Store update availability should be owned by Store infrastructure rather than the direct website manifest.
+The detailed audit and implementation plan is [`docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`](WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md). The Store build should rely on Microsoft Store update behavior. It should not check, download, cache, or launch the direct Inno installer from `latest.json`. The app may still display its human product version for support, but Store update availability should be owned by Store infrastructure rather than the direct website manifest. This behavior is not implemented yet; the recommended first follow-up is an explicit Store channel flag controlled by MSBuild/build configuration while keeping Direct as the default for the existing Inno flow.
 
 ## Store app data and session migration risks
 
@@ -198,7 +198,7 @@ Public submission should happen only after:
 - No confirmed MSIX packaging project yet.
 - No confirmed Store package identity yet.
 - No confirmed Store version mapping yet.
-- No confirmed Store channel build flag yet.
+- Store channel/update behavior is planned in `docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`, but no Store channel build flag is implemented yet.
 - No confirmed Store update behavior implementation yet.
 - No confirmed Store local-data migration strategy yet; `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md` recommends isolated first prototype behavior pending review.
 - No Windows App Certification Kit command/process in the playbook yet.
@@ -208,11 +208,12 @@ Public submission should happen only after:
 ## Next safe Codex tasks
 
 - Task A: review `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md` and confirm the first-prototype local-data decision.
-- Task B: plan Store channel build flag and update behavior so Store builds cannot use direct `latest.json`.
-- Task C: prototype MSIX packaging locally without changing direct Inno installer.
-- Task D: add Windows App Certification Kit local verification notes after the prototype.
-- Task E: prepare Store listing/legal/assets content.
-- Task F: decide final Paddle disclosure wording for Store listing and in-app upgrade flow.
+- Task B: complete/review the Store channel/update behavior plan so Store builds cannot use direct `latest.json`.
+- Task C: implement the Store channel flag/update behavior without changing direct Inno installer.
+- Task D: prototype MSIX packaging locally without changing direct Inno installer.
+- Task E: add Windows App Certification Kit local verification notes after the prototype.
+- Task F: prepare Store listing/legal/assets content.
+- Task G: decide final Paddle disclosure wording for Store listing and in-app upgrade flow.
 
 ## What must not be touched during Store preparation
 
