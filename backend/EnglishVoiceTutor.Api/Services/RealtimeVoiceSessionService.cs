@@ -11,11 +11,12 @@ namespace EnglishVoiceTutor.Api.Services;
 
 public sealed class RealtimeVoiceSessionService
 {
-    private const string RealtimeWebSocketEndpoint = "wss://api.openai.com/v1/realtime?model=" + OpenAiConstants.DefaultRealtimeVoiceModel;
+    private const string RealtimeWebSocketEndpointBase = "wss://api.openai.com/v1/realtime?model=";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly OpenAiOptionsProvider optionsProvider;
     private readonly ILogger<RealtimeVoiceSessionService> logger;
     private readonly LessonPromptBuilder lessonPromptBuilder;
+    private readonly IAiModelSettingsService aiModelSettingsService;
     private ClientWebSocket? openAiSocket;
     private WebSocket? desktopSocket;
     private RealtimeVoiceSessionStartRequest? startRequest;
@@ -64,10 +65,12 @@ public sealed class RealtimeVoiceSessionService
     public RealtimeVoiceSessionService(
         OpenAiOptionsProvider optionsProvider,
         LessonPromptBuilder lessonPromptBuilder,
+        IAiModelSettingsService aiModelSettingsService,
         ILogger<RealtimeVoiceSessionService> logger)
     {
         this.optionsProvider = optionsProvider;
         this.lessonPromptBuilder = lessonPromptBuilder;
+        this.aiModelSettingsService = aiModelSettingsService;
         this.logger = logger;
     }
 
@@ -332,19 +335,21 @@ public sealed class RealtimeVoiceSessionService
             isDisconnecting = false;
             startupFailureNotified = false;
             startupCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var modelSettings = aiModelSettingsService.GetActiveSettings();
+            var realtimeWebSocketEndpoint = RealtimeWebSocketEndpointBase + Uri.EscapeDataString(modelSettings.RealtimeVoiceModel);
             openAiSocket = new ClientWebSocket();
             openAiSocket.Options.SetRequestHeader("Authorization", $"Bearer {options.ApiKey}");
-            await openAiSocket.ConnectAsync(new Uri(RealtimeWebSocketEndpoint), cancellationToken);
+            await openAiSocket.ConnectAsync(new Uri(realtimeWebSocketEndpoint), cancellationToken);
             _ = Task.Run(() => ReceiveOpenAiEventsAsync(openAiSocket, cancellationToken), CancellationToken.None);
 
             var instructions = lessonPromptBuilder.BuildRealtimeInstructions(request);
             var resolvedSpeechVoice = ResolveRealtimeSpeechVoice(request.SpeechVoice);
-            var sessionUpdateEvent = CreateRealtimeSessionUpdateEvent(instructions, resolvedSpeechVoice);
+            var sessionUpdateEvent = CreateRealtimeSessionUpdateEvent(instructions, resolvedSpeechVoice, modelSettings);
             LogRealtimeSessionUpdateShape(sessionUpdateEvent, instructions.Length);
             await SendOpenAiEventAsync(sessionUpdateEvent, cancellationToken);
 
             await startupCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken);
-            logger.LogInformation("Realtime session configured. SessionId={SessionId}; SessionConfiguredMs={ElapsedMs}; InputAudioTranscriptionModel={TranscriptionModel}; TranscriptionLanguage={Language}.", sessionId, stopwatch.ElapsedMilliseconds, OpenAiConstants.DefaultTranscriptionModel, OpenAiConstants.TranscriptionLanguage);
+            logger.LogInformation("Realtime session configured. SessionId={SessionId}; SessionConfiguredMs={ElapsedMs}; InputAudioTranscriptionModel={TranscriptionModel}; TranscriptionLanguage={Language}.", sessionId, stopwatch.ElapsedMilliseconds, modelSettings.SpeechToTextModel, OpenAiConstants.TranscriptionLanguage);
 
             await SeedRecentConversationAsync(request, cancellationToken);
             isStartupInProgress = false;
@@ -352,21 +357,21 @@ public sealed class RealtimeVoiceSessionService
 
             logger.LogInformation("Realtime session created. SessionId={SessionId}; Model={Model}; Voice={Voice}; LessonType={LessonType}; Topic={Topic}; Subtopic={Subtopic}; Level={Level}.",
                 sessionId,
-                OpenAiConstants.DefaultRealtimeVoiceModel,
+                modelSettings.RealtimeVoiceModel,
                 resolvedSpeechVoice,
                 request.LessonType,
                 string.IsNullOrWhiteSpace(request.Topic) ? request.TopicTitle : request.Topic,
                 string.IsNullOrWhiteSpace(request.Subtopic) ? request.SubtopicTitle : request.Subtopic,
                 request.SelectedLevel);
 
-            await SendDesktopEventAsync(new { type = "session.ready", sessionId, model = OpenAiConstants.DefaultRealtimeVoiceModel, voice = resolvedSpeechVoice }, cancellationToken);
+            await SendDesktopEventAsync(new { type = "session.ready", sessionId, model = modelSettings.RealtimeVoiceModel, voice = resolvedSpeechVoice }, cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             isStartupInProgress = false;
             isSessionReady = false;
             startupCompletionSource?.TrySetException(exception);
-            logger.LogError(exception, "Realtime session start failed. SessionId={SessionId}; Endpoint={Endpoint}; FailureKind=StartupFailed.", request.SessionId, RealtimeWebSocketEndpoint);
+            logger.LogError(exception, "Realtime session start failed. SessionId={SessionId}; Endpoint={Endpoint}; FailureKind=StartupFailed.", request.SessionId, RealtimeWebSocketEndpointBase);
             if (!startupFailureNotified)
             {
                 startupFailureNotified = true;
@@ -384,7 +389,7 @@ public sealed class RealtimeVoiceSessionService
             : requestedSpeechVoice.Trim();
     }
 
-    private static object CreateRealtimeSessionUpdateEvent(string instructions, string speechVoice)
+    private static object CreateRealtimeSessionUpdateEvent(string instructions, string speechVoice, AiModelSettings modelSettings)
     {
         var voice = OpenAiConstants.DefaultRealtimeVoice;
         if (!string.IsNullOrWhiteSpace(speechVoice))
@@ -398,7 +403,7 @@ public sealed class RealtimeVoiceSessionService
             session = new
             {
                 type = "realtime",
-                model = OpenAiConstants.DefaultRealtimeVoiceModel,
+                model = modelSettings.RealtimeVoiceModel,
                 output_modalities = new[] { OpenAiConstants.RealtimeAudioOutputModality },
                 instructions,
                 audio = new
@@ -413,7 +418,7 @@ public sealed class RealtimeVoiceSessionService
                         turn_detection = (object?)null,
                         transcription = new
                         {
-                            model = OpenAiConstants.DefaultTranscriptionModel,
+                            model = modelSettings.SpeechToTextModel,
                             language = OpenAiConstants.TranscriptionLanguage
                         }
                     },
@@ -595,7 +600,7 @@ public sealed class RealtimeVoiceSessionService
                 var finalTranscript = activeTranscript.ToString();
                 if (AssistantOutputLanguageGuard.IsClearlyNonEnglishTutorOutput(finalTranscript))
                 {
-                    logger.LogWarning("RealtimeAssistantLanguageViolation SessionId={SessionId}; RealtimeUserTurnId={RealtimeUserTurnId}; ResponseId={ResponseId}; Model={Model}; LessonId={LessonId}; Level={Level}; Topic={Topic}; Subtopic={Subtopic}; TranscriptLength={TranscriptLength}.", sessionId, activeResponseUserTurnId, GetOutboundResponseId(responseId), OpenAiConstants.DefaultRealtimeVoiceModel, startRequest?.LessonScenarioId, startRequest?.SelectedLevel, startRequest?.Topic, startRequest?.Subtopic, finalTranscript.Length);
+                    logger.LogWarning("RealtimeAssistantLanguageViolation SessionId={SessionId}; RealtimeUserTurnId={RealtimeUserTurnId}; ResponseId={ResponseId}; Model={Model}; LessonId={LessonId}; Level={Level}; Topic={Topic}; Subtopic={Subtopic}; TranscriptLength={TranscriptLength}.", sessionId, activeResponseUserTurnId, GetOutboundResponseId(responseId), aiModelSettingsService.GetActiveSettings().RealtimeVoiceModel, startRequest?.LessonScenarioId, startRequest?.SelectedLevel, startRequest?.Topic, startRequest?.Subtopic, finalTranscript.Length);
                     await SendOpenAiEventAsync(new { type = "session.update", session = new { type = "realtime", instructions = BuildCorrectiveEnglishOnlyInstructions() } }, cancellationToken);
                 }
 
@@ -825,7 +830,7 @@ public sealed class RealtimeVoiceSessionService
     {
         if (!responseDoneEvent.TryGetProperty("response", out var response) || !response.TryGetProperty("usage", out var usage))
         {
-            logger.LogInformation("Developer usage summary: Operation=realtime_response; SessionId={SessionId}; RealtimeUserTurnId={RealtimeUserTurnId}; LearnerTurnNumber={LearnerTurnNumber}; ResponseId={ResponseId}; Model={Model}; HasExactUsage=False; CostEstimateApproximate=True; MissingUsageFields=realtime_response_usage; MissingCostFields={MissingCostFields}.", sessionId, activeResponseUserTurnId, learnerTurnCount, GetOutboundResponseId(responseId), OpenAiConstants.DefaultRealtimeVoiceModel, GetRealtimeResponseMissingCostFields());
+            logger.LogInformation("Developer usage summary: Operation=realtime_response; SessionId={SessionId}; RealtimeUserTurnId={RealtimeUserTurnId}; LearnerTurnNumber={LearnerTurnNumber}; ResponseId={ResponseId}; Model={Model}; HasExactUsage=False; CostEstimateApproximate=True; MissingUsageFields=realtime_response_usage; MissingCostFields={MissingCostFields}.", sessionId, activeResponseUserTurnId, learnerTurnCount, GetOutboundResponseId(responseId), aiModelSettingsService.GetActiveSettings().RealtimeVoiceModel, GetRealtimeResponseMissingCostFields());
             return;
         }
 
@@ -847,7 +852,7 @@ public sealed class RealtimeVoiceSessionService
             outputAudioTokens = outputDetails.TryGetProperty("audio_tokens", out var value) && value.TryGetInt64(out var parsed) ? parsed : null;
         }
 
-        logger.LogInformation("Developer usage summary: Operation=realtime_response; SessionId={SessionId}; RealtimeUserTurnId={RealtimeUserTurnId}; LearnerTurnNumber={LearnerTurnNumber}; ResponseId={ResponseId}; Model={Model}; InputTokens={InputTokens}; OutputTokens={OutputTokens}; TotalTokens={TotalTokens}; AudioInputTokens={AudioInputTokens}; AudioOutputTokens={AudioOutputTokens}; HasExactUsage={HasExactUsage}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", sessionId, activeResponseUserTurnId, learnerTurnCount, GetOutboundResponseId(responseId), OpenAiConstants.DefaultRealtimeVoiceModel, inputTokens, outputTokens, totalTokens, inputAudioTokens, outputAudioTokens, inputTokens.HasValue || outputTokens.HasValue || totalTokens.HasValue || inputAudioTokens.HasValue || outputAudioTokens.HasValue, GetRealtimeResponseMissingCostFields());
+        logger.LogInformation("Developer usage summary: Operation=realtime_response; SessionId={SessionId}; RealtimeUserTurnId={RealtimeUserTurnId}; LearnerTurnNumber={LearnerTurnNumber}; ResponseId={ResponseId}; Model={Model}; InputTokens={InputTokens}; OutputTokens={OutputTokens}; TotalTokens={TotalTokens}; AudioInputTokens={AudioInputTokens}; AudioOutputTokens={AudioOutputTokens}; HasExactUsage={HasExactUsage}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", sessionId, activeResponseUserTurnId, learnerTurnCount, GetOutboundResponseId(responseId), aiModelSettingsService.GetActiveSettings().RealtimeVoiceModel, inputTokens, outputTokens, totalTokens, inputAudioTokens, outputAudioTokens, inputTokens.HasValue || outputTokens.HasValue || totalTokens.HasValue || inputAudioTokens.HasValue || outputAudioTokens.HasValue, GetRealtimeResponseMissingCostFields());
     }
 
 
@@ -1128,7 +1133,7 @@ public sealed class RealtimeVoiceSessionService
 
         isDisconnecting = true;
         logger.LogInformation("Realtime disconnect. SessionId={SessionId}; ResponseId={ResponseId}; DisconnectReason={DisconnectReason}; ElapsedMs={ElapsedMs}.", sessionId, activeResponseId, reason, stopwatch.ElapsedMilliseconds);
-        logger.LogInformation("Developer usage summary: Operation=realtime_session; SessionId={SessionId}; Model={Model}; Voice={Voice}; InputTranscriptionModel={InputTranscriptionModel}; Language={Language}; TotalInputAudioBytes={TotalInputAudioBytes}; EstimatedInputAudioDurationSeconds={EstimatedInputAudioDurationSeconds}; TotalCommittedAudioBytes={TotalCommittedAudioBytes}; AudioCommits={AudioCommits}; UserTranscriptCharacters={UserTranscriptCharacters}; AssistantTranscriptCharacters={AssistantTranscriptCharacters}; AssistantAudioBytes={AssistantAudioBytes}; EstimatedAssistantAudioDurationSeconds={EstimatedAssistantAudioDurationSeconds}; DisconnectReason={DisconnectReason}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", sessionId, OpenAiConstants.DefaultRealtimeVoiceModel, OpenAiConstants.DefaultRealtimeVoice, OpenAiConstants.DefaultTranscriptionModel, OpenAiConstants.TranscriptionLanguage, totalInputAudioBytes, EstimateRealtimePcmDurationSeconds(totalInputAudioBytes), totalCommittedAudioBytes, audioCommitCount, realtimeUserTranscriptCharacters, activeTranscript.Length, totalAssistantAudioBytes, EstimateRealtimePcmDurationSeconds(totalAssistantAudioBytes), reason, PricingConstants.OpenAi.RealtimeAudioInputPerMillionTokensUsd == 0m || PricingConstants.OpenAi.RealtimeAudioOutputPerMillionTokensUsd == 0m ? "realtime_pricing" : string.Empty);
+        logger.LogInformation("Developer usage summary: Operation=realtime_session; SessionId={SessionId}; Model={Model}; Voice={Voice}; InputTranscriptionModel={InputTranscriptionModel}; Language={Language}; TotalInputAudioBytes={TotalInputAudioBytes}; EstimatedInputAudioDurationSeconds={EstimatedInputAudioDurationSeconds}; TotalCommittedAudioBytes={TotalCommittedAudioBytes}; AudioCommits={AudioCommits}; UserTranscriptCharacters={UserTranscriptCharacters}; AssistantTranscriptCharacters={AssistantTranscriptCharacters}; AssistantAudioBytes={AssistantAudioBytes}; EstimatedAssistantAudioDurationSeconds={EstimatedAssistantAudioDurationSeconds}; DisconnectReason={DisconnectReason}; CostEstimateApproximate=True; MissingCostFields={MissingCostFields}.", sessionId, aiModelSettingsService.GetActiveSettings().RealtimeVoiceModel, OpenAiConstants.DefaultRealtimeVoice, aiModelSettingsService.GetActiveSettings().SpeechToTextModel, OpenAiConstants.TranscriptionLanguage, totalInputAudioBytes, EstimateRealtimePcmDurationSeconds(totalInputAudioBytes), totalCommittedAudioBytes, audioCommitCount, realtimeUserTranscriptCharacters, activeTranscript.Length, totalAssistantAudioBytes, EstimateRealtimePcmDurationSeconds(totalAssistantAudioBytes), reason, PricingConstants.OpenAi.RealtimeAudioInputPerMillionTokensUsd == 0m || PricingConstants.OpenAi.RealtimeAudioOutputPerMillionTokensUsd == 0m ? "realtime_pricing" : string.Empty);
         transcriptionTimeoutCancellationTokenSource?.Cancel();
         transcriptionTimeoutCancellationTokenSource?.Dispose();
         transcriptionTimeoutCancellationTokenSource = null;

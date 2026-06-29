@@ -41,7 +41,12 @@
         websiteContent: "/api/admin/website/content",
         websiteContentDraft: "/api/admin/website/content/draft",
         websiteContentPublish: "/api/admin/website/content/publish",
-        websiteContentPreview: "/api/admin/website/content/preview"
+        websiteContentPreview: "/api/admin/website/content/preview",
+        aiModelSettings: "/api/admin/system/ai-models",
+        aiModelSettingsDraft: "/api/admin/system/ai-models/draft",
+        aiModelSettingsValidate: "/api/admin/system/ai-models/validate",
+        aiModelSettingsPublish: "/api/admin/system/ai-models/publish",
+        aiModelSettingsResetDraft: "/api/admin/system/ai-models/reset-draft"
     };
 
     const HttpStatus = { badRequest: 400, unauthorized: 401, forbidden: 403, notFound: 404, conflict: 409 };
@@ -122,6 +127,7 @@
     let selectedUserLookupPayload = null;
     let cmsHasLoadedOnce = false;
     let websiteHasLoadedOnce = false;
+    let aiModelsHaveLoadedOnce = false;
     let cmsSelectedTopic = null;
     let cmsSelectedScenario = null;
     let cmsSelectedPromptTemplate = null;
@@ -530,6 +536,7 @@
                 if (!cmsHasLoadedOnce) { await loadCmsContentPacks(); }
             }
             if (tabId === Tabs.website && !websiteHasLoadedOnce) { await loadWebsiteContent(); }
+            if (tabId === Tabs.system && !aiModelsHaveLoadedOnce) { await loadAiModelSettings(); }
             if (tabId === Tabs.overview) { await loadProductStatistics(); }
         }));
     }
@@ -823,6 +830,62 @@
     const getSelectedAuditLimit = () => [10, 25, 50, 100].includes(Number.parseInt(auditLimitElement.value, 10)) ? Number.parseInt(auditLimitElement.value, 10) : 10;
 
 
+
+
+    const aiModelsFieldsElement = document.getElementById("ai-models-fields");
+    const aiModelsMessageElement = document.getElementById("ai-models-message");
+    const aiModelsErrorElement = document.getElementById("ai-models-error");
+    const aiModelsLoadButton = document.getElementById("ai-models-load-button");
+    const aiModelsSaveDraftButton = document.getElementById("ai-models-save-draft-button");
+    const aiModelsValidateButton = document.getElementById("ai-models-validate-button");
+    const aiModelsResetDraftButton = document.getElementById("ai-models-reset-draft-button");
+    const aiModelsPublishButton = document.getElementById("ai-models-publish-button");
+    const aiModelFields = [
+        ["lessonTutorChatModel", "Lesson tutor chat model"],
+        ["feedbackCorrectionModel", "Feedback / correction model"],
+        ["lessonHintModel", "Lesson hint model"],
+        ["translationModel", "Translation model"],
+        ["speechToTextModel", "Speech-to-text model"],
+        ["lessonChatTextToSpeechModel", "Lesson chat text-to-speech model"],
+        ["conversationModeTextToSpeechModel", "Conversation Mode text-to-speech model"],
+        ["realtimeVoiceModel", "Realtime voice model"]
+    ];
+    let aiModelDraft = {};
+    function setAiModelsMessage(message) { if (aiModelsMessageElement) { aiModelsMessageElement.textContent = message || ""; } }
+    function setAiModelsError(message) { if (aiModelsErrorElement) { aiModelsErrorElement.textContent = message || ""; } }
+    function renderAiModelFields() {
+        if (!aiModelsFieldsElement) { return; }
+        aiModelsFieldsElement.textContent = "";
+        aiModelFields.forEach(([key, label]) => {
+            const wrapper = document.createElement("div");
+            wrapper.className = "field";
+            const labelElement = document.createElement("label");
+            labelElement.setAttribute("for", `ai-model-${key}`);
+            labelElement.textContent = label;
+            const input = document.createElement("input");
+            input.id = `ai-model-${key}`;
+            input.type = "text";
+            input.autocomplete = "off";
+            input.maxLength = 120;
+            input.value = aiModelDraft[key] || "";
+            input.dataset.aiModelKey = key;
+            const help = document.createElement("p");
+            help.className = "help-text";
+            help.textContent = "Use provider model ID characters only: letters, numbers, dot, dash, underscore, and colon. Invalid/nonexistent models can break AI calls.";
+            wrapper.append(labelElement, input, help);
+            aiModelsFieldsElement.appendChild(wrapper);
+        });
+    }
+    function collectAiModelDraft() {
+        if (!aiModelsFieldsElement) { return; }
+        aiModelsFieldsElement.querySelectorAll("[data-ai-model-key]").forEach(input => { aiModelDraft[input.dataset.aiModelKey] = input.value; });
+    }
+    async function readAiModelsResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
+    async function loadAiModelSettings() { setAiModelsError(""); setAiModelsMessage("Loading AI model settings..."); try { const response = await fetch(ApiPaths.aiModelSettings, { method: "GET", headers: getAdminHeaders() }); const payload = await readAiModelsResponse(response, "Unable to load AI model settings."); aiModelDraft = payload.draft || payload.active || {}; renderAiModelFields(); aiModelsHaveLoadedOnce = true; setAiModelsMessage("AI model draft loaded."); } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to load AI model settings."); } }
+    async function saveAiModelDraft() { collectAiModelDraft(); setAiModelsError(""); setAiModelsMessage("Saving AI model draft..."); try { const response = await fetch(ApiPaths.aiModelSettingsDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(aiModelDraft) }); const payload = await readAiModelsResponse(response, "Unable to save AI model draft."); aiModelDraft = payload.draft || aiModelDraft; renderAiModelFields(); setAiModelsMessage("AI model draft saved."); return true; } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to save AI model draft."); return false; } }
+    async function validateAiModelDraft() { collectAiModelDraft(); setAiModelsError(""); setAiModelsMessage("Validating AI model draft..."); try { const response = await fetch(ApiPaths.aiModelSettingsValidate, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(aiModelDraft) }); const payload = await readAiModelsResponse(response, "Unable to validate AI model draft."); if (!payload.isValid) { setAiModelsMessage(""); setAiModelsError((payload.errors || []).join(" ") || "AI model draft is invalid."); return false; } setAiModelsMessage((payload.warnings || []).join(" ") || "AI model draft is valid."); return true; } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to validate AI model draft."); return false; } }
+    async function publishAiModelDraft() { const saved = await saveAiModelDraft(); if (!saved) { return; } setAiModelsMessage("Publishing AI model settings..."); try { const response = await fetch(ApiPaths.aiModelSettingsPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readAiModelsResponse(response, "Unable to publish AI model settings."); aiModelDraft = payload.draft || payload.active || aiModelDraft; renderAiModelFields(); setAiModelsMessage("AI model settings published. Run a new lesson smoke test."); } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to publish AI model settings."); } }
+    async function resetAiModelDraft() { setAiModelsError(""); setAiModelsMessage("Resetting AI model draft from active..."); try { const response = await fetch(ApiPaths.aiModelSettingsResetDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readAiModelsResponse(response, "Unable to reset AI model draft."); aiModelDraft = payload.draft || payload.active || {}; renderAiModelFields(); setAiModelsMessage("AI model draft reset from active."); } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to reset AI model draft."); } }
 
     const websiteSectionTabs = document.getElementById("website-section-tabs");
     const websiteEditorHeading = document.getElementById("website-editor-heading");
@@ -2779,6 +2842,11 @@
     websiteSaveDraftButton.addEventListener("click", async () => { await saveWebsiteDraft(); });
     websitePreviewButton.addEventListener("click", async () => { await previewWebsiteContent(); });
     websitePublishButton.addEventListener("click", async () => { await publishWebsiteContent(); });
+    aiModelsLoadButton?.addEventListener("click", async () => { await loadAiModelSettings(); });
+    aiModelsSaveDraftButton?.addEventListener("click", async () => { await saveAiModelDraft(); });
+    aiModelsValidateButton?.addEventListener("click", async () => { await validateAiModelDraft(); });
+    aiModelsResetDraftButton?.addEventListener("click", async () => { await resetAiModelDraft(); });
+    aiModelsPublishButton?.addEventListener("click", async () => { await publishAiModelDraft(); });
     roleManagementForms.forEach((form) => form.addEventListener("submit", async (event) => { event.preventDefault(); await submitRoleManagementMutation(form); }));
     logoutButton.addEventListener("click", () => { logoutAdminSession(); });
     initializeTabs();
