@@ -81,7 +81,7 @@ public sealed class AiModelSettingsServiceTests : IDisposable
     }
 
     private static AiModelSettingsService CreateService(string contentRootPath) =>
-        new(Options.Create(new AiModelSettingsOptions()), new TestWebHostEnvironment(contentRootPath), NullLogger<AiModelSettingsService>.Instance);
+        new(Microsoft.Extensions.Options.Options.Create(new AiModelSettingsOptions()), new TestWebHostEnvironment(contentRootPath), NullLogger<AiModelSettingsService>.Instance);
 
     private static void WriteDocument(string path, AiModelSettings settings, int revision)
     {
