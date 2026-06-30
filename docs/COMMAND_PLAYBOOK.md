@@ -367,12 +367,13 @@ The active Windows release flow is Direct EXE/Inno plus the direct `latest.json`
 
 ## AI Models CMS post-deploy verification
 
-After a backend deploy, open **Admin CMS → System → AI Models → Load AI Models** as Super Admin. Confirm lesson tutor chat remains `gpt-5.5`; confirm feedback/correction, lesson hint, and translation remain `gpt-5.2`; run **Validate format**; run **Test provider access** only if model settings changed; and do not publish unless the changes are intentional. AI Models CMS JSON is persistent server data at `site/content/ai-model-settings.json` resolved outside versioned backend release folders, not a packaged release artifact.
+After a backend deploy, open **Admin CMS → System → AI Models → Load AI Models** as Super Admin. Confirm lesson tutor chat remains `gpt-5.5`; confirm feedback/correction, lesson hint, and translation remain `gpt-5.2`; run **Validate format**; run **Test provider access** only if model settings changed; and do not publish unless the changes are intentional. AI Models CMS JSON is persistent server data/config at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` resolved outside versioned backend release folders, not a packaged release artifact. The current production persistent file is verified, survived backend restart, and matched the release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`; future deploys must not use `/opt/languagevoicetutor/backend/current/site/content/ai-model-settings.json` or `/opt/languagevoicetutor/backend/releases/<version>/site/content/ai-model-settings.json` as the source of truth.
 
 ## Do not mix release operations
 
-- Backend deploy commands package/upload the backend only; they do not upload Windows installers, publish Website CMS/static site content, run EF migrations, enable Paddle live, or change `latest.json`.
+- Backend deploy commands package/upload the backend only; they do not upload Windows installers, publish Website CMS/static site content, run EF migrations, enable Paddle live, change `latest.json`, or replace persistent AI Models server data/config from release-folder JSON.
 - Windows direct upload commands publish only the Direct EXE/Inno release files for `latest.json`; they do not deploy backend code, run migrations, publish Website CMS, or create Store/MSIX packages.
 - Website CMS publish is a separate website/content operation; it is not backend deploy and not Windows installer upload.
 - DB migrations are separate reviewed operator work; do not imply backend upload scripts apply migrations automatically.
 - Paddle live account/provider changes are manual/provider configuration unless an approved backend configuration/code change is explicitly required.
+- AI Models persistence correction is server data/config work; it is separate from backend deploy, Website CMS publish, Windows direct installer upload, DB migrations, and provider/Paddle live changes.

@@ -1,6 +1,6 @@
 # Backend server deployment
 
-Review date: 2026-06-28.
+Review date: 2026-06-30.
 
 ## Current production backend
 
@@ -76,7 +76,9 @@ Do not paste production environment values, database connection strings, API key
 
 ## Persistent AI Models CMS settings
 
-AI Models CMS active/draft runtime settings are persistent server data, not release artifacts. The configured `AiModelSettings:StorageJsonPath` defaults to `site/content/ai-model-settings.json` and is resolved outside the versioned release content root, so production stores it under the persistent backend data tree (for example `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`) rather than `/opt/languagevoicetutor/backend/current/site/content/` or `/opt/languagevoicetutor/backend/releases/<version>/site/content/`. Backend startup/deploy must not overwrite an existing active settings file with packaged defaults. If the persistent file is missing but a legacy release-content file exists, the backend imports that file once; otherwise defaults seed the in-memory draft/active values until an admin saves or publishes.
+AI Models CMS active/draft runtime settings are persistent server data/config, not release artifacts. The configured `AiModelSettings:StorageJsonPath` defaults to `site/content/ai-model-settings.json` and is resolved outside the versioned release content root, so production stores it under the persistent backend data tree (`/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`) rather than `/opt/languagevoicetutor/backend/current/site/content/` or `/opt/languagevoicetutor/backend/releases/<version>/site/content/`. Backend startup/deploy must not overwrite an existing active settings file with packaged defaults, and future backend deploys must not rely on release-folder AI Models JSON as the source of truth. If the persistent file is missing but a legacy release-content file exists, the backend imports that file once; otherwise defaults seed the in-memory draft/active values until an admin saves or publishes.
+
+Current production verification: the persistent file exists at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`, was seeded from `/opt/languagevoicetutor/backend/current/site/content/ai-model-settings.json` only as a one-time data/config correction, has mode `644`, contains lesson tutor chat `gpt-5.5` plus feedback/correction, lesson hint, and translation `gpt-5.2`, and matched the current release file by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`. After restarting `languagevoicetutor-backend.service`, `/health` and `/api/health/database` returned `200 Healthy`, the persistent file still existed, and `gpt-5.5` plus `gpt-5.2` remained present. This correction was not a backend deploy, not a database migration, not a Website CMS publish, and not a Windows installer upload.
 
 After backend deploy, Super Admin should verify **Admin CMS → System → AI Models → Load AI Models**: lesson tutor chat remains `gpt-5.5`; feedback/correction, lesson hint, and translation remain `gpt-5.2`; then run **Validate format**. Test provider access only if settings changed, and do not publish unless changes are intentional. API keys remain environment secrets and are never stored in AI Models CMS JSON.
 
@@ -113,6 +115,7 @@ Backend deploy is backend-only. It does not:
 - apply reviewed SQL;
 - publish static website HTML/CSS/JS;
 - publish Website CMS content;
+- seed or replace persistent AI Models server data/config from release folders as the source of truth;
 - upload Windows installer files;
 - change production Paddle environment values;
 - enable live Paddle;
@@ -128,6 +131,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
+- AI Models: persistent production storage is verified and survived restart with known-good `gpt-5.5` / `gpt-5.2` values.
 - Billing: Paddle live is not enabled yet. Production/live Paddle readiness remains deferred.
 - Legal: website legal/support/seller/AI/status pages are ready for owner/legal final review as drafts, not final legal advice.
 

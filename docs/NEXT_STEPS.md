@@ -134,6 +134,8 @@ Backend remains source of truth for plan, subscription, entitlement, usage, and 
 
 AI model IDs are editable by Super Admin / Bootstrap Admin in **Admin → System → AI Models** through JSON/file-based CMS settings. API keys remain environment/server secrets and are not CMS content. Backend runtime remains the source of truth for AI model selection; model changes should require only CMS publish for backend runtime to use them on new AI requests. No desktop release is required because the desktop does not decide model IDs or call OpenAI directly. No DB migration was added.
 
+The production persistent AI Models file is now verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`. It was seeded from the current release file only to correct missing persistent data/config, then confirmed to exist, contain `gpt-5.5` plus `gpt-5.2`, match the current release file by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`, and survive a backend service restart with `/health` and `/api/health/database` still healthy. Treat this file as server data/config, not a release artifact; future deploys must not use release-folder AI Models JSON as the source of truth.
+
 Current known-good model configuration: lesson tutor chat `gpt-5.5`; feedback/correction `gpt-5.2`; lesson hint `gpt-5.2`; translation `gpt-5.2`; speech-to-text `gpt-4o-mini-transcribe`; lesson chat TTS `tts-1`; Conversation Mode TTS `gpt-4o-mini-tts`; Realtime voice `gpt-realtime`.
 
 Operational workflow before changing production models: Load AI Models → Edit draft → Save draft → Validate format → Test provider access → Review compatibility diagnostics → Publish / Make active only if relevant runtime diagnostics pass → run a small real lesson. Validate format checks syntax only and does not prove provider access. Test provider access performs provider-level checks using draft settings, does not publish, and uses safe dummy input rather than real lesson/user text. Audio and realtime roles may be marked `not_tested` if not covered by lightweight checks.
@@ -154,16 +156,18 @@ Windows release work stays on the Direct EXE/Inno installer. Updates continue th
 
 ### Top remaining tasks in recommended order
 
-1. Keep the backend release discrepancy resolved in docs: the live symlink verification command `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` confirmed `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82`; `/health` and `/api/health/database` were verified healthy. No backend deploy was performed for this documentation update.
-2. Verify the live Windows direct manifest still points to `0.1.36-tester.31`, production backend URL, and `manual-confirmation` before any tester handoff.
-3. Keep Store/MSIX removed/discontinued; do not recreate `packaging/windows-msix`, Store channel logic, Store update messaging, WACK commands, or Partner Center planning.
-4. Complete final clean-machine and update-over-existing-install smoke for the current direct installer.
-5. Purchase/select a Windows code signing certificate and plan integration for the direct Inno installer.
-6. Prepare a signed direct installer release candidate only after signing is approved; validate, upload, and verify via the existing direct-release helper flow.
-7. Complete owner/legal review of website, pricing, subscription, terms, privacy, refunds, cancellation, support, seller/company, AI/data, and status pages; publish through Website CMS/static-site flow only.
-8. Complete Paddle live readiness and provider/account setup before paid public launch; do not enable live billing as part of docs-only work.
-9. Run backend deploy only for an approved backend runtime/configuration change; do not deploy backend for Website CMS publish, Windows installer upload, or docs-only work.
-10. Run DB migration only for a reviewed schema/data change with backups, SQL review, privilege checks, and rollback/remediation plan.
+1. Complete final clean-machine and update-over-existing-install smoke for the current Direct EXE/Inno installer.
+2. Purchase/select a Windows code signing certificate and plan integration for the direct Inno installer.
+3. Prepare a signed direct installer release candidate only after signing is approved; validate, upload, and verify via the existing direct-release helper flow.
+4. Complete owner/legal review of website, pricing, subscription, terms, privacy, refunds, cancellation, support, seller/company, AI/data, and status pages; publish through Website CMS/static-site flow only.
+5. Complete Paddle live readiness and provider/account setup before paid public launch; do not enable live billing as part of docs-only work.
+6. Collect controlled tester feedback, triage severity, and make an explicit release decision before broader public distribution.
+7. Before any tester handoff, re-verify the live Windows direct manifest still points to `0.1.36-tester.31`, production backend URL, and `manual-confirmation`.
+8. Keep the backend release discrepancy resolved in docs: the live symlink verification command `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` confirmed `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82`; `/health` and `/api/health/database` were verified healthy. No backend deploy was performed for this documentation update.
+9. Keep the AI Models persistence risk closed: preserve `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` as persistent server data/config, do not package release-folder JSON as the production source of truth, and verify it after future backend deploys.
+10. Keep Store/MSIX removed/discontinued; do not recreate `packaging/windows-msix`, Store channel logic, Store update messaging, WACK commands, or Partner Center planning.
+11. Run backend deploy only for an approved backend runtime/configuration change; do not deploy backend for Website CMS publish, Windows installer upload, AI Models persistence correction, or docs-only work.
+12. Run DB migration only for a reviewed schema/data change with backups, SQL review, privilege checks, and rollback/remediation plan.
 
 ### Task classification
 
@@ -172,4 +176,4 @@ Windows release work stays on the Direct EXE/Inno installer. Updates continue th
 - Requires Website CMS publish: public website/legal/support/pricing content changes.
 - Requires DB migration: only reviewed schema/data changes.
 - Docs-only: release-readiness documentation, command/runbook clarification, stale Store/MSIX wording cleanup.
-- Manual account/provider/admin work: code signing purchase, Paddle live configuration, owner/legal review, tester management, AI Models verification/publish if model settings intentionally change.
+- Manual account/provider/admin work: code signing purchase, Paddle live configuration, owner/legal review, tester management, AI Models publish only if model settings intentionally change; persistence verification is already complete for the current production state.
