@@ -12,7 +12,7 @@ if (-not (Test-Path $WapProj)) { throw "Missing MSIX prototype project: $WapProj
 if (-not (Test-Path $Manifest)) { throw "Missing MSIX prototype manifest: $Manifest" }
 if (-not (Test-Path $Inno)) { throw "Direct Inno installer script is missing: $Inno" }
 if (-not (Test-Path $Docs)) { throw "Missing MSIX prototype documentation: $Docs" }
-if (-not (Test-Path $AssetGenerator)) { throw "Missing local MSIX placeholder asset generator: $AssetGenerator" }
+if (-not (Test-Path $AssetGenerator)) { throw "Missing local MSIX asset generator: $AssetGenerator" }
 if (-not (Test-Path $VersionProvider)) { throw "Missing desktop app version provider: $VersionProvider" }
 if (-not (Test-Path $SettingsViewModel)) { throw "Missing Settings view model: $SettingsViewModel" }
 
@@ -46,13 +46,49 @@ if ($SettingsViewModelContent -notmatch 'DesktopAppVersionProvider\.GetInstalled
 if ($SettingsViewModelContent -match 'InstalledAppVersionText\s*=>\s*\$"Version: v\{appVersionText\}"') { throw 'Settings footer must not hard-code Direct v-prefix for Store/MSIX builds.' }
 
 $AssetGeneratorContent = Get-Content $AssetGenerator -Raw
-if ($AssetGeneratorContent -notmatch "Name\s*=\s*'Square310x310Logo\.png';\s*Width\s*=\s*310;\s*Height\s*=\s*310") { throw 'MSIX placeholder asset generator must create Square310x310Logo.png as 310x310.' }
+if ($AssetGeneratorContent -notmatch [regex]::Escape('Assets/Branding/app-icon.ico') -and $AssetGeneratorContent -notmatch [regex]::Escape('Assets\Branding\app-icon.ico')) { throw 'MSIX asset generator must use the tracked Direct desktop app icon source.' }
+if ($AssetGeneratorContent -notmatch 'System\.Drawing\.Icon' -or $AssetGeneratorContent -notmatch 'DrawIcon') { throw 'MSIX asset generator must render from the real app icon instead of text-only placeholder drawing.' }
+if ($AssetGeneratorContent -match "DrawString\s*\(\s*'LVT'" -or $AssetGeneratorContent -match 'placeholder generator') { throw 'MSIX asset generator must not use placeholder-only LVT drawing logic.' }
+if ($AssetGeneratorContent -notmatch "Name\s*=\s*'Square310x310Logo\.png';\s*Width\s*=\s*310;\s*Height\s*=\s*310") { throw 'MSIX asset generator must create Square310x310Logo.png as 310x310.' }
+foreach ($GeneratedAsset in @('Square44x44Logo.png', 'Square150x150Logo.png', 'Square310x310Logo.png', 'Wide310x150Logo.png', 'StoreLogo.png', 'SplashScreen.png')) {
+    if ($AssetGeneratorContent -notmatch [regex]::Escape($GeneratedAsset)) { throw "MSIX asset generator must generate $GeneratedAsset." }
+}
+
+$ExpectedDimensions = @{
+    'Square44x44Logo.png' = @(44, 44)
+    'Square150x150Logo.png' = @(150, 150)
+    'Square310x310Logo.png' = @(310, 310)
+    'Wide310x150Logo.png' = @(310, 150)
+    'StoreLogo.png' = @(50, 50)
+    'SplashScreen.png' = @(620, 300)
+}
+foreach ($AssetName in $ExpectedDimensions.Keys) {
+    $AssetFile = Join-Path $Root "packaging/windows-msix/Assets/$AssetName"
+    if (Test-Path $AssetFile) {
+        Add-Type -AssemblyName System.Drawing
+        $Image = [System.Drawing.Image]::FromFile($AssetFile)
+        try {
+            if ($Image.Width -ne $ExpectedDimensions[$AssetName][0] -or $Image.Height -ne $ExpectedDimensions[$AssetName][1]) {
+                throw "Generated asset $AssetName has dimensions $($Image.Width)x$($Image.Height); expected $($ExpectedDimensions[$AssetName][0])x$($ExpectedDimensions[$AssetName][1])."
+            }
+        }
+        finally { $Image.Dispose() }
+    }
+}
+
+$DesktopProjectContent = Get-Content (Join-Path $Root 'EnglishVoiceTutor.Desktop.csproj') -Raw
+$InnoContent = Get-Content $Inno -Raw
+if ($DesktopProjectContent -notmatch [regex]::Escape('Assets\Branding\app-icon.ico')) { throw 'Desktop project must continue to use Assets\Branding\app-icon.ico.' }
+if ($InnoContent -notmatch [regex]::Escape('Assets\Branding\app-icon.ico') -or $InnoContent -notmatch 'IconFilename') { throw 'Direct Inno installer must continue to use the tracked app icon for shortcuts.' }
+$InnoDiff = git -C $Root diff -- installer/windows/LanguageVoiceTutor.iss
+if ($InnoDiff) { throw "Direct Inno installer script has uncommitted changes, but this prototype icon change must not alter Inno behavior:`n$InnoDiff" }
 
 $TrackedGeneratedArtifacts = git -C $Root ls-files -- '*.pfx' '*.pvk' '*.snk' '*.cer' 'packaging/windows-msix/Assets/*.png' 'packaging/windows-msix/AppPackages/*'
 if ($TrackedGeneratedArtifacts) { throw "Tracked generated/signing artifacts are forbidden:`n$TrackedGeneratedArtifacts" }
 
 $DocContent = Get-Content $Docs -Raw
 if ($DocContent -notmatch 'Settings footer') { throw 'MSIX prototype docs must document Settings footer version verification.' }
+if ($DocContent -notmatch 'Assets/Branding/app-icon.ico' -or $DocContent -match 'placeholder PNG') { throw 'MSIX prototype docs must document local asset generation from the Direct desktop app icon source, not placeholder assets.' }
 if ($DocContent -notmatch '0\.1\.36\.0') { throw 'MSIX prototype docs must document the current prototype package version.' }
 
 foreach ($Forbidden in @('is available in the Microsoft Store', 'has passed WACK', 'submitted to Microsoft Store')) {
