@@ -71,9 +71,9 @@ public sealed class AdminCapabilitiesServiceTests
         return new AdminCapabilitiesService(
             new TestWebHostEnvironment(),
             new AdminRolePermissionCatalogService(),
-            Options.Create(billingOptions),
-            Options.Create(paddleBillingOptions),
-            Options.Create(paddleWebhookOptions));
+            Microsoft.Extensions.Options.Options.Create(billingOptions),
+            Microsoft.Extensions.Options.Options.Create(paddleBillingOptions),
+            Microsoft.Extensions.Options.Options.Create(paddleWebhookOptions));
     }
 
     private sealed class TestWebHostEnvironment : IWebHostEnvironment
