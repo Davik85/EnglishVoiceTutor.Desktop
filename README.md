@@ -210,7 +210,7 @@ dotnet restore
 dotnet build
 ```
 
-Recommended next work: update-over-existing-install validation if not already recorded for the current handoff, small controlled external tester handoff, and feedback collection. CMS/Admin is connected, CMS published-snapshot runtime is active for controlled tester lessons, and Save draft + Publish is required before newly started desktop lessons see CMS changes. Static JSON fallback remains available for rollback. The deployed backend API is available at `https://api.languagevoicetutor.com`. Production billing readiness, remaining billing operations, critical-change approval workflow, Microsoft Store, App Store, Google Play, Mac version, broad public release readiness, and full production CMS/Admin operational readiness remain deferred. Prompt/scenario/bot-behavior polishing stays in CMS/Admin rather than code edits.
+Recommended next work: update-over-existing-install validation if not already recorded for the current handoff, small controlled external tester handoff, and feedback collection. CMS/Admin is connected, CMS published-snapshot runtime is active for controlled tester lessons, and Save draft + Publish is required before newly started desktop lessons see CMS changes. Static JSON fallback remains available for rollback. The deployed backend API is available at `https://api.languagevoicetutor.com`. Production billing readiness, remaining billing operations, critical-change approval workflow, App Store, Google Play, Mac version, broad public release readiness, and full production CMS/Admin operational readiness remain deferred. Prompt/scenario/bot-behavior polishing stays in CMS/Admin rather than code edits.
 
 
 ## Local admin shell and Admin CMS Content

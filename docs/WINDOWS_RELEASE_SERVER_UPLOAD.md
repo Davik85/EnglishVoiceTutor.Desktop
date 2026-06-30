@@ -173,8 +173,8 @@ Do not state that the product is fully public production-ready. The current Wind
 
 Code signing remains deferred. Production billing/Paddle/subscription payment lifecycle remains deferred. CMS published-snapshot runtime is active for controlled tester lessons. Backend deployment, database migrations, the download website, and update UI remain separate work.
 
-## Future Microsoft Store / MSIX channel boundary
+## Windows distribution boundary
 
-Microsoft Store/MSIX is a planned future distribution channel and is not part of this Windows direct release upload process. The commands in this document upload only the direct Inno installer channel files to `/var/www/languagevoicetutor/releases/windows/direct` and maintain the direct `latest.json` flow.
+Microsoft Store/MSIX was evaluated and discontinued for now. Do not use this upload process for Store/MSIX packages, and do not add MSIX prototype commands here.
 
-Store/MSIX builds must not be uploaded with `scripts/upload-windows-direct-release.ps1`, must not reuse the direct `latest.json` installer update flow, and should rely on Microsoft Store-managed updates after a real MSIX prototype and Partner Center submission path exist. No Store/MSIX command is currently confirmed in the project playbook.
+This document uploads only the Direct EXE/Inno installer channel files to `/var/www/languagevoicetutor/releases/windows/direct` and maintains the direct `latest.json` flow. Backend deploy, Website CMS/static site publish, Windows direct installer upload, and database migrations remain separate processes.

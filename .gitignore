@@ -8,11 +8,8 @@ TestResults/
 *.nupkg
 artifacts/
 
-# Local MSIX/package signing artifacts (private keys and generated packages must not be committed)
+# Local signing artifacts (private keys and certificates must not be committed)
 *.pfx
 *.pvk
 *.snk
-packaging/windows-msix/AppPackages/
-packaging/windows-msix/Assets/*.png
-packaging/windows-msix/*.cer
-packaging/windows-msix/*.pfx
+*.cer

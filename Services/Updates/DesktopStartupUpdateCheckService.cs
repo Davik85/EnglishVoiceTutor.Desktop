@@ -39,11 +39,6 @@ public sealed class DesktopStartupUpdateCheckService
 
         hasStarted = true;
 
-        if (!DesktopUpdatePolicy.ShouldRunStartupDirectUpdateCheck)
-        {
-            return;
-        }
-
         _ = RunStartupUpdateCheckAsync(owner, isLessonActive);
     }
 

@@ -49,7 +49,7 @@ Remaining release steps:
 3. Final Windows installer smoke.
 4. Paddle live readiness checklist.
 5. Only after approval: production Paddle environment, token, webhook, and price setup.
-6. Microsoft Store preparation later; Microsoft Store availability is not claimed as currently available.
+6. Microsoft Store/MSIX was evaluated and discontinued for now; Microsoft Store availability is not claimed.
 
 Do not state that the product is fully public production-ready. The current Windows release remains a controlled tester/direct Windows release, not a broad public production launch, and not broad public production readiness.
 
@@ -233,8 +233,10 @@ Compatibility diagnostics are interpreted as follows: `minimal_responses_text` v
 
 Provider errors are mapped to safe categories. Super Admin sees only safe provider fields: `statusCode`, `safeCategory`, `providerErrorType`, `providerErrorCode`, `providerErrorParam`, and `sanitizedProviderMessage`. Logs may include safe runtime fields such as `operation`, `modelRole`, `configuredModelId`, provider status/category, and provider error type/code/param/message where available. Logs and Admin UI must not expose API keys, Authorization headers, raw provider response bodies, raw request bodies, full prompts, private user lesson text, environment values, or connection strings.
 
-## Future Microsoft Store / MSIX channel planning
+## Windows distribution channel
 
-Microsoft Store distribution is a planned future channel, not the current production/tester flow. The preferred Store strategy is MSIX, while the existing Windows direct Inno installer channel remains parallel and must not be removed, renamed, or repurposed. Store builds must not use the direct `/releases/windows/direct/latest.json` installer update flow; Store updates should be managed by Microsoft Store.
+The active Windows distribution channel is the Direct EXE/Inno installer. The direct `latest.json` update flow remains active for update checks, installer download, verification, and installer launch.
 
-Planning details, open identity/versioning/data-migration questions, and the audited script list are in `docs/WINDOWS_STORE_RELEASE_PLAN.md`. Paddle/web checkout is the planned PC non-game Store payment path pending final Partner Center disclosure and policy review, and Microsoft Store IAP is not being implemented in this planning step. Backend remains the source of truth for account, subscription, entitlement, usage, and limits; the desktop app must not call OpenAI directly.
+Microsoft Store/MSIX was evaluated with a local prototype and is discontinued for now. Store/MSIX packaging is not implemented or active, no Store submission is planned, and Store-channel runtime behavior should not be reintroduced unless the product decision changes in a separate future effort. Future Windows trust work should focus on buying and integrating a code signing certificate for the direct EXE/Inno installer.
+
+Backend deploy, Website CMS/static site publish, Windows direct installer upload, and database migrations remain separate processes.

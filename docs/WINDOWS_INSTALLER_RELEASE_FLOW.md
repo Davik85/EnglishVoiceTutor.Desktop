@@ -1,6 +1,6 @@
 # Windows installer release flow
 
-> Release direction note: this Inno Setup flow remains valid for controlled tester/direct Windows releases until the owner explicitly changes the release flow. The owner-preferred eventual full public distribution direction is Microsoft Store + MSIX, but MSIX/Microsoft Store work is deferred until the project is fully release-ready and should be planned in a separate readiness checklist. Do not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior for this future-direction note.
+> Release direction note: this Inno Setup flow remains valid for controlled tester/direct Windows releases until the owner explicitly changes the release flow. Microsoft Store/MSIX was evaluated and discontinued for now. Future Windows trust/signing work should focus on a code signing certificate for the direct EXE/Inno installer. Do not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior for this future-direction note.
 
 
 Review date: 2026-06-18.
@@ -49,7 +49,7 @@ This is a private tester/direct Windows release, not broad public production rea
 - Server-ready direct-download output: `artifacts\releases\windows\direct`.
 - Installed file names were renamed to `LanguageVoiceTutor.Desktop.*`. Installed tester/release output files now use `LanguageVoiceTutor.Desktop.*` names. Internal project, folder, and namespace names may remain `EnglishVoiceTutor.*` until a later safe cleanup to avoid risky project-wide churn.
 
-Velopack is rejected/deprecated for this project because its Windows installer is a one-click installer and does not match the desired release-like wizard UX. ZIP packaging remains only an emergency/developer fallback. Microsoft Store/MSIX remains deferred.
+Velopack is rejected/deprecated for this project because its Windows installer is a one-click installer and does not match the desired release-like wizard UX. ZIP packaging remains only an emergency/developer fallback. Microsoft Store/MSIX was evaluated and discontinued for now.
 
 ## Release backend lock
 

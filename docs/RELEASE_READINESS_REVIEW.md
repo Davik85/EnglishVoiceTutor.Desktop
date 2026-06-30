@@ -8,7 +8,7 @@ Scope: controlled tester/direct Windows release readiness and broader public-rel
 
 Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.80` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
 
-Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus completed local backup schedule activation plus completed Phase 4 backup/restore/migration rollback drills plus optional off-server backup hardening, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
+Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus completed local backup schedule activation plus completed Phase 4 backup/restore/migration rollback drills plus optional off-server backup hardening, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
 
 
 ## Admin/CMS statistics boundary fix (2026-06-25)
@@ -27,7 +27,7 @@ Public release still requires remaining operational readiness work: the complete
 - Premium continuous coverage display is backend-computed and can include queued paid Premium periods; `PremiumActive` remains based only on active started entitlements.
 - Paddle sandbox checkout and sandbox cancel-renewal work through backend-owned flows. Production/live Paddle readiness remains deferred.
 - The release remains a controlled tester/direct Windows release, not broad public production launch.
-- Current controlled tester/direct Windows releases continue to use the existing Inno Setup installer flow; the preferred eventual full public release direction is Microsoft Store + MSIX after the project is fully release-ready. This review does not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior.
+- Current controlled tester/direct Windows releases continue to use the existing Inno Setup installer flow; Microsoft Store/MSIX was evaluated and discontinued for now; future trust work should focus on direct installer code signing. This review does not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior.
 
 
 ## 1. Release blockers for controlled external tester handoff
@@ -150,7 +150,7 @@ Verified Phase 4C evidence: backend current `/opt/languagevoicetutor/backend/rel
 
 Phase 4D permission-fidelity restore drill completed successfully on 2026-06-23. The owner/ACL-aware backup `/var/backups/languagevoicetutor/postgres/lvt_app_db_owner_acl_20260623_161611Z.dump` for production database `lvt_app_db` was non-empty (`3.4M`), passed `pg_restore --list` readability with `245` lines, and restored into separate drill database `lvt_app_db_owner_acl_drill_20260623_161611Z`. Key table owners and `lvt_app` grants matched the production baseline, key tables returned `OK`, latest migration was `20260620165657_AddAdminRoleAssignmentPersistence`, the drill database was cleaned up, and production backend remained healthy on `0.1.35-backend.39`.
 
-Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate restore drill, Phase 4B local scheduled PostgreSQL backups, Phase 4C migration rollback/remediation dry-run, and Phase 4D permission-fidelity restore drill are complete. Off-server encrypted backups remain optional future infrastructure hardening rather than an immediate release blocker. Production/live Paddle readiness remains deferred, Microsoft Store/MSIX remains later release-channel work, and broad public production readiness is not claimed.
+Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate restore drill, Phase 4B local scheduled PostgreSQL backups, Phase 4C migration rollback/remediation dry-run, and Phase 4D permission-fidelity restore drill are complete. Off-server encrypted backups remain optional future infrastructure hardening rather than an immediate release blocker. Production/live Paddle readiness remains deferred, Microsoft Store/MSIX is discontinued for now, and broad public production readiness is not claimed.
 
 ## 2026-06-23 Phase 5A logging/privacy audit update
 
@@ -173,8 +173,8 @@ Website CMS now includes Marketing / SEO fields for the consent banner, analytic
 
 Public website publish now emits or maintains public HTML pages plus crawler/consent artifacts including `robots.txt`, `sitemap.xml`, `llms.txt` when enabled, and `marketing-consent.js`. Generated pages are expected to include canonical URLs, meta descriptions, Open Graph/Twitter metadata, JSON-LD where appropriate, and SoftwareApplication JSON-LD for the Windows desktop only. Consent mode defaults to denied for analytics and ads storage/user data/personalization before user choice, the banner is controlled by Website CMS, Privacy Policy includes optional analytics/advertising/cookie disclosure, and GA/Ads scripts must not be emitted while IDs are empty or tracking is disabled. This note does not enable live Paddle, publish Website CMS, deploy the backend, upload installers, run EF migrations, add secrets, or change application behavior.
 
-## 2026-06-29 Microsoft Store / MSIX readiness planning note
+## 2026-06-30 Microsoft Store / MSIX discontinued note
 
-A documentation-only Store readiness plan now records MSIX as the preferred future Microsoft Store path. This does not change current release readiness: Windows direct tester releases continue to use the existing Inno Setup packaging, direct validation, direct upload, and public `latest.json` flow. Backend deployment, database migrations, Website CMS/static site publish, and Windows installer upload remain separate flows.
+The local Microsoft Store/MSIX prototype was evaluated and discontinued. The active Windows distribution path is Direct EXE/Inno installer plus direct `latest.json` update behavior. No Store submission is planned, Store/MSIX packaging is not active, and future Windows trust/signing work should focus on a code signing certificate for the direct EXE/Inno installer.
 
-Store builds must not use the direct `latest.json` installer update flow; Store updates should be handled by Microsoft Store. Paddle/web checkout is the planned PC non-game Store payment approach pending final Partner Center disclosure and policy review, but Microsoft Store payment/IAP integration is not implemented in this step. No code, backend behavior, entitlement semantics, billing provider behavior, EF migration, deployment script, Inno script, generated artifact, or Store submission changed.
+Backend deployment, database migrations, Website CMS/static site publish, and Windows direct installer upload remain separate processes. This decision does not change Paddle/payment logic, OpenAI provider logic, backend runtime behavior, database schema, deployment scripts, or Inno installer behavior.

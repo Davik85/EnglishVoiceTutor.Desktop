@@ -1,6 +1,6 @@
 # Windows code signing readiness
 
-> Distribution direction note: OV/EV/direct-download code signing planning remains relevant only for the current direct installer path. Controlled tester/direct releases continue to use the existing Inno Setup flow until the owner explicitly changes the release flow. The preferred eventual full public distribution direction is Microsoft Store + MSIX, and that work should be handled later with a separate Microsoft Store/MSIX readiness checklist after the project is fully release-ready. This document does not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior.
+> Distribution direction note: OV/EV/direct-download code signing planning remains relevant only for the current direct installer path. Controlled tester/direct releases continue to use the existing Inno Setup flow until the owner explicitly changes the release flow. Microsoft Store/MSIX was evaluated and discontinued for now. Future Windows trust work should focus on buying and integrating a code signing certificate for the direct EXE/Inno installer. This document does not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior.
 
 
 Review date: 2026-06-20.
@@ -14,7 +14,7 @@ The current Windows direct-release flow is intentionally simple and remains vali
 | Area | Current state |
 | --- | --- |
 | Packaging script | `scripts/package-windows-inno-release.ps1` publishes the desktop app for `win-x64`, enforces the production backend URL for tester/release installed builds, runs Inno Setup 6 through `ISCC.exe`, and prepares server-ready direct-release files. |
-| Installer technology | Inno Setup 6 is the primary direct-download installer path. Velopack is deprecated for this release UX, ZIP packaging is only an emergency/developer fallback, and MSIX/Microsoft Store remains deferred. |
+| Installer technology | Inno Setup 6 is the primary direct-download installer path. Velopack is deprecated for this release UX, ZIP packaging is only an emergency/developer fallback, and MSIX/Microsoft Store was evaluated and discontinued for now. |
 | Installer artifact | The final installer is produced as `artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe`. |
 | Server-ready release folder | The upload-ready folder is `artifacts\releases\windows\direct`. It contains the installer plus `latest.json`, `changelog.json`, `known-issues.json`, and `checksums.sha256`. |
 | Manifest generation | `package-windows-inno-release.ps1` generates `latest.json` with product identity, app id, platform, architecture, channel, version, installer filename/relative URL, SHA-256, size, non-secret `backendBaseUrl`, minimum supported version, manual-confirmation update mode, and release notes. |
