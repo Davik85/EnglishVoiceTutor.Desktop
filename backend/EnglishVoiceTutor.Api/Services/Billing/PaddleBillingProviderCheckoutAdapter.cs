@@ -17,18 +17,15 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
     private const string PaddleRequestIdHeaderName = "Paddle-Request-Id";
 
     private readonly HttpClient httpClient;
-    private readonly IHttpContextAccessor httpContextAccessor;
     private readonly PaddleBillingOptions options;
     private readonly ILogger<PaddleBillingProviderCheckoutAdapter> logger;
 
     public PaddleBillingProviderCheckoutAdapter(
         HttpClient httpClient,
-        IHttpContextAccessor httpContextAccessor,
         IOptions<PaddleBillingOptions> options,
         ILogger<PaddleBillingProviderCheckoutAdapter> logger)
     {
         this.httpClient = httpClient;
-        this.httpContextAccessor = httpContextAccessor;
         this.options = options.Value;
         this.logger = logger;
     }
@@ -163,16 +160,17 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
         }
 
         if (string.Equals(request.PlanId, SubscriptionConstants.Plans.PremiumPlanId, StringComparison.OrdinalIgnoreCase)
-            && string.IsNullOrWhiteSpace(options.PremiumPriceId))
+            && string.IsNullOrWhiteSpace(GetPremiumPriceId(environment)))
         {
             logger.LogInformation("Paddle checkout adapter resolved but Premium price id is not configured. PlanId={PlanId}; Environment={Environment}.", request.PlanId, environment);
             return CreateNotConfiguredResult(request.PlanId, SubscriptionConstants.Billing.PaddleCheckoutNotConfiguredMessage);
         }
 
-        if (string.IsNullOrWhiteSpace(options.ClientSideToken))
+        var configuredCheckoutUrl = GetConfiguredCheckoutUrl();
+        if (string.IsNullOrWhiteSpace(configuredCheckoutUrl))
         {
-            logger.LogInformation("Paddle checkout adapter resolved but client-side token is not configured. PlanId={PlanId}; Environment={Environment}.", request.PlanId, environment);
-            return CreateNotConfiguredResult(request.PlanId, SubscriptionConstants.Billing.PaddleCheckoutClientSideTokenMissingMessage);
+            logger.LogInformation("Paddle checkout adapter resolved but checkout URL is not configured. PlanId={PlanId}; Environment={Environment}.", request.PlanId, environment);
+            return CreateNotConfiguredResult(request.PlanId, SubscriptionConstants.Billing.PaddleCheckoutNotConfiguredMessage);
         }
 
         var baseUrl = GetBaseUrl(environment);
@@ -190,12 +188,18 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
             {
                 new
                 {
-                    price_id = options.PremiumPriceId.Trim(),
+                    price_id = GetPremiumPriceId(environment),
                     quantity = 1
                 }
             },
+            checkout = new
+            {
+                url = configuredCheckoutUrl
+            },
             custom_data = new
             {
+                app = GetExpectedCustomDataApp(),
+                product = GetExpectedCustomDataProduct(),
                 evt_user_id = request.UserId.ToString(),
                 evt_plan_id = SubscriptionConstants.Plans.PremiumPlanId,
                 evt_checkout_source = SubscriptionConstants.Billing.PaddleCheckoutSourceDesktopBackend
@@ -232,7 +236,7 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
             var parsedResponse = ParsePaddleCheckoutResponse(responseBody);
             var checkoutUrlPresent = !string.IsNullOrWhiteSpace(parsedResponse.CheckoutUrl);
-            var checkoutUrl = BuildBackendHostedCheckoutLaunchUrl(parsedResponse.TransactionId);
+            var checkoutUrl = BuildPublicCheckoutUrl(configuredCheckoutUrl, parsedResponse.TransactionId);
 
             if (string.IsNullOrWhiteSpace(checkoutUrl))
             {
@@ -332,32 +336,42 @@ public sealed class PaddleBillingProviderCheckoutAdapter : IBillingProviderCheck
         };
     }
 
-    private string BuildBackendHostedCheckoutLaunchUrl(string transactionId)
+    private string BuildPublicCheckoutUrl(string checkoutUrl, string transactionId)
     {
-        if (string.IsNullOrWhiteSpace(transactionId) || string.IsNullOrWhiteSpace(options.ClientSideToken))
+        if (string.IsNullOrWhiteSpace(transactionId) || !Uri.TryCreate(checkoutUrl, UriKind.Absolute, out var uri))
         {
             return string.Empty;
         }
-
-        var httpContext = httpContextAccessor.HttpContext;
-        if (httpContext is null)
-        {
-            return string.Empty;
-        }
-
-        var request = httpContext.Request;
-        var route = string.Concat(
-            request.Scheme,
-            "://",
-            request.Host.ToUriComponent(),
-            request.PathBase.ToUriComponent(),
-            ApiConstants.PaddleCheckoutLaunchRoute);
 
         return AppendQueryParameter(
-            new Uri(route),
-            SubscriptionConstants.Billing.PaddleCheckoutLaunchTransactionIdParameterName,
+            uri,
+            SubscriptionConstants.Billing.PaddleLegacyCheckoutTransactionIdParameterName,
             transactionId.Trim());
     }
+
+    private string GetPremiumPriceId(string environment)
+    {
+        var livePriceId = string.IsNullOrWhiteSpace(options.PremiumLivePriceId) ? options.PremiumPriceId : options.PremiumLivePriceId;
+        var priceId = string.Equals(environment, SubscriptionConstants.Billing.LivePaddleEnvironment, StringComparison.OrdinalIgnoreCase)
+            ? livePriceId
+            : options.PremiumPriceId;
+        return priceId.Trim();
+    }
+
+    private string GetConfiguredCheckoutUrl()
+    {
+        return string.IsNullOrWhiteSpace(options.CheckoutUrl)
+            ? "https://languagevoicetutor.com/pay.html"
+            : options.CheckoutUrl.Trim();
+    }
+
+    private string GetExpectedCustomDataApp() => string.IsNullOrWhiteSpace(options.ExpectedCustomDataApp)
+        ? "language_voice_tutor"
+        : options.ExpectedCustomDataApp.Trim();
+
+    private string GetExpectedCustomDataProduct() => string.IsNullOrWhiteSpace(options.ExpectedCustomDataProduct)
+        ? "language_voice_tutor_pro"
+        : options.ExpectedCustomDataProduct.Trim();
 
     private static string AppendQueryParameter(Uri uri, string name, string value)
     {

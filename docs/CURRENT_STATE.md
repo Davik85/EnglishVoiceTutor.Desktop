@@ -281,3 +281,7 @@ Do not change backend runtime code, desktop runtime code, database schema/migrat
 - DB migration is separate and must be reviewed.
 - Direct Windows installer upload is not Store/MSIX.
 - Paddle live account/provider changes are not code deploy unless an approved backend configuration/code change is required.
+
+## 2026-06-30 Paddle live checkout preparation state
+
+Paddle approved the website, and repository code is prepared for live checkout, but production payments are still not enabled because live secrets/config are not present in server env and the static site has not been published with `/paddle.public.json`. Backend production remains treated as `0.1.35-backend.82`; Windows direct tester release remains `0.1.36-tester.31`; AI Models persistent storage is verified and untouched. Store/MSIX remains discontinued; active Windows distribution remains Direct EXE/Inno.

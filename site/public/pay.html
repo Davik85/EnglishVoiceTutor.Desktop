@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Secure checkout | Language Voice Tutor</title>
+  <meta name="description" content="Secure Language Voice Tutor Pro checkout.">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="canonical" href="https://languagevoicetutor.com/pay.html">
+  <link rel="icon" href="assets/brand/lvt-logo.png">
+  <link rel="stylesheet" href="styles.css?v=landing-20260614-1">
+  <script src="https://cdn.paddle.com/paddle/v2/paddle.js" defer></script>
+</head>
+<body class="landing-page checkout-page">
+  <main class="hero" aria-labelledby="checkout-title">
+    <div class="hero__content">
+      <p class="eyebrow">Language Voice Tutor Pro</p>
+      <h1 id="checkout-title">Secure checkout</h1>
+      <p id="checkout-status" role="status">Preparing your secure checkout…</p>
+      <p id="checkout-help" class="muted">If checkout does not open, return to the desktop app and start checkout again.</p>
+      <p><a href="/support.html">Contact support</a></p>
+    </div>
+  </main>
+  <script>
+    (function () {
+      "use strict";
+      const status = document.getElementById("checkout-status");
+      const transactionId = new URLSearchParams(window.location.search).get("_ptxn") || "";
+      const transactionPattern = /^txn_[A-Za-z0-9_\-]+$/;
+
+      function show(message) {
+        status.textContent = message;
+      }
+
+      async function readConfig() {
+        const response = await fetch("/paddle.public.json", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error("missing_public_config");
+        }
+        return response.json();
+      }
+
+      async function startCheckout() {
+        if (!transactionPattern.test(transactionId)) {
+          show("Checkout link is missing or invalid. Please return to Language Voice Tutor and try again.");
+          return;
+        }
+
+        let config;
+        try {
+          config = await readConfig();
+        } catch (_) {
+          show("Checkout is not configured yet. Please try again later or contact support.");
+          return;
+        }
+
+        const token = String(config && config.paddleClientSideToken || "").trim();
+        if (!token || token === "REPLACE_WITH_PADDLE_LIVE_CLIENT_SIDE_TOKEN") {
+          show("Checkout is not configured yet. Please try again later or contact support.");
+          return;
+        }
+
+        if (!window.Paddle || !window.Paddle.Checkout || typeof window.Paddle.Initialize !== "function") {
+          show("Checkout could not load. Please refresh this page or contact support.");
+          return;
+        }
+
+        window.Paddle.Initialize({ token: token });
+        window.Paddle.Checkout.open({ transactionId: transactionId });
+        show("Checkout opened. Complete payment in the secure Paddle checkout window.");
+      }
+
+      if (window.Paddle) {
+        startCheckout();
+      } else {
+        window.addEventListener("load", startCheckout, { once: true });
+      }
+    }());
+  </script>
+</body>
+</html>

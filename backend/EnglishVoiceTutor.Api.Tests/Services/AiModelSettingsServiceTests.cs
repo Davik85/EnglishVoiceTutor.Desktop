@@ -60,9 +60,12 @@ public sealed class AiModelSettingsServiceTests : IDisposable
         var active = CreateService(releaseRoot).GetActiveSettings();
 
         Assert.Equal("gpt-5.5", active.LessonTutorChatModel);
-        var json = File.ReadAllText(persistentPath);
-        Assert.Contains("gpt-5.5", json);
-        Assert.DoesNotContain("gpt-5.2", json);
+        var persistedDocument = JsonSerializer.Deserialize<AiModelSettingsDocument>(
+            File.ReadAllText(persistentPath),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(persistedDocument);
+        Assert.Equal("gpt-5.5", persistedDocument.Active.LessonTutorChatModel);
+        Assert.Equal("gpt-5.5", persistedDocument.Draft.LessonTutorChatModel);
     }
 
     [Fact]
@@ -81,7 +84,7 @@ public sealed class AiModelSettingsServiceTests : IDisposable
     }
 
     private static AiModelSettingsService CreateService(string contentRootPath) =>
-        new(Options.Create(new AiModelSettingsOptions()), new TestWebHostEnvironment(contentRootPath), NullLogger<AiModelSettingsService>.Instance);
+        new(Microsoft.Extensions.Options.Options.Create(new AiModelSettingsOptions()), new TestWebHostEnvironment(contentRootPath), NullLogger<AiModelSettingsService>.Instance);
 
     private static void WriteDocument(string path, AiModelSettings settings, int revision)
     {
