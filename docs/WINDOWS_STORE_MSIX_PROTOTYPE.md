@@ -25,8 +25,8 @@ Deployment impact classification:
 
 - Packaging project: `packaging/windows-msix/LanguageVoiceTutor.StorePrototype.wapproj`.
 - Package manifest: `packaging/windows-msix/Package.appxmanifest`.
-- Local placeholder MSIX visual asset generator: `scripts/generate-store-msix-placeholder-assets.ps1`.
-- Generated local placeholder MSIX visual assets output to `packaging/windows-msix/Assets/*.png` and are intentionally ignored by git. The local prototype set includes `Square44x44Logo.png` (44x44), `Square150x150Logo.png` (150x150), `Square310x310Logo.png` (310x310), `Wide310x150Logo.png` (310x150), `StoreLogo.png` (50x50), and `SplashScreen.png` (620x300).
+- Local MSIX visual asset generator: `scripts/generate-store-msix-placeholder-assets.ps1`. The script name is retained for compatibility, but it now renders from the real Direct desktop app icon source.
+- Generated local MSIX visual assets output to `packaging/windows-msix/Assets/*.png` and are intentionally ignored by git. They are generated from `Assets/Branding/app-icon.ico`, the same tracked icon configured by `EnglishVoiceTutor.Desktop.csproj` and `installer/windows/LanguageVoiceTutor.iss` for the Direct EXE/Inno app and shortcuts. The local prototype set includes `Square44x44Logo.png` (44x44), `Square150x150Logo.png` (150x150), `Square310x310Logo.png` (310x310), `Wide310x150Logo.png` (310x150), `StoreLogo.png` (50x50), and `SplashScreen.png` (620x300).
 - Static policy check: `scripts/test-store-msix-prototype-policy.ps1`.
 - Channel-aware desktop version display: Store/MSIX builds first read the installed package identity version, then fall back to assembly informational version, then the safe local fallback. Direct builds keep the existing bundled `release-version.txt`/assembly version behavior and direct `v` prefix.
 
@@ -103,7 +103,7 @@ Before Store submission, approve a stable mapping rule. Examples to review inclu
 
 No generated MSIX PNG output, signing private key, `.pfx`, `.pvk`, `.snk`, local `.cer`, password, token, API key, refresh/access token, DB connection string, JWT secret, Paddle key, OpenAI key, or certificate with private key may be committed.
 
-The repository ignores local MSIX signing artifacts, generated placeholder PNG assets, and generated package outputs. For local sideload testing, create a local test certificate outside git and reference it only in local Visual Studio/MSBuild settings or temporary untracked files. If a public `.cer` export is needed for trusting a local test package, keep it outside the repository unless there is a reviewed reason to document or commit a non-secret public certificate.
+The repository ignores local MSIX signing artifacts, generated icon-derived PNG assets, and generated package outputs. For local sideload testing, create a local test certificate outside git and reference it only in local Visual Studio/MSBuild settings or temporary untracked files. If a public `.cer` export is needed for trusting a local test package, keep it outside the repository unless there is a reviewed reason to document or commit a non-secret public certificate.
 
 ## Local Windows packaging commands
 
@@ -115,7 +115,7 @@ Recommended local Windows verification:
 # 1. Verify the desktop Store-channel build behavior.
 dotnet build .\EnglishVoiceTutor.Desktop.csproj -c Release -p:DesktopDistributionChannel=Store
 
-# 2. Generate local placeholder visual assets. These PNG outputs are ignored by git.
+# 2. Generate local MSIX visual assets from Assets/Branding/app-icon.ico. These PNG outputs are ignored by git.
 powershell -ExecutionPolicy Bypass -File .\scripts\generate-store-msix-placeholder-assets.ps1
 
 # 3. Run static repository policy checks.
@@ -152,7 +152,7 @@ NuGet compatibility warnings such as `NU1701` or `NU1702` may still appear durin
 
 ## Manual smoke test plan
 
-- Launch app from Start menu and verify branding is prototype/local.
+- Launch app from Start menu and verify the MSIX tile/Start Menu branding matches the Direct desktop app icon as closely as possible. The prototype display name can still include “Store Prototype”; the icon artwork should come from `Assets/Branding/app-icon.ico`.
 - Register/login through backend APIs.
 - Start and finish a short lesson.
 - Verify lesson history/progress syncs from backend.
