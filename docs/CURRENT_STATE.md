@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-06-29.
+Review date: 2026-06-30.
 
 ## Source of truth for current versions
 
@@ -39,6 +39,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows tester release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
+- AI Models: persistent production storage at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` is verified, survived a backend service restart, and contains the known-good `gpt-5.5` / `gpt-5.2` production setup.
 - Billing: Paddle live is not enabled yet. Production/live Paddle readiness remains deferred until owner approval and live configuration.
 - Legal: pricing, subscription terms, terms, privacy, refunds, cancellation, support, seller/company details, AI/data disclosure, platform availability/status, and download pages are ready for owner/legal final review as product/legal drafts, not final legal advice.
 
@@ -73,7 +74,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.
 
 The backend upload flow uses the uploaded `deploy-backend-release.sh` helper and `ssh -tt` for sudo restart/status when needed. Do not document old fragile inline bash deployment paths as the current flow.
 
-Backend deploy is separate from Windows installer upload, static website publish, and database migrations. Backend upload/package scripts do not apply EF migrations automatically. Database migrations remain a separate reviewed SQL/operator process only when schema changes exist. Backend deploy does not upload Windows installer files, does not publish public website HTML, does not enable production billing, and does not change production Paddle configuration.
+Backend deploy is separate from Windows installer upload, static website publish, Website CMS publish, database migrations, provider/Paddle live changes, and AI Models data/config correction. Backend upload/package scripts do not apply EF migrations automatically. Database migrations remain a separate reviewed SQL/operator process only when schema changes exist. Backend deploy does not upload Windows installer files, does not publish public website HTML, does not enable production billing, does not change production Paddle configuration, and must not treat release-folder AI Models JSON as the production source of truth.
 
 Admin Product Statistics still uses the `Tracked signed-in app/device records` label for backend `DeviceEntity` records; this metric is not raw installer downloads. `Successful payments total` and `Successful payments current month` remain internal billing-event metrics and are not the source of Premium access.
 
@@ -221,6 +222,8 @@ Website/legal pages prepared for review include Pricing / Subscription terms, Te
 
 AI model identifiers for backend runtime are managed through the Super Admin / Bootstrap Admin controlled **Admin → System → AI Models** CMS endpoint set. Backend runtime remains the source of truth for AI model selection: the Desktop app calls backend endpoints and does not choose OpenAI model IDs. The active and draft values are stored in JSON/file-based persistent server data at `site/content/ai-model-settings.json` resolved outside versioned backend release folders (for production, under the persistent `/opt/languagevoicetutor/backend/site/content/` tree rather than `/opt/languagevoicetutor/backend/current` or `/opt/languagevoicetutor/backend/releases/<version>`). Packaged defaults are only fallback/seed data; startup must not overwrite an existing published active file. API keys are not stored in CMS, no database table is used, and no EF migration was added. OpenAI API keys remain server environment secrets, especially `OPENAI_API_KEY`.
 
+Production verification update: `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` now exists as persistent server data/config, was seeded from the current release only because the persistent file was missing, has mode `644`, and survived a `languagevoicetutor-backend.service` restart. `sha256sum` matched the current release copy exactly (`94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`), and post-restart checks confirmed the file still existed and contained `gpt-5.5` plus `gpt-5.2`. This resolved the AI Models persistence risk. Future backend deploys must not rely on `/opt/languagevoicetutor/backend/current/site/content/ai-model-settings.json` or any `/opt/languagevoicetutor/backend/releases/<version>/site/content/ai-model-settings.json` file as the production source of truth.
+
 Current known-good AI model configuration: lesson tutor chat uses `gpt-5.5`; feedback/correction, lesson hints, and translation use `gpt-5.2`; speech-to-text uses `gpt-4o-mini-transcribe`; normal lesson chat TTS uses `tts-1`; Conversation Mode TTS uses `gpt-4o-mini-tts`; and Realtime voice uses `gpt-realtime`. These are model IDs only and do not include provider credentials.
 
 Known-good production values are lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2`. Publishing AI model settings affects new backend AI requests without a desktop release because the desktop continues to call backend endpoints and does not choose OpenAI model IDs. The Super Admin workflow is: Load AI Models → Edit draft → Save draft → Validate format → Test provider access → Review compatibility diagnostics → Publish / Make active only if relevant runtime diagnostics pass → run a small real lesson after publishing. Validate format checks syntax only and does not prove provider access. Test provider access performs provider-level checks using draft settings, does not publish settings, and uses safe dummy input rather than real lesson/user text. Audio and realtime roles may be `not_tested` when not covered by lightweight provider tests.
@@ -257,15 +260,15 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 - Windows direct tester release: `0.1.36-tester.31`, verified in tracked `site/public/releases/windows/direct/latest.json` with production backend URL and manual-confirmation update mode.
 - Backend release in tracked release docs: `0.1.35-backend.82`. The live `/opt/languagevoicetutor/backend/current` symlink was manually verified with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` and resolved to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82`; `/health` and `/api/health/database` were also verified healthy. No backend deploy was performed by this documentation task.
-- AI Models known-good production setup: lesson tutor chat `gpt-5.5`; feedback/correction `gpt-5.2`; lesson hint `gpt-5.2`; translation `gpt-5.2`. For `gpt-5.5`, backend requests must omit `temperature`.
+- AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; it survived backend service restart, matched the current release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`, and contains lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2`. For `gpt-5.5`, backend requests must omit `temperature`.
 
 ### What is ready, partial, and blocked
 
-Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, Website CMS draft/publish mechanics, and documented secret boundaries.
+Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, verified persistent AI Models production storage, Website CMS draft/publish mechanics, and documented secret boundaries.
 
 Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.82`, with deploys, health checks, database health checks, and migrations kept as separate operations.
 
-Blocked before broad public paid release: code signing for the direct installer, Paddle live account/provider/webhook/reconciliation readiness, final legal/support/pricing approval, final release smoke on clean/update machines, and explicit release decision after controlled tester feedback.
+Blocked before broad public paid release: code signing for the direct installer, direct installer clean-machine/update smoke, Paddle live account/provider/webhook/reconciliation readiness, final website/legal/support/pricing approval, and explicit release decision after controlled tester feedback.
 
 ### Must not be touched for this docs-only state
 

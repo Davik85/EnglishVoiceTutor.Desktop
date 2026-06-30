@@ -1,8 +1,8 @@
 # Release readiness review
 
-Review date: 2026-06-20.
+Review date: 2026-06-30.
 
-Scope: controlled tester/direct Windows release readiness and broader public-release remaining work. This review is documentation-only and does not change product behavior, billing logic, entitlement logic, Paddle integration, database schema, migrations, deployment scripts, generated artifacts, or secrets.
+Scope: controlled tester/direct Windows release readiness and broader public-release remaining work. This review is documentation-only and does not change backend runtime code, desktop runtime code, product behavior, billing logic, entitlement logic, Paddle/OpenAI runtime behavior, database schema, migrations, Inno installer behavior, deployment scripts, generated artifacts, signing keys, or secrets.
 
 ## 2026-06-21 Admin RBAC and roadmap update
 
@@ -22,6 +22,7 @@ Public release still requires remaining operational readiness work: the complete
 
 - Backend `0.1.35-backend.82` is deployed at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82` and production `/health` plus `/api/health/database` return `200 OK`.
 - Windows direct tester `0.1.36-tester.31` is live as `LanguageVoiceTutorSetup-0.1.36-tester.31.exe` with `backendBaseUrl=https://api.languagevoicetutor.com` and `updateMode=manual-confirmation`.
+- AI Models persistent production storage is verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; it contains the known-good lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2` setup; matched the release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`; and survived a backend service restart with health/database health still green. This was a production data/config persistence correction, not a backend deploy, DB migration, Website CMS publish, or Windows installer upload.
 - Trial reference plan is seeded/required. Trial is displayed as a first-class tariff/reference plan, while Trial access remains entitlement-owned.
 - Learner Account subscription UI is simplified to Current tariff, Free lessons remaining, Premium, and Auto-renewal.
 - Premium continuous coverage display is backend-computed and can include queued paid Premium periods; `PremiumActive` remains based only on active started entitlements.
@@ -32,10 +33,10 @@ Public release still requires remaining operational readiness work: the complete
 
 ## 1. Release blockers for controlled external tester handoff
 
-No new critical blockers were found in this documentation/source review, assuming the following handoff checks are performed immediately before inviting testers:
+No new critical blockers were found in this documentation/source review. The earlier AI Models persistent storage risk is resolved. Perform the following handoff checks immediately before inviting testers:
 
 - Verify live Windows `latest.json` over HTTPS still points to `0.1.36-tester.31`, `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`, `https://api.languagevoicetutor.com`, and `manual-confirmation`.
-- Verify backend symlink still resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82` and `/health` plus `/api/health/database` are green.
+- Verify backend symlink still resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82`, `/health` plus `/api/health/database` are green, and the persistent AI Models file still exists under `/opt/languagevoicetutor/backend/site/content/` with the known-good model IDs.
 - Perform one installed-build smoke: registration/login, auth restore, lesson start, at least one lesson completion path, TTS/bot voice, Conversation Mode, Lesson History, Progress, Account view, Buy Premium sandbox path, Refresh status, and Cancel subscription sandbox path where applicable.
 - Confirm generated artifacts, installers, backend ZIPs, generated release folders, temp deploy scripts, SQL outputs, `.env` files, and secrets are not committed.
 - Prepare tester feedback intake: tester group, feedback template, severity labels, known-issue list, and rollback/contact instructions.
@@ -77,7 +78,7 @@ No new critical blockers were found in this documentation/source review, assumin
 ### CMS runtime content source
 
 - CMS published snapshot is active for controlled tester lessons; static JSON fallback remains rollback/safety.
-- Before public release, define content approval ownership, runtime validation thresholds, rollback procedure, and post-publish monitoring.
+- Before public release, define content approval ownership, runtime validation thresholds, rollback procedure, and post-publish monitoring. AI Models persistent storage is already verified; future AI Models changes remain Super Admin CMS operations using persistent server data/config, not release-folder JSON.
 
 ### Admin CMS Save draft / Publish / Restore
 
