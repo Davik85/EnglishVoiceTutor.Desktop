@@ -148,10 +148,39 @@ Do not turn on live Paddle immediately. The smallest safe next step is an owner-
 
 ## 2026-06-30 live checkout approval preparation
 
-Paddle website approval is complete, but live production payments remain disabled until live server environment values are manually added and an explicit controlled live checkout test is approved. The approved-domain payment page is `/pay.html` on `https://languagevoicetutor.com`, and backend-created Paddle transactions must set `checkout.url` to `https://languagevoicetutor.com/pay.html` so Paddle returns/opens checkout with the `_ptxn` transaction query parameter.
+Paddle website approval is complete, live server environment values are configured in `/etc/languagevoicetutor/backend.env`, and the approved-domain payment page `/pay.html` is deployed under the nginx root. Backend-created Paddle transactions set `checkout.url` to `https://languagevoicetutor.com/pay.html`; a real transaction URL opened checkout with the expected product and price. Real live payment, webhook delivery, and Premium activation validation are still intentionally deferred.
 
 Required live values are not committed: `PaddleBilling__Environment=live`, `PaddleBilling__CheckoutAdapterEnabled=true`, `PaddleBilling__ApiKey`, `PaddleWebhook__SecretKey`, `PaddleBilling__PremiumLivePriceId`, `PaddleBilling__PremiumLiveProductId`, and the public static-site `/paddle.public.json` value `paddleClientSideToken`. The API key and webhook secret are server-only secrets and must never be exposed to the public website or desktop app. The client-side token is public-only and is injected into the website publish artifact, not hardcoded in git.
 
 Webhook Premium activation is transaction-completion driven and must pass all guards before entitlement activation: verified Paddle signature, supported `transaction.completed` lifecycle, acceptable transaction metadata, expected Language Voice Tutor Pro price id, expected product id when configured/available, expected `custom_data.app=language_voice_tutor`, expected `custom_data.product=language_voice_tutor_pro`, and valid backend user mapping. Mismatched price/product/custom_data events are recorded through the provider-event pipeline but blocked from Premium activation with safe non-secret diagnostics.
 
 Deployment order: merge code; deploy backend only after backend tests pass; publish/upload static website files including `/pay.html` and injected `/paddle.public.json`; add live env values on the server; restart backend; verify `/health` and `/api/health/database`; run a controlled live checkout test only after explicit approval. Rollback: remove/disable live env or restore sandbox mode, keep mismatched webhooks blocked from Premium, and leave the direct Windows EXE/Inno installer path separate. No DB migration is needed for this change.
+
+## 2026-06-30 Paddle live checkout/Admin readiness update
+
+Current production facts after backend `0.1.35-backend.83` and before any real live payment test:
+
+- Backend health and database health are `200 Healthy`.
+- Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.
+- Backend current symlink is `/opt/languagevoicetutor/backend/current`; backend releases are under `/opt/languagevoicetutor/backend/releases/<version>`.
+- AI Models persistent server data remains `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; known-good models remain `gpt-5.5` for lesson tutor chat and `gpt-5.2` for feedback correction, lesson hints, and translation.
+- Static website nginx root is `/var/www/languagevoicetutor/site`. The parent `/var/www/languagevoicetutor` is not the nginx static-site root and must not be used as the static website upload target.
+- Public Paddle config is `/var/www/languagevoicetutor/site/paddle.public.json`; public Paddle checkout page is `/var/www/languagevoicetutor/site/pay.html`.
+- Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.
+- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct tester remains `0.1.36-tester.31`; direct `latest.json` remains active with manual-confirmation update mode.
+- Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
+- No real live payment test has been completed. Paid-launch readiness remains incomplete until controlled live payment, webhook delivery, Premium entitlement activation, refund/cancel/customer portal/chargeback operational checks, and post-test docs are completed.
+
+Static website upload command must target the real nginx root:
+
+```powershell
+scripts/upload-static-site.ps1 -ServerHost "lvt-server" -ServerUser "deploy" -RemotePath "/var/www/languagevoicetutor/site"
+```
+
+Safe backend env verification must redact secrets and must use the existing env file, for example:
+
+```bash
+sudo awk -F= '/^(Billing__|PaddleBilling__|PaddleWebhook__)/ { v=$2; if ($1 ~ /(ApiKey|SecretKey|Token)/) v=(length($2)>0 ? "SET" : "EMPTY"); print $1 "=" v }' /etc/languagevoicetutor/backend.env
+```
+
+Admin capabilities should now distinguish configuration from launch completion: configured live checkout/webhooks can be reported as available/configured, while `billingLivePaymentTestComplete=false` and `billingPaidLaunchReleaseComplete=false` continue to block paid launch until the controlled live payment path is documented.
