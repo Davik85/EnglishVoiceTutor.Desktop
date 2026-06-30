@@ -15,5 +15,13 @@ public sealed class AdminCapabilitiesSnapshot
     public bool BillingProviderConfigured { get; init; }
     public bool PaddleCheckoutAvailable { get; init; }
     public bool PaddleWebhooksAvailable { get; init; }
+    public bool PaddleLiveConfigured { get; init; }
+    public bool PaddleCheckoutUrlConfigured { get; init; }
+    public bool PaddleLivePriceConfigured { get; init; }
+    public bool PaddleLiveProductConfigured { get; init; }
+    public bool PaddleExpectedCustomDataConfigured { get; init; }
+    public bool PaddlePublicCheckoutPageConfigured { get; init; }
+    public bool BillingLivePaymentTestComplete { get; init; }
+    public bool BillingPaidLaunchReleaseComplete { get; init; }
     public bool MobileStoreEntitlementBridgeAvailable { get; init; }
 }
