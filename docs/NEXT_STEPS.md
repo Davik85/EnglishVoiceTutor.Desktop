@@ -145,3 +145,31 @@ Compatibility diagnostics should be read as a matrix: `minimal_responses_text` c
 ## Discontinued Microsoft Store / MSIX channel
 
 The Microsoft Store/MSIX prototype path is discontinued for now. The repository should not contain active Store/MSIX packaging, Store-channel runtime behavior, Store submission commands, or MSIX local packaging tests. Keep Windows release work focused on the Direct EXE/Inno installer, the direct `latest.json` update manifest, and a future code signing certificate for that direct installer path.
+
+## 2026-06-30 recommended release path after Store/MSIX discontinuation
+
+### Current Active Release Strategy
+
+Windows release work stays on the Direct EXE/Inno installer. Updates continue through the direct `latest.json` manifest. Future Windows trust work is code signing for the direct installer. Backend deployment, Website CMS/static-site publish, Windows direct installer upload, DB migrations, and Paddle live account/provider work remain separate operations. Microsoft Store/MSIX is discontinued for now and must not be treated as an active next step.
+
+### Top remaining tasks in recommended order
+
+1. Verify the live backend symlink and resolve the documentation discrepancy: tracked docs currently say `0.1.35-backend.80`; this audit found no tracked confirmation of `0.1.35-backend.82`.
+2. Verify the live Windows direct manifest still points to `0.1.36-tester.31`, production backend URL, and `manual-confirmation` before any tester handoff.
+3. Keep Store/MSIX removed/discontinued; do not recreate `packaging/windows-msix`, Store channel logic, Store update messaging, WACK commands, or Partner Center planning.
+4. Complete final clean-machine and update-over-existing-install smoke for the current direct installer.
+5. Purchase/select a Windows code signing certificate and plan integration for the direct Inno installer.
+6. Prepare a signed direct installer release candidate only after signing is approved; validate, upload, and verify via the existing direct-release helper flow.
+7. Complete owner/legal review of website, pricing, subscription, terms, privacy, refunds, cancellation, support, seller/company, AI/data, and status pages; publish through Website CMS/static-site flow only.
+8. Complete Paddle live readiness and provider/account setup before paid public launch; do not enable live billing as part of docs-only work.
+9. Run backend deploy only for an approved backend runtime/configuration change; do not deploy backend for Website CMS publish, Windows installer upload, or docs-only work.
+10. Run DB migration only for a reviewed schema/data change with backups, SQL review, privilege checks, and rollback/remediation plan.
+
+### Task classification
+
+- Requires backend deploy: only approved backend runtime/configuration changes.
+- Requires Windows installer build/upload: signed or intentionally new direct installer releases.
+- Requires Website CMS publish: public website/legal/support/pricing content changes.
+- Requires DB migration: only reviewed schema/data changes.
+- Docs-only: release-readiness documentation, command/runbook clarification, stale Store/MSIX wording cleanup.
+- Manual account/provider/admin work: code signing purchase, Paddle live configuration, owner/legal review, tester management, AI Models verification/publish if model settings intentionally change.

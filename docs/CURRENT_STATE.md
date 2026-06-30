@@ -240,3 +240,41 @@ The active Windows distribution channel is the Direct EXE/Inno installer. The di
 Microsoft Store/MSIX was evaluated with a local prototype and is discontinued for now. Store/MSIX packaging is not implemented or active, no Store submission is planned, and Store-channel runtime behavior should not be reintroduced unless the product decision changes in a separate future effort. Future Windows trust work should focus on buying and integrating a code signing certificate for the direct EXE/Inno installer.
 
 Backend deploy, Website CMS/static site publish, Windows direct installer upload, and database migrations remain separate processes.
+
+## 2026-06-30 release-readiness audit snapshot
+
+### Current Active Release Strategy
+
+- Windows: Direct EXE/Inno installer.
+- Updates: direct `latest.json` manifest at `site/public/releases/windows/direct/latest.json` and `https://languagevoicetutor.com/releases/windows/direct/latest.json`.
+- Signing: future trust work is a code signing certificate for the direct EXE/Inno installer.
+- Backend: production API is `https://api.languagevoicetutor.com`; backend deploy uses package/upload helpers plus `/health` and `/api/health/database` checks.
+- Website: public site is `https://languagevoicetutor.com`; Website CMS/static-site publish is separate from backend deploy.
+- Billing: Paddle/global provider-agnostic billing remains the target; Paddle live readiness still needs verification.
+- Store/MSIX: discontinued for now and not an active release path.
+
+### Current release point
+
+- Windows direct tester release: `0.1.36-tester.31`, verified in tracked `site/public/releases/windows/direct/latest.json` with production backend URL and manual-confirmation update mode.
+- Backend release in tracked release docs: `0.1.35-backend.80`. This audit did not find a tracked document confirming `0.1.35-backend.82`; verify the live server symlink before changing the documented backend current release.
+- AI Models known-good production setup: lesson tutor chat `gpt-5.5`; feedback/correction `gpt-5.2`; lesson hint `gpt-5.2`; translation `gpt-5.2`. For `gpt-5.5`, backend requests must omit `temperature`.
+
+### What is ready, partial, and blocked
+
+Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, Website CMS draft/publish mechanics, and documented secret boundaries.
+
+Partially ready: Windows public installer release because signing and wider smoke/feedback remain; backend operations because the docs currently prove `0.1.35-backend.80` but not `0.1.35-backend.82`; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain.
+
+Blocked before broad public paid release: code signing for the direct installer, Paddle live account/provider/webhook/reconciliation readiness, final legal/support/pricing approval, final release smoke on clean/update machines, and explicit release decision after controlled tester feedback.
+
+### Must not be touched for this docs-only state
+
+Do not change backend runtime code, desktop runtime code, database schema/migrations, Inno installer behavior, deployment scripts, Website CMS live content, backend deployment, Windows direct upload, Store/MSIX files, Paddle/OpenAI/AI Models runtime behavior, generated artifacts, signing private keys, or secrets as part of this documentation audit.
+
+### Do not mix these operations
+
+- Backend deploy is not Windows installer upload.
+- Website CMS publish is not backend deploy.
+- DB migration is separate and must be reviewed.
+- Direct Windows installer upload is not Store/MSIX.
+- Paddle live account/provider changes are not code deploy unless an approved backend configuration/code change is required.

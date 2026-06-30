@@ -178,3 +178,79 @@ Public website publish now emits or maintains public HTML pages plus crawler/con
 The local Microsoft Store/MSIX prototype was evaluated and discontinued. The active Windows distribution path is Direct EXE/Inno installer plus direct `latest.json` update behavior. No Store submission is planned, Store/MSIX packaging is not active, and future Windows trust/signing work should focus on a code signing certificate for the direct EXE/Inno installer.
 
 Backend deployment, database migrations, Website CMS/static site publish, and Windows direct installer upload remain separate processes. This decision does not change Paddle/payment logic, OpenAI provider logic, backend runtime behavior, database schema, deployment scripts, or Inno installer behavior.
+
+## 2026-06-30 full release-readiness audit after Store/MSIX discontinuation
+
+### Current Active Release Strategy
+
+- **Windows:** Direct EXE/Inno installer is the active Windows distribution path.
+- **Updates:** Direct `latest.json` update checks remain active through `site/public/releases/windows/direct/latest.json` and the public URL `https://languagevoicetutor.com/releases/windows/direct/latest.json`.
+- **Signing:** Future Windows trust work is buying and integrating a code signing certificate for the direct EXE/Inno installer. Store/MSIX signing/submission is not active.
+- **Backend:** Production backend is served at `https://api.languagevoicetutor.com` and uses the backend package/upload helper plus health and database-health checks.
+- **Website:** Public site is `https://languagevoicetutor.com`; Website CMS/static-site publish is separate from backend deployment.
+- **Billing:** Billing remains Paddle/global provider-agnostic; live Paddle readiness is still to verify before paid launch.
+- **Store/MSIX:** Microsoft Store/MSIX was evaluated and discontinued for now. It must not appear as an active release path, active next step, Store-channel runtime behavior, or Store submission plan.
+
+### Verified current release point from tracked repository state
+
+- Windows direct tester release is tracked as `0.1.36-tester.31` in `site/public/releases/windows/direct/latest.json`, with `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=0.1.36-tester.31`, and `updateMode=manual-confirmation`.
+- Backend production release is tracked in release docs as `0.1.35-backend.80`. This audit did **not** find a tracked release document proving `0.1.35-backend.82`; therefore `0.1.35-backend.82` must be treated as unverified until the live `/opt/languagevoicetutor/backend/current` symlink and docs are updated by an operator.
+- Admin CMS AI Models settings are persistent server data outside versioned backend release folders. Known-good model settings are: lesson tutor chat `gpt-5.5`; feedback/correction `gpt-5.2`; lesson hint `gpt-5.2`; translation `gpt-5.2`.
+- For `gpt-5.5`, backend requests must omit `temperature`. API keys and provider secrets remain server environment secrets. The Desktop app must not call OpenAI directly and must not choose OpenAI model IDs.
+
+### Store/MSIX rollback audit result
+
+- No tracked `packaging/windows-msix` files were found in the working tree.
+- No active Store/MSIX command should be used from the command playbook; the only Store/MSIX playbook section is a discontinued warning.
+- Store/MSIX references retained in docs must be historical/discontinued context only.
+- Direct `latest.json` update behavior remains the active and protected update path.
+- If any future search finds `DesktopDistributionChannel`, Store-channel update guards, Store-specific update messaging, WACK commands, Partner Center submission commands, or active MSIX packaging commands, treat that as a regression unless it is explicitly marked discontinued historical context.
+
+### Do not mix these operations
+
+- Backend deploy is not Windows installer upload.
+- Website CMS/static-site publish is not backend deploy.
+- DB migration is separate, reviewed, backed up, and operator-approved; backend upload scripts do not apply migrations automatically.
+- Direct Windows installer upload is not Store/MSIX packaging or Microsoft Store submission.
+- Paddle live changes are provider/account/configuration work and are not code deploy unless a reviewed backend configuration/code change is intentionally required.
+
+### Area-by-area readiness snapshot
+
+| Area | Status | Notes |
+| --- | --- | --- |
+| Windows Direct EXE/Inno | Partially ready for controlled testers | `0.1.36-tester.31` is documented and manifest-backed. Public release still needs code signing, update-over-existing-install evidence if not already current, clean-machine smoke before expansion, and controlled feedback. |
+| Direct update flow | Ready for controlled testers | `latest.json`, manual confirmation, manifest identity checks, and SHA-256 verification remain the active path. |
+| Backend production | Partially ready | Health/database health checks and deployment docs exist. The repo verifies `0.1.35-backend.80`, not the expected `0.1.35-backend.82`; live symlink verification is required before updating docs. |
+| Database/migrations | Controlled/manual | Current docs say backend deploy does not run migrations. Any migration requires separate review, backup, SQL/operator procedure, and post-checks. |
+| Admin CMS / AI Models | Partially ready | AI Models are persistent server data and known-good models are documented. CMS publish changes runtime content for newly started lessons. |
+| Website/CMS/legal/support | Partially ready | Public site and legal/support pages are draft-ready for owner/legal review. Website CMS publish is separate. Do not claim mobile app stores or Microsoft Store availability. |
+| Billing/Paddle | Blocked for paid public launch | Provider-agnostic architecture exists, but live Paddle credentials/prices/webhooks/reconciliation/refund/customer portal/finance operations still require verification and owner approval. |
+| AI tutor / lessons | Partially ready | CMS owns prompt/scenario/tutor behavior tuning; product quality still needs controlled tester feedback and content approval ownership before broad launch. |
+| Security/privacy/compliance | Partially ready | Secrets boundaries, desktop/backend boundary, log privacy, backups, and rate limiting are documented; code signing and live billing/legal final review remain blockers. |
+| Release operations | Partially ready | Safe commands exist for checks/package/upload. Operations must remain separated and generated artifacts/secrets must not be committed. |
+
+### Top 10 remaining release tasks in safe order
+
+1. **Docs-only:** Resolve the backend release discrepancy by verifying the live server symlink; update docs only after confirming whether current production is `0.1.35-backend.80`, `0.1.35-backend.82`, or another version.
+2. **Docs/manual:** Re-run final release-readiness checklist and confirm Store/MSIX appears only as discontinued historical context.
+3. **Manual/provider:** Buy/select the Windows code signing certificate and document the signing integration plan for the direct Inno installer.
+4. **Windows installer build/upload:** After signing integration is approved, build a new direct installer, validate the direct-release folder, upload with the direct upload helper, and verify HTTPS `latest.json` plus installer SHA-256.
+5. **Manual QA:** Perform clean-machine install/update-over-existing-install smoke for auth/session, lesson flow, updates, history/progress, account/billing sandbox views, and uninstall/reinstall expectations.
+6. **Website CMS publish:** Complete final owner/legal review of website, pricing, subscription, privacy, terms, refunds, cancellation, support, seller/company, AI/data, and status pages; publish only through Website CMS/static-site flow.
+7. **Manual/provider:** Complete Paddle live readiness: live account, products/prices, client token, webhook destination/signing, reconciliation, refund/chargeback/customer portal policy, finance operations, and monitoring.
+8. **Backend deploy only if needed:** Deploy backend only for an approved runtime/configuration change; otherwise do not deploy just for docs, Website CMS, installer upload, or Paddle account setup.
+9. **DB migration only if needed:** Run a migration only if a reviewed schema/data change exists; this requires backup, SQL review, operator approval, privilege checks, and rollback/remediation plan.
+10. **Manual/product:** Run a small external tester cohort, collect structured feedback, triage blockers, and hold a release decision before broad public launch.
+
+### Deployment impact classification for this audit
+
+- Documentation-only: yes.
+- Backend runtime code changed: no.
+- Desktop runtime code changed: no.
+- Database schema changed: no.
+- Inno installer behavior changed: no.
+- Deployment scripts changed: no.
+- Website CMS publish needed: no.
+- Backend deploy needed: no.
+- Windows direct installer upload needed: no.
+- Store/MSIX path: discontinued, not active.
