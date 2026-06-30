@@ -171,6 +171,7 @@
     const rolesPermissionsRolesElement = document.getElementById("roles-permissions-roles");
     const rolesPermissionsListElement = document.getElementById("roles-permissions-list");
     const systemProductionRolesAvailableElement = document.getElementById("system-production-roles-available");
+    const systemBillingPaddleStatusElement = document.getElementById("system-billing-paddle-status");
     const websiteTabButton = document.getElementById("tab-button-website");
     const websiteTabPanel = document.getElementById("tab-panel-website");
     const roleManagementRefreshButton = document.getElementById("role-management-refresh-button");
@@ -1075,7 +1076,7 @@
     async function publishWebsiteContent() { collectCurrentWebsiteSection(); setWebsiteError(""); setWebsiteMessage("Saving draft before publish..."); websitePublishButton.disabled = true; try { const saved = await saveWebsiteDraft(); if (!saved) { return; } setWebsiteMessage("Publishing saved draft to static website..."); const response = await fetch(ApiPaths.websiteContentPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readWebsiteResponse(response, "Unable to publish Website content."); fillWebsiteForm(payload.active); setWebsiteMessage(`Published saved draft to ${Array.isArray(payload.publishedFiles) ? payload.publishedFiles.length : ""} static website files.`); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to publish Website content."); } finally { websitePublishButton.disabled = false; } }
 
     function resetDashboard() {
-        adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" }; adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; bootstrapAdminStatusElement.textContent = "-"; adminPermissionCountElement.textContent = "-"; capabilitiesListElement.textContent = ""; renderBadges(adminRolesBadgesElement, []); renderBadges(rolesPermissionsRolesElement, []); renderPermissionList(rolesPermissionsListElement, []); workflowAvailabilityListElement.textContent = ""; systemProductionRolesAvailableElement.textContent = "false"; systemProductionRolesAvailableElement.className = "badge unavailable";
+        adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" }; adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; bootstrapAdminStatusElement.textContent = "-"; adminPermissionCountElement.textContent = "-"; capabilitiesListElement.textContent = ""; renderBadges(adminRolesBadgesElement, []); renderBadges(rolesPermissionsRolesElement, []); renderPermissionList(rolesPermissionsListElement, []); workflowAvailabilityListElement.textContent = ""; systemProductionRolesAvailableElement.textContent = "false"; systemProductionRolesAvailableElement.className = "badge unavailable"; systemBillingPaddleStatusElement.textContent = "not configured"; systemBillingPaddleStatusElement.className = "badge unavailable";
         setLookupError(""); setLookupLoading(false); setLookupSourceLoading(LookupSources.premium, false); setLookupSourceLoading(LookupSources.freeLesson, false); clearLookupErrors(); clearUserLookupResult(); lookupForm.reset(); premiumLookupForm.reset(); freeLessonLookupForm.reset(); clearSelectedUserState();
         setGrantVisible(false); setRevokeVisible(false); setBillingCancelRenewalVisible(false); setFreeLessonResetVisible(false); clearGrantState(); clearRevokeState(); clearBillingCancelRenewalState(); clearFreeLessonResetState(); grantForm.reset(); revokeForm.reset(); billingCancelRenewalForm.reset(); freeLessonResetForm.reset(); clearAuditLog(); clearAllCmsDirtyState();
     }
@@ -2531,6 +2532,7 @@
         };
         renderAdminAccessSnapshot();
         renderCapabilitiesList(capabilitiesPayload.capabilities || {});
+        renderBillingPaddleStatus(capabilitiesPayload.capabilities || {});
     }
 
     function renderCapabilitiesList(capabilities) {
@@ -2545,6 +2547,28 @@
             item.appendChild(badge);
             capabilitiesListElement.appendChild(item);
         });
+    }
+
+    function renderBillingPaddleStatus(capabilities) {
+        const checkoutAvailable = Boolean(capabilities.paddleCheckoutAvailable);
+        const webhooksAvailable = Boolean(capabilities.paddleWebhooksAvailable);
+        const paymentTestComplete = Boolean(capabilities.billingLivePaymentTestComplete);
+        const paidLaunchComplete = Boolean(capabilities.billingPaidLaunchReleaseComplete);
+
+        if (checkoutAvailable && webhooksAvailable && !paymentTestComplete && !paidLaunchComplete) {
+            systemBillingPaddleStatusElement.textContent = "configured / live checkout opens / live payment test pending";
+            systemBillingPaddleStatusElement.className = "badge available";
+            return;
+        }
+
+        if (checkoutAvailable || webhooksAvailable) {
+            systemBillingPaddleStatusElement.textContent = "partially configured / live payment test pending";
+            systemBillingPaddleStatusElement.className = "badge unavailable";
+            return;
+        }
+
+        systemBillingPaddleStatusElement.textContent = "not configured";
+        systemBillingPaddleStatusElement.className = "badge unavailable";
     }
 
     async function loadAdminCapabilities() {
