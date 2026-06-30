@@ -69,6 +69,7 @@ public partial class SettingsViewModel : ViewModelBase
     private Uri? latestInstallerUri;
     private LessonHistoryItem? latestLesson;
     private readonly string appVersionText;
+    private readonly string installedAppVersionText;
     private readonly string settingsFilePathText;
     private readonly string lessonHistoryFilePathText;
     private SettingsLocalizedText localizedText;
@@ -199,7 +200,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string AppVersionText => appVersionText;
 
-    public string InstalledAppVersionText => $"Version: v{appVersionText}";
+    public string InstalledAppVersionText => installedAppVersionText;
 
     public string CheckForUpdatesButtonText => IsCheckingForUpdates || IsDownloadingUpdate
         ? LocalizeUiText("Checking for updates...")
@@ -509,6 +510,7 @@ public partial class SettingsViewModel : ViewModelBase
         settingsFilePathText = settingsFilePath;
         lessonHistoryFilePathText = lessonHistoryFilePath;
         appVersionText = DesktopAppVersionProvider.GetCurrentVersionText();
+        installedAppVersionText = DesktopAppVersionProvider.GetInstalledVersionDisplayText();
         this.lessonChatBackendService = lessonChatBackendService;
         this.backendDiagnosticsService = backendDiagnosticsService;
         this.backendUserSettingsClient = backendUserSettingsClient;

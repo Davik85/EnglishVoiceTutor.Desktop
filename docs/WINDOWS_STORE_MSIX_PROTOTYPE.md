@@ -9,7 +9,7 @@ This is a **local MSIX packaging prototype only** for the existing WPF desktop a
 Deployment impact classification:
 
 - Documentation-only: no.
-- Desktop runtime code changed: no.
+- Desktop runtime code changed: yes. The Settings footer now uses channel-aware version metadata so the installed MSIX prototype can display the package identity version instead of the local fallback.
 - Packaging project/files changed: yes.
 - Backend runtime code changed: no.
 - Database schema changed: no.
@@ -28,6 +28,7 @@ Deployment impact classification:
 - Local placeholder MSIX visual asset generator: `scripts/generate-store-msix-placeholder-assets.ps1`.
 - Generated local placeholder MSIX visual assets output to `packaging/windows-msix/Assets/*.png` and are intentionally ignored by git. The local prototype set includes `Square44x44Logo.png` (44x44), `Square150x150Logo.png` (150x150), `Square310x310Logo.png` (310x310), `Wide310x150Logo.png` (310x150), `StoreLogo.png` (50x50), and `SplashScreen.png` (620x300).
 - Static policy check: `scripts/test-store-msix-prototype-policy.ps1`.
+- Channel-aware desktop version display: Store/MSIX builds first read the installed package identity version, then fall back to assembly informational version, then the safe local fallback. Direct builds keep the existing bundled `release-version.txt`/assembly version behavior and direct `v` prefix.
 
 The packaging project is separate from `EnglishVoiceTutor.Desktop.csproj`. It packages the existing WPF/Win32 desktop app through Desktop Bridge style MSIX packaging and does not convert the app to UWP, WinUI, MAUI, or Windows App SDK.
 
@@ -46,6 +47,22 @@ Manual pre-package behavior check:
 ```powershell
 dotnet build .\EnglishVoiceTutor.Desktop.csproj -c Release -p:DesktopDistributionChannel=Store
 ```
+
+## Settings footer version display
+
+The Settings footer is part of the MSIX prototype smoke test. For Store-channel builds (`DesktopDistributionChannel=Store`), the app resolves the display version in this order:
+
+1. installed MSIX package identity version from the Windows package identity (`GetCurrentPackageFullName`);
+2. assembly informational version if package identity is unavailable;
+3. safe local fallback (`0.0.0-local`) only when no package/build metadata is available.
+
+For the current local prototype manifest, the expected installed Settings footer is:
+
+```text
+Version: 0.1.36.0
+```
+
+Direct builds keep the existing direct-channel behavior: the release bundle version file remains preferred, assembly metadata remains the fallback, and the footer keeps the direct `v` prefix. The Store/MSIX package identity lookup is guarded so unpackaged Direct builds do not crash when Windows package identity APIs are unavailable.
 
 ## Direct latest.json/update installer behavior
 
@@ -106,6 +123,13 @@ powershell -ExecutionPolicy Bypass -File .\scripts\test-store-msix-prototype-pol
 
 # 4. Build the local MSIX prototype project from a Visual Studio Developer PowerShell.
 msbuild .\packaging\windows-msix\LanguageVoiceTutor.StorePrototype.wapproj /restore /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:AppxPackageSigningEnabled=false
+
+# 5. Optional local signing example. Use your own untracked test certificate values.
+signtool sign /fd SHA256 /a .\packaging\windows-msix\AppPackages\<package>.msix
+
+# 6. Reinstall the signed package for local testing.
+Get-AppxPackage LanguageVoiceTutor.Desktop.StorePrototype | Remove-AppxPackage
+Add-AppxPackage .\packaging\windows-msix\AppPackages\<package>.msix
 ```
 
 If local sideload installation requires signing, create/use a local test certificate outside git, then build with local certificate properties or sign the generated package with `signtool` using the local certificate. Do not commit the certificate private key or generated package.
@@ -135,6 +159,7 @@ NuGet compatibility warnings such as `NU1701` or `NU1702` may still appear durin
 - Open Settings and verify no release backend URL editing is exposed.
 - Verify no generated MSIX PNG output is tracked and no OpenAI API key, Paddle key, DB connection string, JWT secret, or token appears in UI, logs, docs output, or generated artifacts.
 - Verify update behavior is Store-channel safe and does not call/download/launch the direct Inno update path.
+- Open Settings and verify the footer shows `Version: 0.1.36.0` for the current local MSIX prototype instead of `Version: v0.0.0-local`.
 
 ## WACK follow-up
 
