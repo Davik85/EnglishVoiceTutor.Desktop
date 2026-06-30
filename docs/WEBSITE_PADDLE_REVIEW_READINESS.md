@@ -128,6 +128,6 @@ Remaining release steps:
 3. Final Windows installer smoke.
 4. Paddle live readiness checklist.
 5. Only after approval: production Paddle environment, token, webhook, and price setup.
-6. Microsoft Store preparation later, not claimed as currently available.
+6. Microsoft Store/MSIX is discontinued for now and must not be listed as an active next step or claimed as currently available.
 
 Do not state that the product is fully public production-ready. The current Windows release remains a controlled tester/direct Windows release, not a broad public production launch, and not broad public production readiness. Production/live Paddle readiness remains deferred.

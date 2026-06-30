@@ -14,7 +14,7 @@ Implemented slices cover auth login/register/password reset; audio transcription
 
 Phase 3 did not change Admin RBAC authorization behavior, product/free usage semantics, Premium entitlement semantics, billing/Paddle semantics, Paddle webhook signature verification, provider-event handling, Desktop behavior, Admin UI behavior, CMS runtime behavior, package/upload scripts, deployment scripts, or EF migrations. No database migrations were added or run for Phase 3.
 
-Deferred after Phase 3: true distributed/shared rate limiter storage, true concurrent realtime voice WebSocket connection caps if not implemented, backups/restore/migration rollback drills as Phase 4, monitoring/logging/privacy hardening, Paddle live readiness/legal/support blockers, Microsoft Store/MSIX, and broad public-production readiness.
+Deferred after Phase 3: true distributed/shared rate limiter storage, true concurrent realtime voice WebSocket connection caps if not implemented, backups/restore/migration rollback drills as Phase 4, monitoring/logging/privacy hardening, Paddle live readiness/legal/support blockers, and broad public-production readiness. Microsoft Store/MSIX remains discontinued for now.
 
 
 ## 1. Current state
@@ -39,7 +39,7 @@ Deferred after Phase 3: true distributed/shared rate limiter storage, true concu
 - True distributed/shared rate-limit storage remains future work for multi-instance deployments.
 - True concurrent realtime voice WebSocket connection caps remain future work if not implemented; Phase 3 verified start-rate protection.
 - Backups/restore/migration rollback drills are Phase 4 operational work, not Phase 3.
-- Monitoring/logging/privacy hardening, Paddle live readiness/legal/support blockers, Microsoft Store/MSIX, and broad public-production readiness remain deferred.
+- Monitoring/logging/privacy hardening, Paddle live readiness/legal/support blockers, and broad public-production readiness remain deferred. Microsoft Store/MSIX remains discontinued for now.
 - Request-size abuse policy beyond existing request/form validation and hosting defaults remains a future hardening topic.
 
 ### Product limits are not technical rate limits
@@ -311,7 +311,7 @@ Next work is Phase 4 operational readiness:
 2. Keep generated backup files, SQL dumps, connection strings, `.env` contents, secrets, provider payloads, Paddle signatures, and raw user data out of git and shared transcripts.
 3. Design distributed/shared rate limiter storage before any multi-instance backend scale-out.
 4. Add true concurrent realtime voice WebSocket connection caps if the current backend only protects start rate.
-5. Continue monitoring/logging/privacy hardening, Paddle live readiness/legal/support work, and Microsoft Store/MSIX work before any broad public-production readiness claim.
+5. Continue monitoring/logging/privacy hardening, Paddle live readiness/legal/support work, and keep Microsoft Store/MSIX discontinued unless a separate future product decision reopens it before any broad public-production readiness claim.
 
 ## Historical implementation note
 
