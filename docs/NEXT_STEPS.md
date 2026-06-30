@@ -32,7 +32,7 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.80`.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.82`.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
@@ -154,7 +154,7 @@ Windows release work stays on the Direct EXE/Inno installer. Updates continue th
 
 ### Top remaining tasks in recommended order
 
-1. Verify the live backend symlink and resolve the documentation discrepancy: tracked docs currently say `0.1.35-backend.80`; this audit found no tracked confirmation of `0.1.35-backend.82`.
+1. Keep the backend release discrepancy resolved in docs: the live symlink verification command `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` confirmed `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82`; `/health` and `/api/health/database` were verified healthy. No backend deploy was performed for this documentation update.
 2. Verify the live Windows direct manifest still points to `0.1.36-tester.31`, production backend URL, and `manual-confirmation` before any tester handoff.
 3. Keep Store/MSIX removed/discontinued; do not recreate `packaging/windows-msix`, Store channel logic, Store update messaging, WACK commands, or Partner Center planning.
 4. Complete final clean-machine and update-over-existing-install smoke for the current direct installer.
