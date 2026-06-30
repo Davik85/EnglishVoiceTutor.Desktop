@@ -145,3 +145,13 @@ Do not turn on live Paddle immediately. The smallest safe next step is an owner-
 - Running live Paddle transactions.
 - Changing entitlement semantics, billing provider behavior, Desktop behavior, deployment scripts, EF migrations, or legal text.
 - Full refunds, chargebacks, finance reconciliation automation, customer portal/support automation, mobile app store entitlement bridging, and broad public production readiness.
+
+## 2026-06-30 live checkout approval preparation
+
+Paddle website approval is complete, but live production payments remain disabled until live server environment values are manually added and an explicit controlled live checkout test is approved. The approved-domain payment page is `/pay.html` on `https://languagevoicetutor.com`, and backend-created Paddle transactions must set `checkout.url` to `https://languagevoicetutor.com/pay.html` so Paddle returns/opens checkout with the `_ptxn` transaction query parameter.
+
+Required live values are not committed: `PaddleBilling__Environment=live`, `PaddleBilling__CheckoutAdapterEnabled=true`, `PaddleBilling__ApiKey`, `PaddleWebhook__SecretKey`, `PaddleBilling__PremiumLivePriceId`, `PaddleBilling__PremiumLiveProductId`, and the public static-site `/paddle.public.json` value `paddleClientSideToken`. The API key and webhook secret are server-only secrets and must never be exposed to the public website or desktop app. The client-side token is public-only and is injected into the website publish artifact, not hardcoded in git.
+
+Webhook Premium activation is transaction-completion driven and must pass all guards before entitlement activation: verified Paddle signature, supported `transaction.completed` lifecycle, acceptable transaction metadata, expected Language Voice Tutor Pro price id, expected product id when configured/available, expected `custom_data.app=language_voice_tutor`, expected `custom_data.product=language_voice_tutor_pro`, and valid backend user mapping. Mismatched price/product/custom_data events are recorded through the provider-event pipeline but blocked from Premium activation with safe non-secret diagnostics.
+
+Deployment order: merge code; deploy backend only after backend tests pass; publish/upload static website files including `/pay.html` and injected `/paddle.public.json`; add live env values on the server; restart backend; verify `/health` and `/api/health/database`; run a controlled live checkout test only after explicit approval. Rollback: remove/disable live env or restore sandbox mode, keep mismatched webhooks blocked from Premium, and leave the direct Windows EXE/Inno installer path separate. No DB migration is needed for this change.

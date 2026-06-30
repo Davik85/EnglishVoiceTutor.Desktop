@@ -12,6 +12,18 @@ public sealed class PaddleBillingOptions
 
     public string PremiumPriceId { get; set; } = string.Empty;
 
+    public string PremiumLivePriceId { get; set; } = string.Empty;
+
+    public string PremiumProductId { get; set; } = string.Empty;
+
+    public string PremiumLiveProductId { get; set; } = string.Empty;
+
+    public string ExpectedCustomDataApp { get; set; } = "language_voice_tutor";
+
+    public string ExpectedCustomDataProduct { get; set; } = "language_voice_tutor_pro";
+
+    public string CheckoutUrl { get; set; } = "https://languagevoicetutor.com/pay.html";
+
     public string ClientSideToken { get; set; } = string.Empty;
 
     public string ApiVersion { get; set; } = "1";

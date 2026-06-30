@@ -377,3 +377,10 @@ After a backend deploy, open **Admin CMS → System → AI Models → Load AI Mo
 - DB migrations are separate reviewed operator work; do not imply backend upload scripts apply migrations automatically.
 - Paddle live account/provider changes are manual/provider configuration unless an approved backend configuration/code change is explicitly required.
 - AI Models persistence correction is server data/config work; it is separate from backend deploy, Website CMS publish, Windows direct installer upload, DB migrations, and provider/Paddle live changes.
+
+## Paddle live checkout verification commands
+
+- Static checkout readiness: `pytest -q tests/test_paddle_live_checkout_readiness.py`.
+- Backend compile/test in an environment with the .NET SDK installed: `dotnet test backend/EnglishVoiceTutor.Api.Tests/EnglishVoiceTutor.Api.Tests.csproj --no-restore` or the repository's current backend test command.
+- After backend deployment and restart: `curl -fsS https://api.languagevoicetutor.com/health` and `curl -fsS https://api.languagevoicetutor.com/api/health/database`.
+- Do not run live checkout or live webhook smoke tests until the owner explicitly approves the controlled live test.

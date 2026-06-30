@@ -171,6 +171,8 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
             paddleStatus = FirstNonEmpty(transactionSnapshot.Status, subscriptionSnapshot.Status),
             paddlePriceId = FirstNonEmpty(transactionSnapshot.PriceId, subscriptionSnapshot.PriceId),
             paddleProductId = FirstNonEmpty(transactionSnapshot.ProductId, subscriptionSnapshot.ProductId),
+            customDataApp = ExtractCustomDataValue(webhookEvent.RawPayload, "app"),
+            customDataProduct = ExtractCustomDataValue(webhookEvent.RawPayload, "product"),
             amountMinor = transactionSnapshot.AmountMinor,
             currency = transactionSnapshot.Currency,
             billedAtUtc = transactionSnapshot.BilledAtUtc,
@@ -190,6 +192,24 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         return JsonSerializer.Serialize(safeMetadata, SafeMetadataJsonOptions);
     }
 
+
+    private static string? ExtractCustomDataValue(string rawPayload, string propertyName)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(rawPayload);
+            var root = document.RootElement;
+            return root.ValueKind == JsonValueKind.Object
+                && TryGetObject(root, "data", out var data)
+                && TryGetObject(data, "custom_data", out var customData)
+                    ? GetString(customData, propertyName)
+                    : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 
     private static TransactionSnapshotMetadata ExtractTransactionSnapshot(string rawPayload)
     {
