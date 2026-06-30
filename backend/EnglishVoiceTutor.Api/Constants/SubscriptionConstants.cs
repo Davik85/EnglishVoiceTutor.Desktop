@@ -140,6 +140,9 @@ public static class SubscriptionConstants
         public const string UnsupportedBillingEventTypeMessage = "Unsupported billing event type for entitlement reconciliation.";
         public const string MissingInternalUserIdMessage = "Missing internal user id for entitlement reconciliation.";
         public const string UnsupportedPlanIdMessage = "Unsupported plan id for entitlement reconciliation.";
+        public const string UnsupportedPriceIdMessage = "Unsupported Paddle price id for entitlement reconciliation.";
+        public const string UnsupportedProductIdMessage = "Unsupported Paddle product id for entitlement reconciliation.";
+        public const string UnsupportedCustomDataMessage = "Unsupported Paddle custom_data marker for entitlement reconciliation.";
         public const string InvalidBillingEventMetadataMessage = "Invalid billing event metadata.";
     }
 

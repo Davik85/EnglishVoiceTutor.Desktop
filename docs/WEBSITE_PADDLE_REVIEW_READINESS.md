@@ -131,3 +131,9 @@ Remaining release steps:
 6. Microsoft Store/MSIX is discontinued for now and must not be listed as an active next step or claimed as currently available.
 
 Do not state that the product is fully public production-ready. The current Windows release remains a controlled tester/direct Windows release, not a broad public production launch, and not broad public production readiness. Production/live Paddle readiness remains deferred.
+
+## 2026-06-30 approved-domain `/pay.html` checkout page
+
+The public website now includes `/pay.html` for Paddle approved-domain checkout. It loads Paddle.js from `https://cdn.paddle.com/paddle/v2/paddle.js`, reads `_ptxn`, validates it as a Paddle transaction id, initializes Paddle with a public client-side token loaded from `/paddle.public.json`, and calls `Paddle.Checkout.open({ transactionId })`. If `_ptxn` is missing/invalid, Paddle.js fails to load, or the public token config is missing, it shows a safe support-oriented fallback without secrets.
+
+Publishers must create `/paddle.public.json` during static-site publish from `site/public/paddle.public.example.json` and inject only the live Paddle client-side token. Do not publish server API keys, webhook secrets, `.env` files, private keys, generated installer artifacts, or backend signing material. Backend deployment and Website CMS/static publish remain separate operations.
