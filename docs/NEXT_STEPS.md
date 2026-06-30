@@ -177,3 +177,15 @@ Windows release work stays on the Direct EXE/Inno installer. Updates continue th
 - Requires DB migration: only reviewed schema/data changes.
 - Docs-only: release-readiness documentation, command/runbook clarification, stale Store/MSIX wording cleanup.
 - Manual account/provider/admin work: code signing purchase, Paddle live configuration, owner/legal review, tester management, AI Models publish only if model settings intentionally change; persistence verification is already complete for the current production state.
+
+## Paddle live checkout manual next steps
+
+1. Merge the live checkout preparation code.
+2. Run backend and static-site tests before deployment.
+3. Deploy backend only after tests pass.
+4. Publish/upload static website files including `/pay.html` and a generated `/paddle.public.json` containing only the public Paddle client-side token.
+5. Add live server env values for Paddle API key, webhook secret, live price id, live product id, checkout URL, expected custom_data markers, and live environment mode.
+6. Restart backend and verify `/health` plus `/api/health/database`.
+7. Run a controlled live checkout test only after explicit approval.
+
+Rollback: disable live env or return `PaddleBilling__Environment`/provider settings to sandbox/disabled, confirm mismatched webhooks do not grant Premium, and do not upload Windows installers or reintroduce Store/MSIX.

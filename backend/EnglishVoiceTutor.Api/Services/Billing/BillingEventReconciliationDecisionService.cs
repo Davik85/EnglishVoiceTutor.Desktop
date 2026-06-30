@@ -2,7 +2,9 @@ using System.Text.Json;
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
+using EnglishVoiceTutor.Api.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace EnglishVoiceTutor.Api.Services.Billing;
 
@@ -15,13 +17,16 @@ public sealed class BillingEventReconciliationDecisionService : IBillingEventRec
 
     private readonly AppDbContext dbContext;
     private readonly ILogger<BillingEventReconciliationDecisionService> logger;
+    private readonly PaddleBillingOptions paddleOptions;
 
     public BillingEventReconciliationDecisionService(
         AppDbContext dbContext,
-        ILogger<BillingEventReconciliationDecisionService> logger)
+        ILogger<BillingEventReconciliationDecisionService> logger,
+        IOptions<PaddleBillingOptions> paddleOptions)
     {
         this.dbContext = dbContext;
         this.logger = logger;
+        this.paddleOptions = paddleOptions.Value;
     }
 
     public async Task<BillingEventReconciliationDecisionResult> ProcessReceivedEventsAsync(
@@ -149,6 +154,30 @@ public sealed class BillingEventReconciliationDecisionService : IBillingEventRec
                     SubscriptionConstants.BillingEventReconciliation.UnsupportedPlanIdMessage);
                 blockedCount++;
             }
+            else if (!MatchesExpectedPrice(metadata.PaddlePriceId))
+            {
+                MarkBlocked(
+                    billingEvent,
+                    nowUtc,
+                    SubscriptionConstants.BillingEventReconciliation.UnsupportedPriceIdMessage);
+                blockedCount++;
+            }
+            else if (!MatchesExpectedProduct(metadata.PaddleProductId))
+            {
+                MarkBlocked(
+                    billingEvent,
+                    nowUtc,
+                    SubscriptionConstants.BillingEventReconciliation.UnsupportedProductIdMessage);
+                blockedCount++;
+            }
+            else if (!MatchesExpectedCustomData(metadata.CustomDataApp, metadata.CustomDataProduct))
+            {
+                MarkBlocked(
+                    billingEvent,
+                    nowUtc,
+                    SubscriptionConstants.BillingEventReconciliation.UnsupportedCustomDataMessage);
+                blockedCount++;
+            }
             else
             {
                 MarkPending(billingEvent, nowUtc);
@@ -180,6 +209,46 @@ public sealed class BillingEventReconciliationDecisionService : IBillingEventRec
             startedAtUtc,
             finishedAtUtc);
     }
+
+    private bool MatchesExpectedPrice(string? priceId)
+    {
+        var expected = GetExpectedPremiumPriceId();
+        return !string.IsNullOrWhiteSpace(expected)
+            && string.Equals(priceId, expected, StringComparison.Ordinal);
+    }
+
+    private bool MatchesExpectedProduct(string? productId)
+    {
+        var expected = GetExpectedPremiumProductId();
+        return string.IsNullOrWhiteSpace(expected)
+            || string.Equals(productId, expected, StringComparison.Ordinal);
+    }
+
+    private bool MatchesExpectedCustomData(string? app, string? product)
+    {
+        return string.Equals(app, ExpectedCustomDataApp(), StringComparison.Ordinal)
+            && string.Equals(product, ExpectedCustomDataProduct(), StringComparison.Ordinal);
+    }
+
+    private string GetExpectedPremiumPriceId()
+    {
+        var livePriceId = string.IsNullOrWhiteSpace(paddleOptions.PremiumLivePriceId) ? paddleOptions.PremiumPriceId : paddleOptions.PremiumLivePriceId;
+        return string.Equals(paddleOptions.Environment, SubscriptionConstants.Billing.LivePaddleEnvironment, StringComparison.OrdinalIgnoreCase)
+            ? livePriceId.Trim()
+            : paddleOptions.PremiumPriceId.Trim();
+    }
+
+    private string GetExpectedPremiumProductId()
+    {
+        var liveProductId = string.IsNullOrWhiteSpace(paddleOptions.PremiumLiveProductId) ? paddleOptions.PremiumProductId : paddleOptions.PremiumLiveProductId;
+        return string.Equals(paddleOptions.Environment, SubscriptionConstants.Billing.LivePaddleEnvironment, StringComparison.OrdinalIgnoreCase)
+            ? liveProductId.Trim()
+            : paddleOptions.PremiumProductId.Trim();
+    }
+
+    private string ExpectedCustomDataApp() => string.IsNullOrWhiteSpace(paddleOptions.ExpectedCustomDataApp) ? "language_voice_tutor" : paddleOptions.ExpectedCustomDataApp.Trim();
+
+    private string ExpectedCustomDataProduct() => string.IsNullOrWhiteSpace(paddleOptions.ExpectedCustomDataProduct) ? "language_voice_tutor_pro" : paddleOptions.ExpectedCustomDataProduct.Trim();
 
     private static int NormalizeLimit(int limit)
     {
@@ -242,5 +311,9 @@ public sealed class BillingEventReconciliationDecisionService : IBillingEventRec
     {
         public Guid? InternalUserId { get; set; }
         public string? InternalPlanId { get; set; }
+        public string? PaddlePriceId { get; set; }
+        public string? PaddleProductId { get; set; }
+        public string? CustomDataApp { get; set; }
+        public string? CustomDataProduct { get; set; }
     }
 }
