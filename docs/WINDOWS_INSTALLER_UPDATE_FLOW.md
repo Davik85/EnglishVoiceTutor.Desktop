@@ -91,6 +91,6 @@ Release/tester installed builds are server-only and use `https://api.languagevoi
 ## Deferred items
 
 - Code signing is deferred, but required before broad public distribution.
-- Microsoft Store/MSIX is deferred.
+- Microsoft Store/MSIX was evaluated and discontinued for now.
 - Production billing/Paddle/subscription payment lifecycle remains deferred.
 - Public production readiness is not claimed.

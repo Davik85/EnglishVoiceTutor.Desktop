@@ -22,17 +22,13 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 Release/tester installed builds are server-only and use `https://api.languagevoicetutor.com`. Local backend URLs are DEBUG/developer-only. Diagnostics and Backend URL editing are not part of user/release Settings. The packaged desktop path covers registration/login/lesson/history/progress/update through backend APIs rather than direct provider calls. Direct builds keep the simple user-facing **Check for updates** button backed by `latest.json`, SHA-256 verification, and a flow that does not silently auto-update; clean-machine smoke remains required before tester handoff.
 
-## Store / MSIX sequence
+## Windows distribution direction
 
-Current Store/MSIX work now includes a local prototype scaffold, but remains unsubmitted and unpublished. Use this order:
+Microsoft Store/MSIX was evaluated with a local prototype and is discontinued for now. Do not run MSIX prototype commands, do not recreate `packaging/windows-msix/`, do not submit to Partner Center, and do not claim Store availability.
 
-1. Review `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md`.
-2. Complete/review `docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md`.
-3. Use the implemented Store channel flag (`dotnet build -c Release -p:DesktopDistributionChannel=Store`) for pre-MSIX behavior checks; Direct remains the default.
-4. Verify the local MSIX packaging scaffold in `packaging/windows-msix/` on Windows/Visual Studio without changing the direct Inno installer flow.
-5. Add Windows App Certification Kit verification notes only after WACK is actually run.
+Current Windows distribution remains the Direct EXE/Inno installer channel with the direct `latest.json` update flow. Future Windows trust/signing work should focus on buying and integrating a proper code signing certificate for the direct EXE/Inno installer.
 
-Do not upload Store packages, submit to Partner Center, or claim Store availability. The current prototype commands are local-only and documented in `docs/WINDOWS_STORE_MSIX_PROTOTYPE.md`.
+Backend deploy, Website CMS/static site publish, Windows direct installer upload, and database migrations remain separate processes. No backend deploy, Website CMS publish, Store submission, or Windows installer upload is implied by this cleanup.
 
 ## Release-readiness status
 
@@ -52,7 +48,7 @@ Do not state that the product is fully public production-ready. This remains a c
 3. Final Windows installer smoke.
 4. Paddle live readiness checklist.
 5. Only after approval: production Paddle environment, token, webhook, and price setup.
-6. Microsoft Store preparation later; do not claim Microsoft Store, Android, or iOS availability as currently available.
+6. Microsoft Store/MSIX discontinued for now; do not claim Microsoft Store, Android, or iOS availability as currently available.
 
 ## Backend next-step guardrails
 
@@ -146,15 +142,6 @@ The `gpt-5.5` lesson tutor chat root cause was unsupported `temperature`, not pr
 
 Compatibility diagnostics should be read as a matrix: `minimal_responses_text` checks model availability / Responses API access; `current_provider_test_shape` checks the older provider-test shape including `temperature` if present; `minimal_structured_output` checks strict structured output; and `lesson_chat_runtime_shape_without_user_content` checks lesson runtime request options/schema with safe dummy input. If a new model breaks lessons, inspect safe backend logs for operation, model role, configured model ID, provider status/category, and safe provider error type/code/param/message, then restore a previous known-good model if needed. Logs and Admin UI must not expose secrets, raw provider bodies, raw request bodies, full prompts, private user lesson text, env values, or connection strings.
 
-## Future Microsoft Store / MSIX channel next steps
+## Discontinued Microsoft Store / MSIX channel
 
-This is planned work only; the current Windows direct Inno installer flow remains the working release channel and must not be changed by Store preparation.
-
-1. Finish/review the local data audit in `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md` and keep the migration decision pending until reviewed.
-2. Plan the Store channel build flag and update behavior so Store builds cannot use direct `latest.json`, without changing runtime behavior in the planning step.
-3. Then prototype MSIX packaging locally without changing `scripts/package-windows-inno-release.ps1`, `installer/windows/LanguageVoiceTutor.iss`, direct release artifacts, or `latest.json`.
-4. Add Windows App Certification Kit local verification notes only after a real MSIX prototype confirms the command/process.
-5. Prepare Store listing/legal/assets content and screenshots.
-6. Decide final Paddle/web checkout disclosure wording for Store listing and in-app upgrade flow after Partner Center policy review.
-
-Known gaps before submission: no final Partner Center package identity, final Store version mapping, WACK pass, production Store screenshots/assets checklist, Partner Center disclosure review, or Store submission checklist. A local prototype project and temporary identity now exist, but they do not imply Store availability. See `docs/WINDOWS_STORE_RELEASE_PLAN.md` and `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md`.
+The Microsoft Store/MSIX prototype path is discontinued for now. The repository should not contain active Store/MSIX packaging, Store-channel runtime behavior, Store submission commands, or MSIX local packaging tests. Keep Windows release work focused on the Direct EXE/Inno installer, the direct `latest.json` update manifest, and a future code signing certificate for that direct installer path.

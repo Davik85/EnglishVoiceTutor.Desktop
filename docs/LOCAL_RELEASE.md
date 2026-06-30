@@ -97,7 +97,7 @@ The desktop app does not contain an OpenAI API key, must not call OpenAI directl
 
 ## Deferred items
 
-- Microsoft Store/MSIX remains deferred.
+- Microsoft Store/MSIX was evaluated and discontinued for now.
 - Code signing is deferred but required before broad public distribution.
 - The release Settings UX includes a simple **Check for updates** button. It checks `latest.json`, validates the manifest, asks before download/install, verifies SHA-256 before launching the installer, and does not silently auto-update.
 - Public release is not declared ready.

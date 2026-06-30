@@ -136,18 +136,11 @@ Re-run the public verification commands after rollback.
 A landing page update was initially uploaded to `/var/www/languagevoicetutor/`, but nginx serves the public website from `/var/www/languagevoicetutor/site`. Because the files were in the wrong parent directory, the live homepage did not update and public requests for `download.html` plus landing assets returned 404. Diagnostics confirmed the real nginx root, confirmed `/releases/windows/direct/` is a separate alias to `/var/www/languagevoicetutor/releases/windows/direct/`, and confirmed that Windows release files should not be mixed with website files. The accidental files were removed from the wrong parent directory, then `index.html`, `download.html`, `styles.css`, `download.js`, the landing images, and the landing README were uploaded to `/var/www/languagevoicetutor/site`. Public verification then returned `200 OK` for the homepage, `download.html`, and both landing images, while `latest.json` remained valid.
 
 
-## Local Store/MSIX prototype commands
+## Microsoft Store/MSIX prototype commands discontinued
 
-These commands are local-only prototype checks. They do not upload packages, do not submit to Microsoft Store, and do not replace the Windows direct Inno release flow. Use Windows with Visual Studio/MSBuild packaging components for the MSIX packaging command.
+Do not run MSIX prototype commands. The local Store/MSIX prototype was evaluated and discontinued, and the repository no longer keeps active Store/MSIX packaging projects, asset generators, or policy tests.
 
-```powershell
-dotnet build .\EnglishVoiceTutor.Desktop.csproj -c Release -p:DesktopDistributionChannel=Store
-powershell -ExecutionPolicy Bypass -File .\scripts\generate-store-msix-placeholder-assets.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\test-store-msix-prototype-policy.ps1
-msbuild .\packaging\windows-msix\LanguageVoiceTutor.StorePrototype.wapproj /restore /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:AppxPackageSigningEnabled=false
-```
-
-The asset generator creates local MSIX PNG files under `packaging/windows-msix/Assets/` from `Assets/Branding/app-icon.ico`, the same tracked icon source used by the Direct EXE/Inno desktop app shortcut. It generates `Square44x44Logo.png`, `Square150x150Logo.png`, `Square310x310Logo.png`, `Wide310x150Logo.png`, `StoreLogo.png`, and `SplashScreen.png`; those PNG outputs are intentionally ignored by git. If signing is needed for sideload testing, create a local test certificate outside git. Do not commit `.pfx`, `.pvk`, `.snk`, local `.cer`, private keys, passwords, generated PNG assets, generated packages, or Store submission artifacts. WACK remains a follow-up until it is actually run. The explicit `RuntimeIdentifier=win-x64` property matches the MSIX prototype project reference and ensures restore/build includes the desktop app `net10.0-windows/win-x64` target. `NU1701`/`NU1702` package compatibility warnings are current follow-up review warnings unless they become blocking errors after the RID restore issue is resolved.
+Use the Direct EXE/Inno installer commands in this playbook for Windows distribution. The direct `latest.json` update flow remains the active update path. Future Windows trust/signing work should focus on a code signing certificate for the direct EXE/Inno installer. Backend deploy, Website CMS/static site publish, Windows direct installer upload, and database migrations remain separate processes.
 
 ## Windows direct release upload commands
 
@@ -366,14 +359,11 @@ When checking CMS content changes, remember: **Save draft** alone does not affec
 
 Next commands/checks are tester-handoff oriented only: verify the installed tester build from the public site, perform a short smoke test, prepare tester handoff, and collect feedback on lesson quality, level behavior, voice, UI, and CMS-controlled content. Do not touch billing/Paddle in this phase and do not start broad public release yet.
 
-## Planned Microsoft Store / MSIX commands — not yet implemented
+## Microsoft Store/MSIX commands
 
-This section is intentionally a placeholder for future Store work. Microsoft Store distribution is planned as a separate MSIX channel, while the existing direct Windows Inno installer commands above remain the current working direct release flow.
+No Microsoft Store/MSIX commands are active or planned. Do not add Partner Center submission commands, WACK commands, MSIX package commands, or Store-channel build flags unless the product decision changes in a separate future effort.
 
-No Store/MSIX package command, Windows App Certification Kit command, Partner Center submission command, Store package identity, Store version mapping, or Store local-data migration process is confirmed yet. The pre-MSIX Store channel behavior flag is `DesktopDistributionChannel=Store`, for example `dotnet build -c Release -p:DesktopDistributionChannel=Store`; Direct remains the default when omitted. Review `docs/WINDOWS_STORE_LOCAL_DATA_AUDIT.md` and `docs/WINDOWS_STORE_CHANNEL_UPDATE_PLAN.md` before the first MSIX prototype, and do not invent or run final Store commands from this playbook until a real local MSIX prototype confirms them and `docs/WINDOWS_STORE_RELEASE_PLAN.md` is updated.
-
-Store builds must not use the direct `/releases/windows/direct/latest.json` installer update flow. Direct installer upload, backend deployment, database migrations, Website CMS/static site publish, and future Store/MSIX submission remain separate flows.
-
+The active Windows release flow is Direct EXE/Inno plus the direct `latest.json` update manifest.
 
 ## AI Models CMS post-deploy verification
 

@@ -21,11 +21,6 @@ public sealed class UpdateDownloadService
         Uri installerUri,
         CancellationToken cancellationToken = default)
     {
-        if (!DesktopUpdatePolicy.CanDownloadDirectInstaller)
-        {
-            return UpdateDownloadResult.Failure(DesktopUpdatePolicy.StoreManagedUpdatesMessage);
-        }
-
         if (!string.Equals(installerUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
         {
             return UpdateDownloadResult.Failure("The installer download address is not a valid HTTPS URL.");
@@ -94,12 +89,6 @@ public sealed class UpdateDownloadService
 
     public static bool TryStartVerifiedInstallerAfterAppShutdown(string installerPath, Action<string>? showStartFailure = null)
     {
-        if (!DesktopUpdatePolicy.CanLaunchDirectInstaller)
-        {
-            showStartFailure?.Invoke(DesktopUpdatePolicy.StoreManagedUpdatesMessage);
-            return false;
-        }
-
         if (string.IsNullOrWhiteSpace(installerPath) || !File.Exists(installerPath))
         {
             showStartFailure?.Invoke("The verified installer could not be found. Please check for updates again.");

@@ -19,7 +19,6 @@
     <ApplicationIcon Condition="Exists('$(AppIconPath)')">$(AppIconPath)</ApplicationIcon>
     <DesktopBackendBaseUrl Condition="'$(DesktopBackendBaseUrl)' == '' and '$(Configuration)' == 'Debug'">http://localhost:5000</DesktopBackendBaseUrl>
     <DesktopBackendBaseUrl Condition="'$(DesktopBackendBaseUrl)' == '' and '$(Configuration)' != 'Debug'">https://api.languagevoicetutor.com</DesktopBackendBaseUrl>
-    <DesktopDistributionChannel Condition="'$(DesktopDistributionChannel)' == ''">Direct</DesktopDistributionChannel>
   </PropertyGroup>
 
   <ItemGroup>
@@ -45,17 +44,12 @@
   <Target Name="ValidateDesktopBackendBaseUrl" BeforeTargets="BeforeBuild">
     <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(DesktopBackendBaseUrl)', '^https?://\S+$'))" Text="DesktopBackendBaseUrl must be an absolute http/https URL." />
     <Error Condition="'$(Configuration)' != 'Debug' and '$(DesktopBackendBaseUrl)' != 'https://api.languagevoicetutor.com'" Text="Non-Debug desktop builds are server-only and must use https://api.languagevoicetutor.com." />
-    <Error Condition="'$(DesktopDistributionChannel)' != 'Direct' and '$(DesktopDistributionChannel)' != 'Store'" Text="DesktopDistributionChannel must be Direct or Store." />
   </Target>
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>DesktopBackendBaseUrl</_Parameter1>
       <_Parameter2>$(DesktopBackendBaseUrl)</_Parameter2>
-    </AssemblyAttribute>
-    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
-      <_Parameter1>DesktopDistributionChannel</_Parameter1>
-      <_Parameter2>$(DesktopDistributionChannel)</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
 

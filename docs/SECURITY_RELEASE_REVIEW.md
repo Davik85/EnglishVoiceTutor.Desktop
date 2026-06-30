@@ -8,7 +8,7 @@ Scope: documentation and source review only. No application behavior, billing lo
 
 Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.80` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
 
-Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus completed local backup schedule activation plus completed Phase 4 backup/restore/migration rollback drills plus optional off-server backup hardening, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, Microsoft Store/MSIX readiness, and validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
+Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus completed local backup schedule activation plus completed Phase 4 backup/restore/migration rollback drills plus optional off-server backup hardening, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
 
 
 ## Admin/CMS statistics boundary fix (2026-06-25)
@@ -162,7 +162,7 @@ Phase 4C verified backend current `/opt/languagevoicetutor/backend/releases/0.1.
 
 Phase 4D completed on 2026-06-23 without production mutation. An owner/ACL-aware backup of `lvt_app_db` restored into separate drill database `lvt_app_db_owner_acl_drill_20260623_161611Z`; key table ownership and `lvt_app` grants matched the production baseline; the drill database was dropped; and production backend `0.1.35-backend.39` stayed healthy with `/health` and `/api/health/database` returning `200 OK`. No EF migrations, SQL remediation, restore-over-production, runtime behavior, Desktop, Admin UI, CMS, billing, Paddle, package, upload, or deployment changes occurred.
 
-Phase 4 backup/restore/migration rollback drills are complete for the current release-readiness level. Off-server encrypted backups remain optional future infrastructure hardening. Production/live Paddle readiness remains deferred, Microsoft Store/MSIX remains later release-channel work, and broad public production readiness is not claimed.
+Phase 4 backup/restore/migration rollback drills are complete for the current release-readiness level. Off-server encrypted backups remain optional future infrastructure hardening. Production/live Paddle readiness remains deferred, Microsoft Store/MSIX is discontinued for now, and broad public production readiness is not claimed.
 
 ## 2026-06-23 Phase 5A logging/privacy audit security note
 
@@ -185,8 +185,8 @@ Website CMS now includes Marketing / SEO fields for the consent banner, analytic
 
 Public website publish now emits or maintains public HTML pages plus crawler/consent artifacts including `robots.txt`, `sitemap.xml`, `llms.txt` when enabled, and `marketing-consent.js`. Generated pages are expected to include canonical URLs, meta descriptions, Open Graph/Twitter metadata, JSON-LD where appropriate, and SoftwareApplication JSON-LD for the Windows desktop only. Consent mode defaults to denied for analytics and ads storage/user data/personalization before user choice, the banner is controlled by Website CMS, Privacy Policy includes optional analytics/advertising/cookie disclosure, and GA/Ads scripts must not be emitted while IDs are empty or tracking is disabled. This note does not enable live Paddle, publish Website CMS, deploy the backend, upload installers, run EF migrations, add secrets, or change application behavior.
 
-## 2026-06-29 Microsoft Store / MSIX security planning note
+## 2026-06-30 Microsoft Store / MSIX discontinued security note
 
-Future Store/MSIX work must preserve the existing security boundaries: no desktop OpenAI calls, no committed secrets, backend-owned account/subscription/entitlement/usage decisions, and provider-agnostic billing architecture. Paddle/web checkout is only the planned PC non-game Store payment approach pending final Partner Center disclosure and policy review; do not document it as approved and do not implement Microsoft Store IAP in this planning step.
+The local Microsoft Store/MSIX prototype was evaluated and discontinued. The active Windows distribution path is Direct EXE/Inno installer plus direct `latest.json` update behavior. No Store submission is planned, Store/MSIX packaging is not active, and future Windows trust/signing work should focus on a code signing certificate for the direct EXE/Inno installer.
 
-Before any Store submission, review package identity, local data/session migration, microphone/audio disclosures, AI/backend disclosures, listing/legal text, Store asset contents, and Windows App Certification Kit results. Store preparation must not change the direct Inno installer channel or its `latest.json` update flow.
+Backend deployment, database migrations, Website CMS/static site publish, and Windows direct installer upload remain separate processes. This decision does not change Paddle/payment logic, OpenAI provider logic, backend runtime behavior, database schema, deployment scripts, or Inno installer behavior.
