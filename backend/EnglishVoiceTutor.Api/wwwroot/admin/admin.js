@@ -8,6 +8,7 @@
         userLookupByEmail: "/api/admin/users/by-email",
         userLookupByIdTemplate: "/api/admin/users/{userId}",
         auditActionsTemplate: "/api/admin/users/{userId}/audit-actions",
+        adminActivity: "/api/admin/activity",
         manualPremiumGrantTemplate: "/api/admin/users/{userId}/premium-grants",
         manualPremiumRevokeTemplate: "/api/admin/users/{userId}/premium-grants/{entitlementId}/revoke",
         freeLessonAllowanceResetTemplate: "/api/admin/users/{userId}/free-lesson-allowance/reset",
@@ -61,6 +62,8 @@
         invalidAuditLimit: "Invalid audit log limit.",
         auditTargetNotFound: "User or audit log target was not found.",
         auditLoadFailed: "Unable to load audit log.",
+        activityLoadFailed: "Unable to load Admin Activity.",
+        invalidActivityLimit: "Invalid Admin Activity limit.",
         grantInvalid: "Grant request is invalid. Check duration and reason.",
         grantUserNotFound: "Selected user was not found.",
         grantFailed: "Unable to grant Premium.",
@@ -89,7 +92,8 @@
     const DailyUsageColumns = ["usageDate", "studyLanguage", "lessonsStarted", "lessonsCompleted", "chatReplyCount", "hintsUsed", "feedbackRequests", "transcriptionSeconds", "ttsSeconds", "estimatedCost", "updatedAt"];
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
-    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", website: "website", roleManagement: "role-management", system: "system" });
+    const ActivityColumns = ["occurredAtUtc", "actorEmail", "actionType", "result", "targetType", "targetUserEmail", "targetAdminUserEmail", "source", "reason", "safeMetadataJson"];
+    const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", adminActivity: "admin-activity", cmsContent: "cms-content", website: "website", roleManagement: "role-management", system: "system" });
     const AdminPermissionIds = Object.freeze({
         usersRead: "users.read",
         userLookupRead: "users.lookup.read",
@@ -125,6 +129,7 @@
         { label: "Free Lesson Reset", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.freeLessonAllowanceReset] },
         { label: "Billing Cancel Renewal", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.billingCancelRenewal] },
         { label: "Audit Log", statusWhenAvailable: "read-only / available", anyPermissions: [AdminPermissionIds.auditRead] },
+        { label: "Admin Activity", statusWhenAvailable: "read-only / available", anyPermissions: [AdminPermissionIds.auditRead] },
         { label: "CMS Content", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsContentRead] },
         { label: "CMS Draft Editing", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsContentWriteDraft] },
         { label: "CMS Publish", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsContentPublish] },
@@ -141,6 +146,7 @@
         [Tabs.premium]: { anyPermissions: [AdminPermissionIds.premiumGrant, AdminPermissionIds.premiumRevoke, AdminPermissionIds.billingCancelRenewal] },
         [Tabs.freeLesson]: { anyPermissions: [AdminPermissionIds.freeLessonAllowanceReset] },
         [Tabs.auditLog]: { anyPermissions: [AdminPermissionIds.auditRead] },
+        [Tabs.adminActivity]: { anyPermissions: [AdminPermissionIds.auditRead] },
         [Tabs.cmsContent]: { anyPermissions: [AdminPermissionIds.cmsContentRead] },
         [Tabs.website]: { bootstrapAdminOnly: true },
         [Tabs.roleManagement]: { anyPermissions: [AdminPermissionIds.adminRolesManage] },
@@ -275,6 +281,20 @@
     const auditLoadingElement = document.getElementById("audit-loading");
     const auditErrorElement = document.getElementById("audit-error");
     const auditResultElement = document.getElementById("audit-result");
+    const activityActorAdminUserIdInput = document.getElementById("activity-actor-admin-user-id");
+    const activityActorUserIdInput = document.getElementById("activity-actor-user-id");
+    const activityTargetUserIdInput = document.getElementById("activity-target-user-id");
+    const activityTargetAdminUserIdInput = document.getElementById("activity-target-admin-user-id");
+    const activitySourceInput = document.getElementById("activity-source");
+    const activityResultInput = document.getElementById("activity-result");
+    const activityActionTypeInput = document.getElementById("activity-action-type");
+    const activityFromUtcInput = document.getElementById("activity-from-utc");
+    const activityToUtcInput = document.getElementById("activity-to-utc");
+    const activityLimitInput = document.getElementById("activity-limit");
+    const loadActivityButton = document.getElementById("load-activity-button");
+    const activityLoadingElement = document.getElementById("activity-loading");
+    const activityErrorElement = document.getElementById("activity-error");
+    const activityResultElement = document.getElementById("activity-result-table");
 
     const freeLessonResetCard = document.getElementById("free-lesson-reset-card");
     const freeLessonResetForm = document.getElementById("free-lesson-reset-form");
@@ -614,6 +634,7 @@
     const setError = (message) => { loginError.textContent = message; };
     const setLookupError = (message) => { setLookupSourceError(LookupSources.userLookup, message); };
     const setAuditError = (message) => { auditErrorElement.textContent = message || ""; };
+    const setActivityError = (message) => { activityErrorElement.textContent = message || ""; };
     const setGrantError = (message) => { grantErrorElement.textContent = message || ""; };
     const setGrantSuccess = (message) => { grantSuccessElement.textContent = message || ""; };
 
@@ -884,6 +905,7 @@
     }
 
     const renderAuditLog = (payload) => renderTable(auditResultElement, payload && Array.isArray(payload.items) ? payload.items : [], AuditColumns, "No audit actions.");
+    const renderAdminActivity = (payload) => renderTable(activityResultElement, payload && Array.isArray(payload.items) ? payload.items : [], ActivityColumns, "No Admin Activity events.");
     const getSelectedAuditLimit = () => [10, 25, 50, 100].includes(Number.parseInt(auditLimitElement.value, 10)) ? Number.parseInt(auditLimitElement.value, 10) : 10;
 
 
@@ -1180,6 +1202,17 @@
         if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
         if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); }
         if (!response.ok) { throw new Error(ErrorMessages.lookupFailed); }
+        return response.json();
+    }
+
+    async function fetchAdminActivity() {
+        const params = new URLSearchParams();
+        [["actorAdminUserId", activityActorAdminUserIdInput.value], ["actorUserId", activityActorUserIdInput.value], ["targetUserId", activityTargetUserIdInput.value], ["targetAdminUserId", activityTargetAdminUserIdInput.value], ["source", activitySourceInput.value], ["result", activityResultInput.value], ["actionType", activityActionTypeInput.value], ["fromUtc", activityFromUtcInput.value ? `${activityFromUtcInput.value}Z` : ""], ["toUtc", activityToUtcInput.value ? `${activityToUtcInput.value}Z` : ""], ["limit", activityLimitInput.value]].forEach(([key, value]) => { if (String(value || "").trim()) { params.set(key, String(value).trim()); } });
+        const response = await fetch(`${ApiPaths.adminActivity}?${params.toString()}`, { method: "GET", headers: getAdminHeaders() });
+        if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.invalidActivityLimit); }
+        if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); }
+        if (!response.ok) { throw new Error(ErrorMessages.activityLoadFailed); }
         return response.json();
     }
 
@@ -2443,6 +2476,13 @@
     function isAuthErrorMessage(message) { return message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied || message === ErrorMessages.sessionExpired; }
     function handleCmsError(error) { const message = getCmsErrorMessage(error); setCmsError(message); setCmsSuccess(""); if (isAuthErrorMessage(message)) { resetSession(); setError(message); } }
 
+    async function loadAdminActivity() {
+        setActivityError(""); activityLoadingElement.classList.remove("hidden"); loadActivityButton.disabled = true;
+        try { renderAdminActivity(await fetchAdminActivity()); }
+        catch (error) { activityResultElement.textContent = ""; const message = error instanceof Error ? error.message : ErrorMessages.activityLoadFailed; setActivityError(message); if (isAuthErrorMessage(message)) { expireAdminSession(message); } }
+        finally { activityLoadingElement.classList.add("hidden"); loadActivityButton.disabled = false; }
+    }
+
     async function loadAuditLogForSelectedUser() {
         if (!selectedUserId) { clearAuditLog(); return; }
         setAuditError(""); setAuditLoading(true);
@@ -2944,6 +2984,7 @@
     billingCancelRenewalForm.addEventListener("submit", async (event) => { event.preventDefault(); await cancelPaidRenewalForSelectedUser(); });
     freeLessonResetForm.addEventListener("submit", async (event) => { event.preventDefault(); await resetFreeLessonAllowanceForSelectedUser(); });
     loadAuditButton.addEventListener("click", async () => { await loadAuditLogForSelectedUser(); });
+    loadActivityButton.addEventListener("click", async () => { await loadAdminActivity(); });
     refreshStatisticsButton.addEventListener("click", async () => { await loadProductStatistics(); });
     roleManagementRefreshButton.addEventListener("click", async () => { await loadRoleManagementData(); });
     websiteSaveDraftButton.addEventListener("click", async () => { await saveWebsiteDraft(); });

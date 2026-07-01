@@ -223,3 +223,10 @@ sudo awk -F= '/^(Billing__|PaddleBilling__|PaddleWebhook__)/ { v=$2; if ($1 ~ /(
 Admin capabilities should now distinguish configuration from launch completion: configured live checkout/webhooks can be reported as available/configured, while `billingLivePaymentTestComplete=false` and `billingPaidLaunchReleaseComplete=false` continue to block paid launch until the controlled live payment path is documented.
 
 Admin RBAC note: Production Admin RBAC / persistent role management is completed. `productionRolesAvailable` means persistent Admin role authorization is active with an explicit fallback cutover (`AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`). It is not a broad public-launch flag and does not override remaining paid-launch blockers. Production diagnostics show two active `super_admin` AdminUsers and fallback disabled; if this flag is false, check the explicit fallback configuration and cutover status before changing role assignments.
+
+## Admin Activity follow-ups
+
+- Keep the first actor-centric Admin Activity slice read-only unless an explicit schema change is approved.
+- Add login/logout/failure audit persistence only after approving a unified audit table or another explicit schema update.
+- Review Website/AI publish audit coverage and add explicit persistence only through an approved safe audit design.
+- Paddle live payment test remains pending.

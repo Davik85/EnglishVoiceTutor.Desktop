@@ -256,6 +256,7 @@ builder.Services.AddScoped<IAdminFreeLessonAllowanceResetService, AdminFreeLesso
 builder.Services.AddScoped<IAdminBillingCancellationService, AdminBillingCancellationService>();
 builder.Services.AddScoped<IAdminProductStatisticsService, AdminProductStatisticsService>();
 builder.Services.AddScoped<IAdminAuditLogService, AdminAuditLogService>();
+builder.Services.AddScoped<IAdminActivityService, AdminActivityService>();
 builder.Services.AddScoped<ICmsContentValidationService, CmsContentValidationService>();
 builder.Services.AddScoped<ICmsContentImportService, CmsContentImportService>();
 builder.Services.AddScoped<ICmsPublishedContentService, CmsPublishedContentService>();
