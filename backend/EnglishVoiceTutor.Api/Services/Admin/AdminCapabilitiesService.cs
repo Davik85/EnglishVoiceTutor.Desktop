@@ -57,6 +57,7 @@ public sealed class AdminCapabilitiesService(
             BootstrapAdminFallbackForAdminPermissionPoliciesEnabled: false,
             BootstrapAdminFallbackConfigurationValuePresent: true
         };
+        var cmsUiAvailable = IsAdminCmsContentUiAvailable();
 
         return new AdminCapabilitiesResponse
         {
@@ -74,7 +75,7 @@ public sealed class AdminCapabilitiesService(
                 ManualPremiumRevoke = true,
                 FreeLessonAllowanceReset = true,
                 LocalSmokeTestScript = true,
-                CmsUiAvailable = false,
+                CmsUiAvailable = cmsUiAvailable,
                 ProductionRolesAvailable = productionRolesAvailable,
                 BillingProviderConfigured = billingProviderConfigured,
                 PaddleCheckoutAvailable = paddleCheckoutAvailable,
@@ -127,5 +128,17 @@ public sealed class AdminCapabilitiesService(
     private static bool IsConfigured(string? value)
     {
         return !string.IsNullOrWhiteSpace(value);
+    }
+
+    private static bool IsAdminCmsContentUiAvailable()
+    {
+        return AdminEndpointPermissionCatalog.Mappings.Any(mapping =>
+                string.Equals(mapping.ActionKey, "admin.cms.content_packs.list", StringComparison.Ordinal)
+                && string.Equals(mapping.HttpMethod, "GET", StringComparison.Ordinal)
+                && string.Equals(mapping.RequiredPermission, AdminPermissionConstants.CmsContentRead, StringComparison.Ordinal))
+            && AdminEndpointPermissionCatalog.Mappings.Any(mapping =>
+                string.Equals(mapping.ActionKey, "admin.cms.content_pack.read", StringComparison.Ordinal)
+                && string.Equals(mapping.HttpMethod, "GET", StringComparison.Ordinal)
+                && string.Equals(mapping.RequiredPermission, AdminPermissionConstants.CmsContentRead, StringComparison.Ordinal));
     }
 }

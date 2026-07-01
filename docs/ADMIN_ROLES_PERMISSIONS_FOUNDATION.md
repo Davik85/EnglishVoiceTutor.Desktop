@@ -35,6 +35,8 @@ A static production role-to-permission catalog exists for Owner/Super Admin, Sup
 
 `ProductionRolesAvailable` is now treated as the signal that persistent Admin role authorization is active; it is not a paid-launch or broad public-readiness flag.
 
+`CmsUiAvailable` means the Admin Shell has the current CMS Content workspace wired to the CMS content-pack read endpoints guarded by `cms.content.read`. It is a System capability for the Admin CMS Content UI surface, not a signal that the signed-in role can see the tab, not a CMS runtime published-snapshot health check, and not a CMS content-publish readiness flag. Per-role CMS tab visibility still comes from `GET /api/admin/me` permissions and the Admin Shell permission checks.
+
 ## Admin Shell UI-awareness
 
 The Admin Shell now loads `GET /api/admin/me` and `GET /api/admin/capabilities` and renders the returned metadata informationally.
