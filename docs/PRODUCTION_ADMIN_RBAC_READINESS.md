@@ -1,8 +1,40 @@
 # Production Admin RBAC Readiness
 
-Review date: 2026-06-22.
+Review date: 2026-07-01.
 
-Scope: planning/documentation only. This document audits the current Admin / BootstrapAdmin / authorization state and defines the minimum production Admin RBAC target before support, content, billing, or auditor workflows are exposed broadly. It does not implement runtime RBAC, endpoint behavior changes, database schema changes, EF migrations, Admin UI behavior changes, billing/Paddle changes, entitlement changes, Desktop changes, secrets, or test credentials.
+Scope: documentation of the Production Admin RBAC / persistent role management state. This document records production verification completed after backend release `0.1.35-backend.88`; it does not implement runtime RBAC changes, endpoint behavior changes, database schema changes, EF migrations, Admin UI behavior changes, billing/Paddle changes, entitlement changes, Desktop changes, secrets, or test credentials.
+
+## 2026-07-01 production completion update
+
+Production Admin RBAC / persistent role management is completed after backend release `0.1.35-backend.88`. The production backend `current` symlink was verified as `/opt/languagevoicetutor/backend/releases/0.1.35-backend.88`; `/health` returned `200 Healthy`; `/api/health/database` returned `200 Healthy`. Backend .88 was deployed by the normal backend package/upload flow. No EF migrations were run or added for this RBAC stage, Windows installer release files were not changed, and billing/Paddle/payment/Premium entitlement runtime logic was not changed by this documentation update.
+
+Completed manual production checks:
+
+- Persistent AdminUsers can sign in to `/admin`.
+- Admin source is reported as `persistent_role_assignment`.
+- Role-aware Admin UI works.
+- `403` from role-limited workflows does not log the admin out.
+- `401` still returns to login.
+- `super_admin` can assign and revoke roles.
+- `super_admin` can disable AdminUsers.
+- Disabled AdminUser loses access to Admin.
+- `support` can use allowed support workflows.
+- `billing_support` can use Manual Premium Grant after selecting a user and providing a reason.
+- `billing_support` cannot access `super_admin`-only areas.
+- `support` cannot grant/revoke Premium.
+- Role visibility and workflow availability match the backend permission catalog.
+
+Verified final role policy:
+
+| Role | Verified allowed scope | Verified forbidden / not granted scope |
+| --- | --- | --- |
+| `support` | Sign in; User Lookup / User Overview; approved diagnostics; audit entries where allowed; reset free lesson allowance. | Grant/revoke Premium; cancel paid renewal; manage roles; edit/publish CMS; edit Website; manage System AI Models. |
+| `billing_support` | Sign in; User Lookup / User Overview; billing/subscription/Premium diagnostics; cancel paid renewal if the existing backend policy allows it; Manual Premium Grant for verified payment recovery cases. | Premium Revoke unless explicitly granted later; manage roles; edit/publish CMS; edit Website; manage System AI Models. |
+| `content_editor` | CMS content read/draft workflows according to current permissions. | Publish/restore unless explicitly granted; billing, Premium, Admin roles, and System AI Models management. |
+| `read_only_auditor` | Read-only diagnostics/audit/statistics according to current permissions. | Mutating user, billing, Premium, CMS, Website, roles, or System AI Models. |
+| `super_admin` | Full Admin access, including role management, disabling AdminUsers, Premium support actions, CMS/Website/System controls according to existing backend permissions. | None within existing backend permissions, subject to existing reason/audit requirements and future critical-change approval rules. |
+
+Remaining limitation: current audit visibility is not enough to review all actions performed by a specific admin actor. The next recommended backend readiness step is an actor-centric Admin Activity / Audit Log by admin user. Paddle live payment/webhook/Premium activation verification remains incomplete; `billingLivePaymentTestComplete` and `billingPaidLaunchReleaseComplete` remain pending/unavailable, so paid public launch remains blocked.
 
 ## 2026-06-22 production status update
 
@@ -34,24 +66,19 @@ Important final state:
 - Both approved persistent `super_admin` accounts passed validation after permanent fallback disable.
 - Rollback remains available by setting `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=true` and restarting the backend.
 
-Still pending before Production Admin RBAC can be accepted for public RC:
-
-- Validation that non-owner roles behave correctly.
-- Critical-change approval remains future work.
-
-Public release is still not complete. Do not claim broad public-production readiness from the rehearsal or permanent fallback disable.
+Production Admin RBAC / persistent role management has now been accepted for the verified role matrix after backend `0.1.35-backend.88`. Critical-change approval remains future hardening, and public release is still not complete because live Paddle payment/webhook/Premium activation verification and paid-launch release checks remain pending.
 
 ## Executive status
 
-The current Admin foundation is acceptable for controlled tester/direct Windows operations where a very small trusted operator set has verified persistent `super_admin` access and audit logs are reviewed. It is not suitable as the final public-production Admin model until non-owner role validation is accepted and critical-change approval is addressed. BootstrapAdmin fallback for `AdminPermission:*` policies is currently disabled explicitly for production, and UI hiding or UI awareness alone must never be treated as authorization.
+The current Admin foundation is acceptable for controlled tester/direct Windows operations with verified persistent role assignments for `super_admin`, `support`, `billing_support`, `content_editor`, and `read_only_auditor`. It is not a paid public-launch completion signal; critical-change approval remains future hardening and actor-centric Admin Activity / Audit Log remains the next backend readiness step. BootstrapAdmin fallback for `AdminPermission:*` policies is currently disabled explicitly for production, and UI hiding or UI awareness alone must never be treated as authorization.
 
-Public release candidate readiness requires production Admin RBAC with endpoint-level permission enforcement, accepted non-owner role validation, and critical-change approval. UI hiding or UI awareness alone must never be treated as authorization.
+Public release candidate readiness now has the Production Admin RBAC / persistent roles stage complete for the verified role matrix, but still requires actor-centric Admin Activity / Audit Log, logging/release-readiness checks, live Paddle payment/webhook/Premium activation verification, and paid-launch release approval. UI hiding or UI awareness alone must never be treated as authorization.
 
 Current implementation note: permission policy constants, registered permission policies, persistent Admin role assignment tables, and role-management validation now exist. The migrated `AdminPermission:*` endpoints can be authorized by persistent roles, as proven during the 2026-06-22 disabled-fallback rehearsal. Production RBAC endpoint-level enforcement is still not fully complete for every sensitive Admin action; a public release candidate still requires completion of the remaining endpoint decisions or an owner-approved exception.
 
 Current static catalog update: `AdminRolePermissionCatalogService` contains the production role-to-permission catalog for Owner/Super Admin, Support, Content Editor, Billing Support, and Read-only Auditor. Production role assignment persistence now exists, the Admin UI role-management controlled-validation surface has been used to create a second backup `super_admin`, and persistent-role authorization was proven with fallback disabled for the migrated `AdminPermission:*` endpoints. BootstrapAdmin fallback is disabled explicitly after the permanent disable, and a public release candidate still requires remaining endpoint decisions, non-owner role validation, and critical-change approval. Manual Premium revoke remains Super Admin only in the static catalog. Billing Support receives user lookup/overview, billing/subscription/Premium diagnostics, cancel-renewal, and manual Premium grant for verified payment-success recovery without receiving role-management, CMS authoring, Website editing, System AI model settings, or other super-admin controls.
 
-Current endpoint/action catalog update: `AdminEndpointPermissionCatalog` now contains a static foundation mapping from current Admin endpoint/action identifiers to production admin permissions, plus documented future-only seams for permissions that do not yet have active endpoints. As a controlled proof of concept, exactly five safe read-only existing Admin endpoints now require matching permission policies: `GET /api/admin/me` (`admin.identity.read`, `AdminPermission:admin.self.read`), `GET /api/admin/capabilities` (`admin.capabilities.read`, `AdminPermission:admin.capabilities.read`), `GET /api/admin/statistics/overview` (`admin.product_overview.read`, `AdminPermission:product_statistics.read`), `GET /api/admin/dev/cms/runtime-status` (`admin.cms.runtime_status.read`, `AdminPermission:cms.runtime_status.read`), and one additional safe read-only CMS content endpoint, `GET /api/admin/dev/cms/content-packs` (`admin.cms.content_packs.list`, `AdminPermission:cms.content.read`). SuperAdmin access through persistent roles remains preserved through the permission handler and production permission catalog; BootstrapAdmin fallback is available only if explicitly re-enabled as rollback. This does not mean full production RBAC is enabled: role assignment persistence exists as a foundation but production Admin RBAC remains incomplete until endpoint migration is completed, operational Admin UI role management exists, BootstrapAdmin fallback is kept disabled after owner-approved cutover, and rollback procedures remain documented. Admin UI role management now exists as a product and has an operational validation runbook at `docs/ADMIN_ROLE_MANAGEMENT_UI_RUNBOOK.md`; the release gate now runs `tools/test_admin_ui_role_management_policy.py`, and an opt-in manual smoke script exists at `tools/smoke_admin_role_management_flow.ps1`. `bootstrap-first-owner` remains separate/manual and is not exposed in Admin UI. No write/user/billing/Premium/free-lesson endpoints were migrated; no CMS write/draft/publish/restore/import/init/validate/preview endpoints were migrated; and dangerous/write/user/billing/CMS write/Premium/free-lesson endpoints remain on `BootstrapAdmin` until migrated deliberately. Production Admin RBAC remains incomplete until operational validation, remaining endpoint migration, the completed BootstrapAdmin fallback disable, documented rollback procedures, non-owner role validation, and critical-change approval. An Admin RBAC cutover runbook now exists at `docs/ADMIN_RBAC_CUTOVER_RUNBOOK.md`, and the manual opt-in validation smoke script now exists at `tools/smoke_admin_rbac_cutover_validation.ps1`; the Admin RBAC cutover validation static pack is now part of the release gate. The release gate verifies cutover guardrails statically but does not perform live cutover, and the cutover smoke script remains manual and opt-in. Fallback is currently disabled explicitly through production `backend.env`, and re-enabling or changing it again requires owner-approved controlled validation with rollback readiness.
+Current endpoint/action catalog update: `AdminEndpointPermissionCatalog` contains a static mapping from current Admin endpoint/action identifiers to production admin permissions, plus documented future-only seams for permissions that do not yet have active endpoints. Existing migrated AdminPermission endpoints are authorized through persistent roles with BootstrapAdmin fallback disabled. Admin UI role management exists as a product and has an operational validation runbook at `docs/ADMIN_ROLE_MANAGEMENT_UI_RUNBOOK.md`; the release gate runs `tools/test_admin_ui_role_management_policy.py`, and an opt-in manual smoke script exists at `tools/smoke_admin_role_management_flow.ps1`. `bootstrap-first-owner` remains separate/manual and is not exposed in Admin UI. Production Admin RBAC / persistent role management is complete for the verified role matrix after backend `0.1.35-backend.88`; rollback procedures remain documented, critical-change approval remains future hardening, and actor-centric Admin Activity / Audit Log remains the next backend readiness step. An Admin RBAC cutover runbook exists at `docs/ADMIN_RBAC_CUTOVER_RUNBOOK.md`, and the manual opt-in validation smoke script exists at `tools/smoke_admin_rbac_cutover_validation.ps1`; the Admin RBAC cutover validation static pack is part of the release gate. Fallback is currently disabled explicitly through production `backend.env`, and re-enabling or changing it again requires owner-approved controlled validation with rollback readiness.
 
 
 ## Current Admin / BootstrapAdmin / authorization audit
@@ -461,7 +488,7 @@ The remaining eligible existing read-only Admin endpoints have been batch-migrat
 
 BootstrapAdmin fallback is currently disabled by production configuration for `AdminPermission:*` policies, so persistent-role admins must hold the required active permission. The fallback code path remains available only as an operational rollback if the setting is changed back to `true` and the backend is restarted. Role-assignment management endpoints remain on `AdminRoleManagementPermissionPolicyName`. CMS import/init endpoints remain BootstrapAdmin-protected. Premium grant/revoke, free-lesson reset, and billing cancel-renewal now use narrow AdminPermission policies while persistent-role authorization is required for `AdminPermission:*` policies; other still-unmigrated mutating or sensitive endpoints remain BootstrapAdmin-protected.
 
-Admin UI Role Management controlled-validation surface now exists for controlled operations using the existing guarded role-assignment endpoints, but it was not expanded by the CMS authoring workflow migration or the user-impacting Admin action endpoint migration. It does not expose first-owner bootstrap, does not create app users or invites, and does not remove BootstrapAdmin fallback. Production Admin RBAC remains incomplete until final operational validation, the completed BootstrapAdmin fallback disable, documented rollback procedures, non-owner role validation, and critical-change approval.
+Admin UI Role Management controlled-validation surface now exists for controlled operations using the existing guarded role-assignment endpoints, but it was not expanded by the CMS authoring workflow migration or the user-impacting Admin action endpoint migration. It does not expose first-owner bootstrap, does not create app users or invites, and does not remove BootstrapAdmin fallback. Production Admin RBAC / persistent role management is complete for the verified production role matrix after backend `0.1.35-backend.88`; rollback procedures remain documented and critical-change approval remains future hardening.
 
 ## Controlled BootstrapAdmin fallback cutover switch
 
@@ -471,7 +498,7 @@ When the switch is enabled, persistent active Admin role assignments are evaluat
 
 This switch affects only `AdminPermission:*` policy fallback behavior. BootstrapAdmin-only endpoints, including CMS import/init endpoints, remain BootstrapAdmin-protected. Role-assignment management endpoints remain protected by `AdminRoleManagementPermissionPolicyName`.
 
-Do not change the fallback setting again until persistent Owner/SuperAdmin mapping, actor resolution, diagnostics, expected critical role assignments, and rollback readiness have been validated in the target environment. Production Admin RBAC remains incomplete until non-owner role validation and critical-change approval are completed.
+Do not change the fallback setting again without owner-approved controlled validation and rollback readiness. Persistent role authorization is active in production; the remaining readiness gap is actor-centric Admin Activity / Audit Log visibility, not the RBAC cutover itself.
 
 
 ## Safe RBAC cutover status surface
@@ -480,4 +507,4 @@ A safe read-only backend status endpoint now exists at `GET /api/admin/rbac/cuto
 
 The Admin UI Role Management page displays this cutover status read-only. There is no Admin UI toggle or control to disable fallback. The cutover smoke validates `-ExpectedFallbackEnabled` against the backend-reported status when the parameter is provided.
 
-Fallback remains enabled by default only when the setting is absent, but production now explicitly disables fallback with `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Rollback remains available through an owner-approved config change to `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies=true` and backend reload/restart through the documented operational process. Production Admin RBAC remains incomplete until non-owner role validation and critical-change approval are completed.
+Fallback remains enabled by default only when the setting is absent, but production now explicitly disables fallback with `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Rollback remains available through an owner-approved config change to `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies=true` and backend reload/restart through the documented operational process. Production Admin RBAC / persistent role management is complete for the verified role matrix; actor-centric Admin Activity / Audit Log remains the next backend readiness step.
