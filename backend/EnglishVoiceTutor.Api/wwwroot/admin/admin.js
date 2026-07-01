@@ -95,6 +95,10 @@
         userLookupRead: "users.lookup.read",
         userOverviewRead: "users.overview.read",
         usersDiagnosticsRead: "users.diagnostics.read",
+        lessonHistoryDiagnosticsRead: "lesson_history.diagnostics.read",
+        subscriptionsDiagnosticsRead: "subscriptions.diagnostics.read",
+        premiumDiagnosticsRead: "premium.diagnostics.read",
+        billingDiagnosticsRead: "billing.diagnostics.read",
         premiumGrant: "premium.grant",
         premiumRevoke: "premium.revoke",
         freeLessonAllowanceReset: "free_lesson_allowance.reset",
@@ -111,6 +115,11 @@
     });
     const WorkflowAvailabilityDefinitions = Object.freeze([
         { label: "User Lookup", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.userLookupRead, AdminPermissionIds.userOverviewRead] },
+        { label: "User Diagnostics", statusWhenAvailable: "read-only / available", anyPermissions: [AdminPermissionIds.usersDiagnosticsRead] },
+        { label: "Lesson History Diagnostics", statusWhenAvailable: "read-only / available", anyPermissions: [AdminPermissionIds.lessonHistoryDiagnosticsRead] },
+        { label: "Subscription Diagnostics", statusWhenAvailable: "read-only / available", anyPermissions: [AdminPermissionIds.subscriptionsDiagnosticsRead] },
+        { label: "Premium Diagnostics", statusWhenAvailable: "read-only / available", anyPermissions: [AdminPermissionIds.premiumDiagnosticsRead] },
+        { label: "Billing Diagnostics", statusWhenAvailable: "read-only / available", anyPermissions: [AdminPermissionIds.billingDiagnosticsRead] },
         { label: "Premium Grant", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.premiumGrant] },
         { label: "Premium Revoke", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.premiumRevoke] },
         { label: "Free Lesson Reset", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.freeLessonAllowanceReset] },

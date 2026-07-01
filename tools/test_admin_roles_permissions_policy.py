@@ -59,12 +59,12 @@ EXPECTED_ROLE_PERMISSIONS = {
     "SuperAdmin": set(PERMISSIONS),
     "Support": {
         "AdminSelfRead", "AdminCapabilitiesRead", "UsersRead", "UserLookupRead", "UserOverviewRead",
-        "UsersDiagnosticsRead", "LessonHistoryDiagnosticsRead", "FreeLessonAllowanceReset", "SystemDiagnosticsRead",
+        "UsersDiagnosticsRead", "LessonHistoryDiagnosticsRead", "AuditRead", "FreeLessonAllowanceReset", "SystemDiagnosticsRead",
     },
     "ContentEditor": {"AdminSelfRead", "AdminCapabilitiesRead", "CmsContentRead", "CmsContentWriteDraft", "CmsRuntimeStatusRead"},
     "BillingSupport": {
         "AdminSelfRead", "AdminCapabilitiesRead", "UserLookupRead", "UserOverviewRead",
-        "SubscriptionsDiagnosticsRead", "PremiumDiagnosticsRead", "BillingDiagnosticsRead", "BillingCancelRenewal",
+        "SubscriptionsDiagnosticsRead", "PremiumDiagnosticsRead", "PremiumGrant", "BillingDiagnosticsRead", "BillingCancelRenewal",
     },
     "ReadOnlyAuditor": {
         "AdminSelfRead", "AdminCapabilitiesRead", "AuditRead", "UsersDiagnosticsRead", "LessonHistoryDiagnosticsRead",
@@ -74,7 +74,7 @@ EXPECTED_ROLE_PERMISSIONS = {
 
 DANGEROUS_FOR_SUPPORT = {"PremiumGrant", "PremiumRevoke", "CmsContentPublish", "CmsContentRestore", "BillingCancelRenewal", "AdminRolesManage"}
 CONTENT_EDITOR_FORBIDDEN_PREFIXES = ("Billing", "Premium", "AdminRoles")
-BILLING_SUPPORT_FORBIDDEN = {"CmsContentWriteDraft", "CmsContentPublish", "CmsContentRestore", "AdminRolesManage", "PremiumGrant", "PremiumRevoke"}
+BILLING_SUPPORT_FORBIDDEN = {"CmsContentWriteDraft", "CmsContentPublish", "CmsContentRestore", "AdminRolesManage", "PremiumRevoke"}
 READ_ONLY_ACTIONS = {
     "CmsContentWriteDraft", "CmsContentPublish", "CmsContentRestore", "PremiumGrant", "PremiumRevoke",
     "FreeLessonAllowanceReset", "BillingCancelRenewal", "AdminRolesManage",
@@ -144,7 +144,7 @@ def main() -> None:
     if any(permission.startswith(CONTENT_EDITOR_FORBIDDEN_PREFIXES) for permission in extract_role_block(catalog_service, "ContentEditor")):
         raise AssertionError("Content Editor includes billing/Premium/admin-role permissions")
     if extract_role_block(catalog_service, "BillingSupport") & BILLING_SUPPORT_FORBIDDEN:
-        raise AssertionError("Billing Support includes CMS write/publish/restore, manual Premium, or admin-role permissions")
+        raise AssertionError("Billing Support includes CMS write/publish/restore, Premium revoke, or admin-role permissions")
     if extract_role_block(catalog_service, "ReadOnlyAuditor") & READ_ONLY_ACTIONS:
         raise AssertionError("Read-only Auditor includes write/action permissions")
 

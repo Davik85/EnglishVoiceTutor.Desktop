@@ -52,6 +52,44 @@ public sealed class AdminUiRbacStaticTests
     }
 
     [Fact]
+    public void BillingSupportPremiumGrantAndSupportDiagnosticsMatchRoleCatalog()
+    {
+        Assert.Contains("premiumGrant: \"premium.grant\"", AdminJs);
+        Assert.Contains("{ label: \"Premium Grant\", statusWhenAvailable: \"available\", anyPermissions: [AdminPermissionIds.premiumGrant] }", AdminJs);
+        Assert.Contains("setGrantVisible(Boolean(selectedUserId) && hasAdminPermission(AdminPermissionIds.premiumGrant));", AdminJs);
+        Assert.Contains("{ label: \"User Diagnostics\", statusWhenAvailable: \"read-only / available\", anyPermissions: [AdminPermissionIds.usersDiagnosticsRead] }", AdminJs);
+        Assert.Contains("{ label: \"Billing Diagnostics\", statusWhenAvailable: \"read-only / available\", anyPermissions: [AdminPermissionIds.billingDiagnosticsRead] }", AdminJs);
+
+        var catalog = new AdminRolePermissionCatalogService();
+        var billingSupportPermissions = catalog.GetProductionRolePermissions()[AdminRoleConstants.BillingSupport];
+        Assert.Contains(AdminPermissionConstants.UserLookupRead, billingSupportPermissions);
+        Assert.Contains(AdminPermissionConstants.UserOverviewRead, billingSupportPermissions);
+        Assert.Contains(AdminPermissionConstants.SubscriptionsDiagnosticsRead, billingSupportPermissions);
+        Assert.Contains(AdminPermissionConstants.PremiumDiagnosticsRead, billingSupportPermissions);
+        Assert.Contains(AdminPermissionConstants.BillingDiagnosticsRead, billingSupportPermissions);
+        Assert.Contains(AdminPermissionConstants.PremiumGrant, billingSupportPermissions);
+        Assert.DoesNotContain(AdminPermissionConstants.PremiumRevoke, billingSupportPermissions);
+        Assert.DoesNotContain(AdminPermissionConstants.AdminRolesManage, billingSupportPermissions);
+        Assert.DoesNotContain(AdminPermissionConstants.SystemAiModelSettingsManage, billingSupportPermissions);
+        Assert.DoesNotContain(AdminPermissionConstants.CmsContentWriteDraft, billingSupportPermissions);
+        Assert.DoesNotContain(AdminPermissionConstants.CmsContentPublish, billingSupportPermissions);
+        Assert.DoesNotContain(AdminPermissionConstants.CmsContentRestore, billingSupportPermissions);
+
+        var supportPermissions = catalog.GetProductionRolePermissions()[AdminRoleConstants.Support];
+        Assert.Contains(AdminPermissionConstants.UserLookupRead, supportPermissions);
+        Assert.Contains(AdminPermissionConstants.UserOverviewRead, supportPermissions);
+        Assert.Contains(AdminPermissionConstants.FreeLessonAllowanceReset, supportPermissions);
+        Assert.Contains(AdminPermissionConstants.UsersDiagnosticsRead, supportPermissions);
+        Assert.Contains(AdminPermissionConstants.LessonHistoryDiagnosticsRead, supportPermissions);
+        Assert.Contains(AdminPermissionConstants.AuditRead, supportPermissions);
+        Assert.DoesNotContain(AdminPermissionConstants.PremiumGrant, supportPermissions);
+        Assert.DoesNotContain(AdminPermissionConstants.PremiumRevoke, supportPermissions);
+        Assert.DoesNotContain(AdminPermissionConstants.BillingCancelRenewal, supportPermissions);
+        Assert.DoesNotContain(AdminPermissionConstants.AdminRolesManage, supportPermissions);
+        Assert.DoesNotContain(AdminPermissionConstants.SystemAiModelSettingsManage, supportPermissions);
+    }
+
+    [Fact]
     public void LoginWordingMentionsLinkedPersistentAdminUserRoles()
     {
         Assert.Contains("linked persistent Admin User role", AdminIndex);
