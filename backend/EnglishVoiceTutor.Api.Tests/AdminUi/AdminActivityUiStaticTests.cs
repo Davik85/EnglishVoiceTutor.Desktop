@@ -54,6 +54,36 @@ public sealed class AdminActivityUiStaticTests
         Assert.Contains("key: \"adminNote\", label: \"Admin note\"", AdminJs);
         Assert.Contains("admin-note-cell", AdminJs);
         Assert.Contains(".admin-note-cell", AdminCss);
+        Assert.Contains("min-width: 360px", AdminCss);
+        Assert.Contains("max-width: 520px", AdminCss);
         Assert.Contains("overflow-wrap: anywhere", AdminCss);
+        Assert.Contains("white-space: normal", AdminCss);
+        Assert.Contains("word-break: break-word", AdminCss);
+    }
+
+    [Fact]
+    public void AdminActivityTableKeepsAdminNoteAndSafeMetadataSeparate()
+    {
+        Assert.Contains("{ key: \"adminNote\", label: \"Admin note\", className: \"admin-note-cell\" }, \"safeMetadataJson\"", AdminJs);
+        Assert.DoesNotContain("safeMetadataJson: item.adminNote", AdminJs);
+        Assert.Contains("\"safeMetadataJson\"", AdminJs);
+    }
+
+    [Fact]
+    public void AdminActivityTableHasSynchronizedTopHorizontalScrollbar()
+    {
+        Assert.Contains("const ActivityTableOptions = Object.freeze({ wrapClassName: \"table-wrap admin-activity-table-wrapper\", topScroll: true })", AdminJs);
+        Assert.Contains("admin-activity-top-scroll", AdminJs);
+        Assert.Contains("admin-activity-top-scroll-inner", AdminJs);
+        Assert.Contains("function syncAdminActivityTopScroll(topScroll, tableWrap, topScrollInner)", AdminJs);
+        Assert.Contains("topScrollInner.style.width = `${tableWrap.scrollWidth}px`", AdminJs);
+        Assert.Contains("tableWrap.scrollLeft = topScroll.scrollLeft", AdminJs);
+        Assert.Contains("topScroll.scrollLeft = tableWrap.scrollLeft", AdminJs);
+        Assert.Contains("window.requestAnimationFrame(updateTopScrollWidth)", AdminJs);
+        Assert.Contains("new ResizeObserver(updateTopScrollWidth)", AdminJs);
+        Assert.Contains("ActivityTableOptions", AdminJs);
+        Assert.Contains(".admin-activity-table-wrapper", AdminCss);
+        Assert.Contains(".admin-activity-top-scroll", AdminCss);
+        Assert.Contains(".admin-activity-top-scroll-inner", AdminCss);
     }
 }

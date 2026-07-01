@@ -93,6 +93,7 @@
     const UsageEventColumns = ["usageEventId", "sessionId", "operation", "model", "studyLanguage", "status", "inputTokens", "outputTokens", "audioDurationMs", "inputChars", "outputBytes", "estimatedCost", "createdAt"];
     const AuditColumns = ["createdAtUtc", "actionType", "reason", "adminUserId", "adminActionId", "safeMetadataJson"];
     const ActivityColumns = ["occurredAtUtc", "actorEmail", "actionType", "result", "targetType", "targetUserEmail", "targetAdminUserEmail", "source", { key: "adminNote", label: "Admin note", className: "admin-note-cell" }, "safeMetadataJson"];
+    const ActivityTableOptions = Object.freeze({ wrapClassName: "table-wrap admin-activity-table-wrapper", topScroll: true });
     const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", adminActivity: "admin-activity", cmsContent: "cms-content", website: "website", roleManagement: "role-management", system: "system" });
     const AdminPermissionIds = Object.freeze({
         usersRead: "users.read",
@@ -886,7 +887,22 @@
 
     const formatValue = (value) => (value === null || value === undefined || value === "") ? "-" : (typeof value === "boolean" ? (value ? "Yes" : "No") : String(value));
     function renderKeyValueList(container, data, emptyMessage) { container.textContent = ""; if (!data || typeof data !== "object" || Object.keys(data).length === 0) { const p = document.createElement("p"); p.className = "empty-state"; p.textContent = emptyMessage; container.appendChild(p); return; } const list = document.createElement("dl"); list.className = "kv-list"; Object.keys(data).forEach((key) => { const dt = document.createElement("dt"); dt.textContent = key; const dd = document.createElement("dd"); dd.textContent = formatValue(data[key]); list.appendChild(dt); list.appendChild(dd); }); container.appendChild(list); }
-    function renderTable(container, items, columns, emptyMessage) { container.textContent = ""; if (!Array.isArray(items) || items.length === 0) { const p = document.createElement("p"); p.className = "empty-state"; p.textContent = emptyMessage; container.appendChild(p); return; } const normalizeColumn = (column) => typeof column === "string" ? { key: column, label: column, className: "" } : column; const columnDefs = columns.map(normalizeColumn); const wrap = document.createElement("div"); wrap.className = "table-wrap"; const table = document.createElement("table"); table.className = "compact-table"; const thead = document.createElement("thead"); const hr = document.createElement("tr"); columnDefs.forEach((column) => { const th = document.createElement("th"); th.scope = "col"; th.textContent = column.label || column.key; if (column.className) { th.className = column.className; } hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead); const tbody = document.createElement("tbody"); items.forEach((item) => { const row = document.createElement("tr"); columnDefs.forEach((column) => { const td = document.createElement("td"); td.textContent = formatValue(item ? item[column.key] : null); if (column.className) { td.className = column.className; } row.appendChild(td); }); tbody.appendChild(row); }); table.appendChild(tbody); wrap.appendChild(table); container.appendChild(wrap); }
+    function syncAdminActivityTopScroll(topScroll, tableWrap, topScrollInner) {
+        if (!topScroll || !tableWrap || !topScrollInner) { return; }
+        const updateTopScrollWidth = () => { topScrollInner.style.width = `${tableWrap.scrollWidth}px`; topScroll.scrollLeft = tableWrap.scrollLeft; };
+        let isSyncing = false;
+        topScroll.addEventListener("scroll", () => { if (isSyncing) { return; } isSyncing = true; tableWrap.scrollLeft = topScroll.scrollLeft; isSyncing = false; });
+        tableWrap.addEventListener("scroll", () => { if (isSyncing) { return; } isSyncing = true; topScroll.scrollLeft = tableWrap.scrollLeft; isSyncing = false; });
+        updateTopScrollWidth();
+        window.requestAnimationFrame(updateTopScrollWidth);
+        if (typeof ResizeObserver === "function") {
+            const resizeObserver = new ResizeObserver(updateTopScrollWidth);
+            resizeObserver.observe(tableWrap);
+            if (tableWrap.firstElementChild) { resizeObserver.observe(tableWrap.firstElementChild); }
+        }
+    }
+
+    function renderTable(container, items, columns, emptyMessage, options = {}) { container.textContent = ""; if (!Array.isArray(items) || items.length === 0) { const p = document.createElement("p"); p.className = "empty-state"; p.textContent = emptyMessage; container.appendChild(p); return; } const normalizeColumn = (column) => typeof column === "string" ? { key: column, label: column, className: "" } : column; const columnDefs = columns.map(normalizeColumn); const wrap = document.createElement("div"); wrap.className = options.wrapClassName || "table-wrap"; const table = document.createElement("table"); table.className = "compact-table"; const thead = document.createElement("thead"); const hr = document.createElement("tr"); columnDefs.forEach((column) => { const th = document.createElement("th"); th.scope = "col"; th.textContent = column.label || column.key; if (column.className) { th.className = column.className; } hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead); const tbody = document.createElement("tbody"); items.forEach((item) => { const row = document.createElement("tr"); columnDefs.forEach((column) => { const td = document.createElement("td"); td.textContent = formatValue(item ? item[column.key] : null); if (column.className) { td.className = column.className; } row.appendChild(td); }); tbody.appendChild(row); }); table.appendChild(tbody); let topScroll = null; let topScrollInner = null; if (options.topScroll) { topScroll = document.createElement("div"); topScroll.className = "admin-activity-top-scroll"; topScroll.setAttribute("aria-hidden", "true"); topScrollInner = document.createElement("div"); topScrollInner.className = "admin-activity-top-scroll-inner"; topScroll.appendChild(topScrollInner); container.appendChild(topScroll); } wrap.appendChild(table); container.appendChild(wrap); if (options.topScroll) { syncAdminActivityTopScroll(topScroll, wrap, topScrollInner); } }
 
     const createSection = (title) => { const s = document.createElement("section"); s.className = "lookup-section"; const h = document.createElement("h3"); h.textContent = title; s.appendChild(h); return s; };
     const pickFields = (source, fields) => { const result = {}; fields.forEach((field) => { result[field] = source && typeof source === "object" ? source[field] : null; }); return result; };
@@ -905,7 +921,7 @@
     }
 
     const renderAuditLog = (payload) => renderTable(auditResultElement, payload && Array.isArray(payload.items) ? payload.items : [], AuditColumns, "No audit actions.");
-    const renderAdminActivity = (payload) => renderTable(activityResultElement, payload && Array.isArray(payload.items) ? payload.items : [], ActivityColumns, "No Admin Activity events.");
+    const renderAdminActivity = (payload) => renderTable(activityResultElement, payload && Array.isArray(payload.items) ? payload.items : [], ActivityColumns, "No Admin Activity events.", ActivityTableOptions);
     const getSelectedAuditLimit = () => [10, 25, 50, 100].includes(Number.parseInt(auditLimitElement.value, 10)) ? Number.parseInt(auditLimitElement.value, 10) : 10;
 
 
