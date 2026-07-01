@@ -21,7 +21,7 @@ function Invoke-GateCommand {
     $global:LASTEXITCODE = 0
     & $Command
     if ($LASTEXITCODE -ne 0) {
-        throw "Gate command failed with exit code $LASTEXITCODE: $Title"
+        throw "Gate command failed with exit code $($LASTEXITCODE): $Title"
     }
 }
 
