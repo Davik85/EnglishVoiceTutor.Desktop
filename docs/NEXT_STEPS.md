@@ -32,7 +32,7 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.84`.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.88`; Production Admin RBAC / persistent role management is completed.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
@@ -46,9 +46,10 @@ Do not state that the product is fully public production-ready. This remains a c
 1. Final manual website review in incognito.
 2. Final owner/legal text review.
 3. Final Windows installer smoke.
-4. Paddle live readiness checklist.
-5. Only after approval: production Paddle environment, token, webhook, and price setup.
-6. Microsoft Store/MSIX discontinued for now; do not claim Microsoft Store, Android, or iOS availability as currently available.
+4. Admin Activity / Audit Log by actor admin user.
+5. Logging/release-readiness checks for Admin operations and paid-launch evidence.
+6. Paddle live payment/webhook/Premium activation test remains explicitly last.
+7. Microsoft Store/MSIX discontinued for now; do not claim Microsoft Store, Android, or iOS availability as currently available.
 
 ## Backend next-step guardrails
 
@@ -61,7 +62,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Admin permission fallback remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
+Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Production Admin RBAC / persistent role management is completed after backend `0.1.35-backend.88`; Admin permission fallback remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
 
 ## Website/CMS next-step guardrails
 
@@ -160,14 +161,16 @@ Windows release work stays on the Direct EXE/Inno installer. Updates continue th
 2. Purchase/select a Windows code signing certificate and plan integration for the direct Inno installer.
 3. Prepare a signed direct installer release candidate only after signing is approved; validate, upload, and verify via the existing direct-release helper flow.
 4. Complete owner/legal review of website, pricing, subscription, terms, privacy, refunds, cancellation, support, seller/company, AI/data, and status pages; publish through Website CMS/static-site flow only.
-5. Complete Paddle live readiness and provider/account setup before paid public launch; do not enable live billing as part of docs-only work.
-6. Collect controlled tester feedback, triage severity, and make an explicit release decision before broader public distribution.
-7. Before any tester handoff, re-verify the live Windows direct manifest still points to `0.1.36-tester.31`, production backend URL, and `manual-confirmation`.
-8. Keep the backend release discrepancy resolved in docs: the live symlink verification command `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` confirmed `/opt/languagevoicetutor/backend/releases/0.1.35-backend.84`; `/health` and `/api/health/database` were verified healthy. No backend deploy was performed for this documentation update.
-9. Keep the AI Models persistence risk closed: preserve `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` as persistent server data/config, do not package release-folder JSON as the production source of truth, and verify it after future backend deploys.
-10. Keep Store/MSIX removed/discontinued; do not recreate `packaging/windows-msix`, Store channel logic, Store update messaging, WACK commands, or Partner Center planning.
-11. Run backend deploy only for an approved backend runtime/configuration change; do not deploy backend for Website CMS publish, Windows installer upload, AI Models persistence correction, or docs-only work.
-12. Run DB migration only for a reviewed schema/data change with backups, SQL review, privilege checks, and rollback/remediation plan.
+5. Complete actor-centric Admin Activity / Audit Log by admin user so release-readiness review can answer who performed Admin actions.
+6. Complete logging/release-readiness checks for Admin operations and paid-launch evidence.
+7. Keep Paddle live payment/webhook/Premium activation test explicitly last; do not claim paid public launch until that test and post-test documentation are complete.
+8. Collect controlled tester feedback, triage severity, and make an explicit release decision before broader public distribution.
+9. Before any tester handoff, re-verify the live Windows direct manifest still points to `0.1.36-tester.31`, production backend URL, and `manual-confirmation`.
+10. Keep the backend release discrepancy resolved in docs: the live symlink verification command `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` confirmed `/opt/languagevoicetutor/backend/releases/0.1.35-backend.88`; `/health` and `/api/health/database` were verified healthy. Backend .88 was deployed by the normal backend package/upload flow; this documentation update did not change deploy commands.
+11. Keep the AI Models persistence risk closed: preserve `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` as persistent server data/config, do not package release-folder JSON as the production source of truth, and verify it after future backend deploys.
+12. Keep Store/MSIX removed/discontinued; do not recreate `packaging/windows-msix`, Store channel logic, Store update messaging, WACK commands, or Partner Center planning.
+13. Run backend deploy only for an approved backend runtime/configuration change; do not deploy backend for Website CMS publish, Windows installer upload, AI Models persistence correction, or docs-only work.
+14. Run DB migration only for a reviewed schema/data change with backups, SQL review, privilege checks, and rollback/remediation plan.
 
 ### Task classification
 
@@ -192,7 +195,7 @@ Rollback: disable live env or return `PaddleBilling__Environment`/provider setti
 
 ## 2026-06-30 Paddle live checkout/Admin readiness update
 
-Current production facts after backend `0.1.35-backend.84` and before any real live payment test:
+Current production facts after backend `0.1.35-backend.88` and before any real live payment test:
 
 - Backend health and database health are `200 Healthy`.
 - Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.
@@ -219,4 +222,4 @@ sudo awk -F= '/^(Billing__|PaddleBilling__|PaddleWebhook__)/ { v=$2; if ($1 ~ /(
 
 Admin capabilities should now distinguish configuration from launch completion: configured live checkout/webhooks can be reported as available/configured, while `billingLivePaymentTestComplete=false` and `billingPaidLaunchReleaseComplete=false` continue to block paid launch until the controlled live payment path is documented.
 
-Admin RBAC note: `productionRolesAvailable` now means persistent Admin role authorization is active with an explicit fallback cutover (`AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`). It is not a broad public-launch flag and does not override remaining paid-launch blockers. Production diagnostics show two active `super_admin` AdminUsers and fallback disabled; if this flag is false, check the explicit fallback configuration and cutover status before changing role assignments.
+Admin RBAC note: Production Admin RBAC / persistent role management is completed. `productionRolesAvailable` means persistent Admin role authorization is active with an explicit fallback cutover (`AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`). It is not a broad public-launch flag and does not override remaining paid-launch blockers. Production diagnostics show two active `super_admin` AdminUsers and fallback disabled; if this flag is false, check the explicit fallback configuration and cutover status before changing role assignments.

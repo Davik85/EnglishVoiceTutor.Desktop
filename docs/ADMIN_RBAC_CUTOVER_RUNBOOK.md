@@ -16,6 +16,12 @@ Rollback/restoration also passed. `AdminAuthorization__EnableBootstrapAdminFallb
 
 Current final state: permanent BootstrapAdmin fallback disable has been completed. Production `backend.env` now sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`, `languagevoicetutor-backend.service` was restarted successfully, `/health` and `/api/health/database` returned `200 OK`, and both approved persistent `super_admin` accounts passed validation with `ExpectedFallbackEnabled false`, `ExpectedActorMappingFound true`, `ExpectedAdminPermissionEndpointStatus 200`, and `ExpectedRoleManagementEndpointStatus 200`. Current RBAC status showed `fallbackEnabled=False`, `defaultFallbackEnabled=True`, `configValuePresent=True`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`. Rollback remains available by setting `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=true` and restarting the backend.
 
+### 2026-07-01 final production verification after backend .88
+
+After backend release `0.1.35-backend.88`, the production backend `current` symlink was verified at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.88`; `/health` and `/api/health/database` returned `200 Healthy`. Backend .88 was deployed through the normal backend package/upload flow. No EF migrations were run or added for this RBAC stage, and Windows installer release files were not changed.
+
+Final fallback state remains disabled and persistent role authorization is active: `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Manual production verification passed for persistent AdminUser sign-in, `persistent_role_assignment` admin source, role-aware Admin UI, `403` without logout, `401` returning to login, `super_admin` role assignment/revocation, `super_admin` AdminUser disable, disabled AdminUser access loss, allowed `support` workflows, allowed `billing_support` Manual Premium Grant with selected user and reason, denial of `billing_support` access to `super_admin`-only areas, denial of `support` Premium grant/revoke, and role visibility/workflow availability matching the backend permission catalog.
+
 The release gate runs the Admin RBAC cutover validation static pack, which verifies cutover guardrails statically but does not perform live cutover. The manual cutover smoke script remains opt-in and outside the release gate. The setting is:
 
 `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies`
