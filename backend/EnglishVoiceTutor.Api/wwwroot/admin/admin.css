@@ -36,7 +36,11 @@ button:disabled { background: #93a7d7; cursor: not-allowed; }
 .admin-activity-controls input, .admin-activity-controls select { box-sizing: border-box; min-width: 0; width: 100%; }
 .admin-activity-controls button { align-self: end; min-width: 0; white-space: normal; }
 .admin-activity-controls .audit-limit-field { max-width: none; }
-.admin-note-cell { max-width: 280px; overflow-wrap: anywhere; white-space: normal; word-break: break-word; }
+.admin-note-cell { min-width: 360px; max-width: 520px; overflow-wrap: anywhere; white-space: normal; word-break: break-word; }
+.admin-activity-table-wrapper { max-width: 100%; overflow-x: auto; }
+.admin-activity-table-wrapper .compact-table { width: max-content; }
+.admin-activity-top-scroll { margin: 12px 0 4px; max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+.admin-activity-top-scroll-inner { height: 1px; }
 .grid { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
 .meta { display: grid; gap: 8px; grid-template-columns: 160px 1fr; }
 .meta dt, .kv-list dt { font-weight: 600; }
