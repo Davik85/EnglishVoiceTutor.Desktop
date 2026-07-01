@@ -60,7 +60,7 @@ def main() -> None:
     assert_not_contains(statistics_loader, "handleAuthInvalidResponse(); }\n            if (!response.ok)", "optional statistics forbidden session deletion path")
     assert_contains(admin_js, "function renderStatisticsUnavailable", "optional statistics unavailable renderer")
 
-    assert_contains(auth_endpoints, "HasPersistentAdminShellAccessAsync", "persistent Admin User login gate")
+    assert_contains(auth_endpoints, "GetPersistentAdminShellAccessAsync", "persistent Admin User login gate")
     assert_contains(auth_endpoints, "AdminPermissionConstants.AdminSelfRead", "admin shell self-read login permission")
     assert_contains(auth_endpoints, "GetEffectiveRolesByUserIdAsync", "persistent role login by linked app user id")
     assert_contains(auth_endpoints, "GetEffectiveRolesByNormalizedEmailAsync", "persistent role login by normalized email fallback")
