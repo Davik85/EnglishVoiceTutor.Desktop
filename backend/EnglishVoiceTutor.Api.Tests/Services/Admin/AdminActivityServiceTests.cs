@@ -20,9 +20,9 @@ public sealed class AdminActivityServiceTests
         dbContext.AdminActions.Add(new AdminActionEntity { Id = Guid.NewGuid(), AdminUserId = actor, TargetUserId = target, ActionType = "manual_premium_grant", Reason = "safe", CreatedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-3), SafeMetadataJson = "{\"entitlementId\":\"safe\"}" });
         dbContext.AdminRoleAssignmentEvents.Add(new AdminRoleAssignmentEventEntity { Id = Guid.NewGuid(), ActorAdminUserId = adminUserId, TargetAdminUserId = adminUserId, ActionType = "assign", Result = "succeeded", OccurredAtUtc = DateTimeOffset.UtcNow.AddMinutes(-2), SafeMetadataJson = "{\"roleId\":\"support\"}" });
         dbContext.ContentAuditLogs.Add(new ContentAuditLogEntity { Id = Guid.NewGuid(), ActorUserId = actor, ActorEmail = "actor@example.test", Action = "DraftSaved", EntityType = "Topic", EntityId = Guid.NewGuid(), ChangedFieldsJson = "[]", Reason = "safe", Source = "AdminCms", Status = "succeeded", CreatedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-1), RequestMetadataJson = "{\"source\":\"AdminCms\"}" });
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var response = await new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(null, null, null, null, null, null, null, null, null, 10), CancellationToken.None);
+        var response = await new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(null, null, null, null, null, null, null, null, null, 10), TestContext.Current.CancellationToken);
 
         Assert.Equal(new[] { "cms_content_audit_logs", "admin_role_assignment_events", "admin_actions" }, response.Items.Select(item => item.Source));
     }
@@ -31,7 +31,7 @@ public sealed class AdminActivityServiceTests
     public async Task LimitValidationRejectsTooLargeLimit()
     {
         await using var dbContext = CreateDbContext();
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(null, null, null, null, null, null, null, null, null, 201), CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(null, null, null, null, null, null, null, null, null, 201), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public sealed class AdminActivityServiceTests
     {
         var id = Guid.NewGuid();
         dbContext.Users.Add(new UserEntity { Id = id, Email = email, PasswordHash = "hash", Status = "active", CreatedAt = DateTimeOffset.UtcNow });
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         return id;
     }
 }
