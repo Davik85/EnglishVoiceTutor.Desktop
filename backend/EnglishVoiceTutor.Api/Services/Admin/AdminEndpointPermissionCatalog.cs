@@ -29,7 +29,7 @@ public static class AdminEndpointPermissionCatalog
         new("admin.users.overview.read", "GET", ApiConstants.AdminUserByIdRoute, AdminPermissionConstants.UserOverviewRead, "Read an Admin-visible user overview by user id."),
         new("admin.users.audit.read", "GET", ApiConstants.AdminUserAuditActionsRoute, AdminPermissionConstants.AuditRead, "Read audit actions for a target user."),
         new("admin.premium.grant", "POST", ApiConstants.AdminUserPremiumGrantsRoute, AdminPermissionConstants.PremiumGrant, "Grant manual Premium access to a user."),
-        new("admin.premium.revoke", "POST", ApiConstants.AdminUserPremiumGrantRevokeRoute, AdminPermissionConstants.PremiumRevoke, "Revoke a manual Premium entitlement from a user."),
+        new("admin.premium.revoke", "POST", ApiConstants.AdminUserPremiumGrantRevokeRoute, AdminPermissionConstants.PremiumRevoke, "Emergency revoke Premium backend entitlement access for a user without mutating provider history."),
         new("admin.free_lesson_allowance.reset", "POST", ApiConstants.AdminUserFreeLessonAllowanceResetRoute, AdminPermissionConstants.FreeLessonAllowanceReset, "Reset a user's free lesson allowance."),
         new("admin.billing.cancel_renewal", "POST", ApiConstants.AdminUserBillingCancelRenewalRoute, AdminPermissionConstants.BillingCancelRenewal, "Cancel renewal for a user's billing subscription through the backend provider abstraction."),
         new("admin.system.ai_models.read", "GET", ApiConstants.AdminAiModelSettingsRoute, AdminPermissionConstants.SystemAiModelSettingsManage, "Read Super Admin AI model CMS settings."),

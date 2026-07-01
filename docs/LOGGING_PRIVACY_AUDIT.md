@@ -77,3 +77,9 @@ Backend `0.1.35-backend.49` retains the Phase 5C Production logging hardening fi
 - The unified DTO intentionally exposes safe fields only and does not add password, cookie, JWT, API key, Authorization header, webhook raw payload, provider raw payload, or full request-body fields.
 - No migration was added. Login/logout/failure audit persistence remains pending until a unified audit table or explicit approved schema change is available.
 - Website/AI publish audit may still be partial where existing audit tables do not already contain those events. Paddle live payment test remains pending.
+
+## 2026-07-01 Admin actions visibility and Premium revoke audit note
+
+- Admin Activity now includes and filters existing `admin_actions` rows with normalized actor fields where a linked persistent `admin_users` row exists for the stored actor app-user id.
+- Manual Premium Revoke remains audited with an admin-entered reason and safe metadata only. The emergency revoke action changes backend entitlement/access state only and does not alter Paddle provider history or delete payment records.
+- No migration was added. Login/logout/failure audit persistence and the live Paddle payment test remain pending.

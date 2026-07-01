@@ -66,6 +66,28 @@ public sealed class AdminActivityServiceTests
     }
 
     [Fact]
+    public async Task ListActivityResolvesAdminActionActorAdminUserAndFiltersByBothActorIds()
+    {
+        await using var dbContext = CreateDbContext();
+        var actor = await AddUserAsync(dbContext, "mapped-actor@example.test");
+        var target = await AddUserAsync(dbContext, "mapped-target@example.test");
+        var actorAdminUserId = Guid.NewGuid();
+        dbContext.AdminUsers.Add(new AdminUserEntity { Id = actorAdminUserId, UserId = actor, NormalizedEmail = "mapped-actor@example.test", Status = "active", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow });
+        dbContext.AdminActions.Add(new AdminActionEntity { Id = Guid.NewGuid(), AdminUserId = actor, TargetUserId = target, ActionType = "manual_premium_revoke", Reason = "Emergency revoke", CreatedAtUtc = DateTimeOffset.UtcNow, SafeMetadataJson = "{\"accessControlOnly\":true}" });
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var byAdminUser = await new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(actorAdminUserId, null, null, null, "admin_actions", null, "manual_premium_revoke", null, null, 10), TestContext.Current.CancellationToken);
+        var byAppUser = await new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(null, actor, null, null, "admin_actions", null, "manual_premium_revoke", null, null, 10), TestContext.Current.CancellationToken);
+
+        var item = Assert.Single(byAdminUser.Items);
+        Assert.Equal(actorAdminUserId, item.ActorAdminUserId);
+        Assert.Equal(actor, item.ActorUserId);
+        Assert.Equal("mapped-actor@example.test", item.ActorEmail);
+        Assert.Equal("manual_premium_revoke", item.ActionType);
+        Assert.Single(byAppUser.Items);
+    }
+
+    [Fact]
     public async Task LimitValidationRejectsTooLargeLimit()
     {
         await using var dbContext = CreateDbContext();
