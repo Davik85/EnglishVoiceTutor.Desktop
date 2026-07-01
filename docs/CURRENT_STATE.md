@@ -337,6 +337,7 @@ Admin RBAC note: `productionRolesAvailable` now means persistent Admin role auth
 ## Admin Activity / Audit Log first safe slice (read-only)
 
 - Added the first actor-centric **Admin Activity** view as a read-only slice built from existing audit tables only: `admin_actions`, `admin_role_assignment_events`, and `cms_content_audit_logs`.
+- Admin Activity now displays existing admin-entered reasons/notes where those values are already stored in the normalized audit rows, while keeping safe metadata in a separate column.
 - No database migration was added, no new audit table was created, and this slice does not write new audit events.
 - The backend endpoint is `GET /api/admin/activity` and is protected by the existing audit-read policy.
 - Login/logout/failure persistence remains pending because it requires a later unified audit table or an explicit approved schema change.
