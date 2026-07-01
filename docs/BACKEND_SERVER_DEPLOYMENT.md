@@ -6,7 +6,7 @@ Review date: 2026-06-30.
 
 Production backend is deployed and healthy.
 
-- Current release: `0.1.35-backend.82`
+- Current release: `0.1.35-backend.84`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -21,7 +21,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is release `0.1.35-backend.82`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live.
+Expected baseline for the current deployment is release `0.1.35-backend.84`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live.
 
 Previous backend rollback reference must be verified from `/opt/languagevoicetutor/backend/previous`. `0.1.35-backend.49` remains a documented older rollback reference, not a substitute for checking the live `previous` symlink.
 
@@ -30,7 +30,7 @@ Previous backend rollback reference must be verified from `/opt/languagevoicetut
 Backend packaging uses the repository PowerShell helper and creates the linux-x64 backend archive under `artifacts/packages/backend/`:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.82
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.84
 ```
 
 The package command does not upload, restart, run EF migrations, publish website files, upload Windows installers, or enable Paddle live.
@@ -40,7 +40,7 @@ The package command does not upload, restart, run EF migrations, publish website
 Use `-PackageFirst -DryRun` to print the upload, generated deploy-helper, symlink, and restart/status commands without changing the server:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.82 -PackageFirst -DryRun
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.84 -PackageFirst -DryRun
 ```
 
 The upload helper creates a temporary `deploy-backend-release.sh` helper and uses that helper for release extraction and symlink switching. It uses `ssh -tt` for sudo restart/status when restart is enabled. Do not document old fragile inline bash deployment paths as the current backend deployment flow.
@@ -50,7 +50,7 @@ The upload helper creates a temporary `deploy-backend-release.sh` helper and use
 After the pre-check and dry run are reviewed, run the backend upload helper without `-DryRun`:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.82 -PackageFirst
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.84 -PackageFirst
 ```
 
 By default, the helper uploads to `/opt/languagevoicetutor/backend`, switches `current`, updates `previous` when an older current release exists, restarts `languagevoicetutor-backend.service`, and prints service status. Use script parameters only for an intentionally reviewed non-default host, SSH port, user, or remote path.
@@ -127,12 +127,12 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.82`.
+- Backend: production healthy, current release `0.1.35-backend.84`.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
 - AI Models: persistent production storage is verified and survived restart with known-good `gpt-5.5` / `gpt-5.2` values.
-- Billing: Paddle live is not enabled yet. Production/live Paddle readiness remains deferred.
+- Billing: Paddle live checkout configuration is present and checkout opens the expected Pro monthly product, but no real live payment/webhook/Premium activation test is complete; paid launch remains blocked.
 - Legal: website legal/support/seller/AI/status pages are ready for owner/legal final review as drafts, not final legal advice.
 
 Do not state that the product is fully public production-ready. The direct Windows release remains a controlled tester/direct Windows release, not a broad public production launch, and not broad public production readiness.
@@ -147,7 +147,7 @@ Production/live Paddle readiness remains deferred, and broad public production r
 
 ## 2026-06-30 Paddle live checkout/Admin readiness update
 
-Current production facts after backend `0.1.35-backend.83` and before any real live payment test:
+Current production facts after backend `0.1.35-backend.84` and before any real live payment test:
 
 - Backend health and database health are `200 Healthy`.
 - Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.
@@ -173,3 +173,5 @@ sudo awk -F= '/^(Billing__|PaddleBilling__|PaddleWebhook__)/ { v=$2; if ($1 ~ /(
 ```
 
 Admin capabilities should now distinguish configuration from launch completion: configured live checkout/webhooks can be reported as available/configured, while `billingLivePaymentTestComplete=false` and `billingPaidLaunchReleaseComplete=false` continue to block paid launch until the controlled live payment path is documented.
+
+Admin RBAC note: `productionRolesAvailable` now means persistent Admin role authorization is active with an explicit fallback cutover (`AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`). It is not a broad public-launch flag and does not override remaining paid-launch blockers. Production diagnostics show two active `super_admin` AdminUsers and fallback disabled; if this flag is false, check the explicit fallback configuration and cutover status before changing role assignments.

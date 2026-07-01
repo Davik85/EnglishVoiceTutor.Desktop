@@ -42,9 +42,9 @@ def main() -> None:
     ]:
         assert_contains(admin_js, permission_id, f"workflow permission id {permission_id}")
 
-    assert_contains(combined, "Production role management is not enabled yet", "production role management deferred wording")
-    assert_contains(combined, "BootstrapAdmin-based", "BootstrapAdmin-based access wording")
-    assert_contains(combined, "Production RBAC", "production RBAC deferred wording")
+    assert_contains(combined, "Production role management is a controlled persistent-RBAC workflow", "production role management controlled wording")
+    assert_contains(combined, "server cutover status", "server cutover status wording")
+    assert_contains(combined, "Production RBAC", "production RBAC status wording")
 
     # This UI-awareness step must remain informational: do not gate tabs, buttons, or fetches on permission checks.
     assert_not_contains(admin_js, "hasPermission", "client-side permission enforcement helper")
