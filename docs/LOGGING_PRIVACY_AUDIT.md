@@ -6,7 +6,7 @@ Scope: lightweight documentation/source audit only. No backend runtime behavior,
 
 ## Current production context
 
-- Production backend at last verification: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.93` through `/opt/languagevoicetutor/backend/current`; verify `/opt/languagevoicetutor/backend/previous` before rollback.
+- Production backend at last verification: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.94` through `/opt/languagevoicetutor/backend/current`; verify `/opt/languagevoicetutor/backend/previous` before rollback.
 - `/health` and `/api/health/database` are healthy at last verification.
 - Phase 4 backup/restore/migration rollback drills are complete for the current release-readiness level.
 - Broad public production readiness is not claimed.
@@ -72,12 +72,12 @@ Backend `0.1.35-backend.49` retains the Phase 5C Production logging hardening fi
 
 ## Admin Activity privacy note
 
-- `GET /api/admin/activity` is read-only and normalizes only existing audit rows from `admin_actions`, `admin_role_assignment_events`, and `cms_content_audit_logs`.
-- Current visible Admin Activity sources are `admin_actions`, `admin_role_assignment_events`, and `cms_content_audit_logs`; no raw provider payload table is exposed through this view.
+- `GET /api/admin/activity` is read-only and normalizes audit rows from `admin_actions`, `admin_role_assignment_events`, `cms_content_audit_logs`, and the production-applied `admin_auth_audit_events` source.
+- Current visible Admin Activity sources include `admin_actions`, `admin_role_assignment_events`, `cms_content_audit_logs`, and `admin_auth_audit_events`; no raw provider payload table is exposed through this view.
 - Visible action coverage includes `manual_premium_grant`, `manual_premium_revoke`, `free_lesson_reset` where present, `billing_cancel_renewal` where present, role assignment/revocation/admin disable/enable events from role-assignment audit rows, and CMS events where already present in `cms_content_audit_logs`.
 - Admin-entered reasons/notes are shown when they are already present in those existing audit rows; the Admin note/reason column is separate from safe metadata such as `safeMetadataJson`, and no raw payload inference is used.
 - The unified DTO intentionally exposes safe fields only and does not add password, cookie, JWT, API key, Authorization header, webhook raw payload, provider raw payload, raw provider event bodies, secrets, or full request-body fields.
-- No migration was added. Login/logout/failure audit persistence remains pending until a unified audit table or explicit approved schema change is available.
+- Migration `20260701000000_AddAdminAuthAuditEvents` was applied in production before backend `0.1.35-backend.94`, after a fresh backup and SQL review. Production Admin Activity shows verified `admin_login_success` and `admin_logout` rows from `admin_auth_audit_events`. `admin_login_failed` is not documented as production-verified without a manual failed-login check, `disabled_admin_login_denied` remains pending, and session expiration persistence remains pending.
 - Website/AI publish audit may still be partial where existing audit tables do not already contain those events. Controlled Paddle live paid-launch validation remains pending.
 
 ## 2026-07-01 Admin actions visibility and Premium revoke audit note
@@ -86,11 +86,11 @@ Backend `0.1.35-backend.49` retains the Phase 5C Production logging hardening fi
 - Admin Activity is visible and usable in production for `admin_actions` and `admin_role_assignment_events`, including `manual_premium_grant` and `manual_premium_revoke`; the Admin note/reason is visible where stored.
 - Manual Premium Revoke remains audited with an admin-entered reason and safe metadata only. The emergency revoke action changes backend entitlement/access state only and does not alter Paddle provider history, delete payment records, or fake Paddle webhook events.
 - Secrets, raw provider payloads, webhook signatures, and unredacted provider event bodies must not be exposed in Admin Activity, docs, tickets, screenshots, or pasted operational evidence.
-- No migration was added. Login/logout/failure audit persistence and the controlled live Paddle payment validation remain pending.
+- Admin auth audit migration `20260701000000_AddAdminAuthAuditEvents` is production-applied and visible in Admin Activity for verified `admin_login_success` and `admin_logout` events. `admin_login_failed` and `disabled_admin_login_denied` remain pending until manually verified; session expiration audit persistence and the controlled live Paddle payment validation remain pending.
 
-## 2026-07-01 Admin login/logout/failure audit persistence design
+## 2026-07-01 Admin login/logout/failure audit persistence design and production status
 
-Inspection result: do **not** persist admin login/logout/failure events into the existing visible Admin Activity source tables without an approved schema change.
+Inspection result: do **not** persist admin login/logout/failure events into the pre-existing visible Admin Activity source tables. The approved follow-up was the dedicated `admin_auth_audit_events` schema, which is now production-applied for verified `admin_login_success` and `admin_logout` events.
 
 Current admin login/session flow:
 
@@ -100,15 +100,15 @@ Current admin login/session flow:
 - Admin logout/session deletion happens in `AdminEndpoints.DeleteAdminSessionAsync`, which signs out the `AdminShellCookie` scheme and returns `204`. The Admin UI calls `DELETE /api/admin/session` from `logoutAdminSession` and then clears local Admin UI state.
 - Session expiration is currently cookie/auth-ticket expiration only; it is not a persistent event, and the Admin UI treats invalid/expired session responses as local session reset.
 
-Current persistent logging coverage:
+Current persistent logging coverage after production verification:
 
-| Event | Persisted in Admin Activity today? | Current behavior |
+| Event | Persisted in Admin Activity? | Current behavior |
 | --- | --- | --- |
-| successful admin login | No | Application log `Auth login completed. Result=Ok`; Admin cookie may be issued when Admin shell access exists. |
-| failed app credential login | No | Application log `Auth login completed. Result=Unauthorized`; no durable audit row. |
-| disabled AdminUser login attempt | No | App login can succeed, but persistent Admin shell access fails and the Admin cookie is signed out; no durable audit row distinguishing disabled-admin denial. |
-| explicit admin logout | No | `DELETE /api/admin/session` signs out the Admin cookie and returns `204`; no durable audit row. |
-| session expiration | No | Cookie expiry / invalid-session handling only; no durable audit row. |
+| successful admin login | Yes, production-verified | `admin_auth_audit_events` appears in Admin Activity with `admin_login_success`. |
+| failed app credential login | Pending manual verification | Do not claim `admin_login_failed` as production-verified until a manual failed-login check is performed and documented. |
+| disabled AdminUser login attempt | Pending | `disabled_admin_login_denied` remains pending until separately verified. |
+| explicit admin logout | Yes, production-verified | `admin_auth_audit_events` appears in Admin Activity with `admin_logout`. |
+| session expiration | No | Cookie expiry / invalid-session handling only; no durable audit row completion is claimed. |
 
 Existing table fit:
 
@@ -116,7 +116,7 @@ Existing table fit:
 - `admin_role_assignment_events` is not a safe fit. It is role-management audit with required `TargetAdminUserId`, role-change fields, and role-assignment semantics. Login/logout/failure events are not role assignment events; forcing them here would pollute RBAC audit and still would not represent unknown failed attempts safely.
 - `cms_content_audit_logs` is not a safe fit. It is CMS content audit with entity/content fields and CMS action/status semantics, not authentication/session audit.
 
-Migration decision: a database migration is required for durable, queryable, privacy-safe Admin Activity coverage of all requested login/logout/failure events. Do not create it until explicitly approved. The smallest safe schema should be a dedicated authentication/session audit table, for example `admin_auth_audit_events`, with only safe fields:
+Migration decision: the approved durable, queryable, privacy-safe Admin Activity coverage uses the dedicated authentication/session audit table `admin_auth_audit_events`, with only safe fields:
 
 - `id` GUID primary key.
 - `occurred_at_utc` timestamp.
@@ -128,13 +128,13 @@ Migration decision: a database migration is required for durable, queryable, pri
 - Nullable safe role context such as `role_ids_json` only after app authentication succeeds and roles are resolved from existing Admin RBAC data; do not store cookies, JWTs, authorization headers, raw claims, or full request bodies.
 - Nullable `safe_metadata_json` for bounded non-secret context such as `admin_shell_cookie_issued`, `denial_reason`, or `auth_stage`; never store cookies, JWTs, Authorization headers, Paddle secrets, OpenAI keys, raw provider payloads, raw request bodies, or full provider payloads.
 
-First safe implementation slice after schema approval:
+Implemented/remaining safe slice status:
 
-1. Add the dedicated table and EF entity/configuration/migration.
-2. Persist `admin_login_success` only after app login succeeds and Admin shell access is granted.
-3. Persist `disabled_admin_login_denied` when app login succeeds but the persistent AdminUser is disabled and Admin shell access is denied.
-4. Persist `admin_login_failed` for invalid credentials with only normalized attempted email and no password/body/token data.
-5. Persist `admin_logout` in `DeleteAdminSessionAsync` using the authenticated principal and resolved AdminUser when safely available.
+1. Dedicated table and EF entity/configuration/migration: production-applied as `20260701000000_AddAdminAuthAuditEvents`.
+2. `admin_login_success`: production-verified in Admin Activity.
+3. `disabled_admin_login_denied`: pending separate production verification.
+4. `admin_login_failed`: pending manual failed-login production verification before documenting as verified.
+5. `admin_logout`: production-verified in Admin Activity.
 6. Include the new source in Admin Activity as read-only, with filters for actor user/admin user/action/result/time and no secret-bearing fields.
 7. Add tests for success, failed credential attempt, disabled-admin denial, explicit logout, Admin Activity projection/filtering, and privacy assertions that password/cookie/JWT/Authorization/request-body/provider secrets are not persisted.
 
