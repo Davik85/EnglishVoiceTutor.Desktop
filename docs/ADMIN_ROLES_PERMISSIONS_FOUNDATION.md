@@ -4,7 +4,7 @@ Review date: 2026-07-01.
 
 ## Current status
 
-The backend now has a stable admin roles/permissions foundation, Admin Shell role-aware UI, persistent Admin role management, and completed Production Admin RBAC / persistent role authorization after backend `0.1.35-backend.88`. Current production behavior for migrated AdminPermission endpoints is persistent-role based with BootstrapAdmin fallback disabled.
+The backend now has a stable admin roles/permissions foundation, Admin Shell role-aware UI, persistent Admin role management, and completed Production Admin RBAC / persistent role authorization after backend `0.1.35-backend.95`. Current production behavior for migrated AdminPermission endpoints is persistent-role based with BootstrapAdmin fallback disabled.
 
 Stable production role constants now exist for:
 
@@ -18,7 +18,7 @@ Legacy alias constants remain mapped to the new stable target role ids for compa
 
 Stable permission constants now exist for admin self/capabilities, users, audit, CMS, runtime status, subscriptions diagnostics, premium grant/revoke, free lesson allowance reset, billing diagnostics, and product statistics.
 
-A static production role-to-permission catalog exists for Owner/Super Admin, Support, Content Editor, Billing Support, and Read-only Auditor, and a static Admin endpoint/action-to-permission catalog documents the permission that protects each current Admin action plus future-only seams. Production role assignment persistence, database tables, and Admin UI role management now exist; no EF migration was added or run for the .88 RBAC completion stage. Migrated AdminPermission endpoints enforce persistent role permissions with fallback disabled; BootstrapAdmin-only endpoints remain intentionally separate.
+A static production role-to-permission catalog exists for Owner/Super Admin, Support, Content Editor, Billing Support, and Read-only Auditor, and a static Admin endpoint/action-to-permission catalog documents the permission that protects each current Admin action plus future-only seams. Production role assignment persistence, database tables, and Admin UI role management now exist; no EF migration was added or run for the .95 RBAC completion stage. Migrated AdminPermission endpoints enforce persistent role permissions with fallback disabled; BootstrapAdmin-only endpoints remain intentionally separate.
 
 ## Exposed admin metadata
 
@@ -54,7 +54,7 @@ This is role-aware UI backed by server-side persistent-role authorization for th
 
 ## Boundaries and deferred work
 
-Production role management/RBAC is complete for the verified production role matrix after backend `0.1.35-backend.88`. Do not claim this completes paid public launch.
+Production role management/RBAC is complete for the verified production role matrix after backend `0.1.35-backend.95`. Do not claim this completes paid public launch.
 
 Deferred work:
 
@@ -65,4 +65,10 @@ Deferred work:
 
 ## Deployment note
 
-Production Admin RBAC / persistent role management is completed in production backend `0.1.35-backend.88`, active at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.88` with `/opt/languagevoicetutor/backend/current` pointing to that release at the last verification. No EF migration was required for this RBAC completion stage. Backend `/health` and `/api/health/database` returned `200 Healthy`.
+Production Admin RBAC / persistent role management is completed in production backend `0.1.35-backend.95`, active at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.95` with `/opt/languagevoicetutor/backend/current` pointing to that release at the last verification. No EF migration was required for this RBAC completion stage. Backend `/health` and `/api/health/database` returned `200 Healthy`.
+
+## 2026-07-01 production CMS capability/runtime verification
+
+Backend `0.1.35-backend.95` fixed the stale `cmsUiAvailable` capability state. In production, **System → Capabilities Check** shows `cmsUiAvailable` as AVAILABLE, the Admin Shell **CMS Content** tab opens, and the CMS Content workspace loads. This verification did not save, publish, restore, initialize, import, or otherwise mutate CMS content.
+
+The learner runtime is production-verified as `CmsPublishedSnapshot`, with the published snapshot active and valid. The current runtime snapshot reports content pack slug `static-json-v1`, published version number `46`, 6 topics, 26 scenarios, 4 prompt templates, 3 tutor behavior profiles, validation success `Yes`, and currently using static JSON fallback `No`. Static JSON remains an emergency fallback only and is not active in the verified production runtime state.

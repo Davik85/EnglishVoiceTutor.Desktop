@@ -32,7 +32,7 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.94`; Production Admin RBAC / persistent role management is completed.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.95`; Production Admin RBAC / persistent role management is completed.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
@@ -46,7 +46,7 @@ Do not state that the product is fully public production-ready. This remains a c
 1. Final manual website review in incognito.
 2. Final owner/legal text review.
 3. Final Windows installer smoke and code signing for the Direct installer.
-4. Admin auth audit follow-up: manually verify/document `admin_login_failed` if desired, verify `disabled_admin_login_denied`, and keep session expiration audit persistence pending until a later approved implementation.
+4. Admin auth audit follow-up: first production slice is complete for `admin_login_success`, `admin_logout`, `admin_login_failed`, and `disabled_admin_login_denied`; keep session expiration audit persistence pending until a later approved implementation.
 5. Monitoring/logging/privacy hardening for remaining Admin operations and paid-launch evidence.
 6. Backup/restore/rollback drill currency check before broader launch.
 7. Controlled Paddle live payment validation, including webhook/Premium activation/refund/cancel/customer portal/chargeback checks; this remains explicitly last and incomplete until documented.
@@ -63,7 +63,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Production Admin RBAC / persistent role management is completed after backend `0.1.35-backend.94`; Admin permission fallback remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
+Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Production Admin RBAC / persistent role management is completed after backend `0.1.35-backend.95`; Admin permission fallback remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
 
 ## Website/CMS next-step guardrails
 
@@ -162,12 +162,12 @@ Windows release work stays on the Direct EXE/Inno installer. Updates continue th
 2. Purchase/select a Windows code signing certificate and plan integration for the direct Inno installer.
 3. Prepare a signed direct installer release candidate only after signing is approved; validate, upload, and verify via the existing direct-release helper flow.
 4. Complete owner/legal review of website, pricing, subscription, terms, privacy, refunds, cancellation, support, seller/company, AI/data, and status pages; publish through Website CMS/static-site flow only.
-5. Add login/logout/failure audit persistence only after a unified audit table or another explicit approved schema update.
+5. Keep Admin auth audit first-slice verification documented for `admin_login_success`, `admin_logout`, `admin_login_failed`, and `disabled_admin_login_denied`; keep session expiration audit persistence pending until a later approved implementation.
 6. Complete monitoring/logging/privacy hardening for remaining Admin operations and paid-launch evidence.
 7. Keep Paddle live payment validation explicitly last; do not claim paid public launch until controlled live payment, webhook delivery, Premium activation, refund/cancel/customer portal/chargeback checks, and post-test documentation are complete.
 8. Collect controlled tester feedback, triage severity, and make an explicit release decision before broader public distribution.
 9. Before any tester handoff, re-verify the live Windows direct manifest still points to `0.1.36-tester.31`, production backend URL, and `manual-confirmation`.
-10. Keep the backend release discrepancy resolved in docs: the live symlink verification command `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` confirmed `/opt/languagevoicetutor/backend/releases/0.1.35-backend.94`; `/health` and `/api/health/database` were verified healthy. Backend .94 was deployed by the normal backend package/upload flow; this documentation update did not change deploy commands.
+10. Keep the backend release discrepancy resolved in docs: the live symlink verification command `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` confirmed `/opt/languagevoicetutor/backend/releases/0.1.35-backend.95`; `/health` and `/api/health/database` were verified healthy. Backend .95 was deployed by the normal backend package/upload flow; this documentation update did not change deploy commands.
 11. Keep the AI Models persistence risk closed: preserve `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` as persistent server data/config, do not package release-folder JSON as the production source of truth, and verify it after future backend deploys.
 12. Keep Store/MSIX removed/discontinued; do not recreate `packaging/windows-msix`, Store channel logic, Store update messaging, WACK commands, or Partner Center planning.
 13. Run backend deploy only for an approved backend runtime/configuration change; do not deploy backend for Website CMS publish, Windows installer upload, AI Models persistence correction, or docs-only work.
@@ -196,7 +196,7 @@ Rollback: disable live env or return `PaddleBilling__Environment`/provider setti
 
 ## 2026-06-30 Paddle live checkout/Admin readiness update
 
-Current production facts after backend `0.1.35-backend.94` and before any real live payment test:
+Current production facts after backend `0.1.35-backend.95` and before any real live payment test:
 
 - Backend health and database health are `200 Healthy`.
 - Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.
@@ -227,9 +227,9 @@ Admin RBAC note: Production Admin RBAC / persistent role management is completed
 
 ## Admin Activity follow-ups
 
-- Admin Activity first production slice is completed and visible for existing `admin_actions`, `admin_role_assignment_events`, and `cms_content_audit_logs`; keep it read-only unless an explicit schema change is approved.
-- Manual Premium Grant, Manual Premium Revoke, role assignment/revocation/admin disable/enable, and stored Admin note/reason visibility are no longer active blockers for the first slice.
-- Add login/logout/failure audit persistence only after approving a unified audit table or another explicit schema update.
+- Admin Activity first production slice is completed and visible for `admin_actions`, `admin_role_assignment_events`, `cms_content_audit_logs`, and the production-applied `admin_auth_audit_events` source; keep it read-only unless an explicit schema change is approved.
+- Manual Premium Grant, Manual Premium Revoke, role assignment/revocation/admin disable/enable, stored Admin note/reason visibility, and Admin auth audit events for login/logout/failure/disabled-denied are no longer active blockers for the first slice.
+- Keep session expiration audit persistence pending until a future approved implementation slice.
 - Review Website/AI publish audit coverage and add explicit persistence only through an approved safe audit design where existing audit tables do not already cover the event.
 - Monitoring/logging/privacy hardening, backup/restore/rollback drill currency, controlled Paddle live payment validation, webhook/Premium activation/refund/cancel/customer portal/chargeback checks, and Direct installer code signing remain pending.
 
@@ -249,11 +249,11 @@ Current persistent logging coverage:
 
 | Event | Persisted in Admin Activity today? | Current behavior |
 | --- | --- | --- |
-| successful admin login | No | Application log `Auth login completed. Result=Ok`; Admin cookie may be issued when Admin shell access exists. |
-| failed app credential login | No | Application log `Auth login completed. Result=Unauthorized`; no durable audit row. |
-| disabled AdminUser login attempt | No | App login can succeed, but persistent Admin shell access fails and the Admin cookie is signed out; no durable audit row distinguishing disabled-admin denial. |
-| explicit admin logout | No | `DELETE /api/admin/session` signs out the Admin cookie and returns `204`; no durable audit row. |
-| session expiration | No | Cookie expiry / invalid-session handling only; no durable audit row. |
+| successful admin login | Yes, production-verified | Durable `admin_login_success` row in `admin_auth_audit_events`; Admin Activity source/filtering is visible. |
+| failed app credential login | Yes, production-verified | Durable `admin_login_failed` row in `admin_auth_audit_events`; no password/body/token data is stored. |
+| disabled AdminUser login attempt | Yes, production-verified | Durable `disabled_admin_login_denied` row in `admin_auth_audit_events`. |
+| explicit admin logout | Yes, production-verified | Durable `admin_logout` row in `admin_auth_audit_events`. |
+| session expiration | No | Cookie expiry / invalid-session handling only; no durable audit row completion is claimed. |
 
 Existing table fit:
 
@@ -261,7 +261,7 @@ Existing table fit:
 - `admin_role_assignment_events` is not a safe fit. It is role-management audit with required `TargetAdminUserId`, role-change fields, and role-assignment semantics. Login/logout/failure events are not role assignment events; forcing them here would pollute RBAC audit and still would not represent unknown failed attempts safely.
 - `cms_content_audit_logs` is not a safe fit. It is CMS content audit with entity/content fields and CMS action/status semantics, not authentication/session audit.
 
-Migration decision: a database migration is required for durable, queryable, privacy-safe Admin Activity coverage of all requested login/logout/failure events. Do not create it until explicitly approved. The smallest safe schema should be a dedicated authentication/session audit table, for example `admin_auth_audit_events`, with only safe fields:
+Migration decision completed for the first production slice: the dedicated authentication/session audit table `admin_auth_audit_events` was approved, migration `20260701000000_AddAdminAuthAuditEvents` was applied before backend `0.1.35-backend.95`, and Admin Activity now shows production-verified `admin_login_success`, `admin_logout`, `admin_login_failed`, and `disabled_admin_login_denied` events. Session expiration audit persistence remains pending. The safe schema uses only bounded fields:
 
 - `id` GUID primary key.
 - `occurred_at_utc` timestamp.
@@ -273,21 +273,25 @@ Migration decision: a database migration is required for durable, queryable, pri
 - Nullable safe role context such as `role_ids_json` only after app authentication succeeds and roles are resolved from existing Admin RBAC data; do not store cookies, JWTs, authorization headers, raw claims, or full request bodies.
 - Nullable `safe_metadata_json` for bounded non-secret context such as `admin_shell_cookie_issued`, `denial_reason`, or `auth_stage`; never store cookies, JWTs, Authorization headers, Paddle secrets, OpenAI keys, raw provider payloads, raw request bodies, or full provider payloads.
 
-First safe implementation slice after schema approval:
+First safe implementation slice status:
 
-1. Add the dedicated table and EF entity/configuration/migration.
-2. Persist `admin_login_success` only after app login succeeds and Admin shell access is granted.
-3. Persist `disabled_admin_login_denied` when app login succeeds but the persistent AdminUser is disabled and Admin shell access is denied.
-4. Persist `admin_login_failed` for invalid credentials with only normalized attempted email and no password/body/token data.
-5. Persist `admin_logout` in `DeleteAdminSessionAsync` using the authenticated principal and resolved AdminUser when safely available.
-6. Include the new source in Admin Activity as read-only, with filters for actor user/admin user/action/result/time and no secret-bearing fields.
-7. Add tests for success, failed credential attempt, disabled-admin denial, explicit logout, Admin Activity projection/filtering, and privacy assertions that password/cookie/JWT/Authorization/request-body/provider secrets are not persisted.
+1. Dedicated table and EF entity/configuration/migration: complete for `20260701000000_AddAdminAuthAuditEvents`.
+2. `admin_login_success` persistence and production Admin Activity verification: complete.
+3. `disabled_admin_login_denied` persistence and production Admin Activity verification: complete.
+4. `admin_login_failed` persistence and production Admin Activity verification: complete.
+5. `admin_logout` persistence and production Admin Activity verification: complete.
+6. Read-only Admin Activity source/filtering for `admin_auth_audit_events`: production-visible and verified.
+7. Session expiration audit persistence: pending future approved slice; do not mark complete.
 
-Until that schema is approved, keep Admin Activity read-only over the current source tables and do not force auth/session events into tables whose required keys and semantics do not fit.
+Keep Admin Activity read-only over the approved source tables and do not expose password/cookie/JWT/Authorization/request-body/provider secrets.
 
 ## Admin auth audit persistence deployment follow-up
 
-- Apply the local `20260701000000_AddAdminAuthAuditEvents` migration only through the approved production deployment/migration process; it is not applied to production by the code change alone.
-- After deployment and migration, verify Admin Activity shows and filters the new `admin_auth_audit_events` source for `admin_login_success`, `admin_login_failed`, `disabled_admin_login_denied`, and `admin_logout`.
+- Migration `20260701000000_AddAdminAuthAuditEvents` is already applied in production.
+- Admin Activity shows and filters the `admin_auth_audit_events` source for `admin_login_success`, `admin_login_failed`, `disabled_admin_login_denied`, and `admin_logout`.
 - Session expiration persistence remains pending unless a future slice identifies a clean, low-noise place to write expiration events.
 - Paddle live payment validation remains pending and must stay separate from Admin auth audit persistence.
+
+## 2026-07-01 CMS production verification update
+
+Backend `0.1.35-backend.95` fixed `cmsUiAvailable`; System → Capabilities Check now shows it as AVAILABLE. CMS Content opens in Admin Shell and the CMS Content workspace loads. Learner runtime is using an active and valid `CmsPublishedSnapshot` for `static-json-v1`, published version `46`, with 6 topics, 26 scenarios, 4 prompt templates, 3 tutor behavior profiles, validation success `Yes`, and static JSON fallback currently `No`. No CMS content was saved, published, restored, initialized, imported, or mutated during this verification.
