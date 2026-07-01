@@ -92,10 +92,13 @@
     const Tabs = Object.freeze({ overview: "overview", userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson", auditLog: "audit-log", cmsContent: "cms-content", website: "website", roleManagement: "role-management", system: "system" });
     const AdminPermissionIds = Object.freeze({
         usersRead: "users.read",
+        userLookupRead: "users.lookup.read",
+        userOverviewRead: "users.overview.read",
         usersDiagnosticsRead: "users.diagnostics.read",
         premiumGrant: "premium.grant",
         premiumRevoke: "premium.revoke",
         freeLessonAllowanceReset: "free_lesson_allowance.reset",
+        billingCancelRenewal: "billing.cancel_renewal",
         auditRead: "audit.read",
         cmsContentRead: "cms.content.read",
         cmsContentWriteDraft: "cms.content.write_draft",
@@ -103,13 +106,15 @@
         cmsContentRestore: "cms.content.restore",
         cmsRuntimeStatusRead: "cms.runtime_status.read",
         productStatisticsRead: "product_statistics.read",
-        adminRolesManage: "admin.roles.manage"
+        adminRolesManage: "admin.roles.manage",
+        systemAiModelSettingsManage: "system.ai_model_settings.manage"
     });
     const WorkflowAvailabilityDefinitions = Object.freeze([
-        { label: "User Lookup", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.usersRead, AdminPermissionIds.usersDiagnosticsRead] },
+        { label: "User Lookup", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.userLookupRead, AdminPermissionIds.userOverviewRead] },
         { label: "Premium Grant", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.premiumGrant] },
         { label: "Premium Revoke", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.premiumRevoke] },
         { label: "Free Lesson Reset", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.freeLessonAllowanceReset] },
+        { label: "Billing Cancel Renewal", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.billingCancelRenewal] },
         { label: "Audit Log", statusWhenAvailable: "read-only / available", anyPermissions: [AdminPermissionIds.auditRead] },
         { label: "CMS Content", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsContentRead] },
         { label: "CMS Draft Editing", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.cmsContentWriteDraft] },
@@ -119,6 +124,20 @@
         { label: "Product Statistics", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.productStatisticsRead] },
         { label: "Persistent Admin Roles", statusWhenAvailable: "available", anyPermissions: [AdminPermissionIds.adminRolesManage] }
     ]);
+
+
+    const TabPermissionDefinitions = Object.freeze({
+        [Tabs.overview]: { anyPermissions: [] },
+        [Tabs.userLookup]: { allPermissions: [AdminPermissionIds.userLookupRead, AdminPermissionIds.userOverviewRead] },
+        [Tabs.premium]: { anyPermissions: [AdminPermissionIds.premiumGrant, AdminPermissionIds.premiumRevoke, AdminPermissionIds.billingCancelRenewal] },
+        [Tabs.freeLesson]: { anyPermissions: [AdminPermissionIds.freeLessonAllowanceReset] },
+        [Tabs.auditLog]: { anyPermissions: [AdminPermissionIds.auditRead] },
+        [Tabs.cmsContent]: { anyPermissions: [AdminPermissionIds.cmsContentRead] },
+        [Tabs.website]: { bootstrapAdminOnly: true },
+        [Tabs.roleManagement]: { anyPermissions: [AdminPermissionIds.adminRolesManage] },
+        [Tabs.system]: { anyPermissions: [AdminPermissionIds.systemAiModelSettingsManage] }
+    });
+    const NotAvailableForRoleMessage = "Not available for this role.";
 
     const CmsSubTabs = Object.freeze({ overview: "overview", topics: "topics", scenarios: "scenarios", levels: "levels", prompts: "prompts", tutors: "tutors", validationPreview: "validation-preview", versionsPublish: "versions-publish", audit: "audit" });
     const LookupSources = Object.freeze({ userLookup: "user-lookup", premium: "premium", freeLesson: "free-lesson" });
@@ -466,6 +485,31 @@
         return headers;
     }
 
+    function hasAdminPermission(permissionId) {
+        return adminAccessSnapshot.permissions.includes(permissionId);
+    }
+
+    function hasAnyAdminPermission(permissionIds = []) {
+        return permissionIds.length === 0 || permissionIds.some(hasAdminPermission);
+    }
+
+    function hasAllAdminPermissions(permissionIds = []) {
+        return permissionIds.every(hasAdminPermission);
+    }
+
+    function canAccessTab(tabId) {
+        const definition = TabPermissionDefinitions[tabId];
+        if (!definition) { return false; }
+        if (definition.bootstrapAdminOnly && !adminAccessSnapshot.isBootstrapAdmin) { return false; }
+        return hasAnyAdminPermission(definition.anyPermissions || []) && hasAllAdminPermissions(definition.allPermissions || []);
+    }
+
+    function assertCanAccessTab(tabId) {
+        if (canAccessTab(tabId)) { return true; }
+        setError(NotAvailableForRoleMessage);
+        return false;
+    }
+
     const UnsavedChangesMessage = "You have unsaved changes. Save draft before leaving, or discard changes.";
     const cmsScenarioStructuredInputs = [
         cmsScenarioTitleInput, cmsScenarioDescriptionInput, cmsScenarioSetupMessageInput, cmsScenarioIsActiveInput,
@@ -511,7 +555,8 @@
     function clearAllCmsDirtyState() { Object.keys(cmsDirtyState).forEach(clearCmsBaseline); }
 
     function activateTab(tabId) {
-        const selectedTabId = isKnownTab(tabId) ? tabId : Tabs.overview;
+        const requestedTabId = isKnownTab(tabId) ? tabId : Tabs.overview;
+        const selectedTabId = canAccessTab(requestedTabId) ? requestedTabId : Tabs.overview;
         updateAdminHash(selectedTabId, getHashCmsSubTab());
         tabButtons.forEach((button) => {
             const isActive = button.dataset.tabId === selectedTabId;
@@ -531,6 +576,7 @@
         tabsInitialized = true;
         tabButtons.forEach((button) => button.addEventListener("click", async () => {
             const tabId = button.dataset.tabId || Tabs.overview;
+            if (!assertCanAccessTab(tabId)) { return; }
             if (tabId !== getCurrentActiveTab() && !confirmDiscardUnsavedChanges()) { return; }
             activateTab(tabId);
             if (tabId === Tabs.cmsContent) {
@@ -884,7 +930,8 @@
         if (!aiModelsFieldsElement) { return; }
         aiModelsFieldsElement.querySelectorAll("[data-ai-model-key]").forEach(input => { aiModelDraft[input.dataset.aiModelKey] = input.value; });
     }
-    async function readAiModelsResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
+    async function readAiModelsResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
     async function loadAiModelSettings() { setAiModelsError(""); setAiModelsMessage("Loading AI model settings..."); try { const response = await fetch(ApiPaths.aiModelSettings, { method: "GET", headers: getAdminHeaders() }); const payload = await readAiModelsResponse(response, "Unable to load AI model settings."); aiModelDraft = payload.draft || payload.active || {}; renderAiModelFields(); aiModelsHaveLoadedOnce = true; setAiModelsMessage("AI model draft loaded."); } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to load AI model settings."); } }
     async function saveAiModelDraft() { collectAiModelDraft(); setAiModelsError(""); setAiModelsMessage("Saving AI model draft..."); try { const response = await fetch(ApiPaths.aiModelSettingsDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(aiModelDraft) }); const payload = await readAiModelsResponse(response, "Unable to save AI model draft."); aiModelDraft = payload.draft || aiModelDraft; renderAiModelFields(); setAiModelsMessage("AI model draft saved."); return true; } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to save AI model draft."); return false; } }
     async function validateAiModelDraft() { collectAiModelDraft(); setAiModelsError(""); setAiModelsMessage("Validating AI model draft format/syntax only..."); try { const response = await fetch(ApiPaths.aiModelSettingsValidate, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(aiModelDraft) }); const payload = await readAiModelsResponse(response, "Unable to validate AI model draft."); if (!payload.isValid) { setAiModelsMessage(""); setAiModelsError((payload.errors || []).join(" ") || "AI model draft is invalid."); return false; } setAiModelsMessage((payload.warnings || []).join(" ") || "AI model draft format/syntax is valid. Format validation does not prove provider access. Use Test provider access before publishing a new model."); return true; } catch (error) { setAiModelsMessage(""); setAiModelsError(error instanceof Error ? error.message : "Unable to validate AI model draft."); return false; } }
@@ -1069,7 +1116,8 @@
     }
     function collectCurrentWebsiteSection() { const section = websiteSections.find(x => x.key === activeWebsiteSection); if (!section) return; if (section.key === "marketingSeo") { const marketing = (websiteContentDraft.marketing ||= {}); websiteEditorFields.querySelectorAll("[data-website-marketing-key]").forEach(input => { const key = input.dataset.websiteMarketingKey; marketing[key] = input.type === "checkbox" ? String(input.checked) : input.value; }); return; } const target = ((websiteContentDraft.pages ||= {})[section.key] ||= {}); websiteEditorFields.querySelectorAll("[data-website-key]").forEach(input => { const key = input.dataset.websiteKey; target[key] = /Px|Weight/.test(key) ? Number(input.value) : input.value; }); }
     function fillWebsiteForm(content) { websiteContentDraft = JSON.parse(JSON.stringify(content || { pages: {}, design: {}, marketing: {} })); websiteContentDraft.marketing ||= {}; renderWebsiteEditor(); }
-    async function readWebsiteResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
+    async function readWebsiteResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
     async function loadWebsiteContent() { setWebsiteError(""); setWebsiteMessage("Loading Website editor..."); try { const response = await fetch(ApiPaths.websiteContent, { method: "GET", headers: getAdminHeaders() }); const payload = await readWebsiteResponse(response, "Unable to load Website content."); fillWebsiteForm(payload.draft || payload.active); websiteHasLoadedOnce = true; setWebsiteMessage("Draft loaded."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to load Website content."); } }
     async function saveWebsiteDraft() { collectCurrentWebsiteSection(); setWebsiteError(""); setWebsiteMessage("Saving draft..."); websiteSaveDraftButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(websiteContentDraft) }); const payload = await readWebsiteResponse(response, "Unable to save Website draft."); fillWebsiteForm(payload.draft); setWebsiteMessage("Draft saved."); return true; } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to save Website draft."); return false; } finally { websiteSaveDraftButton.disabled = false; } }
     async function previewWebsiteContent() { collectCurrentWebsiteSection(); setWebsiteError(""); setWebsiteMessage("Rendering Website preview..."); websitePreviewButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentPreview, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ content: websiteContentDraft, pageKey: activeWebsiteSection === "marketingSeo" ? "home" : activeWebsiteSection }) }); const payload = await readWebsiteResponse(response, "Unable to preview Website content."); const previewWindow = window.open("about:blank", "_blank"); if (!previewWindow) { throw new Error("Preview popup was blocked. Allow popups for this admin site and try again."); } previewWindow.opener = null; previewWindow.document.open(); previewWindow.document.write(payload.html || ""); previewWindow.document.close(); setWebsiteMessage("Preview opened in a new tab. Nothing was saved or published."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to preview Website content."); } finally { websitePreviewButton.disabled = false; } }
@@ -1120,7 +1168,8 @@
     async function readUserLookupResponse(response, badRequestMessage) {
         if (response.status === HttpStatus.badRequest) { throw new Error(badRequestMessage); }
         if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.userNotFound); }
-        if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); }
         if (!response.ok) { throw new Error(ErrorMessages.lookupFailed); }
         return response.json();
     }
@@ -1129,7 +1178,8 @@
         const response = await fetch(`${ApiPaths.auditActionsTemplate.replace("{userId}", encodeURIComponent(userId))}?limit=${encodeURIComponent(limit)}`, { method: "GET", headers: getAdminHeaders() });
         if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.invalidAuditLimit); }
         if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.auditTargetNotFound); }
-        if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); }
         if (!response.ok) { throw new Error(ErrorMessages.auditLoadFailed); }
         return response.json();
     }
@@ -1160,13 +1210,13 @@
         syncLookupEmailInputs(selectedUserEmail);
         updateSelectedUserHeader();
         updateUserRequiredEmptyStates();
-        setGrantVisible(Boolean(selectedUserId));
-        setRevokeVisible(Boolean(selectedUserId));
-        setBillingCancelRenewalVisible(Boolean(selectedUserId));
-        setFreeLessonResetVisible(Boolean(selectedUserId));
+        setGrantVisible(Boolean(selectedUserId) && hasAdminPermission(AdminPermissionIds.premiumGrant));
+        setRevokeVisible(Boolean(selectedUserId) && hasAdminPermission(AdminPermissionIds.premiumRevoke));
+        setBillingCancelRenewalVisible(Boolean(selectedUserId) && hasAdminPermission(AdminPermissionIds.billingCancelRenewal));
+        setFreeLessonResetVisible(Boolean(selectedUserId) && hasAdminPermission(AdminPermissionIds.freeLessonAllowanceReset));
         clearAuditLog();
         updateHashField("selectedUserId", selectedUserId);
-        await loadAuditLogForSelectedUser();
+        if (hasAdminPermission(AdminPermissionIds.auditRead)) { await loadAuditLogForSelectedUser(); }
     }
 
     async function restoreSelectedUserFromHash() {
@@ -1191,7 +1241,7 @@
         updateUserRequiredEmptyStates();
         setGrantVisible(false);
         setRevokeVisible(false);
-        setBillingCancelRenewalVisible(false);
+        setBillingCancelRenewalVisible(Boolean(selectedUserId) && hasAdminPermission(AdminPermissionIds.billingCancelRenewal));
         setFreeLessonResetVisible(false);
         clearGrantState();
         clearRevokeState();
@@ -1252,7 +1302,8 @@
 
             if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.grantInvalid); }
             if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.grantUserNotFound); }
-            if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+            if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); }
             if (!(response.status === 200 || response.status === 201)) { throw new Error(ErrorMessages.grantFailed); }
 
             const payload = await response.json();
@@ -1292,7 +1343,8 @@
             if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.revokeInvalid); }
             if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.revokeNotFound); }
             if (response.status === HttpStatus.conflict) { throw new Error(ErrorMessages.revokeConflict); }
-            if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+            if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); }
             if (!response.ok) { throw new Error(ErrorMessages.revokeFailed); }
 
             const payload = await response.json();
@@ -1329,7 +1381,8 @@
 
             if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.billingCancelInvalid); }
             if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.billingCancelNotFound); }
-            if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+            if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); }
             if (!response.ok) { throw new Error(ErrorMessages.billingCancelFailed); }
 
             const payload = await response.json();
@@ -1380,7 +1433,8 @@
 
             if (response.status === HttpStatus.badRequest) { throw new Error(ErrorMessages.resetInvalid); }
             if (response.status === HttpStatus.notFound) { throw new Error(ErrorMessages.resetNotFound); }
-            if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+            if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); }
             if (!response.ok) { throw new Error(ErrorMessages.resetFailed); }
 
             const payload = await response.json();
@@ -1869,7 +1923,8 @@
         const headers = getAdminHeaders(options.headers || {});
         if (options.body && !headers["Content-Type"]) { headers["Content-Type"] = "application/json"; }
         const response = await fetch(path, Object.assign({}, options, { headers }));
-        if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); }
         if (response.status === HttpStatus.notFound) { const error = new Error("CMS item was not found."); error.status = HttpStatus.notFound; throw error; }
         if (response.status === HttpStatus.badRequest) {
             let payload = null;
@@ -2500,11 +2555,14 @@
         renderWorkflowAvailability();
         systemProductionRolesAvailableElement.textContent = String(Boolean(adminAccessSnapshot.productionRolesAvailable));
         systemProductionRolesAvailableElement.className = `badge ${adminAccessSnapshot.productionRolesAvailable ? "available" : "unavailable"}`;
-        const canUseWebsiteEditor = Boolean(adminAccessSnapshot.isBootstrapAdmin);
-        websiteTabButton.classList.toggle("hidden", !canUseWebsiteEditor);
-        websiteTabButton.setAttribute("aria-hidden", canUseWebsiteEditor ? "false" : "true");
-        websiteTabPanel.classList.toggle("hidden", !canUseWebsiteEditor || websiteTabButton.getAttribute("aria-selected") !== "true");
-        if (!canUseWebsiteEditor && getCurrentActiveTab() === Tabs.website) { activateTab(Tabs.overview); }
+        tabButtons.forEach((button) => {
+            const tabId = button.dataset.tabId || Tabs.overview;
+            const canUseTab = canAccessTab(tabId);
+            button.classList.toggle("hidden", !canUseTab);
+            button.disabled = !canUseTab;
+            button.setAttribute("aria-hidden", canUseTab ? "false" : "true");
+        });
+        if (!canAccessTab(getCurrentActiveTab())) { activateTab(Tabs.overview); }
     }
 
     async function loadAdminAccessSnapshot() {
@@ -2513,7 +2571,8 @@
             fetch(ApiPaths.capabilities, { method: "GET", headers: getAdminHeaders() })
         ]);
         [meResponse, capabilitiesResponse].forEach((response) => {
-            if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+            if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+        if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); }
         });
         if (!meResponse.ok) { throw new Error("Unable to load admin profile."); }
         if (!capabilitiesResponse.ok) { throw new Error("Unable to load admin capabilities."); }
