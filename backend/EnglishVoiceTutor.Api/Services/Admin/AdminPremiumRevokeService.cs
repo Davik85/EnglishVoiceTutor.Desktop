@@ -57,7 +57,6 @@ public sealed class AdminPremiumRevokeService(
 
         if (entitlement.PlanId != SubscriptionConstants.Plans.PremiumPlanId ||
             entitlement.EntitlementType != SubscriptionConstants.Entitlements.PremiumAccessType ||
-            entitlement.Source != SubscriptionConstants.Entitlements.SourceManualAdmin ||
             entitlement.Status != SubscriptionConstants.Entitlements.StatusActive)
         {
             return BuildConflictResult(nameof(AdminPremiumRevokeConstants.EntitlementNotRevokableError), AdminPremiumRevokeConstants.EntitlementNotRevokableError);
@@ -85,7 +84,8 @@ public sealed class AdminPremiumRevokeService(
             [AdminPremiumRevokeConstants.MetadataKeys.NewStatus] = entitlement.Status,
             [AdminPremiumRevokeConstants.MetadataKeys.PreviousExpiresAtUtc] = previousExpiresAtUtc,
             [AdminPremiumRevokeConstants.MetadataKeys.RevokedAtUtc] = revokedAtUtc,
-            [AdminPremiumRevokeConstants.MetadataKeys.Source] = entitlement.Source
+            [AdminPremiumRevokeConstants.MetadataKeys.Source] = entitlement.Source,
+            [AdminPremiumRevokeConstants.MetadataKeys.AccessControlOnly] = true
         });
 
         await adminAuditService.RecordTargetUserActionAsync(
