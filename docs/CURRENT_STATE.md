@@ -341,6 +341,7 @@ Admin RBAC note: `productionRolesAvailable` now means persistent Admin role auth
 - No database migration was added, no new audit table was created, and this slice does not write new audit events.
 - The backend endpoint is `GET /api/admin/activity` and is protected by the existing audit-read policy.
 - Login/logout/failure persistence remains pending because it requires a later unified audit table or an explicit approved schema change.
+- 2026-07-01 inspection confirmed the existing `admin_actions`, `admin_role_assignment_events`, and `cms_content_audit_logs` schemas are not a safe semantic fit for admin auth/session events, especially unknown failed credential attempts; the smallest safe next step is an approved dedicated admin auth audit table before implementation.
 - Website/AI publish audit may still be partial when the corresponding events are not already present in the existing audit tables.
 - Controlled Paddle live paid-launch validation remains pending.
 

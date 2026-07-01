@@ -232,3 +232,55 @@ Admin RBAC note: Production Admin RBAC / persistent role management is completed
 - Add login/logout/failure audit persistence only after approving a unified audit table or another explicit schema update.
 - Review Website/AI publish audit coverage and add explicit persistence only through an approved safe audit design where existing audit tables do not already cover the event.
 - Monitoring/logging/privacy hardening, backup/restore/rollback drill currency, controlled Paddle live payment validation, webhook/Premium activation/refund/cancel/customer portal/chargeback checks, and Direct installer code signing remain pending.
+
+## 2026-07-01 Admin login/logout/failure audit persistence design
+
+Inspection result: do **not** persist admin login/logout/failure events into the existing visible Admin Activity source tables without an approved schema change.
+
+Current admin login/session flow:
+
+- App-user credential login happens in `AuthEndpoints.LoginAsync` through `IAuthService.LoginAsync` after the request email/password presence check. Missing credentials return `400`; invalid credentials return `401` and only write an application log message without a persistent audit row.
+- The Admin shell cookie is created in `AuthEndpoints.LoginAsync` only after app login succeeds and either bootstrap admin access is detected or persistent Admin RBAC grants `admin.self.read`. The cookie uses the `AdminShellCookie` scheme, is non-persistent, cannot refresh, and expires at the app auth response expiry.
+- Persistent Admin shell access is checked first by linked app-user id and then, if the linked AdminUser is not disabled and the email is present, by normalized email. Disabled AdminUsers are rejected by the role-assignment read service when `DisabledAtUtc` is set or status is not `active`; that returns no Admin shell access and `AuthEndpoints.LoginAsync` signs out the Admin shell cookie instead of creating one.
+- Admin logout/session deletion happens in `AdminEndpoints.DeleteAdminSessionAsync`, which signs out the `AdminShellCookie` scheme and returns `204`. The Admin UI calls `DELETE /api/admin/session` from `logoutAdminSession` and then clears local Admin UI state.
+- Session expiration is currently cookie/auth-ticket expiration only; it is not a persistent event, and the Admin UI treats invalid/expired session responses as local session reset.
+
+Current persistent logging coverage:
+
+| Event | Persisted in Admin Activity today? | Current behavior |
+| --- | --- | --- |
+| successful admin login | No | Application log `Auth login completed. Result=Ok`; Admin cookie may be issued when Admin shell access exists. |
+| failed app credential login | No | Application log `Auth login completed. Result=Unauthorized`; no durable audit row. |
+| disabled AdminUser login attempt | No | App login can succeed, but persistent Admin shell access fails and the Admin cookie is signed out; no durable audit row distinguishing disabled-admin denial. |
+| explicit admin logout | No | `DELETE /api/admin/session` signs out the Admin cookie and returns `204`; no durable audit row. |
+| session expiration | No | Cookie expiry / invalid-session handling only; no durable audit row. |
+
+Existing table fit:
+
+- `admin_actions` is not a safe fit. It is target-app-user/action audit with required `TargetUserId`, required non-empty `Reason`, and foreign keys to app users. Login failures can involve no known user/admin identity, and logout is actor/session activity rather than an action taken against a target user.
+- `admin_role_assignment_events` is not a safe fit. It is role-management audit with required `TargetAdminUserId`, role-change fields, and role-assignment semantics. Login/logout/failure events are not role assignment events; forcing them here would pollute RBAC audit and still would not represent unknown failed attempts safely.
+- `cms_content_audit_logs` is not a safe fit. It is CMS content audit with entity/content fields and CMS action/status semantics, not authentication/session audit.
+
+Migration decision: a database migration is required for durable, queryable, privacy-safe Admin Activity coverage of all requested login/logout/failure events. Do not create it until explicitly approved. The smallest safe schema should be a dedicated authentication/session audit table, for example `admin_auth_audit_events`, with only safe fields:
+
+- `id` GUID primary key.
+- `occurred_at_utc` timestamp.
+- `event_type` string: `admin_login_success`, `admin_logout`, `admin_login_failed`, `disabled_admin_login_denied`.
+- `result` string: `succeeded`, `failed`, or `denied`.
+- Nullable `actor_user_id` for the linked app user when app authentication succeeded.
+- Nullable `actor_admin_user_id` for the persistent AdminUser when resolved safely.
+- Nullable normalized `actor_email` or `attempted_normalized_email`, stored only as the email string submitted/known for the login attempt after trimming/normalization; do not store passwords or raw request bodies.
+- Nullable safe role context such as `role_ids_json` only after app authentication succeeds and roles are resolved from existing Admin RBAC data; do not store cookies, JWTs, authorization headers, raw claims, or full request bodies.
+- Nullable `safe_metadata_json` for bounded non-secret context such as `admin_shell_cookie_issued`, `denial_reason`, or `auth_stage`; never store cookies, JWTs, Authorization headers, Paddle secrets, OpenAI keys, raw provider payloads, raw request bodies, or full provider payloads.
+
+First safe implementation slice after schema approval:
+
+1. Add the dedicated table and EF entity/configuration/migration.
+2. Persist `admin_login_success` only after app login succeeds and Admin shell access is granted.
+3. Persist `disabled_admin_login_denied` when app login succeeds but the persistent AdminUser is disabled and Admin shell access is denied.
+4. Persist `admin_login_failed` for invalid credentials with only normalized attempted email and no password/body/token data.
+5. Persist `admin_logout` in `DeleteAdminSessionAsync` using the authenticated principal and resolved AdminUser when safely available.
+6. Include the new source in Admin Activity as read-only, with filters for actor user/admin user/action/result/time and no secret-bearing fields.
+7. Add tests for success, failed credential attempt, disabled-admin denial, explicit logout, Admin Activity projection/filtering, and privacy assertions that password/cookie/JWT/Authorization/request-body/provider secrets are not persisted.
+
+Until that schema is approved, keep Admin Activity read-only over the current source tables and do not force auth/session events into tables whose required keys and semantics do not fit.
