@@ -29,6 +29,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<AdminUserEntity> AdminUsers => Set<AdminUserEntity>();
     public DbSet<AdminUserRoleEntity> AdminUserRoles => Set<AdminUserRoleEntity>();
     public DbSet<AdminRoleAssignmentEventEntity> AdminRoleAssignmentEvents => Set<AdminRoleAssignmentEventEntity>();
+    public DbSet<AdminAuthAuditEventEntity> AdminAuthAuditEvents => Set<AdminAuthAuditEventEntity>();
     public DbSet<PasswordResetTokenEntity> PasswordResetTokens => Set<PasswordResetTokenEntity>();
     public DbSet<UserRefreshTokenEntity> UserRefreshTokens => Set<UserRefreshTokenEntity>();
     public DbSet<ContentPackEntity> ContentPacks => Set<ContentPackEntity>();
@@ -66,6 +67,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigurePaddleWebhookEvents(modelBuilder);
         ConfigureAdminActions(modelBuilder);
         ConfigureAdminRoleAssignmentPersistence(modelBuilder);
+        ConfigureAdminAuthAuditEvents(modelBuilder);
         ConfigurePasswordResetTokens(modelBuilder);
         ConfigureUserRefreshTokens(modelBuilder);
         ConfigureCmsContent(modelBuilder);
@@ -554,6 +556,35 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         entity.HasOne(roleEvent => roleEvent.TargetAdminUser)
             .WithMany(adminUser => adminUser.TargetEvents)
             .HasForeignKey(roleEvent => roleEvent.TargetAdminUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    private static void ConfigureAdminAuthAuditEvents(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<AdminAuthAuditEventEntity>();
+        entity.ToTable(EntityConstants.TableNames.AdminAuthAuditEvents);
+        entity.HasKey(auditEvent => auditEvent.Id);
+        entity.Property(auditEvent => auditEvent.OccurredAtUtc).IsRequired();
+        entity.Property(auditEvent => auditEvent.EventType).IsRequired().HasMaxLength(EntityConstants.Lengths.AdminAuthEventTypeMaxLength);
+        entity.Property(auditEvent => auditEvent.Result).IsRequired().HasMaxLength(EntityConstants.Lengths.AdminAuthResultMaxLength);
+        entity.Property(auditEvent => auditEvent.ActorEmail).HasMaxLength(EntityConstants.Lengths.EmailMaxLength);
+        entity.Property(auditEvent => auditEvent.AttemptedEmail).HasMaxLength(EntityConstants.Lengths.EmailMaxLength);
+        entity.Property(auditEvent => auditEvent.AdminSource).HasMaxLength(EntityConstants.Lengths.AdminAuthSourceMaxLength);
+        entity.Property(auditEvent => auditEvent.RoleIdsJson).HasMaxLength(EntityConstants.Lengths.MetadataJsonMaxLength);
+        entity.Property(auditEvent => auditEvent.FailureReasonCode).HasMaxLength(EntityConstants.Lengths.AdminAuthFailureReasonMaxLength);
+        entity.Property(auditEvent => auditEvent.SafeMetadataJson).HasMaxLength(EntityConstants.Lengths.MetadataJsonMaxLength);
+        entity.HasIndex(auditEvent => auditEvent.OccurredAtUtc);
+        entity.HasIndex(auditEvent => auditEvent.EventType);
+        entity.HasIndex(auditEvent => auditEvent.Result);
+        entity.HasIndex(auditEvent => auditEvent.ActorUserId);
+        entity.HasIndex(auditEvent => auditEvent.ActorAdminUserId);
+        entity.HasOne(auditEvent => auditEvent.ActorUser)
+            .WithMany()
+            .HasForeignKey(auditEvent => auditEvent.ActorUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne(auditEvent => auditEvent.ActorAdminUser)
+            .WithMany()
+            .HasForeignKey(auditEvent => auditEvent.ActorAdminUserId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 

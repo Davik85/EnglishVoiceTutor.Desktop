@@ -5,7 +5,7 @@ public sealed class AdminActivityEventsResponse
     public List<AdminActivityEventSnapshot> Items { get; set; } = [];
     public int Limit { get; set; }
     public DateTimeOffset GeneratedAtUtc { get; set; }
-    public string Note { get; set; } = "Read-only actor-centric activity assembled from existing audit tables. Login/logout/failure persistence requires a later unified audit table or explicit approved schema change.";
+    public string Note { get; set; } = "Read-only actor-centric activity assembled from existing audit tables plus dedicated admin_auth_audit_events after migration.";
 }
 
 public sealed class AdminActivityEventSnapshot

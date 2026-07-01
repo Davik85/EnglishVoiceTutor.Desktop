@@ -356,3 +356,11 @@ Production backend current release is `0.1.35-backend.93`; the `current` symlink
 - Emergency Premium Revoke does not mutate Paddle provider history, does not delete `PaymentEntity` records, does not fake Paddle webhook events, does not make payment history the Premium access source, and does not change Paddle webhook/payment activation rules. Cancel paid renewal remains a separate future-renewal cancellation action; paid subscription/provider state may show `cancellation_scheduled` and `cancelAtPeriodEnd=true` while backend Premium access can still be separately revoked by `super_admin` when needed.
 - No EF migration was added for this update; existing entitlement and admin action fields support the emergency revoke/audit behavior.
 - Controlled Paddle live payment/webhook/Premium activation validation remains pending. Login/logout/failure audit persistence remains pending.
+
+## Admin auth audit persistence local slice (2026-07-01)
+
+- A local EF migration, `20260701000000_AddAdminAuthAuditEvents`, adds the approved dedicated `admin_auth_audit_events` source for Admin authentication audit events. It has not been applied to production by this repository change.
+- The dedicated source records the first approved Admin auth event types: `admin_login_success`, `admin_login_failed`, `disabled_admin_login_denied`, and `admin_logout` with only safe identifiers and metadata fields.
+- Admin Activity includes `admin_auth_audit_events` as a read-only source after the migration is deployed/applied in the target environment, and the source filter supports `source=admin_auth_audit_events`.
+- Session expiration persistence remains pending; no low-noise expiration persistence point was added in this slice.
+- Paddle live payment validation remains pending.

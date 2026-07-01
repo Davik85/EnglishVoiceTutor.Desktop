@@ -284,3 +284,10 @@ First safe implementation slice after schema approval:
 7. Add tests for success, failed credential attempt, disabled-admin denial, explicit logout, Admin Activity projection/filtering, and privacy assertions that password/cookie/JWT/Authorization/request-body/provider secrets are not persisted.
 
 Until that schema is approved, keep Admin Activity read-only over the current source tables and do not force auth/session events into tables whose required keys and semantics do not fit.
+
+## Admin auth audit persistence deployment follow-up
+
+- Apply the local `20260701000000_AddAdminAuthAuditEvents` migration only through the approved production deployment/migration process; it is not applied to production by the code change alone.
+- After deployment and migration, verify Admin Activity shows and filters the new `admin_auth_audit_events` source for `admin_login_success`, `admin_login_failed`, `disabled_admin_login_denied`, and `admin_logout`.
+- Session expiration persistence remains pending unless a future slice identifies a clean, low-noise place to write expiration events.
+- Paddle live payment validation remains pending and must stay separate from Admin auth audit persistence.
