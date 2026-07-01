@@ -6,6 +6,7 @@ public sealed class AdminActivityUiStaticTests
 {
     private static readonly string AdminJs = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../../EnglishVoiceTutor.Api/wwwroot/admin/admin.js"));
     private static readonly string AdminIndex = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../../EnglishVoiceTutor.Api/wwwroot/admin/index.html"));
+    private static readonly string AdminCss = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../../EnglishVoiceTutor.Api/wwwroot/admin/admin.css"));
     private static readonly string ApiConstantsSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../../EnglishVoiceTutor.Api/Constants/ApiConstants.cs"));
     private static readonly string AdminEndpointsSource = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "../../../../EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs"));
 
@@ -34,5 +35,25 @@ public sealed class AdminActivityUiStaticTests
     {
         Assert.Contains("/api/admin/users/{userId}/audit-actions", AdminJs);
         Assert.Contains("Audit Log", AdminIndex);
+    }
+
+    [Fact]
+    public void AdminActivityFiltersUseResponsiveWrappingGrid()
+    {
+        Assert.Contains("audit-controls admin-activity-controls", AdminIndex);
+        Assert.Contains(".admin-activity-controls", AdminCss);
+        Assert.Contains("display: grid", AdminCss);
+        Assert.Contains("repeat(auto-fit, minmax(170px, 1fr))", AdminCss);
+        Assert.Contains("max-width: 100%", AdminCss);
+        Assert.DoesNotContain("admin-activity-controls { align-items: end; display: flex", AdminCss);
+    }
+
+    [Fact]
+    public void AdminActivityTableIncludesAdminNoteColumn()
+    {
+        Assert.Contains("key: \"adminNote\", label: \"Admin note\"", AdminJs);
+        Assert.Contains("admin-note-cell", AdminJs);
+        Assert.Contains(".admin-note-cell", AdminCss);
+        Assert.Contains("overflow-wrap: anywhere", AdminCss);
     }
 }

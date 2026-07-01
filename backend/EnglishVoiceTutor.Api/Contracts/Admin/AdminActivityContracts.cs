@@ -27,5 +27,6 @@ public sealed class AdminActivityEventSnapshot
     public string? EntityId { get; set; }
     public string? StableKey { get; set; }
     public string? Reason { get; set; }
+    public string? AdminNote { get; set; }
     public string? SafeMetadataJson { get; set; }
 }

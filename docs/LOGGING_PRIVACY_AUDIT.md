@@ -73,6 +73,7 @@ Backend `0.1.35-backend.49` retains the Phase 5C Production logging hardening fi
 ## Admin Activity privacy note
 
 - `GET /api/admin/activity` is read-only and normalizes only existing audit rows from `admin_actions`, `admin_role_assignment_events`, and `cms_content_audit_logs`.
+- Admin-entered reasons/notes are shown when they are already present in those existing audit rows; safe metadata remains separate and no raw payload inference is used.
 - The unified DTO intentionally exposes safe fields only and does not add password, cookie, JWT, API key, Authorization header, webhook raw payload, provider raw payload, or full request-body fields.
 - No migration was added. Login/logout/failure audit persistence remains pending until a unified audit table or explicit approved schema change is available.
 - Website/AI publish audit may still be partial where existing audit tables do not already contain those events. Paddle live payment test remains pending.

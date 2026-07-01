@@ -28,6 +28,44 @@ public sealed class AdminActivityServiceTests
     }
 
     [Fact]
+    public async Task ListActivityMapsAdminActionReasonIntoAdminNote()
+    {
+        await using var dbContext = CreateDbContext();
+        var actor = await AddUserAsync(dbContext, "actor-action@example.test");
+        var target = await AddUserAsync(dbContext, "target-action@example.test");
+        dbContext.AdminActions.Add(new AdminActionEntity { Id = Guid.NewGuid(), AdminUserId = actor, TargetUserId = target, ActionType = "manual_premium_grant", Reason = "Manual grant for tester cohort", CreatedAtUtc = DateTimeOffset.UtcNow, SafeMetadataJson = "{\"entitlementId\":\"safe\"}" });
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var response = await new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(null, null, null, null, "admin_actions", null, null, null, null, 10), TestContext.Current.CancellationToken);
+
+        var item = Assert.Single(response.Items);
+        Assert.Equal("Manual grant for tester cohort", item.AdminNote);
+        Assert.Equal("Manual grant for tester cohort", item.Reason);
+        Assert.Equal("{\"entitlementId\":\"safe\"}", item.SafeMetadataJson);
+    }
+
+    [Fact]
+    public async Task ListActivityMapsRoleAssignmentReasonIntoAdminNote()
+    {
+        await using var dbContext = CreateDbContext();
+        var actorUserId = await AddUserAsync(dbContext, "actor-role@example.test");
+        var targetUserId = await AddUserAsync(dbContext, "target-role@example.test");
+        var actorAdminUserId = Guid.NewGuid();
+        var targetAdminUserId = Guid.NewGuid();
+        dbContext.AdminUsers.AddRange(
+            new AdminUserEntity { Id = actorAdminUserId, UserId = actorUserId, NormalizedEmail = "actor-role@example.test", Status = "active", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow },
+            new AdminUserEntity { Id = targetAdminUserId, UserId = targetUserId, NormalizedEmail = "target-role@example.test", Status = "active", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow });
+        dbContext.AdminRoleAssignmentEvents.Add(new AdminRoleAssignmentEventEntity { Id = Guid.NewGuid(), ActorAdminUserId = actorAdminUserId, TargetAdminUserId = targetAdminUserId, ActionType = "disable_admin", Result = "succeeded", Reason = "Disable requested by owner", OccurredAtUtc = DateTimeOffset.UtcNow, SafeMetadataJson = "{\"roleCount\":1}" });
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var response = await new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(null, null, null, null, "admin_role_assignment_events", null, null, null, null, 10), TestContext.Current.CancellationToken);
+
+        var item = Assert.Single(response.Items);
+        Assert.Equal("Disable requested by owner", item.AdminNote);
+        Assert.Equal("{\"roleCount\":1}", item.SafeMetadataJson);
+    }
+
+    [Fact]
     public async Task LimitValidationRejectsTooLargeLimit()
     {
         await using var dbContext = CreateDbContext();

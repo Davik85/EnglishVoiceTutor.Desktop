@@ -46,7 +46,7 @@ public sealed class AdminActivityService(AppDbContext dbContext) : IAdminActivit
                     ActorUserId = action.AdminUserId, ActorEmail = action.AdminUser == null ? null : action.AdminUser.Email,
                     ActionType = action.ActionType, Result = SucceededResult, TargetType = "user",
                     TargetUserId = action.TargetUserId, TargetUserEmail = action.TargetUser.Email,
-                    Reason = action.Reason, SafeMetadataJson = action.SafeMetadataJson
+                    Reason = action.Reason, AdminNote = action.Reason, SafeMetadataJson = action.SafeMetadataJson
                 }).ToListAsync(cancellationToken));
         }
 
@@ -71,7 +71,7 @@ public sealed class AdminActivityService(AppDbContext dbContext) : IAdminActivit
                     ActorEmail = roleEvent.ActorAdminUser == null ? null : roleEvent.ActorAdminUser.NormalizedEmail,
                     ActionType = roleEvent.ActionType, Result = roleEvent.Result, TargetType = "admin_user",
                     TargetAdminUserId = roleEvent.TargetAdminUserId, TargetAdminUserEmail = roleEvent.TargetAdminUser.NormalizedEmail,
-                    Reason = roleEvent.Reason, SafeMetadataJson = roleEvent.SafeMetadataJson
+                    Reason = roleEvent.Reason, AdminNote = roleEvent.Reason, SafeMetadataJson = roleEvent.SafeMetadataJson
                 }).ToListAsync(cancellationToken));
         }
 
@@ -92,7 +92,7 @@ public sealed class AdminActivityService(AppDbContext dbContext) : IAdminActivit
                     ActorUserId = log.ActorUserId, ActorEmail = log.ActorEmail,
                     ActionType = log.Action, Result = log.Status, TargetType = "cms_entity",
                     EntityType = log.EntityType, EntityId = log.EntityId.ToString(), StableKey = log.StableKey,
-                    Reason = log.Reason, SafeMetadataJson = log.RequestMetadataJson
+                    Reason = log.Reason, AdminNote = log.Reason, SafeMetadataJson = log.RequestMetadataJson
                 }).ToListAsync(cancellationToken));
         }
 
