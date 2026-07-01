@@ -52,6 +52,14 @@ def main() -> None:
     assert_contains(admin_html, "linked persistent Admin User role", "persistent Admin User sign-in wording")
     assert_not_contains(admin_html, "Development bootstrap admin account", "stale bootstrap-only sign-in wording")
 
+    statistics_loader = admin_js[admin_js.index("async function loadProductStatistics"):admin_js.index("async function showAdminShellAfterAuth")]
+    assert_contains(statistics_loader, "response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse();", "strict 401 handling for optional statistics")
+    assert_contains(statistics_loader, "response.status === HttpStatus.forbidden", "role-limited 403 handling for optional statistics")
+    assert_contains(statistics_loader, "Product statistics are not available for this role.", "role-limited statistics unavailable message")
+    assert_not_contains(statistics_loader, "HttpStatus.unauthorized || response.status === HttpStatus.forbidden", "optional statistics 403 invalid-session handling")
+    assert_not_contains(statistics_loader, "handleAuthInvalidResponse(); }\n            if (!response.ok)", "optional statistics forbidden session deletion path")
+    assert_contains(admin_js, "function renderStatisticsUnavailable", "optional statistics unavailable renderer")
+
     assert_contains(auth_endpoints, "HasPersistentAdminShellAccessAsync", "persistent Admin User login gate")
     assert_contains(auth_endpoints, "AdminPermissionConstants.AdminSelfRead", "admin shell self-read login permission")
     assert_contains(auth_endpoints, "GetEffectiveRolesByUserIdAsync", "persistent role login by linked app user id")

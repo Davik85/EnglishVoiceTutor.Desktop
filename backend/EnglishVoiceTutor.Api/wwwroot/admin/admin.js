@@ -2720,6 +2720,13 @@
         refreshStatisticsButton.disabled = isLoading;
     }
 
+    function renderStatisticsUnavailable(message) {
+        statisticsCardsElement.textContent = message;
+        studyLanguageDistributionElement.textContent = "No language data available.";
+        nativeLanguageDistributionElement.textContent = "No language data available.";
+        explanationLanguageDistributionElement.textContent = "No language data available.";
+    }
+
     function renderStatisticsOverview(payload) {
         const safePayload = payload && typeof payload === "object" ? payload : {};
         const definitions = safePayload.definitions && typeof safePayload.definitions === "object" ? safePayload.definitions : {};
@@ -2803,7 +2810,11 @@
         setStatisticsLoading(true);
         try {
             const response = await fetch(ApiPaths.statisticsOverview, { method: "GET", headers: getAdminHeaders() });
-            if (response.status === HttpStatus.unauthorized || response.status === HttpStatus.forbidden) { handleAuthInvalidResponse(); }
+            if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
+            if (response.status === HttpStatus.forbidden) {
+                renderStatisticsUnavailable("Product statistics are not available for this role.");
+                return;
+            }
             if (!response.ok) { throw new Error(ErrorMessages.statisticsLoadFailed); }
             renderStatisticsOverview(await response.json());
         } catch (error) {
