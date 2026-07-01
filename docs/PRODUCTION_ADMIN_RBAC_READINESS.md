@@ -508,3 +508,11 @@ A safe read-only backend status endpoint now exists at `GET /api/admin/rbac/cuto
 The Admin UI Role Management page displays this cutover status read-only. There is no Admin UI toggle or control to disable fallback. The cutover smoke validates `-ExpectedFallbackEnabled` against the backend-reported status when the parameter is provided.
 
 Fallback remains enabled by default only when the setting is absent, but production now explicitly disables fallback with `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Rollback remains available through an owner-approved config change to `AdminAuthorization:EnableBootstrapAdminFallbackForAdminPermissionPolicies=true` and backend reload/restart through the documented operational process. Production Admin RBAC / persistent role management is complete for the verified role matrix; actor-centric Admin Activity / Audit Log remains the next backend readiness step.
+
+## Actor-centric Admin Activity read-only slice
+
+- The first Admin Activity view is available as a read-only audit-read workflow from existing audit tables: `admin_actions`, `admin_role_assignment_events`, and `cms_content_audit_logs`.
+- No migration was added for this slice, and no new audit table was created.
+- Login/logout/failure persistence remains pending pending a unified audit table or explicit approved schema change.
+- Website/AI publish audit may still be partial if events are not already present in existing audit rows.
+- Paddle live payment test remains pending.

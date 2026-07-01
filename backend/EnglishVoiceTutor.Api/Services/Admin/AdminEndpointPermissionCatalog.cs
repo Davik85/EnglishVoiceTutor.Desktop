@@ -57,6 +57,7 @@ public static class AdminEndpointPermissionCatalog
         new("admin.cms.tutor_behavior_profiles.list", "GET", ApiConstants.AdminDevCmsContentPackTutorBehaviorProfilesRoute, AdminPermissionConstants.CmsContentRead, "List CMS tutor behavior profiles."),
         new("admin.cms.tutor_behavior_profile.read", "GET", ApiConstants.AdminDevCmsContentPackTutorBehaviorProfileRoute, AdminPermissionConstants.CmsContentRead, "Read a CMS tutor behavior profile."),
         new("admin.cms.tutor_behavior_profile.draft_save", "PUT", ApiConstants.AdminDevCmsContentPackTutorBehaviorProfileRoute, AdminPermissionConstants.CmsContentWriteDraft, "Save a CMS tutor behavior profile draft change."),
+        new("admin.activity.read", "GET", ApiConstants.AdminActivityRoute, AdminPermissionConstants.AuditRead, "Read actor-centric Admin Activity assembled from existing audit tables."),
         new("admin.cms.audit.read", "GET", ApiConstants.AdminDevCmsAuditEntriesRoute, AdminPermissionConstants.AuditRead, "Read CMS audit entries."),
         new("admin.cms.content_pack_audit.read", "GET", ApiConstants.AdminDevCmsContentPackAuditEntriesRoute, AdminPermissionConstants.AuditRead, "Read CMS audit entries scoped to a content pack."),
         new("admin.cms.validate", "POST", ApiConstants.AdminDevCmsContentPackValidateRoute, AdminPermissionConstants.CmsContentRead, "Validate a CMS draft content pack without saving or publishing changes."),

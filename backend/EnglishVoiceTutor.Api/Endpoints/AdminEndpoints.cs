@@ -109,6 +109,12 @@ public static class AdminEndpoints
             .RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName),
             rateLimitingEnabled);
 
+        ApplyAdminReadRateLimiting(
+            app.MapGet(ApiConstants.AdminActivityRoute, GetAdminActivityAsync)
+            .RequireAuthorization(AdminAuthorizationConstants.AuditLogViewPermissionPolicyName),
+            rateLimitingEnabled);
+
+
         ApplyAdminWriteRateLimiting(
             app.MapPost(ApiConstants.AdminUserFreeLessonAllowanceResetRoute, ResetFreeLessonAllowanceAsync)
             .RequireAuthorization(AdminAuthorizationConstants.FreeLessonResetPermissionPolicyName),
@@ -404,6 +410,32 @@ public static class AdminEndpoints
         return Results.Ok(response);
     }
 
+
+
+    private static async Task<IResult> GetAdminActivityAsync(
+        [FromQuery] Guid? actorAdminUserId,
+        [FromQuery] Guid? actorUserId,
+        [FromQuery] Guid? targetUserId,
+        [FromQuery] Guid? targetAdminUserId,
+        [FromQuery] string? source,
+        [FromQuery] string? actionType,
+        [FromQuery] string? result,
+        [FromQuery] DateTimeOffset? fromUtc,
+        [FromQuery] DateTimeOffset? toUtc,
+        [FromQuery] int? limit,
+        IAdminActivityService adminActivityService,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Results.Ok(await adminActivityService.ListActivityAsync(new AdminActivityQuery(
+                actorAdminUserId, actorUserId, targetUserId, targetAdminUserId, source, actionType, result, fromUtc, toUtc, limit), cancellationToken));
+        }
+        catch (ArgumentOutOfRangeException exception)
+        {
+            return Results.BadRequest(new { error = exception.Message });
+        }
+    }
 
     private static async Task<IResult> BootstrapFirstOwnerAdminRoleAssignmentAsync(
         [FromBody] AdminRoleAssignmentBootstrapFirstOwnerRequest request,

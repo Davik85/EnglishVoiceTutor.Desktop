@@ -3,6 +3,7 @@ using EnglishVoiceTutor.Api.Contracts.Admin;
 using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Admin;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 
@@ -73,7 +74,8 @@ public sealed class AdminCapabilitiesServiceTests
             new AdminRolePermissionCatalogService(),
             Microsoft.Extensions.Options.Options.Create(billingOptions),
             Microsoft.Extensions.Options.Options.Create(paddleBillingOptions),
-            Microsoft.Extensions.Options.Options.Create(paddleWebhookOptions));
+            Microsoft.Extensions.Options.Options.Create(paddleWebhookOptions),
+            new ConfigurationBuilder().Build());
     }
 
     private sealed class TestWebHostEnvironment : IWebHostEnvironment
