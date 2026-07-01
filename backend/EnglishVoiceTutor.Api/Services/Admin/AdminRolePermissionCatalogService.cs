@@ -50,6 +50,7 @@ public sealed class AdminRolePermissionCatalogService : IAdminRolePermissionCata
                 AdminPermissionConstants.UserOverviewRead,
                 AdminPermissionConstants.UsersDiagnosticsRead,
                 AdminPermissionConstants.LessonHistoryDiagnosticsRead,
+                AdminPermissionConstants.AuditRead,
                 AdminPermissionConstants.FreeLessonAllowanceReset,
                 AdminPermissionConstants.SystemDiagnosticsRead
             ],
@@ -69,6 +70,7 @@ public sealed class AdminRolePermissionCatalogService : IAdminRolePermissionCata
                 AdminPermissionConstants.UserOverviewRead,
                 AdminPermissionConstants.SubscriptionsDiagnosticsRead,
                 AdminPermissionConstants.PremiumDiagnosticsRead,
+                AdminPermissionConstants.PremiumGrant,
                 AdminPermissionConstants.BillingDiagnosticsRead,
                 AdminPermissionConstants.BillingCancelRenewal
             ],
