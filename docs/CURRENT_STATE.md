@@ -35,7 +35,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.88`.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.93`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows tester release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
@@ -48,8 +48,8 @@ Remaining release steps:
 1. Final manual website review in incognito.
 2. Final owner/legal text review.
 3. Final Windows installer smoke.
-4. Admin Activity / Audit Log by actor admin user for release-readiness review of who performed Admin actions.
-5. Logging/release-readiness checks for Admin operations and paid-launch evidence.
+4. Logging/release-readiness checks for remaining Admin operations and paid-launch evidence.
+5. Login/logout/failure audit persistence through a later approved audit schema change.
 6. Paddle live payment/webhook/Premium activation test remains explicitly last.
 7. Microsoft Store/MSIX was evaluated and discontinued for now; Microsoft Store availability is not claimed.
 
@@ -64,13 +64,13 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.88`. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
+Current backend release: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.93`. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
 
 Backend deployment uses:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.88
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.88
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.93
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.93
 ```
 
 The backend upload flow uses the uploaded `deploy-backend-release.sh` helper and `ssh -tt` for sudo restart/status when needed. Do not document old fragile inline bash deployment paths as the current flow.
@@ -79,13 +79,13 @@ Backend deploy is separate from Windows installer upload, static website publish
 
 Admin Product Statistics still uses the `Tracked signed-in app/device records` label for backend `DeviceEntity` records; this metric is not raw installer downloads. `Successful payments total` and `Successful payments current month` remain internal billing-event metrics and are not the source of Premium access.
 
-Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Production Admin RBAC / persistent role management is completed for backend `0.1.35-backend.88`: persistent AdminUsers can sign in to `/admin`, admin source is reported as `persistent_role_assignment`, role-aware Admin UI works, `super_admin` can assign/revoke roles and disable AdminUsers, disabled AdminUsers lose Admin access, support and billing_support least-privilege checks passed, `403` from role-limited workflows no longer logs the admin out, and `401` still returns to login. Bootstrap Admin fallback for Admin permission policies remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. The Website CMS endpoints are still authenticated/authorized but no longer consume the normal admin read/write rate limit because long legal text editing caused `RateLimitExceeded` during normal CMS work.
+Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Production Admin RBAC / persistent role management is completed for backend `0.1.35-backend.93`: persistent AdminUsers can sign in to `/admin`, admin source is reported as `persistent_role_assignment`, role-aware Admin UI works, `super_admin` can assign/revoke roles and disable AdminUsers, disabled AdminUsers lose Admin access, support and billing_support least-privilege checks passed, `403` from role-limited workflows no longer logs the admin out, and `401` still returns to login. Bootstrap Admin fallback for Admin permission policies remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. The Website CMS endpoints are still authenticated/authorized but no longer consume the normal admin read/write rate limit because long legal text editing caused `RateLimitExceeded` during normal CMS work.
 
 Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling is active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
 
 ## Production Admin RBAC / persistent roles
 
-Production Admin RBAC / persistent role management is completed after backend release `0.1.35-backend.88`, deployed by the normal backend package/upload flow. The production backend `current` symlink was verified at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.88`; `/health` and `/api/health/database` returned `200 Healthy`. No EF migrations were added or run for this RBAC stage. Windows installer release files were not changed.
+Production Admin RBAC / persistent role management is completed after backend release `0.1.35-backend.93`, deployed by the normal backend package/upload flow. The production backend `current` symlink was verified at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.93`; `/health` and `/api/health/database` returned `200 Healthy`. No EF migrations were added or run for this RBAC stage. Windows installer release files were not changed.
 
 Manual production verification completed: persistent AdminUsers can sign in to `/admin`; admin source is `persistent_role_assignment`; the role-aware Admin UI works; role-limited workflows return `403` without logging the admin out; `401` still returns to login; `super_admin` can assign and revoke roles and disable AdminUsers; disabled AdminUsers lose Admin access; `support` can use allowed support workflows; `billing_support` can use Manual Premium Grant after selecting a user and providing a reason; `billing_support` cannot access `super_admin`-only areas; `support` cannot grant or revoke Premium; and role visibility/workflow availability matches the backend permission catalog.
 
@@ -97,7 +97,7 @@ Current final role policy:
 - `read_only_auditor`: can use read-only diagnostics/audit/statistics according to current permissions; cannot mutate user, billing, Premium, CMS, Website, roles, or System AI Models.
 - `super_admin`: has full Admin access, including role management, disabling AdminUsers, Premium support actions, CMS/Website/System controls according to existing backend permissions.
 
-Remaining Admin readiness limitation: current audit visibility is not enough to review all actions performed by a specific admin actor. The next backend readiness step is an actor-centric Admin Activity / Audit Log.
+Admin Activity first production slice is completed: the Admin Activity tab is visible and usable, includes `admin_actions` and `admin_role_assignment_events`, displays admin-entered reasons/notes where stored, and keeps `safeMetadataJson` separate from Admin note. Remaining audit readiness gaps are login/logout/failure persistence through a later approved audit schema change and any Website/AI publish audit coverage not already represented in existing audit tables.
 
 ## Public website and Website CMS
 
@@ -200,7 +200,7 @@ Current public tester values:
 - `updateMode`: `manual-confirmation`
 - `minimumSupportedVersion`: `0.1.36-tester.31`
 
-The `0.1.36-tester.31` Windows direct tester release has been built, uploaded, and verified. The user confirmed the newly uploaded build works and that the manual-confirmation update flow works on other devices. Backend deployment was not part of this desktop polish release; production backend remains healthy at `0.1.35-backend.88`, and no database migrations were added or run.
+The `0.1.36-tester.31` Windows direct tester release has been built, uploaded, and verified. The user confirmed the newly uploaded build works and that the manual-confirmation update flow works on other devices. Backend deployment was not part of this desktop polish release; production backend remains healthy at `0.1.35-backend.93`, and no database migrations were added or run.
 
 Release-relevant desktop polish included in `0.1.36-tester.31`:
 
@@ -276,14 +276,14 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 ### Current release point
 
 - Windows direct tester release: `0.1.36-tester.31`, verified in tracked `site/public/releases/windows/direct/latest.json` with production backend URL and manual-confirmation update mode.
-- Backend release in tracked release docs: `0.1.35-backend.88`. The live `/opt/languagevoicetutor/backend/current` symlink was manually verified with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` and resolved to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.88`; `/health` and `/api/health/database` were also verified healthy. Backend .88 was deployed by the normal backend package/upload flow for the RBAC stage; this documentation task did not deploy backend code.
+- Backend release in tracked release docs: `0.1.35-backend.93`. The live `/opt/languagevoicetutor/backend/current` symlink was manually verified with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` and resolved to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.93`; `/health` and `/api/health/database` were also verified healthy. Backend .93 was deployed by the normal backend package/upload flow for the Admin Activity and emergency Premium revoke stage; this documentation task did not deploy backend code.
 - AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; it survived backend service restart, matched the current release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`, and contains lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2`. For `gpt-5.5`, backend requests must omit `temperature`.
 
 ### What is ready, partial, and blocked
 
 Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, verified persistent AI Models production storage, Website CMS draft/publish mechanics, and documented secret boundaries.
 
-Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.88`, with deploys, health checks, database health checks, and migrations kept as separate operations.
+Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.93`, with deploys, health checks, database health checks, and migrations kept as separate operations.
 
 Blocked before broad public paid release: code signing for the direct installer, direct installer clean-machine/update smoke, Paddle live account/provider/webhook/reconciliation readiness, final website/legal/support/pricing approval, and explicit release decision after controlled tester feedback.
 
@@ -301,11 +301,11 @@ Do not change backend runtime code, desktop runtime code, database schema/migrat
 
 ## 2026-06-30 Paddle live checkout preparation state
 
-Paddle approved the website, backend live checkout code is deployed in production `0.1.35-backend.88`, `/pay.html` and `/paddle.public.json` are published under the real nginx root, and live server-side Paddle config is present in `/etc/languagevoicetutor/backend.env`. A real Paddle transaction URL opened checkout with the expected Language Voice Tutor Pro monthly price, but no real live payment/webhook/Premium activation test has been completed. Windows direct tester release remains `0.1.36-tester.31`; AI Models persistent storage is verified and untouched. Store/MSIX remains discontinued; active Windows distribution remains Direct EXE/Inno.
+Paddle approved the website, backend live checkout code is deployed in production `0.1.35-backend.93`, `/pay.html` and `/paddle.public.json` are published under the real nginx root, and live server-side Paddle config is present in `/etc/languagevoicetutor/backend.env`. A real Paddle transaction URL opened checkout with the expected Language Voice Tutor Pro monthly price, but no real live payment/webhook/Premium activation test has been completed. Windows direct tester release remains `0.1.36-tester.31`; AI Models persistent storage is verified and untouched. Store/MSIX remains discontinued; active Windows distribution remains Direct EXE/Inno.
 
 ## 2026-06-30 Paddle live checkout/Admin readiness update
 
-Current production facts after backend `0.1.35-backend.88` and before any real live payment test:
+Current production facts after backend `0.1.35-backend.93` and before any real live payment test:
 
 - Backend health and database health are `200 Healthy`.
 - Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.
@@ -342,12 +342,16 @@ Admin RBAC note: `productionRolesAvailable` now means persistent Admin role auth
 - The backend endpoint is `GET /api/admin/activity` and is protected by the existing audit-read policy.
 - Login/logout/failure persistence remains pending because it requires a later unified audit table or an explicit approved schema change.
 - Website/AI publish audit may still be partial when the corresponding events are not already present in the existing audit tables.
-- Paddle live payment test remains pending.
+- Controlled Paddle live paid-launch validation remains pending.
 
 ## 2026-07-01 Admin Activity and emergency Premium revoke update
 
+Production backend current release is `0.1.35-backend.93`; the `current` symlink was verified at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.93`, `languagevoicetutor-backend.service` is active/running, `/health` returns `200 Healthy`, and `/api/health/database` returns `200 Healthy`. Backend .93 was deployed through the normal backend package/upload flow. The deploy script did not run EF migrations, and Windows installer files were not changed.
+
+- Admin Activity is visible and usable in production and includes `admin_role_assignment_events` plus `admin_actions`, including `manual_premium_grant` and `manual_premium_revoke`.
+- Admin Activity table usability was improved with a top horizontal scrollbar and wider Admin note column; Admin note/reason is visible where stored, and `safeMetadataJson` remains separate from Admin note.
 - Admin Activity continues to be read-only and now resolves existing `admin_actions` actor app-user ids to matching persistent `admin_users` where possible, so `actorAdminUserId`, `actorUserId`, and source/action filters can find existing admin action rows such as Manual Premium Grant, Manual Premium Revoke, Free Lesson Reset, and Billing Cancel Renewal.
-- Manual Premium Revoke is an emergency `super_admin` backend entitlement/access-control action. It expires/revokes active Premium entitlement rows, including paid/provider-backed active Premium entitlements, and writes a required-reason `admin_actions` audit row with safe metadata.
-- Emergency Premium Revoke does not mutate Paddle provider history, does not delete `PaymentEntity` records, does not make payment history the Premium access source, and does not change Paddle webhook/payment activation rules.
+- Manual Premium Revoke is completed as an emergency `super_admin` backend entitlement/access-control action. It requires an admin reason, expires/revokes active Premium entitlement rows, including paid/provider-backed active Premium entitlements, and writes an `admin_actions` Admin Activity entry with safe metadata. After revoke, the selected user no longer has active Premium access.
+- Emergency Premium Revoke does not mutate Paddle provider history, does not delete `PaymentEntity` records, does not fake Paddle webhook events, does not make payment history the Premium access source, and does not change Paddle webhook/payment activation rules. Cancel paid renewal remains a separate future-renewal cancellation action; paid subscription/provider state may show `cancellation_scheduled` and `cancelAtPeriodEnd=true` while backend Premium access can still be separately revoked by `super_admin` when needed.
 - No EF migration was added for this update; existing entitlement and admin action fields support the emergency revoke/audit behavior.
-- Paddle live payment/webhook/Premium activation test remains pending. Login/logout/failure audit persistence remains pending.
+- Controlled Paddle live payment/webhook/Premium activation validation remains pending. Login/logout/failure audit persistence remains pending.

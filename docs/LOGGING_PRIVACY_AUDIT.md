@@ -6,11 +6,11 @@ Scope: lightweight documentation/source audit only. No backend runtime behavior,
 
 ## Current production context
 
-- Production backend at last verification: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.49` through `/opt/languagevoicetutor/backend/current`, with rollback reference `/opt/languagevoicetutor/backend/releases/0.1.35-backend.48`.
+- Production backend at last verification: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.93` through `/opt/languagevoicetutor/backend/current`; verify `/opt/languagevoicetutor/backend/previous` before rollback.
 - `/health` and `/api/health/database` are healthy at last verification.
 - Phase 4 backup/restore/migration rollback drills are complete for the current release-readiness level.
 - Broad public production readiness is not claimed.
-- Production/live Paddle readiness remains deferred.
+- Controlled Paddle live paid-launch validation remains deferred; do not claim refund, chargeback, customer portal, or full live payment completion until separately verified and documented.
 
 ## Reviewed areas
 
@@ -73,13 +73,17 @@ Backend `0.1.35-backend.49` retains the Phase 5C Production logging hardening fi
 ## Admin Activity privacy note
 
 - `GET /api/admin/activity` is read-only and normalizes only existing audit rows from `admin_actions`, `admin_role_assignment_events`, and `cms_content_audit_logs`.
-- Admin-entered reasons/notes are shown when they are already present in those existing audit rows; safe metadata remains separate and no raw payload inference is used.
-- The unified DTO intentionally exposes safe fields only and does not add password, cookie, JWT, API key, Authorization header, webhook raw payload, provider raw payload, or full request-body fields.
+- Current visible Admin Activity sources are `admin_actions`, `admin_role_assignment_events`, and `cms_content_audit_logs`; no raw provider payload table is exposed through this view.
+- Visible action coverage includes `manual_premium_grant`, `manual_premium_revoke`, `free_lesson_reset` where present, `billing_cancel_renewal` where present, role assignment/revocation/admin disable/enable events from role-assignment audit rows, and CMS events where already present in `cms_content_audit_logs`.
+- Admin-entered reasons/notes are shown when they are already present in those existing audit rows; the Admin note/reason column is separate from safe metadata such as `safeMetadataJson`, and no raw payload inference is used.
+- The unified DTO intentionally exposes safe fields only and does not add password, cookie, JWT, API key, Authorization header, webhook raw payload, provider raw payload, raw provider event bodies, secrets, or full request-body fields.
 - No migration was added. Login/logout/failure audit persistence remains pending until a unified audit table or explicit approved schema change is available.
-- Website/AI publish audit may still be partial where existing audit tables do not already contain those events. Paddle live payment test remains pending.
+- Website/AI publish audit may still be partial where existing audit tables do not already contain those events. Controlled Paddle live paid-launch validation remains pending.
 
 ## 2026-07-01 Admin actions visibility and Premium revoke audit note
 
 - Admin Activity now includes and filters existing `admin_actions` rows with normalized actor fields where a linked persistent `admin_users` row exists for the stored actor app-user id.
-- Manual Premium Revoke remains audited with an admin-entered reason and safe metadata only. The emergency revoke action changes backend entitlement/access state only and does not alter Paddle provider history or delete payment records.
-- No migration was added. Login/logout/failure audit persistence and the live Paddle payment test remain pending.
+- Admin Activity is visible and usable in production for `admin_actions` and `admin_role_assignment_events`, including `manual_premium_grant` and `manual_premium_revoke`; the Admin note/reason is visible where stored.
+- Manual Premium Revoke remains audited with an admin-entered reason and safe metadata only. The emergency revoke action changes backend entitlement/access state only and does not alter Paddle provider history, delete payment records, or fake Paddle webhook events.
+- Secrets, raw provider payloads, webhook signatures, and unredacted provider event bodies must not be exposed in Admin Activity, docs, tickets, screenshots, or pasted operational evidence.
+- No migration was added. Login/logout/failure audit persistence and the controlled live Paddle payment validation remain pending.
