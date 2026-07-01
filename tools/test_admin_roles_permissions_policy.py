@@ -166,7 +166,7 @@ def main() -> None:
     migrated_permission_authorizations = re.findall(r"RequireAuthorization\(AdminAuthorizationConstants\.(\w+PermissionPolicyName)\)", admin_endpoints)
     expected_permission_authorizations = [
         "AdminSelfReadPermissionPolicyName", "AdminCapabilitiesReadPermissionPolicyName", "ProductStatisticsReadPermissionPolicyName",
-        "UserLookupPermissionPolicyName", "UserOverviewPermissionPolicyName", "ManualPremiumGrantPermissionPolicyName", "ManualPremiumRevokePermissionPolicyName", "AuditLogViewPermissionPolicyName",
+        "UserLookupPermissionPolicyName", "UserOverviewPermissionPolicyName", "ManualPremiumGrantPermissionPolicyName", "ManualPremiumRevokePermissionPolicyName", "AuditLogViewPermissionPolicyName", "AuditLogViewPermissionPolicyName",
         "FreeLessonResetPermissionPolicyName", "BillingCancelRenewalPermissionPolicyName",
         "CmsContentReadPermissionPolicyName", "CmsRuntimeStatusReadPermissionPolicyName", "CmsRuntimeStatusReadPermissionPolicyName",
         "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName", "CmsContentReadPermissionPolicyName",
@@ -182,7 +182,11 @@ def main() -> None:
         if policy != "AdminRoleManagementPermissionPolicyName"
     ]
     if existing_endpoint_authorizations != expected_permission_authorizations:
-        raise AssertionError(f"Exactly thirty-five existing endpoints may use permission policies after the controlled user-impacting Admin action endpoint batch migration. Got: {existing_endpoint_authorizations}")
+        raise AssertionError(f"Exactly thirty-six endpoints may use permission policies after intentionally adding read-only Admin Activity as the 36th AuditRead endpoint. Got: {existing_endpoint_authorizations}")
+    require(admin_endpoints, "app.MapGet(ApiConstants.AdminActivityRoute, GetAdminActivityAsync)", "intentional read-only Admin Activity endpoint")
+    require(admin_endpoints, "app.MapGet(ApiConstants.AdminUserAuditActionsRoute, GetTargetUserAuditActionsAsync)", "existing target-user Audit Log endpoint remains present")
+    if re.search(r"app\.Map(Post|Put|Delete)\(ApiConstants\.AdminActivityRoute", admin_endpoints):
+        raise AssertionError("Admin Activity must remain read-only and must not expose POST, PUT, or DELETE mappings.")
     require(admin_endpoints, "app.MapGet(ApiConstants.AdminRoleAssignmentDiagnosticsRoute, GetAdminRoleAssignmentDiagnosticsAsync)", "new role assignment diagnostics endpoint")
     require(admin_endpoints, "RequireAuthorization(AdminAuthorizationConstants.AdminRoleManagementPermissionPolicyName)", "new role assignment diagnostics endpoint uses role-management permission")
     forbid(read("program"), "GetProductionRolePermissions()", "production role catalog endpoint enforcement")

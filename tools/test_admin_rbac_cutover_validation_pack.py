@@ -164,8 +164,17 @@ def main() -> None:
         policy for policy in permission_authorizations
         if policy != "AdminRoleManagementPermissionPolicyName"
     ])
-    if admin_permission_count != 35:
-        raise AssertionError(f"Existing AdminPermission endpoint count must remain exactly 35; got {admin_permission_count}.")
+    if admin_permission_count != 36:
+        raise AssertionError(f"AdminPermission endpoint count must remain exactly 36 after intentionally adding read-only Admin Activity as the 36th AuditRead endpoint; got {admin_permission_count}.")
+
+    admin_activity_pattern = r"MapGet\(ApiConstants\.AdminActivityRoute,.*?RequireAuthorization\(AdminAuthorizationConstants\.AuditLogViewPermissionPolicyName\)"
+    if not re.search(admin_activity_pattern, admin_endpoints, re.DOTALL):
+        raise AssertionError("Admin Activity must be present as GET AdminActivityRoute protected by AuditLogViewPermissionPolicyName.")
+    if re.search(r"Map(Post|Put|Delete)\(ApiConstants\.AdminActivityRoute", admin_endpoints):
+        raise AssertionError("Admin Activity must remain read-only and must not expose POST, PUT, or DELETE mappings.")
+    target_audit_pattern = r"MapGet\(ApiConstants\.AdminUserAuditActionsRoute,.*?RequireAuthorization\(AdminAuthorizationConstants\.AuditLogViewPermissionPolicyName\)"
+    if not re.search(target_audit_pattern, admin_endpoints, re.DOTALL):
+        raise AssertionError("Existing target-user Audit Log endpoint must remain GET-only with AuditLogViewPermissionPolicyName; Admin Activity must not replace or weaken it.")
 
     for route in [
         "AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute",
