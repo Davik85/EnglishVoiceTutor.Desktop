@@ -16,6 +16,7 @@ public sealed class AdminCapabilitiesServiceTests
     {
         var response = CreateService(new BillingOptions(), new PaddleBillingOptions(), new PaddleWebhookOptions()).GetCapabilities();
 
+        Assert.True(response.Capabilities.CmsUiAvailable);
         Assert.False(response.Capabilities.BillingProviderConfigured);
         Assert.False(response.Capabilities.PaddleCheckoutAvailable);
         Assert.False(response.Capabilities.PaddleWebhooksAvailable);

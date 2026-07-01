@@ -227,7 +227,7 @@ Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.manual
 Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.manualPremiumRevoke -Message "capabilities.manualPremiumRevoke"
 Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.freeLessonAllowanceReset -Message "capabilities.freeLessonAllowanceReset"
 Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.localSmokeTestScript -Message "capabilities.localSmokeTestScript"
-Assert-Equal -Expected $false -Actual $adminCapabilities.Body.capabilities.cmsUiAvailable -Message "capabilities.cmsUiAvailable"
+Assert-Equal -Expected $true -Actual $adminCapabilities.Body.capabilities.cmsUiAvailable -Message "capabilities.cmsUiAvailable"
 Assert-Equal -Expected $false -Actual $adminCapabilities.Body.capabilities.productionRolesAvailable -Message "capabilities.productionRolesAvailable"
 Assert-Equal -Expected $false -Actual $adminCapabilities.Body.capabilities.billingProviderConfigured -Message "capabilities.billingProviderConfigured"
 Assert-Equal -Expected $false -Actual $adminCapabilities.Body.capabilities.paddleCheckoutAvailable -Message "capabilities.paddleCheckoutAvailable"
