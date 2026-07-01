@@ -71,7 +71,7 @@
         revokeNotFound: "Selected user or entitlement was not found.",
         revokeConflict: "This entitlement cannot be revoked.",
         revokeFailed: "Unable to revoke Premium.",
-        revokeNoEntitlements: "No revokable manual Premium entitlements.",
+        revokeNoEntitlements: "No active Premium entitlements are available for emergency revoke.",
         resetInvalid: "Reset request is invalid. Check usage date and reason.",
         resetNotFound: "No consumed free lesson allowance was found for this user and date.",
         resetFailed: "Unable to reset free lesson allowance.",
@@ -745,7 +745,6 @@
         return schedule.filter((entry) => entry
             && entry.planId === "premium"
             && entry.entitlementType === "premium_access"
-            && entry.source === "manual_admin"
             && entry.status === "active");
     }
 
@@ -788,7 +787,7 @@
             const fallback = String(entry.entitlementId || "-");
             const reasonOrId = String(entry.reason || "").trim() || fallback;
             option.value = fallback;
-            option.textContent = `${formatValue(entry.startsAtUtc)} → ${formatValue(entry.expiresAtUtc)} | ${reasonOrId}`;
+            option.textContent = `${formatValue(entry.source)} | ${formatValue(entry.startsAtUtc)} → ${formatValue(entry.expiresAtUtc)} | ${reasonOrId}`;
             revokeEntitlementIdElement.appendChild(option);
         });
 

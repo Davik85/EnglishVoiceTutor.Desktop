@@ -28,26 +28,37 @@ public sealed class AdminActivityService(AppDbContext dbContext) : IAdminActivit
         var items = new List<AdminActivityEventSnapshot>();
         if (MatchesSource(query.Source, AdminActionsSource))
         {
-            items.AddRange(await _dbContext.AdminActions.AsNoTracking()
-                .Include(action => action.AdminUser)
-                .Include(action => action.TargetUser)
-                .Where(action => !query.ActorUserId.HasValue || action.AdminUserId == query.ActorUserId)
-                .Where(action => !query.TargetUserId.HasValue || action.TargetUserId == query.TargetUserId)
-                .Where(action => query.ActorAdminUserId == null && query.TargetAdminUserId == null)
-                .Where(action => string.IsNullOrWhiteSpace(query.ActionType) || action.ActionType == query.ActionType)
-                .Where(action => string.IsNullOrWhiteSpace(query.Result) || SucceededResult == query.Result)
-                .Where(action => !query.FromUtc.HasValue || action.CreatedAtUtc >= query.FromUtc.Value)
-                .Where(action => !query.ToUtc.HasValue || action.CreatedAtUtc <= query.ToUtc.Value)
-                .OrderByDescending(action => action.CreatedAtUtc)
+            var adminActionRows = await (from action in _dbContext.AdminActions.AsNoTracking()
+                    join actorAdminUser in _dbContext.AdminUsers.AsNoTracking()
+                        on action.AdminUserId equals actorAdminUser.UserId into actorAdminUsers
+                    from actorAdminUser in actorAdminUsers.DefaultIfEmpty()
+                    join actorUser in _dbContext.Users.AsNoTracking()
+                        on action.AdminUserId equals actorUser.Id into actorUsers
+                    from actorUser in actorUsers.DefaultIfEmpty()
+                    join targetUser in _dbContext.Users.AsNoTracking()
+                        on action.TargetUserId equals targetUser.Id
+                    where !query.ActorUserId.HasValue || action.AdminUserId == query.ActorUserId
+                    where !query.ActorAdminUserId.HasValue || (actorAdminUser != null && actorAdminUser.Id == query.ActorAdminUserId)
+                    where !query.TargetUserId.HasValue || action.TargetUserId == query.TargetUserId
+                    where query.TargetAdminUserId == null
+                    where string.IsNullOrWhiteSpace(query.ActionType) || action.ActionType == query.ActionType
+                    where string.IsNullOrWhiteSpace(query.Result) || SucceededResult == query.Result
+                    where !query.FromUtc.HasValue || action.CreatedAtUtc >= query.FromUtc.Value
+                    where !query.ToUtc.HasValue || action.CreatedAtUtc <= query.ToUtc.Value
+                    orderby action.CreatedAtUtc descending
+                    select new AdminActivityEventSnapshot
+                    {
+                        EventId = action.Id.ToString(), Source = AdminActionsSource, OccurredAtUtc = action.CreatedAtUtc,
+                        ActorAdminUserId = actorAdminUser == null ? null : actorAdminUser.Id, ActorUserId = action.AdminUserId,
+                        ActorEmail = actorAdminUser == null ? actorUser == null ? null : actorUser.Email : actorAdminUser.NormalizedEmail,
+                        ActionType = action.ActionType, Result = SucceededResult, TargetType = "user",
+                        TargetUserId = action.TargetUserId, TargetUserEmail = targetUser.Email,
+                        Reason = action.Reason, AdminNote = action.Reason, SafeMetadataJson = action.SafeMetadataJson
+                    })
                 .Take(limit)
-                .Select(action => new AdminActivityEventSnapshot
-                {
-                    EventId = action.Id.ToString(), Source = AdminActionsSource, OccurredAtUtc = action.CreatedAtUtc,
-                    ActorUserId = action.AdminUserId, ActorEmail = action.AdminUser == null ? null : action.AdminUser.Email,
-                    ActionType = action.ActionType, Result = SucceededResult, TargetType = "user",
-                    TargetUserId = action.TargetUserId, TargetUserEmail = action.TargetUser.Email,
-                    Reason = action.Reason, AdminNote = action.Reason, SafeMetadataJson = action.SafeMetadataJson
-                }).ToListAsync(cancellationToken));
+                .ToListAsync(cancellationToken);
+
+            items.AddRange(adminActionRows);
         }
 
         if (MatchesSource(query.Source, AdminRoleAssignmentEventsSource))

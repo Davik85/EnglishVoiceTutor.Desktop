@@ -343,3 +343,11 @@ Admin RBAC note: `productionRolesAvailable` now means persistent Admin role auth
 - Login/logout/failure persistence remains pending because it requires a later unified audit table or an explicit approved schema change.
 - Website/AI publish audit may still be partial when the corresponding events are not already present in the existing audit tables.
 - Paddle live payment test remains pending.
+
+## 2026-07-01 Admin Activity and emergency Premium revoke update
+
+- Admin Activity continues to be read-only and now resolves existing `admin_actions` actor app-user ids to matching persistent `admin_users` where possible, so `actorAdminUserId`, `actorUserId`, and source/action filters can find existing admin action rows such as Manual Premium Grant, Manual Premium Revoke, Free Lesson Reset, and Billing Cancel Renewal.
+- Manual Premium Revoke is an emergency `super_admin` backend entitlement/access-control action. It expires/revokes active Premium entitlement rows, including paid/provider-backed active Premium entitlements, and writes a required-reason `admin_actions` audit row with safe metadata.
+- Emergency Premium Revoke does not mutate Paddle provider history, does not delete `PaymentEntity` records, does not make payment history the Premium access source, and does not change Paddle webhook/payment activation rules.
+- No EF migration was added for this update; existing entitlement and admin action fields support the emergency revoke/audit behavior.
+- Paddle live payment/webhook/Premium activation test remains pending. Login/logout/failure audit persistence remains pending.
