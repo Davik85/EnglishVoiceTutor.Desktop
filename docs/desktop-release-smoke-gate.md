@@ -112,9 +112,9 @@ Expected result:
 Run these from the repository root when local EF/database validation is required. Use the backend project path `backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj`.
 
 ```powershell
-dotnet ef migrations list --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj
-dotnet ef database update --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj
-dotnet ef migrations has-pending-model-changes --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj
+dotnet ef migrations list --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj --startup-project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj
+dotnet ef database update --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj --startup-project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj
+dotnet ef migrations has-pending-model-changes --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj --startup-project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj
 ```
 
 The helper script does not run EF/database checks by default. To include them explicitly, run:
@@ -303,9 +303,9 @@ Automated checks:
 - single active lesson guard smoke, if run (`tools/smoke_single_active_lesson_guard.ps1`):
 
 Backend/EF checks, if run:
-- dotnet ef migrations list:
-- dotnet ef database update:
-- dotnet ef migrations has-pending-model-changes:
+- dotnet ef migrations list --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj --startup-project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj:
+- dotnet ef database update --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj --startup-project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj:
+- dotnet ef migrations has-pending-model-changes --project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj --startup-project backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj:
 
 Backend unavailable resilience:
 - app starts:

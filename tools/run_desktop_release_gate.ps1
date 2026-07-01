@@ -108,6 +108,10 @@ Invoke-GateCommand "Admin roles permissions policy" {
     python "tools/test_admin_roles_permissions_policy.py"
 }
 
+Invoke-GateCommand "Admin roles permissions UI policy" {
+    python "tools/test_admin_roles_permissions_ui_policy.py"
+}
+
 if ($IncludeEfChecks) {
     Invoke-GateCommand "EF migrations list" {
         dotnet ef migrations list --project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj" --startup-project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj"
