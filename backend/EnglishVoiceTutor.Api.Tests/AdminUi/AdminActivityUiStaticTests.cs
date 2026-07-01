@@ -22,6 +22,7 @@ public sealed class AdminActivityUiStaticTests
     public void AdminActivityTabIsAuditReadOnly()
     {
         Assert.Contains("Admin Activity", AdminIndex);
+        Assert.Contains("<option value=\"admin_auth_audit_events\">admin_auth_audit_events</option>", AdminIndex);
         Assert.Contains("data-tab-id=\"admin-activity\"", AdminIndex);
         Assert.Contains("[Tabs.adminActivity]: { anyPermissions: [AdminPermissionIds.auditRead] }", AdminJs);
         Assert.Contains("/api/admin/activity", AdminJs);

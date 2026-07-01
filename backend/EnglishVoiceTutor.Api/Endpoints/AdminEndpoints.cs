@@ -284,8 +284,12 @@ public static class AdminEndpoints
         }
     }
 
-    private static async Task DeleteAdminSessionAsync(HttpContext httpContext)
+    private static async Task DeleteAdminSessionAsync(
+        HttpContext httpContext,
+        IAdminAuthAuditService adminAuthAuditService,
+        CancellationToken cancellationToken)
     {
+        await adminAuthAuditService.RecordLogoutAsync(httpContext.User, cancellationToken);
         await httpContext.SignOutAsync(AdminAuthorizationConstants.AdminCookieAuthenticationScheme);
         httpContext.Response.StatusCode = StatusCodes.Status204NoContent;
     }

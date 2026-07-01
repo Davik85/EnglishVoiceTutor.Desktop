@@ -1,10 +1,12 @@
 using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.Auth;
+using EnglishVoiceTutor.Api.Data.Entities;
 using EnglishVoiceTutor.Api.Options;
 using EnglishVoiceTutor.Api.Services.Admin;
 using EnglishVoiceTutor.Api.Services.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Text.Json;
 using System.Security.Claims;
 
 namespace EnglishVoiceTutor.Api.Endpoints;
@@ -79,6 +81,7 @@ public static class AuthEndpoints
         IBootstrapAdminAccessService bootstrapAdminAccessService,
         IAdminRoleAssignmentReadService adminRoleAssignmentReadService,
         IAdminRolePermissionCatalogService adminRolePermissionCatalogService,
+        IAdminAuthAuditService adminAuthAuditService,
         HttpContext httpContext,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
@@ -91,13 +94,23 @@ public static class AuthEndpoints
         var response = await authService.LoginAsync(request, cancellationToken);
         if (response is null)
         {
+            await adminAuthAuditService.RecordAsync(new AdminAuthAuditEventEntity
+            {
+                EventType = "admin_login_failed",
+                Result = "failed",
+                AttemptedEmail = NormalizeEmailForAudit(request.Email),
+                FailureReasonCode = "invalid_credentials"
+            }, cancellationToken);
             loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Auth login completed. Result=Unauthorized");
             return Results.Json(new { error = AuthConstants.InvalidCredentialsError }, statusCode: StatusCodes.Status401Unauthorized);
         }
 
         var principal = CreatePrincipal(response);
-        if (bootstrapAdminAccessService.IsBootstrapAdmin(principal)
-            || await HasPersistentAdminShellAccessAsync(response.User.UserId, response.User.Email, adminRoleAssignmentReadService, adminRolePermissionCatalogService, cancellationToken))
+        var bootstrapAdmin = bootstrapAdminAccessService.IsBootstrapAdmin(principal);
+        var persistentAccess = bootstrapAdmin
+            ? AdminShellAccessResult.NotFound
+            : await GetPersistentAdminShellAccessAsync(response.User.UserId, response.User.Email, adminRoleAssignmentReadService, adminRolePermissionCatalogService, cancellationToken);
+        if (bootstrapAdmin || persistentAccess.HasAccess)
         {
             await httpContext.SignInAsync(
                 AdminAuthorizationConstants.AdminCookieAuthenticationScheme,
@@ -108,10 +121,34 @@ public static class AuthEndpoints
                     ExpiresUtc = response.ExpiresAtUtc,
                     IsPersistent = false
                 });
+
+            await adminAuthAuditService.RecordAsync(new AdminAuthAuditEventEntity
+            {
+                EventType = "admin_login_success",
+                Result = "succeeded",
+                ActorUserId = response.User.UserId,
+                ActorAdminUserId = persistentAccess.AdminUserId,
+                ActorEmail = response.User.Email,
+                AdminSource = bootstrapAdmin ? AdminAuthorizationConstants.BootstrapAdminSource : "persistent_role_assignment",
+                RoleIdsJson = persistentAccess.RoleIds.Count == 0 ? null : JsonSerializer.Serialize(persistentAccess.RoleIds)
+            }, cancellationToken);
         }
         else
         {
             await httpContext.SignOutAsync(AdminAuthorizationConstants.AdminCookieAuthenticationScheme);
+            if (persistentAccess.IsDisabled)
+            {
+                await adminAuthAuditService.RecordAsync(new AdminAuthAuditEventEntity
+                {
+                    EventType = "disabled_admin_login_denied",
+                    Result = "denied",
+                    ActorUserId = response.User.UserId,
+                    ActorAdminUserId = persistentAccess.AdminUserId,
+                    ActorEmail = response.User.Email,
+                    AdminSource = "persistent_role_assignment",
+                    FailureReasonCode = "admin_user_disabled"
+                }, cancellationToken);
+            }
         }
 
         loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Auth login completed. Result=Ok");
@@ -147,7 +184,7 @@ public static class AuthEndpoints
     }
 
 
-    private static async Task<bool> HasPersistentAdminShellAccessAsync(
+    private static async Task<AdminShellAccessResult> GetPersistentAdminShellAccessAsync(
         Guid userId,
         string email,
         IAdminRoleAssignmentReadService adminRoleAssignmentReadService,
@@ -157,21 +194,35 @@ public static class AuthEndpoints
         var rolesByUserId = await adminRoleAssignmentReadService.GetEffectiveRolesByUserIdAsync(userId, cancellationToken);
         if (HasPersistentPermission(rolesByUserId, AdminPermissionConstants.AdminSelfRead, adminRolePermissionCatalogService))
         {
-            return true;
+            return AdminShellAccessResult.Allowed(rolesByUserId.AdminUserId, rolesByUserId.RoleIds);
         }
 
         if (rolesByUserId.IsDisabled)
         {
-            return false;
+            return AdminShellAccessResult.Disabled(rolesByUserId.AdminUserId);
         }
 
         if (string.IsNullOrWhiteSpace(email))
         {
-            return false;
+            return AdminShellAccessResult.NotFound;
         }
 
         var rolesByEmail = await adminRoleAssignmentReadService.GetEffectiveRolesByNormalizedEmailAsync(email.Trim(), cancellationToken);
-        return HasPersistentPermission(rolesByEmail, AdminPermissionConstants.AdminSelfRead, adminRolePermissionCatalogService);
+        if (HasPersistentPermission(rolesByEmail, AdminPermissionConstants.AdminSelfRead, adminRolePermissionCatalogService))
+        {
+            return AdminShellAccessResult.Allowed(rolesByEmail.AdminUserId, rolesByEmail.RoleIds);
+        }
+
+        return rolesByEmail.IsDisabled ? AdminShellAccessResult.Disabled(rolesByEmail.AdminUserId) : AdminShellAccessResult.NotFound;
+    }
+
+    private static string? NormalizeEmailForAudit(string? email) => string.IsNullOrWhiteSpace(email) ? null : email.Trim().ToLowerInvariant();
+
+    private sealed record AdminShellAccessResult(bool HasAccess, bool IsDisabled, Guid? AdminUserId, IReadOnlyList<string> RoleIds)
+    {
+        public static AdminShellAccessResult NotFound { get; } = new(false, false, null, []);
+        public static AdminShellAccessResult Allowed(Guid? adminUserId, IReadOnlyList<string> roleIds) => new(true, false, adminUserId, roleIds);
+        public static AdminShellAccessResult Disabled(Guid? adminUserId) => new(false, true, adminUserId, []);
     }
 
     private static bool HasPersistentPermission(

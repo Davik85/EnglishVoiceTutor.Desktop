@@ -19,12 +19,13 @@ public sealed class AdminActivityServiceTests
         dbContext.AdminUsers.Add(new AdminUserEntity { Id = adminUserId, UserId = actor, NormalizedEmail = "actor@example.test", Status = "active", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow });
         dbContext.AdminActions.Add(new AdminActionEntity { Id = Guid.NewGuid(), AdminUserId = actor, TargetUserId = target, ActionType = "manual_premium_grant", Reason = "safe", CreatedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-3), SafeMetadataJson = "{\"entitlementId\":\"safe\"}" });
         dbContext.AdminRoleAssignmentEvents.Add(new AdminRoleAssignmentEventEntity { Id = Guid.NewGuid(), ActorAdminUserId = adminUserId, TargetAdminUserId = adminUserId, ActionType = "assign", Result = "succeeded", OccurredAtUtc = DateTimeOffset.UtcNow.AddMinutes(-2), SafeMetadataJson = "{\"roleId\":\"support\"}" });
+        dbContext.AdminAuthAuditEvents.Add(new AdminAuthAuditEventEntity { Id = Guid.NewGuid(), ActorUserId = actor, ActorAdminUserId = adminUserId, ActorEmail = "actor@example.test", EventType = "admin_login_success", Result = "succeeded", OccurredAtUtc = DateTimeOffset.UtcNow, AdminSource = "persistent_role_assignment", RoleIdsJson = "[\"super_admin\"]" });
         dbContext.ContentAuditLogs.Add(new ContentAuditLogEntity { Id = Guid.NewGuid(), ActorUserId = actor, ActorEmail = "actor@example.test", Action = "DraftSaved", EntityType = "Topic", EntityId = Guid.NewGuid(), ChangedFieldsJson = "[]", Reason = "safe", Source = "AdminCms", Status = "succeeded", CreatedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-1), RequestMetadataJson = "{\"source\":\"AdminCms\"}" });
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var response = await new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(null, null, null, null, null, null, null, null, null, 10), TestContext.Current.CancellationToken);
 
-        Assert.Equal(new[] { "cms_content_audit_logs", "admin_role_assignment_events", "admin_actions" }, response.Items.Select(item => item.Source));
+        Assert.Equal(new[] { "admin_auth_audit_events", "cms_content_audit_logs", "admin_role_assignment_events", "admin_actions" }, response.Items.Select(item => item.Source));
     }
 
     [Fact]
@@ -92,6 +93,40 @@ public sealed class AdminActivityServiceTests
     {
         await using var dbContext = CreateDbContext();
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(null, null, null, null, null, null, null, null, null, 201), TestContext.Current.CancellationToken));
+    }
+
+
+    [Fact]
+    public async Task ListActivityIncludesAndFiltersAdminAuthAuditEvents()
+    {
+        await using var dbContext = CreateDbContext();
+        var actor = await AddUserAsync(dbContext, "auth-actor@example.test");
+        var adminUserId = Guid.NewGuid();
+        dbContext.AdminUsers.Add(new AdminUserEntity { Id = adminUserId, UserId = actor, NormalizedEmail = "auth-actor@example.test", Status = "active", CreatedAtUtc = DateTimeOffset.UtcNow, UpdatedAtUtc = DateTimeOffset.UtcNow });
+        dbContext.AdminAuthAuditEvents.AddRange(
+            new AdminAuthAuditEventEntity { Id = Guid.NewGuid(), ActorUserId = actor, ActorAdminUserId = adminUserId, ActorEmail = "auth-actor@example.test", EventType = "admin_logout", Result = "succeeded", OccurredAtUtc = DateTimeOffset.UtcNow.AddMinutes(-1) },
+            new AdminAuthAuditEventEntity { Id = Guid.NewGuid(), AttemptedEmail = "failed@example.test", EventType = "admin_login_failed", Result = "failed", FailureReasonCode = "invalid_credentials", OccurredAtUtc = DateTimeOffset.UtcNow });
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var response = await new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(null, null, null, null, "admin_auth_audit_events", "admin_login_failed", "failed", null, null, 10), TestContext.Current.CancellationToken);
+
+        var item = Assert.Single(response.Items);
+        Assert.Equal("admin_auth_audit_events", item.Source);
+        Assert.Equal("admin_login_failed", item.ActionType);
+        Assert.Equal("failed", item.Result);
+        Assert.Equal("failed@example.test", item.ActorEmail);
+        Assert.Null(item.TargetUserId);
+        Assert.Null(item.TargetAdminUserId);
+    }
+
+    [Fact]
+    public void AdminAuthAuditEntityDoesNotExposeForbiddenFields()
+    {
+        var names = typeof(AdminAuthAuditEventEntity).GetProperties().Select(property => property.Name.ToLowerInvariant()).ToArray();
+        foreach (var forbidden in new[] { "password", "token", "cookie", "authorization", "api key", "apikey", "secret", "rawrequestbody", "rawproviderpayload" })
+        {
+            Assert.DoesNotContain(names, name => name.Contains(forbidden.Replace(" ", string.Empty), StringComparison.Ordinal));
+        }
     }
 
     [Fact]

@@ -10,6 +10,7 @@ public sealed class AdminActivityService(AppDbContext dbContext) : IAdminActivit
     public const int MaxLimit = 200;
     private const string AdminActionsSource = "admin_actions";
     private const string AdminRoleAssignmentEventsSource = "admin_role_assignment_events";
+    private const string AdminAuthAuditEventsSource = "admin_auth_audit_events";
     private const string CmsContentAuditLogsSource = "cms_content_audit_logs";
     private const string SucceededResult = "succeeded";
 
@@ -23,8 +24,7 @@ public sealed class AdminActivityService(AppDbContext dbContext) : IAdminActivit
             throw new ArgumentOutOfRangeException(nameof(query), $"limit must be between 1 and {MaxLimit}.");
         }
 
-        // This first safe slice is read-only. Login/logout/failure audit persistence is intentionally not synthesized here;
-        // it requires a later unified audit table or an explicit approved schema change.
+        // Admin Activity remains read-only and normalizes approved audit sources; Admin auth events come only from the dedicated admin_auth_audit_events table.
         var items = new List<AdminActivityEventSnapshot>();
         if (MatchesSource(query.Source, AdminActionsSource))
         {
@@ -83,6 +83,28 @@ public sealed class AdminActivityService(AppDbContext dbContext) : IAdminActivit
                     ActionType = roleEvent.ActionType, Result = roleEvent.Result, TargetType = "admin_user",
                     TargetAdminUserId = roleEvent.TargetAdminUserId, TargetAdminUserEmail = roleEvent.TargetAdminUser.NormalizedEmail,
                     Reason = roleEvent.Reason, AdminNote = roleEvent.Reason, SafeMetadataJson = roleEvent.SafeMetadataJson
+                }).ToListAsync(cancellationToken));
+        }
+
+        if (MatchesSource(query.Source, AdminAuthAuditEventsSource))
+        {
+            items.AddRange(await _dbContext.AdminAuthAuditEvents.AsNoTracking()
+                .Where(authEvent => !query.ActorUserId.HasValue || authEvent.ActorUserId == query.ActorUserId)
+                .Where(authEvent => !query.ActorAdminUserId.HasValue || authEvent.ActorAdminUserId == query.ActorAdminUserId)
+                .Where(authEvent => query.TargetUserId == null && query.TargetAdminUserId == null)
+                .Where(authEvent => string.IsNullOrWhiteSpace(query.ActionType) || authEvent.EventType == query.ActionType)
+                .Where(authEvent => string.IsNullOrWhiteSpace(query.Result) || authEvent.Result == query.Result)
+                .Where(authEvent => !query.FromUtc.HasValue || authEvent.OccurredAtUtc >= query.FromUtc.Value)
+                .Where(authEvent => !query.ToUtc.HasValue || authEvent.OccurredAtUtc <= query.ToUtc.Value)
+                .OrderByDescending(authEvent => authEvent.OccurredAtUtc)
+                .Take(limit)
+                .Select(authEvent => new AdminActivityEventSnapshot
+                {
+                    EventId = authEvent.Id.ToString(), Source = AdminAuthAuditEventsSource, OccurredAtUtc = authEvent.OccurredAtUtc,
+                    ActorAdminUserId = authEvent.ActorAdminUserId, ActorUserId = authEvent.ActorUserId,
+                    ActorEmail = authEvent.ActorEmail ?? authEvent.AttemptedEmail,
+                    ActionType = authEvent.EventType, Result = authEvent.Result, TargetType = string.Empty,
+                    SafeMetadataJson = authEvent.SafeMetadataJson
                 }).ToListAsync(cancellationToken));
         }
 
