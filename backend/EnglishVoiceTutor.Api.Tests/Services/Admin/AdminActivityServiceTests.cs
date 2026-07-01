@@ -76,8 +76,8 @@ public sealed class AdminActivityServiceTests
         dbContext.AdminActions.Add(new AdminActionEntity { Id = Guid.NewGuid(), AdminUserId = actor, TargetUserId = target, ActionType = "manual_premium_revoke", Reason = "Emergency revoke", CreatedAtUtc = DateTimeOffset.UtcNow, SafeMetadataJson = "{\"accessControlOnly\":true}" });
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var byAdminUser = await new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(actorAdminUserId, null, null, null, "admin_actions", null, "manual_premium_revoke", null, null, 10), TestContext.Current.CancellationToken);
-        var byAppUser = await new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(null, actor, null, null, "admin_actions", null, "manual_premium_revoke", null, null, 10), TestContext.Current.CancellationToken);
+        var byAdminUser = await new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(actorAdminUserId, null, null, null, "admin_actions", "manual_premium_revoke", null, null, null, 10), TestContext.Current.CancellationToken);
+        var byAppUser = await new AdminActivityService(dbContext).ListActivityAsync(new AdminActivityQuery(null, actor, null, null, "admin_actions", "manual_premium_revoke", null, null, null, 10), TestContext.Current.CancellationToken);
 
         var item = Assert.Single(byAdminUser.Items);
         Assert.Equal(actorAdminUserId, item.ActorAdminUserId);
