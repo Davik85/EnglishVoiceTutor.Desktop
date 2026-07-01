@@ -27,7 +27,7 @@ Previous backend rollback reference must be verified from `/opt/languagevoicetut
 
 ## Package backend release
 
-Backend packaging uses the repository PowerShell helper and creates the linux-x64 backend archive under `artifacts/packages/backend/`:
+The production server does not need a git checkout, a `dotnet` SDK, or a `dotnet` runtime. Backend packaging uses the repository PowerShell helper and creates the linux-x64 backend archive under `artifacts/packages/backend/`:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.84
@@ -37,7 +37,7 @@ The package command does not upload, restart, run EF migrations, publish website
 
 ## Dry-run upload
 
-Use `-PackageFirst -DryRun` to print the upload, generated deploy-helper, symlink, and restart/status commands without changing the server:
+Use `-PackageFirst -DryRun` to print the upload, generated deploy-helper, symlink, and restart/status commands without changing the server; the script does not run the sudo restart or sudo status commands in dry-run mode, and restart/status commands are printed but not executed:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.84 -PackageFirst -DryRun
@@ -72,7 +72,7 @@ If the service status or health checks need investigation, inspect recent backen
 ssh -t lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 --no-pager"
 ```
 
-Do not paste production environment values, database connection strings, API keys, or provider secrets into documentation, tickets, chat, commits, or pull requests.
+Do not paste production environment values, database connection strings, API keys, or provider secrets into documentation, tickets, chat, commits, or pull requests. Do not echo `ConnectionStrings__DefaultConnection`, `PGPASSWORD`, or database URLs.
 
 ## Persistent AI Models CMS settings
 
@@ -106,6 +106,10 @@ If rollback health checks fail or the service does not stabilize, capture the la
 ```powershell
 ssh -t lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 --no-pager"
 ```
+
+## Migration reference
+
+If a reviewed database change is required, generate and review SQL separately. The current refresh-token migration reference is `20260611000000_AddUserRefreshTokens`; apply reviewed SQL with `psql` only through the approved database procedure, never from the backend upload helper.
 
 ## Scope boundaries
 

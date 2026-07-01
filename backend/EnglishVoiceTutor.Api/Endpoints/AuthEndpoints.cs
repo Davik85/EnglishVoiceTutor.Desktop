@@ -77,6 +77,8 @@ public static class AuthEndpoints
         LoginRequest request,
         IAuthService authService,
         IBootstrapAdminAccessService bootstrapAdminAccessService,
+        IAdminRoleAssignmentReadService adminRoleAssignmentReadService,
+        IAdminRolePermissionCatalogService adminRolePermissionCatalogService,
         HttpContext httpContext,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
@@ -94,7 +96,8 @@ public static class AuthEndpoints
         }
 
         var principal = CreatePrincipal(response);
-        if (bootstrapAdminAccessService.IsBootstrapAdmin(principal))
+        if (bootstrapAdminAccessService.IsBootstrapAdmin(principal)
+            || await HasPersistentAdminShellAccessAsync(response.User.UserId, response.User.Email, adminRoleAssignmentReadService, adminRolePermissionCatalogService, cancellationToken))
         {
             await httpContext.SignInAsync(
                 AdminAuthorizationConstants.AdminCookieAuthenticationScheme,
@@ -141,6 +144,50 @@ public static class AuthEndpoints
         await authService.RevokeRefreshTokenAsync(request, cancellationToken);
         loggerFactory.CreateLogger("AuthEndpoints").LogInformation("Auth revoke completed. Result=Ok");
         return Results.NoContent();
+    }
+
+
+    private static async Task<bool> HasPersistentAdminShellAccessAsync(
+        Guid userId,
+        string email,
+        IAdminRoleAssignmentReadService adminRoleAssignmentReadService,
+        IAdminRolePermissionCatalogService adminRolePermissionCatalogService,
+        CancellationToken cancellationToken)
+    {
+        var rolesByUserId = await adminRoleAssignmentReadService.GetEffectiveRolesByUserIdAsync(userId, cancellationToken);
+        if (HasPersistentPermission(rolesByUserId, AdminPermissionConstants.AdminSelfRead, adminRolePermissionCatalogService))
+        {
+            return true;
+        }
+
+        if (rolesByUserId.IsDisabled)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return false;
+        }
+
+        var rolesByEmail = await adminRoleAssignmentReadService.GetEffectiveRolesByNormalizedEmailAsync(email.Trim(), cancellationToken);
+        return HasPersistentPermission(rolesByEmail, AdminPermissionConstants.AdminSelfRead, adminRolePermissionCatalogService);
+    }
+
+    private static bool HasPersistentPermission(
+        AdminRoleAssignmentReadResult readResult,
+        string permissionName,
+        IAdminRolePermissionCatalogService adminRolePermissionCatalogService)
+    {
+        if (readResult is not { IsAdminUserFound: true, IsDisabled: false } || readResult.RoleIds.Count == 0)
+        {
+            return false;
+        }
+
+        var productionRolePermissions = adminRolePermissionCatalogService.GetProductionRolePermissions();
+        return readResult.RoleIds.Any(roleId =>
+            productionRolePermissions.TryGetValue(roleId, out var permissions)
+            && permissions.Contains(permissionName, StringComparer.Ordinal));
     }
 
     private static ClaimsPrincipal CreatePrincipal(AuthResponse response)

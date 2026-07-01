@@ -284,9 +284,12 @@ public static class AdminEndpoints
         httpContext.Response.StatusCode = StatusCodes.Status204NoContent;
     }
 
-    private static IResult GetAdminMe(
+    private static async Task<IResult> GetAdminMe(
         ClaimsPrincipal principal,
-        IAdminRolePermissionCatalogService adminRolePermissionCatalogService)
+        IBootstrapAdminAccessService bootstrapAdminAccessService,
+        IAdminRoleAssignmentReadService adminRoleAssignmentReadService,
+        IAdminRolePermissionCatalogService adminRolePermissionCatalogService,
+        CancellationToken cancellationToken)
     {
         var userId = ClaimsUserAccessor.TryGetUserId(principal);
         var email = ClaimsUserAccessor.TryGetUserEmail(principal);
@@ -296,19 +299,65 @@ public static class AdminEndpoints
             return Results.Unauthorized();
         }
 
+        var isBootstrapAdmin = bootstrapAdminAccessService.IsBootstrapAdmin(principal);
+        var roles = isBootstrapAdmin
+            ? adminRolePermissionCatalogService.GetBootstrapAdminRoles()
+            : await GetPersistentRolesAsync(userId.Value, email, adminRoleAssignmentReadService, cancellationToken);
+        var permissions = ResolvePermissions(roles, isBootstrapAdmin, adminRolePermissionCatalogService);
+
         var response = new AdminMeResponse
         {
             UserId = userId.Value,
             Email = email,
             IsAdmin = true,
-            AdminSource = AdminAuthorizationConstants.BootstrapAdminSource,
-            Roles = adminRolePermissionCatalogService.GetBootstrapAdminRoles(),
-            Permissions = adminRolePermissionCatalogService.GetBootstrapAdminPermissions(),
-            IsBootstrapAdmin = true,
+            AdminSource = isBootstrapAdmin ? AdminAuthorizationConstants.BootstrapAdminSource : "persistent_role_assignment",
+            Roles = roles,
+            Permissions = permissions,
+            IsBootstrapAdmin = isBootstrapAdmin,
             CheckedAtUtc = DateTimeOffset.UtcNow
         };
 
         return Results.Ok(response);
+    }
+
+
+    private static async Task<IReadOnlyList<string>> GetPersistentRolesAsync(
+        Guid userId,
+        string email,
+        IAdminRoleAssignmentReadService adminRoleAssignmentReadService,
+        CancellationToken cancellationToken)
+    {
+        var rolesByUserId = await adminRoleAssignmentReadService.GetEffectiveRolesByUserIdAsync(userId, cancellationToken);
+        if (rolesByUserId is { IsAdminUserFound: true, IsDisabled: false } && rolesByUserId.RoleIds.Count > 0)
+        {
+            return rolesByUserId.RoleIds;
+        }
+
+        if (rolesByUserId.IsDisabled || string.IsNullOrWhiteSpace(email))
+        {
+            return [];
+        }
+
+        var rolesByEmail = await adminRoleAssignmentReadService.GetEffectiveRolesByNormalizedEmailAsync(email.Trim(), cancellationToken);
+        return rolesByEmail is { IsAdminUserFound: true, IsDisabled: false } ? rolesByEmail.RoleIds : [];
+    }
+
+    private static IReadOnlyList<string> ResolvePermissions(
+        IReadOnlyList<string> roles,
+        bool isBootstrapAdmin,
+        IAdminRolePermissionCatalogService adminRolePermissionCatalogService)
+    {
+        if (isBootstrapAdmin)
+        {
+            return adminRolePermissionCatalogService.GetBootstrapAdminPermissions();
+        }
+
+        var productionRolePermissions = adminRolePermissionCatalogService.GetProductionRolePermissions();
+        return roles
+            .SelectMany(roleId => productionRolePermissions.TryGetValue(roleId, out var permissions) ? permissions : [])
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
     }
 
 
