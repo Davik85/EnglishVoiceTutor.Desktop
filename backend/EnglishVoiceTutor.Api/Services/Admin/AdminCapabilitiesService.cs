@@ -10,7 +10,8 @@ public sealed class AdminCapabilitiesService(
     IAdminRolePermissionCatalogService adminRolePermissionCatalogService,
     IOptions<BillingOptions> billingOptionsAccessor,
     IOptions<PaddleBillingOptions> paddleBillingOptionsAccessor,
-    IOptions<PaddleWebhookOptions> paddleWebhookOptionsAccessor) : IAdminCapabilitiesService
+    IOptions<PaddleWebhookOptions> paddleWebhookOptionsAccessor,
+    IConfiguration configuration) : IAdminCapabilitiesService
 {
     public AdminCapabilitiesResponse GetCapabilities()
     {
@@ -50,6 +51,12 @@ public sealed class AdminCapabilitiesService(
         var paddleWebhooksAvailable = paddleWebhookOptions.Enabled
             && IsConfigured(paddleWebhookOptions.SecretKey)
             && paddleWebhookOptions.TimestampToleranceSeconds > 0;
+        var productionRolesAvailable = AdminRbacCutoverStatusReader.GetStatus(configuration) is
+        {
+            PersistentRoleAuthorizationEnabled: true,
+            BootstrapAdminFallbackForAdminPermissionPoliciesEnabled: false,
+            BootstrapAdminFallbackConfigurationValuePresent: true
+        };
 
         return new AdminCapabilitiesResponse
         {
@@ -68,7 +75,7 @@ public sealed class AdminCapabilitiesService(
                 FreeLessonAllowanceReset = true,
                 LocalSmokeTestScript = true,
                 CmsUiAvailable = false,
-                ProductionRolesAvailable = false,
+                ProductionRolesAvailable = productionRolesAvailable,
                 BillingProviderConfigured = billingProviderConfigured,
                 PaddleCheckoutAvailable = paddleCheckoutAvailable,
                 PaddleWebhooksAvailable = paddleWebhooksAvailable,
