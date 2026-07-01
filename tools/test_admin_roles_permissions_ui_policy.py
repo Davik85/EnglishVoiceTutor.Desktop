@@ -5,6 +5,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ADMIN_JS = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js"
 ADMIN_HTML = ROOT / "backend/EnglishVoiceTutor.Api/wwwroot/admin/index.html"
+AUTH_ENDPOINTS = ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AuthEndpoints.cs"
+ADMIN_ENDPOINTS = ROOT / "backend/EnglishVoiceTutor.Api/Endpoints/AdminEndpoints.cs"
 
 
 def read(path: Path) -> str:
@@ -24,6 +26,8 @@ def assert_not_contains(text: str, needle: str, label: str) -> None:
 def main() -> None:
     admin_js = read(ADMIN_JS)
     admin_html = read(ADMIN_HTML)
+    auth_endpoints = read(AUTH_ENDPOINTS)
+    admin_endpoints = read(ADMIN_ENDPOINTS)
     combined = admin_js + "\n" + admin_html
 
     assert_contains(admin_js, 'adminMe: "/api/admin/me"', "Admin Shell /api/admin/me path")
@@ -45,6 +49,15 @@ def main() -> None:
     assert_contains(combined, "Production role management is a controlled persistent-RBAC workflow", "production role management controlled wording")
     assert_contains(combined, "server cutover status", "server cutover status wording")
     assert_contains(combined, "Production RBAC", "production RBAC status wording")
+    assert_contains(admin_html, "linked persistent Admin User role", "persistent Admin User sign-in wording")
+    assert_not_contains(admin_html, "Development bootstrap admin account", "stale bootstrap-only sign-in wording")
+
+    assert_contains(auth_endpoints, "HasPersistentAdminShellAccessAsync", "persistent Admin User login gate")
+    assert_contains(auth_endpoints, "AdminPermissionConstants.AdminSelfRead", "admin shell self-read login permission")
+    assert_contains(auth_endpoints, "GetEffectiveRolesByUserIdAsync", "persistent role login by linked app user id")
+    assert_contains(auth_endpoints, "GetEffectiveRolesByNormalizedEmailAsync", "persistent role login by normalized email fallback")
+    assert_contains(admin_endpoints, "persistent_role_assignment", "persistent Admin User /api/admin/me source")
+    assert_contains(admin_endpoints, "ResolvePermissions", "persistent Admin User /api/admin/me permissions")
 
     # This UI-awareness step must remain informational: do not gate tabs, buttons, or fetches on permission checks.
     assert_not_contains(admin_js, "hasPermission", "client-side permission enforcement helper")
