@@ -18,7 +18,11 @@ function Invoke-GateCommand {
     )
 
     Write-Section $Title
+    $global:LASTEXITCODE = 0
     & $Command
+    if ($LASTEXITCODE -ne 0) {
+        throw "Gate command failed with exit code $LASTEXITCODE: $Title"
+    }
 }
 
 $repoRoot = (Get-Location).Path

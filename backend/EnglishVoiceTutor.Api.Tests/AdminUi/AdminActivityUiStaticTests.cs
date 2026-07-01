@@ -24,6 +24,9 @@ public sealed class AdminActivityUiStaticTests
         Assert.Contains("data-tab-id=\"admin-activity\"", AdminIndex);
         Assert.Contains("[Tabs.adminActivity]: { anyPermissions: [AdminPermissionIds.auditRead] }", AdminJs);
         Assert.Contains("/api/admin/activity", AdminJs);
+        Assert.Contains("if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }", AdminJs);
+        Assert.Contains("if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); }", AdminJs);
+        Assert.Contains("function isAuthErrorMessage(message) { return message === ErrorMessages.signInAgain || message === ErrorMessages.accessDenied || message === ErrorMessages.sessionExpired; }", AdminJs);
     }
 
     [Fact]

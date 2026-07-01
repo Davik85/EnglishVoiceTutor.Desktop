@@ -88,6 +88,13 @@ MIGRATED_ENDPOINTS = [
         "policy_constant": "AuditLogViewPermissionPolicyName",
     },
     {
+        "action_key": "admin.activity.read",
+        "method": "GET",
+        "route_constant": "AdminActivityRoute",
+        "permission_constant": "AuditRead",
+        "policy_constant": "AuditLogViewPermissionPolicyName",
+    },
+    {
         "action_key": "admin.premium.grant",
         "method": "POST",
         "route_constant": "AdminUserPremiumGrantsRoute",
@@ -503,9 +510,9 @@ def main() -> None:
         )
         for migrated_endpoint in MIGRATED_ENDPOINTS
     ]
-    if len(migrated_authorizations) != 35 or set(migrated_authorizations) != set(expected_migrations):
+    if len(migrated_authorizations) != 36 or set(migrated_authorizations) != set(expected_migrations):
         raise AssertionError(
-            f"Exactly thirty-five existing Admin endpoints must use AdminPermission:* policies after the controlled user-impacting Admin action endpoint batch migration. Got: {migrated_authorizations}"
+            f"Exactly thirty-six Admin endpoints must use AdminPermission:* policies after intentionally adding read-only Admin Activity as the 36th AuditRead endpoint. Got: {migrated_authorizations}"
         )
 
     for method, route, policy in endpoint_authorizations:
@@ -532,6 +539,14 @@ def main() -> None:
         if policy != "BootstrapAdminPolicyName":
             raise AssertionError(f"Unexpected migrated Admin endpoint: {(method, route, policy)}")
 
+
+    admin_activity_authorization = ("GET", "AdminActivityRoute", "AuditLogViewPermissionPolicyName")
+    if admin_activity_authorization not in migrated_authorizations:
+        raise AssertionError("Admin Activity must be the intentional 36th AdminPermission endpoint: GET-only AdminActivityRoute protected by AuditLogViewPermissionPolicyName.")
+    if any(route == "AdminActivityRoute" and method.upper() != "GET" for method, route, _ in endpoint_authorizations):
+        raise AssertionError("Admin Activity must remain read-only: AdminActivityRoute may only be mapped with GET.")
+    if ("GET", "AdminUserAuditActionsRoute", "AuditLogViewPermissionPolicyName") not in migrated_authorizations:
+        raise AssertionError("Existing target-user Audit Log endpoint must remain GET-only and protected by AuditLogViewPermissionPolicyName; Admin Activity must not replace or weaken it.")
 
     cms_runtime_authorization = ("GET", "AdminDevCmsRuntimeStatusRoute", "CmsRuntimeStatusReadPermissionPolicyName")
     if cms_runtime_authorization not in migrated_authorizations:

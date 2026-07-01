@@ -774,8 +774,14 @@ def main() -> None:
         flags=re.MULTILINE,
     )
     permission_migrated = {(method.upper(), route, policy) for method, route, policy in endpoint_authorizations if policy.endswith("PermissionPolicyName") and route not in {"AdminRoleAssignmentDiagnosticsRoute", "AdminRoleAssignmentActorRoute", "AdminRoleAssignmentRevokeRoute", "AdminRoleAssignmentAssignRoute", "AdminRoleAssignmentDisableAdminRoute", "AdminRoleAssignmentEnableAdminRoute", "AdminRoleAssignmentProvisionAdminUserRoute", "AdminRoleAssignmentBootstrapFirstOwnerRoute", "AdminRbacCutoverStatusRoute"}}
-    if {policy for _, _, policy in permission_migrated} != MIGRATED_POLICY_CONSTANTS or len(permission_migrated) != 35:
-        raise AssertionError(f"Exactly thirty-five existing Admin endpoints must remain permission-policy migrated after user-impacting Admin action endpoint migration. Found: {sorted(permission_migrated)}")
+    if {policy for _, _, policy in permission_migrated} != MIGRATED_POLICY_CONSTANTS or len(permission_migrated) != 36:
+        raise AssertionError(f"Exactly thirty-six Admin endpoints must remain permission-policy migrated after intentionally adding read-only Admin Activity as the 36th AuditRead endpoint. Found: {sorted(permission_migrated)}")
+    if ("GET", "AdminActivityRoute", "AuditLogViewPermissionPolicyName") not in permission_migrated:
+        raise AssertionError("Admin Activity must be present as the intentional 36th permission-policy endpoint: GET AdminActivityRoute with AuditLogViewPermissionPolicyName.")
+    if any(route == "AdminActivityRoute" and method != "GET" for method, route, _ in permission_migrated):
+        raise AssertionError("Admin Activity must remain read-only: AdminActivityRoute may only be permission-policy migrated as GET.")
+    if ("GET", "AdminUserAuditActionsRoute", "AuditLogViewPermissionPolicyName") not in permission_migrated:
+        raise AssertionError("Existing target-user Audit Log endpoint must remain GET-only with AuditLogViewPermissionPolicyName; Admin Activity must not replace or weaken it.")
     if ("GET", "AdminDevCmsRuntimeStatusRoute", "CmsRuntimeStatusReadPermissionPolicyName") not in permission_migrated:
         raise AssertionError("CMS runtime status must remain a GET-only AdminPermission migration.")
     if ("GET", "AdminDevCmsContentPacksRoute", "CmsContentReadPermissionPolicyName") not in permission_migrated:
