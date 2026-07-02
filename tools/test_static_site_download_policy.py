@@ -72,8 +72,8 @@ def main() -> int:
     assert_contains(download_html, 'id="detail-minimum-supported-version"', "manifest minimumSupportedVersion display")
     assert_contains(download_html, 'id="detail-update-mode"', "manifest updateMode display")
     assert_contains(download_html, 'If release details do not load automatically, please contact', "safe no-JavaScript support fallback")
-    assert_contains(download_html, "0.1.36-tester.31", "manifest version rendered into static download page")
-    assert_contains(download_html, "LanguageVoiceTutorSetup-0.1.36-tester.31.exe", "manifest installer rendered into static download page")
+    assert_contains(download_html, "1.0", "manifest version rendered into static download page")
+    assert_contains(download_html, "LanguageVoiceTutorSetup-1.0.exe", "manifest installer rendered into static download page")
     if "Version</dt>\n                    <dd id=\"detail-version\">Unavailable</dd>" in download_html:
         raise AssertionError("download.html must not default release details to Version: Unavailable")
     assert_contains(download_js, '"/releases/windows/direct/latest.json"', "release manifest URL")

@@ -7,7 +7,7 @@ public static class AppConstants
     public const string AppName = "Language Voice Tutor Desktop";
     public const string ShortAppName = "Language Voice Tutor";
     public const string WelcomeSubtitle = "Practice spoken English with short AI-powered lessons.";
-    public const string MvpFooterNote = "MVP build — AI, voice, and avatar will be connected step by step.";
+    public const string MvpFooterNote = "Practice real conversations with AI-powered voice lessons.";
 
     public const string LevelSelectionTitle = "Choose your English level";
     public const string LevelSelectionSubtitle = "We will use this level later to adapt lessons and corrections.";
@@ -15,7 +15,7 @@ public static class AppConstants
 
     public const string HomeTitle = "Choose a conversation topic";
     public const string HomeSubtitle = "Start with a practical situation and practice step by step.";
-    public const string DailyLimitText = "Free MVP limit: 3 lessons today";
+    public const string DailyLimitText = "";
     public const string SettingsPlaceholderMessage = "Settings screen will be added in a future step.";
     public const string LessonHistoryTitle = "Lesson history";
     public const string LessonHistorySubtitle = "Recent completed lessons on this device.";

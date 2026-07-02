@@ -2,7 +2,7 @@
 
 Review date: 2026-06-30.
 
-Scope: controlled tester/direct Windows release readiness and broader public-release remaining work. This review is documentation-only and does not change backend runtime code, desktop runtime code, product behavior, billing logic, entitlement logic, Paddle/OpenAI runtime behavior, database schema, migrations, Inno installer behavior, deployment scripts, generated artifacts, signing keys, or secrets.
+Scope: controlled direct Windows release readiness and broader public-release remaining work. This review is documentation-only and does not change backend runtime code, desktop runtime code, product behavior, billing logic, entitlement logic, Paddle/OpenAI runtime behavior, database schema, migrations, Inno installer behavior, deployment scripts, generated artifacts, signing keys, or secrets.
 
 ## 2026-06-21 Admin RBAC and roadmap update
 
@@ -21,21 +21,21 @@ Public release still requires remaining operational readiness work: the complete
 ## Current verified state recorded for release planning
 
 - Backend `0.1.35-backend.82` is deployed at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82` and production `/health` plus `/api/health/database` return `200 OK`.
-- Windows direct tester `0.1.36-tester.31` is live as `LanguageVoiceTutorSetup-0.1.36-tester.31.exe` with `backendBaseUrl=https://api.languagevoicetutor.com` and `updateMode=manual-confirmation`.
+- Windows direct public `1.0` is live as `LanguageVoiceTutorSetup-1.0.exe` with `backendBaseUrl=https://api.languagevoicetutor.com` and `updateMode=manual-confirmation`.
 - AI Models persistent production storage is verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; it contains the known-good lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2` setup; matched the release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`; and survived a backend service restart with health/database health still green. This was a production data/config persistence correction, not a backend deploy, DB migration, Website CMS publish, or Windows installer upload.
 - Trial reference plan is seeded/required. Trial is displayed as a first-class tariff/reference plan, while Trial access remains entitlement-owned.
 - Learner Account subscription UI is simplified to Current tariff, Free lessons remaining, Premium, and Auto-renewal.
 - Premium continuous coverage display is backend-computed and can include queued paid Premium periods; `PremiumActive` remains based only on active started entitlements.
 - Paddle sandbox checkout and sandbox cancel-renewal work through backend-owned flows. Controlled live Paddle validation is complete; broader launch readiness remains pending.
-- The release remains a controlled tester/direct Windows release, not broad public production launch.
-- Current controlled tester/direct Windows releases continue to use the existing Inno Setup installer flow; Microsoft Store/MSIX was evaluated and discontinued for now; future trust work should focus on direct installer code signing. This review does not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior.
+- The release remains a controlled direct Windows release, not broad public production launch.
+- Current controlled direct Windows releases continue to use the existing Inno Setup installer flow; Microsoft Store/MSIX was evaluated and discontinued for now; future trust work should focus on direct installer code signing. This review does not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior.
 
 
 ## 1. Release blockers for controlled external tester handoff
 
 No new critical blockers were found in this documentation/source review. The earlier AI Models persistent storage risk is resolved. Perform the following handoff checks immediately before inviting testers:
 
-- Verify live Windows `latest.json` over HTTPS still points to `0.1.36-tester.31`, `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`, `https://api.languagevoicetutor.com`, and `manual-confirmation`.
+- Verify live Windows `latest.json` over HTTPS still points to `1.0`, `LanguageVoiceTutorSetup-1.0.exe`, `https://api.languagevoicetutor.com`, and `manual-confirmation`.
 - Verify backend symlink still resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82`, `/health` plus `/api/health/database` are green, and the persistent AI Models file still exists under `/opt/languagevoicetutor/backend/site/content/` with the known-good model IDs.
 - Perform one installed-build smoke: registration/login, auth restore, lesson start, at least one lesson completion path, TTS/bot voice, Conversation Mode, Lesson History, Progress, Account view, Buy Premium sandbox path, Refresh status, and Cancel subscription sandbox path where applicable.
 - Confirm generated artifacts, installers, backend ZIPs, generated release folders, temp deploy scripts, SQL outputs, `.env` files, and secrets are not committed.
@@ -194,7 +194,7 @@ Backend deployment, database migrations, Website CMS/static site publish, and Wi
 
 ### Verified current release point from tracked repository state
 
-- Windows direct tester release is tracked as `0.1.36-tester.31` in `site/public/releases/windows/direct/latest.json`, with `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=0.1.36-tester.31`, and `updateMode=manual-confirmation`.
+- Windows direct release is tracked as `1.0` in `site/public/releases/windows/direct/latest.json`, with `LanguageVoiceTutorSetup-1.0.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.0`, and `updateMode=manual-confirmation`.
 - Backend production release is tracked in release docs as `0.1.35-backend.82`. The live `/opt/languagevoicetutor/backend/current` symlink was manually verified with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` and resolved to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82`; production `/health` and `/api/health/database` were verified healthy. No backend deploy was performed by this documentation task.
 - Admin CMS AI Models settings are persistent server data outside versioned backend release folders. Known-good model settings are: lesson tutor chat `gpt-5.5`; feedback/correction `gpt-5.2`; lesson hint `gpt-5.2`; translation `gpt-5.2`.
 - For `gpt-5.5`, backend requests must omit `temperature`. API keys and provider secrets remain server environment secrets. The Desktop app must not call OpenAI directly and must not choose OpenAI model IDs.
@@ -219,7 +219,7 @@ Backend deployment, database migrations, Website CMS/static site publish, and Wi
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| Windows Direct EXE/Inno | Partially ready for controlled testers | `0.1.36-tester.31` is documented and manifest-backed. Public release still needs code signing, update-over-existing-install evidence if not already current, clean-machine smoke before expansion, and controlled feedback. |
+| Windows Direct EXE/Inno | Partially ready for controlled testers | `1.0` is documented and manifest-backed. Public release still needs code signing, update-over-existing-install evidence if not already current, clean-machine smoke before expansion, and controlled feedback. |
 | Direct update flow | Ready for controlled testers | `latest.json`, manual confirmation, manifest identity checks, and SHA-256 verification remain the active path. |
 | Backend production | Ready for controlled testers | Health/database health checks and deployment docs exist. The live current symlink verifies production backend `0.1.35-backend.82`; backend deploys, database migrations, Website CMS publish, and Windows installer uploads remain separate operations. |
 | Database/migrations | Controlled/manual | Current docs say backend deploy does not run migrations. Any migration requires separate review, backup, SQL/operator procedure, and post-checks. |
@@ -267,7 +267,7 @@ Current production facts after backend `0.1.35-backend.83` and before any real l
 - Static website nginx root is `/var/www/languagevoicetutor/site`. The parent `/var/www/languagevoicetutor` is not the nginx static-site root and must not be used as the static website upload target.
 - Public Paddle config is `/var/www/languagevoicetutor/site/paddle.public.json`; public Paddle checkout page is `/var/www/languagevoicetutor/site/pay.html`.
 - Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.
-- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct tester remains `0.1.36-tester.31`; direct `latest.json` remains active with manual-confirmation update mode.
+- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct public release is `1.0`; direct `latest.json` remains active with manual-confirmation update mode.
 - Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
 - Controlled live payment, webhook delivery, Premium entitlement activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed. Paid-launch readiness remains incomplete until final release-readiness review and remaining non-billing blockers are closed; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 

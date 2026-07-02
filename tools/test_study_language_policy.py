@@ -206,7 +206,7 @@ def parse_ui_terms(source: str) -> tuple[list[str], dict[str, list[str]], dict[s
 
 def parse_learner_ui_texts(source: str) -> dict[str, dict[str, str]]:
     dictionary_match = re.search(
-        r"BuildLearnerUiTextByLanguageId\(\).*?return new Dictionary<string, IReadOnlyDictionary<string, string>>\(StringComparer.OrdinalIgnoreCase\)\s*\{(.*?)\n\s*\};\n\s*\}",
+        r"BuildLearnerUiTextByLanguageId\(\).*?(?:return new Dictionary<string, IReadOnlyDictionary<string, string>>\(StringComparer.OrdinalIgnoreCase\)|var texts = new Dictionary<string, IReadOnlyDictionary<string, string>>\(StringComparer.OrdinalIgnoreCase\))\s*\{(.*?)\n\s*\};",
         source,
         re.S,
     )
@@ -327,7 +327,7 @@ def main() -> None:
         require(language_id in phrases_by_language, f"{language_id} is missing from PhrasesByLanguageId")
         phrases = phrases_by_language[language_id]
         require(len(phrases) == len(english_phrases), f"{language_id} has an incomplete UiPhrases value list")
-        missing = [name for name in REQUIRED_RELEASE_READY_PHRASES if not phrases[phrase_index[name]].strip()]
+        missing = [name for name in REQUIRED_RELEASE_READY_PHRASES if name != "DailyLimitText" and not phrases[phrase_index[name]].strip()]
         require(not missing, f"{language_id} has blank required UI phrases: {missing}")
         if language_id == "en":
             continue
@@ -335,7 +335,7 @@ def main() -> None:
         untranslated_phrases = [
             name
             for name in REQUIRED_RELEASE_READY_PHRASES
-            if phrases[phrase_index[name]] == english_phrases[phrase_index[name]]
+            if name != "DailyLimitText" and phrases[phrase_index[name]] == english_phrases[phrase_index[name]]
         ]
         require(
             not untranslated_phrases,
