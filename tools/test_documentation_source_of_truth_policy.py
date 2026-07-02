@@ -23,15 +23,15 @@ BACKEND_SYMLINK_COMMAND = 'ssh lvt-server "readlink -f /opt/languagevoicetutor/b
 PROD_BACKEND_URL = "https://api.languagevoicetutor.com"
 CURRENT_TESTER_RELEASE = "0.1.36-tester.31"
 CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-0.1.36-tester.31.exe"
-CURRENT_BACKEND_RELEASE = "0.1.35-backend.96"
+CURRENT_BACKEND_RELEASE = "0.1.35-backend.99"
 PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.49"
 STALE_BACKEND_RELEASES = ["0.1.35-backend.27", "0.1.35-backend.33", "0.1.35-backend.34"]
 STALE_TESTER_RELEASES = ["0.1.35-tester.1", "0.1.36-tester.2", "0.1.36-tester.3", "0.1.36-tester.17"]
 DEFERRED_ITEMS = [
     "Code signing remains deferred",
-    "Broad public paid launch remains pending",
-    "Automatic refund/chargeback revocation requires production verification",
-    "Customer portal verification remains pending",
+    "broad public paid launch remains pending",
+    "Full-refund Premium revocation is production-verified",
+    "expanded customer portal/subscription management is deferred",
     "CMS published-snapshot runtime is active for controlled tester lessons",
     "backend deployment, database migrations, the download website, and update UI remain separate work",
     "Generated local files under `artifacts/`",
@@ -173,10 +173,11 @@ def main() -> int:
         ("Controlled Paddle live payment validation completed", "controlled Paddle live payment completed wording"),
         ("desktop cancel-renewal validation", "cancel-renewal validation completed wording"),
         ("failed payment attempts did not grant Premium", "failed payments do not grant Premium wording"),
-        ("current backend release is `0.1.35-backend.96`", "current production backend .95 wording"),
-        ("Automatic refund/chargeback revocation requires production verification", "refund/chargeback automatic revoke pending production verification wording"),
-        ("Customer portal verification remains pending", "customer portal pending wording"),
-        ("Broad public paid launch remains pending", "broad public paid launch pending wording"),
+        ("current backend release is `0.1.35-backend.99`", "current production backend .99 wording"),
+        ("Full-refund Premium revocation is production-verified", "full refund production verified wording"),
+        ("chargeback remains implemented/test-covered but not live-chargeback-tested", "chargeback not overclaimed wording"),
+        ("expanded customer portal/subscription management is deferred", "customer portal deferred wording"),
+        ("broad public paid launch remains pending", "broad public paid launch pending wording"),
         ("Direct installer code signing remains pending", "direct installer code signing pending wording"),
     ]
     for needle, label in required_billing_truths:

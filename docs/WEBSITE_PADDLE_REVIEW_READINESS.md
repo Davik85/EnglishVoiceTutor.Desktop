@@ -114,11 +114,11 @@ Legal texts are product/legal drafts and must not be described as final legal ad
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.82`.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.99`.
 - Website: public pages generated and Paddle-review polish completed.
 - Download: current Windows tester release visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public tester release `0.1.36-tester.31`.
-- Billing: Paddle live not enabled yet.
+- Billing: controlled Paddle live payment/webhook/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are production-verified; broad public paid launch still requires final release-readiness review.
 - Legal: legal/support/seller/AI/status pages ready for owner/legal final review.
 
 Remaining release steps:
@@ -126,11 +126,11 @@ Remaining release steps:
 1. Final manual website review in incognito.
 2. Final owner/legal text review.
 3. Final Windows installer smoke.
-4. Paddle live readiness checklist.
-5. Only after approval: production Paddle environment, token, webhook, and price setup.
+4. Final paid-launch readiness review; full-refund revoke is no longer a blocker.
+5. Keep Paddle/provider history and Admin diagnostics as support fallback; expanded customer portal/subscription management is deferred.
 6. Microsoft Store/MSIX is discontinued for now and must not be listed as an active next step or claimed as currently available.
 
-Do not state that the product is fully public production-ready. The current Windows release remains a controlled tester/direct Windows release, not a broad public production launch, and not broad public production readiness. Production/live Paddle readiness remains deferred.
+Do not state that the product is fully public production-ready. The current Windows release remains a controlled tester/direct Windows release, not a broad public production launch, and not broad public production readiness. Controlled live Paddle validation is complete; only broader launch readiness remains.
 
 ## 2026-06-30 approved-domain `/pay.html` checkout page
 
@@ -140,7 +140,7 @@ Publishers must create `/paddle.public.json` during static-site publish from `si
 
 ## 2026-06-30 Paddle live checkout/Admin readiness update
 
-Current production facts after backend `0.1.35-backend.83` and before any real live payment test:
+Current production facts after backend `0.1.35-backend.99` and the 2026-07-02 controlled live validation:
 
 - Backend health and database health are `200 Healthy`.
 - Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.
@@ -151,7 +151,7 @@ Current production facts after backend `0.1.35-backend.83` and before any real l
 - Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.
 - Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct tester remains `0.1.36-tester.31`; direct `latest.json` remains active with manual-confirmation update mode.
 - Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
-- No real live payment test has been completed. Paid-launch readiness remains incomplete until controlled live payment, webhook delivery, Premium entitlement activation, refund/cancel/customer portal/chargeback operational checks, and post-test docs are completed.
+- Controlled live payment, webhook delivery, Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed. Chargeback remains implemented/test-covered but not live-chargeback-tested. Partial refund remains conservative/manual-review. Expanded customer portal/subscription management is deferred and not a current blocker.
 
 Static website upload command must target the real nginx root:
 
@@ -165,4 +165,4 @@ Safe backend env verification must redact secrets and must use the existing env 
 sudo awk -F= '/^(Billing__|PaddleBilling__|PaddleWebhook__)/ { v=$2; if ($1 ~ /(ApiKey|SecretKey|Token)/) v=(length($2)>0 ? "SET" : "EMPTY"); print $1 "=" v }' /etc/languagevoicetutor/backend.env
 ```
 
-Admin capabilities should now distinguish configuration from launch completion: configured live checkout/webhooks can be reported as available/configured, while `billingLivePaymentTestComplete=false` and `billingPaidLaunchReleaseComplete=false` continue to block paid launch until the controlled live payment path is documented.
+Admin capabilities should distinguish validation from launch completion: live checkout/webhooks, controlled live payment, Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation can be reported as completed, while `billingPaidLaunchReleaseComplete=false` remains until final release-readiness review and remaining non-billing blockers are closed.

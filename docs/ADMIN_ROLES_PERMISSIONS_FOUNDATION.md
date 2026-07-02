@@ -65,7 +65,7 @@ Deferred work:
 
 ## Deployment note
 
-Production Admin RBAC / persistent role management is completed in production backend `0.1.35-backend.95`, active at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.95` with `/opt/languagevoicetutor/backend/current` pointing to that release at the last verification. No EF migration was required for this RBAC completion stage. Backend `/health` and `/api/health/database` returned `200 Healthy`.
+Production Admin RBAC / persistent role management was completed in production backend `0.1.35-backend.95`; at that RBAC verification stage `/opt/languagevoicetutor/backend/current` pointed to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.95`. No EF migration was required for this RBAC completion stage. Backend `/health` and `/api/health/database` returned `200 Healthy`.
 
 ## 2026-07-01 production CMS capability/runtime verification
 
