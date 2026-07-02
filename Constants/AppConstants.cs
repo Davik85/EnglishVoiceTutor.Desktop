@@ -15,7 +15,7 @@ public static class AppConstants
 
     public const string HomeTitle = "Choose a conversation topic";
     public const string HomeSubtitle = "Start with a practical situation and practice step by step.";
-    public const string DailyLimitText = string.Empty;
+    public const string DailyLimitText = "";
     public const string SettingsPlaceholderMessage = "Settings screen will be added in a future step.";
     public const string LessonHistoryTitle = "Lesson history";
     public const string LessonHistorySubtitle = "Recent completed lessons on this device.";
