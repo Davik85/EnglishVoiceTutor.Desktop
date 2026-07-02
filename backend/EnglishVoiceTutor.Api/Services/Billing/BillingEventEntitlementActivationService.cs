@@ -189,6 +189,85 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             entitlementExpiresAtUtc);
     }
 
+
+    public async Task<BillingEventEntitlementActivationResult> RevokeAdjustmentProviderEventAsync(
+        string billingProvider,
+        string providerEventId,
+        CancellationToken cancellationToken)
+    {
+        var startedAtUtc = DateTimeOffset.UtcNow;
+        var checkedCount = 0;
+        var activatedCount = 0;
+        var blockedCount = 0;
+        var failedCount = 0;
+        var alreadySkippedCount = 0;
+        DateTimeOffset? entitlementExpiresAtUtc = null;
+
+        var billingEventId = await dbContext.BillingEvents
+            .AsNoTracking()
+            .Where(candidate => candidate.BillingProvider == billingProvider
+                && candidate.ProviderEventId == providerEventId
+                && (candidate.EventType == SubscriptionConstants.BillingEventTypes.AdjustmentCreated
+                    || candidate.EventType == SubscriptionConstants.BillingEventTypes.AdjustmentUpdated))
+            .Select(candidate => (Guid?)candidate.Id)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (billingEventId is not null)
+        {
+            checkedCount = 1;
+
+            try
+            {
+                var activationOutcome = await BillingSerializableTransactionRetryPolicy.ExecuteAsync(
+                    (_, retryCancellationToken) => RevokeAdjustmentBillingEventAsync(billingEventId.Value, retryCancellationToken),
+                    dbContext.ChangeTracker.Clear,
+                    logger,
+                    "Paddle adjustment operator reprocess revocation",
+                    billingEventId.Value,
+                    cancellationToken);
+                entitlementExpiresAtUtc = activationOutcome.EntitlementExpiresAtUtc;
+
+                switch (activationOutcome.Result)
+                {
+                    case ActivationEventResult.Activated:
+                        activatedCount++;
+                        break;
+                    case ActivationEventResult.Blocked:
+                        blockedCount++;
+                        break;
+                    case ActivationEventResult.AlreadySkipped:
+                        alreadySkippedCount++;
+                        break;
+                    case ActivationEventResult.Failed:
+                        failedCount++;
+                        break;
+                }
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                failedCount++;
+                dbContext.ChangeTracker.Clear();
+                logger.LogError(
+                    exception,
+                    "Paddle adjustment operator reprocess revocation failed unexpectedly. BillingEventId={BillingEventId}; BillingProvider={BillingProvider}; ProviderEventId={ProviderEventId}.",
+                    billingEventId.Value,
+                    billingProvider,
+                    providerEventId);
+            }
+        }
+
+        var completedAtUtc = DateTimeOffset.UtcNow;
+        return new BillingEventEntitlementActivationResult(
+            checkedCount,
+            activatedCount,
+            blockedCount,
+            failedCount,
+            alreadySkippedCount,
+            startedAtUtc,
+            completedAtUtc,
+            entitlementExpiresAtUtc);
+    }
+
     private async Task<ActivationEventOutcome> ActivateBillingEventAsync(
         Guid billingEventId,
         CancellationToken cancellationToken)
@@ -294,6 +373,26 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             : ActivationEventOutcome.AlreadyCurrent(effectiveExpiresAtUtc);
     }
 
+
+    private async Task<ActivationEventOutcome> RevokeAdjustmentBillingEventAsync(
+        Guid billingEventId,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+
+        var billingEvent = await dbContext.BillingEvents.SingleOrDefaultAsync(
+            candidate => candidate.Id == billingEventId,
+            cancellationToken);
+        if (billingEvent is null || !IsAdjustmentEvent(billingEvent.EventType))
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return ActivationEventOutcome.AlreadySkipped();
+        }
+
+        var outcome = await ProcessAdjustmentBillingEventAsync(billingEvent, DateTimeOffset.UtcNow, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return outcome;
+    }
 
     private async Task<ActivationEventOutcome> ProcessAdjustmentBillingEventAsync(
         BillingEventEntity billingEvent,

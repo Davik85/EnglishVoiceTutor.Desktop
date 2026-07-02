@@ -16,19 +16,43 @@ public sealed class PaddleAdjustmentReprocessServiceTests
     public async Task ExistingAdjustmentUpdatedPreviouslyBlockedCanBeReprocessedAndRevokesActiveProviderEventPremium()
     {
         await using var dbContext = CreateDbContext();
-        var fixture = await SeedFullRefundAsync(dbContext, SubscriptionConstants.BillingEventStatuses.ReconciliationBlocked);
+        var fixture = await SeedFullRefundAsync(dbContext, SubscriptionConstants.BillingEventStatuses.ReconciliationBlocked, includeInternalUserId: false);
         var paymentCount = await dbContext.Payments.CountAsync(TestContext.Current.CancellationToken);
         var subscriptionCount = await dbContext.Subscriptions.CountAsync(TestContext.Current.CancellationToken);
 
         var result = await CreateService(dbContext).ReprocessProviderEventAsync(fixture.ProviderEventId, TestContext.Current.CancellationToken);
 
         Assert.Equal(PaddleAdjustmentReprocessResults.Revoked, result.Result);
+        Assert.Equal("payment", result.UserResolutionSource);
+        Assert.Equal(1, result.EntitlementCandidatesCount);
+        Assert.True(result.FullRefundDetected);
         Assert.Equal(1, result.RevokedCount);
         Assert.Equal(paymentCount, await dbContext.Payments.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(subscriptionCount, await dbContext.Subscriptions.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(1, await dbContext.BillingEvents.CountAsync(e => e.ProviderEventId == fixture.ProviderEventId, TestContext.Current.CancellationToken));
         var entitlement = await dbContext.Entitlements.SingleAsync(e => e.Id == fixture.EntitlementId, TestContext.Current.CancellationToken);
         Assert.Equal(SubscriptionConstants.Entitlements.StatusExpired, entitlement.Status);
+    }
+
+
+    [Fact]
+    public async Task SecondReprocessAfterRevocationReturnsAlreadyRevokedAndDoesNotCreateAnotherBillingEvent()
+    {
+        await using var dbContext = CreateDbContext();
+        var fixture = await SeedFullRefundAsync(dbContext, SubscriptionConstants.BillingEventStatuses.ReconciliationBlocked, includeInternalUserId: false);
+        var paymentCount = await dbContext.Payments.CountAsync(TestContext.Current.CancellationToken);
+        var subscriptionCount = await dbContext.Subscriptions.CountAsync(TestContext.Current.CancellationToken);
+        var billingEventCount = await dbContext.BillingEvents.CountAsync(TestContext.Current.CancellationToken);
+
+        var first = await CreateService(dbContext).ReprocessProviderEventAsync(fixture.ProviderEventId, TestContext.Current.CancellationToken);
+        var second = await CreateService(dbContext).ReprocessProviderEventAsync(fixture.ProviderEventId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(PaddleAdjustmentReprocessResults.Revoked, first.Result);
+        Assert.Equal(PaddleAdjustmentReprocessResults.AlreadyRevoked, second.Result);
+        Assert.Equal(0, second.RevokedCount);
+        Assert.Equal(paymentCount, await dbContext.Payments.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(subscriptionCount, await dbContext.Subscriptions.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(billingEventCount, await dbContext.BillingEvents.CountAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -128,12 +152,11 @@ public sealed class PaddleAdjustmentReprocessServiceTests
             ExpectedCustomDataApp = "language_voice_tutor",
             ExpectedCustomDataProduct = "language_voice_tutor_pro"
         });
-        var reconciliation = new BillingEventReconciliationDecisionService(dbContext, NullLogger<BillingEventReconciliationDecisionService>.Instance, options);
         var activation = new BillingEventEntitlementActivationService(dbContext, NullLogger<BillingEventEntitlementActivationService>.Instance, options);
-        return new PaddleAdjustmentReprocessService(dbContext, reconciliation, activation, NullLogger<PaddleAdjustmentReprocessService>.Instance);
+        return new PaddleAdjustmentReprocessService(dbContext, activation, NullLogger<PaddleAdjustmentReprocessService>.Instance);
     }
 
-    private static async Task<Fixture> SeedFullRefundAsync(AppDbContext dbContext, string eventStatus, string eventType = SubscriptionConstants.BillingEventTypes.AdjustmentUpdated, string action = "refund", string adjustmentType = "full", long adjustmentAmountMinor = 1000)
+    private static async Task<Fixture> SeedFullRefundAsync(AppDbContext dbContext, string eventStatus, string eventType = SubscriptionConstants.BillingEventTypes.AdjustmentUpdated, string action = "refund", string adjustmentType = "full", long adjustmentAmountMinor = 1000, bool includeInternalUserId = true)
     {
         var now = DateTimeOffset.UtcNow;
         var userId = Guid.NewGuid();
@@ -144,14 +167,14 @@ public sealed class PaddleAdjustmentReprocessServiceTests
         dbContext.Subscriptions.Add(new SubscriptionEntity { Id = subscriptionId, UserId = userId, PlanId = SubscriptionConstants.Plans.PremiumPlanId, Status = "active", Provider = SubscriptionConstants.BillingProviders.Paddle, ProviderSubscriptionId = "sub_test", ProviderPriceId = "pri_test", ProviderProductId = "pro_test", StartedAt = now.AddDays(-1), CreatedAt = now.AddDays(-1), UpdatedAt = now.AddDays(-1) });
         dbContext.Payments.Add(new PaymentEntity { Id = Guid.NewGuid(), UserId = userId, SubscriptionId = subscriptionId, InternalPlanId = SubscriptionConstants.Plans.PremiumPlanId, Amount = 10, AmountMinor = 1000, Currency = "USD", Status = SubscriptionConstants.PaymentStatuses.Completed, Provider = SubscriptionConstants.BillingProviders.Paddle, ProviderPaymentId = "txn_test", ProviderSubscriptionId = "sub_test", ProviderPriceId = "pri_test", ProviderProductId = "pro_test", CreatedAt = now.AddDays(-1), UpdatedAt = now.AddDays(-1) });
         dbContext.Entitlements.Add(new EntitlementEntity { Id = entitlementId, UserId = userId, SubscriptionId = subscriptionId, PlanId = SubscriptionConstants.Plans.PremiumPlanId, EntitlementType = SubscriptionConstants.Entitlements.PremiumAccessType, Source = SubscriptionConstants.Entitlements.SourceProviderEvent, Status = SubscriptionConstants.Entitlements.StatusActive, StartsAtUtc = now.AddDays(-1), ExpiresAtUtc = now.AddDays(30), CreatedAt = now.AddDays(-1), UpdatedAt = now.AddDays(-1) });
-        dbContext.BillingEvents.Add(new BillingEventEntity { Id = Guid.NewGuid(), BillingProvider = SubscriptionConstants.BillingProviders.Paddle, EventType = eventType, ProviderEventId = providerEventId, ReceivedAtUtc = now.AddMinutes(-10), ProcessedAtUtc = now.AddMinutes(-5), Status = eventStatus, ErrorMessage = "old state", SafeMetadataJson = CreateMetadata(userId, action, "approved", adjustmentType, adjustmentAmountMinor, 1000) });
+        dbContext.BillingEvents.Add(new BillingEventEntity { Id = Guid.NewGuid(), BillingProvider = SubscriptionConstants.BillingProviders.Paddle, EventType = eventType, ProviderEventId = providerEventId, ReceivedAtUtc = now.AddMinutes(-10), ProcessedAtUtc = now.AddMinutes(-5), Status = eventStatus, ErrorMessage = "old state", SafeMetadataJson = CreateMetadata(userId, action, "approved", adjustmentType, adjustmentAmountMinor, 1000, includeInternalUserId: includeInternalUserId) });
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         return new Fixture(userId, entitlementId, providerEventId);
     }
 
-    private static string CreateMetadata(Guid userId, string action, string status, string type, long adjustmentAmountMinor, long amountMinor, bool includeForbidden = false) => JsonSerializer.Serialize(new Dictionary<string, object?>
+    private static string CreateMetadata(Guid userId, string action, string status, string type, long adjustmentAmountMinor, long amountMinor, bool includeForbidden = false, bool includeInternalUserId = true) => JsonSerializer.Serialize(new Dictionary<string, object?>
     {
-        ["internalUserId"] = userId.ToString(),
+        ["internalUserId"] = includeInternalUserId ? userId.ToString() : null,
         ["internalPlanId"] = SubscriptionConstants.Plans.PremiumPlanId,
         ["paddlePriceId"] = "pri_test",
         ["paddleProductId"] = "pro_test",

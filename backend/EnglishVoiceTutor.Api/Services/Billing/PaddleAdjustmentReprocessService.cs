@@ -10,18 +10,15 @@ public sealed class PaddleAdjustmentReprocessService : IPaddleAdjustmentReproces
     private static readonly JsonSerializerOptions MetadataJsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly AppDbContext dbContext;
-    private readonly IBillingEventReconciliationDecisionService reconciliationDecisionService;
     private readonly IBillingEventEntitlementActivationService entitlementActivationService;
     private readonly ILogger<PaddleAdjustmentReprocessService> logger;
 
     public PaddleAdjustmentReprocessService(
         AppDbContext dbContext,
-        IBillingEventReconciliationDecisionService reconciliationDecisionService,
         IBillingEventEntitlementActivationService entitlementActivationService,
         ILogger<PaddleAdjustmentReprocessService> logger)
     {
         this.dbContext = dbContext;
-        this.reconciliationDecisionService = reconciliationDecisionService;
         this.entitlementActivationService = entitlementActivationService;
         this.logger = logger;
     }
@@ -66,29 +63,43 @@ public sealed class PaddleAdjustmentReprocessService : IPaddleAdjustmentReproces
             return result;
         }
 
-        var originalPaymentCount = await dbContext.Payments.CountAsync(cancellationToken);
-        var originalSubscriptionCount = await dbContext.Subscriptions.CountAsync(cancellationToken);
-        var nowUtc = DateTimeOffset.UtcNow;
-        billingEvent.Status = SubscriptionConstants.BillingEventStatuses.Received;
-        billingEvent.ProcessedAtUtc = null;
-        billingEvent.ErrorMessage = null;
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        var reconciliation = await reconciliationDecisionService.ProcessProviderEventAsync(SubscriptionConstants.BillingProviders.Paddle, normalizedProviderEventId, cancellationToken);
-        if (reconciliation.MarkedPendingCount != 1)
+        if (resolution.UserId is null)
         {
-            var blockReason = reconciliation.BlockedCount > 0 ? "reconciliation_blocked" : "reconciliation_not_pending";
-            var result = CreateResult(PaddleAdjustmentReprocessResults.Blocked, blockReason, billingEvent.EventType, normalizedProviderEventId, metadata, resolution.Source, resolution.UserId, entitlementCandidatesCount, 0);
+            var result = CreateResult(PaddleAdjustmentReprocessResults.Blocked, "user_not_safely_resolved", billingEvent.EventType, normalizedProviderEventId, metadata, resolution.Source, resolution.UserId, entitlementCandidatesCount, 0);
             LogResult(result);
             return result;
         }
 
-        var activation = await entitlementActivationService.ActivateProviderEventAsync(SubscriptionConstants.BillingProviders.Paddle, normalizedProviderEventId, cancellationToken);
+        if (entitlementCandidatesCount == 0)
+        {
+            var result = CreateResult(PaddleAdjustmentReprocessResults.AlreadyRevoked, null, billingEvent.EventType, normalizedProviderEventId, metadata, resolution.Source, resolution.UserId, entitlementCandidatesCount, 0);
+            LogResult(result);
+            return result;
+        }
+
+        var originalPaymentCount = await dbContext.Payments.CountAsync(cancellationToken);
+        var originalSubscriptionCount = await dbContext.Subscriptions.CountAsync(cancellationToken);
+
+        var activation = await entitlementActivationService.RevokeAdjustmentProviderEventAsync(SubscriptionConstants.BillingProviders.Paddle, normalizedProviderEventId, cancellationToken);
         var currentPaymentCount = await dbContext.Payments.CountAsync(cancellationToken);
         var currentSubscriptionCount = await dbContext.Subscriptions.CountAsync(cancellationToken);
         if (currentPaymentCount != originalPaymentCount || currentSubscriptionCount != originalSubscriptionCount)
         {
             var result = CreateResult(PaddleAdjustmentReprocessResults.Failed, "payment_or_subscription_history_changed", billingEvent.EventType, normalizedProviderEventId, metadata, resolution.Source, resolution.UserId, entitlementCandidatesCount, activation.ActivatedCount);
+            LogResult(result);
+            return result;
+        }
+
+        if (activation.FailedCount > 0)
+        {
+            var result = CreateResult(PaddleAdjustmentReprocessResults.Failed, "adjustment_revoke_failed", billingEvent.EventType, normalizedProviderEventId, metadata, resolution.Source, resolution.UserId, entitlementCandidatesCount, activation.ActivatedCount);
+            LogResult(result);
+            return result;
+        }
+
+        if (activation.BlockedCount > 0)
+        {
+            var result = CreateResult(PaddleAdjustmentReprocessResults.Blocked, "adjustment_revoke_blocked", billingEvent.EventType, normalizedProviderEventId, metadata, resolution.Source, resolution.UserId, entitlementCandidatesCount, activation.ActivatedCount);
             LogResult(result);
             return result;
         }

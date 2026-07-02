@@ -10,4 +10,9 @@ public interface IBillingEventEntitlementActivationService
         string billingProvider,
         string providerEventId,
         CancellationToken cancellationToken);
+
+    Task<BillingEventEntitlementActivationResult> RevokeAdjustmentProviderEventAsync(
+        string billingProvider,
+        string providerEventId,
+        CancellationToken cancellationToken);
 }
