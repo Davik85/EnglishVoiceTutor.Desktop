@@ -40,7 +40,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 - Download: the current Windows tester release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
 - AI Models: persistent production storage at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` is verified, survived a backend service restart, and contains the known-good `gpt-5.5` / `gpt-5.2` production setup.
-- Billing: Paddle live checkout configuration is present and checkout opens the expected Pro monthly product, but no real live payment/webhook/Premium activation test is complete; paid launch remains blocked.
+- Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; refund, chargeback, customer portal, and broad public paid launch remain pending.
 - Legal: pricing, subscription terms, terms, privacy, refunds, cancellation, support, seller/company details, AI/data disclosure, platform availability/status, and download pages are ready for owner/legal final review as product/legal drafts, not final legal advice.
 
 Remaining release steps:
@@ -50,7 +50,7 @@ Remaining release steps:
 3. Final Windows installer smoke.
 4. Logging/release-readiness checks for remaining Admin operations and paid-launch evidence.
 5. Admin auth audit first production slice is complete for `admin_login_success`, `admin_logout`, `admin_login_failed`, and `disabled_admin_login_denied`; session expiration audit persistence remains pending until separately implemented/verified.
-6. Paddle live payment/webhook/Premium activation test remains explicitly last.
+6. Controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed; refund, chargeback, customer portal, and broad paid launch remain pending.
 7. Microsoft Store/MSIX was evaluated and discontinued for now; Microsoft Store availability is not claimed.
 
 Do not state that the product is fully public production-ready. The current Windows release remains a controlled tester/direct Windows release, not a broad public production launch, and not broad public production readiness.
@@ -285,7 +285,7 @@ Ready for controlled tester use: direct Windows manifest/update flow, production
 
 Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.95`, with deploys, health checks, database health checks, and migrations kept as separate operations.
 
-Blocked before broad public paid release: code signing for the direct installer, direct installer clean-machine/update smoke, Paddle live account/provider/webhook/reconciliation readiness, final website/legal/support/pricing approval, and explicit release decision after controlled tester feedback.
+Blocked before broad public paid release: code signing for the direct installer, direct installer clean-machine/update smoke, refund/chargeback/customer portal checks, final website/legal/support/pricing approval, and explicit release decision after controlled tester feedback. Controlled Paddle live payment/Premium activation and cancel-renewal behavior are completed, but they are not a broad launch decision.
 
 ### Must not be touched for this docs-only state
 
@@ -301,11 +301,11 @@ Do not change backend runtime code, desktop runtime code, database schema/migrat
 
 ## 2026-06-30 Paddle live checkout preparation state
 
-Paddle approved the website, backend live checkout code is deployed in production `0.1.35-backend.95`, `/pay.html` and `/paddle.public.json` are published under the real nginx root, and live server-side Paddle config is present in `/etc/languagevoicetutor/backend.env`. A real Paddle transaction URL opened checkout with the expected Language Voice Tutor Pro monthly price, but no real live payment/webhook/Premium activation test has been completed. Windows direct tester release remains `0.1.36-tester.31`; AI Models persistent storage is verified and untouched. Store/MSIX remains discontinued; active Windows distribution remains Direct EXE/Inno.
+Paddle approved the website, backend live checkout code is deployed in production `0.1.35-backend.95`, `/pay.html` and `/paddle.public.json` are published under the real nginx root, and live server-side Paddle config is present in `/etc/languagevoicetutor/backend.env`. The controlled 2026-07-02 live payment/webhook/Premium activation path completed for the expected Language Voice Tutor Pro monthly price, and desktop cancel-renewal behavior was verified. Windows direct tester release remains `0.1.36-tester.31`; AI Models persistent storage is verified and untouched. Store/MSIX remains discontinued; active Windows distribution remains Direct EXE/Inno.
 
 ## 2026-06-30 Paddle live checkout/Admin readiness update
 
-Current production facts after backend `0.1.35-backend.95` and before any real live payment test:
+Current production facts after backend `0.1.35-backend.95` and the 2026-07-02 controlled live payment/cancel-renewal validation:
 
 - Backend health and database health are `200 Healthy`.
 - Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.
@@ -316,7 +316,9 @@ Current production facts after backend `0.1.35-backend.95` and before any real l
 - Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.
 - Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct tester remains `0.1.36-tester.31`; direct `latest.json` remains active with manual-confirmation update mode.
 - Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
-- No real live payment test has been completed. Paid-launch readiness remains incomplete until controlled live payment, webhook delivery, Premium entitlement activation, refund/cancel/customer portal/chargeback operational checks, and post-test docs are completed.
+- Controlled Paddle live payment validation completed on 2026-07-02 for Language Voice Tutor Pro. A real Paddle live payment completed for 14.99 EUR by Google Pay for customer email `11111@gmail.com`; Paddle status was Complete. Backend `0.1.35-backend.95` remained healthy afterward: production backend health returned `200 Healthy` and production database health returned `200 Healthy`. Backend logs showed live checkout transaction creation, webhook receipt for `subscription.created`, `subscription.activated`, and `transaction.completed`, successful payment persistence, reconciliation marking the completed transaction for activation, subscription snapshot processing, and entitlement activation with `ActivatedCount=1`, `BlockedCount=0`, `FailedCount=0`. Earlier `transaction.payment_failed` attempts were stored and safely processed with `ActivatedCount=0` / `AlreadySkippedCount=1`; they did not grant Premium. One transient PostgreSQL serialization failure occurred during subscription lifecycle snapshot processing; the retry policy retried it, the retry succeeded, and final snapshot processing completed with `FailedCount=0`. This is observed non-blocking retry evidence, not a failed payment flow.
+- Desktop Premium visibility was confirmed after payment: Current tariff `Premium`, free lessons remaining `without limits`, Premium active until `8/2/2026`, and auto-renewal initially Active. Cancel-renewal verification also completed from the desktop flow: after cancellation, Desktop still showed Current tariff `Premium`, free lessons remaining `without limits`, Premium active until `8/2/2026`, and Auto-renewal inactive. This confirms cancellation disables future renewal while preserving paid Premium access until the paid period end. Refund, chargeback, and customer portal checks remain pending unless separately verified; broad public paid launch remains pending. This documentation update did not change runtime code, billing logic, migrations, deployment paths, env files, or Windows installer files.
+- Controlled live payment, webhook delivery, payment persistence, subscription snapshot processing, entitlement activation, desktop Premium visibility, and desktop cancel-renewal behavior were completed and documented on 2026-07-02. Refund, chargeback, and customer portal checks remain pending; broad public paid launch is not claimed.
 
 Static website upload command must target the real nginx root:
 
@@ -330,7 +332,7 @@ Safe backend env verification must redact secrets and must use the existing env 
 sudo awk -F= '/^(Billing__|PaddleBilling__|PaddleWebhook__)/ { v=$2; if ($1 ~ /(ApiKey|SecretKey|Token)/) v=(length($2)>0 ? "SET" : "EMPTY"); print $1 "=" v }' /etc/languagevoicetutor/backend.env
 ```
 
-Admin capabilities should now distinguish configuration from launch completion: configured live checkout/webhooks can be reported as available/configured, while `billingLivePaymentTestComplete=false` and `billingPaidLaunchReleaseComplete=false` continue to block paid launch until the controlled live payment path is documented.
+Admin capabilities should distinguish completed controlled validation from launch completion: live checkout/webhooks and the 2026-07-02 live payment/Premium activation/cancel-renewal path can be reported as completed, while refund, chargeback, customer portal, and `billingPaidLaunchReleaseComplete=false` continue to block broad paid launch.
 
 Admin RBAC note: `productionRolesAvailable` now means persistent Admin role authorization is active with an explicit fallback cutover (`AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`). It is not a broad public-launch flag and does not override remaining paid-launch blockers. Production diagnostics show two active `super_admin` AdminUsers and fallback disabled; if this flag is false, check the explicit fallback configuration and cutover status before changing role assignments.
 
@@ -343,7 +345,7 @@ Admin RBAC note: `productionRolesAvailable` now means persistent Admin role auth
 - On 2026-07-01, migration `20260701000000_AddAdminAuthAuditEvents` was applied to production after a fresh readable backup and SQL review. The production table exists, the owner was corrected to `lvt_app`, and `lvt_app` has table privileges.
 - Production Admin Activity includes the `admin_auth_audit_events` source dropdown entry and shows verified `admin_login_success`, `admin_logout`, `admin_login_failed`, and `disabled_admin_login_denied` events. Session expiration audit persistence remains pending.
 - Website/AI publish audit may still be partial when the corresponding events are not already present in the existing audit tables.
-- Controlled Paddle live paid-launch validation remains pending.
+- Controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation were completed on 2026-07-02; refund, chargeback, customer portal, and broad paid launch remain pending.
 
 ## 2026-07-01 Admin Activity and emergency Premium revoke update
 
@@ -355,7 +357,7 @@ Production backend current release is `0.1.35-backend.95`; the `current` symlink
 - Manual Premium Revoke is completed as an emergency `super_admin` backend entitlement/access-control action. It requires an admin reason, expires/revokes active Premium entitlement rows, including paid/provider-backed active Premium entitlements, and writes an `admin_actions` Admin Activity entry with safe metadata. After revoke, the selected user no longer has active Premium access.
 - Emergency Premium Revoke does not mutate Paddle provider history, does not delete `PaymentEntity` records, does not fake Paddle webhook events, does not make payment history the Premium access source, and does not change Paddle webhook/payment activation rules. Cancel paid renewal remains a separate future-renewal cancellation action; paid subscription/provider state may show `cancellation_scheduled` and `cancelAtPeriodEnd=true` while backend Premium access can still be separately revoked by `super_admin` when needed.
 - No EF migration was added for this update; existing entitlement and admin action fields support the emergency revoke/audit behavior.
-- Controlled Paddle live payment/webhook/Premium activation validation remains pending. Session expiration audit persistence remains pending and must not be marked complete.
+- Controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation were completed on 2026-07-02. Refund, chargeback, customer portal, and broad paid launch remain pending. Session expiration audit persistence remains pending and must not be marked complete.
 
 ## Admin auth audit persistence production verification (2026-07-01)
 
@@ -366,7 +368,7 @@ Production backend current release is `0.1.35-backend.95`; the `current` symlink
 - Admin Activity includes `admin_auth_audit_events` as a read-only source, the source dropdown includes `admin_auth_audit_events`, and production Admin Activity shows verified `admin_login_success`, `admin_logout`, `admin_login_failed`, and `disabled_admin_login_denied` events.
 - Session expiration audit persistence remains pending and is not claimed complete.
 - Session expiration persistence remains pending; no low-noise expiration persistence completion is claimed.
-- Controlled Paddle live payment validation remains pending, including webhook/Premium activation, refund, chargeback, and customer portal checks.
+- Controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation were completed on 2026-07-02. Refund, chargeback, and customer portal checks remain pending.
 
 ## CMS capability and runtime production verification (2026-07-01)
 
