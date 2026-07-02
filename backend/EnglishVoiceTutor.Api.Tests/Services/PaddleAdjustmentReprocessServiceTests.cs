@@ -7,7 +7,6 @@ using EnglishVoiceTutor.Api.Services.Billing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 
 namespace EnglishVoiceTutor.Api.Tests.Services;
 
@@ -122,7 +121,7 @@ public sealed class PaddleAdjustmentReprocessServiceTests
 
     private static IPaddleAdjustmentReprocessService CreateService(AppDbContext dbContext)
     {
-        var options = Options.Create(new PaddleBillingOptions
+        var options = Microsoft.Extensions.Options.Options.Create(new PaddleBillingOptions
         {
             PremiumPriceId = "pri_test",
             PremiumProductId = "pro_test",
