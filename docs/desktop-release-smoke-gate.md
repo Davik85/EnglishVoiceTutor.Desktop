@@ -4,7 +4,7 @@ Step: 5B desktop release gate, updated 2026-06-02 for accepted Welcome screen po
 
 ## Purpose
 
-This smoke gate is the repeatable pre-package safety check for the current desktop release-hardening phase. It confirms that the desktop app, backend build, lesson content, interface localization coverage, local backend readiness, and backend-unavailable resilience wording are still safe before creating the primary Inno tester installer with `scripts/package-windows-inno-release.ps1`.
+This smoke gate is the repeatable pre-package safety check for the current desktop release-hardening phase. It confirms that the desktop app, backend build, lesson content, interface localization coverage, local backend readiness, and backend-unavailable resilience wording are still safe before creating the primary Inno direct installer with `scripts/package-windows-inno-release.ps1`.
 
 This gate does not add product features. It does not change runtime localization behavior, billing, subscriptions, entitlements, Admin UI, database schema, lesson JSON, Study languages, Interface languages, or Native/Explanation language support.
 
@@ -14,7 +14,7 @@ Current audited release-blocking localization issues have been addressed for the
 
 ## Backend URL profile check
 
-Normal local desktop builds default to `http://localhost:5000`. The primary Inno tester/release package defaults to `https://api.languagevoicetutor.com` through the `DesktopBackendBaseUrl` MSBuild property passed by `scripts/package-windows-inno-release.ps1`; the script prints the Backend URL used. Empty saved settings use the current build default, saved legacy localhost settings can migrate to the deployed API only in those tester/release builds, and custom Backend URL values remain preserved. Settings/Diagnostics must still show the current Backend URL.
+Normal local desktop builds default to `http://localhost:5000`. The primary Inno direct/release package defaults to `https://api.languagevoicetutor.com` through the `DesktopBackendBaseUrl` MSBuild property passed by `scripts/package-windows-inno-release.ps1`; the script prints the Backend URL used. Empty saved settings use the current build default, saved legacy localhost settings can migrate to the deployed API only in those tester/release builds, and custom Backend URL values remain preserved. Settings/Diagnostics must still show the current Backend URL.
 
 Validate packaged release metadata with:
 
@@ -22,23 +22,23 @@ Validate packaged release metadata with:
 powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
 ```
 
-The backend remains the server-side source of truth, the desktop must not contain OpenAI keys or call OpenAI directly, production billing remains deferred, and public release is still blocked until clean-machine install plus the controlled tester checklist pass.
+The backend remains the server-side source of truth, the desktop must not contain OpenAI keys or call OpenAI directly, remaining billing operations and broader paid-launch approval remain deferred, and Windows Direct Release 1.0 is already published; continue using this gate for future direct-release safety checks and update/reinstall validation.
 
 ## When to run this gate
 
 Run this gate:
 
-- before sharing a desktop tester build;
+- before sharing a desktop direct build;
 - after any desktop UI, settings, localization, lesson flow, or release packaging change;
 - after backend changes that affect desktop-facing APIs;
 - before moving from the current hardening item to the next release-hardening item;
 - before revisiting production billing readiness.
 
-Do not use this gate as proof that production billing is ready. Production billing remains deferred until desktop hardening is complete and the separate Paddle production readiness checks pass.
+Do not use this gate as proof that production billing is ready. Broader paid-launch approval remains separate from this desktop smoke gate.
 
-## Current tester package flow
+## Current direct package flow
 
-The current accepted desktop tester distribution flow is:
+The current accepted desktop direct distribution flow is:
 
 1. Run this automated release gate.
 2. Run EF checks when backend schema changed or database validation is required.
@@ -64,7 +64,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release
 
 Public direct Windows release files go to `/var/www/languagevoicetutor/releases/windows/direct`; the public website root is separate at `/var/www/languagevoicetutor/site`. Generated release artifacts must not be committed.
 
-Use the script-created installer as the tester handoff artifact:
+Use the script-created installer as the direct release artifact:
 
 ```text
 artifacts\installers\windows\LanguageVoiceTutorSetup-{version}.exe

@@ -87,7 +87,7 @@ def main() -> int:
 
     assert_contains(backend_constants, f'ProductionBackendBaseUrl = "{PROD_URL}"', "production backend constant")
     assert_contains(project, f"'$(DesktopBackendBaseUrl)' != '{PROD_URL}'", "release backend lock")
-    assert_contains(package_inno, "Tester/release installed builds are server-only", "packaging backend lock message")
+    assert_contains(package_inno, "Public direct-release installed builds are server-only", "packaging backend lock message")
     assert_contains(package_inno, "$BackendBaseUrl -ne $productionBackendBaseUrl", "packaging backend lock condition")
 
     assert_contains(release_docs, f"Installed tester/release output files now use `{NEW_BASE}.*` names", "installer naming decision docs")

@@ -21,8 +21,8 @@ ALL_MARKDOWN = [ROOT / "README.md", *sorted((ROOT / "docs").glob("*.md"))]
 LATEST_JSON_COMMAND = "Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json"
 BACKEND_SYMLINK_COMMAND = 'ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"'
 PROD_BACKEND_URL = "https://api.languagevoicetutor.com"
-CURRENT_TESTER_RELEASE = "1.0"
-CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-1.0.exe"
+CURRENT_DIRECT_RELEASE = "1.0"
+CURRENT_DIRECT_INSTALLER = "LanguageVoiceTutorSetup-1.0.exe"
 CURRENT_BACKEND_RELEASE = "0.1.35-backend.99"
 PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.49"
 STALE_BACKEND_RELEASES = ["0.1.35-backend.27", "0.1.35-backend.33", "0.1.35-backend.34"]
@@ -32,7 +32,7 @@ DEFERRED_ITEMS = [
     "broad public paid launch remains pending",
     "Full-refund Premium revocation is production-verified",
     "expanded customer portal/subscription management is deferred",
-    "CMS published-snapshot runtime is active for controlled tester lessons",
+    "CMS published-snapshot runtime is active for published Windows direct lessons",
     "backend deployment, database migrations, the download website, and update UI remain separate work",
     "Generated local files under `artifacts/`",
 ]
@@ -88,8 +88,8 @@ def main() -> int:
     )
     assert_contains(combined_main, PROD_BACKEND_URL, "release backend lock URL")
     assert_contains(combined_main, "Release/tester installed builds are server-only", "release backend lock wording")
-    assert_contains(combined_main, CURRENT_TESTER_RELEASE, "current verified tester release")
-    assert_contains(combined_main, CURRENT_TESTER_INSTALLER, "current verified tester installer")
+    assert_contains(combined_main, CURRENT_DIRECT_RELEASE, "current verified direct release")
+    assert_contains(combined_main, CURRENT_DIRECT_INSTALLER, "current verified direct installer")
     assert_contains(combined_main, CURRENT_BACKEND_RELEASE, "current verified backend release")
     assert_contains(combined_main, "not broad public production readiness", "no broad production readiness wording")
     assert_contains(combined_main, "Do not state that the product is fully public production-ready", "no fully public production-ready wording")
@@ -168,7 +168,7 @@ def main() -> int:
     assert_not_regex(current_state, r"(?:current|live|active|deployed and healthy)[^\n]*0\.1\.35-backend\.27", "old backend 0.1.35-backend.27 claimed current")
     assert_not_regex(current_state, r"0\.1\.36-tester\.17[^\n]*(?:current|live|active|latest)", "old tester 0.1.36-tester.17 claimed current")
     assert_not_regex(next_steps, r"immediate blocker[^\n]*(?:billing UI localization|cancel-renewal)|(?:billing UI localization|cancel-renewal)[^\n]*immediate blocker", "completed billing UI localization/cancel-renewal listed as immediate blocker")
-    assert_contains(combined_main, "controlled direct Windows release, not a broad public production launch", "controlled tester not broad launch wording")
+    assert_contains(combined_main, "public Windows direct release, not a full broad production-readiness claim", "Windows direct release not full production readiness wording")
     required_billing_truths = [
         ("Controlled Paddle live payment validation completed", "controlled Paddle live payment completed wording"),
         ("desktop cancel-renewal validation", "cancel-renewal validation completed wording"),

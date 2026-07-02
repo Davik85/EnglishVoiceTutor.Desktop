@@ -57,7 +57,7 @@ def main() -> None:
 
     assert_contains(constants, f'ProductionBackendBaseUrl = "{PROD_URL}"', "single production backend constant")
     assert_contains(project, f"'$(Configuration)' != 'Debug' and '$(DesktopBackendBaseUrl)' != '{PROD_URL}'", "release backend override build failure")
-    assert_contains(package_script, "Tester/release installed builds are server-only", "packaging rejects custom release backends")
+    assert_contains(package_script, "Public direct-release installed builds are server-only", "packaging rejects custom release backends")
     assert_contains(package_script, "$BackendBaseUrl -ne $productionBackendBaseUrl", "packaging locks backend URL")
     assert_contains(package_script, "Release publish output contains forbidden backend override/UI string", "publish output forbidden backend scan")
     assert_contains(project, "'$(Configuration)' == 'Debug'", "localhost is Debug-only MSBuild configuration")

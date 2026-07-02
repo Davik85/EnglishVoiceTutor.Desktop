@@ -1,10 +1,11 @@
 {
   "version": "1.0",
-  "channel": "public",
+  "channel": "direct-public",
   "installerRelativeUrl": "LanguageVoiceTutorSetup-1.0.exe",
   "installerFileName": "LanguageVoiceTutorSetup-1.0.exe",
   "backendBaseUrl": "https://api.languagevoicetutor.com",
   "minimumSupportedVersion": "1.0",
   "updateMode": "manual-confirmation",
-  "installerSha256": "Release details load from the public manifest."
+  "installerSha256": "d6be93fbcd75536a0cd149bd8872c8327fc3131ede247b1db2b2d33d673680e1",
+  "installerSizeBytes": 188751650
 }

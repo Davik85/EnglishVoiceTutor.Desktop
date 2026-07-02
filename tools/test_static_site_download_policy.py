@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Policy checks for the static tester download page foundation."""
+"""Policy checks for the static public direct download page foundation."""
 from __future__ import annotations
 
 import pathlib
@@ -43,7 +43,7 @@ def assert_no_hardcoded_installer_fallback(path: pathlib.Path) -> None:
     text = read(path)
     manifest_installer = read(LATEST_JSON) if LATEST_JSON.exists() else ""
     if OLD_INSTALLER_VERSION_PATTERN.search(text):
-        raise AssertionError(f"Old tester installer version is hardcoded in {path.relative_to(ROOT)}")
+        raise AssertionError(f"Old installer version is hardcoded in {path.relative_to(ROOT)}")
 
     for match in INSTALLER_EXE_PATTERN.finditer(text):
         matched_text = match.group(0)
@@ -100,7 +100,7 @@ def main() -> int:
         if path.is_file():
             assert_no_sensitive_values(path)
 
-    print("Static tester download page policy checks passed.")
+    print("Static public direct download page policy checks passed.")
     return 0
 
 

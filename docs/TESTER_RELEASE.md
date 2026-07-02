@@ -1,4 +1,4 @@
-# Tester release workflow
+# Historical tester release workflow
 
 Review date: 2026-06-18.
 
@@ -6,7 +6,7 @@ Review date: 2026-06-18.
 
 These docs are a snapshot of the last known verified state. They can become stale and must not be used as the only source of truth for live versions. Always verify the live/public state before telling a tester that a version is current.
 
-Check the public Windows direct tester release from the live website manifest:
+Check the public Windows direct release from the live website manifest:
 
 ```powershell
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
@@ -33,21 +33,21 @@ Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBas
 
 Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS.
 
-## Current approval status
+## Historical tester status and current direct release
 
-The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-1.0.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `1.0`, and `updateMode` set to `manual-confirmation`.
+The public Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-1.0.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `1.0`, and `updateMode` set to `manual-confirmation`.
 
-`1.0` is the intended live/direct tester release (previous tester release: `1.0`), but it must still be verified from the website `latest.json` over HTTPS before telling testers it is current. This remains a private tester/direct Windows release channel. It approves only the live manifest package as the private tester build and does not mean the product is fully public production-ready.
+Windows Direct Release 1.0 is now published on the public direct channel. Historical tester-release notes in this document are retained only as history; they are not the current active release state. Always verify the website `latest.json` over HTTPS before naming the current public direct installer. This does not mean every operational area is fully public production-ready.
 
 ## Release artifact boundary
 
 `latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, installers, packages, and other files under `artifacts/` are generated outputs and must not be committed. Public direct Windows release files are uploaded to `/var/www/languagevoicetutor/releases/windows/direct`; the public website root is separate at `/var/www/languagevoicetutor/site`. Backend deploy and Windows installer upload are separate flows.
 
-## Current production backend state
+## Historical backend notes
 
-Latest known production backend snapshot: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.24` is active, and `/opt/languagevoicetutor/backend/current` points to that release; verify the live value from the server symlink before calling it current. Backend `0.1.35-backend.24` includes the release-hardening fixes for settings native-language sync, aggregate-only Admin Product Statistics language/device semantics, and privacy-safe tracked-device identity. Previous backend release for rollback reference: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.23`.
+Historical tester-era backend snapshot notes are retained only for context. Current production backend for the Windows Direct Release 1.0 documentation state is `0.1.35-backend.99`; verify the live value from the server symlink before calling it current.
 
-`https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. The backend service started successfully after the `0.1.35-backend.24` deploy. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
+`https://api.languagevoicetutor.com/health` and `https://api.languagevoicetutor.com/api/health/database` return `200 OK`. Operator manual smoke should continue to verify app launch, login, Account opening, lesson start, at least 7 Daily Life / Introductions or guided roleplay user messages without a generic server error, Lesson History updates, and Progress updates.
 
 ## Backend URL profile
 
@@ -55,9 +55,9 @@ Production tester/release installed builds are server-only and always use `https
 
 Release Settings must not show a Diagnostics tab. Release Settings must not show a Backend URL field. Localhost/dev backend usage is DEBUG/developer-only and must not be described as normal tester/release behavior. Testers do not need to run a local backend.
 
-## Current verified tester behavior
+## Historical verified tester behavior
 
-The current tester build verifies:
+The historical tester build verified these behaviors; the current active release state is Windows Direct Release 1.0:
 
 - registration and login from installed builds against `https://api.languagevoicetutor.com`;
 - registration on another device;
@@ -72,7 +72,7 @@ The current tester build verifies:
 - Welcome/start screen clamped to the visible working area;
 - Welcome primary actions visible without scrolling on smaller screens;
 - Welcome cover image using cover-style fill/crop without gray bars;
-- public download page and live `latest.json` verified over HTTPS before naming the current public installer;
+- public download page and live `latest.json` verified over HTTPS before naming the public installer;
 - Installed file names were renamed to `LanguageVoiceTutor.Desktop.*`; legacy `EnglishVoiceTutor.Desktop.*` install-folder files are cleaned during update/reinstall without deleting user AppData.
 
 Raw passwords are not stored. Auth/session data is protected under the current user's app-data area, and logout clears persisted auth session data.
@@ -100,7 +100,7 @@ Downloaded update installers from **Check for updates** are saved in the current
 
 ## CMS/Admin and content runtime
 
-CMS/Admin is connected. CMS published-snapshot runtime is active for controlled tester lessons. **Save draft** alone does not affect the desktop app; **Save draft** plus **Publish** is required, and newly started desktop lessons pick up published CMS changes. The admin-only **Initialize from static JSON** action initializes `static-json-v1` CMS draft/admin content from packaged static JSON for first setup/recovery, does not publish automatically, and does not switch runtime. Runtime should use CMS published snapshot when `CmsContent__UsePublishedSnapshotForRuntime=true` and a valid published snapshot is active. Static JSON fallback remains available as initialization/emergency fallback; static JSON should not be the normal active learner source. Normal runtime status should remain `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, with no errors and no warnings. Production critical-change approval remains future work. Public release remains blocked until controlled tester feedback and operational readiness are complete.
+CMS/Admin is connected. CMS published-snapshot runtime is active for published Windows direct lessons. **Save draft** alone does not affect the desktop app; **Save draft** plus **Publish** is required, and newly started desktop lessons pick up published CMS changes. The admin-only **Initialize from static JSON** action initializes `static-json-v1` CMS draft/admin content from packaged static JSON for first setup/recovery, does not publish automatically, and does not switch runtime. Runtime should use CMS published snapshot when `CmsContent__UsePublishedSnapshotForRuntime=true` and a valid published snapshot is active. Static JSON fallback remains available as initialization/emergency fallback; static JSON should not be the normal active learner source. Normal runtime status should remain `effectiveSource=CmsPublishedSnapshot`, `validationSuccess=true`, `fallbackUsed=false`, with no errors and no warnings. Production critical-change approval remains future work. Public release remains blocked until controlled tester feedback and operational readiness are complete.
 
 ## Windows installer installed-version behavior
 

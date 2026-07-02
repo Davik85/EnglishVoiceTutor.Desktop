@@ -26,7 +26,7 @@ Windows direct release manifest:
 https://languagevoicetutor.com/releases/windows/direct/latest.json
 ```
 
-Current public tester values:
+Current public direct release values:
 
 ```text
 version: 1.0
@@ -110,11 +110,11 @@ $manifest.checksums.sha256
 
 Confirm:
 
-- `version` is `1.0` or the intended newly uploaded tester version;
+- `version` is `1.0` or the intended newly uploaded direct version;
 - `installerFileName` is `LanguageVoiceTutorSetup-1.0.exe` or the matching intended installer;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
 - `updateMode` is `manual-confirmation`;
-- `minimumSupportedVersion` is `1.0` for this uploaded tester release;
+- `minimumSupportedVersion` is `1.0` for this uploaded direct release;
 - `installerSha256` and `checksums.sha256` are present and agree with the uploaded installer hash.
 
 ## Installer download verification
@@ -158,20 +158,20 @@ Then open `https://languagevoicetutor.com/download.html` in a browser, click **D
 
 ## Download page behavior
 
-The static tester download page keeps `download.js` and `/releases/windows/direct/latest.json` support. It is also useful without JavaScript: when the local/public manifest is available, static HTML shows the current release details instead of only showing Loading or Unavailable.
+The static public direct download page keeps `download.js` and `/releases/windows/direct/latest.json` support. It is also useful without JavaScript: when the local/public manifest is available, static HTML shows the current release details instead of only showing Loading or Unavailable.
 
 Required static fallback text:
 
-- “Current Windows tester release is available through the Download for Windows button.”
+- “Current Windows direct release is available through the Download for Windows button.”
 - “If release details do not load automatically, please contact [support@languagevoicetutor.com](mailto:support@languagevoicetutor.com).”
 
 ## Release-readiness status and deferred items
 
-Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.82`. Website Paddle-review polish is completed separately from this upload flow. Paddle live is not enabled yet. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
+Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.99`. Website Paddle-review polish is completed separately from this upload flow. Paddle live payment validation, Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are complete; chargeback remains implemented/test-covered but not live-chargeback-tested and partial refunds remain conservative/manual-review. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
 
-Do not state that the product is fully public production-ready. The current Windows release remains a controlled direct Windows release, not a broad public production launch, and not broad public production readiness.
+Do not state that the product is fully public production-ready. The current Windows release remains a public Windows direct release, not a full broad production-readiness claim, and not broad public production readiness.
 
-Code signing remains deferred. Production billing/Paddle/subscription payment lifecycle remains deferred. CMS published-snapshot runtime is active for controlled tester lessons. Backend deployment, database migrations, the download website, and update UI remain separate work.
+Code signing remains deferred. Expanded customer portal/subscription management and broader paid-launch approval remain deferred. CMS published-snapshot runtime is active for published Windows direct lessons. Backend deployment, database migrations, static website publishing, and update UI remain separate work.
 
 ## Windows distribution boundary
 

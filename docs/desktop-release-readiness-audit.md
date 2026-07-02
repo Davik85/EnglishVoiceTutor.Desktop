@@ -19,7 +19,7 @@ This audit remains useful as the Step 5A baseline, but the following release-har
 - The tester ZIP was verified on another Windows device after extraction, including app start, Diagnostics hidden by default, backend connection, account login, backend history, accepted lesson flow, active lesson guard, and remote active lesson release.
 - Backend-enforced single active lesson protection is heartbeat-based, uses a 2-minute freshness window, supports remote release, marks the old session `Abandoned`, and rejects old heartbeat/message actions with `lesson_session_ended_elsewhere`.
 - Prompt/dialogue/scenario/bot-behavior quality polishing is intentionally deferred to CMS/Admin.
-- Public release is still not declared ready; production billing remains deferred, and CMS/Admin content foundation work is now underway before external tester handoff but is not production-ready.
+- Public release is still not declared ready; remaining billing operations and broader paid-launch approval remain deferred, and CMS/Admin content foundation work is now underway before external tester handoff but is not production-ready.
 
 ## Executive summary
 

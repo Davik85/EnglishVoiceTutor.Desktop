@@ -134,7 +134,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 - Backend: production healthy, current release `0.1.35-backend.99`.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
-- Windows installer: current public tester release is `1.0`, installer `LanguageVoiceTutorSetup-1.0.exe`.
+- Windows installer: current public direct release is `1.0`, installer `LanguageVoiceTutorSetup-1.0.exe`.
 - AI Models: persistent production storage is verified and survived restart with known-good `gpt-5.5` / `gpt-5.2` values.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: website legal/support/seller/AI/status pages are ready for owner/legal final review as drafts, not final legal advice.
