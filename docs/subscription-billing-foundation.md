@@ -483,3 +483,11 @@ sudo awk -F= '/^(Billing__|PaddleBilling__|PaddleWebhook__)/ { v=$2; if ($1 ~ /(
 ```
 
 Admin capabilities should distinguish completed controlled validation from launch completion: live checkout/webhooks and the 2026-07-02 live payment/Premium activation/cancel-renewal path can be reported as completed, while refund, chargeback, customer portal, and `billingPaidLaunchReleaseComplete=false` continue to block broad paid launch.
+
+## 2026-07-02 refund and chargeback Premium protection
+
+Full Paddle refunds are now treated as access-control events after `adjustment.created` or `adjustment.updated` webhook processing: the backend preserves Paddle/payment/subscription history, maps the adjustment back to the internal user by safe metadata or existing payment/subscription records, and immediately expires active provider-event Premium entitlements with reason `paddle_full_refund`. Chargebacks are treated as stronger refund evidence and immediately expire active provider-event Premium entitlements with reason `paddle_chargeback`.
+
+Normal cancel-renewal behavior is unchanged: scheduled cancellation keeps Premium through the paid period end. Partial refunds are conservative in this slice: the event is safely recorded/processed for review and Premium is left unchanged unless the adjustment is full or a chargeback. Provider history is preserved; payment and subscription records are not deleted, and refund processing does not fake Paddle webhook events or expose raw provider payloads, webhook signatures, tokens, cookies, secrets, API keys, or full card/payment data in Admin Activity evidence.
+
+Broad public paid launch remains pending until live refund and chargeback behavior is production-verified. Customer portal verification remains pending unless separately completed. Direct installer code signing remains pending.

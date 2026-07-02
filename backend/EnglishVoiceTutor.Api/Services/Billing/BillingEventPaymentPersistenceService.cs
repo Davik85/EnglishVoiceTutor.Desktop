@@ -164,6 +164,29 @@ public sealed class BillingEventPaymentPersistenceService : IBillingEventPayment
         PaymentSafeMetadata metadata,
         CancellationToken cancellationToken)
     {
+        if (metadata.InternalUserId is null && !string.IsNullOrWhiteSpace(metadata.PaddleTransactionId))
+        {
+            var existingPayment = await dbContext.Payments
+                .AsNoTracking()
+                .Where(payment => payment.Provider == SubscriptionConstants.BillingProviders.Paddle
+                    && payment.ProviderPaymentId == metadata.PaddleTransactionId)
+                .Select(payment => new
+                {
+                    payment.UserId,
+                    payment.InternalPlanId,
+                    payment.AmountMinor,
+                    payment.Currency
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (existingPayment is not null)
+            {
+                metadata.InternalUserId = existingPayment.UserId;
+                metadata.InternalPlanId ??= existingPayment.InternalPlanId;
+                metadata.AmountMinor ??= existingPayment.AmountMinor;
+                metadata.Currency ??= existingPayment.Currency;
+            }
+        }
+
         if (metadata.InternalUserId is null)
         {
             return PaymentValidationResult.Invalid(SubscriptionConstants.PaymentPersistence.MissingInternalUserIdMessage);
@@ -322,14 +345,25 @@ public sealed class BillingEventPaymentPersistenceService : IBillingEventPayment
     private static bool IsSupportedPaymentEventType(string eventType)
     {
         return string.Equals(eventType, SubscriptionConstants.BillingEventTypes.TransactionCompleted, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(eventType, SubscriptionConstants.BillingEventTypes.TransactionPaymentFailed, StringComparison.OrdinalIgnoreCase);
+            || string.Equals(eventType, SubscriptionConstants.BillingEventTypes.TransactionPaymentFailed, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(eventType, SubscriptionConstants.BillingEventTypes.AdjustmentCreated, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(eventType, SubscriptionConstants.BillingEventTypes.AdjustmentUpdated, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string MapPaymentStatus(string eventType)
     {
-        return string.Equals(eventType, SubscriptionConstants.BillingEventTypes.TransactionPaymentFailed, StringComparison.OrdinalIgnoreCase)
-            ? SubscriptionConstants.PaymentStatuses.Failed
-            : SubscriptionConstants.PaymentStatuses.Completed;
+        if (string.Equals(eventType, SubscriptionConstants.BillingEventTypes.TransactionPaymentFailed, StringComparison.OrdinalIgnoreCase))
+        {
+            return SubscriptionConstants.PaymentStatuses.Failed;
+        }
+
+        if (string.Equals(eventType, SubscriptionConstants.BillingEventTypes.AdjustmentCreated, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(eventType, SubscriptionConstants.BillingEventTypes.AdjustmentUpdated, StringComparison.OrdinalIgnoreCase))
+        {
+            return SubscriptionConstants.PaymentStatuses.Refunded;
+        }
+
+        return SubscriptionConstants.PaymentStatuses.Completed;
     }
 
     private static decimal ConvertAmount(long? amountMinor)
