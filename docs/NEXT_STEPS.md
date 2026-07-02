@@ -34,12 +34,12 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 - Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.99`; Production Admin RBAC / persistent role management is completed.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
-- Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
-- Windows installer: current public tester release is `1.0`, installer `LanguageVoiceTutorSetup-1.0.exe`.
+- Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
+- Windows installer: current Windows direct public release is `1.0`, installer `LanguageVoiceTutorSetup-1.0.exe`.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: legal/support/seller/AI/status/download pages are ready for owner/legal final review as drafts, not final legal advice.
 
-Do not state that the product is fully public production-ready. This remains a controlled direct Windows release, not a broad public production launch, and not broad public production readiness.
+Do not state that the product is fully public production-ready. This remains a public Windows direct release, not a full broad production-readiness claim, and not broad public production readiness.
 
 ## Remaining release steps
 
@@ -98,7 +98,7 @@ Final verification should confirm public pages do not contain placeholder IDs su
 - `seller.html`, `ai-data.html`, and `status.html` exist and are linked from the footer.
 - Download page statically shows current release details when the manifest is available and remains supported by `download.js` and `/releases/windows/direct/latest.json`.
 - Privacy Policy default/static content now includes optional analytics/advertising cookie disclosure. The polished consent banner is controlled by Website CMS Marketing / SEO, and Google Analytics/Ads IDs are optional public configuration values that must be left empty unless intentionally configured; never commit real Google IDs or secrets.
-- Download non-JS fallback text remains: “Current Windows tester release is available through the Download for Windows button.” and “If release details do not load automatically, please contact [support@languagevoicetutor.com](mailto:support@languagevoicetutor.com).”
+- Download non-JS fallback text remains: “Current Windows direct release is available through the Download for Windows button.” and “If release details do not load automatically, please contact [support@languagevoicetutor.com](mailto:support@languagevoicetutor.com).”
 
 ## Windows direct release next-step guardrails
 
@@ -124,7 +124,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release
 
 Do not manually `scp` installer files if the upload script exists. After upload, verify `latest.json`, installer filename, backend base URL, installer hash, and that the download page button downloads the same installer.
 
-Code signing remains deferred. CMS published-snapshot runtime is active for controlled tester lessons. Backend deployment, database migrations, the download website, and update UI remain separate work.
+Code signing remains deferred. CMS published-snapshot runtime is active for published Windows direct lessons. Backend deployment, database migrations, the download website, and update UI remain separate work.
 
 ## Paddle/live billing next-step guardrails
 

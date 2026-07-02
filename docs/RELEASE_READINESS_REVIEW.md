@@ -6,7 +6,7 @@ Scope: controlled direct Windows release readiness and broader public-release re
 
 ## 2026-06-21 Admin RBAC and roadmap update
 
-Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.82` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
+Admin RBAC fallback disable is production-complete for the owner-equivalent path. Backend `0.1.35-backend.99` is deployed, production migration `20260620165657_AddAdminRoleAssignmentPersistence` is applied, persistent `super_admin` mappings exist, and production explicitly sets `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Admin RBAC smoke passed with `fallbackEnabled=False`, `persistentRoleAuthorizationEnabled=True`, and `actorMappingFound=True`.
 
 Public release still requires remaining operational readiness work: the completed Phase 4A backup/readability/separate-drill-restore plus completed local backup schedule activation plus completed Phase 4 backup/restore/migration rollback drills plus optional off-server backup hardening, monitoring/logging/privacy hardening, Paddle live readiness plus legal/support blockers, validation of non-owner roles/critical-change approval. Rate limiting/abuse protection Phase 3 is implemented at the single-instance/in-memory level with distributed/shared limiter storage deferred.
 
@@ -20,14 +20,14 @@ Public release still requires remaining operational readiness work: the complete
 
 ## Current verified state recorded for release planning
 
-- Backend `0.1.35-backend.82` is deployed at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82` and production `/health` plus `/api/health/database` return `200 OK`.
+- Backend `0.1.35-backend.99` is deployed at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.99` and production `/health` plus `/api/health/database` return `200 OK`.
 - Windows direct public `1.0` is live as `LanguageVoiceTutorSetup-1.0.exe` with `backendBaseUrl=https://api.languagevoicetutor.com` and `updateMode=manual-confirmation`.
 - AI Models persistent production storage is verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; it contains the known-good lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2` setup; matched the release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`; and survived a backend service restart with health/database health still green. This was a production data/config persistence correction, not a backend deploy, DB migration, Website CMS publish, or Windows installer upload.
 - Trial reference plan is seeded/required. Trial is displayed as a first-class tariff/reference plan, while Trial access remains entitlement-owned.
 - Learner Account subscription UI is simplified to Current tariff, Free lessons remaining, Premium, and Auto-renewal.
 - Premium continuous coverage display is backend-computed and can include queued paid Premium periods; `PremiumActive` remains based only on active started entitlements.
 - Paddle sandbox checkout and sandbox cancel-renewal work through backend-owned flows. Controlled live Paddle validation is complete; broader launch readiness remains pending.
-- The release remains a controlled direct Windows release, not broad public production launch.
+- The Windows Direct Release 1.0 is published, while broad production-readiness items remain tracked separately.
 - Current controlled direct Windows releases continue to use the existing Inno Setup installer flow; Microsoft Store/MSIX was evaluated and discontinued for now; future trust work should focus on direct installer code signing. This review does not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior.
 
 
@@ -36,7 +36,7 @@ Public release still requires remaining operational readiness work: the complete
 No new critical blockers were found in this documentation/source review. The earlier AI Models persistent storage risk is resolved. Perform the following handoff checks immediately before inviting testers:
 
 - Verify live Windows `latest.json` over HTTPS still points to `1.0`, `LanguageVoiceTutorSetup-1.0.exe`, `https://api.languagevoicetutor.com`, and `manual-confirmation`.
-- Verify backend symlink still resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82`, `/health` plus `/api/health/database` are green, and the persistent AI Models file still exists under `/opt/languagevoicetutor/backend/site/content/` with the known-good model IDs.
+- Verify backend symlink still resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.99`, `/health` plus `/api/health/database` are green, and the persistent AI Models file still exists under `/opt/languagevoicetutor/backend/site/content/` with the known-good model IDs.
 - Perform one installed-build smoke: registration/login, auth restore, lesson start, at least one lesson completion path, TTS/bot voice, Conversation Mode, Lesson History, Progress, Account view, Buy Premium sandbox path, Refresh status, and Cancel subscription sandbox path where applicable.
 - Confirm generated artifacts, installers, backend ZIPs, generated release folders, temp deploy scripts, SQL outputs, `.env` files, and secrets are not committed.
 - Prepare tester feedback intake: tester group, feedback template, severity labels, known-issue list, and rollback/contact instructions.
@@ -62,7 +62,7 @@ No new critical blockers were found in this documentation/source review. The ear
 
 ### Conversation Mode
 
-- Keep Conversation Mode in controlled tester validation.
+- Keep Conversation Mode in Windows Direct Release 1.0 validation.
 - Before public release, verify voice capture, transcript quality, interrupt/retry behavior, and user expectations across supported locales/devices.
 
 ### Voice/TTS
@@ -77,7 +77,7 @@ No new critical blockers were found in this documentation/source review. The ear
 
 ### CMS runtime content source
 
-- CMS published snapshot is active for controlled tester lessons; static JSON fallback remains rollback/safety.
+- CMS published snapshot is active for published Windows direct lessons; static JSON fallback remains rollback/safety.
 - Before public release, define content approval ownership, runtime validation thresholds, rollback procedure, and post-publish monitoring. AI Models persistent storage is already verified; future AI Models changes remain Super Admin CMS operations using persistent server data/config, not release-folder JSON.
 
 ### Admin CMS Save draft / Publish / Restore
@@ -101,7 +101,7 @@ No new critical blockers were found in this documentation/source review. The ear
 
 ### Support/admin operations
 
-- Controlled tester support actions are available: manual Premium grant/revoke, free lesson reset, billing diagnostics, and admin cancel-renewal with reason.
+- Windows Direct Release 1.0 support actions are available: manual Premium grant/revoke, free lesson reset, billing diagnostics, and admin cancel-renewal with reason.
 - BootstrapAdmin is acceptable for controlled testing only. A public release candidate requires production Admin RBAC or a documented owner-approved exception.
 - Endpoint-level permission enforcement is required before exposing support, content, or billing admin actions broadly; Admin UI awareness is not enough.
 - Audit logging must remain mandatory for dangerous actions such as manual Premium grant/revoke, free lesson reset, cancel-renewal, CMS publish, CMS restore/rollback, and role/permission changes.
@@ -136,7 +136,7 @@ No new critical blockers were found in this documentation/source review. The ear
 - Mobile releases and Apple/Google entitlement bridge.
 - Full production Admin role management/RBAC and critical-change approval if not completed before product.
 - Additional content polishing for short/repeating scenarios and avatar dialogue quality.
-- Advanced monitoring dashboards and support automation beyond the controlled tester needs.
+- Advanced monitoring dashboards and support automation beyond the Windows Direct Release 1.0 needs.
 
 
 ## 2026-06-23 Phase 4C documentation/tooling update
@@ -163,7 +163,7 @@ The current logging/privacy posture remains controlled-tester appropriate when o
 
 Phase 5B bounded production log sampling found over-verbose EF Core `Microsoft.EntityFrameworkCore.Database.Command[20101]` entries at `Information` level with SQL command text. The sampled output redacted parameter values as `?` and did not show raw passwords, bearer tokens, refresh-token values, connection strings, OpenAI API keys, raw Paddle payload contents, raw SQL dumps, or raw secrets, so this is not treated as a data breach. It is a release-readiness issue because SQL text can expose sensitive schema/field names and unnecessary health-check/CMS noise.
 
-Phase 5C production logging hardening was first deployed on backend `0.1.35-backend.40` and is retained, deployed, and production-verified on current backend `0.1.35-backend.82`. `/opt/languagevoicetutor/backend/current` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82`, `/opt/languagevoicetutor/backend/previous` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.49`, `/health` returned `200 OK`, `/api/health/database` returned `200 OK`, and a repeat database-health check also returned `200 OK`. `languagevoicetutor-backend.service` is active and enabled. Post-deploy journal sampling over the recent verification window returned 0 lines for the bounded sensitive/EF SQL grep set: `Microsoft.EntityFrameworkCore.Database.Command`, `SELECT`, `INSERT`, `UPDATE`, `PasswordHash`, `TokenHash`, `RawPayload`, and `SignatureHeader`. No EF migrations were run for this config-only backend release, and no production database schema or data changed. Controlled live Paddle validation is complete; broad public production readiness is still not claimed.
+Phase 5C production logging hardening was first deployed on backend `0.1.35-backend.40` and is retained, deployed, and production-verified on current backend `0.1.35-backend.99`. `/opt/languagevoicetutor/backend/current` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.99`, `/opt/languagevoicetutor/backend/previous` points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.49`, `/health` returned `200 OK`, `/api/health/database` returned `200 OK`, and a repeat database-health check also returned `200 OK`. `languagevoicetutor-backend.service` is active and enabled. Post-deploy journal sampling over the recent verification window returned 0 lines for the bounded sensitive/EF SQL grep set: `Microsoft.EntityFrameworkCore.Database.Command`, `SELECT`, `INSERT`, `UPDATE`, `PasswordHash`, `TokenHash`, `RawPayload`, and `SignatureHeader`. No EF migrations were run for this config-only backend release, and no production database schema or data changed. Controlled live Paddle validation is complete; broad public production readiness is still not claimed.
 
 ## 2026-06-25 Admin payment-event statistics note
 
@@ -195,7 +195,7 @@ Backend deployment, database migrations, Website CMS/static site publish, and Wi
 ### Verified current release point from tracked repository state
 
 - Windows direct release is tracked as `1.0` in `site/public/releases/windows/direct/latest.json`, with `LanguageVoiceTutorSetup-1.0.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.0`, and `updateMode=manual-confirmation`.
-- Backend production release is tracked in release docs as `0.1.35-backend.82`. The live `/opt/languagevoicetutor/backend/current` symlink was manually verified with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` and resolved to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.82`; production `/health` and `/api/health/database` were verified healthy. No backend deploy was performed by this documentation task.
+- Backend production release is tracked in release docs as `0.1.35-backend.99`. The live `/opt/languagevoicetutor/backend/current` symlink was manually verified with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` and resolved to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.99`; production `/health` and `/api/health/database` were verified healthy. No backend deploy was performed by this documentation task.
 - Admin CMS AI Models settings are persistent server data outside versioned backend release folders. Known-good model settings are: lesson tutor chat `gpt-5.5`; feedback/correction `gpt-5.2`; lesson hint `gpt-5.2`; translation `gpt-5.2`.
 - For `gpt-5.5`, backend requests must omit `temperature`. API keys and provider secrets remain server environment secrets. The Desktop app must not call OpenAI directly and must not choose OpenAI model IDs.
 
@@ -221,7 +221,7 @@ Backend deployment, database migrations, Website CMS/static site publish, and Wi
 | --- | --- | --- |
 | Windows Direct EXE/Inno | Partially ready for controlled testers | `1.0` is documented and manifest-backed. Public release still needs code signing, update-over-existing-install evidence if not already current, clean-machine smoke before expansion, and controlled feedback. |
 | Direct update flow | Ready for controlled testers | `latest.json`, manual confirmation, manifest identity checks, and SHA-256 verification remain the active path. |
-| Backend production | Ready for controlled testers | Health/database health checks and deployment docs exist. The live current symlink verifies production backend `0.1.35-backend.82`; backend deploys, database migrations, Website CMS publish, and Windows installer uploads remain separate operations. |
+| Backend production | Ready for controlled testers | Health/database health checks and deployment docs exist. The live current symlink verifies production backend `0.1.35-backend.99`; backend deploys, database migrations, Website CMS publish, and Windows installer uploads remain separate operations. |
 | Database/migrations | Controlled/manual | Current docs say backend deploy does not run migrations. Any migration requires separate review, backup, SQL/operator procedure, and post-checks. |
 | Admin CMS / AI Models | Partially ready | AI Models are persistent server data and known-good models are documented. CMS publish changes runtime content for newly started lessons. |
 | Website/CMS/legal/support | Partially ready | Public site and legal/support pages are draft-ready for owner/legal review. Website CMS publish is separate. Do not claim mobile app stores or Microsoft Store availability. |
@@ -232,7 +232,7 @@ Backend deployment, database migrations, Website CMS/static site publish, and Wi
 
 ### Top 10 remaining release tasks in safe order
 
-1. **Docs-only/operations hygiene:** Keep the backend release discrepancy resolved: production current is documented as `0.1.35-backend.82` after live symlink, health, and database-health verification; do not run backend deploys for docs-only work.
+1. **Docs-only/operations hygiene:** Keep the backend release discrepancy resolved: production current is documented as `0.1.35-backend.99` after live symlink, health, and database-health verification; do not run backend deploys for docs-only work.
 2. **Docs/manual:** Re-run final release-readiness checklist and confirm Store/MSIX appears only as discontinued historical context.
 3. **Manual/provider:** Buy/select the Windows code signing certificate and document the signing integration plan for the direct Inno installer.
 4. **Windows installer build/upload:** After signing integration is approved, build a new direct installer, validate the direct-release folder, upload with the direct upload helper, and verify HTTPS `latest.json` plus installer SHA-256.

@@ -75,7 +75,7 @@ The Windows direct release manifest is:
 https://languagevoicetutor.com/releases/windows/direct/latest.json
 ```
 
-Current public tester release:
+Current public direct release:
 
 - `version`: `1.0`
 - `installerFileName`: `LanguageVoiceTutorSetup-1.0.exe`
@@ -117,7 +117,7 @@ Legal texts are product/legal drafts and must not be described as final legal ad
 - Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.99`.
 - Website: public pages generated and Paddle-review polish completed.
 - Download: current Windows tester release visible without JavaScript and manifest-driven with JavaScript.
-- Windows installer: current public tester release `1.0`.
+- Windows installer: current public direct release `1.0`.
 - Billing: controlled Paddle live payment/webhook/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are production-verified; broad public paid launch still requires final release-readiness review.
 - Legal: legal/support/seller/AI/status pages ready for owner/legal final review.
 

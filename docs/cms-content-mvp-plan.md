@@ -20,7 +20,7 @@ Runtime learner behavior now uses the CMS published snapshot in the controlled t
 
 Step 5D-6a reorganized the existing static backend Admin `CMS Content` section into internal sub-tabs: Overview, Topics, Scenarios, Prompts, Tutors, Validation & Preview, Versions & Publish, and Audit. This is a UI organization step only: existing CMS Admin API calls, bounded draft save operations, validation, preview, version listing, publish, and restore behavior remain in place.
 
-The Admin CMS UI remains development-only/admin-only. Runtime learner behavior now uses CMS published snapshot for controlled tester lessons, and static JSON fallback remains available. External tester handoff remains paused, production billing remains deferred, and public release remains not ready. No EF migration, lesson JSON edit, prompt/tutor content edit, desktop UI change, billing/Paddle/subscription/entitlement/payment change, or password reset behavior change is part of this step.
+The Admin CMS UI remains development-only/admin-only. Runtime learner behavior now uses CMS published snapshot for controlled tester lessons, and static JSON fallback remains available. External tester handoff remains paused, remaining billing operations and broader paid-launch approval remain deferred, and public release remains not ready. No EF migration, lesson JSON edit, prompt/tutor content edit, desktop UI change, billing/Paddle/subscription/entitlement/payment change, or password reset behavior change is part of this step.
 
 ## Step 5D-6c update — Full scenario JSON editing foundation
 

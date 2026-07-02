@@ -37,23 +37,24 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 - Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.99`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
-- Download: the current Windows tester release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
-- Windows installer: current public tester release is `1.0`, installer `LanguageVoiceTutorSetup-1.0.exe`.
+- Download: the current Windows direct public release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
+- Windows installer: current Windows direct public release is `1.0`, installer `LanguageVoiceTutorSetup-1.0.exe`.
 - AI Models: persistent production storage at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` is verified, survived a backend service restart, and contains the known-good `gpt-5.5` / `gpt-5.2` production setup.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: pricing, subscription terms, terms, privacy, refunds, cancellation, support, seller/company details, AI/data disclosure, platform availability/status, and download pages are ready for owner/legal final review as product/legal drafts, not final legal advice.
 
-Remaining release steps:
+Remaining follow-ups after Windows Direct Release 1.0 publication:
 
-1. Final manual website review in incognito.
-2. Final owner/legal text review.
-3. Final Windows installer smoke.
-4. Logging/release-readiness checks for remaining Admin operations and paid-launch evidence.
-5. Admin auth audit first production slice is complete for `admin_login_success`, `admin_logout`, `admin_login_failed`, and `disabled_admin_login_denied`; session expiration audit persistence remains pending until separately implemented/verified.
-6. Controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad paid launch remains pending final release-readiness review.
-7. Microsoft Store/MSIX was evaluated and discontinued for now; Microsoft Store availability is not claimed.
+1. Code signing remains deferred and accepted as a known release risk / SmartScreen warning source for this release.
+2. Post-release monitoring and customer feedback triage remain ongoing.
+3. Backup/restore/rollback currency checks remain ongoing operational work.
+4. Final owner/legal/support/pricing review remains a follow-up for broader marketing and paid-launch expansion.
+5. Logging/release-readiness checks for remaining Admin operations and paid-launch evidence remain follow-up work.
+6. Admin auth audit first production slice is complete for `admin_login_success`, `admin_logout`, `admin_login_failed`, and `disabled_admin_login_denied`; session expiration audit persistence remains pending until separately implemented/verified.
+7. Controlled Paddle live payment/webhook/Premium activation, failed-payment non-activation, desktop cancel-renewal validation, and full-refund Premium revocation are completed; chargeback remains implemented/test-covered but not live-chargeback-tested; partial refunds remain conservative/manual-review; expanded customer portal/subscription management is deferred and not a 1.0 blocker; broad paid launch remains pending final release-readiness review.
+8. Microsoft Store/MSIX was evaluated and discontinued for now; Microsoft Store availability is not claimed.
 
-Do not state that the product is fully public production-ready. The current Windows release remains a controlled direct Windows release, not a broad public production launch, and not broad public production readiness.
+Do not state that the product is fully public production-ready. The current Windows release remains a public Windows direct release, not a full broad production-readiness claim, and not broad public production readiness.
 
 ## Backend deployment state and boundaries
 
@@ -75,7 +76,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.
 
 The backend upload flow uses the uploaded `deploy-backend-release.sh` helper and `ssh -tt` for sudo restart/status when needed. Do not document old fragile inline bash deployment paths as the current flow.
 
-Backend deploy is separate from Windows installer upload, static website publish, Website CMS publish, database migrations, provider/Paddle live changes, and AI Models data/config correction. Backend upload/package scripts do not apply EF migrations automatically. Database migrations remain a separate reviewed SQL/operator process only when schema changes exist. Backend deploy does not upload Windows installer files, does not publish public website HTML, does not enable production billing, does not change production Paddle configuration, and must not treat release-folder AI Models JSON as the production source of truth.
+Backend deploy is separate from Windows installer upload, static website publish, Website CMS publish, database migrations, provider/Paddle live changes, and AI Models data/config correction. Backend upload/package scripts do not apply EF migrations automatically. Database migrations remain a separate reviewed SQL/operator process only when schema changes exist. Backend deploy does not upload Windows installer files, does not publish public website HTML, does not change production billing/Paddle configuration, and must not treat release-folder AI Models JSON as the production source of truth.
 
 Admin Product Statistics still uses the `Tracked signed-in app/device records` label for backend `DeviceEntity` records; this metric is not raw installer downloads. `Successful payments total` and `Successful payments current month` remain internal billing-event metrics and are not the source of Premium access.
 
@@ -185,14 +186,48 @@ The generated footer is shared across pages and has two rows:
 
 The download page is manifest-driven and also useful without JavaScript. When the local/public manifest is available, it statically shows current release details instead of only showing Loading or Unavailable. It keeps `download.js` and `/releases/windows/direct/latest.json` support. The static non-JS fallback text is:
 
-- “Current Windows tester release is available through the Download for Windows button.”
+- “Current Windows direct release is available through the Download for Windows button.”
 - “If release details do not load automatically, please contact [support@languagevoicetutor.com](mailto:support@languagevoicetutor.com).”
+
+## Windows Direct Release 1.0 publication record
+
+Windows Direct Release 1.0 is published on the public direct channel. The release was built locally with Inno Setup, validated, uploaded to `/var/www/languagevoicetutor/releases/windows/direct`, verified on the server, verified over public HTTPS, verified on the website download page, and manually checked by downloading the installer from the public Download button.
+
+Public release manifest values verified over HTTPS:
+
+- `version`: `1.0`
+- `installerFileName`: `LanguageVoiceTutorSetup-1.0.exe`
+- `channel`: `direct-public`
+- `backendBaseUrl`: `https://api.languagevoicetutor.com`
+- `minimumSupportedVersion`: `1.0`
+- `updateMode`: `manual-confirmation`
+- `sha256`: `d6be93fbcd75536a0cd149bd8872c8327fc3131ede247b1db2b2d33d673680e1`
+- `installerSizeBytes`: `188751650`
+
+Publication verification completed:
+
+- Local installer created: `artifacts\installers\windows\LanguageVoiceTutorSetup-1.0.exe`.
+- Server-ready release copy created: `artifacts\releases\windows\direct\LanguageVoiceTutorSetup-1.0.exe`.
+- Direct release manifest created: `artifacts\releases\windows\direct\latest.json`.
+- `scripts\validate-windows-direct-release.ps1` passed before upload.
+- `latest.json`, `changelog.json`, and `known-issues.json` parsed as JSON.
+- `latest.json`, `changelog.json`, `known-issues.json`, and `checksums.sha256` had no UTF-8 BOM.
+- Manifest identity matched product `Language Voice Tutor`, app id `LanguageVoiceTutor.Desktop`, platform `windows`, architecture `win-x64`, backend `https://api.languagevoicetutor.com`, channel `direct-public`, and update mode `manual-confirmation`.
+- Installer SHA-256 matched both `latest.json` and `checksums.sha256`.
+- `changelog.json` and `known-issues.json` both referenced version `1.0`.
+- Dry-run upload uploaded nothing; the real upload completed successfully for `latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, and `LanguageVoiceTutorSetup-1.0.exe`.
+- Server command confirmed remote `latest.json` content.
+- Public HTTPS `latest.json` returned version `1.0`, installer `LanguageVoiceTutorSetup-1.0.exe`, backend `https://api.languagevoicetutor.com`, minimum supported version `1.0`, and update mode `manual-confirmation`.
+- Public download page showed Current version `1.0`, release details for channel `direct-public`, size `180.0 MB`, and SHA-256 `d6be93fbcd75536a0cd149bd8872c8327fc3131ede247b1db2b2d33d673680e1`.
+- Manual website check confirmed the Download button downloads the `1.0` installer.
+
+Scope boundary: the public release upload affected only Windows direct release files. It did not deploy backend code, run migrations, modify database state, change billing/Paddle/refund logic, upload website files, rebuild the installer, change secrets, or change installer binaries. Production backend remains `0.1.35-backend.99`. Code signing remains deferred and accepted as a known release risk for this release; Windows SmartScreen warnings remain expected until a future signed installer is published. The next public direct version should be `1.1`; future public direct versions should continue as `1.1`, `1.2`, and so on.
 
 ## Windows direct release
 
 Manifest: `https://languagevoicetutor.com/releases/windows/direct/latest.json`.
 
-Current public tester values:
+Current public direct release values:
 
 - `version`: `1.0`
 - `installerFileName`: `LanguageVoiceTutorSetup-1.0.exe`
@@ -223,7 +258,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release
 
 Do not manually `scp` installer files when the script exists. Windows direct release upload is separate from backend deploy and static website publish. After upload, verify `latest.json`, `installerFileName`, `backendBaseUrl`, installer hash, and that the download page button downloads the same installer named by the manifest.
 
-Code signing remains deferred. CMS published-snapshot runtime is active for controlled tester lessons. Backend deployment, database migrations, the download website, and update UI remain separate work.
+Code signing remains deferred. CMS published-snapshot runtime is active for published Windows direct lessons. Backend deployment, database migrations, the download website, and update UI remain separate work.
 
 ## Paddle, legal, and subscription architecture
 

@@ -6,7 +6,7 @@ Review date: 2026-06-18.
 
 These docs are a snapshot of the last known verified state. They can become stale and must not be used as the only source of truth for live versions. Always verify the live/public state before telling a tester that a version is current.
 
-Check the public Windows direct tester release from the live website manifest:
+Check the public Windows direct release from the live website manifest:
 
 ```powershell
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
@@ -31,7 +31,7 @@ Inno Setup is the primary Windows direct-download installer foundation for Langu
 
 ## Current update status
 
-The public tester Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-1.0.exe`, uses `version: 1.0`, keeps `minimumSupportedVersion` at `1.0`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. Future local builds are not public/live unless the live website manifest points to them.
+The public Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-1.0.exe`, uses `version: 1.0`, keeps `minimumSupportedVersion` at `1.0`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. Future local builds are not public/live unless the live website manifest points to them.
 
 The desktop release UX has a simple user-facing **Check for updates** button in Settings. The old technical update dashboard in Diagnostics is not part of release UX. Release Settings must not expose Diagnostics or Backend URL editing.
 
@@ -67,7 +67,7 @@ In code this is built from `Environment.SpecialFolder.LocalApplicationData` plus
 
 Current cleanup behavior: stale `.download` for the same target is deleted before a new download; timeout/failure deletes the `.download`; SHA-256 failure deletes both the `.download` and any existing same-name destination. Successfully verified installers remain in the update cache until replaced by the same file name or cleaned manually. They are not stored in a random temp folder.
 
-Manual cleanup for old downloaded update installers on a tester machine:
+Manual cleanup for old downloaded update installers on a Windows direct release machine:
 
 ```powershell
 Remove-Item "$env:LOCALAPPDATA\LanguageVoiceTutor\Updates\LanguageVoiceTutorSetup-*.exe" -Force -ErrorAction SilentlyContinue
