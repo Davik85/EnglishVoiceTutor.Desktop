@@ -1,6 +1,6 @@
 # Windows installer release flow
 
-> Release direction note: this Inno Setup flow remains valid for controlled tester/direct Windows releases until the owner explicitly changes the release flow. Microsoft Store/MSIX was evaluated and discontinued for now. Future Windows trust/signing work should focus on a code signing certificate for the direct EXE/Inno installer. Do not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior for this future-direction note.
+> Release direction note: this Inno Setup flow remains valid for controlled direct Windows releases until the owner explicitly changes the release flow. Microsoft Store/MSIX was evaluated and discontinued for now. Future Windows trust/signing work should focus on a code signing certificate for the direct EXE/Inno installer. Do not change packaging scripts, upload scripts, `latest.json`, release validation, or installer behavior for this future-direction note.
 
 
 Review date: 2026-06-18.
@@ -9,7 +9,7 @@ Review date: 2026-06-18.
 
 These docs are a snapshot of the last known verified state. They can become stale and must not be used as the only source of truth for live versions. Always verify the live/public state before telling a tester that a version is current.
 
-Check the public Windows direct tester release from the live website manifest:
+Check the public Windows direct release from the live website manifest:
 
 ```powershell
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
@@ -34,9 +34,9 @@ Inno Setup is the primary Windows direct-download installer track for Language V
 
 ## Current validated release
 
-The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.36-tester.31.exe` with `version` set to `0.1.36-tester.31`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.36-tester.31`, and `updateMode` set to `manual-confirmation`. Treat this as a controlled tester/direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
+The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-1.0.exe` with `version` set to `1.0`, `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `1.0`, and `updateMode` set to `manual-confirmation`. Treat this as a controlled direct Windows release baseline only; do not describe any future local build as public/live unless the website `latest.json` points to it over HTTPS.
 
-This is a private tester/direct Windows release, not broad public production readiness. Code signing remains deferred, so SmartScreen warnings are still expected for controlled testers.
+This is a private direct Windows release, not broad public production readiness. Code signing remains deferred, so SmartScreen warnings are still expected for controlled testers.
 
 ## Decision
 

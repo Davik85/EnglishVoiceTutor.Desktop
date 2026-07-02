@@ -6,7 +6,7 @@ Review date: 2026-07-01.
 
 These docs record the release-ready handoff state, but live systems can change. Always verify the live/public state before telling a tester that a version is current.
 
-Check the public Windows direct tester release from the live website manifest:
+Check the public Windows direct release from the live website manifest:
 
 ```powershell
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
@@ -38,7 +38,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 - Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.99`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows tester release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
-- Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
+- Windows installer: current public tester release is `1.0`, installer `LanguageVoiceTutorSetup-1.0.exe`.
 - AI Models: persistent production storage at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` is verified, survived a backend service restart, and contains the known-good `gpt-5.5` / `gpt-5.2` production setup.
 - Billing: controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed for the 2026-07-02 owner-led test; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad public paid launch remains pending final release-readiness review.
 - Legal: pricing, subscription terms, terms, privacy, refunds, cancellation, support, seller/company details, AI/data disclosure, platform availability/status, and download pages are ready for owner/legal final review as product/legal drafts, not final legal advice.
@@ -53,7 +53,7 @@ Remaining release steps:
 6. Controlled Paddle live payment/webhook/Premium activation and desktop cancel-renewal validation are completed; full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred; broad paid launch remains pending final release-readiness review.
 7. Microsoft Store/MSIX was evaluated and discontinued for now; Microsoft Store availability is not claimed.
 
-Do not state that the product is fully public production-ready. The current Windows release remains a controlled tester/direct Windows release, not a broad public production launch, and not broad public production readiness.
+Do not state that the product is fully public production-ready. The current Windows release remains a controlled direct Windows release, not a broad public production launch, and not broad public production readiness.
 
 ## Backend deployment state and boundaries
 
@@ -194,15 +194,15 @@ Manifest: `https://languagevoicetutor.com/releases/windows/direct/latest.json`.
 
 Current public tester values:
 
-- `version`: `0.1.36-tester.31`
-- `installerFileName`: `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`
+- `version`: `1.0`
+- `installerFileName`: `LanguageVoiceTutorSetup-1.0.exe`
 - `backendBaseUrl`: `https://api.languagevoicetutor.com`
 - `updateMode`: `manual-confirmation`
-- `minimumSupportedVersion`: `0.1.36-tester.31`
+- `minimumSupportedVersion`: `1.0`
 
-The `0.1.36-tester.31` Windows direct tester release has been built, uploaded, and verified. The user confirmed the newly uploaded build works and that the manual-confirmation update flow works on other devices. Backend deployment was not part of this desktop polish release; production backend remains healthy at `0.1.35-backend.99`, and no database migrations were added or run.
+The `1.0` Windows direct release has been built, uploaded, and verified. The user confirmed the newly uploaded build works and that the manual-confirmation update flow works on other devices. Backend deployment was not part of this desktop polish release; production backend remains healthy at `0.1.35-backend.99`, and no database migrations were added or run.
 
-Release-relevant desktop polish included in `0.1.36-tester.31`:
+Release-relevant desktop polish included in `1.0`:
 
 - Settings now includes a Contacts tab with `support@languagevoicetutor.com` and `https://languagevoicetutor.com`.
 - Contacts is localized for all release-ready UI languages: `en`, `es`, `fr`, `de`, `it`, `pt`, `ru`, `pl`, `ar`, `ja`, `ko`, `sr`, `hr`, and `bg`.
@@ -213,12 +213,12 @@ Release-relevant desktop polish included in `0.1.36-tester.31`:
 
 Recent relevant implementation commits for this handoff state: `52b5c1a` (Polish desktop release localization and lesson guard), `c704ec3` (Fix contacts localization coverage), and `d2a1202` (Fix Contacts localization refresh).
 
-Final local validation before/around this release included clean `git status`, `git diff --check`, `dotnet restore`, Debug and Release `dotnet build`, `python .\tools\test_desktop_release_polish_policy.py`, `python .\tools\test_finish_lesson_confirmation_policy.py`, `powershell -ExecutionPolicy Bypass -File .\tools\run_desktop_release_gate.ps1`, and `powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1`. The desktop release gate passed restore, Debug build, Release build, backend build, lesson content audit, interface localization audit, desktop backend boundary audit, tutor prompt policy, lesson behavior CMS ownership policy, admin/RBAC static policy checks, and desktop release smoke gate automated checks; EF checks were skipped because there were no schema-affecting backend changes. Windows direct release validation passed release directory/file presence, no UTF-8 BOM, JSON parsing, required manifest fields, production backend URL, manual-confirmation update mode, installer presence, installer SHA-256 agreement with `latest.json` and `checksums.sha256`, and matching `0.1.36-tester.31` changelog/known-issues versions.
+Final local validation before/around this release included clean `git status`, `git diff --check`, `dotnet restore`, Debug and Release `dotnet build`, `python .\tools\test_desktop_release_polish_policy.py`, `python .\tools\test_finish_lesson_confirmation_policy.py`, `powershell -ExecutionPolicy Bypass -File .\tools\run_desktop_release_gate.ps1`, and `powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1`. The desktop release gate passed restore, Debug build, Release build, backend build, lesson content audit, interface localization audit, desktop backend boundary audit, tutor prompt policy, lesson behavior CMS ownership policy, admin/RBAC static policy checks, and desktop release smoke gate automated checks; EF checks were skipped because there were no schema-affecting backend changes. Windows direct release validation passed release directory/file presence, no UTF-8 BOM, JSON parsing, required manifest fields, production backend URL, manual-confirmation update mode, installer presence, installer SHA-256 agreement with `latest.json` and `checksums.sha256`, and matching `1.0` changelog/known-issues versions.
 
 Use the Windows direct-release upload helper:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 0.1.36-tester.31
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 1.0
 ```
 
 Do not manually `scp` installer files when the script exists. Windows direct release upload is separate from backend deploy and static website publish. After upload, verify `latest.json`, `installerFileName`, `backendBaseUrl`, installer hash, and that the download page button downloads the same installer named by the manifest.
@@ -275,7 +275,7 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 ### Current release point
 
-- Windows direct tester release: `0.1.36-tester.31`, verified in tracked `site/public/releases/windows/direct/latest.json` with production backend URL and manual-confirmation update mode.
+- Windows direct release: `1.0`, verified in tracked `site/public/releases/windows/direct/latest.json` with production backend URL and manual-confirmation update mode.
 - Backend release in tracked release docs: `0.1.35-backend.99`. The live `/opt/languagevoicetutor/backend/current` symlink was manually verified with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` and resolved to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.99`; `/health` and `/api/health/database` were also verified healthy. Backend .99 was deployed by the normal backend package/upload flow; this documentation task did not deploy backend code.
 - AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; it survived backend service restart, matched the current release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`, and contains lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2`. For `gpt-5.5`, backend requests must omit `temperature`.
 
@@ -301,7 +301,7 @@ Do not change backend runtime code, desktop runtime code, database schema/migrat
 
 ## 2026-06-30 Paddle live checkout preparation state
 
-Paddle approved the website, backend live checkout code is deployed in production `0.1.35-backend.99`, `/pay.html` and `/paddle.public.json` are published under the real nginx root, and live server-side Paddle config is present in `/etc/languagevoicetutor/backend.env`. The controlled 2026-07-02 live payment/webhook/Premium activation path completed for the expected Language Voice Tutor Pro monthly price, and desktop cancel-renewal behavior was verified. Windows direct tester release remains `0.1.36-tester.31`; AI Models persistent storage is verified and untouched. Store/MSIX remains discontinued; active Windows distribution remains Direct EXE/Inno.
+Paddle approved the website, backend live checkout code is deployed in production `0.1.35-backend.99`, `/pay.html` and `/paddle.public.json` are published under the real nginx root, and live server-side Paddle config is present in `/etc/languagevoicetutor/backend.env`. The controlled 2026-07-02 live payment/webhook/Premium activation path completed for the expected Language Voice Tutor Pro monthly price, and desktop cancel-renewal behavior was verified. Windows direct release remains `1.0`; AI Models persistent storage is verified and untouched. Store/MSIX remains discontinued; active Windows distribution remains Direct EXE/Inno.
 
 ## 2026-06-30 Paddle live checkout/Admin readiness update
 
@@ -314,7 +314,7 @@ Current production facts after backend `0.1.35-backend.99` and the 2026-07-02 co
 - Static website nginx root is `/var/www/languagevoicetutor/site`. The parent `/var/www/languagevoicetutor` is not the nginx static-site root and must not be used as the static website upload target.
 - Public Paddle config is `/var/www/languagevoicetutor/site/paddle.public.json`; public Paddle checkout page is `/var/www/languagevoicetutor/site/pay.html`.
 - Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.
-- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct tester remains `0.1.36-tester.31`; direct `latest.json` remains active with manual-confirmation update mode.
+- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct public release is `1.0`; direct `latest.json` remains active with manual-confirmation update mode.
 - Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
 - Controlled Paddle live payment validation completed on 2026-07-02 for Language Voice Tutor Pro. A real Paddle live payment completed for 14.99 EUR by Google Pay for customer email `11111@gmail.com`; Paddle status was Complete. Backend `0.1.35-backend.99` remained healthy afterward: production backend health returned `200 Healthy` and production database health returned `200 Healthy`. Backend logs showed live checkout transaction creation, webhook receipt for `subscription.created`, `subscription.activated`, and `transaction.completed`, successful payment persistence, reconciliation marking the completed transaction for activation, subscription snapshot processing, and entitlement activation with `ActivatedCount=1`, `BlockedCount=0`, `FailedCount=0`. Earlier `transaction.payment_failed` attempts were stored and safely processed with `ActivatedCount=0` / `AlreadySkippedCount=1`; they did not grant Premium. One transient PostgreSQL serialization failure occurred during subscription lifecycle snapshot processing; the retry policy retried it, the retry succeeded, and final snapshot processing completed with `FailedCount=0`. This is observed non-blocking retry evidence, not a failed payment flow.
 - Desktop Premium visibility was confirmed after payment: Current tariff `Premium`, free lessons remaining `without limits`, Premium active until `8/2/2026`, and auto-renewal initially Active. Cancel-renewal verification also completed from the desktop flow: after cancellation, Desktop still showed Current tariff `Premium`, free lessons remaining `without limits`, Premium active until `8/2/2026`, and Auto-renewal inactive. This confirms cancellation disables future renewal while preserving paid Premium access until the paid period end when no refund exists. The later full refund removes backend Premium access.

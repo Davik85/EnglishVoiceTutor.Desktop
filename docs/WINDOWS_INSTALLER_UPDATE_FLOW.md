@@ -31,7 +31,7 @@ Inno Setup is the primary Windows direct-download installer foundation for Langu
 
 ## Current update status
 
-The public tester Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-0.1.36-tester.16.exe`, uses `version: 0.1.36-tester.16`, keeps `minimumSupportedVersion` at `0.1.36-tester.16`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. Future local builds are not public/live unless the live website manifest points to them.
+The public tester Windows direct manifest baseline must be checked from live `https://languagevoicetutor.com/releases/windows/direct/latest.json`. Current verified manifest baseline: it points to `LanguageVoiceTutorSetup-1.0.exe`, uses `version: 1.0`, keeps `minimumSupportedVersion` at `1.0`, uses `backendBaseUrl: https://api.languagevoicetutor.com`, and uses `updateMode: manual-confirmation`. Future local builds are not public/live unless the live website manifest points to them.
 
 The desktop release UX has a simple user-facing **Check for updates** button in Settings. The old technical update dashboard in Diagnostics is not part of release UX. Release Settings must not expose Diagnostics or Backend URL editing.
 
@@ -78,7 +78,7 @@ Follow-up TODO: add safe automatic retention cleanup for old `LanguageVoiceTutor
 
 ## Direct-download manifest files
 
-`latest.json` describes the Language Voice Tutor Windows x64 direct-tester installer with a relative installer URL, SHA-256 checksum, file size, `manual-confirmation` update mode, and notes that code signing is deferred. The same folder also contains `changelog.json`, `known-issues.json`, and `checksums.sha256`. These files are generated artifacts under `artifacts\` and must not be committed. Generated artifacts are not source of truth for the public/live Windows release until uploaded and verified through live `latest.json`.
+`latest.json` describes the Language Voice Tutor Windows x64 direct-public installer with a relative installer URL, SHA-256 checksum, file size, `manual-confirmation` update mode, and notes that code signing is deferred. The same folder also contains `changelog.json`, `known-issues.json`, and `checksums.sha256`. These files are generated artifacts under `artifacts\` and must not be committed. Generated artifacts are not source of truth for the public/live Windows release until uploaded and verified through live `latest.json`.
 
 ## Uninstall/update behavior
 

@@ -77,8 +77,8 @@ https://languagevoicetutor.com/releases/windows/direct/latest.json
 
 Current public tester release:
 
-- `version`: `0.1.36-tester.31`
-- `installerFileName`: `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`
+- `version`: `1.0`
+- `installerFileName`: `LanguageVoiceTutorSetup-1.0.exe`
 - `backendBaseUrl`: `https://api.languagevoicetutor.com`
 - `updateMode`: `manual-confirmation`
 
@@ -117,7 +117,7 @@ Legal texts are product/legal drafts and must not be described as final legal ad
 - Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.99`.
 - Website: public pages generated and Paddle-review polish completed.
 - Download: current Windows tester release visible without JavaScript and manifest-driven with JavaScript.
-- Windows installer: current public tester release `0.1.36-tester.31`.
+- Windows installer: current public tester release `1.0`.
 - Billing: controlled Paddle live payment/webhook/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are production-verified; broad public paid launch still requires final release-readiness review.
 - Legal: legal/support/seller/AI/status pages ready for owner/legal final review.
 
@@ -149,7 +149,7 @@ Current production facts after backend `0.1.35-backend.99` and the 2026-07-02 co
 - Static website nginx root is `/var/www/languagevoicetutor/site`. The parent `/var/www/languagevoicetutor` is not the nginx static-site root and must not be used as the static website upload target.
 - Public Paddle config is `/var/www/languagevoicetutor/site/paddle.public.json`; public Paddle checkout page is `/var/www/languagevoicetutor/site/pay.html`.
 - Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.
-- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct tester remains `0.1.36-tester.31`; direct `latest.json` remains active with manual-confirmation update mode.
+- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct public release is `1.0`; direct `latest.json` remains active with manual-confirmation update mode.
 - Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
 - Controlled live payment, webhook delivery, Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed. Chargeback remains implemented/test-covered but not live-chargeback-tested. Partial refund remains conservative/manual-review. Expanded customer portal/subscription management is deferred and not a current blocker.
 

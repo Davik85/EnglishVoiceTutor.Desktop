@@ -4,7 +4,7 @@ Review date: 2026-06-29.
 
 ## Source of truth for current versions
 
-The live website manifest is the public source of truth for the Windows direct tester release:
+The live website manifest is the public source of truth for the Windows direct release:
 
 ```powershell
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
@@ -29,11 +29,11 @@ https://languagevoicetutor.com/releases/windows/direct/latest.json
 Current public tester values:
 
 ```text
-version: 0.1.36-tester.31
-installerFileName: LanguageVoiceTutorSetup-0.1.36-tester.31.exe
+version: 1.0
+installerFileName: LanguageVoiceTutorSetup-1.0.exe
 backendBaseUrl: https://api.languagevoicetutor.com
 updateMode: manual-confirmation
-minimumSupportedVersion: 0.1.36-tester.31
+minimumSupportedVersion: 1.0
 ```
 
 This release has been built, uploaded, and verified. The user confirmed the newly uploaded build works and that manual-confirmation update flow works on other devices.
@@ -110,11 +110,11 @@ $manifest.checksums.sha256
 
 Confirm:
 
-- `version` is `0.1.36-tester.31` or the intended newly uploaded tester version;
-- `installerFileName` is `LanguageVoiceTutorSetup-0.1.36-tester.31.exe` or the matching intended installer;
+- `version` is `1.0` or the intended newly uploaded tester version;
+- `installerFileName` is `LanguageVoiceTutorSetup-1.0.exe` or the matching intended installer;
 - `backendBaseUrl` is `https://api.languagevoicetutor.com`;
 - `updateMode` is `manual-confirmation`;
-- `minimumSupportedVersion` is `0.1.36-tester.31` for this uploaded tester release;
+- `minimumSupportedVersion` is `1.0` for this uploaded tester release;
 - `installerSha256` and `checksums.sha256` are present and agree with the uploaded installer hash.
 
 ## Installer download verification
@@ -154,7 +154,7 @@ Verify the download page resolves and that the page button downloads the same in
 Invoke-WebRequest https://languagevoicetutor.com/download.html -UseBasicParsing
 ```
 
-Then open `https://languagevoicetutor.com/download.html` in a browser, click **Download for Windows**, and confirm the downloaded file name is the same as `$manifest.installerFileName`. The page must keep working as a controlled tester/direct Windows release page, not as a broad public production launch announcement. When Website CMS has been published with static release details available, `download.html` should show the current Windows installer details from `latest.json`. This verification is separate from Website CMS Publish and does not itself publish public website HTML/CSS/JS.
+Then open `https://languagevoicetutor.com/download.html` in a browser, click **Download for Windows**, and confirm the downloaded file name is the same as `$manifest.installerFileName`. The page must keep working as a controlled direct Windows release page, not as a broad public production launch announcement. When Website CMS has been published with static release details available, `download.html` should show the current Windows installer details from `latest.json`. This verification is separate from Website CMS Publish and does not itself publish public website HTML/CSS/JS.
 
 ## Download page behavior
 
@@ -169,7 +169,7 @@ Required static fallback text:
 
 Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.82`. Website Paddle-review polish is completed separately from this upload flow. Paddle live is not enabled yet. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
 
-Do not state that the product is fully public production-ready. The current Windows release remains a controlled tester/direct Windows release, not a broad public production launch, and not broad public production readiness.
+Do not state that the product is fully public production-ready. The current Windows release remains a controlled direct Windows release, not a broad public production launch, and not broad public production readiness.
 
 Code signing remains deferred. Production billing/Paddle/subscription payment lifecycle remains deferred. CMS published-snapshot runtime is active for controlled tester lessons. Backend deployment, database migrations, the download website, and update UI remain separate work.
 
@@ -190,7 +190,7 @@ Current production facts after backend `0.1.35-backend.83` and before any real l
 - Static website nginx root is `/var/www/languagevoicetutor/site`. The parent `/var/www/languagevoicetutor` is not the nginx static-site root and must not be used as the static website upload target.
 - Public Paddle config is `/var/www/languagevoicetutor/site/paddle.public.json`; public Paddle checkout page is `/var/www/languagevoicetutor/site/pay.html`.
 - Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.
-- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct tester remains `0.1.36-tester.31`; direct `latest.json` remains active with manual-confirmation update mode.
+- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct public release is `1.0`; direct `latest.json` remains active with manual-confirmation update mode.
 - Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
 - Controlled live payment, webhook delivery, Premium entitlement activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed. Paid-launch readiness remains incomplete until final release-readiness review and remaining non-billing blockers are closed; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 
