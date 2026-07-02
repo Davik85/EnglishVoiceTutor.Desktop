@@ -53,8 +53,17 @@ def test_public_website_polish_regressions_are_locked():
     manifest = (ROOT / "site/public/releases/windows/direct/latest.json").read_text(encoding="utf-8")
 
     assert "ReadStaticReleaseManifest(root)" in source
-    assert "Current Windows tester release is available through the Download for Windows button." in source
-    assert "If release details do not load automatically, please contact" in download_html
+    assert "Language Voice Tutor for Windows" in source
+    assert "Technical release details" in source
+    assert "download-hero" in source
+    assert "Language Voice Tutor for Windows" in download_html
+    assert "Download for Windows" in download_html
+    assert "Start quickly" in download_html
+    assert "Choose practical topics" in download_html
+    assert "Learn step by step" in download_html
+    assert "Practice real conversation" in download_html
+    assert "Technical release details" in download_html
+    assert "assets/images/landing/windows-desktop.webp" in (ROOT / "site/public/styles.css").read_text(encoding="utf-8")
     assert "Version</dt>\n                    <dd id=\"detail-version\">Unavailable</dd>" not in download_html
     assert "1.0" in manifest
     assert "1.0" in download_html
