@@ -127,7 +127,7 @@ function applyManifest(manifest) {
 
 function applyManifestFailure(message) {
     setDownloadEnabled(false);
-    setText(elements.currentVersion, "Unavailable");
+    setText(elements.currentVersion, "available from the public release manifest");
     setText(elements.detailVersion, "Unavailable");
     setText(elements.detailChannel, "Unavailable");
     setText(elements.detailInstaller, "Unavailable");
