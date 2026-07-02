@@ -19,18 +19,18 @@ $productName = "Language Voice Tutor"
 $appId = "LanguageVoiceTutor.Desktop"
 $platform = "windows"
 $architecture = "win-x64"
-$channel = "direct-tester"
+$channel = "direct-public"
 $updateMode = "manual-confirmation"
 $productionBackendBaseUrl = "https://api.languagevoicetutor.com"
 $mainExe = "LanguageVoiceTutor.Desktop.exe"
 $bundledVersionFileName = "release-version.txt"
 $installerBaseName = "LanguageVoiceTutorSetup-$Version.exe"
-$semVerPattern = '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$'
-$semVerCorePattern = '^(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)'
+$semVerPattern = '^(0|[1-9]\d*)\.(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$'
+$semVerCorePattern = '^(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)(?:\.(?<patch>0|[1-9]\d*))?'
 $defaultChangelogItems = @(
-    "Windows direct-download installer package generated for tester validation.",
+    "Windows direct-download installer package generated for the public release line.",
     "Settings displays the installed app version for support and bug reports.",
-    "Server-ready direct-download release manifest files generated for future download and update-check flows."
+    "Server-ready direct-download release manifest files generated for public download and update-check flows."
 )
 $knownIssues = @(
     "Installer is unsigned and may trigger Windows SmartScreen warnings.",
@@ -44,7 +44,7 @@ $manifestNotes = @(
 )
 
 if ($Version -notmatch $semVerPattern) {
-    throw "Installer version '$Version' is invalid. Use a SemVer-compatible version such as 0.1.0 or 0.1.0-beta.1. Build metadata and four-part versions are not supported for installer file naming."
+    throw "Installer version '$Version' is invalid. Use a SemVer-compatible version such as 1.0, 1.1, or 1.1-beta.1. Build metadata and four-part versions are not supported for installer file naming."
 }
 
 $semVerCoreMatch = [regex]::Match($Version, $semVerCorePattern)
@@ -52,7 +52,8 @@ if (-not $semVerCoreMatch.Success) {
     throw "Installer version '$Version' did not contain a numeric SemVer core."
 }
 
-$numericAssemblyVersion = "{0}.{1}.{2}.0" -f $semVerCoreMatch.Groups["major"].Value, $semVerCoreMatch.Groups["minor"].Value, $semVerCoreMatch.Groups["patch"].Value
+$patchVersion = if ($semVerCoreMatch.Groups["patch"].Success) { $semVerCoreMatch.Groups["patch"].Value } else { "0" }
+$numericAssemblyVersion = "{0}.{1}.{2}.0" -f $semVerCoreMatch.Groups["major"].Value, $semVerCoreMatch.Groups["minor"].Value, $patchVersion
 $releaseChangelogItems = if ($ChangelogItem.Count -gt 0) { @($ChangelogItem) } else { @($defaultChangelogItems) }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -193,7 +194,7 @@ if (-not (Test-Path $appIconPath -PathType Leaf)) {
 
 $BackendBaseUrl = Normalize-BackendBaseUrl -Value $BackendBaseUrl
 if ($BackendBaseUrl -ne $productionBackendBaseUrl) {
-    throw "Tester/release installed builds are server-only and must use $productionBackendBaseUrl. Local/custom backend URLs are DEBUG/developer-only."
+    throw "Public direct-release installed builds are server-only and must use $productionBackendBaseUrl. Local/custom backend URLs are DEBUG/developer-only."
 }
 $isccExe = Resolve-IsccPath -ExplicitPath $IsccPath
 

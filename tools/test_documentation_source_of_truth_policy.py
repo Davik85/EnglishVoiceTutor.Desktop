@@ -21,8 +21,8 @@ ALL_MARKDOWN = [ROOT / "README.md", *sorted((ROOT / "docs").glob("*.md"))]
 LATEST_JSON_COMMAND = "Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json"
 BACKEND_SYMLINK_COMMAND = 'ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"'
 PROD_BACKEND_URL = "https://api.languagevoicetutor.com"
-CURRENT_TESTER_RELEASE = "0.1.36-tester.31"
-CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-0.1.36-tester.31.exe"
+CURRENT_TESTER_RELEASE = "1.0"
+CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-1.0.exe"
 CURRENT_BACKEND_RELEASE = "0.1.35-backend.99"
 PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.49"
 STALE_BACKEND_RELEASES = ["0.1.35-backend.27", "0.1.35-backend.33", "0.1.35-backend.34"]
@@ -66,7 +66,7 @@ def main() -> int:
     assert_contains(combined_main, "Source of truth for current versions", "source-of-truth section")
     assert_regex(
         combined_main,
-        r"public Windows direct tester release.*live website manifest|latest\.json.*public source of truth for the live Windows",
+        r"public Windows direct release.*live website manifest|latest\.json.*public source of truth for the live Windows",
         "live Windows latest.json source-of-truth wording",
     )
     assert_regex(
@@ -168,7 +168,7 @@ def main() -> int:
     assert_not_regex(current_state, r"(?:current|live|active|deployed and healthy)[^\n]*0\.1\.35-backend\.27", "old backend 0.1.35-backend.27 claimed current")
     assert_not_regex(current_state, r"0\.1\.36-tester\.17[^\n]*(?:current|live|active|latest)", "old tester 0.1.36-tester.17 claimed current")
     assert_not_regex(next_steps, r"immediate blocker[^\n]*(?:billing UI localization|cancel-renewal)|(?:billing UI localization|cancel-renewal)[^\n]*immediate blocker", "completed billing UI localization/cancel-renewal listed as immediate blocker")
-    assert_contains(combined_main, "controlled tester/direct Windows release, not a broad public production launch", "controlled tester not broad launch wording")
+    assert_contains(combined_main, "controlled direct Windows release, not a broad public production launch", "controlled tester not broad launch wording")
     required_billing_truths = [
         ("Controlled Paddle live payment validation completed", "controlled Paddle live payment completed wording"),
         ("desktop cancel-renewal validation", "cancel-renewal validation completed wording"),

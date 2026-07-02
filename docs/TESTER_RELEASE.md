@@ -35,9 +35,9 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Current approval status
 
-The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-0.1.36-tester.16.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `0.1.36-tester.16`, and `updateMode` set to `manual-confirmation`.
+The public tester Windows direct manifest baseline must be checked from the live website `latest.json`. Last verified public snapshot: `latest.json` pointed to `LanguageVoiceTutorSetup-1.0.exe` with `backendBaseUrl` set to `https://api.languagevoicetutor.com`, `minimumSupportedVersion` set to `1.0`, and `updateMode` set to `manual-confirmation`.
 
-`0.1.36-tester.16` is the intended live/direct tester release (previous tester release: `0.1.36-tester.15`), but it must still be verified from the website `latest.json` over HTTPS before telling testers it is current. This remains a private tester/direct Windows release channel. It approves only the live manifest package as the private tester build and does not mean the product is fully public production-ready.
+`1.0` is the intended live/direct tester release (previous tester release: `1.0`), but it must still be verified from the website `latest.json` over HTTPS before telling testers it is current. This remains a private tester/direct Windows release channel. It approves only the live manifest package as the private tester build and does not mean the product is fully public production-ready.
 
 ## Release artifact boundary
 

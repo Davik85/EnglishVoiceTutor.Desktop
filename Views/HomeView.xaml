@@ -21,7 +21,6 @@
                     <TextBlock Text="{Binding Title}" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" TextAlignment="Center" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxWidth="640" HorizontalAlignment="Center" />
                     <TextBlock Margin="0,10,0,0" Text="{Binding Subtitle}" FontSize="15" Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxWidth="660" HorizontalAlignment="Center" />
                     <TextBlock Margin="0,18,0,0" Text="{Binding CurrentLevelText}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" TextAlignment="Center" />
-                    <TextBlock Margin="0,6,0,0" Text="{Binding DailyLimitText}" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center" />
 
                     <ItemsControl Margin="0,22,0,0" ItemsSource="{Binding Topics}">
                         <ItemsControl.ItemTemplate>

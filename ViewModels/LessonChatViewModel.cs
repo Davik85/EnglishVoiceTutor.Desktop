@@ -4212,10 +4212,7 @@ public partial class LessonChatViewModel : ViewModelBase, IDisposable
 
         if (string.Equals(configStatus.OpenAiStatus, BackendConstants.OpenAiConfiguredStatus, StringComparison.OrdinalIgnoreCase))
         {
-            var modelName = configStatus.OpenAiModel?.Trim();
-            AiStatusText = string.IsNullOrWhiteSpace(modelName)
-                ? BackendConstants.AiStatusConfiguredPrefix
-                : $"{BackendConstants.AiStatusConfiguredPrefix} ({modelName})";
+            AiStatusText = BackendConstants.AiStatusConfiguredPrefix;
             return;
         }
 

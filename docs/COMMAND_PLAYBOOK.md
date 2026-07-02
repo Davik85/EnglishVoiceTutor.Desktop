@@ -6,7 +6,7 @@ Review date: 2026-06-18.
 
 These docs are a snapshot of the last known verified state. They can become stale and must not be used as the only source of truth for live versions. Always verify the live/public state before telling a tester that a version is current.
 
-Check the public Windows direct tester release from the live website manifest:
+Check the public Windows direct release from the live website manifest:
 
 ```powershell
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
@@ -119,7 +119,7 @@ Invoke-WebRequest https://languagevoicetutor.com/assets/images/landing/mobile.we
 Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json
 ```
 
-The first four checks must return `200 OK`. The `latest.json` check must remain valid and should still show the intended Windows release metadata. For the resolved landing page incident, the verified manifest remained `version=0.1.36-tester.16`, `installerFileName=LanguageVoiceTutorSetup-0.1.36-tester.16.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=0.1.36-tester.16`, and `updateMode=manual-confirmation`.
+The first four checks must return `200 OK`. The `latest.json` check must remain valid and should still show the intended Windows release metadata. For the resolved landing page incident, the verified manifest remained `version=1.0`, `installerFileName=LanguageVoiceTutorSetup-1.0.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.0`, and `updateMode=manual-confirmation`.
 
 ### Rollback public website files
 
@@ -345,7 +345,7 @@ Rollback remains disabling or removing the CMS runtime flags and restarting the 
 
 ## Current controlled tester handoff checks after CMS runtime milestone
 
-Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.24` and the live public direct Windows manifest points to `version=0.1.36-tester.16`, `installerFileName=LanguageVoiceTutorSetup-0.1.36-tester.16.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=0.1.36-tester.16`, and `updateMode=manual-confirmation`. For future tester handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
+Use these checks after confirming the server `current` symlink points to backend `0.1.35-backend.24` and the live public direct Windows manifest points to `version=1.0`, `installerFileName=LanguageVoiceTutorSetup-1.0.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.0`, and `updateMode=manual-confirmation`. For future tester handoffs, replace these values with the live `latest.json` and server symlink values instead of hardcoding a new example here.
 
 Verify the public tester manifest before handoff:
 
@@ -396,7 +396,7 @@ Current production facts after backend `0.1.35-backend.99` and the 2026-07-02 co
 - Static website nginx root is `/var/www/languagevoicetutor/site`. The parent `/var/www/languagevoicetutor` is not the nginx static-site root and must not be used as the static website upload target.
 - Public Paddle config is `/var/www/languagevoicetutor/site/paddle.public.json`; public Paddle checkout page is `/var/www/languagevoicetutor/site/pay.html`.
 - Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.
-- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct tester remains `0.1.36-tester.31`; direct `latest.json` remains active with manual-confirmation update mode.
+- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct public release is `1.0`; direct `latest.json` remains active with manual-confirmation update mode.
 - Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
 - 2026-07-02 controlled validation completed: real live payment Complete for Language Voice Tutor Pro at 14.99 EUR via Google Pay; live checkout transaction creation, `subscription.created`, `subscription.activated`, `transaction.completed`, payment persistence, subscription snapshot processing, reconciliation, entitlement activation (`ActivatedCount=1`, `BlockedCount=0`, `FailedCount=0`), and desktop Premium visibility were verified without exposing raw provider payloads or secrets. Earlier failed payment attempts were processed without Premium activation (`ActivatedCount=0` / `AlreadySkippedCount=1`). One PostgreSQL serialization conflict during subscription snapshot processing retried successfully and ended with `FailedCount=0`. Desktop cancel-renewal was verified: auto-renewal became inactive while Premium remained active until `8/2/2026`. Full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred and not a current blocker.
 - Controlled live payment, webhook delivery, payment persistence, subscription snapshot processing, entitlement activation, desktop Premium visibility, and desktop cancel-renewal behavior were completed and documented on 2026-07-02. Paddle full-refund Premium revocation is production-verified on backend `0.1.35-backend.99` using the already stored live `adjustment.updated` event; automatic future handling should use delivered `adjustment.created` / `adjustment.updated` notifications, with the operator reprocess command reserved for already-stored/legacy events only. Chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred and not a current blocker; broad public paid launch remains pending final release-readiness review and remaining release blockers.
