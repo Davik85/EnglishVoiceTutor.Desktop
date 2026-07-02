@@ -156,4 +156,13 @@ In candidate backend code that is not yet production-deployed, full Paddle refun
 
 Normal cancel-renewal behavior is unchanged: scheduled cancellation keeps Premium through the paid period end. Partial refunds are conservative in this slice: the event is safely recorded/processed for review and Premium is left unchanged unless the adjustment is full or a chargeback. Provider history is preserved; payment and subscription records are not deleted, and refund processing does not fake Paddle webhook events or expose raw provider payloads, webhook signatures, tokens, cookies, secrets, API keys, or full card/payment data in Admin Activity evidence.
 
-Automatic refund/chargeback revocation requires production verification after the candidate backend is deployed; current production remains `0.1.35-backend.95`. Broad public paid launch remains pending. Customer portal verification remains pending. Direct installer code signing remains pending.
+Automatic refund/chargeback revocation requires production verification after the candidate backend is deployed; current production backend is `0.1.35-backend.96`; production `.96` received `adjustment.created` and `adjustment.updated` but blocked them in reconciliation before automatic Premium revocation. Broad public paid launch remains pending. Customer portal verification remains pending. Direct installer code signing remains pending.
+
+
+### 2026-07-02 production refund replay blocker and fix candidate
+
+Production backend `0.1.35-backend.96` is deployed and healthy. Paddle has `adjustment.created` and `adjustment.updated` enabled and delivered. A controlled full-refund notification reached the backend with provider transaction/subscription ids but no `InternalUserId`; normalization and payment persistence completed, but reconciliation blocked the event before entitlement revocation. Therefore automatic refund/chargeback Premium revocation is not production-verified yet.
+
+Fix candidate: for full-refund/chargeback adjustment events, use safe metadata first, then resolve the backend user from existing Paddle payment history by provider transaction id, then existing subscription history by provider subscription id, then active provider-event entitlement evidence where already linked. If no safe mapping exists, block with a safe reason. Manual Premium Revoke remains the operational stopgap until the next backend is deployed and Paddle Replay verification passes. No more live payment/refund tests should be run until fake-signed/local verification passes. Broad public paid launch remains pending. Customer portal remains pending unless separately verified. Direct installer code signing remains pending.
+
+Production verification after deployment must not create another live payment or refund: replay the already delivered Paddle `adjustment.updated` notification from the Paddle notification log, then refresh Desktop/Admin subscription status and confirm Premium is removed.

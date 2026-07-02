@@ -23,7 +23,7 @@ BACKEND_SYMLINK_COMMAND = 'ssh lvt-server "readlink -f /opt/languagevoicetutor/b
 PROD_BACKEND_URL = "https://api.languagevoicetutor.com"
 CURRENT_TESTER_RELEASE = "0.1.36-tester.31"
 CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-0.1.36-tester.31.exe"
-CURRENT_BACKEND_RELEASE = "0.1.35-backend.95"
+CURRENT_BACKEND_RELEASE = "0.1.35-backend.96"
 PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.49"
 STALE_BACKEND_RELEASES = ["0.1.35-backend.27", "0.1.35-backend.33", "0.1.35-backend.34"]
 STALE_TESTER_RELEASES = ["0.1.35-tester.1", "0.1.36-tester.2", "0.1.36-tester.3", "0.1.36-tester.17"]
@@ -173,7 +173,7 @@ def main() -> int:
         ("Controlled Paddle live payment validation completed", "controlled Paddle live payment completed wording"),
         ("desktop cancel-renewal validation", "cancel-renewal validation completed wording"),
         ("failed payment attempts did not grant Premium", "failed payments do not grant Premium wording"),
-        ("current backend release is `0.1.35-backend.95`", "current production backend .95 wording"),
+        ("current backend release is `0.1.35-backend.96`", "current production backend .95 wording"),
         ("Automatic refund/chargeback revocation requires production verification", "refund/chargeback automatic revoke pending production verification wording"),
         ("Customer portal verification remains pending", "customer portal pending wording"),
         ("Broad public paid launch remains pending", "broad public paid launch pending wording"),

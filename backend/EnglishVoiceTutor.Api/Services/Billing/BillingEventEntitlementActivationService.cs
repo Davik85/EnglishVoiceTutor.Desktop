@@ -323,14 +323,17 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             billingEvent.ProcessedAtUtc = nowUtc;
             billingEvent.ErrorMessage = SubscriptionConstants.BillingEventActivation.PartialRefundManualReviewMessage;
             await dbContext.SaveChangesAsync(cancellationToken);
+            LogAdjustmentDiagnostics(billingEvent, metadata, metadata.UserResolutionSource ?? "none", null, isFullRefund, isChargeback, "skipped", null, 0, 0);
             return ActivationEventOutcome.AlreadySkipped();
         }
 
-        var userId = await ResolveAdjustmentUserIdAsync(metadata, cancellationToken);
+        var resolution = await ResolveAdjustmentUserIdAsync(metadata, cancellationToken);
+        var userId = resolution.UserId;
         if (userId is null)
         {
             MarkBlocked(billingEvent, nowUtc, SubscriptionConstants.BillingEventReconciliation.MissingInternalUserIdMessage);
             await dbContext.SaveChangesAsync(cancellationToken);
+            LogAdjustmentDiagnostics(billingEvent, metadata, resolution.Source, null, isFullRefund, isChargeback, "blocked", SubscriptionConstants.BillingEventReconciliation.MissingInternalUserIdMessage, 0, 0);
             return ActivationEventOutcome.Blocked();
         }
 
@@ -383,14 +386,16 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         billingEvent.ProcessedAtUtc = nowUtc;
         billingEvent.ErrorMessage = null;
         await dbContext.SaveChangesAsync(cancellationToken);
+        LogAdjustmentDiagnostics(billingEvent, metadata, resolution.Source, userId, isFullRefund, isChargeback, "processed", null, entitlements.Count, entitlements.Count);
         return entitlements.Count > 0 ? ActivationEventOutcome.Activated(nowUtc) : ActivationEventOutcome.AlreadyCurrent(nowUtc);
     }
 
-    private async Task<Guid?> ResolveAdjustmentUserIdAsync(BillingEventActivationSafeMetadata metadata, CancellationToken cancellationToken)
+    private async Task<AdjustmentUserResolution> ResolveAdjustmentUserIdAsync(BillingEventActivationSafeMetadata metadata, CancellationToken cancellationToken)
     {
         if (Guid.TryParse(metadata.InternalUserId, out var parsed))
         {
-            return parsed;
+            metadata.UserResolutionSource = "metadata";
+            return new AdjustmentUserResolution(parsed, "metadata");
         }
 
         if (!string.IsNullOrWhiteSpace(metadata.PaddleTransactionId))
@@ -403,21 +408,74 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
                 .FirstOrDefaultAsync(cancellationToken);
             if (paymentUserId is not null)
             {
-                return paymentUserId;
+                metadata.UserResolutionSource = "payment";
+                return new AdjustmentUserResolution(paymentUserId, "payment");
             }
         }
 
         if (!string.IsNullOrWhiteSpace(metadata.PaddleSubscriptionId))
         {
-            return await dbContext.Subscriptions
+            var subscriptionUserId = await dbContext.Subscriptions
                 .AsNoTracking()
                 .Where(subscription => subscription.Provider == SubscriptionConstants.BillingProviders.Paddle
                     && subscription.ProviderSubscriptionId == metadata.PaddleSubscriptionId)
                 .Select(subscription => (Guid?)subscription.UserId)
                 .FirstOrDefaultAsync(cancellationToken);
+            if (subscriptionUserId is not null)
+            {
+                metadata.UserResolutionSource = "subscription";
+                return new AdjustmentUserResolution(subscriptionUserId, "subscription");
+            }
+
+            var entitlementUserId = await dbContext.Entitlements
+                .AsNoTracking()
+                .Where(entitlement => entitlement.Subscription != null
+                    && entitlement.Subscription.Provider == SubscriptionConstants.BillingProviders.Paddle
+                    && entitlement.Subscription.ProviderSubscriptionId == metadata.PaddleSubscriptionId
+                    && entitlement.PlanId == SubscriptionConstants.Plans.PremiumPlanId
+                    && entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType
+                    && entitlement.Source == SubscriptionConstants.Entitlements.SourceProviderEvent
+                    && entitlement.Status == SubscriptionConstants.Entitlements.StatusActive)
+                .Select(entitlement => (Guid?)entitlement.UserId)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (entitlementUserId is not null)
+            {
+                metadata.UserResolutionSource = "entitlement";
+                return new AdjustmentUserResolution(entitlementUserId, "entitlement");
+            }
         }
 
-        return null;
+        metadata.UserResolutionSource = "none";
+        return new AdjustmentUserResolution(null, "none");
+    }
+
+    private void LogAdjustmentDiagnostics(
+        BillingEventEntity billingEvent,
+        BillingEventActivationSafeMetadata metadata,
+        string userResolutionSource,
+        Guid? resolvedUserId,
+        bool fullRefundDetected,
+        bool chargebackDetected,
+        string decision,
+        string? blockReasonCode,
+        int entitlementCandidatesCount,
+        int revokedCount)
+    {
+        logger.LogInformation(
+            "Billing adjustment entitlement diagnostics. EventType={EventType}; ProviderEventId={ProviderEventId}; ProviderTransactionId={ProviderTransactionId}; ProviderSubscriptionId={ProviderSubscriptionId}; InternalUserIdPresent={InternalUserIdPresent}; UserResolutionSource={UserResolutionSource}; ResolvedUserId={ResolvedUserId}; FullRefundDetected={FullRefundDetected}; ChargebackDetected={ChargebackDetected}; ReconciliationDecision={ReconciliationDecision}; BlockReasonCode={BlockReasonCode}; EntitlementCandidatesCount={EntitlementCandidatesCount}; RevokedCount={RevokedCount}.",
+            billingEvent.EventType,
+            billingEvent.ProviderEventId,
+            metadata.PaddleTransactionId,
+            metadata.PaddleSubscriptionId,
+            !string.IsNullOrWhiteSpace(metadata.InternalUserId),
+            userResolutionSource,
+            resolvedUserId,
+            fullRefundDetected,
+            chargebackDetected,
+            decision,
+            blockReasonCode,
+            entitlementCandidatesCount,
+            revokedCount);
     }
 
     private static bool IsAdjustmentEvent(string eventType)
@@ -733,7 +791,10 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         public string? AdjustmentStatus { get; set; }
         public string? AdjustmentType { get; set; }
         public long? AdjustmentAmountMinor { get; set; }
+        public string? UserResolutionSource { get; set; }
     }
+
+    private sealed record AdjustmentUserResolution(Guid? UserId, string Source);
 
     private sealed record ActivationValidationResult(
         bool IsValid,
