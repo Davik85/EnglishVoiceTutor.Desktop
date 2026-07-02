@@ -17,7 +17,7 @@ Last known production baseline at the time this Phase 4C asset was added:
 - Phase 4A backup/readability/separate-drill-restore is completed.
 - Phase 4B local PostgreSQL backup scheduling is active on production via `languagevoicetutor-postgres-backup.timer`, and the latest known readability check returned `245` `pg_restore --list` lines.
 - Contabo VPS Auto Backup is enabled at provider/VPS level as an additional safety layer.
-- Production/live Paddle readiness remains deferred.
+- Controlled live Paddle validation is complete; broader launch readiness remains pending.
 - Broad public production readiness is not claimed.
 - Phase 4D permission-fidelity restore drill is completed for the current release-readiness level.
 
