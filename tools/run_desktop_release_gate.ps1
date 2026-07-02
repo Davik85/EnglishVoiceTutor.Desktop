@@ -112,6 +112,14 @@ Invoke-GateCommand "Admin roles permissions UI policy" {
     python "tools/test_admin_roles_permissions_ui_policy.py"
 }
 
+Invoke-GateCommand "Documentation source-of-truth policy" {
+    python "tools/test_documentation_source_of_truth_policy.py"
+}
+
+Invoke-GateCommand "Docs current release consistency policy" {
+    python "tools/test_docs_current_release_consistency_policy.py"
+}
+
 if ($IncludeEfChecks) {
     Invoke-GateCommand "EF migrations list" {
         dotnet ef migrations list --project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj" --startup-project "backend/EnglishVoiceTutor.Api/EnglishVoiceTutor.Api.csproj"

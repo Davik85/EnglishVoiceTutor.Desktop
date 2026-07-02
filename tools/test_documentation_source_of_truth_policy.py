@@ -21,15 +21,17 @@ ALL_MARKDOWN = [ROOT / "README.md", *sorted((ROOT / "docs").glob("*.md"))]
 LATEST_JSON_COMMAND = "Invoke-RestMethod https://languagevoicetutor.com/releases/windows/direct/latest.json"
 BACKEND_SYMLINK_COMMAND = 'ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"'
 PROD_BACKEND_URL = "https://api.languagevoicetutor.com"
-CURRENT_TESTER_RELEASE = "0.1.36-tester.24"
-CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-0.1.36-tester.24.exe"
-CURRENT_BACKEND_RELEASE = "0.1.35-backend.50"
+CURRENT_TESTER_RELEASE = "0.1.36-tester.31"
+CURRENT_TESTER_INSTALLER = "LanguageVoiceTutorSetup-0.1.36-tester.31.exe"
+CURRENT_BACKEND_RELEASE = "0.1.35-backend.95"
 PREVIOUS_BACKEND_ROLLBACK_RELEASE = "0.1.35-backend.49"
 STALE_BACKEND_RELEASES = ["0.1.35-backend.27", "0.1.35-backend.33", "0.1.35-backend.34"]
 STALE_TESTER_RELEASES = ["0.1.35-tester.1", "0.1.36-tester.2", "0.1.36-tester.3", "0.1.36-tester.17"]
 DEFERRED_ITEMS = [
     "Code signing remains deferred",
-    "Production billing/Paddle/subscription payment lifecycle remains deferred",
+    "Broad public paid launch remains pending",
+    "Automatic refund/chargeback revocation requires production verification",
+    "Customer portal verification remains pending",
     "CMS published-snapshot runtime is active for controlled tester lessons",
     "backend deployment, database migrations, the download website, and update UI remain separate work",
     "Generated local files under `artifacts/`",
@@ -167,7 +169,23 @@ def main() -> int:
     assert_not_regex(current_state, r"0\.1\.36-tester\.17[^\n]*(?:current|live|active|latest)", "old tester 0.1.36-tester.17 claimed current")
     assert_not_regex(next_steps, r"immediate blocker[^\n]*(?:billing UI localization|cancel-renewal)|(?:billing UI localization|cancel-renewal)[^\n]*immediate blocker", "completed billing UI localization/cancel-renewal listed as immediate blocker")
     assert_contains(combined_main, "controlled tester/direct Windows release, not a broad public production launch", "controlled tester not broad launch wording")
-    assert_contains(combined_main, "Production/live Paddle readiness remains deferred", "Paddle live deferred wording")
+    required_billing_truths = [
+        ("Controlled Paddle live payment validation completed", "controlled Paddle live payment completed wording"),
+        ("desktop cancel-renewal validation", "cancel-renewal validation completed wording"),
+        ("failed payment attempts did not grant Premium", "failed payments do not grant Premium wording"),
+        ("current backend release is `0.1.35-backend.95`", "current production backend .95 wording"),
+        ("Automatic refund/chargeback revocation requires production verification", "refund/chargeback automatic revoke pending production verification wording"),
+        ("Customer portal verification remains pending", "customer portal pending wording"),
+        ("Broad public paid launch remains pending", "broad public paid launch pending wording"),
+        ("Direct installer code signing remains pending", "direct installer code signing pending wording"),
+    ]
+    for needle, label in required_billing_truths:
+        assert_contains(combined_main, needle, label)
+    assert_not_regex(
+        combined_main,
+        r"Production/live Paddle readiness remains deferred(?![^\n]*(?:broad public paid launch|controlled live payment validation))",
+        "outdated blanket Paddle live deferred wording",
+    )
     assert_regex(combined_main, r"Windows direct-release upload publishes static release files only\. It does not deploy the backend, does not run EF migrations", "Windows upload separate from backend/migrations wording")
     assert_regex(combined_main, r"backend upload/package scripts do not apply EF migrations automatically|Backend deploys remain separate from EF database migrations", "migrations explicit not upload-script wording")
     assert_regex(combined_main, r"Generated local files under `artifacts/`.*must not be committed|Generated artifacts.*must not be committed", "generated artifacts not committed wording")
