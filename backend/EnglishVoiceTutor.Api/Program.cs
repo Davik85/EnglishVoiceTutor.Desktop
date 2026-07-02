@@ -238,6 +238,7 @@ builder.Services.AddScoped<IBillingEventReconciliationDecisionService, BillingEv
 builder.Services.AddScoped<IBillingEventSubscriptionSnapshotService, BillingEventSubscriptionSnapshotService>();
 builder.Services.AddScoped<IBillingEventPaymentPersistenceService, BillingEventPaymentPersistenceService>();
 builder.Services.AddScoped<IBillingEventEntitlementActivationService, BillingEventEntitlementActivationService>();
+builder.Services.AddScoped<IPaddleAdjustmentReprocessService, PaddleAdjustmentReprocessService>();
 builder.Services.AddScoped<IAdminUserLookupService, AdminUserLookupService>();
 builder.Services.AddSingleton<IAdminRolePermissionCatalogService, AdminRolePermissionCatalogService>();
 builder.Services.AddScoped<IAdminRoleAssignmentReadService, AdminRoleAssignmentReadService>();
@@ -281,6 +282,28 @@ static void AddAdminPermissionPolicy(AuthorizationOptions options, string policy
 }
 
 var app = builder.Build();
+
+if (args.Contains("--reprocess-paddle-adjustment", StringComparer.OrdinalIgnoreCase))
+{
+    var providerEventId = ReadCommandLineValue(args, "--provider-event-id");
+    if (string.IsNullOrWhiteSpace(providerEventId))
+    {
+        app.Logger.LogError("Paddle adjustment reprocess refused because --provider-event-id was not supplied.");
+        return;
+    }
+
+    await using var scope = app.Services.CreateAsyncScope();
+    var reprocessService = scope.ServiceProvider.GetRequiredService<IPaddleAdjustmentReprocessService>();
+    var result = await reprocessService.ReprocessProviderEventAsync(providerEventId, CancellationToken.None);
+    app.Logger.LogInformation(
+        "Paddle adjustment reprocess command completed. ProviderEventId={ProviderEventId}; Result={Result}; BlockReason={BlockReason}; RevokedCount={RevokedCount}; EntitlementCandidatesCount={EntitlementCandidatesCount}.",
+        result.ProviderEventId,
+        result.Result,
+        result.BlockReason,
+        result.RevokedCount,
+        result.EntitlementCandidatesCount);
+    return;
+}
 
 app.UseWebSockets();
 app.UseAuthentication();
@@ -424,6 +447,21 @@ static async Task HandleRealtimeVoiceAsync(
     using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
     logger.LogInformation("Realtime voice desktop WebSocket accepted. Route={Route}; Path={Path}.", ApiConstants.RealtimeVoiceRoute, context.Request.Path);
     await realtimeVoiceSessionService.RunGatewayAsync(webSocket, context.RequestAborted);
+}
+
+static string? ReadCommandLineValue(string[] args, string name)
+{
+    for (var index = 0; index < args.Length; index++)
+    {
+        if (!string.Equals(args[index], name, StringComparison.OrdinalIgnoreCase))
+        {
+            continue;
+        }
+
+        return index + 1 < args.Length ? args[index + 1] : null;
+    }
+
+    return null;
 }
 
 static IResult HandleHealthAsync(IHealthService healthService)

@@ -422,3 +422,18 @@ Admin RBAC note: Production Admin RBAC / persistent role management, Admin Activ
 Backend `0.1.35-backend.95` fixed the stale `cmsUiAvailable` capability state. In production, **System → Capabilities Check** shows `cmsUiAvailable` as AVAILABLE, the Admin Shell **CMS Content** tab opens, and the CMS Content workspace loads. This verification did not save, publish, restore, initialize, import, or otherwise mutate CMS content.
 
 The learner runtime is production-verified as `CmsPublishedSnapshot`, with the published snapshot active and valid. The current runtime snapshot reports content pack slug `static-json-v1`, published version number `46`, 6 topics, 26 scenarios, 4 prompt templates, 3 tutor behavior profiles, validation success `Yes`, and currently using static JSON fallback `No`. Static JSON remains an emergency fallback only and is not active in the verified production runtime state.
+
+## Operator-only Paddle adjustment reprocess command
+
+Use this only as a one-off recovery path for an already-stored Paddle `adjustment.created` or `adjustment.updated` provider event that was previously normalized but skipped/blocked before entitlement revocation. This command is not part of normal deployment, must not run automatically, and must not be used to create a new payment, create a new refund, delete provider history, or fabricate a webhook.
+
+After deploying a backend build that contains the recovery path, run it from the backend release directory with the specific existing Paddle provider event id:
+
+```bash
+cd /opt/languagevoicetutor/backend/current
+sudo -u languagevoicetutor dotnet EnglishVoiceTutor.Api.dll --reprocess-paddle-adjustment --provider-event-id evt_01kwhgmvh1v9k8ve70gvnfeskm
+```
+
+Expected safe behavior: the command refuses to run without `--provider-event-id`; refuses event types other than `adjustment.created` / `adjustment.updated`; reuses the existing billing event row; re-runs reconciliation and full-refund/chargeback revocation; skips partial refunds conservatively; preserves `PaymentEntity` and `SubscriptionEntity` history; does not create a fake Paddle webhook event; and reports `Revoked`, `AlreadyRevoked`, `NotFound`, `RefusedEventType`, or `Blocked` with safe metadata only.
+
+Post-run verification should use bounded checks only: confirm logs show safe result metadata for the provider event id, confirm Admin/Desktop no longer show active paid provider-event Premium for the refunded user, and do not paste raw Paddle payloads, signatures, cookies, tokens, secrets, API keys, full request bodies, full user data, or card/payment data into tickets or chats.
