@@ -35,7 +35,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.95`.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.96`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows tester release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current public tester release is `0.1.36-tester.31`, installer `LanguageVoiceTutorSetup-0.1.36-tester.31.exe`.
@@ -305,7 +305,7 @@ Paddle approved the website, backend live checkout code is deployed in productio
 
 ## 2026-06-30 Paddle live checkout/Admin readiness update
 
-Current production facts after backend `0.1.35-backend.95` and the 2026-07-02 controlled live payment/cancel-renewal validation:
+Current production facts after backend `0.1.35-backend.96` and the 2026-07-02 controlled live payment/cancel-renewal validation:
 
 - Backend health and database health are `200 Healthy`.
 - Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.
@@ -382,4 +382,4 @@ In candidate backend code that is not yet production-deployed, full Paddle refun
 
 Normal cancel-renewal behavior is unchanged: scheduled cancellation keeps Premium through the paid period end. Partial refunds are conservative in this slice: the event is safely recorded/processed for review and Premium is left unchanged unless the adjustment is full or a chargeback. Provider history is preserved; payment and subscription records are not deleted, and refund processing does not fake Paddle webhook events or expose raw provider payloads, webhook signatures, tokens, cookies, secrets, API keys, or full card/payment data in Admin Activity evidence.
 
-Automatic refund/chargeback revocation requires production verification after the candidate backend is deployed; current production remains `0.1.35-backend.95`. Broad public paid launch remains pending. Customer portal verification remains pending. Direct installer code signing remains pending.
+Automatic refund/chargeback revocation requires production verification after the candidate backend is deployed; current production backend is `0.1.35-backend.96`; production `.96` received `adjustment.created` and `adjustment.updated` but blocked them in reconciliation before automatic Premium revocation. Broad public paid launch remains pending. Customer portal verification remains pending. Direct installer code signing remains pending.

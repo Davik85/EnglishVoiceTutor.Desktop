@@ -63,7 +63,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Production Admin RBAC / persistent role management is completed after backend `0.1.35-backend.95`; Admin permission fallback remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
+Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Production Admin RBAC / persistent role management is completed after backend `0.1.35-backend.96`; Admin permission fallback remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
 
 ## Website/CMS next-step guardrails
 
@@ -196,7 +196,7 @@ Rollback: disable live env or return `PaddleBilling__Environment`/provider setti
 
 ## 2026-06-30 Paddle live checkout/Admin readiness update
 
-Current production facts after backend `0.1.35-backend.95` and the 2026-07-02 controlled live payment/cancel-renewal validation:
+Current production facts after backend `0.1.35-backend.96` and the 2026-07-02 controlled live payment/cancel-renewal validation:
 
 - Backend health and database health are `200 Healthy`.
 - Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.
@@ -303,4 +303,4 @@ In candidate backend code that is not yet production-deployed, full Paddle refun
 
 Normal cancel-renewal behavior is unchanged: scheduled cancellation keeps Premium through the paid period end. Partial refunds are conservative in this slice: the event is safely recorded/processed for review and Premium is left unchanged unless the adjustment is full or a chargeback. Provider history is preserved; payment and subscription records are not deleted, and refund processing does not fake Paddle webhook events or expose raw provider payloads, webhook signatures, tokens, cookies, secrets, API keys, or full card/payment data in Admin Activity evidence.
 
-Automatic refund/chargeback revocation requires production verification after the candidate backend is deployed; current production remains `0.1.35-backend.95`. Broad public paid launch remains pending. Customer portal verification remains pending. Direct installer code signing remains pending.
+Automatic refund/chargeback revocation requires production verification after the candidate backend is deployed; current production backend is `0.1.35-backend.96`; production `.96` received `adjustment.created` and `adjustment.updated` but blocked them in reconciliation before automatic Premium revocation. Broad public paid launch remains pending. Customer portal verification remains pending. Direct installer code signing remains pending.

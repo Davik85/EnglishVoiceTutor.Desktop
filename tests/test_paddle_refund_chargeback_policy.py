@@ -62,3 +62,29 @@ def test_existing_payment_success_failure_and_cancel_renewal_behaviors_remain_pr
     assert "ActivatedReason" in activation
     assert "scheduledChangeAction" in read("backend/EnglishVoiceTutor.Api/Services/Billing/PaddleWebhookEventNormalizer.cs")
     assert "CancelAtPeriodEnd" in subscription
+
+
+def test_adjustment_user_resolution_fallbacks_and_safe_diagnostics_are_present():
+    reconciliation = read("backend/EnglishVoiceTutor.Api/Services/Billing/BillingEventReconciliationDecisionService.cs")
+    activation = read("backend/EnglishVoiceTutor.Api/Services/Billing/BillingEventEntitlementActivationService.cs")
+
+    for source in ["metadata", "payment", "subscription", "entitlement", "none"]:
+        assert source in activation
+    assert "EnsureSafeUserResolutionAsync" in reconciliation
+    assert "ProviderPaymentId == metadata.PaddleTransactionId" in reconciliation
+    assert "ProviderSubscriptionId == metadata.PaddleSubscriptionId" in reconciliation
+    assert "LogReconciliationDiagnostics" in reconciliation
+    assert "LogAdjustmentDiagnostics" in activation
+    for field in ["ProviderTransactionId", "ProviderSubscriptionId", "InternalUserIdPresent", "UserResolutionSource", "FullRefundDetected", "ChargebackDetected", "EntitlementCandidatesCount", "RevokedCount"]:
+        assert field in reconciliation + activation
+
+
+def test_fake_signed_refund_chargeback_smoke_path_exists_and_refuses_production():
+    script = read("tools/smoke_paddle_refund_chargeback_fake_signed.py")
+    assert "adjustment.updated" in script
+    assert "full_refund" in script
+    assert "partial_refund" in script
+    assert "chargeback" in script
+    assert "Refusing to post fake-signed events to production/public host" in script
+    assert "Paddle-Signature" in script
+    assert "does not create live Paddle payments or refunds" in script
