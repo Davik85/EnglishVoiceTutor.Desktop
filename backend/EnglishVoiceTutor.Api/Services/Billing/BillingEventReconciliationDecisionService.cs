@@ -119,10 +119,7 @@ public sealed class BillingEventReconciliationDecisionService : IBillingEventRec
         try
         {
             var nowUtc = DateTimeOffset.UtcNow;
-            if (!string.Equals(
-                billingEvent.EventType,
-                SubscriptionConstants.BillingEventTypes.TransactionCompleted,
-                StringComparison.OrdinalIgnoreCase))
+            if (!IsSupportedReconciliationEventType(billingEvent.EventType))
             {
                 MarkIgnored(billingEvent, nowUtc);
                 ignoredCount++;
@@ -208,6 +205,13 @@ public sealed class BillingEventReconciliationDecisionService : IBillingEventRec
             failedCount,
             startedAtUtc,
             finishedAtUtc);
+    }
+
+    private static bool IsSupportedReconciliationEventType(string eventType)
+    {
+        return string.Equals(eventType, SubscriptionConstants.BillingEventTypes.TransactionCompleted, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(eventType, SubscriptionConstants.BillingEventTypes.AdjustmentCreated, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(eventType, SubscriptionConstants.BillingEventTypes.AdjustmentUpdated, StringComparison.OrdinalIgnoreCase);
     }
 
     private bool MatchesExpectedPrice(string? priceId)

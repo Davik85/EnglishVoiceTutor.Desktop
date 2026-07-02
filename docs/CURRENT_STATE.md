@@ -375,3 +375,11 @@ Production backend current release is `0.1.35-backend.95`; the `current` symlink
 Backend `0.1.35-backend.95` fixed the stale `cmsUiAvailable` capability state. **System → Capabilities Check** now shows `cmsUiAvailable` as AVAILABLE, the Admin Shell **CMS Content** tab opens, and the CMS Content workspace loads. This is production UI availability verification only; no CMS content was saved, published, restored, initialized, imported, or otherwise mutated during this verification.
 
 Learner runtime is production-verified as using `CmsPublishedSnapshot`, with the CMS published snapshot active and valid. Runtime status currently shows content pack slug `static-json-v1`, published version number `46`, 6 topics, 26 scenarios, 4 prompt templates, 3 tutor behavior profiles, validation success `Yes`, and currently using static JSON fallback `No`. Static JSON remains available as emergency fallback, but it is not active in the verified production runtime state.
+
+## 2026-07-02 refund and chargeback Premium protection
+
+Full Paddle refunds are now treated as access-control events after `adjustment.created` or `adjustment.updated` webhook processing: the backend preserves Paddle/payment/subscription history, maps the adjustment back to the internal user by safe metadata or existing payment/subscription records, and immediately expires active provider-event Premium entitlements with reason `paddle_full_refund`. Chargebacks are treated as stronger refund evidence and immediately expire active provider-event Premium entitlements with reason `paddle_chargeback`.
+
+Normal cancel-renewal behavior is unchanged: scheduled cancellation keeps Premium through the paid period end. Partial refunds are conservative in this slice: the event is safely recorded/processed for review and Premium is left unchanged unless the adjustment is full or a chargeback. Provider history is preserved; payment and subscription records are not deleted, and refund processing does not fake Paddle webhook events or expose raw provider payloads, webhook signatures, tokens, cookies, secrets, API keys, or full card/payment data in Admin Activity evidence.
+
+Broad public paid launch remains pending until live refund and chargeback behavior is production-verified. Customer portal verification remains pending unless separately completed. Direct installer code signing remains pending.

@@ -24,6 +24,7 @@ public static class SubscriptionConstants
         public const string Expired = "expired";
         public const string Paused = "paused";
         public const string Unknown = "unknown";
+        public const string Chargeback = "chargeback";
     }
 
 
@@ -104,6 +105,8 @@ public static class SubscriptionConstants
         public const string SubscriptionPaused = "subscription.paused";
         public const string SubscriptionResumed = "subscription.resumed";
         public const string SubscriptionActivated = "subscription.activated";
+        public const string AdjustmentCreated = "adjustment.created";
+        public const string AdjustmentUpdated = "adjustment.updated";
     }
 
     public static class ScheduledChangeActions
@@ -157,6 +160,9 @@ public static class SubscriptionConstants
         public const string MissingInternalUserIdMessage = "Missing internal user id for entitlement activation.";
         public const string InvalidInternalUserIdMessage = "Invalid internal user id for entitlement activation.";
         public const string UnexpectedProcessingErrorMessage = "Unexpected entitlement activation processing error.";
+        public const string FullRefundRevokedReason = "paddle_full_refund";
+        public const string ChargebackRevokedReason = "paddle_chargeback";
+        public const string PartialRefundManualReviewMessage = "Partial Paddle refund recorded for manual review; Premium unchanged.";
     }
 
 
@@ -208,6 +214,8 @@ public static class SubscriptionConstants
         public const string RevokePremium = "revoke_premium";
         public const string ResetFreeLesson = "reset_free_lesson";
         public const string ForcePlanRefresh = "force_plan_refresh";
+        public const string PaddleFullRefundPremiumRevoke = "paddle_full_refund_premium_revoke";
+        public const string PaddleChargebackPremiumRevoke = "paddle_chargeback_premium_revoke";
     }
 
 

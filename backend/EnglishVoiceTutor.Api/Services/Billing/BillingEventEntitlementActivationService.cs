@@ -46,7 +46,9 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         var billingEventIds = await dbContext.BillingEvents
             .AsNoTracking()
             .Where(billingEvent => billingEvent.Status == SubscriptionConstants.BillingEventStatuses.ReconciliationPending
-                && billingEvent.EventType == SubscriptionConstants.BillingEventTypes.TransactionCompleted)
+                && (billingEvent.EventType == SubscriptionConstants.BillingEventTypes.TransactionCompleted
+                    || billingEvent.EventType == SubscriptionConstants.BillingEventTypes.AdjustmentCreated
+                    || billingEvent.EventType == SubscriptionConstants.BillingEventTypes.AdjustmentUpdated))
             .OrderBy(billingEvent => billingEvent.ReceivedAtUtc)
             .ThenBy(billingEvent => billingEvent.Id)
             .Take(effectiveLimit)
@@ -202,14 +204,26 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
             return ActivationEventOutcome.AlreadySkipped();
         }
 
-        if (billingEvent.Status != SubscriptionConstants.BillingEventStatuses.ReconciliationPending
-            || billingEvent.EventType != SubscriptionConstants.BillingEventTypes.TransactionCompleted)
+        if (billingEvent.Status != SubscriptionConstants.BillingEventStatuses.ReconciliationPending)
         {
             await transaction.CommitAsync(cancellationToken);
             return ActivationEventOutcome.AlreadySkipped();
         }
 
         var nowUtc = DateTimeOffset.UtcNow;
+        if (IsAdjustmentEvent(billingEvent.EventType))
+        {
+            var refundOutcome = await ProcessAdjustmentBillingEventAsync(billingEvent, nowUtc, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return refundOutcome;
+        }
+
+        if (billingEvent.EventType != SubscriptionConstants.BillingEventTypes.TransactionCompleted)
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return ActivationEventOutcome.AlreadySkipped();
+        }
+
         var validation = await ValidateBillingEventAsync(billingEvent, nowUtc, cancellationToken);
         if (!validation.IsValid)
         {
@@ -278,6 +292,138 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         return entitlementChanged
             ? ActivationEventOutcome.Activated(effectiveExpiresAtUtc)
             : ActivationEventOutcome.AlreadyCurrent(effectiveExpiresAtUtc);
+    }
+
+
+    private async Task<ActivationEventOutcome> ProcessAdjustmentBillingEventAsync(
+        BillingEventEntity billingEvent,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken)
+    {
+        if (!TryReadMetadata(billingEvent.SafeMetadataJson, out var metadata))
+        {
+            MarkBlocked(billingEvent, nowUtc, SubscriptionConstants.BillingEventActivation.InvalidBillingEventMetadataMessage);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return ActivationEventOutcome.Blocked();
+        }
+
+        var isChargeback = string.Equals(metadata.AdjustmentAction, "chargeback", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(metadata.AdjustmentAction, "chargeback_warning", StringComparison.OrdinalIgnoreCase);
+        var isApprovedRefund = string.Equals(metadata.AdjustmentAction, "refund", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(metadata.AdjustmentStatus, "pending_approval", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(metadata.AdjustmentStatus, "rejected", StringComparison.OrdinalIgnoreCase);
+        var isFullRefund = isApprovedRefund
+            && (string.Equals(metadata.AdjustmentType, "full", StringComparison.OrdinalIgnoreCase)
+                || (metadata.AdjustmentAmountMinor.HasValue && metadata.AmountMinor.HasValue
+                    && Math.Abs(metadata.AdjustmentAmountMinor.Value) >= Math.Abs(metadata.AmountMinor.Value)));
+
+        if (!isChargeback && !isFullRefund)
+        {
+            billingEvent.Status = SubscriptionConstants.BillingEventStatuses.Processed;
+            billingEvent.ProcessedAtUtc = nowUtc;
+            billingEvent.ErrorMessage = SubscriptionConstants.BillingEventActivation.PartialRefundManualReviewMessage;
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return ActivationEventOutcome.AlreadySkipped();
+        }
+
+        var userId = await ResolveAdjustmentUserIdAsync(metadata, cancellationToken);
+        if (userId is null)
+        {
+            MarkBlocked(billingEvent, nowUtc, SubscriptionConstants.BillingEventReconciliation.MissingInternalUserIdMessage);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return ActivationEventOutcome.Blocked();
+        }
+
+        var entitlements = await dbContext.Entitlements
+            .Where(entitlement => entitlement.UserId == userId.Value
+                && entitlement.PlanId == SubscriptionConstants.Plans.PremiumPlanId
+                && entitlement.EntitlementType == SubscriptionConstants.Entitlements.PremiumAccessType
+                && entitlement.Source == SubscriptionConstants.Entitlements.SourceProviderEvent
+                && entitlement.Status == SubscriptionConstants.Entitlements.StatusActive
+                && entitlement.StartsAtUtc <= nowUtc
+                && (!entitlement.ExpiresAtUtc.HasValue || entitlement.ExpiresAtUtc > nowUtc))
+            .ToListAsync(cancellationToken);
+
+        var reason = isChargeback
+            ? SubscriptionConstants.BillingEventActivation.ChargebackRevokedReason
+            : SubscriptionConstants.BillingEventActivation.FullRefundRevokedReason;
+
+        foreach (var entitlement in entitlements)
+        {
+            entitlement.Status = SubscriptionConstants.Entitlements.StatusExpired;
+            entitlement.ExpiresAtUtc = nowUtc;
+            entitlement.Reason = $"{reason}; Provider={billingEvent.BillingProvider}; ProviderEventId={billingEvent.ProviderEventId}.";
+            entitlement.UpdatedAt = nowUtc;
+        }
+
+        dbContext.AdminActions.Add(new AdminActionEntity
+        {
+            Id = Guid.NewGuid(),
+            AdminUserId = null,
+            TargetUserId = userId.Value,
+            ActionType = isChargeback
+                ? SubscriptionConstants.AdminActionTypes.PaddleChargebackPremiumRevoke
+                : SubscriptionConstants.AdminActionTypes.PaddleFullRefundPremiumRevoke,
+            Reason = reason,
+            CreatedAtUtc = nowUtc,
+            SafeMetadataJson = JsonSerializer.Serialize(new
+            {
+                billingProvider = billingEvent.BillingProvider,
+                providerEventId = billingEvent.ProviderEventId,
+                eventType = billingEvent.EventType,
+                paddleTransactionId = metadata.PaddleTransactionId,
+                paddleSubscriptionId = metadata.PaddleSubscriptionId,
+                adjustmentAction = metadata.AdjustmentAction,
+                adjustmentStatus = metadata.AdjustmentStatus,
+                revokedEntitlementCount = entitlements.Count
+            }, MetadataJsonOptions)
+        });
+
+        billingEvent.Status = SubscriptionConstants.BillingEventStatuses.Processed;
+        billingEvent.ProcessedAtUtc = nowUtc;
+        billingEvent.ErrorMessage = null;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return entitlements.Count > 0 ? ActivationEventOutcome.Activated(nowUtc) : ActivationEventOutcome.AlreadyCurrent(nowUtc);
+    }
+
+    private async Task<Guid?> ResolveAdjustmentUserIdAsync(BillingEventActivationSafeMetadata metadata, CancellationToken cancellationToken)
+    {
+        if (Guid.TryParse(metadata.InternalUserId, out var parsed))
+        {
+            return parsed;
+        }
+
+        if (!string.IsNullOrWhiteSpace(metadata.PaddleTransactionId))
+        {
+            var paymentUserId = await dbContext.Payments
+                .AsNoTracking()
+                .Where(payment => payment.Provider == SubscriptionConstants.BillingProviders.Paddle
+                    && payment.ProviderPaymentId == metadata.PaddleTransactionId)
+                .Select(payment => (Guid?)payment.UserId)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (paymentUserId is not null)
+            {
+                return paymentUserId;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(metadata.PaddleSubscriptionId))
+        {
+            return await dbContext.Subscriptions
+                .AsNoTracking()
+                .Where(subscription => subscription.Provider == SubscriptionConstants.BillingProviders.Paddle
+                    && subscription.ProviderSubscriptionId == metadata.PaddleSubscriptionId)
+                .Select(subscription => (Guid?)subscription.UserId)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        return null;
+    }
+
+    private static bool IsAdjustmentEvent(string eventType)
+    {
+        return string.Equals(eventType, SubscriptionConstants.BillingEventTypes.AdjustmentCreated, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(eventType, SubscriptionConstants.BillingEventTypes.AdjustmentUpdated, StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task<ActivationValidationResult> ValidateBillingEventAsync(
@@ -580,6 +726,13 @@ public sealed class BillingEventEntitlementActivationService : IBillingEventEnti
         public string? PaddleProductId { get; set; }
         public string? CustomDataApp { get; set; }
         public string? CustomDataProduct { get; set; }
+        public string? PaddleTransactionId { get; set; }
+        public string? PaddleSubscriptionId { get; set; }
+        public long? AmountMinor { get; set; }
+        public string? AdjustmentAction { get; set; }
+        public string? AdjustmentStatus { get; set; }
+        public string? AdjustmentType { get; set; }
+        public long? AdjustmentAmountMinor { get; set; }
     }
 
     private sealed record ActivationValidationResult(

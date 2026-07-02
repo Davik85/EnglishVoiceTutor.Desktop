@@ -159,6 +159,7 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
     {
         var subscriptionSnapshot = ExtractSubscriptionSnapshot(webhookEvent.RawPayload);
         var transactionSnapshot = ExtractTransactionSnapshot(webhookEvent.RawPayload);
+        var adjustmentSnapshot = ExtractAdjustmentSnapshot(webhookEvent.RawPayload);
         var safeMetadata = new
         {
             paddleEventId = webhookEvent.PaddleEventId,
@@ -173,6 +174,11 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
             paddleProductId = FirstNonEmpty(transactionSnapshot.ProductId, subscriptionSnapshot.ProductId),
             customDataApp = ExtractCustomDataValue(webhookEvent.RawPayload, "app"),
             customDataProduct = ExtractCustomDataValue(webhookEvent.RawPayload, "product"),
+            adjustmentAction = adjustmentSnapshot.Action,
+            adjustmentStatus = adjustmentSnapshot.Status,
+            adjustmentType = adjustmentSnapshot.Type,
+            adjustmentAmountMinor = adjustmentSnapshot.AmountMinor,
+            adjustmentCurrency = adjustmentSnapshot.Currency,
             amountMinor = transactionSnapshot.AmountMinor,
             currency = transactionSnapshot.Currency,
             billedAtUtc = transactionSnapshot.BilledAtUtc,
@@ -192,6 +198,51 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         return JsonSerializer.Serialize(safeMetadata, SafeMetadataJsonOptions);
     }
 
+
+    private static AdjustmentSnapshotMetadata ExtractAdjustmentSnapshot(string rawPayload)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(rawPayload);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object || !TryGetObject(root, "data", out var data))
+            {
+                return AdjustmentSnapshotMetadata.Empty;
+            }
+
+            var amountMinor = FirstLong(
+                GetNestedLong(data, "totals", "total"),
+                GetNestedLong(data, "payout_totals", "total"));
+
+            return new AdjustmentSnapshotMetadata(
+                GetString(data, "action"),
+                GetString(data, "status"),
+                ExtractAdjustmentType(data),
+                amountMinor,
+                FirstNonEmpty(GetString(data, "currency_code"), GetString(data, "currency")));
+        }
+        catch (JsonException)
+        {
+            return AdjustmentSnapshotMetadata.Empty;
+        }
+    }
+
+    private static string? ExtractAdjustmentType(JsonElement data)
+    {
+        if (TryGetArray(data, "items", out var items))
+        {
+            foreach (var item in items.EnumerateArray())
+            {
+                var type = GetString(item, "type");
+                if (!string.IsNullOrWhiteSpace(type))
+                {
+                    return type;
+                }
+            }
+        }
+
+        return null;
+    }
 
     private static string? ExtractCustomDataValue(string rawPayload, string propertyName)
     {
@@ -358,6 +409,16 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
         return TryGetObject(element, objectPropertyName, out var nestedObject) ? GetString(nestedObject, stringPropertyName) : null;
     }
 
+    private static long? GetNestedLong(JsonElement element, string objectPropertyName, string numberPropertyName)
+    {
+        if (!TryGetObject(element, objectPropertyName, out var nestedObject))
+        {
+            return null;
+        }
+
+        return GetLong(nestedObject, numberPropertyName);
+    }
+
     private static long? GetNestedLong(JsonElement element, string firstObjectPropertyName, string secondObjectPropertyName, string numberPropertyName)
     {
         if (!TryGetObject(element, firstObjectPropertyName, out var firstObject)
@@ -509,6 +570,16 @@ public sealed class PaddleWebhookEventNormalizer : IPaddleWebhookEventNormalizer
     private sealed record PriceMetadata(string? PriceId, string? ProductId)
     {
         public static PriceMetadata Empty { get; } = new(null, null);
+    }
+
+    private sealed record AdjustmentSnapshotMetadata(
+        string? Action,
+        string? Status,
+        string? Type,
+        long? AmountMinor,
+        string? Currency)
+    {
+        public static AdjustmentSnapshotMetadata Empty { get; } = new(null, null, null, null, null);
     }
 
     private sealed record TransactionSnapshotMetadata(
