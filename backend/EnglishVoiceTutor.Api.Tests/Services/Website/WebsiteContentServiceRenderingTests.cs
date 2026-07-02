@@ -68,7 +68,12 @@ public sealed class WebsiteContentServiceRenderingTests
         Assert.Contains("id=\"detail-sha\"", html);
         Assert.Contains("Current version", html);
         Assert.Contains("Installer filename", html);
-        Assert.Contains("Current release details", html);
+        Assert.Contains("Technical release details", html);
+        Assert.Contains("Language Voice Tutor for Windows", html);
+        Assert.Contains("Start quickly", html);
+        Assert.Contains("Choose practical topics", html);
+        Assert.Contains("Learn step by step", html);
+        Assert.Contains("Practice real conversation", html);
     }
 
     [Fact]

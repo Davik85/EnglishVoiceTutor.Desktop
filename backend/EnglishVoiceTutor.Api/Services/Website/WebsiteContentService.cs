@@ -234,60 +234,83 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
 
     private static string RenderDownload(WebsiteContentSet c, bool includePublicBaseHref, StaticReleaseManifest? release)
     {
-        var p = c.Pages["download"];
-        var currentVersion = "Current Windows tester release is available through the Download for Windows button.";
-        var manifestStatus = "If release details do not load automatically, please contact support@languagevoicetutor.com.";
+        _ = c.Pages["download"];
+        var currentVersion = release?.Version ?? "Release details load from the public manifest.";
+        var manifestStatus = release is not null
+            ? "The button uses the published direct release manifest and will refresh automatically when JavaScript runs."
+            : "If release details do not load automatically, please contact support@languagevoicetutor.com.";
         var downloadAttributes = string.Empty;
-        var downloadClass = "download-button is-disabled";
+        var downloadClass = "download-button download-button--hero is-disabled";
         var ariaDisabled = "true";
         if (release is not null)
         {
-            currentVersion = release.Version;
-            manifestStatus = "Release details are shown from the published local manifest and will refresh automatically when JavaScript runs.";
             downloadAttributes = $" href=\"{E(release.InstallerRelativeUrl)}\" download=\"{E(release.InstallerFileName)}\"";
-            downloadClass = "download-button";
+            downloadClass = "download-button download-button--hero";
             ariaDisabled = "false";
         }
-        var body = new StringBuilder();
-        body.Append($"""
-<main class="page-shell legal-page">
-    <section class="hero-card" aria-labelledby="download-title">
-        <h1 id="download-title">{E(p["pageTitle"])}</h1>
-        <p class="description">{E(p.GetValueOrDefault("introText", p.GetValueOrDefault("intro", string.Empty)))}</p>
-""");
-        if (!string.IsNullOrWhiteSpace(p.GetValueOrDefault("bodyMarkdown")))
-        {
-            body.AppendLine("        <div class=\"markdown-content\">");
-            body.AppendLine(RenderMarkdown(p["bodyMarkdown"]));
-            body.AppendLine("        </div>");
-        }
-        body.Append($"""
-        <div class="download-panel" aria-label="Windows download" data-manifest-url="/releases/windows/direct/latest.json">
-            <p class="version-line">Current version: <strong id="current-version">{E(currentVersion)}</strong></p>
-            <a id="download-button" class="{downloadClass}" aria-disabled="{ariaDisabled}"{downloadAttributes}>{E(p.GetValueOrDefault("downloadButtonText", "Download for Windows"))}</a>
-            <p id="manifest-status" class="status-note" role="status">{E(manifestStatus)}</p>
-            <p class="status-note">If release details do not load automatically, please contact <a href="mailto:support@languagevoicetutor.com">support@languagevoicetutor.com</a>.</p>
-            <p class="warning-note">{E(p.GetValueOrDefault("safetySupportNote", string.Empty))}</p>
-        </div>
-    </section>
 
-    <section class="details-card legal-section" aria-labelledby="release-details-title">
-        <h2 id="release-details-title">Current release details</h2>
-        <dl class="release-details">
-            <div><dt>Version</dt><dd id="detail-version">{E(release?.Version ?? "Release details load from the public manifest.")}</dd></div>
-            <div><dt>Installer filename</dt><dd id="detail-installer">{E(release?.InstallerFileName ?? "Use the Download for Windows button or contact support.")}</dd></div>
-            <div><dt>Backend base URL</dt><dd id="detail-backend-base-url">{E(release?.BackendBaseUrl ?? "Release details load from the public manifest.")}</dd></div>
-            <div><dt>Minimum supported version</dt><dd id="detail-minimum-supported-version">{E(release?.MinimumSupportedVersion ?? "Release details load from the public manifest.")}</dd></div>
-            <div><dt>Update mode</dt><dd id="detail-update-mode">{E(release?.UpdateMode ?? "Release details load from the public manifest.")}</dd></div>
-            <div><dt>Channel</dt><dd id="detail-channel">{E(release?.Channel ?? "Release details load from the public manifest.")}</dd></div>
-            <div><dt>Installer size</dt><dd id="detail-size">{E(release?.InstallerSize ?? "Release details load from the public manifest.")}</dd></div>
-            <div><dt>SHA-256</dt><dd id="detail-sha">{E(release?.InstallerSha256 ?? "Release details load from the public manifest.")}</dd></div>
-        </dl>
-    </section>
-""");
-        body.Append(Nav());
-        body.AppendLine("</main>");
-        return Shell(c, E(p["seoTitle"]), E(p["seoDescription"]), body.ToString(), false, includePublicBaseHref, "    <script src=\"download.js?v=manifest-download\" defer></script>", pageFileName: "download.html", jsonLd: RenderSoftwareApplicationJsonLd(release));
+        var body = $$"""
+    <main>
+        <section class="download-hero" aria-labelledby="product-title">
+            <div class="download-hero__shade" aria-hidden="true"></div>
+            <div class="download-hero__inner">
+                <section class="download-cta-panel" aria-label="Windows download" data-manifest-url="/releases/windows/direct/latest.json">
+                    <p class="eyebrow">Windows desktop app</p>
+                    <h1 id="product-title">Language Voice Tutor for Windows</h1>
+                    <p class="download-hero__subtitle">Practice real conversations by text or voice with an AI tutor. Choose a topic, start a lesson, and improve step by step.</p>
+                    <p class="version-line">Current version: <strong id="current-version">{{E(currentVersion)}}</strong></p>
+                    <a id="download-button" class="{{downloadClass}}" aria-disabled="{{ariaDisabled}}"{{downloadAttributes}}>Download for Windows</a>
+                    <p id="manifest-status" class="download-hero__status" role="status">{{E(manifestStatus)}}</p>
+                    <p class="download-hero__note">Windows may show a SmartScreen warning because code signing is deferred.</p>
+                </section>
+
+                <section class="download-feature-grid" aria-label="Language Voice Tutor features">
+                    <article class="download-feature-card">
+                        <div class="download-feature-card__visual" aria-hidden="true"><span>Quick start</span></div>
+                        <h2>Start quickly</h2>
+                        <p>Open the app and jump into practical language practice in a few clicks.</p>
+                    </article>
+                    <article class="download-feature-card">
+                        <div class="download-feature-card__visual" aria-hidden="true"><span>Topics</span></div>
+                        <h2>Choose practical topics</h2>
+                        <p>Pick real-life situations like travel, work, daily life, and more.</p>
+                    </article>
+                    <article class="download-feature-card">
+                        <div class="download-feature-card__visual" aria-hidden="true"><span>Guided lesson</span></div>
+                        <h2>Learn step by step</h2>
+                        <p>Practice inside a guided lesson with clear prompts, hints, and feedback.</p>
+                    </article>
+                    <article class="download-feature-card">
+                        <div class="download-feature-card__visual" aria-hidden="true"><span>Conversation</span></div>
+                        <h2>Practice real conversation</h2>
+                        <p>Switch to conversation mode and train natural speaking in a realistic dialogue.</p>
+                    </article>
+                </section>
+            </div>
+        </section>
+
+        <section class="download-content-shell">
+            <details class="details-card release-details-disclosure">
+                <summary id="release-details-title">Technical release details</summary>
+                <dl class="release-details" aria-labelledby="release-details-title">
+                    <div><dt>Version</dt><dd id="detail-version">{{E(release?.Version ?? "Release details load from the public manifest.")}}</dd></div>
+                    <div><dt>Channel</dt><dd id="detail-channel">{{E(release?.Channel ?? "Release details load from the public manifest.")}}</dd></div>
+                    <div><dt>Installer filename</dt><dd id="detail-installer">{{E(release?.InstallerFileName ?? "Use the Download for Windows button or contact support.")}}</dd></div>
+                    <div><dt>Backend base URL</dt><dd id="detail-backend-base-url">{{E(release?.BackendBaseUrl ?? "Release details load from the public manifest.")}}</dd></div>
+                    <div><dt>Minimum supported version</dt><dd id="detail-minimum-supported-version">{{E(release?.MinimumSupportedVersion ?? "Release details load from the public manifest.")}}</dd></div>
+                    <div><dt>Update mode</dt><dd id="detail-update-mode">{{E(release?.UpdateMode ?? "Release details load from the public manifest.")}}</dd></div>
+                    <div><dt>Installer size</dt><dd id="detail-size">{{E(release?.InstallerSize ?? "Release details load from the public manifest.")}}</dd></div>
+                    <div><dt>SHA-256</dt><dd id="detail-sha">{{E(release?.InstallerSha256 ?? "Release details load from the public manifest.")}}</dd></div>
+                </dl>
+            </details>
+
+            <section class="support-card" aria-label="Support">
+                <p>Need help? Email <a href="mailto:support@languagevoicetutor.com">support@languagevoicetutor.com</a>.</p>
+            </section>
+        </section>
+    </main>
+""";
+        return Shell(c, "Language Voice Tutor download", "Download Language Voice Tutor for Windows and practice real conversations by text or voice with an AI tutor.", body, false, includePublicBaseHref, "    <script src=\"download.js?v=manifest-download\" defer></script>", pageFileName: "download.html", jsonLd: RenderSoftwareApplicationJsonLd(release));
     }
 
     private static string RenderSimple(WebsiteContentSet c, string page, string titleId, (string title, string key)[] sections, string? button, bool includePublicBaseHref)
@@ -849,7 +872,7 @@ window.addEventListener("DOMContentLoaded", () => {
     private static WebsiteContentSet DefaultSet() => new(new()
     {
         ["home"] = new(){{"logoPath",""},{"logoAltText","Language Voice Tutor logo"},{"fallbackLogoText","Language Voice Tutor"},{"topHeaderText","Practice real conversations in:"},{"supportedLanguageLine",RequiredLanguageLine},{"windowsCardBadge","Available for testers"},{"windowsCardTitle","Application for Windows"},{"windowsCardDescription","Practice real-life language lessons by text or voice on your desktop."},{"windowsDownloadButtonText","Download desktop version"},{"mobileCardBadge","In development"},{"mobileCardTitle","Application for mobile devices"},{"mobileCardDescription","Android and iOS apps are planned but are not currently available."},{"mobileComingSoonButtonText","Not currently available"},{"footerCopyrightText","© Language Voice Tutor. All rights reserved."},{"footerPrivacyLabel","Privacy Policy"},{"footerTermsLabel","Terms of Use"},{"footerRefundsLabel","Refund Policy"},{"footerCancellationLabel","Cancellation"},{"footerSupportLabel","Support"},{"footerPricingLabel","Pricing"},{"seoTitle","Language Voice Tutor"},{"seoDescription","Language Voice Tutor helps you practice real-life language lessons by text or voice on desktop, with mobile apps planned."}},
-        ["download"] = Page("Language Voice Tutor tester download","A Windows desktop app for practicing spoken languages with an AI tutor.", new(){{"downloadButtonText","Download for Windows"},{"currentVersionLabel","Current version details are loaded from the release manifest."},{"safetySupportNote","Windows may show a SmartScreen warning because code signing is deferred."}}),
+        ["download"] = Page("Language Voice Tutor for Windows","Download Language Voice Tutor for Windows and practice real conversations by text or voice with an AI tutor.", new(){{"downloadButtonText","Download for Windows"},{"currentVersionLabel","Current version details are loaded from the release manifest."},{"safetySupportNote","Windows may show a SmartScreen warning because code signing is deferred."}}),
         ["mobile"] = Page("Mobile app coming soon","Android and iOS versions are planned and not currently available.", new(){{"androidComingSoonText","Android app coming soon."},{"iosComingSoonText","iOS app coming soon."},{"emailSupportCtaText","Email support@languagevoicetutor.com for availability questions."}}),
         ["pricing"] = Page("Pricing","Language Voice Tutor is currently offered for Windows desktop tester access.", new(){{"freePlanText","Invited testers may be able to use free Windows desktop access during evaluation."},{"premiumPlanText","Premium subscription details are draft placeholders until paid billing is enabled by the owner."},{"trialText","Trial terms are not final and require owner/legal review."},{"paddleLiveCheckoutDisclaimerText","No live checkout button is provided and production Paddle billing is not enabled from this page."}}),
         ["support"] = Page("Contact support","For Language Voice Tutor help, contact support@languagevoicetutor.com.", new(){{"supportEmailText","support@languagevoicetutor.com"},{"responseTimeText","Response times may vary during tester access."},{"accountDeletionSupportText","Contact support for account or deletion requests."},{"billingSupportText","Billing support applies only if paid billing is enabled."}}),
