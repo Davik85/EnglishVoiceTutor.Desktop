@@ -358,7 +358,7 @@ Need help? Email support@languagevoicetutor.com.
 
     </main>
 """;
-        return Shell(c, "Language Voice Tutor for Windows Download", "Download Language Voice Tutor for Windows and practice real conversations by text or voice with an AI tutor.", body, false, includePublicBaseHref, "    <script src=\"download.js?v=manifest-download\" defer></script>", pageFileName: "download.html", jsonLd: RenderSoftwareApplicationJsonLd(release));
+        return Shell(c, "Language Voice Tutor for Windows Download", "Download Language Voice Tutor for Windows and practice real conversations by text or voice with an AI tutor.", body, false, includePublicBaseHref, "    <script src=\"download.js?v=20260703-lightbox\" defer></script>", pageFileName: "download.html", jsonLd: RenderSoftwareApplicationJsonLd(release));
     }
 
     private static string RenderDownloadFeatureCards(Dictionary<string, string> download)
@@ -374,8 +374,11 @@ Need help? Email support@languagevoicetutor.com.
             var description = ValueOrDefault(download, $"{prefix}Description", card.Description);
             var imagePath = NormalizeDownloadImagePath(ValueOrDefault(download, $"{prefix}ImagePath", card.ImagePath));
             var style = string.IsNullOrWhiteSpace(imagePath) ? string.Empty : $" style=\"--download-card-image: url('{E(imagePath)}');\"";
+            var lightboxAttributes = string.IsNullOrWhiteSpace(imagePath)
+                ? string.Empty
+                : $" role=\"button\" tabindex=\"0\" data-download-lightbox-src=\"{E(imagePath)}\" data-download-lightbox-alt=\"{E(title)} screenshot\"";
             builder.AppendLine("                    <article class=\"download-feature-card\">");
-            builder.AppendLine($"                        <div class=\"download-feature-card__visual\" aria-hidden=\"true\"{style}><span>{E(label)}</span></div>");
+            builder.AppendLine($"                        <div class=\"download-feature-card__visual\" aria-label=\"Open {E(title)} screenshot larger\"{style}{lightboxAttributes}><span>{E(label)}</span></div>");
             builder.AppendLine($"                        <h2>{E(title)}</h2>");
             builder.AppendLine($"                        <p>{E(description)}</p>");
             builder.AppendLine("                    </article>");
