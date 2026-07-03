@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using EnglishVoiceTutor.Desktop.Constants;
 using EnglishVoiceTutor.Desktop.Models;
+using EnglishVoiceTutor.Desktop.Services.Auth;
 
 namespace EnglishVoiceTutor.Desktop.Services;
 
@@ -52,12 +53,9 @@ public sealed class BackendUserSettingsClient
     {
         using var httpClient = CreateHttpClient();
         var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath);
-        using var request = new HttpRequestMessage(HttpMethod.Get, endpointUri);
-        AddBearerToken(request, accessToken);
-
         try
         {
-            using var response = await httpClient.SendAsync(request, cancellationToken);
+            using var response = await SendAsync(httpClient, HttpMethod.Get, endpointUri, backendBaseUrl, endpointPath, accessToken, request: null, cancellationToken);
             await RecordSettingsDiagnosticsAsync(GetSettingsRequestName(endpointPath, HttpMethod.Get), HttpMethod.Get, endpointUri, backendBaseUrl, response, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
@@ -94,15 +92,9 @@ public sealed class BackendUserSettingsClient
 
         using var httpClient = CreateHttpClient();
         var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpointPath);
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Put, endpointUri)
-        {
-            Content = JsonContent.Create(request, options: JsonOptions)
-        };
-        AddBearerToken(httpRequest, accessToken);
-
         try
         {
-            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+            using var response = await SendAsync(httpClient, HttpMethod.Put, endpointUri, backendBaseUrl, endpointPath, accessToken, request, cancellationToken);
             await RecordSettingsDiagnosticsAsync(GetSettingsRequestName(endpointPath, HttpMethod.Put), HttpMethod.Put, endpointUri, backendBaseUrl, response, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
@@ -164,12 +156,39 @@ public sealed class BackendUserSettingsClient
         return $"Backend settings {method} {endpointPath} failed with HTTP {(int)statusCode}.";
     }
 
-    private static void AddBearerToken(HttpRequestMessage request, string? accessToken)
+    private static Task<HttpResponseMessage> SendAsync(
+        HttpClient httpClient,
+        HttpMethod method,
+        Uri endpointUri,
+        string? backendBaseUrl,
+        string endpointPath,
+        string? accessToken,
+        UpdateBackendUserSettingsRequest? request,
+        CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrWhiteSpace(accessToken))
+        if (string.IsNullOrWhiteSpace(accessToken) || endpointPath != BackendConstants.MeSettingsEndpoint)
         {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            return httpClient.SendAsync(CreateRequest(method, endpointUri, request), cancellationToken);
         }
+
+        var authBackendService = new AuthBackendService();
+        authBackendService.SetBackendBaseUrl(backendBaseUrl);
+        return AuthenticatedRequestHelper.SendWithRefreshRetryAsync(
+            httpClient,
+            _ => CreateRequest(method, endpointUri, request),
+            authBackendService,
+            cancellationToken);
+    }
+
+    private static HttpRequestMessage CreateRequest(HttpMethod method, Uri endpointUri, UpdateBackendUserSettingsRequest? request)
+    {
+        var httpRequest = new HttpRequestMessage(method, endpointUri);
+        if (request is not null)
+        {
+            httpRequest.Content = JsonContent.Create(request, options: JsonOptions);
+        }
+
+        return httpRequest;
     }
 
     private static HttpClient CreateHttpClient()

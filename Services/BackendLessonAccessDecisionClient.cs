@@ -11,7 +11,7 @@ namespace EnglishVoiceTutor.Desktop.Services;
 public sealed class BackendLessonAccessDecisionClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly AuthSessionStorageService authSessionStorageService = new();
+    private readonly AuthBackendService authBackendService = new();
 
     public async Task<BackendLessonAccessDecisionClientResult> GetAsync(
         string? backendBaseUrl,
@@ -21,19 +21,20 @@ public sealed class BackendLessonAccessDecisionClient
 
         try
         {
-            var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
-            var hasAccessToken = !string.IsNullOrWhiteSpace(session?.AccessToken);
-            var endpoint = hasAccessToken
+            authBackendService.SetBackendBaseUrl(backendBaseUrl);
+            var hasStoredSession = await authBackendService.HasStoredSessionAsync(cancellationToken);
+            var endpoint = hasStoredSession
                 ? BackendConstants.MeLessonAccessEndpoint
                 : BackendConstants.DevLessonAccessEndpoint;
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Get, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpoint));
+            var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpoint);
 
-            if (hasAccessToken)
-            {
-                AuthenticatedRequestHelper.AddBearerTokenIfPresent(httpRequest, session?.AccessToken);
-            }
-
-            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+            using var response = hasStoredSession
+                ? await AuthenticatedRequestHelper.SendWithRefreshRetryAsync(
+                    httpClient,
+                    _ => new HttpRequestMessage(HttpMethod.Get, endpointUri),
+                    authBackendService,
+                    cancellationToken)
+                : await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, endpointUri), cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 return BackendLessonAccessDecisionClientResult.Failure(
