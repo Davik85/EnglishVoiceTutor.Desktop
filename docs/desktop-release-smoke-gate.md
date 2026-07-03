@@ -22,7 +22,7 @@ Validate packaged release metadata with:
 powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-release.ps1
 ```
 
-The backend remains the server-side source of truth, the desktop must not contain OpenAI keys or call OpenAI directly, remaining billing operations and broader paid-launch approval remain deferred, and Windows Direct Release 1.0 is already published; continue using this gate for future direct-release safety checks and update/reinstall validation.
+The backend remains the server-side source of truth, the desktop must not contain OpenAI keys or call OpenAI directly, remaining billing operations and broader paid-launch approval remain deferred, and Windows Direct Release 1.1 is already published; continue using this gate for future direct-release safety checks and update/reinstall validation.
 
 ## When to run this gate
 
@@ -59,7 +59,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\validate-windows-direct-relea
 6. Validate and upload through the canonical direct release scripts, keeping backend deploy separate from Windows release upload:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 1.0
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-windows-direct-release.ps1 -Version 1.1
 ```
 
 Public direct Windows release files go to `/var/www/languagevoicetutor/releases/windows/direct`; the public website root is separate at `/var/www/languagevoicetutor/site`. Generated release artifacts must not be committed.
