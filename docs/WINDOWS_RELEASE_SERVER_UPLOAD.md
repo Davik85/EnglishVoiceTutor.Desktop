@@ -167,7 +167,7 @@ Required static fallback text:
 
 ## Release-readiness status and deferred items
 
-Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.99`. Website Paddle-review polish is completed separately from this upload flow. Paddle live payment validation, Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are complete; chargeback remains implemented/test-covered but not live-chargeback-tested and partial refunds remain conservative/manual-review. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
+Current backend is production healthy at `https://api.languagevoicetutor.com`, release `0.1.35-backend.108`. Website Paddle-review polish is completed separately from this upload flow. Paddle live payment validation, Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are complete; chargeback remains implemented/test-covered but not live-chargeback-tested and partial refunds remain conservative/manual-review. Legal/support/seller/AI/status pages are ready for owner/legal final review as drafts.
 
 Do not state that the product is fully public production-ready. The current Windows release remains a public Windows direct release, not a full broad production-readiness claim, and not broad public production readiness.
 
@@ -197,7 +197,10 @@ Current production facts after backend `0.1.35-backend.83` and before any real l
 Static website upload command must target the real nginx root:
 
 ```powershell
-scripts/upload-static-site.ps1 -ServerHost "lvt-server" -ServerUser "deploy" -RemotePath "/var/www/languagevoicetutor/site"
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\upload-static-site.ps1 `
+  -ServerHost "lvt-server" `
+  -ServerUser "deploy" `
+  -RemotePath "/var/www/languagevoicetutor/site"
 ```
 
 Safe backend env verification must redact secrets and must use the existing env file, for example:
@@ -207,3 +210,16 @@ sudo awk -F= '/^(Billing__|PaddleBilling__|PaddleWebhook__)/ { v=$2; if ($1 ~ /(
 ```
 
 Admin capabilities should now distinguish configuration from launch completion: configured live checkout/webhooks can be reported as available/configured, while `billingLivePaymentTestComplete=false` and `billingPaidLaunchReleaseComplete=false` continue to block paid launch until the controlled live payment path is documented.
+
+## Static site upload boundary after Download page polish
+
+`upload-static-site.ps1` is the public website upload helper, not a backend deployment helper and not a Windows installer release helper. Use PowerShell 7 / `pwsh` for the updated script:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\upload-static-site.ps1 `
+  -ServerHost "lvt-server" `
+  -ServerUser "deploy" `
+  -RemotePath "/var/www/languagevoicetutor/site"
+```
+
+Current behavior: it uploads `site/public` root files and top-level folders such as `site/public/assets`, groups uploads instead of running one `mkdir`/`scp` per file, and skips `site/public/releases/**` completely. It must not upload `site/public/releases/windows/direct/latest.json`, does not manage `LanguageVoiceTutorSetup-1.0.exe`, does not manage any Windows release files, and does not deploy the backend. Windows direct release files remain managed only by the Windows direct release upload flow.

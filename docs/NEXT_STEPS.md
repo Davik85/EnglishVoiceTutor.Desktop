@@ -32,7 +32,7 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.99`; Production Admin RBAC / persistent role management is completed.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.108`; Production Admin RBAC / persistent role management is completed.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current Windows direct public release is `1.0`, installer `LanguageVoiceTutorSetup-1.0.exe`.
@@ -63,7 +63,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Production Admin RBAC / persistent role management is completed after backend `0.1.35-backend.99`; Admin permission fallback remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
+Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Production Admin RBAC / persistent role management is completed after backend `0.1.35-backend.108`; Admin permission fallback remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
 
 ## Website/CMS next-step guardrails
 
@@ -72,6 +72,10 @@ The Website CMS is under Admin Shell → Website. It is Super Admin / Bootstrap 
 Normal flow: load draft/active → Save draft → Preview selected page without publishing → Publish / Make active to promote content and render static pages. Publish creates `index.html`, `download.html`, `mobile.html`, `pricing.html`, `support.html`, `terms.html`, `privacy.html`, `refunds.html`, `cancellation.html`, `seller.html`, `ai-data.html`, and `status.html`.
 
 Normal pages expose Page title, Body markdown, SEO title, and SEO description. Home remains structured for landing cards/assets. Design is not a normal Super Admin editing page. Markdown supports headings, emphasis, lists, markdown links, safe URL/email/domain autolinks such as `Paddle.com`, and must continue to reject/escape unsafe schemes including `javascript:`, `data:`, and `vbscript:`.
+
+Download is also structured for the Desktop app release page. In addition to Page title, Body markdown, SEO title, and SEO description, CMS Save draft and Publish preserve/fill four feature cards using `featureCard1Label` / `featureCard1Title` / `featureCard1Description` / `featureCard1ImagePath` through the matching `featureCard4*` keys. Default image paths are `/assets/images/download/quick-start.webp`, `/assets/images/download/topics.webp`, `/assets/images/download/guided-lesson.webp`, and `/assets/images/download/conversation.webp`. Blank or missing Download image paths normalize back to these defaults.
+
+Website CMS publish must write only managed static website files, preserve public assets, preserve `releases/windows/direct`, avoid deleting or recreating the full static website root, avoid removing manually uploaded or repository-tracked website assets, and never touch `latest.json` or installer files. The fixed production issue was that CMS Publish generated `download.html` without `/assets/images/download/...` paths even though image files still existed; the root cause was partial Download page payload / `featureCard*` field preservation. Save draft and Publish now preserve/fill those fields.
 
 Admin Website CMS endpoints remain authenticated/authorized but no longer consume the normal admin read/write rate limit because legal text editing previously caused `RateLimitExceeded`.
 
@@ -96,7 +100,7 @@ Final verification should confirm public pages do not contain placeholder IDs su
 - Footer has primary links: Privacy Policy, Terms of Use, Refund Policy, Cancellation, Support, Pricing.
 - Footer has secondary links: Seller / Company Details, AI & Data Disclosure, Service Status.
 - `seller.html`, `ai-data.html`, and `status.html` exist and are linked from the footer.
-- Download page statically shows current release details when the manifest is available and remains supported by `download.js` and `/releases/windows/direct/latest.json`.
+- Download page statically shows current release details when the manifest is available and remains supported by `download.js` and `/releases/windows/direct/latest.json`; its safe non-JavaScript fallback href is `/releases/windows/direct/LanguageVoiceTutorSetup-1.0.exe`, never the broken relative `LanguageVoiceTutorSetup-1.0.exe`.
 - Privacy Policy default/static content now includes optional analytics/advertising cookie disclosure. The polished consent banner is controlled by Website CMS Marketing / SEO, and Google Analytics/Ads IDs are optional public configuration values that must be left empty unless intentionally configured; never commit real Google IDs or secrets.
 - Download non-JS fallback text remains: “Current Windows direct release is available through the Download for Windows button.” and “If release details do not load automatically, please contact [support@languagevoicetutor.com](mailto:support@languagevoicetutor.com).”
 
@@ -167,7 +171,7 @@ Windows release work stays on the Direct EXE/Inno installer. Updates continue th
 7. Controlled Paddle live payment, webhook delivery, Premium activation, failed-payment non-activation, desktop cancel-renewal, and full-refund Premium revocation are documented as completed for the 2026-07-02 owner-led test; do not claim paid public launch until final release-readiness review, remaining release smoke/signing, and owner release decision are complete.
 8. Collect controlled tester feedback, triage severity, and make an explicit release decision before broader public distribution.
 9. Before any tester handoff, re-verify the live Windows direct manifest still points to `1.0`, production backend URL, and `manual-confirmation`.
-10. Keep the backend release discrepancy resolved in docs: the live symlink verification command `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` confirmed `/opt/languagevoicetutor/backend/releases/0.1.35-backend.99`; `/health` and `/api/health/database` were verified healthy. Backend .99 was deployed by the normal backend package/upload flow; this documentation update did not change deploy commands.
+10. Keep the backend release discrepancy resolved in docs: the live symlink verification command `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` confirmed `/opt/languagevoicetutor/backend/releases/0.1.35-backend.108`; `/health` and `/api/health/database` were verified healthy. Backend .99 was deployed by the normal backend package/upload flow; this documentation update did not change deploy commands.
 11. Keep the AI Models persistence risk closed: preserve `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` as persistent server data/config, do not package release-folder JSON as the production source of truth, and verify it after future backend deploys.
 12. Keep Store/MSIX removed/discontinued; do not recreate `packaging/windows-msix`, Store channel logic, Store update messaging, WACK commands, or Partner Center planning.
 13. Run backend deploy only for an approved backend runtime/configuration change; do not deploy backend for Website CMS publish, Windows installer upload, AI Models persistence correction, or docs-only work.
@@ -196,7 +200,7 @@ Rollback: disable live env or return `PaddleBilling__Environment`/provider setti
 
 ## 2026-06-30 Paddle live checkout/Admin readiness update
 
-Current production facts after backend `0.1.35-backend.99` and the 2026-07-02 controlled live payment/cancel-renewal validation:
+Current production facts after backend `0.1.35-backend.108` and the 2026-07-02 controlled live payment/cancel-renewal validation:
 
 - Backend health and database health are `200 Healthy`.
 - Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.
@@ -208,12 +212,15 @@ Current production facts after backend `0.1.35-backend.99` and the 2026-07-02 co
 - Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct public release is `1.0`; direct `latest.json` remains active with manual-confirmation update mode.
 - Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
 - 2026-07-02 controlled validation completed: real live payment Complete for Language Voice Tutor Pro at 14.99 EUR via Google Pay; live checkout transaction creation, `subscription.created`, `subscription.activated`, `transaction.completed`, payment persistence, subscription snapshot processing, reconciliation, entitlement activation (`ActivatedCount=1`, `BlockedCount=0`, `FailedCount=0`), and desktop Premium visibility were verified without exposing raw provider payloads or secrets. Earlier failed payment attempts were processed without Premium activation (`ActivatedCount=0` / `AlreadySkippedCount=1`). One PostgreSQL serialization conflict during subscription snapshot processing retried successfully and ended with `FailedCount=0`. Desktop cancel-renewal was verified: auto-renewal became inactive while Premium remained active until `8/2/2026`. Full-refund Premium revocation is production-verified; chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred and not a current blocker.
-- Controlled live payment, webhook delivery, payment persistence, subscription snapshot processing, entitlement activation, desktop Premium visibility, and desktop cancel-renewal behavior were completed and documented on 2026-07-02. Paddle full-refund Premium revocation is production-verified on backend `0.1.35-backend.99` using the already stored live `adjustment.updated` event; automatic future handling should use delivered `adjustment.created` / `adjustment.updated` notifications, with the operator reprocess command reserved for already-stored/legacy events only. Chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred and not a current blocker; broad public paid launch remains pending final release-readiness review and remaining release blockers.
+- Controlled live payment, webhook delivery, payment persistence, subscription snapshot processing, entitlement activation, desktop Premium visibility, and desktop cancel-renewal behavior were completed and documented on 2026-07-02. Paddle full-refund Premium revocation is production-verified on backend `0.1.35-backend.108` using the already stored live `adjustment.updated` event; automatic future handling should use delivered `adjustment.created` / `adjustment.updated` notifications, with the operator reprocess command reserved for already-stored/legacy events only. Chargeback remains implemented/test-covered but not live-chargeback-tested; expanded customer portal/subscription management is deferred and not a current blocker; broad public paid launch remains pending final release-readiness review and remaining release blockers.
 
 Static website upload command must target the real nginx root:
 
 ```powershell
-scripts/upload-static-site.ps1 -ServerHost "lvt-server" -ServerUser "deploy" -RemotePath "/var/www/languagevoicetutor/site"
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\upload-static-site.ps1 `
+  -ServerHost "lvt-server" `
+  -ServerUser "deploy" `
+  -RemotePath "/var/www/languagevoicetutor/site"
 ```
 
 Safe backend env verification must redact secrets and must use the existing env file, for example:
@@ -262,7 +269,7 @@ Existing table fit:
 - `admin_role_assignment_events` is not a safe fit. It is role-management audit with required `TargetAdminUserId`, role-change fields, and role-assignment semantics. Login/logout/failure events are not role assignment events; forcing them here would pollute RBAC audit and still would not represent unknown failed attempts safely.
 - `cms_content_audit_logs` is not a safe fit. It is CMS content audit with entity/content fields and CMS action/status semantics, not authentication/session audit.
 
-Migration decision completed for the first production slice: the dedicated authentication/session audit table `admin_auth_audit_events` was approved, migration `20260701000000_AddAdminAuthAuditEvents` was applied before backend `0.1.35-backend.99`, and Admin Activity now shows production-verified `admin_login_success`, `admin_logout`, `admin_login_failed`, and `disabled_admin_login_denied` events. Session expiration audit persistence remains pending. The safe schema uses only bounded fields:
+Migration decision completed for the first production slice: the dedicated authentication/session audit table `admin_auth_audit_events` was approved, migration `20260701000000_AddAdminAuthAuditEvents` was applied before backend `0.1.35-backend.108`, and Admin Activity now shows production-verified `admin_login_success`, `admin_logout`, `admin_login_failed`, and `disabled_admin_login_denied` events. Session expiration audit persistence remains pending. The safe schema uses only bounded fields:
 
 - `id` GUID primary key.
 - `occurred_at_utc` timestamp.
@@ -295,15 +302,15 @@ Keep Admin Activity read-only over the approved source tables and do not expose 
 
 ## 2026-07-01 CMS production verification update
 
-Backend `0.1.35-backend.99` fixed `cmsUiAvailable`; System → Capabilities Check now shows it as AVAILABLE. CMS Content opens in Admin Shell and the CMS Content workspace loads. Learner runtime is using an active and valid `CmsPublishedSnapshot` for `static-json-v1`, published version `46`, with 6 topics, 26 scenarios, 4 prompt templates, 3 tutor behavior profiles, validation success `Yes`, and static JSON fallback currently `No`. No CMS content was saved, published, restored, initialized, imported, or mutated during this verification.
+Backend `0.1.35-backend.108` fixed `cmsUiAvailable`; System → Capabilities Check now shows it as AVAILABLE. CMS Content opens in Admin Shell and the CMS Content workspace loads. Learner runtime is using an active and valid `CmsPublishedSnapshot` for `static-json-v1`, published version `46`, with 6 topics, 26 scenarios, 4 prompt templates, 3 tutor behavior profiles, validation success `Yes`, and static JSON fallback currently `No`. No CMS content was saved, published, restored, initialized, imported, or mutated during this verification.
 
 ## 2026-07-02 refund and chargeback Premium protection
 
-In production backend `0.1.35-backend.99`, full Paddle refunds are treated as access-control events after `adjustment.created` or `adjustment.updated` webhook processing: the backend preserves Paddle/payment/subscription history, maps the adjustment back to the internal user by safe metadata or existing payment/subscription records, and expires active provider-event Premium entitlements with reason `paddle_full_refund`. Chargebacks are implemented as stronger refund evidence and are covered by tests/fake paths, but no real live chargeback was performed.
+In production backend `0.1.35-backend.108`, full Paddle refunds are treated as access-control events after `adjustment.created` or `adjustment.updated` webhook processing: the backend preserves Paddle/payment/subscription history, maps the adjustment back to the internal user by safe metadata or existing payment/subscription records, and expires active provider-event Premium entitlements with reason `paddle_full_refund`. Chargebacks are implemented as stronger refund evidence and are covered by tests/fake paths, but no real live chargeback was performed.
 
 Normal cancel-renewal behavior is unchanged: scheduled cancellation keeps Premium through the paid period end. Partial refunds are conservative in this slice: the event is safely recorded/processed for review and Premium is left unchanged unless the adjustment is full or a chargeback. Provider history is preserved; payment and subscription records are not deleted, and refund processing does not fake Paddle webhook events or expose raw provider payloads, webhook signatures, tokens, cookies, secrets, API keys, or full card/payment data in Admin Activity evidence.
 
-Full-refund Premium revocation is production-verified on current production backend `0.1.35-backend.99`: the operator reprocess of stored provider event `evt_01kwhgmvh1v9k8ve70gvnfeskm` returned `Result=Revoked`, `RevokedCount=1`, and `BlockReason=(null)`; Admin User Lookup confirmed Free/no Premium/no Trial; Admin Activity showed `paddle_full_refund_premium_revoke` succeeded for the refunded user. Broad public paid launch is no longer blocked by full-refund revoke, but remains pending final release-readiness review and non-billing blockers. Expanded customer portal/subscription management is deferred and is not a current blocker. Direct installer code signing remains pending.
+Full-refund Premium revocation is production-verified on current production backend `0.1.35-backend.108`: the operator reprocess of stored provider event `evt_01kwhgmvh1v9k8ve70gvnfeskm` returned `Result=Revoked`, `RevokedCount=1`, and `BlockReason=(null)`; Admin User Lookup confirmed Free/no Premium/no Trial; Admin Activity showed `paddle_full_refund_premium_revoke` succeeded for the refunded user. Broad public paid launch is no longer blocked by full-refund revoke, but remains pending final release-readiness review and non-billing blockers. Expanded customer portal/subscription management is deferred and is not a current blocker. Direct installer code signing remains pending.
 
 ## Paddle full-refund recovery next step
 
