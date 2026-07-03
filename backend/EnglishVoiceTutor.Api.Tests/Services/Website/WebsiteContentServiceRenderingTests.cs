@@ -110,6 +110,18 @@ Need help? Email support@languagevoicetutor.com.
         Assert.DoesNotContain("tester download", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Available for testers", html);
 
+        AssertInOrder(
+            html,
+            "Download Language Voice Tutor for Windows.",
+            "Practice real conversations by text or voice with an AI tutor",
+            "id=\"current-version\"",
+            "id=\"installer-size\"",
+            "id=\"download-button\"",
+            "id=\"manifest-status\"",
+            "Windows may show a SmartScreen warning because code signing is deferred.",
+            "support@languagevoicetutor.com");
+        Assert.DoesNotContain("Current version and installer size are loaded from the release manifest.", html);
+
         var supportIndex = html.IndexOf("support@languagevoicetutor.com", StringComparison.Ordinal);
         var firstSectionCloseAfterSupport = html.IndexOf("</section>", supportIndex, StringComparison.Ordinal);
         var secondSectionCloseAfterSupport = html.IndexOf("</section>", firstSectionCloseAfterSupport + "</section>".Length, StringComparison.Ordinal);
@@ -155,8 +167,31 @@ Need help? Email support@languagevoicetutor.com.
 
         Assert.Contains("Custom main CTA copy for testing.", ctaHtml);
         Assert.Contains("Need help? Email <a href=\"mailto:support@languagevoicetutor.com\">support@languagevoicetutor.com</a>.", ctaHtml);
+        AssertInOrder(ctaHtml, "Custom main CTA copy for testing.", "id=\"current-version\"", "id=\"download-button\"", "id=\"manifest-status\"", "Need help? Email");
         Assert.DoesNotContain("Practice real conversations by text or voice with an AI tutor, choose practical topics", html);
         Assert.Equal(1, CountOccurrences(html, "Custom main CTA copy for testing."));
+    }
+
+    [Fact]
+    public async Task PublishedDownloadHtmlSplitsCmsBodyAroundReleaseControls()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        content.Pages["download"]["bodyMarkdown"] = """
+Download Language Voice Tutor for Windows.
+Practice real conversations by text or voice with an AI tutor, choose practical topics, start guided lessons, and improve step by step.
+
+Windows may show a SmartScreen warning because code signing is deferred.
+
+Need help? Email support@languagevoicetutor.com.
+""";
+
+        await service.SaveDraftAsync(content, TestContext.Current.CancellationToken);
+        await service.PublishAsync(TestContext.Current.CancellationToken);
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"), TestContext.Current.CancellationToken);
+
+        AssertInOrder(html, "Download Language Voice Tutor for Windows.", "Practice real conversations", "id=\"current-version\"", "id=\"download-button\"", "id=\"manifest-status\"", "Windows may show a SmartScreen warning", "href=\"mailto:support@languagevoicetutor.com\"");
     }
 
     [Fact]
@@ -618,6 +653,17 @@ Need help? Email support@languagevoicetutor.com.
         }
 
         throw new InvalidOperationException("Could not find repository root containing backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js.");
+    }
+
+    private static void AssertInOrder(string value, params string[] tokens)
+    {
+        var previousIndex = -1;
+        foreach (var token in tokens)
+        {
+            var index = value.IndexOf(token, previousIndex + 1, StringComparison.Ordinal);
+            Assert.True(index > previousIndex, $"Expected '{token}' after index {previousIndex}, but found it at {index}.");
+            previousIndex = index;
+        }
     }
 
     private static int CountOccurrences(string value, string token)
