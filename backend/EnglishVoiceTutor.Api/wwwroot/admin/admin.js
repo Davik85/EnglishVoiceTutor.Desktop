@@ -1121,6 +1121,34 @@
         "/assets/images/download/guided-lesson.webp",
         "/assets/images/download/conversation.webp"
     ];
+
+    const defaultDownloadFeatureCardValues = {
+        featureCard1Label: "Quick Start",
+        featureCard1Title: "Start quickly",
+        featureCard1Description: "Open the app and jump into practical language practice in a few clicks.",
+        featureCard1ImagePath: "/assets/images/download/quick-start.webp",
+        featureCard2Label: "Topics",
+        featureCard2Title: "Choose practical topics",
+        featureCard2Description: "Pick real-life situations like travel, work, daily life, and more.",
+        featureCard2ImagePath: "/assets/images/download/topics.webp",
+        featureCard3Label: "Guided Lesson",
+        featureCard3Title: "Learn step by step",
+        featureCard3Description: "Practice inside a guided lesson with clear prompts, hints, and feedback.",
+        featureCard3ImagePath: "/assets/images/download/guided-lesson.webp",
+        featureCard4Label: "Conversation",
+        featureCard4Title: "Practice real conversation",
+        featureCard4Description: "Switch to conversation mode and train natural speaking in a realistic dialogue.",
+        featureCard4ImagePath: "/assets/images/download/conversation.webp"
+    };
+    function preserveDownloadFeatureCardFields() {
+        const pages = (websiteContentDraft.pages ||= {});
+        const download = (pages.download ||= {});
+        expectedDownloadFeatureCardKeys.forEach(key => {
+            if (download[key] === undefined || download[key] === null || String(download[key]).trim() === "") {
+                download[key] = defaultDownloadFeatureCardValues[key] || "";
+            }
+        });
+    }
     function renderDownloadFeatureCardEditor(values) {
         const section = document.createElement("section");
         section.className = "website-seo-section website-field-long";
@@ -1212,9 +1240,9 @@
     async function readWebsiteResponse(response, fallbackMessage) { if (response.status === HttpStatus.unauthorized) { handleAuthInvalidResponse(); }
         if (response.status === HttpStatus.forbidden) { throw new Error(NotAvailableForRoleMessage); } if (!response.ok) { let detail = fallbackMessage; try { const body = await response.json(); detail = body.error || body.detail || detail; } catch (_) { } throw new Error(detail); } return response.json(); }
     async function loadWebsiteContent() { setWebsiteError(""); setWebsiteMessage("Loading Website editor..."); try { const response = await fetch(ApiPaths.websiteContent, { method: "GET", headers: getAdminHeaders() }); const payload = await readWebsiteResponse(response, "Unable to load Website content."); fillWebsiteForm(payload.draft || payload.active); websiteHasLoadedOnce = true; setWebsiteMessage("Draft loaded."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to load Website content."); } }
-    async function saveWebsiteDraft() { collectCurrentWebsiteSection(); setWebsiteError(""); setWebsiteMessage("Saving draft..."); websiteSaveDraftButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(websiteContentDraft) }); const payload = await readWebsiteResponse(response, "Unable to save Website draft."); fillWebsiteForm(payload.draft); setWebsiteMessage("Draft saved."); return true; } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to save Website draft."); return false; } finally { websiteSaveDraftButton.disabled = false; } }
+    async function saveWebsiteDraft() { collectCurrentWebsiteSection(); preserveDownloadFeatureCardFields(); setWebsiteError(""); setWebsiteMessage("Saving draft..."); websiteSaveDraftButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentDraft, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(websiteContentDraft) }); const payload = await readWebsiteResponse(response, "Unable to save Website draft."); fillWebsiteForm(payload.draft); setWebsiteMessage("Draft saved."); return true; } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to save Website draft."); return false; } finally { websiteSaveDraftButton.disabled = false; } }
     async function previewWebsiteContent() { collectCurrentWebsiteSection(); setWebsiteError(""); setWebsiteMessage("Rendering Website preview..."); websitePreviewButton.disabled = true; try { const response = await fetch(ApiPaths.websiteContentPreview, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ content: websiteContentDraft, pageKey: activeWebsiteSection === "marketingSeo" ? "home" : activeWebsiteSection }) }); const payload = await readWebsiteResponse(response, "Unable to preview Website content."); const previewWindow = window.open("about:blank", "_blank"); if (!previewWindow) { throw new Error("Preview popup was blocked. Allow popups for this admin site and try again."); } previewWindow.opener = null; previewWindow.document.open(); previewWindow.document.write(payload.html || ""); previewWindow.document.close(); setWebsiteMessage("Preview opened in a new tab. Nothing was saved or published."); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to preview Website content."); } finally { websitePreviewButton.disabled = false; } }
-    async function publishWebsiteContent() { collectCurrentWebsiteSection(); setWebsiteError(""); setWebsiteMessage("Saving draft before publish..."); websitePublishButton.disabled = true; try { const saved = await saveWebsiteDraft(); if (!saved) { return; } setWebsiteMessage("Publishing saved draft to static website..."); const response = await fetch(ApiPaths.websiteContentPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readWebsiteResponse(response, "Unable to publish Website content."); fillWebsiteForm(payload.active); setWebsiteMessage(`Published saved draft to ${Array.isArray(payload.publishedFiles) ? payload.publishedFiles.length : ""} static website files.`); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to publish Website content."); } finally { websitePublishButton.disabled = false; } }
+    async function publishWebsiteContent() { collectCurrentWebsiteSection(); preserveDownloadFeatureCardFields(); setWebsiteError(""); setWebsiteMessage("Saving draft before publish..."); websitePublishButton.disabled = true; try { const saved = await saveWebsiteDraft(); if (!saved) { return; } setWebsiteMessage("Publishing saved draft to static website..."); const response = await fetch(ApiPaths.websiteContentPublish, { method: "POST", headers: getAdminHeaders({ "Content-Type": "application/json" }) }); const payload = await readWebsiteResponse(response, "Unable to publish Website content."); fillWebsiteForm(payload.active); setWebsiteMessage(`Published saved draft to ${Array.isArray(payload.publishedFiles) ? payload.publishedFiles.length : ""} static website files.`); } catch (error) { setWebsiteMessage(""); setWebsiteError(error instanceof Error ? error.message : "Unable to publish Website content."); } finally { websitePublishButton.disabled = false; } }
 
     function resetDashboard() {
         adminAccessSnapshot = { roles: [], permissions: [], isBootstrapAdmin: false, productionRolesAvailable: false, adminSource: "", environment: "", checkedAtUtc: "" }; adminSourceElement.textContent = "-"; environmentElement.textContent = "-"; checkedAtElement.textContent = "-"; bootstrapAdminStatusElement.textContent = "-"; adminPermissionCountElement.textContent = "-"; capabilitiesListElement.textContent = ""; renderBadges(adminRolesBadgesElement, []); renderBadges(rolesPermissionsRolesElement, []); renderPermissionList(rolesPermissionsListElement, []); workflowAvailabilityListElement.textContent = ""; systemProductionRolesAvailableElement.textContent = "false"; systemProductionRolesAvailableElement.className = "badge unavailable"; systemBillingPaddleStatusElement.textContent = "not configured"; systemBillingPaddleStatusElement.className = "badge unavailable";
