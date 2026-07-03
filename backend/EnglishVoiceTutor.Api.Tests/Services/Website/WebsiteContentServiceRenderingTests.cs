@@ -78,7 +78,9 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Contains("download.js?v=20260703-lightbox", html);
         Assert.Contains("id=\"current-version\"", html);
         Assert.Contains("id=\"download-button\"", html);
-        Assert.Contains("aria-disabled=\"true\"", html);
+        Assert.Contains("href=\"/releases/windows/direct/LanguageVoiceTutorSetup-1.0.exe\"", html);
+        Assert.Contains("download=\"LanguageVoiceTutorSetup-1.0.exe\"", html);
+        Assert.DoesNotContain("href=\"LanguageVoiceTutorSetup-1.0.exe\"", html);
         Assert.Contains("id=\"manifest-status\"", html);
         Assert.Contains("id=\"installer-size\"", html);
         Assert.DoesNotContain("id=\"detail-version\"", html);
@@ -137,7 +139,8 @@ Need help? Email support@languagevoicetutor.com.
         await File.WriteAllTextAsync(landingAsset, "landing screenshot", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(brandAsset, "brand", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(flagAsset, "flag", TestContext.Current.CancellationToken);
-        await File.WriteAllTextAsync(releaseManifest, "{\"version\":\"1.0\",\"installerRelativeUrl\":\"LanguageVoiceTutorSetup-1.0.exe\",\"installerFileName\":\"LanguageVoiceTutorSetup-1.0.exe\",\"installerSizeBytes\":123}", TestContext.Current.CancellationToken);
+        const string releaseManifestSentinel = "{\"version\":\"1.0\",\"installerRelativeUrl\":\"LanguageVoiceTutorSetup-1.0.exe\",\"installerFileName\":\"LanguageVoiceTutorSetup-1.0.exe\",\"installerSizeBytes\":123}";
+        await File.WriteAllTextAsync(releaseManifest, releaseManifestSentinel, TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(installerArtifact, "installer", TestContext.Current.CancellationToken);
 
         var response = await service.PublishAsync(TestContext.Current.CancellationToken);
@@ -149,8 +152,10 @@ Need help? Email support@languagevoicetutor.com.
         Assert.True(File.Exists(brandAsset));
         Assert.True(File.Exists(flagAsset));
         Assert.Equal("download screenshot", await File.ReadAllTextAsync(downloadAsset, TestContext.Current.CancellationToken));
-        Assert.Contains("\"version\":\"1.0\"", await File.ReadAllTextAsync(releaseManifest, TestContext.Current.CancellationToken));
+        Assert.Equal(releaseManifestSentinel, await File.ReadAllTextAsync(releaseManifest, TestContext.Current.CancellationToken));
         Assert.Equal("installer", await File.ReadAllTextAsync(installerArtifact, TestContext.Current.CancellationToken));
+        var downloadHtml = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"), TestContext.Current.CancellationToken);
+        Assert.Contains("href=\"/releases/windows/direct/LanguageVoiceTutorSetup-1.0.exe\"", downloadHtml);
         Assert.DoesNotContain(response.PublishedFiles, file => file.Contains(Path.Combine("assets", "images", "download"), StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(response.PublishedFiles, file => file.Contains(Path.Combine("releases", "windows", "direct"), StringComparison.OrdinalIgnoreCase));
     }

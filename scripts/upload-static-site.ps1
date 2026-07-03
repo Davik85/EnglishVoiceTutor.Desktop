@@ -64,6 +64,13 @@ function Invoke-LoggedCommand {
     }
 }
 
+function Get-RelativePathFromSiteRoot {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $sourceWithSeparator = $siteSource.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+    return $Path.Substring($sourceWithSeparator.Length).Replace([System.IO.Path]::DirectorySeparatorChar, '/').Replace([System.IO.Path]::AltDirectorySeparatorChar, '/')
+}
+
 Assert-SafeSimpleValue -Name "ServerHost" -Value $ServerHost -Pattern '^[A-Za-z0-9._-]+$'
 Assert-SafeSimpleValue -Name "ServerUser" -Value $ServerUser -Pattern '^[A-Za-z0-9._-]+$'
 Assert-SafeSimpleValue -Name "RemotePath" -Value $RemotePath -Pattern '^/[A-Za-z0-9._~/-]+$'
@@ -72,37 +79,42 @@ if (-not (Test-Path $siteSource -PathType Container)) {
     throw "Static site source folder was not found: $siteSource"
 }
 
-$localFiles = @(Get-ChildItem -Path $siteSource -File -Recurse | Sort-Object -Property FullName)
-if ($localFiles.Count -eq 0) {
-    throw "Static site source folder does not contain files: $siteSource"
+$rootFiles = @(Get-ChildItem -Path $siteSource -File | Sort-Object -Property Name)
+$topLevelDirectories = @(Get-ChildItem -Path $siteSource -Directory | Where-Object { $_.Name -ne "releases" } | Sort-Object -Property Name)
+$uploadFiles = @($rootFiles)
+foreach ($directory in $topLevelDirectories) {
+    $uploadFiles += @(Get-ChildItem -Path $directory.FullName -File -Recurse | Sort-Object -Property FullName)
+}
+
+if ($uploadFiles.Count -eq 0) {
+    throw "Static site source folder does not contain uploadable files outside site/public/releases: $siteSource"
 }
 
 $remoteTarget = "$ServerUser@$ServerHost`:$RemotePath/"
+$sshTarget = "$ServerUser@$ServerHost"
 
 Write-Host "Static site upload summary"
 Write-Host "Local source: $siteSource"
 Write-Host "Remote target: $remoteTarget"
 Write-Host "SSH port: $SshPort"
 Write-Host "Dry run: $([bool]$DryRun)"
-Write-Host "Scope: recursively uploads site/public files, including site/public/assets, to the static website folder without touching releases/windows/direct."
-Write-Host "Release files: not touched. Backend deployment: not touched."
+Write-Host "Scope: uploads site/public root files and top-level folders such as site/public/assets in grouped scp commands. site/public/releases/** is skipped completely."
+Write-Host "Release files: skipped. Backend deployment: not touched."
 Write-Host "Files:"
-foreach ($localFile in $localFiles) {
-    $relativePath = [System.IO.Path]::GetRelativePath($siteSource, $localFile.FullName)
+foreach ($localFile in $uploadFiles) {
+    $relativePath = Get-RelativePathFromSiteRoot -Path $localFile.FullName
     Write-Host (" - {0} ({1} bytes)" -f $relativePath, $localFile.Length)
 }
 
-$sshTarget = "$ServerUser@$ServerHost"
-$mkdirCommand = @("ssh", "-p", [string]$SshPort, "--", $sshTarget, "mkdir", "-p", $RemotePath)
-Invoke-LoggedCommand -Arguments $mkdirCommand
+Invoke-LoggedCommand -Arguments @("ssh", "-p", [string]$SshPort, "--", $sshTarget, "mkdir", "-p", $RemotePath)
 
-foreach ($localFile in $localFiles) {
-    $relativeDirectory = [System.IO.Path]::GetRelativePath($siteSource, $localFile.DirectoryName)
-    $normalizedRelativeDirectory = if ($relativeDirectory -eq ".") { "" } else { ($relativeDirectory -replace "\\", "/") }
-    $remoteDirectory = if ([string]::IsNullOrWhiteSpace($normalizedRelativeDirectory)) { $RemotePath } else { "$RemotePath/$normalizedRelativeDirectory" }
-    $remoteFileTarget = "$ServerUser@$ServerHost`:$remoteDirectory/"
-    Invoke-LoggedCommand -Arguments @("ssh", "-p", [string]$SshPort, "--", $sshTarget, "mkdir", "-p", $remoteDirectory)
-    Invoke-LoggedCommand -Arguments @("scp", "-P", [string]$SshPort, "--", $localFile.FullName, $remoteFileTarget)
+if ($rootFiles.Count -gt 0) {
+    $rootScpCommand = @("scp", "-P", [string]$SshPort, "--") + @($rootFiles | ForEach-Object { $_.FullName }) + @($remoteTarget)
+    Invoke-LoggedCommand -Arguments $rootScpCommand
+}
+
+foreach ($directory in $topLevelDirectories) {
+    Invoke-LoggedCommand -Arguments @("scp", "-P", [string]$SshPort, "-r", "--", $directory.FullName, $remoteTarget)
 }
 
 if ($DryRun) {

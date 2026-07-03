@@ -1,5 +1,7 @@
 const manifestUrl = "/releases/windows/direct/latest.json";
 const releaseBaseUrl = "/releases/windows/direct/";
+const fallbackInstallerFileName = "LanguageVoiceTutorSetup-1.0.exe";
+const fallbackInstallerUrl = `${releaseBaseUrl}${fallbackInstallerFileName}`;
 
 const elements = {
     currentVersion: document.getElementById("current-version"),
@@ -128,7 +130,7 @@ function applyManifest(manifest) {
 }
 
 function applyManifestFailure(message) {
-    setDownloadEnabled(false);
+    setDownloadEnabled(true, fallbackInstallerUrl, fallbackInstallerFileName);
     setText(elements.currentVersion, "available from the public release manifest");
     setText(elements.installerSize, "Unavailable");
     setText(elements.detailVersion, "Unavailable");
