@@ -53,6 +53,20 @@ def test_tracking_hooks_are_config_and_consent_gated_without_breaking_downloads(
     assert "normalizeInstallerRelativeUrl" in download_js
 
 
+
+def test_public_checkout_pages_include_shared_marketing_consent_runtime():
+    expected_config = "window.lvtMarketing = { gaMeasurementId: '', googleAdsId: '', downloadConversionLabel: '' }"
+    expected_runtime = 'src="marketing-consent.js?v=marketing-seo" defer'
+
+    for name in ["index.html", "download.html", "pricing.html", "pay.html"]:
+        html = (PUBLIC / name).read_text(encoding="utf-8")
+        assert expected_config in html
+        assert expected_runtime in html
+        assert 'id="consent-banner"' in html
+        assert 'id="consent-analytics"' in html
+        assert 'id="consent-advertising"' in html
+
+
 def test_robots_sitemap_llms_and_seo_metadata_are_present_and_public_only():
     robots = (PUBLIC / "robots.txt").read_text(encoding="utf-8")
     sitemap = (PUBLIC / "sitemap.xml").read_text(encoding="utf-8")

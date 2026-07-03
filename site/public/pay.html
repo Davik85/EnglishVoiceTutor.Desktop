@@ -21,6 +21,27 @@
       <p><a href="/support.html">Contact support</a></p>
     </div>
   </main>
+  <section class="consent-banner" id="consent-banner" role="dialog" aria-modal="false" aria-labelledby="consent-title" aria-describedby="consent-description" hidden>
+    <div class="consent-banner__content">
+      <div class="consent-banner__copy">
+        <p class="consent-banner__eyebrow">Privacy choices</p>
+        <h2 id="consent-title">Optional cookies</h2>
+        <p id="consent-description">We may use analytics and advertising cookies, if enabled, to understand traffic, improve Language Voice Tutor, measure marketing performance, and count download clicks. You can accept all, reject non-essential cookies, or manage choices. <a class="consent-banner__link" href="privacy.html">Privacy Policy</a></p>
+        <div class="consent-choices" id="consent-manage" hidden>
+          <label class="consent-choice"><input type="checkbox" id="consent-analytics"> <span><strong>Analytics cookies</strong><small>Help us measure site traffic and product improvement signals.</small></span></label>
+          <label class="consent-choice"><input type="checkbox" id="consent-advertising"> <span><strong>Advertising cookies</strong><small>Help us measure marketing performance and download conversions.</small></span></label>
+        </div>
+      </div>
+      <div class="consent-banner__actions">
+        <button class="consent-button consent-button--primary" type="button" data-consent-action="accept">Accept all</button>
+        <button class="consent-button consent-button--secondary" type="button" data-consent-action="reject">Reject non-essential</button>
+        <button class="consent-button consent-button--link" type="button" data-consent-action="manage">Manage choices</button>
+        <button class="consent-button consent-button--primary" type="button" data-consent-action="save" hidden>Save choices</button>
+      </div>
+    </div>
+  </section>
+  <script>window.lvtMarketing = { gaMeasurementId: '', googleAdsId: '', downloadConversionLabel: '' };</script>
+  <script src="marketing-consent.js?v=marketing-seo" defer></script>
   <script>
     (function () {
       "use strict";
