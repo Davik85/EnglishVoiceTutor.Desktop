@@ -366,11 +366,18 @@ Need help? Email support@languagevoicetutor.com.
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "EnglishVoiceTutor.Desktop.sln")))
+        while (directory is not null)
         {
+            var adminJsPath = Path.Combine(directory.FullName, "backend", "EnglishVoiceTutor.Api", "wwwroot", "admin", "admin.js");
+            if (File.Exists(adminJsPath))
+            {
+                return directory.FullName;
+            }
+
             directory = directory.Parent;
         }
-        return directory?.FullName ?? throw new InvalidOperationException("Could not find repository root.");
+
+        throw new InvalidOperationException("Could not find repository root containing backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js.");
     }
 
     private static int CountOccurrences(string value, string token)
