@@ -75,7 +75,9 @@ The historical tester build verified these behaviors; the current active release
 - public download page and live `latest.json` verified over HTTPS before naming the public installer;
 - Installed file names were renamed to `LanguageVoiceTutor.Desktop.*`; legacy `EnglishVoiceTutor.Desktop.*` install-folder files are cleaned during update/reinstall without deleting user AppData.
 
-Raw passwords are not stored. Auth/session data is protected under the current user's app-data area, and logout clears persisted auth session data.
+Raw passwords are not stored. Auth/session data is protected under the current user's app-data area, and Logout clears persisted auth session data. Desktop stores auth session safely in the current user's app-data storage, protected by Windows user-scoped data protection rather than raw password storage, and the desktop does not store raw passwords. A successful token refresh persists the replacement access token and refresh token so the next app restart uses the refreshed session. The update/reinstall should preserve auth session policy is intentional: update/reinstall should preserve auth session, settings, Lesson History, and Progress rather than deleting app-data session storage. The app should not log out the user just because the access token expired when the refresh token is still valid; authenticated desktop clients should use the central refresh-aware request flow so stale access tokens are refreshed and retried consistently.
+
+Auth session persistence works across app restart and Windows restart. Regression coverage now includes the stale access token + valid refresh token path, refresh retry behavior, and persisted refreshed session state so a refreshed replacement access token and refresh token survive subsequent restore.
 
 ## Latest verified smoke summary
 
