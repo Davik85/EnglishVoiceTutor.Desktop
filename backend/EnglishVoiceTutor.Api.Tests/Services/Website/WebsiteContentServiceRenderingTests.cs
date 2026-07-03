@@ -79,6 +79,17 @@ public sealed class WebsiteContentServiceRenderingTests
         Assert.Contains("assets/images/download/topics.webp", html);
         Assert.Contains("assets/images/download/guided-lesson.webp", html);
         Assert.Contains("assets/images/download/conversation.webp", html);
+        Assert.Contains("class=\"download-cta-support\"", html);
+        Assert.Contains("href=\"mailto:support@languagevoicetutor.com\"", html);
+        Assert.DoesNotContain("class=\"download-content-shell\"", html);
+        Assert.DoesNotContain("<section class=\"support-card\" aria-label=\"Support\">", html);
+
+        var supportIndex = html.IndexOf("class=\"download-cta-support\"", StringComparison.Ordinal);
+        var firstSectionCloseAfterSupport = html.IndexOf("</section>", supportIndex, StringComparison.Ordinal);
+        var secondSectionCloseAfterSupport = html.IndexOf("</section>", firstSectionCloseAfterSupport + "</section>".Length, StringComparison.Ordinal);
+        var footerIndex = html.IndexOf("<footer class=\"site-footer\">", StringComparison.Ordinal);
+        Assert.InRange(supportIndex, 0, firstSectionCloseAfterSupport);
+        Assert.InRange(secondSectionCloseAfterSupport, 0, footerIndex);
     }
 
     [Fact]

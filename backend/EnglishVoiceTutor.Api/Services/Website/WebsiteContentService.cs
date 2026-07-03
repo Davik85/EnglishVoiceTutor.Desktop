@@ -263,6 +263,7 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
                     <a id="download-button" class="{{downloadClass}}" aria-disabled="{{ariaDisabled}}"{{downloadAttributes}}>Download for Windows</a>
                     <p id="manifest-status" class="download-hero__status" role="status">{{E(manifestStatus)}}</p>
                     <p class="download-hero__note">Windows may show a SmartScreen warning because code signing is deferred.</p>
+                    <p class="download-cta-support">Need help? Email <a href="mailto:support@languagevoicetutor.com">support@languagevoicetutor.com</a>.</p>
                 </section>
 
                 <section class="download-feature-grid" aria-label="Language Voice Tutor features">
@@ -290,11 +291,6 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
             </div>
         </section>
 
-        <section class="download-content-shell">
-            <section class="support-card" aria-label="Support">
-                <p>Need help? Email <a href="mailto:support@languagevoicetutor.com">support@languagevoicetutor.com</a>.</p>
-            </section>
-        </section>
     </main>
 """;
         return Shell(c, "Language Voice Tutor for Windows Download", "Download Language Voice Tutor for Windows and practice real conversations by text or voice with an AI tutor.", body, false, includePublicBaseHref, "    <script src=\"download.js?v=manifest-download\" defer></script>", pageFileName: "download.html", jsonLd: RenderSoftwareApplicationJsonLd(release));

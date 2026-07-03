@@ -72,6 +72,16 @@ def main() -> int:
     assert_contains(download_html, "assets/images/download/topics.webp", "topics screenshot path")
     assert_contains(download_html, "assets/images/download/guided-lesson.webp", "guided lesson screenshot path")
     assert_contains(download_html, "assets/images/download/conversation.webp", "conversation screenshot path")
+    assert_contains(download_html, 'class="download-cta-support"', "support email inside download CTA card")
+    assert_contains(download_html, 'href="mailto:support@languagevoicetutor.com"', "support mailto link")
+    if 'class="download-content-shell"' in download_html or '<section class="support-card" aria-label="Support">' in download_html:
+        raise AssertionError("download.html must not include a separate support section below the hero")
+    support_index = download_html.index('class="download-cta-support"')
+    panel_close_index = download_html.index('</section>', support_index)
+    hero_close_index = download_html.index('</section>', panel_close_index + len('</section>'))
+    footer_index = download_html.index('<footer class="site-footer">')
+    if support_index > panel_close_index or hero_close_index > footer_index:
+        raise AssertionError("support email must stay inside the download CTA card and the footer must follow the hero")
     if "Technical release details" in download_html:
         raise AssertionError("download.html must not show a public technical release details section")
     for removed_id in ["detail-installer", "detail-backend-base-url", "detail-minimum-supported-version", "detail-update-mode", "detail-sha"]:
