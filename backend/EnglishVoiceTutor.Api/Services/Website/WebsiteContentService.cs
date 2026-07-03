@@ -101,7 +101,7 @@ Need help? Email support@languagevoicetutor.com.
         if (document is null) { var d = DefaultSet(); return new WebsiteContentDocument(d, d); }
         var hasLegacyDownloadContent = IsLegacyDownloadContent(document.Active) || IsLegacyDownloadContent(document.Draft);
         var normalized = new WebsiteContentDocument(Normalize(document.Active), Normalize(document.Draft));
-        if (hasLegacyDownloadContent)
+        if (hasLegacyDownloadContent || !WebsiteContentDocumentsEqual(document, normalized))
         {
             await WriteDocumentAsync(normalized, cancellationToken);
         }
@@ -209,7 +209,10 @@ Need help? Email support@languagevoicetutor.com.
             download.TryAdd($"{prefix}Label", card.Label);
             download.TryAdd($"{prefix}Title", card.Title);
             download.TryAdd($"{prefix}Description", card.Description);
-            download.TryAdd($"{prefix}ImagePath", card.ImagePath);
+            if (!download.TryGetValue($"{prefix}ImagePath", out var imagePath) || string.IsNullOrWhiteSpace(imagePath))
+            {
+                download[$"{prefix}ImagePath"] = card.ImagePath;
+            }
         }
     }
 
@@ -371,11 +374,9 @@ Need help? Email support@languagevoicetutor.com.
             var label = ValueOrDefault(download, $"{prefix}Label", card.Label);
             var title = ValueOrDefault(download, $"{prefix}Title", card.Title);
             var description = ValueOrDefault(download, $"{prefix}Description", card.Description);
-            var imagePath = NormalizeDownloadImagePath(ValueOrDefault(download, $"{prefix}ImagePath", card.ImagePath));
-            var style = string.IsNullOrWhiteSpace(imagePath) ? string.Empty : $" style=\"--download-card-image: url('{E(imagePath)}');\"";
-            var lightboxAttributes = string.IsNullOrWhiteSpace(imagePath)
-                ? string.Empty
-                : $" role=\"button\" tabindex=\"0\" data-download-lightbox-src=\"{E(imagePath)}\" data-download-lightbox-alt=\"{E(title)} screenshot\"";
+            var imagePath = NormalizeDownloadImagePath(ValueOrDefault(download, $"{prefix}ImagePath", card.ImagePath), card.ImagePath);
+            var style = $" style=\"--download-card-image: url('{E(imagePath)}');\"";
+            var lightboxAttributes = $" role=\"button\" tabindex=\"0\" data-download-lightbox-src=\"{E(imagePath)}\" data-download-lightbox-alt=\"{E(title)} screenshot\"";
             builder.AppendLine("                    <article class=\"download-feature-card\">");
             builder.AppendLine($"                        <div class=\"download-feature-card__visual\" aria-label=\"Open {E(title)} screenshot larger\"{style}{lightboxAttributes}><span>{E(label)}</span></div>");
             builder.AppendLine($"                        <h2>{E(title)}</h2>");
@@ -389,11 +390,19 @@ Need help? Email support@languagevoicetutor.com.
     private static string ValueOrDefault(Dictionary<string, string> values, string key, string fallback) =>
         values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : fallback;
 
-    private static string NormalizeDownloadImagePath(string? value)
+    private static string NormalizeDownloadImagePath(string? value, string fallback)
     {
-        var path = NormalizeLogoPath(value ?? string.Empty);
-        return path.StartsWith("/", StringComparison.Ordinal) ? path[1..] : path;
+        var path = NormalizeLogoPath(value, fallback);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            path = fallback;
+        }
+
+        return path.StartsWith("/", StringComparison.Ordinal) ? path : $"/{path}";
     }
+
+    private static bool WebsiteContentDocumentsEqual(WebsiteContentDocument left, WebsiteContentDocument right) =>
+        JsonSerializer.Serialize(left, JsonOptions) == JsonSerializer.Serialize(right, JsonOptions);
 
     private static string RenderSimple(WebsiteContentSet c, string page, string titleId, (string title, string key)[] sections, string? button, bool includePublicBaseHref)
     {
