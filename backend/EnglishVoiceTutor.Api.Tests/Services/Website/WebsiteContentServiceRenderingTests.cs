@@ -274,12 +274,100 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Equal("/assets/images/download/custom-topics.webp", reloaded.Draft.Pages["download"]["featureCard2ImagePath"]);
         Assert.Contains("Pick your scenario", preview.Html);
         Assert.Contains("Custom topics description from CMS.", preview.Html);
-        Assert.Contains("assets/images/download/custom-topics.webp", preview.Html);
-        Assert.Contains("data-download-lightbox-src=\"assets/images/download/custom-topics.webp\"", preview.Html);
+        Assert.Contains("/assets/images/download/custom-topics.webp", preview.Html);
+        Assert.Contains("data-download-lightbox-src=\"/assets/images/download/custom-topics.webp\"", preview.Html);
         Assert.DoesNotContain("tester download", preview.Html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Available for testers", preview.Html);
         Assert.DoesNotContain("Technical release details", preview.Html);
         Assert.DoesNotContain("<section class=\"support-card\" aria-label=\"Support\">", preview.Html);
+    }
+
+
+    [Fact]
+    public async Task SaveDraftAndPublishPreserveDownloadFeatureCardsWhenPayloadIsPartial()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var seeded = await service.GetAsync(TestContext.Current.CancellationToken);
+        var partialPages = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["download"] = new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["pageTitle"] = "Partial CMS download save",
+                ["bodyMarkdown"] = "Partial body from a generic editor payload.",
+                ["seoTitle"] = "Partial SEO title",
+                ["seoDescription"] = "Partial SEO description"
+            }
+        };
+        var partialDraft = new WebsiteContentSet(partialPages, seeded.Draft.Design, seeded.Draft.Marketing);
+
+        var saved = await service.SaveDraftAsync(partialDraft, TestContext.Current.CancellationToken);
+        var published = await service.PublishAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("Partial CMS download save", saved.Draft.Pages["download"]["pageTitle"]);
+        AssertDownloadFeatureCardImagePaths(saved.Draft.Pages["download"]);
+        AssertDownloadFeatureCardImagePaths(published.Active.Pages["download"]);
+    }
+
+    [Fact]
+    public async Task BlankAndMissingDownloadFeatureCardImagePathsNormalizeToDefaultsAndRender()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var seeded = await service.GetAsync(TestContext.Current.CancellationToken);
+        seeded.Draft.Pages["download"]["featureCard1ImagePath"] = "";
+        seeded.Draft.Pages["download"]["featureCard2ImagePath"] = "   ";
+        seeded.Draft.Pages["download"].Remove("featureCard3ImagePath");
+        seeded.Draft.Pages["download"]["featureCard4ImagePath"] = null!;
+        await fixture.WriteDocumentAsync(new WebsiteContentDocument(seeded.Active, seeded.Draft));
+
+        var loaded = await fixture.CreateService().GetAsync(TestContext.Current.CancellationToken);
+        var published = await fixture.CreateService().PublishAsync(TestContext.Current.CancellationToken);
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"), TestContext.Current.CancellationToken);
+        var persistedJson = await File.ReadAllTextAsync(fixture.StorageJsonPath, TestContext.Current.CancellationToken);
+
+        AssertDownloadFeatureCardImagePaths(loaded.Draft.Pages["download"]);
+        AssertDownloadFeatureCardImagePaths(published.Active.Pages["download"]);
+        AssertDownloadHtmlContainsDefaultFeatureCards(html);
+        Assert.DoesNotContain("\"featureCard1ImagePath\": \"\"", persistedJson);
+        Assert.DoesNotContain("\"featureCard2ImagePath\": \"   \"", persistedJson);
+        Assert.DoesNotContain("\"featureCard4ImagePath\": null", persistedJson);
+        Assert.DoesNotContain("empty url()", html);
+        Assert.DoesNotContain("data-download-lightbox-src=\"\"", html);
+        Assert.DoesNotContain("background-image: url(\"\")", html);
+    }
+
+    [Fact]
+    public async Task PublishRegressionKeepsDownloadImagePathsAndReleaseSentinel()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var paths = DefaultDownloadImagePaths.Select(path => Path.Combine(fixture.PublicSiteRoot, path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar))).ToArray();
+        foreach (var path in paths)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            await File.WriteAllTextAsync(path, "screenshot", TestContext.Current.CancellationToken);
+        }
+        var releaseManifest = Path.Combine(fixture.PublicSiteRoot, "releases", "windows", "direct", "latest.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(releaseManifest)!);
+        const string latestJsonSentinel = "{\"version\":\"sentinel\"}";
+        await File.WriteAllTextAsync(releaseManifest, latestJsonSentinel, TestContext.Current.CancellationToken);
+
+        await fixture.CreateService().PublishAsync(TestContext.Current.CancellationToken);
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"), TestContext.Current.CancellationToken);
+
+        AssertDownloadHtmlContainsDefaultFeatureCards(html);
+        foreach (var path in paths)
+        {
+            Assert.True(File.Exists(path));
+        }
+        Assert.Equal(latestJsonSentinel, await File.ReadAllTextAsync(releaseManifest, TestContext.Current.CancellationToken));
+        Assert.DoesNotContain("tester download", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Available for testers", html);
+        Assert.DoesNotContain("Technical release details", html);
+        Assert.DoesNotContain("href=\"LanguageVoiceTutorSetup-1.0.exe\"", html);
+        Assert.DoesNotContain("empty url()", html);
+        Assert.DoesNotContain("data-download-lightbox-src=\"\"", html);
+        Assert.DoesNotContain("background-image: url(\"\")", html);
     }
 
     [Fact]
@@ -298,6 +386,9 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Contains("/assets/images/download/guided-lesson.webp", adminJs);
         Assert.Contains("/assets/images/download/conversation.webp", adminJs);
         Assert.Contains("public website assets, not release artifacts", adminJs);
+        Assert.Contains("preserveDownloadFeatureCardFields", adminJs);
+        Assert.Contains("defaultDownloadFeatureCardValues", adminJs);
+        Assert.Contains("JSON.stringify(websiteContentDraft)", adminJs);
     }
 
     [Fact]
@@ -407,6 +498,32 @@ Need help? Email support@languagevoicetutor.com.
         Assert.DoesNotContain("href=\"javascript:", preview.Html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("<script>alert(1)</script>", preview.Html, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("&lt;script&gt;alert(1)&lt;/script&gt;", preview.Html);
+    }
+
+
+    private static readonly string[] DefaultDownloadImagePaths =
+    [
+        "/assets/images/download/quick-start.webp",
+        "/assets/images/download/topics.webp",
+        "/assets/images/download/guided-lesson.webp",
+        "/assets/images/download/conversation.webp"
+    ];
+
+    private static void AssertDownloadFeatureCardImagePaths(Dictionary<string, string> download)
+    {
+        for (var i = 0; i < DefaultDownloadImagePaths.Length; i++)
+        {
+            Assert.Equal(DefaultDownloadImagePaths[i], download[$"featureCard{i + 1}ImagePath"]);
+        }
+    }
+
+    private static void AssertDownloadHtmlContainsDefaultFeatureCards(string html)
+    {
+        foreach (var path in DefaultDownloadImagePaths)
+        {
+            Assert.Contains(path, html);
+            Assert.Contains($"data-download-lightbox-src=\"{path}\"", html);
+        }
     }
 
     private static string FindRepositoryRoot()
