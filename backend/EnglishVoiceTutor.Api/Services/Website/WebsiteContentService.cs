@@ -28,6 +28,14 @@ Windows may show a SmartScreen warning because code signing is deferred.
 
 Need help? Email support@languagevoicetutor.com.
 """;
+
+    private static readonly (string Label, string Title, string Description, string ImagePath)[] DefaultDownloadFeatureCards =
+    [
+        ("Quick Start", "Start quickly", "Open the app and jump into practical language practice in a few clicks.", "/assets/images/download/quick-start.webp"),
+        ("Topics", "Choose practical topics", "Pick real-life situations like travel, work, daily life, and more.", "/assets/images/download/topics.webp"),
+        ("Guided Lesson", "Learn step by step", "Practice inside a guided lesson with clear prompts, hints, and feedback.", "/assets/images/download/guided-lesson.webp"),
+        ("Conversation", "Practice real conversation", "Switch to conversation mode and train natural speaking in a realistic dialogue.", "/assets/images/download/conversation.webp")
+    ];
     private static readonly IReadOnlyDictionary<string, string> DefaultLanguageFlagPaths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         ["English"] = "assets/flags/gb.webp",
@@ -164,6 +172,7 @@ Need help? Email support@languagevoicetutor.com.
         pages["home"]["mobileCardDescription"] = "Android and iOS apps are planned but are not currently available.";
         pages["home"]["mobileComingSoonButtonText"] = "Not currently available";
         UpgradeLegacyDownloadContent(pages);
+        EnsureDownloadFeatureCards(pages);
         var design = NormalizeDesign(input?.Design, defaults.Design);
         var marketing = NormalizeMarketing(input?.Marketing, defaults.Marketing);
         return new WebsiteContentSet(pages, design, marketing);
@@ -181,6 +190,24 @@ Need help? Email support@languagevoicetutor.com.
         download["seoDescription"] = ReleaseReadyDownloadSeoDescription;
         download["introText"] = ReleaseReadyDownloadSeoDescription;
         download["bodyMarkdown"] = ReleaseReadyDownloadBodyMarkdown;
+    }
+
+    private static void EnsureDownloadFeatureCards(Dictionary<string, Dictionary<string, string>> pages)
+    {
+        if (!pages.TryGetValue("download", out var download))
+        {
+            return;
+        }
+
+        for (var i = 0; i < DefaultDownloadFeatureCards.Length; i++)
+        {
+            var card = DefaultDownloadFeatureCards[i];
+            var prefix = $"featureCard{i + 1}";
+            download.TryAdd($"{prefix}Label", card.Label);
+            download.TryAdd($"{prefix}Title", card.Title);
+            download.TryAdd($"{prefix}Description", card.Description);
+            download.TryAdd($"{prefix}ImagePath", card.ImagePath);
+        }
     }
 
     private static bool IsLegacyDownloadContent(Dictionary<string, string> download) =>
@@ -308,6 +335,7 @@ Need help? Email support@languagevoicetutor.com.
             ariaDisabled = "false";
         }
 
+        var featureCards = RenderDownloadFeatureCards(c.Pages["download"]);
         var body = $$"""
     <main>
         <section class="download-hero" aria-labelledby="product-title">
@@ -324,34 +352,45 @@ Need help? Email support@languagevoicetutor.com.
                     <p class="download-cta-support">Need help? Email <a href="mailto:support@languagevoicetutor.com">support@languagevoicetutor.com</a>.</p>
                 </section>
 
-                <section class="download-feature-grid" aria-label="Language Voice Tutor features">
-                    <article class="download-feature-card">
-                        <div class="download-feature-card__visual" aria-hidden="true" style="--download-card-image: url('assets/images/download/quick-start.webp');"><span>Quick start</span></div>
-                        <h2>Start quickly</h2>
-                        <p>Open the app and jump into practical language practice in a few clicks.</p>
-                    </article>
-                    <article class="download-feature-card">
-                        <div class="download-feature-card__visual" aria-hidden="true" style="--download-card-image: url('assets/images/download/topics.webp');"><span>Topics</span></div>
-                        <h2>Choose practical topics</h2>
-                        <p>Pick real-life situations like travel, work, daily life, and more.</p>
-                    </article>
-                    <article class="download-feature-card">
-                        <div class="download-feature-card__visual" aria-hidden="true" style="--download-card-image: url('assets/images/download/guided-lesson.webp');"><span>Guided lesson</span></div>
-                        <h2>Learn step by step</h2>
-                        <p>Practice inside a guided lesson with clear prompts, hints, and feedback.</p>
-                    </article>
-                    <article class="download-feature-card">
-                        <div class="download-feature-card__visual" aria-hidden="true" style="--download-card-image: url('assets/images/download/conversation.webp');"><span>Conversation</span></div>
-                        <h2>Practice real conversation</h2>
-                        <p>Switch to conversation mode and train natural speaking in a realistic dialogue.</p>
-                    </article>
-                </section>
+{{featureCards}}
             </div>
         </section>
 
     </main>
 """;
         return Shell(c, "Language Voice Tutor for Windows Download", "Download Language Voice Tutor for Windows and practice real conversations by text or voice with an AI tutor.", body, false, includePublicBaseHref, "    <script src=\"download.js?v=manifest-download\" defer></script>", pageFileName: "download.html", jsonLd: RenderSoftwareApplicationJsonLd(release));
+    }
+
+    private static string RenderDownloadFeatureCards(Dictionary<string, string> download)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("                <section class=\"download-feature-grid\" aria-label=\"Language Voice Tutor features\">");
+        for (var i = 0; i < DefaultDownloadFeatureCards.Length; i++)
+        {
+            var card = DefaultDownloadFeatureCards[i];
+            var prefix = $"featureCard{i + 1}";
+            var label = ValueOrDefault(download, $"{prefix}Label", card.Label);
+            var title = ValueOrDefault(download, $"{prefix}Title", card.Title);
+            var description = ValueOrDefault(download, $"{prefix}Description", card.Description);
+            var imagePath = NormalizeDownloadImagePath(ValueOrDefault(download, $"{prefix}ImagePath", card.ImagePath));
+            var style = string.IsNullOrWhiteSpace(imagePath) ? string.Empty : $" style=\"--download-card-image: url('{E(imagePath)}');\"";
+            builder.AppendLine("                    <article class=\"download-feature-card\">");
+            builder.AppendLine($"                        <div class=\"download-feature-card__visual\" aria-hidden=\"true\"{style}><span>{E(label)}</span></div>");
+            builder.AppendLine($"                        <h2>{E(title)}</h2>");
+            builder.AppendLine($"                        <p>{E(description)}</p>");
+            builder.AppendLine("                    </article>");
+        }
+        builder.Append("                </section>");
+        return builder.ToString();
+    }
+
+    private static string ValueOrDefault(Dictionary<string, string> values, string key, string fallback) =>
+        values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : fallback;
+
+    private static string NormalizeDownloadImagePath(string? value)
+    {
+        var path = NormalizeLogoPath(value ?? string.Empty);
+        return path.StartsWith("/", StringComparison.Ordinal) ? path[1..] : path;
     }
 
     private static string RenderSimple(WebsiteContentSet c, string page, string titleId, (string title, string key)[] sections, string? button, bool includePublicBaseHref)
@@ -903,7 +942,7 @@ window.addEventListener("DOMContentLoaded", () => {
     private static WebsiteContentSet DefaultSet() => new(new()
     {
         ["home"] = new(){{"logoPath",""},{"logoAltText","Language Voice Tutor logo"},{"fallbackLogoText","Language Voice Tutor"},{"topHeaderText","Practice real conversations in:"},{"supportedLanguageLine",RequiredLanguageLine},{"windowsCardBadge","Available for testers"},{"windowsCardTitle","Application for Windows"},{"windowsCardDescription","Practice real-life language lessons by text or voice on your desktop."},{"windowsDownloadButtonText","Download desktop version"},{"mobileCardBadge","In development"},{"mobileCardTitle","Application for mobile devices"},{"mobileCardDescription","Android and iOS apps are planned but are not currently available."},{"mobileComingSoonButtonText","Not currently available"},{"footerCopyrightText","© Language Voice Tutor. All rights reserved."},{"footerPrivacyLabel","Privacy Policy"},{"footerTermsLabel","Terms of Use"},{"footerRefundsLabel","Refund Policy"},{"footerCancellationLabel","Cancellation"},{"footerSupportLabel","Support"},{"footerPricingLabel","Pricing"},{"seoTitle","Language Voice Tutor"},{"seoDescription","Language Voice Tutor helps you practice real-life language lessons by text or voice on desktop, with mobile apps planned."}},
-        ["download"] = Page(ReleaseReadyDownloadPageTitle, ReleaseReadyDownloadSeoDescription, new(){{"downloadButtonText","Download for Windows"},{"currentVersionLabel","Current version and installer size are loaded from the release manifest."},{"safetySupportNote","Windows may show a SmartScreen warning because code signing is deferred."},{"seoTitle",ReleaseReadyDownloadSeoTitle},{"bodyMarkdown",ReleaseReadyDownloadBodyMarkdown}}),
+        ["download"] = Page(ReleaseReadyDownloadPageTitle, ReleaseReadyDownloadSeoDescription, DownloadDefaults()),
         ["mobile"] = Page("Mobile app coming soon","Android and iOS versions are planned and not currently available.", new(){{"androidComingSoonText","Android app coming soon."},{"iosComingSoonText","iOS app coming soon."},{"emailSupportCtaText","Email support@languagevoicetutor.com for availability questions."}}),
         ["pricing"] = Page("Pricing","Language Voice Tutor is currently offered for Windows desktop tester access.", new(){{"freePlanText","Invited testers may be able to use free Windows desktop access during evaluation."},{"premiumPlanText","Premium subscription details are draft placeholders until paid billing is enabled by the owner."},{"trialText","Trial terms are not final and require owner/legal review."},{"paddleLiveCheckoutDisclaimerText","No live checkout button is provided and production Paddle billing is not enabled from this page."}}),
         ["support"] = Page("Contact support","For Language Voice Tutor help, contact support@languagevoicetutor.com.", new(){{"supportEmailText","support@languagevoicetutor.com"},{"responseTimeText","Response times may vary during tester access."},{"accountDeletionSupportText","Contact support for account or deletion requests."},{"billingSupportText","Billing support applies only if paid billing is enabled."}}),
@@ -925,6 +964,28 @@ You can change or withdraw your choices by using the choices interface when avai
     }, new WebsiteDesignContent("#0d2b4c", "#0d2b4c", "#24201b", "#dce9f7", "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif", 16, 700, 999, "Normal"), DefaultMarketing());
     private static Dictionary<string,string> Page(string title,string intro,Dictionary<string,string> extra){ extra["pageTitle"]=title; extra["introText"]=intro; if (!extra.ContainsKey("seoTitle")) extra["seoTitle"]=$"{title} | Language Voice Tutor"; extra["seoDescription"]=intro; return extra; }
     private static Dictionary<string,string> Legal(string title,string intro,Dictionary<string,string> extra){ var p=Page(title,intro,extra); p["effectiveDate"]="Effective date placeholder"; p["intro"]=intro; return p; }
+    private static Dictionary<string, string> DownloadDefaults()
+    {
+        var values = new Dictionary<string, string>
+        {
+            { "downloadButtonText", "Download for Windows" },
+            { "currentVersionLabel", "Current version and installer size are loaded from the release manifest." },
+            { "safetySupportNote", "Windows may show a SmartScreen warning because code signing is deferred." },
+            { "seoTitle", ReleaseReadyDownloadSeoTitle },
+            { "bodyMarkdown", ReleaseReadyDownloadBodyMarkdown }
+        };
+        for (var i = 0; i < DefaultDownloadFeatureCards.Length; i++)
+        {
+            var card = DefaultDownloadFeatureCards[i];
+            var prefix = $"featureCard{i + 1}";
+            values[$"{prefix}Label"] = card.Label;
+            values[$"{prefix}Title"] = card.Title;
+            values[$"{prefix}Description"] = card.Description;
+            values[$"{prefix}ImagePath"] = card.ImagePath;
+        }
+        return values;
+    }
+
     private static Dictionary<string, string> DefaultMarketing() => new(StringComparer.OrdinalIgnoreCase) { ["enableAnalytics"] = "false", ["googleAnalyticsMeasurementId"] = "", ["enableAdsTracking"] = "false", ["googleAdsId"] = "", ["googleAdsDownloadConversionLabel"] = "", ["googleSearchConsoleVerificationToken"] = "", ["enableConsentBanner"] = "true", ["enableLlmsTxt"] = "true", ["defaultSocialImageUrl"] = "" };
     private static Dictionary<string, string> MergeMarketing(Dictionary<string, string>? existing, Dictionary<string, string>? incoming) { var merged = NormalizeMarketing(existing, DefaultMarketing()); if (incoming is not null) foreach (var kv in incoming) merged[kv.Key] = kv.Value; return NormalizeMarketing(merged, DefaultMarketing()); }
     private static Dictionary<string, string> NormalizeMarketing(Dictionary<string, string>? value, Dictionary<string, string>? fallback) { var result = new Dictionary<string, string>(fallback ?? DefaultMarketing(), StringComparer.OrdinalIgnoreCase); if (value is null) return result; foreach (var (key, raw) in value) result[key] = key switch { "googleAnalyticsMeasurementId" => SafeGaId(raw), "googleAdsId" => SafeAdsId(raw), "googleAdsDownloadConversionLabel" => SafeConversionLabel(raw), "googleSearchConsoleVerificationToken" => SafeSearchConsoleToken(raw), "enableAnalytics" or "enableAdsTracking" or "enableConsentBanner" or "enableLlmsTxt" => IsTruthy(raw) ? "true" : "false", "defaultSocialImageUrl" => NormalizeLogoPath(raw), _ => LimitText(raw, 120, string.Empty) }; return result; }

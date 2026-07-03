@@ -167,6 +167,93 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Equal(LegacyDownloadBodyMarkdown, loaded.Draft.Pages["support"]["bodyMarkdown"]);
     }
 
+
+    [Fact]
+    public async Task OlderDownloadContentWithoutFeatureCardsGetsDefaultCards()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var seeded = await service.GetAsync(TestContext.Current.CancellationToken);
+        foreach (var key in seeded.Draft.Pages["download"].Keys.Where(key => key.StartsWith("featureCard", StringComparison.Ordinal)).ToList())
+        {
+            seeded.Draft.Pages["download"].Remove(key);
+        }
+        await fixture.WriteDocumentAsync(new WebsiteContentDocument(seeded.Active, seeded.Draft));
+
+        var loaded = await fixture.CreateService().GetAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("Quick Start", loaded.Draft.Pages["download"]["featureCard1Label"]);
+        Assert.Equal("Start quickly", loaded.Draft.Pages["download"]["featureCard1Title"]);
+        Assert.Equal("Open the app and jump into practical language practice in a few clicks.", loaded.Draft.Pages["download"]["featureCard1Description"]);
+        Assert.Equal("/assets/images/download/quick-start.webp", loaded.Draft.Pages["download"]["featureCard1ImagePath"]);
+        Assert.Equal("/assets/images/download/topics.webp", loaded.Draft.Pages["download"]["featureCard2ImagePath"]);
+        Assert.Equal("/assets/images/download/guided-lesson.webp", loaded.Draft.Pages["download"]["featureCard3ImagePath"]);
+        Assert.Equal("/assets/images/download/conversation.webp", loaded.Draft.Pages["download"]["featureCard4ImagePath"]);
+        Assert.Equal("Language Voice Tutor", loaded.Draft.Pages["home"]["seoTitle"]);
+    }
+
+    [Fact]
+    public async Task GetAsyncResponseIncludesDownloadFeatureCardsAndImagePaths()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+
+        var response = await service.GetAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("Quick Start", response.Draft.Pages["download"]["featureCard1Label"]);
+        Assert.Equal("Topics", response.Draft.Pages["download"]["featureCard2Label"]);
+        Assert.Equal("Guided Lesson", response.Draft.Pages["download"]["featureCard3Label"]);
+        Assert.Equal("Conversation", response.Draft.Pages["download"]["featureCard4Label"]);
+        Assert.Equal("/assets/images/download/quick-start.webp", response.Draft.Pages["download"]["featureCard1ImagePath"]);
+        Assert.Equal("/assets/images/download/topics.webp", response.Draft.Pages["download"]["featureCard2ImagePath"]);
+        Assert.Equal("/assets/images/download/guided-lesson.webp", response.Draft.Pages["download"]["featureCard3ImagePath"]);
+        Assert.Equal("/assets/images/download/conversation.webp", response.Draft.Pages["download"]["featureCard4ImagePath"]);
+    }
+
+    [Fact]
+    public async Task SavingEditedDownloadFeatureCardPersistsAndRenders()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        content.Pages["download"]["featureCard2Title"] = "Pick your scenario";
+        content.Pages["download"]["featureCard2Description"] = "Custom topics description from CMS.";
+        content.Pages["download"]["featureCard2ImagePath"] = "/assets/images/download/custom-topics.webp";
+
+        await service.SaveDraftAsync(content, TestContext.Current.CancellationToken);
+        var reloaded = await fixture.CreateService().GetAsync(TestContext.Current.CancellationToken);
+        var preview = await fixture.CreateService().PreviewAsync(new WebsitePreviewRequest(reloaded.Draft, "download"), TestContext.Current.CancellationToken);
+
+        Assert.Equal("Pick your scenario", reloaded.Draft.Pages["download"]["featureCard2Title"]);
+        Assert.Equal("Custom topics description from CMS.", reloaded.Draft.Pages["download"]["featureCard2Description"]);
+        Assert.Equal("/assets/images/download/custom-topics.webp", reloaded.Draft.Pages["download"]["featureCard2ImagePath"]);
+        Assert.Contains("Pick your scenario", preview.Html);
+        Assert.Contains("Custom topics description from CMS.", preview.Html);
+        Assert.Contains("assets/images/download/custom-topics.webp", preview.Html);
+        Assert.DoesNotContain("tester download", preview.Html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Available for testers", preview.Html);
+        Assert.DoesNotContain("Technical release details", preview.Html);
+        Assert.DoesNotContain("<section class=\"support-card\" aria-label=\"Support\">", preview.Html);
+    }
+
+    [Fact]
+    public void AdminWebsiteEditorDefinesStructuredDownloadFeatureCardFieldsAndHelp()
+    {
+        var adminJs = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "backend", "EnglishVoiceTutor.Api", "wwwroot", "admin", "admin.js"));
+
+        Assert.Contains("Download feature cards", adminJs);
+        Assert.Contains("featureCard1Label", adminJs);
+        Assert.Contains("featureCard2Title", adminJs);
+        Assert.Contains("featureCard3Description", adminJs);
+        Assert.Contains("featureCard4ImagePath", adminJs);
+        Assert.Contains("Upload screenshots as WebP files to: /assets/images/download/", adminJs);
+        Assert.Contains("/assets/images/download/quick-start.webp", adminJs);
+        Assert.Contains("/assets/images/download/topics.webp", adminJs);
+        Assert.Contains("/assets/images/download/guided-lesson.webp", adminJs);
+        Assert.Contains("/assets/images/download/conversation.webp", adminJs);
+        Assert.Contains("public website assets, not release artifacts", adminJs);
+    }
+
     [Fact]
     public async Task PreviewHtmlIncludesPublicBaseHrefSoAboutBlankCanResolveRelativeAssets()
     {
@@ -274,6 +361,23 @@ Need help? Email support@languagevoicetutor.com.
         Assert.DoesNotContain("href=\"javascript:", preview.Html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("<script>alert(1)</script>", preview.Html, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("&lt;script&gt;alert(1)&lt;/script&gt;", preview.Html);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var adminJsPath = Path.Combine(directory.FullName, "backend", "EnglishVoiceTutor.Api", "wwwroot", "admin", "admin.js");
+            if (File.Exists(adminJsPath))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new InvalidOperationException("Could not find repository root containing backend/EnglishVoiceTutor.Api/wwwroot/admin/admin.js.");
     }
 
     private static int CountOccurrences(string value, string token)
