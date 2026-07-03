@@ -167,7 +167,7 @@ Current production facts after backend `0.1.35-backend.83` and before any real l
 - Static website nginx root is `/var/www/languagevoicetutor/site`. The parent `/var/www/languagevoicetutor` is not the nginx static-site root and must not be used as the static website upload target.
 - Public Paddle config is `/var/www/languagevoicetutor/site/paddle.public.json`; public Paddle checkout page is `/var/www/languagevoicetutor/site/pay.html`.
 - Direct Windows release files are separate at `/var/www/languagevoicetutor/releases/windows/direct` and are not touched by static website upload.
-- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct public release is `1.0`; direct `latest.json` remains active with manual-confirmation update mode.
+- Active Windows delivery remains Direct EXE/Inno. Store/MSIX is discontinued and must not be reintroduced. Current direct public release is `1.1`; direct `latest.json` remains active with manual-confirmation update mode.
 - Paddle website review is approved, `/pay.html` and `/paddle.public.json` are deployed/reachable, backend live Paddle env is configured, and a real transaction URL opened Paddle checkout with `Language Voice Tutor Pro`, `Pro Monthly`, `14.99 EUR`.
 - Controlled live payment, webhook delivery, Premium entitlement activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed. Paid-launch readiness remains incomplete until final release-readiness review and remaining non-billing blockers are closed; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 
@@ -184,3 +184,9 @@ sudo awk -F= '/^(Billing__|PaddleBilling__|PaddleWebhook__)/ { v=$2; if ($1 ~ /(
 ```
 
 Admin capabilities should now distinguish configuration from launch completion: configured live checkout/webhooks can be reported as available/configured, while `billingLivePaymentTestComplete=false` and `billingPaidLaunchReleaseComplete=false` continue to block paid launch until the controlled live payment path is documented.
+
+## 2026-07-03 pay.html consent/analytics coverage note
+
+`pay.html` now has the shared consent banner, `window.lvtMarketing`, and `marketing-consent.js` coverage. The Paddle checkout logic was reviewed and intentionally left unchanged: script loading, `_ptxn` transaction handling, `/paddle.public.json` loading, `Paddle.Initialize`, and `Paddle.Checkout.open` remain in place. Analytics stays CMS/config controlled; production analytics or Ads IDs and all provider/API/JWT/database/webhook secrets must not be hardcoded into static HTML or committed files.
+
+This was a static website upload only. It must skip `site/public/releases/**`, must not touch `latest.json` or Windows installers, and is separate from backend deploy and Windows direct release upload. No production backend change was part of the Windows `1.1` desktop release or this static site upload.
