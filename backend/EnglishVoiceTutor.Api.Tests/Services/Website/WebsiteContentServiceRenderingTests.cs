@@ -4,11 +4,32 @@ using EnglishVoiceTutor.Api.Services.Website;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using System.Text.Json;
 
 namespace EnglishVoiceTutor.Api.Tests.Services.Website;
 
 public sealed class WebsiteContentServiceRenderingTests
 {
+    private const string LegacyDownloadBodyMarkdown = """
+A Windows desktop app for practicing spoken languages with an AI tutor.
+
+Current version details are loaded from the release manifest.
+
+Windows may show a SmartScreen warning because code signing is deferred.
+""";
+
+    private const string ReleaseReadyDownloadBodyMarkdown = """
+Download Language Voice Tutor for Windows. Practice real conversations by text or voice with an AI tutor, choose practical topics, start guided lessons, and improve step by step.
+
+Current version and installer size are loaded from the release manifest.
+
+Windows may show a SmartScreen warning because code signing is deferred.
+
+Need help? Email support@languagevoicetutor.com.
+""";
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
+
     [Fact]
     public async Task PublishedHomeHtmlContainsDefaultLogoAndFlagImageAssets()
     {
@@ -83,6 +104,8 @@ public sealed class WebsiteContentServiceRenderingTests
         Assert.Contains("href=\"mailto:support@languagevoicetutor.com\"", html);
         Assert.DoesNotContain("class=\"download-content-shell\"", html);
         Assert.DoesNotContain("<section class=\"support-card\" aria-label=\"Support\">", html);
+        Assert.DoesNotContain("tester download", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Available for testers", html);
 
         var supportIndex = html.IndexOf("class=\"download-cta-support\"", StringComparison.Ordinal);
         var firstSectionCloseAfterSupport = html.IndexOf("</section>", supportIndex, StringComparison.Ordinal);
@@ -90,6 +113,58 @@ public sealed class WebsiteContentServiceRenderingTests
         var footerIndex = html.IndexOf("<footer class=\"site-footer\">", StringComparison.Ordinal);
         Assert.InRange(supportIndex, 0, firstSectionCloseAfterSupport);
         Assert.InRange(secondSectionCloseAfterSupport, 0, footerIndex);
+    }
+
+    [Fact]
+    public async Task GetAsyncUpgradesLegacyDownloadContentInActiveAndDraft()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var seeded = await service.GetAsync(TestContext.Current.CancellationToken);
+        seeded.Active.Pages["download"]["pageTitle"] = "Language Voice Tutor tester download";
+        seeded.Active.Pages["download"]["seoTitle"] = "Language Voice Tutor tester download";
+        seeded.Active.Pages["download"]["bodyMarkdown"] = LegacyDownloadBodyMarkdown;
+        seeded.Draft.Pages["download"]["pageTitle"] = "LANGUAGE VOICE TUTOR TESTER DOWNLOAD";
+        seeded.Draft.Pages["download"]["seoTitle"] = "Tester Download";
+        seeded.Draft.Pages["download"]["bodyMarkdown"] = LegacyDownloadBodyMarkdown;
+        await fixture.WriteDocumentAsync(new WebsiteContentDocument(seeded.Active, seeded.Draft));
+
+        var upgraded = await fixture.CreateService().GetAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("Language Voice Tutor for Windows", upgraded.Active.Pages["download"]["pageTitle"]);
+        Assert.Equal("Language Voice Tutor for Windows Download", upgraded.Active.Pages["download"]["seoTitle"]);
+        Assert.Equal(ReleaseReadyDownloadBodyMarkdown, upgraded.Active.Pages["download"]["bodyMarkdown"]);
+        Assert.Equal("Language Voice Tutor for Windows", upgraded.Draft.Pages["download"]["pageTitle"]);
+        Assert.Equal("Language Voice Tutor for Windows Download", upgraded.Draft.Pages["download"]["seoTitle"]);
+        Assert.Equal(ReleaseReadyDownloadBodyMarkdown, upgraded.Draft.Pages["download"]["bodyMarkdown"]);
+        Assert.DoesNotContain("tester-era", upgraded.Draft.Pages["download"]["bodyMarkdown"], StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Current version details are loaded from the release manifest.", upgraded.Draft.Pages["download"]["bodyMarkdown"]);
+
+        var persistedJson = await File.ReadAllTextAsync(fixture.StorageJsonPath, TestContext.Current.CancellationToken);
+        Assert.DoesNotContain("tester download", persistedJson, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Current version details are loaded from the release manifest.", persistedJson);
+    }
+
+    [Fact]
+    public async Task GetAsyncDoesNotOverwriteNonLegacyCustomContentOrOtherPages()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var seeded = await service.GetAsync(TestContext.Current.CancellationToken);
+        seeded.Draft.Pages["download"]["pageTitle"] = "Custom Windows download";
+        seeded.Draft.Pages["download"]["seoTitle"] = "Custom SEO download";
+        seeded.Draft.Pages["download"]["bodyMarkdown"] = "Custom release notes for the editor.";
+        seeded.Draft.Pages["support"]["pageTitle"] = "Custom support page";
+        seeded.Draft.Pages["support"]["bodyMarkdown"] = LegacyDownloadBodyMarkdown;
+        await fixture.WriteDocumentAsync(new WebsiteContentDocument(seeded.Active, seeded.Draft));
+
+        var loaded = await fixture.CreateService().GetAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("Custom Windows download", loaded.Draft.Pages["download"]["pageTitle"]);
+        Assert.Equal("Custom SEO download", loaded.Draft.Pages["download"]["seoTitle"]);
+        Assert.Equal("Custom release notes for the editor.", loaded.Draft.Pages["download"]["bodyMarkdown"]);
+        Assert.Equal("Custom support page", loaded.Draft.Pages["support"]["pageTitle"]);
+        Assert.Equal(LegacyDownloadBodyMarkdown, loaded.Draft.Pages["support"]["bodyMarkdown"]);
     }
 
     [Fact]
@@ -227,7 +302,7 @@ public sealed class WebsiteContentServiceRenderingTests
 
         public string ContentRoot { get; }
         public string PublicSiteRoot { get; }
-        private string StorageJsonPath { get; }
+        public string StorageJsonPath { get; }
 
         public WebsiteContentService CreateService()
         {
@@ -237,6 +312,13 @@ public sealed class WebsiteContentServiceRenderingTests
                 PublicSiteRoot = PublicSiteRoot
             });
             return new WebsiteContentService(options, new TestWebHostEnvironment(ContentRoot));
+        }
+
+        public async Task WriteDocumentAsync(WebsiteContentDocument document)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(StorageJsonPath)!);
+            await using var stream = File.Create(StorageJsonPath);
+            await JsonSerializer.SerializeAsync(stream, document, JsonOptions, TestContext.Current.CancellationToken);
         }
 
         public void Dispose()

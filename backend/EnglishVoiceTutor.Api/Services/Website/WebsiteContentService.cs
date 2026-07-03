@@ -16,6 +16,18 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     private const string PreviewPublicBaseHref = "https://languagevoicetutor.com/";
     private const string PublicSiteBaseUrl = "https://languagevoicetutor.com";
     private const string RequiredLanguageLine = "🇬🇧 English · 🇫🇷 French · 🇩🇪 German · 🇪🇸 Spanish · 🇮🇹 Italian · 🇵🇹 Portuguese";
+    private const string ReleaseReadyDownloadPageTitle = "Language Voice Tutor for Windows";
+    private const string ReleaseReadyDownloadSeoTitle = "Language Voice Tutor for Windows Download";
+    private const string ReleaseReadyDownloadSeoDescription = "Download Language Voice Tutor for Windows and practice real conversations by text or voice with an AI tutor.";
+    private const string ReleaseReadyDownloadBodyMarkdown = """
+Download Language Voice Tutor for Windows. Practice real conversations by text or voice with an AI tutor, choose practical topics, start guided lessons, and improve step by step.
+
+Current version and installer size are loaded from the release manifest.
+
+Windows may show a SmartScreen warning because code signing is deferred.
+
+Need help? Email support@languagevoicetutor.com.
+""";
     private static readonly IReadOnlyDictionary<string, string> DefaultLanguageFlagPaths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         ["English"] = "assets/flags/gb.webp",
@@ -69,10 +81,21 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
             await WriteDocumentAsync(doc, cancellationToken);
             return doc;
         }
-        await using var stream = File.OpenRead(path);
-        var document = await JsonSerializer.DeserializeAsync<WebsiteContentDocument>(stream, JsonOptions, cancellationToken);
+        WebsiteContentDocument? document;
+        await using (var stream = File.OpenRead(path))
+        {
+            document = await JsonSerializer.DeserializeAsync<WebsiteContentDocument>(stream, JsonOptions, cancellationToken);
+        }
+
         if (document is null) { var d = DefaultSet(); return new WebsiteContentDocument(d, d); }
-        return new WebsiteContentDocument(Normalize(document.Active), Normalize(document.Draft));
+        var hasLegacyDownloadContent = IsLegacyDownloadContent(document.Active) || IsLegacyDownloadContent(document.Draft);
+        var normalized = new WebsiteContentDocument(Normalize(document.Active), Normalize(document.Draft));
+        if (hasLegacyDownloadContent)
+        {
+            await WriteDocumentAsync(normalized, cancellationToken);
+        }
+
+        return normalized;
     }
 
 
@@ -140,10 +163,45 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
         pages["home"]["supportedLanguageLine"] = RequiredLanguageLine;
         pages["home"]["mobileCardDescription"] = "Android and iOS apps are planned but are not currently available.";
         pages["home"]["mobileComingSoonButtonText"] = "Not currently available";
+        UpgradeLegacyDownloadContent(pages);
         var design = NormalizeDesign(input?.Design, defaults.Design);
         var marketing = NormalizeMarketing(input?.Marketing, defaults.Marketing);
         return new WebsiteContentSet(pages, design, marketing);
     }
+
+    private static void UpgradeLegacyDownloadContent(Dictionary<string, Dictionary<string, string>> pages)
+    {
+        if (!pages.TryGetValue("download", out var download) || !IsLegacyDownloadContent(download))
+        {
+            return;
+        }
+
+        download["pageTitle"] = ReleaseReadyDownloadPageTitle;
+        download["seoTitle"] = ReleaseReadyDownloadSeoTitle;
+        download["seoDescription"] = ReleaseReadyDownloadSeoDescription;
+        download["introText"] = ReleaseReadyDownloadSeoDescription;
+        download["bodyMarkdown"] = ReleaseReadyDownloadBodyMarkdown;
+    }
+
+    private static bool IsLegacyDownloadContent(Dictionary<string, string> download) =>
+        ContainsTesterDownload(download.GetValueOrDefault("pageTitle"))
+        || ContainsTesterDownload(download.GetValueOrDefault("seoTitle"))
+        || ContainsLegacyTesterBody(download.GetValueOrDefault("bodyMarkdown"));
+
+    private static bool IsLegacyDownloadContent(WebsiteContentSet? content) =>
+        content?.Pages is not null
+        && content.Pages.TryGetValue("download", out var download)
+        && download is not null
+        && IsLegacyDownloadContent(download);
+
+    private static bool ContainsTesterDownload(string? value) =>
+        value?.IndexOf("tester download", StringComparison.OrdinalIgnoreCase) >= 0;
+
+    private static bool ContainsLegacyTesterBody(string? value) =>
+        !string.IsNullOrWhiteSpace(value)
+        && value.Contains("A Windows desktop app for practicing spoken languages with an AI tutor.", StringComparison.OrdinalIgnoreCase)
+        && value.Contains("Current version details are loaded from the release manifest.", StringComparison.OrdinalIgnoreCase)
+        && value.Contains("Windows may show a SmartScreen warning because code signing is deferred.", StringComparison.OrdinalIgnoreCase);
 
     private async Task<IReadOnlyList<string>> RenderAllAsync(WebsiteContentSet c, string root, CancellationToken ct)
     {
@@ -845,7 +903,7 @@ window.addEventListener("DOMContentLoaded", () => {
     private static WebsiteContentSet DefaultSet() => new(new()
     {
         ["home"] = new(){{"logoPath",""},{"logoAltText","Language Voice Tutor logo"},{"fallbackLogoText","Language Voice Tutor"},{"topHeaderText","Practice real conversations in:"},{"supportedLanguageLine",RequiredLanguageLine},{"windowsCardBadge","Available for testers"},{"windowsCardTitle","Application for Windows"},{"windowsCardDescription","Practice real-life language lessons by text or voice on your desktop."},{"windowsDownloadButtonText","Download desktop version"},{"mobileCardBadge","In development"},{"mobileCardTitle","Application for mobile devices"},{"mobileCardDescription","Android and iOS apps are planned but are not currently available."},{"mobileComingSoonButtonText","Not currently available"},{"footerCopyrightText","© Language Voice Tutor. All rights reserved."},{"footerPrivacyLabel","Privacy Policy"},{"footerTermsLabel","Terms of Use"},{"footerRefundsLabel","Refund Policy"},{"footerCancellationLabel","Cancellation"},{"footerSupportLabel","Support"},{"footerPricingLabel","Pricing"},{"seoTitle","Language Voice Tutor"},{"seoDescription","Language Voice Tutor helps you practice real-life language lessons by text or voice on desktop, with mobile apps planned."}},
-        ["download"] = Page("Language Voice Tutor for Windows","Download Language Voice Tutor for Windows and practice real conversations by text or voice with an AI tutor.", new(){{"downloadButtonText","Download for Windows"},{"currentVersionLabel","Current version and installer size are loaded from the release manifest."},{"safetySupportNote","Windows may show a SmartScreen warning because code signing is deferred."},{"seoTitle","Language Voice Tutor for Windows Download"}}),
+        ["download"] = Page(ReleaseReadyDownloadPageTitle, ReleaseReadyDownloadSeoDescription, new(){{"downloadButtonText","Download for Windows"},{"currentVersionLabel","Current version and installer size are loaded from the release manifest."},{"safetySupportNote","Windows may show a SmartScreen warning because code signing is deferred."},{"seoTitle",ReleaseReadyDownloadSeoTitle},{"bodyMarkdown",ReleaseReadyDownloadBodyMarkdown}}),
         ["mobile"] = Page("Mobile app coming soon","Android and iOS versions are planned and not currently available.", new(){{"androidComingSoonText","Android app coming soon."},{"iosComingSoonText","iOS app coming soon."},{"emailSupportCtaText","Email support@languagevoicetutor.com for availability questions."}}),
         ["pricing"] = Page("Pricing","Language Voice Tutor is currently offered for Windows desktop tester access.", new(){{"freePlanText","Invited testers may be able to use free Windows desktop access during evaluation."},{"premiumPlanText","Premium subscription details are draft placeholders until paid billing is enabled by the owner."},{"trialText","Trial terms are not final and require owner/legal review."},{"paddleLiveCheckoutDisclaimerText","No live checkout button is provided and production Paddle billing is not enabled from this page."}}),
         ["support"] = Page("Contact support","For Language Voice Tutor help, contact support@languagevoicetutor.com.", new(){{"supportEmailText","support@languagevoicetutor.com"},{"responseTimeText","Response times may vary during tester access."},{"accountDeletionSupportText","Contact support for account or deletion requests."},{"billingSupportText","Billing support applies only if paid billing is enabled."}}),
