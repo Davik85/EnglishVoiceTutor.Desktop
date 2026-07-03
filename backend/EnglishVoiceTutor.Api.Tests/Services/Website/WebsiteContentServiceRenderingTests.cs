@@ -104,19 +104,96 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Contains("assets/images/download/conversation.webp", html);
         Assert.Contains("data-download-lightbox-src=\"/assets/images/download/quick-start.webp\"", html);
         Assert.Contains("role=\"button\" tabindex=\"0\"", html);
-        Assert.Contains("class=\"download-cta-support\"", html);
         Assert.Contains("href=\"mailto:support@languagevoicetutor.com\"", html);
         Assert.DoesNotContain("class=\"download-content-shell\"", html);
         Assert.DoesNotContain("<section class=\"support-card\" aria-label=\"Support\">", html);
         Assert.DoesNotContain("tester download", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Available for testers", html);
 
-        var supportIndex = html.IndexOf("class=\"download-cta-support\"", StringComparison.Ordinal);
+        var supportIndex = html.IndexOf("support@languagevoicetutor.com", StringComparison.Ordinal);
         var firstSectionCloseAfterSupport = html.IndexOf("</section>", supportIndex, StringComparison.Ordinal);
         var secondSectionCloseAfterSupport = html.IndexOf("</section>", firstSectionCloseAfterSupport + "</section>".Length, StringComparison.Ordinal);
         var footerIndex = html.IndexOf("<footer class=\"site-footer\">", StringComparison.Ordinal);
         Assert.InRange(supportIndex, 0, firstSectionCloseAfterSupport);
         Assert.InRange(secondSectionCloseAfterSupport, 0, footerIndex);
+    }
+
+    [Fact]
+    public async Task PublishedDownloadHtmlUsesCmsTitleAsMainCtaHeading()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        content.Pages["download"]["pageTitle"] = "Custom Windows Download Heading";
+
+        await service.SaveDraftAsync(content, TestContext.Current.CancellationToken);
+        await service.PublishAsync(TestContext.Current.CancellationToken);
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"), TestContext.Current.CancellationToken);
+
+        Assert.Contains("<h1 id=\"product-title\">Custom Windows Download Heading</h1>", html);
+        Assert.DoesNotContain("<h1 id=\"product-title\">Language Voice Tutor for Windows</h1>", html);
+    }
+
+    [Fact]
+    public async Task PublishedDownloadHtmlUsesCmsBodyInsideMainCtaCard()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        content.Pages["download"]["bodyMarkdown"] = """
+Custom main CTA copy for testing.
+
+Need help? Email support@languagevoicetutor.com.
+""";
+
+        await service.SaveDraftAsync(content, TestContext.Current.CancellationToken);
+        await service.PublishAsync(TestContext.Current.CancellationToken);
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"), TestContext.Current.CancellationToken);
+        var ctaStart = html.IndexOf("<section class=\"download-cta-panel\"", StringComparison.Ordinal);
+        var ctaEnd = html.IndexOf("</section>", ctaStart, StringComparison.Ordinal);
+        var ctaHtml = html[ctaStart..ctaEnd];
+
+        Assert.Contains("Custom main CTA copy for testing.", ctaHtml);
+        Assert.Contains("Need help? Email <a href=\"mailto:support@languagevoicetutor.com\">support@languagevoicetutor.com</a>.", ctaHtml);
+        Assert.DoesNotContain("Practice real conversations by text or voice with an AI tutor, choose practical topics", html);
+        Assert.Equal(1, CountOccurrences(html, "Custom main CTA copy for testing."));
+    }
+
+    [Fact]
+    public async Task BlankDownloadTitleAndBodyFallbackToReleaseReadyDefaults()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var seeded = await service.GetAsync(TestContext.Current.CancellationToken);
+        seeded.Draft.Pages["download"]["pageTitle"] = "";
+        seeded.Draft.Pages["download"]["bodyMarkdown"] = "   ";
+        await fixture.WriteDocumentAsync(new WebsiteContentDocument(seeded.Active, seeded.Draft));
+
+        await fixture.CreateService().PublishAsync(TestContext.Current.CancellationToken);
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"), TestContext.Current.CancellationToken);
+
+        Assert.Contains("<h1 id=\"product-title\">Language Voice Tutor for Windows</h1>", html);
+        Assert.Contains("Download Language Voice Tutor for Windows. Practice real conversations by text or voice with an AI tutor", html);
+        Assert.Contains("Windows may show a SmartScreen warning because code signing is deferred.", html);
+        Assert.Contains("Need help? Email <a href=\"mailto:support@languagevoicetutor.com\">support@languagevoicetutor.com</a>.", html);
+    }
+
+    [Fact]
+    public async Task PublishedDownloadHtmlDoesNotDuplicateMainCtaMarkdownOutsideCard()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var content = (await service.GetAsync(TestContext.Current.CancellationToken)).Draft;
+        content.Pages["download"]["bodyMarkdown"] = "Unique duplicate guard CTA body.";
+
+        await service.SaveDraftAsync(content, TestContext.Current.CancellationToken);
+        await service.PublishAsync(TestContext.Current.CancellationToken);
+        var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, CountOccurrences(html, "Unique duplicate guard CTA body."));
+        Assert.DoesNotContain("details-card legal-section markdown-content", html);
+        Assert.DoesNotContain("class=\"download-content-shell\"", html);
+        Assert.DoesNotContain("<section class=\"support-card\" aria-label=\"Support\">", html);
     }
 
 
