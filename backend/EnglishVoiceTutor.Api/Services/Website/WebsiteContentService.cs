@@ -340,7 +340,9 @@ Need help? Email support@languagevoicetutor.com.
         var ariaDisabled = "false";
 
         var featureCards = RenderDownloadFeatureCards(download);
-        var mainCtaBody = RenderMarkdown(bodyMarkdown);
+        var (introMarkdown, notesMarkdown) = SplitDownloadBodyMarkdown(bodyMarkdown);
+        var mainCtaIntro = RenderMarkdown(introMarkdown);
+        var mainCtaNotes = string.IsNullOrWhiteSpace(notesMarkdown) ? string.Empty : RenderMarkdown(notesMarkdown);
         var body = $$"""
     <main>
         <section class="download-hero" aria-labelledby="product-title">
@@ -350,11 +352,14 @@ Need help? Email support@languagevoicetutor.com.
                     <p class="eyebrow">Windows desktop app</p>
                     <h1 id="product-title">{{E(pageTitle)}}</h1>
                     <div class="download-hero__subtitle markdown-content">
-{{mainCtaBody}}
+{{mainCtaIntro}}
                     </div>
                     <p class="version-line">Current version: <strong id="current-version">{{E(currentVersion)}}</strong> <span aria-hidden="true">·</span> Installer size: <strong id="installer-size">{{E(installerSize)}}</strong></p>
                     <a id="download-button" class="{{downloadClass}}" aria-disabled="{{ariaDisabled}}"{{downloadAttributes}}>Download for Windows</a>
                     <p id="manifest-status" class="download-hero__status" role="status">{{E(manifestStatus)}}</p>
+                    <div class="download-hero__notes markdown-content">
+{{mainCtaNotes}}
+                    </div>
                 </section>
 
 {{featureCards}}
@@ -365,6 +370,54 @@ Need help? Email support@languagevoicetutor.com.
 """;
         return Shell(c, E(ValueOrDefault(download, "seoTitle", ReleaseReadyDownloadSeoTitle)), E(ValueOrDefault(download, "seoDescription", ReleaseReadyDownloadSeoDescription)), body, false, includePublicBaseHref, "    <script src=\"download.js?v=20260703-lightbox\" defer></script>", pageFileName: "download.html", jsonLd: RenderSoftwareApplicationJsonLd(release));
     }
+
+    private static (string IntroMarkdown, string NotesMarkdown) SplitDownloadBodyMarkdown(string bodyMarkdown)
+    {
+        var intro = new List<string>();
+        var notes = new List<string>();
+        foreach (var paragraph in MarkdownParagraphs(bodyMarkdown))
+        {
+            if (IsDownloadReleaseManifestParagraph(paragraph))
+            {
+                continue;
+            }
+
+            if (IsDownloadNoteParagraph(paragraph))
+            {
+                notes.Add(paragraph);
+            }
+            else
+            {
+                intro.Add(paragraph);
+            }
+        }
+
+        return (string.Join("\n\n", intro), string.Join("\n\n", notes));
+    }
+
+    private static IEnumerable<string> MarkdownParagraphs(string markdown)
+    {
+        var normalized = markdown.Replace("\r\n", "\n").Replace('\r', '\n');
+        foreach (var paragraph in Regex.Split(normalized, "\n[ \t]*\n"))
+        {
+            var trimmed = paragraph.Trim();
+            if (trimmed.Length > 0)
+            {
+                yield return trimmed;
+            }
+        }
+    }
+
+    private static bool IsDownloadReleaseManifestParagraph(string paragraph)
+        => paragraph.Contains("release manifest", StringComparison.OrdinalIgnoreCase)
+        || paragraph.Contains("Current version and installer size", StringComparison.OrdinalIgnoreCase)
+        || paragraph.Contains("Current version details", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsDownloadNoteParagraph(string paragraph)
+        => paragraph.Contains("SmartScreen", StringComparison.OrdinalIgnoreCase)
+        || paragraph.Contains("code signing", StringComparison.OrdinalIgnoreCase)
+        || paragraph.Contains("support@languagevoicetutor.com", StringComparison.OrdinalIgnoreCase)
+        || paragraph.Contains("Need help", StringComparison.OrdinalIgnoreCase);
 
     private static string RenderDownloadFeatureCards(Dictionary<string, string> download)
     {

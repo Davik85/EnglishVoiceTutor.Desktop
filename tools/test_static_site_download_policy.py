@@ -39,6 +39,15 @@ def assert_no_sensitive_values(path: pathlib.Path) -> None:
             raise AssertionError(f"Potential sensitive value found in {path.relative_to(ROOT)}: {match.group(0)}")
 
 
+def assert_in_order(text: str, label: str, *needles: str) -> None:
+    previous_index = -1
+    for needle in needles:
+        index = text.find(needle, previous_index + 1)
+        if index <= previous_index:
+            raise AssertionError(f"{label} has wrong order for {needle!r}; found {index} after {previous_index}")
+        previous_index = index
+
+
 def assert_no_hardcoded_installer_fallback(path: pathlib.Path) -> None:
     text = read(path)
     manifest_installer = read(LATEST_JSON) if LATEST_JSON.exists() else ""
@@ -64,6 +73,7 @@ def main() -> int:
     download_js = read(DOWNLOAD_JS)
     upload_script = read(UPLOAD_SCRIPT)
     latest_json = read(LATEST_JSON)
+    styles = read(STYLES)
 
     assert_contains(download_html, 'href="styles.css"', "stylesheet reference")
     assert_contains(download_html, 'src="download.js?v=20260703-lightbox"', "cache-busted lightbox download script reference")
@@ -74,6 +84,18 @@ def main() -> int:
     assert_contains(download_html, "assets/images/download/conversation.webp", "conversation screenshot path")
     assert_contains(download_html, 'class="download-cta-support"', "support email inside download CTA card")
     assert_contains(download_html, 'href="mailto:support@languagevoicetutor.com"', "support mailto link")
+    assert_in_order(
+        download_html,
+        "download CTA",
+        "Download Language Voice Tutor for Windows.",
+        "Practice real conversations by text or voice",
+        'id="current-version"',
+        'id="installer-size"',
+        'id="download-button"',
+        'id="manifest-status"',
+        "Windows may show a SmartScreen warning",
+        'href="mailto:support@languagevoicetutor.com"',
+    )
     if 'class="download-content-shell"' in download_html or '<section class="support-card" aria-label="Support">' in download_html:
         raise AssertionError("download.html must not include a separate support section below the hero")
     support_index = download_html.index('class="download-cta-support"')
@@ -109,7 +131,9 @@ def main() -> int:
     assert_contains(download_js, "downloadLightboxUnavailable", "missing screenshot disables lightbox")
     assert_contains(download_js, 'event.key === "Escape"', "Escape closes screenshot lightbox")
     assert_contains(download_js, 'event.key === "Enter" || event.key === " "', "keyboard opens screenshot lightbox")
-    assert_contains(read(STYLES), ".download-lightbox", "download screenshot lightbox styles")
+    assert_contains(styles, ".download-lightbox", "download screenshot lightbox styles")
+    assert_contains(styles, "rgba(16, 56, 88, 0.52)", "lighter download-page overlay midpoint")
+    assert_contains(styles, ".download-hero__notes", "scoped download notes styling")
     assert_contains(upload_script, "[switch]$DryRun", "DryRun switch")
     assert_contains(upload_script, "site\\public", "static site source folder")
     assert_contains(upload_script, "-Recurse", "recursive static asset upload")
