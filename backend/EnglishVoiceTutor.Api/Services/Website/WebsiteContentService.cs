@@ -19,6 +19,9 @@ public sealed partial class WebsiteContentService(IOptions<WebsiteContentOptions
     private const string ReleaseReadyDownloadPageTitle = "Language Voice Tutor for Windows";
     private const string ReleaseReadyDownloadSeoTitle = "Language Voice Tutor for Windows Download";
     private const string ReleaseReadyDownloadSeoDescription = "Download Language Voice Tutor for Windows and practice real conversations by text or voice with an AI tutor.";
+    private const string WindowsDirectReleaseBasePath = "/releases/windows/direct/";
+    private const string DefaultWindowsInstallerFileName = "LanguageVoiceTutorSetup-1.0.exe";
+    private const string DefaultWindowsInstallerUrl = WindowsDirectReleaseBasePath + DefaultWindowsInstallerFileName;
     private const string ReleaseReadyDownloadBodyMarkdown = """
 Download Language Voice Tutor for Windows. Practice real conversations by text or voice with an AI tutor, choose practical topics, start guided lessons, and improve step by step.
 
@@ -325,15 +328,11 @@ Need help? Email support@languagevoicetutor.com.
         var manifestStatus = release is not null
             ? "Ready to download. Latest Windows version is shown above."
             : "If release details do not load automatically, please contact support@languagevoicetutor.com.";
-        var downloadAttributes = string.Empty;
-        var downloadClass = "download-button download-button--hero is-disabled";
-        var ariaDisabled = "true";
-        if (release is not null)
-        {
-            downloadAttributes = $" href=\"{E(release.InstallerRelativeUrl)}\" download=\"{E(release.InstallerFileName)}\"";
-            downloadClass = "download-button download-button--hero";
-            ariaDisabled = "false";
-        }
+        var installerUrl = release is null ? DefaultWindowsInstallerUrl : WindowsDirectReleaseBasePath + release.InstallerRelativeUrl;
+        var installerFileName = release?.InstallerFileName ?? DefaultWindowsInstallerFileName;
+        var downloadAttributes = $" href=\"{E(installerUrl)}\" download=\"{E(installerFileName)}\"";
+        var downloadClass = "download-button download-button--hero";
+        var ariaDisabled = "false";
 
         var featureCards = RenderDownloadFeatureCards(c.Pages["download"]);
         var body = $$"""

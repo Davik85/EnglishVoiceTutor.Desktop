@@ -88,7 +88,9 @@ def main() -> int:
         if removed_id in download_html:
             raise AssertionError(f"download.html must not include removed technical detail element: {removed_id}")
     assert_contains(download_html, "1.0", "manifest version rendered into static download page")
-    assert_contains(download_html, "LanguageVoiceTutorSetup-1.0.exe", "manifest installer rendered into static download page")
+    assert_contains(download_html, 'href="/releases/windows/direct/LanguageVoiceTutorSetup-1.0.exe"', "safe public installer fallback href")
+    if 'href="LanguageVoiceTutorSetup-1.0.exe"' in download_html:
+        raise AssertionError("download.html must not use a broken relative installer fallback href")
     if "Version</dt>\n                    <dd id=\"detail-version\">Unavailable</dd>" in download_html:
         raise AssertionError("download.html must not default release details to Version: Unavailable")
     assert_contains(download_js, '"/releases/windows/direct/latest.json"', "release manifest URL")
@@ -112,7 +114,11 @@ def main() -> int:
     assert_contains(upload_script, "site\\public", "static site source folder")
     assert_contains(upload_script, "-Recurse", "recursive static asset upload")
     assert_contains(upload_script, "site/public/assets", "public assets recursive upload note")
-    assert_contains(upload_script, "Release files: not touched. Backend deployment: not touched.", "deployment scope guard")
+    assert_contains(upload_script, "site/public/releases/** is skipped completely", "release tree excluded from static upload")
+    assert_contains(upload_script, '$_.Name -ne "releases"', "top-level releases folder exclusion")
+    assert_contains(upload_script, "Release files: skipped. Backend deployment: not touched.", "deployment scope guard")
+    if "GetRelativePath" in upload_script:
+        raise AssertionError("upload-static-site.ps1 must avoid System.IO.Path.GetRelativePath for Windows PowerShell compatibility")
     assert_contains(latest_json, '"updateMode": "manual-confirmation"', "current manual confirmation update mode")
 
     for path in [DOWNLOAD_HTML, DOWNLOAD_JS]:
