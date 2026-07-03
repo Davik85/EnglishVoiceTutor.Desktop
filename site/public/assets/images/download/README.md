@@ -1,22 +1,32 @@
-# Download page screenshots
+# Download page screenshot assets
 
-This folder is reserved for public website screenshots used by the Windows download page feature cards.
+This folder contains tracked public website screenshots used by the Windows Download page feature cards.
 
-Expected filenames:
+Expected files:
 
-- `quick-start.webp` — Quick Start / main screen
-- `topics.webp` — Topics / choose practical topics
-- `guided-lesson.webp` — Guided Lesson / open lesson
-- `conversation.webp` — Conversation / dialogue mode
+- `quick-start.webp`
+- `topics.webp`
+- `guided-lesson.webp`
+- `conversation.webp`
 
-Recommended format and dimensions:
+Public CMS/default paths:
 
-- Format: WebP (`.webp`)
-- Aspect ratio: 16:9 or close to 16:9
-- Recommended size: 1200 × 675 px or larger, exported for web delivery
+- `/assets/images/download/quick-start.webp`
+- `/assets/images/download/topics.webp`
+- `/assets/images/download/guided-lesson.webp`
+- `/assets/images/download/conversation.webp`
 
-Upload notes:
+Public URLs:
 
-- These are public website screenshots and may be shown on `download.html`.
-- Uploading or replacing these screenshots must not touch `site/public/releases/windows/direct/latest.json`.
-- Uploading or replacing these screenshots must not touch Windows installer files or release artifacts.
+- `https://languagevoicetutor.com/assets/images/download/quick-start.webp`
+- `https://languagevoicetutor.com/assets/images/download/topics.webp`
+- `https://languagevoicetutor.com/assets/images/download/guided-lesson.webp`
+- `https://languagevoicetutor.com/assets/images/download/conversation.webp`
+
+Production server path:
+
+- `/var/www/languagevoicetutor/site/assets/images/download/`
+
+These files are public website assets for `download.html`; they are not installer artifacts and are not Windows release files. They are safe to upload with the static site upload flow, which uploads `site/public` website files and top-level folders such as `site/public/assets` but skips `site/public/releases/**` completely. Uploading or replacing these screenshots must not touch `site/public/releases/windows/direct/latest.json`, the public `latest.json`, `LanguageVoiceTutorSetup-1.0.exe`, or any other installer/release artifact.
+
+Website CMS Download feature-card image fields (`featureCard1ImagePath` through `featureCard4ImagePath`) should use the public paths above. Blank or missing image paths normalize back to these defaults during the current CMS Save draft / Publish flow.
