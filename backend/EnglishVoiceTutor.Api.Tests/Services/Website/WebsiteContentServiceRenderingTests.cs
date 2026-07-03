@@ -59,21 +59,26 @@ public sealed class WebsiteContentServiceRenderingTests
         Assert.Contains("id=\"download-button\"", html);
         Assert.Contains("aria-disabled=\"true\"", html);
         Assert.Contains("id=\"manifest-status\"", html);
-        Assert.Contains("id=\"detail-version\"", html);
-        Assert.Contains("id=\"detail-installer\"", html);
-        Assert.Contains("id=\"detail-backend-base-url\"", html);
-        Assert.Contains("id=\"detail-minimum-supported-version\"", html);
-        Assert.Contains("id=\"detail-update-mode\"", html);
-        Assert.Contains("id=\"detail-size\"", html);
-        Assert.Contains("id=\"detail-sha\"", html);
+        Assert.Contains("id=\"installer-size\"", html);
+        Assert.DoesNotContain("id=\"detail-version\"", html);
+        Assert.DoesNotContain("id=\"detail-installer\"", html);
+        Assert.DoesNotContain("id=\"detail-backend-base-url\"", html);
+        Assert.DoesNotContain("id=\"detail-minimum-supported-version\"", html);
+        Assert.DoesNotContain("id=\"detail-update-mode\"", html);
+        Assert.DoesNotContain("id=\"detail-size\"", html);
+        Assert.DoesNotContain("id=\"detail-sha\"", html);
         Assert.Contains("Current version", html);
-        Assert.Contains("Installer filename", html);
-        Assert.Contains("Technical release details", html);
+        Assert.Contains("Installer size", html);
+        Assert.DoesNotContain("Technical release details", html);
         Assert.Contains("Language Voice Tutor for Windows", html);
         Assert.Contains("Start quickly", html);
         Assert.Contains("Choose practical topics", html);
         Assert.Contains("Learn step by step", html);
         Assert.Contains("Practice real conversation", html);
+        Assert.Contains("assets/images/download/quick-start.webp", html);
+        Assert.Contains("assets/images/download/topics.webp", html);
+        Assert.Contains("assets/images/download/guided-lesson.webp", html);
+        Assert.Contains("assets/images/download/conversation.webp", html);
     }
 
     [Fact]
