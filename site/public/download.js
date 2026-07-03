@@ -172,4 +172,81 @@ elements.downloadButton?.addEventListener("click", (event) => {
     }
 });
 
+function createScreenshotLightbox() {
+    const overlay = document.createElement("div");
+    overlay.className = "download-lightbox";
+    overlay.hidden = true;
+    overlay.innerHTML = `
+        <div class="download-lightbox__backdrop" data-download-lightbox-close="true"></div>
+        <div class="download-lightbox__dialog" role="dialog" aria-modal="true" aria-label="Screenshot preview">
+            <button class="download-lightbox__close" type="button" aria-label="Close screenshot preview" data-download-lightbox-close="true">×</button>
+            <img class="download-lightbox__image" alt="">
+        </div>`;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+const screenshotLightbox = createScreenshotLightbox();
+const screenshotLightboxImage = screenshotLightbox.querySelector(".download-lightbox__image");
+const screenshotLightboxClose = screenshotLightbox.querySelector(".download-lightbox__close");
+screenshotLightboxImage.addEventListener("error", closeScreenshotLightbox);
+let screenshotLightboxReturnFocus = null;
+
+function closeScreenshotLightbox() {
+    if (screenshotLightbox.hidden) {
+        return;
+    }
+
+    screenshotLightbox.hidden = true;
+    document.body.classList.remove("download-lightbox-open");
+    screenshotLightboxImage.removeAttribute("src");
+    screenshotLightboxReturnFocus?.focus?.();
+    screenshotLightboxReturnFocus = null;
+}
+
+function openScreenshotLightbox(trigger) {
+    const imageSrc = trigger?.dataset?.downloadLightboxSrc;
+    if (!imageSrc || trigger.dataset.downloadLightboxUnavailable === "true") {
+        return;
+    }
+
+    screenshotLightboxReturnFocus = trigger;
+    screenshotLightboxImage.src = imageSrc;
+    screenshotLightboxImage.alt = trigger.dataset.downloadLightboxAlt || "Download page screenshot";
+    screenshotLightbox.hidden = false;
+    document.body.classList.add("download-lightbox-open");
+    screenshotLightboxClose.focus();
+}
+
+document.querySelectorAll("[data-download-lightbox-src]").forEach((trigger) => {
+    const image = new Image();
+    image.addEventListener("error", () => {
+        trigger.dataset.downloadLightboxUnavailable = "true";
+        trigger.removeAttribute("role");
+        trigger.removeAttribute("tabindex");
+        trigger.removeAttribute("aria-label");
+    }, { once: true });
+    image.src = trigger.dataset.downloadLightboxSrc;
+
+    trigger.addEventListener("click", () => openScreenshotLightbox(trigger));
+    trigger.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openScreenshotLightbox(trigger);
+        }
+    });
+});
+
+screenshotLightbox.addEventListener("click", (event) => {
+    if (event.target?.dataset?.downloadLightboxClose === "true") {
+        closeScreenshotLightbox();
+    }
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+        closeScreenshotLightbox();
+    }
+});
+
 loadManifest();

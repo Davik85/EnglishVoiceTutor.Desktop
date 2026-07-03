@@ -72,7 +72,7 @@ if (-not (Test-Path $siteSource -PathType Container)) {
     throw "Static site source folder was not found: $siteSource"
 }
 
-$localFiles = @(Get-ChildItem -Path $siteSource -File | Sort-Object -Property Name)
+$localFiles = @(Get-ChildItem -Path $siteSource -File -Recurse | Sort-Object -Property FullName)
 if ($localFiles.Count -eq 0) {
     throw "Static site source folder does not contain files: $siteSource"
 }
@@ -84,19 +84,26 @@ Write-Host "Local source: $siteSource"
 Write-Host "Remote target: $remoteTarget"
 Write-Host "SSH port: $SshPort"
 Write-Host "Dry run: $([bool]$DryRun)"
-Write-Host "Scope: uploads only files from site/public to the static website folder."
+Write-Host "Scope: recursively uploads site/public files, including site/public/assets, to the static website folder without touching releases/windows/direct."
 Write-Host "Release files: not touched. Backend deployment: not touched."
 Write-Host "Files:"
 foreach ($localFile in $localFiles) {
-    Write-Host (" - {0} ({1} bytes)" -f $localFile.Name, $localFile.Length)
+    $relativePath = [System.IO.Path]::GetRelativePath($siteSource, $localFile.FullName)
+    Write-Host (" - {0} ({1} bytes)" -f $relativePath, $localFile.Length)
 }
 
 $sshTarget = "$ServerUser@$ServerHost"
 $mkdirCommand = @("ssh", "-p", [string]$SshPort, "--", $sshTarget, "mkdir", "-p", $RemotePath)
 Invoke-LoggedCommand -Arguments $mkdirCommand
 
-$scpCommand = @("scp", "-P", [string]$SshPort, "--") + @($localFiles.FullName) + @($remoteTarget)
-Invoke-LoggedCommand -Arguments $scpCommand
+foreach ($localFile in $localFiles) {
+    $relativeDirectory = [System.IO.Path]::GetRelativePath($siteSource, $localFile.DirectoryName)
+    $normalizedRelativeDirectory = if ($relativeDirectory -eq ".") { "" } else { ($relativeDirectory -replace "\\", "/") }
+    $remoteDirectory = if ([string]::IsNullOrWhiteSpace($normalizedRelativeDirectory)) { $RemotePath } else { "$RemotePath/$normalizedRelativeDirectory" }
+    $remoteFileTarget = "$ServerUser@$ServerHost`:$remoteDirectory/"
+    Invoke-LoggedCommand -Arguments @("ssh", "-p", [string]$SshPort, "--", $sshTarget, "mkdir", "-p", $remoteDirectory)
+    Invoke-LoggedCommand -Arguments @("scp", "-P", [string]$SshPort, "--", $localFile.FullName, $remoteFileTarget)
+}
 
 if ($DryRun) {
     Write-Host "Dry run completed. No files were uploaded."

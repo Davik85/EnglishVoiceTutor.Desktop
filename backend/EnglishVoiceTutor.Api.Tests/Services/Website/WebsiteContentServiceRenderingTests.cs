@@ -75,7 +75,7 @@ Need help? Email support@languagevoicetutor.com.
         var html = await File.ReadAllTextAsync(Path.Combine(fixture.PublicSiteRoot, "download.html"), TestContext.Current.CancellationToken);
 
         Assert.Contains("/releases/windows/direct/latest.json", html);
-        Assert.Contains("download.js?v=manifest-download", html);
+        Assert.Contains("download.js?v=20260703-lightbox", html);
         Assert.Contains("id=\"current-version\"", html);
         Assert.Contains("id=\"download-button\"", html);
         Assert.Contains("aria-disabled=\"true\"", html);
@@ -100,6 +100,8 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Contains("assets/images/download/topics.webp", html);
         Assert.Contains("assets/images/download/guided-lesson.webp", html);
         Assert.Contains("assets/images/download/conversation.webp", html);
+        Assert.Contains("data-download-lightbox-src=\"assets/images/download/quick-start.webp\"", html);
+        Assert.Contains("role=\"button\" tabindex=\"0\"", html);
         Assert.Contains("class=\"download-cta-support\"", html);
         Assert.Contains("href=\"mailto:support@languagevoicetutor.com\"", html);
         Assert.DoesNotContain("class=\"download-content-shell\"", html);
@@ -113,6 +115,44 @@ Need help? Email support@languagevoicetutor.com.
         var footerIndex = html.IndexOf("<footer class=\"site-footer\">", StringComparison.Ordinal);
         Assert.InRange(supportIndex, 0, firstSectionCloseAfterSupport);
         Assert.InRange(secondSectionCloseAfterSupport, 0, footerIndex);
+    }
+
+
+    [Fact]
+    public async Task PublishPreservesPublicAssetsAndReleaseArtifacts()
+    {
+        using var fixture = new WebsiteContentServiceFixture();
+        var service = fixture.CreateService();
+        var downloadAsset = Path.Combine(fixture.PublicSiteRoot, "assets", "images", "download", "quick-start.webp");
+        var landingAsset = Path.Combine(fixture.PublicSiteRoot, "assets", "images", "landing", "windows-desktop.webp");
+        var brandAsset = Path.Combine(fixture.PublicSiteRoot, "assets", "brand", "lvt-logo.png");
+        var flagAsset = Path.Combine(fixture.PublicSiteRoot, "assets", "flags", "gb.webp");
+        var releaseManifest = Path.Combine(fixture.PublicSiteRoot, "releases", "windows", "direct", "latest.json");
+        var installerArtifact = Path.Combine(fixture.PublicSiteRoot, "releases", "windows", "direct", "LanguageVoiceTutorSetup-1.0.exe");
+        foreach (var path in new[] { downloadAsset, landingAsset, brandAsset, flagAsset, releaseManifest, installerArtifact })
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        }
+        await File.WriteAllTextAsync(downloadAsset, "download screenshot", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(landingAsset, "landing screenshot", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(brandAsset, "brand", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(flagAsset, "flag", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(releaseManifest, "{\"version\":\"1.0\",\"installerRelativeUrl\":\"LanguageVoiceTutorSetup-1.0.exe\",\"installerFileName\":\"LanguageVoiceTutorSetup-1.0.exe\",\"installerSizeBytes\":123}", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(installerArtifact, "installer", TestContext.Current.CancellationToken);
+
+        var response = await service.PublishAsync(TestContext.Current.CancellationToken);
+
+        Assert.Contains(response.PublishedFiles, file => Path.GetFileName(file) == "download.html");
+        Assert.Contains(response.PublishedFiles, file => Path.GetFileName(file) == "index.html");
+        Assert.True(File.Exists(downloadAsset));
+        Assert.True(File.Exists(landingAsset));
+        Assert.True(File.Exists(brandAsset));
+        Assert.True(File.Exists(flagAsset));
+        Assert.Equal("download screenshot", await File.ReadAllTextAsync(downloadAsset, TestContext.Current.CancellationToken));
+        Assert.Contains("\"version\":\"1.0\"", await File.ReadAllTextAsync(releaseManifest, TestContext.Current.CancellationToken));
+        Assert.Equal("installer", await File.ReadAllTextAsync(installerArtifact, TestContext.Current.CancellationToken));
+        Assert.DoesNotContain(response.PublishedFiles, file => file.Contains(Path.Combine("assets", "images", "download"), StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(response.PublishedFiles, file => file.Contains(Path.Combine("releases", "windows", "direct"), StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -230,6 +270,7 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Contains("Pick your scenario", preview.Html);
         Assert.Contains("Custom topics description from CMS.", preview.Html);
         Assert.Contains("assets/images/download/custom-topics.webp", preview.Html);
+        Assert.Contains("data-download-lightbox-src=\"assets/images/download/custom-topics.webp\"", preview.Html);
         Assert.DoesNotContain("tester download", preview.Html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Available for testers", preview.Html);
         Assert.DoesNotContain("Technical release details", preview.Html);
