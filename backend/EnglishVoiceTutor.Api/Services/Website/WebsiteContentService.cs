@@ -325,7 +325,9 @@ Need help? Email support@languagevoicetutor.com.
 
     private static string RenderDownload(WebsiteContentSet c, bool includePublicBaseHref, StaticReleaseManifest? release)
     {
-        _ = c.Pages["download"];
+        var download = c.Pages["download"];
+        var pageTitle = ValueOrDefault(download, "pageTitle", ReleaseReadyDownloadPageTitle);
+        var bodyMarkdown = ValueOrDefault(download, "bodyMarkdown", ReleaseReadyDownloadBodyMarkdown);
         var currentVersion = release?.Version ?? "Release details load from the public manifest.";
         var installerSize = release?.InstallerSize ?? "Unavailable";
         var manifestStatus = release is not null
@@ -337,7 +339,8 @@ Need help? Email support@languagevoicetutor.com.
         var downloadClass = "download-button download-button--hero";
         var ariaDisabled = "false";
 
-        var featureCards = RenderDownloadFeatureCards(c.Pages["download"]);
+        var featureCards = RenderDownloadFeatureCards(download);
+        var mainCtaBody = RenderMarkdown(bodyMarkdown);
         var body = $$"""
     <main>
         <section class="download-hero" aria-labelledby="product-title">
@@ -345,13 +348,13 @@ Need help? Email support@languagevoicetutor.com.
             <div class="download-hero__inner">
                 <section class="download-cta-panel" aria-label="Windows download" data-manifest-url="/releases/windows/direct/latest.json">
                     <p class="eyebrow">Windows desktop app</p>
-                    <h1 id="product-title">Language Voice Tutor for Windows</h1>
-                    <p class="download-hero__subtitle">Practice real conversations by text or voice with an AI tutor. Choose a topic, start a lesson, and improve step by step.</p>
+                    <h1 id="product-title">{{E(pageTitle)}}</h1>
+                    <div class="download-hero__subtitle markdown-content">
+{{mainCtaBody}}
+                    </div>
                     <p class="version-line">Current version: <strong id="current-version">{{E(currentVersion)}}</strong> <span aria-hidden="true">·</span> Installer size: <strong id="installer-size">{{E(installerSize)}}</strong></p>
                     <a id="download-button" class="{{downloadClass}}" aria-disabled="{{ariaDisabled}}"{{downloadAttributes}}>Download for Windows</a>
                     <p id="manifest-status" class="download-hero__status" role="status">{{E(manifestStatus)}}</p>
-                    <p class="download-hero__note">Windows may show a SmartScreen warning because code signing is deferred.</p>
-                    <p class="download-cta-support">Need help? Email <a href="mailto:support@languagevoicetutor.com">support@languagevoicetutor.com</a>.</p>
                 </section>
 
 {{featureCards}}
@@ -360,7 +363,7 @@ Need help? Email support@languagevoicetutor.com.
 
     </main>
 """;
-        return Shell(c, "Language Voice Tutor for Windows Download", "Download Language Voice Tutor for Windows and practice real conversations by text or voice with an AI tutor.", body, false, includePublicBaseHref, "    <script src=\"download.js?v=20260703-lightbox\" defer></script>", pageFileName: "download.html", jsonLd: RenderSoftwareApplicationJsonLd(release));
+        return Shell(c, E(ValueOrDefault(download, "seoTitle", ReleaseReadyDownloadSeoTitle)), E(ValueOrDefault(download, "seoDescription", ReleaseReadyDownloadSeoDescription)), body, false, includePublicBaseHref, "    <script src=\"download.js?v=20260703-lightbox\" defer></script>", pageFileName: "download.html", jsonLd: RenderSoftwareApplicationJsonLd(release));
     }
 
     private static string RenderDownloadFeatureCards(Dictionary<string, string> download)
