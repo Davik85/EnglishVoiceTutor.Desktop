@@ -978,7 +978,7 @@ dd {
 .download-cta-panel h1 {
     max-width: 12ch;
     margin: 0 0 18px;
-    font-size: clamp(2.6rem, 6vw, 5.4rem);
+    font-size: clamp(2.15rem, 4.4vw, 4.1rem);
     line-height: 0.96;
     text-wrap: balance;
 }
@@ -995,6 +995,11 @@ dd {
     color: rgba(255, 255, 255, 0.82);
     font-weight: 700;
 }
+
+.download-cta-panel .version-line strong {
+    color: #ffffff;
+}
+
 
 .download-button--hero {
     min-height: 58px;
@@ -1041,9 +1046,13 @@ dd {
     margin-bottom: 16px;
     border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 18px;
-    background:
+    background-image:
+        linear-gradient(180deg, rgba(5, 22, 38, 0.18), rgba(5, 22, 38, 0.48)),
+        var(--download-card-image),
         linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
         linear-gradient(135deg, rgba(197, 242, 229, 0.2), rgba(13, 43, 76, 0.12));
+    background-position: center;
+    background-size: cover;
 }
 
 .download-feature-card__visual span {

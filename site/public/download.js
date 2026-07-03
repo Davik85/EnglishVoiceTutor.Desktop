@@ -5,6 +5,7 @@ const elements = {
     currentVersion: document.getElementById("current-version"),
     downloadButton: document.getElementById("download-button"),
     manifestStatus: document.getElementById("manifest-status"),
+    installerSize: document.getElementById("installer-size"),
     detailVersion: document.getElementById("detail-version"),
     detailChannel: document.getElementById("detail-channel"),
     detailInstaller: document.getElementById("detail-installer"),
@@ -114,6 +115,7 @@ function applyManifest(manifest) {
 
     setDownloadEnabled(true, release.installerUrl, release.installerFileName);
     setText(elements.currentVersion, release.version);
+    setText(elements.installerSize, formatBytes(release.installerSizeBytes));
     setText(elements.detailVersion, release.version);
     setText(elements.detailChannel, release.channel);
     setText(elements.detailInstaller, release.installerFileName);
@@ -122,12 +124,13 @@ function applyManifest(manifest) {
     setText(elements.detailUpdateMode, release.updateMode);
     setText(elements.detailSize, formatBytes(release.installerSizeBytes));
     setText(elements.detailSha, release.installerSha256);
-    setText(elements.manifestStatus, "Release manifest loaded. The download link matches the current version shown above.");
+    setText(elements.manifestStatus, "Ready to download. Latest Windows version is shown above.");
 }
 
 function applyManifestFailure(message) {
     setDownloadEnabled(false);
     setText(elements.currentVersion, "available from the public release manifest");
+    setText(elements.installerSize, "Unavailable");
     setText(elements.detailVersion, "Unavailable");
     setText(elements.detailChannel, "Unavailable");
     setText(elements.detailInstaller, "Unavailable");
@@ -157,8 +160,8 @@ async function loadManifest() {
             && !error.message.includes("request failed");
         applyManifestFailure(
             isValidationError
-                ? "Release manifest is invalid. Please try again later."
-                : "Could not load the latest release manifest. Please try again later."
+                ? "Release details are temporarily unavailable. Please try again later."
+                : "Could not load the latest Windows download. Please try again later."
         );
     }
 }
