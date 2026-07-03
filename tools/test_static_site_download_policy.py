@@ -132,7 +132,7 @@ def main() -> int:
     assert_contains(download_js, 'event.key === "Escape"', "Escape closes screenshot lightbox")
     assert_contains(download_js, 'event.key === "Enter" || event.key === " "', "keyboard opens screenshot lightbox")
     assert_contains(styles, ".download-lightbox", "download screenshot lightbox styles")
-    assert_contains(styles, "rgba(16, 56, 88, 0.52)", "lighter download-page overlay midpoint")
+    assert_contains(styles, "rgba(4, 18, 32, 0.08)", "home-tone download-page overlay midpoint")
     assert_contains(styles, ".download-hero__notes", "scoped download notes styling")
     assert_contains(upload_script, "[switch]$DryRun", "DryRun switch")
     assert_contains(upload_script, "site\\public", "static site source folder")
