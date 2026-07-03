@@ -15,14 +15,14 @@ public sealed class BackendCheckoutSessionClient
     private const string CheckoutRequestTimedOutMessage = "Backend checkout-session POST timed out.";
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly AuthSessionStorageService authSessionStorageService = new();
+    private readonly AuthBackendService authBackendService = new();
 
     public async Task<BackendCheckoutSessionClientResult> CreateAsync(
         string? backendBaseUrl,
         CancellationToken cancellationToken = default)
     {
-        var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
-        if (string.IsNullOrWhiteSpace(session?.AccessToken))
+        authBackendService.SetBackendBaseUrl(backendBaseUrl);
+        if (!await authBackendService.HasStoredSessionAsync(cancellationToken))
         {
             return BackendCheckoutSessionClientResult.Failure(RequiresLoginMessage, requiresLogin: true);
         }
@@ -30,18 +30,20 @@ public sealed class BackendCheckoutSessionClient
         using var httpClient = CreateHttpClient();
         try
         {
-            using var httpRequest = new HttpRequestMessage(
-                HttpMethod.Post,
-                BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.MeBillingCheckoutSessionEndpoint));
-            httpRequest.Content = JsonContent.Create(
-                new BackendCheckoutSessionRequest
+            var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.MeBillingCheckoutSessionEndpoint);
+            using var response = await AuthenticatedRequestHelper.SendWithRefreshRetryAsync(
+                httpClient,
+                _ => new HttpRequestMessage(HttpMethod.Post, endpointUri)
                 {
-                    PlanId = BackendConstants.BackendCheckoutPremiumPlanId
+                    Content = JsonContent.Create(
+                        new BackendCheckoutSessionRequest
+                        {
+                            PlanId = BackendConstants.BackendCheckoutPremiumPlanId
+                        },
+                        options: JsonOptions)
                 },
-                options: JsonOptions);
-
-            AuthenticatedRequestHelper.AddBearerTokenIfPresent(httpRequest, session.AccessToken);
-            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+                authBackendService,
+                cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 return BackendCheckoutSessionClientResult.Failure(

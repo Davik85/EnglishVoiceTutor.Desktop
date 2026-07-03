@@ -11,12 +11,12 @@ namespace EnglishVoiceTutor.Desktop.Services;
 public sealed class BackendCancelSubscriptionClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly AuthSessionStorageService authSessionStorageService = new();
+    private readonly AuthBackendService authBackendService = new();
 
     public async Task<BackendCancelSubscriptionClientResult> CancelAsync(string? backendBaseUrl, CancellationToken cancellationToken = default)
     {
-        var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
-        if (string.IsNullOrWhiteSpace(session?.AccessToken))
+        authBackendService.SetBackendBaseUrl(backendBaseUrl);
+        if (!await authBackendService.HasStoredSessionAsync(cancellationToken))
         {
             return BackendCancelSubscriptionClientResult.Failure("Sign in is required to cancel renewal.", requiresLogin: true);
         }
@@ -24,9 +24,12 @@ public sealed class BackendCancelSubscriptionClient
         using var httpClient = CreateHttpClient();
         try
         {
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.MeBillingSubscriptionCancelEndpoint));
-            AuthenticatedRequestHelper.AddBearerTokenIfPresent(httpRequest, session.AccessToken);
-            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+            var endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, BackendConstants.MeBillingSubscriptionCancelEndpoint);
+            using var response = await AuthenticatedRequestHelper.SendWithRefreshRetryAsync(
+                httpClient,
+                _ => new HttpRequestMessage(HttpMethod.Post, endpointUri),
+                authBackendService,
+                cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 return BackendCancelSubscriptionClientResult.Failure($"Backend subscription cancellation POST {BackendConstants.MeBillingSubscriptionCancelEndpoint} failed with HTTP {(int)response.StatusCode}.");

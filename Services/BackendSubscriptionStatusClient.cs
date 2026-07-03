@@ -11,7 +11,7 @@ namespace EnglishVoiceTutor.Desktop.Services;
 public sealed class BackendSubscriptionStatusClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly AuthSessionStorageService authSessionStorageService = new();
+    private readonly AuthBackendService authBackendService = new();
 
     public async Task<BackendSubscriptionStatusClientResult> GetAsync(
         string? backendBaseUrl,
@@ -23,20 +23,20 @@ public sealed class BackendSubscriptionStatusClient
 
         try
         {
-            var session = await authSessionStorageService.GetValidSessionOrNullAsync(cancellationToken);
-            var hasAccessToken = !string.IsNullOrWhiteSpace(session?.AccessToken);
-            endpoint = hasAccessToken
+            authBackendService.SetBackendBaseUrl(backendBaseUrl);
+            var hasStoredSession = await authBackendService.HasStoredSessionAsync(cancellationToken);
+            endpoint = hasStoredSession
                 ? BackendConstants.MeSubscriptionStatusEndpoint
                 : BackendConstants.DevSubscriptionStatusEndpoint;
             endpointUri = BackendEndpointBuilder.BuildEndpointUri(backendBaseUrl, endpoint);
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpointUri);
 
-            if (hasAccessToken)
-            {
-                AuthenticatedRequestHelper.AddBearerTokenIfPresent(httpRequest, session?.AccessToken);
-            }
-
-            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+            using var response = hasStoredSession
+                ? await AuthenticatedRequestHelper.SendWithRefreshRetryAsync(
+                    httpClient,
+                    _ => new HttpRequestMessage(HttpMethod.Get, endpointUri),
+                    authBackendService,
+                    cancellationToken)
+                : await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, endpointUri), cancellationToken);
             await RecordSubscriptionDiagnosticsAsync(endpoint, endpointUri, backendBaseUrl, response, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
