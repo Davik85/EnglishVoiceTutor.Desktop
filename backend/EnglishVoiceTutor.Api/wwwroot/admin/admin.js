@@ -1102,6 +1102,52 @@
         });
         return toolbar;
     }
+    const downloadFeatureCardFields = [
+        ["featureCard1", "Card 1"],
+        ["featureCard2", "Card 2"],
+        ["featureCard3", "Card 3"],
+        ["featureCard4", "Card 4"]
+    ];
+    const downloadFeatureCardPathHelp = "Public website asset path. Upload screenshots as WebP files to /assets/images/download/. These are public website assets, not release artifacts.";
+    const expectedDownloadFeatureCardKeys = [
+        "featureCard1Label", "featureCard1Title", "featureCard1Description", "featureCard1ImagePath",
+        "featureCard2Label", "featureCard2Title", "featureCard2Description", "featureCard2ImagePath",
+        "featureCard3Label", "featureCard3Title", "featureCard3Description", "featureCard3ImagePath",
+        "featureCard4Label", "featureCard4Title", "featureCard4Description", "featureCard4ImagePath"
+    ];
+    const expectedDownloadScreenshotPaths = [
+        "/assets/images/download/quick-start.webp",
+        "/assets/images/download/topics.webp",
+        "/assets/images/download/guided-lesson.webp",
+        "/assets/images/download/conversation.webp"
+    ];
+    function renderDownloadFeatureCardEditor(values) {
+        const section = document.createElement("section");
+        section.className = "website-seo-section website-field-long";
+        const heading = document.createElement("h4");
+        heading.textContent = "Download feature cards";
+        const helper = document.createElement("p");
+        helper.className = "muted";
+        helper.textContent = `Upload screenshots as WebP files to: /assets/images/download/. Expected public paths: ${expectedDownloadScreenshotPaths.join(", ")}. These are public website assets, not release artifacts. Editable CMS keys: ${expectedDownloadFeatureCardKeys.join(", ")}. Full image upload management is not part of this editor.`;
+        const grid = document.createElement("div");
+        grid.className = "website-seo-grid";
+        downloadFeatureCardFields.forEach(([prefix, label]) => {
+            const card = document.createElement("section");
+            card.className = "website-field-long";
+            const cardHeading = document.createElement("h5");
+            cardHeading.textContent = label;
+            card.append(
+                cardHeading,
+                createWebsiteField(`${prefix}Label`, "Card label", values[`${prefix}Label`], { help: prefix === "featureCard1" ? "Example labels: Quick Start, Topics, Guided Lesson, Conversation." : "" }),
+                createWebsiteField(`${prefix}Title`, "Card title", values[`${prefix}Title`]),
+                createWebsiteField(`${prefix}Description`, "Card description", values[`${prefix}Description`], { textarea: true, rows: 3, long: true }),
+                createWebsiteField(`${prefix}ImagePath`, "Image path", values[`${prefix}ImagePath`], { long: true, help: downloadFeatureCardPathHelp })
+            );
+            grid.appendChild(card);
+        });
+        section.append(heading, helper, grid);
+        websiteEditorFields.appendChild(section);
+    }
     function renderSimpleWebsiteEditor(section, values) {
         websiteEditorFields.classList.add("website-simple-editor-fields");
         websiteEditorFields.appendChild(createWebsiteField("pageTitle", "Page title", values.pageTitle, { long: true }));
@@ -1109,6 +1155,7 @@
         const bodyTextarea = bodyField.querySelector("textarea");
         bodyField.insertBefore(createMarkdownToolbar(bodyTextarea), bodyTextarea);
         websiteEditorFields.appendChild(bodyField);
+        if (section.key === "download") { renderDownloadFeatureCardEditor(values); }
         const seoSection = document.createElement("section");
         seoSection.className = "website-seo-section website-field-long";
         const heading = document.createElement("h4");
