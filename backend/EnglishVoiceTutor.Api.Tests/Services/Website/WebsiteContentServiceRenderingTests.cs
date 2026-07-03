@@ -102,7 +102,7 @@ Need help? Email support@languagevoicetutor.com.
         Assert.Contains("assets/images/download/topics.webp", html);
         Assert.Contains("assets/images/download/guided-lesson.webp", html);
         Assert.Contains("assets/images/download/conversation.webp", html);
-        Assert.Contains("data-download-lightbox-src=\"assets/images/download/quick-start.webp\"", html);
+        Assert.Contains("data-download-lightbox-src=\"/assets/images/download/quick-start.webp\"", html);
         Assert.Contains("role=\"button\" tabindex=\"0\"", html);
         Assert.Contains("class=\"download-cta-support\"", html);
         Assert.Contains("href=\"mailto:support@languagevoicetutor.com\"", html);
