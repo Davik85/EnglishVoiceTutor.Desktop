@@ -1027,6 +1027,24 @@ dd {
     margin-top: 8px;
 }
 
+.download-cta-support {
+    margin: 14px 0 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95rem;
+}
+
+.download-cta-support a {
+    color: #ffffff;
+    font-weight: 800;
+    text-decoration-color: rgba(197, 242, 229, 0.7);
+    text-underline-offset: 4px;
+}
+
+.download-cta-support a:hover,
+.download-cta-support a:focus-visible {
+    text-decoration-color: #ffffff;
+}
+
 .download-feature-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1079,11 +1097,6 @@ dd {
     color: rgba(255, 255, 255, 0.82);
 }
 
-.download-content-shell {
-    width: min(920px, calc(100% - 32px));
-    margin: 0 auto;
-    padding: 28px 0 48px;
-}
 
 .release-details-disclosure summary {
     cursor: pointer;
