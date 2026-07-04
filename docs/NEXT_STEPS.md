@@ -41,7 +41,7 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 Do not state that the product is fully public production-ready. This remains a public Windows direct release, not a full broad production-readiness claim, and not broad public production readiness.
 
-Pre-mobile planning should start from [`docs/PRE_MOBILE_READINESS.md`](PRE_MOBILE_READINESS.md) so stale Windows `1.0`, backend `.99`, tester-era, or pre-live Paddle facts are not reused as current mobile planning inputs.
+Pre-mobile planning should start from [`docs/PRE_MOBILE_READINESS.md`](PRE_MOBILE_READINESS.md) so stale Windows `1.0`, backend `.99`, tester-era, or pre-live Paddle facts are not reused as current mobile planning inputs. Mobile v1 must be treated as another client for the same Language Voice Tutor product: same backend account, database, Premium entitlement, usage/limits, lesson history/progress, lesson model, and backend-verified billing source of truth.
 
 ## Remaining release steps
 
