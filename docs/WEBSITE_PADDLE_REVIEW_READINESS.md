@@ -65,6 +65,8 @@ Website Publish now emits or maintains public HTML pages, `robots.txt`, `sitemap
 
 Consent mode defaults to denied before user choice for `analytics_storage`, `ad_storage`, `ad_user_data`, and `ad_personalization`. The banner supports Accept all, Reject non-essential, Manage choices, and a Privacy Policy link. Privacy Policy includes optional analytics, advertising, and cookie consent disclosure. The website remains usable when non-essential cookies are rejected, and GA/Ads scripts must not be emitted when IDs are empty or tracking is disabled.
 
+Static upload warning: analytics IDs are CMS/config controlled. Real GA/Ads IDs, conversion labels, and Search Console tokens must not be committed into static HTML, docs, or examples. A raw upload of committed `site/public` files can overwrite public pages with blank analytics configuration if those files were not generated from the current CMS/config values. After any static upload, operators must verify analytics/ads config on the public site or publish through the intended Website CMS/static workflow. This is an operations warning only, not a script or code change.
+
 Final verification should confirm public pages do not contain placeholder IDs such as `G-XXXXXXXXXX` or `AW-123456789`, do not include `googletagmanager.com/gtag/js` while IDs are empty, `download.html` shows current Windows installer details from `latest.json` when static release details are available, and `robots.txt`, `sitemap.xml`, `llms.txt`, and `marketing-consent.js` return `200`.
 
 ## Download page readiness
@@ -93,7 +95,7 @@ Windows direct release upload is separate from backend deploy and static website
 
 ## Paddle/legal readiness
 
-Live Paddle is not enabled yet. Do not change production Paddle environment values during website review. Do not place real Paddle API keys, price IDs, client-side tokens, webhook secrets, raw payloads, signatures, customer IDs, transaction IDs, JWT secrets, database URLs, OpenAI keys, or other secrets in docs or public pages.
+Controlled live Paddle validation is completed for payment/webhook/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revoke, but broad public paid launch remains pending final readiness, legal, support, and operations review. Do not change production Paddle environment values during website review or treat controlled validation as a completed paid launch. Do not place real Paddle API keys, price IDs, client-side tokens, webhook secrets, raw payloads, signatures, customer IDs, transaction IDs, JWT secrets, database URLs, OpenAI keys, or other secrets in docs or public pages.
 
 Paddle remains behind the backend/provider adapter. Desktop must not directly decide Premium and must not directly integrate with Paddle. Backend remains the source of truth for plan, subscription, entitlement, usage, and limits. Entitlement remains the source of Premium access; `PaymentEntity` is diagnostic payment history only.
 
@@ -114,7 +116,7 @@ Legal texts are product/legal drafts and must not be described as final legal ad
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.99`.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.108`.
 - Website: public pages generated and Paddle-review polish completed.
 - Download: current Windows tester release visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release `1.1`.
@@ -140,7 +142,7 @@ Publishers must create `/paddle.public.json` during static-site publish from `si
 
 ## 2026-06-30 Paddle live checkout/Admin readiness update
 
-Current production facts after backend `0.1.35-backend.99` and the 2026-07-02 controlled live validation:
+Current production facts after backend `0.1.35-backend.108` and the 2026-07-02 controlled live validation:
 
 - Backend health and database health are `200 Healthy`.
 - Backend server-side Paddle configuration is in the existing env file `/etc/languagevoicetutor/backend.env`; do not invent a second env file and do not create Paddle live systemd drop-ins for this configuration.

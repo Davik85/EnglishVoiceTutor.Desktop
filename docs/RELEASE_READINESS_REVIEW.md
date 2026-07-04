@@ -97,7 +97,7 @@ No new critical blockers were found in this documentation/source review. The ear
 
 ### Paddle production readiness
 
-- Production/live Paddle remains deferred. Complete live credentials, live product/price, live webhook destination, webhook monitoring, reconciliation, refunds, chargebacks, customer portal, finance operations, and legal policy review before broad paid launch.
+- Controlled live Paddle validation is completed for payment/webhook/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revoke. Broad public paid launch remains pending final readiness, legal, support, and operations review; do not treat controlled validation as a completed paid launch. Remaining broad-launch readiness includes webhook monitoring, reconciliation, partial-refund manual-review policy, chargeback operations, customer portal/subscription management, finance operations, and legal policy review.
 
 ### Support/admin operations
 
@@ -157,7 +157,7 @@ Phase 4 is complete for the current release-readiness level: Phase 4A backup/rea
 
 Phase 5A lightweight production logging/privacy audit is complete and documented in `docs/LOGGING_PRIVACY_AUDIT.md`. This was documentation/audit only: no code, backend runtime behavior, Desktop behavior, billing/Paddle semantics, EF migrations, deployment scripts, external services, or heavy monitoring infrastructure were changed. No obvious dangerous source-code logging issue requiring immediate fix was found.
 
-The current logging/privacy posture remains controlled-tester appropriate when operators follow the redaction rule: paste only bounded non-secret operational evidence, and never paste secrets, tokens, connection strings, `.env` contents, raw Paddle signatures or payloads, raw OpenAI/STT/TTS/lesson content, SQL dumps, backup contents, or full unfiltered terminal transcripts. The smallest next hardening step is a bounded production log sampling/redaction checklist before introducing any heavy monitoring stack. Broad public production readiness is still not claimed, and production/live Paddle readiness remains deferred.
+The current logging/privacy posture remains controlled-tester appropriate when operators follow the redaction rule: paste only bounded non-secret operational evidence, and never paste secrets, tokens, connection strings, `.env` contents, raw Paddle signatures or payloads, raw OpenAI/STT/TTS/lesson content, SQL dumps, backup contents, or full unfiltered terminal transcripts. The smallest next hardening step is a bounded production log sampling/redaction checklist before introducing any heavy monitoring stack. Broad public production readiness is still not claimed. Controlled live Paddle validation is completed, but broad paid launch readiness remains pending final legal, support, operations, and release-readiness review.
 
 ## 2026-06-24 Phase 5C production logging hardening note
 
@@ -194,7 +194,7 @@ Backend deployment, database migrations, Website CMS/static site publish, and Wi
 
 ### Verified current release point from tracked repository state
 
-- Windows direct release is tracked as `1.0` in `site/public/releases/windows/direct/latest.json`, with `LanguageVoiceTutorSetup-1.1.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.1`, and `updateMode=manual-confirmation`.
+- Windows direct release is tracked as `1.1` in `site/public/releases/windows/direct/latest.json`, with `LanguageVoiceTutorSetup-1.1.exe`, `backendBaseUrl=https://api.languagevoicetutor.com`, `minimumSupportedVersion=1.1`, and `updateMode=manual-confirmation`.
 - Backend production release is tracked in release docs as `0.1.35-backend.108`. The live `/opt/languagevoicetutor/backend/current` symlink was manually verified with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` and resolved to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.108`; production `/health` and `/api/health/database` were verified healthy. No backend deploy was performed by this documentation task.
 - Admin CMS AI Models settings are persistent server data outside versioned backend release folders. Known-good model settings are: lesson tutor chat `gpt-5.5`; feedback/correction `gpt-5.2`; lesson hint `gpt-5.2`; translation `gpt-5.2`.
 - For `gpt-5.5`, backend requests must omit `temperature`. API keys and provider secrets remain server environment secrets. The Desktop app must not call OpenAI directly and must not choose OpenAI model IDs.

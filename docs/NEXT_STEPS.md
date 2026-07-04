@@ -91,6 +91,8 @@ Website Publish now emits or maintains public HTML pages, `robots.txt`, `sitemap
 
 Consent mode defaults to denied before user choice for `analytics_storage`, `ad_storage`, `ad_user_data`, and `ad_personalization`. The banner supports Accept all, Reject non-essential, Manage choices, and a Privacy Policy link. Privacy Policy includes optional analytics, advertising, and cookie consent disclosure. The website remains usable when non-essential cookies are rejected, and GA/Ads scripts must not be emitted when IDs are empty or tracking is disabled.
 
+Static upload warning: analytics IDs are CMS/config controlled. Real GA/Ads IDs, conversion labels, and Search Console tokens must not be committed into static HTML, docs, or examples. A raw upload of committed `site/public` files can overwrite public pages with blank analytics configuration if those files were not generated from the current CMS/config values. After any static upload, operators must verify analytics/ads config on the public site or publish through the intended Website CMS/static workflow. This is an operations warning only, not a script or code change.
+
 Final verification should confirm public pages do not contain placeholder IDs such as `G-XXXXXXXXXX` or `AW-123456789`, do not include `googletagmanager.com/gtag/js` while IDs are empty, `download.html` shows current Windows installer details from `latest.json` when static release details are available, and `robots.txt`, `sitemap.xml`, `llms.txt`, and `marketing-consent.js` return `200`.
 
 ## Website/public review checklist
@@ -132,7 +134,7 @@ Code signing remains deferred. CMS published-snapshot runtime is active for publ
 
 ## Paddle/live billing next-step guardrails
 
-Production billing/Paddle/subscription payment lifecycle remains deferred. Live Paddle is not enabled yet. Do not change production Paddle environment values, add live checkout links, or commit secrets. Paddle stays behind the backend/provider adapter. Desktop does not call Paddle directly and does not decide Premium directly.
+Controlled live Paddle validation is completed for payment/webhook/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revoke. Broad public paid launch remains pending final readiness, legal, support, and operations review. Do not broaden production Paddle environment values, add new live checkout links, or commit secrets as part of docs-only work. Paddle stays behind the backend/provider adapter. Desktop does not call Paddle directly and does not decide Premium directly.
 
 Backend remains source of truth for plan, subscription, entitlement, usage, and limits. Entitlement is the source of Premium access; `PaymentEntity` is diagnostic payment history only. Desktop and future mobile clients share one backend account, one backend database, one subscription/entitlement state, and one lesson history/progress source. Paddle may be the first web/desktop provider, but Apple/Google must remain possible later for mobile. Do not add YooKassa or Russia-only billing assumptions.
 
