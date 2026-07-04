@@ -35,27 +35,68 @@ These facts are stable enough to use as mobile planning inputs:
 - Website CMS owns public website wording; repository static files can be stale snapshots unless they are explicitly non-CMS-managed files.
 - Backend deploy, static site upload, Windows release upload, and database migrations are separate operations and must remain separate in planning and runbooks.
 
-## Shared product model required for Windows and mobile
+## Mobile v1 product principle
 
-Future mobile work must preserve a single shared product model across Windows desktop and mobile:
+Mobile v1 is another client for the same Language Voice Tutor product, not a separate product. The first mobile version must include the same core product functionality as the Windows desktop app, adapted visually and ergonomically for phone screens. Users should recognize the same account, learning model, Premium status, and lesson behavior rather than feeling like they moved to a different product.
 
-- One backend account.
-- One backend database.
-- One subscription/entitlement state.
-- One usage/limits model.
-- One lesson history/progress source.
-- One settings/profile model where applicable.
+## Mobile v1 shared product scope
+
+Future mobile work must preserve the same product model across Windows desktop and mobile:
+
+- Same user account as Windows desktop.
+- Same production backend.
+- Same backend database.
+- Same Premium, subscription, and entitlement status.
+- Same usage and limits model.
+- Same lesson history and progress.
+- Same study-language, level, topic, and scenario model.
+- Same AI tutor lesson behavior, adapted to mobile UX and phone ergonomics.
+- Same account, settings, and profile model where applicable.
+- Mobile UI should be visually adapted for phone screens, but product behavior should remain consistent with desktop.
+
+## Shared backend, account, and entitlement boundary
+
+The backend remains the source of truth for accounts, auth/session behavior, Premium entitlement, usage/limits, lesson history/progress, settings/profile data where applicable, and AI tutor requests. Windows desktop and mobile clients must check the same backend account status and must not maintain client-specific entitlement decisions.
+
+Required shared-boundary rules:
+
+- No separate mobile backend.
+- No separate mobile database.
+- No separate mobile account system.
+- No separate mobile-only Premium state.
+- No client-side OpenAI calls.
+- No client-side Premium decisions.
+- No OpenAI keys, Paddle secrets, Google Play credentials, Apple credentials, webhook secrets, or billing secrets in mobile clients.
+
+## Billing provider and payment verification boundary
+
+Payment provider may differ by purchase surface, but Premium entitlement must remain shared through the backend entitlement/source-of-truth model. Existing Paddle billing remains valid for website/desktop. A future Google Play Billing provider should plug into the backend as another billing provider, and a future Apple App Store provider may later plug into the same backend entitlement model.
+
+Android payments should be planned around Google Play Billing, not a separate client-side Google Pay-only entitlement model. The mobile app may initiate the Google Play purchase flow and send the resulting purchase token to the backend, but the backend must verify the purchase with the Google Play Developer API before Premium is granted. After verification, the backend creates, extends, pauses, expires, or revokes Premium through the same entitlement/source-of-truth model already used by desktop/Paddle.
+
+Cross-client Premium recognition must remain account/backend based:
+
+- Desktop must recognize Premium purchased through Google Play after checking backend account status.
+- Mobile must recognize Premium purchased through Paddle, website, or desktop after checking backend account status.
+- Do not create separate mobile subscriptions outside the backend entitlement model.
+- Do not let the mobile client decide Premium locally.
 
 ## Explicit constraints
 
 Mobile planning must not introduce or assume:
 
 - A separate mobile backend.
+- A separate mobile database.
+- A separate mobile account system.
 - A separate mobile subscription model.
+- A separate mobile-only Premium state.
 - Client-side OpenAI calls.
 - Client-side Premium decisions.
+- Mobile implementation code in this task.
 - Mobile architecture planning in this document.
-- App Store or Google Play implementation planning in this document.
+- Mobile UI framework selection in this document.
+- App Store or Google Play release planning in this document.
+- Billing code changes in this document.
 
 ## Known risks and backlog for mobile planning
 
