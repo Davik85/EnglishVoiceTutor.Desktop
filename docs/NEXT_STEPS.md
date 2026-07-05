@@ -2,6 +2,17 @@
 
 Review date: 2026-06-29.
 
+## Mobile v1 planning next step
+
+Before any mobile implementation project is created, review and approve the Mobile v1 planning scope in `docs/MOBILE_V1_PLANNING.md`. The review should explicitly cover the shared-product boundaries, backend/API gaps, billing provider plan, and the provisional technology comparison. Choose a mobile technology only after the Mobile v1 scope is approved.
+
+Required review decisions:
+
+- Approve that Mobile v1 is the same Language Voice Tutor product and uses the same backend account, subscription, entitlement, lesson history, progress, limits, and AI tutor behavior.
+- Review backend/API gaps for auth/session, `/api/me`, settings sync, subscription status, lesson access, lesson history/progress, voice/TTS, app-version metadata, stable DTOs/errors, and mobile usage/rate limits.
+- Review the billing provider plan: Paddle remains valid for website/desktop, Google Play Billing is required for Android mobile billing when implemented, and every provider maps into the same backend entitlement model.
+- Choose Flutter, React Native, Kotlin Multiplatform / Android native first, .NET MAUI, or another mobile technology only after scope approval.
+
 ## Source of truth for current versions
 
 These docs are a release-readiness handoff snapshot. Always verify live/public state before announcing versions.
