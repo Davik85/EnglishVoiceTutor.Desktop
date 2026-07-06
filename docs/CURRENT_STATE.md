@@ -39,7 +39,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.108`.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.109`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows direct public release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
@@ -69,13 +69,13 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release after the Website CMS / Download CTA layout/background and CMS rendering work: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.108`. Current-state docs must not use the obsolete phrase “current backend release is `0.1.35-backend.99`” except when explicitly identifying it as outdated wording. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
+Current backend release after the selected tutor settings API deployment: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.109`. Previous backend release before this deployment was `/opt/languagevoicetutor/backend/releases/0.1.35-backend.108`. Current-state docs must not use the obsolete phrase “current backend release is `0.1.35-backend.99`” except when explicitly identifying it as outdated wording. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
 
 Backend deployment uses:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.108
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.108
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.109
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.109
 ```
 
 The backend upload flow uses the uploaded `deploy-backend-release.sh` helper and `ssh -tt` for sudo restart/status when needed. Do not document old fragile inline bash deployment paths as the current flow.
@@ -289,6 +289,13 @@ Desktop now and future mobile clients share one backend account, one backend dat
 
 Website/legal pages prepared for review include Pricing / Subscription terms, Terms of Use, Privacy Policy, Refund Policy, Cancellation Policy, Support, Seller / Company Details, AI & Data Disclosure, Platform Availability / Service Status, and Download. Legal texts are product/legal drafts and must not be described as final legal advice. Seller details are public business details only; do not publish passport/private personal data. `Paddle.com` bare domains are clickable via markdown/autolink rendering. The download page, footer, and legal/support pages are Paddle-review-ready pending final owner/legal review.
 
+
+## Selected tutor settings API deployment
+
+Backend commit `268681e` (`Add selected tutor to user settings API`) is deployed in production release `0.1.35-backend.109`; the previous backend release was `0.1.35-backend.108`. The deployed package was `LanguageVoiceTutor.Backend-linux-x64-0.1.35-backend.109.zip`, uploaded/deployed with the normal PackageFirst backend flow. The deploy script did not run EF migrations because no database migration was needed: `UserProfileEntity.SelectedTutorId` already existed in the EF model and existing migrations. Production verification after deployment confirmed `/opt/languagevoicetutor/backend/current` resolved to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.109`, `languagevoicetutor-backend.service` was active/running, `https://api.languagevoicetutor.com/health` returned `200 Healthy`, and `https://api.languagevoicetutor.com/api/health/database` returned `200 Healthy`.
+
+`selectedTutorId` is no longer a known backend API gap. `/api/me/settings` is now the persisted account-state source for the selected tutor: `GET /api/me/settings` returns `selectedTutorId`, and `PUT /api/me/settings` persists the selected tutor when a valid `selectedTutorId` is supplied. `GET /api/tutor-options` remains the source for available tutor options. The backend validates supplied tutor IDs against `TutorAvatarOptions.All`, rejects invalid values, canonicalizes valid IDs, and persists them to `UserProfileEntity.SelectedTutorId`. Omitted or `null` `selectedTutorId` values preserve the existing selected tutor for backward compatibility. The existing settings fields (`nativeLanguage`, `studyLanguage`, `explanationLanguage`, `speechVoice`, `speechSpeed`, and `conversationModeEnabled`) continue to work separately, and `speechVoice` is not changed automatically when `selectedTutorId` changes.
+
 ## AI model settings in Super Admin CMS
 
 AI model identifiers for backend runtime are managed through the Super Admin / Bootstrap Admin controlled **Admin → System → AI Models** CMS endpoint set. Backend runtime remains the source of truth for AI model selection: the Desktop app calls backend endpoints and does not choose OpenAI model IDs. The active and draft values are stored in JSON/file-based persistent server data at `site/content/ai-model-settings.json` resolved outside versioned backend release folders (for production, under the persistent `/opt/languagevoicetutor/backend/site/content/` tree rather than `/opt/languagevoicetutor/backend/current` or `/opt/languagevoicetutor/backend/releases/<version>`). Packaged defaults are only fallback/seed data; startup must not overwrite an existing published active file. API keys are not stored in CMS, no database table is used, and no EF migration was added. OpenAI API keys remain server environment secrets, especially `OPENAI_API_KEY`.
@@ -337,7 +344,7 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, verified persistent AI Models production storage, Website CMS draft/publish mechanics, and documented secret boundaries.
 
-Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.108`, with deploys, health checks, database health checks, and migrations kept as separate operations.
+Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.109`, with deploys, health checks, database health checks, and migrations kept as separate operations.
 
 Blocked before broad public paid release: code signing for the direct installer, direct installer clean-machine/update smoke, final website/legal/support/pricing approval, monitoring/privacy/release-readiness review, and explicit release decision after controlled tester feedback. Controlled Paddle live payment/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed, but they are not a broad launch decision; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 
@@ -406,7 +413,7 @@ Admin RBAC note: `productionRolesAvailable` now means persistent Admin role auth
 
 ## 2026-07-01 Admin Activity and emergency Premium revoke update
 
-Production backend current release is `0.1.35-backend.108`; the `current` symlink was verified at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.108`, `languagevoicetutor-backend.service` is active/running, `/health` returns `200 Healthy`, and `/api/health/database` returns `200 Healthy`. Backend .99 was deployed through the normal backend package/upload flow. The deploy script did not run EF migrations, and Windows installer files were not changed.
+Production backend current release is `0.1.35-backend.109`; the `current` symlink was verified at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.109`, `languagevoicetutor-backend.service` is active/running, `/health` returns `200 Healthy`, and `/api/health/database` returns `200 Healthy`. Backend .99 was deployed through the normal backend package/upload flow. The deploy script did not run EF migrations, and Windows installer files were not changed.
 
 - Admin Activity is visible and usable in production and includes `admin_role_assignment_events` plus `admin_actions`, including `manual_premium_grant` and `manual_premium_revoke`.
 - Admin Activity table usability was improved with a top horizontal scrollbar and wider Admin note column; Admin note/reason is visible where stored, and `safeMetadataJson` remains separate from Admin note.

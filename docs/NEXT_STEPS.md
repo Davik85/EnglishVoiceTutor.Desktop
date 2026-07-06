@@ -9,7 +9,7 @@ Before any mobile implementation project is created, review and approve the Mobi
 Required review decisions:
 
 - Approve that Mobile v1 is the same Language Voice Tutor product and uses the same backend account, subscription, entitlement, lesson history, progress, limits, and AI tutor behavior.
-- Review backend/API gaps for auth/session, `/api/me`, settings sync, subscription status, lesson access, lesson history/progress, voice/TTS, app-version metadata, stable DTOs/errors, and mobile usage/rate limits.
+- Review backend/API gaps for auth/session, `/api/me`, settings sync, subscription status, lesson access, lesson history/progress, voice/TTS, app-version metadata, stable DTOs/errors, and mobile usage/rate limits. The selected tutor settings gap is closed in backend `0.1.35-backend.109`: mobile can later replace the read-only selected tutor note with a real picker that reads `GET /api/tutor-options` and persists `selectedTutorId` through `/api/me/settings`.
 - Review the billing provider plan: Paddle remains valid for website/desktop, Google Play Billing is required for Android mobile billing when implemented, and every provider maps into the same backend entitlement model.
 - Choose Flutter, React Native, Kotlin Multiplatform / Android native first, .NET MAUI, or another mobile technology only after scope approval.
 
@@ -43,7 +43,7 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.108`; Production Admin RBAC / persistent role management is completed.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.109`; Production Admin RBAC / persistent role management is completed.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
@@ -75,6 +75,8 @@ Current health checks:
 Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
+
+Selected tutor persistence is completed and production-deployed in backend `0.1.35-backend.109`: `/api/me/settings` returns and persists `selectedTutorId`, `GET /api/tutor-options` remains the tutor option source, omitted or `null` selected tutor values preserve existing state, invalid tutor IDs are rejected, `speechVoice` remains independent, no database migration was needed, and production health/database health are `200 Healthy`.
 
 Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Production Admin RBAC / persistent role management is completed after backend `0.1.35-backend.108`; Admin permission fallback remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
 

@@ -18,8 +18,8 @@ The backend and desktop now treat native language, selected study language, expl
 - `UserProfileEntity.NativeLanguage` is the source for the user's native language.
 - `UserSettingsEntity.StudyLanguage` is the selected supported study language for lessons.
 - `UserSettingsEntity.ExplanationLanguage` is the explanation/interface language preference, separate from native language.
-- `UserProfileEntity.SelectedTutorId` is the backend source for selected tutor account state. `/api/me/settings` returns `selectedTutorId`, and `/api/tutor-options` remains the source for available tutor IDs.
-- `speechVoice` remains separate from `selectedTutorId`; saving a selected tutor must not automatically overwrite the selected speech voice.
+- `UserProfileEntity.SelectedTutorId` is the backend source for persisted selected tutor account state. `GET /api/me/settings` returns `selectedTutorId`, `PUT /api/me/settings` persists it when a valid `selectedTutorId` is supplied, and `GET /api/tutor-options` remains the source for available tutor IDs.
+- `speechVoice` remains separate from `selectedTutorId`; saving a selected tutor must not automatically overwrite the selected speech voice. Omitted or `null` `selectedTutorId` values preserve the existing backend-selected tutor for backward compatibility, and invalid IDs are rejected by backend validation.
 
 Desktop settings writes should map UI selections as follows:
 
