@@ -2,6 +2,10 @@
 
 Language Voice Tutor Desktop is a WPF desktop product for guided English speaking practice. The current product lesson flow is stabilized for local Windows testing: learners choose a level, topic, subtopic, and scenario, then practice in Lesson Chat by typing or recording speech.
 
+## Windows client functionality
+
+For the current Windows desktop client feature source of truth, customer-facing functional overview, and future mobile planning reference, see [`docs/WINDOWS_CLIENT_FUNCTIONALITY_OVERVIEW.md`](docs/WINDOWS_CLIENT_FUNCTIONALITY_OVERVIEW.md).
+
 ## Run the desktop app
 
 1. Restore dependencies:
