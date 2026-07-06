@@ -49,6 +49,12 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
             profile.UpdatedAt = now;
         }
 
+        if (request.SelectedTutorId is not null)
+        {
+            profile.SelectedTutorId = ToSupportedCanonicalTutorId(request.SelectedTutorId);
+            profile.UpdatedAt = now;
+        }
+
         settings.StudyLanguage = StudyLanguageConstants.ToCanonicalValue(request.StudyLanguage);
         settings.ExplanationLanguage = NativeLanguageCatalog.GetByIdOrName(request.ExplanationLanguage).Id;
         settings.SpeechVoice = request.SpeechVoice.Trim();
@@ -164,6 +170,11 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
             throw new UserSettingsValidationException("Explanation language must be a supported native/interface/explanation language code or name.");
         }
 
+        if (request.SelectedTutorId is not null)
+        {
+            _ = ToSupportedCanonicalTutorId(request.SelectedTutorId);
+        }
+
         if (string.IsNullOrWhiteSpace(request.SpeechVoice))
         {
             throw new UserSettingsValidationException("Speech voice is required.");
@@ -175,18 +186,33 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         }
     }
 
+    private static string ToSupportedCanonicalTutorId(string? tutorId)
+    {
+        var canonicalTutorId = TutorAvatarOptions.ToCanonicalId(tutorId);
+        var supportedTutor = TutorAvatarOptions.All.FirstOrDefault(option => string.Equals(option.Id, canonicalTutorId, StringComparison.OrdinalIgnoreCase));
+        if (supportedTutor is not null)
+        {
+            return supportedTutor.Id;
+        }
+
+        throw new UserSettingsValidationException($"Selected tutor must be one of: {string.Join(", ", TutorAvatarOptions.All.Select(option => option.Id))}.");
+    }
+
     private static UserSettingsResponse ToResponse(UserEntity user)
     {
         var settings = user.Settings ?? throw new InvalidOperationException("User settings are required.");
-        var nativeLanguage = string.IsNullOrWhiteSpace(user.Profile?.NativeLanguage)
+        var profile = user.Profile ?? throw new InvalidOperationException("User profile is required.");
+        var nativeLanguage = string.IsNullOrWhiteSpace(profile.NativeLanguage)
             ? DefaultNativeLanguage
-            : user.Profile.NativeLanguage;
+            : profile.NativeLanguage;
+        var selectedTutorId = TutorAvatarOptions.GetById(profile.SelectedTutorId).Id;
 
         return new UserSettingsResponse(
             settings.UserId,
             nativeLanguage,
             settings.StudyLanguage,
             settings.ExplanationLanguage,
+            selectedTutorId,
             settings.SpeechVoice,
             settings.SpeechSpeed,
             settings.ConversationModeEnabled,
