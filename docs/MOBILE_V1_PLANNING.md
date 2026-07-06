@@ -80,7 +80,7 @@ Mobile needs a stable account summary and settings sync contract for:
 - Premium/entitlement summary suitable for learner UI.
 - Trial/free/Premium status and relevant dates.
 - Free lessons remaining or limit display fields.
-- Study language, level, topic, scenario, voice, UI, and lesson preferences where shared.
+- Study language, level, topic, scenario, voice, UI, selected tutor, and lesson preferences where shared. Mobile can now read tutor options from `GET /api/tutor-options` and, in a later mobile-only implementation task, persist `selectedTutorId` through `GET`/`PUT /api/me/settings`.
 - Server timestamps and version fields so mobile can reconcile cached settings safely.
 - Safe partial updates for mobile settings without overwriting desktop-only values.
 
