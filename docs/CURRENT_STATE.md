@@ -33,6 +33,10 @@ Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBas
 
 Generated local files under `artifacts/` are not proof that a version is live on the public site. A locally built installer becomes public only after the Windows direct release files are uploaded to the website release folder and `latest.json` is verified over HTTPS. Generated release outputs, including `latest.json`, `changelog.json`, `known-issues.json`, `checksums.sha256`, installers, and packages, must not be committed.
 
+## Windows client functionality source of truth
+
+For the current Windows desktop client feature baseline, language counts, lesson flow, settings sections, and mobile-client reuse notes, see [Windows Client Functionality Overview](WINDOWS_CLIENT_FUNCTIONALITY_OVERVIEW.md).
+
 ## Concise release-readiness status
 
 - Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.108`.
