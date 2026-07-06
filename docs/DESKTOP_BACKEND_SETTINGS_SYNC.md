@@ -1,6 +1,6 @@
 # Desktop backend settings sync
 
-Review date: 2026-06-15.
+Review date: 2026-07-06.
 
 The desktop app remains local-first for user settings while authenticated users also sync account preferences with the backend. Lessons continue to read the selected study language through the normal desktop settings flow, but signed-in saves also send the separated settings fields expected by the backend contract.
 
@@ -13,11 +13,13 @@ The desktop app remains local-first for user settings while authenticated users 
 
 ## Language ownership and sync contract
 
-The backend and desktop now treat native language, selected study language, and explanation/interface language as separate concepts:
+The backend and desktop now treat native language, selected study language, explanation/interface language, and selected tutor as separate concepts:
 
 - `UserProfileEntity.NativeLanguage` is the source for the user's native language.
 - `UserSettingsEntity.StudyLanguage` is the selected supported study language for lessons.
 - `UserSettingsEntity.ExplanationLanguage` is the explanation/interface language preference, separate from native language.
+- `UserProfileEntity.SelectedTutorId` is the backend source for selected tutor account state. `/api/me/settings` returns `selectedTutorId`, and `/api/tutor-options` remains the source for available tutor IDs.
+- `speechVoice` remains separate from `selectedTutorId`; saving a selected tutor must not automatically overwrite the selected speech voice.
 
 Desktop settings writes should map UI selections as follows:
 

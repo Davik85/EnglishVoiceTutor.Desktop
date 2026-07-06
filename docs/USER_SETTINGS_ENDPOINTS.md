@@ -1,6 +1,6 @@
 # User Settings Endpoints
 
-Review date: 2026-06-15.
+Review date: 2026-07-06.
 
 ## Status
 
@@ -26,7 +26,7 @@ Review date: 2026-06-15.
 - Signed in -> uses `/api/me/settings`.
 - Logout -> returns to `/api/dev/user-settings`.
 - Backend-backed settings remain the source of truth for signed-in account preferences.
-- Authenticated request/response payloads include the separated `NativeLanguage`, `StudyLanguage`, and `ExplanationLanguage` concepts.
+- Authenticated request/response payloads include the separated `NativeLanguage`, `StudyLanguage`, `ExplanationLanguage`, and backend-persisted `selectedTutorId` concepts.
 
 ## Auth behavior
 
@@ -39,6 +39,9 @@ Review date: 2026-06-15.
 - `UserProfileEntity.NativeLanguage` is the backend source for native language.
 - `UserSettingsEntity.StudyLanguage` is the selected supported study language.
 - `UserSettingsEntity.ExplanationLanguage` is the explanation/interface language preference.
+- `UserProfileEntity.SelectedTutorId` is backend-owned account state for the selected tutor and is returned as `selectedTutorId` from `/api/me/settings` and `/api/dev/user-settings`.
+- Available tutor options still come from `/api/tutor-options`; settings writes validate `selectedTutorId` against those approved tutor IDs.
+- `speechVoice` remains a separate setting and is not automatically overwritten when `selectedTutorId` changes.
 - Desktop sends `SelectedNativeLanguageOption.Id` as `NativeLanguage`.
 - Desktop sends `SelectedInterfaceLanguageOption.Id` as `ExplanationLanguage`, or the current intended interface/explanation source if that UI is refactored later.
 - Desktop sends the selected supported study language as `StudyLanguage`.
@@ -53,6 +56,7 @@ Review date: 2026-06-15.
 - empty `explanationLanguage`
 - empty `speechVoice`
 - `speechSpeed` outside allowed range
+- unsupported `selectedTutorId` (valid tutor IDs come from `/api/tutor-options`)
 
 ## Current language boundaries
 
