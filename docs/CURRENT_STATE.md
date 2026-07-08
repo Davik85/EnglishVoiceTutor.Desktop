@@ -69,13 +69,13 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release after the selected tutor settings API deployment: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.109`. Previous backend release before this deployment was `/opt/languagevoicetutor/backend/releases/0.1.35-backend.108`. Current-state docs must not use the obsolete phrase “current backend release is `0.1.35-backend.99`” except when explicitly identifying it as outdated wording. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
+Current backend release after the mobile lesson-session reply placeholder deployment: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.110`. Previous backend release before this deployment was `/opt/languagevoicetutor/backend/releases/0.1.35-backend.109`. Current-state docs must not use the obsolete phrase “current backend release is `0.1.35-backend.99`” except when explicitly identifying it as outdated wording. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
 
 Backend deployment uses:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.109
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.109
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.110
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.110
 ```
 
 The backend upload flow uses the uploaded `deploy-backend-release.sh` helper and `ssh -tt` for sudo restart/status when needed. Do not document old fragile inline bash deployment paths as the current flow.
@@ -413,7 +413,7 @@ Admin RBAC note: `productionRolesAvailable` now means persistent Admin role auth
 
 ## 2026-07-01 Admin Activity and emergency Premium revoke update
 
-Production backend current release is `0.1.35-backend.109`; the `current` symlink was verified at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.109`, `languagevoicetutor-backend.service` is active/running, `/health` returns `200 Healthy`, and `/api/health/database` returns `200 Healthy`. Backend .99 was deployed through the normal backend package/upload flow. The deploy script did not run EF migrations, and Windows installer files were not changed.
+Production backend current release is `0.1.35-backend.110`; the `current` symlink was verified at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.110`, `languagevoicetutor-backend.service` is active/running, `/health` returns `200 Healthy`, and `/api/health/database` returns `200 Healthy`. Backend .99 was deployed through the normal backend package/upload flow. The deploy script did not run EF migrations, and Windows installer files were not changed.
 
 - Admin Activity is visible and usable in production and includes `admin_role_assignment_events` plus `admin_actions`, including `manual_premium_grant` and `manual_premium_revoke`.
 - Admin Activity table usability was improved with a top horizontal scrollbar and wider Admin note column; Admin note/reason is visible where stored, and `safeMetadataJson` remains separate from Admin note.
@@ -422,6 +422,17 @@ Production backend current release is `0.1.35-backend.109`; the `current` symlin
 - Emergency Premium Revoke does not mutate Paddle provider history, does not delete `PaymentEntity` records, does not fake Paddle webhook events, does not make payment history the Premium access source, and does not change Paddle webhook/payment activation rules. Cancel paid renewal remains a separate future-renewal cancellation action; paid subscription/provider state may show `cancellation_scheduled` and `cancelAtPeriodEnd=true` while backend Premium access can still be separately revoked by `super_admin` when needed.
 - No EF migration was added for this update; existing entitlement and admin action fields support the emergency revoke/audit behavior.
 - Controlled Paddle live payment/webhook/Premium activation, failed-payment non-activation, desktop cancel-renewal, and full-refund Premium revocation were completed on 2026-07-02. Chargeback remains implemented/test-covered but not live-chargeback-tested; partial refund remains conservative/manual-review; expanded customer portal/subscription management is deferred and not a current blocker. Session expiration audit persistence remains pending and must not be marked complete.
+
+
+## Mobile lesson-session reply placeholder production verification (2026-07-08)
+
+Production backend `0.1.35-backend.110` is deployed and verified for the backend-only mobile lesson-session reply placeholder route. The live `/opt/languagevoicetutor/backend/current` symlink resolved to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.110`, `https://api.languagevoicetutor.com/health` returned `200 OK` / `Healthy` / `Production`, `https://api.languagevoicetutor.com/api/health/database` returned `200 OK` / `Healthy` / `canConnect true`, and `languagevoicetutor-backend.service` was active/running. No EF migrations were added or run.
+
+The new route is `POST /api/me/lesson-sessions/{sessionId}/reply` with request body `{ "messageText": "..." }`. It authenticates the user, verifies session ownership, verifies active session state, checks existing limits where applicable, and for a valid active session intentionally returns controlled `409 Conflict` with `mobile_lesson_reply_not_implemented`. Blank `messageText` returns `400`, missing/not-owned sessions return `404`, inactive/ended sessions return the existing session-ended `409` payload, exceeded chat reply limits return the existing `429` free/rate-limit payload, and unavailable session storage returns the existing `503` storage-unavailable payload.
+
+This is not real mobile AI chat yet. Mobile must not call the existing desktop-owned `POST /api/lesson-chat/reply` endpoint directly, must not send the large desktop-built `LessonChatRequest`, must not duplicate desktop prompt/runtime/scenario/turn logic, and must not call OpenAI directly. The old `/api/lesson-chat/reply` endpoint was not changed. The expected next implementation direction is backend-side hydration of lesson runtime/server-side context before enabling AI replies, while mobile continues to send only `sessionId` and `messageText` to the new route.
+
+Pre-deploy verification passed: `dotnet test backend\EnglishVoiceTutor.Api.Tests\EnglishVoiceTutor.Api.Tests.csproj` passed `89/89`; `python .\tools\test_backend_linux_deployment_policy.py`, `python .\tools\test_backend_refresh_token_migration_policy.py`, `python .\tools\test_backend_refresh_token_policy.py`, and `python .\tools\test_desktop_release_backend_lock_policy.py` passed. This was docs/backend-route-only release scope and did not change desktop code, mobile repo code, billing, OpenAI/provider configuration, deployment scripts, Website CMS/static site content, voice, TTS, realtime, analytics, history, store setup, or installer release artifacts.
 
 ## Admin auth audit persistence production verification (2026-07-01)
 
