@@ -10,6 +10,7 @@ public static class ApiConstants
     public const string MockBotReplyText = "Thanks. I received your answer, and the tutor reply will appear here when AI chat is enabled.";
     public const string MockHintText = "You can say: Hi, my name is David.";
     public const string EmptyUserMessageError = "User message is required.";
+    public const string EmptyLessonSessionReplyMessageError = "MessageText is required.";
     public const string EmptyAudioFileError = "Audio file is required.";
     public const string EmptyTranslationTextError = "Text is required for translation.";
     public const string EmptyTargetLanguageError = "Target language is required for translation.";
@@ -56,6 +57,7 @@ public static class ApiConstants
     public const string MeLessonContentScenarioRoute = "/api/me/lesson-content/scenarios/{scenarioKey}";
     public const string MeLessonSessionByIdRoute = "/api/me/lesson-sessions/{sessionId:guid}";
     public const string MeLessonSessionFinishRoute = "/api/me/lesson-sessions/{sessionId:guid}/finish";
+    public const string MeLessonSessionReplyRoute = "/api/me/lesson-sessions/{sessionId:guid}/reply";
     public const string LessonSessionHeartbeatRoute = "/api/lesson-sessions/{sessionId:guid}/heartbeat";
     public const string LessonSessionAbandonRoute = "/api/lesson-sessions/{sessionId:guid}/abandon";
     public const string ActiveLessonSessionAbandonRoute = "/api/lesson-sessions/active/abandon";

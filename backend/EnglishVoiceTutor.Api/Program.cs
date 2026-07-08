@@ -181,6 +181,7 @@ builder.Services.AddScoped<RealtimeVoiceSessionService>();
 builder.Services.AddScoped<DevUserProvider>();
 builder.Services.AddScoped<IUserSettingsService, UserSettingsService>();
 builder.Services.AddScoped<ILessonSessionService, LessonSessionService>();
+builder.Services.AddScoped<ILessonSessionReplyService, LessonSessionReplyService>();
 builder.Services.AddScoped<ILessonMessageService, LessonMessageService>();
 builder.Services.AddScoped<ILessonSummaryService, LessonSummaryService>();
 builder.Services.AddScoped<ILessonHistoryService, LessonHistoryService>();
@@ -387,11 +388,13 @@ app.MapPost(ApiConstants.LessonSessionAbandonRoute, HandleAbandonLessonSessionAs
 app.MapPost(ApiConstants.ActiveLessonSessionAbandonRoute, HandleAbandonActiveLessonSessionAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonSessionsRoute, HandleGetDevLessonSessionsAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonSessionByIdRoute, HandleGetLessonSessionByIdAsync).RequireAuthorization();
+var authenticatedLessonReplyEndpoint = app.MapPost(ApiConstants.MeLessonSessionReplyRoute, HandleCreateLessonSessionReplyAsync).RequireAuthorization();
 var authenticatedLessonMessageEndpoint = app.MapPost(ApiConstants.MeLessonSessionMessagesRoute, HandleCreateLessonMessageAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonSessionMessagesRoute, HandleGetLessonMessagesAsync).RequireAuthorization();
 if (rateLimitingEnabled)
 {
     authenticatedLessonStartEndpoint.RequireRateLimiting(RateLimitingConstants.LessonStartPolicyName);
+    authenticatedLessonReplyEndpoint.RequireRateLimiting(RateLimitingConstants.LessonChatReplyPolicyName);
     authenticatedLessonMessageEndpoint.RequireRateLimiting(RateLimitingConstants.LessonPersistedMessagePolicyName);
 }
 app.MapPut(ApiConstants.DevLessonSessionSummaryRoute, HandleUpsertDevLessonSummaryAsync);
@@ -955,6 +958,52 @@ static async Task<IResult> HandleCreateLessonMessageAsync(
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
         logger.LogWarning(exception, "Dev lesson message POST failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleCreateLessonSessionReplyAsync(
+    Guid sessionId,
+    LessonSessionReplyRequest request,
+    ILessonSessionReplyService lessonSessionReplyService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("LessonSessionReplyEndpoint");
+
+    try
+    {
+        var result = await lessonSessionReplyService.CreateReplyAsync(sessionId, request, cancellationToken);
+        return result.Status switch
+        {
+            LessonSessionReplyResultStatus.FreeLimitExceeded => Results.Json(
+                result.FreeLimitExceededResponse!,
+                statusCode: StatusCodes.Status429TooManyRequests),
+            LessonSessionReplyResultStatus.NotImplemented => Results.Json(
+                result.UnavailableResponse!,
+                statusCode: StatusCodes.Status409Conflict),
+            _ => Results.Problem(
+                title: "Lesson session reply failed.",
+                detail: "The lesson session reply result was not recognized.",
+                statusCode: StatusCodes.Status500InternalServerError)
+        };
+    }
+    catch (LessonSessionReplyValidationException exception)
+    {
+        return Results.BadRequest(new { error = exception.Message });
+    }
+    catch (KeyNotFoundException)
+    {
+        return Results.NotFound(new { error = "Lesson session was not found." });
+    }
+    catch (LessonSessionEndedElsewhereException exception)
+    {
+        logger.LogInformation("Rejected lesson session reply because session is no longer active. SessionId={SessionId}; Status={Status}.", exception.SessionId, exception.Status);
+        return CreateLessonSessionEndedElsewhereResult(exception);
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Lesson session reply POST failed because storage is unavailable.");
         return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }

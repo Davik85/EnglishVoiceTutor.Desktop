@@ -237,6 +237,7 @@ public static class RateLimitingServiceCollectionExtensions
         ApiConstants.LessonChatHintRoute => RateLimitingConstants.LessonHintPolicyName,
         ApiConstants.LessonChatFeedbackRoute => RateLimitingConstants.LessonFeedbackPolicyName,
         ApiConstants.MeLessonSessionsRoute when HttpMethods.IsPost(context.Request.Method) => RateLimitingConstants.LessonStartPolicyName,
+        _ when IsAuthenticatedLessonReplyRequest(context) => RateLimitingConstants.LessonChatReplyPolicyName,
         ApiConstants.MeSubscriptionStatusRoute or ApiConstants.MeLessonAccessRoute or ApiConstants.MeTrialClaimRoute => RateLimitingConstants.LessonStatusPolicyName,
         _ when IsAuthenticatedLessonMessageCreateRequest(context) => RateLimitingConstants.LessonPersistedMessagePolicyName,
         ApiConstants.AudioTranscriptionRoute => RateLimitingConstants.AudioTranscriptionPolicyName,
@@ -258,6 +259,11 @@ public static class RateLimitingServiceCollectionExtensions
         HttpMethods.IsPost(context.Request.Method)
         && context.Request.Path.Value?.StartsWith("/api/me/lesson-sessions/", StringComparison.OrdinalIgnoreCase) == true
         && context.Request.Path.Value.EndsWith("/messages", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsAuthenticatedLessonReplyRequest(HttpContext context) =>
+        HttpMethods.IsPost(context.Request.Method)
+        && context.Request.Path.Value?.StartsWith("/api/me/lesson-sessions/", StringComparison.OrdinalIgnoreCase) == true
+        && context.Request.Path.Value.EndsWith("/reply", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsAdminRequest(HttpContext context) =>
         context.Request.Path.Value?.StartsWith("/api/admin", StringComparison.OrdinalIgnoreCase) == true;
