@@ -17,7 +17,7 @@ This note is a concise planning input for future mobile work. It records the cur
 
 ## Current backend baseline
 
-- Production backend is `0.1.35-backend.108` and healthy at `https://api.languagevoicetutor.com`.
+- Production backend is `0.1.35-backend.111` and healthy at `https://api.languagevoicetutor.com`.
 - Backend health and database health are expected to be verified with `/health` and `/api/health/database` before treating the backend as current.
 - OpenAI calls are backend-only. Desktop clients call backend APIs; future mobile clients must do the same.
 - Website analytics is working, including the fixed `pay.html` analytics/consent coverage.
@@ -49,6 +49,7 @@ Future mobile work must preserve the same product model across Windows desktop a
 - Same Premium, subscription, and entitlement status.
 - Same usage and limits model.
 - Same lesson history and progress.
+- Same backend-owned lesson completion and summary source of truth.
 - Same study-language, level, topic, and scenario model.
 - Same AI tutor lesson behavior, adapted to mobile UX and phone ergonomics.
 - Same account, settings, and profile model where applicable.
@@ -80,6 +81,10 @@ Cross-client Premium recognition must remain account/backend based:
 - Mobile must recognize Premium purchased through Paddle, website, or desktop after checking backend account status.
 - Do not create separate mobile subscriptions outside the backend entitlement model.
 - Do not let the mobile client decide Premium locally.
+
+## Current mobile lesson completion integration step
+
+Mobile can implement Finish lesson + Summary without a new backend endpoint by using `PUT /api/me/lesson-sessions/{sessionId}/finish` and `GET /api/me/lesson-sessions/{sessionId}/summary`. The mobile client must not generate summaries locally or upload summary fields; the backend generates and persists summaries from persisted lesson messages and safe metadata. The summary read can return `ready` learner-safe fields or `unavailable`, and mobile must handle both. Development `/api/dev/.../summary` routes remain diagnostic-only and are not production mobile contracts.
 
 ## Explicit constraints
 
