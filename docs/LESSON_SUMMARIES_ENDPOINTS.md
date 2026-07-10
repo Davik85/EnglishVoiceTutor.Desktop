@@ -1,5 +1,7 @@
 # Lesson Summaries Endpoints
 
+Lesson summaries are backend-owned learner feedback. Authenticated desktop and mobile clients finish through `PUT /api/me/lesson-sessions/{sessionId}/finish` and read the learner-safe result through `GET /api/me/lesson-sessions/{sessionId}/summary`. Clients do not author or upload summary content. The `/api/dev/.../summary` routes below remain development diagnostics and are not production/mobile contracts.
+
 Review date: 2026-05-23.
 
 ## Status

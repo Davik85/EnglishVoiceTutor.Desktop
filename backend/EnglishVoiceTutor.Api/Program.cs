@@ -181,6 +181,7 @@ builder.Services.AddScoped<RealtimeVoiceSessionService>();
 builder.Services.AddScoped<DevUserProvider>();
 builder.Services.AddScoped<IUserSettingsService, UserSettingsService>();
 builder.Services.AddScoped<ILessonSessionService, LessonSessionService>();
+builder.Services.AddScoped<ILessonSummaryGenerationService, LessonSummaryGenerationService>();
 builder.Services.AddScoped<ILessonSessionReplyService, LessonSessionReplyService>();
 builder.Services.AddScoped<ILessonMessageService, LessonMessageService>();
 builder.Services.AddScoped<ILessonSummaryService, LessonSummaryService>();
@@ -383,6 +384,7 @@ app.MapGet(ApiConstants.DevLessonSessionMessagesRoute, HandleGetLessonMessagesAs
 var authenticatedLessonStartEndpoint = app.MapPost(ApiConstants.MeLessonSessionsRoute, HandleCreateDevLessonSessionAsync).RequireAuthorization();
 app.MapGet(ApiConstants.MeLessonContentScenarioRoute, HandleGetRuntimeLessonScenarioAsync).RequireAuthorization();
 app.MapPut(ApiConstants.MeLessonSessionFinishRoute, HandleFinishLessonSessionAsync).RequireAuthorization();
+app.MapGet(ApiConstants.MeLessonSessionSummaryRoute, HandleGetAuthenticatedLessonSummaryAsync).RequireAuthorization();
 app.MapPost(ApiConstants.LessonSessionHeartbeatRoute, HandleLessonSessionHeartbeatAsync).RequireAuthorization();
 app.MapPost(ApiConstants.LessonSessionAbandonRoute, HandleAbandonLessonSessionAsync).RequireAuthorization();
 app.MapPost(ApiConstants.ActiveLessonSessionAbandonRoute, HandleAbandonActiveLessonSessionAsync).RequireAuthorization();
@@ -958,6 +960,27 @@ static async Task<IResult> HandleCreateLessonMessageAsync(
     catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
     {
         logger.LogWarning(exception, "Dev lesson message POST failed because storage is unavailable.");
+        return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}
+
+static async Task<IResult> HandleGetAuthenticatedLessonSummaryAsync(
+    Guid sessionId,
+    ILessonSummaryService lessonSummaryService,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken)
+{
+    var logger = loggerFactory.CreateLogger("AuthenticatedLessonSummariesEndpoint");
+    try
+    {
+        var summary = await lessonSummaryService.GetAuthenticatedLessonSummaryAsync(sessionId, cancellationToken);
+        return summary is null
+            ? Results.NotFound(new { error = "Lesson session was not found." })
+            : Results.Ok(summary);
+    }
+    catch (Exception exception) when (IsLessonSessionStorageUnavailable(exception))
+    {
+        logger.LogWarning(exception, "Authenticated lesson summary GET failed because storage is unavailable.");
         return Results.Json(CreateLessonSessionStorageUnavailableResponse(), statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }

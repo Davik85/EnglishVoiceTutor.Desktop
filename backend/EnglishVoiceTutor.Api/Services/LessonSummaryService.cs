@@ -80,6 +80,17 @@ public sealed class LessonSummaryService(AppDbContext dbContext, IRequestUserRes
         return new LessonSummaryListResponse(items);
     }
 
+    public async Task<AuthenticatedLessonSummaryResponse?> GetAuthenticatedLessonSummaryAsync(Guid sessionId, CancellationToken cancellationToken)
+    {
+        var userId = requestUserResolver.ResolveCurrentUser().UserId;
+        var session = await dbContext.LessonSessions.Include(item => item.Summary)
+            .SingleOrDefaultAsync(item => item.Id == sessionId && item.UserId == userId, cancellationToken);
+        if (session is null) return null;
+        if (session.Summary is null) return new AuthenticatedLessonSummaryResponse(LessonSummaryConstants.UnavailableStatus, null, null, null, null, null, null, [], [], [], [], [], null, null);
+        var summary = session.Summary;
+        return new AuthenticatedLessonSummaryResponse(LessonSummaryConstants.ReadyStatus, session.LessonContentId, session.StudyLanguage, session.TopicTitle, session.SubtopicTitle, session.Level, summary.Summary, Split(summary.Strengths), Split(summary.Improvements), Split(summary.Vocabulary), Split(summary.Grammar), Split(summary.NextSteps), summary.CreatedAt, summary.UpdatedAt);
+    }
+
     private async Task<LessonSessionEntity> GetDevUserSessionAsync(Guid sessionId, CancellationToken cancellationToken)
     {
         var userId = requestUserResolver.ResolveCurrentUser().UserId;
@@ -124,4 +135,5 @@ public sealed class LessonSummaryService(AppDbContext dbContext, IRequestUserRes
     }
 
     private static string? TrimOrNull(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    private static IReadOnlyList<string> Split(string? value) => string.IsNullOrWhiteSpace(value) ? [] : value.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 }
