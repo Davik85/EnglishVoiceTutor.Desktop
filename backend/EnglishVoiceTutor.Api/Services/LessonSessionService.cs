@@ -14,6 +14,7 @@ public sealed class LessonSessionService(
     AppDbContext dbContext,
     IRequestUserResolver requestUserResolver,
     ILessonAccessDecisionService lessonAccessDecisionService,
+    ILessonSummaryGenerationService lessonSummaryGenerationService,
     ILogger<LessonSessionService> logger) : ILessonSessionService
 {
     private const string DefaultUserEmail = "dev-user@local.test";
@@ -114,6 +115,11 @@ public sealed class LessonSessionService(
             throw new KeyNotFoundException($"Lesson session '{sessionId}' was not found for the dev user.");
         }
 
+        if (string.Equals(session.Status, LessonSessionConstants.FinishedStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            await lessonSummaryGenerationService.TryGenerateForFinishedSessionAsync(session.Id, cancellationToken);
+            return ToResponse(session);
+        }
         EnsureSessionIsActive(session);
 
         var now = DateTimeOffset.UtcNow;
@@ -124,6 +130,7 @@ public sealed class LessonSessionService(
         session.UpdatedAt = now;
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await lessonSummaryGenerationService.TryGenerateForFinishedSessionAsync(session.Id, cancellationToken);
 
         return ToResponse(session);
     }

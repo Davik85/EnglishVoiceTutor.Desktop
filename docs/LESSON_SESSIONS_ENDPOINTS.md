@@ -4,7 +4,7 @@ Review date: 2026-07-08.
 
 ## Status
 
-- **Implemented + Validated:** create/finish/read session endpoints and the authenticated mobile lesson-session reply placeholder route.
+- **Implemented + Validated:** authenticated create/finish/read session endpoints, backend-owned lesson summaries, persisted messages, and the authenticated mobile lesson-session reply placeholder route.
 - **Development-only:** legacy diagnostic routes remain under `/api/dev/*`.
 - **Production mobile contract:** `POST /api/me/lesson-sessions/{sessionId}/reply` is authenticated and backend-owned, but is intentionally not AI-enabled yet.
 - **Transitional product behavior:** request identity is auth-aware in Development for dev routes.
@@ -13,7 +13,13 @@ Review date: 2026-07-08.
 
 ### Authenticated user-facing routes
 
+- `POST /api/me/lesson-sessions`
+- `PUT /api/me/lesson-sessions/{sessionId}/finish`
+- `GET /api/me/lesson-sessions/{sessionId}/summary`
+- `POST /api/me/lesson-sessions/{sessionId}/messages`
 - `POST /api/me/lesson-sessions/{sessionId}/reply`
+
+`PUT /api/me/lesson-sessions/{sessionId}/finish` marks the owned session complete first, then makes a best-effort backend summary-generation attempt using persisted lesson messages and safe runtime metadata. It is idempotent. `GET /api/me/lesson-sessions/{sessionId}/summary` returns the learner-safe persisted result when ready, or a stable safe unavailable status when generation is not ready or unavailable. Authenticated production clients do not upload or author `summary`, `strengths`, `improvements`, `vocabulary`, `grammar`, or `nextSteps`; those fields are generated and owned by the backend.
 
 ### Development / diagnostic routes
 
@@ -21,6 +27,10 @@ Review date: 2026-07-08.
 - `PUT /api/dev/lesson-sessions/{sessionId}/finish`
 - `GET /api/dev/lesson-sessions`
 - `GET /api/dev/lesson-sessions/{sessionId}`
+- `PUT /api/dev/lesson-sessions/{sessionId}/summary`
+- `GET /api/dev/lesson-sessions/{sessionId}/summary`
+
+The development-only summary routes are diagnostic routes, not production mobile contracts.
 
 ## Mobile lesson-session text reply placeholder
 
@@ -54,10 +64,11 @@ Other response behavior:
 
 Architecture boundary:
 
-- Mobile must **not** call `POST /api/lesson-chat/reply` directly. That endpoint remains desktop-owned and still expects the large desktop-built `LessonChatRequest`.
+- `POST /api/lesson-chat/reply` remains the existing real Windows desktop lesson runtime path and still expects the large desktop-built `LessonChatRequest`. Mobile must **not** call it directly.
+- `POST /api/me/lesson-sessions/{sessionId}/messages` remains the persisted lesson-message path used for server-owned transcript/history.
 - Mobile must **not** send desktop prompt, runtime, scenario, or turn-management payloads.
 - Mobile must **not** call OpenAI directly. Provider access remains backend-only.
-- This endpoint is not real mobile AI chat yet; it is the future mobile text-reply contract in safe placeholder mode.
+- This endpoint is not the real production lesson runtime yet; it is a safe placeholder contract and must not be treated as the production cross-platform chat implementation.
 - The next implementation direction is for the backend to hydrate lesson runtime/server-side context before enabling AI replies. Mobile should continue to send only `sessionId` and `messageText`, and should not duplicate desktop prompt/scenario/turn logic.
 
 Production deployment note: backend `0.1.35-backend.110` deployed this placeholder contract without adding or running an EF/database migration. The old `POST /api/lesson-chat/reply` desktop endpoint was not changed.
