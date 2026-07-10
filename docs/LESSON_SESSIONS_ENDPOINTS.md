@@ -71,7 +71,7 @@ Architecture boundary:
 - This endpoint is not the real production lesson runtime yet; it is a safe placeholder contract and must not be treated as the production cross-platform chat implementation.
 - The next implementation direction is for the backend to hydrate lesson runtime/server-side context before enabling AI replies. Mobile should continue to send only `sessionId` and `messageText`, and should not duplicate desktop prompt/scenario/turn logic.
 
-Production deployment note: backend `0.1.35-backend.110` deployed this placeholder contract without adding or running an EF/database migration. The old `POST /api/lesson-chat/reply` desktop endpoint was not changed.
+Production deployment note: backend `0.1.35-backend.110` deployed this placeholder contract without adding or running an EF/database migration. Backend `0.1.35-backend.111` later deployed backend-owned authenticated lesson completion and summaries without adding or running an EF/database migration. The old `POST /api/lesson-chat/reply` desktop endpoint was not changed, and `POST /api/me/lesson-sessions/{sessionId}/messages` remains unchanged.
 
 ## Runtime identity resolution (Development)
 

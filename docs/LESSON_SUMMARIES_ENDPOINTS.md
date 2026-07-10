@@ -2,15 +2,30 @@
 
 Lesson summaries are backend-owned learner feedback. Authenticated desktop and mobile clients finish through `PUT /api/me/lesson-sessions/{sessionId}/finish` and read the learner-safe result through `GET /api/me/lesson-sessions/{sessionId}/summary`. Clients do not author or upload summary content. The `/api/dev/.../summary` routes below remain development diagnostics and are not production/mobile contracts.
 
-Review date: 2026-05-23.
+Review date: 2026-07-10.
 
 ## Status
 
-- **Implemented + Validated:** summary upsert/read/list persistence.
-- **Development-only:** current route namespace is `/api/dev/*`.
+- **Implemented + Validated:** authenticated backend-owned finish and learner-safe summary read flow.
+- **Development-only:** `/api/dev/*` summary upsert/read/list persistence remains diagnostic only.
 - **Transitional product behavior:** runtime identity is auth-aware in Development.
 
-## Endpoints
+## Production endpoints
+
+- `PUT /api/me/lesson-sessions/{sessionId}/finish`
+- `GET /api/me/lesson-sessions/{sessionId}/summary`
+
+The finish request remains backward compatible, for example:
+
+```json
+{
+  "validTurnCount": 1
+}
+```
+
+Finish is idempotent. The backend generates and persists summaries from persisted lesson messages and safe lesson/session metadata. Summary generation failure does not undo a successfully completed lesson. Summary GET may return `ready` with learner-safe fields or `unavailable`. Production clients, including desktop and mobile, must not upload `summary`, `strengths`, `improvements`, `vocabulary`, `grammar`, or `nextSteps`.
+
+## Development / diagnostic endpoints
 
 - `PUT /api/dev/lesson-sessions/{sessionId}/summary`
 - `GET /api/dev/lesson-sessions/{sessionId}/summary`
@@ -37,6 +52,4 @@ Common responses:
 ## Known limitations / future hardening
 
 - Dev endpoints remain available for local diagnostics.
-- Production auth enforcement for all runtime endpoints is not enabled yet.
-- Future production API naming should move away from `/api/dev` for authenticated user-facing summary APIs.
 - Subscription/payment enforcement is not implemented.

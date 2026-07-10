@@ -41,9 +41,13 @@ Current Windows distribution remains the Direct EXE/Inno installer channel with 
 
 Backend deploy, Website CMS/static site publish, Windows direct installer upload, and database migrations remain separate processes. No backend deploy, Website CMS publish, Store submission, or Windows installer upload is implied by this cleanup.
 
+## Next mobile lesson completion step
+
+Mobile can now implement Finish lesson + Summary against the existing authenticated production routes: `PUT /api/me/lesson-sessions/{sessionId}/finish` and `GET /api/me/lesson-sessions/{sessionId}/summary`. Mobile must send only completion facts such as `validTurnCount`, must not generate summaries locally or upload summary fields, and must handle both `ready` and `unavailable` summary status. No new backend endpoint is required for this mobile step; desktop and mobile must keep using the same backend session, completion, history, progress, and summary source of truth. Development `/api/dev/.../summary` routes remain diagnostics only and are not mobile contracts.
+
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.109`; Production Admin RBAC / persistent role management is completed.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.111`; Production Admin RBAC / persistent role management is completed.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
