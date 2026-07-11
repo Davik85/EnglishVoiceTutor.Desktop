@@ -41,13 +41,13 @@ Current Windows distribution remains the Direct EXE/Inno installer channel with 
 
 Backend deploy, Website CMS/static site publish, Windows direct installer upload, and database migrations remain separate processes. No backend deploy, Website CMS publish, Store submission, or Windows installer upload is implied by this cleanup.
 
-## Next mobile lesson completion step
+## Authenticated mobile lesson completion status
 
-Mobile can now implement Finish lesson + Summary against the existing authenticated production routes: `PUT /api/me/lesson-sessions/{sessionId}/finish` and `GET /api/me/lesson-sessions/{sessionId}/summary`. Mobile must send only completion facts such as `validTurnCount`, must not generate summaries locally or upload summary fields, and must handle both `ready` and `unavailable` summary status. No new backend endpoint is required for this mobile step; desktop and mobile must keep using the same backend session, completion, history, progress, and summary source of truth. Development `/api/dev/.../summary` routes remain diagnostics only and are not mobile contracts.
+Authenticated mobile Finish + ready Summary is production-verified as of 2026-07-11 against backend `0.1.35-backend.112` using the existing authenticated production routes: `PUT /api/me/lesson-sessions/{sessionId}/finish` and `GET /api/me/lesson-sessions/{sessionId}/summary`. Mobile must send only completion facts such as `validTurnCount`, must not generate summaries locally or upload summary fields, and must handle both `ready` and `unavailable` summary status. Finish triggers backend-owned generation; GET only reads the already persisted learner-safe result and does not regenerate a missing summary. No new backend endpoint is required for this step; desktop and mobile must keep using the same backend session, completion, history, progress, and summary source of truth. Development `/api/dev/.../summary` routes remain diagnostics only and are not mobile contracts. This verification does not complete mobile history/progress, voice, translation, hints, feedback, TTS, Conversation mode, billing, store publication, or broad public production readiness.
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.111`; Production Admin RBAC / persistent role management is completed.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.112`, rollback release `0.1.35-backend.111`; Production Admin RBAC / persistent role management is completed.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
@@ -192,7 +192,7 @@ Windows release work stays on the Direct EXE/Inno installer. Updates continue th
 7. Controlled Paddle live payment, webhook delivery, Premium activation, failed-payment non-activation, desktop cancel-renewal, and full-refund Premium revocation are documented as completed for the 2026-07-02 owner-led test; do not claim paid public launch until final release-readiness review, remaining release smoke/signing, and owner release decision are complete.
 8. Collect controlled tester feedback, triage severity, and make an explicit release decision before broader public distribution.
 9. Before any tester handoff, re-verify the live Windows direct manifest still points to `1.1`, production backend URL, and `manual-confirmation`.
-10. Keep the backend release discrepancy resolved in docs: the live symlink verification command `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` confirmed `/opt/languagevoicetutor/backend/releases/0.1.35-backend.108`; `/health` and `/api/health/database` were verified healthy. Backend .99 was deployed by the normal backend package/upload flow; this documentation update did not change deploy commands.
+10. Keep backend current-state docs aligned with the 2026-07-11 verification: the live symlink resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.112`, rollback is `0.1.35-backend.111`, `/health` and `/api/health/database` are `200 Healthy`, no EF migration was run, and Windows installer/release files are unchanged.
 11. Keep the AI Models persistence risk closed: preserve `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json` as persistent server data/config, do not package release-folder JSON as the production source of truth, and verify it after future backend deploys.
 12. Keep Store/MSIX removed/discontinued; do not recreate `packaging/windows-msix`, Store channel logic, Store update messaging, WACK commands, or Partner Center planning.
 13. Run backend deploy only for an approved backend runtime/configuration change; do not deploy backend for Website CMS publish, Windows installer upload, AI Models persistence correction, or docs-only work.

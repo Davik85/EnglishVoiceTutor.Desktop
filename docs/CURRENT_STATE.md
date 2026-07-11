@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-07-03.
+Review date: 2026-07-11.
 
 ## Source of truth for current versions
 
@@ -39,7 +39,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.111`.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.112`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows direct public release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
@@ -69,13 +69,13 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release after the backend-owned lesson completion/summary deployment: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.111`. Previous rollback release before this deployment was `/opt/languagevoicetutor/backend/releases/0.1.35-backend.110`. Current-state docs must not use the obsolete phrase “current backend release is `0.1.35-backend.99`” except when explicitly identifying it as outdated wording. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
+Current backend release after the backend-owned authenticated lesson summary extraction fix: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.112`. Previous rollback release before this deployment was `/opt/languagevoicetutor/backend/releases/0.1.35-backend.111`. The live `current` symlink was verified as `/opt/languagevoicetutor/backend/current` -> `/opt/languagevoicetutor/backend/releases/0.1.35-backend.112`; `languagevoicetutor-backend.service` was active; `/health` returned `200 Healthy`; and `/api/health/database` returned `200 Healthy` with `canConnect=true`. No EF migration or schema change was added or run, and Windows installer/release files were unchanged. Current-state docs must not use the obsolete phrase “current backend release is `0.1.35-backend.99`” except when explicitly identifying it as outdated wording. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
 
 Backend deployment uses:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.111
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.111
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.112
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.112
 ```
 
 The backend upload flow uses the uploaded `deploy-backend-release.sh` helper and `ssh -tt` for sudo restart/status when needed. Do not document old fragile inline bash deployment paths as the current flow.
@@ -87,6 +87,17 @@ Admin Product Statistics still uses the `Tracked signed-in app/device records` l
 Phase 3 rate limiting / abuse protection is completed and production-verified with `RateLimiting__Enabled=true`. Production Admin RBAC / persistent role management is completed for backend `0.1.35-backend.108`: persistent AdminUsers can sign in to `/admin`, admin source is reported as `persistent_role_assignment`, role-aware Admin UI works, `super_admin` can assign/revoke roles and disable AdminUsers, disabled AdminUsers lose Admin access, support and billing_support least-privilege checks passed, `403` from role-limited workflows no longer logs the admin out, and `401` still returns to login. Bootstrap Admin fallback for Admin permission policies remains disabled with `AdminAuthorization__EnableBootstrapAdminFallbackForAdminPermissionPolicies=false`. The Website CMS endpoints are still authenticated/authorized but no longer consume the normal admin read/write rate limit because long legal text editing caused `RateLimitExceeded` during normal CMS work.
 
 Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling is active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
+
+
+## 2026-07-11 authenticated lesson summary production verification
+
+Backend `0.1.35-backend.112` is the current production backend; `0.1.35-backend.111` is the rollback release. It was packaged and uploaded with the normal Linux backend release scripts. Production verification confirmed the `current` symlink points to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.112`, `languagevoicetutor-backend.service` is active, `/health` returns `200 Healthy`, and `/api/health/database` returns `200 Healthy` with `canConnect=true`. No EF migrations were run, no database schema changed, and Windows installer/release files stayed unchanged.
+
+Backend `0.1.35-backend.111` already supported authenticated `PUT /api/me/lesson-sessions/{sessionId}/finish` and `GET /api/me/lesson-sessions/{sessionId}/summary`, but summary generation could remain unavailable because `LessonSummaryGenerationService` read only the top-level Responses API `output_text` field. Real provider responses may place the structured summary text under `output[].content[].text`; when top-level `output_text` was absent, an empty string reached JSON deserialization, causing a safely isolated `JsonException` that did not undo successful lesson completion.
+
+Backend `0.1.35-backend.112` keeps top-level `output_text` support, adds fallback extraction from nonblank `output[].content[].text`, rejects blank provider output before JSON deserialization, and continues to isolate summary-generation failure from lesson completion. No local/client summary generation was introduced. Authenticated Finish triggers backend-owned generation; authenticated GET reads only the stored learner-safe result and does not regenerate a missing summary. Development `/api/dev/.../summary` routes remain diagnostic/development boundaries and are not the mobile production flow.
+
+A real authenticated Flutter mobile lesson was verified in production on 2026-07-11: the session started, lesson messages persisted, `PUT /api/me/lesson-sessions/{sessionId}/finish` completed the lesson, and `GET /api/me/lesson-sessions/{sessionId}/summary` returned a ready backend-owned learner-safe summary displayed by mobile, including summary, strengths, improvements, vocabulary, grammar, and next steps. Authenticated desktop Finish uses the shared completion path, but desktop currently displays its existing local desktop summary flow; the `.112` extraction fix did not change desktop UI or Finish response contracts. Mobile is the first verified client displaying the authenticated backend-owned GET summary result.
 
 ## Production Admin RBAC / persistent roles
 
@@ -233,7 +244,7 @@ Publication verification completed:
 - Public download page showed Current version `1.0`, release details for channel `direct-public`, size `180.0 MB`, and SHA-256 `d6be93fbcd75536a0cd149bd8872c8327fc3131ede247b1db2b2d33d673680e1`.
 - Manual website check confirmed the Download button downloads the `1.0` installer.
 
-Historical scope boundary: the public release upload affected only Windows direct release files. It did not deploy backend code, run migrations, modify database state, change billing/Paddle/refund logic, upload website files, rebuild the installer, change secrets, or change installer binaries. Production backend remains `0.1.35-backend.108`. Code signing remains deferred and accepted as a known release risk for this release; Windows SmartScreen warnings remain expected until a future signed installer is published. The next public direct version after `1.1` should be `1.2`; future public direct versions should continue as `1.2`, `1.3`, and so on.
+Historical scope boundary: the public release upload affected only Windows direct release files. It did not deploy backend code, run migrations, modify database state, change billing/Paddle/refund logic, upload website files, rebuild the installer, change secrets, or change installer binaries. That historical Windows release upload did not change the backend; the backend has since advanced and the current production backend is `0.1.35-backend.112`. Code signing remains deferred and accepted as a known release risk for this release; Windows SmartScreen warnings remain expected until a future signed installer is published. The next public direct version after `1.1` should be `1.2`; future public direct versions should continue as `1.2`, `1.3`, and so on.
 
 ## Windows direct release
 
@@ -249,7 +260,7 @@ Current public direct release values:
 - `updateMode`: `manual-confirmation`
 - `minimumSupportedVersion`: `1.1`
 
-The `1.1` Windows direct release has been built, uploaded, verified, and confirmed installed; the desktop displays version `1.1`. Backend deployment was not part of the desktop `1.1` release or the later static website upload; production backend remains healthy at `0.1.35-backend.108`, and no database migrations were added or run. `minimumSupportedVersion` is intentionally `1.1` because `1.1` contains the desktop auth/session stability fix described below.
+The `1.1` Windows direct release has been built, uploaded, verified, and confirmed installed; the desktop displays version `1.1`. Backend deployment was not part of the desktop `1.1` release or the later static website upload; that desktop release did not change backend deployment; the current production backend is now healthy at `0.1.35-backend.112`, and no database migrations were added or run for the `.112` summary extraction fix. `minimumSupportedVersion` is intentionally `1.1` because `1.1` contains the desktop auth/session stability fix described below.
 
 
 ### Desktop auth/session fix in Windows Direct Release 1.1
@@ -337,14 +348,14 @@ Backend deploy, Website CMS/static site publish, Windows direct installer upload
 ### Current release point
 
 - Windows direct release: `1.1`, verified from public `https://languagevoicetutor.com/releases/windows/direct/latest.json` with `channel=direct-public`, installer `LanguageVoiceTutorSetup-1.1.exe`, production backend URL, `minimumSupportedVersion=1.1`, and manual-confirmation update mode. The tracked repository `site/public/releases/windows/direct/latest.json` was not changed by this docs update.
-- Backend release in tracked release docs: `0.1.35-backend.108`. The live `/opt/languagevoicetutor/backend/current` symlink was manually verified with `ssh lvt-server "readlink -f /opt/languagevoicetutor/backend/current"` and resolved to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.108`; `/health` and `/api/health/database` were also verified healthy. Backend .99 was deployed by the normal backend package/upload flow; this documentation task did not deploy backend code.
+- Backend release in tracked release docs: current production is `0.1.35-backend.112`, rollback is `0.1.35-backend.111`, and the live `/opt/languagevoicetutor/backend/current` symlink resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.112`; `/health` and `/api/health/database` are verified healthy. Backend .99/.108 references are historical and not current production.
 - AI Models persistent production file: verified at `/opt/languagevoicetutor/backend/site/content/ai-model-settings.json`; it survived backend service restart, matched the current release copy by SHA-256 `94f84fc07551d821bfa9dc0682bb4ee60108d11d74987b84ebb39fce96f825f1`, and contains lesson tutor chat `gpt-5.5`, feedback/correction `gpt-5.2`, lesson hint `gpt-5.2`, and translation `gpt-5.2`. For `gpt-5.5`, backend requests must omit `temperature`.
 
 ### What is ready, partial, and blocked
 
 Ready for controlled tester use: direct Windows manifest/update flow, production backend health-check procedure, CMS published-snapshot runtime for lessons, verified persistent AI Models production storage, Website CMS draft/publish mechanics, and documented secret boundaries.
 
-Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.109`, with deploys, health checks, database health checks, and migrations kept as separate operations.
+Partially ready: Windows public installer release because signing and wider smoke/feedback remain; website/legal pages because owner/legal final review remains; AI tutor quality because CMS content approval and tester feedback remain. Backend operations remain controlled/manual: current production is documented as `0.1.35-backend.112`, with deploys, health checks, database health checks, and migrations kept as separate operations.
 
 Blocked before broad public paid release: code signing for the direct installer, direct installer clean-machine/update smoke, final website/legal/support/pricing approval, monitoring/privacy/release-readiness review, and explicit release decision after controlled tester feedback. Controlled Paddle live payment/Premium activation, failed-payment non-activation, cancel-renewal, and full-refund Premium revocation are completed, but they are not a broad launch decision; chargeback remains implemented/test-covered but not live-chargeback-tested, partial refund remains conservative/manual-review, and expanded customer portal/subscription management is deferred.
 
@@ -413,7 +424,7 @@ Admin RBAC note: `productionRolesAvailable` now means persistent Admin role auth
 
 ## 2026-07-01 Admin Activity and emergency Premium revoke update
 
-Production backend current release is `0.1.35-backend.111`; the `current` symlink was verified at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.111`, previous rollback release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.110`, `languagevoicetutor-backend.service` is active and listening on `127.0.0.1:5001`, `/health` returns `200 Healthy`, and `/api/health/database` returns `200 Healthy` with `canConnect=true`. No EF migration or database schema change was required, and Windows installer files were not changed.
+Production backend current release is `0.1.35-backend.112`; the `current` symlink was verified at `/opt/languagevoicetutor/backend/releases/0.1.35-backend.112`, rollback release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.111`, `languagevoicetutor-backend.service` is active, `/health` returns `200 Healthy`, and `/api/health/database` returns `200 Healthy` with `canConnect=true`. No EF migration or database schema change was required for the `.112` summary extraction fix, and Windows installer files were not changed.
 
 - Admin Activity is visible and usable in production and includes `admin_role_assignment_events` plus `admin_actions`, including `manual_premium_grant` and `manual_premium_revoke`.
 - Admin Activity table usability was improved with a top horizontal scrollbar and wider Admin note column; Admin note/reason is visible where stored, and `safeMetadataJson` remains separate from Admin note.
@@ -426,7 +437,7 @@ Production backend current release is `0.1.35-backend.111`; the `current` symlin
 
 ## Mobile lesson-session reply placeholder production verification (2026-07-08)
 
-Production backend `0.1.35-backend.111` is deployed and verified for backend-owned authenticated lesson completion and summaries. `PUT /api/me/lesson-sessions/{sessionId}/finish` remains backward compatible with the existing desktop payload `{ "validTurnCount": 1 }`, marks owned sessions complete idempotently, and makes a best-effort backend summary generation attempt from persisted lesson messages plus safe lesson/session metadata. `GET /api/me/lesson-sessions/{sessionId}/summary` is the authenticated learner-safe summary read route and may return `ready` data or `unavailable`; production clients must not generate or upload summary, strengths, improvements, vocabulary, grammar, or next steps. Summary generation failure does not undo a completed lesson. Existing desktop lesson start, chat, finish, summary/history behavior was manually verified after deployment, and no new Windows desktop release was required. Existing `POST /api/lesson-chat/reply` and `POST /api/me/lesson-sessions/{sessionId}/messages` behavior is unchanged. Development `/api/dev/.../summary` routes remain diagnostic/development-only and are not production mobile contracts. Mobile can now implement Finish lesson + Summary with the authenticated finish and summary routes, handle both `ready` and `unavailable`, and must not generate summaries locally; no new backend endpoint is required for that mobile step. Desktop and mobile continue to share the backend session, completion, history, progress, and summary source of truth.
+Production backend `0.1.35-backend.112` is deployed and verified for backend-owned authenticated lesson completion and summaries. Backend `.111` already supported authenticated Finish and Summary but could leave summaries unavailable because `LessonSummaryGenerationService` read only top-level Responses API `output_text`; `.112` also supports nested `output[].content[].text`, rejects blank provider output before JSON deserialization, and preserves successful lesson completion if summary generation fails. `PUT /api/me/lesson-sessions/{sessionId}/finish` remains backward compatible with the existing desktop payload `{ "validTurnCount": 1 }`, marks owned sessions complete idempotently, and makes a best-effort backend summary generation attempt from persisted lesson messages plus safe lesson/session metadata. `GET /api/me/lesson-sessions/{sessionId}/summary` is the authenticated learner-safe read route for an already persisted result and does not regenerate missing summaries; production clients must not generate or upload summary, strengths, improvements, vocabulary, grammar, or next steps. A real authenticated Flutter mobile lesson displayed a ready backend-owned GET summary result on 2026-07-11. Existing desktop Finish uses the shared completion path, desktop UI and Finish response contracts are unchanged, and desktop currently displays its existing local desktop summary flow. Existing `POST /api/lesson-chat/reply` and `POST /api/me/lesson-sessions/{sessionId}/messages` behavior is unchanged. Development `/api/dev/.../summary` routes remain diagnostic/development-only and are not production mobile contracts. Desktop and mobile continue to share the backend session, completion, history, progress, and summary source of truth.
 
 Production backend `0.1.35-backend.110` is deployed and verified for the backend-only mobile lesson-session reply placeholder route. The live `/opt/languagevoicetutor/backend/current` symlink resolved to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.110`, `https://api.languagevoicetutor.com/health` returned `200 OK` / `Healthy` / `Production`, `https://api.languagevoicetutor.com/api/health/database` returned `200 OK` / `Healthy` / `canConnect true`, and `languagevoicetutor-backend.service` was active/running. No EF migrations were added or run.
 
