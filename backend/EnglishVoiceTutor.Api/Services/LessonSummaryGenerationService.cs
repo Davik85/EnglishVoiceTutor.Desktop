@@ -72,7 +72,15 @@ public sealed class LessonSummaryGenerationService(
 
             var providerResponse = JsonSerializer.Deserialize<OpenAiResponsesResponse>(await response.Content.ReadAsStringAsync(cancellationToken), JsonOptions)
                 ?? throw new InvalidOperationException("Lesson summary provider response is empty.");
-            var generated = JsonSerializer.Deserialize<GeneratedLessonSummary>(providerResponse.OutputText, JsonOptions)
+            var outputText = ExtractOutputText(providerResponse);
+            if (string.IsNullOrWhiteSpace(outputText))
+            {
+                await RecordUsageAsync(session, UsageConstants.Statuses.Failed, null, cancellationToken);
+                logger.LogWarning("Lesson summary generation unavailable. SessionId={SessionId}; Category={Category}.", sessionId, "empty_provider_output");
+                return;
+            }
+
+            var generated = JsonSerializer.Deserialize<GeneratedLessonSummary>(outputText, JsonOptions)
                 ?? throw new InvalidOperationException("Lesson summary provider response is invalid.");
             if (string.IsNullOrWhiteSpace(generated.Summary)) throw new InvalidOperationException("Lesson summary provider response is incomplete.");
 
@@ -114,6 +122,27 @@ public sealed class LessonSummaryGenerationService(
 
     private async Task RecordUsageAsync(LessonSessionEntity session, string status, OpenAiResponseUsage? usage, CancellationToken cancellationToken) =>
         await usageEventService.TryRecordAsync(new UsageEventRecord { UserId = session.UserId, SessionId = session.Id, Operation = UsageConstants.Operations.LessonSummary, StudyLanguage = session.StudyLanguage, Status = status, InputTokens = usage?.InputTokens, OutputTokens = usage?.OutputTokens }, cancellationToken);
+
+    private static string ExtractOutputText(OpenAiResponsesResponse response)
+    {
+        if (!string.IsNullOrWhiteSpace(response.OutputText))
+        {
+            return response.OutputText.Trim();
+        }
+
+        foreach (var outputItem in response.Output)
+        {
+            foreach (var contentItem in outputItem.Content)
+            {
+                if (!string.IsNullOrWhiteSpace(contentItem.Text))
+                {
+                    return contentItem.Text.Trim();
+                }
+            }
+        }
+
+        return string.Empty;
+    }
 
     private static string? Join(IReadOnlyList<string>? values) => values is null ? null : string.Join("\n", values.Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value.Trim()));
     private sealed class GeneratedLessonSummary { public string Summary { get; init; } = string.Empty; public IReadOnlyList<string> Strengths { get; init; } = []; public IReadOnlyList<string> Improvements { get; init; } = []; public IReadOnlyList<string> Vocabulary { get; init; } = []; public IReadOnlyList<string> Grammar { get; init; } = []; public IReadOnlyList<string> NextSteps { get; init; } = []; }
