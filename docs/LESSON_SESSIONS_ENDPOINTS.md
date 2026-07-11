@@ -19,7 +19,7 @@ Review date: 2026-07-08.
 - `POST /api/me/lesson-sessions/{sessionId}/messages`
 - `POST /api/me/lesson-sessions/{sessionId}/reply`
 
-`PUT /api/me/lesson-sessions/{sessionId}/finish` marks the owned session complete first, then makes a best-effort backend summary-generation attempt using persisted lesson messages and safe runtime metadata. It is idempotent. `GET /api/me/lesson-sessions/{sessionId}/summary` returns the learner-safe persisted result when ready, or a stable safe unavailable status when generation is not ready or unavailable. Authenticated production clients do not upload or author `summary`, `strengths`, `improvements`, `vocabulary`, `grammar`, or `nextSteps`; those fields are generated and owned by the backend.
+`PUT /api/me/lesson-sessions/{sessionId}/finish` marks the owned session complete first, then makes a best-effort backend-owned summary-generation attempt using persisted lesson messages and safe runtime metadata. It is idempotent. `GET /api/me/lesson-sessions/{sessionId}/summary` is read-only: it returns the learner-safe persisted result when ready, or a stable safe unavailable status when generation is not ready or unavailable; it does not regenerate a missing summary. Authenticated production clients do not upload or author `summary`, `strengths`, `improvements`, `vocabulary`, `grammar`, or `nextSteps`; those fields are generated and owned by the backend.
 
 ### Development / diagnostic routes
 
@@ -30,7 +30,7 @@ Review date: 2026-07-08.
 - `PUT /api/dev/lesson-sessions/{sessionId}/summary`
 - `GET /api/dev/lesson-sessions/{sessionId}/summary`
 
-The development-only summary routes are diagnostic routes, not production mobile contracts.
+The development-only summary routes are diagnostic/development boundaries, not the production mobile flow or production mobile contracts.
 
 ## Mobile lesson-session text reply placeholder
 
@@ -71,7 +71,7 @@ Architecture boundary:
 - This endpoint is not the real production lesson runtime yet; it is a safe placeholder contract and must not be treated as the production cross-platform chat implementation.
 - The next implementation direction is for the backend to hydrate lesson runtime/server-side context before enabling AI replies. Mobile should continue to send only `sessionId` and `messageText`, and should not duplicate desktop prompt/scenario/turn logic.
 
-Production deployment note: backend `0.1.35-backend.110` deployed this placeholder contract without adding or running an EF/database migration. Backend `0.1.35-backend.111` later deployed backend-owned authenticated lesson completion and summaries without adding or running an EF/database migration. The old `POST /api/lesson-chat/reply` desktop endpoint was not changed, and `POST /api/me/lesson-sessions/{sessionId}/messages` remains unchanged.
+Production deployment note: backend `0.1.35-backend.110` deployed this placeholder contract without adding or running an EF/database migration. Backend `0.1.35-backend.111` later deployed backend-owned authenticated lesson completion and summaries without adding or running an EF/database migration. Backend `0.1.35-backend.112` is the current production backend and fixes authenticated summary provider-output extraction without adding or running an EF/database migration; rollback is `0.1.35-backend.111`. The old `POST /api/lesson-chat/reply` desktop endpoint was not changed, and `POST /api/me/lesson-sessions/{sessionId}/messages` remains unchanged.
 
 ## Runtime identity resolution (Development)
 
@@ -99,3 +99,10 @@ Common responses:
 - Production auth enforcement is not enabled for all runtime endpoints yet.
 - Future production API naming should move away from `/api/dev` for authenticated user-facing session APIs.
 - Subscription/payment enforcement is not implemented.
+
+
+## 2026-07-11 authenticated Finish + Summary production verification
+
+Production backend `0.1.35-backend.112` was verified with a real authenticated Flutter mobile lesson: session start succeeded, lesson messages persisted, `PUT /api/me/lesson-sessions/{sessionId}/finish` completed the lesson, and `GET /api/me/lesson-sessions/{sessionId}/summary` returned a ready backend-owned learner-safe summary displayed by mobile. The `.112` fix preserves support for top-level Responses API `output_text`, adds fallback support for nested `output[].content[].text`, rejects blank provider output before deserialization, and keeps summary failure isolated from lesson completion. No local/client summary generation, endpoint contract change, schema change, migration, desktop UI change, or Windows installer change was introduced.
+
+Desktop authenticated Finish uses the shared completion path and keeps its existing desktop-compatible response behavior. Desktop currently displays its existing local desktop summary flow; mobile is the first verified client displaying the authenticated backend-owned GET summary result.
