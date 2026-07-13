@@ -47,11 +47,11 @@ Authenticated mobile Finish + ready Summary is production-verified as of 2026-07
 
 ## Voice scenario follow-up
 
-Authenticated backend voice scenario semantic resolution is deployed in backend `0.1.35-backend.113` from source commit `c850f4b`; the endpoint contract is documented in `docs/LESSON_SESSIONS_ENDPOINTS.md`. No Desktop client source changed and no Desktop usage of this endpoint is claimed. A Desktop voice-scenario parity review may be considered as a future task only; it is not a completed audit or confirmed defect.
+Authenticated backend voice scenario semantic resolution was added in backend `0.1.35-backend.113` from source commit `c850f4b`; backend `0.1.35-backend.115` is now deployed with the structured-output validation fix for `POST /api/me/lesson-sessions/{sessionId}/voice-scenario-resolution`. Backend `.114` was already active before this latest deployment and must not be described as containing the `.115` fix. The public endpoint route and Mobile request/response contract did not change; the endpoint contract is documented in `docs/LESSON_SESSIONS_ENDPOINTS.md`. Physical Android retest is still required to confirm that the first clean voice scenario selection no longer returns HTTP 502. Initial mixed-script transcription rejection, keyboard overflow and lesson-screen UI work, and missing lesson-chat avatar assets remain separate Mobile issues, so the complete Mobile voice flow must not yet be marked fully stabilized. No Desktop client source changed and no Desktop usage of this endpoint is claimed. A Desktop voice-scenario parity review may be considered as a future task only; it is not a completed audit or confirmed defect.
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.113`, rollback release `0.1.35-backend.112`; Production Admin RBAC / persistent role management is completed.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.115`, previous release `0.1.35-backend.114`; Production Admin RBAC / persistent role management is completed.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
