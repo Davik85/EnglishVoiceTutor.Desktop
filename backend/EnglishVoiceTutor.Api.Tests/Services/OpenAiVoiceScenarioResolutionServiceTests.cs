@@ -1,18 +1,12 @@
-using System.Net;
-using System.Text;
 using System.Text.Json;
-using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Models;
 using EnglishVoiceTutor.Api.Services;
 
 namespace EnglishVoiceTutor.Api.Tests.Services;
 
-public sealed class OpenAiVoiceScenarioResolutionServiceTests : IDisposable
+public sealed class OpenAiVoiceScenarioResolutionServiceTests
 {
-    private readonly string? _originalApiKey = Environment.GetEnvironmentVariable(OpenAiConstants.ApiKeyEnvironmentVariableName);
-
-    public OpenAiVoiceScenarioResolutionServiceTests() =>
-        Environment.SetEnvironmentVariable(OpenAiConstants.ApiKeyEnvironmentVariableName, "test-voice-resolution-key");
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public static TheoryData<string, string, string, string?> DynamicFixtures()
     {
@@ -25,9 +19,35 @@ public sealed class OpenAiVoiceScenarioResolutionServiceTests : IDisposable
         return data;
     }
 
+    public static TheoryData<VoiceScenarioResolutionResponse> ContradictoryResponses()
+    {
+        var data = new TheoryData<VoiceScenarioResolutionResponse>();
+        data.Add(new VoiceScenarioResolutionResponse
+        {
+            Decision = "published_context", MatchedContextId = "context-a", Confidence = .9,
+            CandidateContextIds = [], NormalizedFreeContext = "A different safe situation"
+        });
+        data.Add(new VoiceScenarioResolutionResponse
+        {
+            Decision = "free_context", Confidence = .8, CandidateContextIds = [],
+            NormalizedFreeContext = "A different safe situation", ClarificationText = "Which one?"
+        });
+        data.Add(new VoiceScenarioResolutionResponse
+        {
+            Decision = "clarify", Confidence = .5, CandidateContextIds = ["context-a"],
+            ClarificationText = "Which situation?"
+        });
+        data.Add(new VoiceScenarioResolutionResponse
+        {
+            Decision = "unsafe", Confidence = .9, CandidateContextIds = [],
+            NormalizedFreeContext = "A selected situation"
+        });
+        return data;
+    }
+
     [Theory]
     [MemberData(nameof(DynamicFixtures))]
-    public async Task UsesDynamicCandidateContractAcrossUnrelatedFixtures(
+    public void UsesDynamicCandidateContractAcrossUnrelatedFixtures(
         string group, string recognizedText, string decision, string? matchedId)
     {
         var candidates = Candidates(group);
@@ -40,39 +60,156 @@ public sealed class OpenAiVoiceScenarioResolutionServiceTests : IDisposable
             NormalizedFreeContext = decision == "free_context" ? recognizedText : null,
             ClarificationText = decision == "clarify" ? "Please choose the closest situation." : null
         };
-        var factory = new CapturingHttpClientFactory(Envelope(output));
-        var service = new OpenAiVoiceScenarioResolutionService(
-            new OpenAiOptionsProvider(new FakeAiModelSettingsService()), factory);
 
-        var result = await service.ResolveAsync(Request(group, recognizedText, candidates), TestContext.Current.CancellationToken);
+        var result = Parse(output, candidates.Select(candidate => candidate.Id));
+        var providerRequest = OpenAiVoiceScenarioResolutionService.CreateProviderRequest(
+            Request(group, recognizedText, candidates), "mocked-model");
+        var suppliedRequest = JsonSerializer.Deserialize<VoiceScenarioResolutionRequest>(providerRequest.Input, JsonOptions);
 
         Assert.Equal(decision, result.Decision);
         Assert.Equal(matchedId, result.MatchedContextId);
-        Assert.NotNull(factory.ProviderRequestBody);
-        var providerRequest = JsonSerializer.Deserialize<OpenAiResponsesRequest>(factory.ProviderRequestBody!, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-        Assert.NotNull(providerRequest);
-        var suppliedRequest = JsonSerializer.Deserialize<VoiceScenarioResolutionRequest>(providerRequest!.Input, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.NotNull(suppliedRequest);
         Assert.Equal(recognizedText, suppliedRequest!.RecognizedText);
         Assert.All(candidates, candidate => Assert.Contains(suppliedRequest.Candidates, supplied => supplied.Id == candidate.Id));
     }
 
     [Fact]
-    public async Task RejectsContextIdOutsideSuppliedFiniteList()
+    public void PublishedContextWithValidAllowedIdSucceeds()
     {
-        var candidates = Candidates("safety");
-        var output = new VoiceScenarioResolutionResponse
-        {
-            Decision = "published_context",
-            MatchedContextId = "invented-id",
-            Confidence = .99
-        };
-        var service = new OpenAiVoiceScenarioResolutionService(
-            new OpenAiOptionsProvider(new FakeAiModelSettingsService()),
-            new CapturingHttpClientFactory(Envelope(output)));
+        var result = Parse(Published("context-a"), AllowedIds());
 
-        await Assert.ThrowsAsync<InvalidDataException>(() =>
-            service.ResolveAsync(Request("safety", "first choice", candidates), TestContext.Current.CancellationToken));
+        Assert.Equal("published_context", result.Decision);
+        Assert.Equal("context-a", result.MatchedContextId);
+    }
+
+    [Fact]
+    public void PublishedContextWithUnknownIdFails()
+    {
+        Assert.Throws<InvalidDataException>(() => Parse(Published("unknown-context"), AllowedIds()));
+    }
+
+    [Fact]
+    public void FreeContextWithValidNormalizedContextSucceeds()
+    {
+        var result = Parse(Free("Ordering a replacement for a damaged item"), AllowedIds());
+
+        Assert.Equal("free_context", result.Decision);
+        Assert.Equal("Ordering a replacement for a damaged item", result.NormalizedFreeContext);
+    }
+
+    [Fact]
+    public void FreeContextWithoutRequiredSafeContextFails()
+    {
+        Assert.Throws<InvalidDataException>(() => Parse(Free("   "), AllowedIds()));
+    }
+
+    [Fact]
+    public void ClarifyWithRequiredClarificationDataSucceeds()
+    {
+        var result = Parse(Clarify(), AllowedIds());
+
+        Assert.Equal("clarify", result.Decision);
+        Assert.Equal(["context-a", "context-b"], result.CandidateContextIds);
+        Assert.False(string.IsNullOrWhiteSpace(result.ClarificationText));
+    }
+
+    [Fact]
+    public void ClarifyCannotCarryPublishedMatch()
+    {
+        var response = new VoiceScenarioResolutionResponse
+        {
+            Decision = "clarify",
+            MatchedContextId = "context-a",
+            Confidence = .48,
+            CandidateContextIds = ["context-a", "context-b"],
+            ClarificationText = "Which of these two situations did you mean?"
+        };
+
+        Assert.Throws<InvalidDataException>(() => Parse(response, AllowedIds()));
+    }
+
+    [Fact]
+    public void UnsafeWithEmptyNonSelectionShapeSucceeds()
+    {
+        var result = Parse(Unsafe(), AllowedIds());
+
+        Assert.Equal("unsafe", result.Decision);
+        Assert.Null(result.MatchedContextId);
+        Assert.Empty(result.CandidateContextIds);
+        Assert.Null(result.NormalizedFreeContext);
+        Assert.Null(result.ClarificationText);
+    }
+
+    [Fact]
+    public void UnsafeWithSelectionDataFails()
+    {
+        var response = new VoiceScenarioResolutionResponse
+        {
+            Decision = "unsafe",
+            MatchedContextId = "context-a",
+            Confidence = .97,
+            CandidateContextIds = []
+        };
+
+        Assert.Throws<InvalidDataException>(() => Parse(response, AllowedIds()));
+    }
+
+    [Fact]
+    public void StructuredOutputSchemaBranchesMatchValidationContract()
+    {
+        var request = OpenAiVoiceScenarioResolutionService.CreateProviderRequest(
+            Request("schema", "choose a situation", Candidates("schema")), "mocked-model");
+        var schema = request.Text!.Format!.Schema;
+        var branches = schema.GetProperty("properties").GetProperty("result").GetProperty("anyOf").EnumerateArray().ToArray();
+
+        Assert.Equal(["result"], schema.GetProperty("required").EnumerateArray().Select(item => item.GetString()));
+        Assert.Equal(4, branches.Length);
+        Assert.Equal(
+            ["published_context", "free_context", "clarify", "unsafe"],
+            branches.Select(Decision));
+        Assert.All(branches, branch =>
+        {
+            Assert.False(branch.GetProperty("additionalProperties").GetBoolean());
+            Assert.Equal(6, branch.GetProperty("required").GetArrayLength());
+        });
+
+        Assert.Equal(0, Properties(branches[0]).GetProperty("candidateContextIds").GetProperty("maxItems").GetInt32());
+        Assert.Equal("null", Properties(branches[0]).GetProperty("normalizedFreeContext").GetProperty("type").GetString());
+        Assert.Equal("string", Properties(branches[1]).GetProperty("normalizedFreeContext").GetProperty("type").GetString());
+        Assert.Equal(2, Properties(branches[2]).GetProperty("candidateContextIds").GetProperty("anyOf")[1].GetProperty("minItems").GetInt32());
+        Assert.Equal("string", Properties(branches[2]).GetProperty("clarificationText").GetProperty("type").GetString());
+        Assert.Equal("null", Properties(branches[3]).GetProperty("clarificationText").GetProperty("type").GetString());
+
+        Parse(Published("context-a"), AllowedIds());
+        Parse(Free("A safe normalized context"), AllowedIds());
+        Parse(Clarify(), AllowedIds());
+        Parse(Unsafe(), AllowedIds());
+    }
+
+    [Theory]
+    [MemberData(nameof(ContradictoryResponses))]
+    public void ContradictoryDecisionShapesFail(VoiceScenarioResolutionResponse response)
+    {
+        Assert.Throws<InvalidDataException>(() => Parse(response, AllowedIds()));
+    }
+
+    [Fact]
+    public void MalformedSerializedProviderResponseFails()
+    {
+        Assert.Throws<InvalidDataException>(() =>
+            OpenAiVoiceScenarioResolutionService.DeserializeAndValidateResponse(
+                "{\"result\":{\"decision\":", AllowedIds()));
+    }
+
+    [Fact]
+    public void NullCandidateListFailsAsInvalidProviderData()
+    {
+        const string output = """
+        {"result":{"decision":"unsafe","matchedContextId":null,"confidence":0.2,"candidateContextIds":null,"normalizedFreeContext":null,"clarificationText":null}}
+        """;
+
+        Assert.Throws<InvalidDataException>(() =>
+            OpenAiVoiceScenarioResolutionService.DeserializeAndValidateResponse(output, AllowedIds()));
     }
 
     [Fact]
@@ -83,8 +220,6 @@ public sealed class OpenAiVoiceScenarioResolutionServiceTests : IDisposable
         foreach (var phrase in new[] { "language school", "meeting neighbor", "meeting a friend in a park", "hobby club", "doctor", "manager" })
             Assert.DoesNotContain(phrase, source, StringComparison.OrdinalIgnoreCase);
     }
-
-    public void Dispose() => Environment.SetEnvironmentVariable(OpenAiConstants.ApiKeyEnvironmentVariableName, _originalApiKey);
 
     private static void AddGroup(TheoryData<string, string, string, string?> data, string group, string title, string partial, string free)
     {
@@ -99,6 +234,60 @@ public sealed class OpenAiVoiceScenarioResolutionServiceTests : IDisposable
         data.Add(group, "practice something", "clarify", null);
         data.Add(group, "the common option", "clarify", null);
     }
+
+    private static VoiceScenarioResolutionResponse Parse(
+        VoiceScenarioResolutionResponse response,
+        IEnumerable<string> allowedIds) =>
+        OpenAiVoiceScenarioResolutionService.DeserializeAndValidateResponse(
+            JsonSerializer.Serialize(new { result = response }, JsonOptions),
+            allowedIds.ToHashSet(StringComparer.Ordinal));
+
+    private static VoiceScenarioResolutionResponse Published(string matchedId) => new()
+    {
+        Decision = "published_context",
+        MatchedContextId = matchedId,
+        Confidence = .92,
+        CandidateContextIds = [],
+        NormalizedFreeContext = null,
+        ClarificationText = null
+    };
+
+    private static VoiceScenarioResolutionResponse Free(string normalizedContext) => new()
+    {
+        Decision = "free_context",
+        MatchedContextId = null,
+        Confidence = .83,
+        CandidateContextIds = [],
+        NormalizedFreeContext = normalizedContext,
+        ClarificationText = null
+    };
+
+    private static VoiceScenarioResolutionResponse Clarify() => new()
+    {
+        Decision = "clarify",
+        MatchedContextId = null,
+        Confidence = .48,
+        CandidateContextIds = ["context-a", "context-b"],
+        NormalizedFreeContext = null,
+        ClarificationText = "Which of these two situations did you mean?"
+    };
+
+    private static VoiceScenarioResolutionResponse Unsafe() => new()
+    {
+        Decision = "unsafe",
+        MatchedContextId = null,
+        Confidence = .97,
+        CandidateContextIds = [],
+        NormalizedFreeContext = null,
+        ClarificationText = null
+    };
+
+    private static HashSet<string> AllowedIds() => ["context-a", "context-b"];
+
+    private static string Decision(JsonElement branch) =>
+        Properties(branch).GetProperty("decision").GetProperty("enum")[0].GetString()!;
+
+    private static JsonElement Properties(JsonElement branch) => branch.GetProperty("properties");
 
     private static List<VoiceScenarioCandidate> Candidates(string group)
     {
@@ -130,35 +319,4 @@ public sealed class OpenAiVoiceScenarioResolutionServiceTests : IDisposable
         IsInitialScenarioSelectionTurn = true,
         Candidates = candidates
     };
-
-    private static string Envelope(VoiceScenarioResolutionResponse response)
-    {
-        var output = JsonSerializer.Serialize(response, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-        return "{\"id\":\"response\",\"output\":[{\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"text\":" + JsonSerializer.Serialize(output) + "}]}]}";
-    }
-
-    private sealed class CapturingHttpClientFactory(string envelope) : IHttpClientFactory
-    {
-        public string? ProviderRequestBody { get; private set; }
-        public HttpClient CreateClient(string name) => new(new Handler(envelope, body => ProviderRequestBody = body));
-    }
-
-    private sealed class Handler(string envelope, Action<string> capture) : HttpMessageHandler
-    {
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            capture(await request.Content!.ReadAsStringAsync(cancellationToken));
-            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(envelope, Encoding.UTF8, "application/json") };
-        }
-    }
-
-    private sealed class FakeAiModelSettingsService : IAiModelSettingsService
-    {
-        public AiModelSettings GetActiveSettings() => AiModelSettings.Defaults;
-        public Task<AiModelSettingsResponse> GetAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<AiModelSettingsResponse> SaveDraftAsync(AiModelSettings draft, string? updatedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public AiModelSettingsValidationResponse Validate(AiModelSettings settings) => throw new NotSupportedException();
-        public Task<AiModelSettingsResponse> PublishAsync(string? updatedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<AiModelSettingsResponse> ResetDraftFromActiveAsync(string? updatedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
-    }
 }
