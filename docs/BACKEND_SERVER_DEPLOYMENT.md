@@ -6,7 +6,7 @@ Review date: 2026-07-13.
 
 Production backend is deployed and healthy.
 
-- Current release: `0.1.35-backend.115`
+- Current release: `0.1.35-backend.116`
 - Production URL: `https://api.languagevoicetutor.com`
 - Health: `https://api.languagevoicetutor.com/health`
 - Database health: `https://api.languagevoicetutor.com/api/health/database`
@@ -21,7 +21,7 @@ Invoke-WebRequest https://api.languagevoicetutor.com/health -UseBasicParsing
 Invoke-WebRequest https://api.languagevoicetutor.com/api/health/database -UseBasicParsing
 ```
 
-Expected baseline for the current deployment is release `0.1.35-backend.115` with previous release `0.1.35-backend.114`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live.
+Expected baseline for the current deployment is release `0.1.35-backend.116` with previous release `0.1.35-backend.115`. The live server symlink is the source of truth; generated local files under `artifacts/` are not proof that a backend version is live.
 
 Previous backend rollback reference must be verified from `/opt/languagevoicetutor/backend/previous`. `0.1.35-backend.49` remains a documented older rollback reference, not a substitute for checking the live `previous` symlink.
 
@@ -30,7 +30,7 @@ Previous backend rollback reference must be verified from `/opt/languagevoicetut
 The production server does not need a git checkout, a `dotnet` SDK, or a `dotnet` runtime. Backend packaging uses the repository PowerShell helper and creates the linux-x64 backend archive under `artifacts/packages/backend/`:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.115
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.116
 ```
 
 The package command does not upload, restart, run EF migrations, publish website files, upload Windows installers, or enable Paddle live.
@@ -40,7 +40,7 @@ The package command does not upload, restart, run EF migrations, publish website
 Use `-PackageFirst -DryRun` to print the upload, generated deploy-helper, symlink, and restart/status commands without changing the server; the script does not run the sudo restart or sudo status commands in dry-run mode, and restart/status commands are printed but not executed:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.115 -PackageFirst -DryRun
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.116 -PackageFirst -DryRun
 ```
 
 The upload helper creates a temporary `deploy-backend-release.sh` helper and uses that helper for release extraction and symlink switching. It uses `ssh -tt` for sudo restart/status when restart is enabled. Do not document old fragile inline bash deployment paths as the current backend deployment flow.
@@ -50,7 +50,7 @@ The upload helper creates a temporary `deploy-backend-release.sh` helper and use
 After the pre-check and dry run are reviewed, run the backend upload helper without `-DryRun`:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.115 -PackageFirst
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.116 -PackageFirst
 ```
 
 By default, the helper uploads to `/opt/languagevoicetutor/backend`, switches `current`, updates `previous` when an older current release exists, restarts `languagevoicetutor-backend.service`, and prints service status. Use script parameters only for an intentionally reviewed non-default host, SSH port, user, or remote path.
@@ -73,6 +73,16 @@ ssh -t lvt-server "sudo journalctl -u languagevoicetutor-backend.service -n 100 
 ```
 
 Do not paste production environment values, database connection strings, API keys, or provider secrets into documentation, tickets, chat, commits, or pull requests. Do not echo `ConnectionStrings__DefaultConnection`, `PGPASSWORD`, or database URLs.
+
+## 2026-07-13 backend `0.1.35-backend.116` verification
+
+Backend `0.1.35-backend.116` is deployed and verified in production as the completed backend prerequisite for the upcoming Mobile Settings -> Learning work. The live current release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.116`; the previous rollback release is `/opt/languagevoicetutor/backend/releases/0.1.35-backend.115`; `languagevoicetutor-backend.service` is active and running; the backend listens on `127.0.0.1:5001` behind the existing production setup; `https://api.languagevoicetutor.com/health` returned HTTP 200 `Healthy`; and `https://api.languagevoicetutor.com/api/health/database` returned HTTP 200 `Healthy` with `canConnect=true`. The release was packaged and deployed through `scripts/upload-backend-linux-release.ps1` with `-Version 0.1.35-backend.116 -PackageFirst`, after the dry run completed successfully.
+
+The implemented learner settings contract is intentionally additive to the existing settings API: `GET /api/me/settings` now returns `CurrentLevel`, and `PUT /api/me/settings` accepts optional `CurrentLevel`. `UserProfileEntity.CurrentLevel` remains the storage location. Supported writable values are `A1`, `A2`, `B1`, and `B2`; supported stored and returned values are canonical uppercase; new profiles use `A1`; omitted or JSON `null` `CurrentLevel` preserves the existing stored value; blank or unsupported PUT values are rejected through the existing user-settings validation error; known legacy blank/whitespace and `unknown` values are repaired to `A1`; and arbitrary unsupported stored values such as `C1` are not overwritten, while current clients receive a safe `A1` response. No new endpoint, table, or migration was introduced. The contract was implemented by commit `5c08116c21b44aa3fdfd418f4f7e472fdae2fb9e`.
+
+The saved `CurrentLevel` is only the user's selected level. It does not replace or duplicate CMS level behavior. The unchanged runtime ownership chain remains: saved `CurrentLevel` -> Mobile selects the matching runtime level profile -> backend runtime scenario supplies CMS-published `levelProfiles` -> the active level profile supplies language complexity, correction guidance, answer length, hint behavior, wrap-up timing, and final-turn timing -> lesson requests carry the selected level and resolved profile values -> `LessonLimitHelper` and `LessonPromptBuilder` apply those values. Published CMS level profiles remain the source of truth for level-dependent lesson behavior and lesson length.
+
+Verification completed before deployment: the full backend test suite passed with `184 passed, 0 failed, 0 skipped`; backend Linux deployment policy passed; backend refresh-token migration policy passed; backend refresh-token policy passed; Desktop release backend-lock policy passed; CMS level-profile policy passed; lesson behavior CMS ownership policy passed; lesson timing source-of-truth policy passed; and lesson turn policy passed. The test build emitted existing `xUnit1051` cancellation-token analyzer warnings; these were non-blocking and did not represent backend runtime failures. No EF migrations were added or executed; no database schema changed; and no Desktop UI, Mobile, CMS UI, public website, Windows installer, billing, Paddle, voice, transcription, TTS, semantic-resolution, or AI Models configuration files were deployed or changed by this release.
 
 
 ## 2026-07-11 backend `0.1.35-backend.112` verification
@@ -160,7 +170,7 @@ Generated local files under `artifacts/` are not proof that a version is live on
 
 ## Release-readiness status
 
-- Backend: production healthy, current release `0.1.35-backend.115`, previous release `0.1.35-backend.114`.
+- Backend: production healthy, current release `0.1.35-backend.116`, previous release `0.1.35-backend.115`.
 - Website: generated public pages and Paddle-review polish are completed separately from backend deployment.
 - Download: current Windows tester release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current public direct release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
@@ -216,9 +226,9 @@ Admin RBAC note: Production Admin RBAC / persistent role management is completed
 
 ## 2026-07-13 backend voice scenario semantic resolution release
 
-Backend `0.1.35-backend.113` was deployed successfully from source commit `c850f4b` (`feat: add voice scenario semantic resolution`), with rollback release `0.1.35-backend.112`. That historical note describes the original additive endpoint deployment only. The latest voice scenario structured-output validation fix is in backend `0.1.35-backend.115`, not `.113` or `.114`.
+This section is historical for the `.113`/`.115` voice scenario releases; the current production backend has since advanced to `0.1.35-backend.116`. Backend `0.1.35-backend.113` was deployed successfully from source commit `c850f4b` (`feat: add voice scenario semantic resolution`), with rollback release `0.1.35-backend.112`. That historical note describes the original additive endpoint deployment only. The latest voice scenario structured-output validation fix is in backend `0.1.35-backend.115`, not `.113` or `.114`.
 
-Backend `0.1.35-backend.115` is deployed and verified in production with previous release `0.1.35-backend.114`. The live `current` symlink resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.115`, and the live `previous` symlink resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.114`; these symlinks remain the source of truth. Backend `0.1.35-backend.114` was already active before the latest deployment and must not be described as containing the `.115` fix. `languagevoicetutor-backend.service` is active and running, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. No EF migration or database schema change was required or run, and no website or Windows installer deployment was performed.
+Backend `0.1.35-backend.115` was deployed and verified in production with previous release `0.1.35-backend.114` for the dated voice scenario structured-output validation fix. The live `current` symlink resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.115`, and the live `previous` symlink resolves to `/opt/languagevoicetutor/backend/releases/0.1.35-backend.114`; these symlink values were the source of truth for that dated `.115` verification. Backend `0.1.35-backend.114` was already active before the `.115` deployment and must not be described as containing the `.115` fix. `languagevoicetutor-backend.service` is active and running, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. No EF migration or database schema change was required or run, and no website or Windows installer deployment was performed.
 
 Backend `.115` fixes `POST /api/me/lesson-sessions/{sessionId}/voice-scenario-resolution` returning HTTP 502 when the provider returned a structured-output shape permitted by the old provider schema but rejected by backend validation. The provider schema now has explicit result shapes for `published_context`, `free_context`, `clarify`, and `unsafe`, and the nested provider result is converted back into the existing flat public endpoint response. The public endpoint route and Mobile request/response contract were not changed; `free_context` remains a first-class result; runtime candidate IDs are still validated against current CMS candidates for the lesson; production credential validation is unchanged; and automated tests did not use a live OpenAI call. Verification completed: `OpenAiVoiceScenarioResolutionServiceTests` passed `61 passed, 0 failed, 0 skipped`; the full backend test suite passed `162 passed, 0 failed, 0 skipped`; the Release backend build succeeded with `0 warnings` and `0 errors`; production deployment completed through the existing `upload-backend-linux-release.ps1` script; and no EF migrations were run.
 

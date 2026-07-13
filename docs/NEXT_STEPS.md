@@ -47,11 +47,15 @@ Authenticated mobile Finish + ready Summary is production-verified as of 2026-07
 
 ## Voice scenario follow-up
 
-Authenticated backend voice scenario semantic resolution was originally deployed in backend `0.1.35-backend.113` from source commit `c850f4b`; the endpoint contract is documented in `docs/LESSON_SESSIONS_ENDPOINTS.md`. Backend `0.1.35-backend.115` is now the current production backend and fixes a structured-output validation mismatch that could make `POST /api/me/lesson-sessions/{sessionId}/voice-scenario-resolution` return HTTP 502. The public route and Mobile request/response contract did not change, `free_context` remains supported, and runtime candidate IDs are still validated against the current CMS candidates. No Desktop client source changed and no Desktop usage of this endpoint is claimed. A physical Android retest is still required before marking the first clean voice scenario selection, or the complete Mobile voice flow, fully stabilized.
+Authenticated backend voice scenario semantic resolution was originally deployed in backend `0.1.35-backend.113` from source commit `c850f4b`; the endpoint contract is documented in `docs/LESSON_SESSIONS_ENDPOINTS.md`. Backend `0.1.35-backend.115` historically fixed a structured-output validation mismatch that could make `POST /api/me/lesson-sessions/{sessionId}/voice-scenario-resolution` return HTTP 502. The public route and Mobile request/response contract did not change, `free_context` remains supported, and runtime candidate IDs are still validated against the current CMS candidates. No Desktop client source changed and no Desktop usage of this endpoint is claimed. A physical Android retest is still required before marking the first clean voice scenario selection, or the complete Mobile voice flow, fully stabilized.
+
+## Mobile Settings -> Learning learner level next step
+
+Backend `0.1.35-backend.116` completes the backend prerequisite for learner level settings: the existing settings API returns and accepts optional `CurrentLevel`. The next bounded Mobile step is for Mobile Settings -> Learning to read and save `CurrentLevel` through the existing settings API before removing Choose Level from lesson start. Do not claim the complete Mobile level-flow change is implemented until Mobile consumes the field, the Choose Level start screen is removed, and physical Mobile validation passes.
 
 ## Release-readiness status
 
-- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.115`, previous release `0.1.35-backend.114`; Production Admin RBAC / persistent role management is completed.
+- Backend: production healthy at `https://api.languagevoicetutor.com`, current release `0.1.35-backend.116`, previous release `0.1.35-backend.115`; Production Admin RBAC / persistent role management is completed.
 - Website: generated public pages and Paddle-review polish are completed for `https://languagevoicetutor.com`.
 - Download: current Windows direct public release is visible without JavaScript and manifest-driven with JavaScript.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
