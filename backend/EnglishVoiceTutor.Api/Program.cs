@@ -174,6 +174,7 @@ builder.Services.AddScoped<LessonPromptBuilder>();
 builder.Services.AddScoped<TutorIdentityGuard>();
 builder.Services.AddScoped<ILessonChatService, OpenAiLessonChatService>();
 builder.Services.AddScoped<ILessonHintService, OpenAiLessonHintService>();
+builder.Services.AddScoped<IVoiceScenarioResolutionService, OpenAiVoiceScenarioResolutionService>();
 builder.Services.AddScoped<AudioTranscriptionService>();
 builder.Services.AddScoped<TranslationService>();
 builder.Services.AddScoped<AudioSpeechService>();
@@ -427,6 +428,7 @@ app.MapAdminEndpoints();
 app.MapWebsiteAdminEndpoints();
 app.MapAiModelSettingsAdminEndpoints();
 app.MapCmsDiagnosticsEndpoints();
+app.MapVoiceScenarioResolutionEndpoints();
 
 app.Logger.LogInformation("{ServiceName} started. Environment={EnvironmentName}; StartedAtUtc={StartedAtUtc:o}; Real lesson chat endpoint enabled at {LessonChatReplyRoute}.",
     ApiConstants.ServiceName,

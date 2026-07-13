@@ -59,6 +59,7 @@ public static class ApiConstants
     public const string MeLessonSessionFinishRoute = "/api/me/lesson-sessions/{sessionId:guid}/finish";
     public const string MeLessonSessionSummaryRoute = "/api/me/lesson-sessions/{sessionId:guid}/summary";
     public const string MeLessonSessionReplyRoute = "/api/me/lesson-sessions/{sessionId:guid}/reply";
+    public const string MeLessonSessionVoiceScenarioResolutionRoute = "/api/me/lesson-sessions/{sessionId:guid}/voice-scenario-resolution";
     public const string LessonSessionHeartbeatRoute = "/api/lesson-sessions/{sessionId:guid}/heartbeat";
     public const string LessonSessionAbandonRoute = "/api/lesson-sessions/{sessionId:guid}/abandon";
     public const string ActiveLessonSessionAbandonRoute = "/api/lesson-sessions/active/abandon";
