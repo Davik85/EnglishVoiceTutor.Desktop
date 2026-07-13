@@ -5,6 +5,7 @@ public sealed record UserSettingsResponse(
     string NativeLanguage,
     string StudyLanguage,
     string ExplanationLanguage,
+    string CurrentLevel,
     string SelectedTutorId,
     string SpeechVoice,
     decimal SpeechSpeed,

@@ -2,6 +2,7 @@ using EnglishVoiceTutor.Api.Constants;
 using EnglishVoiceTutor.Api.Contracts.UserSettings;
 using EnglishVoiceTutor.Api.Data;
 using EnglishVoiceTutor.Api.Data.Entities;
+using EnglishVoiceTutor.Api.Services.Cms;
 using EnglishVoiceTutor.Desktop.Models;
 using EnglishVoiceTutor.Shared.NativeLanguages;
 using Microsoft.EntityFrameworkCore;
@@ -52,6 +53,12 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         if (request.SelectedTutorId is not null)
         {
             profile.SelectedTutorId = ToSupportedCanonicalTutorId(request.SelectedTutorId);
+            profile.UpdatedAt = now;
+        }
+
+        if (request.CurrentLevel is not null)
+        {
+            profile.CurrentLevel = ToSupportedCanonicalLevel(request.CurrentLevel);
             profile.UpdatedAt = now;
         }
 
@@ -125,6 +132,23 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
                 user.Profile.SelectedTutorId = canonicalSelectedTutorId;
                 user.Profile.UpdatedAt = now;
             }
+
+            string? canonicalCurrentLevel = null;
+            if (TryGetSupportedCanonicalLevel(user.Profile.CurrentLevel, out var supportedCurrentLevel))
+            {
+                canonicalCurrentLevel = supportedCurrentLevel;
+            }
+            else if (IsNonMeaningfulLegacyCurrentLevel(user.Profile.CurrentLevel))
+            {
+                canonicalCurrentLevel = DefaultCurrentLevel;
+            }
+
+            if (canonicalCurrentLevel is not null
+                && !string.Equals(user.Profile.CurrentLevel, canonicalCurrentLevel, StringComparison.Ordinal))
+            {
+                user.Profile.CurrentLevel = canonicalCurrentLevel;
+                user.Profile.UpdatedAt = now;
+            }
         }
 
         if (user.Settings is null)
@@ -175,6 +199,11 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
             _ = ToSupportedCanonicalTutorId(request.SelectedTutorId);
         }
 
+        if (request.CurrentLevel is not null)
+        {
+            _ = ToSupportedCanonicalLevel(request.CurrentLevel);
+        }
+
         if (string.IsNullOrWhiteSpace(request.SpeechVoice))
         {
             throw new UserSettingsValidationException("Speech voice is required.");
@@ -198,6 +227,32 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
         throw new UserSettingsValidationException($"Selected tutor must be one of: {string.Join(", ", TutorAvatarOptions.All.Select(option => option.Id))}.");
     }
 
+    private static string ToSupportedCanonicalLevel(string level)
+    {
+        if (TryGetSupportedCanonicalLevel(level, out var supportedLevel))
+        {
+            return supportedLevel;
+        }
+
+        throw new UserSettingsValidationException(
+            $"Current level must be one of: {string.Join(", ", CmsLevelProfiles.RequiredLevelKeys.Select(key => key.ToUpperInvariant()))}.");
+    }
+
+    private static bool TryGetSupportedCanonicalLevel(string? level, out string canonicalLevel)
+    {
+        var trimmedLevel = level?.Trim();
+        var supportedLevel = CmsLevelProfiles.RequiredLevelKeys.FirstOrDefault(
+            key => string.Equals(key, trimmedLevel, StringComparison.OrdinalIgnoreCase));
+        canonicalLevel = supportedLevel?.ToUpperInvariant() ?? string.Empty;
+        return supportedLevel is not null;
+    }
+
+    private static bool IsNonMeaningfulLegacyCurrentLevel(string? level)
+    {
+        return string.IsNullOrWhiteSpace(level)
+            || string.Equals(level.Trim(), "unknown", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static UserSettingsResponse ToResponse(UserEntity user)
     {
         var settings = user.Settings ?? throw new InvalidOperationException("User settings are required.");
@@ -206,12 +261,16 @@ public sealed class UserSettingsService(AppDbContext dbContext, DevUserProvider 
             ? DefaultNativeLanguage
             : profile.NativeLanguage;
         var selectedTutorId = TutorAvatarOptions.GetById(profile.SelectedTutorId).Id;
+        var currentLevel = TryGetSupportedCanonicalLevel(profile.CurrentLevel, out var supportedCurrentLevel)
+            ? supportedCurrentLevel
+            : DefaultCurrentLevel;
 
         return new UserSettingsResponse(
             settings.UserId,
             nativeLanguage,
             settings.StudyLanguage,
             settings.ExplanationLanguage,
+            currentLevel,
             selectedTutorId,
             settings.SpeechVoice,
             settings.SpeechSpeed,
