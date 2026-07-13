@@ -1,6 +1,6 @@
 # Current State
 
-Review date: 2026-07-11.
+Review date: 2026-07-13.
 
 ## Source of truth for current versions
 
@@ -39,7 +39,7 @@ For the current Windows desktop client feature baseline, language counts, lesson
 
 ## Concise release-readiness status
 
-- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.112`.
+- Backend: production is deployed and healthy at `https://api.languagevoicetutor.com`; current backend release is `0.1.35-backend.113`.
 - Website: public pages at `https://languagevoicetutor.com` are generated and Paddle-review polish is completed for the current static site.
 - Download: the current Windows direct public release is visible without JavaScript when the local/public manifest is available and remains manifest-driven with JavaScript through `/releases/windows/direct/latest.json`.
 - Windows installer: current Windows direct public release is `1.1`, installer `LanguageVoiceTutorSetup-1.1.exe`.
@@ -69,13 +69,13 @@ Health endpoints:
 - `https://api.languagevoicetutor.com/health`
 - `https://api.languagevoicetutor.com/api/health/database`
 
-Current backend release after the backend-owned authenticated lesson summary extraction fix: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.112`. Previous rollback release before this deployment was `/opt/languagevoicetutor/backend/releases/0.1.35-backend.111`. The live `current` symlink was verified as `/opt/languagevoicetutor/backend/current` -> `/opt/languagevoicetutor/backend/releases/0.1.35-backend.112`; `languagevoicetutor-backend.service` was active; `/health` returned `200 Healthy`; and `/api/health/database` returned `200 Healthy` with `canConnect=true`. No EF migration or schema change was added or run, and Windows installer/release files were unchanged. Current-state docs must not use the obsolete phrase “current backend release is `0.1.35-backend.99`” except when explicitly identifying it as outdated wording. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
+Current backend release after authenticated initial voice scenario semantic resolution: `/opt/languagevoicetutor/backend/releases/0.1.35-backend.113`. Previous rollback release before this deployment was `/opt/languagevoicetutor/backend/releases/0.1.35-backend.112`. Deployment completed successfully: `languagevoicetutor-backend.service` was active, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. No EF migration or schema change was added or run, and Windows installer/release files were unchanged. Current-state docs must not use the obsolete phrase “current backend release is `0.1.35-backend.99`” except when explicitly identifying it as outdated wording. Previous backend rollback reference should be verified from `/opt/languagevoicetutor/backend/previous`; the last documented rollback reference before this handoff was `0.1.35-backend.49`, but operators must verify the symlink before rollback. Older documentation-source policy baselines such as `0.1.35-backend.50` are not the current backend release for this handoff.
 
 Backend deployment uses:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.112
-powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.112
+powershell -ExecutionPolicy Bypass -File .\scripts\package-backend-linux-release.ps1 -Version 0.1.35-backend.113
+powershell -ExecutionPolicy Bypass -File .\scripts\upload-backend-linux-release.ps1 -Version 0.1.35-backend.113
 ```
 
 The backend upload flow uses the uploaded `deploy-backend-release.sh` helper and `ssh -tt` for sudo restart/status when needed. Do not document old fragile inline bash deployment paths as the current flow.
@@ -88,6 +88,14 @@ Phase 3 rate limiting / abuse protection is completed and production-verified wi
 
 Phase 4 is complete for the current release-readiness level: Phase 4A backup/readability/separate-drill-restore completed, Phase 4B local PostgreSQL backup scheduling is active, Phase 4C migration rollback/remediation dry-run rehearsal completed, and Phase 4D permission-fidelity restore drill completed. Off-server encrypted backups remain optional future infrastructure hardening.
 
+
+## 2026-07-13 authenticated voice scenario resolution production verification
+
+Backend `0.1.35-backend.113` is the current production backend; `0.1.35-backend.112` is the rollback release. Deployment completed successfully, `languagevoicetutor-backend.service` is active, public `/health` returned HTTP 200, and public `/api/health/database` returned HTTP 200 with `canConnect=true`. No EF migration or database schema change was required. Website and Windows installer files were not deployed.
+
+Source commit `c850f4b` (`feat: add voice scenario semantic resolution`) added the authenticated `POST /api/me/lesson-sessions/{sessionId}/voice-scenario-resolution` endpoint for backend-owned semantic resolution of the initial voice scenario selection turn. The detailed authoritative API contract and client boundary are documented in [Lesson Session Endpoints](LESSON_SESSIONS_ENDPOINTS.md#initial-voice-scenario-semantic-resolution). The endpoint is additive, does not replace normal lesson replies, and does not expose backend model IDs, API keys, provider prompts, or secrets to clients.
+
+Verification recorded for this backend work: focused resolver tests passed (`47 passed`), the complete `EnglishVoiceTutor.Api.Tests` project passed (`148 passed`), the Release backend build succeeded, backend deployment policy checks passed, and production health/database-health checks passed. No Desktop client source code changed in commit `c850f4b`; existing Desktop API usage remains compatible, no new Windows installer was required, and Desktop usage of the new endpoint is not claimed. Desktop voice-scenario parity review remains only a possible future task.
 
 ## 2026-07-11 authenticated lesson summary production verification
 
